@@ -1,9 +1,12 @@
 using Elsa.Common.Models;
+using Elsa.Mediator.Contracts;
 using Elsa.Mediator.HostedServices;
 using Elsa.Testing.Shared;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Requests;
@@ -27,16 +30,19 @@ public class Tests
     {
         var services = CreateServices();
         await services.PopulateRegistriesAsync();
-        var starter = services.GetRequiredService<IWorkflowStarter>();
         var handle = WorkflowDefinitionHandle.ByDefinitionId(nameof(CorrelatedSingletonConversationWorkflow), VersionOptions.Published);
+        await using var scope1 = services.CreateAsyncScope();
+        await using var scope2 = services.CreateAsyncScope();
+        var starter1 = scope1.ServiceProvider.GetRequiredService<IWorkflowStarter>();
+        var starter2 = scope2.ServiceProvider.GetRequiredService<IWorkflowStarter>();
 
         var results = await Task.WhenAll(
-            starter.StartWorkflowAsync(new StartWorkflowRequest
+            starter1.StartWorkflowAsync(new StartWorkflowRequest
             {
                 WorkflowDefinitionHandle = handle,
                 CorrelationId = "conversation-1"
             }),
-            starter.StartWorkflowAsync(new StartWorkflowRequest
+            starter2.StartWorkflowAsync(new StartWorkflowRequest
             {
                 WorkflowDefinitionHandle = handle,
                 CorrelationId = "conversation-1"
@@ -45,12 +51,18 @@ public class Tests
         Assert.Equal(1, results.Count(result => !result.CannotStart));
         Assert.Equal(1, results.Count(result => result.CannotStart));
         Assert.Single(await FindRunningAsync(services, nameof(CorrelatedSingletonConversationWorkflow), "conversation-1"));
+        Assert.Single(await FindByCorrelationAsync(services, nameof(CorrelatedSingletonConversationWorkflow), "conversation-1"));
     }
 
     [Fact(DisplayName = "Concurrent dispatch with the same CorrelationId and CorrelatedSingleton creates one Running instance")]
     public async Task ConcurrentDispatch_WithCorrelatedSingleton_CreatesOneRunningInstance()
     {
-        var services = CreateServices();
+        var savedSignal = new WorkflowInstanceSavedSignal();
+        var services = CreateServices(serviceCollection =>
+        {
+            serviceCollection.AddSingleton(savedSignal);
+            serviceCollection.AddNotificationHandler<WorkflowInstanceSavedSignal, WorkflowInstanceSaved>(sp => sp.GetRequiredService<WorkflowInstanceSavedSignal>());
+        });
         await services.PopulateRegistriesAsync();
         var graph = await FindGraphAsync(services, nameof(CorrelatedSingletonConversationWorkflow));
         var dispatcher = services.GetRequiredService<IWorkflowDispatcher>();
@@ -69,10 +81,11 @@ public class Tests
                     CorrelationId = "conversation-1"
                 }, null));
 
-            await WaitUntilAsync(async () => (await FindRunningAsync(services, nameof(CorrelatedSingletonConversationWorkflow), "conversation-1")).Count != 0);
+            await savedSignal.Saved.Task.WaitAsync(TimeSpan.FromSeconds(10));
 
             var instances = await FindRunningAsync(services, nameof(CorrelatedSingletonConversationWorkflow), "conversation-1");
             Assert.Single(instances);
+            Assert.Single(await FindByCorrelationAsync(services, nameof(CorrelatedSingletonConversationWorkflow), "conversation-1"));
         }
         finally
         {
@@ -102,28 +115,24 @@ public class Tests
 
         Assert.All(results, result => Assert.False(result.CannotStart));
         Assert.Equal(2, (await FindRunningAsync(services, nameof(GroupedConversationWorkflow), "conversation-1")).Count);
+        Assert.Equal(2, (await FindByCorrelationAsync(services, nameof(GroupedConversationWorkflow), "conversation-1")).Count);
     }
 
-    [Fact(DisplayName = "Blank CorrelationId with CorrelatedSingleton still allows many Running instances")]
-    public async Task ConcurrentStart_WithBlankCorrelationId_AllowsMultipleRunningInstances()
+    [Fact(DisplayName = "CorrelatedSingleton requires a non-blank CorrelationId and persists no instance")]
+    public async Task Start_WithBlankCorrelationId_ThrowsAndDoesNotPersistInstance()
     {
         var services = CreateServices();
         await services.PopulateRegistriesAsync();
         var starter = services.GetRequiredService<IWorkflowStarter>();
         var handle = WorkflowDefinitionHandle.ByDefinitionId(nameof(CorrelatedSingletonConversationWorkflow), VersionOptions.Published);
 
-        var results = await Task.WhenAll(
-            starter.StartWorkflowAsync(new StartWorkflowRequest
-            {
-                WorkflowDefinitionHandle = handle
-            }),
-            starter.StartWorkflowAsync(new StartWorkflowRequest
-            {
-                WorkflowDefinitionHandle = handle
-            }));
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() => starter.StartWorkflowAsync(new StartWorkflowRequest
+        {
+            WorkflowDefinitionHandle = handle
+        }));
 
-        Assert.All(results, result => Assert.False(result.CannotStart));
-        Assert.Equal(2, (await FindRunningAsync(services, nameof(CorrelatedSingletonConversationWorkflow), correlationId: null)).Count);
+        Assert.Contains("non-blank correlation ID", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(await FindByDefinitionAsync(services, nameof(CorrelatedSingletonConversationWorkflow)));
     }
 
     [Fact(DisplayName = "CorrelatedSingleton scopes uniqueness to DefinitionId + CorrelationId")]
@@ -172,12 +181,59 @@ public class Tests
         Assert.True(second.CannotStart);
         Assert.Single(await FindRunningAsync(services, nameof(GlobalCorrelationConversationWorkflow), "shared-conversation"));
         Assert.Empty(await FindRunningAsync(services, nameof(OtherGlobalCorrelationConversationWorkflow), "shared-conversation"));
+        Assert.Single(await FindByCorrelationAsync(services, nameof(GlobalCorrelationConversationWorkflow), "shared-conversation"));
+        Assert.Empty(await FindByCorrelationAsync(services, nameof(OtherGlobalCorrelationConversationWorkflow), "shared-conversation"));
     }
 
-    private IServiceProvider CreateServices()
+    [Fact(DisplayName = "Singleton scopes uniqueness to tenant and definition, independent of correlation ID")]
+    public async Task Singleton_RefusesSecondRunningInstanceWithDifferentCorrelationId()
     {
-        return new TestApplicationBuilder(_testOutputHelper)
+        var services = CreateServices();
+        await services.PopulateRegistriesAsync();
+        var starter = services.GetRequiredService<IWorkflowStarter>();
+        var handle = WorkflowDefinitionHandle.ByDefinitionId(nameof(SingletonConversationWorkflow), VersionOptions.Published);
+
+        var first = await starter.StartWorkflowAsync(new StartWorkflowRequest { WorkflowDefinitionHandle = handle, CorrelationId = "conversation-1" });
+        var second = await starter.StartWorkflowAsync(new StartWorkflowRequest { WorkflowDefinitionHandle = handle, CorrelationId = "conversation-2" });
+
+        Assert.False(first.CannotStart);
+        Assert.True(second.CannotStart);
+        Assert.Single(await FindByDefinitionAsync(services, nameof(SingletonConversationWorkflow)));
+    }
+
+    [Fact(DisplayName = "A terminal instance no longer occupies its activation scope")]
+    public async Task CorrelatedSingleton_AllowsNewInstanceAfterPriorInstanceFinishes()
+    {
+        var services = CreateServices();
+        await services.PopulateRegistriesAsync();
+        var starter = services.GetRequiredService<IWorkflowStarter>();
+        var handle = WorkflowDefinitionHandle.ByDefinitionId(nameof(CorrelatedSingletonConversationWorkflow), VersionOptions.Published);
+        var first = await starter.StartWorkflowAsync(new StartWorkflowRequest { WorkflowDefinitionHandle = handle, CorrelationId = "conversation-terminal" });
+        Assert.False(first.CannotStart);
+
+        var firstInstance = Assert.Single(await FindByCorrelationAsync(services, nameof(CorrelatedSingletonConversationWorkflow), "conversation-terminal"));
+        firstInstance.Status = WorkflowStatus.Finished;
+        firstInstance.SubStatus = WorkflowSubStatus.Finished;
+        firstInstance.WorkflowState.Status = WorkflowStatus.Finished;
+        firstInstance.WorkflowState.SubStatus = WorkflowSubStatus.Finished;
+        await services.GetRequiredService<IWorkflowInstanceStore>().SaveAsync(firstInstance);
+
+        var second = await starter.StartWorkflowAsync(new StartWorkflowRequest { WorkflowDefinitionHandle = handle, CorrelationId = "conversation-terminal" });
+
+        Assert.False(second.CannotStart);
+        Assert.Single(await FindRunningAsync(services, nameof(CorrelatedSingletonConversationWorkflow), "conversation-terminal"));
+        Assert.Equal(2, (await FindByCorrelationAsync(services, nameof(CorrelatedSingletonConversationWorkflow), "conversation-terminal")).Count);
+    }
+
+    private IServiceProvider CreateServices(Action<IServiceCollection>? configureServices = null)
+    {
+        var builder = new TestApplicationBuilder(_testOutputHelper);
+        if (configureServices != null)
+            builder.ConfigureServices(configureServices);
+
+        return builder
             .AddWorkflow<CorrelatedSingletonConversationWorkflow>()
+            .AddWorkflow<SingletonConversationWorkflow>()
             .AddWorkflow<GroupedConversationWorkflow>()
             .AddWorkflow<OtherCorrelatedSingletonConversationWorkflow>()
             .AddWorkflow<GlobalCorrelationConversationWorkflow>()
@@ -207,18 +263,27 @@ public class Tests
         return (await services.GetRequiredService<IWorkflowInstanceStore>().FindManyAsync(filter)).ToList();
     }
 
-    private static async Task WaitUntilAsync(Func<Task<bool>> predicate)
-    {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-
-        while (!timeout.IsCancellationRequested)
+    private static async Task<List<WorkflowInstance>> FindByCorrelationAsync(IServiceProvider services, string definitionId, string correlationId) =>
+        (await services.GetRequiredService<IWorkflowInstanceStore>().FindManyAsync(new WorkflowInstanceFilter
         {
-            if (await predicate())
-                return;
+            DefinitionId = definitionId,
+            CorrelationId = correlationId
+        })).ToList();
 
-            await Task.Delay(50, CancellationToken.None);
+    private static async Task<List<WorkflowInstance>> FindByDefinitionAsync(IServiceProvider services, string definitionId) =>
+        (await services.GetRequiredService<IWorkflowInstanceStore>().FindManyAsync(new WorkflowInstanceFilter
+        {
+            DefinitionId = definitionId
+        })).ToList();
+
+    private sealed class WorkflowInstanceSavedSignal : INotificationHandler<WorkflowInstanceSaved>
+    {
+        public TaskCompletionSource Saved { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task HandleAsync(WorkflowInstanceSaved notification, CancellationToken cancellationToken)
+        {
+            Saved.TrySetResult();
+            return Task.CompletedTask;
         }
-
-        Assert.Fail("Timed out waiting for a workflow instance to appear.");
     }
 }

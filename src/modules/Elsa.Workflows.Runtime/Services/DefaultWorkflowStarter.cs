@@ -6,24 +6,16 @@ using Elsa.Workflows.Runtime.Messages;
 
 namespace Elsa.Workflows.Runtime;
 
-public class DefaultWorkflowStarter(IWorkflowDefinitionService workflowDefinitionService, IWorkflowActivationStrategyEvaluator workflowActivationStrategyEvaluator, IWorkflowRuntime workflowRuntime) : IWorkflowStarter
+public class DefaultWorkflowStarter(IWorkflowDefinitionService workflowDefinitionService, IWorkflowRuntime workflowRuntime) : IWorkflowStarter
 {
+    public DefaultWorkflowStarter(IWorkflowDefinitionService workflowDefinitionService, IWorkflowActivationStrategyEvaluator evaluator, IWorkflowRuntime workflowRuntime)
+        : this(workflowDefinitionService, workflowRuntime)
+    {
+    }
+
     public async Task<StartWorkflowResponse> StartWorkflowAsync(StartWorkflowRequest request, CancellationToken cancellationToken = default)
     {
         var workflow = await GetWorkflowAsync(request, cancellationToken);
-
-        var canStart = await workflowActivationStrategyEvaluator.CanStartWorkflowAsync(new()
-        {
-            Workflow = workflow,
-            CorrelationId = request.CorrelationId,
-            CancellationToken = cancellationToken
-        });
-
-        if (!canStart)
-            return new()
-            {
-                CannotStart = true
-            };
 
         var workflowClient = await workflowRuntime.CreateClientAsync(cancellationToken);
         var createWorkflowInstanceRequest = new CreateAndRunWorkflowInstanceRequest

@@ -12,14 +12,14 @@ public class CorrelationStrategyTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]
-    public async Task AllowsActivation_WhenCorrelationIdIsBlank(string? correlationId)
+    public async Task Throws_WhenCorrelationIdIsBlank(string? correlationId)
     {
         var store = Substitute.For<IWorkflowInstanceStore>();
         var strategy = new CorrelationStrategy(store);
 
-        var allowed = await strategy.GetAllowActivationAsync(new(new Workflow(), correlationId, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await strategy.GetAllowActivationAsync(new(new Workflow(), correlationId, CancellationToken.None)));
 
-        Assert.True(allowed);
         await store.DidNotReceiveWithAnyArgs().CountAsync(default!, default);
     }
 

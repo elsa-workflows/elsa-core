@@ -74,11 +74,13 @@ Key files:
 | Strategy | Running-instance uniqueness | Blank `CorrelationId` |
 | --- | --- | --- |
 | None / `AllowAlwaysStrategy` (default) | None. Many Running instances may share a correlation ID. | Many |
-| `CorrelatedSingletonStrategy` | At most one Running instance per `(DefinitionId, CorrelationId)`. Different definitions may share a correlation ID. | Many |
-| `CorrelationStrategy` | At most one Running instance per `CorrelationId` across definitions. | Many |
-| `SingletonStrategy` | At most one Running instance per definition. | N/A |
+| `CorrelatedSingletonStrategy` | At most one Running instance per `(TenantId, DefinitionId, CorrelationId)`. Different definitions and tenants have separate scopes. | Fails explicitly; a non-blank value is required |
+| `CorrelationStrategy` | At most one Running instance per `(TenantId, CorrelationId)` across definitions. | Fails explicitly; a non-blank value is required |
+| `SingletonStrategy` | At most one Running instance per `(TenantId, DefinitionId)`. | N/A |
 
-`StartWorkflow` and `DispatchWorkflowDefinition` both evaluate the strategy at create time. The check is serialized with the persist of the new instance so two concurrent dispatches cannot both observe "no Running instance" and both create one. A refused create returns `CannotStart` and does not attach to or resume the existing instance. Later events for the same conversation should resume through stimulus / bookmarks, not by dispatching the definition again.
+`StartWorkflow` and `DispatchWorkflowDefinition` both evaluate the strategy at the shared create boundary. Built-in lock names are deterministic hashes of canonical, tenant-scoped strategy components; raw tenant and correlation values are not logged or embedded in lock names. Create-only requests persist under the lease. Create-and-run keeps the candidate in memory until the runner's first durable commit and holds the lease through that point, so a pre-commit failure or cancellation does not leave a phantom Running/Pending instance. A refused create returns `CannotStart` without an instance ID and does not attach to or resume the existing instance. Later events for the same conversation should resume through stimulus / bookmarks, not by dispatching the definition again. A configured but unregistered strategy fails closed with a registration/configuration error.
+
+Custom `IWorkflowActivationStrategy` implementations are still evaluated without requiring an interface change, but their exclusivity scope is unknown and the runtime does not claim distributed atomicity for them. Synchronously awaited nested dispatch using the same built-in activation scope can wait on its parent-held lease; use a distinct correlation scope for that nested activation.
 
 Conversation workflows that treat `CorrelationId` as the identity of a long-running process should set `CorrelatedSingletonStrategy` (or `CorrelationStrategy` when the conversation key is process-wide). Clustered hosts must use a cross-node `IDistributedLockProvider`; the default file-system provider only coordinates on one node.
 

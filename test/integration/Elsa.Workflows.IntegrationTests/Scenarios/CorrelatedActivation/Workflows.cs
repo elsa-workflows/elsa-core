@@ -13,6 +13,15 @@ public class CorrelatedSingletonConversationWorkflow : WorkflowBase
     }
 }
 
+public class SingletonConversationWorkflow : WorkflowBase
+{
+    protected override void Build(IWorkflowBuilder builder)
+    {
+        builder.WithActivationStrategyType<SingletonStrategy>();
+        builder.Root = new Event("Hold");
+    }
+}
+
 public class GroupedConversationWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder)

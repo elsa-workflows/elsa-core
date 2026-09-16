@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Entities;
@@ -14,13 +15,15 @@ namespace Elsa.Workflows.Management.Stores;
 public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
 {
     private readonly MemoryStore<WorkflowInstance> _store;
+    private readonly ITenantAccessor? _tenantAccessor;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public MemoryWorkflowInstanceStore(MemoryStore<WorkflowInstance> store)
+    public MemoryWorkflowInstanceStore(MemoryStore<WorkflowInstance> store, ITenantAccessor? tenantAccessor = null)
     {
         _store = store;
+        _tenantAccessor = tenantAccessor;
     }
 
     /// <inheritdoc />
@@ -123,12 +126,14 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
+        ApplyCurrentTenant(instance);
         _store.Save(instance, x => x.Id);
         return ValueTask.CompletedTask;
     }
 
     public ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
+        ApplyCurrentTenant(instance);
         _store.Add(instance, GetId);
         return ValueTask.CompletedTask;
     }
@@ -142,7 +147,10 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
-        _store.SaveMany(instances, GetId);
+        var instanceList = instances.ToList();
+        foreach (var instance in instanceList)
+            ApplyCurrentTenant(instance);
+        _store.SaveMany(instanceList, GetId);
         return ValueTask.CompletedTask;
     }
 
@@ -171,5 +179,12 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     private static string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;
 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Management.Filters.WorkflowInstanceFilter.Apply(IQueryable<WorkflowInstance>)")]
-    private static IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> query, WorkflowInstanceFilter filter) => filter.Apply(query);
+    private IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> query, WorkflowInstanceFilter filter) =>
+        filter.Apply(query.WhereVisibleToTenant(_tenantAccessor?.TenantId ?? Tenant.DefaultTenantId));
+
+    private void ApplyCurrentTenant(WorkflowInstance instance)
+    {
+        if (instance.TenantId != Tenant.AgnosticTenantId)
+            instance.TenantId ??= _tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
+    }
 }

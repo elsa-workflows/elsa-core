@@ -73,7 +73,7 @@ public class StimulusSender(
 
                 if (response.CannotStart)
                 {
-                    logger.LogWarning("Workflow activation strategy disallowed starting workflow {WorkflowDefinitionHandle} with correlation ID {CorrelationId}", workflow.DefinitionHandle, correlationId);
+                    logger.LogWarning("Workflow activation strategy disallowed starting workflow {WorkflowDefinitionId}", workflow.Identity.DefinitionId);
                     continue;
                 }
 

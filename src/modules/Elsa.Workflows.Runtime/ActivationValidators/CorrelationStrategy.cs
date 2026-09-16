@@ -6,7 +6,7 @@ namespace Elsa.Workflows.Runtime.ActivationValidators;
 
 /// <summary>
 /// Only allow new workflow instances if a running one with the same correlation ID doesn't already exist.
-/// Blank or missing correlation IDs are not unique and always allow activation.
+/// A non-blank correlation ID is required for this strategy.
 /// </summary>
 [Display(Name = "Correlation", Description = "Only allow new workflow instances of any workflow definition if a running one with the same non-blank correlation ID doesn't already exist.")]
 public class CorrelationStrategy(IWorkflowInstanceStore workflowInstanceStore) : IWorkflowActivationStrategy
@@ -17,7 +17,7 @@ public class CorrelationStrategy(IWorkflowInstanceStore workflowInstanceStore) :
     public async ValueTask<bool> GetAllowActivationAsync(WorkflowInstantiationStrategyContext context)
     {
         if (string.IsNullOrWhiteSpace(context.CorrelationId))
-            return true;
+            throw new ArgumentException("A non-blank correlation ID is required when using CorrelationStrategy.", nameof(context.CorrelationId));
 
         var filter = new WorkflowInstanceFilter
         {

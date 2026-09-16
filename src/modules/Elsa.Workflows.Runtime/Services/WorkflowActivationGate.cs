@@ -1,3 +1,6 @@
+using System.Buffers.Binary;
+using System.Security.Cryptography;
+using System.Text;
 using Elsa.Common.DistributedHosting;
 using Elsa.Common.Multitenancy;
 using Elsa.Workflows.ActivationValidators;
@@ -63,25 +66,36 @@ public class WorkflowActivationGate(
         var definitionId = workflow.Identity.DefinitionId;
 
         if (strategyType == typeof(SingletonStrategy))
-            return $"workflow-activation:{tenantId}:singleton:{definitionId}";
+            return CreateLockKey("singleton", tenantId, definitionId);
 
         if (strategyType == typeof(CorrelatedSingletonStrategy))
         {
-            if (string.IsNullOrWhiteSpace(correlationId))
-                return null;
-
-            return $"workflow-activation:{tenantId}:correlated-singleton:{definitionId}:{correlationId}";
+            return CreateLockKey("correlated-singleton", tenantId, definitionId, correlationId ?? string.Empty);
         }
 
         if (strategyType == typeof(CorrelationStrategy))
         {
-            if (string.IsNullOrWhiteSpace(correlationId))
-                return null;
-
-            return $"workflow-activation:{tenantId}:correlation:{correlationId}";
+            return CreateLockKey("correlation", tenantId, correlationId ?? string.Empty);
         }
 
-        var correlationKey = string.IsNullOrWhiteSpace(correlationId) ? "_" : correlationId;
-        return $"workflow-activation:{tenantId}:custom:{strategyType.FullName}:{definitionId}:{correlationKey}";
+        // Custom strategies remain compatible, but their uniqueness scope is unknown. Do not
+        // invent a lock key that implies atomicity the strategy has not declared.
+        return null;
+    }
+
+    private static string CreateLockKey(string strategy, params string[] components)
+    {
+        using var stream = new MemoryStream();
+        Span<byte> length = stackalloc byte[sizeof(int)];
+        foreach (var component in components)
+        {
+            var bytes = Encoding.UTF8.GetBytes(component);
+            BinaryPrimitives.WriteInt32BigEndian(length, bytes.Length);
+            stream.Write(length);
+            stream.Write(bytes);
+        }
+
+        var hash = Convert.ToHexString(SHA256.HashData(stream.ToArray()));
+        return $"workflow-activation:v1:{strategy}:{hash}";
     }
 }

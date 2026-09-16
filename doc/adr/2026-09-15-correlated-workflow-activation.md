@@ -13,9 +13,10 @@ Dispatching or starting a workflow with a `CorrelationId` could create two Runni
 `CorrelationId` is a routing and grouping key, not a global identity:
 
 - The default (no strategy / `AllowAlwaysStrategy`) allows many Running instances to share a correlation ID. `BulkDispatchWorkflows` can assign the same correlation to many children of one definition.
-- `CorrelatedSingletonStrategy` allows at most one Running instance per `(DefinitionId, CorrelationId)`.
-- `CorrelationStrategy` allows at most one Running instance per `CorrelationId` across definitions.
-- Blank or missing correlation IDs must remain unbounded. A unique index cannot express those three scopes and would reject legitimate multi-instance use.
+- `SingletonStrategy` allows at most one Running instance per `(TenantId, DefinitionId)`.
+- `CorrelatedSingletonStrategy` allows at most one Running instance per `(TenantId, DefinitionId, CorrelationId)`.
+- `CorrelationStrategy` allows at most one Running instance per `(TenantId, CorrelationId)` across definitions.
+- Blank or missing correlation IDs remain unbounded when no correlation-based strategy is selected. The two correlation-based strategies require a non-blank correlation ID and fail explicitly when it is missing. A unique index cannot express those scopes and would reject legitimate multi-instance use.
 
 The existing strategies also treated a blank `CorrelationId` as "match every Running instance", which accidentally made them behave like a singleton.
 
@@ -23,13 +24,15 @@ The existing strategies also treated a blank `CorrelationId` as "match every Run
 
 Do not add a unique index on `CorrelationId`.
 
-Honor the workflow's activation strategy on every create path, including `DispatchWorkflowDefinition` → `CreateAndRunInstanceAsync`. Serialize the strategy check with the persist of the new instance using the existing distributed lock provider, keyed by the strategy's uniqueness scope. A second create is refused (`CannotStart`); it does not attach to or resume the existing instance. Resume remains the stimulus / bookmark path.
+Honor the workflow's activation strategy on every create path, including `DispatchWorkflowDefinition` → `CreateAndRunInstanceAsync`. Built-in singleton strategies acquire a distributed lock whose name is derived from a length-prefixed, canonical hash of the tenant and strategy scope; raw tenant and correlation values are not included in the lock name or denial log. A second create is refused (`CannotStart`); it does not attach to or resume the existing instance. Resume remains the stimulus / bookmark path.
 
-Blank correlation IDs skip correlation-scoped uniqueness. Finished instances do not occupy the slot.
+Create-only requests persist under the activation lease. Create-and-run requests keep the candidate instance in memory until the runner commits its first resulting state, and hold the activation lease through that boundary; a failure or cancellation before commit must not leave a provisional Running/Pending row. Finished instances do not occupy the slot. The tradeoff is that synchronous nested dispatch which reuses the parent's built-in uniqueness scope can wait for the parent-held lease; workflows that synchronously await a nested activation should use distinct correlation scopes.
+
+Custom `IWorkflowActivationStrategy` implementations remain source-compatible and are still evaluated, but the runtime does not guess their exclusivity scope. They are not made atomic across concurrent callers unless they adopt a future explicit scope capability.
 
 ## Consequences
 
-Conversation workflows that want one Running instance per correlation ID must set `CorrelatedSingletonStrategy` (or `CorrelationStrategy` for a process-wide conversation key). Dispatch and start now enforce that under concurrency, including multi-node hosts with a cross-node lock provider.
+Conversation workflows that want one Running instance per correlation ID must set `CorrelatedSingletonStrategy` (or `CorrelationStrategy` for a process-wide conversation key) and provide a non-blank correlation ID. Dispatch and start enforce built-in scopes under concurrency, including multi-node hosts with a cross-node lock provider. A configured but unregistered strategy fails closed with an actionable configuration error.
 
 Default grouping behavior is unchanged. Hosts that used `CorrelationId` only as a tag continue to create multiple Running instances.
 
