@@ -137,7 +137,7 @@ public class Tests
     [Fact(DisplayName = "Concurrent dispatch on two runtime nodes sharing SQLite and a distributed lock persists one Running instance")]
     public async Task ConcurrentDispatch_AcrossRuntimeNodes_CreatesOneRunningInstance()
     {
-        var databasePath = Path.Combine(Path.GetTempPath(), $"elsa-activation-multinode-{Guid.NewGuid():N}.db");
+        var databasePath = Path.Join(Path.GetTempPath(), $"elsa-activation-multinode-{Guid.NewGuid():N}.db");
         var connectionString = $"Data Source={databasePath};Default Timeout=30;Pooling=False";
         var lockProvider = new BarrierDistributedLockProvider();
 

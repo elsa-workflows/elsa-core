@@ -87,9 +87,8 @@ public class WorkflowActivationGate(
     {
         using var stream = new MemoryStream();
         Span<byte> length = stackalloc byte[sizeof(int)];
-        foreach (var component in components)
+        foreach (var bytes in components.Select(component => Encoding.UTF8.GetBytes(component)))
         {
-            var bytes = Encoding.UTF8.GetBytes(component);
             BinaryPrimitives.WriteInt32BigEndian(length, bytes.Length);
             stream.Write(length);
             stream.Write(bytes);
