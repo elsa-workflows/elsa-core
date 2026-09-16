@@ -647,16 +647,16 @@
     <value />
   </data>
   <data name="Please enter a name for the input." xml:space="preserve">
-    <value />
+    <value>Bitte gebe der Eingabe einen Namen.</value>
   </data>
   <data name="Workflow published" xml:space="preserve">
     <value />
   </data>
   <data name="Edit output" xml:space="preserve">
-    <value />
+    <value>Ausgabe bearbeiten</value>
   </data>
   <data name="The name of the agent." xml:space="preserve">
-    <value />
+    <value>Der Name des Agenten.</value>
   </data>
   <data name="Rollback to this version" xml:space="preserve">
     <value />
@@ -683,7 +683,7 @@
     <value />
   </data>
   <data name="This activity does not have any input properties." xml:space="preserve">
-    <value />
+    <value>Diese Aktivität hat keine Eingabe-Eigenschaften.</value>
   </data>
   <data name="Workflow instances" xml:space="preserve">
     <value />
@@ -701,28 +701,28 @@
     <value />
   </data>
   <data name="Default" xml:space="preserve">
-    <value />
+    <value>Standard</value>
   </data>
   <data name="Interval" xml:space="preserve">
     <value />
   </data>
   <data name="Not usable as activity." xml:space="preserve">
-    <value />
+    <value>Nicht als Aktivität benutzbar.</value>
   </data>
   <data name="Successfully started workflow" xml:space="preserve">
     <value />
   </data>
   <data name="Delete selected versions" xml:space="preserve">
-    <value />
+    <value>Ausgewählte Version löschen</value>
   </data>
   <data name="Create output" xml:space="preserve">
-    <value />
+    <value>Ausgabe erstellen</value>
   </data>
   <data name="Method" xml:space="preserve">
-    <value />
+    <value>Methode</value>
   </data>
   <data name="Delete selected input?" xml:space="preserve">
-    <value />
+    <value>Ausgewählte Eingabe löschen?</value>
   </data>
   <data name="Provider Type" xml:space="preserve">
     <value />
@@ -731,7 +731,7 @@
     <value />
   </data>
   <data name="The .NET type of the input variable." xml:space="preserve">
-    <value />
+    <value>Der .NET Typ der Eingabevariable.</value>
   </data>
   <data name="Workflow unpublished" xml:space="preserve">
     <value />
@@ -749,7 +749,7 @@
     <value />
   </data>
   <data name="Successfully imported" xml:space="preserve">
-    <value />
+    <value>Erfolgreich importiert</value>
   </data>
   <data name="The definition ID of the workflows to dispatch." xml:space="preserve">
     <value />
@@ -767,7 +767,7 @@
     <value />
   </data>
   <data name="The ID of the variable." xml:space="preserve">
-    <value />
+    <value>Die ID der Variable.</value>
   </data>
   <data name="Successfully imported 1 workflow definition." xml:space="preserve">
     <value />
@@ -785,7 +785,7 @@
     <value />
   </data>
   <data name="The secret value." xml:space="preserve">
-    <value />
+    <value>Der geheime Wert.</value>
   </data>
   <data name="A list of radio buttons" xml:space="preserve">
     <value />
@@ -797,7 +797,7 @@
     <value />
   </data>
   <data name="This variable is an array" xml:space="preserve">
-    <value />
+    <value>Die Variable ist ein Array</value>
   </data>
   <data name="Showing incidents" xml:space="preserve">
     <value />
@@ -806,7 +806,7 @@
     <value />
   </data>
   <data name="The lifetime of this secret" xml:space="preserve">
-    <value />
+    <value>Die Lebenszeit des Geheimnisses</value>
   </data>
   <data name="Are you sure you want to delete this version?" xml:space="preserve">
     <value />
@@ -821,7 +821,7 @@
     <value />
   </data>
   <data name="There are currently no inputs defined." xml:space="preserve">
-    <value />
+    <value>Es sind aktuell keine Eingaben definiert.</value>
   </data>
   <data name="Code" xml:space="preserve">
     <value />
@@ -836,16 +836,16 @@
     <value />
   </data>
   <data name="Started" xml:space="preserve">
-    <value />
+    <value>Gestartet</value>
   </data>
   <data name="The name of the workflow." xml:space="preserve">
-    <value />
+    <value>Der Name des Workflows.</value>
   </data>
   <data name="Not executed" xml:space="preserve">
-    <value />
+    <value>Nicht ausgeführt</value>
   </data>
   <data name="Timestamp" xml:space="preserve">
-    <value />
+    <value>Zeitstempel</value>
   </data>
   <data name="Request Content." xml:space="preserve">
     <value />
@@ -854,19 +854,19 @@
     <value />
   </data>
   <data name="Please enter a name for the variable." xml:space="preserve">
-    <value />
+    <value>Bitte gebe der Variable einen Namen.</value>
   </data>
   <data name="Run Task" xml:space="preserve">
     <value />
   </data>
   <data name="The .NET type of the output variable." xml:space="preserve">
-    <value />
+    <value>Der .NET Typ der Ausgabevariable.</value>
   </data>
   <data name="Expected Status Codes" xml:space="preserve">
     <value />
   </data>
   <data name="Type" xml:space="preserve">
-    <value />
+    <value>Typ</value>
   </data>
   <data name="Show relative time" xml:space="preserve">
     <value />
@@ -890,13 +890,13 @@
     <value />
   </data>
   <data name="The user-friendly name of this output." xml:space="preserve">
-    <value />
+    <value>Der benutzerfreundliche Name der Ausgabe.</value>
   </data>
   <data name="Rows Per Page" xml:space="preserve">
     <value />
   </data>
   <data name="There are currently no outputs defined." xml:space="preserve">
-    <value />
+    <value>Es sind aktuell keine Ausgaben definiert.</value>
   </data>
   <data name="Incident handling strategy" xml:space="preserve">
     <value />
@@ -908,7 +908,7 @@
     <value />
   </data>
   <data name="UpdatedAt" xml:space="preserve">
-    <value />
+    <value>Aktualisiert am</value>
   </data>
   <data name="{0} workflows consuming published workflows have been updated" xml:space="preserve">
     <value />
@@ -923,7 +923,7 @@
     <value />
   </data>
   <data name="Default Strategy" xml:space="preserve">
-    <value />
+    <value>Standardstrategie</value>
   </data>
   <data name="Successfully imported {0} workflow definitions." xml:space="preserve">
     <value />
@@ -947,10 +947,10 @@
     <value />
   </data>
   <data name="Delete version {0}" xml:space="preserve">
-    <value />
+    <value>Lösche Version {0}</value>
   </data>
   <data name="Condition" xml:space="preserve">
-    <value />
+    <value>Bedingung</value>
   </data>
   <data name="workflows are already unpublished" xml:space="preserve">
     <value />
@@ -959,37 +959,37 @@
     <value />
   </data>
   <data name="Center" xml:space="preserve">
-    <value />
+    <value>Zentriert</value>
   </data>
   <data name="Use JSON Response" xml:space="preserve">
-    <value />
+    <value>Benutze JSON-Antwort</value>
   </data>
   <data name="Are you sure you want to delete the selected variable?" xml:space="preserve">
-    <value />
+    <value>Bist du sicher, dass du die ausgewählte Variable löschen möchtest?</value>
   </data>
   <data name="Payload" xml:space="preserve">
     <value />
   </data>
   <data name="There are currently no variables defined." xml:space="preserve">
-    <value />
+    <value>Es sind aktuell keine Variablen definiert.</value>
   </data>
   <data name="Scripting" xml:space="preserve">
     <value />
   </data>
   <data name="Use this version" xml:space="preserve">
-    <value />
+    <value>Benutze diese Version</value>
   </data>
   <data name="Start at" xml:space="preserve">
     <value />
   </data>
   <data name="This input is an array" xml:space="preserve">
-    <value />
+    <value>Die Eingabe ist ein Array</value>
   </data>
   <data name="Yes" xml:space="preserve">
-    <value />
+    <value>Ja</value>
   </data>
   <data name="Create variable" xml:space="preserve">
-    <value />
+    <value>Variable erstellen</value>
   </data>
   <data name="workflows are unpublished" xml:space="preserve">
     <value />
@@ -1004,13 +1004,13 @@
     <value />
   </data>
   <data name="Content Type" xml:space="preserve">
-    <value />
+    <value>Inhaltstyp</value>
   </data>
   <data name="workflows consuming published workflows have been updated" xml:space="preserve">
     <value />
   </data>
   <data name="Inherit" xml:space="preserve">
-    <value />
+    <value>Erben</value>
   </data>
   <data name="Set Variable" xml:space="preserve">
     <value />
@@ -1025,7 +1025,7 @@
     <value />
   </data>
   <data name="imported successfully." xml:space="preserve">
-    <value />
+    <value>Erfolgreich importiert.</value>
   </data>
   <data name="Zoom to fit" xml:space="preserve">
     <value />
@@ -1058,16 +1058,16 @@
     <value />
   </data>
   <data name="Variables" xml:space="preserve">
-    <value />
+    <value>Variablen</value>
   </data>
   <data name="{0} workflows are published" xml:space="preserve">
     <value />
   </data>
   <data name="A variable with this name already exists in the current scope." xml:space="preserve">
-    <value />
+    <value>Eine Variable existiert bereits im aktuellen Gültigkeitsbereich.</value>
   </data>
   <data name="Are you sure you want to delete the selected versions?" xml:space="preserve">
-    <value />
+    <value>Bist du sicher, dass du die ausgewählte Version löschen möchtest?</value>
   </data>
   <data name="Are you sure you want to cancel the selected workflow instances?" xml:space="preserve">
     <value />
@@ -1076,10 +1076,10 @@
     <value />
   </data>
   <data name="UI Hint" xml:space="preserve">
-    <value />
+    <value>UI Hinweis</value>
   </data>
   <data name="Status" xml:space="preserve">
-    <value />
+    <value>Status</value>
   </data>
   <data name="Workflow definitions Editor" xml:space="preserve">
     <value />
@@ -1106,7 +1106,7 @@
     <value />
   </data>
   <data name="This output is an array" xml:space="preserve">
-    <value />
+    <value>Die Ausgabe ist ein Array</value>
   </data>
   <data name="The switch mode determines whether the first match should be scheduled, or all matches." xml:space="preserve">
     <value />
@@ -1127,7 +1127,7 @@
     <value />
   </data>
   <data name="Temperature" xml:space="preserve">
-    <value />
+    <value>Temperatur</value>
   </data>
   <data name="Set Workflow Context Parameter" xml:space="preserve">
     <value />
@@ -1145,7 +1145,7 @@
     <value />
   </data>
   <data name="Version history" xml:space="preserve">
-    <value />
+    <value>Versionshistorie</value>
   </data>
   <data name="One workflow consuming a published workflow has been updated" xml:space="preserve">
     <value />
@@ -1160,10 +1160,10 @@
     <value />
   </data>
   <data name="Time" xml:space="preserve">
-    <value />
+    <value>Zeit</value>
   </data>
   <data name="Used" xml:space="preserve">
-    <value />
+    <value>Benutzt</value>
   </data>
   <data name="Please enter a name for the workflow." xml:space="preserve">
     <value />
@@ -1187,13 +1187,13 @@
     <value />
   </data>
   <data name="string" xml:space="preserve">
-    <value />
+    <value>Zeichenkette</value>
   </data>
   <data name="The penalty for repeating any one token" xml:space="preserve">
     <value />
   </data>
   <data name="Create input" xml:space="preserve">
-    <value />
+    <value>Eingabe erstellen</value>
   </data>
   <data name="The data source to use for dispatching the workflows." xml:space="preserve">
     <value />
@@ -1217,7 +1217,7 @@
     <value />
   </data>
   <data name="Single line" xml:space="preserve">
-    <value />
+    <value>Einzeilig</value>
   </data>
   <data name="When checked, this activity can trigger this workflow." xml:space="preserve">
     <value />
@@ -1229,7 +1229,7 @@
     <value />
   </data>
   <data name="The user-friendly name of this input." xml:space="preserve">
-    <value />
+    <value>Der benutzerfreundliche Name der Eingabe.</value>
   </data>
   <data name="Upload JSON and/or ZIP files containing workflow data to import." xml:space="preserve">
     <value />
@@ -1244,7 +1244,7 @@
     <value />
   </data>
   <data name="The name of the new secret." xml:space="preserve">
-    <value>Der Name des neuen Geheimnis</value>
+    <value>Der Name des neuen Geheimnisses.</value>
   </data>
   <data name="The maximum number" xml:space="preserve">
     <value />
@@ -1256,25 +1256,25 @@
     <value />
   </data>
   <data name="Delete selected variable?" xml:space="preserve">
-    <value />
+    <value>Ausgewählte Variable löschen?</value>
   </data>
   <data name="State" xml:space="preserve">
-    <value />
+    <value>Zustand</value>
   </data>
   <data name="Storage" xml:space="preserve">
-    <value />
+    <value>Speicher</value>
   </data>
   <data name="Please enter a name for the output." xml:space="preserve">
-    <value />
+    <value>Bitte gebe der Ausgabe einen Namen.</value>
   </data>
   <data name="Edit variable" xml:space="preserve">
-    <value />
+    <value>Variable bearbeiten</value>
   </data>
   <data name="Send Email" xml:space="preserve">
     <value />
   </data>
   <data name="The name of the variable." xml:space="preserve">
-    <value />
+    <value>Der Name der Variable.</value>
   </data>
   <data name="Switch (flow)" xml:space="preserve">
     <value />
@@ -1286,7 +1286,7 @@
     <value />
   </data>
   <data name="Version" xml:space="preserve">
-    <value />
+    <value>Version</value>
   </data>
   <data name="The workflow cannot be started" xml:space="preserve">
     <value />
@@ -1313,16 +1313,16 @@
     <value />
   </data>
   <data name="You can find documentation and examples here" xml:space="preserve">
-    <value />
+    <value>Hier findest du eine Dokumentation und Beispiele</value>
   </data>
   <data name="Set Output" xml:space="preserve">
     <value />
   </data>
   <data name="Unable to make changes as the workflow or application is currently in read-only mode" xml:space="preserve">
-    <value />
+    <value>Nicht möglich Änderungen durchzuführen, da der Workflow oder die Anwendung im Lesemodus ist</value>
   </data>
   <data name="Show description" xml:space="preserve">
-    <value />
+    <value>Beschreibung anzeigen</value>
   </data>
   <data name="{0} workflows are not found" xml:space="preserve">
     <value />
@@ -1331,13 +1331,13 @@
     <value />
   </data>
   <data name="Value" xml:space="preserve">
-    <value />
+    <value>Wert</value>
   </data>
   <data name="No workflows found to import." xml:space="preserve">
     <value />
   </data>
   <data name="None" xml:space="preserve">
-    <value />
+    <value>Nichts</value>
   </data>
   <data name="One workflow is published" xml:space="preserve">
     <value />
@@ -1349,7 +1349,7 @@
     <value />
   </data>
   <data name="Executes javaScript code" xml:space="preserve">
-    <value />
+    <value>JavaScript ausführen</value>
   </data>
   <data name="Label" xml:space="preserve">
     <value />
@@ -1364,7 +1364,7 @@
     <value />
   </data>
   <data name="View" xml:space="preserve">
-    <value />
+    <value>Ansicht</value>
   </data>
   <data name="The read-only workflows will not be affected." xml:space="preserve">
     <value />
@@ -1379,16 +1379,16 @@
     <value />
   </data>
   <data name="The plugins that the agent can use." xml:space="preserve">
-    <value />
+    <value>Die Erweiterungen die ein Agent nutzen kann.</value>
   </data>
   <data name="Mode" xml:space="preserve">
-    <value />
+    <value>Modus</value>
   </data>
   <data name="Controls whether the end step is upper/lowerbound inclusive or exclusive. True (inclusive) by default." xml:space="preserve">
     <value />
   </data>
   <data name="Successfully imported {0} instances" xml:space="preserve">
-    <value />
+    <value>Erfolgreich {0} Instanzen importiert</value>
   </data>
   <data name="Timer" xml:space="preserve">
     <value />
@@ -1397,10 +1397,10 @@
     <value />
   </data>
   <data name="Updated" xml:space="preserve">
-    <value />
+    <value>Aktualisiert</value>
   </data>
   <data name="Multi line" xml:space="preserve">
-    <value />
+    <value>Mehrzeilig</value>
   </data>
   <data name="Unpublish the current workflow" xml:space="preserve">
     <value />
@@ -1412,16 +1412,16 @@
     <value />
   </data>
   <data name="Cancelled" xml:space="preserve">
-    <value />
+    <value>Abgebrochen</value>
   </data>
   <data name="The description of the output variable." xml:space="preserve">
-    <value />
+    <value>Die Beschreibung der Ausgabevariable.</value>
   </data>
   <data name="The name of the new workflow." xml:space="preserve">
-    <value />
+    <value>Der Name des neuen Workflows.</value>
   </data>
   <data name="A single line of text input" xml:space="preserve">
-    <value />
+    <value>Eine einzelne Zeile als Texteingabe</value>
   </data>
   <data name="Checkbox" xml:space="preserve">
     <value />
@@ -1442,7 +1442,7 @@
     <value />
   </data>
   <data name="The value of the API key." xml:space="preserve">
-    <value />
+    <value>Der Wert des API-Schlüssels.</value>
   </data>
   <data name="{0} consuming workflow(s) updated" xml:space="preserve">
     <value />
@@ -1472,7 +1472,7 @@
     <value />
   </data>
   <data name="Usable as activity" xml:space="preserve">
-    <value />
+    <value>Benutzbar als Aktivität</value>
   </data>
   <data name="Radio list" xml:space="preserve">
     <value />
@@ -1490,7 +1490,7 @@
     <value />
   </data>
   <data name="This activity does not have any common properties." xml:space="preserve">
-    <value />
+    <value>Diese Aktivität hat keine gemeinsamen Eigenschaften.</value>
   </data>
   <data name="Auto layout" xml:space="preserve">
     <value />
@@ -1499,13 +1499,13 @@
     <value />
   </data>
   <data name="Executing" xml:space="preserve">
-    <value />
+    <value>In Ausführung</value>
   </data>
   <data name="Delete version" xml:space="preserve">
-    <value />
+    <value>Version löschen</value>
   </data>
   <data name="Workflows" xml:space="preserve">
-    <value />
+    <value>Workflows</value>
   </data>
   <data name="A list of checkboxes" xml:space="preserve">
     <value />
@@ -1520,13 +1520,13 @@
     <value />
   </data>
   <data name="Whether to show the description in the designer." xml:space="preserve">
-    <value />
+    <value>Ob die Beschreibung im Designer angezeigt werden soll.</value>
   </data>
   <data name="Delete workflow?" xml:space="preserve">
     <value />
   </data>
   <data name="Message" xml:space="preserve">
-    <value />
+    <value>Nachricht</value>
   </data>
   <data name="Services" xml:space="preserve">
     <value />
@@ -1538,7 +1538,7 @@
     <value />
   </data>
   <data name="Delete selected output?" xml:space="preserve">
-    <value />
+    <value>Ausgewählte Ausgabe löschen?</value>
   </data>
   <data name="Zoom to fit the screen" xml:space="preserve">
     <value />
@@ -1547,13 +1547,13 @@
     <value />
   </data>
   <data name="The text to display in the designer." xml:space="preserve">
-    <value />
+    <value>Der Text der im Designer angezeigt wird.</value>
   </data>
   <data name="The start step." xml:space="preserve">
     <value />
   </data>
   <data name="Task" xml:space="preserve">
-    <value />
+    <value>Aufgabe</value>
   </data>
   <data name="Variable picker" xml:space="preserve">
     <value />
@@ -1562,7 +1562,7 @@
     <value />
   </data>
   <data name="The technical name of the API key." xml:space="preserve">
-    <value />
+    <value>Der technische Name des API-Schlüssels.</value>
   </data>
   <data name="Scheduling" xml:space="preserve">
     <value />
