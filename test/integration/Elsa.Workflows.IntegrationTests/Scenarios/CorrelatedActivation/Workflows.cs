@@ -1,3 +1,4 @@
+using Elsa.Workflows.ActivationValidators;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Activities;
@@ -26,6 +27,15 @@ public class GroupedConversationWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder)
     {
+        builder.Root = new Event("Hold");
+    }
+}
+
+public class AllowAlwaysConversationWorkflow : WorkflowBase
+{
+    protected override void Build(IWorkflowBuilder builder)
+    {
+        builder.WithActivationStrategyType<AllowAlwaysStrategy>();
         builder.Root = new Event("Hold");
     }
 }

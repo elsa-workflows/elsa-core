@@ -56,7 +56,7 @@ public class LocalWorkflowClient(
         await using var lease = await workflowActivationGate.EvaluateAsync(workflowGraph.Workflow, request.CorrelationId, cancellationToken);
         if (!lease.CanStart)
         {
-            logger.LogWarning("Workflow activation strategy disallowed creating an instance for definition {WorkflowDefinitionId}", workflowGraph.Workflow.Identity.DefinitionId);
+            LogActivationDenial(workflowGraph.Workflow, request.CorrelationId);
             return new()
             {
                 CannotStart = true
@@ -84,7 +84,7 @@ public class LocalWorkflowClient(
         await using var lease = await workflowActivationGate.EvaluateAsync(workflowGraph.Workflow, request.CorrelationId, cancellationToken);
         if (!lease.CanStart)
         {
-            logger.LogWarning("Workflow activation strategy disallowed creating an instance for definition {WorkflowDefinitionId}", workflowGraph.Workflow.Identity.DefinitionId);
+            LogActivationDenial(workflowGraph.Workflow, request.CorrelationId);
             return new()
             {
                 CannotStart = true
@@ -116,6 +116,18 @@ public class LocalWorkflowClient(
             SchedulingCallStackDepth = request.SchedulingCallStackDepth,
             IncludeWorkflowOutput = request.IncludeWorkflowOutput
         }, cancellationToken);
+    }
+
+    private void LogActivationDenial(Workflow workflow, string? correlationId)
+    {
+        var identity = workflow.Identity;
+        logger.LogWarning(
+            "Workflow activation strategy {ActivationStrategyType} disallowed creating an instance for definition {WorkflowDefinitionId} version {WorkflowDefinitionVersion} ({WorkflowDefinitionVersionId}); correlation ID present: {CorrelationIdPresent}",
+            workflow.Options.ActivationStrategyType?.FullName,
+            identity.DefinitionId,
+            identity.Version,
+            identity.Id,
+            !string.IsNullOrWhiteSpace(correlationId));
     }
 
     /// <inheritdoc />

@@ -9,6 +9,7 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Exceptions;
 using Elsa.Workflows.Runtime.Messages;
+using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -159,6 +160,35 @@ public class LocalWorkflowClientTests
     }
 
     [Fact]
+    public async Task CreateAndRunInstanceAsync_LogsSafeStructuredActivationDenialDetails()
+    {
+        const string correlationId = "sensitive-correlation-123";
+        var logger = new RecordingLogger<LocalWorkflowClient>();
+        var client = CreateClient(canStart: false, logger);
+        SetupWorkflowGraph("test-definition", typeof(CorrelatedSingletonStrategy));
+        var request = new CreateAndRunWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId("test-definition"),
+            CorrelationId = correlationId
+        };
+
+        var response = await client.CreateAndRunInstanceAsync(request);
+
+        Assert.True(response.CannotStart);
+        await _workflowInstanceManager.DidNotReceiveWithAnyArgs().SaveAsync(default(WorkflowInstance)!, default);
+        await _workflowInstanceManager.DidNotReceiveWithAnyArgs().CreateAndCommitWorkflowInstanceAsync(default!, default, default);
+        var entry = Assert.Single(logger.Entries);
+        Assert.Equal(LogLevel.Warning, entry.Level);
+        Assert.Equal("test-definition", entry.Properties["WorkflowDefinitionId"]);
+        Assert.Equal("test-definition", entry.Properties["WorkflowDefinitionVersionId"]);
+        Assert.Equal(1, entry.Properties["WorkflowDefinitionVersion"]);
+        Assert.Equal(typeof(CorrelatedSingletonStrategy).FullName, entry.Properties["ActivationStrategyType"]);
+        Assert.Equal(true, entry.Properties["CorrelationIdPresent"]);
+        Assert.DoesNotContain(correlationId, entry.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(correlationId, string.Join(";", entry.Properties.Values), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task CreateAndRunInstanceAsync_DoesNotPersistProvisionalInstance_WhenRunnerThrows()
     {
         var client = CreateClient();
@@ -211,12 +241,13 @@ public class LocalWorkflowClientTests
         WorkflowState = new WorkflowState { Id = "test-workflow-instance-id", Status = WorkflowStatus.Running }
     };
 
-    private void SetupWorkflowGraph(string definitionId)
+    private void SetupWorkflowGraph(string definitionId, Type? activationStrategyType = null)
     {
         var workflow = new Workflow
         {
             Id = definitionId,
-            Identity = new WorkflowIdentity(definitionId, 1, definitionId)
+            Identity = new WorkflowIdentity(definitionId, 1, definitionId),
+            Options = new WorkflowOptions { ActivationStrategyType = activationStrategyType }
         };
         var node = new ActivityNode(workflow, "Root");
         var graph = new WorkflowGraph(workflow, node, [node]);
@@ -230,7 +261,7 @@ public class LocalWorkflowClientTests
             .Returns(new WorkflowGraphFindResult(definition, graph));
     }
 
-    private LocalWorkflowClient CreateClient(bool canStart = true)
+    private LocalWorkflowClient CreateClient(bool canStart = true, ILogger<LocalWorkflowClient>? logger = null)
     {
         _workflowActivationGate.EvaluateAsync(Arg.Any<Workflow>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(canStart ? new WorkflowActivationLease(true, null) : WorkflowActivationLease.Denied);
@@ -243,6 +274,25 @@ public class LocalWorkflowClientTests
             _workflowCanceler,
             _workflowActivationGate,
             _workflowStateMapper,
-            _logger);
+            logger ?? _logger);
     }
+
+    private sealed class RecordingLogger<T> : ILogger<T>
+    {
+        public List<LogEntry> Entries { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            var properties = state is IEnumerable<KeyValuePair<string, object?>> pairs
+                ? pairs.ToDictionary(pair => pair.Key, pair => pair.Value)
+                : new Dictionary<string, object?>();
+            Entries.Add(new(logLevel, formatter(state, exception), properties));
+        }
+    }
+
+    private sealed record LogEntry(LogLevel Level, string Message, IReadOnlyDictionary<string, object?> Properties);
 }

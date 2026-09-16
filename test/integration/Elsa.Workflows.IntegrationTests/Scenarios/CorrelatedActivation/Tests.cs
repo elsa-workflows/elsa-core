@@ -1,6 +1,10 @@
+using System.Collections.Concurrent;
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Mediator.HostedServices;
+using Elsa.Persistence.EFCore.Extensions;
+using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
@@ -9,7 +13,10 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Requests;
+using Medallion.Threading;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Xunit.Abstractions;
@@ -93,6 +100,102 @@ public class Tests
         }
     }
 
+    [Theory(DisplayName = "Concurrent dispatch without a restrictive activation strategy allows both instances")]
+    [InlineData(nameof(GroupedConversationWorkflow))]
+    [InlineData(nameof(AllowAlwaysConversationWorkflow))]
+    public async Task ConcurrentDispatch_WithoutRestriction_AllowsMultipleRunningInstances(string definitionId)
+    {
+        var savedSignal = new WorkflowInstanceSavedSignal(expectedCount: 2);
+        var services = CreateServices(serviceCollection =>
+        {
+            serviceCollection.AddSingleton(savedSignal);
+            serviceCollection.AddNotificationHandler<WorkflowInstanceSavedSignal, WorkflowInstanceSaved>(sp => sp.GetRequiredService<WorkflowInstanceSavedSignal>());
+        });
+        await services.PopulateRegistriesAsync();
+        var graph = await FindGraphAsync(services, definitionId);
+        var dispatcher = services.GetRequiredService<IWorkflowDispatcher>();
+        var commandProcessor = services.GetServices<IHostedService>().OfType<BackgroundCommandSenderHostedService>().Single();
+        await commandProcessor.StartAsync(CancellationToken.None);
+
+        try
+        {
+            await Task.WhenAll(
+                dispatcher.DispatchAsync(new DispatchWorkflowDefinitionRequest(graph.Workflow.Identity.Id) { CorrelationId = "conversation-1" }, null),
+                dispatcher.DispatchAsync(new DispatchWorkflowDefinitionRequest(graph.Workflow.Identity.Id) { CorrelationId = "conversation-1" }, null));
+
+            await savedSignal.Saved.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+            Assert.Equal(2, (await FindRunningAsync(services, definitionId, "conversation-1")).Count);
+            Assert.Equal(2, (await FindByCorrelationAsync(services, definitionId, "conversation-1")).Count);
+        }
+        finally
+        {
+            await commandProcessor.StopAsync(CancellationToken.None);
+        }
+    }
+
+    [Fact(DisplayName = "Concurrent dispatch on two runtime nodes sharing SQLite and a distributed lock persists one Running instance")]
+    public async Task ConcurrentDispatch_AcrossRuntimeNodes_CreatesOneRunningInstance()
+    {
+        var databasePath = Path.Combine(Path.GetTempPath(), $"elsa-activation-multinode-{Guid.NewGuid():N}.db");
+        var connectionString = $"Data Source={databasePath};Default Timeout=30;Pooling=False";
+        var lockProvider = new BarrierDistributedLockProvider();
+
+        try
+        {
+            await using var nodeA = CreateSqliteServices(connectionString, lockProvider);
+            await using var nodeB = CreateSqliteServices(connectionString, lockProvider);
+            Assert.NotSame(nodeA, nodeB);
+            Assert.Same(lockProvider, nodeA.GetRequiredService<IDistributedLockProvider>());
+            Assert.Same(lockProvider, nodeB.GetRequiredService<IDistributedLockProvider>());
+
+            await using (var dbContext = await nodeA.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync())
+                await dbContext.Database.EnsureCreatedAsync();
+
+            await Task.WhenAll(nodeA.PopulateRegistriesAsync(), nodeB.PopulateRegistriesAsync());
+            var graphA = await FindGraphAsync(nodeA, nameof(CorrelatedSingletonConversationWorkflow));
+            var graphB = await FindGraphAsync(nodeB, nameof(CorrelatedSingletonConversationWorkflow));
+            var dispatcherA = nodeA.GetRequiredService<IWorkflowDispatcher>();
+            var dispatcherB = nodeB.GetRequiredService<IWorkflowDispatcher>();
+            var commandProcessorA = nodeA.GetServices<IHostedService>().OfType<BackgroundCommandSenderHostedService>().Single();
+            var commandProcessorB = nodeB.GetServices<IHostedService>().OfType<BackgroundCommandSenderHostedService>().Single();
+            await Task.WhenAll(
+                commandProcessorA.StartAsync(CancellationToken.None),
+                commandProcessorB.StartAsync(CancellationToken.None));
+
+            try
+            {
+                await Task.WhenAll(
+                    dispatcherA.DispatchAsync(new DispatchWorkflowDefinitionRequest(graphA.Workflow.Identity.Id) { CorrelationId = "shared-runtime-correlation" }, null),
+                    dispatcherB.DispatchAsync(new DispatchWorkflowDefinitionRequest(graphB.Workflow.Identity.Id) { CorrelationId = "shared-runtime-correlation" }, null));
+
+                await lockProvider.TwoActivationLockAttempts.Task.WaitAsync(TimeSpan.FromSeconds(10));
+                await lockProvider.TwoActivationLockReleases.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+                Assert.Equal(2, lockProvider.ActivationLockAttempts);
+                Assert.Equal(2, lockProvider.ActivationLockReleases);
+                Assert.Single(lockProvider.ActivationLockNames.Distinct());
+                Assert.Single(await FindRunningAsync(nodeA, nameof(CorrelatedSingletonConversationWorkflow), "shared-runtime-correlation"));
+                Assert.Single(await FindRunningAsync(nodeB, nameof(CorrelatedSingletonConversationWorkflow), "shared-runtime-correlation"));
+                Assert.Single(await FindByCorrelationAsync(nodeA, nameof(CorrelatedSingletonConversationWorkflow), "shared-runtime-correlation"));
+                Assert.Single(await FindByCorrelationAsync(nodeB, nameof(CorrelatedSingletonConversationWorkflow), "shared-runtime-correlation"));
+            }
+            finally
+            {
+                lockProvider.ReleaseActivationBarrier();
+                await Task.WhenAll(
+                    commandProcessorA.StopAsync(CancellationToken.None),
+                    commandProcessorB.StopAsync(CancellationToken.None));
+            }
+        }
+        finally
+        {
+            lockProvider.ReleaseActivationBarrier();
+            if (File.Exists(databasePath))
+                File.Delete(databasePath);
+        }
+    }
+
     [Fact(DisplayName = "Without an activation strategy, the same CorrelationId may have many Running instances")]
     public async Task ConcurrentStart_WithoutStrategy_AllowsMultipleRunningInstances()
     {
@@ -118,13 +221,15 @@ public class Tests
         Assert.Equal(2, (await FindByCorrelationAsync(services, nameof(GroupedConversationWorkflow), "conversation-1")).Count);
     }
 
-    [Fact(DisplayName = "CorrelatedSingleton requires a non-blank CorrelationId and persists no instance")]
-    public async Task Start_WithBlankCorrelationId_ThrowsAndDoesNotPersistInstance()
+    [Theory(DisplayName = "Correlation strategies require a non-blank CorrelationId and persist no instance")]
+    [InlineData(nameof(CorrelatedSingletonConversationWorkflow))]
+    [InlineData(nameof(GlobalCorrelationConversationWorkflow))]
+    public async Task Start_WithBlankCorrelationId_ThrowsAndDoesNotPersistInstance(string definitionId)
     {
         var services = CreateServices();
         await services.PopulateRegistriesAsync();
         var starter = services.GetRequiredService<IWorkflowStarter>();
-        var handle = WorkflowDefinitionHandle.ByDefinitionId(nameof(CorrelatedSingletonConversationWorkflow), VersionOptions.Published);
+        var handle = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Published);
 
         var exception = await Assert.ThrowsAsync<ArgumentException>(() => starter.StartWorkflowAsync(new StartWorkflowRequest
         {
@@ -132,7 +237,21 @@ public class Tests
         }));
 
         Assert.Contains("non-blank correlation ID", exception.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Empty(await FindByDefinitionAsync(services, nameof(CorrelatedSingletonConversationWorkflow)));
+        Assert.Empty(await FindByDefinitionAsync(services, definitionId));
+    }
+
+    [Fact(DisplayName = "Without an activation strategy a blank CorrelationId is allowed")]
+    public async Task Start_WithoutStrategy_AllowsBlankCorrelationId()
+    {
+        var services = CreateServices();
+        await services.PopulateRegistriesAsync();
+        var starter = services.GetRequiredService<IWorkflowStarter>();
+        var handle = WorkflowDefinitionHandle.ByDefinitionId(nameof(GroupedConversationWorkflow), VersionOptions.Published);
+
+        var result = await starter.StartWorkflowAsync(new StartWorkflowRequest { WorkflowDefinitionHandle = handle });
+
+        Assert.False(result.CannotStart);
+        Assert.Single(await FindByDefinitionAsync(services, nameof(GroupedConversationWorkflow)));
     }
 
     [Fact(DisplayName = "CorrelatedSingleton scopes uniqueness to DefinitionId + CorrelationId")]
@@ -235,9 +354,23 @@ public class Tests
             .AddWorkflow<CorrelatedSingletonConversationWorkflow>()
             .AddWorkflow<SingletonConversationWorkflow>()
             .AddWorkflow<GroupedConversationWorkflow>()
+            .AddWorkflow<AllowAlwaysConversationWorkflow>()
             .AddWorkflow<OtherCorrelatedSingletonConversationWorkflow>()
             .AddWorkflow<GlobalCorrelationConversationWorkflow>()
             .AddWorkflow<OtherGlobalCorrelationConversationWorkflow>()
+            .Build();
+    }
+
+    private ServiceProvider CreateSqliteServices(string connectionString, IDistributedLockProvider lockProvider)
+    {
+        var builder = new TestApplicationBuilder(_testOutputHelper)
+            .ConfigureElsa(elsa => elsa
+                .UseWorkflowManagement(management => management.UseWorkflowInstances(instances =>
+                    instances.UseEntityFrameworkCore(persistence => persistence.UseSqlite(connectionString))))
+                .UseWorkflowRuntime(runtime => runtime.DistributedLockProvider = _ => lockProvider));
+
+        return (ServiceProvider)builder
+            .AddWorkflow<CorrelatedSingletonConversationWorkflow>()
             .Build();
     }
 
@@ -276,14 +409,101 @@ public class Tests
             DefinitionId = definitionId
         })).ToList();
 
-    private sealed class WorkflowInstanceSavedSignal : INotificationHandler<WorkflowInstanceSaved>
+    private sealed class WorkflowInstanceSavedSignal(int expectedCount = 1) : INotificationHandler<WorkflowInstanceSaved>
     {
+        private int _count;
+
         public TaskCompletionSource Saved { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public Task HandleAsync(WorkflowInstanceSaved notification, CancellationToken cancellationToken)
         {
-            Saved.TrySetResult();
+            if (Interlocked.Increment(ref _count) >= expectedCount)
+                Saved.TrySetResult();
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class BarrierDistributedLockProvider : IDistributedLockProvider
+    {
+        private const string ActivationLockPrefix = "workflow-activation:v1:";
+        private readonly ConcurrentDictionary<string, SemaphoreSlim> _locks = new();
+        private readonly ConcurrentQueue<string> _activationLockNames = new();
+        private int _activationLockAttempts;
+        private int _activationLockReleases;
+
+        public TaskCompletionSource TwoActivationLockAttempts { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource TwoActivationLockReleases { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public int ActivationLockAttempts => Volatile.Read(ref _activationLockAttempts);
+        public int ActivationLockReleases => Volatile.Read(ref _activationLockReleases);
+        public IReadOnlyCollection<string> ActivationLockNames => _activationLockNames.ToArray();
+
+        public IDistributedLock CreateLock(string name) => new BarrierDistributedLock(this, name, _locks.GetOrAdd(name, _ => new SemaphoreSlim(1, 1)));
+
+        public void ReleaseActivationBarrier() => TwoActivationLockAttempts.TrySetResult();
+
+        private async ValueTask<IDistributedSynchronizationHandle> AcquireAsync(string name, SemaphoreSlim semaphore, TimeSpan? timeout, CancellationToken cancellationToken)
+        {
+            var isActivationLock = name.StartsWith(ActivationLockPrefix, StringComparison.Ordinal);
+            if (isActivationLock)
+            {
+                _activationLockNames.Enqueue(name);
+                if (Interlocked.Increment(ref _activationLockAttempts) == 2)
+                    TwoActivationLockAttempts.TrySetResult();
+                await TwoActivationLockAttempts.Task.WaitAsync(cancellationToken);
+            }
+
+            if (!await semaphore.WaitAsync(timeout ?? Timeout.InfiniteTimeSpan, cancellationToken))
+                throw new TimeoutException($"Could not acquire lock '{name}'.");
+
+            return new Handle(this, name, semaphore, isActivationLock);
+        }
+
+        private void Release(string name, SemaphoreSlim semaphore, bool isActivationLock)
+        {
+            semaphore.Release();
+            if (isActivationLock && Interlocked.Increment(ref _activationLockReleases) == 2)
+                TwoActivationLockReleases.TrySetResult();
+        }
+
+        private sealed class BarrierDistributedLock(BarrierDistributedLockProvider provider, string name, SemaphoreSlim semaphore) : IDistributedLock
+        {
+            public string Name => name;
+
+            public IDistributedSynchronizationHandle? TryAcquire(TimeSpan timeout = default, CancellationToken cancellationToken = default) =>
+                semaphore.Wait(timeout, cancellationToken) ? new Handle(provider, name, semaphore, name.StartsWith(ActivationLockPrefix, StringComparison.Ordinal)) : null;
+
+            public IDistributedSynchronizationHandle Acquire(TimeSpan? timeout = null, CancellationToken cancellationToken = default) =>
+                provider.AcquireAsync(name, semaphore, timeout, cancellationToken).AsTask().GetAwaiter().GetResult();
+
+            public ValueTask<IDistributedSynchronizationHandle?> TryAcquireAsync(TimeSpan timeout = default, CancellationToken cancellationToken = default) =>
+                TryAcquireCoreAsync(timeout, cancellationToken);
+
+            private async ValueTask<IDistributedSynchronizationHandle?> TryAcquireCoreAsync(TimeSpan timeout, CancellationToken cancellationToken) =>
+                await semaphore.WaitAsync(timeout, cancellationToken)
+                    ? new Handle(provider, name, semaphore, name.StartsWith(ActivationLockPrefix, StringComparison.Ordinal))
+                    : null;
+
+            public ValueTask<IDistributedSynchronizationHandle> AcquireAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default) =>
+                provider.AcquireAsync(name, semaphore, timeout, cancellationToken);
+        }
+
+        private sealed class Handle(BarrierDistributedLockProvider provider, string name, SemaphoreSlim semaphore, bool isActivationLock) : IDistributedSynchronizationHandle
+        {
+            private int _disposed;
+
+            public CancellationToken HandleLostToken => CancellationToken.None;
+
+            public void Dispose()
+            {
+                if (Interlocked.Exchange(ref _disposed, 1) == 0)
+                    provider.Release(name, semaphore, isActivationLock);
+            }
+
+            public ValueTask DisposeAsync()
+            {
+                Dispose();
+                return ValueTask.CompletedTask;
+            }
         }
     }
 }

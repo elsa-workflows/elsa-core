@@ -37,6 +37,43 @@ public class DispatchWorkflowCommandHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_PreservesDefinitionDispatchMetadata()
+    {
+        var input = new Dictionary<string, object> { ["input-key"] = "input-value" };
+        var properties = new Dictionary<string, object> { ["property-key"] = "property-value" };
+        var command = new DispatchWorkflowDefinitionCommand("definition-version-1")
+        {
+            InstanceId = "child-1",
+            ParentWorkflowInstanceId = "parent-1",
+            CorrelationId = "correlation-1",
+            Input = input,
+            Properties = properties,
+            TriggerActivityId = "trigger-1",
+            SchedulingActivityExecutionId = "scheduled-execution-1",
+            SchedulingWorkflowInstanceId = "scheduling-parent-1",
+            SchedulingCallStackDepth = 4
+        };
+        CreateAndRunWorkflowInstanceRequest? observedRequest = null;
+        _workflowClient.CreateAndRunInstanceAsync(
+                Arg.Do<CreateAndRunWorkflowInstanceRequest>(request => observedRequest = request),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new RunWorkflowInstanceResponse()));
+
+        await _handler.HandleAsync(command, CancellationToken.None);
+
+        Assert.NotNull(observedRequest);
+        Assert.Equal("definition-version-1", observedRequest.WorkflowDefinitionHandle.DefinitionVersionId);
+        Assert.Equal("correlation-1", observedRequest.CorrelationId);
+        Assert.Same(input, observedRequest.Input);
+        Assert.Same(properties, observedRequest.Properties);
+        Assert.Equal("parent-1", observedRequest.ParentId);
+        Assert.Equal("trigger-1", observedRequest.TriggerActivityId);
+        Assert.Equal("scheduled-execution-1", observedRequest.SchedulingActivityExecutionId);
+        Assert.Equal("scheduling-parent-1", observedRequest.SchedulingWorkflowInstanceId);
+        Assert.Equal(4, observedRequest.SchedulingCallStackDepth);
+    }
+
+    [Fact]
     public async Task HandleAsync_DoesNotCreateAndRunWorkflow_WhenCommandInstanceAlreadyExistsAndIdempotencyIsRequested()
     {
         var command = new DispatchWorkflowDefinitionCommand("definition-version-1")
