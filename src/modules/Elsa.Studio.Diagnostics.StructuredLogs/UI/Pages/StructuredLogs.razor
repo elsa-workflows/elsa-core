@@ -7,6 +7,12 @@
 <MudContainer MaxWidth="MaxWidth.False" Class="structured-logs-page">
     <PageHeading Text="@Localizer["Structured Logs"]" />
 
+    @if (IsTerminalFailure)
+    {
+        <MudAlert Severity="@StateSeverity" Dense="true" Class="mt-3">@Localizer[StateMessage]</MudAlert>
+    }
+    else
+    {
     <MudPaper Elevation="0" Outlined="true" Class="structured-logs-toolbar">
         <div class="structured-logs-toolbar-row">
             <div class="structured-logs-summary">
@@ -285,4 +291,5 @@
             </aside>
         }
     </div>
+    }
 </MudContainer>
