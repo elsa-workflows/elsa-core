@@ -53,7 +53,7 @@ public class SignalRStructuredLogObserver(
             await DisposeConnectionAsync(false);
             await PublishStatusAsync(StructuredLogConnectionStatus.Unavailable);
         }
-        catch (HttpRequestException e) when (e.StatusCode is HttpStatusCode.Unauthorized)
+        catch (HttpRequestException e) when (e.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
             await DisposeConnectionAsync(false);
             await PublishStatusAsync(StructuredLogConnectionStatus.Unauthorized);

@@ -7,7 +7,10 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.JSInterop;
 using MudBlazor;
 using System.Globalization;
+using System.Net;
+using System.Net.Http;
 using System.Text.Json;
+using Refit;
 
 #pragma warning disable IL2026 // Raw details copy mirrors existing Studio JSON display behavior.
 
@@ -39,6 +42,9 @@ public partial class StructuredLogs : IAsyncDisposable
     private string? _fromFilterText;
     private string? _toFilterText;
     private bool _queryInitialized;
+    private bool _terminalFailure;
+    private bool _observerStopped;
+    private bool _isDisposed;
 
     /// <summary>
     /// Gets or sets the structured log service.
@@ -88,6 +94,11 @@ public partial class StructuredLogs : IAsyncDisposable
     /// Gets a value indicating whether the page is loading.
     /// </summary>
     protected bool IsLoading { get; private set; }
+
+    /// <summary>
+    /// Gets a value indicating whether the diagnostics surface is unavailable, access was denied, or the component was disposed.
+    /// </summary>
+    protected bool IsTerminalFailure => _isDisposed || _terminalFailure || ViewState.ConnectionStatus is StructuredLogConnectionStatus.Unauthorized or StructuredLogConnectionStatus.Unavailable;
 
     /// <summary>
     /// Gets the last error message.
@@ -169,14 +180,11 @@ public partial class StructuredLogs : IAsyncDisposable
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
-        Observer.LogReceived -= OnLogReceivedAsync;
-        Observer.DroppedEventsReceived -= OnDroppedEventsReceivedAsync;
-        Observer.ConnectionStatusChanged -= OnConnectionStatusChangedAsync;
-        Observer.SourceChanged -= OnSourceChangedAsync;
+        _isDisposed = true;
+        await StopObserverAsync();
 
         await _cancellationTokenSource.CancelAsync();
         _cancellationTokenSource.Dispose();
-        await Observer.DisposeAsync();
 
         if (_scriptModule != null)
             await _scriptModule.DisposeAsync();
@@ -192,18 +200,15 @@ public partial class StructuredLogs : IAsyncDisposable
 
     protected Task ClearAsync()
     {
-        _rows.Clear();
-        _selectedLogIds.Clear();
-        ViewState.SelectedEventId = null;
-        ViewState.LocalDroppedRows = 0;
-        BackendDroppedCount = 0;
-        StorageDroppedWriteCount = 0;
-        HasStorageDiagnosticsProvider = false;
+        ClearBufferedData();
         return InvokeAsync(StateHasChanged);
     }
 
     protected async Task ReconnectAsync()
     {
+        if (IsTerminalFailure)
+            return;
+
         ErrorMessage = null;
         await Observer.ReconnectAsync(ViewState.Filter, _cancellationTokenSource.Token);
     }
@@ -499,8 +504,17 @@ public partial class StructuredLogs : IAsyncDisposable
         try
         {
             await LoadSourcesAsync(cancellationToken);
+            if (IsTerminalFailure)
+                return;
+
             var recent = await StructuredLogService.GetRecentAsync(ViewState.Filter, ViewState.VisibleRowCap, cancellationToken);
+            if (IsTerminalFailure)
+                return;
+
             var storageDiagnostics = await StructuredLogService.GetStorageDiagnosticsAsync(cancellationToken);
+            if (IsTerminalFailure)
+                return;
+
             BackendDroppedCount = recent.DroppedEvents;
             StorageDroppedWriteCount = storageDiagnostics.DroppedWriteCount;
             HasStorageDiagnosticsProvider = storageDiagnostics.HasStorageDiagnosticsProvider;
@@ -509,7 +523,14 @@ public partial class StructuredLogs : IAsyncDisposable
                 AddRow(logEvent);
 
             await Observer.StartAsync(ViewState.Filter, cancellationToken);
+            if (IsTerminalFailure)
+                return;
+
             await ScrollToBottomAsync();
+        }
+        catch (Exception e) when (IsAuthorizationFailure(e))
+        {
+            await EnterTerminalFailureAsync(StructuredLogConnectionStatus.Unauthorized);
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
@@ -524,6 +545,9 @@ public partial class StructuredLogs : IAsyncDisposable
 
     private async Task RefreshFilterAsync()
     {
+        if (IsTerminalFailure)
+            return;
+
         IsLoading = true;
         ErrorMessage = null;
         UpdateUrlFromFilter();
@@ -539,7 +563,13 @@ public partial class StructuredLogs : IAsyncDisposable
             HasStorageDiagnosticsProvider = false;
 
             var recent = await StructuredLogService.GetRecentAsync(ViewState.Filter, ViewState.VisibleRowCap, _cancellationTokenSource.Token);
+            if (IsTerminalFailure)
+                return;
+
             var storageDiagnostics = await StructuredLogService.GetStorageDiagnosticsAsync(_cancellationTokenSource.Token);
+            if (IsTerminalFailure)
+                return;
+
             BackendDroppedCount = recent.DroppedEvents;
             StorageDroppedWriteCount = storageDiagnostics.DroppedWriteCount;
             HasStorageDiagnosticsProvider = storageDiagnostics.HasStorageDiagnosticsProvider;
@@ -548,7 +578,14 @@ public partial class StructuredLogs : IAsyncDisposable
                 AddRow(logEvent);
 
             await Observer.UpdateFilterAsync(ViewState.Filter, _cancellationTokenSource.Token);
+            if (IsTerminalFailure)
+                return;
+
             await ScrollToBottomAsync();
+        }
+        catch (Exception e) when (IsAuthorizationFailure(e))
+        {
+            await EnterTerminalFailureAsync(StructuredLogConnectionStatus.Unauthorized);
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
@@ -571,11 +608,11 @@ public partial class StructuredLogs : IAsyncDisposable
 
     private async Task OnLogReceivedAsync(StructuredLogEvent logEvent)
     {
-        if (ViewState.IsPaused)
-            return;
-
         await InvokeAsync(async () =>
         {
+            if (_terminalFailure || _isDisposed || ViewState.IsPaused)
+                return;
+
             AddRow(logEvent);
             StateHasChanged();
 
@@ -586,27 +623,103 @@ public partial class StructuredLogs : IAsyncDisposable
 
     private Task OnDroppedEventsReceivedAsync(StructuredLogDroppedEventSummary summary)
     {
-        BackendDroppedCount += summary.DroppedCount;
-        return InvokeAsync(StateHasChanged);
+        return InvokeAsync(() =>
+        {
+            if (_terminalFailure || _isDisposed)
+                return;
+
+            BackendDroppedCount += summary.DroppedCount;
+            StateHasChanged();
+        });
     }
 
     private Task OnConnectionStatusChangedAsync(StructuredLogConnectionStatus status)
     {
-        ViewState.ConnectionStatus = status;
-        return InvokeAsync(StateHasChanged);
+        return InvokeAsync(async () =>
+        {
+            if (_terminalFailure || _isDisposed)
+                return;
+
+            if (status is StructuredLogConnectionStatus.Unauthorized or StructuredLogConnectionStatus.Unavailable)
+            {
+                await EnterTerminalFailureAsync(status);
+                return;
+            }
+
+            ViewState.ConnectionStatus = status;
+            StateHasChanged();
+        });
     }
 
     private Task OnSourceChangedAsync(StructuredLogSource source)
     {
-        var index = _sources.FindIndex(x => string.Equals(x.Id, source.Id, StringComparison.OrdinalIgnoreCase));
+        return InvokeAsync(() =>
+        {
+            if (_terminalFailure || _isDisposed)
+                return;
 
-        if (index >= 0)
-            _sources[index] = source;
-        else
-            _sources.Add(source);
+            var index = _sources.FindIndex(x => string.Equals(x.Id, source.Id, StringComparison.OrdinalIgnoreCase));
 
-        _sources.Sort((left, right) => string.Compare(left.DisplayName, right.DisplayName, StringComparison.OrdinalIgnoreCase));
-        return InvokeAsync(StateHasChanged);
+            if (index >= 0)
+                _sources[index] = source;
+            else
+                _sources.Add(source);
+
+            _sources.Sort((left, right) => string.Compare(left.DisplayName, right.DisplayName, StringComparison.OrdinalIgnoreCase));
+            StateHasChanged();
+        });
+    }
+
+    private async Task EnterTerminalFailureAsync(StructuredLogConnectionStatus status)
+    {
+        if (_terminalFailure || _isDisposed)
+            return;
+
+        _terminalFailure = true;
+        IsLoading = false;
+        ErrorMessage = null;
+        ViewState.ConnectionStatus = status;
+        _sources.Clear();
+        ClearBufferedData();
+        await _cancellationTokenSource.CancelAsync();
+        await StopObserverAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ClearBufferedData()
+    {
+        _rows.Clear();
+        _selectedLogIds.Clear();
+        ViewState.SelectedEventId = null;
+        ViewState.LocalDroppedRows = 0;
+        BackendDroppedCount = 0;
+        StorageDroppedWriteCount = 0;
+        HasStorageDiagnosticsProvider = false;
+    }
+
+    private async Task StopObserverAsync()
+    {
+        if (_observerStopped)
+            return;
+
+        _observerStopped = true;
+        Observer.LogReceived -= OnLogReceivedAsync;
+        Observer.DroppedEventsReceived -= OnDroppedEventsReceivedAsync;
+        Observer.ConnectionStatusChanged -= OnConnectionStatusChangedAsync;
+        Observer.SourceChanged -= OnSourceChangedAsync;
+        await Observer.DisposeAsync();
+    }
+
+    private static bool IsAuthorizationFailure(Exception exception)
+    {
+        for (Exception? current = exception; current != null; current = current.InnerException)
+        {
+            if (current is ApiException { StatusCode: HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden } ||
+                current is HttpRequestException { StatusCode: HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden })
+                return true;
+        }
+
+        return false;
     }
 
     private void AddRow(StructuredLogEvent logEvent)
