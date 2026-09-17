@@ -6,13 +6,11 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Requests;
-using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Stimuli;
 using Elsa.Workflows.Runtime.UIHints;
 using Elsa.Workflows.UIHints;
@@ -118,7 +116,7 @@ public class BulkDispatchWorkflows : Activity
 
         // Dispatch the child workflows.
         foreach (var item in items)
-            await DispatchChildWorkflowAsync(context, item, waitForCompletion, startNewTrace, count);
+            await DispatchChildWorkflowAsync(context, item, waitForCompletion, startNewTrace);
 
         // Store the number of dispatched instances for tracking.
         context.SetProperty(DispatchedInstancesCountKey, count);
@@ -148,7 +146,7 @@ public class BulkDispatchWorkflows : Activity
         }
     }
 
-    private async ValueTask<string> DispatchChildWorkflowAsync(ActivityExecutionContext context, object item, bool waitForCompletion, bool startNewTrace, int scheduledInstancesCount)
+    private async ValueTask<string> DispatchChildWorkflowAsync(ActivityExecutionContext context, object item, bool waitForCompletion, bool startNewTrace)
     {
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
         var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
@@ -169,17 +167,6 @@ public class BulkDispatchWorkflows : Activity
 
         if (waitForCompletion) properties["WaitForCompletion"] = true;
         if (startNewTrace) properties["StartNewTrace"] = true;
-
-        if (waitForCompletion)
-        {
-            var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<BulkDispatchWorkflows>();
-            var stimulus = new BulkDispatchWorkflowsStimulus(parentInstanceId)
-            {
-                ScheduledInstanceIdsCount = scheduledInstancesCount
-            };
-            var stimulusHash = context.GetRequiredService<IStimulusHasher>().Hash(activityTypeName, stimulus);
-            DispatchWorkflowActivationDeniedRoute.Add(properties, activityTypeName, stimulusHash);
-        }
 
         var itemDictionary = new Dictionary<string, object>
         {
@@ -222,19 +209,19 @@ public class BulkDispatchWorkflows : Activity
         var input = context.WorkflowInput;
         var workflowInstanceId = input["WorkflowInstanceId"].ConvertTo<string>()!;
         var workflowSubStatus = input["WorkflowSubStatus"].ConvertTo<WorkflowSubStatus>();
-        var cannotStart = input.TryGetValue("CannotStart", out var cannotStartValue) && cannotStartValue is true;
         var finishedInstancesCount = context.GetProperty<long>(CompletedInstancesCountKey) + 1;
 
         context.SetProperty(CompletedInstancesCountKey, finishedInstancesCount);
 
-        var variables = new List<Variable>();
-        if (!cannotStart)
+        var childInstanceId = new Variable<string>("ChildInstanceId", workflowInstanceId)
         {
-            variables.Add(new Variable<string>("ChildInstanceId", workflowInstanceId)
-            {
-                StorageDriverType = typeof(WorkflowInstanceStorageDriver)
-            });
-        }
+            StorageDriverType = typeof(WorkflowInstanceStorageDriver)
+        };
+
+        var variables = new List<Variable>
+        {
+            childInstanceId
+        };
 
         var options = new ScheduleWorkOptions
         {
