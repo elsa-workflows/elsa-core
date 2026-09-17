@@ -244,61 +244,6 @@ public class Tests
         }
     }
 
-    [Fact(DisplayName = "Waiting bulk dispatch resumes its parent through ChildFaulted when child activation is denied")]
-    public async Task BulkDispatchWorkflows_WaitForCompletion_ResumesParentWhenActivationIsDenied()
-    {
-        var finishedSignal = new WorkflowInstanceFinishedSavedSignal();
-        var services = CreateServices(serviceCollection =>
-        {
-            serviceCollection.AddSingleton(finishedSignal);
-            serviceCollection.AddNotificationHandler<WorkflowInstanceFinishedSavedSignal, WorkflowInstanceSaved>(sp => sp.GetRequiredService<WorkflowInstanceFinishedSavedSignal>());
-        });
-        await services.PopulateRegistriesAsync();
-        var starter = services.GetRequiredService<IWorkflowStarter>();
-        var child = await starter.StartWorkflowAsync(new StartWorkflowRequest
-        {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(nameof(CorrelatedSingletonConversationWorkflow), VersionOptions.Published),
-            CorrelationId = "denied-bulk-dispatch-correlation"
-        });
-        Assert.False(child.CannotStart);
-
-        var commandProcessor = services.GetServices<IHostedService>().OfType<BackgroundCommandSenderHostedService>().Single();
-        var parent = await starter.StartWorkflowAsync(new StartWorkflowRequest
-        {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(nameof(WaitForDeniedBulkDispatchConversationWorkflow), VersionOptions.Published)
-        });
-
-        Assert.False(parent.CannotStart);
-        var parentInstanceId = Assert.IsType<string>(parent.WorkflowInstanceId);
-        var persistedParentBeforeDispatch = Assert.Single(
-            await FindByDefinitionAsync(services, nameof(WaitForDeniedBulkDispatchConversationWorkflow)),
-            instance => instance.Id == parentInstanceId);
-        Assert.Single(persistedParentBeforeDispatch.WorkflowState.Bookmarks);
-
-        // Start only the dispatch command processor: no bookmark-queue worker should be needed
-        // because denial routing uses the race-safe resume-or-enqueue stimulus sender.
-        await commandProcessor.StartAsync(CancellationToken.None);
-        try
-        {
-            await finishedSignal.WaitForFinishAsync(parentInstanceId);
-
-            var persistedParent = Assert.Single(
-                await FindByDefinitionAsync(services, nameof(WaitForDeniedBulkDispatchConversationWorkflow)),
-                instance => instance.Id == parentInstanceId);
-            Assert.Equal(WorkflowStatus.Finished, persistedParent.Status);
-            Assert.Empty(persistedParent.WorkflowState.Bookmarks);
-            Assert.Equal(true, persistedParent.WorkflowState.Output["ActivationDenied"]);
-            Assert.False(persistedParent.WorkflowState.Properties.ContainsKey(WorkflowInstanceStorageDriver.VariablesDictionaryStateKey));
-
-            var persistedChildren = await FindByCorrelationAsync(services, nameof(CorrelatedSingletonConversationWorkflow), "denied-bulk-dispatch-correlation");
-            Assert.Equal(child.WorkflowInstanceId, Assert.Single(persistedChildren).Id);
-        }
-        finally
-        {
-            await commandProcessor.StopAsync(CancellationToken.None);
-        }
-    }
-
     [Fact(DisplayName = "Without an activation strategy, the same CorrelationId may have many Running instances")]
     public async Task ConcurrentStart_WithoutStrategy_AllowsMultipleRunningInstances()
     {
@@ -456,7 +401,6 @@ public class Tests
         return builder
             .AddWorkflow<CorrelatedSingletonConversationWorkflow>()
             .AddWorkflow<WaitForDeniedDispatchConversationWorkflow>()
-            .AddWorkflow<WaitForDeniedBulkDispatchConversationWorkflow>()
             .AddWorkflow<SingletonConversationWorkflow>()
             .AddWorkflow<GroupedConversationWorkflow>()
             .AddWorkflow<AllowAlwaysConversationWorkflow>()

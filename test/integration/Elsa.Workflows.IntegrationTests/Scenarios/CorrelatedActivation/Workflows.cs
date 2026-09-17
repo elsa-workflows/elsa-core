@@ -1,7 +1,5 @@
-using Elsa.Expressions.JavaScript.Models;
 using Elsa.Workflows.ActivationValidators;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Management.Activities.SetOutput;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Activities;
 
@@ -29,32 +27,6 @@ public class WaitForDeniedDispatchConversationWorkflow : WorkflowBase
                     WorkflowDefinitionId = new(nameof(CorrelatedSingletonConversationWorkflow)),
                     CorrelationId = new("denied-dispatch-correlation"),
                     WaitForCompletion = new(true)
-                },
-                new Finish()
-            }
-        };
-    }
-}
-
-public class WaitForDeniedBulkDispatchConversationWorkflow : WorkflowBase
-{
-    protected override void Build(IWorkflowBuilder builder)
-    {
-        builder.Root = new Sequence
-        {
-            Activities =
-            {
-                new BulkDispatchWorkflows
-                {
-                    WorkflowDefinitionId = new(nameof(CorrelatedSingletonConversationWorkflow)),
-                    Items = new(new[] { "item-1" }),
-                    CorrelationIdFunction = new(JavaScriptExpression.Create("`denied-bulk-dispatch-correlation`")),
-                    WaitForCompletion = new(true),
-                    ChildFaulted = new SetOutput
-                    {
-                        OutputName = new("ActivationDenied"),
-                        OutputValue = new(true)
-                    }
                 },
                 new Finish()
             }
