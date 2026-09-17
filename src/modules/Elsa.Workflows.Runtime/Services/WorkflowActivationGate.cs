@@ -16,7 +16,7 @@ public class WorkflowActivationGate(
     IWorkflowActivationStrategyEvaluator evaluator,
     IDistributedLockProvider distributedLockProvider,
     IOptions<DistributedLockingOptions> distributedLockingOptions,
-    ITenantAccessor tenantAccessor) : IWorkflowActivationGate
+    ITenantAccessor? tenantAccessor = null) : IWorkflowActivationGate
 {
     /// <inheritdoc />
     public async Task<WorkflowActivationLease> EvaluateAsync(Workflow workflow, string? correlationId, CancellationToken cancellationToken = default)
@@ -87,7 +87,7 @@ public class WorkflowActivationGate(
         if (strategyType == null || strategyType == typeof(AllowAlwaysStrategy))
             return null;
 
-        var tenantId = tenantAccessor.TenantId;
+        var tenantId = tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
         var definitionId = workflow.Identity.DefinitionId;
 
         if (strategyType == typeof(SingletonStrategy))

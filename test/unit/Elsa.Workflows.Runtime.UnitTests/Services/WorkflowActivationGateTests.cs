@@ -5,6 +5,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Medallion.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Services;
@@ -199,6 +200,40 @@ public class WorkflowActivationGateTests
             Assert.DoesNotContain(correlationId, key, StringComparison.Ordinal);
             Assert.Matches("^workflow-activation:v1:[a-z-]+:[A-F0-9]{64}$", key);
         });
+    }
+
+    [Fact]
+    public async Task UsesDefaultTenantScope_WhenTenantAccessorIsNotRegistered()
+    {
+        var evaluator = Substitute.For<IWorkflowActivationStrategyEvaluator>();
+        evaluator.CanStartWorkflowAsync(Arg.Any<WorkflowActivationStrategyEvaluationContext>()).Returns(true);
+        var lockProvider = new InMemoryDistributedLockProvider();
+        using var serviceProvider = new ServiceCollection()
+            .AddSingleton<IWorkflowActivationStrategyEvaluator>(evaluator)
+            .AddSingleton<IDistributedLockProvider>(lockProvider)
+            .AddSingleton(Microsoft.Extensions.Options.Options.Create(new DistributedLockingOptions()))
+            .AddScoped<WorkflowActivationGate>()
+            .BuildServiceProvider();
+        using var serviceScope = serviceProvider.CreateScope();
+        var unregisteredAccessorGate = serviceScope.ServiceProvider.GetRequiredService<WorkflowActivationGate>();
+        var tenantAccessor = new DefaultTenantAccessor();
+        var defaultTenantGate = new WorkflowActivationGate(
+            evaluator,
+            lockProvider,
+            Microsoft.Extensions.Options.Options.Create(new DistributedLockingOptions()),
+            tenantAccessor);
+        var workflow = CreateWorkflow(typeof(SingletonStrategy));
+
+        await using (await unregisteredAccessorGate.EvaluateAsync(workflow, null)) { }
+        await using (await defaultTenantGate.EvaluateAsync(workflow, null)) { }
+        using (tenantAccessor.PushContext(new Tenant { Id = "tenant-b", Name = "Tenant B" }))
+            await using (await defaultTenantGate.EvaluateAsync(workflow, null)) { }
+
+        var keys = lockProvider.LockNames.ToArray();
+        Assert.Equal(3, keys.Length);
+        Assert.Equal(keys[0], keys[1]);
+        Assert.NotEqual(keys[1], keys[2]);
+        Assert.DoesNotContain("tenant-b", keys[2], StringComparison.Ordinal);
     }
 
     [Fact]
