@@ -67,6 +67,25 @@ Key files:
 - [BookmarkResumer](../../src/modules/Elsa.Workflows.Runtime/Services/BookmarkResumer.cs)
 - [TriggerInvoker](../../src/modules/Elsa.Workflows.Runtime/Services/TriggerInvoker.cs)
 
+## Correlation IDs And Activation Strategies
+
+`CorrelationId` groups and routes instances. It is not a unique identity unless the workflow opts into an activation strategy. The decision is recorded in [Refuse duplicate running instances through activation strategies](../adr/2026-09-15-correlated-workflow-activation.md).
+
+| Strategy | Running-instance uniqueness | Blank `CorrelationId` |
+| --- | --- | --- |
+| None / `AllowAlwaysStrategy` (default) | None. Many Running instances may share a correlation ID. | Many |
+| `CorrelatedSingletonStrategy` | At most one Running instance per `(TenantId, DefinitionId, CorrelationId)`. Different definitions and tenants have separate scopes. | Fails explicitly; a non-blank value is required |
+| `CorrelationStrategy` | At most one Running instance per `(TenantId, CorrelationId)` across definitions. | Fails explicitly; a non-blank value is required |
+| `SingletonStrategy` | At most one Running instance per `(TenantId, DefinitionId)`. | N/A |
+
+`StartWorkflow` and `DispatchWorkflowDefinition` both evaluate the strategy at the shared create boundary. Built-in lock names are deterministic hashes of canonical, tenant-scoped strategy components; raw tenant and correlation values are not logged or embedded in lock names. Create-only requests persist under the lease. Create-and-run keeps the candidate in memory until the runner's first durable commit and holds the lease through that point, so a pre-commit failure or cancellation does not leave a phantom Running/Pending instance. A refused create returns `CannotStart` without an instance ID and does not attach to or resume the existing instance. Later events for the same conversation should resume through stimulus / bookmarks, not by dispatching the definition again. A configured but unregistered strategy fails closed with a registration/configuration error.
+
+Custom `IWorkflowActivationStrategy` implementations are still evaluated without requiring an interface change, but their exclusivity scope is unknown and the runtime does not claim distributed atomicity for them. Synchronously awaited nested dispatch using the same built-in activation scope can wait on its parent-held lease; use a distinct correlation scope for that nested activation.
+
+Conversation workflows that treat `CorrelationId` as the identity of a long-running process should set `CorrelatedSingletonStrategy` (or `CorrelationStrategy` when the conversation key is process-wide). Clustered hosts must use a cross-node `IDistributedLockProvider`; the default file-system provider only coordinates on one node.
+
+Do not add a unique database index on `CorrelationId`. That would collapse the three scopes above and reject blank correlation IDs.
+
 ## Transactional Dispatch Outbox
 
 Hosts can opt into at-least-once workflow dispatch for dispatch calls made from inside a running workflow, including child workflow dispatches and in-workflow asynchronous event publications (`PublishEvent` / `IEventPublisher.PublishAsync(..., asynchronous: true)`):

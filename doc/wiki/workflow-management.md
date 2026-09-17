@@ -31,6 +31,8 @@ It depends on workflow core, caching, mediator, string compression, system clock
 
 Management entities are separate from core execution models. Core can run workflows; management stores definitions and instances.
 
+`WorkflowInstance.CorrelationId` is indexed for lookup, not uniqueness. Running-instance uniqueness is opt-in through activation strategies. See [Correlation IDs And Activation Strategies](workflow-runtime.md#correlation-ids-and-activation-strategies).
+
 ## Stores
 
 Contracts:

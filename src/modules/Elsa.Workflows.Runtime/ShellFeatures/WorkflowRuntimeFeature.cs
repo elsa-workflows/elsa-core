@@ -278,6 +278,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<IWorkflowCanceler, WorkflowCanceler>()
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
             .AddScoped<IWorkflowActivationStrategyEvaluator, DefaultWorkflowActivationStrategyEvaluator>()
+            .AddScoped<IWorkflowActivationGate, WorkflowActivationGate>()
             .AddScoped<IWorkflowStarter, DefaultWorkflowStarter>()
             .AddScoped<IWorkflowRestarter, DefaultWorkflowRestarter>()
             .AddScoped<IBookmarkQueuePurger, DefaultBookmarkQueuePurger>()

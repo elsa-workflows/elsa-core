@@ -4,6 +4,8 @@ using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Options;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.ActivationValidators;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Exceptions;
@@ -22,9 +24,26 @@ public class LocalWorkflowClient(
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowRunner workflowRunner,
     IWorkflowCanceler workflowCanceler,
+    IWorkflowActivationGate workflowActivationGate,
     WorkflowStateMapper workflowStateMapper,
     ILogger<LocalWorkflowClient> logger) : IWorkflowClient
 {
+    /// <summary>
+    /// Retained for source compatibility. Hosts should prefer the constructor resolved by DI,
+    /// which supplies the configured activation gate.
+    /// </summary>
+    public LocalWorkflowClient(
+        string workflowInstanceId,
+        IWorkflowInstanceManager workflowInstanceManager,
+        IWorkflowDefinitionService workflowDefinitionService,
+        IWorkflowRunner workflowRunner,
+        IWorkflowCanceler workflowCanceler,
+        WorkflowStateMapper workflowStateMapper,
+        ILogger<LocalWorkflowClient> logger)
+        : this(workflowInstanceId, workflowInstanceManager, workflowDefinitionService, workflowRunner, workflowCanceler, new CompatibilityActivationGate(), workflowStateMapper, logger)
+    {
+    }
+
     /// <inheritdoc />
     public string WorkflowInstanceId => workflowInstanceId;
 
@@ -34,17 +53,21 @@ public class LocalWorkflowClient(
         var workflowDefinitionHandle = request.WorkflowDefinitionHandle;
         var workflowGraph = await GetWorkflowGraphAsync(workflowDefinitionHandle, cancellationToken);
 
-        var options = new WorkflowInstanceOptions
+        await using var lease = await workflowActivationGate.EvaluateAsync(workflowGraph.Workflow, request.CorrelationId, cancellationToken);
+        if (!lease.CanStart)
         {
-            WorkflowInstanceId = WorkflowInstanceId,
-            CorrelationId = request.CorrelationId,
-            Name = request.Name,
-            ParentWorkflowInstanceId = request.ParentId,
-            Input = request.Input,
-            Properties = request.Properties
-        };
+            LogActivationDenial(workflowGraph.Workflow, request.CorrelationId);
+            return new()
+            {
+                CannotStart = true
+            };
+        }
 
-        await workflowInstanceManager.CreateAndCommitWorkflowInstanceAsync(workflowGraph.Workflow, options, cancellationToken);
+        var effectiveCancellationToken = lease.GetEffectiveCancellationToken(cancellationToken);
+        effectiveCancellationToken.ThrowIfCancellationRequested();
+        var workflowInstance = CreateWorkflowInstance(workflowGraph.Workflow, request);
+        effectiveCancellationToken.ThrowIfCancellationRequested();
+        await workflowInstanceManager.SaveAsync(workflowInstance, effectiveCancellationToken);
         return new();
     }
 
@@ -58,16 +81,35 @@ public class LocalWorkflowClient(
     /// <inheritdoc />
     public async Task<RunWorkflowInstanceResponse> CreateAndRunInstanceAsync(CreateAndRunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        var createRequest = new CreateWorkflowInstanceRequest
+        var workflowDefinitionHandle = request.WorkflowDefinitionHandle;
+        var workflowGraph = await GetWorkflowGraphAsync(workflowDefinitionHandle, cancellationToken);
+
+        await using var lease = await workflowActivationGate.EvaluateAsync(workflowGraph.Workflow, request.CorrelationId, cancellationToken);
+        if (!lease.CanStart)
         {
-            Properties = request.Properties,
+            LogActivationDenial(workflowGraph.Workflow, request.CorrelationId);
+            return new()
+            {
+                CannotStart = true
+            };
+        }
+
+        var effectiveCancellationToken = lease.GetEffectiveCancellationToken(cancellationToken);
+        effectiveCancellationToken.ThrowIfCancellationRequested();
+        var workflowInstance = CreateWorkflowInstance(workflowGraph.Workflow, new CreateWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = workflowDefinitionHandle,
             CorrelationId = request.CorrelationId,
             Name = request.Name,
+            ParentId = request.ParentId,
             Input = request.Input,
-            WorkflowDefinitionHandle = request.WorkflowDefinitionHandle,
-            ParentId = request.ParentId
-        };
-        var workflowInstance = await CreateInstanceInternalAsync(createRequest, cancellationToken);
+            Properties = request.Properties
+        });
+        effectiveCancellationToken.ThrowIfCancellationRequested();
+
+        // Do not durably publish a Running/Pending row before execution. If the run is
+        // interrupted before WorkflowRunner commits its result, that row would occupy the
+        // activation scope despite the failed activation.
         return await RunInstanceAsync(workflowInstance, new()
         {
             Input = request.Input,
@@ -75,11 +117,23 @@ public class LocalWorkflowClient(
             Properties = request.Properties,
             TriggerActivityId = request.TriggerActivityId,
             ActivityHandle = request.ActivityHandle,
-            IncludeWorkflowOutput = request.IncludeWorkflowOutput,
             SchedulingActivityExecutionId = request.SchedulingActivityExecutionId,
             SchedulingWorkflowInstanceId = request.SchedulingWorkflowInstanceId,
-            SchedulingCallStackDepth = request.SchedulingCallStackDepth
-        }, cancellationToken);
+            SchedulingCallStackDepth = request.SchedulingCallStackDepth,
+            IncludeWorkflowOutput = request.IncludeWorkflowOutput
+        }, effectiveCancellationToken);
+    }
+
+    private void LogActivationDenial(Workflow workflow, string? correlationId)
+    {
+        var identity = workflow.Identity;
+        logger.LogWarning(
+            "Workflow activation strategy {ActivationStrategyType} disallowed creating an instance for definition {WorkflowDefinitionId} version {WorkflowDefinitionVersion} ({WorkflowDefinitionVersionId}); correlation ID present: {CorrelationIdPresent}",
+            workflow.Options.ActivationStrategyType?.FullName,
+            identity.DefinitionId,
+            identity.Version,
+            identity.Id,
+            !string.IsNullOrWhiteSpace(correlationId));
     }
 
     /// <inheritdoc />
@@ -134,6 +188,7 @@ public class LocalWorkflowClient(
 
     public async Task<RunWorkflowInstanceResponse> RunInstanceAsync(WorkflowInstance workflowInstance, RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var workflowState = workflowInstance.WorkflowState;
 
         if (workflowInstance.Status != WorkflowStatus.Running)
@@ -161,6 +216,7 @@ public class LocalWorkflowClient(
         };
 
         var workflowGraph = await GetWorkflowGraphAsync(workflowInstance, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
         var workflowResult = await workflowRunner.RunAsync(workflowGraph, workflowState, runWorkflowOptions, cancellationToken);
 
         workflowState = workflowResult.WorkflowState;
@@ -181,6 +237,11 @@ public class LocalWorkflowClient(
         var workflowDefinitionHandle = request.WorkflowDefinitionHandle;
         var workflowGraph = await GetWorkflowGraphAsync(workflowDefinitionHandle, cancellationToken);
 
+        return CreateWorkflowInstance(workflowGraph.Workflow, request);
+    }
+
+    private WorkflowInstance CreateWorkflowInstance(Workflow workflow, CreateWorkflowInstanceRequest request)
+    {
         var options = new WorkflowInstanceOptions
         {
             WorkflowInstanceId = WorkflowInstanceId,
@@ -191,7 +252,7 @@ public class LocalWorkflowClient(
             Properties = request.Properties
         };
 
-        return workflowInstanceManager.CreateWorkflowInstance(workflowGraph.Workflow, options);
+        return workflowInstanceManager.CreateWorkflowInstance(workflow, options);
     }
 
     private async Task<WorkflowInstance> GetWorkflowInstanceAsync(CancellationToken cancellationToken)
@@ -218,5 +279,16 @@ public class LocalWorkflowClient(
         if (!result.WorkflowDefinitionExists) throw new WorkflowDefinitionNotFoundException("Workflow definition not found.", definitionHandle);
         if (!result.WorkflowGraphExists) throw new WorkflowMaterializerNotFoundException(result.WorkflowDefinition!.MaterializerName);
         return result.WorkflowGraph!;
+    }
+
+    private sealed class CompatibilityActivationGate : IWorkflowActivationGate
+    {
+        public Task<WorkflowActivationLease> EvaluateAsync(Workflow workflow, string? correlationId, CancellationToken cancellationToken = default)
+        {
+            if (workflow.Options.ActivationStrategyType != null && workflow.Options.ActivationStrategyType != typeof(AllowAlwaysStrategy))
+                throw new InvalidOperationException("The compatibility LocalWorkflowClient constructor cannot enforce a configured activation strategy. Resolve LocalWorkflowClient from dependency injection so the registered activation gate is used.");
+
+            return Task.FromResult(new WorkflowActivationLease(true, null, cancellationToken));
+        }
     }
 }
