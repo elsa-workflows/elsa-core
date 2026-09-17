@@ -141,6 +141,92 @@ public class LocalWorkflowClientTests
     }
 
     [Fact]
+    public async Task CreateInstanceAsync_DoesNotPersist_WhenDistributedLeaseIsLostBeforeSave()
+    {
+        using var handleLostSource = new CancellationTokenSource();
+        var lockHandle = new TrackingAsyncDisposable();
+        var client = CreateClient();
+        SetupWorkflowGraph("test-definition");
+        _workflowActivationGate.EvaluateAsync(Arg.Any<Workflow>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                handleLostSource.Cancel();
+                return Task.FromResult(new WorkflowActivationLease(true, lockHandle, handleLostSource.Token));
+            });
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => client.CreateInstanceAsync(new CreateWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId("test-definition")
+        }));
+
+        await _workflowInstanceManager.DidNotReceiveWithAnyArgs().SaveAsync(default(WorkflowInstance)!, default);
+        Assert.Equal(1, lockHandle.DisposeCount);
+    }
+
+    [Fact]
+    public async Task CreateInstanceAsync_CancelsPersistence_WhenDistributedLeaseIsLostDuringSave()
+    {
+        using var handleLostSource = new CancellationTokenSource();
+        var lockHandle = new TrackingAsyncDisposable();
+        var client = CreateClient();
+        SetupWorkflowGraph("test-definition");
+        _workflowActivationGate.EvaluateAsync(Arg.Any<Workflow>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult(new WorkflowActivationLease(true, lockHandle, handleLostSource.Token)));
+        var saveStarted = new TaskCompletionSource<CancellationToken>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _workflowInstanceManager.SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var cancellationToken = call.Arg<CancellationToken>();
+                saveStarted.SetResult(cancellationToken);
+                var canceled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                cancellationToken.Register(() => canceled.TrySetCanceled(cancellationToken));
+                return canceled.Task;
+            });
+
+        var save = client.CreateInstanceAsync(new CreateWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId("test-definition")
+        });
+        var persistenceToken = await saveStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        handleLostSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => save);
+        Assert.True(persistenceToken.IsCancellationRequested);
+        await _workflowInstanceManager.Received(1).SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>());
+        Assert.Equal(1, lockHandle.DisposeCount);
+    }
+
+    [Fact]
+    public async Task CreateInstanceAsync_PreservesCallerCancellation_WhenActivationGateReturnsLegacyLease()
+    {
+        using var cancellationSource = new CancellationTokenSource();
+        var client = CreateClient();
+        SetupWorkflowGraph("test-definition");
+        _workflowActivationGate.EvaluateAsync(Arg.Any<Workflow>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new WorkflowActivationLease(true, null)));
+        var saveStarted = new TaskCompletionSource<CancellationToken>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _workflowInstanceManager.SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var cancellationToken = call.Arg<CancellationToken>();
+                saveStarted.SetResult(cancellationToken);
+                var canceled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                cancellationToken.Register(() => canceled.TrySetCanceled(cancellationToken));
+                return canceled.Task;
+            });
+
+        var save = client.CreateInstanceAsync(new CreateWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId("test-definition")
+        }, cancellationSource.Token);
+        var persistenceToken = await saveStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal(cancellationSource.Token, persistenceToken);
+        cancellationSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => save);
+    }
+
+    [Fact]
     public async Task CreateAndRunInstanceAsync_ReturnsCannotStart_WhenActivationGateDenies()
     {
         var client = CreateClient(canStart: false);
@@ -232,6 +318,46 @@ public class LocalWorkflowClientTests
         await _workflowInstanceManager.DidNotReceiveWithAnyArgs().CreateAndCommitWorkflowInstanceAsync(default!, default, default);
     }
 
+    [Fact]
+    public async Task CreateAndRunInstanceAsync_CancelsRunner_WhenDistributedLeaseIsLostDuringRun()
+    {
+        using var handleLostSource = new CancellationTokenSource();
+        var lockHandle = new TrackingAsyncDisposable();
+        var client = CreateClient();
+        SetupWorkflowGraph("test-definition");
+        _workflowInstanceManager.CreateWorkflowInstance(Arg.Any<Workflow>(), Arg.Any<WorkflowInstanceOptions>())
+            .Returns(CreateRunningInstance());
+        var runnerStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var runnerCompletion = new TaskCompletionSource<RunWorkflowResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+        CancellationToken runnerToken = default;
+        _workflowRunner.RunAsync(Arg.Any<WorkflowGraph>(), Arg.Any<WorkflowState>(), Arg.Any<RunWorkflowOptions>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                runnerToken = call.Arg<CancellationToken>();
+                runnerToken.Register(() => runnerCompletion.TrySetCanceled(runnerToken));
+                runnerStarted.SetResult();
+                return runnerCompletion.Task;
+            });
+        _workflowActivationGate.EvaluateAsync(Arg.Any<Workflow>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult(new WorkflowActivationLease(true, lockHandle, handleLostSource.Token)));
+
+        var run = client.CreateAndRunInstanceAsync(new CreateAndRunWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId("test-definition")
+        });
+        await runnerStarted.Task;
+        handleLostSource.Cancel();
+        var runnerObservedLeaseLoss = runnerToken.IsCancellationRequested;
+        if (!runnerObservedLeaseLoss)
+            runnerCompletion.TrySetException(new InvalidOperationException("The runner did not receive the lease-loss cancellation token."));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run);
+        Assert.True(runnerObservedLeaseLoss);
+        Assert.Equal(1, lockHandle.DisposeCount);
+        await _workflowInstanceManager.DidNotReceiveWithAnyArgs().SaveAsync(default(WorkflowInstance)!, default);
+        await _workflowInstanceManager.DidNotReceiveWithAnyArgs().CreateAndCommitWorkflowInstanceAsync(default!, default, default);
+    }
+
     private static WorkflowInstance CreateRunningInstance() => new()
     {
         Id = "test-workflow-instance-id",
@@ -264,7 +390,9 @@ public class LocalWorkflowClientTests
     private LocalWorkflowClient CreateClient(bool canStart = true, ILogger<LocalWorkflowClient>? logger = null)
     {
         _workflowActivationGate.EvaluateAsync(Arg.Any<Workflow>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
-            .Returns(canStart ? new WorkflowActivationLease(true, null) : WorkflowActivationLease.Denied);
+            .Returns(call => canStart
+                ? new WorkflowActivationLease(true, null, call.Arg<CancellationToken>())
+                : WorkflowActivationLease.Denied);
 
         return new(
             "test-workflow-instance-id",
@@ -275,6 +403,19 @@ public class LocalWorkflowClientTests
             _workflowActivationGate,
             _workflowStateMapper,
             logger ?? _logger);
+    }
+
+    private sealed class TrackingAsyncDisposable : IAsyncDisposable
+    {
+        private int _disposeCount;
+
+        public int DisposeCount => Volatile.Read(ref _disposeCount);
+
+        public ValueTask DisposeAsync()
+        {
+            Interlocked.Increment(ref _disposeCount);
+            return ValueTask.CompletedTask;
+        }
     }
 
     private sealed class RecordingLogger<T> : ILogger<T>

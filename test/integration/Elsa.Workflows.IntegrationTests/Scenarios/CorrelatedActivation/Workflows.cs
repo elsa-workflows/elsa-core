@@ -14,6 +14,26 @@ public class CorrelatedSingletonConversationWorkflow : WorkflowBase
     }
 }
 
+public class WaitForDeniedDispatchConversationWorkflow : WorkflowBase
+{
+    protected override void Build(IWorkflowBuilder builder)
+    {
+        builder.Root = new Sequence
+        {
+            Activities =
+            {
+                new DispatchWorkflow
+                {
+                    WorkflowDefinitionId = new(nameof(CorrelatedSingletonConversationWorkflow)),
+                    CorrelationId = new("denied-dispatch-correlation"),
+                    WaitForCompletion = new(true)
+                },
+                new Finish()
+            }
+        };
+    }
+}
+
 public class SingletonConversationWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder)

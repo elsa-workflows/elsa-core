@@ -170,7 +170,9 @@ public class Tests
                     dispatcherB.DispatchAsync(new DispatchWorkflowDefinitionRequest(graphB.Workflow.Identity.Id) { CorrelationId = "shared-runtime-correlation" }, null));
 
                 await lockProvider.TwoActivationLockAttempts.Task.WaitAsync(TimeSpan.FromSeconds(10));
-                await lockProvider.TwoActivationLockReleases.Task.WaitAsync(TimeSpan.FromSeconds(10));
+                // The SQLite connection timeout is 30 seconds; allow a transient provider lock wait
+                // to complete so the assertion timeout does not fire before the persistence timeout.
+                await lockProvider.TwoActivationLockReleases.Task.WaitAsync(TimeSpan.FromSeconds(40));
 
                 Assert.Equal(2, lockProvider.ActivationLockAttempts);
                 Assert.Equal(2, lockProvider.ActivationLockReleases);
@@ -193,6 +195,52 @@ public class Tests
             lockProvider.ReleaseActivationBarrier();
             if (File.Exists(databasePath))
                 File.Delete(databasePath);
+        }
+    }
+
+    [Fact(DisplayName = "Waiting dispatch resumes its parent when child activation is denied")]
+    public async Task DispatchWorkflow_WaitForCompletion_ResumesParentWhenActivationIsDenied()
+    {
+        var finishedSignal = new WorkflowInstanceFinishedSavedSignal();
+        var services = CreateServices(serviceCollection =>
+        {
+            serviceCollection.AddSingleton(finishedSignal);
+            serviceCollection.AddNotificationHandler<WorkflowInstanceFinishedSavedSignal, WorkflowInstanceSaved>(sp => sp.GetRequiredService<WorkflowInstanceFinishedSavedSignal>());
+        });
+        await services.PopulateRegistriesAsync();
+        var starter = services.GetRequiredService<IWorkflowStarter>();
+        var child = await starter.StartWorkflowAsync(new StartWorkflowRequest
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(nameof(CorrelatedSingletonConversationWorkflow), VersionOptions.Published),
+            CorrelationId = "denied-dispatch-correlation"
+        });
+        Assert.False(child.CannotStart);
+
+        var commandProcessor = services.GetServices<IHostedService>().OfType<BackgroundCommandSenderHostedService>().Single();
+        var parent = await starter.StartWorkflowAsync(new StartWorkflowRequest
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(nameof(WaitForDeniedDispatchConversationWorkflow), VersionOptions.Published)
+        });
+
+        Assert.False(parent.CannotStart);
+        var parentInstanceId = Assert.IsType<string>(parent.WorkflowInstanceId);
+        await commandProcessor.StartAsync(CancellationToken.None);
+        try
+        {
+            await finishedSignal.WaitForFinishAsync(parentInstanceId);
+
+            var persistedParent = Assert.Single(
+                await FindByDefinitionAsync(services, nameof(WaitForDeniedDispatchConversationWorkflow)),
+                instance => instance.Id == parentInstanceId);
+            Assert.Equal(WorkflowStatus.Finished, persistedParent.Status);
+            Assert.Empty(persistedParent.WorkflowState.Bookmarks);
+
+            var persistedChildren = await FindByCorrelationAsync(services, nameof(CorrelatedSingletonConversationWorkflow), "denied-dispatch-correlation");
+            Assert.Equal(child.WorkflowInstanceId, Assert.Single(persistedChildren).Id);
+        }
+        finally
+        {
+            await commandProcessor.StopAsync(CancellationToken.None);
         }
     }
 
@@ -352,6 +400,7 @@ public class Tests
 
         return builder
             .AddWorkflow<CorrelatedSingletonConversationWorkflow>()
+            .AddWorkflow<WaitForDeniedDispatchConversationWorkflow>()
             .AddWorkflow<SingletonConversationWorkflow>()
             .AddWorkflow<GroupedConversationWorkflow>()
             .AddWorkflow<AllowAlwaysConversationWorkflow>()
@@ -419,6 +468,35 @@ public class Tests
         {
             if (Interlocked.Increment(ref _count) >= expectedCount)
                 Saved.TrySetResult();
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class WorkflowInstanceFinishedSavedSignal : INotificationHandler<WorkflowInstanceSaved>
+    {
+        private readonly ConcurrentDictionary<string, TaskCompletionSource> _pending = new();
+        private readonly ConcurrentDictionary<string, byte> _finished = new();
+
+        public Task WaitForFinishAsync(string workflowInstanceId)
+        {
+            if (_finished.ContainsKey(workflowInstanceId))
+                return Task.CompletedTask;
+
+            var completion = _pending.GetOrAdd(workflowInstanceId, _ => new(TaskCreationOptions.RunContinuationsAsynchronously));
+            if (_finished.ContainsKey(workflowInstanceId))
+                completion.TrySetResult();
+            return completion.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        }
+
+        public Task HandleAsync(WorkflowInstanceSaved notification, CancellationToken cancellationToken)
+        {
+            if (notification.WorkflowInstance.Status != WorkflowStatus.Finished)
+                return Task.CompletedTask;
+
+            var workflowInstanceId = notification.WorkflowInstance.Id;
+            _finished.TryAdd(workflowInstanceId, 0);
+            if (_pending.TryGetValue(workflowInstanceId, out var completion))
+                completion.TrySetResult();
             return Task.CompletedTask;
         }
     }

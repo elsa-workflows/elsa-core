@@ -76,6 +76,54 @@ public class WorkflowActivationGateTests
     }
 
     [Fact]
+    public async Task CancelsEvaluatorAndRejectsActivation_WhenDistributedLeaseIsLostDuringEvaluation()
+    {
+        using var handleLostSource = new CancellationTokenSource();
+        var evaluatorStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var completeEvaluation = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        CancellationToken strategyToken = default;
+        var evaluator = Substitute.For<IWorkflowActivationStrategyEvaluator>();
+        evaluator.CanStartWorkflowAsync(Arg.Any<WorkflowActivationStrategyEvaluationContext>())
+            .Returns(call =>
+            {
+                strategyToken = call.Arg<WorkflowActivationStrategyEvaluationContext>().CancellationToken;
+                evaluatorStarted.SetResult();
+                return completeEvaluation.Task;
+            });
+        var lockProvider = new HandleLostTokenDistributedLockProvider(handleLostSource.Token);
+        var gate = CreateGate(evaluator, lockProvider);
+
+        var evaluation = gate.EvaluateAsync(CreateWorkflow(typeof(SingletonStrategy)), null);
+        await evaluatorStarted.Task;
+        handleLostSource.Cancel();
+        var strategyObservedCancellation = strategyToken.IsCancellationRequested;
+        completeEvaluation.SetResult(true);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => evaluation);
+        Assert.True(strategyObservedCancellation);
+        Assert.Equal(1, lockProvider.HandleDisposeCount);
+    }
+
+    [Fact]
+    public async Task CancelsLeaseToken_WhenDistributedLeaseIsLostAfterEvaluation()
+    {
+        using var handleLostSource = new CancellationTokenSource();
+        var evaluator = Substitute.For<IWorkflowActivationStrategyEvaluator>();
+        evaluator.CanStartWorkflowAsync(Arg.Any<WorkflowActivationStrategyEvaluationContext>()).Returns(true);
+        var lockProvider = new HandleLostTokenDistributedLockProvider(handleLostSource.Token);
+        var gate = CreateGate(evaluator, lockProvider);
+
+        await using var lease = await gate.EvaluateAsync(CreateWorkflow(typeof(SingletonStrategy)), null);
+        Assert.True(lease.CanStart);
+        var cancellationToken = lease.GetEffectiveCancellationToken(CancellationToken.None);
+        Assert.False(cancellationToken.IsCancellationRequested);
+
+        handleLostSource.Cancel();
+
+        Assert.True(cancellationToken.IsCancellationRequested);
+    }
+
+    [Fact]
     public async Task SerializesCheckAndCreate_WhenTwoCallersRaceOnSameCorrelation()
     {
         var started = 0;
@@ -203,6 +251,45 @@ public class WorkflowActivationGateTests
         {
             _lockNames.Enqueue(name);
             return new InMemoryDistributedLock(_locks.GetOrAdd(name, _ => new SemaphoreSlim(1, 1)), name, Contended);
+        }
+    }
+
+    private sealed class HandleLostTokenDistributedLockProvider(CancellationToken handleLostToken) : IDistributedLockProvider
+    {
+        private HandleLostTokenDistributedSynchronizationHandle Handle { get; } = new(handleLostToken);
+        public int HandleDisposeCount => Handle.DisposeCount;
+
+        public IDistributedLock CreateLock(string name) => new HandleLostTokenDistributedLock(name, Handle);
+
+        private sealed class HandleLostTokenDistributedLock(string name, HandleLostTokenDistributedSynchronizationHandle handle) : IDistributedLock
+        {
+            public string Name => name;
+
+            public IDistributedSynchronizationHandle? TryAcquire(TimeSpan timeout = default, CancellationToken cancellationToken = default) => handle;
+
+            public IDistributedSynchronizationHandle Acquire(TimeSpan? timeout = null, CancellationToken cancellationToken = default) => handle;
+
+            public ValueTask<IDistributedSynchronizationHandle?> TryAcquireAsync(TimeSpan timeout = default, CancellationToken cancellationToken = default) =>
+                ValueTask.FromResult<IDistributedSynchronizationHandle?>(handle);
+
+            public ValueTask<IDistributedSynchronizationHandle> AcquireAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default) =>
+                ValueTask.FromResult<IDistributedSynchronizationHandle>(handle);
+        }
+
+        private sealed class HandleLostTokenDistributedSynchronizationHandle(CancellationToken handleLostToken) : IDistributedSynchronizationHandle
+        {
+            private int _disposeCount;
+
+            public CancellationToken HandleLostToken => handleLostToken;
+            public int DisposeCount => Volatile.Read(ref _disposeCount);
+
+            public void Dispose() => Interlocked.Increment(ref _disposeCount);
+
+            public ValueTask DisposeAsync()
+            {
+                Dispose();
+                return ValueTask.CompletedTask;
+            }
         }
     }
 

@@ -23,33 +23,58 @@ public class WorkflowActivationGate(
     {
         var lockKey = GetLockKey(workflow, correlationId);
         IDistributedSynchronizationHandle? lockHandle = null;
+        CancellationTokenSource? linkedCancellationTokenSource = null;
 
         if (lockKey != null)
             lockHandle = await distributedLockProvider.AcquireLockAsync(lockKey, distributedLockingOptions.Value.LockAcquisitionTimeout, cancellationToken);
 
         try
         {
+            var effectiveCancellationToken = cancellationToken;
+            if (lockHandle != null)
+            {
+                linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, lockHandle.HandleLostToken);
+                effectiveCancellationToken = linkedCancellationTokenSource.Token;
+            }
+
+            effectiveCancellationToken.ThrowIfCancellationRequested();
             var canStart = await evaluator.CanStartWorkflowAsync(new()
             {
                 Workflow = workflow,
                 CorrelationId = correlationId,
-                CancellationToken = cancellationToken
+                CancellationToken = effectiveCancellationToken
             });
+            effectiveCancellationToken.ThrowIfCancellationRequested();
 
             if (!canStart)
             {
-                if (lockHandle != null)
-                    await lockHandle.DisposeAsync();
+                var acquiredLockHandle = lockHandle;
+                lockHandle = null;
+                if (acquiredLockHandle != null)
+                    await acquiredLockHandle.DisposeAsync();
+
+                linkedCancellationTokenSource?.Dispose();
+                linkedCancellationTokenSource = null;
 
                 return WorkflowActivationLease.Denied;
             }
 
-            return new(true, lockHandle);
+            var lease = new WorkflowActivationLease(true, lockHandle, effectiveCancellationToken, linkedCancellationTokenSource);
+            lockHandle = null;
+            linkedCancellationTokenSource = null;
+            return lease;
         }
         catch
         {
-            if (lockHandle != null)
-                await lockHandle.DisposeAsync();
+            try
+            {
+                if (lockHandle != null)
+                    await lockHandle.DisposeAsync();
+            }
+            finally
+            {
+                linkedCancellationTokenSource?.Dispose();
+            }
 
             throw;
         }
