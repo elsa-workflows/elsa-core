@@ -45,6 +45,8 @@ public partial class StructuredLogs : IAsyncDisposable
     private bool _terminalFailure;
     private bool _observerStopped;
     private bool _isDisposed;
+    private bool _hasRenderedInteractively;
+    private bool _scrollPending;
 
     /// <summary>
     /// Gets or sets the structured log service.
@@ -178,6 +180,21 @@ public partial class StructuredLogs : IAsyncDisposable
     }
 
     /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        _hasRenderedInteractively = true;
+
+        if (!_scrollPending)
+            return;
+
+        _scrollPending = false;
+        if (IsTerminalFailure || _isDisposed)
+            return;
+
+        await ScrollToBottomAsync();
+    }
+
+    /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
         _isDisposed = true;
@@ -195,7 +212,7 @@ public partial class StructuredLogs : IAsyncDisposable
         ViewState.IsPaused = !ViewState.IsPaused;
 
         if (!ViewState.IsPaused)
-            await ScrollToBottomAsync();
+            await RequestScrollToBottomAsync();
     }
 
     protected Task ClearAsync()
@@ -292,7 +309,7 @@ public partial class StructuredLogs : IAsyncDisposable
         ViewState.AutoScroll = value;
 
         if (value)
-            await ScrollToBottomAsync();
+            await RequestScrollToBottomAsync();
     }
 
     protected Task SetWrapMessagesAsync(bool value)
@@ -526,7 +543,7 @@ public partial class StructuredLogs : IAsyncDisposable
             if (IsTerminalFailure)
                 return;
 
-            await ScrollToBottomAsync();
+            await RequestScrollToBottomAsync();
         }
         catch (Exception e) when (IsAuthorizationFailure(e))
         {
@@ -581,7 +598,7 @@ public partial class StructuredLogs : IAsyncDisposable
             if (IsTerminalFailure)
                 return;
 
-            await ScrollToBottomAsync();
+            await RequestScrollToBottomAsync();
         }
         catch (Exception e) when (IsAuthorizationFailure(e))
         {
@@ -617,7 +634,7 @@ public partial class StructuredLogs : IAsyncDisposable
             StateHasChanged();
 
             if (ViewState.AutoScroll)
-                await ScrollToBottomAsync();
+                await RequestScrollToBottomAsync();
         });
     }
 
@@ -676,6 +693,7 @@ public partial class StructuredLogs : IAsyncDisposable
             return;
 
         _terminalFailure = true;
+        _scrollPending = false;
         IsLoading = false;
         ErrorMessage = null;
         ViewState.ConnectionStatus = status;
@@ -748,6 +766,17 @@ public partial class StructuredLogs : IAsyncDisposable
         {
             // Scrolling is best-effort and should not interrupt structured log updates.
         }
+    }
+
+    private Task RequestScrollToBottomAsync()
+    {
+        if (!_hasRenderedInteractively)
+        {
+            _scrollPending = true;
+            return Task.CompletedTask;
+        }
+
+        return ScrollToBottomAsync();
     }
 
     private void ApplyQueryFromUrl()
