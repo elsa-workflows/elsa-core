@@ -94,8 +94,8 @@ public class ForEach<T> : Activity
         {
             var variables = new[]
             {
-                new Variable("CurrentIndex", currentIndex),
-                new Variable("CurrentValue", currentValue)
+                new Variable("CurrentIndex", currentIndex, $"{context.Id}:CurrentIndex"),
+                new Variable("CurrentValue", currentValue, $"{context.Id}:CurrentValue")
             };
             await context.ScheduleActivityAsync(Body, OnChildCompleted, variables: variables);
         }
