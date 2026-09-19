@@ -601,8 +601,10 @@ public partial class WorkflowExecutionContext : IExecutionContext
                 activityExecutionContext.DynamicVariables.RemoveWhere(x => x.Name == variable.Name);
                 activityExecutionContext.DynamicVariables.Add(variable);
 
-                // Assign the variable to the expression execution context.
-                activityExecutionContext.ExpressionExecutionContext.CreateVariable(variable.Name, variable.Value);
+                // Declare on this activity's own memory. CreateVariable() builds a new Variable with a
+                // name-derived id, and Set() walks parent scopes — so a nested loop's CurrentValue /
+                // CurrentIndex would overwrite the parent's memory block (#7908).
+                DeclareScheduledVariable(activityExecutionContext.ExpressionExecutionContext, variable);
             }
         }
 
@@ -716,5 +718,12 @@ public partial class WorkflowExecutionContext : IExecutionContext
     public Task CommitAsync()
     {
         return _commitStateHandler.CommitAsync(this, CancellationToken);
+    }
+
+    private static void DeclareScheduledVariable(ExpressionExecutionContext context, Variable variable)
+    {
+        variable.StorageDriverType ??= typeof(WorkflowInstanceStorageDriver);
+        var block = context.Memory.Declare(variable);
+        block.Value = variable.ParseValue(variable.Value);
     }
 }

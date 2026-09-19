@@ -104,7 +104,7 @@ public class For : Activity
             {
                 var variables = new[]
                 {
-                    new Variable("CurrentValue", currentValue)
+                    new Variable("CurrentValue", currentValue, $"{context.Id}:CurrentValue")
                 };
                 await context.ScheduleActivityAsync(iterateNode, OnChildComplete, variables: variables);
             }
