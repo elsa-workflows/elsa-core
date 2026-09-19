@@ -108,7 +108,8 @@ public interface IWorkflowInstanceManager
     string SerializeWorkflowState(WorkflowState workflowState);
     
     /// <summary>
-    /// Instantiates and saves a new workflow instance.
+    /// Instantiates and saves a new workflow instance without evaluating its activation strategy.
+    /// This is a low-level persistence operation; use the workflow runtime start APIs when beginning execution.
     /// </summary>
     Task<WorkflowInstance> CreateAndCommitWorkflowInstanceAsync(Workflow workflow, WorkflowInstanceOptions? options = null, CancellationToken cancellationToken = default);
     

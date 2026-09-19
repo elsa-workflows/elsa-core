@@ -2,8 +2,10 @@ using System.Runtime.CompilerServices;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Stimuli;
 using Elsa.Workflows.Runtime.UIHints;
@@ -14,6 +16,8 @@ namespace Elsa.Workflows.Runtime.Activities;
 
 /// <summary>
 /// Creates a new workflow instance of the specified workflow and dispatches it for execution.
+/// When <see cref="WaitForCompletion"/> is enabled and activation is denied, the activity completes with a result dictionary containing
+/// <c>CannotStart</c> set to <c>true</c> and the requested <c>WorkflowInstanceId</c>.
 /// </summary>
 [Activity("Elsa", "Composition", "Create a new workflow instance of the specified workflow and dispatch it for execution.")]
 [UsedImplicitly]
@@ -126,6 +130,15 @@ public class DispatchWorkflow : Activity<object>
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
         var instanceId = identityGenerator.GenerateId();
+
+        if (waitForCompletion)
+        {
+            var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<DispatchWorkflow>();
+            var stimulus = new DispatchWorkflowStimulus(instanceId);
+            var stimulusHash = context.GetRequiredService<IStimulusHasher>().Hash(activityTypeName, stimulus);
+            DispatchWorkflowActivationDeniedRoute.Add(properties, activityTypeName, stimulusHash);
+        }
+
         var request = new DispatchWorkflowDefinitionRequest(workflowGraph.Workflow.Identity.Id)
         {
             ParentWorkflowInstanceId = parentInstanceId,

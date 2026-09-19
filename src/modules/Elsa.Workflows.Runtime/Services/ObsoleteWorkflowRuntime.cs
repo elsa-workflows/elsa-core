@@ -67,6 +67,9 @@ public class ObsoleteWorkflowRuntime(
             TriggerActivityId = options?.TriggerActivityId
         };
         var response = await client.CreateAndRunInstanceAsync(createRequest, cancellationToken);
+        if (response.CannotStart)
+            throw new InvalidOperationException("The workflow activation strategy refused to create a new workflow instance.");
+
         return new(response.WorkflowInstanceId, response.Status, response.SubStatus, response.Bookmarks, response.Incidents, null, new Dictionary<string, object>());
     }
 

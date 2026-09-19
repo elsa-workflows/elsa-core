@@ -13,7 +13,7 @@ public class DefaultWorkflowActivationStrategyEvaluator(IEnumerable<IWorkflowAct
         var strategy = strategies.FirstOrDefault(x => x.GetType() == strategyType);
 
         if (strategy == null)
-            return true;
+            throw new InvalidOperationException($"Workflow activation strategy '{strategyType.FullName}' is configured but not registered. Register an IWorkflowActivationStrategy implementation for this type or select a registered strategy.");
         
         var correlationId = context.CorrelationId;
         var cancellationToken = context.CancellationToken;

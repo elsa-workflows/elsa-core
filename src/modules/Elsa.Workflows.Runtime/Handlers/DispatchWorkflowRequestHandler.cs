@@ -3,13 +3,14 @@ using Elsa.Mediator.Models;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Messages;
+using Elsa.Workflows.Runtime.Notifications;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 
 // ReSharper disable once UnusedType.Global
 [UsedImplicitly]
-internal class DispatchWorkflowCommandHandler(IStimulusSender stimulusSender, IWorkflowRuntime workflowRuntime) :
+internal class DispatchWorkflowCommandHandler(IStimulusSender stimulusSender, IWorkflowRuntime workflowRuntime, INotificationSender notificationSender) :
     ICommandHandler<DispatchTriggerWorkflowsCommand>,
     ICommandHandler<DispatchWorkflowDefinitionCommand>,
     ICommandHandler<DispatchWorkflowInstanceCommand>,
@@ -39,19 +40,29 @@ internal class DispatchWorkflowCommandHandler(IStimulusSender stimulusSender, IW
         if (command.SkipIfInstanceExists && !string.IsNullOrWhiteSpace(command.InstanceId) && await client.InstanceExistsAsync(cancellationToken))
             return Unit.Instance;
 
+        var properties = DispatchWorkflowActivationDeniedRoute.SanitizeAndRead(command.Properties, out var denialRoute);
+
         var createRequest = new CreateAndRunWorkflowInstanceRequest
         {
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(command.DefinitionVersionId),
             CorrelationId = command.CorrelationId,
             Input = command.Input,
-            Properties = command.Properties,
+            Properties = properties,
             ParentId = command.ParentWorkflowInstanceId,
             TriggerActivityId = command.TriggerActivityId,
             SchedulingActivityExecutionId = command.SchedulingActivityExecutionId,
             SchedulingWorkflowInstanceId = command.SchedulingWorkflowInstanceId,
             SchedulingCallStackDepth = command.SchedulingCallStackDepth
         };
-        await client.CreateAndRunInstanceAsync(createRequest, cancellationToken);
+        var response = await client.CreateAndRunInstanceAsync(createRequest, cancellationToken);
+        if (response.CannotStart &&
+            denialRoute is { } route &&
+            !string.IsNullOrWhiteSpace(command.ParentWorkflowInstanceId) &&
+            !string.IsNullOrWhiteSpace(command.InstanceId))
+        {
+            await notificationSender.SendAsync(new DispatchWorkflowActivationDenied(command.ParentWorkflowInstanceId, command.InstanceId, route.ActivityTypeName, route.StimulusHash), cancellationToken);
+        }
+
         return Unit.Instance;
     }
 
