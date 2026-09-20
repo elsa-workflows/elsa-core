@@ -52,6 +52,21 @@ public sealed class ExpressionJsonConverterTests
         Assert.Equal("hello", result.Value);
     }
 
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"type\":\"\"}")]
+    public void When_DeserializeExpressionWithoutOrWithEmptyType_Then_ReturnsNull(string json)
+    {
+        // Arrange
+        var options = CreateOptions();
+
+        // Act
+        var result = JsonSerializer.Deserialize<Expression>(json, options);
+
+        // Assert
+        Assert.Null(result);
+    }
+
     private static JsonSerializerOptions CreateOptions(ExpressionDescriptor? descriptor = null)
     {
         var registry = Substitute.For<IExpressionDescriptorRegistry>();
