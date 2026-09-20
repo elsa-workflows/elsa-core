@@ -35,7 +35,7 @@ public class ExpressionJsonConverter : JsonConverter<Expression>
         var memoryBlockReference = expressionDescriptor?.MemoryBlockReferenceFactory?.Invoke();
 
         if (memoryBlockReference == null)
-            return default!;
+            throw new JsonException($"Could not find an expression descriptor for expression type '{expressionTypeName}'.");
 
         var memoryBlockType = memoryBlockReference.GetType();
         var context = new ExpressionSerializationContext(expressionTypeName!, expressionElement, options, memoryBlockType);
