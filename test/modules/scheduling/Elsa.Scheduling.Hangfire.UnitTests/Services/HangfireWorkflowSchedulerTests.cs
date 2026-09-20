@@ -171,6 +171,50 @@ public class HangfireWorkflowSchedulerTests
         Assert.NotEmpty(GetScheduledJobIds(storage, "task-1"));
     }
 
+    [Fact]
+    public async Task ScheduleRecurringAsync_ReplacesExistingDelayedJobForTheSameTask()
+    {
+        var (sut, storage) = CreateScheduler();
+        var request = CreateNewInstanceRequest();
+        var firstStartAt = DateTimeOffset.UtcNow.AddHours(1);
+        var secondStartAt = DateTimeOffset.UtcNow.AddHours(3);
+        var secondInterval = TimeSpan.FromHours(2);
+
+        await sut.ScheduleRecurringAsync("task-1", request, firstStartAt, TimeSpan.FromHours(1));
+        Assert.Single(GetScheduledJobs(storage, "task-1"));
+
+        await sut.ScheduleRecurringAsync("task-1", request, secondStartAt, secondInterval);
+
+        var scheduled = Assert.Single(GetScheduledJobs(storage, "task-1"));
+        Assert.Equal(typeof(RunWorkflowJob), scheduled.Job.Type);
+        Assert.Equal(nameof(RunWorkflowJob.ExecuteRecurringAsync), scheduled.Job.Method.Name);
+        Assert.Equal(secondStartAt, (DateTimeOffset)scheduled.Job.Args[3]);
+        Assert.Equal(secondInterval, (TimeSpan)scheduled.Job.Args[4]);
+        Assert.Equal(secondStartAt.UtcDateTime, scheduled.EnqueueAt, TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
+    public async Task ScheduleRecurringAsync_ExistingInstance_ReplacesExistingDelayedJobForTheSameTask()
+    {
+        var (sut, storage) = CreateScheduler();
+        var request = CreateExistingInstanceRequest();
+        var firstStartAt = DateTimeOffset.UtcNow.AddHours(1);
+        var secondStartAt = DateTimeOffset.UtcNow.AddHours(3);
+        var secondInterval = TimeSpan.FromMinutes(30);
+
+        await sut.ScheduleRecurringAsync("task-1", request, firstStartAt, TimeSpan.FromMinutes(5));
+        Assert.Single(GetScheduledJobs(storage, "task-1"));
+
+        await sut.ScheduleRecurringAsync("task-1", request, secondStartAt, secondInterval);
+
+        var scheduled = Assert.Single(GetScheduledJobs(storage, "task-1"));
+        Assert.Equal(typeof(ResumeWorkflowJob), scheduled.Job.Type);
+        Assert.Equal(nameof(ResumeWorkflowJob.ExecuteRecurringAsync), scheduled.Job.Method.Name);
+        Assert.Equal(secondStartAt, (DateTimeOffset)scheduled.Job.Args[3]);
+        Assert.Equal(secondInterval, (TimeSpan)scheduled.Job.Args[4]);
+        Assert.Equal(secondStartAt.UtcDateTime, scheduled.EnqueueAt, TimeSpan.FromSeconds(1));
+    }
+
     public static TheoryData<TimeSpan> CommonIntervals =>
     [
         TimeSpan.FromMinutes(30),
