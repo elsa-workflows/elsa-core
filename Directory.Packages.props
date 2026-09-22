@@ -11,7 +11,7 @@
     <BpmnModelVersion>0.2.0</BpmnModelVersion>
   </PropertyGroup>
   <ItemGroup Label="Elsa">
-    <PackageVersion Include="Elsa.Api.Client" Version="3.8.0-preview.5565" />
+    <PackageVersion Include="Elsa.Api.Client" Version="3.8.4" />
   </ItemGroup>
   <ItemGroup>
     <PackageVersion Include="Blazilla" Version="2.3.0" />

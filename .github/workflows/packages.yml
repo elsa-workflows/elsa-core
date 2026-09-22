@@ -19,7 +19,7 @@ on:
     # on the action) then raced: the second run failed with npm EPUBLISHCONFLICT.
     types: [ published ]
 env:
-  base_version: '3.8.0'
+  base_version: '3.10.0'
   nuget_feed_feedzio: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
   nuget_feed_nuget: 'https://api.nuget.org/v3/index.json'
   npm_feed_feedzio: 'https://f.feedz.io/elsa-workflows/elsa-3/npm/'
