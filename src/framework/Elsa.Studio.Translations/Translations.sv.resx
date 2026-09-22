@@ -1220,7 +1220,7 @@
     <value />
   </data>
   <data name="HTTP Endpoint" xml:space="preserve">
-    <value></value>
+    <value>HTTP slutpunkt</value>
   </data>
   <data name="No API keys found" xml:space="preserve">
     <value>Hittade inga API-nycklar</value>
@@ -1445,7 +1445,7 @@
     <value>Datumfilter</value>
   </data>
   <data name="Log Persistence Strategy" xml:space="preserve">
-    <value />
+    <value>Strategi för loggpersistens</value>
   </data>
   <data name="This activity does not have any common properties." xml:space="preserve">
     <value />
