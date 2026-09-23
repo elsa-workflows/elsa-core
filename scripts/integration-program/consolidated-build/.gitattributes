@@ -3,3 +3,4 @@ source-integration.patch -text -whitespace
 dapper-atomic-updates.patch -text -whitespace
 mongo-atomic-updates.patch -text -whitespace
 workbench-canonical-secrets.patch -text -whitespace
+studio-test-layout.patch -whitespace

@@ -67,3 +67,5 @@ Warnings include existing nullable/analyzer findings, dependency advisories, and
 Do not push the synthetic rehearsal commit. The real import must preserve source ancestors with a normal merge after the compatibility and publishing gates are accepted. Package publication, production/cutover and repository archival retain their explicit approval boundaries.
 
 A subsequent [provider and sample build proof](provider-build.md) records a complete successful rehearsal build after the Dapper/Mongo patches and canonical Secrets sample correction. It retains exact input revisions, the failed diagnostic, warnings and remaining final-import/test gates.
+
+The [Studio source-test layout correction](studio-test-layout.md) retains the subsequent full test run (6,169 passed, 21 path-resolution failures, 148 skipped) and the 103 passing tests after repairing the three affected projects. It does not relabel the initial full run as successful.
