@@ -1,0 +1,51 @@
+{
+  "scope": "Post-review added-descriptor comparison against unchanged recorded C# host evidence",
+  "runnerSha256": "a1dec117c6009dc23e246b14baad944b29f303f2e6406a6f1bb510f57b9b5f03",
+  "frameworks": [
+    {
+      "framework": "net8.0",
+      "allowedSourceOnlyAddedDescriptors": [
+        "Elsa.Ldap.Activities.AddLdapEntry",
+        "Elsa.Ldap.Activities.CompareLdapEntry",
+        "Elsa.Ldap.Activities.DeleteLdapEntry",
+        "Elsa.Ldap.Activities.ModifyLdapEntry",
+        "Elsa.Ldap.Activities.MoveLdapEntry",
+        "Elsa.Ldap.Activities.SearchLdapEntries",
+        "Elsa.Ldap.Activities.SearchLdapEntry",
+        "Elsa.Mqtt.Activities.MqttMessageReceived",
+        "Elsa.Mqtt.Activities.PublishMqttMessage"
+      ],
+      "unexpectedAddedDescriptors": []
+    },
+    {
+      "framework": "net9.0",
+      "allowedSourceOnlyAddedDescriptors": [
+        "Elsa.Ldap.Activities.AddLdapEntry",
+        "Elsa.Ldap.Activities.CompareLdapEntry",
+        "Elsa.Ldap.Activities.DeleteLdapEntry",
+        "Elsa.Ldap.Activities.ModifyLdapEntry",
+        "Elsa.Ldap.Activities.MoveLdapEntry",
+        "Elsa.Ldap.Activities.SearchLdapEntries",
+        "Elsa.Ldap.Activities.SearchLdapEntry",
+        "Elsa.Mqtt.Activities.MqttMessageReceived",
+        "Elsa.Mqtt.Activities.PublishMqttMessage"
+      ],
+      "unexpectedAddedDescriptors": []
+    },
+    {
+      "framework": "net10.0",
+      "allowedSourceOnlyAddedDescriptors": [
+        "Elsa.Ldap.Activities.AddLdapEntry",
+        "Elsa.Ldap.Activities.CompareLdapEntry",
+        "Elsa.Ldap.Activities.DeleteLdapEntry",
+        "Elsa.Ldap.Activities.ModifyLdapEntry",
+        "Elsa.Ldap.Activities.MoveLdapEntry",
+        "Elsa.Ldap.Activities.SearchLdapEntries",
+        "Elsa.Ldap.Activities.SearchLdapEntry",
+        "Elsa.Mqtt.Activities.MqttMessageReceived",
+        "Elsa.Mqtt.Activities.PublishMqttMessage"
+      ],
+      "unexpectedAddedDescriptors": []
+    }
+  ]
+}

@@ -64,6 +64,14 @@ def descriptor_map(result):
     return {descriptor['ClrType']: normalized_descriptor(descriptor) for descriptor in descriptors}
 
 
+def classify_added_descriptors(before, after, matrix):
+    source_only = {entry['assembly'] for entry in matrix if entry['releasedVersion'] is None}
+    added = sorted(after.keys() - before.keys())
+    allowed = [key for key in added if after[key]['Assembly'] in source_only]
+    unexpected = [key for key in added if after[key]['Assembly'] not in source_only]
+    return allowed, unexpected
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source-tree', type=Path, required=True)
@@ -111,13 +119,14 @@ def main():
     if all(path.exists() for path in paths):
         old, new = [json.loads(path.read_text()) for path in paths]
         a, b = [descriptor_map(result) for result in [old, new]]
-        receipt['comparison'] = {'missingDescriptors': sorted(a.keys() - b.keys()), 'addedDescriptors': sorted(b.keys() - a.keys()), 'changedDescriptors': sorted(k for k in a.keys() & b.keys() if a[k] != b[k]), 'releasedFailures': old['failures'], 'consolidatedFailures': new['failures'], 'historicalWorkflowPreserved': new['importedPreserved']}
+        allowed_added, unexpected_added = classify_added_descriptors(a, b, entries)
+        receipt['comparison'] = {'allowedSourceOnlyAddedDescriptors': allowed_added, 'unexpectedAddedDescriptors': unexpected_added, 'missingDescriptors': sorted(a.keys() - b.keys()), 'addedDescriptors': sorted(b.keys() - a.keys()), 'changedDescriptors': sorted(k for k in a.keys() & b.keys() if a[k] != b[k]), 'releasedFailures': old['failures'], 'consolidatedFailures': new['failures'], 'historicalWorkflowPreserved': new['importedPreserved']}
     receipt['sourceInputsUnchanged'] = before_inputs == source_inputs(source)
     receipt['sourceInputsSha256'] = digest(output / 'source-inputs.json')
     (output / 'receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
     # Existing baseline failures remain a failing gate, never an allowlist pass.
     comparison = receipt.get('comparison', {})
-    comparison_passed = comparison.get('historicalWorkflowPreserved') is True and not comparison.get('missingDescriptors', [None]) and not comparison.get('changedDescriptors', [None])
+    comparison_passed = comparison.get('historicalWorkflowPreserved') is True and not comparison.get('missingDescriptors', [None]) and not comparison.get('changedDescriptors', [None]) and not comparison.get('unexpectedAddedDescriptors', [None])
     return 0 if comparison_passed and receipt['sourceInputsUnchanged'] and all(h.get('buildExitCode') == 0 and h.get('probeExitCode') == 0 for h in receipt['hosts'].values()) else 1
 
 

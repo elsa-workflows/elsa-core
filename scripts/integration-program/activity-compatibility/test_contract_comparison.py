@@ -41,5 +41,25 @@ class ContractComparisonTests(unittest.TestCase):
             runner.descriptor_map({'descriptors': [first, second]})
 
 
+    def test_added_descriptor_in_released_assembly_is_rejected(self):
+        before = {'original': self.descriptor()}
+        after = dict(before, added=self.descriptor())
+        allowed, unexpected = runner.classify_added_descriptors(before, after, [{'assembly': 'Example', 'releasedVersion': '3.8.4'}])
+        self.assertEqual([], allowed)
+        self.assertEqual(['added'], unexpected)
+
+    def test_only_explicit_source_only_assemblies_allow_added_descriptors(self):
+        row = self.descriptor()
+        row['Assembly'] = 'Elsa.Ldap'
+        allowed, unexpected = runner.classify_added_descriptors({}, {'ldap': row}, [{'assembly': 'Elsa.Ldap', 'releasedVersion': None}])
+        self.assertEqual(['ldap'], allowed)
+        self.assertEqual([], unexpected)
+
+    def test_unlisted_assembly_addition_is_rejected(self):
+        allowed, unexpected = runner.classify_added_descriptors({}, {'unknown': self.descriptor()}, [{'assembly': 'Elsa.Ldap', 'releasedVersion': None}])
+        self.assertEqual([], allowed)
+        self.assertEqual(['unknown'], unexpected)
+
+
 if __name__ == '__main__':
     unittest.main()
