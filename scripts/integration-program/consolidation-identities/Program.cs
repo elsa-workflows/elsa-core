@@ -100,7 +100,7 @@ foreach (var mapping in activeMappings)
         var consolidated = EvaluateProject(consolidatedPath, mapping.Repository, mapping.Destination, arguments.Configuration, evaluationCollection, scratch.RootPath, evaluatedInputs);
         projects.Add(Compare(mapping, consolidatedPath, original, consolidated));
     }
-    catch (Exception exception)
+    catch (Exception exception) when (!IsFatal(exception))
     {
         evaluationFailures.Add(new EvaluationFailure(mapping.Repository, mapping.Source, mapping.Destination, exception.ToString()));
     }
@@ -248,9 +248,8 @@ static IdentityProperties Evaluate(string projectPath, Dictionary<string, string
     try
     {
         project = new Project(projectPath, globals, null, collection);
-        foreach (var import in project.Imports)
+        foreach (var importedProject in project.Imports.Select(import => import.ImportedProject))
         {
-            var importedProject = import.ImportedProject;
             if (importedProject is null || string.IsNullOrWhiteSpace(importedProject.FullPath))
             {
                 throw new InvalidOperationException($"An evaluated import for '{projectPath}' did not resolve to a file.");
@@ -554,10 +553,22 @@ static void Require(bool condition, string message)
     }
 }
 
+static bool IsFatal(Exception exception)
+{
+    return exception is OutOfMemoryException
+        or StackOverflowException
+        or AccessViolationException
+        or AppDomainUnloadedException
+        or BadImageFormatException
+        or CannotUnloadAppDomainException
+        or InvalidProgramException;
+}
+
 static string ResolveInside(string root, string relativePath)
 {
     var fullRoot = ResolvePhysicalPath(root);
-    var fullPath = ResolvePhysicalPath(Path.Combine(root, relativePath));
+    Require(!Path.IsPathRooted(relativePath), $"Expected a path relative to '{root}', found '{relativePath}'.");
+    var fullPath = ResolvePhysicalPath(Path.Combine(fullRoot, relativePath));
     Require(IsWithin(fullRoot, fullPath), $"Project path '{relativePath}' escapes root '{root}'.");
     Require(File.Exists(fullPath), $"Mapped file does not exist: {fullPath}.");
     return fullPath;
@@ -568,6 +579,14 @@ static string ResolvePhysicalPath(string path)
     var fullPath = Path.GetFullPath(path);
     var root = Path.GetPathRoot(fullPath) ?? throw new InvalidOperationException($"Path has no root: {path}.");
     var remaining = fullPath[root.Length..].Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries);
+    foreach (var segment in remaining)
+    {
+        Require(!Path.IsPathRooted(segment)
+            && !segment.Contains(Path.DirectorySeparatorChar)
+            && !segment.Contains(Path.AltDirectorySeparatorChar),
+            $"Expected a relative path segment while resolving '{path}', found '{segment}'.");
+    }
+
     var current = root;
     for (var index = 0; index < remaining.Length; index++)
     {
@@ -583,7 +602,11 @@ static string ResolvePhysicalPath(string path)
 
         if (!info.Exists)
         {
-            current = Path.Combine(current, Path.Combine(remaining[index..]));
+            for (var remainingIndex = index; remainingIndex < remaining.Length; remainingIndex++)
+            {
+                current = Path.Combine(current, remaining[remainingIndex]);
+            }
+
             break;
         }
 
