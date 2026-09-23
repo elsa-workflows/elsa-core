@@ -310,12 +310,12 @@ public sealed class BpmnInterchangeDocumentService(
     }
 
     /// <summary>
-    /// The document-edit persist: prepare the draft once, dispatch
-    /// <see cref="WorkflowDefinitionDraftSaving"/> so a rejecting handler fails the request before
-    /// anything is written, then compare-and-swap that same draft. The swap accepts the write only
-    /// when If-Match and the loaded snapshot (id, version, graph, name, description, IsLatest) are
-    /// still the row the draft was built from — so a metadata-only save in the window is 412, not a
-    /// silent overwrite. A lost race is <see cref="BpmnDocumentPreconditionFailedException"/>.
+    /// The document-edit persist: prepare and announce a draft before writing so a rejecting
+    /// <see cref="WorkflowDefinitionDraftSaving"/> handler fails the request without a partial save.
+    /// The compare-and-swap checks document content and row identity/state. Its update is rebuilt from
+    /// the row loaded by the store, so metadata-only changes outside the document precondition remain
+    /// intact. A changed document or incompatible row transition is
+    /// <see cref="BpmnDocumentPreconditionFailedException"/>.
     /// </summary>
     private async Task<BpmnDocumentImportResult> PersistDocumentEditAsync(
         string xml,
@@ -346,8 +346,11 @@ public sealed class BpmnInterchangeDocumentService(
         var expectedName = current.Name;
         var expectedDescription = current.Description;
         var expectedStringData = current.StringData;
+        var expectedIsPublished = current.IsPublished;
+        var expectedTenantId = current.TenantId;
 
         var draft = ApplyDocumentEdit(current, process, xml, rootDefinition);
+        var draftCustomProperties = new Dictionary<string, object>(draft.CustomProperties);
         await mediator.SendAsync(new WorkflowDefinitionDraftSaving(draft), cancellationToken);
 
         var result = await store.TryUpdateLatestAsync(
@@ -358,8 +361,24 @@ public sealed class BpmnInterchangeDocumentService(
                       && loaded.StringData == expectedStringData
                       && loaded.Name == expectedName
                       && loaded.Description == expectedDescription
+                      && loaded.IsPublished == expectedIsPublished
+                      && loaded.TenantId == expectedTenantId
                       && (expectedETag is null || string.Equals(BpmnDocumentETag.From(loaded), expectedETag, StringComparison.Ordinal)),
-            _ => draft,
+            loaded =>
+            {
+                var updated = ApplyDocumentEdit(loaded, process, xml, rootDefinition);
+
+                // The notification ran before the store's atomic load. Keep its announced identity and custom
+                // property edits, but base other document-preserved state on the row the store actually loaded.
+                updated.Id = draft.Id;
+                updated.Version = draft.Version;
+                updated.CreatedAt = draft.CreatedAt;
+                updated.IsLatest = draft.IsLatest;
+                updated.IsPublished = draft.IsPublished;
+                ApplyCustomPropertyChanges(draftCustomProperties, draft.CustomProperties, updated.CustomProperties);
+
+                return updated;
+            },
             cancellationToken);
 
         if (result.Outcome == WorkflowDefinitionUpdateOutcome.NotFound)
@@ -376,6 +395,26 @@ public sealed class BpmnInterchangeDocumentService(
 
         await mediator.SendAsync(new WorkflowDefinitionDraftSaved(result.Definition!), cancellationToken);
         return new BpmnDocumentImportResult(new ImportWorkflowResult(true, result.Definition!, []), analysis);
+    }
+
+    private static void ApplyCustomPropertyChanges(
+        IDictionary<string, object> beforeNotification,
+        IDictionary<string, object> afterNotification,
+        IDictionary<string, object> destination)
+    {
+        foreach (var key in beforeNotification.Keys.Concat(afterNotification.Keys).Distinct())
+        {
+            var wasPresent = beforeNotification.TryGetValue(key, out var previousValue);
+            var isPresent = afterNotification.TryGetValue(key, out var currentValue);
+
+            if (wasPresent == isPresent && Equals(previousValue, currentValue))
+                continue;
+
+            if (isPresent)
+                destination[key] = currentValue!;
+            else
+                destination.Remove(key);
+        }
     }
 
     /// <summary>

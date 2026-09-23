@@ -107,6 +107,47 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         Assert.Equal(stored.StringData, after.StringData);
     }
 
+    [Fact(DisplayName = "A metadata save during document PUT is preserved while the BPMN edit is applied")]
+    public async Task ImportDocumentAsync_WhenMetadataIsSavedDuringCompareAndSwap_PreservesTheMetadataAndDocumentEdit()
+    {
+        var services = new TestApplicationBuilder(testOutputHelper)
+            .ConfigureElsa(elsa => elsa.UseBpmnInterchange())
+            .Build();
+        await services.PopulateRegistriesAsync();
+
+        var innerStore = services.GetRequiredService<IWorkflowDefinitionStore>();
+        var setup = services.GetRequiredService<BpmnInterchangeDocumentService>();
+        var imported = await setup.ImportAsync(ReadAsset("camunda-order-process.bpmn"), definitionId: null, name: "Order", processId: null, CancellationToken.None);
+        var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
+        var stored = await FindLatestAsync(innerStore, definitionId);
+        var expectedETag = BpmnDocumentETag.From(stored);
+        var reader = services.GetRequiredService<BpmnXmlReader>();
+        var sourceXml = (string)stored.CustomProperties[BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey];
+        var edit = reader.Read(sourceXml.Replace("Order Handled", "Document edit"), new BpmnImportOptions()).Definitions;
+
+        var gate = new CompareAndSwapPauseGate();
+        var pausingStore = new PausingCompareAndSwapStore(innerStore, gate);
+        var documentWriter = ActivatorUtilities.CreateInstance<BpmnInterchangeDocumentService>(services, pausingStore);
+        var documentPut = documentWriter.ImportDocumentAsync(edit, definitionId, processId: null, CancellationToken.None, expectedETag);
+        await gate.Checked.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        var metadataWriter = await FindLatestAsync(innerStore, definitionId);
+        metadataWriter.Options.UsableAsActivity = true;
+        metadataWriter.CustomProperties["test:concurrent-metadata"] = "preserve-me";
+        await innerStore.SaveAsync(metadataWriter);
+
+        gate.Release.TrySetResult();
+
+        var result = await documentPut;
+        Assert.True(result.ImportResult.Succeeded);
+
+        var after = await FindLatestAsync(innerStore, definitionId);
+        Assert.Equal("preserve-me", after.CustomProperties["test:concurrent-metadata"]);
+        Assert.True(after.Options.UsableAsActivity);
+        Assert.NotEqual(stored.StringData, after.StringData);
+        Assert.NotEqual(expectedETag, BpmnDocumentETag.From(after));
+    }
+
     [Fact(DisplayName = "A rejecting DraftSaving handler fails the document PUT before persist; the stored definition is unchanged")]
     public async Task ImportDocumentAsync_WhenDraftSavingHandlerRejects_DoesNotPersist()
     {
