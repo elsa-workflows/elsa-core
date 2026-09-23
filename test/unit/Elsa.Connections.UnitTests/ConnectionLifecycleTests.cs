@@ -301,6 +301,40 @@ public sealed class ConnectionLifecycleTests
     }
 
     [Fact]
+    public async Task CallerCancellationAfterSuccessfulNonIdempotentRevocationDoesNotLoseConfirmedCompletion()
+    {
+        await using var database = new TestDatabase();
+        using var cancellation = new CancellationTokenSource();
+        var provider = new SyntheticCredentialProvider(
+            block: false,
+            supportsStableOperationIdIdempotency: false,
+            cancelBeforeSuccessfulRevocation: cancellation.Cancel);
+        await using var worker = await Worker.CreateAsync(database.Path, MakeKey(32), provider);
+        var connectionId = await SeedAsync(worker);
+
+        using (worker.TenantAccessor.PushContext(TenantContext()))
+        using (var scope = worker.Services.CreateScope())
+        {
+            var lifecycle = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleService>();
+            var recovery = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleRecoveryService>();
+            var store = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleStore>();
+            var generationId = (await store.FindAsync(connectionId, TenantId, EnvironmentId))!.CurrentGenerationId!;
+            Assert.True((await lifecycle.DisconnectAsync(Principal(), TenantId, EnvironmentId, connectionId)).Accepted);
+            var requested = await lifecycle.RequestTokenRevocationAsync(Principal(), TenantId, EnvironmentId, connectionId, generationId);
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                recovery.ReconcileOffboardingAsync(TenantId, EnvironmentId, connectionId, cancellation.Token));
+
+            var operation = await store.FindOffboardingOperationAsync(requested.OperationId!, TenantId, EnvironmentId, connectionId);
+            Assert.Equal(ConnectionOffboardingOperationStatus.Completed, operation!.Status);
+            Assert.Equal(1, provider.RevocationEffects);
+
+            var cleanup = await lifecycle.CleanupGenerationAsync(Principal(), TenantId, EnvironmentId, connectionId, generationId);
+            Assert.True(cleanup.Succeeded);
+        }
+    }
+
+    [Fact]
     public async Task DisconnectDuringCredentialReadDeniesTheNewCredentialHandoff()
     {
         await using var database = new TestDatabase();
@@ -986,7 +1020,8 @@ public sealed class ConnectionLifecycleTests
     private sealed class SyntheticCredentialProvider(
         bool block,
         bool throwSensitiveCancellation = false,
-        bool supportsStableOperationIdIdempotency = true) : IConnectionCredentialProvider, IConnectionOffboardingProvider
+        bool supportsStableOperationIdIdempotency = true,
+        Action? cancelBeforeSuccessfulRevocation = null) : IConnectionCredentialProvider, IConnectionOffboardingProvider
     {
         private readonly TaskCompletionSource<CredentialMaterial> _response = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource _entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -1090,6 +1125,7 @@ public sealed class ConnectionLifecycleTests
         {
             cancellationToken.ThrowIfCancellationRequested();
             Interlocked.Increment(ref _revocationAttempts);
+            ConnectionOffboardingProviderResult result;
             lock (_gate)
             {
                 var firstAttempt = _completedOffboardingOperationIds.Add(operationId);
@@ -1099,14 +1135,19 @@ public sealed class ConnectionLifecycleTests
                 }
 
                 Interlocked.Increment(ref _revocationEffects);
-                var result = ConnectionOffboardingProviderResult.Succeeded;
+                result = ConnectionOffboardingProviderResult.Succeeded;
                 if (firstAttempt && _nextRevocationResults.TryDequeue(out var next))
                 {
                     result = next;
                 }
-
-                return Task.FromResult(result);
             }
+
+            if (result == ConnectionOffboardingProviderResult.Succeeded)
+            {
+                cancelBeforeSuccessfulRevocation?.Invoke();
+            }
+
+            return Task.FromResult(result);
         }
 
         public Task<ConnectionOffboardingProviderResult> UninstallInstallationAsync(

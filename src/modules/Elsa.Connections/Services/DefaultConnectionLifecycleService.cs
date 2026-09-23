@@ -357,7 +357,9 @@ public sealed class DefaultConnectionLifecycleService(
             switch (providerResult)
             {
                 case ConnectionOffboardingProviderResult.Succeeded:
-                    await store.TryCompleteOffboardingOperationAsync(claimed.Id, tenantId, environmentId, connectionId, claimed.Fence, now, cancellationToken);
+                    // Once the provider has confirmed success, caller cancellation must not turn that known
+                    // result into an unknown operation. Persist the semantic outcome independently.
+                    await store.TryCompleteOffboardingOperationAsync(claimed.Id, tenantId, environmentId, connectionId, claimed.Fence, now, CancellationToken.None);
                     break;
                 case ConnectionOffboardingProviderResult.RetryableFailure:
                     await RecordOffboardingFailureAsync(claimed, tenantId, environmentId, connectionId,
