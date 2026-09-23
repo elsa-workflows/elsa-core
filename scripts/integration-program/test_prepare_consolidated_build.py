@@ -9,6 +9,8 @@ from unittest.mock import patch
 
 import prepare_consolidated_build as build
 
+SOURCE_INTEGRATION_PATCH = build.PATCH
+
 SOLUTION = '''Microsoft Visual Studio Solution File, Format Version 12.00
 Global
 \tGlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -134,6 +136,18 @@ new file mode 100644
         self.assertEqual(build.solution_with_projects(SOLUTION, paths), build.solution_with_projects(SOLUTION, paths[::-1]))
         with self.assertRaisesRegex(ValueError, 'Invalid project path'):
             build.solution_with_projects(SOLUTION, ['../outside.csproj'])
+
+    def test_slack_preparation_preserves_package_and_project_reference_modes(self):
+        patch = SOURCE_INTEGRATION_PATCH.read_text()
+        marker = 'diff --git a/src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj '
+        slack_diff = patch.split(marker, 1)[1].split('\ndiff --git ', 1)[0]
+        package_mode = slack_diff.split("Condition=\"'$(UseProjectReferences)' != 'true'\">", 1)[1].split('</ItemGroup>', 1)[0]
+        project_mode = slack_diff.split("Condition=\"'$(UseProjectReferences)' == 'true'\">", 1)[1].split('</ItemGroup>', 1)[0]
+
+        self.assertIn('<PackageReference Include="Elsa" />', package_mode)
+        self.assertNotIn('ProjectReference', package_mode)
+        self.assertIn('+        <ProjectReference Include="../../../modules/Elsa/Elsa.csproj" />', project_mode)
+        self.assertNotIn('PackageReference', project_mode)
 
 
 if __name__ == '__main__':

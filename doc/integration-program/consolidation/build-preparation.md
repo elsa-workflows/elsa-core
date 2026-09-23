@@ -31,6 +31,20 @@ This tool trusts the local Git installation and the reviewed tool/patch. Builds 
 
 The patch integrates 166 imported projects and one new regression-test project with Core's existing solution. It rewrites references to local Core/Studio/Extensions projects, retains separate upstream central dependency baselines, keeps external CShells dependencies as packages, repairs relocated assets, and scopes build properties/targets. Test/sample central-version wrappers import their corresponding source baseline instead of duplicating it. A static comparison also confirms that all 166 imported project files retain their explicit `PackageId`, `AssemblyName` and `RootNamespace` declarations; evaluated and packed public identity checks remain a later gate. Imported projects are nonpackable and automatic generation of packages is disabled; original upstream publishing workflows remain inert. Fody behavior remains scoped to its original product instead of silently inheriting Core's different guard.
 
+The Slack relocation keeps its upstream two-mode Elsa dependency. With `UseProjectReferences=false`, `Elsa.Slack.csproj` retains `PackageReference Include="Elsa"`; with `UseProjectReferences=true`, it uses the mapped Core project at `../../../modules/Elsa/Elsa.csproj`. The package reference is versioned by the imported Extensions central package baseline (`ElsaVersion` is `3.8.0-preview.5557` at the recorded source pin). This matters for package verification: evaluating or building the project-reference mode does not establish the package-mode dependency. After preparation, inspect both evaluated modes with:
+
+```sh
+dotnet msbuild src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj \
+  -getProperty:PackageId,AssemblyName,RootNamespace,ElsaVersion,ManagePackageVersionsCentrally \
+  -getItem:PackageReference,ProjectReference -p:UseProjectReferences=false
+
+dotnet msbuild src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj \
+  -getProperty:PackageId,AssemblyName,RootNamespace,ElsaVersion,ManagePackageVersionsCentrally \
+  -getItem:PackageReference,ProjectReference -p:UseProjectReferences=true
+```
+
+On 2026-09-24, this check passed against a fresh preparation using Core `8e893e02c4ac089d526b0a0d294a8546f021d072`, Extensions `33fa0bfd28c7585240e3d4f665058c067b17e287` and Studio `9afd3e36fd1bc90dfdf8a00b40d89e4a50c8822`. The package mode evaluated to `PackageId`, `AssemblyName` and `RootNamespace` `Elsa.Slack`, with the `Elsa` package reference and no project references. The source mode evaluated to the same identity and mapped Core project reference, with no `Elsa` package reference. This was MSBuild evaluation only; no restore, build or pack was performed, so it does not substitute for checking the generated `.nuspec` in the package artifact proof. See [NuGet PackageReference conditions](https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files#adding-a-packagereference-condition) for the MSBuild condition semantics.
+
 Two diagnosed compatibility changes are explicit in the patch:
 
 - Agents no longer relies on Studio transitively supplying archived Blazored.FluentValidation. Both button and form submission await the existing async name validator, using a component-owned message store, stale-response revision guard and disposal guard. Six new tests cover pending uniqueness, duplicate messages, field changes including change-back, direct name changes, competing responses and disposal.

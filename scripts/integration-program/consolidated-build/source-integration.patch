@@ -1392,7 +1392,7 @@ index ff6453a93..973181275 100644
      
  </Project>
 diff --git a/src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj b/src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj
-index 82fdd733b..110f62e07 100644
+index 82fdd733b..40a2c867f 100644
 --- a/src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj
 +++ b/src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj
 @@ -1,4 +1,4 @@
@@ -1401,12 +1401,11 @@ index 82fdd733b..110f62e07 100644
  
      <PropertyGroup>
  	    <Description>
-@@ -12,11 +12,11 @@
+@@ -12,10 +12,10 @@
      </ItemGroup>
      
      <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
--      <PackageReference Include="Elsa" />
-+      <ProjectReference Include="../../../modules/Elsa/Elsa.csproj" />
+       <PackageReference Include="Elsa" />
      </ItemGroup>
      
      <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
