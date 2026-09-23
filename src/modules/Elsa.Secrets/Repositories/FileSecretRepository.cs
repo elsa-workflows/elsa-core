@@ -114,6 +114,11 @@ public class FileSecretRepository : ISecretRepository
                 if (secrets[index].Status != SecretStatus.Deleted)
                     return false;
 
+                if (secrets[index].IsLifecycleManaged)
+                {
+                    return false;
+                }
+
                 if (!SecretRepositoryTenant.CanReplace(secrets[index], secret, tenantAccessor, tenancyEnabled))
                     return false;
 
@@ -233,6 +238,9 @@ public class FileSecretRepository : ISecretRepository
     /// </summary>
     private static Secret ReplaceTenantOwnedSecret(Secret existing, Secret incoming, bool tenancyEnabled)
     {
+        incoming.ManagedOwnerId = existing.ManagedOwnerId;
+        incoming.ManagedGenerationId = existing.ManagedGenerationId;
+
         if (tenancyEnabled)
             incoming.TenantId = existing.TenantId;
 
@@ -242,6 +250,8 @@ public class FileSecretRepository : ISecretRepository
     private static Secret ReplaceIdentityAndTenant(Secret existing, Secret incoming, bool tenancyEnabled)
     {
         incoming.Id = existing.Id;
+        incoming.ManagedOwnerId = existing.ManagedOwnerId;
+        incoming.ManagedGenerationId = existing.ManagedGenerationId;
 
         if (tenancyEnabled)
             incoming.TenantId = existing.TenantId;

@@ -32,10 +32,12 @@ public class SecretTestFixture
         TypeRegistry = new SecretTypeRegistry(types);
         Repository = new InMemorySecretRepository();
         Manager = new DefaultSecretManager(new DefaultSecretNameValidator(), StoreRegistry, TypeRegistry, Repository);
+        ManagedManager = Manager;
         Resolver = new DefaultSecretResolver(Manager);
     }
 
     public DefaultSecretManager Manager { get; }
+    public IManagedSecretManager ManagedManager { get; }
     public ISecretRepository Repository { get; }
     public ISecretResolver Resolver { get; }
     public ISecretStoreRegistry StoreRegistry { get; }

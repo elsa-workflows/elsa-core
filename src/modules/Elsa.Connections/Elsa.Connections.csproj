@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Provides tenant and environment scoped outbound connection credential lifecycle services.</Description>
+        <PackageTags>elsa module connections</PackageTags>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
+        <ProjectReference Include="..\Elsa.Secrets\Elsa.Secrets.csproj" />
+    </ItemGroup>
+
+</Project>

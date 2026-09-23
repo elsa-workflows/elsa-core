@@ -463,7 +463,7 @@
       "number": 8259,
       "title": "[Task] Select the release-proof connector and design its release unit",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8259"
     },
     {
@@ -519,8 +519,78 @@
       "number": 8276,
       "title": "[Task] Reproduce the published Secrets SQLite upgrade from 3.8.1 to 3.8.4",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8276"
+    },
+    {
+      "number": 8279,
+      "title": "[Story] Prove paired backend and Blazor Studio source development",
+      "level": "Story",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8279"
+    },
+    {
+      "number": 8280,
+      "title": "[Task] Capture a reproducible paired WorkflowContexts source contract probe",
+      "level": "Task",
+      "state": "closed",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8280"
+    },
+    {
+      "number": 8282,
+      "title": "[Task] Specify and verify the Secrets SQLite bridge",
+      "level": "Task",
+      "state": "closed",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8282"
+    },
+    {
+      "number": 8284,
+      "title": "[Task] Deliver the paired Blazor source host and debugging workflow",
+      "level": "Task",
+      "state": "closed",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8284"
+    },
+    {
+      "number": 8286,
+      "title": "[Story] Build and verify the consolidated source workspace before history import",
+      "level": "Story",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8286"
+    },
+    {
+      "number": 8287,
+      "title": "[Task] Prepare and diagnose the full consolidated source build",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8287"
+    },
+    {
+      "number": 8290,
+      "title": "[Task] Implement a synthetic current-Core Secrets SQLite bridge",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8290"
+    },
+    {
+      "number": 8292,
+      "title": "[Bug] Preserve concurrent metadata during BPMN document PUT",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8292"
+    },
+    {
+      "number": 8293,
+      "title": "[Task] Preserve atomic BPMN edits in Dapper workflow definitions",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8293"
+    },
+    {
+      "number": 8294,
+      "title": "[Task] Preserve atomic BPMN edits in Mongo workflow definitions",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8294"
     }
   ],
   "parent_edges": [
@@ -815,6 +885,46 @@
     [
       8275,
       8276
+    ],
+    [
+      8215,
+      8279
+    ],
+    [
+      8279,
+      8280
+    ],
+    [
+      8275,
+      8282
+    ],
+    [
+      8279,
+      8284
+    ],
+    [
+      8214,
+      8286
+    ],
+    [
+      8286,
+      8287
+    ],
+    [
+      8275,
+      8290
+    ],
+    [
+      8286,
+      8292
+    ],
+    [
+      8286,
+      8293
+    ],
+    [
+      8286,
+      8294
     ]
   ],
   "blocking_edges": [
@@ -933,6 +1043,18 @@
     [
       8270,
       8271
+    ],
+    [
+      8276,
+      8282
+    ],
+    [
+      8280,
+      8284
+    ],
+    [
+      8282,
+      8290
     ]
   ]
 }

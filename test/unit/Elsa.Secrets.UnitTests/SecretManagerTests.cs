@@ -47,6 +47,81 @@ public class SecretManagerTests
     }
 
     [Fact]
+    public async Task ManagedGeneration_CannotBeChangedOrResolvedThroughGenericApis()
+    {
+        var managed = await _fixture.ManagedManager.CreateGenerationAsync("connection-1", "generation-1", "access=synthetic;refresh=synthetic");
+
+        Assert.Equal("connection-1", managed.ManagedOwnerId);
+        Assert.Equal("generation-1", managed.ManagedGenerationId);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Resolver.ResolveAsync(managed.Name));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.UpdateAsync(managed.Name, new UpdateSecretRequest { Description = "changed" }));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.RotateAsync(managed.Name, new RotateSecretRequest { Value = "replacement" }));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.RevokeAsync(managed.Name));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.DeleteAsync(managed.Name));
+
+        var testResult = await _fixture.Manager.TestAsync(managed.Name);
+        Assert.False(testResult.Succeeded);
+        Assert.Equal("Lifecycle-managed secret generations can only be accessed through their owner.", testResult.Error);
+    }
+
+    [Fact]
+    public async Task ManagedGeneration_RequiresExactOwnerAndGenerationForResolutionAndCleanup()
+    {
+        var managed = await _fixture.ManagedManager.CreateGenerationAsync("connection-1", "generation-1", "access=synthetic;refresh=synthetic");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.ManagedManager.ResolveGenerationAsync(managed.Name, "connection-2", "generation-1"));
+        Assert.False(await _fixture.ManagedManager.DeleteGenerationAsync(managed.Name, "connection-1", "generation-2"));
+        Assert.Equal("access=synthetic;refresh=synthetic", (await _fixture.ManagedManager.ResolveGenerationAsync(managed.Name, "connection-1", "generation-1")).Value);
+
+        Assert.True(await _fixture.ManagedManager.DeleteGenerationAsync(managed.Name, "connection-1", "generation-1"));
+        var deleted = await _fixture.Repository.GetAsync(managed.Name);
+        Assert.Equal(SecretStatus.Deleted, deleted!.Status);
+        Assert.Equal("connection-1", deleted.ManagedOwnerId);
+        Assert.Equal("generation-1", deleted.ManagedGenerationId);
+    }
+
+    [Fact]
+    public async Task GenericCreate_CannotReuseDeletedManagedGenerationName()
+    {
+        var managed = await _fixture.ManagedManager.CreateGenerationAsync("connection-1", "generation-1", "access=synthetic;refresh=synthetic");
+        Assert.True(await _fixture.ManagedManager.DeleteGenerationAsync(managed.Name, "connection-1", "generation-1"));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = managed.Name, Value = "generic" }));
+
+        var stored = await _fixture.Repository.GetAsync(managed.Name);
+        Assert.Equal("connection-1", stored!.ManagedOwnerId);
+        Assert.Equal("generation-1", stored.ManagedGenerationId);
+    }
+
+    [Fact]
+    public async Task ResolvePayloadAsync_UsesPersistedOwnershipMarkerInsteadOfCallerObject()
+    {
+        var managed = await _fixture.ManagedManager.CreateGenerationAsync("connection-1", "generation-1", "synthetic-token");
+        var forged = new Secret { Id = managed.Id, Name = managed.Name };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.ResolvePayloadAsync(forged));
+    }
+
+    [Fact]
+    public async Task ManagedGenerations_AreHiddenFromGenericListsAndApiModels()
+    {
+        var managed = await _fixture.ManagedManager.CreateGenerationAsync("connection-1", "generation-1", "synthetic-token");
+        await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "ordinary:secret", Value = "ordinary-value" });
+
+        var page = await _fixture.Manager.ListPageAsync(new ListSecretsRequest());
+        var count = await _fixture.Manager.CountAsync(new ListSecretsRequest());
+        var model = Elsa.Secrets.Services.SecretModelMapper.ToModel(managed);
+
+        Assert.Equal(1, count);
+        Assert.Equal("ordinary:secret", Assert.Single(page.Items).Name);
+        Assert.DoesNotContain(model.GetType().GetProperties(), x => x.Name.Contains("Managed", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(model.GetType().GetProperties(), x => x.Name.Contains("Value", StringComparison.OrdinalIgnoreCase));
+
+        var stored = await _fixture.Repository.GetAsync(managed.Name);
+        Assert.DoesNotContain("synthetic-token", System.Text.Json.JsonSerializer.Serialize(stored!.Versions.Single().Payload.Metadata));
+    }
+
+    [Fact]
     public async Task RevokeAsync_PreventsResolution()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "smtp:password", Value = "one" });

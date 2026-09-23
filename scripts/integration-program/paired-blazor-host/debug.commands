@@ -1,0 +1,11 @@
+set just-my-code 0
+break Elsa.WorkflowContexts.Endpoints.ProviderTypes.List.List.ExecuteAsync
+break WorkflowContextsEditor.razor.cs:50
+run
+backtrace
+delete 1
+continue
+backtrace
+delete 2
+continue
+quit

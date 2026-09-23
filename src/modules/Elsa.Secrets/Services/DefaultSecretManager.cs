@@ -1,6 +1,6 @@
 namespace Elsa.Secrets.Services;
 
-public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretStoreRegistry storeRegistry, ISecretTypeRegistry typeRegistry, ISecretRepository repository) : ISecretManager
+public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretStoreRegistry storeRegistry, ISecretTypeRegistry typeRegistry, ISecretRepository repository) : ISecretManager, IManagedSecretManager
 {
     public async Task<Secret> CreateAsync(CreateSecretRequest request, CancellationToken cancellationToken = default)
     {
@@ -50,6 +50,7 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
     public async Task<Secret> UpdateAsync(string name, UpdateSecretRequest request, CancellationToken cancellationToken = default)
     {
         var secret = await GetExistingAsync(name, cancellationToken);
+        EnsureNotLifecycleManaged(secret);
 
         secret.DisplayName = string.IsNullOrWhiteSpace(request.DisplayName) ? secret.Name : request.DisplayName.Trim();
         secret.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
@@ -62,6 +63,7 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
     public async Task<Secret> RotateAsync(string name, RotateSecretRequest request, CancellationToken cancellationToken = default)
     {
         var secret = await GetExistingAsync(name, cancellationToken);
+        EnsureNotLifecycleManaged(secret);
         if (secret.Status == SecretStatus.Revoked)
             throw new InvalidOperationException($"Secret '{secret.Name}' is revoked and cannot be rotated.");
 
@@ -92,6 +94,8 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
         if (secret == null)
             return null;
 
+        EnsureNotLifecycleManaged(secret);
+
         secret.Status = SecretStatus.Revoked;
         secret.UpdatedAt = DateTimeOffset.UtcNow;
         foreach (var version in secret.Versions.Where(x => x.Status == SecretStatus.Active))
@@ -107,6 +111,8 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
         if (secret == null)
             return false;
 
+        EnsureNotLifecycleManaged(secret);
+
         await storeRegistry.Get(secret.StoreName).DeleteAsync(secret, cancellationToken);
         secret.Status = SecretStatus.Deleted;
         secret.UpdatedAt = DateTimeOffset.UtcNow;
@@ -119,6 +125,7 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
         try
         {
             var secret = await GetExistingAsync(name, cancellationToken);
+            EnsureNotLifecycleManaged(secret);
             var version = GetLatestActiveVersion(secret);
             var succeeded = await storeRegistry.Get(secret.StoreName).TestAsync(secret, version, cancellationToken);
             return new SecretTestResponse { Succeeded = succeeded, Error = succeeded ? null : "Secret value is unavailable." };
@@ -153,6 +160,71 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
 
     public async Task<SecretPayload> ResolvePayloadAsync(Secret secret, CancellationToken cancellationToken = default)
     {
+        var persisted = await GetExistingAsync(secret.Name, cancellationToken);
+        if (!string.Equals(secret.Id, persisted.Id, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"Secret '{secret.Name}' was not found.");
+        }
+
+        EnsureNotLifecycleManaged(persisted);
+        return await ReadPayloadCoreAsync(persisted, cancellationToken);
+    }
+
+    public async Task<Secret> CreateGenerationAsync(string ownerId, string generationId, string value, CancellationToken cancellationToken = default)
+    {
+        ValidateManagedIdentity(ownerId, generationId);
+        var name = ManagedSecretNames.ForGeneration(ownerId, generationId);
+        if (await repository.GetAsync(nameValidator.Normalize(name), cancellationToken) != null)
+        {
+            throw new InvalidOperationException($"A secret named '{name}' already exists.");
+        }
+
+        var request = new CreateSecretRequest
+        {
+            Name = name,
+            TypeName = SecretTypeNames.Text,
+            StoreName = SecretStoreNames.Encrypted,
+            Value = value
+        };
+
+        var secret = await CreateSecretAsync(request, cancellationToken);
+        secret.ManagedOwnerId = ownerId;
+        secret.ManagedGenerationId = generationId;
+        await repository.AddAsync(secret, cancellationToken);
+        return secret;
+    }
+
+    public async Task<SecretPayload> ResolveGenerationAsync(string name, string ownerId, string generationId, CancellationToken cancellationToken = default)
+    {
+        ValidateManagedIdentity(ownerId, generationId);
+        var secret = await GetExistingAsync(name, cancellationToken);
+        EnsureManagedOwner(secret, ownerId, generationId);
+        return await ReadPayloadCoreAsync(secret, cancellationToken);
+    }
+
+    public async Task<bool> DeleteGenerationAsync(string name, string ownerId, string generationId, CancellationToken cancellationToken = default)
+    {
+        ValidateManagedIdentity(ownerId, generationId);
+        // Read the repository directly so a retry after process loss can recognize its own tombstone. The
+        // public GetAsync intentionally hides deleted secrets, while immutable managed-generation identities
+        // must remain unavailable for recreation after cleanup.
+        var secret = await repository.GetAsync(nameValidator.Normalize(name), cancellationToken);
+        if (secret == null || !HasManagedOwner(secret, ownerId, generationId))
+        {
+            return false;
+        }
+
+        if (secret.Status == SecretStatus.Deleted)
+        {
+            return true;
+        }
+
+        await DeleteGenerationAsync(secret, cancellationToken);
+        return true;
+    }
+
+    private async Task<SecretPayload> ReadPayloadCoreAsync(Secret secret, CancellationToken cancellationToken)
+    {
         var version = GetLatestActiveVersion(secret);
         var store = storeRegistry.Get(secret.StoreName);
         var payload = await store.ReadAsync(secret, version, cancellationToken);
@@ -161,6 +233,14 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
             throw new InvalidOperationException($"Secret '{secret.Name}' could not be resolved.");
 
         return payload;
+    }
+
+    private async Task DeleteGenerationAsync(Secret secret, CancellationToken cancellationToken)
+    {
+        await storeRegistry.Get(secret.StoreName).DeleteAsync(secret, cancellationToken);
+        secret.Status = SecretStatus.Deleted;
+        secret.UpdatedAt = DateTimeOffset.UtcNow;
+        await repository.SaveAsync(secret, cancellationToken);
     }
 
     private async Task<Secret> CreateSecretAsync(CreateSecretRequest request, CancellationToken cancellationToken)
@@ -219,9 +299,39 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
             throw new InvalidOperationException($"Secret store '{store.Name}' does not support writing secrets.");
     }
 
+    private static void EnsureNotLifecycleManaged(Secret secret)
+    {
+        if (secret.IsLifecycleManaged)
+        {
+            throw new InvalidOperationException("Lifecycle-managed secret generations can only be accessed through their owner.");
+        }
+    }
+
+    private static void EnsureManagedOwner(Secret secret, string ownerId, string generationId)
+    {
+        if (!HasManagedOwner(secret, ownerId, generationId))
+        {
+            throw new InvalidOperationException("Managed credential generation is unavailable.");
+        }
+    }
+
+    private static bool HasManagedOwner(Secret secret, string ownerId, string generationId)
+    {
+        return string.Equals(secret.ManagedOwnerId, ownerId, StringComparison.Ordinal) &&
+               string.Equals(secret.ManagedGenerationId, generationId, StringComparison.Ordinal);
+    }
+
+    private static void ValidateManagedIdentity(string ownerId, string generationId)
+    {
+        if (string.IsNullOrWhiteSpace(ownerId) || ownerId.Length > 200 || string.IsNullOrWhiteSpace(generationId) || generationId.Length > 200)
+        {
+            throw new ArgumentException("A valid owner and generation identifier are required.");
+        }
+    }
+
     private static IEnumerable<Secret> ApplyFilters(IEnumerable<Secret> secrets, ListSecretsRequest request)
     {
-        var query = secrets.Where(x => x.Status != SecretStatus.Deleted);
+        var query = secrets.Where(x => x.Status != SecretStatus.Deleted && !x.IsLifecycleManaged);
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {

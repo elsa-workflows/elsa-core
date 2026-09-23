@@ -99,8 +99,10 @@ public class InMemorySecretRepository : ISecretRepository
             var existing = FindVisible(secret.Name);
             if (existing is not null)
             {
-                if (existing.Status != SecretStatus.Deleted || !SecretRepositoryTenant.CanReplace(existing, secret, tenantAccessor, tenancyEnabled))
+                if (existing.IsLifecycleManaged || existing.Status != SecretStatus.Deleted || !SecretRepositoryTenant.CanReplace(existing, secret, tenantAccessor, tenancyEnabled))
+                {
                     return Task.FromResult(false);
+                }
 
                 var replacement = Clone(secret);
                 if (tenancyEnabled)
@@ -143,6 +145,8 @@ public class InMemorySecretRepository : ISecretRepository
                 // EF updates the row found by name, retaining its primary key and tenant ownership.
                 var replacement = Clone(secret);
                 replacement.Id = existing.Id;
+                replacement.ManagedOwnerId = existing.ManagedOwnerId;
+                replacement.ManagedGenerationId = existing.ManagedGenerationId;
 
                 if (tenancyEnabled)
                     replacement.TenantId = existing.TenantId;
@@ -182,6 +186,8 @@ public class InMemorySecretRepository : ISecretRepository
             TypeName = secret.TypeName,
             StoreName = secret.StoreName,
             Scope = secret.Scope,
+            ManagedOwnerId = secret.ManagedOwnerId,
+            ManagedGenerationId = secret.ManagedGenerationId,
             Tags = secret.Tags.ToHashSet(StringComparer.OrdinalIgnoreCase),
             Status = secret.Status,
             CreatedAt = secret.CreatedAt,

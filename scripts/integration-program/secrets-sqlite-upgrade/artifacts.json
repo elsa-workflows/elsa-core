@@ -1,0 +1,37 @@
+{
+  "targetFramework": "net10.0",
+  "phases": {
+    "extensions-3.8.1": {
+      "repository": "https://github.com/elsa-workflows/elsa-extensions",
+      "sourceCommit": "01bf9ad70d0399afadae9609fe820703d3de290d",
+      "packages": [
+        {
+          "id": "Elsa.Secrets.Persistence.EFCore",
+          "version": "3.8.1",
+          "sha512": "00ffb499bb1164fb740c28bf669aaf26cf37e891dded5a5e88a33d41a48a6c9c8b1118554770fb12657c91e4307cc53cf72637c3e2c0dccd878610e6b11dd803"
+        },
+        {
+          "id": "Elsa.Secrets.Persistence.EFCore.Sqlite",
+          "version": "3.8.1",
+          "sha512": "59b1c1972082b2e5b453aabcac11634c2ce97307667a1797839bd2e186ee63d70536ca9870b8e927688f7eecac18a054615ef45997964b43f34e3b7df21eaff5"
+        }
+      ]
+    },
+    "core-3.8.4": {
+      "repository": "https://github.com/elsa-workflows/elsa-core",
+      "sourceCommit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+      "packages": [
+        {
+          "id": "Elsa.Secrets.Persistence.EFCore",
+          "version": "3.8.4",
+          "sha512": "1c6855fcd9785db2f7c90f17bc75817c78db9a5bf630d5eb0ddfaa0c383b7ad1a3d64866e392dbabcfb762267a40e21fa564b112dfd9f4c9502c3c3bed92aeb8"
+        },
+        {
+          "id": "Elsa.Secrets.Persistence.EFCore.Sqlite",
+          "version": "3.8.4",
+          "sha512": "44a62f88de8de4ae7fb35de460ad449c9f300ff44bb34d8842b8734582b581f003687423696cef2dc5eed9c24d8b4f61b42b304b7659c5ad6c2f122399eaa9b1"
+        }
+      ]
+    }
+  }
+}
