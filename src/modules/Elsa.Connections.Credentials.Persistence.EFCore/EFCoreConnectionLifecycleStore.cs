@@ -50,10 +50,20 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
         }
 
         var rows = await Scoped(db, connectionId, tenantId, environmentId)
-            .Where(x => x.Revision == expectedRevision && x.CurrentGenerationId != generationId &&
-                        (x.OperationStatus == CredentialOperationStatus.None || x.OperationStatus == CredentialOperationStatus.Completed ||
-                         (x.OperationSourceGenerationId != generationId && x.PlannedGenerationId != generationId && x.StagedGenerationId != generationId)))
-            .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.Revision, x => x.Revision + 1), cancellationToken);
+            .Where(x => x.Revision == expectedRevision &&
+                        (x.CurrentGenerationId != generationId &&
+                         (x.OperationStatus == CredentialOperationStatus.None || x.OperationStatus == CredentialOperationStatus.Completed ||
+                          (x.OperationSourceGenerationId != generationId && x.PlannedGenerationId != generationId && x.StagedGenerationId != generationId)) ||
+                         (x.Status == ConnectionStatus.Disconnected && x.CurrentGenerationId == generationId &&
+                          (x.OperationStatus == CredentialOperationStatus.None || x.OperationStatus == CredentialOperationStatus.Completed))) &&
+                        !db.OffboardingOperations.Any(operation => operation.ConnectionId == connectionId && operation.TenantId == tenantId &&
+                            operation.EnvironmentId == environmentId && operation.GenerationId == generationId &&
+                            operation.Status != ConnectionOffboardingOperationStatus.Completed &&
+                            operation.Status != ConnectionOffboardingOperationStatus.TerminalFailure))
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.CurrentSecretName, x => x.CurrentGenerationId == generationId ? null : x.CurrentSecretName)
+                .SetProperty(x => x.CurrentGenerationId, x => x.CurrentGenerationId == generationId ? null : x.CurrentGenerationId)
+                .SetProperty(x => x.Revision, x => x.Revision + 1), cancellationToken);
 
         if (rows != 1)
         {
@@ -94,6 +104,280 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return cleanup;
+    }
+
+    public async Task<IntegrationConnection?> TryDisconnectAndRecordAsync(
+        string id,
+        string tenantId,
+        string environmentId,
+        long expectedRevision,
+        ConnectionOffboardingOperation operation,
+        CancellationToken cancellationToken = default)
+    {
+        if (expectedRevision == long.MaxValue)
+        {
+            return null;
+        }
+
+        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        var rows = await Scoped(db, id, tenantId, environmentId)
+            .Where(x => x.Revision == expectedRevision &&
+                        (x.Status == ConnectionStatus.Active || x.Status == ConnectionStatus.RecoveryRequired || x.Status == ConnectionStatus.Disconnected) &&
+                        !db.OffboardingOperations.Any(existing => existing.Id == operation.Id && existing.TenantId == tenantId &&
+                            existing.EnvironmentId == environmentId && existing.ConnectionId == id))
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.Status, ConnectionStatus.Disconnected)
+                .SetProperty(x => x.Revision, x => x.Revision + 1), cancellationToken);
+        if (rows != 1)
+        {
+            var existing = await db.OffboardingOperations.AsNoTracking()
+                .SingleOrDefaultAsync(x => x.Id == operation.Id && x.TenantId == tenantId && x.EnvironmentId == environmentId && x.ConnectionId == id, cancellationToken);
+            if (existing == null)
+            {
+                return null;
+            }
+
+            return await Scoped(db, id, tenantId, environmentId).AsNoTracking().SingleOrDefaultAsync(cancellationToken);
+        }
+
+        db.OffboardingOperations.Add(operation);
+        await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return await Scoped(db, id, tenantId, environmentId).AsNoTracking().SingleOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<ConnectionOffboardingOperation?> FindOffboardingOperationAsync(
+        string operationId,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await db.OffboardingOperations.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.Id == operationId && x.TenantId == tenantId && x.EnvironmentId == environmentId &&
+                                       x.ConnectionId == connectionId, cancellationToken);
+    }
+
+    public async Task<ConnectionOffboardingOperation?> FindNextOffboardingOperationAsync(
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        DateTimeOffset now,
+        bool stableRevocationIdIdempotency,
+        bool stableUninstallIdIdempotency,
+        CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await db.OffboardingOperations.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.EnvironmentId == environmentId && x.ConnectionId == connectionId &&
+                        x.Kind != ConnectionOffboardingOperationKind.LocalDisconnect &&
+                        (x.Status == ConnectionOffboardingOperationStatus.Pending ||
+                         (x.Status == ConnectionOffboardingOperationStatus.RetryScheduled &&
+                          (x.NextAttemptAt == null || x.NextAttemptAt <= now)) ||
+                         (x.Status == ConnectionOffboardingOperationStatus.UnknownOutcome &&
+                          ((x.Kind == ConnectionOffboardingOperationKind.TokenPairRevocation &&
+                            (!stableRevocationIdIdempotency || x.NextAttemptAt == null || x.NextAttemptAt <= now)) ||
+                           (x.Kind == ConnectionOffboardingOperationKind.InstallationUninstall &&
+                            (!stableUninstallIdIdempotency || x.NextAttemptAt == null || x.NextAttemptAt <= now)))) ||
+                         ((x.Status == ConnectionOffboardingOperationStatus.Claimed || x.Status == ConnectionOffboardingOperationStatus.ProviderCallStarted) &&
+                          x.LeaseExpiresAt != null && x.LeaseExpiresAt <= now)))
+            .OrderBy(x => x.Status == ConnectionOffboardingOperationStatus.UnknownOutcome || x.Status == ConnectionOffboardingOperationStatus.ProviderCallStarted ? 1 : 0)
+            .ThenBy(x => x.CreatedAt)
+            .ThenBy(x => x.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<ConnectionOffboardingOperation?> TryQueueOffboardingOperationAsync(
+        long expectedConnectionRevision,
+        ConnectionOffboardingOperation operation,
+        CancellationToken cancellationToken = default)
+    {
+        if (expectedConnectionRevision == long.MaxValue)
+        {
+            return null;
+        }
+
+        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        var rows = await Scoped(db, operation.ConnectionId, operation.TenantId, operation.EnvironmentId)
+            .Where(x => x.Revision == expectedConnectionRevision && x.Status == ConnectionStatus.Disconnected &&
+                        (x.OperationStatus == CredentialOperationStatus.None || x.OperationStatus == CredentialOperationStatus.Completed) &&
+                        !db.OffboardingOperations.Any(existing => existing.Id == operation.Id && existing.TenantId == operation.TenantId &&
+                            existing.EnvironmentId == operation.EnvironmentId && existing.ConnectionId == operation.ConnectionId) &&
+                        (operation.GenerationId == null || !db.GenerationCleanups.Any(cleanup =>
+                            cleanup.ConnectionId == operation.ConnectionId && cleanup.TenantId == operation.TenantId &&
+                            cleanup.EnvironmentId == operation.EnvironmentId && cleanup.GenerationId == operation.GenerationId)))
+            .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.Revision, x => x.Revision + 1), cancellationToken);
+        if (rows != 1)
+        {
+            return await db.OffboardingOperations.AsNoTracking()
+                .SingleOrDefaultAsync(x => x.Id == operation.Id && x.TenantId == operation.TenantId &&
+                                           x.EnvironmentId == operation.EnvironmentId && x.ConnectionId == operation.ConnectionId, cancellationToken);
+        }
+
+        db.OffboardingOperations.Add(operation);
+        await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return operation;
+    }
+
+    public async Task<ConnectionOffboardingOperation?> TryClaimOffboardingOperationAsync(
+        string operationId,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        long expectedFence,
+        DateTimeOffset now,
+        DateTimeOffset leaseExpiresAt,
+        CancellationToken cancellationToken = default)
+    {
+        if (expectedFence == long.MaxValue)
+        {
+            return null;
+        }
+
+        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        var rows = await db.OffboardingOperations
+            .Where(x => x.Id == operationId && x.TenantId == tenantId && x.EnvironmentId == environmentId &&
+                        x.ConnectionId == connectionId && x.Fence == expectedFence &&
+                        (x.Status == ConnectionOffboardingOperationStatus.Pending ||
+                         ((x.Status == ConnectionOffboardingOperationStatus.RetryScheduled || x.Status == ConnectionOffboardingOperationStatus.UnknownOutcome) &&
+                          (x.NextAttemptAt == null || x.NextAttemptAt <= now)) ||
+                         ((x.Status == ConnectionOffboardingOperationStatus.Claimed || x.Status == ConnectionOffboardingOperationStatus.ProviderCallStarted) &&
+                          x.LeaseExpiresAt != null && x.LeaseExpiresAt <= now)))
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.Status, ConnectionOffboardingOperationStatus.Claimed)
+                .SetProperty(x => x.Fence, x => x.Fence + 1)
+                .SetProperty(x => x.AttemptCount, x => x.AttemptCount + 1)
+                .SetProperty(x => x.UpdatedAt, now)
+                .SetProperty(x => x.NextAttemptAt, (DateTimeOffset?)null)
+                .SetProperty(x => x.LeaseExpiresAt, leaseExpiresAt), cancellationToken);
+        if (rows != 1)
+        {
+            return null;
+        }
+
+        return await db.OffboardingOperations.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.Id == operationId && x.TenantId == tenantId && x.EnvironmentId == environmentId &&
+                                       x.ConnectionId == connectionId && x.Fence == expectedFence + 1, cancellationToken);
+    }
+
+    public async Task<bool> TryStartOffboardingProviderCallAsync(
+        string operationId,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        long fence,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await db.OffboardingOperations
+            .Where(x => x.Id == operationId && x.TenantId == tenantId && x.EnvironmentId == environmentId &&
+                        x.ConnectionId == connectionId && x.Fence == fence && x.Status == ConnectionOffboardingOperationStatus.Claimed &&
+                        x.LeaseExpiresAt != null && x.LeaseExpiresAt > now)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.Status, ConnectionOffboardingOperationStatus.ProviderCallStarted)
+                .SetProperty(x => x.UpdatedAt, now), cancellationToken) == 1;
+    }
+
+    public async Task<bool> TryMarkOffboardingOutcomeUnknownIfLeaseExpiredAsync(
+        string operationId,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        long fence,
+        DateTimeOffset now,
+        string safeErrorCode,
+        CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await db.OffboardingOperations
+            .Where(x => x.Id == operationId && x.TenantId == tenantId && x.EnvironmentId == environmentId &&
+                        x.ConnectionId == connectionId && x.Fence == fence &&
+                        x.Status == ConnectionOffboardingOperationStatus.ProviderCallStarted &&
+                        x.LeaseExpiresAt != null && x.LeaseExpiresAt <= now)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.Status, ConnectionOffboardingOperationStatus.UnknownOutcome)
+                .SetProperty(x => x.UpdatedAt, now)
+                .SetProperty(x => x.NextAttemptAt, (DateTimeOffset?)null)
+                .SetProperty(x => x.LeaseExpiresAt, (DateTimeOffset?)null)
+                .SetProperty(x => x.LastSafeErrorCode, safeErrorCode), cancellationToken) == 1;
+    }
+
+    public async Task<bool> TryReleaseOffboardingClaimAsync(
+        string operationId,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        long fence,
+        DateTimeOffset updatedAt,
+        DateTimeOffset nextAttemptAt,
+        string safeErrorCode,
+        CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await db.OffboardingOperations
+            .Where(x => x.Id == operationId && x.TenantId == tenantId && x.EnvironmentId == environmentId &&
+                        x.ConnectionId == connectionId && x.Fence == fence && x.Status == ConnectionOffboardingOperationStatus.Claimed)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.Status, ConnectionOffboardingOperationStatus.RetryScheduled)
+                .SetProperty(x => x.UpdatedAt, updatedAt)
+                .SetProperty(x => x.NextAttemptAt, nextAttemptAt)
+                .SetProperty(x => x.LeaseExpiresAt, (DateTimeOffset?)null)
+                .SetProperty(x => x.LastSafeErrorCode, safeErrorCode), cancellationToken) == 1;
+    }
+
+    public async Task<bool> TryCompleteOffboardingOperationAsync(
+        string operationId,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        long fence,
+        DateTimeOffset completedAt,
+        CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await db.OffboardingOperations
+            .Where(x => x.Id == operationId && x.TenantId == tenantId && x.EnvironmentId == environmentId &&
+                        x.ConnectionId == connectionId && x.Fence == fence && x.Status == ConnectionOffboardingOperationStatus.ProviderCallStarted)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.Status, ConnectionOffboardingOperationStatus.Completed)
+                .SetProperty(x => x.UpdatedAt, completedAt)
+                .SetProperty(x => x.LeaseExpiresAt, (DateTimeOffset?)null)
+                .SetProperty(x => x.NextAttemptAt, (DateTimeOffset?)null)
+                .SetProperty(x => x.LastSafeErrorCode, (string?)null), cancellationToken) == 1;
+    }
+
+    public async Task<bool> TryRecordOffboardingFailureAsync(
+        string operationId,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        long fence,
+        ConnectionOffboardingOperationStatus status,
+        DateTimeOffset updatedAt,
+        DateTimeOffset? nextAttemptAt,
+        string safeErrorCode,
+        CancellationToken cancellationToken = default)
+    {
+        if (status is not (ConnectionOffboardingOperationStatus.RetryScheduled or ConnectionOffboardingOperationStatus.UnknownOutcome or ConnectionOffboardingOperationStatus.TerminalFailure))
+        {
+            throw new ArgumentOutOfRangeException(nameof(status));
+        }
+
+        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await db.OffboardingOperations
+            .Where(x => x.Id == operationId && x.TenantId == tenantId && x.EnvironmentId == environmentId &&
+                        x.ConnectionId == connectionId && x.Fence == fence && x.Status == ConnectionOffboardingOperationStatus.ProviderCallStarted)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.Status, status)
+                .SetProperty(x => x.UpdatedAt, updatedAt)
+                .SetProperty(x => x.NextAttemptAt, nextAttemptAt)
+                .SetProperty(x => x.LeaseExpiresAt, (DateTimeOffset?)null)
+                .SetProperty(x => x.LastSafeErrorCode, safeErrorCode), cancellationToken) == 1;
     }
 
     public async Task<bool> CompleteGenerationCleanupAsync(string connectionId, string tenantId, string environmentId, string generationId, long fence, CancellationToken cancellationToken = default)

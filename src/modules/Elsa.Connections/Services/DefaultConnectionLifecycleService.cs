@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Elsa.Common.Multitenancy;
 using Elsa.Connections.Contracts;
@@ -15,7 +17,8 @@ public sealed class DefaultConnectionLifecycleService(
     IConnectionCredentialProvider provider,
     IManagedSecretManager secrets,
     TimeProvider timeProvider,
-    ITenantAccessor tenantAccessor) : IConnectionLifecycleService, IConnectionBackgroundUseService, IConnectionLifecycleRecoveryService
+    ITenantAccessor tenantAccessor,
+    IConnectionOffboardingProvider? offboardingProvider = null) : IConnectionLifecycleService, IConnectionBackgroundUseService, IConnectionLifecycleRecoveryService
 {
     private static readonly TimeSpan OperationLeaseDuration = TimeSpan.FromMinutes(2);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -150,7 +153,239 @@ public sealed class DefaultConnectionLifecycleService(
             throw new ConnectionUnavailableException();
         }
 
+        var latest = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+        if (latest == null || latest.Status != ConnectionStatus.Active ||
+            latest.Revision != connection.Revision || latest.CurrentGenerationId != connection.CurrentGenerationId ||
+            latest.CurrentSecretName != connection.CurrentSecretName ||
+            latest.OperationStatus is not (CredentialOperationStatus.None or CredentialOperationStatus.Completed))
+        {
+            throw new ConnectionUnavailableException();
+        }
+
         return new ConnectionAccessCredential(material.AccessToken, material.AccessTokenExpiresAt);
+    }
+
+    public async Task<ConnectionOffboardingOperationResult> DisconnectAsync(
+        ClaimsPrincipal principal,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await AuthorizeAsync(principal, ConnectionUseKind.Human, tenantId, environmentId, connectionId, "manage:disconnect", cancellationToken))
+        {
+            return new ConnectionOffboardingOperationResult(false, "connection_unavailable", null, null, null);
+        }
+
+        using var tenantContext = PushTenant(tenantId);
+        var connection = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+        if (connection == null)
+        {
+            return new ConnectionOffboardingOperationResult(false, "connection_unavailable", null, null, null);
+        }
+
+        var operationId = GetOffboardingOperationId(tenantId, environmentId, connectionId, ConnectionOffboardingOperationKind.LocalDisconnect, null);
+        var existing = await store.FindOffboardingOperationAsync(operationId, tenantId, environmentId, connectionId, cancellationToken);
+        if (existing != null)
+        {
+            return new ConnectionOffboardingOperationResult(true, null, operationId, existing.Status, connection.Revision);
+        }
+
+        var now = timeProvider.GetUtcNow();
+        var operation = new ConnectionOffboardingOperation
+        {
+            Id = operationId,
+            TenantId = tenantId,
+            EnvironmentId = environmentId,
+            ConnectionId = connectionId,
+            ProviderId = connection.ProviderId,
+            ProviderAccountId = connection.ProviderAccountId,
+            Kind = ConnectionOffboardingOperationKind.LocalDisconnect,
+            Status = ConnectionOffboardingOperationStatus.Completed,
+            Fence = 1,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+        var disconnected = await store.TryDisconnectAndRecordAsync(connectionId, tenantId, environmentId, connection.Revision, operation, cancellationToken);
+        if (disconnected != null)
+        {
+            return new ConnectionOffboardingOperationResult(true, null, operationId, operation.Status, disconnected.Revision);
+        }
+
+        var latestOperation = await store.FindOffboardingOperationAsync(operationId, tenantId, environmentId, connectionId, cancellationToken);
+        var latestConnection = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+        return latestOperation != null && latestConnection != null
+            ? new ConnectionOffboardingOperationResult(true, null, operationId, latestOperation.Status, latestConnection.Revision)
+            : new ConnectionOffboardingOperationResult(false, "connection_conflict", operationId, null, latestConnection?.Revision);
+    }
+
+    public async Task<ConnectionOffboardingOperationResult> RequestTokenRevocationAsync(
+        ClaimsPrincipal principal,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        string generationId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await AuthorizeAsync(principal, ConnectionUseKind.Human, tenantId, environmentId, connectionId, "manage:revoke", cancellationToken))
+        {
+            return new ConnectionOffboardingOperationResult(false, "connection_unavailable", null, null, null);
+        }
+
+        return await QueueOffboardingOperationAsync(tenantId, environmentId, connectionId,
+            ConnectionOffboardingOperationKind.TokenPairRevocation, generationId, cancellationToken);
+    }
+
+    public async Task<ConnectionOffboardingOperationResult> RequestInstallationUninstallAsync(
+        ClaimsPrincipal principal,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await AuthorizeAsync(principal, ConnectionUseKind.Human, tenantId, environmentId, connectionId, "manage:uninstall", cancellationToken))
+        {
+            return new ConnectionOffboardingOperationResult(false, "connection_unavailable", null, null, null);
+        }
+
+        return await QueueOffboardingOperationAsync(tenantId, environmentId, connectionId,
+            ConnectionOffboardingOperationKind.InstallationUninstall, null, cancellationToken);
+    }
+
+    public async Task<ConnectionOffboardingOperationResult> ReconcileOffboardingAsync(
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await AuthorizeAsync(SystemPrincipal, ConnectionUseKind.BackgroundSystem, tenantId, environmentId, connectionId, "manage:reconcile", cancellationToken))
+        {
+            return new ConnectionOffboardingOperationResult(false, "connection_unavailable", null, null, null);
+        }
+
+        using var tenantContext = PushTenant(tenantId);
+        var now = timeProvider.GetUtcNow();
+        var stableRevocationIdempotency = offboardingProvider?.SupportsStableOperationIdIdempotency(ConnectionOffboardingOperationKind.TokenPairRevocation) == true;
+        var stableUninstallIdempotency = offboardingProvider?.SupportsStableOperationIdIdempotency(ConnectionOffboardingOperationKind.InstallationUninstall) == true;
+        var pending = await store.FindNextOffboardingOperationAsync(
+            tenantId, environmentId, connectionId, now, stableRevocationIdempotency, stableUninstallIdempotency, cancellationToken);
+        if (pending == null)
+        {
+            var current = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+            return new ConnectionOffboardingOperationResult(true, null, null, null, current?.Revision);
+        }
+
+        var supportsStableIdempotency = offboardingProvider?.SupportsStableOperationIdIdempotency(pending.Kind) == true;
+
+        if (!supportsStableIdempotency && pending.Status == ConnectionOffboardingOperationStatus.UnknownOutcome)
+        {
+            return await GetOffboardingResultAsync(pending.Id, tenantId, environmentId, connectionId, false,
+                "offboarding_outcome_unknown", cancellationToken);
+        }
+
+        if (!supportsStableIdempotency && pending.Status == ConnectionOffboardingOperationStatus.ProviderCallStarted &&
+            pending.LeaseExpiresAt <= now)
+        {
+            await store.TryMarkOffboardingOutcomeUnknownIfLeaseExpiredAsync(pending.Id, tenantId, environmentId, connectionId,
+                pending.Fence, now, "provider_outcome_unknown", CancellationToken.None);
+            return await GetOffboardingResultAsync(pending.Id, tenantId, environmentId, connectionId, false,
+                "offboarding_outcome_unknown", cancellationToken);
+        }
+
+        var claimed = await store.TryClaimOffboardingOperationAsync(
+            pending.Id, tenantId, environmentId, connectionId, pending.Fence, now, now + OperationLeaseDuration, cancellationToken);
+        if (claimed == null)
+        {
+            return await GetOffboardingResultAsync(pending.Id, tenantId, environmentId, connectionId, false, "offboarding_conflict", cancellationToken);
+        }
+
+        if (offboardingProvider == null)
+        {
+            await ReleaseOffboardingClaimAsync(claimed, tenantId, environmentId, connectionId, "offboarding_provider_unavailable");
+            return await GetOffboardingResultAsync(claimed.Id, tenantId, environmentId, connectionId, false, "offboarding_provider_unavailable", cancellationToken);
+        }
+
+        CredentialMaterial? credentials = null;
+        if (claimed.Kind == ConnectionOffboardingOperationKind.TokenPairRevocation)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(claimed.GenerationId))
+                {
+                    throw new ConnectionUnavailableException();
+                }
+
+                var secretName = ManagedSecretNames.ForGeneration(connectionId, claimed.GenerationId);
+                var payload = await secrets.ResolveGenerationAsync(secretName, connectionId, claimed.GenerationId, cancellationToken);
+                credentials = Deserialize(payload.Value);
+                if (credentials == null)
+                {
+                    throw new ConnectionUnavailableException();
+                }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                await ReleaseOffboardingClaimAsync(claimed, tenantId, environmentId, connectionId, "offboarding_cancelled_before_call");
+                throw new OperationCanceledException("Credential offboarding was cancelled before the provider call.", cancellationToken);
+            }
+            catch (Exception)
+            {
+                await ReleaseOffboardingClaimAsync(claimed, tenantId, environmentId, connectionId, "credential_unavailable");
+                return await GetOffboardingResultAsync(claimed.Id, tenantId, environmentId, connectionId, false, "credential_unavailable", cancellationToken);
+            }
+        }
+
+        now = timeProvider.GetUtcNow();
+        if (!await store.TryStartOffboardingProviderCallAsync(claimed.Id, tenantId, environmentId, connectionId, claimed.Fence, now, cancellationToken))
+        {
+            await ReleaseOffboardingClaimAsync(claimed, tenantId, environmentId, connectionId, "offboarding_conflict");
+            return await GetOffboardingResultAsync(claimed.Id, tenantId, environmentId, connectionId, false, "offboarding_conflict", cancellationToken);
+        }
+
+        try
+        {
+            var providerResult = claimed.Kind switch
+            {
+                ConnectionOffboardingOperationKind.TokenPairRevocation when credentials != null =>
+                    await offboardingProvider.RevokeTokenPairAsync(claimed.ProviderId, claimed.ProviderAccountId, claimed.Id, credentials, cancellationToken),
+                ConnectionOffboardingOperationKind.InstallationUninstall =>
+                    await offboardingProvider.UninstallInstallationAsync(claimed.ProviderId, claimed.ProviderAccountId, claimed.Id, cancellationToken),
+                _ => ConnectionOffboardingProviderResult.TerminalFailure
+            };
+
+            now = timeProvider.GetUtcNow();
+            switch (providerResult)
+            {
+                case ConnectionOffboardingProviderResult.Succeeded:
+                    await store.TryCompleteOffboardingOperationAsync(claimed.Id, tenantId, environmentId, connectionId, claimed.Fence, now, cancellationToken);
+                    break;
+                case ConnectionOffboardingProviderResult.RetryableFailure:
+                    await RecordOffboardingFailureAsync(claimed, tenantId, environmentId, connectionId,
+                        ConnectionOffboardingOperationStatus.RetryScheduled, "provider_retryable_failure");
+                    break;
+                case ConnectionOffboardingProviderResult.TerminalFailure:
+                    await RecordOffboardingFailureAsync(claimed, tenantId, environmentId, connectionId,
+                        ConnectionOffboardingOperationStatus.TerminalFailure, "provider_terminal_failure");
+                    break;
+                case ConnectionOffboardingProviderResult.UnknownOutcome:
+                    await RecordOffboardingFailureAsync(claimed, tenantId, environmentId, connectionId,
+                        ConnectionOffboardingOperationStatus.UnknownOutcome, "provider_outcome_unknown", supportsStableIdempotency);
+                    break;
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            await RecordOffboardingFailureAsync(claimed, tenantId, environmentId, connectionId,
+                ConnectionOffboardingOperationStatus.UnknownOutcome, "provider_outcome_unknown", supportsStableIdempotency);
+            throw new OperationCanceledException("Credential offboarding was cancelled; provider outcome is unknown.", cancellationToken);
+        }
+        catch (Exception)
+        {
+            await RecordOffboardingFailureAsync(claimed, tenantId, environmentId, connectionId,
+                ConnectionOffboardingOperationStatus.UnknownOutcome, "provider_outcome_unknown", supportsStableIdempotency);
+        }
+
+        return await GetOffboardingResultAsync(claimed.Id, tenantId, environmentId, connectionId, true, null, cancellationToken);
     }
 
     public async Task<ConnectionLifecycleResult> RefreshAsync(ClaimsPrincipal principal, string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken = default)
@@ -423,6 +658,161 @@ public sealed class DefaultConnectionLifecycleService(
 
     private async Task<bool> AuthorizeAsync(ClaimsPrincipal principal, ConnectionUseKind kind, string tenantId, string environmentId, string connectionId, string purpose, CancellationToken cancellationToken) =>
         await authorizer.AuthorizeAsync(new ConnectionUseRequest(principal, kind, tenantId, environmentId, connectionId, purpose), cancellationToken);
+
+    private async Task<ConnectionOffboardingOperationResult> QueueOffboardingOperationAsync(
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        ConnectionOffboardingOperationKind kind,
+        string? generationId,
+        CancellationToken cancellationToken)
+    {
+        if (kind == ConnectionOffboardingOperationKind.TokenPairRevocation && string.IsNullOrWhiteSpace(generationId) ||
+            kind == ConnectionOffboardingOperationKind.InstallationUninstall && generationId != null)
+        {
+            return new ConnectionOffboardingOperationResult(false, "connection_unavailable", null, null, null);
+        }
+
+        using var tenantContext = PushTenant(tenantId);
+        var connection = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+        if (connection is not { Status: ConnectionStatus.Disconnected } ||
+            connection.OperationStatus is not (CredentialOperationStatus.None or CredentialOperationStatus.Completed))
+        {
+            return new ConnectionOffboardingOperationResult(false, "connection_unavailable", null, null, connection?.Revision);
+        }
+
+        var operationId = GetOffboardingOperationId(tenantId, environmentId, connectionId, kind, generationId);
+        var existing = await store.FindOffboardingOperationAsync(operationId, tenantId, environmentId, connectionId, cancellationToken);
+        if (existing != null)
+        {
+            return new ConnectionOffboardingOperationResult(true, null, operationId, existing.Status, connection.Revision);
+        }
+
+        if (kind == ConnectionOffboardingOperationKind.TokenPairRevocation)
+        {
+            try
+            {
+                var payload = await secrets.ResolveGenerationAsync(ManagedSecretNames.ForGeneration(connectionId, generationId!), connectionId, generationId!, cancellationToken);
+                if (Deserialize(payload.Value) == null)
+                {
+                    throw new ConnectionUnavailableException();
+                }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                return new ConnectionOffboardingOperationResult(false, "connection_unavailable", null, null, connection.Revision);
+            }
+        }
+
+        var now = timeProvider.GetUtcNow();
+        var operation = new ConnectionOffboardingOperation
+        {
+            Id = operationId,
+            TenantId = tenantId,
+            EnvironmentId = environmentId,
+            ConnectionId = connectionId,
+            ProviderId = connection.ProviderId,
+            ProviderAccountId = connection.ProviderAccountId,
+            Kind = kind,
+            GenerationId = generationId,
+            Status = ConnectionOffboardingOperationStatus.Pending,
+            Fence = 1,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        var queued = await store.TryQueueOffboardingOperationAsync(connection.Revision, operation, cancellationToken);
+        if (queued != null)
+        {
+            return new ConnectionOffboardingOperationResult(true, null, operationId, queued.Status, connection.Revision + 1);
+        }
+
+        var latestOperation = await store.FindOffboardingOperationAsync(operationId, tenantId, environmentId, connectionId, cancellationToken);
+        var latestConnection = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+        return latestOperation != null && latestConnection != null
+            ? new ConnectionOffboardingOperationResult(true, null, operationId, latestOperation.Status, latestConnection.Revision)
+            : new ConnectionOffboardingOperationResult(false, "connection_conflict", operationId, null, latestConnection?.Revision);
+    }
+
+    private async Task<ConnectionOffboardingOperationResult> GetOffboardingResultAsync(
+        string operationId,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        bool accepted,
+        string? safeErrorCode,
+        CancellationToken cancellationToken)
+    {
+        var operation = await store.FindOffboardingOperationAsync(operationId, tenantId, environmentId, connectionId, cancellationToken);
+        var connection = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+        return new ConnectionOffboardingOperationResult(accepted, safeErrorCode, operation?.Id, operation?.Status, connection?.Revision);
+    }
+
+    private async Task ReleaseOffboardingClaimAsync(
+        ConnectionOffboardingOperation operation,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        string safeErrorCode)
+    {
+        var now = timeProvider.GetUtcNow();
+        try
+        {
+            await store.TryReleaseOffboardingClaimAsync(operation.Id, tenantId, environmentId, connectionId, operation.Fence,
+                now, now + TimeSpan.FromSeconds(30), safeErrorCode, CancellationToken.None);
+        }
+        catch (Exception)
+        {
+            // An expired claim is safe to retry; the provider-call state is never advanced here.
+        }
+    }
+
+    private async Task RecordOffboardingFailureAsync(
+        ConnectionOffboardingOperation operation,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        ConnectionOffboardingOperationStatus status,
+        string safeErrorCode,
+        bool supportsStableIdempotency = true)
+    {
+        var now = timeProvider.GetUtcNow();
+        DateTimeOffset? nextAttemptAt = status == ConnectionOffboardingOperationStatus.RetryScheduled ||
+                            status == ConnectionOffboardingOperationStatus.UnknownOutcome && supportsStableIdempotency
+            ? now + TimeSpan.FromSeconds(30)
+            : null;
+        try
+        {
+            await store.TryRecordOffboardingFailureAsync(operation.Id, tenantId, environmentId, connectionId, operation.Fence,
+                status, now, nextAttemptAt, safeErrorCode, CancellationToken.None);
+        }
+        catch (Exception)
+        {
+            // The durable provider-call lease expires and reconciliation retries with the same idempotency key.
+        }
+    }
+
+    private static string GetOffboardingOperationId(
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        ConnectionOffboardingOperationKind kind,
+        string? generationId)
+    {
+        var canonicalIdentity = JsonSerializer.SerializeToUtf8Bytes(new string?[]
+        {
+            tenantId,
+            environmentId,
+            connectionId,
+            kind.ToString(),
+            generationId
+        }, JsonOptions);
+        return Convert.ToHexString(SHA256.HashData(canonicalIdentity)).ToLowerInvariant();
+    }
 
     private static bool CanUseCurrentGeneration(IntegrationConnection? connection) =>
         connection is { Status: ConnectionStatus.Active, OperationStatus: CredentialOperationStatus.None or CredentialOperationStatus.Completed } &&
