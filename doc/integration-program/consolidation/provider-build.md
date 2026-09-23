@@ -12,6 +12,8 @@ The corrected sample built successfully, and the subsequent complete `Consolidat
 | Corrected workbench sample | 0 | 236 | 24s |
 | Complete incremental build after correction | 0 | 1,561 | 1m 47s |
 
+After Mongo review corrections at `4a24f416b8f082922ad78538594700674f02cf04`, the root reviewer replayed the replacement patch: all 12 focused Mongo tests passed, followed by another complete incremental build with 0 errors and 1,556 warnings (2m47s). The follow-up receipt keeps these source hashes and logs separate from the earlier artifact. The published version now changes only `IsLatest` when creating a draft; infrastructure errors propagate instead of being classified as concurrent-edit conflicts. The classifier tests do not simulate a live primary stepdown.
+
 The warning counts differ because the final build reuses outputs from the diagnostic; they do not demonstrate that warnings were fixed. Warnings include missing SourceLink in the intentionally remote-free rehearsal, nullable/analyzer findings, dependency constraints and package security advisories. In particular, successful compilation does not establish that an EF dependency combination is supported at runtime. Package compatibility, security assessment before release, and complete test execution remain open.
 
 ## Tests previously blocked by restore

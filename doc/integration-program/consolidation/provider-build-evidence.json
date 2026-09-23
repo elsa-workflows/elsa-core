@@ -75,7 +75,6 @@
   "finalImportVerified": false,
   "fullTestClosureVerified": false,
   "packagePublicationAuthorized": false,
-  "remainingMongoReviewCorrection": "PR8304 is addressing raw published-document field preservation; this receipt describes its1327e8a artifact only.",
   "previousRestoreFailureFollowup": {
     "mode": "Existing full-build outputs; no-build and no-restore; not fresh CI or full closure acceptance",
     "passed": 107,
@@ -745,5 +744,45 @@
         }
       }
     ]
+  },
+  "reviewedMongoFollowup": {
+    "mongoArtifactCommit": "4a24f416b8f082922ad78538594700674f02cf04",
+    "completeBuild": {
+      "exitCode": 0,
+      "errors": 0,
+      "warnings": 1556,
+      "elapsed": "00:02:46.92",
+      "incremental": true
+    },
+    "mongoTests": {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "framework": "net10.0",
+      "scope": "Real MongoDB replica set; classifier checks do not simulate a primary stepdown"
+    },
+    "sourceFiles": {
+      "samples/extensions/workbench/Elsa.Server.Web/Elsa.Server.Web.csproj": "1e4a24ff75a65fc4c99c8b6c4ee07f41b6f4d41f58f50bb337c0e5d42892ac78",
+      "samples/extensions/workbench/Elsa.Server.Web/Program.cs": "8af6c57ab64bcd69411fcdfe092315c4839880bb4de0a288600ed0f55f9b821c",
+      "src/extensions/persistence/Elsa.Persistence.Dapper/Dialects/PostgreSqlDialect.cs": "b10f954c6f8337efedd6cf3ac9bcc81e71bb55a4009e843f83988e96d8166731",
+      "src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryBuilderExtensions.cs": "1cc4b3ac7512e4c7b4f1998c0b140da9e8240148a4f924d731eb722f8126749b",
+      "src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs": "e1ad5ba2eaa7f39f0a7b517e667319fac80f647ecd35f908ef2b4bb3b19037f4",
+      "src/extensions/persistence/Elsa.Persistence.MongoDb/Common/MongoDbStore.cs": "8786cb5249a66c4740e50eb5f79a7c0c3f7ec9a086b66a34e3d42d7f1e92b1ba",
+      "src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs": "887db58106d29696d18c9f33c8917b4ce2505f6c9d9e3ab7c82c40554d407993",
+      "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs": "b4313c678ee906cf6f1b9f97a046620ad3eba2e66c78d29918dfc732fa5e66e0",
+      "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs": "0ce453700a5ad62ef79497e3786b225377270a85e7182a7ba37032829f56aed0"
+    },
+    "logs": {
+      "build": {
+        "path": "doc/integration-program/consolidation/provider-build-logs/consolidated-provider-reviewed-build.log.gz",
+        "uncompressedSha256": "dfa7166eece5c4c3ce6bdc93c5e0c491901af1975bfceec705dd4a6513ae0892",
+        "compressedSha256": "eae5c7c765dd5d44cab5dc9aba819b4b92f4ab38024259ca3d9cebb7014e5537"
+      },
+      "mongoTests": {
+        "path": "doc/integration-program/consolidation/provider-build-logs/mongo-root-final-tests.log.gz",
+        "uncompressedSha256": "edcefbe53334614b2a6111196d42ede2c8923bf52b4c38b12861bfcfed891d0d",
+        "compressedSha256": "eef47d50ef2395c46d631466d21018b9ebe06a95844ebf9b693e7fa782f4dcc4"
+      }
+    }
   }
 }
