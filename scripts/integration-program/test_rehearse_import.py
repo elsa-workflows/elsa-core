@@ -74,6 +74,14 @@ class FullHistoryTests(unittest.TestCase):
                               '-c', 'commit.gpgsign=false', 'commit', '--quiet', '-m', 'Initial')
                 repos[name] = repo
                 refs[name] = rehearsal.git(repo, 'rev-parse', 'HEAD').decode().strip()
+            with patch.dict(rehearsal.PINS, {k: refs[k] for k in ('extensions', 'studio')}):
+                for repo in repos.values():
+                    for candidate in (repo / 'nested-rehearsal', repo / '.git' / 'nested-rehearsal'):
+                        with self.subTest(output=candidate):
+                            with self.assertRaisesRegex(ValueError, 'outside every source repository'):
+                                rehearsal.rehearse(repos['core'], {k: repos[k] for k in ('extensions', 'studio')},
+                                                   candidate)
+                            self.assertFalse(candidate.exists())
             output = root / 'output'
             with patch.dict(rehearsal.PINS, {k: refs[k] for k in ('extensions', 'studio')}):
                 rehearsal.rehearse(repos['core'], {k: repos[k] for k in ('extensions', 'studio')}, output)

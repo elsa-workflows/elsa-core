@@ -92,6 +92,12 @@ def relocation_plan(core, sources):
 
 def rehearse(core, sources, output):
     repositories = {'core': Path(core).resolve(), **{k: Path(v).resolve() for k, v in sources.items()}}
+    repositories = {k: Path(git(v, 'rev-parse', '--show-toplevel').decode().strip()).resolve()
+                    for k, v in repositories.items()}
+    protected = list(repositories.values())
+    for repo in repositories.values():
+        common = git(repo, 'rev-parse', '--git-common-dir').decode().strip()
+        protected.append((repo / common).resolve())
     refs = {}
     for product, repo in repositories.items():
         if git(repo, 'rev-parse', '--is-shallow-repository').strip() != b'false':
@@ -102,6 +108,8 @@ def rehearse(core, sources, output):
     sources_tree = {k: tree(repositories[k], refs[k]) for k in sources}
     expected, records = relocation_plan(core_tree, sources_tree)
     output = Path(output).resolve()
+    if any(output == repo or repo in output.parents for repo in protected):
+        raise ValueError('Output must be outside every source repository')
     if output.exists():
         raise ValueError('Output must not exist; choose a new disposable directory')
     output.mkdir(parents=True)
