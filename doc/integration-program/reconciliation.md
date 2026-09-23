@@ -12,7 +12,7 @@ The 68 native parent relationships were added through `POST /repos/elsa-workflow
 
 The 26 explicit dependencies in the existing `Blocking dependencies` and `Dependencies (separate from hierarchy)` sections were recorded through `POST .../issues/{blocked}/dependencies/blocked_by`, using the blocker issue ID, after querying existing dependencies. Each was read back. These include epic and story evidence gates as well as task dependencies. The original qualification “prerequisite evidence; discovery may overlap” still applies; a dependency is not a ban on parallel discovery. No dependency was inferred merely from containment.
 
-[The machine-readable snapshot](hierarchy.json) records each issue, native parent edge and explicit blocking edge separately. Both directed graphs are acyclic. It now includes the evidence-derived credential story #8269 and tasks #8270/#8271: **72 issues, 71 parent edges and 29 separate blocking edges**. The original 69 issues remain present. Issue states were refreshed after acceptance of the audit deliverables and credential validation plan; they are a dated snapshot, not a guarantee about later execution.
+[The machine-readable snapshot](hierarchy.json) records each issue, native parent edge and explicit blocking edge separately. Both directed graphs are acyclic. It now includes the evidence-derived credential story #8269 and tasks #8270/#8271, plus Secrets compatibility story #8275 and its SQLite characterization task #8276: **74 issues, 73 parent edges and 29 separate blocking edges**. The original 69 issues remain present. Issue states were refreshed after acceptance of the audit deliverables and credential validation plan; they are a dated snapshot, not a guarantee about later execution.
 
 ## Reproduce verification
 

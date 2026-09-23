@@ -507,6 +507,20 @@
       "level": "Task",
       "state": "open",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8271"
+    },
+    {
+      "number": 8275,
+      "title": "[Story] Resolve Secrets package and upgrade compatibility",
+      "level": "Story",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8275"
+    },
+    {
+      "number": 8276,
+      "title": "[Task] Reproduce the published Secrets SQLite upgrade from 3.8.1 to 3.8.4",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8276"
     }
   ],
   "parent_edges": [
@@ -793,6 +807,14 @@
     [
       8269,
       8271
+    ],
+    [
+      8214,
+      8275
+    ],
+    [
+      8275,
+      8276
     ]
   ],
   "blocking_edges": [
