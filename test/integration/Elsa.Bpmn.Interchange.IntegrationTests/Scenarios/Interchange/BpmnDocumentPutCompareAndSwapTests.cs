@@ -176,6 +176,7 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
         var stored = await FindLatestAsync(innerStore, definitionId);
         stored.CustomProperties["test:nested"] = new JsonObject { ["value"] = "initial" };
+        stored.CustomProperties["test:typed"] = new TypedCustomMetadata { Values = ["initial"] };
         await innerStore.SaveAsync(stored);
 
         var expectedETag = BpmnDocumentETag.From(stored);
@@ -191,6 +192,8 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         Assert.True(after.Options.AutoUpdateConsumingWorkflows);
         Assert.Contains(after.Variables, variable => variable.Name == "handlerVariable");
         Assert.Equal("handler", ((JsonObject)after.CustomProperties["test:nested"])["value"]!.GetValue<string>());
+        Assert.IsType<TypedCustomMetadata>(after.CustomProperties["test:typed"]);
+        Assert.Equal(["initial"], ((TypedCustomMetadata)after.CustomProperties["test:typed"]).Values);
         Assert.NotEqual(stored.StringData, after.StringData);
         Assert.NotEqual(expectedETag, BpmnDocumentETag.From(after));
     }
@@ -216,6 +219,8 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         var imported = await setup.ImportAsync(ReadAsset("camunda-order-process.bpmn"), definitionId: null, name: "Order", processId: null, CancellationToken.None);
         var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
         var before = await FindLatestAsync(store, definitionId);
+        before.CustomProperties["test:typed"] = new TypedCustomMetadata { Values = ["initial"] };
+        await store.SaveAsync(before);
         var expectedETag = BpmnDocumentETag.From(before);
         var reader = services.GetRequiredService<BpmnXmlReader>();
         var sourceXml = (string)before.CustomProperties[BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey];
@@ -224,6 +229,7 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         var savingBefore = probe.SavingCount;
         var savedBefore = probe.SavedCount;
         probe.Reject = true;
+        probe.MutateTypedCustomProperty = true;
 
         var rejected = await Assert.ThrowsAsync<InvalidOperationException>(
             () => setup.ImportDocumentAsync(edit, definitionId, processId: null, CancellationToken.None, expectedETag));
@@ -236,6 +242,8 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         Assert.Equal(expectedETag, BpmnDocumentETag.From(after));
         Assert.Equal(before.StringData, after.StringData);
         Assert.Equal(before.Name, after.Name);
+        Assert.IsType<TypedCustomMetadata>(after.CustomProperties["test:typed"]);
+        Assert.Equal(["initial"], ((TypedCustomMetadata)after.CustomProperties["test:typed"]).Values);
     }
 
     [Fact(DisplayName = "A published→draft document PUT keeps the same id, version and created-at from DraftSaving through persist and DraftSaved")]
@@ -309,6 +317,7 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         public bool Reject { get; set; }
         public bool StampHandlerMarker { get; set; }
         public bool ApplyDraftEdits { get; set; }
+        public bool MutateTypedCustomProperty { get; set; }
         public int SavingCount { get; set; }
         public int SavedCount { get; set; }
         public string? SavingId { get; set; }
@@ -317,6 +326,11 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         public string? SavedId { get; set; }
         public int SavedVersion { get; set; }
         public DateTimeOffset SavedCreatedAt { get; set; }
+    }
+
+    public sealed class TypedCustomMetadata
+    {
+        public List<string> Values { get; set; } = [];
     }
 
     private sealed class RejectingDraftSavingHandler(DraftNotificationProbe probe) : INotificationHandler<WorkflowDefinitionDraftSaving>
@@ -337,6 +351,11 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
                 notification.WorkflowDefinition.Options.AutoUpdateConsumingWorkflows = true;
                 notification.WorkflowDefinition.Variables = [.. notification.WorkflowDefinition.Variables, new Variable("handlerVariable")];
                 ((JsonObject)notification.WorkflowDefinition.CustomProperties["test:nested"])["value"] = "handler";
+            }
+
+            if (probe.MutateTypedCustomProperty)
+            {
+                ((TypedCustomMetadata)notification.WorkflowDefinition.CustomProperties["test:typed"]).Values.Add("handler");
             }
 
             if (probe.Reject)

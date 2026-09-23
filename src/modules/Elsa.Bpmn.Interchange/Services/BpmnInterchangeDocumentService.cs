@@ -344,17 +344,7 @@ public sealed class BpmnInterchangeDocumentService(
 
         var expectedDefinitionSnapshot = activitySerializer.Serialize((object)current);
         var documentDraft = ApplyDocumentEdit(current, process, xml, rootDefinition);
-        var draft = activitySerializer.Deserialize<WorkflowDefinition>(activitySerializer.Serialize(documentDraft));
-
-        // The activity serializer stores System.Text.Json.Nodes as an untyped property bag when no alias exists.
-        // Restore those mutable JSON values as detached nodes so DraftSaving handlers retain the types they received.
-        foreach (var (key, value) in documentDraft.CustomProperties)
-        {
-            if (value is JsonNode jsonNode)
-            {
-                draft.CustomProperties[key] = jsonNode.DeepClone();
-            }
-        }
+        var draft = CloneForDraftSaving(documentDraft);
 
         await mediator.SendAsync(new WorkflowDefinitionDraftSaving(draft), cancellationToken);
 
@@ -380,6 +370,42 @@ public sealed class BpmnInterchangeDocumentService(
 
         await mediator.SendAsync(new WorkflowDefinitionDraftSaved(result.Definition!), cancellationToken);
         return new BpmnDocumentImportResult(new ImportWorkflowResult(true, result.Definition!, []), analysis);
+    }
+
+    private WorkflowDefinition CloneForDraftSaving(WorkflowDefinition source)
+    {
+        var draft = source.ShallowClone();
+        draft.Options = CloneValue(source.Options);
+        draft.Variables = CloneValue(source.Variables);
+        draft.Inputs = CloneValue(source.Inputs);
+        draft.Outputs = CloneValue(source.Outputs);
+        draft.Outcomes = CloneValue(source.Outcomes);
+        draft.BinaryData = source.BinaryData?.ToArray();
+        draft.CustomProperties = source.CustomProperties.ToDictionary(x => x.Key, x => CloneValue(x.Value)!);
+        return draft;
+    }
+
+    private T CloneValue<T>(T value)
+    {
+        if (value is null)
+            return value;
+
+        if (value is string || value.GetType().IsValueType)
+            return value;
+
+        if (value is JsonNode jsonNode)
+            return (T)(object)jsonNode.DeepClone();
+
+        var runtimeType = value.GetType();
+        var clone = activitySerializer.Deserialize(activitySerializer.Serialize(value), runtimeType);
+
+        if (clone.GetType() != runtimeType)
+        {
+            throw new InvalidOperationException(
+                $"The activity serializer cloned '{runtimeType.FullName}' as '{clone.GetType().FullName}', so the workflow definition draft cannot be detached without changing its runtime metadata types.");
+        }
+
+        return (T)clone;
     }
 
     /// <summary>
