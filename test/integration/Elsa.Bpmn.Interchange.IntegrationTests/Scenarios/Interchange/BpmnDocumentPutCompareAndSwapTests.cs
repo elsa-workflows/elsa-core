@@ -109,8 +109,8 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         Assert.Equal(stored.StringData, after.StringData);
     }
 
-    [Fact(DisplayName = "A metadata save during document PUT is preserved while the BPMN edit is applied")]
-    public async Task ImportDocumentAsync_WhenMetadataIsSavedDuringCompareAndSwap_PreservesTheMetadataAndDocumentEdit()
+    [Fact(DisplayName = "A metadata save during document PUT is retained and rejects the stale document edit")]
+    public async Task ImportDocumentAsync_WhenMetadataIsSavedDuringCompareAndSwap_RejectsTheStaleDocumentEdit()
     {
         var services = new TestApplicationBuilder(testOutputHelper)
             .ConfigureElsa(elsa => elsa.UseBpmnInterchange())
@@ -122,6 +122,9 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         var imported = await setup.ImportAsync(ReadAsset("camunda-order-process.bpmn"), definitionId: null, name: "Order", processId: null, CancellationToken.None);
         var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
         var stored = await FindLatestAsync(innerStore, definitionId);
+        stored.CustomProperties["test:nested"] = new JsonObject { ["value"] = "initial" };
+        await innerStore.SaveAsync(stored);
+
         var expectedETag = BpmnDocumentETag.From(stored);
         var reader = services.GetRequiredService<BpmnXmlReader>();
         var sourceXml = (string)stored.CustomProperties[BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey];
@@ -136,22 +139,25 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         var metadataWriter = await FindLatestAsync(innerStore, definitionId);
         metadataWriter.Options.UsableAsActivity = true;
         metadataWriter.CustomProperties["test:concurrent-metadata"] = "preserve-me";
+        metadataWriter.CustomProperties["test:nested"] = new JsonObject { ["value"] = "concurrent" };
         await innerStore.SaveAsync(metadataWriter);
 
         gate.Release.TrySetResult();
 
-        var result = await documentPut;
-        Assert.True(result.ImportResult.Succeeded);
+        var stale = await Assert.ThrowsAsync<BpmnDocumentPreconditionFailedException>(() => documentPut);
+        Assert.Contains("written since the ETag in If-Match was issued", stale.Message);
 
         var after = await FindLatestAsync(innerStore, definitionId);
         Assert.Equal("preserve-me", after.CustomProperties["test:concurrent-metadata"]);
+        Assert.Equal("concurrent", ((JsonObject)after.CustomProperties["test:nested"])["value"]!.GetValue<string>());
         Assert.True(after.Options.UsableAsActivity);
-        Assert.NotEqual(stored.StringData, after.StringData);
-        Assert.NotEqual(expectedETag, BpmnDocumentETag.From(after));
+        Assert.Equal(stored.StringData, after.StringData);
+        Assert.Equal("Order", after.Name);
+        Assert.Equal(expectedETag, BpmnDocumentETag.From(after));
     }
 
-    [Fact(DisplayName = "DraftSaving handler edits and concurrent metadata are both retained during a document PUT")]
-    public async Task ImportDocumentAsync_WhenDraftSavingHandlerEditsDraft_PreservesHandlerEditsAndConcurrentMetadata()
+    [Fact(DisplayName = "DraftSaving handler edits are persisted during a document PUT when the snapshot still matches")]
+    public async Task ImportDocumentAsync_WhenDraftSavingHandlerEditsDraft_PersistsAllHandlerEdits()
     {
         var probe = new DraftNotificationProbe();
         var services = new TestApplicationBuilder(testOutputHelper)
@@ -177,30 +183,14 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         var sourceXml = (string)stored.CustomProperties[BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey];
         var edit = reader.Read(sourceXml.Replace("Order Handled", "Document edit"), new BpmnImportOptions()).Definitions;
         probe.ApplyDraftEdits = true;
-        var gate = new CompareAndSwapPauseGate();
-        var pausingStore = new PausingCompareAndSwapStore(innerStore, gate);
-        var documentWriter = ActivatorUtilities.CreateInstance<BpmnInterchangeDocumentService>(services, pausingStore);
-        var documentPut = documentWriter.ImportDocumentAsync(edit, definitionId, processId: null, CancellationToken.None, expectedETag);
-        await gate.Checked.Task.WaitAsync(TimeSpan.FromSeconds(10));
-
-        var metadataWriter = await FindLatestAsync(innerStore, definitionId);
-        metadataWriter.Options.UsableAsActivity = true;
-        metadataWriter.CustomProperties["test:concurrent-metadata"] = "preserve-me";
-        metadataWriter.CustomProperties["test:nested"] = new JsonObject { ["value"] = "concurrent" };
-        await innerStore.SaveAsync(metadataWriter);
-
-        gate.Release.TrySetResult();
-
-        var result = await documentPut;
+        var result = await setup.ImportDocumentAsync(edit, definitionId, processId: null, CancellationToken.None, expectedETag);
         Assert.True(result.ImportResult.Succeeded);
 
         var after = await FindLatestAsync(innerStore, definitionId);
         Assert.Equal("Handler name", after.Name);
-        Assert.True(after.Options.UsableAsActivity);
         Assert.True(after.Options.AutoUpdateConsumingWorkflows);
         Assert.Contains(after.Variables, variable => variable.Name == "handlerVariable");
         Assert.Equal("handler", ((JsonObject)after.CustomProperties["test:nested"])["value"]!.GetValue<string>());
-        Assert.Equal("preserve-me", after.CustomProperties["test:concurrent-metadata"]);
         Assert.NotEqual(stored.StringData, after.StringData);
         Assert.NotEqual(expectedETag, BpmnDocumentETag.From(after));
     }

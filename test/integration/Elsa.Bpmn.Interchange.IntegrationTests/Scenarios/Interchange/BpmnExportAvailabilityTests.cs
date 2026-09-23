@@ -282,6 +282,7 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
             store,
             services.GetRequiredService<VariableDefinitionMapper>(),
             services.GetRequiredService<IActivitySerializer>(),
+            services.GetRequiredService<IPayloadSerializer>(),
             services.GetRequiredService<IIdentityGenerator>(),
             services.GetRequiredService<ISystemClock>(),
             services.GetRequiredService<IMediator>());

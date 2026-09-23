@@ -1,7 +1,4 @@
-using System.Reflection;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Bpmn.Interchange;
 using Bpmn.Model;
 using Bpmn.Semantics;
@@ -102,6 +99,7 @@ public sealed class BpmnInterchangeDocumentService(
     IWorkflowDefinitionStore store,
     VariableDefinitionMapper variableDefinitionMapper,
     IActivitySerializer activitySerializer,
+    IPayloadSerializer payloadSerializer,
     IIdentityGenerator identityGenerator,
     ISystemClock systemClock,
     IMediator mediator)
@@ -315,10 +313,10 @@ public sealed class BpmnInterchangeDocumentService(
     /// <summary>
     /// The document-edit persist: prepare and announce a draft before writing so a rejecting
     /// <see cref="WorkflowDefinitionDraftSaving"/> handler fails the request without a partial save.
-    /// The compare-and-swap checks document content and row identity/state. Its update is rebuilt from
-    /// the row loaded by the store, so metadata-only changes outside the document precondition remain
-    /// intact. A changed document or incompatible row transition is
-    /// <see cref="BpmnDocumentPreconditionFailedException"/>.
+    /// The compare-and-swap also checks the full serialized definition snapshot captured before notification,
+    /// so a concurrent metadata write is refused instead of being overwritten. The original announced draft
+    /// is what gets saved when that snapshot still matches, preserving the full DraftSaving handler contract.
+    /// A changed definition or incompatible row transition is <see cref="BpmnDocumentPreconditionFailedException"/>.
     /// </summary>
     private async Task<BpmnDocumentImportResult> PersistDocumentEditAsync(
         string xml,
@@ -344,36 +342,17 @@ public sealed class BpmnInterchangeDocumentService(
                 "The workflow definition has been written since the ETag in If-Match was issued. GET the document again, reapply the edit, and PUT it with the new ETag.");
         }
 
-        var expectedId = current.Id;
-        var expectedVersion = current.Version;
-        var expectedName = current.Name;
-        var expectedDescription = current.Description;
-        var expectedStringData = current.StringData;
-        var expectedIsPublished = current.IsPublished;
-        var expectedTenantId = current.TenantId;
-
-        var draft = ApplyDocumentEdit(current, process, xml, rootDefinition);
-        var draftSnapshot = WorkflowDefinitionDraftSnapshot.Capture(draft);
+        var expectedDefinitionSnapshot = payloadSerializer.Serialize(current);
+        var draft = payloadSerializer.Deserialize<WorkflowDefinition>(
+            payloadSerializer.Serialize(ApplyDocumentEdit(current, process, xml, rootDefinition)));
         await mediator.SendAsync(new WorkflowDefinitionDraftSaving(draft), cancellationToken);
 
         var result = await store.TryUpdateLatestAsync(
             filter,
             loaded => loaded.IsLatest
-                      && loaded.Id == expectedId
-                      && loaded.Version == expectedVersion
-                      && loaded.StringData == expectedStringData
-                      && loaded.Name == expectedName
-                      && loaded.Description == expectedDescription
-                      && loaded.IsPublished == expectedIsPublished
-                      && loaded.TenantId == expectedTenantId
+                      && string.Equals(payloadSerializer.Serialize(loaded), expectedDefinitionSnapshot, StringComparison.Ordinal)
                       && (expectedETag is null || string.Equals(BpmnDocumentETag.From(loaded), expectedETag, StringComparison.Ordinal)),
-            loaded =>
-            {
-                var updated = ApplyDocumentEdit(loaded, process, xml, rootDefinition);
-                draftSnapshot.ApplyChanges(draft, updated);
-
-                return updated;
-            },
+            _ => draft,
             cancellationToken);
 
         if (result.Outcome == WorkflowDefinitionUpdateOutcome.NotFound)
@@ -390,172 +369,6 @@ public sealed class BpmnInterchangeDocumentService(
 
         await mediator.SendAsync(new WorkflowDefinitionDraftSaved(result.Definition!), cancellationToken);
         return new BpmnDocumentImportResult(new ImportWorkflowResult(true, result.Definition!, []), analysis);
-    }
-
-    /// <summary>
-    /// Captures the notification draft's values before handlers run, then applies only handler changes to the
-    /// definition loaded inside compare-and-swap. That keeps concurrent edits to untouched metadata while retaining
-    /// changes made by handlers, including in-place changes to nested custom-property values.
-    /// </summary>
-    private sealed class WorkflowDefinitionDraftSnapshot
-    {
-        private static readonly PropertyInfo[] DefinitionProperties = typeof(WorkflowDefinition)
-            .GetProperties(BindingFlags.Instance | BindingFlags.Public)
-            .Where(property => property.CanRead && property.SetMethod is not null && property.GetIndexParameters().Length == 0)
-            .Where(property => property.Name is not nameof(WorkflowDefinition.Options) and not nameof(WorkflowDefinition.CustomProperties))
-            .ToArray();
-
-        private static readonly PropertyInfo[] OptionProperties = typeof(WorkflowOptions)
-            .GetProperties(BindingFlags.Instance | BindingFlags.Public)
-            .Where(property => property.CanRead && property.SetMethod is not null && property.GetIndexParameters().Length == 0)
-            .ToArray();
-
-        private static readonly JsonSerializerOptions SnapshotSerializerOptions = new()
-        {
-            ReferenceHandler = ReferenceHandler.Preserve,
-            Converters = { new TypeSnapshotJsonConverter() }
-        };
-
-        private readonly Dictionary<string, string> _definitionValues;
-        private readonly Dictionary<string, string> _optionValues;
-        private readonly Dictionary<string, string> _customPropertyValues;
-        private readonly bool _hadOptions;
-        private readonly bool _hadCustomProperties;
-
-        private WorkflowDefinitionDraftSnapshot(WorkflowDefinition definition)
-        {
-            _definitionValues = DefinitionProperties.ToDictionary(
-                property => property.Name,
-                property => SnapshotValue(property.GetValue(definition)),
-                StringComparer.Ordinal);
-            _hadOptions = definition.Options is not null;
-            _optionValues = _hadOptions
-                ? OptionProperties.ToDictionary(property => property.Name, property => SnapshotValue(property.GetValue(definition.Options)), StringComparer.Ordinal)
-                : new Dictionary<string, string>(StringComparer.Ordinal);
-            if (definition.CustomProperties is { } customProperties)
-            {
-                _hadCustomProperties = true;
-                _customPropertyValues = customProperties.ToDictionary(pair => pair.Key, pair => SnapshotValue(pair.Value), StringComparer.Ordinal);
-            }
-            else
-            {
-                _hadCustomProperties = false;
-                _customPropertyValues = new Dictionary<string, string>(StringComparer.Ordinal);
-            }
-        }
-
-        public static WorkflowDefinitionDraftSnapshot Capture(WorkflowDefinition definition) => new(definition);
-
-        public void ApplyChanges(WorkflowDefinition notificationDraft, WorkflowDefinition destination)
-        {
-            // A published row produces a new draft identity when the atomic update callback runs. Reuse the identity
-            // announced to DraftSaving unless a handler explicitly changed one of these fields.
-            destination.Id = notificationDraft.Id;
-            destination.Version = notificationDraft.Version;
-            destination.CreatedAt = notificationDraft.CreatedAt;
-            destination.IsLatest = notificationDraft.IsLatest;
-            destination.IsPublished = notificationDraft.IsPublished;
-
-            foreach (var property in DefinitionProperties)
-            {
-                var value = property.GetValue(notificationDraft);
-                if (_definitionValues[property.Name] != SnapshotValue(value))
-                {
-                    property.SetValue(destination, value);
-                }
-            }
-
-            ApplyOptionChanges(notificationDraft.Options, destination);
-            ApplyCustomPropertyChanges(notificationDraft.CustomProperties, destination);
-        }
-
-        private void ApplyOptionChanges(WorkflowOptions? notificationOptions, WorkflowDefinition destination)
-        {
-            if (notificationOptions is null)
-            {
-                if (_hadOptions)
-                {
-                    destination.Options = null!;
-                }
-
-                return;
-            }
-
-            if (!_hadOptions)
-            {
-                destination.Options = notificationOptions;
-                return;
-            }
-
-            destination.Options ??= new WorkflowOptions();
-            foreach (var property in OptionProperties)
-            {
-                var value = property.GetValue(notificationOptions);
-                if (_optionValues[property.Name] != SnapshotValue(value))
-                {
-                    property.SetValue(destination.Options, value);
-                }
-            }
-        }
-
-        private void ApplyCustomPropertyChanges(IDictionary<string, object>? notificationProperties, WorkflowDefinition destination)
-        {
-            if (notificationProperties is null)
-            {
-                if (_hadCustomProperties)
-                {
-                    destination.CustomProperties = null!;
-                }
-
-                return;
-            }
-
-            if (!_hadCustomProperties)
-            {
-                destination.CustomProperties = notificationProperties;
-                return;
-            }
-
-            destination.CustomProperties ??= new Dictionary<string, object>();
-            var keys = _customPropertyValues.Keys.Concat(notificationProperties.Keys).Distinct(StringComparer.Ordinal);
-            foreach (var key in keys)
-            {
-                var wasPresent = _customPropertyValues.TryGetValue(key, out var previousValue);
-                var isPresent = notificationProperties.TryGetValue(key, out var currentValue);
-                if (wasPresent == isPresent && (!isPresent || previousValue == SnapshotValue(currentValue)))
-                {
-                    continue;
-                }
-
-                if (isPresent)
-                {
-                    destination.CustomProperties[key] = currentValue!;
-                }
-                else
-                {
-                    destination.CustomProperties.Remove(key);
-                }
-            }
-        }
-
-        private static string SnapshotValue(object? value)
-        {
-            if (value is Type type)
-            {
-                return JsonSerializer.Serialize<Type>(type, SnapshotSerializerOptions);
-            }
-
-            return JsonSerializer.Serialize(value, value?.GetType() ?? typeof(object), SnapshotSerializerOptions);
-        }
-
-        private sealed class TypeSnapshotJsonConverter : JsonConverter<Type>
-        {
-            public override Type Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-                Type.GetType(reader.GetString()!, throwOnError: true)!;
-
-            public override void Write(Utf8JsonWriter writer, Type value, JsonSerializerOptions options) =>
-                writer.WriteStringValue(value.AssemblyQualifiedName);
-        }
     }
 
     /// <summary>
