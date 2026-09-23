@@ -161,7 +161,7 @@
     <value />
   </data>
   <data name="Readonly" xml:space="preserve">
-    <value />
+    <value>Skrivskyddad</value>
   </data>
   <data name="Scope" xml:space="preserve">
     <value>Omfång</value>
@@ -173,7 +173,7 @@
     <value />
   </data>
   <data name="An outcome picker" xml:space="preserve">
-    <value />
+    <value></value>
   </data>
   <data name="The HTTP method to use when sending the request." xml:space="preserve">
     <value />
@@ -203,7 +203,7 @@
     <value />
   </data>
   <data name="Are you sure you want to delete the selected workflow instances?" xml:space="preserve">
-    <value />
+    <value>Är du säker på att du vill avbryta valda arbetsflödesinstanser?</value>
   </data>
   <data name="Settings" xml:space="preserve">
     <value>Inställningar</value>
@@ -254,7 +254,7 @@
     <value />
   </data>
   <data name="Not usable as activity." xml:space="preserve">
-    <value />
+    <value>Kan inte användas som aktivitet.</value>
   </data>
   <data name="Successfully started workflow" xml:space="preserve">
     <value />
@@ -302,7 +302,7 @@
     <value />
   </data>
   <data name="When you publish" xml:space="preserve">
-    <value />
+    <value>När du publicerar en ny version uppdateras alla arbetsflöden som använder detta arbetsflöde så att de pekar på den nya versionen.</value>
   </data>
   <data name="Create Secret" xml:space="preserve">
     <value>Skapa hemlighet</value>
@@ -347,7 +347,7 @@
     <value>Incidenter</value>
   </data>
   <data name="Are you sure you want to unpublish the selected workflows?" xml:space="preserve">
-    <value />
+    <value>Är du säker på att du vill avplublicera valda arbetsflöden?</value>
   </data>
   <data name="Start of workflow" xml:space="preserve">
     <value />
@@ -362,13 +362,13 @@
     <value />
   </data>
   <data name="The secret value." xml:space="preserve">
-    <value />
+    <value>Hemligheten.</value>
   </data>
   <data name="A list of radio buttons" xml:space="preserve">
     <value />
   </data>
   <data name="Cancel running workflow instances?" xml:space="preserve">
-    <value />
+    <value>Avbryt arbetsflödesinstanser som körs?</value>
   </data>
   <data name="This activity does not have any output properties." xml:space="preserve">
     <value />
@@ -431,10 +431,10 @@
     <value>Korrelera</value>
   </data>
   <data name="The scope of the secret helps the UI to filter available options from dropdown lists." xml:space="preserve">
-    <value />
+    <value>Omfattningen för hemligheten hjälper användargränssnittet att filtrera vilka alternativ som visas i rullgardinsmenyer.</value>
   </data>
   <data name="A checkbox" xml:space="preserve">
-    <value />
+    <value>En kryssruta</value>
   </data>
   <data name="Started" xml:space="preserve">
     <value />
@@ -449,7 +449,7 @@
     <value />
   </data>
   <data name="Timestamp" xml:space="preserve">
-    <value />
+    <value>Tidstämpel</value>
   </data>
   <data name="Acknowledge Datasource Event" xml:space="preserve">
     <value>Bekräfta datakällshändelse</value>
@@ -497,7 +497,7 @@
     <value />
   </data>
   <data name="Correlation ID Function" xml:space="preserve">
-    <value />
+    <value>Korrelations-ID-funktion</value>
   </data>
   <data name="Sub-Workflow Outputs" xml:space="preserve">
     <value />
@@ -605,7 +605,7 @@
     <value />
   </data>
   <data name="Current Value" xml:space="preserve">
-    <value />
+    <value>Nuvarande värde</value>
   </data>
   <data name="Expires" xml:space="preserve">
     <value>Förfaller</value>
@@ -614,10 +614,10 @@
     <value />
   </data>
   <data name="The technical name of the input." xml:space="preserve">
-    <value />
+    <value>Det tekniska namnet på inputen.</value>
   </data>
   <data name="The technical name of the service." xml:space="preserve">
-    <value />
+    <value>Det tekniska namnet på tjänsten.</value>
   </data>
   <data name="Completed" xml:space="preserve">
     <value>Slutfört</value>
@@ -626,7 +626,7 @@
     <value />
   </data>
   <data name="Delete version {0}" xml:space="preserve">
-    <value />
+    <value>Ta bort version {0}</value>
   </data>
   <data name="Edit" xml:space="preserve">
     <value>Redigera</value>
@@ -635,7 +635,7 @@
     <value />
   </data>
   <data name="Condition" xml:space="preserve">
-    <value />
+    <value>Villkor</value>
   </data>
   <data name="Journal" xml:space="preserve">
     <value />
@@ -653,7 +653,7 @@
     <value />
   </data>
   <data name="Center" xml:space="preserve">
-    <value />
+    <value>Centrera</value>
   </data>
   <data name="Use JSON Response" xml:space="preserve">
     <value />
@@ -707,22 +707,22 @@
     <value />
   </data>
   <data name="Trigger execution at a specific time in the future." xml:space="preserve">
-    <value />
+    <value>Utlös körning vid en angiven tidpunkt i framtiden.</value>
   </data>
   <data name="Failed to import {0} workflow definitions. Errors: {1}" xml:space="preserve">
     <value />
   </data>
   <data name="Top Probability determines" xml:space="preserve">
-    <value />
+    <value>Top Probability anger det kumulativa sannolikhetströskelvärdet för val av token vid textgenerering. Lägre värden ger mindre variation eftersom modellen då endast väljer bland de mest sannolika tokenen. Högre värden ger större variation eftersom modellen tar hänsyn till ett bredare urval av token.</value>
   </data>
   <data name="Content Type" xml:space="preserve">
-    <value />
+    <value>Innehållstyp</value>
   </data>
   <data name="workflows consuming published workflows have been updated" xml:space="preserve">
     <value />
   </data>
   <data name="Inherit" xml:space="preserve">
-    <value />
+    <value>Ärv</value>
   </data>
   <data name="Set Variable" xml:space="preserve">
     <value />
@@ -881,7 +881,7 @@
     <value />
   </data>
   <data name="Cancel selected workflow instances?" xml:space="preserve">
-    <value />
+    <value>Avbryt valda arbetsflödesinstanser?</value>
   </data>
   <data name="Sub-Workflow" xml:space="preserve">
     <value />
@@ -962,13 +962,13 @@
     <value />
   </data>
   <data name="Are you sure you want to publish the selected workflows?" xml:space="preserve">
-    <value />
+    <value>Är du säker på att du vill publicera valda arbetsflöden?</value>
   </data>
   <data name="Are you sure you want to delete the selected output?" xml:space="preserve">
     <value />
   </data>
   <data name="Cancel workflow instance?" xml:space="preserve">
-    <value />
+    <value>Avbryt arbetsflödesinstansen?</value>
   </data>
   <data name="Definitions" xml:space="preserve">
     <value>Definitioner</value>
@@ -983,7 +983,7 @@
     <value />
   </data>
   <data name="Create input" xml:space="preserve">
-    <value />
+    <value>Skapa input</value>
   </data>
   <data name="The data source to use for dispatching the workflows." xml:space="preserve">
     <value />
@@ -1037,7 +1037,7 @@
     <value />
   </data>
   <data name="Upload JSON and/or ZIP files containing workflow data to import." xml:space="preserve">
-    <value />
+    <value>Ladda upp JSON- och/eller ZIP-filer som innehåller arbetsflödesdata som ska importeras.</value>
   </data>
   <data name="Enter the expression that will be used to determine the log persistence strategy for this property." xml:space="preserve">
     <value />
@@ -1061,7 +1061,7 @@
     <value>Kör</value>
   </data>
   <data name="Run workflow" xml:space="preserve">
-    <value />
+    <value>Kör arbetsflöde</value>
   </data>
   <data name="Add input" xml:space="preserve">
     <value>Lägg till input</value>
@@ -1127,13 +1127,13 @@
     <value />
   </data>
   <data name="The workflow cannot be started" xml:space="preserve">
-    <value />
+    <value>Kan inte starta flödet</value>
   </data>
   <data name="Join" xml:space="preserve">
     <value />
   </data>
   <data name="An input with this name already exists." xml:space="preserve">
-    <value />
+    <value>Det finns redan en input med detta namn.</value>
   </data>
   <data name="workflow definitions." xml:space="preserve">
     <value />
@@ -1145,7 +1145,7 @@
     <value />
   </data>
   <data name="Failed to import {0} {1}." xml:space="preserve">
-    <value />
+    <value>Det gick inte att importera {0} {1}.</value>
   </data>
   <data name="One workflow is not found" xml:space="preserve">
     <value />
@@ -1157,7 +1157,7 @@
     <value />
   </data>
   <data name="Unpublish selected workflows?" xml:space="preserve">
-    <value />
+    <value>Vill du avpublicera valda flöden?</value>
   </data>
   <data name="Download File" xml:space="preserve">
     <value>Hämta fil</value>
@@ -1172,7 +1172,7 @@
     <value />
   </data>
   <data name="Show description" xml:space="preserve">
-    <value />
+    <value>Visa beskrivning</value>
   </data>
   <data name="{0} workflows are not found" xml:space="preserve">
     <value />
@@ -1202,13 +1202,13 @@
     <value />
   </data>
   <data name="The services that the agent requires." xml:space="preserve">
-    <value />
+    <value>Tjänsterna som agenten kräver.</value>
   </data>
   <data name="Create workflow" xml:space="preserve">
     <value>Skapa arbetsflöde</value>
   </data>
   <data name="The Authorization header value to send with the request. For example: Bearer {some-access-token}" xml:space="preserve">
-    <value />
+    <value>Värdet för Authorization-headern som ska skickas med begäran. Till exempel: Bearer {some-access-token}</value>
   </data>
   <data name="Executes javaScript code" xml:space="preserve">
     <value />
@@ -1352,7 +1352,7 @@
     <value />
   </data>
   <data name="Used to define the initial instructions" xml:space="preserve">
-    <value />
+    <value>Används för att definiera de inledande instruktionerna eller sammanhanget som Semantic Kernel-agenten använder för att generera svar. Mallen styr agentens beteende och hjälper den att förstå vilken roll den ska ha eller vilka uppgifter den ska utföra.</value>
   </data>
   <data name="Dashboard" xml:space="preserve">
     <value>Instrumentpanel</value>
@@ -1364,7 +1364,7 @@
     <value>Skapa tjänst</value>
   </data>
   <data name="The value of the API key." xml:space="preserve">
-    <value />
+    <value>Värdet på API-nyckeln.</value>
   </data>
   <data name="{0} consuming workflow(s) updated" xml:space="preserve">
     <value />
@@ -1376,13 +1376,13 @@
     <value>Varaktighet</value>
   </data>
   <data name="Aggregation" xml:space="preserve">
-    <value />
+    <value>Sammanställning</value>
   </data>
   <data name="The settings of the service in JSON format." xml:space="preserve">
-    <value />
+    <value>Tjänstens inställningar i JSON-format.</value>
   </data>
   <data name="Default Item Input Key" xml:space="preserve">
-    <value />
+    <value>Standardnyckel för objektindata</value>
   </data>
   <data name="Workflow published with Not Found activities" xml:space="preserve">
     <value />
@@ -1424,7 +1424,7 @@
     <value />
   </data>
   <data name="The system prompt template that the agent will use." xml:space="preserve">
-    <value />
+    <value>Systempromptmallen som agenten kommer att använda.</value>
   </data>
   <data name="Default configuration" xml:space="preserve">
     <value>Standardkonfiguration</value>
@@ -1451,7 +1451,7 @@
     <value />
   </data>
   <data name="Auto layout" xml:space="preserve">
-    <value />
+    <value>Arrangera automatiskt</value>
   </data>
   <data name="Published" xml:space="preserve">
     <value>Publicerat</value>
@@ -1463,7 +1463,7 @@
     <value />
   </data>
   <data name="Delete version" xml:space="preserve">
-    <value />
+    <value>Ta bort version</value>
   </data>
   <data name="Workflows" xml:space="preserve">
     <value />
@@ -1529,13 +1529,13 @@
     <value />
   </data>
   <data name="The text to display in the designer." xml:space="preserve">
-    <value />
+    <value>Text som visas i designern.</value>
   </data>
   <data name="The start step." xml:space="preserve">
     <value />
   </data>
   <data name="Task" xml:space="preserve">
-    <value />
+    <value>Uppgift</value>
   </data>
   <data name="HTTP Request" xml:space="preserve">
     <value />
