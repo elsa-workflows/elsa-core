@@ -2,7 +2,7 @@
 
 Program: [#8194](https://github.com/elsa-workflows/elsa-core/issues/8194). Checked: 2026-09-23.
 
-The existing backlog was read and retained: 10 epics, 40 features, 6 stories, and 12 tasks, plus the program. No issues were recreated, transferred, closed, or assigned. Title prefixes retain the semantic levels without introducing organization-wide issue types or labels.
+During the initial audit, the existing backlog was read and retained: 10 epics, 40 features, 6 stories, and 12 tasks, plus the program. No issues were recreated, transferred, closed, or assigned. Title prefixes retain the semantic levels without introducing organization-wide issue types or labels.
 
 ## Relationships
 
@@ -12,7 +12,7 @@ The 68 native parent relationships were added through `POST /repos/elsa-workflow
 
 The 26 explicit dependencies in the existing `Blocking dependencies` and `Dependencies (separate from hierarchy)` sections were recorded through `POST .../issues/{blocked}/dependencies/blocked_by`, using the blocker issue ID, after querying existing dependencies. Each was read back. These include epic and story evidence gates as well as task dependencies. The original qualification “prerequisite evidence; discovery may overlap” still applies; a dependency is not a ban on parallel discovery. No dependency was inferred merely from containment.
 
-[The machine-readable snapshot](hierarchy.json) records each issue, native parent edge and explicit blocking edge separately. Both directed graphs are acyclic. The snapshot records open issue state at the audit, not a guarantee about later execution.
+[The machine-readable snapshot](hierarchy.json) records each issue, native parent edge and explicit blocking edge separately. Both directed graphs are acyclic. It now includes the evidence-derived credential story #8269 and tasks #8270/#8271: **72 issues, 71 parent edges and 29 separate blocking edges**. The original 69 issues remain present. Issue states were refreshed after acceptance of the audit deliverables and credential validation plan; they are a dated snapshot, not a guarantee about later execution.
 
 ## Reproduce verification
 
@@ -23,7 +23,7 @@ python3 doc/integration-program/verify-hierarchy.py
 python3 doc/integration-program/verify-hierarchy.py --live
 ```
 
-The first command validates counts, levels, uniqueness, coverage and cycles offline. The second uses authenticated `gh` read-only calls to check every recorded native relationship. It deliberately does not remove additional relationships or reparent work. Run it again before subsequent execution if the backlog may have changed. GitHub is the current state; this file is dated evidence.
+The first command validates the declared root, semantic levels, uniqueness, full parent coverage and cycles offline. Counts derive from the snapshot so reviewed implementation tasks can be added without weakening the hierarchy rules. The second uses authenticated, paginated `gh` read-only calls to compare the complete child and blocker sets of every indexed issue, including leaves. Missing and unrecorded links both fail verification, and full issue URLs distinguish cross-repository issue numbers. It never removes additional relationships or reparents work. An issue-state change alone is not relationship drift; refresh state separately when recording new execution evidence. Run it again before subsequent execution if the backlog may have changed. GitHub is the current state; this file is dated evidence.
 
 ## Reporting and decisions
 
@@ -38,7 +38,7 @@ Use existing issue acceptance criteria and append scoped execution notes. Keep s
 
 The audit worktrees start from Core `610790ec57ae9d5c334181d50c1e65f99613fd86`. The supplied detached checkout at `be5bdae501997401bd248f7642eeabacd1994d8a` was left untouched. Open PRs and local worktrees were inspected before starting, including existing Secrets validation, tenant runtime, and NuGet publishing work. The inventory PR contains the detailed cross-repository active-work ledger and source pins.
 
-No wholesale import, NuGet publication, repository archival, PR merge, or production change is authorized by this audit. Elsa 3 remains the target. Co-location, package release, host deployment, and workflow schema compatibility remain separate decisions.
+The initial audit did not authorize wholesale import, NuGet publication, repository archival, PR merge, or production change. The subsequent end-to-end goal authorizes implementation and focused merges after checks and review gates; publication, production cutover and archival remain reserved for explicit approval. Elsa 3 remains the target. Co-location, package release, host deployment, and workflow schema compatibility remain separate decisions.
 
 ## Publishing safeguard discovered during the audit
 

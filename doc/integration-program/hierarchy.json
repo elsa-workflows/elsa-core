@@ -2,7 +2,7 @@
   "program": 8194,
   "repository": "elsa-workflows/elsa-core",
   "checked_date": "2026-09-23",
-  "verification": "Native relationships read back through authenticated GitHub REST; see reconciliation.md for execution status.",
+  "verification": "Native child and blocking-dependency sets read back through authenticated paginated GitHub REST; see reconciliation.md.",
   "issues": [
     {
       "number": 8194,
@@ -365,28 +365,28 @@
       "number": 8245,
       "title": "[Story] Establish the complete Core, Extensions and Studio migration baseline",
       "level": "Story",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8245"
     },
     {
       "number": 8246,
       "title": "[Story] Determine whether existing Secrets capabilities fit connector credentials",
       "level": "Story",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8246"
     },
     {
       "number": 8247,
       "title": "[Story] Create an evidence-backed candidate catalog for integration research",
       "level": "Story",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8247"
     },
     {
       "number": 8248,
       "title": "[Story] Validate provider feasibility and recommend the first delivery cohort",
       "level": "Story",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8248"
     },
     {
@@ -400,63 +400,63 @@
       "number": 8250,
       "title": "[Story] Decide the Secrets-backed connection and authentication architecture",
       "level": "Story",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8250"
     },
     {
       "number": 8251,
       "title": "[Task] Inventory projects, packages and paired server/Studio modules",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8251"
     },
     {
       "number": 8252,
       "title": "[Task] Map active work, build assets and publishing ownership",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8252"
     },
     {
       "number": 8253,
       "title": "[Task] Audit Secrets providers, authorization and mutable credential support",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8253"
     },
     {
       "number": 8254,
       "title": "[Task] Specify token lifecycle and tenant-isolation gaps",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8254"
     },
     {
       "number": 8255,
       "title": "[Task] Define catalog schema, research rubric and seed workflows",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8255"
     },
     {
       "number": 8256,
       "title": "[Task] Survey 50\u2013100 candidates and nominate the deep-research cohort",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8256"
     },
     {
       "number": 8257,
       "title": "[Task] Research the shortlisted providers at operation level",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8257"
     },
     {
       "number": 8258,
       "title": "[Task] Rank cohorts and scope complete pilot workflows",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8258"
     },
     {
@@ -477,15 +477,36 @@
       "number": 8261,
       "title": "[Task] Write the Secrets reuse-versus-extension ADR",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8261"
     },
     {
       "number": 8262,
       "title": "[Task] Specify the credential lifecycle validation slice",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8262"
+    },
+    {
+      "number": 8269,
+      "title": "[Story] Prove a synthetic credential lifecycle across workers and workflow restart",
+      "level": "Story",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8269"
+    },
+    {
+      "number": 8270,
+      "title": "[Task] Implement synthetic credential lifecycle with durable refresh recovery",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8270"
+    },
+    {
+      "number": 8271,
+      "title": "[Task] Prove workflow credential resume and offboarding conformance",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8271"
     }
   ],
   "parent_edges": [
@@ -760,6 +781,18 @@
     [
       8250,
       8262
+    ],
+    [
+      8222,
+      8269
+    ],
+    [
+      8269,
+      8270
+    ],
+    [
+      8269,
+      8271
     ]
   ],
   "blocking_edges": [
@@ -866,6 +899,18 @@
     [
       8261,
       8262
+    ],
+    [
+      8262,
+      8269
+    ],
+    [
+      8262,
+      8270
+    ],
+    [
+      8270,
+      8271
     ]
   ]
 }
