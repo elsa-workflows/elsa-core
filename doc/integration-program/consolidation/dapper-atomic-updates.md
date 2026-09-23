@@ -4,7 +4,7 @@ Program #8194, story #8286, task #8293. This is a source patch for the disposabl
 
 ## Behavior
 
-`DapperWorkflowDefinitionStore.TryUpdateLatestAsync` loads the latest matching row inside a SERIALIZABLE transaction, checks the caller's expected state and invokes its update callback on that loaded row. It updates the same row or unmarks the former latest row and inserts a new draft in that transaction. Failed insertion rolls back the unmark. The selected row's tenant and logical definition cannot change. `ToolVersion`, which is absent from the public workflow entity, is preserved.
+`DapperWorkflowDefinitionStore.TryUpdateLatestAsync` loads the latest matching row inside a SERIALIZABLE transaction, checks the caller's expected state and invokes its update callback on that loaded row. It updates the same row or unmarks the former latest row and inserts a new draft in that transaction. Failed insertion rolls back the unmark. The selected row's tenant and logical definition cannot change. `ToolVersion` exists on the public workflow entity, but the existing Dapper entity/record mapping does not populate it. The atomic update preserves the loaded record column instead of clearing it through that mapping.
 
 The newly injected tenant accessor is optional. A DI regression verifies default-tenant CAS updates and denial of another tenant when that service is absent. The generic store retains its existing registration contract.
 
