@@ -101,6 +101,9 @@ def main():
     # Each deep provider's evidence array is a source index, not a substitute for claim-level citations.
     operations = {op["id"]: p["stableId"] for p in providers for op in p["proposedOperations"]}
     for workflow in catalog["workflowHypotheses"]:
+        steps = [stage["step"] for stage in workflow["stages"]]
+        if steps != list(range(1, len(steps) + 1)):
+            fail(f"{workflow['id']}: workflow stage steps must be contiguous and ordered from 1")
         for stage in workflow["stages"]:
             provider_id = stage["providerId"]
             operation_id = stage["operationId"]

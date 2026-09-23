@@ -3017,9 +3017,9 @@
         "owner": "unassigned"
       },
       "unknowns": [
-        "No official provider API/auth docs reviewed in this catalog pass.",
+        "The documentation checked here covers the cited Microsoft Graph calendar endpoints, not broad API coverage or change notifications.",
         "No authorized Elsa-specific demand evidence verified.",
-        "Operations, trigger semantics, scopes, quotas, tier limits, sandbox, SDK license, data residency and maintenance remain unknown.",
+        "Operations beyond the listed listEvents and createEvent endpoints, notification trigger semantics, additional scope requirements, quotas, tier limits, sandbox, SDK license, data residency and maintenance were not assessed in this discovery entry.",
         "No implementation or test status claimed.",
         "Calendar change-notification subscription lifecycle and supported trigger coverage were not assessed.",
         "Tenant consent, user/admin rollout, mailbox licensing, and calendar permissions need pilot checks."
@@ -3244,9 +3244,9 @@
         "owner": "unassigned"
       },
       "unknowns": [
-        "No official provider API/auth docs reviewed in this catalog pass.",
+        "The documentation checked here covers selected Business Central customer endpoints; broader Dynamics 365 API coverage was not assessed.",
         "No authorized Elsa-specific demand evidence verified.",
-        "Operations, trigger semantics, scopes, quotas, tier limits, sandbox, SDK license, data residency and maintenance remain unknown.",
+        "Operations beyond the listed Business Central customer endpoints, trigger semantics, additional scope requirements, quotas, tier limits, sandbox, SDK license, data residency and maintenance were not assessed in this discovery entry.",
         "No implementation or test status claimed.",
         "S2S permission assignment, tenant administration and app-consent path not evaluated for a shared Elsa connection.",
         "No test tenant or company was accessed."
