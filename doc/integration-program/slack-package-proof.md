@@ -46,6 +46,12 @@ dotnet tool install --tool-path /tmp/codex-sourcelink-8259 sourcelink --version 
 
 The CLI path is required. A missing or unpinned tool, incomplete package store, mismatched payload DLL, or altered install fails closed before package restore or pack, so SourceLink cannot be silently reported as passed when it was not checked. The runner invokes the verified assembly directly rather than executing the shim at that path.
 
+## Manual CI artifact proof
+
+The `Package impact closure rehearsal` workflow has a `workflow_dispatch` job named `released-artifact-proof`. It derives its Core and Extensions pins from this runner's `CORE_SHA` and `EXTENSIONS_SHA` constants, so this released 3.8.4 compatibility proof stays separate from the current-inventory source closure job. The latter uses the inventory's newer Core/Extensions pins and its four known baseline skips still leave that closure incomplete; running the artifact job does not claim the broader closure passed.
+
+The manual job installs the net8.0, net9.0, and net10.0 SDKs, installs SourceLink 3.1.1 into the runner's temporary directory, and invokes this script without modifying it. It has read-only repository permissions, no package-publishing credential or deployment permission, and no push step. It retains the evidence JSON, impact selection, TRX, command logs, generated consumer inputs, and SourceLink PDB as `slack-released-artifact-proof-evidence`. A separate `elsa-slack-local-proof-nupkg` artifact contains only `Elsa.Slack.3.8.5-proof.154ba15.nupkg`; the downloaded public 3.8.4 comparison package and symbol package are not uploaded. Both artifacts expire after 14 days. The job has a 90-minute timeout, and artifact steps still run after a proof failure so already-produced evidence is retained.
+
 Run the inventory selector and proof guard tests in both normal and optimized Python modes:
 
 ```sh
