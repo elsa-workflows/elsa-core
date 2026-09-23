@@ -11,6 +11,12 @@ public interface IConnectionLifecycleService
 
     Task<ConnectionLifecycleResult> RefreshAsync(ClaimsPrincipal principal, string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken = default);
 
+    Task<ConnectionOffboardingOperationResult> DisconnectAsync(ClaimsPrincipal principal, string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken = default);
+
+    Task<ConnectionOffboardingOperationResult> RequestTokenRevocationAsync(ClaimsPrincipal principal, string tenantId, string environmentId, string connectionId, string generationId, CancellationToken cancellationToken = default);
+
+    Task<ConnectionOffboardingOperationResult> RequestInstallationUninstallAsync(ClaimsPrincipal principal, string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken = default);
+
     Task<ConnectionLifecycleResult> CleanupGenerationAsync(ClaimsPrincipal principal, string tenantId, string environmentId, string connectionId, string generationId, CancellationToken cancellationToken = default);
 }
 
@@ -18,6 +24,8 @@ public interface IConnectionLifecycleService
 public interface IConnectionLifecycleRecoveryService
 {
     Task<ConnectionLifecycleResult> ReconcileAsync(string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken = default);
+
+    Task<ConnectionOffboardingOperationResult> ReconcileOffboardingAsync(string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken = default);
 }
 
 public sealed record ConnectConnectionRequest(string TenantId, string EnvironmentId, string ProviderId, string ProviderAccountId, Elsa.Connections.Models.CredentialMaterial InitialCredentials);
@@ -37,3 +45,10 @@ public sealed record ConnectionLifecycleResult(
     long? Revision,
     string? ConnectionId = null,
     ConnectionLifecycleMetadata? Connection = null);
+
+public sealed record ConnectionOffboardingOperationResult(
+    bool Accepted,
+    string? SafeErrorCode,
+    string? OperationId,
+    ConnectionOffboardingOperationStatus? Status,
+    long? ConnectionRevision);

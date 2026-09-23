@@ -10,12 +10,14 @@ public sealed class ConnectionsElsaDbContext(DbContextOptions<ConnectionsElsaDbC
     public DbSet<IntegrationConnection> Connections { get; set; } = null!;
     public DbSet<ConnectionGenerationCleanup> GenerationCleanups { get; set; } = null!;
     public DbSet<ConnectionCredentialBinding> CredentialBindings { get; set; } = null!;
+    public DbSet<ConnectionOffboardingOperation> OffboardingOperations { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new IntegrationConnectionConfiguration());
         modelBuilder.ApplyConfiguration(new ConnectionGenerationCleanupConfiguration());
         modelBuilder.ApplyConfiguration(new ConnectionCredentialBindingConfiguration());
+        modelBuilder.ApplyConfiguration(new ConnectionOffboardingOperationConfiguration());
         base.OnModelCreating(modelBuilder);
     }
 }

@@ -16,6 +16,96 @@ public interface IConnectionLifecycleStore
 
     Task<bool> CancelGenerationCleanupAsync(string connectionId, string tenantId, string environmentId, string generationId, long fence, CancellationToken cancellationToken = default);
 
+    Task<IntegrationConnection?> TryDisconnectAndRecordAsync(
+        string id,
+        string tenantId,
+        string environmentId,
+        long expectedRevision,
+        ConnectionOffboardingOperation operation,
+        CancellationToken cancellationToken = default);
+
+    Task<ConnectionOffboardingOperation?> FindOffboardingOperationAsync(
+        string operationId,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        CancellationToken cancellationToken = default);
+
+    Task<ConnectionOffboardingOperation?> FindNextOffboardingOperationAsync(
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        DateTimeOffset now,
+        bool stableRevocationIdIdempotency,
+        bool stableUninstallIdIdempotency,
+        CancellationToken cancellationToken = default);
+
+    Task<ConnectionOffboardingOperation?> TryQueueOffboardingOperationAsync(
+        long expectedConnectionRevision,
+        ConnectionOffboardingOperation operation,
+        CancellationToken cancellationToken = default);
+
+    Task<ConnectionOffboardingOperation?> TryClaimOffboardingOperationAsync(
+        string operationId,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        long expectedFence,
+        DateTimeOffset now,
+        DateTimeOffset leaseExpiresAt,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> TryStartOffboardingProviderCallAsync(
+        string operationId,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        long fence,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> TryMarkOffboardingOutcomeUnknownIfLeaseExpiredAsync(
+        string operationId,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        long fence,
+        DateTimeOffset now,
+        string safeErrorCode,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> TryReleaseOffboardingClaimAsync(
+        string operationId,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        long fence,
+        DateTimeOffset updatedAt,
+        DateTimeOffset nextAttemptAt,
+        string safeErrorCode,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> TryCompleteOffboardingOperationAsync(
+        string operationId,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        long fence,
+        DateTimeOffset completedAt,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> TryRecordOffboardingFailureAsync(
+        string operationId,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        long fence,
+        ConnectionOffboardingOperationStatus status,
+        DateTimeOffset updatedAt,
+        DateTimeOffset? nextAttemptAt,
+        string safeErrorCode,
+        CancellationToken cancellationToken = default);
+
     Task<IntegrationConnection?> TryClaimRefreshAsync(
         string id,
         string tenantId,
