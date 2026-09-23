@@ -1,6 +1,7 @@
 # [Task] Reproduce the published Secrets SQLite upgrade from 3.8.1 to 3.8.4
 
-Parent story: `doc/integration-program/issue-drafts/8214-secrets-collision-compatibility.md` (F2.2)
+Issue: [#8276](https://github.com/elsa-workflows/elsa-core/issues/8276)
+Parent story: [#8275](https://github.com/elsa-workflows/elsa-core/issues/8275) (F2.2)
 Program: #8194
 
 ## Outcome

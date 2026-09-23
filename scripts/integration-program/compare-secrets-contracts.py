@@ -46,7 +46,14 @@ def git(repo, *args):
 
 
 def pinned(repo, ref):
-    return git(repo, 'rev-parse', '--verify', ref + '^{commit}').decode().strip()
+    result = subprocess.run(
+        ['git', '-C', str(repo), 'rev-parse', '--verify', ref + '^{commit}'],
+        capture_output=True,
+    )
+    if result.returncode:
+        detail = result.stderr.decode(errors='replace').strip()
+        raise ValueError(f'Unable to resolve source pin {ref!r} in {repo}: {detail}')
+    return result.stdout.decode().strip()
 
 
 def read_source(repo, ref, path):

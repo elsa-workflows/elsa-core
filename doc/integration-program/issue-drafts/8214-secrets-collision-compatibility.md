@@ -1,5 +1,6 @@
 # [Story] F2.2: Resolve Secrets package and upgrade compatibility
 
+Issue: [#8275](https://github.com/elsa-workflows/elsa-core/issues/8275)
 Parent: #8214 — Incremental import of extensions into core
 Program: #8194
 
@@ -34,4 +35,4 @@ This slice covers the four `Elsa.Secrets.Persistence.EFCore*` package IDs, `Elsa
 
 ## Evidence
 
-See [Secrets package lineage and compatibility evidence](../secrets-collision-compatibility.md). This draft is for root review and has not been submitted to GitHub.
+See [Secrets package lineage and compatibility evidence](../secrets-collision-compatibility.md). The first implementation Task is [#8276](https://github.com/elsa-workflows/elsa-core/issues/8276); broader provider and API tasks remain in the Story backlog.
