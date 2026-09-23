@@ -115,7 +115,9 @@ public class FileSecretRepository : ISecretRepository
                     return false;
 
                 if (secrets[index].IsLifecycleManaged)
+                {
                     return false;
+                }
 
                 if (!SecretRepositoryTenant.CanReplace(secrets[index], secret, tenantAccessor, tenancyEnabled))
                     return false;

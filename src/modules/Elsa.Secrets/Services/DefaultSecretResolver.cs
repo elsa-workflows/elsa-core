@@ -11,7 +11,9 @@ public class DefaultSecretResolver(ISecretManager secretManager) : ISecretResolv
             throw new InvalidOperationException($"Secret '{reference.Name}' was not found.");
 
         if (secret.IsLifecycleManaged)
+        {
             throw new InvalidOperationException("Lifecycle-managed secret generations can only be accessed through their owner.");
+        }
 
         if (!string.IsNullOrWhiteSpace(reference.TypeName) && !string.Equals(secret.TypeName, reference.TypeName, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException($"Secret '{reference.Name}' is not compatible with required type '{reference.TypeName}'.");

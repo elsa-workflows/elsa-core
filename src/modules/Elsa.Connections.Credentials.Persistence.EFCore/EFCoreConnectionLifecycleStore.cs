@@ -45,7 +45,9 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
 
         if (cleanup?.Status == ConnectionGenerationCleanupStatus.Deleted ||
             cleanup != null && cleanup.Status == ConnectionGenerationCleanupStatus.Deleting && cleanup.LeaseExpiresAt.HasValue && cleanup.LeaseExpiresAt.Value > now)
+        {
             return null;
+        }
 
         var rows = await Scoped(db, connectionId, tenantId, environmentId)
             .Where(x => x.Revision == expectedRevision && x.CurrentGenerationId != generationId &&
@@ -54,7 +56,9 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
             .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.Revision, x => x.Revision + 1), cancellationToken);
 
         if (rows != 1)
+        {
             return null;
+        }
 
         if (cleanup == null)
         {
@@ -80,7 +84,9 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
                     .SetProperty(x => x.Fence, x => x.Fence + 1)
                     .SetProperty(x => x.LeaseExpiresAt, leaseExpiresAt), cancellationToken);
             if (updated != 1)
+            {
                 return null;
+            }
             cleanup.Fence++;
             cleanup.LeaseExpiresAt = leaseExpiresAt;
         }
@@ -138,7 +144,9 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
                 .SetProperty(x => x.StagedGenerationId, (string?)null)
                 .SetProperty(x => x.LastSafeErrorCode, (string?)null), cancellationToken);
         if (rows != 1)
+        {
             return null;
+        }
 
         return await Scoped(db, id, tenantId, environmentId).AsNoTracking().SingleOrDefaultAsync(x => x.OperationId == operationId, cancellationToken);
     }
@@ -191,8 +199,10 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
                         x.OperationStatus == CredentialOperationStatus.Claimed && x.CurrentGenerationId == x.OperationSourceGenerationId);
 
         if (expiredAt.HasValue)
+        {
             query = query.Where(x => x.Status == ConnectionStatus.Disconnected ||
                                      x.OperationLeaseExpiresAt != null && x.OperationLeaseExpiresAt <= expiredAt.Value);
+        }
 
         return await query.ExecuteUpdateAsync(setters => setters
             .SetProperty(x => x.Revision, x => x.Revision + 1)

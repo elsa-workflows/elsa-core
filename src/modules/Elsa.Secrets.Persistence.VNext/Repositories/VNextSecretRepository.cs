@@ -89,7 +89,9 @@ public class VNextSecretRepository(IDocumentStore documentStore, ITenantAccessor
         {
             var existing = await LoadDocumentAsync(secret.Name, cancellationToken);
             if (existing?.Secret.IsLifecycleManaged == true || existing?.Secret.Status is not null and not SecretStatus.Deleted)
+            {
                 return false;
+            }
 
             try
             {

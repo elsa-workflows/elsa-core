@@ -737,9 +737,13 @@ public sealed class ConnectionLifecycleTests
     {
         var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, "test-user") };
         if (canUse)
+        {
             claims.Add(new Claim("permission", "connections.use"));
+        }
         if (canManage)
+        {
             claims.Add(new Claim("permission", "connections.manage"));
+        }
         return new ClaimsPrincipal(new ClaimsIdentity(claims, "synthetic"));
     }
     private static Tenant TenantContext() => new() { Id = TenantId, Name = TenantId };
@@ -763,7 +767,9 @@ public sealed class ConnectionLifecycleTests
             lock (_gate)
             {
                 if (!_availableTokens.Add(token))
+                {
                     throw new InvalidOperationException("synthetic_duplicate_refresh_token");
+                }
             }
         }
 
@@ -791,7 +797,9 @@ public sealed class ConnectionLifecycleTests
             lock (_gate)
             {
                 if (!_availableTokens.Remove(refreshToken))
+                {
                     throw new InvalidOperationException("synthetic_invalid_grant");
+                }
 
                 _consumedTokens.Add(refreshToken);
                 Interlocked.Increment(ref _acceptedCallCount);
@@ -825,7 +833,9 @@ public sealed class ConnectionLifecycleTests
         public Task<bool> AuthorizeAsync(ConnectionUseRequest request, CancellationToken cancellationToken = default)
         {
             if (request.Kind == ConnectionUseKind.BackgroundSystem)
+            {
                 LastBackgroundRequest = request;
+            }
 
             var identity = request.Principal.Identity;
             var inScope = request.TenantId == TenantId && request.EnvironmentId == EnvironmentId &&
@@ -881,7 +891,9 @@ public sealed class ConnectionLifecycleTests
             module.Apply();
             StageWriteFault? stageWriteFault = failBeforeStageWrite ? new StageWriteFault() : null;
             if (stageWriteFault == null)
+            {
                 services.AddScoped<IConnectionLifecycleStore>(sp => sp.GetRequiredService<EFCoreConnectionLifecycleStore>());
+            }
             else
             {
                 services.AddSingleton(stageWriteFault);
@@ -914,7 +926,9 @@ public sealed class ConnectionLifecycleTests
         {
             var serviceProvider = Interlocked.Exchange(ref _serviceProvider, null);
             if (serviceProvider != null)
+            {
                 await serviceProvider.DisposeAsync();
+            }
         }
 
         public ValueTask DisposeAsync() => new(StopAsync());
@@ -929,7 +943,9 @@ public sealed class ConnectionLifecycleTests
         public ValueTask DisposeAsync()
         {
             foreach (var file in new[] { Path, $"{Path}-shm", $"{Path}-wal" }.Where(File.Exists))
+            {
                 File.Delete(file);
+            }
 
             return ValueTask.CompletedTask;
         }
@@ -958,7 +974,9 @@ public sealed class ConnectionLifecycleTests
         public Task<bool> TryRecordStagedGenerationAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, string secretName, string generationId, CancellationToken cancellationToken = default)
         {
             if (stageWriteFault.ShouldFailStageWrite())
+            {
                 throw new TimeoutException("synthetic lost stage write response");
+            }
             return store.TryRecordStagedGenerationAsync(id, tenantId, environmentId, expectedRevision, operationId, fence, secretName, generationId, cancellationToken);
         }
         public Task<bool> TryPublishGenerationAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, CancellationToken cancellationToken = default) => store.TryPublishGenerationAsync(id, tenantId, environmentId, expectedRevision, operationId, fence, cancellationToken);
@@ -997,7 +1015,9 @@ public sealed class ConnectionLifecycleTests
         public void ThrowIfRequested()
         {
             if (Interlocked.Exchange(ref _failNextResolve, 0) == 1)
+            {
                 throw new InvalidOperationException("synthetic secret storage failure");
+            }
         }
     }
 

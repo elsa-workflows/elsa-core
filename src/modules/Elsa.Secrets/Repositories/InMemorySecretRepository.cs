@@ -100,7 +100,9 @@ public class InMemorySecretRepository : ISecretRepository
             if (existing is not null)
             {
                 if (existing.IsLifecycleManaged || existing.Status != SecretStatus.Deleted || !SecretRepositoryTenant.CanReplace(existing, secret, tenantAccessor, tenancyEnabled))
+                {
                     return Task.FromResult(false);
+                }
 
                 var replacement = Clone(secret);
                 if (tenancyEnabled)

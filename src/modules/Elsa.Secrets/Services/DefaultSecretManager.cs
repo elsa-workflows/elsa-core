@@ -162,7 +162,9 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
     {
         var persisted = await GetExistingAsync(secret.Name, cancellationToken);
         if (!string.Equals(secret.Id, persisted.Id, StringComparison.Ordinal))
+        {
             throw new InvalidOperationException($"Secret '{secret.Name}' was not found.");
+        }
 
         EnsureNotLifecycleManaged(persisted);
         return await ReadPayloadCoreAsync(persisted, cancellationToken);
@@ -173,7 +175,9 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
         ValidateManagedIdentity(ownerId, generationId);
         var name = ManagedSecretNames.ForGeneration(ownerId, generationId);
         if (await repository.GetAsync(nameValidator.Normalize(name), cancellationToken) != null)
+        {
             throw new InvalidOperationException($"A secret named '{name}' already exists.");
+        }
 
         var request = new CreateSecretRequest
         {
@@ -206,10 +210,14 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
         // must remain unavailable for recreation after cleanup.
         var secret = await repository.GetAsync(nameValidator.Normalize(name), cancellationToken);
         if (secret == null || !HasManagedOwner(secret, ownerId, generationId))
+        {
             return false;
+        }
 
         if (secret.Status == SecretStatus.Deleted)
+        {
             return true;
+        }
 
         await DeleteGenerationAsync(secret, cancellationToken);
         return true;
@@ -294,13 +302,17 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
     private static void EnsureNotLifecycleManaged(Secret secret)
     {
         if (secret.IsLifecycleManaged)
+        {
             throw new InvalidOperationException("Lifecycle-managed secret generations can only be accessed through their owner.");
+        }
     }
 
     private static void EnsureManagedOwner(Secret secret, string ownerId, string generationId)
     {
         if (!HasManagedOwner(secret, ownerId, generationId))
+        {
             throw new InvalidOperationException("Managed credential generation is unavailable.");
+        }
     }
 
     private static bool HasManagedOwner(Secret secret, string ownerId, string generationId)
@@ -312,7 +324,9 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
     private static void ValidateManagedIdentity(string ownerId, string generationId)
     {
         if (string.IsNullOrWhiteSpace(ownerId) || ownerId.Length > 200 || string.IsNullOrWhiteSpace(generationId) || generationId.Length > 200)
+        {
             throw new ArgumentException("A valid owner and generation identifier are required.");
+        }
     }
 
     private static IEnumerable<Secret> ApplyFilters(IEnumerable<Secret> secrets, ListSecretsRequest request)

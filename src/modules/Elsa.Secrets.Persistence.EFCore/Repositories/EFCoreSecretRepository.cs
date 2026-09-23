@@ -70,7 +70,9 @@ public class EFCoreSecretRepository(
         }
 
         if (existingSecret.IsLifecycleManaged || existingSecret.Status != SecretStatus.Deleted)
+        {
             return false;
+        }
 
         var incomingTenantId = secret.TenantId ?? dbContext.TenantId;
         if (tenancyEnabled && !TenantVisibility.CanReplaceOwnedRow(existingSecret.TenantId, incomingTenantId, dbContext.TenantId ?? Tenant.DefaultTenantId))
