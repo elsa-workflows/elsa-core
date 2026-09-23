@@ -1,10 +1,22 @@
 # Credential lifecycle validation slice
 
-This is a bounded validation recommendation for integration work, based on Core `origin/main` `610790ec57ae9d5c334181d50c1e65f99613fd86`. It describes tests for a future outbound connection lifecycle service. It does not claim the current Secrets or workflow runtime implements these scenarios.
+This file began as a bounded validation recommendation based on Core `origin/main` `610790ec57ae9d5c334181d50c1e65f99613fd86`. The initial synthetic Core lifecycle slice now implements and tests part of this matrix. The matrix remains broader than the shipped code; current proof and deferred scenarios are distinguished below.
+
+## Current implementation and proof
+
+The initial implementation adds `Elsa.Connections`, EF Core lifecycle storage, and a SQLite adapter. The unit tests use the actual Connections and Secrets EF feature registration, a durable SQLite file, and synthetic token values only. [`ConnectionLifecycleTests`](../../../test/unit/Elsa.Connections.UnitTests/ConnectionLifecycleTests.cs) verifies: connect through the authorized lifecycle entry point; default-deny and use/manage separation; positive host-owned system credential use and cross-tenant denial without caller-selected system identity; two live workers racing a refresh; a fresh worker after explicit disposal resolving the same encrypted generation; matching 16/24/32-byte external keys and missing/mismatched-key failures; single-use refresh-token replay rejection; disconnect and post-provider-call recovery races; planned-generation recovery after a lost stage write; live refresh and initial-connect lease protection plus expired-lease reconciliation using an injected clock; unknown provider outcome handling; and provider-error/cancellation redaction. This does not prove workflow run-grant, activity binding, or resume behavior.
+
+On 2026-09-23, these focused commands passed in the implementation worktree with .NET 10:
+
+- `dotnet test test/unit/Elsa.Connections.UnitTests/Elsa.Connections.UnitTests.csproj --no-restore` — 11/11 (`net10.0`).
+- `dotnet test test/unit/Elsa.Secrets.UnitTests/Elsa.Secrets.UnitTests.csproj -f net10.0 --no-restore` — 125/125 (`net10.0`).
+- The Secrets MySQL, Oracle, PostgreSQL, and SQL Server EF projects compiled for their supported target frameworks; MySQL targets `net8.0` and `net9.0`, and the other three compiled on `net10.0`. SQLite is built by the Connections test command.
+
+This is synthetic SQLite proof, not a live provider or released package claim. The current implementation does not include a hosted recovery scheduler, workflow activity integration, Studio UX, export/environment promotion, provider-specific refresh/revoke semantics, or automatic cleanup/offboarding. The full [operations guide](credential-lifecycle-operations.md) records those limits and the deployment/rollback boundary. The matrix below remains the acceptance plan for those future capabilities; rows are not claims that the behaviors already exist.
 
 ## Test harness
 
-Use a deterministic fake OAuth provider and a fake/SQLite `ISecretManager` setup. Use only synthetic token strings and synthetic tenant identifiers; do not call a live vendor or log token material. Make the provider expose controllable responses for expiry, refresh-token rotation, revocation scope, retry/idempotency, and each failure boundary. Run tests with two independently scoped service instances when exercising concurrency so in-process locks cannot masquerade as distributed coordination.
+Use a deterministic fake OAuth provider and the real SQLite Secrets EF feature registration. Use only synthetic token strings and synthetic tenant identifiers; do not call a live vendor or log token material. Make the provider expose controllable responses for expiry, refresh-token rotation, revocation scope, retry/idempotency, and each failure boundary. Run tests with two independently scoped service instances when exercising concurrency so in-process locks cannot masquerade as distributed coordination.
 
 Keep the existing `ISecretResolver` and `ISecretManager` consumer contracts unchanged. The test subject is a new application service that owns connection metadata, actor policy, operation state, expected revision, environment binding, and the reference to a credential generation. All resolution goes through an authorized service path; raw values must not appear in connection DTOs, logs, audit payloads, or serialized workflow summaries. The test cannot assert that arbitrary user-authored workflow values or downstream third-party activities remain redacted after explicit value injection.
 
@@ -41,11 +53,11 @@ At minimum, inject process termination or store/provider exceptions after each d
 
 Tests should verify idempotent reconciliation and exact allowed state transitions at each point. A provider call that may have consumed a one-time refresh token is an ambiguity boundary, not a generic retry case.
 
-## Exit criteria and follow-up scope
+## Exit criteria for full connector integration
 
-The lifecycle implementation is not ready to claim safe connector auth until these scenarios pass for the chosen persistence provider(s), a two-node concurrency test passes, a restart/reconciler test passes, and host authorization/redaction tests cover human and background resolution. Provider-specific adapters need their own pinned documentation and conformance cases. This slice is intentionally not a live credential canary and makes no cloud-vault or provider-support assertion.
+Full connector integration is not ready to claim safe provider support until the relevant scenarios pass for each selected persistence provider, the production host's authorization and scheduling paths are tested, and provider-specific adapters have pinned documentation and conformance cases. This synthetic slice is intentionally not a live credential canary and makes no cloud-vault or provider-support assertion.
 
-## Existing evidence executed for this audit
+## Historical source-audit evidence
 
 The repository tests validate the current Secrets storage/management and inbound External Authentication binding surfaces. These exact commands ran on 2026-09-23 from Core `610790ec57ae9d5c334181d50c1e65f99613fd86`, using the installed .NET 10 SDK. For reviewer traceability, the same suites were re-executed on the docs-only PR head with no-build/no-restore and their pass output, SDK version, and SHAs were retained in the [test execution record](test-runs/2026-09-23-net10.txt); the TRX files were written to a local temporary directory and are not part of the PR.
 
@@ -53,4 +65,4 @@ The repository tests validate the current Secrets storage/management and inbound
 - `dotnet test test/unit/Elsa.ExternalAuthentication.UnitTests/Elsa.ExternalAuthentication.UnitTests.csproj` — passed, 205/205 tests (`net10.0`).
 - `dotnet test test/integration/Elsa.ExternalAuthentication.IntegrationTests/Elsa.ExternalAuthentication.IntegrationTests.csproj --filter 'FullyQualifiedName~ConnectionManagementTests|FullyQualifiedName~SensitiveDataLeakageTests'` — passed, 34/34 filtered tests (`net10.0`).
 
-These passing suites support only the current Secrets behavior and inbound External Authentication pattern. Builds emitted existing nullable/XML-documentation warnings in unrelated source/test files. No existing test in this checkout is a two-node outbound OAuth refresh, slow-worker lease-expiry, consumed-token persistence failure, or workflow restart/reconciliation test; those remain future implementation gates, not passing results.
+These results support only the pinned source audit and inbound External Authentication pattern at that time. Builds emitted existing nullable/XML-documentation warnings in unrelated source/test files. They are separate from the current implementation proof above: the implementation tests cover synthetic SQLite refresh, lease expiry, consumed-token behavior, and worker restart, while workflow restart/resumption, real provider semantics, and production persistence-provider execution remain unverified.

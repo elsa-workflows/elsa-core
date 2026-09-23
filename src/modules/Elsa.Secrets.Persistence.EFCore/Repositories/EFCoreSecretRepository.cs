@@ -69,7 +69,7 @@ public class EFCoreSecretRepository(
             return await TrySaveChangesAsync(dbContext, secret.Name, cancellationToken);
         }
 
-        if (existingSecret.Status != SecretStatus.Deleted)
+        if (existingSecret.IsLifecycleManaged || existingSecret.Status != SecretStatus.Deleted)
             return false;
 
         var incomingTenantId = secret.TenantId ?? dbContext.TenantId;

@@ -22,7 +22,9 @@ public class EFCoreSecretsPersistenceFeature(IModule module) : PersistenceFeatur
         base.Apply();
         AddStore<Secret, EFCoreSecretRepository>();
         Services.AddScoped<ISecretRepository, EFCoreSecretRepository>();
-        Services.AddScoped<ISecretManager, DefaultSecretManager>();
+        Services.AddScoped<DefaultSecretManager>();
+        Services.AddScoped<ISecretManager>(sp => sp.GetRequiredService<DefaultSecretManager>());
+        Services.AddScoped<IManagedSecretManager>(sp => sp.GetRequiredService<DefaultSecretManager>());
         Services.AddScoped<ISecretResolver, DefaultSecretResolver>();
     }
 }

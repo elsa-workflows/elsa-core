@@ -88,7 +88,7 @@ public class VNextSecretRepository(IDocumentStore documentStore, ITenantAccessor
         while (true)
         {
             var existing = await LoadDocumentAsync(secret.Name, cancellationToken);
-            if (existing?.Secret.Status is not null and not SecretStatus.Deleted)
+            if (existing?.Secret.IsLifecycleManaged == true || existing?.Secret.Status is not null and not SecretStatus.Deleted)
                 return false;
 
             try
@@ -106,6 +106,11 @@ public class VNextSecretRepository(IDocumentStore documentStore, ITenantAccessor
     {
         EnsureDefaultTenant();
         var existing = await LoadDocumentAsync(secret.Name, cancellationToken);
+        if (existing != null)
+        {
+            secret.ManagedOwnerId = existing.Value.Secret.ManagedOwnerId;
+            secret.ManagedGenerationId = existing.Value.Secret.ManagedGenerationId;
+        }
         await SaveAsync(secret, existing?.Document.Version ?? 0, cancellationToken);
     }
 

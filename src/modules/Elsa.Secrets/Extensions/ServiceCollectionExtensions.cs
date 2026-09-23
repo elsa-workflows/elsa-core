@@ -1,4 +1,5 @@
 using Elsa.Expressions.Contracts;
+using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Providers;
 using Elsa.Secrets.Repositories;
 using Elsa.Secrets.Services;
@@ -22,7 +23,9 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<ISecretNameValidator, DefaultSecretNameValidator>();
         services.TryAddSingleton<ISecretRepository, FileSecretRepository>();
         services.TryAddSingleton<ISecretValueProtector, DefaultSecretValueProtector>();
-        services.TryAddSingleton<ISecretManager, DefaultSecretManager>();
+        services.TryAddSingleton<DefaultSecretManager>();
+        services.TryAddSingleton<ISecretManager>(serviceProvider => serviceProvider.GetRequiredService<DefaultSecretManager>());
+        services.TryAddSingleton<IManagedSecretManager>(serviceProvider => serviceProvider.GetRequiredService<DefaultSecretManager>());
         services.TryAddSingleton<ISecretResolver, DefaultSecretResolver>();
         services.TryAddSingleton<ISecretStoreRegistry, SecretStoreRegistry>();
         services.TryAddSingleton<ISecretTypeRegistry, SecretTypeRegistry>();
