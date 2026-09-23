@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -105,12 +106,12 @@ def verify_package(package, phase, feed_dir):
     }
 
 
-def restore(project, config, packages_dir, *, update_lockfiles):
+def restore(project, config, packages_dir, *, update_lockfiles, cwd=ROOT):
     command = ['dotnet', 'restore', str(project), '--configfile', str(config), '--packages', str(packages_dir), '-m:1']
     if not update_lockfiles:
         command.append('--locked-mode')
     try:
-        return run(command, cwd=ROOT, capture=True, timeout=300).stdout
+        return run(command, cwd=cwd, capture=True, timeout=300).stdout
     except subprocess.CalledProcessError as error:
         raise RuntimeError(error.stdout) from error
 
@@ -137,7 +138,7 @@ def verify_lock(project, package):
     }
 
 
-def run_phase(project, config, packages_dir, arguments):
+def run_phase(project, config, packages_dir, arguments, *, cwd=ROOT):
     env = os.environ.copy()
     env['NUGET_PACKAGES'] = str(packages_dir)
     command = [
@@ -145,7 +146,7 @@ def run_phase(project, config, packages_dir, arguments):
         '--project', str(project), '--', *map(str, arguments),
     ]
     try:
-        output = run(command, cwd=ROOT, env=env, capture=True, timeout=900).stdout
+        output = run(command, cwd=cwd, env=env, capture=True, timeout=900).stdout
     except subprocess.CalledProcessError as error:
         raise RuntimeError(error.stdout) from error
     try:
@@ -168,10 +169,11 @@ def clone_sqlite(source, destination):
 
 
 def reject_fixture(current_project, config, packages_dir, old_key_ring, wrong_key_ring,
-                   missing_key_ring, tenant_map, source_db, target_db, expected_code):
+                   missing_key_ring, tenant_map, source_db, target_db, expected_code, *, cwd=ROOT):
     result = run_phase(
         current_project, config, packages_dir,
-        [source_db, target_db, old_key_ring, wrong_key_ring, missing_key_ring, tenant_map, 'success'])
+        [source_db, target_db, old_key_ring, wrong_key_ring, missing_key_ring, tenant_map, 'success'],
+        cwd=cwd)
     if result.get('result') != 'rejected' or result.get('rejectionCode') != expected_code:
         raise RuntimeError(f'Expected {expected_code} rejection, got {result}')
     if result.get('targetUnchanged') is not True:
@@ -179,14 +181,15 @@ def reject_fixture(current_project, config, packages_dir, old_key_ring, wrong_ke
     return result
 
 
-def verify_current_core_source_pin():
+def verify_current_core_source_pin(source_root=None):
+    source_root = source_root or ROOT
     pin = subprocess.run(
-        ['git', '-C', str(ROOT), 'cat-file', '-e', f'{PINNED_TARGET_CORE_SOURCE_COMMIT}^{{commit}}'],
+        ['git', '-C', str(source_root), 'cat-file', '-e', f'{PINNED_TARGET_CORE_SOURCE_COMMIT}^{{commit}}'],
         check=False, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
     if pin.returncode:
         raise ValueError(f'Unable to resolve pinned Core target {PINNED_TARGET_CORE_SOURCE_COMMIT}: {pin.stderr.strip()}')
     difference = subprocess.run(
-        ['git', '-C', str(ROOT), 'diff', '--quiet', PINNED_TARGET_CORE_SOURCE_COMMIT, '--', *PINNED_CORE_BUILD_INPUTS],
+        ['git', '-C', str(source_root), 'diff', '--quiet', PINNED_TARGET_CORE_SOURCE_COMMIT, '--', *PINNED_CORE_BUILD_INPUTS],
         check=False, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
     if difference.returncode == 1:
         raise ValueError(f'Core source/build inputs differ from pinned target {PINNED_TARGET_CORE_SOURCE_COMMIT}')
@@ -194,13 +197,32 @@ def verify_current_core_source_pin():
         raise RuntimeError(f'Unable to compare pinned Core source/build inputs: {difference.stderr.strip()}')
 
     untracked_source = subprocess.run(
-        ['git', '-C', str(ROOT), 'ls-files', '--others', '--exclude-standard', '--', *PINNED_CORE_BUILD_INPUTS],
+        ['git', '-C', str(source_root), 'ls-files', '--others', '--exclude-standard', '--', *PINNED_CORE_BUILD_INPUTS],
         check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if untracked_source.returncode:
         raise RuntimeError(f'Unable to inspect untracked Core source/build inputs: {untracked_source.stderr.strip()}')
     if untracked_source.stdout.strip():
         paths = ', '.join(untracked_source.stdout.splitlines())
         raise ValueError(f'Untracked Core source/build inputs are present outside pinned target {PINNED_TARGET_CORE_SOURCE_COMMIT}: {paths}')
+
+
+def prepare_current_core_checkout(destination):
+    run(['git', 'clone', '--shared', '--no-checkout', str(ROOT), str(destination)],
+        capture=True, timeout=300)
+    run(['git', '-C', str(destination), 'checkout', '--detach', PINNED_TARGET_CORE_SOURCE_COMMIT],
+        cwd=destination, capture=True, timeout=300)
+    verify_current_core_source_pin(destination)
+
+    project_relative_path = CURRENT_PROJECT.relative_to(ROOT)
+    project_directory = destination / project_relative_path.parent
+    if project_directory.exists():
+        shutil.rmtree(project_directory)
+    shutil.copytree(
+        CURRENT_PROJECT.parent,
+        project_directory,
+        ignore=shutil.ignore_patterns('bin', 'obj', '.vs'),
+    )
+    return project_directory / CURRENT_PROJECT.name
 
 
 def main():
@@ -213,7 +235,6 @@ def main():
     manifest = json.loads(MANIFEST.read_text())
     if manifest['targetFramework'] != 'net10.0':
         raise ValueError('Unexpected fixture target framework')
-    verify_current_core_source_pin()
     mapping_contract = run_contract_fixtures()
 
     with tempfile.TemporaryDirectory(prefix='elsa-secrets-bridge-contract-') as temp_name:
@@ -246,6 +267,9 @@ def main():
             '</packageSourceMapping></configuration>\n'
         )
 
+        current_core_source = temp_root / 'pinned-current-core'
+        current_project = prepare_current_core_checkout(current_core_source)
+
         lock_summaries = {}
         for project, phase_name in ((OLD_PROJECT, 'extensions-3.8.1'), (CORE_PROJECT, 'core-3.8.4')):
             restore(project, config, packages_dir, update_lockfiles=args.update_lockfiles)
@@ -255,7 +279,7 @@ def main():
         if args.update_lockfiles:
             print(json.dumps({'lockfilesUpdated': True, 'verifiedPackages': verified}, indent=2))
             return 0
-        restore(CURRENT_PROJECT, config, packages_dir, update_lockfiles=False)
+        restore(current_project, config, packages_dir, update_lockfiles=False, cwd=current_core_source)
 
         old_key_ring = temp_root / 'old-data-protection-keys'
         wrong_key_ring = temp_root / 'wrong-data-protection-keys'
@@ -274,9 +298,10 @@ def main():
         if current_target_db.exists() or current_target_db.is_symlink():
             raise RuntimeError(f'Current-Core target path was not fresh: {current_target_db}')
         current_result = run_phase(
-            CURRENT_PROJECT, config, packages_dir,
+            current_project, config, packages_dir,
             [source_db, current_target_db, old_key_ring, wrong_key_ring, missing_key_ring,
-             tenant_map_path, 'success'])
+             tenant_map_path, 'success'],
+            cwd=current_core_source)
 
         if seed_result.get('phase') != 'extensions-3.8.1' or seed_result.get('result') != 'seeded':
             raise RuntimeError(f"Legacy phase did not seed the synthetic SQLite source: {seed_result}")
@@ -349,9 +374,10 @@ def main():
         if collision_target.exists() or collision_target.is_symlink():
             raise RuntimeError(f'Collision target path was not fresh: {collision_target}')
         collision_result = run_phase(
-            CURRENT_PROJECT, config, packages_dir,
+            current_project, config, packages_dir,
             [source_db, collision_target, old_key_ring, wrong_key_ring, missing_key_ring,
-             tenant_map_path, 'id-collision'])
+             tenant_map_path, 'id-collision'],
+            cwd=current_core_source)
         if collision_result.get('result') != 'rejected' or collision_result.get('rejectionCode') != 'AggregateIdCollision' or collision_result.get('targetUnchanged') is not True:
             raise RuntimeError(f'Aggregate-ID collision did not fail closed: {collision_result}')
         failure_scenarios['aggregateIdCollision'] = collision_result
@@ -360,9 +386,10 @@ def main():
         if rollback_target.exists() or rollback_target.is_symlink():
             raise RuntimeError(f'Rollback target path was not fresh: {rollback_target}')
         rollback_result = run_phase(
-            CURRENT_PROJECT, config, packages_dir,
+            current_project, config, packages_dir,
             [source_db, rollback_target, old_key_ring, wrong_key_ring, missing_key_ring,
-             tenant_map_path, 'fail-after-core-save'])
+             tenant_map_path, 'fail-after-core-save'],
+            cwd=current_core_source)
         if rollback_result.get('result') != 'rejected' or rollback_result.get('rejectionCode') != 'InjectedWriteFailure' or rollback_result.get('targetUnchanged') is not True:
             raise RuntimeError(f'Injected write failure did not roll back the target: {rollback_result}')
         failure_scenarios['injectedAfterCoreSave'] = rollback_result
@@ -386,16 +413,18 @@ def main():
             if candidate_target.exists() or candidate_target.is_symlink():
                 raise RuntimeError(f'Rejection target path was not fresh: {candidate_target}')
             failure_scenarios[name] = reject_fixture(
-                CURRENT_PROJECT, config, packages_dir, old_key_ring, wrong_key_ring,
-                missing_key_ring, tenant_map_path, candidate_db, candidate_target, rejection_code)
+                current_project, config, packages_dir, old_key_ring, wrong_key_ring,
+                missing_key_ring, tenant_map_path, candidate_db, candidate_target, rejection_code,
+                cwd=current_core_source)
 
         existing_target = temp_root / 'existing-target.db'
         existing_target.write_bytes(b'preserve existing target bytes')
         existing_target_hash = sha256_file(existing_target)
         existing_target_result = run_phase(
-            CURRENT_PROJECT, config, packages_dir,
+            current_project, config, packages_dir,
             [source_db, existing_target, old_key_ring, wrong_key_ring, missing_key_ring,
-             tenant_map_path, 'success'])
+             tenant_map_path, 'success'],
+            cwd=current_core_source)
         if (existing_target_result.get('result') != 'rejected'
                 or existing_target_result.get('rejectionCode') != 'TargetAlreadyExists'
                 or existing_target_result.get('targetUnchanged') is not True
@@ -409,9 +438,10 @@ def main():
         symlink_alias = temp_root / 'symlink-target-alias.db'
         symlink_alias.symlink_to(symlink_target)
         symlink_result = run_phase(
-            CURRENT_PROJECT, config, packages_dir,
+            current_project, config, packages_dir,
             [source_db, symlink_alias, old_key_ring, wrong_key_ring, missing_key_ring,
-             tenant_map_path, 'success'])
+             tenant_map_path, 'success'],
+            cwd=current_core_source)
         if (symlink_result.get('result') != 'rejected'
                 or symlink_result.get('rejectionCode') != 'TargetAlreadyExists'
                 or symlink_result.get('targetUnchanged') is not True
@@ -421,9 +451,10 @@ def main():
         failure_scenarios['symlinkTargetPreserved'] = symlink_result
 
         alias_result = run_phase(
-            CURRENT_PROJECT, config, packages_dir,
+            current_project, config, packages_dir,
             [source_db, source_db, old_key_ring, wrong_key_ring, missing_key_ring,
-             tenant_map_path, 'success'])
+             tenant_map_path, 'success'],
+            cwd=current_core_source)
         if (alias_result.get('result') != 'rejected'
                 or alias_result.get('rejectionCode') != 'InvalidDatabasePaths'
                 or alias_result.get('targetUnchanged') is not True

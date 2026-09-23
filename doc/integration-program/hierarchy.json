@@ -15,7 +15,7 @@
       "number": 8195,
       "title": "[Epic] E0: Program initialization and current-state audit",
       "level": "Epic",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8195"
     },
     {
@@ -85,28 +85,28 @@
       "number": 8205,
       "title": "[Feature] F0.1: Establish the issue hierarchy, reporting conventions, and decision log",
       "level": "Feature",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8205"
     },
     {
       "number": 8206,
       "title": "[Feature] F0.2: Inventory core/extensions projects, packages, dependencies, and existing integrations",
       "level": "Feature",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8206"
     },
     {
       "number": 8207,
       "title": "[Feature] F0.3: Map existing issues, release workflows, host composition, and Studio extension points",
       "level": "Feature",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8207"
     },
     {
       "number": 8208,
       "title": "[Feature] F0.4: Assess Elsa Secrets for integration credentials",
       "level": "Feature",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8208"
     },
     {
