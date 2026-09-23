@@ -211,6 +211,15 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
         using var deniedRead = await legacyRead.GetAsync("/secrets");
         Assert.Equal(HttpStatusCode.Forbidden, deniedRead.StatusCode);
 
+        using var legacyListRead = CreateClient("read:secrets", null, out var legacyListReadCapture);
+        using var deniedLegacyList = await legacyListRead.GetAsync("/secrets");
+        Assert.Equal(HttpStatusCode.Forbidden, deniedLegacyList.StatusCode);
+
+        using var legacyWriter = CreateClient("write:secrets", null, out var legacyWriterCapture);
+        var legacyWriteDenied = await Assert.ThrowsAsync<ApiException>(() => RestService.For<ISecretsApi>(legacyWriter)
+            .CreateAsync(new CreateSecretRequest { Name = "legacy-write-denied", Value = "legacy-permission-secret" }));
+        Assert.Equal(HttpStatusCode.Forbidden, legacyWriteDenied.StatusCode);
+
         using var writer = CreateClient("secrets:write", null, out var writerCapture);
         var api = RestService.For<ISecretsApi>(writer);
         const string name = "http-permission-contract";
@@ -267,11 +276,13 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
         AssertNoSecretMaterial(
             anonymousCapture.ResponseBodies
                 .Concat(legacyReadCapture.ResponseBodies)
+                .Concat(legacyListReadCapture.ResponseBodies)
+                .Concat(legacyWriterCapture.ResponseBodies)
                 .Concat(writerCapture.ResponseBodies)
                 .Concat(readerCapture.ResponseBodies)
                 .Concat(testCapture.ResponseBodies)
                 .Concat(deleterCapture.ResponseBodies),
-            "permission-secret", "must-not-rotate", "rotated-with-write");
+            "permission-secret", "legacy-permission-secret", "must-not-rotate", "rotated-with-write");
 
         using var missingAfterDelete = await reader.GetAsync($"/secrets/{name}");
         Assert.Equal(HttpStatusCode.NotFound, missingAfterDelete.StatusCode);
@@ -280,9 +291,9 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
     [Fact]
     public async Task HttpTenantResolutionSeparatesSameNameSecretsAcrossTenants()
     {
-        using var tenantAClient = CreateClient("secrets:view,secrets:write", "tenant-a", out var tenantACapture);
+        using var tenantAClient = CreateClient("secrets:view,secrets:write,secrets:delete", "tenant-a", out var tenantACapture);
         using var tenantBClient = CreateClient("secrets:view,secrets:write", "tenant-b", out var tenantBCapture);
-        using var tenantCClient = CreateClient("secrets:view", "tenant-c", out var tenantCCapture);
+        using var tenantCClient = CreateClient("secrets:view,secrets:write,secrets:delete", "tenant-c", out var tenantCCapture);
         var tenantA = RestService.For<ISecretsApi>(tenantAClient);
         var tenantB = RestService.For<ISecretsApi>(tenantBClient);
         var tenantC = RestService.For<ISecretsApi>(tenantCClient);
@@ -301,12 +312,25 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
 
         var missing = await Assert.ThrowsAsync<ApiException>(() => tenantC.GetAsync(sharedName));
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+        var missingUpdate = await Assert.ThrowsAsync<ApiException>(() => tenantC.UpdateAsync(sharedName, new UpdateSecretRequest { DisplayName = "Must not cross tenants" }));
+        Assert.Equal(HttpStatusCode.NotFound, missingUpdate.StatusCode);
+        var missingDelete = await Assert.ThrowsAsync<ApiException>(() => tenantC.DeleteAsync(sharedName));
+        Assert.Equal(HttpStatusCode.NotFound, missingDelete.StatusCode);
+
+        await tenantA.UpdateAsync(sharedName, new UpdateSecretRequest { DisplayName = "Tenant A only" });
+        Assert.NotEqual("Tenant A only", (await tenantB.GetAsync(sharedName)).DisplayName);
+        Assert.Equal(2, (await tenantA.RotateAsync(sharedName, new RotateSecretRequest { Value = "tenant-a-rotated" })).CurrentVersion);
+        Assert.Equal(1, (await tenantB.GetAsync(sharedName)).CurrentVersion);
+        await tenantA.RevokeAsync(sharedName);
+        Assert.Equal(SecretStatus.Active, (await tenantB.GetAsync(sharedName)).Status);
+        await tenantA.DeleteAsync(sharedName);
+        Assert.Equal(secretB.Id, (await tenantB.GetAsync(sharedName)).Id);
 
         AssertNoSecretMaterial(
             tenantACapture.ResponseBodies
                 .Concat(tenantBCapture.ResponseBodies)
                 .Concat(tenantCCapture.ResponseBodies),
-            "tenant-a-secret", "tenant-b-secret");
+            "tenant-a-secret", "tenant-b-secret", "tenant-a-rotated");
     }
 
     private HttpClient CreateClient(string? permissions, string? tenantId, out ResponseCaptureHandler capture)
