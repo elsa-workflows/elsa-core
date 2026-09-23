@@ -13,7 +13,7 @@ module.Configure<EFCoreConnectionsPersistenceFeature>(feature =>
     feature.UsePostgreSql(connectionString));
 ```
 
-The migration identity is provider-specific; keep the Connections provider configured when running migrations. `EnsureCreated` does not validate migration discovery and is not a substitute for the migration path.
+The migration identity is provider-specific; keep the Connections provider configured when running migrations. `EnsureCreated` does not validate migration discovery and is not a substitute for the migration path. The initial migration's `Down` deliberately throws: dropping these tables can discard unresolved provider outcomes and cleanup history. Roll back by restoring the full predeployment database backups and matching key/application version, as described in [credential lifecycle operations](credential-lifecycle-operations.md).
 
 ## Database roles and data boundaries
 

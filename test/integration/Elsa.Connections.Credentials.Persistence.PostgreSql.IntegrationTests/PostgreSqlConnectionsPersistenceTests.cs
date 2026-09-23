@@ -83,6 +83,11 @@ public sealed class PostgreSqlConnectionsPersistenceTests(PostgreSqlConnectionsF
             (await lifecycleStore.FindGenerationCleanupAsync("conn-migration", "tenant-a", "env-a", "generation-1"))!.Status);
         Assert.Equal("conn-migration", (await bindingStore.FindAsync("tenant-a", "env-a", "binding-migration"))!.ConnectionId);
         Assert.Equal(migrations, (await db.Database.GetAppliedMigrationsAsync()).ToArray());
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => db.Database.MigrateAsync("0"));
+        Assert.Equal(ConnectionGenerationCleanupStatus.Deleting,
+            (await lifecycleStore.FindGenerationCleanupAsync("conn-migration", "tenant-a", "env-a", "generation-1"))!.Status);
+        Assert.Equal(migrations, (await db.Database.GetAppliedMigrationsAsync()).ToArray());
     }
 
     [Fact]
