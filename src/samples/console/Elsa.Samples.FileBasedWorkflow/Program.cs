@@ -24,7 +24,7 @@ namespace Elsa.Samples.FileBasedWorkflow
                     .AddConsoleActivities())
                 
                 // Configure blob storage for blob storage workflow storage provider.
-                .Configure<BlobStorageWorkflowProviderOptions>(options => options.BlobStorageFactory = () => StorageFactory.Blobs.DirectoryFiles(currentDirectory))
+                .Configure<BlobStorageWorkflowProviderOptions>(options => options.BlobStorageFactory = () => StorageFactory.Disk(currentDirectory))
                 
                 .BuildServiceProvider();
 

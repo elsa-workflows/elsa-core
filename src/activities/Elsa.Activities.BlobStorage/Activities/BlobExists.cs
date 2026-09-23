@@ -5,7 +5,7 @@ using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
-using FluentStorage.Blobs;
+using FluentStorage.Storage;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.BlobStorage
@@ -17,8 +17,8 @@ namespace Elsa.Activities.BlobStorage
     )]
     public class BlobExists : Activity
     {
-        private readonly IBlobStorage _storage;
-        public BlobExists(IBlobStorage storage) => _storage = storage;
+        private readonly IStore _storage;
+        public BlobExists(IStore storage) => _storage = storage;
 
         [ActivityInput(Hint = "The ID of the blob.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string BlobId { get; set; } = default!;
@@ -28,7 +28,7 @@ namespace Elsa.Activities.BlobStorage
             if (string.IsNullOrWhiteSpace(BlobId))
                 throw new Exception($"{nameof(BlobId)} must have a value");
 
-            if (await _storage.ExistsAsync(BlobId))
+            if (await _storage.ObjectExists(BlobId))
                 return Outcome(OutcomeNames.True);
 
             return Outcome(OutcomeNames.False);

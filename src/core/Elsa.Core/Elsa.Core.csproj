@@ -18,7 +18,7 @@
         <PackageReference Include="AutoMapper" Version="12.0.0" />
         <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.0" />
         <PackageReference Include="DistributedLock.FileSystem" Version="1.0.1" />
-        <PackageReference Include="FluentStorage" Version="5.6.0" />
+        <PackageReference Include="FluentStorage" Version="8.0.22" />
         <PackageReference Include="Humanizer.Core" Version="2.13.14" />
         <PackageReference Include="MediatR" Version="12.4.1" />
         <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="9.0.1" />

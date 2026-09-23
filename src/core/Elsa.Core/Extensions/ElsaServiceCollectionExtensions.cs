@@ -220,7 +220,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddWorkflowProvider<BlobStorageWorkflowProvider>()
                 .AddWorkflowProvider<DatabaseWorkflowProvider>();
 
-            services.Configure<BlobStorageWorkflowProviderOptions>(o => o.BlobStorageFactory = StorageFactory.Blobs.InMemory);
+            services.Configure<BlobStorageWorkflowProviderOptions>(o => o.BlobStorageFactory = StorageFactory.InMemory);
 
             // Workflow Storage Providers.
             services
@@ -229,7 +229,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddWorkflowStorageProvider<WorkflowInstanceWorkflowStorageProvider>()
                 .AddWorkflowStorageProvider<BlobStorageWorkflowStorageProvider>();
 
-            services.Configure<BlobStorageWorkflowStorageProviderOptions>(o => o.BlobStorageFactory = StorageFactory.Blobs.InMemory);
+            services.Configure<BlobStorageWorkflowStorageProviderOptions>(o => o.BlobStorageFactory = StorageFactory.InMemory);
 
             // Metadata.
             services

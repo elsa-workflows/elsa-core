@@ -4,7 +4,7 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
-using FluentStorage.Blobs;
+using FluentStorage.Storage;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.BlobStorage
@@ -16,8 +16,8 @@ namespace Elsa.Activities.BlobStorage
     )]
     public class ReadBlob : Activity
     {
-        private readonly IBlobStorage _storage;
-        public ReadBlob(IBlobStorage storage) => _storage = storage;
+        private readonly IStore _storage;
+        public ReadBlob(IStore storage) => _storage = storage;
 
         [ActivityInput(Hint = "The Id assigned to the blob.")]
         [Required]
@@ -34,9 +34,9 @@ namespace Elsa.Activities.BlobStorage
                 throw new System.Exception($"{nameof(BlobId)} must have a value");
 
             if (string.IsNullOrWhiteSpace(DestinationFilePath))
-                Output = await _storage.ReadBytesAsync(BlobId, context.CancellationToken);
+                Output = await _storage.GetBytes(BlobId, context.CancellationToken);
             else
-                await _storage.ReadToFileAsync(BlobId, DestinationFilePath, context.CancellationToken);
+                await _storage.DownloadObject(BlobId, DestinationFilePath, true, context.CancellationToken); // set to overwrite destination file
 
             return Done();
         }
