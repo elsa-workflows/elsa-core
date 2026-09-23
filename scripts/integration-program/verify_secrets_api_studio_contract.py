@@ -7,7 +7,7 @@ import re
 import subprocess
 
 
-ROUTE = re.compile(r'\b(Get|Post|Put|Patch|Delete)\s*\(\s*["\']([^"\']+)["\']')
+ROUTE = re.compile(r'\b(Get|Post|Put|Patch|Delete)\s*\(\s*(?:route\s*:\s*)?["\']([^"\']+)["\']')
 CORE_PERMISSION = re.compile(r'RequirePermission\([^,]+,\s*(CoreVerbs\.\w+|"[^"]+")\)')
 LEGACY_PERMISSION = re.compile(r'ConfigurePermissions\(\s*"([^"]+)"\s*\)')
 STUDIO_METHOD = re.compile(
@@ -82,6 +82,7 @@ def endpoint_dto(source):
         if len(parts) == 2:
             return parts[0], parts[1]
     fail(f'Unsupported endpoint DTO base: {base}<{arguments}>')
+    return None, None
 
 
 def parse_api_routes(repo, ref, prefix, kind):
@@ -92,7 +93,7 @@ def parse_api_routes(repo, ref, prefix, kind):
         source = read_source(repo, ref, path)
         matches = list(ROUTE.finditer(source))
         if not matches:
-            continue
+            fail(f'Endpoint has no recognized route declaration: {path}')
         if len(matches) != 1:
             fail(f'Expected one route declaration in {path}, got {len(matches)}')
         verb, route = matches[0].groups()
@@ -179,6 +180,14 @@ def verify(core_repo, extensions_repo, studio_repo, fixture):
         verify_pin(repo, pins[name])
     verify_pin(extensions_repo, pins['extensionsSchema'])
 
+    snapshot_root = Path(__file__).resolve().parents[2]
+    for source_name, snapshot_path in fixture['studioTestSourceSnapshots'].items():
+        pinned_path = fixture['sourcePaths'][source_name]
+        pinned_source = read_source(studio_repo, pins['studio'], pinned_path)
+        local_snapshot = (snapshot_root / snapshot_path).read_text()
+        if local_snapshot != pinned_source:
+            fail(f'Studio integration-test source snapshot {snapshot_path} differs from {pins["studio"]}:{pinned_path}')
+
     core_routes = parse_api_routes(core_repo, pins['core'], fixture['sourcePaths']['coreApi'], 'core')
     legacy_routes = parse_api_routes(extensions_repo, pins['extensions'], fixture['sourcePaths']['legacyApi'], 'legacy')
     studio_routes = parse_studio_routes(studio_repo, pins['studio'], fixture['sourcePaths']['studioApi'])
@@ -262,9 +271,9 @@ def verify(core_repo, extensions_repo, studio_repo, fixture):
         'coreFeatureAndLegacyApiAreSeparateRegistrations': True,
         'consolidatedSampleBuildObservation': fixture['consolidatedSampleBuildObservation'],
         'defaultHostRuntimeRouteCompositionVerified': False,
-        'crossTenantHttpRequestsVerified': False,
+        'crossTenantHttpRequestsVerifiedBySourceContract': False,
         'legacySidecarCompatibilityVerified': False,
-        'note': 'Source contract only. Default-host HTTP composition and sidecar-dependent ID behavior require separate runtime fixtures.'
+        'note': 'This report is source-only. The separate TestServer suite exercises the pinned Studio client against the canonical Core UseSecrets/EF SQLite/UseSecretsJavaScript feature block and tenant-context isolation; full Workbench-host startup, tenant membership authorization, and sidecar-dependent legacy-ID behavior remain unverified.'
     }
 
 
