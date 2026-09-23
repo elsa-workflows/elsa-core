@@ -33,7 +33,6 @@
         <PackageReference Include="Microsoft.Extensions.Localization" Version="9.0.1" />
         <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.0" />
-        <PackageReference Include="netbox" Version="2.5.3" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
         <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
         <PackageReference Include="Rebus.Microsoft.Extensions.Logging" Version="5.1.0" />

@@ -14,7 +14,6 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Jint;
 using MediatR;
-using NetBox.Extensions;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.JavaScript
