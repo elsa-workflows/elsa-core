@@ -1,0 +1,9 @@
+set just-my-code 0
+break RemoteWorkflowContextsProvider.cs:27
+break Elsa.WorkflowContexts.Endpoints.ProviderTypes.List.List.ExecuteAsync
+run
+backtrace
+continue
+backtrace
+continue
+quit

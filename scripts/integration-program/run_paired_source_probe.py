@@ -72,7 +72,9 @@ def main():
             process.wait()
 
     results = [json.loads(line.removeprefix('PAIR_PROOF=')) for line in (output / 'build.log').read_text().splitlines() if line.startswith('PAIR_PROOF=')]
-    if len(results) != 1 or not results[0]['featureMatches'] or not results[0]['httpRoundtrip'] or results[0]['descriptorName'] != 'Synthetic' or results[0]['descriptorCount'] != 1:
+    if len(results) != 1 or not results[0]['featureMatches'] or not results[0]['httpRoundtrip'] or results[0]['descriptorName'] != 'Synthetic' or results[0]['descriptorCount'] != 1 or not results[0]['providerTypeResolves']:
+        raise RuntimeError('Missing or unexpected paired contract receipt')
+    if results[0]['descriptorType'] != 'SyntheticWorkflowContextProvider, ContractProbe':
         raise RuntimeError('Missing or unexpected paired contract receipt')
     for name in PINS:
         clone = output / ('elsa-' + name)

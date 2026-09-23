@@ -18,6 +18,10 @@ var builder = WebApplication.CreateBuilder();
 builder.WebHost.UseUrls("http://127.0.0.1:0");
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
+// The legacy context loader consumes simple assembly-qualified names. Explicitly
+// register this trusted host provider; never permit arbitrary CLR type loading.
+builder.Services.Configure<Elsa.Common.Serialization.SerializationTypeOptions>(options =>
+    options.RegisterTypeAlias(typeof(SyntheticWorkflowContextProvider), typeof(SyntheticWorkflowContextProvider).GetSimpleAssemblyQualifiedName()));
 builder.Services.AddSingleton<Elsa.WorkflowContexts.Contracts.IWorkflowContextProvider, SyntheticWorkflowContextProvider>();
 builder.Services.AddElsa(elsa => elsa.UseWorkflowContexts());
 builder.Services.AddFastEndpoints(options => { options.DisableAutoDiscovery = true; options.Assemblies = [typeof(Elsa.WorkflowContexts.Features.WorkflowContextsFeature).Assembly]; });
@@ -34,6 +38,6 @@ try {
     var url = new Uri(app.Urls.Single() + "/elsa/api");
     var client = new Elsa.Studio.WorkflowContexts.Services.RemoteWorkflowContextsProvider(new ProbeBackendClient(url));
     var descriptors = (await client.ListAsync()).ToArray();
-    if (descriptors.Length != 1 || descriptors[0].Name != "Synthetic") throw new InvalidOperationException("Descriptor contract mismatch");
-    Console.WriteLine("PAIR_PROOF=" + JsonSerializer.Serialize(new { expected, features, featureMatches = features.Contains(expected), httpRoundtrip = true, descriptorCount = descriptors.Length, descriptorName = descriptors[0].Name, backendAssembly = typeof(Elsa.WorkflowContexts.Features.WorkflowContextsFeature).Assembly.Location, studioAssembly = studioFeature.Assembly.Location, interactiveDebuggingVerified = false }));
+    if (descriptors.Length != 1 || descriptors[0].Name != "Synthetic" || descriptors[0].Type != typeof(SyntheticWorkflowContextProvider).GetSimpleAssemblyQualifiedName() || Type.GetType(descriptors[0].Type) != typeof(SyntheticWorkflowContextProvider)) throw new InvalidOperationException("Descriptor contract mismatch");
+    Console.WriteLine("PAIR_PROOF=" + JsonSerializer.Serialize(new { expected, features, featureMatches = features.Contains(expected), httpRoundtrip = true, descriptorCount = descriptors.Length, descriptorName = descriptors[0].Name, descriptorType = descriptors[0].Type, providerTypeResolves = true, backendAssembly = typeof(Elsa.WorkflowContexts.Features.WorkflowContextsFeature).Assembly.Location, studioAssembly = studioFeature.Assembly.Location, interactiveDebuggingVerified = false }));
 } finally { await app.StopAsync(); }

@@ -37,6 +37,8 @@
     "httpRoundtrip": true,
     "descriptorCount": 1,
     "descriptorName": "Synthetic",
+    "descriptorType": "SyntheticWorkflowContextProvider, ContractProbe",
+    "providerTypeResolves": true,
     "interactiveDebuggingVerified": false
   },
   "publicationPerformed": false,

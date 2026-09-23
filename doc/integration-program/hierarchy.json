@@ -463,7 +463,7 @@
       "number": 8259,
       "title": "[Task] Select the release-proof connector and design its release unit",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8259"
     },
     {
@@ -535,6 +535,13 @@
       "level": "Task",
       "state": "open",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8280"
+    },
+    {
+      "number": 8282,
+      "title": "[Task] Specify and verify the Secrets SQLite bridge",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8282"
     }
   ],
   "parent_edges": [
@@ -837,6 +844,10 @@
     [
       8279,
       8280
+    ],
+    [
+      8275,
+      8282
     ]
   ],
   "blocking_edges": [
@@ -955,6 +966,10 @@
     [
       8270,
       8271
+    ],
+    [
+      8276,
+      8282
     ]
   ]
 }
