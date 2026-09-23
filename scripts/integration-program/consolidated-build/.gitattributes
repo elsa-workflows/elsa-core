@@ -1,2 +1,2 @@
-# Preserve CRLF in pinned-source patch hunks and legacy context whitespace.
 source-integration.patch -text -whitespace
+dapper-atomic-updates.patch -text -whitespace
