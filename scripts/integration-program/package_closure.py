@@ -113,48 +113,89 @@ def verify_project_reference_paths(
         )
 
 
-def resolved_project_references(project_file: Path, timeout_seconds: int) -> list[Path]:
-    try:
-        result = subprocess.run(
-            [
-                "dotnet", "msbuild", str(project_file), "-nologo", "-getItem:ProjectReference",
-                "-property:UseProjectReferences=true",
-            ],
-            text=True,
-            capture_output=True,
-            check=False,
-            timeout=timeout_seconds,
-        )
-    except subprocess.TimeoutExpired as error:
-        raise ValueError(f"Project reference evaluation timed out for {project_file} after {timeout_seconds}s") from error
-    if result.returncode:
-        raise ValueError(f"Cannot evaluate project references for {project_file}: {result.stderr.strip()}")
-    try:
-        items = json.loads(result.stdout).get("Items", {}).get("ProjectReference", [])
-    except json.JSONDecodeError as error:
-        raise ValueError(f"MSBuild returned invalid project-reference JSON for {project_file}: {error}") from error
-    return [Path(item["FullPath"]).resolve() for item in items]
+def resolved_project_inputs(project_file: Path, timeout_seconds: int, use_project_references: bool) -> tuple[list[Path], list[str]]:
+    """Evaluate every declared framework; outer-build items alone can miss conditional references."""
+    def evaluate(framework: str | None = None) -> dict[str, Any]:
+        command = [
+            "dotnet", "msbuild", str(project_file), "-nologo",
+            "-getItem:ProjectReference,PackageReference",
+            "-getProperty:TargetFramework,TargetFrameworks",
+            f"-property:UseProjectReferences={str(use_project_references).lower()}",
+        ]
+        if framework:
+            command.append(f"-property:TargetFramework={framework}")
+        try:
+            result = subprocess.run(command, text=True, capture_output=True, check=False, timeout=timeout_seconds)
+        except subprocess.TimeoutExpired as error:
+            raise ValueError(f"Project input evaluation timed out for {project_file} after {timeout_seconds}s") from error
+        if result.returncode:
+            raise ValueError(f"Cannot evaluate project inputs for {project_file}: {result.stdout.strip()} {result.stderr.strip()}")
+        try:
+            value = json.loads(result.stdout)
+            if not isinstance(value["Items"]["ProjectReference"], list) or not isinstance(value["Items"]["PackageReference"], list):
+                raise ValueError("Expected item arrays")
+            return value
+        except (json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
+            raise ValueError(f"MSBuild returned invalid project-input JSON for {project_file}: {error}") from error
+
+    outer = evaluate()
+    properties = outer.get("Properties", {})
+    frameworks = set(filter(None, properties.get("TargetFrameworks", "").split(";")))
+    if properties.get("TargetFramework"):
+        frameworks.add(properties["TargetFramework"])
+    evaluations = [outer] + [evaluate(framework) for framework in sorted(frameworks)]
+    references = {Path(item["FullPath"]).resolve() for value in evaluations for item in value["Items"]["ProjectReference"]}
+    packages = {item["Identity"] for value in evaluations for item in value["Items"]["PackageReference"]}
+    return sorted(references), sorted(packages)
 
 
 def verify_resolved_project_graph(plan: dict[str, Any], sources: dict[str, Path], timeout_seconds: int) -> None:
-    core_source = sources["elsa-core"]
-    extensions_source = sources["elsa-extensions"]
-    slack_project = extensions_source / RELEASE_UNIT[1]
-    slack_references = resolved_project_references(slack_project, timeout_seconds)
-    verify_project_reference_paths(
-        slack_project,
-        core_source,
-        extensions_source,
-        slack_references,
-        requires_core_elsa=True,
-    )
-
-    for entry in plan["projects"]:
-        if entry["lane"] == "performance" or not entry["key"].startswith("elsa-extensions:"):
-            continue
-        project_file = Path(entry["project_file"])
-        references = resolved_project_references(project_file, timeout_seconds)
-        verify_project_reference_paths(project_file, core_source, extensions_source, references)
+    core_source = sources["elsa-core"].resolve()
+    extensions_source = sources["elsa-extensions"].resolve()
+    slack_project = (extensions_source / RELEASE_UNIT[1]).resolve()
+    source_package_ids = {package.casefold() for package in plan["source_package_ids"]}
+    # A Core root uses package references for external infrastructure. An Extensions root passes
+    # UseProjectReferences=true to its whole build graph, including referenced Core projects.
+    pending = [(slack_project, True)] + [
+        (Path(entry["project_file"]).resolve(), entry["key"].startswith("elsa-extensions:"))
+        for entry in sorted(plan["projects"], key=lambda row: not row["key"].startswith("elsa-extensions:")) if entry["lane"] != "performance"
+    ]
+    visited: set[tuple[Path, bool]] = set()
+    receipt: dict[str, Any] = {"status": "checking", "framework_scope": "all declared frameworks", "projects": []}
+    plan["source_binding_preflight"] = receipt
+    try:
+        unresolved = plan.get("unresolved_source_package_ids", [])
+        receipt["unresolved_source_package_ids"] = unresolved
+        if unresolved:
+            raise ValueError(
+                f"Source package identity is missing for packable or unclassified projects: {unresolved}. "
+                "Evaluate and record their package identities before claiming source closure."
+            )
+        while pending:
+            project_file, use_project_references = pending.pop(0)
+            identity = (project_file, use_project_references)
+            if identity in visited:
+                continue
+            visited.add(identity)
+            references, packages = resolved_project_inputs(project_file, timeout_seconds, use_project_references)
+            remaining_source_packages = [package for package in packages if package.casefold() in source_package_ids]
+            receipt["projects"].append({
+                "project": str(project_file), "use_project_references": use_project_references,
+                "project_references": [str(path) for path in references],
+                "remaining_source_package_references": remaining_source_packages,
+            })
+            if remaining_source_packages:
+                raise ValueError(
+                    f"Pinned-source proof still resolves source-owned packages from a feed/cache in {project_file}: "
+                    f"{remaining_source_packages}. Use reviewed source bindings before claiming source closure."
+                )
+            verify_project_reference_paths(project_file, core_source, extensions_source, references,
+                                           requires_core_elsa=project_file == slack_project and use_project_references)
+            pending.extend((reference, use_project_references) for reference in references)
+    except Exception:
+        receipt["status"] = "failed"
+        raise
+    receipt["status"] = "passed"
 
 
 def deferred_execution_projects(projects: list[dict[str, Any]], execution: list[dict[str, Any]]) -> list[str]:
@@ -260,6 +301,16 @@ def build_plan(inventory_path: Path, sources: dict[str, Path]) -> dict[str, Any]
             for repository in ("elsa-core", "elsa-extensions")
         },
         "source_checkouts": source_receipts,
+        "source_package_ids": sorted({
+            project["package_id"] for repository in ("elsa-core", "elsa-extensions")
+            for project in inventory["project_inventory"][repository] if project.get("package_id")
+        }),
+        "unresolved_source_package_ids": sorted(
+            f"{repository}:{project['path']}"
+            for repository in ("elsa-core", "elsa-extensions")
+            for project in inventory["project_inventory"][repository]
+            if project.get("is_packable") is not False and not project.get("package_id")
+        ),
         "affected_test_project_count": len(entries),
         "ambiguous_package_edges_resolved_conservatively": len(graph.ambiguous_package_edges),
         "lane_counts": lane_counts,
@@ -373,8 +424,7 @@ def execute_plan(
                 "--logger", f"trx;LogFileName={trx_path.name}",
                 "--results-directory", str(trx_path.parent),
             ]
-        if is_extension:
-            command.append("-p:UseProjectReferences=true")
+        command.append(f"-p:UseProjectReferences={str(is_extension).lower()}")
 
         print(f"[{index}/{len(selected)}] {entry['lane']} {key}", flush=True)
         try:

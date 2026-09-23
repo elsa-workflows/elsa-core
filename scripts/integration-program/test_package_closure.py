@@ -3,7 +3,7 @@ import json
 import os
 import tempfile
 import unittest
-from contextlib import redirect_stderr
+from contextlib import contextmanager, redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
@@ -17,6 +17,8 @@ from package_closure import (
     parse_sources,
     parse_trx,
     verify_project_reference_paths,
+    verify_resolved_project_graph,
+    resolved_project_inputs,
     verify_source_clean,
     verify_source_pin,
 )
@@ -53,6 +55,25 @@ class PackageClosureTests(unittest.TestCase):
             "elsa-core": "610790ec57ae9d5c334181d50c1e65f99613fd86",
             "elsa-extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287",
         })
+
+    def test_missing_packable_identity_blocks_source_preflight(self):
+        self.assertIn("TlsSmoke", build_plan(INVENTORY, {})["source_package_ids"])
+        inventory = json.loads(INVENTORY.read_text())
+        smoke = next(row for row in inventory["project_inventory"]["elsa-core"] if row["path"] == "test/TlsSmoke/TlsSmoke.csproj")
+        smoke["package_id"] = None
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "inventory.json"
+            path.write_text(json.dumps(inventory))
+            recorded = build_plan(path, {})
+        self.assertEqual(recorded["unresolved_source_package_ids"], ["elsa-core:test/TlsSmoke/TlsSmoke.csproj"])
+        with self.source_graph() as (plan, sources, *_):
+            plan["unresolved_source_package_ids"] = recorded["unresolved_source_package_ids"]
+            with patch("package_closure.resolved_project_inputs") as evaluate:
+                with self.assertRaisesRegex(ValueError, "identity is missing"):
+                    verify_resolved_project_graph(plan, sources, 30)
+            evaluate.assert_not_called()
+            self.assertEqual(plan["source_binding_preflight"]["status"], "failed")
+            self.assertEqual(plan["source_binding_preflight"]["projects"], [])
 
     def test_declared_test_inputs_drive_service_and_host_classification(self):
         docker_lane, _ = classify_project("elsa-core", {
@@ -102,6 +123,58 @@ class PackageClosureTests(unittest.TestCase):
             decoy_core_elsa.touch()
             with self.assertRaisesRegex(ValueError, "outside the pinned Core and Extensions"):
                 verify_project_reference_paths(project, core, extensions, [decoy_core_elsa], requires_core_elsa=True)
+
+    @contextmanager
+    def source_graph(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            core, extensions = root / "core", root / "extensions"
+            slack = extensions / "src/modules/communication/Elsa.Slack/Elsa.Slack.csproj"
+            elsa = core / "src/modules/Elsa/Elsa.csproj"
+            helper = core / "src/Helper/Helper.csproj"
+            for path in (slack, elsa, helper):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.touch()
+            plan = {"source_package_ids": ["Elsa"], "projects": []}
+            yield plan, {"elsa-core": core, "elsa-extensions": extensions}, slack, elsa, helper
+
+    def test_transitive_cached_source_package_is_rejected_before_execution(self):
+        with self.source_graph() as (plan, sources, slack, elsa, helper):
+            inputs = {slack: ([elsa], []), elsa: ([helper], []), helper: ([], ["eLsA", "ThirdParty"])}
+            with patch("package_closure.resolved_project_inputs", side_effect=lambda path, *_: inputs[path]):
+                with self.assertRaisesRegex(ValueError, "feed/cache"):
+                    verify_resolved_project_graph(plan, sources, 30)
+            receipt = plan["source_binding_preflight"]
+            self.assertEqual(receipt["status"], "failed")
+            self.assertEqual(receipt["projects"][-1]["remaining_source_package_references"], ["eLsA"])
+            self.assertEqual(len(receipt["projects"]), 3)
+
+    def test_transitive_outside_reference_is_rejected_and_cycle_is_bounded(self):
+        with self.source_graph() as (plan, sources, slack, elsa, helper):
+            outside = sources["elsa-core"].parent / "ambient.csproj"
+            outside.touch()
+            inputs = {slack: ([elsa], []), elsa: ([helper], []), helper: ([elsa, outside], [])}
+            with patch("package_closure.resolved_project_inputs", side_effect=lambda path, *_: inputs[path]):
+                with self.assertRaisesRegex(ValueError, "outside the pinned"):
+                    verify_resolved_project_graph(plan, sources, 30)
+                inputs[helper] = ([elsa], ["ThirdParty"])
+                verify_resolved_project_graph(plan, sources, 30)
+            self.assertEqual(plan["source_binding_preflight"]["status"], "passed")
+            self.assertEqual(len(plan["source_binding_preflight"]["projects"]), 3)
+
+    def test_evaluation_includes_framework_conditional_package_references(self):
+        from types import SimpleNamespace
+        def response(packages):
+            return SimpleNamespace(returncode=0, stderr="", stdout=json.dumps({
+                "Properties": {"TargetFramework": "", "TargetFrameworks": "net8.0;net10.0"},
+                "Items": {"ProjectReference": [], "PackageReference": [{"Identity": value} for value in packages]},
+            }))
+        with patch("package_closure.subprocess.run", side_effect=[response([]), response(["Elsa"]), response(["ThirdParty"])]) as run:
+            references, packages = resolved_project_inputs(Path("Test.csproj"), 30, True)
+        self.assertEqual(references, [])
+        self.assertEqual(packages, ["Elsa", "ThirdParty"])
+        self.assertEqual(run.call_count, 3)
+        self.assertTrue(all("-property:UseProjectReferences=true" in call.args[0] for call in run.call_args_list))
 
     def test_omitted_build_host_and_docker_projects_remain_deferred(self):
         projects = [
