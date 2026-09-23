@@ -519,7 +519,7 @@
       "number": 8276,
       "title": "[Task] Reproduce the published Secrets SQLite upgrade from 3.8.1 to 3.8.4",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8276"
     },
     {
@@ -533,7 +533,7 @@
       "number": 8280,
       "title": "[Task] Capture a reproducible paired WorkflowContexts source contract probe",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8280"
     },
     {
@@ -549,6 +549,27 @@
       "level": "Task",
       "state": "open",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8284"
+    },
+    {
+      "number": 8286,
+      "title": "[Story] Build and verify the consolidated source workspace before history import",
+      "level": "Story",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8286"
+    },
+    {
+      "number": 8287,
+      "title": "[Task] Prepare and diagnose the full consolidated source build",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8287"
+    },
+    {
+      "number": 8290,
+      "title": "[Task] Implement a synthetic current-Core Secrets SQLite bridge",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8290"
     }
   ],
   "parent_edges": [
@@ -859,6 +880,18 @@
     [
       8279,
       8284
+    ],
+    [
+      8214,
+      8286
+    ],
+    [
+      8286,
+      8287
+    ],
+    [
+      8275,
+      8290
     ]
   ],
   "blocking_edges": [
@@ -985,6 +1018,10 @@
     [
       8280,
       8284
+    ],
+    [
+      8282,
+      8290
     ]
   ]
 }
