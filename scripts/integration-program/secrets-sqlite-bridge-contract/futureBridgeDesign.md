@@ -1,6 +1,10 @@
-# Smallest reversible bridge design
+# Reversible bridge design and current-target requirements
 
-This design is a bounded recommendation from the pinned 3.8.1 → 3.8.4 evidence. It does not authorize or implement production DDL. A future task should turn it into reviewed migration code and integration tests before any customer database is touched.
+The first section records the historical 3.8.1 → 3.8.4 fixture contract. It does not define the current Core target: Core 3.8.4 has no native `TenantId`, while current Core does. The current-target section below is grounded in Core commit [`232952540306fc868324e4fb52bae08413ba4113`](https://github.com/elsa-workflows/elsa-core/tree/232952540306fc868324e4fb52bae08413ba4113). Neither section authorizes or implements production DDL. A future task must turn the current-target requirements into reviewed migration code and integration tests before any customer database is touched.
+
+## Historical 3.8.1 → 3.8.4 fixture only
+
+The separate-database recommendation below applies only to the pinned historical pair characterized by [#8276](https://github.com/elsa-workflows/elsa-core/issues/8276). Treat its statements about Core fields, schema, tenancy blockers, and compatibility as specific to Core 3.8.4. In particular, its no-native-tenant-field conclusion must not be carried forward to current Core.
 
 ## Preserve source rows and identity
 
@@ -65,3 +69,20 @@ The sidecar preserves tenant, owner, per-version IDs, status values, names, time
 - It preserves metadata-only behavior (`ExpiresIn`, `LastAccessedAt`, per-version `UpdatedAt`) through the sidecar-backed adapter or explicitly retires those behaviors with a compatibility plan.
 
 Until that adapter and its authorization tests exist, a sidecar can preserve source data but must not be treated as proof that a tenant-bearing or ID-addressed application is safe to cut over. This is a direct-upgrade no-go, not a permanent block on a reversible, compatibility-backed migration.
+
+## Current Core target requirements
+
+The verified target commit is [`232952540306fc868324e4fb52bae08413ba4113`](https://github.com/elsa-workflows/elsa-core/tree/232952540306fc868324e4fb52bae08413ba4113). `Secret` inherits `Id` and nullable `TenantId` from [`Entity`](https://github.com/elsa-workflows/elsa-core/blob/232952540306fc868324e4fb52bae08413ba4113/src/modules/Elsa.Common/Entities/Entity.cs); it has no `Owner` field. [`SecretVersion`](https://github.com/elsa-workflows/elsa-core/blob/232952540306fc868324e4fb52bae08413ba4113/src/modules/Elsa.Secrets/Models/SecretVersion.cs) has no legacy per-version ID, `UpdatedAt`, `ExpiresIn`, or `LastAccessedAt` fields. Those legacy-only values still need a compatibility sidecar, and their old behavior is not restored by storing them there.
+
+Current SQLite persistence has a tenant-aware unique `(TenantId, NormalizedName)` index. [`SecretTenancy`](https://github.com/elsa-workflows/elsa-core/blob/232952540306fc868324e4fb52bae08413ba4113/src/modules/Elsa.Secrets.Persistence.EFCore.Sqlite/Migrations/Secrets/20260825230122_SecretTenancy.cs) adds the nullable column and replaces the old global unique index. [`SecretDefaultTenantUniqueness`](https://github.com/elsa-workflows/elsa-core/blob/232952540306fc868324e4fb52bae08413ba4113/src/modules/Elsa.Secrets.Persistence.EFCore.Sqlite/Migrations/Secrets/20260914120000_SecretDefaultTenantUniqueness.cs) converts remaining null tenant IDs to the default tenant ID `""` before recreating that index. The [`EF Core repository`](https://github.com/elsa-workflows/elsa-core/blob/232952540306fc868324e4fb52bae08413ba4113/src/modules/Elsa.Secrets.Persistence.EFCore/Repositories/EFCoreSecretRepository.cs) stamps default-tenant rows and applies tenant ownership rules through its configured tenancy behavior. This is the native target path to test; Core 3.8.4 is not.
+
+A bounded current-target proof should therefore:
+
+1. Create a synthetic source database from the pinned Extensions schema and a fresh destination by running the target Core migrations. Keep the source immutable and verify its bytes and migration history remain unchanged.
+2. Preserve non-empty legacy `TenantId` values exactly in Core's native `TenantId`, after verifying those identifiers resolve to the same tenant context at the host boundary. Map null/empty legacy tenant values to `""` only after verifying that the source represented them as default-tenant rows. Fail closed on unknown tenant semantics, missing tenant context, or any target uniqueness collision. Exercise reads and writes in at least two named tenants and the default tenant.
+3. Preserve each legacy row ID, owner, and every field with no native Core equivalent in a namespaced sidecar keyed to the source aggregate/version. Core has no `Owner` field, so tenant filtering alone does not preserve owner authorization: no legacy route may be cut over until an adapter checks the preserved owner on every applicable operation. Sidecar preservation does not itself prove route, client, owner, or metadata-behavior compatibility.
+4. Keep the legacy logical aggregate ID as the Core aggregate ID when it passes validation and does not collide. Link each old per-version ID to its Core aggregate/version in the sidecar; test that every source row maps once and that every target version has exactly one source pointer. Preserve `ExpiresIn`, `LastAccessedAt`, per-version `UpdatedAt`, old ciphertext, and unsupported status details verbatim in the sidecar unless a separately verified native mapping exists.
+5. Perform destination writes and sidecar creation atomically. Inject validation, encryption, uniqueness, and write failures and verify rollback leaves the destination unchanged and the old source readable. Verify encrypted values only through the configured Core store; never place plaintext or keys in SQLite sidecar data, logs, or reports.
+6. Report this as a synthetic SQLite conversion proof only. Keep host route selection, API/client compatibility, Owner authorization adapter, provider coverage beyond SQLite, and production cutover as separate acceptance gates.
+
+This proof should reuse the exact artifact/key provenance and crypto contract in this PR, but must exercise actual SQLite rows against the current Core schema. It must not claim end-to-end compatibility until the legacy owner and route behavior is implemented and tested.
