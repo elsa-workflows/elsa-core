@@ -1,0 +1,29 @@
+{
+  "targetFramework": "net10.0",
+  "dataProtectionPurpose": "Elsa.Secrets.Encryption",
+  "dataProtectionApplicationName": "Elsa-Secrets-Bridge-Contract-Synthetic",
+  "phases": {
+    "extensions-3.8.1": {
+      "repository": "https://github.com/elsa-workflows/elsa-extensions",
+      "sourceCommit": "01bf9ad70d0399afadae9609fe820703d3de290d",
+      "packages": [
+        {
+          "id": "Elsa.Secrets.Management",
+          "version": "3.8.1",
+          "sha512": "89cbdffc7e4688ca0dc3c4deb5e50ac9d835272f6b87f999e8284a58518adcd46b95e45b68dfd249ac189db8a3f7bb75141762953ceca95a8fa3d9207f7a81ad"
+        }
+      ]
+    },
+    "core-3.8.4": {
+      "repository": "https://github.com/elsa-workflows/elsa-core",
+      "sourceCommit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+      "packages": [
+        {
+          "id": "Elsa.Secrets",
+          "version": "3.8.4",
+          "sha512": "dba3b4121ad829c1b7486f35507d452bb7ddfd8e3fc7746836bec8e6f300dddd780beb13b9accfd1f2b4ffa755b33d99c8b7766fb7a15184a9030556f46620c7"
+        }
+      ]
+    }
+  }
+}
