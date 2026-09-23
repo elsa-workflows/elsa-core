@@ -1,0 +1,92 @@
+[
+  {
+    "assembly": "Elsa.Agents.Activities",
+    "sourceProject": "src/extensions/agents/Elsa.Agents.Activities/Elsa.Agents.Activities.csproj",
+    "releasedVersion": "3.8.4"
+  },
+  {
+    "assembly": "Elsa.Data.Csv",
+    "sourceProject": "src/extensions/data/Elsa.Data.Csv/Elsa.Data.Csv.csproj",
+    "releasedVersion": "3.8.4"
+  },
+  {
+    "assembly": "Elsa.DevOps.GitHub",
+    "sourceProject": "src/extensions/devops/Elsa.DevOps.GitHub/Elsa.DevOps.GitHub.csproj",
+    "releasedVersion": "3.8.4"
+  },
+  {
+    "assembly": "Elsa.Email",
+    "sourceProject": "src/extensions/email/Elsa.Email/Elsa.Email.csproj",
+    "releasedVersion": "3.8.4"
+  },
+  {
+    "assembly": "Elsa.IO.Compression",
+    "sourceProject": "src/extensions/io/Elsa.IO.Compression/Elsa.IO.Compression.csproj",
+    "releasedVersion": "3.8.4"
+  },
+  {
+    "assembly": "Elsa.Ldap",
+    "sourceProject": "src/extensions/ldap/Elsa.Ldap/Elsa.Ldap.csproj",
+    "releasedVersion": null
+  },
+  {
+    "assembly": "Elsa.Logging",
+    "sourceProject": "src/extensions/diagnostics/Elsa.Logging/Elsa.Logging.csproj",
+    "releasedVersion": "3.8.4"
+  },
+  {
+    "assembly": "Elsa.Mqtt",
+    "sourceProject": "src/extensions/mqtt/Elsa.Mqtt/Elsa.Mqtt.csproj",
+    "releasedVersion": null
+  },
+  {
+    "assembly": "Elsa.OrchardCore",
+    "sourceProject": "src/extensions/cms/Elsa.OrchardCore/Elsa.OrchardCore.csproj",
+    "releasedVersion": "3.8.4"
+  },
+  {
+    "assembly": "Elsa.ServiceBus.AzureServiceBus",
+    "sourceProject": "src/extensions/servicebus/Elsa.ServiceBus.AzureServiceBus/Elsa.ServiceBus.AzureServiceBus.csproj",
+    "releasedVersion": "3.8.4"
+  },
+  {
+    "assembly": "Elsa.ServiceBus.Kafka",
+    "sourceProject": "src/extensions/servicebus/Elsa.ServiceBus.Kafka/Elsa.ServiceBus.Kafka.csproj",
+    "releasedVersion": "3.8.4"
+  },
+  {
+    "assembly": "Elsa.ServiceBus.MassTransit",
+    "sourceProject": "src/extensions/servicebus/Elsa.ServiceBus.MassTransit/Elsa.ServiceBus.MassTransit.csproj",
+    "releasedVersion": "3.8.4"
+  },
+  {
+    "assembly": "Elsa.Slack",
+    "sourceProject": "src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj",
+    "releasedVersion": "3.8.4"
+  },
+  {
+    "assembly": "Elsa.Sql",
+    "sourceProject": "src/extensions/sql/Elsa.Sql/Elsa.Sql.csproj",
+    "releasedVersion": "3.8.4"
+  },
+  {
+    "assembly": "Elsa.Storage.AzureStorage",
+    "sourceProject": "src/extensions/storage/Elsa.Storage.AzureStorage/Elsa.Storage.AzureStorage.csproj",
+    "releasedVersion": "3.8.4"
+  },
+  {
+    "assembly": "Elsa.Storage.Files",
+    "sourceProject": "src/extensions/storage/Elsa.Storage.Files/Elsa.Storage.Files.csproj",
+    "releasedVersion": "3.8.4"
+  },
+  {
+    "assembly": "Elsa.Telnyx",
+    "sourceProject": "src/extensions/telecom/Elsa.Telnyx/Elsa.Telnyx.csproj",
+    "releasedVersion": "3.8.4"
+  },
+  {
+    "assembly": "Elsa.WorkflowContexts",
+    "sourceProject": "src/extensions/workflows/Elsa.WorkflowContexts/Elsa.WorkflowContexts.csproj",
+    "releasedVersion": "3.8.4"
+  }
+]
