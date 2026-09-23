@@ -86,19 +86,33 @@ internal static class Program
         var tenantMapPath = Path.GetFullPath(args[5]);
         var scenario = args[6];
 
-        if (!File.Exists(sourcePath) || string.Equals(sourcePath, targetPath, StringComparison.Ordinal))
+        var pathComparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        if (string.Equals(sourcePath, targetPath, pathComparison))
+        {
             throw new BridgeRejectedException("InvalidDatabasePaths");
-        Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
-        if (File.Exists(targetPath))
-            File.Delete(targetPath);
+        }
+
+        if (!File.Exists(sourcePath))
+        {
+            throw new BridgeRejectedException("InvalidDatabasePaths");
+        }
+
+        if (TargetPathExistsOrIsSymbolicLink(targetPath))
+        {
+            throw new BridgeRejectedException("TargetAlreadyExists");
+        }
 
         var tenantMap = await LoadTenantMapAsync(tenantMapPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
+        CreateFreshTargetFile(targetPath);
         var tenantAccessor = new DefaultTenantAccessor();
         await using var services = CreateCurrentServices(targetPath, tenantAccessor);
         await MigrateTargetAsync(services);
 
         if (scenario == "id-collision")
+        {
             await SeedAggregateIdCollisionAsync(services);
+        }
 
         var targetBefore = await SnapshotTargetAsync(services);
         try
@@ -112,13 +126,17 @@ internal static class Program
 
             if (source.Any(row => CanUnprotect(wrongOldProtector, row.EncryptedValue))
                 || source.Any(row => CanUnprotect(missingOldProtector, row.EncryptedValue)))
+            {
                 throw new BridgeRejectedException("OldKeyRingIsolationFailed");
+            }
 
             var plaintextByLegacyId = new Dictionary<string, string>(StringComparer.Ordinal);
             try
             {
                 foreach (var row in source)
+                {
                     plaintextByLegacyId.Add(row.Id, oldProtector.Unprotect(row.EncryptedValue));
+                }
             }
             catch (CryptographicException)
             {
@@ -194,7 +212,9 @@ internal static class Program
                 && targetMigrationIds.SequenceEqual(ExpectedTargetMigrationIds, StringComparer.Ordinal);
 
             if (!success)
+            {
                 throw new InvalidOperationException("Current-Core fixture assertions failed.");
+            }
 
             return new
             {
@@ -243,6 +263,28 @@ internal static class Program
         "20260923164123_ManagedSecretOwnership"
     ];
 
+    private static bool TargetPathExistsOrIsSymbolicLink(string path)
+    {
+        if (new FileInfo(path).LinkTarget is not null || new DirectoryInfo(path).LinkTarget is not null)
+        {
+            return true;
+        }
+
+        return File.Exists(path) || Directory.Exists(path);
+    }
+
+    private static void CreateFreshTargetFile(string path)
+    {
+        try
+        {
+            using var _ = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+        }
+        catch (IOException) when (TargetPathExistsOrIsSymbolicLink(path))
+        {
+            throw new BridgeRejectedException("TargetAlreadyExists");
+        }
+    }
+
     private static ServiceProvider CreateCurrentServices(string targetPath, DefaultTenantAccessor tenantAccessor)
     {
         var connectionString = new SqliteConnectionStringBuilder
@@ -277,7 +319,9 @@ internal static class Program
         await dbContext.Database.MigrateAsync();
         var migrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
         if (!migrations.SequenceEqual(ExpectedTargetMigrationIds, StringComparer.Ordinal))
+        {
             throw new BridgeRejectedException("UnexpectedTargetMigrationSet");
+        }
     }
 
     private static async Task<Dictionary<string, string>> LoadTenantMapAsync(string path)
@@ -285,7 +329,10 @@ internal static class Program
         var map = JsonSerializer.Deserialize<Dictionary<string, string>>(await File.ReadAllTextAsync(path))
             ?? throw new BridgeRejectedException("InvalidTenantMap");
         if (map.Any(item => string.IsNullOrWhiteSpace(item.Key) || string.IsNullOrWhiteSpace(item.Value)))
+        {
             throw new BridgeRejectedException("InvalidTenantMap");
+        }
+
         return map;
     }
 
@@ -306,11 +353,15 @@ internal static class Program
             migrationCommand.CommandText = "SELECT MigrationId FROM __EFMigrationsHistory ORDER BY MigrationId";
             await using var migrationReader = await migrationCommand.ExecuteReaderAsync();
             while (await migrationReader.ReadAsync())
+            {
                 migrationIds.Add(migrationReader.GetString(0));
+            }
         }
 
         if (!migrationIds.SequenceEqual(["20240915164114_V3_3"], StringComparer.Ordinal))
+        {
             throw new BridgeRejectedException("UnknownSourceMigrationHistory");
+        }
 
         var tables = new List<string>();
         await using (var tableCommand = connection.CreateCommand())
@@ -318,14 +369,18 @@ internal static class Program
             tableCommand.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name";
             await using var tableReader = await tableCommand.ExecuteReaderAsync();
             while (await tableReader.ReadAsync())
+            {
                 tables.Add(tableReader.GetString(0));
+            }
         }
 
         var allowedTables = new HashSet<string>(["Secrets", "__EFMigrationsHistory", "__EFMigrationsLock"], StringComparer.Ordinal);
         if (!tables.Contains("Secrets", StringComparer.Ordinal)
             || !tables.Contains("__EFMigrationsHistory", StringComparer.Ordinal)
             || tables.Any(table => !allowedTables.Contains(table)))
+        {
             throw new BridgeRejectedException("UnknownSourceSchema");
+        }
 
         var columns = new List<string>();
         await using (var schemaCommand = connection.CreateCommand())
@@ -333,11 +388,15 @@ internal static class Program
             schemaCommand.CommandText = "PRAGMA table_info('Secrets')";
             await using var schemaReader = await schemaCommand.ExecuteReaderAsync();
             while (await schemaReader.ReadAsync())
+            {
                 columns.Add(schemaReader.GetString(1));
+            }
         }
 
         if (!columns.SequenceEqual(ExpectedSourceColumns, StringComparer.Ordinal))
+        {
             throw new BridgeRejectedException("UnknownSourceSchema");
+        }
 
         var rows = new List<LegacyRow>();
         await using (var command = connection.CreateCommand())
@@ -381,7 +440,9 @@ internal static class Program
             row.LastAccessedAt = ParseOptionalOffset(row.LastAccessedAtRaw, "LastAccessedAt");
             if (!string.IsNullOrEmpty(row.ExpiresInRaw)
                 && !TimeSpan.TryParse(row.ExpiresInRaw, CultureInfo.InvariantCulture, out _))
+            {
                 throw new BridgeRejectedException("InvalidExpiresIn");
+            }
         }
 
         return rows;
@@ -398,7 +459,10 @@ internal static class Program
     private static DateTimeOffset ParseOffset(string raw, string field)
     {
         if (!HasOffset(raw) || !DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var value))
+        {
             throw new BridgeRejectedException($"Invalid{field}");
+        }
+
         return value;
     }
 
@@ -413,9 +477,14 @@ internal static class Program
         IReadOnlyList<ExistingTarget> existing)
     {
         if (rows.Count == 0)
+        {
             throw new BridgeRejectedException("EmptySource");
+        }
+
         if (rows.GroupBy(row => row.Id, StringComparer.Ordinal).Any(group => group.Count() != 1))
+        {
             throw new BridgeRejectedException("DuplicateLegacyRowId");
+        }
 
         var validator = new DefaultSecretNameValidator();
         var result = new List<ConversionGroup>();
@@ -423,25 +492,38 @@ internal static class Program
         foreach (var row in existing)
         {
             if (!string.IsNullOrWhiteSpace(row.NormalizedName))
+            {
                 nameKeys.Add((row.TenantId ?? Tenant.DefaultTenantId, row.NormalizedName));
+            }
         }
         var ids = existing.Select(row => row.Id).ToHashSet(StringComparer.Ordinal);
 
         foreach (var group in rows.GroupBy(row => row.SecretId, StringComparer.Ordinal))
         {
             if (string.IsNullOrWhiteSpace(group.Key))
+            {
                 throw new BridgeRejectedException("InvalidAggregateId");
+            }
+
             var versions = group.OrderBy(row => row.Version).ToArray();
             if (versions.Any(row => row.Version <= 0)
                 || versions.GroupBy(row => row.Version).Any(items => items.Count() != 1))
+            {
                 throw new BridgeRejectedException("InvalidVersionSequence");
+            }
+
             var latest = versions.Where(row => row.IsLatest).ToArray();
             if (latest.Length != 1 || latest[0].Version != versions[^1].Version)
+            {
                 throw new BridgeRejectedException("InvalidLatestMarker");
+            }
 
             var tenantValues = versions.Select(row => NormalizeLegacyTenant(row.TenantIdRaw)).Distinct(StringComparer.Ordinal).ToArray();
             if (tenantValues.Length != 1)
+            {
                 throw new BridgeRejectedException("TenantChangesWithinAggregate");
+            }
+
             var legacyTenantId = tenantValues[0];
             var targetTenantId = legacyTenantId == Tenant.DefaultTenantId
                 ? Tenant.DefaultTenantId
@@ -449,29 +531,47 @@ internal static class Program
                     ? mappedTenant
                     : throw new BridgeRejectedException("UnmappedTenant");
             if (targetTenantId != Tenant.DefaultTenantId && !tenantMap.Values.Contains(targetTenantId, StringComparer.Ordinal))
+            {
                 throw new BridgeRejectedException("UnmappedTenant");
+            }
 
             foreach (var row in versions)
             {
                 if (!validator.IsValid(row.Name, out _))
+                {
                     throw new BridgeRejectedException("InvalidSecretName");
+                }
+
                 _ = MapStatus(row.Status);
                 if (string.IsNullOrWhiteSpace(row.EncryptedValue))
+                {
                     throw new BridgeRejectedException("MissingEncryptedValue");
+                }
             }
 
             var normalizedName = validator.Normalize(latest[0].Name);
             if (!nameKeys.Add((targetTenantId, normalizedName)))
+            {
                 throw new BridgeRejectedException("NormalizedNameCollision");
+            }
+
             if (!ids.Add(group.Key))
+            {
                 throw new BridgeRejectedException("AggregateIdCollision");
+            }
+
             result.Add(new ConversionGroup(group.Key, targetTenantId, versions));
         }
 
         if (tenantMap.Values.Where(value => value != Tenant.DefaultTenantId).Distinct(StringComparer.Ordinal).Count() != tenantMap.Count)
+        {
             throw new BridgeRejectedException("TenantMappingCollision");
+        }
+
         if (existing.Count > 0 && existing.Any(row => string.Equals(row.Id, SidecarTable, StringComparison.Ordinal)))
+        {
             throw new BridgeRejectedException("TargetCollision");
+        }
 
         return result;
     }
@@ -479,9 +579,15 @@ internal static class Program
     private static string NormalizeLegacyTenant(string? value)
     {
         if (value == null || value.Length == 0)
+        {
             return Tenant.DefaultTenantId;
+        }
+
         if (string.IsNullOrWhiteSpace(value))
+        {
             throw new BridgeRejectedException("InvalidTenantId");
+        }
+
         return value;
     }
 
@@ -529,9 +635,14 @@ internal static class Program
 
         await dbContext.SaveChangesAsync();
         if (scenario == "fail-after-core-save")
+        {
             throw new BridgeRejectedException("InjectedWriteFailure");
+        }
+
         if (scenario != "success" && scenario != "id-collision")
+        {
             throw new BridgeRejectedException("UnknownScenario");
+        }
 
         var batchId = Guid.NewGuid().ToString("N");
         foreach (var row in source)
@@ -617,7 +728,10 @@ internal static class Program
         await using var dbContext = await factory.CreateDbContextAsync();
         var connection = dbContext.Database.GetDbConnection();
         if (connection.State != System.Data.ConnectionState.Open)
+        {
             await connection.OpenAsync();
+        }
+
         await using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT LegacyId, LegacySecretId, LegacyName, LegacyScope, LegacyEncryptedValue, LegacyDescription,
@@ -654,7 +768,10 @@ internal static class Program
         await using var dbContext = await factory.CreateDbContextAsync();
         var connection = dbContext.Database.GetDbConnection();
         if (connection.State != System.Data.ConnectionState.Open)
+        {
             await connection.OpenAsync();
+        }
+
         await using var command = connection.CreateCommand();
         command.CommandText = "SELECT COUNT(*) FROM ElsaSecretsLegacyV381";
         return Convert.ToInt32(await command.ExecuteScalarAsync(), CultureInfo.InvariantCulture);
@@ -675,13 +792,24 @@ internal static class Program
         var tenantBRows = await ReadVisibleAsync(services, tenantAccessor, "tenant-b");
 
         if (defaultRows.SingleOrDefault(row => row.Name == "shared:service")?.Id != "legacy-aggregate-default")
+        {
             return false;
+        }
+
         if (tenantARows.SingleOrDefault(row => row.Name == "shared:service")?.Id != "legacy-aggregate-tenant-a")
+        {
             return false;
+        }
+
         if (tenantBRows.SingleOrDefault(row => row.Name == "shared:service")?.Id != "legacy-aggregate-tenant-b")
+        {
             return false;
+        }
+
         if (tenantARows.Any(row => row.Name == "tenant-b:exclusive") || tenantBRows.All(row => row.Name != "tenant-b:exclusive"))
+        {
             return false;
+        }
 
         using (tenantAccessor.PushContext(new Tenant { Id = "tenant-a", Name = "tenant-a" }))
         await using (var scope = services.CreateAsyncScope())
@@ -741,34 +869,38 @@ internal static class Program
         var rowByAggregateVersion = source.ToDictionary(row => (row.SecretId, row.Version));
 
         foreach (var secret in secrets)
-        foreach (var version in secret.Versions)
         {
-            var oldRow = rowByAggregateVersion[(secret.Id, version.Version)];
-            var payload = await encryptedStore.ReadAsync(secret, version);
-            if (payload?.Value == null || Hash(payload.Value) != sourceHashById[oldRow.Id])
-                return new EncryptionResult(false, false, false);
+            foreach (var version in secret.Versions)
+            {
+                var oldRow = rowByAggregateVersion[(secret.Id, version.Version)];
+                var payload = await encryptedStore.ReadAsync(secret, version);
+                if (payload?.Value == null || Hash(payload.Value) != sourceHashById[oldRow.Id])
+                {
+                    return new EncryptionResult(false, false, false);
+                }
 
-            var legacyCiphertextCopy = new SecretVersion
-            {
-                Version = version.Version,
-                Payload = new SecretPayload { Metadata = { ["protectedValue"] = oldRow.EncryptedValue } }
-            };
-            try
-            {
-                _ = await encryptedStore.ReadAsync(secret, legacyCiphertextCopy);
-                rawLegacyCiphertextRejected = false;
-            }
-            catch (Exception error) when (error is CryptographicException or InvalidOperationException)
-            {
-            }
+                var legacyCiphertextCopy = new SecretVersion
+                {
+                    Version = version.Version,
+                    Payload = new SecretPayload { Metadata = { ["protectedValue"] = oldRow.EncryptedValue } }
+                };
+                try
+                {
+                    _ = await encryptedStore.ReadAsync(secret, legacyCiphertextCopy);
+                    rawLegacyCiphertextRejected = false;
+                }
+                catch (Exception error) when (error is CryptographicException or InvalidOperationException)
+                {
+                }
 
-            try
-            {
-                _ = await wrongCoreStore.ReadAsync(secret, version);
-                wrongCoreKeyRejected = false;
-            }
-            catch (CryptographicException)
-            {
+                try
+                {
+                    _ = await wrongCoreStore.ReadAsync(secret, version);
+                    wrongCoreKeyRejected = false;
+                }
+                catch (CryptographicException)
+                {
+                }
             }
         }
 
@@ -870,7 +1002,10 @@ internal static class Program
         }).ToArray();
         var connection = dbContext.Database.GetDbConnection();
         if (connection.State != System.Data.ConnectionState.Open)
+        {
             await connection.OpenAsync();
+        }
+
         await using var sidecarCommand = connection.CreateCommand();
         sidecarCommand.CommandText = SidecarExistsSql;
         var sidecarExists = Convert.ToInt32(await sidecarCommand.ExecuteScalarAsync(), CultureInfo.InvariantCulture) > 0;

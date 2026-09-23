@@ -25,6 +25,15 @@ OLD_PROJECT = FIXTURE / 'extensions-3.8.1/ExtensionsCryptoRunner.csproj'
 CORE_PROJECT = FIXTURE / 'core-3.8.4/CoreCryptoRunner.csproj'
 CURRENT_PROJECT = FIXTURE / 'current-core/CurrentCoreBridgeRunner.csproj'
 PINNED_TARGET_CORE_SOURCE_COMMIT = '7b06b82d0ea89c12d49c3c28da8d770bfca13faf'
+PINNED_CORE_BUILD_INPUTS = (
+    'src',
+    'Directory.Build.props',
+    'Directory.Build.targets',
+    'Directory.Packages.props',
+    'global.json',
+    'NuGet.Config',
+    'nuget.config',
+)
 
 
 def run(command, *, cwd=None, env=None, capture=False, timeout=None):
@@ -171,14 +180,27 @@ def reject_fixture(current_project, config, packages_dir, old_key_ring, wrong_ke
 
 
 def verify_current_core_source_pin():
-    subprocess.run(
+    pin = subprocess.run(
         ['git', '-C', str(ROOT), 'cat-file', '-e', f'{PINNED_TARGET_CORE_SOURCE_COMMIT}^{{commit}}'],
-        check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
-    difference = subprocess.run(
-        ['git', '-C', str(ROOT), 'diff', '--quiet', PINNED_TARGET_CORE_SOURCE_COMMIT, '--', 'src'],
         check=False, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
-    if difference.returncode != 0:
-        raise ValueError(f'Core source tree differs from pinned target {PINNED_TARGET_CORE_SOURCE_COMMIT}')
+    if pin.returncode:
+        raise ValueError(f'Unable to resolve pinned Core target {PINNED_TARGET_CORE_SOURCE_COMMIT}: {pin.stderr.strip()}')
+    difference = subprocess.run(
+        ['git', '-C', str(ROOT), 'diff', '--quiet', PINNED_TARGET_CORE_SOURCE_COMMIT, '--', *PINNED_CORE_BUILD_INPUTS],
+        check=False, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+    if difference.returncode == 1:
+        raise ValueError(f'Core source/build inputs differ from pinned target {PINNED_TARGET_CORE_SOURCE_COMMIT}')
+    if difference.returncode:
+        raise RuntimeError(f'Unable to compare pinned Core source/build inputs: {difference.stderr.strip()}')
+
+    untracked_source = subprocess.run(
+        ['git', '-C', str(ROOT), 'ls-files', '--others', '--exclude-standard', '--', *PINNED_CORE_BUILD_INPUTS],
+        check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if untracked_source.returncode:
+        raise RuntimeError(f'Unable to inspect untracked Core source/build inputs: {untracked_source.stderr.strip()}')
+    if untracked_source.stdout.strip():
+        paths = ', '.join(untracked_source.stdout.splitlines())
+        raise ValueError(f'Untracked Core source/build inputs are present outside pinned target {PINNED_TARGET_CORE_SOURCE_COMMIT}: {paths}')
 
 
 def main():
@@ -249,6 +271,8 @@ def main():
         tenant_map_path = temp_root / 'tenant-map.json'
         tenant_map_path.write_text(json.dumps({'tenant-a': 'tenant-a', 'tenant-b': 'tenant-b'}))
         current_target_db = temp_root / 'current-core-target.db'
+        if current_target_db.exists() or current_target_db.is_symlink():
+            raise RuntimeError(f'Current-Core target path was not fresh: {current_target_db}')
         current_result = run_phase(
             CURRENT_PROJECT, config, packages_dir,
             [source_db, current_target_db, old_key_ring, wrong_key_ring, missing_key_ring,
@@ -322,6 +346,8 @@ def main():
         failure_scenarios = {}
         source_before = sha256_file(source_db)
         collision_target = temp_root / 'collision-target.db'
+        if collision_target.exists() or collision_target.is_symlink():
+            raise RuntimeError(f'Collision target path was not fresh: {collision_target}')
         collision_result = run_phase(
             CURRENT_PROJECT, config, packages_dir,
             [source_db, collision_target, old_key_ring, wrong_key_ring, missing_key_ring,
@@ -331,6 +357,8 @@ def main():
         failure_scenarios['aggregateIdCollision'] = collision_result
 
         rollback_target = temp_root / 'rollback-target.db'
+        if rollback_target.exists() or rollback_target.is_symlink():
+            raise RuntimeError(f'Rollback target path was not fresh: {rollback_target}')
         rollback_result = run_phase(
             CURRENT_PROJECT, config, packages_dir,
             [source_db, rollback_target, old_key_ring, wrong_key_ring, missing_key_ring,
@@ -355,9 +383,53 @@ def main():
                 candidate.execute(mutation)
                 candidate.commit()
             candidate_target = temp_root / f'{name}-target.db'
+            if candidate_target.exists() or candidate_target.is_symlink():
+                raise RuntimeError(f'Rejection target path was not fresh: {candidate_target}')
             failure_scenarios[name] = reject_fixture(
                 CURRENT_PROJECT, config, packages_dir, old_key_ring, wrong_key_ring,
                 missing_key_ring, tenant_map_path, candidate_db, candidate_target, rejection_code)
+
+        existing_target = temp_root / 'existing-target.db'
+        existing_target.write_bytes(b'preserve existing target bytes')
+        existing_target_hash = sha256_file(existing_target)
+        existing_target_result = run_phase(
+            CURRENT_PROJECT, config, packages_dir,
+            [source_db, existing_target, old_key_ring, wrong_key_ring, missing_key_ring,
+             tenant_map_path, 'success'])
+        if (existing_target_result.get('result') != 'rejected'
+                or existing_target_result.get('rejectionCode') != 'TargetAlreadyExists'
+                or existing_target_result.get('targetUnchanged') is not True
+                or sha256_file(existing_target) != existing_target_hash):
+            raise RuntimeError(f'Existing target was not preserved and rejected: {existing_target_result}')
+        failure_scenarios['existingTargetPreserved'] = existing_target_result
+
+        symlink_target = temp_root / 'symlink-target.db'
+        symlink_target.write_bytes(b'preserve symlink destination bytes')
+        symlink_target_hash = sha256_file(symlink_target)
+        symlink_alias = temp_root / 'symlink-target-alias.db'
+        symlink_alias.symlink_to(symlink_target)
+        symlink_result = run_phase(
+            CURRENT_PROJECT, config, packages_dir,
+            [source_db, symlink_alias, old_key_ring, wrong_key_ring, missing_key_ring,
+             tenant_map_path, 'success'])
+        if (symlink_result.get('result') != 'rejected'
+                or symlink_result.get('rejectionCode') != 'TargetAlreadyExists'
+                or symlink_result.get('targetUnchanged') is not True
+                or symlink_alias.is_symlink() is not True
+                or sha256_file(symlink_target) != symlink_target_hash):
+            raise RuntimeError(f'Symlink target was not preserved and rejected without following it: {symlink_result}')
+        failure_scenarios['symlinkTargetPreserved'] = symlink_result
+
+        alias_result = run_phase(
+            CURRENT_PROJECT, config, packages_dir,
+            [source_db, source_db, old_key_ring, wrong_key_ring, missing_key_ring,
+             tenant_map_path, 'success'])
+        if (alias_result.get('result') != 'rejected'
+                or alias_result.get('rejectionCode') != 'InvalidDatabasePaths'
+                or alias_result.get('targetUnchanged') is not True
+                or sha256_file(source_db) != source_before):
+            raise RuntimeError(f'Source/target alias was not rejected before mutation: {alias_result}')
+        failure_scenarios['sourceTargetAlias'] = alias_result
 
         reopened = run_phase(OLD_PROJECT, config, packages_dir, ['verify', source_db, old_key_ring])
         if reopened.get('result') != 'reopened-and-verified' or reopened.get('sourceUnchangedReadable') is not True:
