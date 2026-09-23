@@ -570,6 +570,27 @@
       "level": "Task",
       "state": "open",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8290"
+    },
+    {
+      "number": 8292,
+      "title": "[Bug] Preserve concurrent metadata during BPMN document PUT",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8292"
+    },
+    {
+      "number": 8293,
+      "title": "[Task] Preserve atomic BPMN edits in Dapper workflow definitions",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8293"
+    },
+    {
+      "number": 8294,
+      "title": "[Task] Preserve atomic BPMN edits in Mongo workflow definitions",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8294"
     }
   ],
   "parent_edges": [
@@ -892,6 +913,18 @@
     [
       8275,
       8290
+    ],
+    [
+      8286,
+      8292
+    ],
+    [
+      8286,
+      8293
+    ],
+    [
+      8286,
+      8294
     ]
   ],
   "blocking_edges": [

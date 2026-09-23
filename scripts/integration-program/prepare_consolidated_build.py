@@ -86,6 +86,7 @@ def verify_workspace(root):
 
 
 def prepare(root):
+    require(not Path(root).is_symlink(), 'Expected a real disposable repository directory')
     root = Path(root).resolve()
     receipt, mapping = verify_workspace(root)
     projects = [row['destination'] for row in mapping if row['destination'].endswith('.csproj')]

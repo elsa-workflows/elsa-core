@@ -90,6 +90,14 @@ new file mode 100644
             build.prepare(self.output)
         self.assertEqual(path.read_text(), 'ambient input')
 
+    def test_rejects_symlink_root_before_modifying_target(self):
+        link = self.root / 'linked-rehearsal'
+        link.symlink_to(self.output, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, 'real disposable'):
+            build.prepare(link)
+        self.assertFalse((self.output / 'Consolidated.sln').exists())
+        self.assertFalse((self.output / build.ADDED_TEST).exists())
+
     def test_rejects_remote(self):
         build.rehearsal.git(self.output, 'remote', 'add', 'origin', 'https://example.invalid/repo')
         with self.assertRaisesRegex(ValueError, 'no remotes'):
