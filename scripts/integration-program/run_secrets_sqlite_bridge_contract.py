@@ -25,6 +25,7 @@ NUGET_FLAT = 'https://api.nuget.org/v3-flatcontainer'
 OLD_PROJECT = FIXTURE / 'extensions-3.8.1/ExtensionsCryptoRunner.csproj'
 CORE_PROJECT = FIXTURE / 'core-3.8.4/CoreCryptoRunner.csproj'
 CURRENT_PROJECT = FIXTURE / 'current-core/CurrentCoreBridgeRunner.csproj'
+PINNED_DOTNET_SDK_VERSION = '10.0.300'
 PINNED_TARGET_CORE_SOURCE_COMMIT = '7b06b82d0ea89c12d49c3c28da8d770bfca13faf'
 PINNED_CORE_BUILD_INPUTS = (
     'src',
@@ -106,7 +107,15 @@ def verify_package(package, phase, feed_dir):
     }
 
 
-def restore(project, config, packages_dir, *, update_lockfiles, cwd=ROOT):
+def verify_dotnet_sdk(cwd=FIXTURE):
+    version = run(['dotnet', '--version'], cwd=cwd, capture=True).stdout.strip()
+    if version != PINNED_DOTNET_SDK_VERSION:
+        raise RuntimeError(
+            f'Expected .NET SDK {PINNED_DOTNET_SDK_VERSION} from the fixture global.json, got {version}')
+    return version
+
+
+def restore(project, config, packages_dir, *, update_lockfiles, cwd=FIXTURE):
     command = ['dotnet', 'restore', str(project), '--configfile', str(config), '--packages', str(packages_dir), '-m:1']
     if not update_lockfiles:
         command.append('--locked-mode')
@@ -138,7 +147,7 @@ def verify_lock(project, package):
     }
 
 
-def run_phase(project, config, packages_dir, arguments, *, cwd=ROOT):
+def run_phase(project, config, packages_dir, arguments, *, cwd=FIXTURE):
     env = os.environ.copy()
     env['NUGET_PACKAGES'] = str(packages_dir)
     command = [
@@ -236,6 +245,7 @@ def main():
     if manifest['targetFramework'] != 'net10.0':
         raise ValueError('Unexpected fixture target framework')
     mapping_contract = run_contract_fixtures()
+    sdk_version = verify_dotnet_sdk()
 
     with tempfile.TemporaryDirectory(prefix='elsa-secrets-bridge-contract-') as temp_name:
         temp_root = Path(temp_name)
@@ -279,7 +289,7 @@ def main():
         if args.update_lockfiles:
             print(json.dumps({'lockfilesUpdated': True, 'verifiedPackages': verified}, indent=2))
             return 0
-        restore(current_project, config, packages_dir, update_lockfiles=False, cwd=current_core_source)
+        restore(current_project, config, packages_dir, update_lockfiles=False, cwd=FIXTURE)
 
         old_key_ring = temp_root / 'old-data-protection-keys'
         wrong_key_ring = temp_root / 'wrong-data-protection-keys'
@@ -301,7 +311,7 @@ def main():
             current_project, config, packages_dir,
             [source_db, current_target_db, old_key_ring, wrong_key_ring, missing_key_ring,
              tenant_map_path, 'success'],
-            cwd=current_core_source)
+            cwd=FIXTURE)
 
         if seed_result.get('phase') != 'extensions-3.8.1' or seed_result.get('result') != 'seeded':
             raise RuntimeError(f"Legacy phase did not seed the synthetic SQLite source: {seed_result}")
@@ -377,7 +387,7 @@ def main():
             current_project, config, packages_dir,
             [source_db, collision_target, old_key_ring, wrong_key_ring, missing_key_ring,
              tenant_map_path, 'id-collision'],
-            cwd=current_core_source)
+            cwd=FIXTURE)
         if collision_result.get('result') != 'rejected' or collision_result.get('rejectionCode') != 'AggregateIdCollision' or collision_result.get('targetUnchanged') is not True:
             raise RuntimeError(f'Aggregate-ID collision did not fail closed: {collision_result}')
         failure_scenarios['aggregateIdCollision'] = collision_result
@@ -389,7 +399,7 @@ def main():
             current_project, config, packages_dir,
             [source_db, rollback_target, old_key_ring, wrong_key_ring, missing_key_ring,
              tenant_map_path, 'fail-after-core-save'],
-            cwd=current_core_source)
+            cwd=FIXTURE)
         if rollback_result.get('result') != 'rejected' or rollback_result.get('rejectionCode') != 'InjectedWriteFailure' or rollback_result.get('targetUnchanged') is not True:
             raise RuntimeError(f'Injected write failure did not roll back the target: {rollback_result}')
         failure_scenarios['injectedAfterCoreSave'] = rollback_result
@@ -415,7 +425,7 @@ def main():
             failure_scenarios[name] = reject_fixture(
                 current_project, config, packages_dir, old_key_ring, wrong_key_ring,
                 missing_key_ring, tenant_map_path, candidate_db, candidate_target, rejection_code,
-                cwd=current_core_source)
+                cwd=FIXTURE)
 
         existing_target = temp_root / 'existing-target.db'
         existing_target.write_bytes(b'preserve existing target bytes')
@@ -424,7 +434,7 @@ def main():
             current_project, config, packages_dir,
             [source_db, existing_target, old_key_ring, wrong_key_ring, missing_key_ring,
              tenant_map_path, 'success'],
-            cwd=current_core_source)
+            cwd=FIXTURE)
         if (existing_target_result.get('result') != 'rejected'
                 or existing_target_result.get('rejectionCode') != 'TargetAlreadyExists'
                 or existing_target_result.get('targetUnchanged') is not True
@@ -441,7 +451,7 @@ def main():
             current_project, config, packages_dir,
             [source_db, symlink_alias, old_key_ring, wrong_key_ring, missing_key_ring,
              tenant_map_path, 'success'],
-            cwd=current_core_source)
+            cwd=FIXTURE)
         if (symlink_result.get('result') != 'rejected'
                 or symlink_result.get('rejectionCode') != 'TargetAlreadyExists'
                 or symlink_result.get('targetUnchanged') is not True
@@ -454,7 +464,7 @@ def main():
             current_project, config, packages_dir,
             [source_db, source_db, old_key_ring, wrong_key_ring, missing_key_ring,
              tenant_map_path, 'success'],
-            cwd=current_core_source)
+            cwd=FIXTURE)
         if (alias_result.get('result') != 'rejected'
                 or alias_result.get('rejectionCode') != 'InvalidDatabasePaths'
                 or alias_result.get('targetUnchanged') is not True
@@ -472,6 +482,7 @@ def main():
         report = {
             'fixture': f'Synthetic Extensions 3.8.1 SQLite source -> Core SQLite target at {PINNED_TARGET_CORE_SOURCE_COMMIT}',
             'targetFramework': manifest['targetFramework'],
+            'sdkVersion': sdk_version,
             'targetCoreSourceCommit': PINNED_TARGET_CORE_SOURCE_COMMIT,
             'verifiedPackages': verified,
             'packageLocks': lock_summaries,

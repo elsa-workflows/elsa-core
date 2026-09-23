@@ -6,6 +6,8 @@ This is a **synthetic-only review fixture**, not a production database migrator.
 
 `artifacts.json` pins official NuGet package IDs, versions, package SHA-512 digests, and nuspec source commits. It also pins the Feedz-only package-manifest generator required to compile the pinned Core source; the script verifies its digest and serves it from a temporary local feed. `packages.lock.json` pins both historical package graphs. The corresponding source links and field-by-field mapping are in [`mapping.json`](mapping.json). Historical package pins match the artifact evidence recorded by [#8276](https://github.com/elsa-workflows/elsa-core/issues/8276).
 
+The fixture's [`global.json`](global.json) selects .NET SDK `10.0.300` with roll-forward disabled. Every restore and runner invocation uses the fixture directory as its working directory, including the isolated Core checkout. This keeps SDK-supplied `Microsoft.NET.ILLink.Tasks` versions consistent with the committed lockfiles across operating systems and hosted runners. The workflow installs the same SDK, and the runner verifies and records the selected version before restoring in locked mode.
+
 The old SQLite `Secrets` migration has 16 columns: per-version `Id`, shared logical `SecretId`, name/scope/value/description, version/latest/status, duration and absolute expiration, last access, tenant, timestamps, and owner. The Python projection checks candidate field placement and rejects unknown schema/history, unsupported statuses, tenant/owner semantics outside the historical target, duplicate versions, ambiguous latest markers, and normalized-name collisions.
 
 ## Historical encryption proof
