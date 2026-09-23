@@ -19,6 +19,7 @@ public sealed class WorkflowCredentialBindingsFeature(IModule module) : FeatureB
     public override void Apply()
     {
         Services.Configure<WorkflowCredentialBindingOptions>(options => options.EnvironmentId = EnvironmentId);
+        Services.TryAddScoped<IConnectionCredentialBindingStore, UnavailableConnectionCredentialBindingStore>();
         Services.TryAddScoped<IConnectionCredentialBindingUseAuthorizer, DenyAllConnectionCredentialBindingUseAuthorizer>();
         Services.TryAddScoped<IConnectionCredentialBindingManagementAuthorizer, DenyAllConnectionCredentialBindingManagementAuthorizer>();
         Services.TryAddScoped<IWorkflowCredentialResolver, WorkflowCredentialResolver>();

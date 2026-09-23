@@ -43,6 +43,7 @@ public sealed class WorkflowCredentialBindingTests
     private const string TenantId = "tenant-a";
     private const string EnvironmentId = "integration-test";
     private const string LogicalBindingId = "payments";
+    private const string LogicalBindingReferenceKey = "credentialBinding";
 
     [Fact]
     public async Task Resolve_UsesAmbientTenantAndConfiguredEnvironment_NotWorkflowInputs()
@@ -337,6 +338,43 @@ public sealed class WorkflowCredentialBindingTests
     }
 
     [Fact]
+    public async Task MissingBindingStoreFailsClosedBeforeResolvingLifecycleService()
+    {
+        var tenantAccessor = new DefaultTenantAccessor();
+        var authorizers = new TestBindingAuthorizers(allow: true);
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<ITenantAccessor>(tenantAccessor);
+        services.AddSingleton<IConnectionCredentialBindingUseAuthorizer>(authorizers);
+        services.AddSingleton<IConnectionCredentialBindingManagementAuthorizer>(authorizers);
+
+        var module = services.CreateModule();
+        module.Configure<ConnectionsFeature>();
+        module.Configure<WorkflowCredentialBindingsFeature>(feature => feature.EnvironmentId = EnvironmentId);
+        module.Apply();
+
+        await using var provider = services.BuildServiceProvider();
+        using var tenant = tenantAccessor.PushContext(TenantContext());
+        using var scope = provider.CreateScope();
+        var manager = scope.ServiceProvider.GetRequiredService<IWorkflowCredentialBindingManager>();
+        var result = await manager.CreateAsync(Principal(), LogicalBindingId, "connection-a");
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("connection_unavailable", result.SafeErrorCode);
+        Assert.Equal(1, authorizers.ManagementCallCount);
+
+        var activityContext = await CreateActivityContextAsync("workflow-no-binding-store");
+        using (activityContext)
+        {
+            var resolver = scope.ServiceProvider.GetRequiredService<IWorkflowCredentialResolver>();
+            await Assert.ThrowsAsync<ConnectionUnavailableException>(() => resolver.ResolveAsync(
+                activityContext.WorkflowExecutionContext,
+                LogicalBindingId));
+            Assert.Null(authorizers.LastUseRequest);
+        }
+    }
+
+    [Fact]
     public async Task PersistedWorkflowRestart_RestoresTenantBeforeResolvingLogicalBinding()
     {
         const string workflowInstanceId = "persisted-workflow-1";
@@ -372,7 +410,11 @@ public sealed class WorkflowCredentialBindingTests
                     DefinitionVersion = 1,
                     Status = WorkflowStatus.Running,
                     SubStatus = WorkflowSubStatus.Executing,
-                    IsExecuting = true
+                    IsExecuting = true,
+                    Input = new Dictionary<string, object>
+                    {
+                        [LogicalBindingReferenceKey] = LogicalBindingId
+                    }
                 }
             });
         }
@@ -385,6 +427,8 @@ public sealed class WorkflowCredentialBindingTests
         var persistedJson = JsonSerializer.Serialize(persistedInstance);
         Assert.DoesNotContain("access-connection-a", persistedJson, StringComparison.Ordinal);
         Assert.DoesNotContain("generation", persistedJson, StringComparison.OrdinalIgnoreCase);
+        var persistedLogicalBindingId = Assert.IsType<string>(persistedInstance.WorkflowState.Input[LogicalBindingReferenceKey]);
+        Assert.Equal(LogicalBindingId, persistedLogicalBindingId);
 
         string? observedTenantId = null;
         string? resolvedToken = null;
@@ -399,7 +443,7 @@ public sealed class WorkflowCredentialBindingTests
             using (activityContext)
             {
                 var resolver = scope.ServiceProvider.GetRequiredService<IWorkflowCredentialResolver>();
-                resolvedToken = (await resolver.ResolveAsync(activityContext.WorkflowExecutionContext, LogicalBindingId)).AccessToken;
+                resolvedToken = (await resolver.ResolveAsync(activityContext.WorkflowExecutionContext, persistedLogicalBindingId)).AccessToken;
             }
         }
 
@@ -463,7 +507,7 @@ public sealed class WorkflowCredentialBindingTests
             bool deleteDatabaseOnDispose = true,
             SaveChangesInterceptor? saveChangesInterceptor = null)
         {
-            var path = Path.Combine(Path.GetTempPath(), $"elsa-workflow-credential-binding-{Guid.NewGuid():N}.db");
+            var path = Path.Join(Path.GetTempPath(), $"elsa-workflow-credential-binding-{Guid.NewGuid():N}.db");
             return CreateForDatabaseAsync(path, environmentId, allow, deleteDatabaseOnDispose, saveChangesInterceptor);
         }
 

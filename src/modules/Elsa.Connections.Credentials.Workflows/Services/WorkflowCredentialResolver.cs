@@ -4,6 +4,7 @@ using Elsa.Connections.Credentials.Workflows.Contracts;
 using Elsa.Connections.Models;
 using Elsa.Connections.Services;
 using Elsa.Workflows;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Connections.Credentials.Workflows.Services;
@@ -11,7 +12,7 @@ namespace Elsa.Connections.Credentials.Workflows.Services;
 public sealed class WorkflowCredentialResolver(
     IConnectionCredentialBindingStore bindingStore,
     IConnectionCredentialBindingUseAuthorizer authorizer,
-    IConnectionBackgroundUseService credentialService,
+    IServiceProvider serviceProvider,
     IOptions<WorkflowCredentialBindingOptions> options,
     ITenantAccessor tenantAccessor) : IWorkflowCredentialResolver
 {
@@ -56,6 +57,7 @@ public sealed class WorkflowCredentialResolver(
 
         // A rebind after this authorization recheck does not revoke an already admitted activity call. New
         // resolutions always read the latest revision; disconnect is independently enforced by the lifecycle service.
+        var credentialService = serviceProvider.GetRequiredService<IConnectionBackgroundUseService>();
         return await credentialService.ResolveForUseAsync(tenantId, environmentId, binding.ConnectionId, cancellationToken);
     }
 }
