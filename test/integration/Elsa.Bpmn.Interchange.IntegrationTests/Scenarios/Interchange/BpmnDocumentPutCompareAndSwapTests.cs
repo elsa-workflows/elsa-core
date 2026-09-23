@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Bpmn.Interchange;
 using Bpmn.Model;
 using Elsa.Bpmn.Interchange.Endpoints.Bpmn.Document;
@@ -11,6 +12,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Memory;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -148,6 +150,61 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         Assert.NotEqual(expectedETag, BpmnDocumentETag.From(after));
     }
 
+    [Fact(DisplayName = "DraftSaving handler edits and concurrent metadata are both retained during a document PUT")]
+    public async Task ImportDocumentAsync_WhenDraftSavingHandlerEditsDraft_PreservesHandlerEditsAndConcurrentMetadata()
+    {
+        var probe = new DraftNotificationProbe();
+        var services = new TestApplicationBuilder(testOutputHelper)
+            .ConfigureElsa(elsa => elsa.UseBpmnInterchange())
+            .ConfigureServices(s =>
+            {
+                s.AddSingleton(probe);
+                s.AddNotificationHandler<RejectingDraftSavingHandler>();
+            })
+            .Build();
+        await services.PopulateRegistriesAsync();
+
+        var innerStore = services.GetRequiredService<IWorkflowDefinitionStore>();
+        var setup = services.GetRequiredService<BpmnInterchangeDocumentService>();
+        var imported = await setup.ImportAsync(ReadAsset("camunda-order-process.bpmn"), definitionId: null, name: "Order", processId: null, CancellationToken.None);
+        var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
+        var stored = await FindLatestAsync(innerStore, definitionId);
+        stored.CustomProperties["test:nested"] = new JsonObject { ["value"] = "initial" };
+        await innerStore.SaveAsync(stored);
+
+        var expectedETag = BpmnDocumentETag.From(stored);
+        var reader = services.GetRequiredService<BpmnXmlReader>();
+        var sourceXml = (string)stored.CustomProperties[BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey];
+        var edit = reader.Read(sourceXml.Replace("Order Handled", "Document edit"), new BpmnImportOptions()).Definitions;
+        probe.ApplyDraftEdits = true;
+        var gate = new CompareAndSwapPauseGate();
+        var pausingStore = new PausingCompareAndSwapStore(innerStore, gate);
+        var documentWriter = ActivatorUtilities.CreateInstance<BpmnInterchangeDocumentService>(services, pausingStore);
+        var documentPut = documentWriter.ImportDocumentAsync(edit, definitionId, processId: null, CancellationToken.None, expectedETag);
+        await gate.Checked.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        var metadataWriter = await FindLatestAsync(innerStore, definitionId);
+        metadataWriter.Options.UsableAsActivity = true;
+        metadataWriter.CustomProperties["test:concurrent-metadata"] = "preserve-me";
+        metadataWriter.CustomProperties["test:nested"] = new JsonObject { ["value"] = "concurrent" };
+        await innerStore.SaveAsync(metadataWriter);
+
+        gate.Release.TrySetResult();
+
+        var result = await documentPut;
+        Assert.True(result.ImportResult.Succeeded);
+
+        var after = await FindLatestAsync(innerStore, definitionId);
+        Assert.Equal("Handler name", after.Name);
+        Assert.True(after.Options.UsableAsActivity);
+        Assert.True(after.Options.AutoUpdateConsumingWorkflows);
+        Assert.Contains(after.Variables, variable => variable.Name == "handlerVariable");
+        Assert.Equal("handler", ((JsonObject)after.CustomProperties["test:nested"])["value"]!.GetValue<string>());
+        Assert.Equal("preserve-me", after.CustomProperties["test:concurrent-metadata"]);
+        Assert.NotEqual(stored.StringData, after.StringData);
+        Assert.NotEqual(expectedETag, BpmnDocumentETag.From(after));
+    }
+
     [Fact(DisplayName = "A rejecting DraftSaving handler fails the document PUT before persist; the stored definition is unchanged")]
     public async Task ImportDocumentAsync_WhenDraftSavingHandlerRejects_DoesNotPersist()
     {
@@ -261,6 +318,7 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
 
         public bool Reject { get; set; }
         public bool StampHandlerMarker { get; set; }
+        public bool ApplyDraftEdits { get; set; }
         public int SavingCount { get; set; }
         public int SavedCount { get; set; }
         public string? SavingId { get; set; }
@@ -282,6 +340,14 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
 
             if (probe.StampHandlerMarker)
                 notification.WorkflowDefinition.CustomProperties[DraftNotificationProbe.HandlerMarkerKey] = "kept";
+
+            if (probe.ApplyDraftEdits)
+            {
+                notification.WorkflowDefinition.Name = "Handler name";
+                notification.WorkflowDefinition.Options.AutoUpdateConsumingWorkflows = true;
+                notification.WorkflowDefinition.Variables = [.. notification.WorkflowDefinition.Variables, new Variable("handlerVariable")];
+                ((JsonObject)notification.WorkflowDefinition.CustomProperties["test:nested"])["value"] = "handler";
+            }
 
             if (probe.Reject)
                 throw new InvalidOperationException("Draft save rejected.");
