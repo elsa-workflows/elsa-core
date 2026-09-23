@@ -17,6 +17,7 @@ var action = args[0];
 var databasePath = Path.GetFullPath(args[1]);
 var connectionString = $"Data Source={databasePath}";
 var optionsBuilder = new DbContextOptionsBuilder<SecretsDbContext>()
+    // Mirrors the standard Extensions graph feature configuration; see the evidence in README.md.
     .ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
 optionsBuilder.UseElsaSqlite(Assembly.Load("Elsa.Secrets.Persistence.EFCore.Sqlite"), connectionString);
 var options = optionsBuilder.Options;

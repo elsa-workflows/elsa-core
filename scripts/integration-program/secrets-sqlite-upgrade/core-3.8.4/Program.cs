@@ -15,6 +15,7 @@ if (args.Length != 2 || args[0] != "upgrade")
 var databasePath = Path.GetFullPath(args[1]);
 var connectionString = $"Data Source={databasePath}";
 var optionsBuilder = new DbContextOptionsBuilder<SecretsElsaDbContext>()
+    // Mirrors the standard Core 3.8.4 persistence shell configuration; see the evidence in README.md.
     .ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
 optionsBuilder.UseElsaSqlite(Assembly.Load("Elsa.Secrets.Persistence.EFCore.Sqlite"), connectionString);
 var options = optionsBuilder.Options;
