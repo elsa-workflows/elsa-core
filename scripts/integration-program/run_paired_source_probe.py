@@ -23,13 +23,18 @@ def git(root, *args):
     return subprocess.check_output(['git', '-C', str(root), *args], text=True).strip()
 
 
-def patch_import(path):
-    before = path.read_bytes()
+def patched_import_bytes(before):
     lines = before.splitlines(keepends=True)
     matches = [line for line in lines if line.rstrip(b'\r\n') == UNUSED_IMPORT]
     if len(matches) != 1:
         raise ValueError('Pinned Razor unused-import precondition changed')
     after = b''.join(line for line in lines if line not in matches)
+    return after
+
+
+def patch_import(path):
+    before = path.read_bytes()
+    after = patched_import_bytes(before)
     path.write_bytes(after)
     return {'path': IMPORTS, 'removedLine': UNUSED_IMPORT.decode(),
             'beforeSha256': hashlib.sha256(before).hexdigest(),
