@@ -1,0 +1,263 @@
+{
+  "fixture": "Extensions 3.8.1 -> Core 3.8.4",
+  "targetFramework": "net10.0",
+  "verifiedPackages": {
+    "extensions-3.8.1": [
+      {
+        "id": "Elsa.Secrets.Persistence.EFCore",
+        "version": "3.8.1",
+        "url": "https://api.nuget.org/v3-flatcontainer/elsa.secrets.persistence.efcore/3.8.1/elsa.secrets.persistence.efcore.3.8.1.nupkg",
+        "bytes": 48662,
+        "sha512": "00ffb499bb1164fb740c28bf669aaf26cf37e891dded5a5e88a33d41a48a6c9c8b1118554770fb12657c91e4307cc53cf72637c3e2c0dccd878610e6b11dd803",
+        "sha512Base64": "AP+0mbsRZPt0DCi/ZpqvJs836JHd7VpeiKM9QaSKbJyLERhVR3D7EmV8keQwfMU89yY3w+LA3M2HhhDmsR3YAw==",
+        "repository": "https://github.com/elsa-workflows/elsa-extensions",
+        "sourceCommit": "01bf9ad70d0399afadae9609fe820703d3de290d"
+      },
+      {
+        "id": "Elsa.Secrets.Persistence.EFCore.Sqlite",
+        "version": "3.8.1",
+        "url": "https://api.nuget.org/v3-flatcontainer/elsa.secrets.persistence.efcore.sqlite/3.8.1/elsa.secrets.persistence.efcore.sqlite.3.8.1.nupkg",
+        "bytes": 46765,
+        "sha512": "59b1c1972082b2e5b453aabcac11634c2ce97307667a1797839bd2e186ee63d70536ca9870b8e927688f7eecac18a054615ef45997964b43f34e3b7df21eaff5",
+        "sha512Base64": "WbHBlyCCsuW0U6q8rBFjTCzpcwdmeheXg5vS4YbuY9cFNsqYcLjpJ2iPfuysGKBUYV70WZeWS0PzTjt98h6v9Q==",
+        "repository": "https://github.com/elsa-workflows/elsa-extensions",
+        "sourceCommit": "01bf9ad70d0399afadae9609fe820703d3de290d"
+      }
+    ],
+    "core-3.8.4": [
+      {
+        "id": "Elsa.Secrets.Persistence.EFCore",
+        "version": "3.8.4",
+        "url": "https://api.nuget.org/v3-flatcontainer/elsa.secrets.persistence.efcore/3.8.4/elsa.secrets.persistence.efcore.3.8.4.nupkg",
+        "bytes": 71326,
+        "sha512": "1c6855fcd9785db2f7c90f17bc75817c78db9a5bf630d5eb0ddfaa0c383b7ad1a3d64866e392dbabcfb762267a40e21fa564b112dfd9f4c9502c3c3bed92aeb8",
+        "sha512Base64": "HGhV/Nl4XbL3yQ8XvHWBfHjbmlv2MNXrDd+qDDg7etGj1khm45Lbq8+3YiZ6QOIfpWSxEt/Z9MlQLDw77ZKuuA==",
+        "repository": "https://github.com/elsa-workflows/elsa-core",
+        "sourceCommit": "33181ae3048f628f591a0155b5665a8e4d1bcea2"
+      },
+      {
+        "id": "Elsa.Secrets.Persistence.EFCore.Sqlite",
+        "version": "3.8.4",
+        "url": "https://api.nuget.org/v3-flatcontainer/elsa.secrets.persistence.efcore.sqlite/3.8.4/elsa.secrets.persistence.efcore.sqlite.3.8.4.nupkg",
+        "bytes": 58089,
+        "sha512": "44a62f88de8de4ae7fb35de460ad449c9f300ff44bb34d8842b8734582b581f003687423696cef2dc5eed9c24d8b4f61b42b304b7659c5ad6c2f122399eaa9b1",
+        "sha512Base64": "RKYviN6N5K5/s13kYK1EnJ8wD/RLs02IQrhzRYK1gfADaHQjaWzvLcXu2cJNi09htCswS3ZZxa1sLxIjmeqpsQ==",
+        "repository": "https://github.com/elsa-workflows/elsa-core",
+        "sourceCommit": "33181ae3048f628f591a0155b5665a8e4d1bcea2"
+      }
+    ]
+  },
+  "packageLocks": {
+    "extensions-3.8.1": {
+      "sha256": "04f92906c361a267cf8bec1d49eb6dfae1b9735af7dff857c577b7cad9a45ea9",
+      "directPackages": {
+        "Elsa.Secrets.Persistence.EFCore": {
+          "version": "3.8.1",
+          "requested": "[3.8.1, 3.8.1]",
+          "nugetLockContentHash": "rfEHtf8geAdofSBrOwhCB1TE0LEnLjP043ASDlxddSw23UaaCUP34tqPRP6qy6jA9OR5I/CywW4rkQf2h/XW9A=="
+        },
+        "Elsa.Secrets.Persistence.EFCore.Sqlite": {
+          "version": "3.8.1",
+          "requested": "[3.8.1, 3.8.1]",
+          "nugetLockContentHash": "4a3DN8kTJhReJqNBeYKLvAKIE3wZiImsTRvNysCC3pm4D4sleT45Z4AC+0kLgvjpyOr0XeqZQcW3faB11y/tWg=="
+        }
+      }
+    },
+    "core-3.8.4": {
+      "sha256": "697ab600f9416aee6b4a960f0440c7820796cd27d5a41563056984073ee2b16e",
+      "directPackages": {
+        "Elsa.Secrets.Persistence.EFCore": {
+          "version": "3.8.4",
+          "requested": "[3.8.4, 3.8.4]",
+          "nugetLockContentHash": "tKHRx8C0QEuhlEorCtDr9yTkffnLCe0Yx/wBydUO0qzqo6d7EPEUOxJmWl+bwwFeHVZbzoroATPYQf/oBU9jPg=="
+        },
+        "Elsa.Secrets.Persistence.EFCore.Sqlite": {
+          "version": "3.8.4",
+          "requested": "[3.8.4, 3.8.4]",
+          "nugetLockContentHash": "ezWw2uXEGwk6GFqot97R8w/H91iPMxe77pU/1Zq/fY6XMy52xZr2b7kIjUL/HDOYHJ59mR5VxKE3+JEr/dVq7A=="
+        }
+      }
+    }
+  },
+  "oldMigration": {
+    "phase": "extensions-3.8.1",
+    "result": "migrated",
+    "appliedMigrations": [
+      "20240915164114_V3_3"
+    ]
+  },
+  "databaseBeforeCore": {
+    "integrityCheck": "ok",
+    "tables": [
+      "Secrets",
+      "__EFMigrationsHistory",
+      "__EFMigrationsLock"
+    ],
+    "secretsColumns": [
+      "Id",
+      "SecretId",
+      "Name",
+      "Scope",
+      "EncryptedValue",
+      "Description",
+      "Version",
+      "IsLatest",
+      "Status",
+      "ExpiresIn",
+      "ExpiresAt",
+      "LastAccessedAt",
+      "TenantId",
+      "CreatedAt",
+      "UpdatedAt",
+      "Owner"
+    ],
+    "migrationHistory": [
+      [
+        "20240915164114_V3_3",
+        "10.0.9"
+      ]
+    ],
+    "syntheticRows": [
+      {
+        "Id": "synthetic-row-version-1",
+        "SecretId": "synthetic-secret-for-upgrade-fixture",
+        "Name": "synthetic-credential",
+        "Scope": "fixture-only",
+        "Description": "synthetic fixture row; not a credential",
+        "Version": 1,
+        "IsLatest": 0,
+        "Status": 0,
+        "TenantId": "synthetic-tenant",
+        "Owner": "synthetic-owner",
+        "ExpiresIn": "00:15:00",
+        "ExpiresAt": "2030-01-02T03:04:05+00:00",
+        "LastAccessedAt": "2026-09-23T10:00:00+00:00",
+        "CreatedAt": "2026-09-23T09:00:00+00:00",
+        "UpdatedAt": "2026-09-23T09:00:00+00:00",
+        "encryptedValueSha512": "bcfd4700367aba3db06aa3e0b9a353456cfd6e36c5521173beceaac62afcca33889add4d14a984e1209b9d7057373d1b500d3c292bd1ad2f6f72ee77eeddbed3"
+      },
+      {
+        "Id": "synthetic-row-version-2",
+        "SecretId": "synthetic-secret-for-upgrade-fixture",
+        "Name": "synthetic-credential",
+        "Scope": "fixture-only",
+        "Description": "synthetic fixture row; not a credential",
+        "Version": 2,
+        "IsLatest": 1,
+        "Status": 0,
+        "TenantId": "synthetic-tenant",
+        "Owner": "synthetic-owner",
+        "ExpiresIn": "00:15:00",
+        "ExpiresAt": "2030-01-02T03:04:05+00:00",
+        "LastAccessedAt": "2026-09-23T10:00:00+00:00",
+        "CreatedAt": "2026-09-23T09:00:00+00:00",
+        "UpdatedAt": "2026-09-23T10:00:00+00:00",
+        "encryptedValueSha512": "748cd8da11f262d97fb1a3c32c4b8902f50d314ed3e3e03d1b482f24d8ce0d18066b14d540ebcdafa1889e4c0a60c59fd4e715b12cd4e0f2e169939c18ce487f"
+      }
+    ]
+  },
+  "coreUpgrade": {
+    "phase": "core-3.8.4",
+    "result": "failed",
+    "appliedMigrationsBeforeUpgrade": [
+      "20240915164114_V3_3"
+    ],
+    "pendingMigrationsBeforeUpgrade": [
+      "20260531141623_Initial"
+    ],
+    "exceptionType": "Microsoft.Data.Sqlite.SqliteException",
+    "exceptionMessage": "SQLite Error 1: 'table \"Secrets\" already exists'."
+  },
+  "databaseAfterCore": {
+    "integrityCheck": "ok",
+    "tables": [
+      "Secrets",
+      "__EFMigrationsHistory",
+      "__EFMigrationsLock"
+    ],
+    "secretsColumns": [
+      "Id",
+      "SecretId",
+      "Name",
+      "Scope",
+      "EncryptedValue",
+      "Description",
+      "Version",
+      "IsLatest",
+      "Status",
+      "ExpiresIn",
+      "ExpiresAt",
+      "LastAccessedAt",
+      "TenantId",
+      "CreatedAt",
+      "UpdatedAt",
+      "Owner"
+    ],
+    "migrationHistory": [
+      [
+        "20240915164114_V3_3",
+        "10.0.9"
+      ]
+    ],
+    "syntheticRows": [
+      {
+        "Id": "synthetic-row-version-1",
+        "SecretId": "synthetic-secret-for-upgrade-fixture",
+        "Name": "synthetic-credential",
+        "Scope": "fixture-only",
+        "Description": "synthetic fixture row; not a credential",
+        "Version": 1,
+        "IsLatest": 0,
+        "Status": 0,
+        "TenantId": "synthetic-tenant",
+        "Owner": "synthetic-owner",
+        "ExpiresIn": "00:15:00",
+        "ExpiresAt": "2030-01-02T03:04:05+00:00",
+        "LastAccessedAt": "2026-09-23T10:00:00+00:00",
+        "CreatedAt": "2026-09-23T09:00:00+00:00",
+        "UpdatedAt": "2026-09-23T09:00:00+00:00",
+        "encryptedValueSha512": "bcfd4700367aba3db06aa3e0b9a353456cfd6e36c5521173beceaac62afcca33889add4d14a984e1209b9d7057373d1b500d3c292bd1ad2f6f72ee77eeddbed3"
+      },
+      {
+        "Id": "synthetic-row-version-2",
+        "SecretId": "synthetic-secret-for-upgrade-fixture",
+        "Name": "synthetic-credential",
+        "Scope": "fixture-only",
+        "Description": "synthetic fixture row; not a credential",
+        "Version": 2,
+        "IsLatest": 1,
+        "Status": 0,
+        "TenantId": "synthetic-tenant",
+        "Owner": "synthetic-owner",
+        "ExpiresIn": "00:15:00",
+        "ExpiresAt": "2030-01-02T03:04:05+00:00",
+        "LastAccessedAt": "2026-09-23T10:00:00+00:00",
+        "CreatedAt": "2026-09-23T09:00:00+00:00",
+        "UpdatedAt": "2026-09-23T10:00:00+00:00",
+        "encryptedValueSha512": "748cd8da11f262d97fb1a3c32c4b8902f50d314ed3e3e03d1b482f24d8ce0d18066b14d540ebcdafa1889e4c0a60c59fd4e715b12cd4e0f2e169939c18ce487f"
+      }
+    ]
+  },
+  "oldPackageReopenAfterFailure": {
+    "phase": "extensions-3.8.1",
+    "result": "readable",
+    "rowCount": 2,
+    "versions": [
+      1,
+      2
+    ],
+    "secretIds": [
+      "synthetic-secret-for-upgrade-fixture"
+    ],
+    "latestFlags": [
+      false,
+      true
+    ],
+    "encryptedValueSha256": [
+      "2CEF360A72B4723C2D0524EB0961834955B0DCB2648D686C4B4B402E8952329E",
+      "4B139718F2E965735950C0B5A88D2035C7A8CD470BD97E2A101E804A1DA81777"
+    ]
+  },
+  "schemaMigrationCodeChanged": false,
+  "credentialConversionVerified": false
+}
