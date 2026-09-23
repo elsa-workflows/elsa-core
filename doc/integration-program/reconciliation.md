@@ -39,3 +39,7 @@ Use existing issue acceptance criteria and append scoped execution notes. Keep s
 The audit worktrees start from Core `610790ec57ae9d5c334181d50c1e65f99613fd86`. The supplied detached checkout at `be5bdae501997401bd248f7642eeabacd1994d8a` was left untouched. Open PRs and local worktrees were inspected before starting, including existing Secrets validation, tenant runtime, and NuGet publishing work. The inventory PR contains the detailed cross-repository active-work ledger and source pins.
 
 No wholesale import, NuGet publication, repository archival, PR merge, or production change is authorized by this audit. Elsa 3 remains the target. Co-location, package release, host deployment, and workflow schema compatibility remain separate decisions.
+
+## Publishing safeguard discovered during the audit
+
+Core's pinned `.github/workflows/packages.yml` matches `codex/*` pushes and can publish the full preview package set to Feedz after tests/build. The initial hierarchy branch triggered [run 35863141778](https://github.com/elsa-workflows/elsa-core/actions/runs/35863141778); it was cancelled during tests. The build and both publishing jobs have no executed steps. No package publication occurred. Remaining audit branches use `audit/*`, outside the current push filters. Further commits on the existing hierarchy branch use `[skip ci]` to prevent the push workflow. This deliberately leaves that branch's Actions evidence skipped/cancelled; local document checks and GitHub relationship verification are reported separately. Do not rerun its Packages workflow.
