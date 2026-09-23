@@ -20,6 +20,8 @@ Official references, checked 2026-09-23:
 
 The real PostgreSQL test initially failed because `PostgreSqlDialect.Upsert` omitted the primary key from INSERT, although the query builder supplies its parameter. The patch includes it. Version selection also emitted integer literals against Boolean columns; it now binds Boolean parameters for draft/latest/published and combined options. Public package identities remain unchanged.
 
+Evidence receipt: [dapper-atomic-updates-evidence.json](dapper-atomic-updates-evidence.json), including exact source/file/patch hashes and test counts. A clean patch replay produced identical source bytes and passed all 28 SQLite tests.
+
 ## Verification
 
 Each contract test creates a uniquely named synthetic table and drops only that table. SQLite uses a fresh temporary database. PostgreSQL and SQL Server use dedicated loopback Docker instances with synthetic credentials. The table fixture models workflow record columns; it does not establish migration compatibility for all historical schemas.

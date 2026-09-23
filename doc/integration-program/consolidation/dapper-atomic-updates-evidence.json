@@ -1,0 +1,78 @@
+{
+  "checkedDate": "2026-09-23",
+  "scope": "Disposable consolidated build patch; no source import or publication",
+  "sourceCommits": {
+    "core": "8e893e02c4ac089d526b0a0d294a8546f021d072",
+    "extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287",
+    "studio": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822"
+  },
+  "patchSha256": "84235ee839f497d5741fcbda811766dd1aeb8574e7e2c73b820c5645396c7e7a",
+  "files": [
+    {
+      "path": "src/extensions/persistence/Elsa.Persistence.Dapper/Dialects/PostgreSqlDialect.cs",
+      "sha256": "b10f954c6f8337efedd6cf3ac9bcc81e71bb55a4009e843f83988e96d8166731"
+    },
+    {
+      "path": "src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryBuilderExtensions.cs",
+      "sha256": "1cc4b3ac7512e4c7b4f1998c0b140da9e8240148a4f924d731eb722f8126749b"
+    },
+    {
+      "path": "src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs",
+      "sha256": "c8867104b11ad749e671578c6d5597ef382276946ee6d3930754e3adc40961e6"
+    },
+    {
+      "path": "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs",
+      "sha256": "385224aaca402ed5787609ca5640c4c7fa0500753e2b786764eb275a69c13674"
+    }
+  ],
+  "tests": [
+    {
+      "backend": "sqlite",
+      "framework": "net10.0",
+      "failed": 0,
+      "passed": 28,
+      "skipped": 0,
+      "logSha256": "9bf1eedacbb7efd15e3363c9230828817e03a338af446911fe916550c0a3539e"
+    },
+    {
+      "backend": "postgres",
+      "framework": "net10.0",
+      "failed": 0,
+      "passed": 15,
+      "skipped": 0,
+      "logSha256": "8334ff32564454cc4696f7cc8a3d241368a47e6fa3f28cb501c5363ea06e3852"
+    },
+    {
+      "backend": "sqlserver",
+      "framework": "net10.0",
+      "failed": 0,
+      "passed": 15,
+      "skipped": 0,
+      "logSha256": "a71477f5b29d3acf7b960baf790a6e0410d3685a6cb6f5ec0812e583532780e4"
+    },
+    {
+      "backend": "sqlite-clean-patch-replay",
+      "framework": "net10.0",
+      "failed": 0,
+      "passed": 28,
+      "skipped": 0,
+      "logSha256": "104268465d9ce0eab589812b205420b6ec9032e78351a8109dbc5ea1832c0a3d"
+    }
+  ],
+  "build": {
+    "frameworks": [
+      "net8.0",
+      "net9.0",
+      "net10.0"
+    ],
+    "errors": 0,
+    "warnings": 60,
+    "logSha256": "1429b84ad2037e5fcd48f90e2c8eef41bf19bf9364f55c5e3572e1bd253caf11"
+  },
+  "limitations": [
+    "Synthetic record table fixture, not full historical migration replay",
+    "Oracle/MySQL/custom providers unverified",
+    "Complete consolidated solution and actual source import pending"
+  ],
+  "publicationAuthorized": false
+}
