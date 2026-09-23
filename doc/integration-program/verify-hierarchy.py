@@ -7,8 +7,9 @@ from pathlib import Path
 import subprocess
 
 
-def api(path):
-    return json.loads(subprocess.check_output(['gh', 'api', path], text=True))
+def api_pages(path):
+    pages = json.loads(subprocess.check_output(['gh', 'api', '--paginate', '--slurp', path], text=True))
+    return [row for page in pages for row in page]
 
 
 def require(condition, message):
@@ -37,33 +38,61 @@ def acyclic(edges):
         visit(node)
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--live', action='store_true', help='Read GitHub with authenticated gh; never mutates issues')
-    args = parser.parse_args()
-    data = json.loads(Path(__file__).with_name('hierarchy.json').read_text())
-    issues = {row['number']: row for row in data['issues']}
-    require(len(issues) == len(data['issues']) == 69, "Expected 69 unique issues")
-    require(collections.Counter(row['level'] for row in issues.values()) == {'Program': 1, 'Epic': 10, 'Feature': 40, 'Story': 6, 'Task': 12}, 'Unexpected semantic level counts')
+def validate(data):
+    rows = data['issues']
+    issues = {row['number']: row for row in rows}
+    require(len(issues) == len(rows), 'Duplicate issue number')
+    program = data['program']
+    require(program in issues, 'Program missing from issue index')
+    require([row['number'] for row in rows if row['level'] == 'Program'] == [program],
+            'Expected exactly the declared program root')
     levels = ['Program', 'Epic', 'Feature', 'Story', 'Task']
     parents = data['parent_edges']
     dependencies = data['blocking_edges']
-    require(len(parents) == 68, 'Expected 68 parent edges')
-    require(len({child for parent, child in parents}) == 68, 'Each child must have one parent')
-    require({child for parent, child in parents} == set(issues) - {8194}, 'Parent coverage differs from the issue index')
-    for parent, child in parents:
-        require(levels.index(issues[child]['level']) == levels.index(issues[parent]['level']) + 1, f'Invalid hierarchy level: {parent} -> {child}')
+    require(all(row['level'] in levels for row in rows), 'Unknown semantic level')
+    require(len(parents) == len(issues) - 1, 'Expected one parent edge per non-root issue')
+    require(len({child for parent, child in parents}) == len(parents), 'Each child must have one parent')
+    require({child for parent, child in parents} == set(issues) - {program}, 'Parent coverage differs from the issue index')
     for edges in (parents, dependencies):
         require(len(edges) == len(set(map(tuple, edges))), 'Duplicate edge')
         require(all(a in issues and b in issues and a != b for a, b in edges), 'Unknown issue or self edge')
         acyclic(edges)
+    for parent, child in parents:
+        require(levels.index(issues[child]['level']) == levels.index(issues[parent]['level']) + 1,
+                f'Invalid hierarchy level: {parent} -> {child}')
+    return issues
+
+
+def verify_live(data, fetch=api_pages):
+    issues = validate(data)
+    base = f"repos/{data['repository']}/issues/"
+    children, blockers = collections.defaultdict(set), collections.defaultdict(set)
+    for parent, child in data['parent_edges']:
+        children[parent].add(issues[child]['url'])
+    for blocker, blocked in data['blocking_edges']:
+        blockers[blocked].add(issues[blocker]['url'])
+    # Read every indexed issue, including leaves: new children or unrecorded
+    # blockers are drift too. Compare full URLs so cross-repository issue numbers
+    # cannot accidentally match. Pagination covers future program growth.
+    for number in issues:
+        for endpoint, expected in [('sub_issues', children[number]),
+                                   ('dependencies/blocked_by', blockers[number])]:
+            actual = {row['html_url'] for row in fetch(f'{base}{number}/{endpoint}?per_page=100')}
+            require(actual == expected,
+                    f'Native {endpoint} drift for #{number}: missing={sorted(expected - actual)}, '
+                    f'unrecorded={sorted(actual - expected)}')
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--live', action='store_true', help='Read GitHub with authenticated gh; never mutates issues')
+    parser.add_argument('--snapshot', type=Path, default=Path(__file__).with_name('hierarchy.json'))
+    args = parser.parse_args()
+    data = json.loads(args.snapshot.read_text())
+    issues = validate(data)
+    parents, dependencies = data['parent_edges'], data['blocking_edges']
     if args.live:
-        base = 'repos/elsa-workflows/elsa-core/issues/'
-        for parent, child in parents:
-            require(api(f'{base}{child}/parent')['number'] == parent, f'Native parent drift for #{child}')
-        for blocker, blocked in dependencies:
-            rows = api(f'{base}{blocked}/dependencies/blocked_by?per_page=100')
-            require(blocker in {row['number'] for row in rows}, f'Native dependency missing: {blocker} -> {blocked}')
+        verify_live(data)
     print(f'PASS: {len(issues)} issues, {len(parents)} parent edges, {len(dependencies)} separate blocking edges; both graphs acyclic' + ('; live relationships verified' if args.live else '; snapshot only'))
 
 
