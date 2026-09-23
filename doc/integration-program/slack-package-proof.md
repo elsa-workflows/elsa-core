@@ -32,7 +32,7 @@ python3 scripts/integration-program/run_slack_package_proof.py \
   --sourcelink-tool /tmp/codex-sourcelink-8259/sourcelink
 ```
 
-The script validates both clean source pins and checks that the Slack project's resolved `ProjectReference` is exactly the supplied Core project. It verifies the explicit SourceLink CLI path is the pinned 3.1.1 tool before restore or pack. It uses per-check NuGet caches, downloads and hashes the official baseline artifact, runs the selector tests, runs only the Slack test project, packs only the Slack project, and asserts the temporary feed has exactly one `.nupkg`. It writes `evidence.json`, selector output, TRX results, consumer projects, and command logs under the output directory. Core source debugging needs the Core tag's `Elsa.Platform.PackageManifest.Generator` 0.0.1-preview.53 build tool; only that package ID is mapped to the configured Elsa Feedz preview source. All released/local package consumers use NuGet.org and the temporary local feed only.
+The script validates both clean source pins and checks that the Slack project's resolved `ProjectReference` is exactly the supplied Core project. It verifies the explicit SourceLink tool path and package store, then invokes the pinned 3.1.1 `sourcelink.dll` payload directly; it compares the installed DLL with the copy in the 3.1.1 package archive and records its SHA-256. This avoids trusting a replaceable command shim based only on `dotnet tool list` metadata. Before recording success, it checks both source HEADs and tracked/untracked working-tree status again. The focused-test receipt reads every TRX file and fails unless the aggregate still matches the pinned baseline: exactly `CreateChannelTests.ExecuteAsync`, skipped as `Not implemented yet`, zero executed/passed/failed, and no error or other non-zero summary counters. It uses per-check NuGet caches, downloads and hashes the official baseline artifact, runs the selector tests, runs only the Slack test project, packs only the Slack project, and asserts the temporary feed has exactly one `.nupkg`. It writes `evidence.json`, selector output, TRX results, consumer projects, and command logs under the output directory. Core source debugging needs the Core tag's `Elsa.Platform.PackageManifest.Generator` 0.0.1-preview.53 build tool; only that package ID is mapped to the configured Elsa Feedz preview source. All released/local package consumers use NuGet.org and the temporary local feed only.
 
 Install the pinned SourceLink CLI before running the proof, using an isolated NuGet config:
 
@@ -44,7 +44,7 @@ EOF
 dotnet tool install --tool-path /tmp/codex-sourcelink-8259 sourcelink --version 3.1.1 --configfile /tmp/codex-sourcelink-8259/NuGet.Config
 ```
 
-The CLI path is required. A missing or unpinned tool fails closed before package restore or pack, so SourceLink cannot be silently reported as passed when it was not checked.
+The CLI path is required. A missing or unpinned tool, incomplete package store, mismatched payload DLL, or altered install fails closed before package restore or pack, so SourceLink cannot be silently reported as passed when it was not checked. The runner invokes the verified assembly directly rather than executing the shim at that path.
 
 Run the inventory selector and proof guard tests in both normal and optimized Python modes:
 

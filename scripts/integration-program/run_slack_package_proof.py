@@ -30,6 +30,13 @@ PROOF_VERSION = "3.8.5-proof.154ba15"
 PROJECT_RELATIVE = Path("src/modules/communication/Elsa.Slack/Elsa.Slack.csproj")
 TEST_RELATIVE = Path("test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj")
 INVENTORY_RELATIVE = Path("doc/integration-program/inventory/inventory.json")
+EXPECTED_SKIPPED_TEST = "Elsa.Slack.Tests.Activities.Channels.CreateChannelTests.ExecuteAsync"
+EXPECTED_SKIP_MESSAGE = "Not implemented yet."
+TRX_COUNTERS = (
+    "total", "executed", "passed", "failed", "error", "timeout", "aborted",
+    "inconclusive", "passedButRunAborted", "notRunnable", "notExecuted", "disconnected",
+    "warning", "completed", "inProgress", "pending",
+)
 
 
 def run(command: list[str], *, cwd: Path, env: dict[str, str], log: Path) -> str:
@@ -58,11 +65,16 @@ def git_value(root: Path, *args: str) -> str:
 
 def require_clean_pin(root: Path, expected_sha: str, name: str) -> None:
     actual_sha = git_value(root, "rev-parse", "HEAD")
-    status = git_value(root, "status", "--porcelain")
+    status = git_value(root, "status", "--porcelain", "--untracked-files=all")
     if actual_sha != expected_sha or status:
         raise RuntimeError(
             f"{name} source must be clean at {expected_sha}; found {actual_sha}, status={status!r}"
         )
+
+
+def require_sources_unchanged(core_source: Path, extensions_source: Path) -> None:
+    require_clean_pin(core_source, CORE_SHA, "Elsa Core")
+    require_clean_pin(extensions_source, EXTENSIONS_SHA, "Elsa Extensions")
 
 
 def require_core_project_reference(project: Path, expected_core_project: Path) -> None:
@@ -83,7 +95,7 @@ def require_core_project_reference(project: Path, expected_core_project: Path) -
         )
 
 
-def require_sourcelink_tool(tool_path: Path) -> tuple[Path, str]:
+def require_sourcelink_tool(tool_path: Path) -> tuple[Path, str, str]:
     tool = tool_path.resolve()
     if tool.stem.lower() != "sourcelink" or not tool.is_file() or not os.access(tool, os.X_OK):
         raise RuntimeError(f"SourceLink CLI must be an executable sourcelink 3.1.1 tool: {tool}")
@@ -106,7 +118,124 @@ def require_sourcelink_tool(tool_path: Path) -> tuple[Path, str]:
         raise RuntimeError(
             f"Expected SourceLink CLI 3.1.1 at {tool}; dotnet tool list returned {matching}"
         )
-    return tool, matching[0][1]
+
+    # Never execute the user-supplied shim: dotnet tool list records package
+    # metadata but does not bind the shim's bytes to that metadata. Verify the
+    # installed package payload against its own nupkg, then invoke that DLL.
+    package_root = tool.parent / ".store/sourcelink/3.1.1/sourcelink/3.1.1"
+    nuspec_path = package_root / "sourcelink.nuspec"
+    settings_path = package_root / "tools/netcoreapp2.1/any/DotnetToolSettings.xml"
+    assembly_path = package_root / "tools/netcoreapp2.1/any/sourcelink.dll"
+    package_path = package_root / "sourcelink.3.1.1.nupkg"
+    if not all(path.is_file() for path in (nuspec_path, settings_path, assembly_path, package_path)):
+        raise RuntimeError(f"Installed SourceLink 3.1.1 package payload is incomplete under {package_root}")
+
+    nuspec = ElementTree.parse(nuspec_path).getroot().find("{*}metadata")
+    settings = ElementTree.parse(settings_path).getroot()
+    command = settings.find("{*}Commands/{*}Command")
+    if (
+        nuspec is None
+        or nuspec.findtext("{*}id") != "sourcelink"
+        or nuspec.findtext("{*}version") != "3.1.1"
+        or command is None
+        or command.get("Name") != "sourcelink"
+        or command.get("EntryPoint") != "sourcelink.dll"
+        or command.get("Runner") != "dotnet"
+    ):
+        raise RuntimeError(f"Installed SourceLink payload metadata is not the expected 3.1.1 tool: {package_root}")
+
+    archive_dll = "tools/netcoreapp2.1/any/sourcelink.dll"
+    try:
+        with zipfile.ZipFile(package_path) as archive:
+            packaged_nuspec = ElementTree.fromstring(archive.read("sourcelink.nuspec"))
+            packaged_metadata = packaged_nuspec.find("{*}metadata")
+            packaged_id = packaged_metadata.findtext("{*}id") if packaged_metadata is not None else None
+            packaged_version = packaged_metadata.findtext("{*}version") if packaged_metadata is not None else None
+            packaged_dll_hash = hashlib.sha256(archive.read(archive_dll)).hexdigest()
+    except (KeyError, zipfile.BadZipFile) as error:
+        raise RuntimeError(f"Cannot verify installed SourceLink package archive: {package_path}") from error
+    payload_hash = sha256(assembly_path)
+    if packaged_id != "sourcelink" or packaged_version != "3.1.1" or payload_hash != packaged_dll_hash:
+        raise RuntimeError("Installed SourceLink executable payload does not match the pinned 3.1.1 package")
+
+    return assembly_path, matching[0][1], payload_hash
+
+
+def read_focused_test_receipt(results_dir: Path) -> dict:
+    trx_files = sorted(results_dir.rglob("*.trx"))
+    if not trx_files:
+        raise RuntimeError("Focused Slack test command produced no TRX result")
+
+    file_receipts = []
+    unit_results = []
+    aggregate = {name: 0 for name in TRX_COUNTERS}
+    for trx_path in trx_files:
+        root = ElementTree.parse(trx_path).getroot()
+        summary = root.find("{*}ResultSummary")
+        counters = summary.find("{*}Counters") if summary is not None else None
+        if summary is None or counters is None:
+            raise RuntimeError(f"Missing test summary or counters in {trx_path}")
+        if summary.get("outcome") != "Completed":
+            raise RuntimeError(f"Unexpected test run outcome in {trx_path}: {summary.get('outcome')!r}")
+        run_info_errors = [
+            info.get("outcome")
+            for info in root.findall(".//{*}RunInfo")
+            if info.get("outcome") in {"Error", "Abort"}
+        ]
+        if run_info_errors:
+            raise RuntimeError(f"TRX contains failed or aborted run information in {trx_path}: {run_info_errors}")
+        file_counts = {}
+        for name in TRX_COUNTERS:
+            raw_count = counters.get(name)
+            if raw_count is None:
+                raise RuntimeError(f"Missing {name} test counter in {trx_path}")
+            try:
+                file_counts[name] = int(raw_count)
+            except ValueError as error:
+                raise RuntimeError(f"Invalid {name} test counter in {trx_path}: {raw_count!r}") from error
+            if file_counts[name] < 0:
+                raise RuntimeError(f"Negative {name} test counter in {trx_path}: {file_counts[name]}")
+            aggregate[name] += file_counts[name]
+
+        results = root.findall(".//{*}UnitTestResult")
+        if file_counts["total"] != len(results):
+            raise RuntimeError(
+                f"TRX total counter does not match recorded test results in {trx_path}: "
+                f"{file_counts['total']} != {len(results)}"
+            )
+        unit_results.extend(results)
+        file_receipts.append({"file": trx_path.name, "counters": file_counts, "unit_result_count": len(results)})
+
+    if len(unit_results) != 1:
+        raise RuntimeError(f"Expected exactly one Slack test result across all TRX files, found {len(unit_results)}")
+
+    result = unit_results[0]
+    skip_message = result.findtext("{*}Output/{*}ErrorInfo/{*}Message")
+    if (
+        result.get("testName") != EXPECTED_SKIPPED_TEST
+        or result.get("outcome") != "NotExecuted"
+        or skip_message != EXPECTED_SKIP_MESSAGE
+    ):
+        raise RuntimeError(
+            "Focused Slack test baseline changed: expected only "
+            f"{EXPECTED_SKIPPED_TEST} skipped as {EXPECTED_SKIP_MESSAGE!r}, found "
+            f"{result.get('testName')!r} outcome={result.get('outcome')!r} message={skip_message!r}"
+        )
+
+    expected_counters = {name: 0 for name in TRX_COUNTERS}
+    expected_counters["total"] = 1
+    if aggregate != expected_counters:
+        raise RuntimeError(
+            f"Unexpected focused Slack test counters across all TRX files: {aggregate}; "
+            f"expected {expected_counters}"
+        )
+    return {
+        "result": {**aggregate, "skipped": 1},
+        "trx_files": file_receipts,
+        "unit_tests": [
+            {"name": result.get("testName"), "outcome": result.get("outcome"), "skip_message": skip_message}
+        ],
+    }
 
 
 def sha256(path: Path) -> str:
@@ -376,7 +505,9 @@ def main() -> int:
     parser.add_argument("--sourcelink-tool", type=Path, required=True)
     args = parser.parse_args()
 
-    source_link_tool, source_link_version = require_sourcelink_tool(args.sourcelink_tool)
+    source_link_assembly, source_link_version, source_link_payload_sha256 = require_sourcelink_tool(
+        args.sourcelink_tool
+    )
     core_source = args.core_source.resolve()
     extensions_source = args.extensions_source.resolve()
     output = args.output_dir.resolve()
@@ -425,7 +556,12 @@ def main() -> int:
         },
         "frameworks": list(TFMS),
         "package_version": PROOF_VERSION,
-        "source_link_tool": {"path": str(source_link_tool), "version": source_link_version},
+        "source_link_tool": {
+            "path": str(source_link_assembly),
+            "version": source_link_version,
+            "sha256": source_link_payload_sha256,
+            "invocation": "dotnet <verified package payload DLL>; supplied shim is never executed",
+        },
         "source_build_tooling_feed": "Core source restore resolves Elsa.Platform.PackageManifest.Generator 0.0.1-preview.53 from Elsa Feedz; package consumers remain NuGet.org-only",
         "commands": [],
     }
@@ -504,26 +640,11 @@ def main() -> int:
             log=output / "logs/slack-tests.log",
         )
     )
-    trx_files = sorted((output / "test-results").glob("*.trx"))
-    if not trx_files:
-        raise RuntimeError("Focused Slack test command produced no TRX result")
-    trx_root = ElementTree.parse(trx_files[0]).getroot()
-    trx_counters = trx_root.find("{*}ResultSummary/{*}Counters")
-    if trx_counters is None:
-        raise RuntimeError(f"Missing test counters in {trx_files[0]}")
-    counts = {name: int(trx_counters.get(name, "0")) for name in ("total", "executed", "passed", "failed", "notExecuted")}
-    test_results = trx_root.findall(".//{*}UnitTestResult")
-    counts["skipped"] = sum(
-        result.get("outcome") == "NotExecuted"
-        and result.find("{*}Output/{*}ErrorInfo/{*}Message") is not None
-        for result in test_results
-    )
-    if counts["failed"]:
-        raise RuntimeError(f"Focused Slack test project reports failures: {counts}")
+    test_receipt = read_focused_test_receipt(output / "test-results")
     evidence["existing_focused_tests"] = {
         "project": TEST_RELATIVE.as_posix(),
         "framework": "net10.0",
-        "result": counts,
+        **test_receipt,
         "note": "The only currently defined Slack test is skipped as 'Not implemented yet'; no connector behavior test passed.",
     }
 
@@ -575,7 +696,7 @@ def main() -> int:
         source_pdb.write_bytes(symbols.read("lib/net10.0/Elsa.Slack.pdb"))
     evidence["commands"].append(
         run(
-            [str(source_link_tool), "print-json", str(source_pdb)],
+            ["dotnet", str(source_link_assembly), "print-json", str(source_pdb)],
             cwd=extensions_source,
             env=env,
             log=output / "logs/sourcelink-print-json.log",
@@ -588,7 +709,7 @@ def main() -> int:
         raise RuntimeError(f"SourceLink documents do not resolve to pinned commit {EXTENSIONS_SHA}: {parsed_source_link}")
     evidence["commands"].append(
         run(
-            [str(source_link_tool), "test", str(source_pdb)],
+            ["dotnet", str(source_link_assembly), "test", str(source_pdb)],
             cwd=extensions_source,
             env=env,
             log=output / "logs/sourcelink-test.log",
@@ -750,9 +871,13 @@ def main() -> int:
         "graph": "Slack project -> Core 3.8.4 source project; distinct from both NuGet package consumers",
     }
 
-    expected_commit = git_value(extensions_source, "rev-parse", "HEAD")
-    if expected_commit != EXTENSIONS_SHA:
-        raise RuntimeError("Extensions source worktree moved while proof was running")
+    require_sources_unchanged(core_source, extensions_source)
+    evidence["final_source_state"] = {
+        "result": "passed",
+        "elsa_core": {"commit": git_value(core_source, "rev-parse", "HEAD"), "clean": True},
+        "elsa_extensions": {"commit": git_value(extensions_source, "rev-parse", "HEAD"), "clean": True},
+        "status_scope": "tracked and untracked files; ignored build outputs are excluded",
+    }
     evidence["result"] = "passed"
     (output / "evidence.json").write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"result": evidence["result"], "evidence": str(output / "evidence.json")}, indent=2))
