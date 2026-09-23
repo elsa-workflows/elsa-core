@@ -23,7 +23,7 @@ Every workflow stage links to a provider operation record. Failure controls and 
 
 The four ranked cohorts are conditional validation order, not a calibrated popularity ranking or authorization to build. The rubric assigns 30% to evidenced demand, 25% to complete-workflow coverage, 15% each to feasibility, infrastructure reuse and sustainability. Because demand is not calibrated, every demand score remains null; score sensitivity shows hypothetical demand values of 0, 2.5 and 5. The resulting ranges overlap for every deep candidate, so there is no robust numeric winner.
 
-The shortlist below exposes the proposed first slice, effort range and main readiness gate without requiring a reader to mine the JSON. Effort figures are engineering estimates in the catalog, not measured delivery times; maintenance sponsor is unassigned for every provider.
+The shortlist below exposes the proposed first slice, effort range and main readiness gate without requiring a reader to mine the JSON. Effort figures are engineering estimates in the catalog, not measured delivery times. They assume Elsa already has reusable credential/OAuth, webhook and rate-limit infrastructure; this assessment does not implement that infrastructure, and the estimates exclude provider app-review/approval time. Maintenance sponsor is unassigned for every provider.
 
 | Cohort | Provider | Proposed first slice | Effort estimate | Main readiness gate |
 | --- | --- | --- | --- | --- |
