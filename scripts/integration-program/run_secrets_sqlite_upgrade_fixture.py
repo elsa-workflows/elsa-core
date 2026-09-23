@@ -22,6 +22,16 @@ NUGET_FLAT = 'https://api.nuget.org/v3-flatcontainer'
 OLD_PROJECT = FIXTURE / 'extensions-3.8.1/ExtensionsRunner.csproj'
 CORE_PROJECT = FIXTURE / 'core-3.8.4/CoreRunner.csproj'
 SYNTHETIC_SECRET_ID = 'synthetic-secret-for-upgrade-fixture'
+EXPECTED_OLD_MIGRATIONS = ['20240915164114_V3_3']
+EXPECTED_CORE_PENDING_MIGRATIONS = ['20260531141623_Initial']
+EXPECTED_SQLITE_EXCEPTION = 'Microsoft.Data.Sqlite.SqliteException'
+EXPECTED_SQLITE_EXCEPTION_MESSAGE = 'SQLite Error 1: \'table "Secrets" already exists\'.'
+EXPECTED_SECRETS_COLUMNS = [
+    'Id', 'SecretId', 'Name', 'Scope', 'EncryptedValue', 'Description', 'Version',
+    'IsLatest', 'Status', 'ExpiresIn', 'ExpiresAt', 'LastAccessedAt', 'TenantId',
+    'CreatedAt', 'UpdatedAt', 'Owner',
+]
+EXPECTED_TABLES = ['Secrets', '__EFMigrationsHistory', '__EFMigrationsLock']
 SYNTHETIC_ROWS = [
     {
         'Id': 'synthetic-row-version-1',
@@ -241,6 +251,63 @@ def inspect_database(database_path):
         }
 
 
+def expected_old_reopen():
+    return {
+        'phase': 'extensions-3.8.1',
+        'result': 'readable',
+        'rowCount': 2,
+        'versions': [1, 2],
+        'secretIds': [SYNTHETIC_SECRET_ID],
+        'latestFlags': [False, True],
+        'encryptedValueSha256': [
+            hashlib.sha256(row['EncryptedValue'].encode()).hexdigest().upper()
+            for row in SYNTHETIC_ROWS
+        ],
+    }
+
+
+def expected_synthetic_rows():
+    expected = []
+    for row in SYNTHETIC_ROWS:
+        preserved = {key: value for key, value in row.items() if key != 'EncryptedValue'}
+        preserved['encryptedValueSha512'] = hashlib.sha512(row['EncryptedValue'].encode()).hexdigest()
+        expected.append(preserved)
+    return expected
+
+
+def validate_known_baseline(old_migration, core_upgrade, before, after, old_reopen):
+    """Require the exact outcome observed for the hash-pinned public package pair."""
+    if old_migration.get('phase') != 'extensions-3.8.1' or old_migration.get('result') != 'migrated':
+        raise ValueError(f'Unexpected Extensions 3.8.1 migration result: {old_migration}')
+    if old_migration.get('appliedMigrations') != EXPECTED_OLD_MIGRATIONS:
+        raise ValueError(f'Unexpected Extensions 3.8.1 migration IDs: {old_migration}')
+
+    if core_upgrade.get('phase') != 'core-3.8.4' or core_upgrade.get('result') != 'failed':
+        raise ValueError(f'Core 3.8.4 must reproduce the expected migration failure: {core_upgrade}')
+    if core_upgrade.get('appliedMigrationsBeforeUpgrade') != EXPECTED_OLD_MIGRATIONS:
+        raise ValueError(f'Unexpected applied migration IDs before Core upgrade: {core_upgrade}')
+    if core_upgrade.get('pendingMigrationsBeforeUpgrade') != EXPECTED_CORE_PENDING_MIGRATIONS:
+        raise ValueError(f'Unexpected pending Core migration IDs: {core_upgrade}')
+    if core_upgrade.get('exceptionType') != EXPECTED_SQLITE_EXCEPTION:
+        raise ValueError(f'Unexpected Core migration exception type: {core_upgrade}')
+    if core_upgrade.get('exceptionMessage') != EXPECTED_SQLITE_EXCEPTION_MESSAGE:
+        raise ValueError(f'Unexpected Core migration exception message: {core_upgrade}')
+
+    if before.get('integrityCheck') != 'ok' or before.get('tables') != EXPECTED_TABLES:
+        raise ValueError(f'Unexpected pre-upgrade SQLite state: {before}')
+    if before.get('secretsColumns') != EXPECTED_SECRETS_COLUMNS:
+        raise ValueError(f'Unexpected pre-upgrade Secrets schema: {before}')
+    expected_history = [[EXPECTED_OLD_MIGRATIONS[0], '10.0.9']]
+    if before.get('migrationHistory') != expected_history:
+        raise ValueError(f'Unexpected pre-upgrade migration history: {before}')
+    if before.get('syntheticRows') != expected_synthetic_rows():
+        raise ValueError(f'Unexpected pre-upgrade synthetic rows: {before}')
+    if after != before:
+        raise ValueError(f'Core failure changed the complete SQLite state: before={before}, after={after}')
+    if old_reopen != expected_old_reopen():
+        raise ValueError(f'Extensions 3.8.1 could not reopen and read the unchanged rows: {old_reopen}')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--update-lockfiles', action='store_true',
@@ -262,35 +329,17 @@ def main():
 
         database_path = temp_root / 'secrets.db'
         old_migration = run_phase(OLD_PROJECT, config, packages_dir, 'migrate', database_path)
-        if old_migration['result'] != 'migrated':
-            raise RuntimeError(f'Extensions 3.8.1 migration did not complete: {old_migration}')
+        if (old_migration.get('phase') != 'extensions-3.8.1'
+                or old_migration.get('result') != 'migrated'
+                or old_migration.get('appliedMigrations') != EXPECTED_OLD_MIGRATIONS):
+            raise RuntimeError(f'Unexpected Extensions 3.8.1 migration result or IDs: {old_migration}')
         seed_synthetic_rows(database_path)
         before = inspect_database(database_path)
-        if before['integrityCheck'] != 'ok' or len(before['syntheticRows']) != 2:
-            raise RuntimeError(f'Invalid Extensions 3.8.1 fixture state: {before}')
 
         core_upgrade = run_phase(CORE_PROJECT, config, packages_dir, 'upgrade', database_path)
         after = inspect_database(database_path)
-        if after['integrityCheck'] != 'ok' or after['syntheticRows'] != before['syntheticRows']:
-            raise RuntimeError(f'Core upgrade did not preserve the synthetic SQLite fixture rows: before={before}, after={after}')
-        old_reopen = None
-        if core_upgrade['result'] == 'failed':
-            old_reopen = run_phase(OLD_PROJECT, config, packages_dir, 'inspect', database_path)
-            expected_reopen = {
-                'result': 'readable',
-                'rowCount': 2,
-                'versions': [1, 2],
-                'secretIds': [SYNTHETIC_SECRET_ID],
-                'latestFlags': [False, True],
-                'encryptedValueSha256': [
-                    hashlib.sha256(row['EncryptedValue'].encode()).hexdigest().upper()
-                    for row in SYNTHETIC_ROWS
-                ],
-            }
-            if any(old_reopen.get(key) != value for key, value in expected_reopen.items()):
-                raise RuntimeError(f'Old package graph could not reopen after failed upgrade: {old_reopen}')
-            if after != before:
-                raise RuntimeError(f'Failed upgrade changed the old database state: before={before}, after={after}')
+        old_reopen = run_phase(OLD_PROJECT, config, packages_dir, 'inspect', database_path)
+        validate_known_baseline(old_migration, core_upgrade, before, after, old_reopen)
 
         report = {
             'fixture': 'Extensions 3.8.1 -> Core 3.8.4',
