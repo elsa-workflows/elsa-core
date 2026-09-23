@@ -189,6 +189,7 @@ public partial class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOu
 
         var after = await FindLatestAsync(innerStore, definitionId);
         Assert.Equal("Handler name", after.Name);
+        Assert.Equal("Handler description", after.Description);
         Assert.True(after.Options.AutoUpdateConsumingWorkflows);
         Assert.Contains(after.Variables, variable => variable.Name == "handlerVariable");
         Assert.Equal("handler", ((JsonObject)after.CustomProperties["test:nested"])["value"]!.GetValue<string>());
@@ -348,6 +349,7 @@ public partial class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOu
             if (probe.ApplyDraftEdits)
             {
                 notification.WorkflowDefinition.Name = "Handler name";
+                notification.WorkflowDefinition.Description = "Handler description";
                 notification.WorkflowDefinition.Options.AutoUpdateConsumingWorkflows = true;
                 notification.WorkflowDefinition.Variables = [.. notification.WorkflowDefinition.Variables, new Variable("handlerVariable")];
                 ((JsonObject)notification.WorkflowDefinition.CustomProperties["test:nested"])["value"] = "handler";

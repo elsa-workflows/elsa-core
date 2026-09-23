@@ -23,11 +23,11 @@ public partial class BpmnDocumentPutCompareAndSwapTests
     [InlineData(true, true)]
     public async Task SqliteDocumentPut_PreservesTheConcurrentWinner(bool metadataOnly, bool published)
     {
-        var directory = Path.Combine(Path.GetTempPath(), $"elsa-bpmn-cas-{Guid.NewGuid():N}");
+        var directory = Path.Join(Path.GetTempPath(), $"elsa-bpmn-cas-{Guid.NewGuid():N}");
         Directory.CreateDirectory(directory);
         try
         {
-            var connectionString = $"Data Source={Path.Combine(directory, "workflows.db")};Pooling=False;Default Timeout=10";
+            var connectionString = $"Data Source={Path.Join(directory, "workflows.db")};Pooling=False;Default Timeout=10";
             var probe = new DraftNotificationProbe();
             await using var services = (ServiceProvider)new TestApplicationBuilder(testOutputHelper)
                 .ConfigureElsa(elsa => elsa
@@ -104,6 +104,7 @@ public partial class BpmnDocumentPutCompareAndSwapTests
             else
             {
                 Assert.Equal("Handler name", persisted.Name);
+                Assert.Equal("Handler description", persisted.Description);
                 Assert.True(persisted.Options.AutoUpdateConsumingWorkflows);
                 Assert.Contains(persisted.Variables, variable => variable.Name == "handlerVariable");
                 Assert.Equal(published ? initial.Version + 1 : initial.Version, persisted.Version);
