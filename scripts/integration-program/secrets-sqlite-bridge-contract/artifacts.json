@@ -2,6 +2,17 @@
   "targetFramework": "net10.0",
   "dataProtectionPurpose": "Elsa.Secrets.Encryption",
   "dataProtectionApplicationName": "Elsa-Secrets-Bridge-Contract-Synthetic",
+  "source-build-tooling": {
+    "sourceCommit": "728b2461bf0073e072fdc7ee61c7ece1f42ac8bb",
+    "packages": [
+      {
+        "id": "Elsa.Platform.PackageManifest.Generator",
+        "version": "0.0.1-preview.53",
+        "downloadUrl": "https://f.feedz.io/elsa-workflows/elsa-3/nuget/v3/packages/elsa.platform.packagemanifest.generator/0.0.1-preview.53/elsa.platform.packagemanifest.generator.0.0.1-preview.53.nupkg",
+        "sha512": "f634e94a5d330f4b43db314fbc69bdf7e7f0fab5b77f5d5dbb6440085a77f1978ba43c6f0f4e4f1f3c474b3f8d5af07f29778d7b1b4b42601b0e3d0daacf3320"
+      }
+    ]
+  },
   "phases": {
     "extensions-3.8.1": {
       "repository": "https://github.com/elsa-workflows/elsa-extensions",
@@ -11,6 +22,28 @@
           "id": "Elsa.Secrets.Management",
           "version": "3.8.1",
           "sha512": "89cbdffc7e4688ca0dc3c4deb5e50ac9d835272f6b87f999e8284a58518adcd46b95e45b68dfd249ac189db8a3f7bb75141762953ceca95a8fa3d9207f7a81ad"
+        },
+        {
+          "id": "Elsa.Secrets.Models",
+          "version": "3.8.1",
+          "sha512": "60b67bf283727e5a00555033aa87182680c1161315f2f641887b0ccb089e177f7e4572bb5526502c9c558e4989e39cf6ba6fba7e79cc23c5e0f3d05289823fef"
+        },
+        {
+          "id": "Elsa.Secrets.Persistence.EFCore.Sqlite",
+          "version": "3.8.1",
+          "sha512": "59b1c1972082b2e5b453aabcac11634c2ce97307667a1797839bd2e186ee63d70536ca9870b8e927688f7eecac18a054615ef45997964b43f34e3b7df21eaff5"
+        },
+        {
+          "id": "Elsa.Secrets.Persistence.EFCore",
+          "version": "3.8.1",
+          "sha512": "00ffb499bb1164fb740c28bf669aaf26cf37e891dded5a5e88a33d41a48a6c9c8b1118554770fb12657c91e4307cc53cf72637c3e2c0dccd878610e6b11dd803"
+        },
+        {
+          "id": "Elsa.Persistence.EFCore.Sqlite",
+          "version": "3.8.0",
+          "repository": "https://github.com/elsa-workflows/elsa-core",
+          "sourceCommit": "8191ae30554ea001b38bb44902dd90dc98c7a106",
+          "sha512": "a1c445d6fcf4ddc2bbe3d6c7362d32e2b11bc04e1bd3afc8260c5f2ad5b796082670b8414a1d05680883ca8c803609972c0b3497e88a72928ce2a5e5bc76b04d"
         }
       ]
     },

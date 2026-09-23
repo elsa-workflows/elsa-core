@@ -2,7 +2,7 @@
   "program": 8194,
   "repository": "elsa-workflows/elsa-core",
   "checked_date": "2026-09-23",
-  "verification": "Native child and blocking-dependency sets read back through authenticated paginated GitHub REST; see reconciliation.md.",
+  "verification": "Native child and blocking-dependency sets read back through authenticated paginated GitHub REST; issue titles and states refreshed from GitHub on 2026-09-23; see reconciliation.md.",
   "issues": [
     {
       "number": 8194,
@@ -15,7 +15,7 @@
       "number": 8195,
       "title": "[Epic] E0: Program initialization and current-state audit",
       "level": "Epic",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8195"
     },
     {
@@ -85,28 +85,28 @@
       "number": 8205,
       "title": "[Feature] F0.1: Establish the issue hierarchy, reporting conventions, and decision log",
       "level": "Feature",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8205"
     },
     {
       "number": 8206,
       "title": "[Feature] F0.2: Inventory core/extensions projects, packages, dependencies, and existing integrations",
       "level": "Feature",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8206"
     },
     {
       "number": 8207,
       "title": "[Feature] F0.3: Map existing issues, release workflows, host composition, and Studio extension points",
       "level": "Feature",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8207"
     },
     {
       "number": 8208,
       "title": "[Feature] F0.4: Assess Elsa Secrets for integration credentials",
       "level": "Feature",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8208"
     },
     {
@@ -498,12 +498,12 @@
       "number": 8270,
       "title": "[Task] Implement synthetic credential lifecycle with durable refresh recovery",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8270"
     },
     {
       "number": 8271,
-      "title": "[Task] Prove workflow credential resume and offboarding conformance",
+      "title": "[Task] Implement restart-safe logical workflow credential bindings",
       "level": "Task",
       "state": "open",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8271"
@@ -591,6 +591,27 @@
       "level": "Task",
       "state": "open",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8294"
+    },
+    {
+      "number": 8296,
+      "title": "[Task] Persist credential offboarding and revoke recovery",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8296"
+    },
+    {
+      "number": 8300,
+      "title": "[Bug] Preserve EF workflow snapshot state during atomic document updates",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8300"
+    },
+    {
+      "number": 8301,
+      "title": "[Task] Prove Secrets API identity and canonical Studio compatibility",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8301"
     }
   ],
   "parent_edges": [
@@ -925,6 +946,18 @@
     [
       8286,
       8294
+    ],
+    [
+      8269,
+      8296
+    ],
+    [
+      8286,
+      8300
+    ],
+    [
+      8275,
+      8301
     ]
   ],
   "blocking_edges": [
@@ -1055,6 +1088,22 @@
     [
       8282,
       8290
+    ],
+    [
+      8270,
+      8296
+    ],
+    [
+      8271,
+      8296
+    ],
+    [
+      8300,
+      8292
+    ],
+    [
+      8290,
+      8301
     ]
   ]
 }
