@@ -47,7 +47,7 @@ The lifecycle implementation is not ready to claim safe connector auth until the
 
 ## Existing evidence executed for this audit
 
-The repository tests validate the current Secrets storage/management and inbound External Authentication binding surfaces. These exact commands ran on 2026-09-23 from Core `610790ec57ae9d5c334181d50c1e65f99613fd86`, using the installed .NET 10 SDK:
+The repository tests validate the current Secrets storage/management and inbound External Authentication binding surfaces. These exact commands ran on 2026-09-23 from Core `610790ec57ae9d5c334181d50c1e65f99613fd86`, using the installed .NET 10 SDK. For reviewer traceability, the same suites were re-executed on the docs-only PR head with no-build/no-restore and their pass output, SDK version, and SHAs were retained in the [test execution record](test-runs/2026-09-23-net10.txt); the TRX files were written to a local temporary directory and are not part of the PR.
 
 - `dotnet test test/unit/Elsa.Secrets.UnitTests/Elsa.Secrets.UnitTests.csproj` — passed, 120/120 tests (`net10.0`).
 - `dotnet test test/unit/Elsa.ExternalAuthentication.UnitTests/Elsa.ExternalAuthentication.UnitTests.csproj` — passed, 205/205 tests (`net10.0`).
