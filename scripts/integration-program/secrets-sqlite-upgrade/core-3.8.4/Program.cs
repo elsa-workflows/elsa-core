@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text.Json;
 using Elsa.Secrets.Persistence.EFCore;
 using Elsa.Persistence.EFCore.Extensions;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,7 +38,7 @@ try
         appliedMigrations = await context.Database.GetAppliedMigrationsAsync()
     }));
 }
-catch (Exception exception)
+catch (SqliteException exception)
 {
     // Migration failure is a valid characterization result. The driver reopens
     // the database with the old package graph and checks the seeded rows.
