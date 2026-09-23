@@ -164,6 +164,13 @@ def verify_resolved_project_graph(plan: dict[str, Any], sources: dict[str, Path]
     receipt: dict[str, Any] = {"status": "checking", "framework_scope": "all declared frameworks", "projects": []}
     plan["source_binding_preflight"] = receipt
     try:
+        unresolved = plan.get("unresolved_source_package_ids", [])
+        receipt["unresolved_source_package_ids"] = unresolved
+        if unresolved:
+            raise ValueError(
+                f"Source package identity is missing for packable or unclassified projects: {unresolved}. "
+                "Evaluate and record their package identities before claiming source closure."
+            )
         while pending:
             project_file, use_project_references = pending.pop(0)
             identity = (project_file, use_project_references)
@@ -298,6 +305,12 @@ def build_plan(inventory_path: Path, sources: dict[str, Path]) -> dict[str, Any]
             project["package_id"] for repository in ("elsa-core", "elsa-extensions")
             for project in inventory["project_inventory"][repository] if project.get("package_id")
         }),
+        "unresolved_source_package_ids": sorted(
+            f"{repository}:{project['path']}"
+            for repository in ("elsa-core", "elsa-extensions")
+            for project in inventory["project_inventory"][repository]
+            if project.get("is_packable") is not False and not project.get("package_id")
+        ),
         "affected_test_project_count": len(entries),
         "ambiguous_package_edges_resolved_conservatively": len(graph.ambiguous_package_edges),
         "lane_counts": lane_counts,

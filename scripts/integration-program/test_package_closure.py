@@ -56,6 +56,18 @@ class PackageClosureTests(unittest.TestCase):
             "elsa-extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287",
         })
 
+    def test_missing_packable_identity_blocks_source_preflight(self):
+        recorded = build_plan(INVENTORY, {})
+        self.assertEqual(recorded["unresolved_source_package_ids"], ["elsa-core:test/TlsSmoke/TlsSmoke.csproj"])
+        with self.source_graph() as (plan, sources, *_):
+            plan["unresolved_source_package_ids"] = recorded["unresolved_source_package_ids"]
+            with patch("package_closure.resolved_project_inputs") as evaluate:
+                with self.assertRaisesRegex(ValueError, "identity is missing"):
+                    verify_resolved_project_graph(plan, sources, 30)
+            evaluate.assert_not_called()
+            self.assertEqual(plan["source_binding_preflight"]["status"], "failed")
+            self.assertEqual(plan["source_binding_preflight"]["projects"], [])
+
     def test_declared_test_inputs_drive_service_and_host_classification(self):
         docker_lane, _ = classify_project("elsa-core", {
             "path": "test/component/Example/Example.csproj",
