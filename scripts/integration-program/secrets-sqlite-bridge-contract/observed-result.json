@@ -1,0 +1,111 @@
+{
+  "fixture": "Extensions 3.8.1 Data Protection -> Core 3.8.4 AES-GCM",
+  "targetFramework": "net10.0",
+  "verifiedPackages": {
+    "extensions-3.8.1": [
+      {
+        "id": "Elsa.Secrets.Management",
+        "version": "3.8.1",
+        "url": "https://api.nuget.org/v3-flatcontainer/elsa.secrets.management/3.8.1/elsa.secrets.management.3.8.1.nupkg",
+        "sha512": "89cbdffc7e4688ca0dc3c4deb5e50ac9d835272f6b87f999e8284a58518adcd46b95e45b68dfd249ac189db8a3f7bb75141762953ceca95a8fa3d9207f7a81ad",
+        "sha512Base64": "icvf/H5GiMoNw8TeteUKydg1Jy9rh/mZ6ChKWFGK3NRrleRbaN/SSawYnbij97t1FBdilTzsqVqPo9kgf3qBrQ==",
+        "repository": "https://github.com/elsa-workflows/elsa-extensions",
+        "sourceCommit": "01bf9ad70d0399afadae9609fe820703d3de290d"
+      }
+    ],
+    "core-3.8.4": [
+      {
+        "id": "Elsa.Secrets",
+        "version": "3.8.4",
+        "url": "https://api.nuget.org/v3-flatcontainer/elsa.secrets/3.8.4/elsa.secrets.3.8.4.nupkg",
+        "sha512": "dba3b4121ad829c1b7486f35507d452bb7ddfd8e3fc7746836bec8e6f300dddd780beb13b9accfd1f2b4ffa755b33d99c8b7766fb7a15184a9030556f46620c7",
+        "sha512Base64": "26O0EhrYKcG3SG81UH1FK7fd/Y4/x3RoNr7I5vMA3d14C+sTuazP0fK0/6dVsz2ZyLd2b7ehUYSpAwVW9GYgxw==",
+        "repository": "https://github.com/elsa-workflows/elsa-core",
+        "sourceCommit": "33181ae3048f628f591a0155b5665a8e4d1bcea2"
+      }
+    ]
+  },
+  "packageLocks": {
+    "extensions-3.8.1": {
+      "sha256": "69bace212a1ca1b1ad7f2aee26bfd07b7bd3aa684b5fa0e22369cc6bfce052a7",
+      "resolvedPackage": {
+        "id": "Elsa.Secrets.Management",
+        "version": "3.8.1",
+        "requested": "[3.8.1, 3.8.1]",
+        "nugetLockContentHash": "EzgTmtW966Ttn+L93V+YiFdWh17BuRVvh1HlDQfwC70fXnYA+wOFcF5ELI6WaVv3spsqPIC4E3rYlQRa3vHYWQ=="
+      }
+    },
+    "core-3.8.4": {
+      "sha256": "30ec099e3433fc982e6ac33ef421423adebf743d0441787c76077f633e9758cd",
+      "resolvedPackage": {
+        "id": "Elsa.Secrets",
+        "version": "3.8.4",
+        "requested": "[3.8.4, 3.8.4]",
+        "nugetLockContentHash": "nPvfXrauwdlaPNKiDveKUW4gKykfVxmQsUSppPMo+koOsSEGX5fyXx3PHgYb0x1OnkDyKk2VnnCr4RpsfTyzDQ=="
+      }
+    }
+  },
+  "dataProtectionPurpose": "Elsa.Secrets.Encryption",
+  "dataProtectionApplicationName": "Elsa-Secrets-Bridge-Contract-Synthetic",
+  "mappingContract": {
+    "result": "verified",
+    "syntheticLogicalSecrets": 1,
+    "syntheticVersions": 2,
+    "derivedCurrentVersionAtReferenceTime": 2,
+    "unsupportedStatusValuesRejected": true,
+    "tenantAndOwnerValuesRejected": true,
+    "normalizedNameDuplicatesRejected": true,
+    "unknownSchemaAndHistoryRejected": true,
+    "ambiguousVersionAndTimestampInputsRejected": true,
+    "missingCiphertextRejected": true,
+    "negativeFixturesRejected": [
+      "duplicate_normalized_name",
+      "duplicate_version",
+      "invalid_expiry_offset",
+      "invalid_latest_marker",
+      "invalid_timestamp",
+      "missing_ciphertext",
+      "owner",
+      "tenant",
+      "unknown_migration_history",
+      "unknown_schema",
+      "unknown_status"
+    ],
+    "plaintextPrinted": false,
+    "ciphertextPrinted": false
+  },
+  "legacyPhase": {
+    "result": "encrypted",
+    "syntheticVersions": 2,
+    "plaintextSha256": [
+      "41663B503A2AC6A76B6E116FCDC2420BDE4C48E23509E9060ADE2883B58368A2",
+      "7CEA371A5E316A5A304C47CFA7AE5E3EB61690E65BDB9CD878FCA317D872CC9E"
+    ]
+  },
+  "corePhase": {
+    "result": "verified",
+    "syntheticVersions": 2,
+    "sourcePlaintextSha256": [
+      "41663B503A2AC6A76B6E116FCDC2420BDE4C48E23509E9060ADE2883B58368A2",
+      "7CEA371A5E316A5A304C47CFA7AE5E3EB61690E65BDB9CD878FCA317D872CC9E"
+    ],
+    "coreReadBackSha256": [
+      "41663B503A2AC6A76B6E116FCDC2420BDE4C48E23509E9060ADE2883B58368A2",
+      "7CEA371A5E316A5A304C47CFA7AE5E3EB61690E65BDB9CD878FCA317D872CC9E"
+    ],
+    "roundTripPassed": true,
+    "rawLegacyCiphertextCopyRejected": true,
+    "wrongLegacyKeyRingRejected": true,
+    "missingLegacyKeyRingRejected": true,
+    "wrongCoreEncryptionKeyRejected": true,
+    "missingCoreEncryptionKeyRejected": true,
+    "corePayloadHasProtectedValue": true,
+    "legacyVersionMetadataPreserved": true,
+    "latestActiveVersion": 2,
+    "previousVersionExpired": true
+  },
+  "plaintextPrinted": false,
+  "keysPrinted": false,
+  "ciphertextPrinted": false,
+  "productionMigrationChanged": false
+}

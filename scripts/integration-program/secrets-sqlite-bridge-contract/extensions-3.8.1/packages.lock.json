@@ -1,0 +1,171 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0": {
+      "Elsa.Secrets.Management": {
+        "type": "Direct",
+        "requested": "[3.8.1, 3.8.1]",
+        "resolved": "3.8.1",
+        "contentHash": "EzgTmtW966Ttn+L93V+YiFdWh17BuRVvh1HlDQfwC70fXnYA+wOFcF5ELI6WaVv3spsqPIC4E3rYlQRa3vHYWQ==",
+        "dependencies": {
+          "Elsa.Secrets.Core": "3.8.1",
+          "Elsa.Secrets.Models": "3.8.1",
+          "Elsa.Workflows.Core": "3.8.0"
+        }
+      },
+      "Microsoft.NET.ILLink.Tasks": {
+        "type": "Direct",
+        "requested": "[10.0.8, )",
+        "resolved": "10.0.8",
+        "contentHash": "dVbSXGIFNR5nZcv2tOLoWI+a9T4jtFd77IYjuND+QVe360qWgAF7H0WtoopYhRw/+SgpGUTyrkrh+65+ClNnfw=="
+      },
+      "Cronos": {
+        "type": "Transitive",
+        "resolved": "0.11.1",
+        "contentHash": "5Ug+giPQITSAdTp/METAsofRSSUi3I5p7t4dlcXnzUgUzwZb4HkOBcYfpHuPwAHrnKJjmyW8amVzLD6mfLpaBg=="
+      },
+      "CShells.Abstractions": {
+        "type": "Transitive",
+        "resolved": "0.0.28",
+        "contentHash": "+AdhE7p4mrhk3KHyWXCpaWpF+cuWUUN63rRl1rRwTnyA/6FRFeXqAF6ZowkABXDNfzeyLe5fx7jWcVyWHbj1tQ==",
+        "dependencies": {
+          "JetBrains.Annotations": "2025.2.4"
+        }
+      },
+      "DistributedLock.Core": {
+        "type": "Transitive",
+        "resolved": "1.0.9",
+        "contentHash": "y72z/Ta4xX3qKc+bsAJDsAZ+LuXz4xbCiAYgJwvOP2Xup63tdonTXmlKXU45Ds3GfEuMEHGrnVinhxyBZjRc2Q=="
+      },
+      "Elsa.Common": {
+        "type": "Transitive",
+        "resolved": "3.8.0",
+        "contentHash": "6QHj3ScICpoR94K2mSTjy4QNGELE8BbY5KBNLxPjroJBUxMWITaTo804lq7lltk6S5LvjH1d2hRDgdG9SCl5jw==",
+        "dependencies": {
+          "Cronos": "0.11.1",
+          "DistributedLock.Core": "1.0.9",
+          "Elsa.Features": "3.8.0",
+          "Elsa.Mediator": "3.8.0",
+          "IronCompress": "1.7.0",
+          "LinqKit.Core": "1.2.11",
+          "Snappier": "1.3.1"
+        }
+      },
+      "Elsa.Expressions": {
+        "type": "Transitive",
+        "resolved": "3.8.0",
+        "contentHash": "Ta916D8KvcBLWZR1d/gsQe0O4UuuAeGP2Dicm3dPl4lBbdon7IxNCqZrIJjGOTLKvD/uI2OIuZf8W3f3qT0HcA==",
+        "dependencies": {
+          "Elsa.Common": "3.8.0",
+          "Elsa.Features": "3.8.0"
+        }
+      },
+      "Elsa.Features": {
+        "type": "Transitive",
+        "resolved": "3.8.0",
+        "contentHash": "oUb/ZpHyGQbzW0sXN11XxENuUY1gmFTfEVsq336ithw/PkfjVnJrrhr+eMNGVOiI4bh7SEUglxhPkQPUA5cFvw==",
+        "dependencies": {
+          "CShells.Abstractions": "0.0.28"
+        }
+      },
+      "Elsa.Mediator": {
+        "type": "Transitive",
+        "resolved": "3.8.0",
+        "contentHash": "SbORc75jXakh4znM3V6Qs5vgJJ1f8OeWwqlnpu6+KI17IdqV8yLxBXh9pVOTQx6OD3xnNFVCxaUAodv43THEnQ=="
+      },
+      "Elsa.Secrets.Core": {
+        "type": "Transitive",
+        "resolved": "3.8.1",
+        "contentHash": "/Kvq5dE8K8XquJ7sZwvqdNBzpq9ae9U4UDJYygPygA4dtA/UM/QovqqmcjQXExygqC1cpw62YiSgbbYs7eXRYA==",
+        "dependencies": {
+          "Elsa.Features": "3.8.0",
+          "Elsa.Secrets.Models": "3.8.1"
+        }
+      },
+      "Elsa.Secrets.Models": {
+        "type": "Transitive",
+        "resolved": "3.8.1",
+        "contentHash": "CsAiCPq5F94/nAvldcXMinj7f52pGNjyD/F9QxdgUKWYXnsL4mVfQ6fjn1uFo2LkqLyFBYjb/zZS/Yr+mW4ZuA=="
+      },
+      "Elsa.Workflows.Core": {
+        "type": "Transitive",
+        "resolved": "3.8.0",
+        "contentHash": "UZzua6vPovDAiRI4oSKMma1flfko9n+g59w3Znzk0ICAwZKF+UKOLIK9M4FBfyl7E13TUUy5epSlau4rlOjA0Q==",
+        "dependencies": {
+          "Elsa.Common": "3.8.0",
+          "Elsa.Expressions": "3.8.0",
+          "Humanizer.Core": "3.0.10",
+          "JsonSchema.Net": "9.4.0",
+          "Newtonsoft.Json": "13.0.4",
+          "ShortGuid": "2.0.1"
+        }
+      },
+      "Humanizer.Core": {
+        "type": "Transitive",
+        "resolved": "3.0.10",
+        "contentHash": "yZIhtw8sYuvsONzQbZxWpR60tMWYHXoo0DL6nyOqSFiU5POjBTSEyWFpTQtJEZuy+oqiYTXKXY/Mjx7KnqIQFw=="
+      },
+      "IronCompress": {
+        "type": "Transitive",
+        "resolved": "1.7.0",
+        "contentHash": "soOOMriKl0J/p3V2fKuJ7R6n+SBtvpB+mRxmWU3tNeowmtBs32CyEyxHaBPralorsInVRWPFZDDJ46Eg6A9nqQ==",
+        "dependencies": {
+          "Snappier": "1.2.0",
+          "ZstdSharp.Port": "0.8.6"
+        }
+      },
+      "JetBrains.Annotations": {
+        "type": "Transitive",
+        "resolved": "2025.2.4",
+        "contentHash": "TwbgxAkXxY+vNEhNVx/QXjJ4vqxmepOjsgRvvImQPbHkHMMb4W+ahL3laMsxXKtNT7iMy+E1B3xkqao2hf1n3A=="
+      },
+      "Json.More.Net": {
+        "type": "Transitive",
+        "resolved": "3.0.1",
+        "contentHash": "fRctF2J2SILYG6wqP21drmeEODmCVkVQ/b3MndDu2fT1swfySyUgq7ePCk+aENGlDcIm05fyfjh9vcuqDEfv3w=="
+      },
+      "JsonPointer.Net": {
+        "type": "Transitive",
+        "resolved": "7.0.2",
+        "contentHash": "oClYHv2ooeRrtPZyC9sb/Za/ie5pGhjTbNHlAyFg4XOCyU+606FdoZKS7UdaWvtsPlrF+U2w0Ja3TRvn5+spyA==",
+        "dependencies": {
+          "Humanizer.Core": "3.0.10",
+          "Json.More.Net": "3.0.1"
+        }
+      },
+      "JsonSchema.Net": {
+        "type": "Transitive",
+        "resolved": "9.4.0",
+        "contentHash": "muE4nPuzbD9x5XA1mkXJNqX4mhz47oF3EY8qFLY1pyUY7lhXFKq65t/dSKIHeNSLBV17zwZuq24MD1em90rMNg==",
+        "dependencies": {
+          "JsonPointer.Net": "7.0.2"
+        }
+      },
+      "LinqKit.Core": {
+        "type": "Transitive",
+        "resolved": "1.2.11",
+        "contentHash": "jQXu7G9Ik6BDcS5506RV1CI184pG5eHwvqzrB5zEivciW7KiZ9iHM8ZTyu5o/TGt55woagJGUVsJYw4aBjRfEQ=="
+      },
+      "Newtonsoft.Json": {
+        "type": "Transitive",
+        "resolved": "13.0.4",
+        "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+      },
+      "ShortGuid": {
+        "type": "Transitive",
+        "resolved": "2.0.1",
+        "contentHash": "I/bXxaY4BDC0mUCJvF9ZlUfWsq3nRswv53gyNrxqg5SmOObDkggNl7v21tHHMQaPC3PW6xdMS1IHeGzFi2GuAQ=="
+      },
+      "Snappier": {
+        "type": "Transitive",
+        "resolved": "1.3.1",
+        "contentHash": "DOdDQiO8YZ5rBtVLY+6CmR1yp9WYoJRgEEktPBrR0tEj9QO2djA/zv0O3DX0OZpEAfosbY8pytQ9tQUogwQsEA=="
+      },
+      "ZstdSharp.Port": {
+        "type": "Transitive",
+        "resolved": "0.8.6",
+        "contentHash": "iP4jVLQoQmUjMU88g1WObiNr6YKZGvh4aOXn3yOJsHqZsflwRsxZPcIBvNXgjXO3vQKSLctXGLTpcBPLnWPS8A=="
+      }
+    }
+  }
+}
