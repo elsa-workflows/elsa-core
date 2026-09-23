@@ -1,6 +1,9 @@
+import io
 import json
+import os
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
@@ -207,6 +210,50 @@ class PackageClosureTests(unittest.TestCase):
             self.assertIn("greater than zero", receipt["failure"]["message"])
             self.assertEqual(receipt["requested"]["inventory"], str(INVENTORY))
             self.assertEqual(receipt["partial_plan"]["affected_test_project_count"], 51)
+
+    def test_step_summary_failure_does_not_replace_success_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output = root / "plan.json"
+            summary_directory = root / "summary-directory"
+            summary_directory.mkdir()
+            stderr = io.StringIO()
+            with patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": str(summary_directory)}), \
+                    patch("package_closure.sys.argv", [
+                        "package_closure.py",
+                        "--inventory", str(INVENTORY),
+                        "--output", str(output),
+                    ]), redirect_stderr(stderr):
+                result = main()
+
+            receipt = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(result, 0)
+            self.assertEqual(receipt["affected_test_project_count"], 51)
+            self.assertEqual(receipt["scenario"]["packages_to_pack"], ["Elsa.Slack"])
+            self.assertNotIn("failure", receipt)
+            self.assertIn("Could not append GitHub step summary", stderr.getvalue())
+
+    def test_step_summary_failure_preserves_primary_failure_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output = root / "failure.json"
+            summary_directory = root / "summary-directory"
+            summary_directory.mkdir()
+            stderr = io.StringIO()
+            with patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": str(summary_directory)}), \
+                    patch("package_closure.sys.argv", [
+                        "package_closure.py",
+                        "--inventory", str(INVENTORY),
+                        "--command-timeout-seconds", "0",
+                        "--output", str(output),
+                    ]), redirect_stderr(stderr):
+                result = main()
+
+            receipt = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(result, 2)
+            self.assertEqual(receipt["result"], "failed")
+            self.assertEqual(receipt["failure"]["phase"], "plan construction and source preflight")
+            self.assertIn("Could not append GitHub step summary", stderr.getvalue())
 
     def test_source_pin_preflight_failure_still_writes_requested_receipt(self):
         with tempfile.TemporaryDirectory() as directory:

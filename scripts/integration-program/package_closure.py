@@ -470,6 +470,15 @@ def execute_plan(
     plan["final_source_checkouts"] = final_sources
 
 
+def append_step_summary(summary_path: str, content: str) -> None:
+    """Write optional CI presentation output without changing the proof result."""
+    try:
+        with open(summary_path, "a", encoding="utf-8") as stream:
+            stream.write(content)
+    except OSError as error:
+        print(f"Could not append GitHub step summary {summary_path}: {error}", file=sys.stderr)
+
+
 def write_output(plan: dict[str, Any], path: Path | None) -> None:
     content = json.dumps(plan, indent=2) + "\n"
     if path:
@@ -506,8 +515,7 @@ def write_output(plan: dict[str, Any], path: Path | None) -> None:
             summary.extend(["", "Skipped test results:", *skips])
         if plan.get("limitations"):
             summary.extend(["", "Limitations:", *[f"- {limitation}" for limitation in plan["limitations"]]])
-        with open(summary_path, "a", encoding="utf-8") as stream:
-            stream.write("\n".join(summary) + "\n")
+        append_step_summary(summary_path, "\n".join(summary) + "\n")
 
 
 def write_failure_output(
@@ -543,12 +551,12 @@ def write_failure_output(
     print(f"Wrote failure receipt {path} (phase={phase})", file=sys.stderr)
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
-        with open(summary_path, "a", encoding="utf-8") as summary:
-            summary.write(
-                "## Core → Slack dependency closure\n\n"
-                f"Gate status: **failed during {phase}**\n\n"
-                f"Error: `{type(error).__name__}: {error}`\n"
-            )
+        append_step_summary(
+            summary_path,
+            "## Core → Slack dependency closure\n\n"
+            f"Gate status: **failed during {phase}**\n\n"
+            f"Error: `{type(error).__name__}: {error}`\n",
+        )
 
 
 def main() -> int:
