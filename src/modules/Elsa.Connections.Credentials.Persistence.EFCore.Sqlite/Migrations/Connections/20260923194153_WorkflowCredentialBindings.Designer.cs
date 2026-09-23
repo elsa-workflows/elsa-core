@@ -2,6 +2,7 @@
 using Elsa.Connections.Credentials.Persistence.EFCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -9,9 +10,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Connections.Credentials.Persistence.EFCore.Sqlite.Migrations.Connections
 {
     [DbContext(typeof(ConnectionsElsaDbContext))]
-    partial class ConnectionsElsaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260923194153_WorkflowCredentialBindings")]
+    partial class WorkflowCredentialBindings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

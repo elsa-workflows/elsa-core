@@ -4,7 +4,11 @@
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\modules\Elsa.Connections\Elsa.Connections.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Connections.Credentials.Workflows\Elsa.Connections.Credentials.Workflows.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Connections.Credentials.Persistence.EFCore.Sqlite\Elsa.Connections.Credentials.Persistence.EFCore.Sqlite.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Secrets.Persistence.EFCore.Sqlite\Elsa.Secrets.Persistence.EFCore.Sqlite.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+        <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
     </ItemGroup>
 </Project>
