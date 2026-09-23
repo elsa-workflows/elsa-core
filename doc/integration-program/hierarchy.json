@@ -521,6 +521,20 @@
       "level": "Task",
       "state": "open",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8276"
+    },
+    {
+      "number": 8279,
+      "title": "[Story] Prove paired backend and Blazor Studio source development",
+      "level": "Story",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8279"
+    },
+    {
+      "number": 8280,
+      "title": "[Task] Capture a reproducible paired WorkflowContexts source contract probe",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8280"
     }
   ],
   "parent_edges": [
@@ -815,6 +829,14 @@
     [
       8275,
       8276
+    ],
+    [
+      8215,
+      8279
+    ],
+    [
+      8279,
+      8280
     ]
   ],
   "blocking_edges": [
