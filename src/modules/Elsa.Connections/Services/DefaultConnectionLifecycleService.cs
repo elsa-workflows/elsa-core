@@ -15,7 +15,7 @@ public sealed class DefaultConnectionLifecycleService(
     IConnectionCredentialProvider provider,
     IManagedSecretManager secrets,
     TimeProvider timeProvider,
-    ITenantAccessor? tenantAccessor = null) : IConnectionLifecycleService, IConnectionBackgroundUseService, IConnectionLifecycleRecoveryService
+    ITenantAccessor tenantAccessor) : IConnectionLifecycleService, IConnectionBackgroundUseService, IConnectionLifecycleRecoveryService
 {
     private static readonly TimeSpan OperationLeaseDuration = TimeSpan.FromMinutes(2);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -61,7 +61,11 @@ public sealed class DefaultConnectionLifecycleService(
         {
             await store.CreateAsync(connection, cancellationToken);
         }
-        catch
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
         {
             return new ConnectionLifecycleResult(false, "connection_create_unknown", null, connectionId);
         }
@@ -75,7 +79,12 @@ public sealed class DefaultConnectionLifecycleService(
                 return new ConnectionLifecycleResult(false, "connection_publish_conflict", 1, connectionId);
             }
         }
-        catch
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            await TryMarkRecoveryRequiredAsync(connection, request.TenantId, request.EnvironmentId, "connection_outcome_unknown");
+            throw new OperationCanceledException("Connection setup was cancelled; creation outcome is unknown.", cancellationToken);
+        }
+        catch (Exception)
         {
             await TryMarkRecoveryRequiredAsync(connection, request.TenantId, request.EnvironmentId, "connection_outcome_unknown");
             return new ConnectionLifecycleResult(false, "connection_outcome_unknown", 1, connectionId);
@@ -121,7 +130,7 @@ public sealed class DefaultConnectionLifecycleService(
         {
             throw new OperationCanceledException("Connection access was cancelled.", cancellationToken);
         }
-        catch
+        catch (Exception)
         {
             throw new ConnectionUnavailableException();
         }
@@ -204,7 +213,7 @@ public sealed class DefaultConnectionLifecycleService(
             await TryReleaseUnstartedRefreshAsync(claimed, tenantId, environmentId, "refresh_not_started");
             throw new OperationCanceledException("Credential refresh was cancelled before the provider call.", cancellationToken);
         }
-        catch
+        catch (Exception)
         {
             if (!providerCallStarted)
                 return await ReleaseUnstartedRefreshAsync(claimed, tenantId, environmentId, "refresh_not_started");
@@ -273,7 +282,7 @@ public sealed class DefaultConnectionLifecycleService(
             // Keep the durable Deleting tombstone. A retry repeats only the idempotent owner-checked deletion.
             throw new OperationCanceledException("Credential generation cleanup was cancelled; cleanup outcome is unknown.", cancellationToken);
         }
-        catch
+        catch (Exception)
         {
             // Keep the durable Deleting tombstone if the external Secrets write may have completed.
             return new ConnectionLifecycleResult(false, "generation_cleanup_unknown", connection.Revision, connectionId, ToMetadata(connection));
@@ -349,7 +358,7 @@ public sealed class DefaultConnectionLifecycleService(
                 if (Deserialize(payload.Value) is not null && await store.TryPromoteRecoveryGenerationAsync(connectionId, tenantId, environmentId, connection.Revision, connection.OperationId!, connection.OperationFence, cancellationToken))
                     return new ConnectionLifecycleResult(true, null, connection.Revision + 1);
             }
-            catch
+            catch (Exception)
             {
                 // Missing or invalid planned material is not safe to publish; retain RecoveryRequired.
             }
@@ -373,7 +382,7 @@ public sealed class DefaultConnectionLifecycleService(
         connection.Revision,
         connection.CurrentGenerationId);
 
-    private IDisposable? PushTenant(string tenantId) => tenantAccessor?.PushContext(new Tenant { Id = tenantId, Name = tenantId });
+    private IDisposable PushTenant(string tenantId) => tenantAccessor.PushContext(new Tenant { Id = tenantId, Name = tenantId });
 
     private async Task<ConnectionLifecycleResult> ReleaseUnstartedRefreshAsync(IntegrationConnection connection, string tenantId, string environmentId, string safeErrorCode)
     {
@@ -391,7 +400,7 @@ public sealed class DefaultConnectionLifecycleService(
             await store.TryReleaseUnstartedRefreshAsync(connection.Id, tenantId, environmentId,
                 connection.OperationId!, connection.OperationFence, safeErrorCode, CancellationToken.None);
         }
-        catch
+        catch (Exception)
         {
             // The active credential remains the only published generation; reconciliation can release this claim after its lease.
         }

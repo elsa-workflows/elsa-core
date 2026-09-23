@@ -54,17 +54,22 @@ public sealed class ConnectionLifecycleTests
     [Fact]
     public async Task LifecycleServiceCanResolveWithoutMultiTenancy()
     {
+        await using var database = new TestDatabase();
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
+        services.Configure<TenantsOptions>(options => options.IsEnabled = false);
         var module = services.CreateModule();
+        var connectionString = $"Data Source={database.Path};Cache=Shared;";
+        var secretsFeature = module.Configure<SecretsFeature>();
+        secretsFeature.UseEntityFrameworkCore(feature => feature.UseSqlite(connectionString));
         module.Configure<ConnectionsFeature>();
+        module.Configure<EFCoreConnectionsPersistenceFeature>(feature => feature.UseSqlite(connectionString));
         module.Apply();
-        services.AddSingleton(Substitute.For<IConnectionLifecycleStore>());
         services.AddSingleton(Substitute.For<IConnectionCredentialProvider>());
         await using var provider = services.BuildServiceProvider();
 
-        Assert.Null(provider.GetService<ITenantAccessor>());
+        Assert.IsType<DefaultTenantAccessor>(provider.GetRequiredService<ITenantAccessor>());
         Assert.NotNull(provider.GetRequiredService<IConnectionLifecycleService>());
     }
 
@@ -923,11 +928,8 @@ public sealed class ConnectionLifecycleTests
 
         public ValueTask DisposeAsync()
         {
-            foreach (var file in new[] { Path, $"{Path}-shm", $"{Path}-wal" })
-            {
-                if (File.Exists(file))
-                    File.Delete(file);
-            }
+            foreach (var file in new[] { Path, $"{Path}-shm", $"{Path}-wal" }.Where(File.Exists))
+                File.Delete(file);
 
             return ValueTask.CompletedTask;
         }
