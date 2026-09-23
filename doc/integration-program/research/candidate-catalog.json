@@ -1558,6 +1558,15 @@
       "checkedDate": "2026-09-23",
       "lastModified": null,
       "limitations": "Documents listing channels in a team. Members cannot see private/shared channels unless they belong to them. Exact permission selection was not assessed for this survey."
+    },
+    {
+      "id": "graph-download-content",
+      "title": "Microsoft Graph download driveItem content",
+      "url": "https://learn.microsoft.com/en-us/graph/api/driveitem-get-content?view=graph-rest-1.0",
+      "kind": "official_provider_docs",
+      "checkedDate": "2026-09-23",
+      "lastModified": "2025-08-27",
+      "limitations": "Downloads primary content only for items with a file facet. Least-privilege permissions are Files.Read delegated and Files.Read.All application. GET /content returns a redirect to a preauthenticated URL that may expire within minutes; do not include Authorization on that URL. The URL is a secret-like bearer capability and must not be logged or persisted."
     }
   ],
   "rubric": [
@@ -1681,6 +1690,27 @@
             "graph-delta"
           ],
           "notes": "Follow every nextLink and persist deltaLink; 410/reset handling and replay tests remain."
+        },
+        {
+          "id": "ms.onedrive.action.downloadfilecontent",
+          "type": "action",
+          "name": "downloadFileContent",
+          "intent": "Download the primary file stream for an eligible driveItem after reconciling its current metadata.",
+          "evidenceStatus": "verified_official_docs",
+          "authScope": {
+            "status": "verified",
+            "value": "Files.Read (delegated); Files.Read.All (application).",
+            "sourceIds": [
+              "graph-download-content"
+            ],
+            "checkedDate": "2026-09-23",
+            "confidence": "high",
+            "note": "GET /content requires an access token and redirects to a preauthenticated download URL; follow it promptly without forwarding Authorization. Only items with a file facet can be downloaded."
+          },
+          "sourceIds": [
+            "graph-download-content"
+          ],
+          "notes": "The temporary preauthenticated URL must not be logged or persisted. Workflow code must skip deleted items and folders, enforce a bounded transfer size, and re-fetch/reconcile when the current file version differs from the hydrated delta state."
         },
         {
           "id": "ms.onedrive.action.uploadfile",
@@ -1854,7 +1884,8 @@
       "evidence": [
         "graph-delta",
         "graph-upload",
-        "graph-subscriptions"
+        "graph-subscriptions",
+        "graph-download-content"
       ],
       "checkedDate": "2026-09-23",
       "confidence": "medium",
@@ -17017,24 +17048,32 @@
           "step": 2,
           "providerId": "ms.onedrive",
           "operationId": "ms.onedrive.search.listchanges",
-          "description": "Hydrate latest state from saved delta cursor, traverse pages and detect current eligible file."
+          "description": "Hydrate latest state from saved delta cursor, traverse pages and select only a current item that still exists and has a file facet."
         },
         {
           "step": 3,
           "providerId": "ms.onedrive",
+          "operationId": "ms.onedrive.action.downloadfilecontent",
+          "description": "Download the file bytes only after checking the current item; if its version changed after delta hydration, re-fetch/reconcile. Apply a transfer-size limit and never log or persist the short-lived preauthenticated URL."
+        },
+        {
+          "step": 4,
+          "providerId": "ms.onedrive",
           "operationId": "ms.onedrive.action.uploadfile",
-          "description": "Copy current file bytes to an explicit target path using resumable upload; file approval is outside this connector hypothesis."
+          "description": "Copy downloaded file bytes to an explicit target path using resumable upload; file approval is outside this connector hypothesis."
         }
       ],
       "failureControls": [
         "Persist deltaLink; handle expired cursor with full resync.",
         "Deduplicate repeated notifications and renew subscriptions before 42,300-minute expiry.",
-        "No file processing/egress until tenant, path and retention policy are explicitly selected."
+        "No file processing/egress until tenant, path and retention policy are explicitly selected.",
+        "Skip deleted entries and folders; enforce a bounded transfer size; never log or persist the preauthenticated download URL; re-fetch and reconcile if the source version changed before download."
       ],
       "assumptions": [
         "Proposed end-user demand is not verified.",
         "OneDrive/Graph app registration and tenant consent are approved.",
-        "Notification timing may be delayed and multiple edits may be coalesced."
+        "Notification timing may be delayed and multiple edits may be coalesced.",
+        "File bytes may leave the source tenant only after a selected target, transfer-size policy and retention policy are approved."
       ],
       "demandEvidenceStatus": "program_hypothesis_only"
     },
@@ -17056,7 +17095,7 @@
           "step": 2,
           "providerId": "moneybird",
           "operationId": "moneybird.search.searchsalesinvoices",
-          "description": "Hydrate authorized invoice fields using sales_invoices scope and administration-bound token."
+          "description": "Hydrate authorized invoice fields using sales_invoices scope and administration-bound token; send a notification only when the returned invoice state is confirmed paid."
         },
         {
           "step": 3,
@@ -17068,7 +17107,8 @@
       "failureControls": [
         "Return HTTP 200 only after durably queueing accepted event; deduplicate on stored delivery Idempotency-Key and test whether provider redelivery preserves the key.",
         "Respect Moneybird 10-retry policy and Slack method throttles.",
-        "Never include full financial contact details without explicit need and approved data retention."
+        "Never include full financial contact details without explicit need and approved data retention.",
+        "The paid-state predicate is an Elsa workflow guard after invoice hydration; an invoice event alone is not proof of payment. Test Moneybird event-to-current-state mapping before use."
       ],
       "assumptions": [
         "This is a hypothesis, not evidence of demand or pilot approval.",

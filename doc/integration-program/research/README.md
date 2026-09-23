@@ -2,7 +2,7 @@
 
 This folder contains the source-grounded research used to assess provider workflows for Elsa. The machine-readable [candidate catalog](candidate-catalog.json) is the detailed record; the [JSON Schema](schema.json) defines its shape, and [validate_catalog.py](validate_catalog.py) checks both structural and cross-record evidence rules.
 
-The catalog contains 67 candidates: 18 receive endpoint-level deep assessments and 49 are discovery entries with a concrete workflow starting point and official API entry page. All 171 source records include a checked date; operation, authentication, trigger, polling, privacy, paid-tier and maintenance claims remain separately qualified as verified, inferred, mixed, hypothesis or unknown. An unknown means the evidence was not established in this pass. A source to an API family or overview does not establish every proposed operation or its required scopes.
+The catalog contains 67 candidates: 18 receive endpoint-level deep assessments and 49 are discovery entries with a concrete workflow starting point and official API entry page. All 172 source records include a checked date; operation, authentication, trigger, polling, privacy, paid-tier and maintenance claims remain separately qualified as verified, inferred, mixed, hypothesis or unknown. An unknown means the evidence was not established in this pass. A source to an API family or overview does not establish every proposed operation or its required scopes.
 
 The inventory snapshot records the inspected Elsa Core and Extensions revisions in the affected records. It found an existing Extensions Slack module and GitHub module, but no matching OneDrive or Moneybird module in those snapshots. The Slack source scan counted 36 activity classes; all six event-watch trigger classes currently throw `NotImplementedException`, and the Slack token is supplied as a raw activity input. These are source observations, not claims of supported or tested provider behavior. See the source IDs in each record for repository permalinks and exact revisions.
 
@@ -10,8 +10,8 @@ The inventory snapshot records the inspected Elsa Core and Extensions revisions 
 
 Six end-to-end examples demonstrate distinct integration shapes. They are research hypotheses, not commitments, pilots or validated customer demand:
 
-- **WF-01 — Microsoft controlled file intake and archive:** detect a changed OneDrive item, reconcile current state via delta, then copy it to an explicitly selected location. Notifications are not a lossless change log.
-- **WF-02 — Moneybird invoice notification:** receive a Moneybird invoice event and send a concise notification to a selected Slack channel. This is a finance-to-notification workflow; it does not infer that arbitrary documents should become sales invoices.
+- **WF-01 — Microsoft controlled file intake and archive:** detect a changed OneDrive item, reconcile current state via delta, download bytes for an eligible current file and copy them to an explicitly selected location. Notifications are not a lossless change log; folders/deleted items are excluded, transfer size is bounded, and the temporary download URL must never be logged.
+- **WF-02 — Moneybird invoice notification:** receive a Moneybird invoice event, hydrate the invoice, confirm its paid state in an Elsa guard, then send a concise notification to a selected Slack channel. This is a finance-to-notification workflow; it does not infer that arbitrary documents should become sales invoices.
 - **WF-03 — GitHub issue to Jira:** route a selected GitHub issue event into an explicitly mapped Jira project, preserving links and duplicate controls.
 - **WF-04 — Drive change to Sheets audit row:** record selected Drive metadata into a chosen Sheet. The workflow calls out that Sheets append has no assumed provider idempotency guarantee; an Elsa-owned durable ledger and reconciliation are design requirements.
 - **WF-05 — Support context and human escalation:** look up ticket/contact context, pause on uncertain matches, and send a private Slack escalation only after policy checks; public customer replies are excluded.
@@ -27,7 +27,7 @@ The shortlist below exposes the proposed first slice, effort range and main read
 
 | Cohort | Provider | Proposed first slice | Effort estimate | Main readiness gate |
 | --- | --- | --- | --- | --- |
-| 1 | OneDrive | selected-file change, delta reconciliation, upload | L: 15–25 days | test tenant and consent policy; durable change processing |
+| 1 | OneDrive | selected-file change, delta reconciliation, content download and upload | L: 15–25 days | test tenant/consent, bounded byte handling, and durable change processing |
 | 1 | Moneybird | invoice search/create, signed invoice event, revoke connection | M: 10–18 days | administration owner authorization; sandbox/account and token lifecycle |
 | 1 | Slack | credential repair, message post/search, event audit | M: 10–18 days; comprehensive repair can be L | current trigger classes throw; resolve token handling and event lifecycle |
 | 2 | GitHub | issue search/comment plus issue event; audit existing module | M: 8–15 days | reconcile existing code, token scopes and webhook repair |
