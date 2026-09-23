@@ -4,6 +4,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Persistence.EFCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Connections.Credentials.Persistence.EFCore.Features;
 
@@ -16,5 +17,8 @@ public sealed class EFCoreConnectionsPersistenceFeature(IModule module)
         base.Apply();
         Services.AddScoped<EFCoreConnectionLifecycleStore>();
         Services.AddScoped<IConnectionLifecycleStore>(sp => sp.GetRequiredService<EFCoreConnectionLifecycleStore>());
+        Services.AddScoped<EFCoreConnectionCredentialBindingStore>();
+        Services.AddScoped<IConnectionCredentialBindingStore>(sp => sp.GetRequiredService<EFCoreConnectionCredentialBindingStore>());
+        Services.TryAddSingleton<IConnectionCredentialBindingConflictClassifier, NoConnectionCredentialBindingConflictClassifier>();
     }
 }
