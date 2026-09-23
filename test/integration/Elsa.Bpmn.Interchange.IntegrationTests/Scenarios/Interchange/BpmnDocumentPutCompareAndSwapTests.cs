@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Bpmn.Interchange;
 using Bpmn.Model;
 using Elsa.Bpmn.Interchange.Endpoints.Bpmn.Document;
@@ -12,6 +13,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Notifications;
+using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
@@ -107,6 +109,95 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         Assert.Equal(stored.StringData, after.StringData);
     }
 
+    [Fact(DisplayName = "A metadata save during document PUT is retained and rejects the stale document edit")]
+    public async Task ImportDocumentAsync_WhenMetadataIsSavedDuringCompareAndSwap_RejectsTheStaleDocumentEdit()
+    {
+        var services = new TestApplicationBuilder(testOutputHelper)
+            .ConfigureElsa(elsa => elsa.UseBpmnInterchange())
+            .Build();
+        await services.PopulateRegistriesAsync();
+
+        var innerStore = services.GetRequiredService<IWorkflowDefinitionStore>();
+        var setup = services.GetRequiredService<BpmnInterchangeDocumentService>();
+        var imported = await setup.ImportAsync(ReadAsset("camunda-order-process.bpmn"), definitionId: null, name: "Order", processId: null, CancellationToken.None);
+        var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
+        var stored = await FindLatestAsync(innerStore, definitionId);
+        stored.CustomProperties["test:nested"] = new JsonObject { ["value"] = "initial" };
+        await innerStore.SaveAsync(stored);
+
+        var expectedETag = BpmnDocumentETag.From(stored);
+        var reader = services.GetRequiredService<BpmnXmlReader>();
+        var sourceXml = (string)stored.CustomProperties[BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey];
+        var edit = reader.Read(sourceXml.Replace("Order Handled", "Document edit"), new BpmnImportOptions()).Definitions;
+
+        var gate = new CompareAndSwapPauseGate();
+        var pausingStore = new PausingCompareAndSwapStore(innerStore, gate);
+        var documentWriter = ActivatorUtilities.CreateInstance<BpmnInterchangeDocumentService>(services, pausingStore);
+        var documentPut = documentWriter.ImportDocumentAsync(edit, definitionId, processId: null, CancellationToken.None, expectedETag);
+        await gate.Checked.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        var metadataWriter = await FindLatestAsync(innerStore, definitionId);
+        metadataWriter.Options.UsableAsActivity = true;
+        metadataWriter.CustomProperties["test:concurrent-metadata"] = "preserve-me";
+        metadataWriter.CustomProperties["test:nested"] = new JsonObject { ["value"] = "concurrent" };
+        await innerStore.SaveAsync(metadataWriter);
+
+        gate.Release.TrySetResult();
+
+        var stale = await Assert.ThrowsAsync<BpmnDocumentPreconditionFailedException>(() => documentPut);
+        Assert.Contains("written since the ETag in If-Match was issued", stale.Message);
+
+        var after = await FindLatestAsync(innerStore, definitionId);
+        Assert.Equal("preserve-me", after.CustomProperties["test:concurrent-metadata"]);
+        Assert.Equal("concurrent", ((JsonObject)after.CustomProperties["test:nested"])["value"]!.GetValue<string>());
+        Assert.True(after.Options.UsableAsActivity);
+        Assert.Equal(stored.StringData, after.StringData);
+        Assert.Equal("Order", after.Name);
+        Assert.Equal(expectedETag, BpmnDocumentETag.From(after));
+    }
+
+    [Fact(DisplayName = "DraftSaving handler edits are persisted during a document PUT when the snapshot still matches")]
+    public async Task ImportDocumentAsync_WhenDraftSavingHandlerEditsDraft_PersistsAllHandlerEdits()
+    {
+        var probe = new DraftNotificationProbe();
+        var services = new TestApplicationBuilder(testOutputHelper)
+            .ConfigureElsa(elsa => elsa.UseBpmnInterchange())
+            .ConfigureServices(s =>
+            {
+                s.AddSingleton(probe);
+                s.AddNotificationHandler<RejectingDraftSavingHandler>();
+            })
+            .Build();
+        await services.PopulateRegistriesAsync();
+
+        var innerStore = services.GetRequiredService<IWorkflowDefinitionStore>();
+        var setup = services.GetRequiredService<BpmnInterchangeDocumentService>();
+        var imported = await setup.ImportAsync(ReadAsset("camunda-order-process.bpmn"), definitionId: null, name: "Order", processId: null, CancellationToken.None);
+        var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
+        var stored = await FindLatestAsync(innerStore, definitionId);
+        stored.CustomProperties["test:nested"] = new JsonObject { ["value"] = "initial" };
+        stored.CustomProperties["test:typed"] = new TypedCustomMetadata { Values = ["initial"] };
+        await innerStore.SaveAsync(stored);
+
+        var expectedETag = BpmnDocumentETag.From(stored);
+        var reader = services.GetRequiredService<BpmnXmlReader>();
+        var sourceXml = (string)stored.CustomProperties[BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey];
+        var edit = reader.Read(sourceXml.Replace("Order Handled", "Document edit"), new BpmnImportOptions()).Definitions;
+        probe.ApplyDraftEdits = true;
+        var result = await setup.ImportDocumentAsync(edit, definitionId, processId: null, CancellationToken.None, expectedETag);
+        Assert.True(result.ImportResult.Succeeded);
+
+        var after = await FindLatestAsync(innerStore, definitionId);
+        Assert.Equal("Handler name", after.Name);
+        Assert.True(after.Options.AutoUpdateConsumingWorkflows);
+        Assert.Contains(after.Variables, variable => variable.Name == "handlerVariable");
+        Assert.Equal("handler", ((JsonObject)after.CustomProperties["test:nested"])["value"]!.GetValue<string>());
+        Assert.IsType<TypedCustomMetadata>(after.CustomProperties["test:typed"]);
+        Assert.Equal(["initial"], ((TypedCustomMetadata)after.CustomProperties["test:typed"]).Values);
+        Assert.NotEqual(stored.StringData, after.StringData);
+        Assert.NotEqual(expectedETag, BpmnDocumentETag.From(after));
+    }
+
     [Fact(DisplayName = "A rejecting DraftSaving handler fails the document PUT before persist; the stored definition is unchanged")]
     public async Task ImportDocumentAsync_WhenDraftSavingHandlerRejects_DoesNotPersist()
     {
@@ -128,6 +219,8 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         var imported = await setup.ImportAsync(ReadAsset("camunda-order-process.bpmn"), definitionId: null, name: "Order", processId: null, CancellationToken.None);
         var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
         var before = await FindLatestAsync(store, definitionId);
+        before.CustomProperties["test:typed"] = new TypedCustomMetadata { Values = ["initial"] };
+        await store.SaveAsync(before);
         var expectedETag = BpmnDocumentETag.From(before);
         var reader = services.GetRequiredService<BpmnXmlReader>();
         var sourceXml = (string)before.CustomProperties[BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey];
@@ -136,6 +229,7 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         var savingBefore = probe.SavingCount;
         var savedBefore = probe.SavedCount;
         probe.Reject = true;
+        probe.MutateTypedCustomProperty = true;
 
         var rejected = await Assert.ThrowsAsync<InvalidOperationException>(
             () => setup.ImportDocumentAsync(edit, definitionId, processId: null, CancellationToken.None, expectedETag));
@@ -148,6 +242,8 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         Assert.Equal(expectedETag, BpmnDocumentETag.From(after));
         Assert.Equal(before.StringData, after.StringData);
         Assert.Equal(before.Name, after.Name);
+        Assert.IsType<TypedCustomMetadata>(after.CustomProperties["test:typed"]);
+        Assert.Equal(["initial"], ((TypedCustomMetadata)after.CustomProperties["test:typed"]).Values);
     }
 
     [Fact(DisplayName = "A published→draft document PUT keeps the same id, version and created-at from DraftSaving through persist and DraftSaved")]
@@ -220,6 +316,8 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
 
         public bool Reject { get; set; }
         public bool StampHandlerMarker { get; set; }
+        public bool ApplyDraftEdits { get; set; }
+        public bool MutateTypedCustomProperty { get; set; }
         public int SavingCount { get; set; }
         public int SavedCount { get; set; }
         public string? SavingId { get; set; }
@@ -228,6 +326,11 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         public string? SavedId { get; set; }
         public int SavedVersion { get; set; }
         public DateTimeOffset SavedCreatedAt { get; set; }
+    }
+
+    public sealed class TypedCustomMetadata
+    {
+        public List<string> Values { get; set; } = [];
     }
 
     private sealed class RejectingDraftSavingHandler(DraftNotificationProbe probe) : INotificationHandler<WorkflowDefinitionDraftSaving>
@@ -241,6 +344,19 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
 
             if (probe.StampHandlerMarker)
                 notification.WorkflowDefinition.CustomProperties[DraftNotificationProbe.HandlerMarkerKey] = "kept";
+
+            if (probe.ApplyDraftEdits)
+            {
+                notification.WorkflowDefinition.Name = "Handler name";
+                notification.WorkflowDefinition.Options.AutoUpdateConsumingWorkflows = true;
+                notification.WorkflowDefinition.Variables = [.. notification.WorkflowDefinition.Variables, new Variable("handlerVariable")];
+                ((JsonObject)notification.WorkflowDefinition.CustomProperties["test:nested"])["value"] = "handler";
+            }
+
+            if (probe.MutateTypedCustomProperty)
+            {
+                ((TypedCustomMetadata)notification.WorkflowDefinition.CustomProperties["test:typed"]).Values.Add("handler");
+            }
 
             if (probe.Reject)
                 throw new InvalidOperationException("Draft save rejected.");

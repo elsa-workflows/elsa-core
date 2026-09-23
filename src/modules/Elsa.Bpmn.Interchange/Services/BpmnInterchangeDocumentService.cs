@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Nodes;
 using Bpmn.Interchange;
 using Bpmn.Model;
 using Bpmn.Semantics;
@@ -310,12 +311,12 @@ public sealed class BpmnInterchangeDocumentService(
     }
 
     /// <summary>
-    /// The document-edit persist: prepare the draft once, dispatch
-    /// <see cref="WorkflowDefinitionDraftSaving"/> so a rejecting handler fails the request before
-    /// anything is written, then compare-and-swap that same draft. The swap accepts the write only
-    /// when If-Match and the loaded snapshot (id, version, graph, name, description, IsLatest) are
-    /// still the row the draft was built from — so a metadata-only save in the window is 412, not a
-    /// silent overwrite. A lost race is <see cref="BpmnDocumentPreconditionFailedException"/>.
+    /// The document-edit persist: prepare and announce a draft before writing so a rejecting
+    /// <see cref="WorkflowDefinitionDraftSaving"/> handler fails the request without a partial save.
+    /// The compare-and-swap also checks the full serialized definition snapshot captured before notification,
+    /// so a concurrent metadata write is refused instead of being overwritten. The original announced draft
+    /// is what gets saved when that snapshot still matches, preserving the full DraftSaving handler contract.
+    /// A changed definition or incompatible row transition is <see cref="BpmnDocumentPreconditionFailedException"/>.
     /// </summary>
     private async Task<BpmnDocumentImportResult> PersistDocumentEditAsync(
         string xml,
@@ -341,23 +342,16 @@ public sealed class BpmnInterchangeDocumentService(
                 "The workflow definition has been written since the ETag in If-Match was issued. GET the document again, reapply the edit, and PUT it with the new ETag.");
         }
 
-        var expectedId = current.Id;
-        var expectedVersion = current.Version;
-        var expectedName = current.Name;
-        var expectedDescription = current.Description;
-        var expectedStringData = current.StringData;
+        var expectedDefinitionSnapshot = activitySerializer.Serialize((object)current);
+        var documentDraft = ApplyDocumentEdit(current, process, xml, rootDefinition);
+        var draft = CloneForDraftSaving(documentDraft);
 
-        var draft = ApplyDocumentEdit(current, process, xml, rootDefinition);
         await mediator.SendAsync(new WorkflowDefinitionDraftSaving(draft), cancellationToken);
 
         var result = await store.TryUpdateLatestAsync(
             filter,
             loaded => loaded.IsLatest
-                      && loaded.Id == expectedId
-                      && loaded.Version == expectedVersion
-                      && loaded.StringData == expectedStringData
-                      && loaded.Name == expectedName
-                      && loaded.Description == expectedDescription
+                      && string.Equals(activitySerializer.Serialize((object)loaded), expectedDefinitionSnapshot, StringComparison.Ordinal)
                       && (expectedETag is null || string.Equals(BpmnDocumentETag.From(loaded), expectedETag, StringComparison.Ordinal)),
             _ => draft,
             cancellationToken);
@@ -376,6 +370,48 @@ public sealed class BpmnInterchangeDocumentService(
 
         await mediator.SendAsync(new WorkflowDefinitionDraftSaved(result.Definition!), cancellationToken);
         return new BpmnDocumentImportResult(new ImportWorkflowResult(true, result.Definition!, []), analysis);
+    }
+
+    private WorkflowDefinition CloneForDraftSaving(WorkflowDefinition source)
+    {
+        var draft = source.ShallowClone();
+        draft.Options = CloneValue(source.Options);
+        draft.Variables = CloneValue(source.Variables);
+        draft.Inputs = CloneValue(source.Inputs);
+        draft.Outputs = CloneValue(source.Outputs);
+        draft.Outcomes = CloneValue(source.Outcomes);
+        draft.BinaryData = source.BinaryData?.ToArray();
+        draft.CustomProperties = source.CustomProperties.ToDictionary(x => x.Key, x => CloneValue(x.Value)!);
+        return draft;
+    }
+
+    private T CloneValue<T>(T value)
+    {
+        if (value is null)
+        {
+            return value;
+        }
+
+        if (value is string)
+        {
+            return value;
+        }
+
+        if (value is JsonNode jsonNode)
+        {
+            return (T)(object)jsonNode.DeepClone();
+        }
+
+        var runtimeType = value.GetType();
+        var clone = activitySerializer.Deserialize(activitySerializer.Serialize(value), runtimeType);
+
+        if (clone.GetType() != runtimeType)
+        {
+            throw new InvalidOperationException(
+                $"The activity serializer cloned '{runtimeType.FullName}' as '{clone.GetType().FullName}', so the workflow definition draft cannot be detached without changing its runtime metadata types.");
+        }
+
+        return (T)clone;
     }
 
     /// <summary>
