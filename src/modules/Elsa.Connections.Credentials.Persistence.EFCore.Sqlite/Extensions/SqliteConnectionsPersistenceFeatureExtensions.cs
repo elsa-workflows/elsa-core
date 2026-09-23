@@ -1,10 +1,10 @@
-using Elsa.Connections.Persistence.EFCore.Features;
+using Elsa.Connections.Credentials.Persistence.EFCore.Features;
 using Elsa.Persistence.EFCore;
 using Elsa.Persistence.EFCore.Extensions;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using System.Reflection;
 
-namespace Elsa.Connections.Persistence.EFCore.Sqlite.Extensions;
+namespace Elsa.Connections.Credentials.Persistence.EFCore.Sqlite.Extensions;
 
 public static class SqliteConnectionsPersistenceFeatureExtensions
 {

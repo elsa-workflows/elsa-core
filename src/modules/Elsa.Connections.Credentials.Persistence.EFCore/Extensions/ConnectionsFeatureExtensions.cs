@@ -1,7 +1,7 @@
 using Elsa.Connections.Features;
-using Elsa.Connections.Persistence.EFCore.Features;
+using Elsa.Connections.Credentials.Persistence.EFCore.Features;
 
-namespace Elsa.Connections.Persistence.EFCore.Extensions;
+namespace Elsa.Connections.Credentials.Persistence.EFCore.Extensions;
 
 public static class ConnectionsFeatureExtensions
 {

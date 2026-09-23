@@ -7,6 +7,10 @@ namespace Elsa.Secrets.Contracts;
 /// Callers must authorize the connection operation before resolving a value and must prove a generation is
 /// unreferenced before deleting it. This is not an HTTP-facing authorization boundary.
 /// </summary>
+/// <remarks>
+/// DeleteGenerationAsync checks only the immutable owner/generation marker. It does not consult the connection
+/// lifecycle store, so lifecycle callers must first acquire the durable no-reference cleanup claim.
+/// </remarks>
 public interface IManagedSecretManager
 {
     Task<Secret> CreateGenerationAsync(string ownerId, string generationId, string value, CancellationToken cancellationToken = default);

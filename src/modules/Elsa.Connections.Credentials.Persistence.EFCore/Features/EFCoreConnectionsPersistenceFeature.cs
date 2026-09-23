@@ -5,7 +5,7 @@ using Elsa.Features.Services;
 using Elsa.Persistence.EFCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Connections.Persistence.EFCore.Features;
+namespace Elsa.Connections.Credentials.Persistence.EFCore.Features;
 
 [DependsOn(typeof(ConnectionsFeature))]
 public sealed class EFCoreConnectionsPersistenceFeature(IModule module)

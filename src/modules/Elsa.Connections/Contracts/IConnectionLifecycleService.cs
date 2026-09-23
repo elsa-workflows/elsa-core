@@ -10,6 +10,8 @@ public interface IConnectionLifecycleService
     Task<ConnectionAccessCredential> ResolveForUseAsync(ClaimsPrincipal principal, string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken = default);
 
     Task<ConnectionLifecycleResult> RefreshAsync(ClaimsPrincipal principal, string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken = default);
+
+    Task<ConnectionLifecycleResult> CleanupGenerationAsync(ClaimsPrincipal principal, string tenantId, string environmentId, string connectionId, string generationId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>Host-owned background recovery contract. It receives no caller identity or caller-selectable system kind.</summary>
@@ -20,4 +22,18 @@ public interface IConnectionLifecycleRecoveryService
 
 public sealed record ConnectConnectionRequest(string TenantId, string EnvironmentId, string ProviderId, string ProviderAccountId, Elsa.Connections.Models.CredentialMaterial InitialCredentials);
 
-public sealed record ConnectionLifecycleResult(bool Succeeded, string? SafeErrorCode, long? Revision, string? ConnectionId = null);
+/// <summary>Non-secret identity and lifecycle metadata returned to authorized connection managers.</summary>
+public sealed record ConnectionLifecycleMetadata(
+    string ConnectionId,
+    string ProviderId,
+    string ProviderAccountId,
+    ConnectionStatus Status,
+    long Revision,
+    string? GenerationId);
+
+public sealed record ConnectionLifecycleResult(
+    bool Succeeded,
+    string? SafeErrorCode,
+    long? Revision,
+    string? ConnectionId = null,
+    ConnectionLifecycleMetadata? Connection = null);

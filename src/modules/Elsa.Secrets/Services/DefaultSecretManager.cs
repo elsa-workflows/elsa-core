@@ -171,9 +171,13 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
     public async Task<Secret> CreateGenerationAsync(string ownerId, string generationId, string value, CancellationToken cancellationToken = default)
     {
         ValidateManagedIdentity(ownerId, generationId);
+        var name = ManagedSecretNames.ForGeneration(ownerId, generationId);
+        if (await repository.GetAsync(nameValidator.Normalize(name), cancellationToken) != null)
+            throw new InvalidOperationException($"A secret named '{name}' already exists.");
+
         var request = new CreateSecretRequest
         {
-            Name = ManagedSecretNames.ForGeneration(ownerId, generationId),
+            Name = name,
             TypeName = SecretTypeNames.Text,
             StoreName = SecretStoreNames.Encrypted,
             Value = value
@@ -197,9 +201,15 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
     public async Task<bool> DeleteGenerationAsync(string name, string ownerId, string generationId, CancellationToken cancellationToken = default)
     {
         ValidateManagedIdentity(ownerId, generationId);
-        var secret = await GetAsync(name, cancellationToken);
+        // Read the repository directly so a retry after process loss can recognize its own tombstone. The
+        // public GetAsync intentionally hides deleted secrets, while immutable managed-generation identities
+        // must remain unavailable for recreation after cleanup.
+        var secret = await repository.GetAsync(nameValidator.Normalize(name), cancellationToken);
         if (secret == null || !HasManagedOwner(secret, ownerId, generationId))
             return false;
+
+        if (secret.Status == SecretStatus.Deleted)
+            return true;
 
         await DeleteGenerationAsync(secret, cancellationToken);
         return true;

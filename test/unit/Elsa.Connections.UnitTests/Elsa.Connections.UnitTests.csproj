@@ -4,7 +4,7 @@
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\modules\Elsa.Connections\Elsa.Connections.csproj" />
-        <ProjectReference Include="..\..\..\src\modules\Elsa.Connections.Persistence.EFCore.Sqlite\Elsa.Connections.Persistence.EFCore.Sqlite.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Connections.Credentials.Persistence.EFCore.Sqlite\Elsa.Connections.Credentials.Persistence.EFCore.Sqlite.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Secrets.Persistence.EFCore.Sqlite\Elsa.Secrets.Persistence.EFCore.Sqlite.csproj" />
     </ItemGroup>
 </Project>

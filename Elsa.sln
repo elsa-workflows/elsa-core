@@ -533,9 +533,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.Structured
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections", "src\modules\Elsa.Connections\Elsa.Connections.csproj", "{3C1DAFA1-2DD7-44BF-B79E-B6A36772D203}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Persistence.EFCore", "src\modules\Elsa.Connections.Persistence.EFCore\Elsa.Connections.Persistence.EFCore.csproj", "{A786DB42-389D-49BD-96A5-0C92E0D13BAB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Credentials.Persistence.EFCore", "src\modules\Elsa.Connections.Credentials.Persistence.EFCore\Elsa.Connections.Credentials.Persistence.EFCore.csproj", "{A786DB42-389D-49BD-96A5-0C92E0D13BAB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Persistence.EFCore.Sqlite", "src\modules\Elsa.Connections.Persistence.EFCore.Sqlite\Elsa.Connections.Persistence.EFCore.Sqlite.csproj", "{8145D0E6-AB49-401D-BECB-0A6C43ADBA44}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Credentials.Persistence.EFCore.Sqlite", "src\modules\Elsa.Connections.Credentials.Persistence.EFCore.Sqlite\Elsa.Connections.Credentials.Persistence.EFCore.Sqlite.csproj", "{8145D0E6-AB49-401D-BECB-0A6C43ADBA44}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.UnitTests", "test\unit\Elsa.Connections.UnitTests\Elsa.Connections.UnitTests.csproj", "{960027E9-5B74-4FF9-A936-63089C0A1BA9}"
 EndProject

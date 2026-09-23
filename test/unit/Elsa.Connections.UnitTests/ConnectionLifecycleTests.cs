@@ -3,14 +3,14 @@ using System.Text.Json;
 using Elsa.Common.Multitenancy;
 using Elsa.Connections.Contracts;
 using Elsa.Connections.Models;
-using Elsa.Connections.Persistence.EFCore;
-using Elsa.Connections.Persistence.EFCore.Sqlite.Extensions;
+using Elsa.Connections.Credentials.Persistence.EFCore;
+using Elsa.Connections.Credentials.Persistence.EFCore.Sqlite.Extensions;
 using Elsa.Connections.Services;
 using Elsa.Persistence.EFCore;
 using Elsa.Persistence.EFCore.EntityHandlers;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Connections.Features;
-using Elsa.Connections.Persistence.EFCore.Features;
+using Elsa.Connections.Credentials.Persistence.EFCore.Features;
 using Elsa.Secrets.Features;
 using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Models;
@@ -23,6 +23,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Elsa.Tenants.Options;
+using NSubstitute;
 
 namespace Elsa.Connections.UnitTests;
 
@@ -50,6 +51,50 @@ public sealed class ConnectionLifecycleTests
         Assert.DoesNotContain(typeof(IConnectionBackgroundUseService).GetMethods(), method => method.GetParameters().Any(parameter => parameter.ParameterType == typeof(ConnectionUseKind) || parameter.ParameterType == typeof(ClaimsPrincipal)));
     }
 
+    [Fact]
+    public async Task LifecycleServiceCanResolveWithoutMultiTenancy()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
+        var module = services.CreateModule();
+        module.Configure<ConnectionsFeature>();
+        module.Apply();
+        services.AddSingleton(Substitute.For<IConnectionLifecycleStore>());
+        services.AddSingleton(Substitute.For<IConnectionCredentialProvider>());
+        await using var provider = services.BuildServiceProvider();
+
+        Assert.Null(provider.GetService<ITenantAccessor>());
+        Assert.NotNull(provider.GetRequiredService<IConnectionLifecycleService>());
+    }
+
+    [Fact]
+    public async Task ConnectReturnsSafeProviderAccountStatusAndGenerationMetadata()
+    {
+        await using var database = new TestDatabase();
+        var provider = new SyntheticCredentialProvider(block: false);
+        await using var worker = await Worker.CreateAsync(database.Path, MakeKey(32), provider);
+        provider.IssueRefreshToken("refresh-initial");
+
+        using var scope = worker.Services.CreateScope();
+        var result = await scope.ServiceProvider.GetRequiredService<IConnectionLifecycleService>().ConnectAsync(
+            Principal(),
+            new ConnectConnectionRequest(TenantId, EnvironmentId, "synthetic-oauth", "account-test",
+                new CredentialMaterial("access-initial", "refresh-initial", DateTimeOffset.UtcNow.AddHours(1))));
+
+        Assert.True(result.Succeeded);
+        Assert.NotNull(result.ConnectionId);
+        var metadata = Assert.IsType<ConnectionLifecycleMetadata>(result.Connection);
+        Assert.Equal(result.ConnectionId, metadata.ConnectionId);
+        Assert.Equal("synthetic-oauth", metadata.ProviderId);
+        Assert.Equal("account-test", metadata.ProviderAccountId);
+        Assert.Equal(ConnectionStatus.Active, metadata.Status);
+        Assert.Equal(2, metadata.Revision);
+        Assert.NotNull(metadata.GenerationId);
+        Assert.DoesNotContain("access-initial", JsonSerializer.Serialize(result));
+        Assert.DoesNotContain("refresh-initial", JsonSerializer.Serialize(result));
+    }
+
     [Theory]
     [InlineData(16)]
     [InlineData(24)]
@@ -63,6 +108,7 @@ public sealed class ConnectionLifecycleTests
         await using var worker1 = await Worker.CreateAsync(databasePath, key, provider);
         var connectionId = await SeedAsync(worker1);
         await using var worker2 = await Worker.CreateAsync(databasePath, key, provider, migrate: false);
+        ConnectionLifecycleResult refreshed;
 
         using (var scope1 = worker1.Services.CreateScope())
         using (var scope2 = worker2.Services.CreateScope())
@@ -74,9 +120,11 @@ public sealed class ConnectionLifecycleTests
             var concurrentRefresh = await scope2.ServiceProvider.GetRequiredService<IConnectionLifecycleService>()
                 .RefreshAsync(Principal(), TenantId, EnvironmentId, connectionId);
             Assert.False(concurrentRefresh.Succeeded);
+            Assert.Equal(3, concurrentRefresh.Revision);
+            Assert.NotNull(concurrentRefresh.Connection);
             provider.Complete(new CredentialMaterial("access-rotated", "refresh-rotated", DateTimeOffset.UtcNow.AddHours(1)));
 
-            var refreshed = await firstRefresh;
+            refreshed = await firstRefresh;
             Assert.True(refreshed.Succeeded);
         }
 
@@ -104,6 +152,8 @@ public sealed class ConnectionLifecycleTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => provider.RefreshAsync("synthetic-oauth", "account-test", "refresh-initial"));
         await Assert.ThrowsAsync<InvalidOperationException>(() => provider.RefreshAsync("synthetic-oauth", "account-test", "unknown-refresh-token"));
         Assert.Equal(1, provider.AcceptedCallCount);
+        Assert.Equal(4, refreshed.Revision);
+        Assert.NotNull(refreshed.Connection?.GenerationId);
 
         var wrongKeyWorker = await Worker.CreateAsync(databasePath, MakeKey(keyLength, mismatch: true), provider, migrate: false);
         await using (wrongKeyWorker)
@@ -226,6 +276,117 @@ public sealed class ConnectionLifecycleTests
     }
 
     [Fact]
+    public async Task PreProviderSecretResolutionFailureReleasesClaimAndKeepsCurrentCredentialUsable()
+    {
+        await using var database = new TestDatabase();
+        var provider = new SyntheticCredentialProvider(block: false);
+        var resolveFault = new SecretResolveFault();
+        await using var worker = await Worker.CreateAsync(database.Path, MakeKey(32), provider, secretResolveFault: resolveFault);
+        var connectionId = await SeedAsync(worker);
+        resolveFault.FailNextResolve();
+
+        using (worker.TenantAccessor.PushContext(TenantContext()))
+        using (var scope = worker.Services.CreateScope())
+        {
+            var lifecycle = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleService>();
+            var store = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleStore>();
+            var before = await store.FindAsync(connectionId, TenantId, EnvironmentId);
+            var result = await lifecycle.RefreshAsync(Principal(), TenantId, EnvironmentId, connectionId);
+            var after = await store.FindAsync(connectionId, TenantId, EnvironmentId);
+
+            Assert.False(result.Succeeded);
+            Assert.Equal("refresh_not_started", result.SafeErrorCode);
+            Assert.Equal(ConnectionStatus.Active, after!.Status);
+            Assert.Equal(CredentialOperationStatus.Completed, after.OperationStatus);
+            Assert.Null(after.OperationId);
+            Assert.Equal(before!.CurrentGenerationId, after.CurrentGenerationId);
+            Assert.Equal(0, provider.CallCount);
+            Assert.Equal("access-initial", (await lifecycle.ResolveForUseAsync(Principal(), TenantId, EnvironmentId, connectionId)).AccessToken);
+
+            var retry = await lifecycle.RefreshAsync(Principal(), TenantId, EnvironmentId, connectionId);
+            Assert.True(retry.Succeeded);
+            Assert.Equal(1, provider.CallCount);
+        }
+    }
+
+    [Fact]
+    public async Task ExpiredUnstartedRefreshClaimReleasesWithoutDisablingOrCallingProvider()
+    {
+        await using var database = new TestDatabase();
+        var clock = new TestTimeProvider(DateTimeOffset.UtcNow);
+        var provider = new SyntheticCredentialProvider(block: false);
+        await using var worker = await Worker.CreateAsync(database.Path, MakeKey(32), provider, timeProvider: clock);
+        var connectionId = await SeedAsync(worker);
+
+        using (worker.TenantAccessor.PushContext(TenantContext()))
+        using (var scope = worker.Services.CreateScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleStore>();
+            var original = await store.FindAsync(connectionId, TenantId, EnvironmentId);
+            var operationId = $"unstarted-{Guid.NewGuid():N}";
+            var claimed = await store.TryClaimRefreshAsync(
+                connectionId, TenantId, EnvironmentId, original!.Revision, operationId, clock.GetUtcNow() + TimeSpan.FromMinutes(2));
+            Assert.NotNull(claimed);
+
+            var lifecycle = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleRecoveryService>();
+            var beforeExpiry = await lifecycle.ReconcileAsync(TenantId, EnvironmentId, connectionId);
+            Assert.Equal("operation_in_progress", beforeExpiry.SafeErrorCode);
+
+            clock.Advance(TimeSpan.FromMinutes(2) + TimeSpan.FromSeconds(1));
+            var expired = await lifecycle.ReconcileAsync(TenantId, EnvironmentId, connectionId);
+            Assert.Equal("refresh_not_started", expired.SafeErrorCode);
+
+            var recovered = await store.FindAsync(connectionId, TenantId, EnvironmentId);
+            Assert.Equal(ConnectionStatus.Active, recovered!.Status);
+            Assert.Equal(CredentialOperationStatus.Completed, recovered.OperationStatus);
+            Assert.Null(recovered.OperationId);
+            Assert.Equal(original.CurrentGenerationId, recovered.CurrentGenerationId);
+            Assert.False(await store.TryStartProviderCallAsync(
+                connectionId, TenantId, EnvironmentId, claimed.OperationExpectedRevision, operationId, claimed.OperationFence, clock.GetUtcNow()));
+            Assert.Equal(0, provider.CallCount);
+
+            var connectionLifecycle = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleService>();
+            Assert.Equal("access-initial", (await connectionLifecycle.ResolveForUseAsync(Principal(), TenantId, EnvironmentId, connectionId)).AccessToken);
+            Assert.True((await connectionLifecycle.RefreshAsync(Principal(), TenantId, EnvironmentId, connectionId)).Succeeded);
+            Assert.Equal(1, provider.CallCount);
+        }
+    }
+
+    [Fact]
+    public async Task DisconnectDuringUnstartedRefreshClaimClearsOperationWithoutRevivingConnection()
+    {
+        await using var database = new TestDatabase();
+        var clock = new TestTimeProvider(DateTimeOffset.UtcNow);
+        var provider = new SyntheticCredentialProvider(block: false);
+        await using var worker = await Worker.CreateAsync(database.Path, MakeKey(32), provider, timeProvider: clock);
+        var connectionId = await SeedAsync(worker);
+
+        using (worker.TenantAccessor.PushContext(TenantContext()))
+        using (var scope = worker.Services.CreateScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleStore>();
+            var original = await store.FindAsync(connectionId, TenantId, EnvironmentId);
+            var operationId = $"unstarted-disconnect-{Guid.NewGuid():N}";
+            var claimed = await store.TryClaimRefreshAsync(
+                connectionId, TenantId, EnvironmentId, original!.Revision, operationId, clock.GetUtcNow() + TimeSpan.FromMinutes(2));
+            Assert.NotNull(claimed);
+            Assert.True(await store.TryDisconnectAsync(connectionId, TenantId, EnvironmentId, claimed.Revision));
+
+            var result = await scope.ServiceProvider.GetRequiredService<IConnectionLifecycleRecoveryService>()
+                .ReconcileAsync(TenantId, EnvironmentId, connectionId);
+            var disconnected = await store.FindAsync(connectionId, TenantId, EnvironmentId);
+
+            Assert.False(result.Succeeded);
+            Assert.Equal("connection_unavailable", result.SafeErrorCode);
+            Assert.Equal(ConnectionStatus.Disconnected, disconnected!.Status);
+            Assert.Equal(CredentialOperationStatus.Completed, disconnected.OperationStatus);
+            Assert.Null(disconnected.OperationId);
+            Assert.Equal(original.CurrentGenerationId, disconnected.CurrentGenerationId);
+            Assert.Equal(0, provider.CallCount);
+        }
+    }
+
+    [Fact]
     public async Task RestartWithProviderCallStartedMarksRecoveryWithoutProviderReplay()
     {
         await using var database = new TestDatabase();
@@ -244,7 +405,7 @@ public sealed class ConnectionLifecycleTests
             var operationId = "crash-after-provider-call-start";
             var claimed = await store.TryClaimRefreshAsync(connectionId, TenantId, EnvironmentId, current!.Revision, operationId, clock.GetUtcNow() + TimeSpan.FromMinutes(2));
             Assert.NotNull(claimed);
-            Assert.True(await store.TryStartProviderCallAsync(connectionId, TenantId, EnvironmentId, claimed.OperationExpectedRevision, operationId, claimed.OperationFence));
+            Assert.True(await store.TryStartProviderCallAsync(connectionId, TenantId, EnvironmentId, claimed.OperationExpectedRevision, operationId, claimed.OperationFence, DateTimeOffset.UtcNow));
         }
 
         await worker1.StopAsync();
@@ -455,6 +616,104 @@ public sealed class ConnectionLifecycleTests
         Assert.Equal("tenant-b", authorizer.LastBackgroundRequest!.TenantId);
     }
 
+    [Fact]
+    public async Task CleanupRejectsCurrentAndUnresolvedStagedGenerations()
+    {
+        await using var database = new TestDatabase();
+        var provider = new SyntheticCredentialProvider(block: true);
+        await using var worker = await Worker.CreateAsync(database.Path, MakeKey(32), provider);
+        var connectionId = await SeedAsync(worker);
+        using var scope = worker.Services.CreateScope();
+        var lifecycle = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleService>();
+        var store = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleStore>();
+        var managedSecrets = scope.ServiceProvider.GetRequiredService<IManagedSecretManager>();
+
+        using (worker.TenantAccessor.PushContext(TenantContext()))
+        {
+            var connection = await store.FindAsync(connectionId, TenantId, EnvironmentId);
+            Assert.NotNull(connection);
+            var currentCleanup = await lifecycle.CleanupGenerationAsync(Principal(), TenantId, EnvironmentId, connectionId, connection.CurrentGenerationId!);
+            Assert.False(currentCleanup.Succeeded);
+            Assert.Equal("generation_in_use", currentCleanup.SafeErrorCode);
+            var retainedCurrent = (await managedSecrets.ResolveGenerationAsync(
+                connection.CurrentSecretName!, connectionId, connection.CurrentGenerationId!)).Value;
+            Assert.Contains("access-initial", retainedCurrent);
+
+            var operationId = $"staged-{Guid.NewGuid():N}";
+            var claimed = await store.TryClaimRefreshAsync(connectionId, TenantId, EnvironmentId, connection.Revision, operationId, DateTimeOffset.UtcNow.AddMinutes(2));
+            Assert.NotNull(claimed);
+            Assert.True(await store.TryStartProviderCallAsync(connectionId, TenantId, EnvironmentId, claimed.OperationExpectedRevision, operationId, claimed.OperationFence, DateTimeOffset.UtcNow));
+            var stagedName = ManagedSecretNames.ForGeneration(connectionId, operationId);
+            await managedSecrets.CreateGenerationAsync(connectionId, operationId, "synthetic-staged-envelope");
+            Assert.True(await store.TryRecordStagedGenerationAsync(connectionId, TenantId, EnvironmentId,
+                claimed.OperationExpectedRevision, operationId, claimed.OperationFence, stagedName, operationId));
+
+            var stagedCleanup = await lifecycle.CleanupGenerationAsync(Principal(), TenantId, EnvironmentId, connectionId, operationId);
+            Assert.False(stagedCleanup.Succeeded);
+            Assert.Equal("generation_in_use", stagedCleanup.SafeErrorCode);
+            Assert.Null(await store.FindGenerationCleanupAsync(connectionId, TenantId, EnvironmentId, operationId));
+            Assert.Equal("synthetic-staged-envelope", (await managedSecrets.ResolveGenerationAsync(stagedName, connectionId, operationId)).Value);
+        }
+    }
+
+    [Fact]
+    public async Task CleanupUsesRevisionCasAndRejectsWrongOwnerWithoutDeletingTheirGeneration()
+    {
+        await using var database = new TestDatabase();
+        var key = MakeKey(32);
+        var provider = new SyntheticCredentialProvider(block: false);
+        await using var worker1 = await Worker.CreateAsync(database.Path, key, provider);
+        var connectionId = await SeedAsync(worker1);
+        await using var worker2 = await Worker.CreateAsync(database.Path, key, provider, migrate: false);
+
+        string retiredGenerationId;
+        using (var scope = worker1.Services.CreateScope())
+        {
+            var lifecycle = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleService>();
+            using var tenant = worker1.TenantAccessor.PushContext(TenantContext());
+            var original = await scope.ServiceProvider.GetRequiredService<IConnectionLifecycleStore>().FindAsync(connectionId, TenantId, EnvironmentId);
+            retiredGenerationId = original!.CurrentGenerationId!;
+            var refreshed = await lifecycle.RefreshAsync(Principal(), TenantId, EnvironmentId, connectionId);
+            Assert.True(refreshed.Succeeded);
+            Assert.NotEqual(retiredGenerationId, refreshed.Connection!.GenerationId);
+        }
+
+        async Task<ConnectionLifecycleResult> CleanupAsync(Worker worker)
+        {
+            using var scope = worker.Services.CreateScope();
+            return await scope.ServiceProvider.GetRequiredService<IConnectionLifecycleService>().CleanupGenerationAsync(
+                Principal(), TenantId, EnvironmentId, connectionId, retiredGenerationId);
+        }
+
+        var cleanupResults = await Task.WhenAll(CleanupAsync(worker1), CleanupAsync(worker2));
+        Assert.Contains(cleanupResults, result => result.Succeeded);
+        Assert.All(cleanupResults.Where(result => !result.Succeeded), result =>
+            Assert.Contains(result.SafeErrorCode, new[] { "generation_cleanup_in_progress", "generation_in_use" }));
+
+        using (worker1.TenantAccessor.PushContext(TenantContext()))
+        using (var scope = worker1.Services.CreateScope())
+        {
+            var lifecycle = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleService>();
+            var store = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleStore>();
+            var cleanupRecord = await store.FindGenerationCleanupAsync(connectionId, TenantId, EnvironmentId, retiredGenerationId);
+            Assert.Equal(ConnectionGenerationCleanupStatus.Deleted, cleanupRecord!.Status);
+            Assert.Equal("access-rotated-1", (await lifecycle.ResolveForUseAsync(Principal(), TenantId, EnvironmentId, connectionId)).AccessToken);
+
+            var manager = scope.ServiceProvider.GetRequiredService<IManagedSecretManager>();
+            await Assert.ThrowsAsync<InvalidOperationException>(() => manager.CreateGenerationAsync(connectionId, retiredGenerationId, "attempted-generation-reuse"));
+            var foreignGenerationId = "foreign-generation";
+            var foreignOwnerId = "foreign-connection";
+            var foreignSecret = await manager.CreateGenerationAsync(foreignOwnerId, foreignGenerationId, "foreign-secret-value");
+            var wrongOwnerDelete = await manager.DeleteGenerationAsync(foreignSecret.Name, connectionId, foreignGenerationId);
+            Assert.False(wrongOwnerDelete);
+
+            var lifecycleWrongOwnerDelete = await lifecycle.CleanupGenerationAsync(Principal(), TenantId, EnvironmentId, connectionId, foreignGenerationId);
+            Assert.False(lifecycleWrongOwnerDelete.Succeeded);
+            Assert.Equal("generation_unavailable", lifecycleWrongOwnerDelete.SafeErrorCode);
+            Assert.Equal("foreign-secret-value", (await manager.ResolveGenerationAsync(foreignSecret.Name, foreignOwnerId, foreignGenerationId)).Value);
+        }
+    }
+
     private static async Task<string> SeedAsync(Worker worker)
     {
         var provider = (SyntheticCredentialProvider)worker.Services.GetRequiredService<IConnectionCredentialProvider>();
@@ -596,7 +855,7 @@ public sealed class ConnectionLifecycleTests
         public DefaultTenantAccessor TenantAccessor { get; }
         public StageWriteFault? StageWriteFault { get; }
 
-        public static async Task<Worker> CreateAsync(string databasePath, byte[]? encryptionKey, SyntheticCredentialProvider provider, bool migrate = true, bool failBeforeStageWrite = false, TimeProvider? timeProvider = null, ConnectGenerationGate? connectGenerationGate = null)
+        public static async Task<Worker> CreateAsync(string databasePath, byte[]? encryptionKey, SyntheticCredentialProvider provider, bool migrate = true, bool failBeforeStageWrite = false, TimeProvider? timeProvider = null, ConnectGenerationGate? connectGenerationGate = null, SecretResolveFault? secretResolveFault = null)
         {
             var tenantAccessor = new DefaultTenantAccessor();
             var services = new ServiceCollection();
@@ -627,6 +886,11 @@ public sealed class ConnectionLifecycleTests
             {
                 services.AddSingleton(connectGenerationGate);
                 services.AddScoped<IManagedSecretManager>(sp => new BlockingManagedSecretManager(sp.GetRequiredService<DefaultSecretManager>(), connectGenerationGate));
+            }
+            if (secretResolveFault != null)
+            {
+                services.AddSingleton(secretResolveFault);
+                services.AddScoped<IManagedSecretManager>(sp => new FaultingManagedSecretManager(sp.GetRequiredService<DefaultSecretManager>(), secretResolveFault));
             }
             var serviceProvider = services.BuildServiceProvider();
             var worker = new Worker(serviceProvider, tenantAccessor, stageWriteFault);
@@ -681,8 +945,14 @@ public sealed class ConnectionLifecycleTests
 
         public Task CreateAsync(IntegrationConnection connection, CancellationToken cancellationToken = default) => store.CreateAsync(connection, cancellationToken);
         public Task<IntegrationConnection?> FindAsync(string id, string tenantId, string environmentId, CancellationToken cancellationToken = default) => store.FindAsync(id, tenantId, environmentId, cancellationToken);
+        public Task<ConnectionGenerationCleanup?> FindGenerationCleanupAsync(string connectionId, string tenantId, string environmentId, string generationId, CancellationToken cancellationToken = default) => store.FindGenerationCleanupAsync(connectionId, tenantId, environmentId, generationId, cancellationToken);
+        public Task<ConnectionGenerationCleanup?> TryClaimGenerationCleanupAsync(string connectionId, string tenantId, string environmentId, long expectedRevision, string generationId, DateTimeOffset now, DateTimeOffset leaseExpiresAt, CancellationToken cancellationToken = default) => store.TryClaimGenerationCleanupAsync(connectionId, tenantId, environmentId, expectedRevision, generationId, now, leaseExpiresAt, cancellationToken);
+        public Task<bool> CompleteGenerationCleanupAsync(string connectionId, string tenantId, string environmentId, string generationId, long fence, CancellationToken cancellationToken = default) => store.CompleteGenerationCleanupAsync(connectionId, tenantId, environmentId, generationId, fence, cancellationToken);
+        public Task<bool> CancelGenerationCleanupAsync(string connectionId, string tenantId, string environmentId, string generationId, long fence, CancellationToken cancellationToken = default) => store.CancelGenerationCleanupAsync(connectionId, tenantId, environmentId, generationId, fence, cancellationToken);
         public Task<IntegrationConnection?> TryClaimRefreshAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, DateTimeOffset leaseExpiresAt, CancellationToken cancellationToken = default) => store.TryClaimRefreshAsync(id, tenantId, environmentId, expectedRevision, operationId, leaseExpiresAt, cancellationToken);
-        public Task<bool> TryStartProviderCallAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, CancellationToken cancellationToken = default) => store.TryStartProviderCallAsync(id, tenantId, environmentId, expectedRevision, operationId, fence, cancellationToken);
+        public Task<bool> TryStartProviderCallAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, DateTimeOffset now, CancellationToken cancellationToken = default) => store.TryStartProviderCallAsync(id, tenantId, environmentId, expectedRevision, operationId, fence, now, cancellationToken);
+        public Task<bool> TryReleaseUnstartedRefreshAsync(string id, string tenantId, string environmentId, string operationId, long fence, string safeErrorCode, CancellationToken cancellationToken = default) => store.TryReleaseUnstartedRefreshAsync(id, tenantId, environmentId, operationId, fence, safeErrorCode, cancellationToken);
+        public Task<bool> TryReleaseExpiredRefreshClaimAsync(string id, string tenantId, string environmentId, string operationId, long fence, DateTimeOffset now, string safeErrorCode, CancellationToken cancellationToken = default) => store.TryReleaseExpiredRefreshClaimAsync(id, tenantId, environmentId, operationId, fence, now, safeErrorCode, cancellationToken);
         public Task<bool> TryRecordStagedGenerationAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, string secretName, string generationId, CancellationToken cancellationToken = default)
         {
             if (stageWriteFault.ShouldFailStageWrite())
@@ -714,6 +984,34 @@ public sealed class ConnectionLifecycleTests
         public Task WaitForRelease => _release.Task;
         public void SignalEntered() => _entered.TrySetResult();
         public void Release() => _release.TrySetResult();
+    }
+
+    private sealed class SecretResolveFault
+    {
+        private int _failNextResolve;
+
+        public void FailNextResolve() => Interlocked.Exchange(ref _failNextResolve, 1);
+
+        public void ThrowIfRequested()
+        {
+            if (Interlocked.Exchange(ref _failNextResolve, 0) == 1)
+                throw new InvalidOperationException("synthetic secret storage failure");
+        }
+    }
+
+    private sealed class FaultingManagedSecretManager(DefaultSecretManager inner, SecretResolveFault fault) : IManagedSecretManager
+    {
+        public Task<Secret> CreateGenerationAsync(string ownerId, string generationId, string value, CancellationToken cancellationToken = default) =>
+            inner.CreateGenerationAsync(ownerId, generationId, value, cancellationToken);
+
+        public Task<SecretPayload> ResolveGenerationAsync(string name, string ownerId, string generationId, CancellationToken cancellationToken = default)
+        {
+            fault.ThrowIfRequested();
+            return inner.ResolveGenerationAsync(name, ownerId, generationId, cancellationToken);
+        }
+
+        public Task<bool> DeleteGenerationAsync(string name, string ownerId, string generationId, CancellationToken cancellationToken = default) =>
+            inner.DeleteGenerationAsync(name, ownerId, generationId, cancellationToken);
     }
 
     private sealed class BlockingManagedSecretManager(DefaultSecretManager inner, ConnectGenerationGate gate) : IManagedSecretManager

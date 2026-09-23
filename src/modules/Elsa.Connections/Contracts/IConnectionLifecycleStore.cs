@@ -8,6 +8,14 @@ public interface IConnectionLifecycleStore
 
     Task<IntegrationConnection?> FindAsync(string id, string tenantId, string environmentId, CancellationToken cancellationToken = default);
 
+    Task<ConnectionGenerationCleanup?> FindGenerationCleanupAsync(string connectionId, string tenantId, string environmentId, string generationId, CancellationToken cancellationToken = default);
+
+    Task<ConnectionGenerationCleanup?> TryClaimGenerationCleanupAsync(string connectionId, string tenantId, string environmentId, long expectedRevision, string generationId, DateTimeOffset now, DateTimeOffset leaseExpiresAt, CancellationToken cancellationToken = default);
+
+    Task<bool> CompleteGenerationCleanupAsync(string connectionId, string tenantId, string environmentId, string generationId, long fence, CancellationToken cancellationToken = default);
+
+    Task<bool> CancelGenerationCleanupAsync(string connectionId, string tenantId, string environmentId, string generationId, long fence, CancellationToken cancellationToken = default);
+
     Task<IntegrationConnection?> TryClaimRefreshAsync(
         string id,
         string tenantId,
@@ -17,7 +25,11 @@ public interface IConnectionLifecycleStore
         DateTimeOffset leaseExpiresAt,
         CancellationToken cancellationToken = default);
 
-    Task<bool> TryStartProviderCallAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, CancellationToken cancellationToken = default);
+    Task<bool> TryStartProviderCallAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, DateTimeOffset now, CancellationToken cancellationToken = default);
+
+    Task<bool> TryReleaseUnstartedRefreshAsync(string id, string tenantId, string environmentId, string operationId, long fence, string safeErrorCode, CancellationToken cancellationToken = default);
+
+    Task<bool> TryReleaseExpiredRefreshClaimAsync(string id, string tenantId, string environmentId, string operationId, long fence, DateTimeOffset now, string safeErrorCode, CancellationToken cancellationToken = default);
 
     Task<bool> TryRecordStagedGenerationAsync(
         string id,

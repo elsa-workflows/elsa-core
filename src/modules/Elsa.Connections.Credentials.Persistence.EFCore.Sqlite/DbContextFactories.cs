@@ -1,11 +1,11 @@
-using Elsa.Connections.Persistence.EFCore;
+using Elsa.Connections.Credentials.Persistence.EFCore;
 using Elsa.Persistence.EFCore.Abstractions;
 using Elsa.Persistence.EFCore.Extensions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Connections.Persistence.EFCore.Sqlite;
+namespace Elsa.Connections.Credentials.Persistence.EFCore.Sqlite;
 
 [UsedImplicitly]
 public sealed class ConnectionsDbContextFactory : SqliteConnectionsDesignTimeDbContextFactory<ConnectionsElsaDbContext>;

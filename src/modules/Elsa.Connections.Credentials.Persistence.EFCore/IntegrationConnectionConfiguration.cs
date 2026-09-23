@@ -2,7 +2,7 @@ using Elsa.Connections.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Elsa.Connections.Persistence.EFCore;
+namespace Elsa.Connections.Credentials.Persistence.EFCore;
 
 internal sealed class IntegrationConnectionConfiguration : IEntityTypeConfiguration<IntegrationConnection>
 {

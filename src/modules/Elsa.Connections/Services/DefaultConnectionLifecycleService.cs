@@ -14,8 +14,8 @@ public sealed class DefaultConnectionLifecycleService(
     IConnectionUseAuthorizer authorizer,
     IConnectionCredentialProvider provider,
     IManagedSecretManager secrets,
-    ITenantAccessor tenantAccessor,
-    TimeProvider timeProvider) : IConnectionLifecycleService, IConnectionBackgroundUseService, IConnectionLifecycleRecoveryService
+    TimeProvider timeProvider,
+    ITenantAccessor? tenantAccessor = null) : IConnectionLifecycleService, IConnectionBackgroundUseService, IConnectionLifecycleRecoveryService
 {
     private static readonly TimeSpan OperationLeaseDuration = TimeSpan.FromMinutes(2);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -81,7 +81,11 @@ public sealed class DefaultConnectionLifecycleService(
             return new ConnectionLifecycleResult(false, "connection_outcome_unknown", 1, connectionId);
         }
 
-        return new ConnectionLifecycleResult(true, null, 2, connectionId);
+        connection.CurrentSecretName = secretName;
+        connection.CurrentGenerationId = operationId;
+        connection.OperationStatus = CredentialOperationStatus.Completed;
+        connection.Revision = 2;
+        return new ConnectionLifecycleResult(true, null, connection.Revision, connectionId, ToMetadata(connection));
     }
 
     public async Task<ConnectionAccessCredential> ResolveForUseAsync(ClaimsPrincipal principal, string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken = default)
@@ -135,26 +139,40 @@ public sealed class DefaultConnectionLifecycleService(
 
         using var tenantContext = PushTenant(tenantId);
         var current = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+        if (current == null)
+            return new ConnectionLifecycleResult(false, "connection_unavailable", null);
         if (!CanUseCurrentGeneration(current))
-            return new ConnectionLifecycleResult(false, "connection_unavailable", current?.Revision);
+        {
+            var code = current.Status == ConnectionStatus.Active ? "refresh_conflict" : "connection_unavailable";
+            return new ConnectionLifecycleResult(false, code, current.Revision, connectionId, ToMetadata(current));
+        }
 
         var operationId = Guid.NewGuid().ToString("N");
         var claimed = await store.TryClaimRefreshAsync(connectionId, tenantId, environmentId, current!.Revision, operationId, timeProvider.GetUtcNow() + OperationLeaseDuration, cancellationToken);
         if (claimed == null)
-            return new ConnectionLifecycleResult(false, "refresh_conflict", current.Revision);
+        {
+            // Another worker may already have claimed or completed the refresh. Return state reloaded after the
+            // lost CAS instead of reporting the revision from this worker's stale pre-claim snapshot.
+            var latest = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+            return latest == null
+                ? new ConnectionLifecycleResult(false, "connection_unavailable", null)
+                : new ConnectionLifecycleResult(false, "refresh_conflict", latest.Revision, connectionId, ToMetadata(latest));
+        }
 
         var expectedRevision = claimed.OperationExpectedRevision;
         var fence = claimed.OperationFence;
+        var providerCallStarted = false;
         try
         {
             var oldPayload = await secrets.ResolveGenerationAsync(claimed.CurrentSecretName!, claimed.Id, claimed.CurrentGenerationId!, cancellationToken);
             var oldMaterial = Deserialize(oldPayload.Value);
             if (oldMaterial == null || string.IsNullOrWhiteSpace(oldMaterial.RefreshToken))
-                return await RequireRecoveryAsync(claimed, tenantId, environmentId, "credential_unavailable");
+                return await ReleaseUnstartedRefreshAsync(claimed, tenantId, environmentId, "credential_unavailable");
 
             // Persist this edge before crossing the provider boundary. After it, no worker may replay the token.
-            if (!await store.TryStartProviderCallAsync(connectionId, tenantId, environmentId, expectedRevision, operationId, fence, cancellationToken))
-                return new ConnectionLifecycleResult(false, "refresh_conflict", claimed.Revision);
+            if (!await store.TryStartProviderCallAsync(connectionId, tenantId, environmentId, expectedRevision, operationId, fence, timeProvider.GetUtcNow(), cancellationToken))
+                return await ReleaseUnstartedRefreshAsync(claimed, tenantId, environmentId, "refresh_conflict");
+            providerCallStarted = true;
 
             var refreshed = await provider.RefreshAsync(claimed.ProviderId, claimed.ProviderAccountId, oldMaterial.RefreshToken, cancellationToken);
             if (refreshed == null || string.IsNullOrWhiteSpace(refreshed.RefreshToken) || string.IsNullOrWhiteSpace(refreshed.AccessToken))
@@ -170,19 +188,101 @@ public sealed class DefaultConnectionLifecycleService(
             if (!await store.TryPublishGenerationAsync(connectionId, tenantId, environmentId, expectedRevision, operationId, fence, cancellationToken))
                 return await RequireRecoveryAsync(claimed, tenantId, environmentId, "generation_publish_conflict");
 
-            return new ConnectionLifecycleResult(true, null, expectedRevision + 1);
+            var published = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+            return published == null
+                ? new ConnectionLifecycleResult(false, "connection_unavailable", null)
+                : new ConnectionLifecycleResult(true, null, published.Revision, connectionId, ToMetadata(published));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            await TryMarkRecoveryRequiredAsync(claimed, tenantId, environmentId, "refresh_outcome_unknown");
-            throw new OperationCanceledException("Credential refresh was cancelled; provider outcome is unknown.", cancellationToken);
+            if (providerCallStarted)
+            {
+                await TryMarkRecoveryRequiredAsync(claimed, tenantId, environmentId, "refresh_outcome_unknown");
+                throw new OperationCanceledException("Credential refresh was cancelled; provider outcome is unknown.", cancellationToken);
+            }
+
+            await TryReleaseUnstartedRefreshAsync(claimed, tenantId, environmentId, "refresh_not_started");
+            throw new OperationCanceledException("Credential refresh was cancelled before the provider call.", cancellationToken);
         }
         catch
         {
-            // Provider/network/persistence errors after claiming can hide a one-time refresh-token rotation.
+            if (!providerCallStarted)
+                return await ReleaseUnstartedRefreshAsync(claimed, tenantId, environmentId, "refresh_not_started");
+
+            // Provider/network/persistence errors after the durable call-start edge can hide a one-time refresh-token rotation.
             await TryMarkRecoveryRequiredAsync(claimed, tenantId, environmentId, "refresh_outcome_unknown");
             return new ConnectionLifecycleResult(false, "refresh_outcome_unknown", expectedRevision);
         }
+    }
+
+    public async Task<ConnectionLifecycleResult> CleanupGenerationAsync(
+        ClaimsPrincipal principal,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        string generationId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await AuthorizeAsync(principal, ConnectionUseKind.Human, tenantId, environmentId, connectionId, "manage:cleanup", cancellationToken))
+            return new ConnectionLifecycleResult(false, "connection_unavailable", null);
+
+        if (string.IsNullOrWhiteSpace(generationId))
+            return new ConnectionLifecycleResult(false, "generation_unavailable", null);
+
+        using var tenantContext = PushTenant(tenantId);
+        var connection = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+        if (connection == null)
+            return new ConnectionLifecycleResult(false, "connection_unavailable", null);
+
+        var cleanup = await store.FindGenerationCleanupAsync(connectionId, tenantId, environmentId, generationId, cancellationToken);
+        if (cleanup?.Status == ConnectionGenerationCleanupStatus.Deleted)
+            return new ConnectionLifecycleResult(true, null, connection.Revision, connectionId, ToMetadata(connection));
+
+        var now = timeProvider.GetUtcNow();
+        var cleanupClaim = await store.TryClaimGenerationCleanupAsync(
+            connectionId, tenantId, environmentId, connection.Revision, generationId, now, now + OperationLeaseDuration, cancellationToken);
+        if (cleanupClaim == null)
+        {
+            cleanup = await store.FindGenerationCleanupAsync(connectionId, tenantId, environmentId, generationId, cancellationToken);
+            connection = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+            if (cleanup?.Status == ConnectionGenerationCleanupStatus.Deleted && connection != null)
+                return new ConnectionLifecycleResult(true, null, connection.Revision, connectionId, ToMetadata(connection));
+
+            var errorCode = cleanup != null && cleanup.Status == ConnectionGenerationCleanupStatus.Deleting && cleanup.LeaseExpiresAt.HasValue && cleanup.LeaseExpiresAt.Value > timeProvider.GetUtcNow()
+                ? "generation_cleanup_in_progress"
+                : "generation_in_use";
+            return new ConnectionLifecycleResult(false, errorCode, connection?.Revision, connectionId, connection is null ? null : ToMetadata(connection));
+        }
+
+        var name = ManagedSecretNames.ForGeneration(connectionId, generationId);
+        try
+        {
+            // This host-only Secrets primitive validates the immutable owner/generation marker. The lifecycle
+            // store claim above is the authorization and no-reference proof; raw host callers must not bypass it.
+            if (!await secrets.DeleteGenerationAsync(name, connectionId, generationId, cancellationToken))
+            {
+                await store.CancelGenerationCleanupAsync(connectionId, tenantId, environmentId, generationId, cleanupClaim.Fence, CancellationToken.None);
+                return new ConnectionLifecycleResult(false, "generation_unavailable", connection.Revision, connectionId, ToMetadata(connection));
+            }
+
+            if (!await store.CompleteGenerationCleanupAsync(connectionId, tenantId, environmentId, generationId, cleanupClaim.Fence, cancellationToken))
+                return new ConnectionLifecycleResult(false, "generation_cleanup_unknown", connection.Revision, connectionId, ToMetadata(connection));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Keep the durable Deleting tombstone. A retry repeats only the idempotent owner-checked deletion.
+            throw new OperationCanceledException("Credential generation cleanup was cancelled; cleanup outcome is unknown.", cancellationToken);
+        }
+        catch
+        {
+            // Keep the durable Deleting tombstone if the external Secrets write may have completed.
+            return new ConnectionLifecycleResult(false, "generation_cleanup_unknown", connection.Revision, connectionId, ToMetadata(connection));
+        }
+
+        var updated = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+        return updated == null
+            ? new ConnectionLifecycleResult(false, "connection_unavailable", null)
+            : new ConnectionLifecycleResult(true, null, updated.Revision, connectionId, ToMetadata(updated));
     }
 
     public async Task<ConnectionLifecycleResult> ReconcileAsync(string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken = default)
@@ -198,7 +298,28 @@ public sealed class DefaultConnectionLifecycleService(
         if (connection.OperationStatus is CredentialOperationStatus.None or CredentialOperationStatus.Completed)
             return new ConnectionLifecycleResult(true, null, connection.Revision);
 
-        if (connection.OperationStatus is CredentialOperationStatus.Claimed or CredentialOperationStatus.ProviderCallStarted or CredentialOperationStatus.CredentialReceived)
+        if (connection.OperationStatus == CredentialOperationStatus.Claimed)
+        {
+            var expiredClaim = await store.TryReleaseExpiredRefreshClaimAsync(
+                connection.Id, tenantId, environmentId, connection.OperationId!, connection.OperationFence,
+                timeProvider.GetUtcNow(), "refresh_not_started", cancellationToken);
+            if (expiredClaim)
+            {
+                var released = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+                return new ConnectionLifecycleResult(false,
+                    released?.Status == ConnectionStatus.Active ? "refresh_not_started" : "connection_unavailable",
+                    released?.Revision, connectionId);
+            }
+
+            var latest = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+            return new ConnectionLifecycleResult(false,
+                latest is { Status: ConnectionStatus.Active, OperationStatus: CredentialOperationStatus.Claimed or CredentialOperationStatus.ProviderCallStarted or CredentialOperationStatus.CredentialReceived }
+                    ? "operation_in_progress"
+                    : "connection_unavailable",
+                latest?.Revision ?? connection.Revision, connectionId);
+        }
+
+        if (connection.OperationStatus is CredentialOperationStatus.ProviderCallStarted or CredentialOperationStatus.CredentialReceived)
         {
             var expired = await store.TryMarkRecoveryRequiredIfLeaseExpiredAsync(connection.Id, tenantId, environmentId, connection.OperationId!, connection.OperationFence, timeProvider.GetUtcNow(), "refresh_outcome_unknown", cancellationToken);
             if (expired)
@@ -244,7 +365,37 @@ public sealed class DefaultConnectionLifecycleService(
         connection is { Status: ConnectionStatus.Active, OperationStatus: CredentialOperationStatus.None or CredentialOperationStatus.Completed } &&
         !string.IsNullOrWhiteSpace(connection.CurrentSecretName) && !string.IsNullOrWhiteSpace(connection.CurrentGenerationId);
 
-    private IDisposable PushTenant(string tenantId) => tenantAccessor.PushContext(new Tenant { Id = tenantId, Name = tenantId });
+    private static ConnectionLifecycleMetadata ToMetadata(IntegrationConnection connection) => new(
+        connection.Id,
+        connection.ProviderId,
+        connection.ProviderAccountId,
+        connection.Status,
+        connection.Revision,
+        connection.CurrentGenerationId);
+
+    private IDisposable? PushTenant(string tenantId) => tenantAccessor?.PushContext(new Tenant { Id = tenantId, Name = tenantId });
+
+    private async Task<ConnectionLifecycleResult> ReleaseUnstartedRefreshAsync(IntegrationConnection connection, string tenantId, string environmentId, string safeErrorCode)
+    {
+        await TryReleaseUnstartedRefreshAsync(connection, tenantId, environmentId, safeErrorCode);
+        var latest = await store.FindAsync(connection.Id, tenantId, environmentId, CancellationToken.None);
+        return latest == null
+            ? new ConnectionLifecycleResult(false, "connection_unavailable", null)
+            : new ConnectionLifecycleResult(false, latest.Status == ConnectionStatus.Active ? safeErrorCode : "connection_unavailable", latest.Revision, connection.Id, ToMetadata(latest));
+    }
+
+    private async Task TryReleaseUnstartedRefreshAsync(IntegrationConnection connection, string tenantId, string environmentId, string safeErrorCode)
+    {
+        try
+        {
+            await store.TryReleaseUnstartedRefreshAsync(connection.Id, tenantId, environmentId,
+                connection.OperationId!, connection.OperationFence, safeErrorCode, CancellationToken.None);
+        }
+        catch
+        {
+            // The active credential remains the only published generation; reconciliation can release this claim after its lease.
+        }
+    }
 
     private static string Serialize(CredentialMaterial material) => JsonSerializer.Serialize(
         new CredentialEnvelope(material.AccessToken, material.RefreshToken, material.AccessTokenExpiresAt), JsonOptions);

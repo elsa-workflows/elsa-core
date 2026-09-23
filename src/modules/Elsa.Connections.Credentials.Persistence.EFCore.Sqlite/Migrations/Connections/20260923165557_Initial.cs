@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Elsa.Connections.Persistence.EFCore.Sqlite.Migrations.Connections
+namespace Elsa.Connections.Credentials.Persistence.EFCore.Sqlite.Migrations.Connections
 {
     /// <inheritdoc />
     public partial class Initial : Migration
