@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Nodes;
 using Bpmn.Interchange;
 using Bpmn.Model;
 using Bpmn.Semantics;
@@ -99,7 +100,6 @@ public sealed class BpmnInterchangeDocumentService(
     IWorkflowDefinitionStore store,
     VariableDefinitionMapper variableDefinitionMapper,
     IActivitySerializer activitySerializer,
-    IPayloadSerializer payloadSerializer,
     IIdentityGenerator identityGenerator,
     ISystemClock systemClock,
     IMediator mediator)
@@ -342,15 +342,26 @@ public sealed class BpmnInterchangeDocumentService(
                 "The workflow definition has been written since the ETag in If-Match was issued. GET the document again, reapply the edit, and PUT it with the new ETag.");
         }
 
-        var expectedDefinitionSnapshot = payloadSerializer.Serialize(current);
-        var draft = payloadSerializer.Deserialize<WorkflowDefinition>(
-            payloadSerializer.Serialize(ApplyDocumentEdit(current, process, xml, rootDefinition)));
+        var expectedDefinitionSnapshot = activitySerializer.Serialize((object)current);
+        var documentDraft = ApplyDocumentEdit(current, process, xml, rootDefinition);
+        var draft = activitySerializer.Deserialize<WorkflowDefinition>(activitySerializer.Serialize(documentDraft));
+
+        // The activity serializer stores System.Text.Json.Nodes as an untyped property bag when no alias exists.
+        // Restore those mutable JSON values as detached nodes so DraftSaving handlers retain the types they received.
+        foreach (var (key, value) in documentDraft.CustomProperties)
+        {
+            if (value is JsonNode jsonNode)
+            {
+                draft.CustomProperties[key] = jsonNode.DeepClone();
+            }
+        }
+
         await mediator.SendAsync(new WorkflowDefinitionDraftSaving(draft), cancellationToken);
 
         var result = await store.TryUpdateLatestAsync(
             filter,
             loaded => loaded.IsLatest
-                      && string.Equals(payloadSerializer.Serialize(loaded), expectedDefinitionSnapshot, StringComparison.Ordinal)
+                      && string.Equals(activitySerializer.Serialize((object)loaded), expectedDefinitionSnapshot, StringComparison.Ordinal)
                       && (expectedETag is null || string.Equals(BpmnDocumentETag.From(loaded), expectedETag, StringComparison.Ordinal)),
             _ => draft,
             cancellationToken);
