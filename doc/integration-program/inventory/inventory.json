@@ -508,7 +508,7 @@
     },
     "elsa-studio": {
       "slug": "elsa-studio",
-      "commit": "9afd3e36fd1bc90dfdf8a00b40d89e4a50c8822",
+      "commit": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822",
       "tag": "3.8.4",
       "tag_url": "https://github.com/elsa-workflows/elsa-studio/releases/tag/3.8.4",
       "role": "source to consolidate",

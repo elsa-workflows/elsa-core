@@ -8,7 +8,7 @@ This is the source and release baseline for #8251 and #8252. It is an audit, not
 |---|---|---:|---:|---:|---:|---:|
 | [elsa-core](https://github.com/elsa-workflows/elsa-core/tree/610790ec57ae9d5c334181d50c1e65f99613fd86) | `610790ec57ae9d5c334181d50c1e65f99613fd86` | 3.8.4 | 171 | 168 | 105 | 63 |
 | [elsa-extensions](https://github.com/elsa-workflows/elsa-extensions/tree/33fa0bfd28c7585240e3d4f665058c067b17e287) | `33fa0bfd28c7585240e3d4f665058c067b17e287` | 3.8.4 | 101 | 101 | 82 | 16 |
-| [elsa-studio](https://github.com/elsa-workflows/elsa-studio/tree/9afd3e36fd1bc90dfdf8a00b40d89e4a50c8822) | `9afd3e36fd1bc90dfdf8a00b40d89e4a50c8822` | 3.8.4 | 71 | 70 | 54 | 15 |
+| [elsa-studio](https://github.com/elsa-workflows/elsa-studio/tree/9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822) | `9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822` | 3.8.4 | 71 | 70 | 54 | 15 |
 
 The task did not pin Core, Extensions, or Studio SHAs. These are the fetched `main` tips observed on 2026-09-23. The tag/release is recorded separately; do not assume `main`, release tags, and published nupkgs are the same source. Each project row records project/package identity candidates, classification, disposition, solution membership, target-framework declaration and source, project/package references, and test/sample references where directly declared. Asset groups record file counts and relative paths for tests, samples/workbench hosts, documentation, and build/release inputs. NuGet/npm manifests and source-declared activity identities are separate collections.
 
