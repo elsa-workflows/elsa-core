@@ -68,7 +68,12 @@ internal static class Program
             }));
             return error.TargetUnchanged ? 0 : 1;
         }
-        catch (Exception error)
+        catch (Exception error) when (
+            error is not (OutOfMemoryException
+                or StackOverflowException
+                or AccessViolationException
+                or AppDomainUnloadedException
+                or BadImageFormatException))
         {
             // Keep unexpected failure output limited to a type name; fixture data and provider details stay private.
             Console.Error.WriteLine($"Bridge fixture failed: {error.GetType().Name}");
@@ -489,12 +494,9 @@ internal static class Program
         var validator = new DefaultSecretNameValidator();
         var result = new List<ConversionGroup>();
         var nameKeys = new HashSet<(string Tenant, string NormalizedName)>();
-        foreach (var row in existing)
+        foreach (var row in existing.Where(row => !string.IsNullOrWhiteSpace(row.NormalizedName)))
         {
-            if (!string.IsNullOrWhiteSpace(row.NormalizedName))
-            {
-                nameKeys.Add((row.TenantId ?? Tenant.DefaultTenantId, row.NormalizedName));
-            }
+            nameKeys.Add((row.TenantId ?? Tenant.DefaultTenantId, row.NormalizedName!));
         }
         var ids = existing.Select(row => row.Id).ToHashSet(StringComparer.Ordinal);
 
@@ -891,6 +893,8 @@ internal static class Program
                 }
                 catch (Exception error) when (error is CryptographicException or InvalidOperationException)
                 {
+                    _ = error;
+                    // Failure is the expected proof that legacy ciphertext is not a Core payload.
                 }
 
                 try
@@ -898,8 +902,10 @@ internal static class Program
                     _ = await wrongCoreStore.ReadAsync(secret, version);
                     wrongCoreKeyRejected = false;
                 }
-                catch (CryptographicException)
+                catch (CryptographicException error)
                 {
+                    _ = error;
+                    // Failure is the expected proof that the independent wrong Core key is rejected.
                 }
             }
         }

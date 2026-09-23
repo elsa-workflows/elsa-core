@@ -4,7 +4,7 @@ Program [#8194](https://github.com/elsa-workflows/elsa-core/issues/8194), audite
 
 ## Backlog and delivery state
 
-The original backlog was read and preserved. Its initial reconciliation had 68 parent links and 26 blockers; those are historical counts. The current [snapshot](hierarchy.json) records **85 issues, 84 parent links and 34 separate blocking dependencies**, including the refreshed credential lifecycle tasks. Use `python3 doc/integration-program/verify-hierarchy.py --live` to detect drift as execution adds work. [Initial reconciliation](reconciliation.md) remains the historical record. Do not infer issue completion from an open PR.
+The original backlog was read and preserved. Its initial reconciliation had 68 parent links and 26 blockers; those are historical counts. The current [snapshot](hierarchy.json) records **87 issues, 86 parent links and 36 separate blocking dependencies**, including the refreshed credential lifecycle tasks and the active EF persistence and Secrets compatibility work. Use `python3 doc/integration-program/verify-hierarchy.py --live` to detect drift as execution adds work. [Initial reconciliation](reconciliation.md) remains the historical record. Do not infer issue completion from an open PR.
 
 ## Integrated initial evidence
 

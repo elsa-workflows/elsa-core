@@ -503,7 +503,7 @@
     },
     {
       "number": 8271,
-      "title": "[Task] Implement restart-safe logical credential bindings",
+      "title": "[Task] Implement restart-safe logical workflow credential bindings",
       "level": "Task",
       "state": "open",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8271"
@@ -598,6 +598,20 @@
       "level": "Task",
       "state": "open",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8296"
+    },
+    {
+      "number": 8300,
+      "title": "[Bug] Preserve EF workflow snapshot state during atomic document updates",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8300"
+    },
+    {
+      "number": 8301,
+      "title": "[Task] Prove Secrets API identity and canonical Studio compatibility",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8301"
     }
   ],
   "parent_edges": [
@@ -936,6 +950,14 @@
     [
       8269,
       8296
+    ],
+    [
+      8286,
+      8300
+    ],
+    [
+      8275,
+      8301
     ]
   ],
   "blocking_edges": [
@@ -1074,6 +1096,14 @@
     [
       8271,
       8296
+    ],
+    [
+      8300,
+      8292
+    ],
+    [
+      8290,
+      8301
     ]
   ]
 }
