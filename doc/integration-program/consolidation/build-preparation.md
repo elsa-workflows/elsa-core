@@ -8,6 +8,12 @@ The experiment uses Core `8e893e02c4ac089d526b0a0d294a8546f021d072`, Extensions 
 
 The rehearsal preserved 9,635 file blobs/modes (5,864 Core, 1,665 Extensions, 2,106 Studio) and all three original histories. Five colliding Secrets projects remain inert `.source` evidence under the existing relocation policy. The remaining legacy Secrets API/Core/Models/Management/Scripting projects are retained for compatibility work. A successful build does not authorize registering both sets of endpoints or switching existing databases.
 
+## Current Core integration profile
+
+The preparer also accepts Core `076f022cc174d497af26fc8e26414970e61a79b1` with the same recorded Extensions and Studio commits. This explicitly reviewed profile includes the merged credential lifecycle and workflow bindings plus EF/BPMN compare-and-swap corrections. Core's root dependency/build properties are unchanged from the original profile; its solution adds the credential projects. Solution generation reads that profile's actual Core solution and preserves its existing projects.
+
+Both exact profiles retain the same source-integration patch. Arbitrary Core commits remain rejected; source trees, original parents, complete relocation mapping, clean workspace and patch application are verified for the selected profile. The receipt records the actual selected commits rather than reporting the historical baseline. The original pinned recipe below remains reproducible. See the [current-Core build proof](current-core-build.md) for the successful 340-project build and 214 targeted tests at this profile.
+
 ## Repeat the preparation
 
 Create a new rehearsal with [rehearse-import.py](../../../scripts/integration-program/rehearse-import.py), using a clean Core checkout at the exact Core commit above and full source histories at the Extensions/Studio pins. Then materialize that disposable repository and apply the reviewed integration patch:

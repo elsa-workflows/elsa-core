@@ -20,6 +20,8 @@ SOURCE_COMMITS = {
     'core': '8e893e02c4ac089d526b0a0d294a8546f021d072',
     **rehearsal.PINS,
 }
+# Reviewed Core integration adds the credential lifecycle/bindings and EF/BPMN CAS fixes.
+CURRENT_CORE_COMMIT = '076f022cc174d497af26fc8e26414970e61a79b1'
 PATCH = HERE / 'consolidated-build/source-integration.patch'
 ADDED_TEST = 'test/extensions/modules/agents/Elsa.Studio.Agents.Tests/Elsa.Studio.Agents.Tests.csproj'
 
@@ -68,19 +70,21 @@ def verify_workspace(root):
     receipt_path = root / 'import-receipt.json'
     require(receipt_path.is_file() and not receipt_path.is_symlink(), 'Missing regular import receipt')
     receipt = json.loads(receipt_path.read_text())
-    require(receipt['sourceCommits'] == SOURCE_COMMITS, 'Unsupported source pins; re-review the patch for new source commits')
+    source_commits = receipt['sourceCommits']
+    supported_pins = (SOURCE_COMMITS, {**SOURCE_COMMITS, 'core': CURRENT_CORE_COMMIT})
+    require(source_commits in supported_pins, 'Unsupported source pins; re-review the patch for new source commits')
     head = rehearsal.git(root, 'rev-parse', 'HEAD').decode().strip()
     require(head == receipt['rehearsalCommit'], 'HEAD is not the recorded rehearsal')
     parents = rehearsal.git(root, 'show', '-s', '--format=%P', head).decode().split()
-    require(parents == list(SOURCE_COMMITS.values()), 'Rehearsal parent set changed')
-    source_trees = {k: rehearsal.tree(root, ref) for k, ref in SOURCE_COMMITS.items()}
+    require(parents == list(source_commits.values()), 'Rehearsal parent set changed')
+    source_trees = {k: rehearsal.tree(root, ref) for k, ref in source_commits.items()}
     expected, mapping = rehearsal.relocation_plan(source_trees['core'], {k: v for k, v in source_trees.items() if k != 'core'})
     require(receipt['mapping'] == mapping, 'Receipt mapping differs from pinned source trees')
     require(rehearsal.tree(root, head) == expected, 'Rehearsal tree differs from pinned blob/mode mapping')
     require(not rehearsal.git(root, 'diff', '--name-only', 'HEAD').strip(), 'Workspace/index contains changes; use a fresh rehearsal')
     untracked = set(rehearsal.git(root, 'ls-files', '--others', '-z').decode().split('\0')) - {''}
     require(untracked == {'import-receipt.json'}, 'Unexpected untracked or ignored files; use a fresh rehearsal')
-    for ref in SOURCE_COMMITS.values():
+    for ref in source_commits.values():
         rehearsal.git(root, 'merge-base', '--is-ancestor', ref, head)
     return receipt, mapping
 
@@ -101,7 +105,7 @@ def prepare(root):
     touched = set(rehearsal.git(root, 'diff', '--name-only', 'HEAD').decode().splitlines())
     touched.update(rehearsal.git(root, 'ls-files', '--others', '--exclude-standard').decode().splitlines())
     touched.discard('import-receipt.json')
-    report = dict(sourceCommits=SOURCE_COMMITS, rehearsalCommit=receipt['rehearsalCommit'],
+    report = dict(sourceCommits=receipt['sourceCommits'], rehearsalCommit=receipt['rehearsalCommit'],
                   patchSha256=sha256(patch), importedProjects=len(projects) - 1, addedTests=[ADDED_TEST],
                   buildCompatibilityVerified=False, publicationAuthorized=False,
                   files=[dict(path=path, sha256=sha256((root / path).read_bytes())) for path in sorted(touched)])
