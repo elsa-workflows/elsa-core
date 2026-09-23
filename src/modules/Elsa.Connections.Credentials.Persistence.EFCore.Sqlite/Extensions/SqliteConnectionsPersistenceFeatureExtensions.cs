@@ -1,8 +1,10 @@
+using System.Reflection;
+using Elsa.Connections.Credentials.Persistence.EFCore;
 using Elsa.Connections.Credentials.Persistence.EFCore.Features;
 using Elsa.Persistence.EFCore;
 using Elsa.Persistence.EFCore.Extensions;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using System.Reflection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Connections.Credentials.Persistence.EFCore.Sqlite.Extensions;
 
@@ -24,6 +26,9 @@ public static class SqliteConnectionsPersistenceFeatureExtensions
         this EFCoreConnectionsPersistenceFeature feature,
         Func<IServiceProvider, string> connectionStringFunc,
         ElsaDbContextOptions? options = null,
-        Action<SqliteDbContextOptionsBuilder>? configure = null) =>
-        feature.UseSqlite(Assembly, connectionStringFunc, options, configure);
+        Action<SqliteDbContextOptionsBuilder>? configure = null)
+    {
+        feature.Services.TryAddSingleton<IConnectionCredentialBindingConflictClassifier, SqliteConnectionCredentialBindingConflictClassifier>();
+        return feature.UseSqlite(Assembly, connectionStringFunc, options, configure);
+    }
 }

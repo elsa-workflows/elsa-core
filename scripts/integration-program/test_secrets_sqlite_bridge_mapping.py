@@ -137,6 +137,12 @@ class SecretsSqliteBridgeMappingTests(unittest.TestCase):
                 timeout=0.01,
             )
 
+    def test_runner_sdk_is_explicitly_pinned_with_roll_forward_disabled(self):
+        sdk = json.loads((bridge_runner.FIXTURE / 'global.json').read_text())['sdk']
+
+        self.assertEqual(bridge_runner.PINNED_DOTNET_SDK_VERSION, sdk['version'])
+        self.assertEqual('disable', sdk['rollForward'])
+
 
 if __name__ == '__main__':
     unittest.main()

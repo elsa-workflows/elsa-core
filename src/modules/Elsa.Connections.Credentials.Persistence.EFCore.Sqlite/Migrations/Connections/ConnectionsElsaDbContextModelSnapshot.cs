@@ -18,6 +18,71 @@ namespace Elsa.Connections.Credentials.Persistence.EFCore.Sqlite.Migrations.Conn
                 .HasDefaultSchema("Elsa")
                 .HasAnnotation("ProductVersion", "10.0.9");
 
+            modelBuilder.Entity("Elsa.Connections.Models.ConnectionCredentialBinding", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EnvironmentId")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LogicalBindingId")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ConnectionId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("Revision")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("TenantId", "EnvironmentId", "LogicalBindingId");
+
+                    b.ToTable("ConnectionCredentialBindings", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Connections.Models.ConnectionGenerationCleanup", b =>
+                {
+                    b.Property<string>("ConnectionId")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("GenerationId")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EnvironmentId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("Fence")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LeaseExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ConnectionId", "GenerationId");
+
+                    b.HasIndex("TenantId", "EnvironmentId", "ConnectionId");
+
+                    b.ToTable("ConnectionGenerationCleanups", "Elsa");
+                });
+
             modelBuilder.Entity("Elsa.Connections.Models.IntegrationConnection", b =>
                 {
                     b.Property<string>("Id")
@@ -107,44 +172,6 @@ namespace Elsa.Connections.Credentials.Persistence.EFCore.Sqlite.Migrations.Conn
                         .IsUnique();
 
                     b.ToTable("Connections", "Elsa");
-                });
-
-            modelBuilder.Entity("Elsa.Connections.Models.ConnectionGenerationCleanup", b =>
-                {
-                    b.Property<string>("ConnectionId")
-                        .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("EnvironmentId")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("GenerationId")
-                        .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.Property<long>("Fence")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("LeaseExpiresAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(24)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("TenantId")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("ConnectionId", "GenerationId");
-
-                    b.HasIndex("TenantId", "EnvironmentId", "ConnectionId");
-
-                    b.ToTable("ConnectionGenerationCleanups", "Elsa");
                 });
 #pragma warning restore 612, 618
         }

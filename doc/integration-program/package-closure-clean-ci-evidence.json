@@ -1,0 +1,76 @@
+{
+  "checked_date": "2026-09-23",
+  "ci_run": "https://github.com/elsa-workflows/elsa-core/actions/runs/35908901399",
+  "source_pins": {
+    "elsa-core": "610790ec57ae9d5c334181d50c1e65f99613fd86",
+    "elsa-extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287"
+  },
+  "source_closure_accepted": false,
+  "ci_execution_summary": {
+    "executed_project_count": 50,
+    "failed_project_count": 5,
+    "known_skip_project_count": 2,
+    "included_docker_service_lane": true,
+    "performance_projects_executed": false,
+    "tested_framework": "net10.0",
+    "projects_with_untested_frameworks": 0,
+    "command_timeout_seconds": 1800
+  },
+  "executed_test_counts": {
+    "passed": 3717,
+    "failed": 0,
+    "total": 3720,
+    "executed": 3717
+  },
+  "failed_projects": [
+    "elsa-extensions:test/modules/diagnostics/Elsa.Logging.Core.IntegrationTests/Elsa.Logging.Core.IntegrationTests.csproj",
+    "elsa-extensions:test/modules/ldap/Elsa.Ldap.UnitTests/Elsa.Ldap.UnitTests.csproj",
+    "elsa-extensions:test/modules/mqtt/Elsa.Mqtt.UnitTests/Elsa.Mqtt.UnitTests.csproj",
+    "elsa-extensions:test/modules/scheduling/Elsa.Scheduling.Quartz.ComponentTests/Elsa.Scheduling.Quartz.ComponentTests.csproj",
+    "elsa-extensions:test/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj"
+  ],
+  "failure_cause": "Explicit source-owned PackageReferences to 3.8.0-preview.5557 remain in test/host projects despite UseProjectReferences=true; clean restore fails NU1100.",
+  "released_artifact_proof": "passed; separate released source baseline; no feed publication",
+  "corrected_preflight": {
+    "result": "failed",
+    "phase": "execution preflight",
+    "project": "elsa-extensions:test/modules/diagnostics/Elsa.Logging.Core.IntegrationTests/Elsa.Logging.Core.IntegrationTests.csproj",
+    "remaining_source_package_references": [
+      "Elsa.Testing.Shared",
+      "Elsa.Testing.Shared.Integration",
+      "Elsa.Workflows.Core"
+    ],
+    "tests_executed": 0,
+    "scope": "Historical transitive-edge check before adding inventory identity guard"
+  },
+  "raw_receipt_sha256": {
+    "ci": "99ce7c4f331b21777c2f324df9c122a274e49edd0a6fbf95458cc269fad9acce",
+    "corrected_preflight": "3ab46df8a56b95609e5a0ee16f188f554aa071d01f6cae73f5101241df4684f3",
+    "identity_guard_preflight": "3246c75cac530c65fcf5320fdf86099741e3869aa550299c5ab9c98a0358a71b",
+    "current_preflight": "6fbfba47dfd7395188d952d7fdecd0cad5d8e3e521a530e08de06bc0ff827a25"
+  },
+  "next_gate": "Compile and test the reviewed consolidated source graph in fresh CI; historical cached counts are not acceptance.",
+  "identity_guard_preflight": {
+    "result": "failed",
+    "unresolved_source_package_ids": [
+      "elsa-core:test/TlsSmoke/TlsSmoke.csproj"
+    ],
+    "tests_executed": 0,
+    "scope": "Historical guard validation before repairing the verified TlsSmoke inventory omission"
+  },
+  "recorded_identity_correction": {
+    "project": "elsa-core:test/TlsSmoke/TlsSmoke.csproj",
+    "package_id": "TlsSmoke",
+    "is_packable": true,
+    "evidence": "dotnet msbuild test/TlsSmoke/TlsSmoke.csproj -nologo -getProperty:PackageId,IsPackable at the recorded clean Core source pin"
+  },
+  "current_preflight": {
+    "result": "failed",
+    "remaining_source_package_references": [
+      "Elsa.Testing.Shared",
+      "Elsa.Testing.Shared.Integration",
+      "Elsa.Workflows.Core"
+    ],
+    "tests_executed": 0
+  }
+}

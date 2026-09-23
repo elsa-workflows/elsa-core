@@ -1,0 +1,673 @@
+diff --git a/src/extensions/persistence/Elsa.Persistence.MongoDb/Common/MongoDbStore.cs b/src/extensions/persistence/Elsa.Persistence.MongoDb/Common/MongoDbStore.cs
+index 6372a7474..958a84b40 100644
+--- a/src/extensions/persistence/Elsa.Persistence.MongoDb/Common/MongoDbStore.cs
++++ b/src/extensions/persistence/Elsa.Persistence.MongoDb/Common/MongoDbStore.cs
+@@ -228,6 +228,24 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
+         return await query(queryable).FirstOrDefaultAsync(cancellationToken);
+     }
+ 
++    /// <summary>
++    /// Finds a document through a caller-owned MongoDB session while applying the same tenant visibility as ordinary reads.
++    /// </summary>
++    /// <param name="session">The session that owns the transaction or snapshot.</param>
++    /// <param name="query">The query to apply after tenant visibility is enforced.</param>
++    /// <param name="tenantAgnostic">Whether the query may match documents from any tenant.</param>
++    /// <param name="cancellationToken">The cancellation token.</param>
++    /// <returns>The first matching document, if any.</returns>
++    public async Task<TDocument?> FindAsync(
++        IClientSessionHandle session,
++        Func<IQueryable<TDocument>, IQueryable<TDocument>> query,
++        bool tenantAgnostic = false,
++        CancellationToken cancellationToken = default)
++    {
++        var queryable = GetQueryableCollection(session, tenantAgnostic);
++        return await query(queryable).FirstOrDefaultAsync(cancellationToken);
++    }
++
+     /// <summary>
+     /// Finds a list of documents matching the specified predicate
+     /// </summary>
+@@ -445,10 +463,20 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
+ 
+     private IQueryable<TDocument> GetQueryableCollection(bool tenantAgnostic = false, bool includeTenantAgnostic = true)
+     {
+-        var queryable = collection.AsQueryable();
++        return ApplyTenantVisibility(collection.AsQueryable(), tenantAgnostic, includeTenantAgnostic);
++    }
++
++    private IQueryable<TDocument> GetQueryableCollection(IClientSessionHandle session, bool tenantAgnostic = false, bool includeTenantAgnostic = true)
++    {
++        return ApplyTenantVisibility(collection.AsQueryable(session), tenantAgnostic, includeTenantAgnostic);
++    }
+ 
++    private IQueryable<TDocument> ApplyTenantVisibility(IQueryable<TDocument> queryable, bool tenantAgnostic, bool includeTenantAgnostic)
++    {
+         if (tenantAgnostic)
++        {
+             return queryable;
++        }
+ 
+         if (typeof(Entity).IsAssignableFrom(typeof(TDocument)))
+         {
+diff --git a/src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs b/src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs
+index dc6f52147..f4f493c30 100644
+--- a/src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs
++++ b/src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs
+@@ -8,6 +8,7 @@ using Elsa.Workflows.Management.Entities;
+ using Elsa.Workflows.Management.Filters;
+ using Elsa.Workflows.Management.Models;
+ using JetBrains.Annotations;
++using MongoDB.Bson;
+ using MongoDB.Driver;
+ using MongoDB.Driver.Linq;
+ using Open.Linq.AsyncExtensions;
+@@ -121,6 +122,129 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
+         return mongoDbStore.SaveAsync(definition, cancellationToken);
+     }
+ 
++    /// <inheritdoc />
++    public async Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
++        WorkflowDefinitionFilter filter,
++        Func<WorkflowDefinition, bool> matchesExpected,
++        Func<WorkflowDefinition, WorkflowDefinition> update,
++        CancellationToken cancellationToken = default)
++    {
++        var mongoClient = mongoDbStore.GetCollection().Database.Client;
++        using var session = await mongoClient.StartSessionAsync(cancellationToken: cancellationToken);
++        session.StartTransaction(new TransactionOptions(
++            readConcern: ReadConcern.Snapshot,
++            readPreference: ReadPreference.Primary,
++            writeConcern: WriteConcern.WMajority));
++
++        WorkflowDefinition? next = null;
++        var invokingCallback = false;
++
++        try
++        {
++            var current = await mongoDbStore.FindAsync(
++                session,
++                queryable => Filter(queryable, filter),
++                filter.TenantAgnostic,
++                cancellationToken);
++
++            if (current is null)
++            {
++                await AbortTransactionQuietlyAsync(session);
++                return WorkflowDefinitionUpdateResult.NotFound();
++            }
++
++            var expectedId = current.Id;
++            var expectedTenantId = current.TenantId;
++            var expectedDefinitionId = current.DefinitionId;
++            var snapshot = await LoadRawSnapshotAsync(session, expectedId, cancellationToken);
++
++            if (snapshot is null)
++            {
++                await AbortTransactionQuietlyAsync(session);
++                return WorkflowDefinitionUpdateResult.Conflict();
++            }
++
++            var snapshotFilter = CreateExactSnapshotFilter(snapshot);
++
++            if (!current.IsLatest)
++            {
++                await AbortTransactionQuietlyAsync(session);
++                return WorkflowDefinitionUpdateResult.Conflict();
++            }
++
++            invokingCallback = true;
++            var isExpected = matchesExpected(current);
++            invokingCallback = false;
++
++            if (!isExpected)
++            {
++                await AbortTransactionQuietlyAsync(session);
++                return WorkflowDefinitionUpdateResult.Conflict();
++            }
++
++            invokingCallback = true;
++            next = update(current);
++            invokingCallback = false;
++
++            if (!string.Equals(next.DefinitionId, expectedDefinitionId, StringComparison.Ordinal))
++            {
++                throw new InvalidOperationException("An atomic workflow update cannot change its logical definition.");
++            }
++
++            next.TenantId = expectedTenantId;
++            var replaceOptions = new ReplaceOptions { Collation = Collation.Simple };
++
++            if (next.Id == expectedId)
++            {
++                var replaceResult = await mongoDbStore.GetCollection().ReplaceOneAsync(
++                    session,
++                    snapshotFilter,
++                    next,
++                    replaceOptions,
++                    cancellationToken);
++
++                if (replaceResult.MatchedCount != 1)
++                {
++                    await AbortTransactionQuietlyAsync(session);
++                    return WorkflowDefinitionUpdateResult.Conflict();
++                }
++            }
++            else
++            {
++                var updateDefinition = Builders<WorkflowDefinition>.Update.Set(x => x.IsLatest, false);
++                var updateOptions = new UpdateOptions { Collation = Collation.Simple };
++                var updateResult = await mongoDbStore.GetCollection().UpdateOneAsync(
++                    session,
++                    snapshotFilter,
++                    updateDefinition,
++                    updateOptions,
++                    cancellationToken);
++
++                if (updateResult.MatchedCount != 1)
++                {
++                    await AbortTransactionQuietlyAsync(session);
++                    return WorkflowDefinitionUpdateResult.Conflict();
++                }
++
++                await mongoDbStore.GetCollection().InsertOneAsync(session, next, cancellationToken: cancellationToken);
++            }
++        }
++        catch (MongoException exception) when (!invokingCallback && IsKnownAbortedConflict(exception))
++        {
++            await AbortTransactionQuietlyAsync(session);
++            return WorkflowDefinitionUpdateResult.Conflict();
++        }
++        catch
++        {
++            await AbortTransactionQuietlyAsync(session);
++            throw;
++        }
++
++        // Commit exceptions are allowed to propagate: an unknown commit result is not proof that the transaction aborted.
++        await session.CommitTransactionAsync(cancellationToken);
++        return WorkflowDefinitionUpdateResult.Updated(next!);
++    }
++
+     /// <inheritdoc />
+     public Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
+     {
+@@ -172,4 +296,45 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
+     {
+         return queryable.OrderBy(order).Paginate(pageArgs)!;
+     }
+-}
+\ No newline at end of file
++
++    private async Task<BsonDocument?> LoadRawSnapshotAsync(IClientSessionHandle session, string id, CancellationToken cancellationToken)
++    {
++        var collection = mongoDbStore.GetCollection();
++        var rawCollection = collection.Database.GetCollection<BsonDocument>(collection.CollectionNamespace.CollectionName);
++        return await rawCollection
++            .Find(session, Builders<BsonDocument>.Filter.Eq("_id", id))
++            .FirstOrDefaultAsync(cancellationToken);
++    }
++
++    private static FilterDefinition<WorkflowDefinition> CreateExactSnapshotFilter(BsonDocument snapshot)
++    {
++        var expression = new BsonDocument("$expr", new BsonDocument("$eq", new BsonArray
++        {
++            "$$ROOT",
++            new BsonDocument("$literal", snapshot)
++        }));
++
++        return new BsonDocumentFilterDefinition<WorkflowDefinition>(expression);
++    }
++
++    private static bool IsKnownAbortedConflict(MongoException exception) =>
++        exception is MongoCommandException { Code: 112 }
++        || exception is MongoWriteException { WriteError.Code: 112 };
++
++    private static async Task AbortTransactionQuietlyAsync(IClientSessionHandle session)
++    {
++        if (!session.IsInTransaction)
++        {
++            return;
++        }
++
++        try
++        {
++            await session.AbortTransactionAsync(CancellationToken.None);
++        }
++        catch (MongoException)
++        {
++            // Preserve the original operation error; commit failures are handled outside the transaction body.
++        }
++    }
++}
+diff --git a/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs b/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs
+new file mode 100644
+index 000000000..0e73233a9
+--- /dev/null
++++ b/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs
+@@ -0,0 +1,426 @@
++using Elsa.Common.Entities;
++using Elsa.Common.Models;
++using Elsa.Common.Multitenancy;
++using Elsa.Persistence.MongoDb.Common;
++using Elsa.Persistence.MongoDb.Modules.Management;
++using Elsa.Workflows.Management.Entities;
++using Elsa.Workflows.Management.Filters;
++using Elsa.Workflows.Management.Models;
++using Elsa.Workflows.Models;
++using MongoDB.Bson;
++using MongoDB.Driver;
++using MongoDB.Driver.Core.Clusters;
++using MongoDB.Driver.Core.Connections;
++using MongoDB.Driver.Core.Servers;
++using Testcontainers.MongoDb;
++
++namespace Elsa.MongoDb.UnitTests;
++
++[CollectionDefinition(nameof(MongoReplicaSetCollection), DisableParallelization = true)]
++public sealed class MongoReplicaSetCollection : ICollectionFixture<MongoReplicaSetFixture>
++{
++}
++
++public sealed class MongoReplicaSetFixture : IAsyncLifetime
++{
++    private readonly MongoDbContainer _container = new MongoDbBuilder()
++        .WithImage("mongo:7.0.24")
++        .WithReplicaSet("rs1")
++        .Build();
++
++    public string ConnectionString => _container.GetConnectionString();
++
++    public Task InitializeAsync() => _container.StartAsync();
++
++    public async Task DisposeAsync() => await _container.DisposeAsync();
++}
++
++[Collection(nameof(MongoReplicaSetCollection))]
++public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposable
++{
++    private readonly TestTenantAccessor _tenantAccessor = new();
++    private readonly MongoClient _client;
++    private readonly IMongoCollection<WorkflowDefinition> _collection;
++    private readonly MongoWorkflowDefinitionStore _store;
++
++    public MongoWorkflowDefinitionStoreCompareAndSwapTests(MongoReplicaSetFixture fixture)
++    {
++        var settings = MongoClientSettings.FromConnectionString(fixture.ConnectionString);
++        settings.ReadPreference = ReadPreference.Nearest;
++        _client = new MongoClient(settings);
++        var database = _client.GetDatabase($"elsa-cas-{Guid.NewGuid():N}");
++        _collection = database.GetCollection<WorkflowDefinition>("workflow_definitions");
++        var genericStore = new MongoDbStore<WorkflowDefinition>(_collection, _tenantAccessor);
++        _store = new MongoWorkflowDefinitionStore(genericStore);
++        _collection.Indexes.CreateOne(
++            new CreateIndexModel<WorkflowDefinition>(
++                Builders<WorkflowDefinition>.IndexKeys.Ascending(x => x.DefinitionId).Ascending(x => x.Version),
++                new CreateIndexOptions { Unique = true }));
++    }
++
++    public void Dispose() => _client.Dispose();
++
++    [Fact]
++    public async Task TryUpdateLatestAsync_WhenSnapshotMatches_UpdatesOnceUsingPrimaryTransaction()
++    {
++        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
++        await _collection.InsertOneAsync(Definition("latest", tenantId: "tenant-a"));
++        var matchCalls = 0;
++        var updateCalls = 0;
++
++        var result = await _store.TryUpdateLatestAsync(
++            LatestFilter("definition"),
++            current =>
++            {
++                matchCalls++;
++                return current.Name == "initial";
++            },
++            current =>
++            {
++                updateCalls++;
++                current.StringData = "updated";
++                return current;
++            });
++
++        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, result.Outcome);
++        Assert.Equal(1, matchCalls);
++        Assert.Equal(1, updateCalls);
++        var stored = await _collection.Find(x => x.Id == "latest").SingleAsync();
++        Assert.Equal("updated", stored.StringData);
++        Assert.Equal("tenant-a", stored.TenantId);
++    }
++
++    [Fact]
++    public async Task TryUpdateLatestAsync_WhenTwoWritersReadTheSameSnapshot_OnlyOneWins()
++    {
++        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
++        await _collection.InsertOneAsync(Definition("latest", tenantId: "tenant-a"));
++        using var start = new ManualResetEventSlim();
++        using var bothMatched = new Barrier(2);
++        var matchCalls = 0;
++        var updateCalls = 0;
++
++        var attempts = Enumerable.Range(1, 2).Select(writer => Task.Run(async () =>
++        {
++            Assert.True(start.Wait(TimeSpan.FromSeconds(10)));
++            return await _store.TryUpdateLatestAsync(
++                LatestFilter("definition"),
++                current =>
++                {
++                    Interlocked.Increment(ref matchCalls);
++                    return bothMatched.SignalAndWait(TimeSpan.FromSeconds(15)) && current.StringData == "initial graph";
++                },
++                current =>
++                {
++                    Interlocked.Increment(ref updateCalls);
++                    current.StringData = $"writer-{writer}";
++                    return current;
++                });
++        })).ToArray();
++
++        start.Set();
++        var results = await Task.WhenAll(attempts).WaitAsync(TimeSpan.FromSeconds(30));
++
++        Assert.Equal(2, matchCalls);
++        Assert.Equal(2, updateCalls);
++        Assert.Single(results, result => result.Outcome == WorkflowDefinitionUpdateOutcome.Updated);
++        Assert.Single(results, result => result.Outcome == WorkflowDefinitionUpdateOutcome.Conflict);
++        var stored = await _collection.Find(x => x.Id == "latest").SingleAsync();
++        Assert.Contains(stored.StringData, new[] { "writer-1", "writer-2" });
++        Assert.Equal("tenant-a", stored.TenantId);
++    }
++
++    [Fact]
++    public async Task TryUpdateLatestAsync_WhenMetadataChangesAfterRead_ReturnsConflictAndKeepsConcurrentMetadata()
++    {
++        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
++        await _collection.InsertOneAsync(Definition("latest", tenantId: "tenant-a"));
++        var matchesCalls = 0;
++        var updateCalls = 0;
++
++        var result = await _store.TryUpdateLatestAsync(
++            LatestFilter("definition"),
++            current =>
++            {
++                matchesCalls++;
++                var concurrentWriter = current.ShallowClone();
++                concurrentWriter.Name = "concurrent metadata";
++                _collection.ReplaceOne(x => x.Id == current.Id, concurrentWriter);
++                return true;
++            },
++            current =>
++            {
++                updateCalls++;
++                current.StringData = "stale graph";
++                return current;
++            });
++
++        Assert.Equal(WorkflowDefinitionUpdateOutcome.Conflict, result.Outcome);
++        Assert.Equal(1, matchesCalls);
++        Assert.Equal(1, updateCalls);
++        var stored = await _collection.Find(x => x.Id == "latest").SingleAsync();
++        Assert.Equal("concurrent metadata", stored.Name);
++        Assert.Equal("initial graph", stored.StringData);
++    }
++
++    [Theory]
++    [InlineData(112, true)]
++    [InlineData(91, false)]
++    public void TryUpdateLatestAsync_ClassifiesOnlyWriteConflictCodeAsAbortedConflict(int code, bool expected)
++    {
++        var exception = new MongoCommandException(
++            new ConnectionId(new ServerId(new ClusterId(), new System.Net.DnsEndPoint("localhost", 27017)), 1),
++            "Synthetic Mongo command failure",
++            new BsonDocument("find", "workflow_definitions"),
++            new BsonDocument { ["ok"] = 0, ["code"] = code, ["errmsg"] = "Synthetic failure" });
++        exception.AddErrorLabel("TransientTransactionError");
++        var classifier = typeof(MongoWorkflowDefinitionStore).GetMethod(
++            "IsKnownAbortedConflict",
++            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
++
++        Assert.NotNull(classifier);
++        var actual = (bool)classifier.Invoke(null, [exception])!;
++
++        Assert.Equal(expected, actual);
++    }
++
++    [Theory]
++    [InlineData(false)]
++    [InlineData(true)]
++    public async Task TryUpdateLatestAsync_WhenCallbackThrowsTransientMongoError_PropagatesAndLeavesDocumentUnchanged(bool throwFromUpdate)
++    {
++        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
++        await _collection.InsertOneAsync(Definition("latest", tenantId: "tenant-a"));
++        var callbackException = new MongoException("synthetic callback failure");
++        callbackException.AddErrorLabel("TransientTransactionError");
++        var matchCalls = 0;
++        var updateCalls = 0;
++
++        var actual = await Assert.ThrowsAsync<MongoException>(() => _store.TryUpdateLatestAsync(
++            LatestFilter("definition"),
++            current =>
++            {
++                matchCalls++;
++                if (!throwFromUpdate)
++                {
++                    throw callbackException;
++                }
++
++                return true;
++            },
++            current =>
++            {
++                updateCalls++;
++                if (throwFromUpdate)
++                {
++                    throw callbackException;
++                }
++
++                return current;
++            }));
++
++        Assert.Same(callbackException, actual);
++        Assert.Equal(1, matchCalls);
++        Assert.Equal(throwFromUpdate ? 1 : 0, updateCalls);
++        var stored = await _collection.Find(x => x.Id == "latest").SingleAsync();
++        Assert.Equal("initial graph", stored.StringData);
++        Assert.Equal("tenant-a", stored.TenantId);
++    }
++
++    [Fact]
++    public async Task TryUpdateLatestAsync_WhenTenantIsNotVisible_ReturnsNotFound_AndTenantAgnosticMutationPreservesOwner()
++    {
++        using (var tenantA = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" }))
++        {
++            await _collection.InsertOneAsync(Definition("latest", tenantId: "tenant-a"));
++        }
++
++        using var tenantB = _tenantAccessor.PushContext(new Tenant { Id = "tenant-b" });
++        var hidden = await _store.TryUpdateLatestAsync(
++            LatestFilter("definition"),
++            _ => true,
++            current => current);
++
++        Assert.Equal(WorkflowDefinitionUpdateOutcome.NotFound, hidden.Outcome);
++
++        var sharedFilter = LatestFilter("definition");
++        sharedFilter.TenantAgnostic = true;
++        var visible = await _store.TryUpdateLatestAsync(
++            sharedFilter,
++            _ => true,
++            current =>
++            {
++                current.Name = "updated across tenants";
++                current.TenantId = "tenant-b";
++                return current;
++            });
++
++        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, visible.Outcome);
++        var stored = await _collection.Find(x => x.Id == "latest").SingleAsync();
++        Assert.Equal("tenant-a", stored.TenantId);
++        Assert.Equal("updated across tenants", stored.Name);
++    }
++
++    [Fact]
++    public async Task TryUpdateLatestAsync_WhenPublishedVersionCreatesDraft_UpdatesBothRowsAndPreservesTenant()
++    {
++        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
++        var published = Definition("published", tenantId: "tenant-a");
++        published.IsPublished = true;
++        await _collection.InsertOneAsync(published);
++        var rawCollection = _collection.Database.GetCollection<BsonDocument>("workflow_definitions");
++        var originalPublishedDocument = await rawCollection.Find(x => x["_id"] == "published").SingleAsync();
++        var updateCalls = 0;
++
++        var result = await _store.TryUpdateLatestAsync(
++            LatestFilter("definition"),
++            _ => true,
++            current =>
++            {
++                updateCalls++;
++                var draft = current.ShallowClone();
++                draft.Id = "new-draft";
++                draft.Version = 2;
++                draft.IsLatest = true;
++                draft.IsPublished = false;
++                draft.TenantId = "tenant-b";
++                return draft;
++            });
++
++        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, result.Outcome);
++        Assert.Equal(1, updateCalls);
++        var storedPublished = await _collection.Find(x => x.Id == "published").SingleAsync();
++        var storedPublishedDocument = await rawCollection.Find(x => x["_id"] == "published").SingleAsync();
++        var expectedPublishedDocument = originalPublishedDocument.DeepClone().AsBsonDocument;
++        expectedPublishedDocument["IsLatest"] = false;
++        var storedDraft = await _collection.Find(x => x.Id == "new-draft").SingleAsync();
++        Assert.Equal(expectedPublishedDocument, storedPublishedDocument);
++        Assert.False(storedPublished.IsLatest);
++        Assert.True(storedPublished.IsPublished);
++        Assert.True(storedDraft.IsLatest);
++        Assert.False(storedDraft.IsPublished);
++        Assert.Equal(2, storedDraft.Version);
++        Assert.Equal("tenant-a", storedDraft.TenantId);
++    }
++
++    [Fact]
++    public async Task TryUpdateLatestAsync_WhenPublishedVersionHasUnknownBsonField_RejectsWithoutMutation()
++    {
++        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
++        var published = Definition("published", tenantId: "tenant-a");
++        published.IsPublished = true;
++        var rawCollection = _collection.Database.GetCollection<BsonDocument>("workflow_definitions");
++        var publishedDocument = published.ToBsonDocument();
++        publishedDocument["LegacyExtra"] = new BsonDocument("source", "older Elsa process");
++        await rawCollection.InsertOneAsync(publishedDocument);
++
++        await Assert.ThrowsAsync<FormatException>(() => _store.TryUpdateLatestAsync(
++            LatestFilter("definition"),
++            _ => true,
++            current =>
++            {
++                var draft = current.ShallowClone();
++                draft.Id = "new-draft";
++                draft.Version = 2;
++                draft.IsLatest = true;
++                draft.IsPublished = false;
++                return draft;
++            }));
++
++        var stored = await rawCollection.Find(x => x["_id"] == "published").SingleAsync();
++        Assert.Equal(publishedDocument, stored);
++        Assert.False(await rawCollection.Find(x => x["_id"] == "new-draft").AnyAsync());
++    }
++
++    [Fact]
++    public async Task TryUpdateLatestAsync_WhenDraftInsertFails_RollsBackLatestUnmark()
++    {
++        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
++        var published = Definition("published", tenantId: "tenant-a");
++        published.IsPublished = true;
++        await _collection.InsertOneAsync(published);
++        var conflictingVersion = Definition("existing-version-2", tenantId: "tenant-a");
++        conflictingVersion.Version = 2;
++        conflictingVersion.IsLatest = false;
++        await _collection.InsertOneAsync(conflictingVersion);
++        var updateCalls = 0;
++
++        await Assert.ThrowsAsync<MongoWriteException>(() => _store.TryUpdateLatestAsync(
++            LatestFilter("definition"),
++            _ => true,
++            current =>
++            {
++                updateCalls++;
++                var draft = current.ShallowClone();
++                draft.Id = "new-draft";
++                draft.Version = 2;
++                draft.IsPublished = false;
++                draft.IsLatest = true;
++                return draft;
++            }));
++
++        Assert.Equal(1, updateCalls);
++        var storedPublished = await _collection.Find(x => x.Id == "published").SingleAsync();
++        Assert.True(storedPublished.IsLatest);
++        Assert.True(storedPublished.IsPublished);
++        Assert.False(await _collection.Find(x => x.Id == "new-draft").AnyAsync());
++    }
++
++    [Fact]
++    public async Task TryUpdateLatestAsync_CannotChangeLogicalDefinitionId()
++    {
++        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
++        await _collection.InsertOneAsync(Definition("latest", tenantId: "tenant-a"));
++
++        await Assert.ThrowsAsync<InvalidOperationException>(() => _store.TryUpdateLatestAsync(
++            LatestFilter("definition"),
++            _ => true,
++            current =>
++            {
++                var next = current.ShallowClone();
++                next.DefinitionId = "another-definition";
++                return next;
++            }));
++
++        var stored = await _collection.Find(x => x.Id == "latest").SingleAsync();
++        Assert.Equal("definition", stored.DefinitionId);
++        Assert.Equal("initial graph", stored.StringData);
++        Assert.Equal("tenant-a", stored.TenantId);
++    }
++
++    private static WorkflowDefinitionFilter LatestFilter(string definitionId) => new()
++    {
++        DefinitionId = definitionId,
++        VersionOptions = VersionOptions.Latest
++    };
++
++    private static WorkflowDefinition Definition(string id, string? tenantId) => new()
++    {
++        Id = id,
++        DefinitionId = "definition",
++        TenantId = tenantId,
++        Name = "initial",
++        Version = 1,
++        IsLatest = true,
++        MaterializerName = "test",
++        StringData = "initial graph"
++    };
++
++    private sealed class TestTenantAccessor : ITenantAccessor
++    {
++        public string TenantId => Tenant?.Id ?? Tenant.DefaultTenantId;
++        public Tenant? Tenant { get; private set; }
++
++        public IDisposable PushContext(Tenant? tenant)
++        {
++            var previousTenant = Tenant;
++            Tenant = tenant;
++            return new Restore(() => Tenant = previousTenant);
++        }
++
++        private sealed class Restore(Action restore) : IDisposable
++        {
++            public void Dispose() => restore();
++        }
++    }
++}

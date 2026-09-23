@@ -8,6 +8,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared.Integration\Elsa.Testing.Shared.Integration.csproj"/>
         <ProjectReference Include="..\..\..\src\modules\Elsa.Bpmn.Interchange\Elsa.Bpmn.Interchange.csproj"/>
+        <ProjectReference Include="../../../src/modules/Elsa.Persistence.EFCore.Sqlite/Elsa.Persistence.EFCore.Sqlite.csproj" />
     </ItemGroup>
 
     <ItemGroup>
