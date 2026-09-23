@@ -16,7 +16,7 @@ python3 -m unittest discover -s scripts/integration-program -p 'test_*.py'
 python3 -O -m unittest discover -s scripts/integration-program -p 'test_*.py'
 ```
 
-The output path must not exist. The script fetches objects from the supplied local clones, creates `source-core`, `source-extensions`, `source-studio` and `rehearsal` refs only in that new repository, and writes `import-receipt.json`. It does not check out, build, run imported scripts, push, or configure an external remote. The receipt covers every imported path, blob and mode, including inert legacy assets. Keep it with the final migration evidence; do not publish a rehearsal commit as the actual import.
+The output path must not exist and must be outside all source checkouts and Git metadata directories. If a post-creation step fails, the tool removes only its newly created output so the same path can be retried. Raw Git pathname bytes round-trip through UTF-8 `surrogateescape`; the JSON receipt escapes non-UTF-8 bytes rather than discarding or normalizing them. The script fetches objects from the supplied local clones, creates `source-core`, `source-extensions`, `source-studio` and `rehearsal` refs only in that new repository, and writes `import-receipt.json`. It does not check out, build, run imported scripts, push, or configure an external remote. The receipt covers every imported path, blob and mode, including inert legacy assets. Keep it with the final migration evidence; do not publish a rehearsal commit as the actual import.
 
 ## Verified execution: 2026-09-23
 

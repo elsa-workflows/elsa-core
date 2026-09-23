@@ -3,6 +3,8 @@ import importlib.util
 from pathlib import Path
 import unittest
 import tempfile
+import subprocess
+import json
 from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('rehearsal', Path(__file__).with_name('rehearse-import.py'))
@@ -58,7 +60,7 @@ class FullHistoryTests(unittest.TestCase):
     def test_rehearsal_retains_ancestors_without_modifying_inputs(self):
         with tempfile.TemporaryDirectory() as root:
             root = Path(root)
-            repos, refs = {}, {}
+            repos, refs, statuses = {}, {}, {}
             for name, path in [('core', 'src/core.cs'),
                                ('extensions', 'src/modules/Module/a.cs'),
                                ('studio', 'src/modules/UI/a.razor')]:
@@ -69,11 +71,16 @@ class FullHistoryTests(unittest.TestCase):
                 source.parent.mkdir(parents=True)
                 source.write_text(name)
                 rehearsal.git(repo, 'add', '.')
+                if name == 'extensions':
+                    blob = rehearsal.git(repo, 'hash-object', '-w', '--stdin', data=b'raw path contents').strip()
+                    rehearsal.git(repo, 'update-index', '-z', '--index-info',
+                                  data=b'100644 ' + blob + b'\tsrc/modules/raw-\xff.cs\0')
                 rehearsal.git(repo, '-c', 'user.name=Test',
                               '-c', 'user.email=test@example.invalid',
                               '-c', 'commit.gpgsign=false', 'commit', '--quiet', '-m', 'Initial')
                 repos[name] = repo
                 refs[name] = rehearsal.git(repo, 'rev-parse', 'HEAD').decode().strip()
+                statuses[name] = rehearsal.git(repo, 'status', '--porcelain')
             with patch.dict(rehearsal.PINS, {k: refs[k] for k in ('extensions', 'studio')}):
                 for repo in repos.values():
                     for candidate in (repo / 'nested-rehearsal', repo / '.git' / 'nested-rehearsal'):
@@ -83,14 +90,28 @@ class FullHistoryTests(unittest.TestCase):
                                                    candidate)
                             self.assertFalse(candidate.exists())
             output = root / 'output'
+            original_git = rehearsal.git
+            def fail_fetch(repo, *args, **kwargs):
+                if args[0] == 'fetch':
+                    raise subprocess.CalledProcessError(1, ['git', 'fetch'])
+                return original_git(repo, *args, **kwargs)
             with patch.dict(rehearsal.PINS, {k: refs[k] for k in ('extensions', 'studio')}):
+                with patch.object(rehearsal, 'git', side_effect=fail_fetch):
+                    with self.assertRaises(subprocess.CalledProcessError):
+                        rehearsal.rehearse(repos['core'], {k: repos[k] for k in ('extensions', 'studio')}, output)
+                self.assertFalse(output.exists())
                 rehearsal.rehearse(repos['core'], {k: repos[k] for k in ('extensions', 'studio')}, output)
             tip = rehearsal.git(output, 'rev-parse', 'rehearsal').strip()
             for name, repo in repos.items():
                 self.assertEqual(rehearsal.git(repo, 'rev-parse', 'HEAD').decode().strip(), refs[name])
-                self.assertEqual(rehearsal.git(repo, 'status', '--porcelain'), b'')
+                self.assertEqual(rehearsal.git(repo, 'status', '--porcelain'), statuses[name])
                 rehearsal.git(output, 'merge-base', '--is-ancestor', refs[name], tip.decode())
-            self.assertEqual(len(rehearsal.tree(output, 'rehearsal')), 3)
+            self.assertEqual(len(rehearsal.tree(output, 'rehearsal')), 4)
+            receipt = json.loads((output / 'import-receipt.json').read_text())
+            raw = next(r for r in receipt['mapping'] if 'raw-' in r['source'])
+            self.assertEqual(raw['destination'].encode('utf-8', errors='surrogateescape'),
+                             b'src/extensions/raw-\xff.cs')
+            self.assertIn(b'src/extensions/raw-\xff.cs\0', rehearsal.git(output, 'ls-tree', '-r', '-z', 'rehearsal'))
             with patch.dict(rehearsal.PINS, {k: refs[k] for k in ('extensions', 'studio')}):
                 with self.assertRaisesRegex(ValueError, 'Output must not exist'):
                     rehearsal.rehearse(repos['core'], {k: repos[k] for k in ('extensions', 'studio')}, output)

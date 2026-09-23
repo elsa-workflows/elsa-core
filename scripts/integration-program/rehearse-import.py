@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import subprocess
+import shutil
 
 PINS = {
     'extensions': '33fa0bfd28c7585240e3d4f665058c067b17e287',
@@ -55,7 +56,7 @@ def tree(repo, ref):
         mode, kind, oid = meta.decode().split()
         if kind != 'blob':
             raise ValueError(f'Unsupported tree entry {kind}: {path!r}')
-        entries[path.decode()] = (mode, oid)
+        entries[path.decode('utf-8', errors='surrogateescape')] = (mode, oid)
     return entries
 
 
@@ -113,40 +114,50 @@ def rehearse(core, sources, output):
     if output.exists():
         raise ValueError('Output must not exist; choose a new disposable directory')
     output.mkdir(parents=True)
-    git(output, 'init', '--quiet')
-    for product, repo in repositories.items():
-        git(output, 'fetch', '--quiet', '--no-tags', str(repo),
-            refs[product] + ':refs/heads/source-' + product)
-    git(output, 'read-tree', '--empty')
-    index = b''.join(f'{mode} {oid}\t{path}'.encode() + b'\0'
-                     for path, (mode, oid) in sorted(expected.items()))
-    git(output, 'update-index', '-z', '--index-info', data=index)
-    tree_id = git(output, 'write-tree').decode().strip()
-    command = ['git', '-C', str(output), '-c', 'commit.gpgsign=false',
-               'commit-tree', tree_id]
-    for ref in refs.values():
-        command.extend(['-p', ref])
-    env = dict(os.environ, GIT_AUTHOR_NAME='Elsa import rehearsal',
-               GIT_AUTHOR_EMAIL='rehearsal@example.invalid',
-               GIT_COMMITTER_NAME='Elsa import rehearsal',
-               GIT_COMMITTER_EMAIL='rehearsal@example.invalid')
-    commit = subprocess.check_output(command, input=b'Disposable integration history rehearsal\n',
-                                     env=env).decode().strip()
-    git(output, 'update-ref', 'refs/heads/rehearsal', commit)
-    if tree(output, commit) != expected:
-        raise ValueError('Rehearsal tree differs from exact source blob/mode mapping')
-    for ref in refs.values():
-        git(output, 'merge-base', '--is-ancestor', ref, commit)
-    # Check all reachable history and blobs, not just three tips.
-    git(output, 'fsck', '--full', '--no-dangling', commit)
-    report = dict(sourceCommits=refs, rehearsalCommit=commit,
-                  sourceFileCounts={k: len(v) for k, v in sources_tree.items()},
-                  coreFiles=len(core_tree), finalFiles=len(expected),
-                  originalHistoriesReachable=True, exactBlobAndModeMapping=True,
-                  buildCompatibilityVerified=False, publicationAuthorized=False,
-                  mapping=records)
-    (output / 'import-receipt.json').write_text(json.dumps(report, indent=2) + '\n')
-    print(json.dumps({k: v for k, v in report.items() if k != 'mapping'}, indent=2))
+    try:
+        git(output, 'init', '--quiet')
+        for product, repo in repositories.items():
+            git(output, 'fetch', '--quiet', '--no-tags', str(repo),
+                refs[product] + ':refs/heads/source-' + product)
+        git(output, 'read-tree', '--empty')
+        index = b''.join(f'{mode} {oid}\t{path}'.encode('utf-8', errors='surrogateescape') + b'\0'
+                         for path, (mode, oid) in sorted(expected.items()))
+        git(output, 'update-index', '-z', '--index-info', data=index)
+        tree_id = git(output, 'write-tree').decode().strip()
+        command = ['git', '-C', str(output), '-c', 'commit.gpgsign=false',
+                   'commit-tree', tree_id]
+        for ref in refs.values():
+            command.extend(['-p', ref])
+        env = dict(os.environ, GIT_AUTHOR_NAME='Elsa import rehearsal',
+                   GIT_AUTHOR_EMAIL='rehearsal@example.invalid',
+                   GIT_COMMITTER_NAME='Elsa import rehearsal',
+                   GIT_COMMITTER_EMAIL='rehearsal@example.invalid')
+        commit = subprocess.check_output(command, input=b'Disposable integration history rehearsal\n',
+                                         env=env).decode().strip()
+        git(output, 'update-ref', 'refs/heads/rehearsal', commit)
+        if tree(output, commit) != expected:
+            raise ValueError('Rehearsal tree differs from exact source blob/mode mapping')
+        for ref in refs.values():
+            git(output, 'merge-base', '--is-ancestor', ref, commit)
+        # Check all reachable history and blobs, not just three tips.
+        git(output, 'fsck', '--full', '--no-dangling', commit)
+        report = dict(sourceCommits=refs, rehearsalCommit=commit,
+                      sourceFileCounts={k: len(v) for k, v in sources_tree.items()},
+                      coreFiles=len(core_tree), finalFiles=len(expected),
+                      originalHistoriesReachable=True, exactBlobAndModeMapping=True,
+                      buildCompatibilityVerified=False, publicationAuthorized=False,
+                      mapping=records)
+        (output / 'import-receipt.json').write_text(json.dumps(report, indent=2) + '\n')
+        print(json.dumps({k: v for k, v in report.items() if k != 'mapping'}, indent=2))
+    except BaseException as error:
+        # This directory was created by this invocation after all source guards.
+        # Never remove or reuse a pre-existing output path.
+        try:
+            shutil.rmtree(output)
+        except OSError as cleanup_error:
+            raise RuntimeError(f'Rehearsal failed; could not remove new output {output}: {cleanup_error}') from error
+        raise
+
 
 
 def main():
