@@ -1,0 +1,109 @@
+/private/tmp/elsa-8294-mongo-preservation-replay/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj : warning NU1902: Package 'SharpCompress' 0.30.1 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-6c8g-7p36-r338
+/private/tmp/elsa-8294-mongo-preservation-replay/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-mggc-4xg6-vcxf
+/private/tmp/elsa-8294-mongo-preservation-replay/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-q939-rpr3-3284
+/private/tmp/elsa-8294-mongo-preservation-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj : warning NU1902: Package 'Microsoft.Build.Tasks.Git' 8.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-23fw-v26w-5fgq [TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj : warning NU1902: Package 'SharpCompress' 0.30.1 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-6c8g-7p36-r338 [TargetFramework=net10.0]
+  Elsa.Features -> /private/tmp/elsa-8294-mongo-preservation-replay/src/common/Elsa.Features/bin/Debug/net10.0/Elsa.Features.dll
+  Elsa.Mediator -> /private/tmp/elsa-8294-mongo-preservation-replay/src/common/Elsa.Mediator/bin/Debug/net10.0/Elsa.Mediator.dll
+  Elsa.Caching -> /private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Caching/bin/Debug/net10.0/Elsa.Caching.dll
+  Elsa.Common -> /private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Common/bin/Debug/net10.0/Elsa.Common.dll
+  Elsa.Expressions -> /private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Expressions/bin/Debug/net10.0/Elsa.Expressions.dll
+  Elsa.KeyValues -> /private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.KeyValues/bin/Debug/net10.0/Elsa.KeyValues.dll
+  Elsa.Workflows.Core -> /private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Workflows.Core/bin/Debug/net10.0/Elsa.Workflows.Core.dll
+  Elsa.Api.Common -> /private/tmp/elsa-8294-mongo-preservation-replay/src/common/Elsa.Api.Common/bin/Debug/net10.0/Elsa.Api.Common.dll
+/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Endpoints/Me/Permissions/Models.cs(16,36): warning CS1573: Parameter 'Resource' has no matching param tag in the XML comment for 'ResourceGrant.ResourceGrant(string, IReadOnlyCollection<string>)' (but other parameters do) [/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Elsa.Identity.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Endpoints/Permissions/List/Models.cs(18,12): warning CS1573: Parameter 'Resource' has no matching param tag in the XML comment for 'ResourceDescriptor.ResourceDescriptor(string, IReadOnlyCollection<string>, IReadOnlyCollection<string>, string, string, string, bool)' (but other parameters do) [/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Elsa.Identity.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Endpoints/Permissions/List/Models.cs(19,33): warning CS1573: Parameter 'SupportedVerbs' has no matching param tag in the XML comment for 'ResourceDescriptor.ResourceDescriptor(string, IReadOnlyCollection<string>, IReadOnlyCollection<string>, string, string, string, bool)' (but other parameters do) [/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Elsa.Identity.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Endpoints/Permissions/List/Models.cs(21,12): warning CS1573: Parameter 'DisplayName' has no matching param tag in the XML comment for 'ResourceDescriptor.ResourceDescriptor(string, IReadOnlyCollection<string>, IReadOnlyCollection<string>, string, string, string, bool)' (but other parameters do) [/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Elsa.Identity.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Endpoints/Permissions/List/Models.cs(22,12): warning CS1573: Parameter 'Description' has no matching param tag in the XML comment for 'ResourceDescriptor.ResourceDescriptor(string, IReadOnlyCollection<string>, IReadOnlyCollection<string>, string, string, string, bool)' (but other parameters do) [/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Elsa.Identity.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Endpoints/Permissions/List/Models.cs(23,12): warning CS1573: Parameter 'Category' has no matching param tag in the XML comment for 'ResourceDescriptor.ResourceDescriptor(string, IReadOnlyCollection<string>, IReadOnlyCollection<string>, string, string, string, bool)' (but other parameters do) [/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Elsa.Identity.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Endpoints/Permissions/Reach/Endpoint.cs(15,31): warning CS1573: Parameter 'Resource' has no matching param tag in the XML comment for 'Response.Response(string, IReadOnlyCollection<string>, int)' (but other parameters do) [/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Elsa.Identity.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Endpoints/Permissions/Reach/Endpoint.cs(15,81): warning CS1573: Parameter 'Count' has no matching param tag in the XML comment for 'Response.Response(string, IReadOnlyCollection<string>, int)' (but other parameters do) [/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Elsa.Identity.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Notifications/RoleSecurityNotifications.cs(14,20): warning CS1573: Parameter 'OccurredAt' has no matching param tag in the XML comment for 'RoleSecurityEventContext.RoleSecurityEventContext(string?, string?, DateTimeOffset, string)' (but other parameters do) [/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Elsa.Identity.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Notifications/RoleSecurityNotifications.cs(15,12): warning CS1573: Parameter 'Summary' has no matching param tag in the XML comment for 'RoleSecurityEventContext.RoleSecurityEventContext(string?, string?, DateTimeOffset, string)' (but other parameters do) [/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Elsa.Identity.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Notifications/RoleSecurityNotifications.cs(24,30): warning CS1573: Parameter 'Context' has no matching param tag in the XML comment for 'RoleChanged.RoleChanged(RoleSecurityEventContext, string, string, string, IReadOnlyCollection<string>)' (but other parameters do) [/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Elsa.Identity.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Notifications/RoleSecurityNotifications.cs(26,12): warning CS1573: Parameter 'RoleId' has no matching param tag in the XML comment for 'RoleChanged.RoleChanged(RoleSecurityEventContext, string, string, string, IReadOnlyCollection<string>)' (but other parameters do) [/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Elsa.Identity.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Notifications/RoleSecurityNotifications.cs(27,12): warning CS1573: Parameter 'RoleName' has no matching param tag in the XML comment for 'RoleChanged.RoleChanged(RoleSecurityEventContext, string, string, string, IReadOnlyCollection<string>)' (but other parameters do) [/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Elsa.Identity.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Notifications/RoleSecurityNotifications.cs(34,30): warning CS1573: Parameter 'Context' has no matching param tag in the XML comment for 'UserRoleAssignmentChanged.UserRoleAssignmentChanged(RoleSecurityEventContext, string, IReadOnlyCollection<string>, IReadOnlyCollection<string>)' (but other parameters do) [/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Elsa.Identity.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Notifications/RoleSecurityNotifications.cs(35,12): warning CS1573: Parameter 'UserId' has no matching param tag in the XML comment for 'UserRoleAssignmentChanged.UserRoleAssignmentChanged(RoleSecurityEventContext, string, IReadOnlyCollection<string>, IReadOnlyCollection<string>)' (but other parameters do) [/private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/Elsa.Identity.csproj::TargetFramework=net10.0]
+  Elsa.Tenants -> /private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Tenants/bin/Debug/net10.0/Elsa.Tenants.dll
+  Elsa.Identity -> /private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Identity/bin/Debug/net10.0/Elsa.Identity.dll
+  Elsa.Workflows.Management -> /private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Workflows.Management/bin/Debug/net10.0/Elsa.Workflows.Management.dll
+  Elsa.Labels -> /private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Labels/bin/Debug/net10.0/Elsa.Labels.dll
+  Elsa.Workflows.Runtime -> /private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Workflows.Runtime/bin/Debug/net10.0/Elsa.Workflows.Runtime.dll
+  Elsa.Alterations.Core -> /private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Alterations.Core/bin/Debug/net10.0/Elsa.Alterations.Core.dll
+  Elsa.Alterations -> /private/tmp/elsa-8294-mongo-preservation-replay/src/modules/Elsa.Alterations/bin/Debug/net10.0/Elsa.Alterations.dll
+/tmp/elsa-8294-nuget-final-clean/microsoft.build.tasks.git/8.0.0/build/Microsoft.Build.Tasks.Git.targets(25,5): warning : Repository '/private/tmp/elsa-8294-mongo-preservation-replay' has no remote. [/private/tmp/elsa-8294-mongo-preservation-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj::TargetFramework=net10.0]
+/tmp/elsa-8294-nuget-final-clean/microsoft.sourcelink.common/8.0.0/build/Microsoft.SourceLink.Common.targets(53,5): warning : Source control information is not available - the generated source link is empty. [/private/tmp/elsa-8294-mongo-preservation-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Serializers/JsonNodeBsonSerializer.cs(81,26): warning CS8600: Converting null literal or possible null value to non-nullable type. [/private/tmp/elsa-8294-mongo-preservation-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Serializers/JsonNodeBsonSerializer.cs(86,26): warning CS8600: Converting null literal or possible null value to non-nullable type. [/private/tmp/elsa-8294-mongo-preservation-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Extensions/DocumentExtensions.cs(53,26): warning IL2090: 'this' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicProperties' in call to 'System.Type.GetProperty(String)'. The generic parameter 'TDocument' of 'Elsa.Persistence.MongoDb.Extensions.DocumentExtensions.BuildIdFilterForList<TDocument>(IEnumerable<TDocument>, String)' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to. [/private/tmp/elsa-8294-mongo-preservation-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-preservation-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Extensions/DocumentExtensions.cs(71,20): warning IL2090: 'this' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicProperties' in call to 'System.Type.GetProperty(String)'. The generic parameter 'TDocument' of 'Elsa.Persistence.MongoDb.Extensions.DocumentExtensions.BuildFilter<TDocument>(TDocument, String)' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to. [/private/tmp/elsa-8294-mongo-preservation-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj::TargetFramework=net10.0]
+  Elsa.Persistence.MongoDb -> /private/tmp/elsa-8294-mongo-preservation-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/bin/Debug/net10.0/Elsa.Persistence.MongoDb.dll
+  Elsa.MongoDb.UnitTests -> /private/tmp/elsa-8294-mongo-preservation-replay/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/bin/Debug/net10.0/Elsa.MongoDb.UnitTests.dll
+Test run for /private/tmp/elsa-8294-mongo-preservation-replay/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/bin/Debug/net10.0/Elsa.MongoDb.UnitTests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.8)
+[xUnit.net 00:00:00.37]   Discovering: Elsa.MongoDb.UnitTests
+[xUnit.net 00:00:00.43]   Discovered:  Elsa.MongoDb.UnitTests
+[xUnit.net 00:00:00.47]   Starting:    Elsa.MongoDb.UnitTests
+[testcontainers.org 00:00:00.25] Connected to Docker:
+  Host: unix:///var/run/docker.sock
+  Server Version: 29.4.0
+  Kernel Version: 7.0.14-orbstack-00380-ga7e0a2dc9535
+  API Version: 1.54
+  Operating System: OrbStack
+  Total Memory: 11.74 GB
+[testcontainers.org 00:00:01.03] Docker container 27519210764b created
+[testcontainers.org 00:00:01.11] Start Docker container 27519210764b
+[testcontainers.org 00:00:02.51] Wait for Docker container 27519210764b to complete readiness checks
+[testcontainers.org 00:00:02.53] Docker container 27519210764b ready
+[testcontainers.org 00:00:05.31] Docker container 0c5466e39e23 created
+[testcontainers.org 00:00:05.34] Add file to tar archive: Content length: 94 byte(s), Target file: "/docker-entrypoint-initdb.d/01-init-keyfile.sh", UID: 0, GID: 0, Mode: 0755
+[testcontainers.org 00:00:05.35] Copy tar archive to container: Content length: 94 byte(s), Docker container: 0c5466e39e23
+[testcontainers.org 00:00:05.45] Start Docker container 0c5466e39e23
+[testcontainers.org 00:00:06.13] Add file to tar archive: Content length: 91 byte(s), Target file: "/tmp/eb1fa5f1-9ae8-454b-ac3c-53f7d3efa579/kya4osne.wpc", UID: 0, GID: 0, Mode: 0644
+[testcontainers.org 00:00:06.13] Copy tar archive to container: Content length: 91 byte(s), Docker container: 0c5466e39e23
+[testcontainers.org 00:00:06.19] Execute "which mongosh" at Docker container 0c5466e39e23
+[testcontainers.org 00:00:06.35] Execute "mongosh --username mongo --password mongo --quiet --eval load('/tmp/eb1fa5f1-9ae8-454b-ac3c-53f7d3efa579/kya4osne.wpc')" at Docker container 0c5466e39e23
+[testcontainers.org 00:00:08.65] Add file to tar archive: Content length: 91 byte(s), Target file: "/tmp/cbdca17f-5d4e-4a52-aa90-0bd4b1b4e2d3/thzzu5ct.upe", UID: 0, GID: 0, Mode: 0644
+[testcontainers.org 00:00:08.65] Copy tar archive to container: Content length: 91 byte(s), Docker container: 0c5466e39e23
+[testcontainers.org 00:00:08.66] Execute "which mongosh" at Docker container 0c5466e39e23
+[testcontainers.org 00:00:08.72] Execute "mongosh --username mongo --password mongo --quiet --eval load('/tmp/cbdca17f-5d4e-4a52-aa90-0bd4b1b4e2d3/thzzu5ct.upe')" at Docker container 0c5466e39e23
+[testcontainers.org 00:00:10.49] Add file to tar archive: Content length: 91 byte(s), Target file: "/tmp/97c5d707-3cb5-45ee-8f42-c83e5e770fc4/3usm04qd.tcr", UID: 0, GID: 0, Mode: 0644
+[testcontainers.org 00:00:10.49] Copy tar archive to container: Content length: 91 byte(s), Docker container: 0c5466e39e23
+[testcontainers.org 00:00:10.51] Execute "which mongosh" at Docker container 0c5466e39e23
+[testcontainers.org 00:00:10.59] Execute "mongosh --username mongo --password mongo --quiet --eval load('/tmp/97c5d707-3cb5-45ee-8f42-c83e5e770fc4/3usm04qd.tcr')" at Docker container 0c5466e39e23
+[testcontainers.org 00:00:12.51] Add file to tar archive: Content length: 91 byte(s), Target file: "/tmp/1eddb257-1e36-4c2a-a2c1-4704fb9852b2/khcn2xa4.dt4", UID: 0, GID: 0, Mode: 0644
+[testcontainers.org 00:00:12.51] Copy tar archive to container: Content length: 91 byte(s), Docker container: 0c5466e39e23
+[testcontainers.org 00:00:12.53] Execute "which mongosh" at Docker container 0c5466e39e23
+[testcontainers.org 00:00:12.60] Execute "mongosh --username mongo --password mongo --quiet --eval load('/tmp/1eddb257-1e36-4c2a-a2c1-4704fb9852b2/khcn2xa4.dt4')" at Docker container 0c5466e39e23
+[testcontainers.org 00:00:14.16] Add file to tar archive: Content length: 91 byte(s), Target file: "/tmp/01bfb515-3980-432e-8182-f2d49baee033/btjp2xvt.00n", UID: 0, GID: 0, Mode: 0644
+[testcontainers.org 00:00:14.16] Copy tar archive to container: Content length: 91 byte(s), Docker container: 0c5466e39e23
+[testcontainers.org 00:00:14.17] Execute "which mongosh" at Docker container 0c5466e39e23
+[testcontainers.org 00:00:14.24] Execute "mongosh --username mongo --password mongo --quiet --eval load('/tmp/01bfb515-3980-432e-8182-f2d49baee033/btjp2xvt.00n')" at Docker container 0c5466e39e23
+[testcontainers.org 00:00:15.15] Wait for Docker container 0c5466e39e23 to complete readiness checks
+[testcontainers.org 00:00:15.15] Add file to tar archive: Content length: 68 byte(s), Target file: "/tmp/136dadd6-241c-4aa5-bae8-7486ac6c44b0/uq3m0gpp.ukw", UID: 0, GID: 0, Mode: 0644
+[testcontainers.org 00:00:15.15] Copy tar archive to container: Content length: 68 byte(s), Docker container: 0c5466e39e23
+[testcontainers.org 00:00:15.16] Execute "which mongosh" at Docker container 0c5466e39e23
+[testcontainers.org 00:00:15.20] Execute "mongosh --username mongo --password mongo --quiet --eval load('/tmp/136dadd6-241c-4aa5-bae8-7486ac6c44b0/uq3m0gpp.ukw')" at Docker container 0c5466e39e23
+[testcontainers.org 00:00:15.83] Docker container 0c5466e39e23 ready
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_CannotChangeLogicalDefinitionId [722 ms]
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_WhenCallbackThrowsTransientMongoError_PropagatesAndLeavesDocumentUnchanged(throwFromUpdate: False) [62 ms]
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_WhenCallbackThrowsTransientMongoError_PropagatesAndLeavesDocumentUnchanged(throwFromUpdate: True) [44 ms]
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_WhenTwoWritersReadTheSameSnapshot_OnlyOneWins [120 ms]
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_WhenPublishedVersionHasUnknownBsonField_RejectsWithoutMutation [81 ms]
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_WhenSnapshotMatches_UpdatesOnceUsingPrimaryTransaction [66 ms]
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_WhenMetadataChangesAfterRead_ReturnsConflictAndKeepsConcurrentMetadata [88 ms]
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_ClassifiesOnlyWriteConflictCodeAsAbortedConflict(code: 91, expected: False) [43 ms]
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_ClassifiesOnlyWriteConflictCodeAsAbortedConflict(code: 112, expected: True) [38 ms]
+[testcontainers.org 00:00:17.36] Delete Docker container 0c5466e39e23
+[xUnit.net 00:00:18.40]   Finished:    Elsa.MongoDb.UnitTests
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_WhenDraftInsertFails_RollsBackLatestUnmark [68 ms]
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_WhenPublishedVersionCreatesDraft_UpdatesBothRowsAndPreservesTenant [74 ms]
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_WhenTenantIsNotVisible_ReturnsNotFound_AndTenantAgnosticMutationPreservesOwner [74 ms]
+
+Test Run Successful.
+Total tests: 12
+     Passed: 12
+ Total time: 20,1233 Seconds

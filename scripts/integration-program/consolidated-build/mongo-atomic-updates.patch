@@ -50,19 +50,18 @@ index 6372a7474..958a84b40 100644
          if (typeof(Entity).IsAssignableFrom(typeof(TDocument)))
          {
 diff --git a/src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs b/src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs
-index dc6f52147..07f51c65e 100644
+index dc6f52147..f4f493c30 100644
 --- a/src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs
 +++ b/src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs
-@@ -8,6 +8,8 @@ using Elsa.Workflows.Management.Entities;
+@@ -8,6 +8,7 @@ using Elsa.Workflows.Management.Entities;
  using Elsa.Workflows.Management.Filters;
  using Elsa.Workflows.Management.Models;
  using JetBrains.Annotations;
 +using MongoDB.Bson;
-+using MongoDB.Bson.Serialization;
  using MongoDB.Driver;
  using MongoDB.Driver.Linq;
  using Open.Linq.AsyncExtensions;
-@@ -121,6 +123,129 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
+@@ -121,6 +122,129 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
          return mongoDbStore.SaveAsync(definition, cancellationToken);
      }
  
@@ -155,16 +154,16 @@ index dc6f52147..07f51c65e 100644
 +            }
 +            else
 +            {
-+                var superseded = BsonSerializer.Deserialize<WorkflowDefinition>(snapshot);
-+                superseded.IsLatest = false;
-+                var replaceResult = await mongoDbStore.GetCollection().ReplaceOneAsync(
++                var updateDefinition = Builders<WorkflowDefinition>.Update.Set(x => x.IsLatest, false);
++                var updateOptions = new UpdateOptions { Collation = Collation.Simple };
++                var updateResult = await mongoDbStore.GetCollection().UpdateOneAsync(
 +                    session,
 +                    snapshotFilter,
-+                    superseded,
-+                    replaceOptions,
++                    updateDefinition,
++                    updateOptions,
 +                    cancellationToken);
 +
-+                if (replaceResult.MatchedCount != 1)
++                if (updateResult.MatchedCount != 1)
 +                {
 +                    await AbortTransactionQuietlyAsync(session);
 +                    return WorkflowDefinitionUpdateResult.Conflict();
@@ -192,7 +191,7 @@ index dc6f52147..07f51c65e 100644
      /// <inheritdoc />
      public Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
      {
-@@ -172,4 +297,45 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
+@@ -172,4 +296,45 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
      {
          return queryable.OrderBy(order).Paginate(pageArgs)!;
      }
@@ -220,7 +219,7 @@ index dc6f52147..07f51c65e 100644
 +    }
 +
 +    private static bool IsKnownAbortedConflict(MongoException exception) =>
-+        exception.HasErrorLabel("TransientTransactionError")
++        exception is MongoCommandException { Code: 112 }
 +        || exception is MongoWriteException { WriteError.Code: 112 };
 +
 +    private static async Task AbortTransactionQuietlyAsync(IClientSessionHandle session)
@@ -242,10 +241,10 @@ index dc6f52147..07f51c65e 100644
 +}
 diff --git a/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs b/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs
 new file mode 100644
-index 000000000..b2036bd51
+index 000000000..0e73233a9
 --- /dev/null
 +++ b/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs
-@@ -0,0 +1,366 @@
+@@ -0,0 +1,426 @@
 +using Elsa.Common.Entities;
 +using Elsa.Common.Models;
 +using Elsa.Common.Multitenancy;
@@ -255,7 +254,11 @@ index 000000000..b2036bd51
 +using Elsa.Workflows.Management.Filters;
 +using Elsa.Workflows.Management.Models;
 +using Elsa.Workflows.Models;
++using MongoDB.Bson;
 +using MongoDB.Driver;
++using MongoDB.Driver.Core.Clusters;
++using MongoDB.Driver.Core.Connections;
++using MongoDB.Driver.Core.Servers;
 +using Testcontainers.MongoDb;
 +
 +namespace Elsa.MongoDb.UnitTests;
@@ -408,6 +411,27 @@ index 000000000..b2036bd51
 +    }
 +
 +    [Theory]
++    [InlineData(112, true)]
++    [InlineData(91, false)]
++    public void TryUpdateLatestAsync_ClassifiesOnlyWriteConflictCodeAsAbortedConflict(int code, bool expected)
++    {
++        var exception = new MongoCommandException(
++            new ConnectionId(new ServerId(new ClusterId(), new System.Net.DnsEndPoint("localhost", 27017)), 1),
++            "Synthetic Mongo command failure",
++            new BsonDocument("find", "workflow_definitions"),
++            new BsonDocument { ["ok"] = 0, ["code"] = code, ["errmsg"] = "Synthetic failure" });
++        exception.AddErrorLabel("TransientTransactionError");
++        var classifier = typeof(MongoWorkflowDefinitionStore).GetMethod(
++            "IsKnownAbortedConflict",
++            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
++
++        Assert.NotNull(classifier);
++        var actual = (bool)classifier.Invoke(null, [exception])!;
++
++        Assert.Equal(expected, actual);
++    }
++
++    [Theory]
 +    [InlineData(false)]
 +    [InlineData(true)]
 +    public async Task TryUpdateLatestAsync_WhenCallbackThrowsTransientMongoError_PropagatesAndLeavesDocumentUnchanged(bool throwFromUpdate)
@@ -491,6 +515,8 @@ index 000000000..b2036bd51
 +        var published = Definition("published", tenantId: "tenant-a");
 +        published.IsPublished = true;
 +        await _collection.InsertOneAsync(published);
++        var rawCollection = _collection.Database.GetCollection<BsonDocument>("workflow_definitions");
++        var originalPublishedDocument = await rawCollection.Find(x => x["_id"] == "published").SingleAsync();
 +        var updateCalls = 0;
 +
 +        var result = await _store.TryUpdateLatestAsync(
@@ -511,13 +537,46 @@ index 000000000..b2036bd51
 +        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, result.Outcome);
 +        Assert.Equal(1, updateCalls);
 +        var storedPublished = await _collection.Find(x => x.Id == "published").SingleAsync();
++        var storedPublishedDocument = await rawCollection.Find(x => x["_id"] == "published").SingleAsync();
++        var expectedPublishedDocument = originalPublishedDocument.DeepClone().AsBsonDocument;
++        expectedPublishedDocument["IsLatest"] = false;
 +        var storedDraft = await _collection.Find(x => x.Id == "new-draft").SingleAsync();
++        Assert.Equal(expectedPublishedDocument, storedPublishedDocument);
 +        Assert.False(storedPublished.IsLatest);
 +        Assert.True(storedPublished.IsPublished);
 +        Assert.True(storedDraft.IsLatest);
 +        Assert.False(storedDraft.IsPublished);
 +        Assert.Equal(2, storedDraft.Version);
 +        Assert.Equal("tenant-a", storedDraft.TenantId);
++    }
++
++    [Fact]
++    public async Task TryUpdateLatestAsync_WhenPublishedVersionHasUnknownBsonField_RejectsWithoutMutation()
++    {
++        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
++        var published = Definition("published", tenantId: "tenant-a");
++        published.IsPublished = true;
++        var rawCollection = _collection.Database.GetCollection<BsonDocument>("workflow_definitions");
++        var publishedDocument = published.ToBsonDocument();
++        publishedDocument["LegacyExtra"] = new BsonDocument("source", "older Elsa process");
++        await rawCollection.InsertOneAsync(publishedDocument);
++
++        await Assert.ThrowsAsync<FormatException>(() => _store.TryUpdateLatestAsync(
++            LatestFilter("definition"),
++            _ => true,
++            current =>
++            {
++                var draft = current.ShallowClone();
++                draft.Id = "new-draft";
++                draft.Version = 2;
++                draft.IsLatest = true;
++                draft.IsPublished = false;
++                return draft;
++            }));
++
++        var stored = await rawCollection.Find(x => x["_id"] == "published").SingleAsync();
++        Assert.Equal(publishedDocument, stored);
++        Assert.False(await rawCollection.Find(x => x["_id"] == "new-draft").AnyAsync());
 +    }
 +
 +    [Fact]
