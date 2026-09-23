@@ -1,0 +1,871 @@
+{
+  "program": 8194,
+  "repository": "elsa-workflows/elsa-core",
+  "checked_date": "2026-09-23",
+  "verification": "Native relationships read back through authenticated GitHub REST; see reconciliation.md for execution status.",
+  "issues": [
+    {
+      "number": 8194,
+      "title": "[Program] Elsa 3 integration ecosystem: monorepo consolidation, independent releases, and researched connector catalog",
+      "level": "Program",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8194"
+    },
+    {
+      "number": 8195,
+      "title": "[Epic] E0: Program initialization and current-state audit",
+      "level": "Epic",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8195"
+    },
+    {
+      "number": 8196,
+      "title": "[Epic] E1: Integration landscape research and prioritization",
+      "level": "Epic",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8196"
+    },
+    {
+      "number": 8197,
+      "title": "[Epic] E2: Repository consolidation and developer experience",
+      "level": "Epic",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8197"
+    },
+    {
+      "number": 8198,
+      "title": "[Epic] E3: Independent versioning, packaging, and compatibility",
+      "level": "Epic",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8198"
+    },
+    {
+      "number": 8199,
+      "title": "[Epic] E4: Connector SDK, connections, and execution infrastructure",
+      "level": "Epic",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8199"
+    },
+    {
+      "number": 8200,
+      "title": "[Epic] E5: Durable triggers and event lifecycle",
+      "level": "Epic",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8200"
+    },
+    {
+      "number": 8201,
+      "title": "[Epic] E6: Shared-cloud policy, isolation, and operational readiness",
+      "level": "Epic",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8201"
+    },
+    {
+      "number": 8202,
+      "title": "[Epic] E7: Pilot connectors and complete workflow examples",
+      "level": "Epic",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8202"
+    },
+    {
+      "number": 8203,
+      "title": "[Epic] E8: Catalog experience and sustainable expansion",
+      "level": "Epic",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8203"
+    },
+    {
+      "number": 8204,
+      "title": "[Epic] E9: Elsa 4 portability assessment",
+      "level": "Epic",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8204"
+    },
+    {
+      "number": 8205,
+      "title": "[Feature] F0.1: Establish the issue hierarchy, reporting conventions, and decision log",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8205"
+    },
+    {
+      "number": 8206,
+      "title": "[Feature] F0.2: Inventory core/extensions projects, packages, dependencies, and existing integrations",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8206"
+    },
+    {
+      "number": 8207,
+      "title": "[Feature] F0.3: Map existing issues, release workflows, host composition, and Studio extension points",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8207"
+    },
+    {
+      "number": 8208,
+      "title": "[Feature] F0.4: Assess Elsa Secrets for integration credentials",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8208"
+    },
+    {
+      "number": 8209,
+      "title": "[Feature] F1.1: Establish target personas and workflow scenarios",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8209"
+    },
+    {
+      "number": 8210,
+      "title": "[Feature] F1.2: Build a broad candidate catalog",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8210"
+    },
+    {
+      "number": 8211,
+      "title": "[Feature] F1.3: Perform technical/commercial feasibility investigations",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8211"
+    },
+    {
+      "number": 8212,
+      "title": "[Feature] F1.4: Rank delivery cohorts and define their operation-level scope",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8212"
+    },
+    {
+      "number": 8213,
+      "title": "[Feature] F2.1: Architecture decision for folder, dependency, and release boundaries",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8213"
+    },
+    {
+      "number": 8214,
+      "title": "[Feature] F2.2: Incremental import of extensions into core",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8214"
+    },
+    {
+      "number": 8215,
+      "title": "[Feature] F2.3: Root solution, solution filters, samples, and debugging workflows",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8215"
+    },
+    {
+      "number": 8216,
+      "title": "[Feature] F2.4: Migration of contribution/release documentation and source ownership",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8216"
+    },
+    {
+      "number": 8217,
+      "title": "[Feature] F3.1: Explicit release-unit manifests and scoped versions",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8217"
+    },
+    {
+      "number": 8218,
+      "title": "[Feature] F3.2: Dependency-aware CI and selective publication",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8218"
+    },
+    {
+      "number": 8219,
+      "title": "[Feature] F3.3: Published-package compatibility validation",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8219"
+    },
+    {
+      "number": 8220,
+      "title": "[Feature] F3.4: Artifact provenance, release notes, and recovery procedures",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8220"
+    },
+    {
+      "number": 8221,
+      "title": "[Feature] F4.1: Tenant-owned named connections and runtime authorization",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8221"
+    },
+    {
+      "number": 8222,
+      "title": "[Feature] F4.2: OAuth lifecycle and Elsa Secrets integration",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8222"
+    },
+    {
+      "number": 8223,
+      "title": "[Feature] F4.3: Typed actions/searches, schemas, pagination, and dynamic options",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8223"
+    },
+    {
+      "number": 8224,
+      "title": "[Feature] F4.4: Provider-aware execution, throttling, retries, and diagnostics",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8224"
+    },
+    {
+      "number": 8225,
+      "title": "[Feature] F4.5: Managed file references and data transformation primitives",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8225"
+    },
+    {
+      "number": 8226,
+      "title": "[Feature] F4.6: Governed authenticated API requests for the long tail",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8226"
+    },
+    {
+      "number": 8227,
+      "title": "[Feature] F5.1: Webhook routing, verification, subscription provisioning, and renewal",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8227"
+    },
+    {
+      "number": 8228,
+      "title": "[Feature] F5.2: Durable polling with cursors, leases, pagination, and fair scheduling",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8228"
+    },
+    {
+      "number": 8229,
+      "title": "[Feature] F5.3: Deduplication, durable ingestion, recovery, and operational health",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8229"
+    },
+    {
+      "number": 8230,
+      "title": "[Feature] F6.1: Shared/dedicated/self-hosted capability profiles",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8230"
+    },
+    {
+      "number": 8231,
+      "title": "[Feature] F6.2: Tenant isolation and outbound network policy",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8231"
+    },
+    {
+      "number": 8232,
+      "title": "[Feature] F6.3: Quotas, fairness, observability, and failure containment",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8232"
+    },
+    {
+      "number": 8233,
+      "title": "[Feature] F6.4: Curated host composition, upgrades, rollback, and deprecation",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8233"
+    },
+    {
+      "number": 8234,
+      "title": "[Feature] F7.1: OneDrive pilot: authentication, file operations, and a validated change-detection path",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8234"
+    },
+    {
+      "number": 8235,
+      "title": "[Feature] F7.2: Moneybird pilot: authentication, selected business-record actions, and a validated event path",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8235"
+    },
+    {
+      "number": 8236,
+      "title": "[Feature] F7.3: Existing Slack connector audit and upgrade to shared infrastructure",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8236"
+    },
+    {
+      "number": 8237,
+      "title": "[Feature] F7.4: End-to-end examples and user validation",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8237"
+    },
+    {
+      "number": 8238,
+      "title": "[Feature] F8.1: Discoverable connector/operation catalog and Studio integration",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8238"
+    },
+    {
+      "number": 8239,
+      "title": "[Feature] F8.2: Connection setup, resource selection, and actionable diagnostics",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8239"
+    },
+    {
+      "number": 8240,
+      "title": "[Feature] F8.3: Connector templates, contributor guidance, and certification checks",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8240"
+    },
+    {
+      "number": 8241,
+      "title": "[Feature] F8.4: Cohort rollout, support ownership, and lifecycle governance",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8241"
+    },
+    {
+      "number": 8242,
+      "title": "[Feature] F9.1: Identify reusable provider clients, schemas, authentication definitions, and test fixtures",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8242"
+    },
+    {
+      "number": 8243,
+      "title": "[Feature] F9.2: Define Elsa 3 versus Elsa 4 runtime adapter boundaries",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8243"
+    },
+    {
+      "number": 8244,
+      "title": "[Feature] F9.3: Validate one representative portability spike after the Elsa 3 pilot",
+      "level": "Feature",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8244"
+    },
+    {
+      "number": 8245,
+      "title": "[Story] Establish the complete Core, Extensions and Studio migration baseline",
+      "level": "Story",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8245"
+    },
+    {
+      "number": 8246,
+      "title": "[Story] Determine whether existing Secrets capabilities fit connector credentials",
+      "level": "Story",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8246"
+    },
+    {
+      "number": 8247,
+      "title": "[Story] Create an evidence-backed candidate catalog for integration research",
+      "level": "Story",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8247"
+    },
+    {
+      "number": 8248,
+      "title": "[Story] Validate provider feasibility and recommend the first delivery cohort",
+      "level": "Story",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8248"
+    },
+    {
+      "number": 8249,
+      "title": "[Story] Prove an existing connector can ship independently from the monorepo",
+      "level": "Story",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8249"
+    },
+    {
+      "number": 8250,
+      "title": "[Story] Decide the Secrets-backed connection and authentication architecture",
+      "level": "Story",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8250"
+    },
+    {
+      "number": 8251,
+      "title": "[Task] Inventory projects, packages and paired server/Studio modules",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8251"
+    },
+    {
+      "number": 8252,
+      "title": "[Task] Map active work, build assets and publishing ownership",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8252"
+    },
+    {
+      "number": 8253,
+      "title": "[Task] Audit Secrets providers, authorization and mutable credential support",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8253"
+    },
+    {
+      "number": 8254,
+      "title": "[Task] Specify token lifecycle and tenant-isolation gaps",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8254"
+    },
+    {
+      "number": 8255,
+      "title": "[Task] Define catalog schema, research rubric and seed workflows",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8255"
+    },
+    {
+      "number": 8256,
+      "title": "[Task] Survey 50\u2013100 candidates and nominate the deep-research cohort",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8256"
+    },
+    {
+      "number": 8257,
+      "title": "[Task] Research the shortlisted providers at operation level",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8257"
+    },
+    {
+      "number": 8258,
+      "title": "[Task] Rank cohorts and scope complete pilot workflows",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8258"
+    },
+    {
+      "number": 8259,
+      "title": "[Task] Select the release-proof connector and design its release unit",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8259"
+    },
+    {
+      "number": 8260,
+      "title": "[Task] Implement and verify the bounded independent-packaging proof",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8260"
+    },
+    {
+      "number": 8261,
+      "title": "[Task] Write the Secrets reuse-versus-extension ADR",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8261"
+    },
+    {
+      "number": 8262,
+      "title": "[Task] Specify the credential lifecycle validation slice",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8262"
+    }
+  ],
+  "parent_edges": [
+    [
+      8194,
+      8195
+    ],
+    [
+      8194,
+      8196
+    ],
+    [
+      8194,
+      8197
+    ],
+    [
+      8194,
+      8198
+    ],
+    [
+      8194,
+      8199
+    ],
+    [
+      8194,
+      8200
+    ],
+    [
+      8194,
+      8201
+    ],
+    [
+      8194,
+      8202
+    ],
+    [
+      8194,
+      8203
+    ],
+    [
+      8194,
+      8204
+    ],
+    [
+      8195,
+      8205
+    ],
+    [
+      8195,
+      8206
+    ],
+    [
+      8195,
+      8207
+    ],
+    [
+      8195,
+      8208
+    ],
+    [
+      8196,
+      8209
+    ],
+    [
+      8196,
+      8210
+    ],
+    [
+      8196,
+      8211
+    ],
+    [
+      8196,
+      8212
+    ],
+    [
+      8197,
+      8213
+    ],
+    [
+      8197,
+      8214
+    ],
+    [
+      8197,
+      8215
+    ],
+    [
+      8197,
+      8216
+    ],
+    [
+      8198,
+      8217
+    ],
+    [
+      8198,
+      8218
+    ],
+    [
+      8198,
+      8219
+    ],
+    [
+      8198,
+      8220
+    ],
+    [
+      8199,
+      8221
+    ],
+    [
+      8199,
+      8222
+    ],
+    [
+      8199,
+      8223
+    ],
+    [
+      8199,
+      8224
+    ],
+    [
+      8199,
+      8225
+    ],
+    [
+      8199,
+      8226
+    ],
+    [
+      8200,
+      8227
+    ],
+    [
+      8200,
+      8228
+    ],
+    [
+      8200,
+      8229
+    ],
+    [
+      8201,
+      8230
+    ],
+    [
+      8201,
+      8231
+    ],
+    [
+      8201,
+      8232
+    ],
+    [
+      8201,
+      8233
+    ],
+    [
+      8202,
+      8234
+    ],
+    [
+      8202,
+      8235
+    ],
+    [
+      8202,
+      8236
+    ],
+    [
+      8202,
+      8237
+    ],
+    [
+      8203,
+      8238
+    ],
+    [
+      8203,
+      8239
+    ],
+    [
+      8203,
+      8240
+    ],
+    [
+      8203,
+      8241
+    ],
+    [
+      8204,
+      8242
+    ],
+    [
+      8204,
+      8243
+    ],
+    [
+      8204,
+      8244
+    ],
+    [
+      8206,
+      8245
+    ],
+    [
+      8208,
+      8246
+    ],
+    [
+      8210,
+      8247
+    ],
+    [
+      8211,
+      8248
+    ],
+    [
+      8218,
+      8249
+    ],
+    [
+      8222,
+      8250
+    ],
+    [
+      8245,
+      8251
+    ],
+    [
+      8245,
+      8252
+    ],
+    [
+      8246,
+      8253
+    ],
+    [
+      8246,
+      8254
+    ],
+    [
+      8247,
+      8255
+    ],
+    [
+      8247,
+      8256
+    ],
+    [
+      8248,
+      8257
+    ],
+    [
+      8248,
+      8258
+    ],
+    [
+      8249,
+      8259
+    ],
+    [
+      8249,
+      8260
+    ],
+    [
+      8250,
+      8261
+    ],
+    [
+      8250,
+      8262
+    ]
+  ],
+  "blocking_edges": [
+    [
+      8195,
+      8197
+    ],
+    [
+      8195,
+      8198
+    ],
+    [
+      8195,
+      8199
+    ],
+    [
+      8195,
+      8200
+    ],
+    [
+      8195,
+      8201
+    ],
+    [
+      8196,
+      8202
+    ],
+    [
+      8199,
+      8202
+    ],
+    [
+      8200,
+      8202
+    ],
+    [
+      8196,
+      8203
+    ],
+    [
+      8202,
+      8204
+    ],
+    [
+      8256,
+      8248
+    ],
+    [
+      8251,
+      8249
+    ],
+    [
+      8252,
+      8249
+    ],
+    [
+      8253,
+      8250
+    ],
+    [
+      8254,
+      8250
+    ],
+    [
+      8251,
+      8252
+    ],
+    [
+      8253,
+      8254
+    ],
+    [
+      8255,
+      8256
+    ],
+    [
+      8256,
+      8257
+    ],
+    [
+      8257,
+      8258
+    ],
+    [
+      8251,
+      8259
+    ],
+    [
+      8252,
+      8259
+    ],
+    [
+      8259,
+      8260
+    ],
+    [
+      8253,
+      8261
+    ],
+    [
+      8254,
+      8261
+    ],
+    [
+      8261,
+      8262
+    ]
+  ]
+}
