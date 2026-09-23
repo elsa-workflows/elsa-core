@@ -57,7 +57,14 @@ class PackageClosureTests(unittest.TestCase):
         })
 
     def test_missing_packable_identity_blocks_source_preflight(self):
-        recorded = build_plan(INVENTORY, {})
+        self.assertIn("TlsSmoke", build_plan(INVENTORY, {})["source_package_ids"])
+        inventory = json.loads(INVENTORY.read_text())
+        smoke = next(row for row in inventory["project_inventory"]["elsa-core"] if row["path"] == "test/TlsSmoke/TlsSmoke.csproj")
+        smoke["package_id"] = None
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "inventory.json"
+            path.write_text(json.dumps(inventory))
+            recorded = build_plan(path, {})
         self.assertEqual(recorded["unresolved_source_package_ids"], ["elsa-core:test/TlsSmoke/TlsSmoke.csproj"])
         with self.source_graph() as (plan, sources, *_):
             plan["unresolved_source_package_ids"] = recorded["unresolved_source_package_ids"]
