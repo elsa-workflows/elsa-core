@@ -25,7 +25,7 @@ namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Interchange;
 /// writer after its match and before its save so a second writer can finish in that window; the first then gets
 /// the same refusal a stale If-Match gets, and the second writer's change is what stays stored.
 /// </summary>
-public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelper)
+public partial class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelper)
 {
     [Fact(DisplayName = "A second document edit that wins the race leaves its change stored; the first writer is refused")]
     public async Task ImportDocumentAsync_WhenASecondWriterSavesAfterTheFirstMatched_RefusesTheFirstAndKeepsTheSecond()
@@ -389,9 +389,8 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
     }
 
     /// <summary>
-    /// A store double that implements the compare-and-swap contract with an explicit pause after the match:
-    /// the first writer stops there, the second writer finishes on the inner store, then this re-reads and
-    /// re-checks so a lost race is Conflict instead of an overwrite.
+    /// Pauses after an initial match, before delegating to the real store's atomic operation.
+    /// A second writer can finish in that window; the inner store must load and recheck the winning state.
     /// </summary>
     private sealed class PausingCompareAndSwapStore(IWorkflowDefinitionStore inner, CompareAndSwapPauseGate gate) : IWorkflowDefinitionStore
     {
@@ -448,17 +447,7 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
             gate.Checked.TrySetResult();
             await gate.Release.Task.WaitAsync(cancellationToken);
 
-            current = await inner.FindAsync(filter, cancellationToken);
-
-            if (current is null)
-                return WorkflowDefinitionUpdateResult.NotFound();
-
-            if (!matchesExpected(current))
-                return WorkflowDefinitionUpdateResult.Conflict();
-
-            var next = update(current);
-            await inner.SaveAsync(next, cancellationToken);
-            return WorkflowDefinitionUpdateResult.Updated(next);
+            return await inner.TryUpdateLatestAsync(filter, matchesExpected, update, cancellationToken);
         }
 
         public Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default) =>

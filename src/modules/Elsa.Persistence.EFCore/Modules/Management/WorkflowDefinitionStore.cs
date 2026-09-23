@@ -139,7 +139,7 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        var queryable = Filter(dbContext.WorkflowDefinitions.AsNoTracking(), filter);
+        var queryable = Filter(dbContext.WorkflowDefinitions.AsTracking(), filter);
 
         if (filter.TenantAgnostic)
             queryable = queryable.IgnoreQueryFilters();
@@ -160,6 +160,9 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         var expectedName = current.Name;
         var expectedDescription = current.Description;
         var expectedData = (string?)dbContext.Entry(current).Property("Data").CurrentValue;
+
+        // Preserve shadow state while loading, then keep the callback outside change tracking.
+        dbContext.Entry(current).State = EntityState.Detached;
 
         var next = update(current);
         var nextData = SerializeState(next);
@@ -186,6 +189,8 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
             .Where(MatchesLoadedSnapshot(expectedId, expectedVersion, expectedStringData, expectedName, expectedDescription, expectedData))
             .ExecuteUpdateAsync(
                 setters => setters
+                    .SetProperty(x => x.Name, next.Name)
+                    .SetProperty(x => x.Description, next.Description)
                     .SetProperty(x => x.StringData, next.StringData)
                     .SetProperty(x => EF.Property<string?>(x, "Data"), nextData)
                     .SetProperty(x => EF.Property<bool?>(x, "UsableAsActivity"), nextUsableAsActivity),
