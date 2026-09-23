@@ -6,7 +6,7 @@
     "extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287",
     "studio": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822"
   },
-  "patchSha256": "84235ee839f497d5741fcbda811766dd1aeb8574e7e2c73b820c5645396c7e7a",
+  "patchSha256": "37310fa8ba733e817c57163fcadb97572e2a12daca522083976014d6367abc97",
   "files": [
     {
       "path": "src/extensions/persistence/Elsa.Persistence.Dapper/Dialects/PostgreSqlDialect.cs",
@@ -22,7 +22,7 @@
     },
     {
       "path": "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs",
-      "sha256": "385224aaca402ed5787609ca5640c4c7fa0500753e2b786764eb275a69c13674"
+      "sha256": "d047270345dbddad99e723ef6bb943f3910f738fea1c0473c6723ed5eea6ad40"
     }
   ],
   "tests": [
@@ -32,7 +32,7 @@
       "failed": 0,
       "passed": 28,
       "skipped": 0,
-      "logSha256": "9bf1eedacbb7efd15e3363c9230828817e03a338af446911fe916550c0a3539e"
+      "logSha256": "4070dba9de2cac5ae62f0fe9cd5c06f2af83cf05a8dc965230df8545a595e89f"
     },
     {
       "backend": "postgres",
@@ -40,7 +40,7 @@
       "failed": 0,
       "passed": 15,
       "skipped": 0,
-      "logSha256": "8334ff32564454cc4696f7cc8a3d241368a47e6fa3f28cb501c5363ea06e3852"
+      "logSha256": "543ec2c797615f88cbe420ebbcba010ac7e99d600e239660c0df80d15db5639a"
     },
     {
       "backend": "sqlserver",
@@ -48,7 +48,7 @@
       "failed": 0,
       "passed": 15,
       "skipped": 0,
-      "logSha256": "a71477f5b29d3acf7b960baf790a6e0410d3685a6cb6f5ec0812e583532780e4"
+      "logSha256": "81568d5c44344b21782556a2640883c32056e9539de12822a3c7752294ef6a65"
     },
     {
       "backend": "sqlite-clean-patch-replay",
@@ -56,7 +56,7 @@
       "failed": 0,
       "passed": 28,
       "skipped": 0,
-      "logSha256": "104268465d9ce0eab589812b205420b6ec9032e78351a8109dbc5ea1832c0a3d"
+      "logSha256": "adef955b628eff4f23e85f15a7b231251647654a31523efed34548c1c6323f17"
     }
   ],
   "build": {
@@ -74,5 +74,6 @@
     "Oracle/MySQL/custom providers unverified",
     "Complete consolidated solution and actual source import pending"
   ],
-  "publicationAuthorized": false
+  "publicationAuthorized": false,
+  "contention_proof": "PostgreSQL/SQL Server two-worker test uses a barrier after both expected-state reads, before either write; exactly one update and one aborted conflict. SQLite reserves the single writer before read."
 }

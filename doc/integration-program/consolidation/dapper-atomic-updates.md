@@ -33,7 +33,7 @@ Each contract test creates a uniquely named synthetic table and drops only that 
 | PostgreSQL 17 contract cases, net10 | 15 passed, 0 skipped |
 | SQL Server 2022 contract cases, net10 | 15 passed, 0 skipped |
 
-Cases cover current metadata and `ToolVersion`, failed preconditions, missing rows, new drafts, rollback after duplicate insertion, a legacy writer during the transaction, two-worker contention, tenant isolation/preservation, tenant-change rejection, and callback-thrown database errors, and all five version-filter modes. A SQL Server run with a one-second command timeout propagated the timeout before deadlock detection; a 15-second bound allowed deadlock resolution and passed. No timeout was relabeled as safe contention.
+Cases cover current metadata and `ToolVersion`, failed preconditions, missing rows, new drafts, rollback after duplicate insertion, a legacy writer during the transaction, two-worker contention, tenant isolation/preservation, tenant-change rejection, and callback-thrown database errors, and all five version-filter modes. A SQL Server run with a one-second command timeout propagated the timeout before deadlock detection; a 15-second bound passed. The final two-worker test uses a barrier on PostgreSQL/SQL Server so both callbacks see the old row before either writes, directly exercising an aborted-writer Conflict. The separate legacy-writer case asserts timeout -2 while SQL Server holds the read locks. No timeout was relabeled as safe contention.
 
 Images:
 

@@ -220,10 +220,10 @@ index c2b1210f8..7548da0a1 100644
 +}
 diff --git a/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs b/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs
 new file mode 100644
-index 000000000..7cf7528d8
+index 000000000..7859fa393
 --- /dev/null
 +++ b/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs
-@@ -0,0 +1,272 @@
+@@ -0,0 +1,282 @@
 +using Dapper;
 +using Elsa.Common.Models;
 +using Elsa.Common.Multitenancy;
@@ -392,10 +392,20 @@ index 000000000..7cf7528d8
 +    {
 +        await _store.SaveAsync(Definition());
 +        using var start = new ManualResetEventSlim();
++        using var bothLoaded = new Barrier(2);
 +        var attempts = Enumerable.Range(0, 2).Select(_ => Task.Run(async () =>
 +        {
 +            start.Wait();
-+            return await _store.TryUpdateLatestAsync(Filter(), current => current.StringData == "old", current => Edited(current));
++            return await _store.TryUpdateLatestAsync(Filter(), current => current.StringData == "old", current =>
++            {
++                // Force two successful reads before either writes on MVCC/row-lock providers.
++                // SQLite reserves its sole writer before the read and therefore cannot enter twice.
++                if (_backend != "sqlite")
++                {
++                    Assert.True(bothLoaded.SignalAndWait(TimeSpan.FromSeconds(10)));
++                }
++                return Edited(current);
++            });
 +        })).ToArray();
 +        start.Set();
 +        var results = await Task.WhenAll(attempts);
