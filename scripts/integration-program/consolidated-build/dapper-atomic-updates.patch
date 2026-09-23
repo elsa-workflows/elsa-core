@@ -58,12 +58,12 @@ index c6ccc98f3..40015f72d 100644
          {
              sql.AppendLine(query.Dialect.And("Version"));
 diff --git a/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs b/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs
-index c2b1210f8..7548da0a1 100644
+index c2b1210f8..be3cbc756 100644
 --- a/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs
 +++ b/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs
 @@ -1,20 +1,28 @@
-+using System.Data.Common;
 +using System.Data;
++using System.Data.Common;
  using System.Text.Json;
 +using Dapper;
  using Elsa.Common.Entities;
@@ -98,7 +98,7 @@ index c2b1210f8..7548da0a1 100644
  /// </summary>
  [UsedImplicitly]
 -internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> store, IPayloadSerializer payloadSerializer)
-+internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> store, IPayloadSerializer payloadSerializer, IDbConnectionProvider connectionProvider, ITenantAccessor tenantAccessor)
++internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> store, IPayloadSerializer payloadSerializer, IDbConnectionProvider connectionProvider, ITenantAccessor? tenantAccessor = null)
      : IWorkflowDefinitionStore
  {
      /// <inheritdoc />
@@ -135,7 +135,7 @@ index c2b1210f8..7548da0a1 100644
 +            query.Is(nameof(WorkflowDefinitionRecord.IsLatest), true);
 +            if (!filter.TenantAgnostic)
 +            {
-+                query.Is(nameof(WorkflowDefinitionRecord.TenantId), (object?)tenantAccessor.Tenant?.Id ?? DBNull.Value);
++                query.Is(nameof(WorkflowDefinitionRecord.TenantId), (object?)tenantAccessor?.Tenant?.Id ?? DBNull.Value);
 +            }
 +
 +            var record = await connection.QueryFirstOrDefaultAsync<WorkflowDefinitionRecord>(new CommandDefinition(
@@ -220,10 +220,10 @@ index c2b1210f8..7548da0a1 100644
 +}
 diff --git a/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs b/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs
 new file mode 100644
-index 000000000..7859fa393
+index 000000000..2f1f29cdf
 --- /dev/null
 +++ b/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs
-@@ -0,0 +1,282 @@
+@@ -0,0 +1,301 @@
 +using Dapper;
 +using Elsa.Common.Models;
 +using Elsa.Common.Multitenancy;
@@ -288,6 +288,25 @@ index 000000000..7859fa393
 +        }
 +        connection.Execute(schema);
 +        _store = new DapperWorkflowDefinitionStore(new Store<WorkflowDefinitionRecord>(_provider, _tenant, _table), _serializer, _provider, _tenant);
++    }
++
++    [Fact]
++    public async Task OptionalTenantAccessorUsesDefaultTenantAndExcludesOtherTenants()
++    {
++        await _store.SaveAsync(Definition());
++        using var services = new ServiceCollection()
++            .AddSingleton(new Store<WorkflowDefinitionRecord>(_provider, _tenant, _table))
++            .AddSingleton(_serializer)
++            .AddSingleton(_provider)
++            .AddTransient<DapperWorkflowDefinitionStore>()
++            .BuildServiceProvider();
++        var store = services.GetRequiredService<DapperWorkflowDefinitionStore>();
++        var result = await store.TryUpdateLatestAsync(Filter(), _ => true, Edited);
++        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, result.Outcome);
++        using var connection = _provider.GetConnection();
++        connection.Execute($"update {_table} set TenantId = 'other' where Id = 'v1'");
++        var otherTenant = await store.TryUpdateLatestAsync(Filter(), _ => true, _ => throw new InvalidOperationException());
++        Assert.Equal(WorkflowDefinitionUpdateOutcome.NotFound, otherTenant.Outcome);
 +    }
 +
 +    [Fact]

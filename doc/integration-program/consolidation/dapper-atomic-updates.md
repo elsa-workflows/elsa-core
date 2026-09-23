@@ -6,6 +6,8 @@ Program #8194, story #8286, task #8293. This is a source patch for the disposabl
 
 `DapperWorkflowDefinitionStore.TryUpdateLatestAsync` loads the latest matching row inside a SERIALIZABLE transaction, checks the caller's expected state and invokes its update callback on that loaded row. It updates the same row or unmarks the former latest row and inserts a new draft in that transaction. Failed insertion rolls back the unmark. The selected row's tenant and logical definition cannot change. `ToolVersion`, which is absent from the public workflow entity, is preserved.
 
+The newly injected tenant accessor is optional. A DI regression verifies default-tenant CAS updates and denial of another tenant when that service is absent. The generic store retains its existing registration contract.
+
 The read uses the existing Dapper tenant convention (ambient tenant ID, or SQL NULL for the default context); an explicit tenant-agnostic filter can select another tenant but cannot move it. No new persisted concurrency stamp is required of older writers. SERIALIZABLE protects this operation from existing `Store.SaveAsync` writes during its transaction. An unconditional stale save issued *after* this operation commits remains unconditional; this method does not retrofit optimistic concurrency onto every legacy API.
 
 SQLite reserves the writer before invoking the callback. SQL Server holds read/range locks through commit; competing upgrades can deadlock, aborting one transaction. PostgreSQL can allow a competing legacy writer to commit and then reject the serializable writer. SQLite BUSY/LOCKED, SQL Server deadlock victim 1205, and PostgreSQL serialization/deadlock aborts 40001/40P01 become `Conflict` after transaction disposal. Callback exceptions are not normalized. There is no automatic retry, especially after an ambiguous commit. Timeouts, transport failures, uniqueness errors and cancellation propagate. Database lock waits use the configured command/provider timeouts; `Conflict` does not imply a wait-free database implementation.
@@ -20,7 +22,7 @@ Official references, checked 2026-09-23:
 
 The real PostgreSQL test initially failed because `PostgreSqlDialect.Upsert` omitted the primary key from INSERT, although the query builder supplies its parameter. The patch includes it. Version selection also emitted integer literals against Boolean columns; it now binds Boolean parameters for draft/latest/published and combined options. Public package identities remain unchanged.
 
-Evidence receipt: [dapper-atomic-updates-evidence.json](dapper-atomic-updates-evidence.json), including exact source/file/patch hashes and test counts. A clean patch replay produced identical source bytes and passed all 28 SQLite tests.
+Evidence receipt: [dapper-atomic-updates-evidence.json](dapper-atomic-updates-evidence.json), including exact source/file/patch hashes and test counts. A clean patch replay produced identical source bytes and passed all 29 SQLite tests.
 
 ## Verification
 
@@ -28,10 +30,10 @@ Each contract test creates a uniquely named synthetic table and drops only that 
 
 | Check | Result |
 |---|---|
-| Dapper project build, net8/net9/net10 | Passed, 0 errors, 60 warnings |
-| Existing Dapper tests plus new cases, SQLite net10 | 28 passed, 0 skipped |
-| PostgreSQL 17 contract cases, net10 | 15 passed, 0 skipped |
-| SQL Server 2022 contract cases, net10 | 15 passed, 0 skipped |
+| Dapper project build, net8/net9/net10 | Passed, 0 errors, 30 warnings |
+| Existing Dapper tests plus new cases, SQLite net10 | 29 passed, 0 skipped |
+| PostgreSQL 17 contract cases, net10 | 16 passed, 0 skipped |
+| SQL Server 2022 contract cases, net10 | 16 passed, 0 skipped |
 
 Cases cover current metadata and `ToolVersion`, failed preconditions, missing rows, new drafts, rollback after duplicate insertion, a legacy writer during the transaction, two-worker contention, tenant isolation/preservation, tenant-change rejection, and callback-thrown database errors, and all five version-filter modes. A SQL Server run with a one-second command timeout propagated the timeout before deadlock detection; a 15-second bound passed. The final two-worker test uses a barrier on PostgreSQL/SQL Server so both callbacks see the old row before either writes, directly exercising an aborted-writer Conflict. The separate legacy-writer case asserts timeout -2 while SQL Server holds the read locks. No timeout was relabeled as safe contention.
 

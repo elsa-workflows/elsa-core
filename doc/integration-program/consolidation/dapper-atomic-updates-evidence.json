@@ -6,7 +6,7 @@
     "extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287",
     "studio": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822"
   },
-  "patchSha256": "37310fa8ba733e817c57163fcadb97572e2a12daca522083976014d6367abc97",
+  "patchSha256": "0b73ba77d301b4288de1929bd22cf2d5ffc70947eccc2437a1d8f00392e6aa21",
   "files": [
     {
       "path": "src/extensions/persistence/Elsa.Persistence.Dapper/Dialects/PostgreSqlDialect.cs",
@@ -18,11 +18,11 @@
     },
     {
       "path": "src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs",
-      "sha256": "c8867104b11ad749e671578c6d5597ef382276946ee6d3930754e3adc40961e6"
+      "sha256": "e1ad5ba2eaa7f39f0a7b517e667319fac80f647ecd35f908ef2b4bb3b19037f4"
     },
     {
       "path": "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs",
-      "sha256": "d047270345dbddad99e723ef6bb943f3910f738fea1c0473c6723ed5eea6ad40"
+      "sha256": "0ce453700a5ad62ef79497e3786b225377270a85e7182a7ba37032829f56aed0"
     }
   ],
   "tests": [
@@ -30,33 +30,33 @@
       "backend": "sqlite",
       "framework": "net10.0",
       "failed": 0,
-      "passed": 28,
+      "passed": 29,
       "skipped": 0,
-      "logSha256": "4070dba9de2cac5ae62f0fe9cd5c06f2af83cf05a8dc965230df8545a595e89f"
+      "logSha256": "59a64b836ea2ffd643bbc47e865d108e720fd4f053dcb8385da5f0e8595f106a"
     },
     {
       "backend": "postgres",
       "framework": "net10.0",
       "failed": 0,
-      "passed": 15,
+      "passed": 16,
       "skipped": 0,
-      "logSha256": "543ec2c797615f88cbe420ebbcba010ac7e99d600e239660c0df80d15db5639a"
+      "logSha256": "1c21e773058a4c4cd1debc7212f03946b7e5c77aea4ee2b5686942582e06e6a7"
     },
     {
       "backend": "sqlserver",
       "framework": "net10.0",
       "failed": 0,
-      "passed": 15,
+      "passed": 16,
       "skipped": 0,
-      "logSha256": "81568d5c44344b21782556a2640883c32056e9539de12822a3c7752294ef6a65"
+      "logSha256": "21687c842a12eb36a957a8c4b8702b734588e2cfaa2cd1a4df9c2472384bfbaa"
     },
     {
       "backend": "sqlite-clean-patch-replay",
       "framework": "net10.0",
       "failed": 0,
-      "passed": 28,
+      "passed": 29,
       "skipped": 0,
-      "logSha256": "adef955b628eff4f23e85f15a7b231251647654a31523efed34548c1c6323f17"
+      "logSha256": "bfe6b270eef61934fa07ec9d4580a3b5e91065f38bc9b1cc90ff122666126e11"
     }
   ],
   "build": {
@@ -66,8 +66,8 @@
       "net10.0"
     ],
     "errors": 0,
-    "warnings": 60,
-    "logSha256": "1429b84ad2037e5fcd48f90e2c8eef41bf19bf9364f55c5e3572e1bd253caf11"
+    "warnings": 30,
+    "logSha256": "d78ebd3204c19b8764c9f1f68e8ae2479a2cdba211ce38d3fcc775bd6afb34d7"
   },
   "limitations": [
     "Synthetic record table fixture, not full historical migration replay",
@@ -75,5 +75,6 @@
     "Complete consolidated solution and actual source import pending"
   ],
   "publicationAuthorized": false,
-  "contention_proof": "PostgreSQL/SQL Server two-worker test uses a barrier after both expected-state reads, before either write; exactly one update and one aborted conflict. SQLite reserves the single writer before read."
+  "contention_proof": "PostgreSQL/SQL Server two-worker test uses a barrier after both expected-state reads, before either write; exactly one update and one aborted conflict. SQLite reserves the single writer before read.",
+  "optionalTenantAccessorProof": "DI resolves the workflow store without an ITenantAccessor registration; the CAS path uses SQL NULL default tenant and cannot select another tenant."
 }
