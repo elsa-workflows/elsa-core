@@ -33,7 +33,7 @@ namespace Elsa.Samples.SignalApi
                 );
 
             // Configure blob storage for blob storage workflow storage provider. 
-            services.Configure<BlobStorageWorkflowProviderOptions>(options => options.BlobStorageFactory = () => StorageFactory.Blobs.DirectoryFiles(Path.Combine(_environment.ContentRootPath, "Workflows")));
+            services.Configure<BlobStorageWorkflowProviderOptions>(options => options.BlobStorageFactory = () => StorageFactory.Disk(Path.Combine(_environment.ContentRootPath, "Workflows")));
         }
 
         public void Configure(IApplicationBuilder app)

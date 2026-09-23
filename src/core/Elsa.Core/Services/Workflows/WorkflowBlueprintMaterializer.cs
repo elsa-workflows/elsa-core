@@ -9,7 +9,6 @@ using Elsa.Models;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NetBox.Extensions;
 
 namespace Elsa.Services.Workflows
 {

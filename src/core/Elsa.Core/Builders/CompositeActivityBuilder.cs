@@ -7,7 +7,6 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.Services.Workflows;
 using Microsoft.Extensions.DependencyInjection;
-using NetBox.Extensions;
 
 namespace Elsa.Builders
 {

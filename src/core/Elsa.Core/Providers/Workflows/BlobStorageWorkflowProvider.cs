@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -14,18 +14,18 @@ using LinqKit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using FluentStorage;
-using FluentStorage.Blobs;
+using FluentStorage.Storage;
 
 namespace Elsa.Providers.Workflows
 {
     public class BlobStorageWorkflowProviderOptions
     {
-        public Func<IBlobStorage> BlobStorageFactory { get; set; } = () => StorageFactory.Blobs.InMemory();
+        public Func<IStore> BlobStorageFactory { get; set; } = () => StorageFactory.InMemory();
     }
 
     public class BlobStorageWorkflowProvider : WorkflowProvider
     {
-        private readonly IBlobStorage _storage;
+        private readonly IStore _storage;
         private readonly IWorkflowBlueprintMaterializer _workflowBlueprintMaterializer;
         private readonly IContentSerializer _contentSerializer;
         private readonly ILogger _logger;
@@ -140,11 +140,11 @@ namespace Elsa.Providers.Workflows
 
         private async IAsyncEnumerable<IWorkflowBlueprint> ListInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            var blobs = await _storage.ListFilesAsync(new ListOptions(), cancellationToken);
+            var blobs = await _storage.ListObjects(new StorageListOptions(), cancellationToken);
 
             foreach (var blob in blobs)
             {
-                var json = await _storage.ReadTextAsync(blob.FullPath, Encoding.UTF8, cancellationToken);
+                var json = await _storage.GetText(blob.FullPath, Encoding.UTF8, cancellationToken);
                 var model = _contentSerializer.Deserialize<WorkflowDefinition>(json);
                 var blueprint = await TryMaterializeBlueprintAsync(model, cancellationToken);
 

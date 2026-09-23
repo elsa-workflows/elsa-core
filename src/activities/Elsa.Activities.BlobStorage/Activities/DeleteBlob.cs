@@ -7,7 +7,7 @@ using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
-using FluentStorage.Blobs;
+using FluentStorage.Storage;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.BlobStorage
@@ -19,8 +19,8 @@ namespace Elsa.Activities.BlobStorage
     )]
     public class DeleteBlob : Activity
     {
-        private readonly IBlobStorage _storage;
-        public DeleteBlob(IBlobStorage storage) => _storage = storage;
+        private readonly IStore _storage;
+        public DeleteBlob(IStore storage) => _storage = storage;
 
         [ActivityInput(
             Hint = "The IDs of the blobs.",
@@ -34,7 +34,7 @@ namespace Elsa.Activities.BlobStorage
         {
             if (BlobIds == default || !BlobIds.Any())
                 throw new System.Exception($"BlobID or BlobIds must have a value");
-            await _storage.DeleteAsync(BlobIds, context.CancellationToken);
+            await _storage.DeleteObjects(BlobIds, context.CancellationToken);
             return Done();
         }
     }

@@ -1,10 +1,9 @@
-﻿using System;
+using System;
 using System.Linq;
 using Elsa.Options;
 using Elsa.Services;
 using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
-using NetBox.Extensions;
 
 namespace Elsa.Server.Hangfire.Extensions
 {

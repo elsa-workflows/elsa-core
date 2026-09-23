@@ -1,11 +1,11 @@
 using System;
 using FluentStorage;
-using FluentStorage.Blobs;
+using FluentStorage.Storage;
 
 namespace Elsa.Providers.WorkflowStorage
 {
     public class BlobStorageWorkflowStorageProviderOptions
     {
-        public Func<IBlobStorage> BlobStorageFactory { get; set; } = () => StorageFactory.Blobs.InMemory();
+        public Func<IStore> BlobStorageFactory { get; set; } = () => StorageFactory.InMemory();
     }
 }

@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
@@ -7,7 +6,7 @@ using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
-using FluentStorage.Blobs;
+using FluentStorage.Storage;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.BlobStorage
@@ -19,12 +18,12 @@ namespace Elsa.Activities.BlobStorage
     )]
     public class WriteBlob : Activity
     {
-        public WriteBlob(IBlobStorage storage)
+        public WriteBlob(IStore storage)
         {
             _storage = storage;
         }
 
-        private readonly IBlobStorage _storage;
+        private readonly IStore _storage;
 
         [ActivityInput(Hint = "The ID to be assigned to the blob.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         [Required]
@@ -39,7 +38,7 @@ namespace Elsa.Activities.BlobStorage
                 throw new System.Exception($"{nameof(BlobId)} must have a value");
 
             if (Bytes != default && Bytes.Any())
-                await _storage.WriteAsync(BlobId, new MemoryStream(Bytes), default, context.CancellationToken);
+                await _storage.SetBytes(BlobId, Bytes, default, context.CancellationToken); // original impl used 'new MemoryStrem(Bytes)' changed to SetBytes to allow the IStore impl to decide
             
             return Done();
         }

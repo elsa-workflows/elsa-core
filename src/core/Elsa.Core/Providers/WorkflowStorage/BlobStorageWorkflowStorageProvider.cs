@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Elsa.Serialization;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using FluentStorage.Blobs;
+using FluentStorage.Storage;
 
 namespace Elsa.Providers.WorkflowStorage
 {
@@ -13,7 +13,7 @@ namespace Elsa.Providers.WorkflowStorage
     {
         public const string ProviderName = "BlobStorage";
 
-        private readonly IBlobStorage _blobStorage;
+        private readonly IStore _blobStorage;
         private readonly JsonSerializerSettings _serializerSettings;
 
         public BlobStorageWorkflowStorageProvider(IOptions<BlobStorageWorkflowStorageProviderOptions> options)
@@ -34,26 +34,26 @@ namespace Elsa.Providers.WorkflowStorage
 
             if (value is Stream stream)
             {
-                await _blobStorage.WriteAsync(path, stream, cancellationToken: cancellationToken);
-                var blob = await _blobStorage.GetBlobAsync(path, cancellationToken);
+                await _blobStorage.SetObject(path, stream, cancellationToken: cancellationToken);
+                var blob = await _blobStorage.GetObjectInfo(path, cancellationToken);
                 blob.Metadata["ContentType"] = "Binary";
-                await _blobStorage.SetBlobAsync(blob, cancellationToken);
+                await _blobStorage.SetObjectInfo(blob, cancellationToken);
             }
             else if (value is byte[] bytes)
             {
-                await _blobStorage.WriteAsync(path, bytes, cancellationToken: cancellationToken);
-                var blob = await _blobStorage.GetBlobAsync(path, cancellationToken);
+                await _blobStorage.SetBytes(path, bytes, cancellationToken: cancellationToken);
+                var blob = await _blobStorage.GetObjectInfo(path, cancellationToken);
                 blob.Metadata["ContentType"] = "Binary";
-                await _blobStorage.SetBlobAsync(blob, cancellationToken);
+                await _blobStorage.SetObjectInfo(blob, cancellationToken);
             }
             else
             {
                 var json = JsonConvert.SerializeObject(value, _serializerSettings);
                 var jsonBytes = Encoding.UTF8.GetBytes(json);
-                await _blobStorage.WriteAsync(path, jsonBytes, cancellationToken: cancellationToken);
-                var blob = await _blobStorage.GetBlobAsync(path, cancellationToken);
+                await _blobStorage.SetBytes(path, jsonBytes, cancellationToken: cancellationToken);
+                var blob = await _blobStorage.GetObjectInfo(path, cancellationToken);
                 blob.Metadata["ContentType"] = "Json";
-                await _blobStorage.SetBlobAsync(blob, cancellationToken);
+                await _blobStorage.SetObjectInfo(blob, cancellationToken);
             }
         }
 
@@ -61,31 +61,31 @@ namespace Elsa.Providers.WorkflowStorage
         {
             var path = GetFullPath(context, key);
 
-            if (!await _blobStorage.ExistsAsync(path, cancellationToken))
+            if (!await _blobStorage.ObjectExists(path, cancellationToken))
                 return null;
 
-            var blob = await _blobStorage.GetBlobAsync(path, cancellationToken);
+            var blob = await _blobStorage.GetObjectInfo(path, cancellationToken);
             var contentType = blob.Metadata.GetItem("ContentType") ?? "Json";
 
             if (contentType == "Json")
             {
-                var json = await _blobStorage.ReadTextAsync(path, cancellationToken: cancellationToken);
+                var json = await _blobStorage.GetText(path, cancellationToken: cancellationToken);
                 return JsonConvert.DeserializeObject(json, _serializerSettings);
             }
 
-            return await _blobStorage.ReadBytesAsync(path, cancellationToken);
+            return await _blobStorage.GetBytes(path, cancellationToken);
         }
 
         public override async ValueTask DeleteAsync(WorkflowStorageContext context, string key, CancellationToken cancellationToken = default)
         {
             var path = GetFullPath(context, key);
-            await _blobStorage.DeleteAsync(path, cancellationToken);
+            await _blobStorage.DeleteObject(path, cancellationToken);
         }
 
         public override async ValueTask DeleteAsync(WorkflowStorageContext context, CancellationToken cancellationToken = default)
         {
             var path = GetContainerPath(context);
-            await _blobStorage.DeleteAsync(path, cancellationToken);
+            await _blobStorage.DeleteObject(path, cancellationToken);
         }
 
         private string GetFullPath(WorkflowStorageContext context, string key)
