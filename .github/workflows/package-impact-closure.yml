@@ -1,0 +1,101 @@
+name: Package impact closure rehearsal
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/integration-program/package_impact.py'
+      - 'scripts/integration-program/package_closure.py'
+      - 'scripts/integration-program/test_*.py'
+      - 'doc/integration-program/inventory/inventory.json'
+      - 'doc/integration-program/package-closure.md'
+      - '.github/workflows/package-impact-closure.yml'
+  workflow_dispatch:
+    inputs:
+      include_docker:
+        description: Run the two Testcontainers-backed component projects
+        type: boolean
+        default: true
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: package-impact-closure-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  selector-and-plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Test selector and closure classification
+        run: |
+          python -m unittest discover -s scripts/integration-program -p 'test_*.py'
+          python -O -m unittest discover -s scripts/integration-program -p 'test_*.py'
+      - name: Rehearse the Core-to-Slack dependency selection
+        run: >-
+          python scripts/integration-program/package_closure.py
+          --inventory doc/integration-program/inventory/inventory.json
+          --output "${RUNNER_TEMP}/package-closure-plan.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-closure-plan
+          path: ${{ runner.temp }}/package-closure-plan.json
+
+  pinned-source-tests:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Read source pins from the inventory
+        id: pins
+        run: >-
+          python scripts/integration-program/package_closure.py
+          --inventory doc/integration-program/inventory/inventory.json
+          --github-output "$GITHUB_OUTPUT"
+          --output "${RUNNER_TEMP}/source-pins-plan.json"
+      - name: Checkout pinned Core source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: elsa-workflows/elsa-core
+          ref: ${{ steps.pins.outputs.core }}
+          path: sources/elsa-core
+          persist-credentials: false
+      - name: Checkout pinned Extensions source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: elsa-workflows/elsa-extensions
+          ref: ${{ steps.pins.outputs.extensions }}
+          path: sources/elsa-extensions
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Execute the pinned dependency closure
+        run: |
+          args=()
+          if [ "${{ inputs.include_docker }}" = "true" ]; then
+            args+=(--include-docker)
+          fi
+          python scripts/integration-program/package_closure.py \
+            --inventory doc/integration-program/inventory/inventory.json \
+            --source elsa-core=sources/elsa-core \
+            --source elsa-extensions=sources/elsa-extensions \
+            --run "${args[@]}" \
+            --output "${RUNNER_TEMP}/package-closure.json"
+      - name: Upload source, TRX, and build receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-closure-source-test-receipts
+          path: |
+            ${{ runner.temp }}/package-closure.json
+            ${{ runner.temp }}/artifacts/**

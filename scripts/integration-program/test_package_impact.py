@@ -31,8 +31,13 @@ class PackageImpactTests(unittest.TestCase):
         self.assertIn(self.slack_tests, affected_tests)
         self.assertGreater(len(affected_tests), 1)
 
-    def test_explicit_slack_release_unit_keeps_package_scope_independent(self):
-        self.assertEqual({"Elsa.Slack"}, self.graph.package_ids([self.slack_project]))
+    def test_slack_module_change_reaches_only_its_module_test(self):
+        self.assertEqual({self.slack_tests}, self.graph.affected_tests([self.slack_project]))
+
+    def test_slack_release_unit_excludes_unchanged_mqtt_package(self):
+        packages = self.graph.package_ids([self.slack_project])
+        self.assertEqual({"Elsa.Slack"}, packages)
+        self.assertNotIn("Elsa.Mqtt", packages)
         self.assertEqual({"Elsa.Slack"}, self.graph.package_ids(iter([self.slack_project])))
 
     def test_ambiguous_package_owners_are_all_included_in_impact_closure(self):
