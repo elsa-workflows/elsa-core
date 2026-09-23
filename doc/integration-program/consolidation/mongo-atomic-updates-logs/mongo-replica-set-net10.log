@@ -1,0 +1,93 @@
+[dotnet-build-slots] waiting for a build slot (2 in use, waited 0s). Held by: pid 56782 since 23:18:50 in /private/tmp/elsa-8194-consolidated-providers: dotnet build Consolidated.sln -p:UseProjectReferences=true -p:IsPackable=false -p:GeneratePackageOnBuild=false -m:1; pid 81576 since 23:26:01 in /Users/sipke/.codex/worktrees/audit-8290-secrets-current-bridge: dotnet build scripts/integration-program/secrets-sqlite-bridge-contract/current-core/CurrentCoreBridgeRunner.csproj --configuration Release --nologo
+[dotnet-build-slots] got slot 1 after 26s
+/private/tmp/elsa-8294-mongo-replay/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj : warning NU1902: Package 'SharpCompress' 0.30.1 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-6c8g-7p36-r338
+/private/tmp/elsa-8294-mongo-replay/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-mggc-4xg6-vcxf
+/private/tmp/elsa-8294-mongo-replay/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-q939-rpr3-3284
+/private/tmp/elsa-8294-mongo-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj : warning NU1902: Package 'Microsoft.Build.Tasks.Git' 8.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-23fw-v26w-5fgq [TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj : warning NU1902: Package 'SharpCompress' 0.30.1 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-6c8g-7p36-r338 [TargetFramework=net10.0]
+  Elsa.Features -> /private/tmp/elsa-8294-mongo-replay/src/common/Elsa.Features/bin/Debug/net10.0/Elsa.Features.dll
+  Elsa.Mediator -> /private/tmp/elsa-8294-mongo-replay/src/common/Elsa.Mediator/bin/Debug/net10.0/Elsa.Mediator.dll
+  Elsa.Common -> /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Common/bin/Debug/net10.0/Elsa.Common.dll
+  Elsa.Caching -> /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Caching/bin/Debug/net10.0/Elsa.Caching.dll
+  Elsa.Expressions -> /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Expressions/bin/Debug/net10.0/Elsa.Expressions.dll
+  Elsa.KeyValues -> /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.KeyValues/bin/Debug/net10.0/Elsa.KeyValues.dll
+  Elsa.Workflows.Core -> /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Workflows.Core/bin/Debug/net10.0/Elsa.Workflows.Core.dll
+  Elsa.Api.Common -> /private/tmp/elsa-8294-mongo-replay/src/common/Elsa.Api.Common/bin/Debug/net10.0/Elsa.Api.Common.dll
+  Elsa.Workflows.Management -> /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Workflows.Management/bin/Debug/net10.0/Elsa.Workflows.Management.dll
+  Elsa.Tenants -> /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Tenants/bin/Debug/net10.0/Elsa.Tenants.dll
+  Elsa.Identity -> /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Identity/bin/Debug/net10.0/Elsa.Identity.dll
+  Elsa.Labels -> /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Labels/bin/Debug/net10.0/Elsa.Labels.dll
+  Elsa.Workflows.Runtime -> /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Workflows.Runtime/bin/Debug/net10.0/Elsa.Workflows.Runtime.dll
+  Elsa.Alterations.Core -> /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Alterations.Core/bin/Debug/net10.0/Elsa.Alterations.Core.dll
+  Elsa.Alterations -> /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Alterations/bin/Debug/net10.0/Elsa.Alterations.dll
+/tmp/elsa-8294-nuget-clean/microsoft.build.tasks.git/8.0.0/build/Microsoft.Build.Tasks.Git.targets(25,5): warning : Repository '/private/tmp/elsa-8294-mongo-replay' has no remote. [/private/tmp/elsa-8294-mongo-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj::TargetFramework=net10.0]
+/tmp/elsa-8294-nuget-clean/microsoft.sourcelink.common/8.0.0/build/Microsoft.SourceLink.Common.targets(53,5): warning : Source control information is not available - the generated source link is empty. [/private/tmp/elsa-8294-mongo-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Serializers/JsonNodeBsonSerializer.cs(81,26): warning CS8600: Converting null literal or possible null value to non-nullable type. [/private/tmp/elsa-8294-mongo-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Serializers/JsonNodeBsonSerializer.cs(86,26): warning CS8600: Converting null literal or possible null value to non-nullable type. [/private/tmp/elsa-8294-mongo-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Extensions/DocumentExtensions.cs(53,26): warning IL2090: 'this' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicProperties' in call to 'System.Type.GetProperty(String)'. The generic parameter 'TDocument' of 'Elsa.Persistence.MongoDb.Extensions.DocumentExtensions.BuildIdFilterForList<TDocument>(IEnumerable<TDocument>, String)' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to. [/private/tmp/elsa-8294-mongo-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8294-mongo-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Extensions/DocumentExtensions.cs(71,20): warning IL2090: 'this' argument does not satisfy 'DynamicallyAccessedMemberTypes.PublicProperties' in call to 'System.Type.GetProperty(String)'. The generic parameter 'TDocument' of 'Elsa.Persistence.MongoDb.Extensions.DocumentExtensions.BuildFilter<TDocument>(TDocument, String)' does not have matching annotations. The source value must declare at least the same requirements as those declared on the target location it is assigned to. [/private/tmp/elsa-8294-mongo-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj::TargetFramework=net10.0]
+  Elsa.Persistence.MongoDb -> /private/tmp/elsa-8294-mongo-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/bin/Debug/net10.0/Elsa.Persistence.MongoDb.dll
+  Elsa.MongoDb.UnitTests -> /private/tmp/elsa-8294-mongo-replay/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/bin/Debug/net10.0/Elsa.MongoDb.UnitTests.dll
+Test run for /private/tmp/elsa-8294-mongo-replay/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/bin/Debug/net10.0/Elsa.MongoDb.UnitTests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.01] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.8)
+[xUnit.net 00:00:00.50]   Discovering: Elsa.MongoDb.UnitTests
+[xUnit.net 00:00:00.84]   Discovered:  Elsa.MongoDb.UnitTests
+[xUnit.net 00:00:01.11]   Starting:    Elsa.MongoDb.UnitTests
+[testcontainers.org 00:00:00.34] Connected to Docker:
+  Host: unix:///var/run/docker.sock
+  Server Version: 29.4.0
+  Kernel Version: 7.0.14-orbstack-00380-ga7e0a2dc9535
+  API Version: 1.54
+  Operating System: OrbStack
+  Total Memory: 11.74 GB
+[testcontainers.org 00:00:00.96] Docker container 0e3ba73f237e created
+[testcontainers.org 00:00:01.03] Start Docker container 0e3ba73f237e
+[testcontainers.org 00:00:01.53] Wait for Docker container 0e3ba73f237e to complete readiness checks
+[testcontainers.org 00:00:01.53] Docker container 0e3ba73f237e ready
+[testcontainers.org 00:00:04.24] Docker container 21b14c78624b created
+[testcontainers.org 00:00:04.25] Add file to tar archive: Content length: 94 byte(s), Target file: "/docker-entrypoint-initdb.d/01-init-keyfile.sh", UID: 0, GID: 0, Mode: 0755
+[testcontainers.org 00:00:04.27] Copy tar archive to container: Content length: 94 byte(s), Docker container: 21b14c78624b
+[testcontainers.org 00:00:04.33] Start Docker container 21b14c78624b
+[testcontainers.org 00:00:04.73] Add file to tar archive: Content length: 91 byte(s), Target file: "/tmp/c50831ec-9228-429b-8cf3-d73354ad2802/spvcv2j0.tju", UID: 0, GID: 0, Mode: 0644
+[testcontainers.org 00:00:04.73] Copy tar archive to container: Content length: 91 byte(s), Docker container: 21b14c78624b
+[testcontainers.org 00:00:04.76] Execute "which mongosh" at Docker container 21b14c78624b
+[testcontainers.org 00:00:04.88] Execute "mongosh --username mongo --password mongo --quiet --eval load('/tmp/c50831ec-9228-429b-8cf3-d73354ad2802/spvcv2j0.tju')" at Docker container 21b14c78624b
+[testcontainers.org 00:00:08.65] Add file to tar archive: Content length: 91 byte(s), Target file: "/tmp/c459eb4b-3bc9-4784-9f39-cf4b62616edd/ci30f0zl.qak", UID: 0, GID: 0, Mode: 0644
+[testcontainers.org 00:00:08.65] Copy tar archive to container: Content length: 91 byte(s), Docker container: 21b14c78624b
+[testcontainers.org 00:00:08.67] Execute "which mongosh" at Docker container 21b14c78624b
+[testcontainers.org 00:00:08.74] Execute "mongosh --username mongo --password mongo --quiet --eval load('/tmp/c459eb4b-3bc9-4784-9f39-cf4b62616edd/ci30f0zl.qak')" at Docker container 21b14c78624b
+[testcontainers.org 00:00:10.26] Add file to tar archive: Content length: 91 byte(s), Target file: "/tmp/7d946b70-0315-412d-93db-f29601e65050/u1hdct2e.0tp", UID: 0, GID: 0, Mode: 0644
+[testcontainers.org 00:00:10.26] Copy tar archive to container: Content length: 91 byte(s), Docker container: 21b14c78624b
+[testcontainers.org 00:00:10.27] Execute "which mongosh" at Docker container 21b14c78624b
+[testcontainers.org 00:00:10.34] Execute "mongosh --username mongo --password mongo --quiet --eval load('/tmp/7d946b70-0315-412d-93db-f29601e65050/u1hdct2e.0tp')" at Docker container 21b14c78624b
+[testcontainers.org 00:00:11.91] Add file to tar archive: Content length: 91 byte(s), Target file: "/tmp/7d420631-209e-4c55-9525-e15fbb526bdb/fpfc0lmm.ef3", UID: 0, GID: 0, Mode: 0644
+[testcontainers.org 00:00:11.91] Copy tar archive to container: Content length: 91 byte(s), Docker container: 21b14c78624b
+[testcontainers.org 00:00:11.95] Execute "which mongosh" at Docker container 21b14c78624b
+[testcontainers.org 00:00:12.02] Execute "mongosh --username mongo --password mongo --quiet --eval load('/tmp/7d420631-209e-4c55-9525-e15fbb526bdb/fpfc0lmm.ef3')" at Docker container 21b14c78624b
+[testcontainers.org 00:00:13.85] Add file to tar archive: Content length: 91 byte(s), Target file: "/tmp/0c533c81-b5cb-49cd-933c-e64de143f1d0/skbysvsh.axy", UID: 0, GID: 0, Mode: 0644
+[testcontainers.org 00:00:13.85] Copy tar archive to container: Content length: 91 byte(s), Docker container: 21b14c78624b
+[testcontainers.org 00:00:13.87] Execute "which mongosh" at Docker container 21b14c78624b
+[testcontainers.org 00:00:13.92] Execute "mongosh --username mongo --password mongo --quiet --eval load('/tmp/0c533c81-b5cb-49cd-933c-e64de143f1d0/skbysvsh.axy')" at Docker container 21b14c78624b
+[testcontainers.org 00:00:15.22] Wait for Docker container 21b14c78624b to complete readiness checks
+[testcontainers.org 00:00:15.23] Add file to tar archive: Content length: 68 byte(s), Target file: "/tmp/22178d1a-d6dc-459f-ab83-e9735e91c10c/4tjpyurs.yua", UID: 0, GID: 0, Mode: 0644
+[testcontainers.org 00:00:15.23] Copy tar archive to container: Content length: 68 byte(s), Docker container: 21b14c78624b
+[testcontainers.org 00:00:15.24] Execute "which mongosh" at Docker container 21b14c78624b
+[testcontainers.org 00:00:15.30] Execute "mongosh --username mongo --password mongo --quiet --eval load('/tmp/22178d1a-d6dc-459f-ab83-e9735e91c10c/4tjpyurs.yua')" at Docker container 21b14c78624b
+[testcontainers.org 00:00:16.10] Docker container 21b14c78624b ready
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_CannotChangeLogicalDefinitionId [1 s]
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_WhenCallbackThrowsTransientMongoError_PropagatesAndLeavesDocumentUnchanged(throwFromUpdate: False) [987 ms]
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_WhenCallbackThrowsTransientMongoError_PropagatesAndLeavesDocumentUnchanged(throwFromUpdate: True) [684 ms]
+[testcontainers.org 00:00:22.56] Delete Docker container 21b14c78624b
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_WhenTwoWritersReadTheSameSnapshot_OnlyOneWins [1 s]
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_WhenSnapshotMatches_UpdatesOnceUsingPrimaryTransaction [384 ms]
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_WhenMetadataChangesAfterRead_ReturnsConflictAndKeepsConcurrentMetadata [187 ms]
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_WhenDraftInsertFails_RollsBackLatestUnmark [189 ms]
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_WhenPublishedVersionCreatesDraft_UpdatesBothRowsAndPreservesTenant [313 ms]
+  Passed Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests.TryUpdateLatestAsync_WhenTenantIsNotVisible_ReturnsNotFound_AndTenantAgnosticMutationPreservesOwner [197 ms]
+[xUnit.net 00:00:25.91]   Finished:    Elsa.MongoDb.UnitTests
+
+Test Run Successful.
+Total tests: 9
+     Passed: 9
+ Total time: 27,6853 Seconds

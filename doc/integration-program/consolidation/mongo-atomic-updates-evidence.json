@@ -1,0 +1,98 @@
+{
+  "checkedDate": "2026-09-23",
+  "scope": "Disposable consolidated source patch; no source import, package creation, or publication",
+  "program": 8194,
+  "story": 8286,
+  "task": 8294,
+  "rehearsalBaseline": "926c91327efaecce286d50b31f19db376239f05e",
+  "sourceCommits": {
+    "core": "8e893e02c4ac089d526b0a0d294a8546f021d072",
+    "extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287",
+    "studio": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822"
+  },
+  "patch": {
+    "path": "scripts/integration-program/consolidated-build/mongo-atomic-updates.patch",
+    "sha256": "2a3d6a1d3a062b2f94f3c42088a38a38f9d93e3d715d59efd288cff188d96fb4",
+    "appliedWithCheckAgainstRehearsalBaseline": true
+  },
+  "packagePin": {
+    "id": "Testcontainers.MongoDb",
+    "version": "4.9.0",
+    "centralPropsPath": "src/extensions/Directory.Packages.props",
+    "centralPropsLine": 242,
+    "centralPropsSha256": "750eceddbf4d573378a0eb52116b2c2a96c076e7048d812f5feb17c027dda6a6",
+    "importedBy": "test/extensions/Directory.Packages.props",
+    "temporaryPackageVersionOverride": false,
+    "resolvedVersionLog": "doc/integration-program/consolidation/mongo-atomic-updates-logs/resolved-packages.log",
+    "resolvedVersionLogSha256": "81941ec1a1304e1a96f1d963f833137c6b90abcef4e3fb0fb13d5dc4d299c02b"
+  },
+  "replayedFiles": [
+    {
+      "path": "src/extensions/persistence/Elsa.Persistence.MongoDb/Common/MongoDbStore.cs",
+      "sha256": "8786cb5249a66c4740e50eb5f79a7c0c3f7ec9a086b66a34e3d42d7f1e92b1ba"
+    },
+    {
+      "path": "src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs",
+      "sha256": "f03ad03d09f4341e2afb402c6b4ed334a08b2704382b7c6da035b7a3434019f7"
+    },
+    {
+      "path": "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs",
+      "sha256": "29d60b20c9b9bccc1952a6d384b92daba4dde1fa98e494df3aff362040ceda4a"
+    }
+  ],
+  "testContainer": {
+    "imageTag": "mongo:7.0.24",
+    "resolvedDigest": "mongo@sha256:4c65244b50910461b9641a76131f84a2dcfd4da487f928298cea626b3842842c",
+    "platform": "linux/arm64",
+    "replicaSet": "rs1",
+    "dockerRuntime": "OrbStack 29.4.0"
+  },
+  "runs": [
+    {
+      "name": "fresh-restore",
+      "command": "NUGET_PACKAGES=/tmp/elsa-8294-nuget-clean dotnet restore test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj --force --no-cache --verbosity minimal",
+      "exitCode": 0,
+      "log": "doc/integration-program/consolidation/mongo-atomic-updates-logs/fresh-restore.log",
+      "logSha256": "ceda4daea5f24528b5cf91a9519298334cfc482f8b9c24c33273271940b129ed"
+    },
+    {
+      "name": "resolved-package-versions",
+      "command": "dotnet list test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj package --no-restore",
+      "exitCode": 0,
+      "log": "doc/integration-program/consolidation/mongo-atomic-updates-logs/resolved-packages.log",
+      "logSha256": "81941ec1a1304e1a96f1d963f833137c6b90abcef4e3fb0fb13d5dc4d299c02b"
+    },
+    {
+      "name": "replica-set-contract-tests",
+      "framework": "net10.0",
+      "testCases": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "command": "dotnet test test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj --no-restore -f net10.0 --filter FullyQualifiedName~MongoWorkflowDefinitionStoreCompareAndSwapTests --logger 'console;verbosity=normal'",
+      "exitCode": 0,
+      "log": "doc/integration-program/consolidation/mongo-atomic-updates-logs/mongo-replica-set-net10.log",
+      "logSha256": "0c4aee7a5820b4e9e2d8da02ea4ee8e14b14b2c3601ba38b9f598c3156b5f3d8"
+    },
+    {
+      "name": "mongo-persistence-build",
+      "frameworks": ["net8.0", "net9.0", "net10.0"],
+      "errors": 0,
+      "warnings": 50,
+      "command": "dotnet build src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj --no-restore --verbosity minimal -m:1",
+      "exitCode": 0,
+      "log": "doc/integration-program/consolidation/mongo-atomic-updates-logs/mongo-project-build-net8-net9-net10.log",
+      "logSha256": "6a9ede3ad07e08128edded9b5dc50e3205ee8ae37e9289bbd37d25817944a836"
+    }
+  ],
+  "limitations": [
+    "The patch has not yet been imported into the history-preserving source repositories.",
+    "The complete consolidated solution build and final imported-layout test run remain an integration gate.",
+    "Only MongoDB 7.0.24 on a local replica set was exercised; standalone MongoDB and other MongoDB versions were not tested.",
+    "This is not the released Elsa 3.8.4 package-compatibility proof.",
+    "No package was packed, pushed to a feed, deployed, or published."
+  ],
+  "publisherWorkflowModified": false,
+  "publishersInvoked": false,
+  "publicationAuthorized": false
+}
