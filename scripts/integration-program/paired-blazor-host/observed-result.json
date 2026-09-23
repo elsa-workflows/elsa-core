@@ -1,0 +1,32 @@
+{
+  "checkedDate": "2026-09-23",
+  "sourceCommits": {
+    "core": "22f479d423975cf5d35f12fa5204b6597764d06b",
+    "extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287",
+    "studio": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822"
+  },
+  "targetFramework": "net10.0",
+  "focusedSolutionBuild": {
+    "errors": 0,
+    "warnings": 29
+  },
+  "browserVerification": {
+    "initialUpdates": 0,
+    "selectedUpdates": 1,
+    "selectedProviderTypes": [
+      "SyntheticWorkflowContextProvider, UiProbe"
+    ],
+    "deselectedUpdates": 2,
+    "deselectedProviderTypes": []
+  },
+  "debugger": {
+    "release": "3.2.0-1092",
+    "archiveSha256": "f4fa33b3ff874910cc184b4bb3b9c56d0abdf5c6521cee0b144d7c6e4a6e59ea",
+    "backendBreakpointHit": true,
+    "componentBreakpointHit": true,
+    "browserUpdateAfterContinue": true,
+    "exitCode": 0
+  },
+  "completeConsolidatedSolutionVerified": false,
+  "productionAuthorizationVerified": false
+}
