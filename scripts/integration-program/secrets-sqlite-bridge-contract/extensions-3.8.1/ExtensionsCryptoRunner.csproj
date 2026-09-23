@@ -10,5 +10,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Elsa.Secrets.Management" Version="[3.8.1]" />
+    <PackageReference Include="Elsa.Secrets.Models" Version="[3.8.1]" />
+    <PackageReference Include="Elsa.Secrets.Persistence.EFCore.Sqlite" Version="[3.8.1]" />
   </ItemGroup>
 </Project>

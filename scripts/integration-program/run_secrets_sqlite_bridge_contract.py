@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -22,6 +23,8 @@ MANIFEST = FIXTURE / 'artifacts.json'
 NUGET_FLAT = 'https://api.nuget.org/v3-flatcontainer'
 OLD_PROJECT = FIXTURE / 'extensions-3.8.1/ExtensionsCryptoRunner.csproj'
 CORE_PROJECT = FIXTURE / 'core-3.8.4/CoreCryptoRunner.csproj'
+CURRENT_PROJECT = FIXTURE / 'current-core/CurrentCoreBridgeRunner.csproj'
+PINNED_TARGET_CORE_SOURCE_COMMIT = '7b06b82d0ea89c12d49c3c28da8d770bfca13faf'
 
 
 def run(command, *, cwd=None, env=None, capture=False, timeout=None):
@@ -50,6 +53,8 @@ def local_name(tag):
 
 
 def package_url(package):
+    if 'downloadUrl' in package:
+        return package['downloadUrl']
     package_id = package['id'].lower()
     version = package['version']
     return f'{NUGET_FLAT}/{package_id}/{version}/{package_id}.{version}.nupkg'
@@ -75,7 +80,10 @@ def verify_package(package, phase, feed_dir):
         raise ValueError(f"Unexpected nuspec ID in {package['id']} {package['version']}")
     if values.get('version') != package['version']:
         raise ValueError(f"Unexpected nuspec version in {package['id']} {package['version']}")
-    if repository.get('url') != phase['repository'] or repository.get('commit') != phase['sourceCommit']:
+    expected_repository = package.get('repository', phase.get('repository'))
+    expected_source_commit = package.get('sourceCommit', phase.get('sourceCommit'))
+    if ((expected_repository and repository.get('url') != expected_repository)
+            or (expected_source_commit and repository.get('commit') != expected_source_commit)):
         raise ValueError(f"Nuspec source provenance mismatch for {package['id']} {package['version']}")
     return {
         'id': package['id'],
@@ -89,7 +97,7 @@ def verify_package(package, phase, feed_dir):
 
 
 def restore(project, config, packages_dir, *, update_lockfiles):
-    command = ['dotnet', 'restore', str(project), '--configfile', str(config), '--packages', str(packages_dir)]
+    command = ['dotnet', 'restore', str(project), '--configfile', str(config), '--packages', str(packages_dir), '-m:1']
     if not update_lockfiles:
         command.append('--locked-mode')
     try:
@@ -137,6 +145,42 @@ def run_phase(project, config, packages_dir, arguments):
         raise RuntimeError(f'Runner did not return valid JSON: {output}') from error
 
 
+def sha256_file(path):
+    digest = hashlib.sha256()
+    with path.open('rb') as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def clone_sqlite(source, destination):
+    with sqlite3.connect(source) as source_db, sqlite3.connect(destination) as destination_db:
+        source_db.backup(destination_db)
+
+
+def reject_fixture(current_project, config, packages_dir, old_key_ring, wrong_key_ring,
+                   missing_key_ring, tenant_map, source_db, target_db, expected_code):
+    result = run_phase(
+        current_project, config, packages_dir,
+        [source_db, target_db, old_key_ring, wrong_key_ring, missing_key_ring, tenant_map, 'success'])
+    if result.get('result') != 'rejected' or result.get('rejectionCode') != expected_code:
+        raise RuntimeError(f'Expected {expected_code} rejection, got {result}')
+    if result.get('targetUnchanged') is not True:
+        raise RuntimeError(f'{expected_code} rejection changed the target: {result}')
+    return result
+
+
+def verify_current_core_source_pin():
+    subprocess.run(
+        ['git', '-C', str(ROOT), 'cat-file', '-e', f'{PINNED_TARGET_CORE_SOURCE_COMMIT}^{{commit}}'],
+        check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+    difference = subprocess.run(
+        ['git', '-C', str(ROOT), 'diff', '--quiet', PINNED_TARGET_CORE_SOURCE_COMMIT, '--', 'src'],
+        check=False, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+    if difference.returncode != 0:
+        raise ValueError(f'Core source tree differs from pinned target {PINNED_TARGET_CORE_SOURCE_COMMIT}')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--update-lockfiles', action='store_true',
@@ -147,6 +191,7 @@ def main():
     manifest = json.loads(MANIFEST.read_text())
     if manifest['targetFramework'] != 'net10.0':
         raise ValueError('Unexpected fixture target framework')
+    verify_current_core_source_pin()
     mapping_contract = run_contract_fixtures()
 
     with tempfile.TemporaryDirectory(prefix='elsa-secrets-bridge-contract-') as temp_name:
@@ -155,19 +200,28 @@ def main():
         packages_dir = temp_root / 'nuget-packages'
         feed_dir.mkdir()
         packages_dir.mkdir()
+        artifact_phases = dict(manifest['phases'])
+        artifact_phases['source-build-tooling'] = manifest['source-build-tooling']
         verified = {
             name: [verify_package(package, phase, feed_dir) for package in phase['packages']]
-            for name, phase in manifest['phases'].items()
+            for name, phase in artifact_phases.items()
         }
 
         config = temp_root / 'NuGet.Config'
         feed = str(feed_dir).replace('&', '&amp;')
+        verified_patterns = ''.join(
+            f'<package pattern="{package["id"]}" />'
+            for phase in artifact_phases.values()
+            for package in phase['packages'])
         config.write_text(
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<configuration><packageSources><clear />'
             f'<add key="verified-artifacts" value="{feed}" />'
             f'<add key="nuget.org" value="{NUGET_FLAT.rsplit("/v3-flatcontainer", 1)[0]}/v3/index.json" />'
-            '</packageSources></configuration>\n'
+            '</packageSources><packageSourceMapping>'
+            f'<packageSource key="verified-artifacts">{verified_patterns}</packageSource>'
+            '<packageSource key="nuget.org"><package pattern="*" /></packageSource>'
+            '</packageSourceMapping></configuration>\n'
         )
 
         lock_summaries = {}
@@ -179,21 +233,32 @@ def main():
         if args.update_lockfiles:
             print(json.dumps({'lockfilesUpdated': True, 'verifiedPackages': verified}, indent=2))
             return 0
+        restore(CURRENT_PROJECT, config, packages_dir, update_lockfiles=False)
 
         old_key_ring = temp_root / 'old-data-protection-keys'
         wrong_key_ring = temp_root / 'wrong-data-protection-keys'
         missing_key_ring = temp_root / 'missing-data-protection-keys'
         ciphertext_path = temp_root / 'synthetic-legacy-ciphertext.txt'
-        old_result = run_phase(OLD_PROJECT, config, packages_dir, [old_key_ring, wrong_key_ring, ciphertext_path])
-        core_result = run_phase(
+        source_db = temp_root / 'legacy-source.db'
+        seed_result = run_phase(
+            OLD_PROJECT, config, packages_dir,
+            ['seed', source_db, old_key_ring, wrong_key_ring, ciphertext_path])
+        historical_core_result = run_phase(
             CORE_PROJECT, config, packages_dir,
             [old_key_ring, wrong_key_ring, missing_key_ring, ciphertext_path])
+        tenant_map_path = temp_root / 'tenant-map.json'
+        tenant_map_path.write_text(json.dumps({'tenant-a': 'tenant-a', 'tenant-b': 'tenant-b'}))
+        current_target_db = temp_root / 'current-core-target.db'
+        current_result = run_phase(
+            CURRENT_PROJECT, config, packages_dir,
+            [source_db, current_target_db, old_key_ring, wrong_key_ring, missing_key_ring,
+             tenant_map_path, 'success'])
 
-        if old_result.get('phase') != 'extensions-3.8.1' or old_result.get('result') != 'encrypted':
-            raise RuntimeError(f"Legacy phase did not encrypt the synthetic value: {old_result}")
-        expected_hash = old_result['plaintextSha256']
+        if seed_result.get('phase') != 'extensions-3.8.1' or seed_result.get('result') != 'seeded':
+            raise RuntimeError(f"Legacy phase did not seed the synthetic SQLite source: {seed_result}")
+        expected_hash = seed_result['plaintextSha256']
         if len(expected_hash) != 2:
-            raise RuntimeError(f"Legacy phase did not create two synthetic versions: {old_result}")
+            raise RuntimeError(f"Legacy phase did not create two crypto-proof versions: {seed_result}")
         required_core_results = {
             'result': 'verified',
             'syntheticVersions': 2,
@@ -210,29 +275,124 @@ def main():
             'latestActiveVersion': 2,
             'previousVersionExpired': True,
         }
-        mismatches = {key: {'expected': value, 'actual': core_result.get(key)}
+        mismatches = {key: {'expected': value, 'actual': historical_core_result.get(key)}
                       for key, value in required_core_results.items()
-                      if core_result.get(key) != value}
+                      if historical_core_result.get(key) != value}
         if mismatches:
-            raise RuntimeError(f'Core synthetic crypto proof did not meet its contract: {mismatches}')
+            raise RuntimeError(f'Historical Core synthetic crypto proof did not meet its contract: {mismatches}')
+
+        expected_current = {
+            'result': 'converted',
+            'targetCoreSourceCommit': PINNED_TARGET_CORE_SOURCE_COMMIT,
+            'targetMigrationIds': [
+                '20260531141623_Initial',
+                '20260825230122_SecretTenancy',
+                '20260914120000_SecretDefaultTenantUniqueness',
+                '20260923164123_ManagedSecretOwnership',
+            ],
+            'sourceRows': 5,
+            'targetAggregates': 4,
+            'targetVersions': 5,
+            'persistedAggregates': 4,
+            'persistedVersions': 5,
+            'sidecarRows': 5,
+            'nativeTenantMappingVerified': True,
+            'defaultTenantStoredAsEmpty': True,
+            'crossTenantIsolationVerified': True,
+            'crossTenantSameNameVerified': True,
+            'crossTenantWriteDenied': True,
+            'sidecarFieldValuesExact': True,
+            'lifecycleOwnershipMarkersNotInvented': True,
+            'encryptedValuesRewritten': True,
+            'rawLegacyCiphertextRejectedByCoreStore': True,
+            'wrongCoreKeyRejected': True,
+            'legacyOwnerAuthorizationAdapterRequired': True,
+            'legacyIdCompatibilityAdapterRequired': True,
+            'cutoverAllowed': False,
+            'plaintextPrinted': False,
+            'keysPrinted': False,
+            'ciphertextPrinted': False,
+        }
+        current_mismatches = {key: {'expected': value, 'actual': current_result.get(key)}
+                              for key, value in expected_current.items()
+                              if current_result.get(key) != value}
+        if current_mismatches:
+            raise RuntimeError(f'Current-Core SQLite bridge proof did not meet its contract: {current_mismatches}')
+
+        failure_scenarios = {}
+        source_before = sha256_file(source_db)
+        collision_target = temp_root / 'collision-target.db'
+        collision_result = run_phase(
+            CURRENT_PROJECT, config, packages_dir,
+            [source_db, collision_target, old_key_ring, wrong_key_ring, missing_key_ring,
+             tenant_map_path, 'id-collision'])
+        if collision_result.get('result') != 'rejected' or collision_result.get('rejectionCode') != 'AggregateIdCollision' or collision_result.get('targetUnchanged') is not True:
+            raise RuntimeError(f'Aggregate-ID collision did not fail closed: {collision_result}')
+        failure_scenarios['aggregateIdCollision'] = collision_result
+
+        rollback_target = temp_root / 'rollback-target.db'
+        rollback_result = run_phase(
+            CURRENT_PROJECT, config, packages_dir,
+            [source_db, rollback_target, old_key_ring, wrong_key_ring, missing_key_ring,
+             tenant_map_path, 'fail-after-core-save'])
+        if rollback_result.get('result') != 'rejected' or rollback_result.get('rejectionCode') != 'InjectedWriteFailure' or rollback_result.get('targetUnchanged') is not True:
+            raise RuntimeError(f'Injected write failure did not roll back the target: {rollback_result}')
+        failure_scenarios['injectedAfterCoreSave'] = rollback_result
+
+        rejection_mutations = {
+            'unknownMigrationHistory': (
+                "UPDATE __EFMigrationsHistory SET MigrationId='99999999999999_Unknown'", 'UnknownSourceMigrationHistory'),
+            'unknownSchema': ("ALTER TABLE Secrets ADD COLUMN Unexpected TEXT NULL", 'UnknownSourceSchema'),
+            'unmappedTenant': ("UPDATE Secrets SET TenantId='tenant-c' WHERE Id='legacy-row-tenant-a-v1'", 'UnmappedTenant'),
+            'unknownStatus': ("UPDATE Secrets SET Status=99 WHERE Id='legacy-row-tenant-a-v1'", 'UnknownStatus'),
+            'invalidLatestMarker': ("UPDATE Secrets SET IsLatest=1 WHERE Id='legacy-row-default-v1'", 'InvalidLatestMarker'),
+            'normalizedNameCollision': ("UPDATE Secrets SET TenantId='' WHERE Id='legacy-row-tenant-a-v1'", 'NormalizedNameCollision'),
+        }
+        for name, (mutation, rejection_code) in rejection_mutations.items():
+            candidate_db = temp_root / f'{name}.db'
+            clone_sqlite(source_db, candidate_db)
+            with sqlite3.connect(candidate_db) as candidate:
+                candidate.execute(mutation)
+                candidate.commit()
+            candidate_target = temp_root / f'{name}-target.db'
+            failure_scenarios[name] = reject_fixture(
+                CURRENT_PROJECT, config, packages_dir, old_key_ring, wrong_key_ring,
+                missing_key_ring, tenant_map_path, candidate_db, candidate_target, rejection_code)
+
+        reopened = run_phase(OLD_PROJECT, config, packages_dir, ['verify', source_db, old_key_ring])
+        if reopened.get('result') != 'reopened-and-verified' or reopened.get('sourceUnchangedReadable') is not True:
+            raise RuntimeError(f'Original source did not reopen after current-Core fixture: {reopened}')
+        source_after = sha256_file(source_db)
+        if source_before != source_after:
+            raise RuntimeError('The current-Core fixture changed the original legacy SQLite source file.')
 
         report = {
-            'fixture': 'Extensions 3.8.1 Data Protection -> Core 3.8.4 AES-GCM',
+            'fixture': f'Synthetic Extensions 3.8.1 SQLite source -> Core SQLite target at {PINNED_TARGET_CORE_SOURCE_COMMIT}',
             'targetFramework': manifest['targetFramework'],
+            'targetCoreSourceCommit': PINNED_TARGET_CORE_SOURCE_COMMIT,
             'verifiedPackages': verified,
             'packageLocks': lock_summaries,
             'dataProtectionPurpose': manifest['dataProtectionPurpose'],
             'dataProtectionApplicationName': manifest['dataProtectionApplicationName'],
             'mappingContract': mapping_contract,
             'legacyPhase': {
-                'result': old_result['result'],
-                'syntheticVersions': old_result['syntheticVersions'],
+                'result': seed_result['result'],
+                'schemaMaterialization': seed_result['schemaMaterialization'],
+                'migrationSqlSha256': seed_result['migrationSqlSha256'],
+                'normalMigrateDiagnostic': seed_result['normalMigrateDiagnostic'],
+                'migrationIds': seed_result['migrationIds'],
+                'syntheticRows': seed_result['syntheticRows'],
                 'plaintextSha256': expected_hash,
             },
             'corePhase': {
-                key: core_result[key]
+                key: historical_core_result[key]
                 for key in required_core_results
             },
+            'currentCorePhase': current_result,
+            'failClosedScenarios': failure_scenarios,
+            'sourceFileSha256Before': source_before,
+            'sourceFileSha256After': source_after,
+            'sourceReopenedAndVerified': True,
             'plaintextPrinted': False,
             'keysPrinted': False,
             'ciphertextPrinted': False,

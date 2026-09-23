@@ -2,7 +2,7 @@
   "program": 8194,
   "repository": "elsa-workflows/elsa-core",
   "checked_date": "2026-09-23",
-  "verification": "Native child and blocking-dependency sets read back through authenticated paginated GitHub REST; see reconciliation.md.",
+  "verification": "Native child and blocking-dependency sets read back through authenticated paginated GitHub REST; issue titles and states refreshed from GitHub on 2026-09-23; see reconciliation.md.",
   "issues": [
     {
       "number": 8194,
@@ -498,12 +498,12 @@
       "number": 8270,
       "title": "[Task] Implement synthetic credential lifecycle with durable refresh recovery",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8270"
     },
     {
       "number": 8271,
-      "title": "[Task] Prove workflow credential resume and offboarding conformance",
+      "title": "[Task] Implement restart-safe logical credential bindings",
       "level": "Task",
       "state": "open",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8271"
@@ -591,6 +591,13 @@
       "level": "Task",
       "state": "open",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8294"
+    },
+    {
+      "number": 8296,
+      "title": "[Task] Persist credential offboarding and revoke recovery",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8296"
     }
   ],
   "parent_edges": [
@@ -925,6 +932,10 @@
     [
       8286,
       8294
+    ],
+    [
+      8269,
+      8296
     ]
   ],
   "blocking_edges": [
@@ -1055,6 +1066,14 @@
     [
       8282,
       8290
+    ],
+    [
+      8270,
+      8296
+    ],
+    [
+      8271,
+      8296
     ]
   ]
 }

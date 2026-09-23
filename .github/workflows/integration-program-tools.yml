@@ -25,3 +25,10 @@ jobs:
           python doc/integration-program/verify-hierarchy.py
           python -m unittest discover -s scripts/integration-program -p 'test_*.py'
           python -O -m unittest discover -s scripts/integration-program -p 'test_*.py'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Verify synthetic Secrets SQLite bridge against current Core
+        run: |
+          python scripts/integration-program/run_secrets_sqlite_bridge_contract.py \
+            --report-out "$RUNNER_TEMP/secrets-sqlite-bridge-report.json"
