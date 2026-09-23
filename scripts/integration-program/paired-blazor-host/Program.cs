@@ -7,6 +7,10 @@ using MudBlazor.Services;
 using UiProbe;
 
 var builder = WebApplication.CreateBuilder(args);
+if (builder.Configuration.GetSection("Kestrel:Endpoints").Exists())
+{
+    throw new InvalidOperationException("This disposable loopback probe does not accept configured Kestrel endpoints.");
+}
 builder.WebHost.UseUrls("http://127.0.0.1:6187");
 builder.WebHost.UseStaticWebAssets();
 builder.Services.AddAuthentication();

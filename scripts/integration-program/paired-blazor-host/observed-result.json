@@ -28,5 +28,13 @@
     "exitCode": 0
   },
   "completeConsolidatedSolutionVerified": false,
-  "productionAuthorizationVerified": false
+  "productionAuthorizationVerified": false,
+  "preparationGuardVerification": {
+    "pythonTestsPassed": 9,
+    "normalAndOptimizedPython": true,
+    "retainedProofValidatedAgainstPinnedImportAndProbeOutput": true,
+    "finalSolutionRebuildErrors": 0,
+    "finalSolutionRebuildWarnings": 39,
+    "configuredKestrelEndpointRejectedBeforeStartup": true
+  }
 }
