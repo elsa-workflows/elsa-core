@@ -2,7 +2,7 @@
   "program": 8194,
   "repository": "elsa-workflows/elsa-core",
   "checked_date": "2026-09-23",
-  "verification": "Native child and blocking-dependency sets read back through authenticated paginated GitHub REST; issue titles and states refreshed from GitHub on 2026-09-23; see reconciliation.md.",
+  "verification": "Native child and blocking-dependency sets read back through authenticated paginated GitHub REST; all issue titles and states refreshed on 2026-09-23 UTC.",
   "issues": [
     {
       "number": 8194,
@@ -505,7 +505,7 @@
       "number": 8271,
       "title": "[Task] Implement restart-safe logical workflow credential bindings",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8271"
     },
     {
@@ -568,14 +568,14 @@
       "number": 8290,
       "title": "[Task] Implement a synthetic current-Core Secrets SQLite bridge",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8290"
     },
     {
       "number": 8292,
       "title": "[Bug] Preserve concurrent metadata during BPMN document PUT",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8292"
     },
     {
@@ -589,7 +589,7 @@
       "number": 8294,
       "title": "[Task] Preserve atomic BPMN edits in Mongo workflow definitions",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8294"
     },
     {
@@ -603,7 +603,7 @@
       "number": 8300,
       "title": "[Bug] Preserve EF workflow snapshot state during atomic document updates",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8300"
     },
     {
@@ -612,6 +612,27 @@
       "level": "Task",
       "state": "open",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8301"
+    },
+    {
+      "number": 8308,
+      "title": "[Story] Prove PostgreSQL credential coordination across independent workers",
+      "level": "Story",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8308"
+    },
+    {
+      "number": 8309,
+      "title": "[Task] Add PostgreSQL persistence for connection lifecycle and offboarding",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8309"
+    },
+    {
+      "number": 8310,
+      "title": "[Task] Verify credential refresh and offboarding with separate PostgreSQL workers",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8310"
     }
   ],
   "parent_edges": [
@@ -958,6 +979,18 @@
     [
       8275,
       8301
+    ],
+    [
+      8222,
+      8308
+    ],
+    [
+      8308,
+      8309
+    ],
+    [
+      8308,
+      8310
     ]
   ],
   "blocking_edges": [
@@ -1104,6 +1137,18 @@
     [
       8290,
       8301
+    ],
+    [
+      8296,
+      8308
+    ],
+    [
+      8296,
+      8309
+    ],
+    [
+      8309,
+      8310
     ]
   ]
 }

@@ -74,6 +74,16 @@ new file mode 100644
         with self.assertRaises(ValueError):
             build.prepare(self.output)
 
+    def test_current_core_profile_preserves_actual_pins_and_parent_checks(self):
+        actual_core = build.SOURCE_COMMITS['core']
+        with patch.dict(build.SOURCE_COMMITS, {'core': 'f' * 40}), \
+                patch.object(build, 'CURRENT_CORE_COMMIT', actual_core), \
+                contextlib.redirect_stdout(io.StringIO()):
+            build.prepare(self.output)
+        receipt = json.loads((self.output / 'consolidated-build-receipt.json').read_text())
+        self.assertEqual(receipt['sourceCommits']['core'], actual_core)
+        self.assertFalse(receipt['buildCompatibilityVerified'])
+
     def test_rejects_dirty_tracked_source_without_overwriting(self):
         path = self.output / 'src/studio/UI/UI.csproj'
         path.write_text('user edit')
