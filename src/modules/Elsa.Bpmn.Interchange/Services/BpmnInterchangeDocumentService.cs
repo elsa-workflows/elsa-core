@@ -388,13 +388,19 @@ public sealed class BpmnInterchangeDocumentService(
     private T CloneValue<T>(T value)
     {
         if (value is null)
+        {
             return value;
+        }
 
-        if (value is string || value.GetType().IsValueType)
+        if (value is string)
+        {
             return value;
+        }
 
         if (value is JsonNode jsonNode)
+        {
             return (T)(object)jsonNode.DeepClone();
+        }
 
         var runtimeType = value.GetType();
         var clone = activitySerializer.Deserialize(activitySerializer.Serialize(value), runtimeType);
