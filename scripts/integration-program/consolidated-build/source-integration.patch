@@ -1124,7 +1124,7 @@ index c4f2b3669..e5b49a06c 100644
  </MudDialog>
 \ No newline at end of file
 diff --git a/src/extensions/agents/Elsa.Studio.Agents/UI/Components/CreateAgentDialog.razor.cs b/src/extensions/agents/Elsa.Studio.Agents/UI/Components/CreateAgentDialog.razor.cs
-index 3e0811921..4f505a66d 100644
+index 3e0811921..2be03de18 100644
 --- a/src/extensions/agents/Elsa.Studio.Agents/UI/Components/CreateAgentDialog.razor.cs
 +++ b/src/extensions/agents/Elsa.Studio.Agents/UI/Components/CreateAgentDialog.razor.cs
 @@ -1,4 +1,3 @@
@@ -1155,7 +1155,14 @@ index 3e0811921..4f505a66d 100644
          var skillsResponseList = await skillsApi.ListAsync();
          AvailableSkills = skillsResponseList.Items;
          SelectedSkills = _agentInputModel.Skills.ToList().AsReadOnly();
-@@ -54,12 +55,28 @@ public partial class CreateAgentDialog
+@@ -48,18 +49,35 @@ public partial class CreateAgentDialog
+ 
+     private Task OnCancelClicked()
+     {
++        _submitValidator?.Dispose();
+         MudDialog.Cancel();
+         return Task.CompletedTask;
+     }
  
      private async Task OnSubmitClicked()
      {

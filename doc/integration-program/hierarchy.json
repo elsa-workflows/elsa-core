@@ -540,14 +540,14 @@
       "number": 8282,
       "title": "[Task] Specify and verify the Secrets SQLite bridge",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8282"
     },
     {
       "number": 8284,
       "title": "[Task] Deliver the paired Blazor source host and debugging workflow",
       "level": "Task",
-      "state": "open",
+      "state": "closed",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8284"
     },
     {
