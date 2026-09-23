@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Elsa.Common.Entities;
 
 namespace Elsa.Secrets.Models;
@@ -24,6 +26,16 @@ public class Secret : Entity
     public string TypeName { get; set; } = SecretTypeNames.Text;
     public string StoreName { get; set; } = SecretStoreNames.Encrypted;
     public string? Scope { get; set; }
+    /// <summary>Stable owner identifier for a lifecycle-managed generation. Generic secret requests cannot set this marker.</summary>
+    public string? ManagedOwnerId { get; set; }
+
+    /// <summary>Generation identifier owned by <see cref="ManagedOwnerId"/>.</summary>
+    public string? ManagedGenerationId { get; set; }
+
+    [JsonIgnore]
+    [NotMapped]
+    public bool IsLifecycleManaged => ManagedOwnerId != null || ManagedGenerationId != null;
+
     [System.Text.Json.Serialization.JsonConverter(typeof(CaseInsensitiveHashSetConverter))]
     public HashSet<string> Tags { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public SecretStatus Status { get; set; } = SecretStatus.Active;

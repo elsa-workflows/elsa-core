@@ -16,7 +16,7 @@ namespace Elsa.Secrets.Persistence.EFCore.Sqlite.Migrations.Secrets
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "10.0.9");
+                .HasAnnotation("ProductVersion", "9.0.17");
 
             modelBuilder.Entity("Elsa.Secrets.Models.Secret", b =>
                 {
@@ -32,6 +32,14 @@ namespace Elsa.Secrets.Persistence.EFCore.Sqlite.Migrations.Secrets
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ManagedGenerationId")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ManagedOwnerId")
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 

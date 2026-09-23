@@ -12,6 +12,8 @@ internal class SecretConfiguration : IEntityTypeConfiguration<Secret>
         builder.Ignore(x => x.Tags);
         builder.Ignore(x => x.Versions);
         builder.Ignore(x => x.LatestActiveVersion);
+        builder.Property(x => x.ManagedOwnerId).HasMaxLength(200);
+        builder.Property(x => x.ManagedGenerationId).HasMaxLength(200);
         builder.Property<string>(SecretShadowPropertyNames.SerializedTags).HasColumnName("Tags").IsRequired();
         builder.Property<string>(SecretShadowPropertyNames.SerializedVersions).HasColumnName("Versions").IsRequired();
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
