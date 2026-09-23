@@ -5,9 +5,11 @@ on:
     paths:
       - 'scripts/integration-program/package_impact.py'
       - 'scripts/integration-program/package_closure.py'
+      - 'scripts/integration-program/run_slack_package_proof.py'
       - 'scripts/integration-program/test_*.py'
       - 'doc/integration-program/inventory/inventory.json'
       - 'doc/integration-program/package-closure.md'
+      - 'doc/integration-program/slack-package-proof.md'
       - '.github/workflows/package-impact-closure.yml'
   workflow_dispatch:
     inputs:
@@ -41,7 +43,7 @@ jobs:
           python scripts/integration-program/package_closure.py
           --inventory doc/integration-program/inventory/inventory.json
           --output "${RUNNER_TEMP}/package-closure-plan.json"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: package-closure-plan
           path: ${{ runner.temp }}/package-closure-plan.json
@@ -76,7 +78,7 @@ jobs:
           ref: ${{ steps.pins.outputs.extensions }}
           path: sources/elsa-extensions
           persist-credentials: false
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           dotnet-version: 10.0.x
       - name: Execute the pinned dependency closure
@@ -93,9 +95,105 @@ jobs:
             --output "${RUNNER_TEMP}/package-closure.json"
       - name: Upload source, TRX, and build receipts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: package-closure-source-test-receipts
           path: |
+            ${{ runner.temp }}/source-pins-plan.json
             ${{ runner.temp }}/package-closure.json
             ${{ runner.temp }}/artifacts/**
+          if-no-files-found: warn
+
+  released-artifact-proof:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Assert the runner targets the released 3.8.4 source pins
+        id: release-pins
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import re
+          import sys
+          sys.path.insert(0, "scripts/integration-program")
+          import run_slack_package_proof as proof
+
+          expected = {
+              "core": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+              "extensions": "154ba15fb4da85b4bebecfbe43639579cbda1d0d",
+          }
+          actual = {"core": proof.CORE_SHA, "extensions": proof.EXTENSIONS_SHA}
+          for name, pin in expected.items():
+              if not re.fullmatch(r"[0-9a-f]{40}", pin) or actual[name] != pin:
+                  raise SystemExit(f"Proof runner {name} pin {actual[name]!r} differs from released 3.8.4 pin {pin!r}")
+              print(f"{name}={pin}")
+          PY
+      - name: Checkout released Core source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: elsa-workflows/elsa-core
+          ref: ${{ steps.release-pins.outputs.core }}
+          path: sources/elsa-core
+          persist-credentials: false
+      - name: Checkout released Extensions source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: elsa-workflows/elsa-extensions
+          ref: ${{ steps.release-pins.outputs.extensions }}
+          path: sources/elsa-extensions
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+      - name: Install isolated SourceLink 3.1.1 tool
+        run: |
+          tool_root="${RUNNER_TEMP}/sourcelink"
+          mkdir -p "$tool_root"
+          cat > "$tool_root/NuGet.Config" <<'EOF'
+          <configuration><packageSources><clear /><add key="nuget.org" value="https://api.nuget.org/v3/index.json" /></packageSources></configuration>
+          EOF
+          dotnet tool install --tool-path "$tool_root" sourcelink --version 3.1.1 --configfile "$tool_root/NuGet.Config"
+      - name: Run local-only released artifact and clean consumer proof
+        env:
+          PROOF_OUTPUT: ${{ runner.temp }}/elsa-slack-proof-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python scripts/integration-program/run_slack_package_proof.py \
+            --core-source sources/elsa-core \
+            --extensions-source sources/elsa-extensions \
+            --output-dir "$PROOF_OUTPUT" \
+            --sourcelink-tool "${RUNNER_TEMP}/sourcelink/sourcelink"
+      - name: Upload proof receipts, logs, and generated consumer inputs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: slack-released-artifact-proof-evidence
+          path: |
+            ${{ runner.temp }}/elsa-slack-proof-${{ github.run_id }}-${{ github.run_attempt }}/evidence.json
+            ${{ runner.temp }}/elsa-slack-proof-${{ github.run_id }}-${{ github.run_attempt }}/impact-selection.json
+            ${{ runner.temp }}/elsa-slack-proof-${{ github.run_id }}-${{ github.run_attempt }}/logs/**
+            ${{ runner.temp }}/elsa-slack-proof-${{ github.run_id }}-${{ github.run_attempt }}/test-results/**/*.trx
+            ${{ runner.temp }}/elsa-slack-proof-${{ github.run_id }}-${{ github.run_attempt }}/consumers/**/*.cs
+            ${{ runner.temp }}/elsa-slack-proof-${{ github.run_id }}-${{ github.run_attempt }}/consumers/**/*.csproj
+            ${{ runner.temp }}/elsa-slack-proof-${{ github.run_id }}-${{ github.run_attempt }}/consumers/**/NuGet.Config
+            ${{ runner.temp }}/elsa-slack-proof-${{ github.run_id }}-${{ github.run_attempt }}/source-link/*.pdb
+            ${{ runner.temp }}/elsa-slack-proof-${{ github.run_id }}-${{ github.run_attempt }}/NuGet.Config
+            ${{ runner.temp }}/elsa-slack-proof-${{ github.run_id }}-${{ github.run_attempt }}/Source-NuGet.Config
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Upload the local proof package only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: elsa-slack-local-proof-nupkg
+          path: ${{ runner.temp }}/elsa-slack-proof-${{ github.run_id }}-${{ github.run_attempt }}/local-feed/Elsa.Slack.3.8.5-proof.154ba15.nupkg
+          if-no-files-found: warn
+          retention-days: 14

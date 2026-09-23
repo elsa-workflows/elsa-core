@@ -2,6 +2,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from package_closure import (
     KNOWN_BASELINE_SKIPS,
@@ -9,6 +10,7 @@ from package_closure import (
     classify_project,
     classify_trx_result,
     deferred_execution_projects,
+    main,
     parse_sources,
     parse_trx,
     verify_project_reference_paths,
@@ -186,6 +188,42 @@ class PackageClosureTests(unittest.TestCase):
             temporary.write_text(json.dumps(data), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "Expected only Elsa.Slack"):
                 build_plan(temporary, {})
+
+    def test_requested_receipt_path_gets_a_failure_receipt_with_partial_plan(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "nested" / "failure.json"
+            with patch("package_closure.sys.argv", [
+                "package_closure.py",
+                "--inventory", str(INVENTORY),
+                "--command-timeout-seconds", "0",
+                "--output", str(output),
+            ]):
+                result = main()
+
+            receipt = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(result, 2)
+            self.assertEqual(receipt["result"], "failed")
+            self.assertEqual(receipt["failure"]["phase"], "plan construction and source preflight")
+            self.assertIn("greater than zero", receipt["failure"]["message"])
+            self.assertEqual(receipt["requested"]["inventory"], str(INVENTORY))
+            self.assertEqual(receipt["partial_plan"]["affected_test_project_count"], 51)
+
+    def test_source_pin_preflight_failure_still_writes_requested_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "failed-pin.json"
+            with patch("package_closure.sys.argv", [
+                "package_closure.py",
+                "--inventory", str(INVENTORY),
+                "--source", "elsa-core=/missing/pinned-source",
+                "--output", str(output),
+            ]):
+                result = main()
+
+            receipt = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(result, 2)
+            self.assertEqual(receipt["result"], "failed")
+            self.assertIn("Source checkout does not exist", receipt["failure"]["message"])
+            self.assertEqual(receipt["requested"]["sources"], ["elsa-core=/missing/pinned-source"])
 
 
 if __name__ == "__main__":

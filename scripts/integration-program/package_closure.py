@@ -510,6 +510,47 @@ def write_output(plan: dict[str, Any], path: Path | None) -> None:
             stream.write("\n".join(summary) + "\n")
 
 
+def write_failure_output(
+    path: Path,
+    *,
+    phase: str,
+    error: Exception,
+    args: argparse.Namespace,
+    partial_plan: dict[str, Any] | None,
+) -> None:
+    receipt: dict[str, Any] = {
+        "schema_version": 1,
+        "result": "failed",
+        "failure": {
+            "phase": phase,
+            "type": type(error).__name__,
+            "message": str(error),
+        },
+        "requested": {
+            "inventory": str(args.inventory),
+            "sources": args.source,
+            "run": args.run,
+            "include_docker": args.include_docker,
+            "only": args.only,
+            "command_timeout_seconds": args.command_timeout_seconds,
+        },
+    }
+    if partial_plan is not None:
+        receipt["partial_plan"] = partial_plan
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+    print(f"Wrote failure receipt {path} (phase={phase})", file=sys.stderr)
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary_path:
+        with open(summary_path, "a", encoding="utf-8") as summary:
+            summary.write(
+                "## Core → Slack dependency closure\n\n"
+                f"Gate status: **failed during {phase}**\n\n"
+                f"Error: `{type(error).__name__}: {error}`\n"
+            )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--inventory", type=Path, required=True)
@@ -527,23 +568,29 @@ def main() -> int:
     parser.add_argument("--github-output", type=Path, help="Append source checkout pins as GitHub Actions outputs")
     args = parser.parse_args()
 
+    phase = "source parsing"
+    plan: dict[str, Any] | None = None
     try:
         sources = parse_sources(args.source)
+        phase = "plan construction and source preflight"
         plan = build_plan(args.inventory, sources)
         if args.command_timeout_seconds <= 0:
             raise ValueError("--command-timeout-seconds must be greater than zero")
         if args.github_output:
+            phase = "GitHub output generation"
             inventory = json.loads(args.inventory.read_text(encoding="utf-8"))
             with args.github_output.open("a", encoding="utf-8") as output:
                 for repository, output_name in (("elsa-core", "core"), ("elsa-extensions", "extensions")):
                     output.write(f"{output_name}={inventory['repositories'][repository]['commit']}\n")
         if args.run:
+            phase = "execution preflight"
             if set(sources) != {"elsa-core", "elsa-extensions"}:
                 raise ValueError("Execution requires pinned --source mappings for elsa-core and elsa-extensions")
             artifact_root = args.output.parent / "artifacts" if args.output else Path("artifacts/package-closure")
             run_artifact_dir = artifact_root / f"run-{uuid4().hex[:12]}"
             plan["artifact_directory"] = str(run_artifact_dir.resolve())
             verify_resolved_project_graph(plan, sources, args.command_timeout_seconds)
+            phase = "project test and host execution"
             execute_plan(
                 plan,
                 sources,
@@ -552,14 +599,26 @@ def main() -> int:
                 set(args.only) if args.only else None,
                 args.command_timeout_seconds,
             )
+        phase = "success receipt writing"
         write_output(plan, args.output)
         if any(result.get("status") == "failed" for result in plan["execution"]):
             return 1
         if args.run and not plan["correctness_closure_complete"]:
             return 3
         return 0
-    except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
+    except Exception as error:
         print(f"package_closure: {error}", file=sys.stderr)
+        if args.output:
+            try:
+                write_failure_output(
+                    args.output,
+                    phase=phase,
+                    error=error,
+                    args=args,
+                    partial_plan=plan,
+                )
+            except OSError as receipt_error:
+                print(f"Could not write failure receipt {args.output}: {receipt_error}", file=sys.stderr)
         return 2
 
 
