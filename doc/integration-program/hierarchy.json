@@ -542,6 +542,13 @@
       "level": "Task",
       "state": "open",
       "url": "https://github.com/elsa-workflows/elsa-core/issues/8282"
+    },
+    {
+      "number": 8284,
+      "title": "[Task] Deliver the paired Blazor source host and debugging workflow",
+      "level": "Task",
+      "state": "open",
+      "url": "https://github.com/elsa-workflows/elsa-core/issues/8284"
     }
   ],
   "parent_edges": [
@@ -848,6 +855,10 @@
     [
       8275,
       8282
+    ],
+    [
+      8279,
+      8284
     ]
   ],
   "blocking_edges": [
@@ -970,6 +981,10 @@
     [
       8276,
       8282
+    ],
+    [
+      8280,
+      8284
     ]
   ]
 }

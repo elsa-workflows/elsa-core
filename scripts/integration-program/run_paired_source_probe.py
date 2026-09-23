@@ -68,10 +68,11 @@ def main():
             try:
                 os.killpg(process.pid, signal.SIGKILL)
             except ProcessLookupError:
+                # Normal completion may already have removed the entire group.
                 pass
             process.wait()
 
-    results = [json.loads(line.removeprefix('PAIR_PROOF=')) for line in (output / 'build.log').read_text().splitlines() if line.startswith('PAIR_PROOF=')]
+    results = [json.loads(line[len('PAIR_PROOF='):]) for line in (output / 'build.log').read_text().splitlines() if line.startswith('PAIR_PROOF=')]
     if len(results) != 1 or not results[0]['featureMatches'] or not results[0]['httpRoundtrip'] or results[0]['descriptorName'] != 'Synthetic' or results[0]['descriptorCount'] != 1 or not results[0]['providerTypeResolves']:
         raise RuntimeError('Missing or unexpected paired contract receipt')
     if results[0]['descriptorType'] != 'SyntheticWorkflowContextProvider, ContractProbe':
