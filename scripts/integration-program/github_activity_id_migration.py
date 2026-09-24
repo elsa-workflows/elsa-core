@@ -115,8 +115,13 @@ def _has_untraversed_legacy_activity(value: Any) -> bool:
         return any(_has_untraversed_legacy_activity(item) for item in value)
     if not isinstance(value, dict):
         return False
-    if isinstance(value.get("type"), str) and value["type"] in LEGACY_TYPES:
-        return True
+    type_name = value.get("type")
+    if isinstance(type_name, str) and type_name in LEGACY_TYPES:
+        provider_input = value.get("id")
+        _, expected_type = LEGACY_TYPES[type_name]
+        if (isinstance(provider_input, dict) and provider_input.get("typeName") == expected_type
+                and isinstance(provider_input.get("expression"), dict)):
+            return True
     return any(
         _has_untraversed_legacy_activity(child)
         for key, child in value.items()

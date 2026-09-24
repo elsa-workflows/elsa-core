@@ -232,6 +232,18 @@ class GitHubActivityIdMigrationTests(unittest.TestCase):
             self.assertEqual(2, result.returncode, result.stderr)
             self.assertFalse(output.exists())
 
+    def test_custom_leaf_business_type_name_is_not_an_activity(self):
+        document = copy.deepcopy(self.workflow)
+        leaf = {
+            "type": "Acme.Classify", "id": "custom-leaf",
+            "businessData": {"externalEvent": {"type": "Elsa.GitHub.Comments.GetComment", "category": "crm"}},
+        }
+        document["Root"]["activities"].append(leaf)
+        mapping = mapping_for_document(document)
+        migrated = migrate_document(document, mapping, WORKFLOW_KEY, mapping["workflow_sha256"])
+        self.assertEqual(leaf, migrated["Root"]["activities"][-1])
+        self.assertEqual("activity-get-comment", migrated["Root"]["activities"][0]["id"])
+
     def test_unsupported_references_on_workflow_or_sequence_are_rejected(self):
         workflows = (
             {"root": {"type": "Elsa.Sequence", "activities": []}, "connections": []},
