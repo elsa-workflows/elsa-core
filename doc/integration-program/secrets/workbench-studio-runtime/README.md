@@ -46,6 +46,10 @@ and a roleless tenant A user received 403. The actual Studio secret pickers
 showed the corresponding tenant-scoped records, and each tenant saved an
 unpublished, unexecuted draft selecting its own secret. The bounded scan
 found no synthetic plaintext markers in the runtime logs or shared database.
+The receipt corrects a two-character transcription error in the private
+matrix-report hash against the existing source-profile ledger. It records Git
+blob IDs for the complete tracked patch set, including the BPMN layout patch;
+these identify exact patch content without embedding the private fixture.
 
 This run used separate origins in the same Codex in-app browser because the
 locked Mac could not create separate browser profiles. The source was a
@@ -55,3 +59,7 @@ or execute either draft, and no provider account was contacted. The fixture
 and processes were removed after the run. Repeat the relevant host and browser
 smoke after the actual import before closing #8326 or #8275; the durable
 frontend build and permission-aware Studio navigation remain separate gates.
+The fixture used different technical names for each tenant, so same-name
+storage isolation was not proven. It also did not record a switch back to
+tenant A after using B or inspect the saved `{name,typeName}` reference shape.
+Those checks remain open for the imported-source browser repeat.
