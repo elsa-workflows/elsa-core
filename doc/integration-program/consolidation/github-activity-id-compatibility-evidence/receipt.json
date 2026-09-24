@@ -21,6 +21,11 @@
   "scope": "Mapped Extensions source patch and focused local activity identity tests; no package publication",
   "status": "passed",
   "test": {
+    "cacheIsolation": {
+      "dotnetCliHome": "dotnet-home",
+      "nugetHttpCache": "nuget-http-cache",
+      "nugetPackages": "nuget-packages"
+    },
     "command": [
       "$DOTNET",
       "test",
@@ -54,7 +59,7 @@
     "expectedCount": 6,
     "framework": "net10.0",
     "logPath": "net10-dotnet-test.log",
-    "logSha256": "0c6ccee43344c5c86d0b6c6dbc662c631dd363ed84cc64892994b27532dce89c",
+    "logSha256": "9d3392c5e3aba1bd6019a4cf06367a50e5704017c4ad9e69d51e494f10c4ae84",
     "outcomes": [
       "Passed",
       "Passed",
@@ -64,15 +69,21 @@
       "Passed"
     ],
     "passed": true,
+    "seededPackage": {
+      "id": "elsa.platform.packagemanifest.generator",
+      "nupkgSha256": "56310f3c6606c793bce875f0dee5746dc5f42721d0cbbfde5fa3c4b61e6f15aa",
+      "source": "Explicit local artifact; NuGet feed provenance is not independently verified by this replay",
+      "version": "0.0.1-preview.50"
+    },
     "testNames": [
-      "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.UnaffectedNeighboringGitHubActivitiesKeepTheirExistingContracts",
+      "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.BothActivitySerializerEntryPointsRoundTripFourRootActivitiesWithoutIdCollisions",
+      "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.FourReleasedV1ShapesRetainTheirProviderInputsAndVersionlessPayloadIsRejectedByLatestV2Dispatch",
       "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.WorkflowDefinitionModelUsesRootActivityShapeAndCanEmitMigrationFixture",
       "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.V2ActivitiesKeepTheirLogicalNameAndVersionForDirectAndDescriptorConstruction",
-      "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.FourReleasedV1ShapesRetainTheirProviderInputsAndVersionlessPayloadIsRejectedByLatestV2Dispatch",
-      "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.BothActivitySerializerEntryPointsRoundTripFourRootActivitiesWithoutIdCollisions",
+      "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.UnaffectedNeighboringGitHubActivitiesKeepTheirExistingContracts",
       "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.BothActivitySerializerEntryPointsRoundTripActivitiesNestedInSequence"
     ],
     "trxPath": "net10-results/github-activity-id.trx",
-    "trxSha256": "836d1c63dc8335e0e54f40d0081c1a94662661c98c1f8a60fdbe66358d22631e"
+    "trxSha256": "2d8b08c586a7f2cb4883e78d8d1036bd66283e3840c6b4e7658678bba519a44e"
   }
 }

@@ -1,15 +1,21 @@
 import hashlib
+import json
+import os
 import sys
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
+from unittest import mock
 
 from run_github_activity_id_compatibility import (
     CORE_REFERENCE,
     REPOSITORY,
     ProofError,
     core_build_input_paths,
+    isolated_dotnet_environment,
+    stage_required_generator,
     override_fixture_project_reference,
     read_test_counts,
     resolve_dotnet,
@@ -17,6 +23,57 @@ from run_github_activity_id_compatibility import (
 
 
 class GitHubActivityCompatibilityRunnerTests(unittest.TestCase):
+    def test_generator_staging_extracts_only_verified_nupkg_content(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "generator"
+            source.mkdir()
+            output = root / "output"
+            (output / "nuget-packages").mkdir(parents=True)
+            nupkg = source / "elsa.platform.packagemanifest.generator.0.0.1-preview.50.nupkg"
+            with zipfile.ZipFile(nupkg, "w") as archive:
+                archive.writestr("tasks/net8.0/Generator.dll", b"verified artifact bytes")
+            (source / "tasks/net8.0").mkdir(parents=True)
+            (source / "tasks/net8.0/Generator.dll").write_bytes(b"tampered extracted cache")
+
+            with mock.patch("run_github_activity_id_compatibility.GENERATOR_NUPKG_SHA256", hashlib.sha256(nupkg.read_bytes()).hexdigest()):
+                result = stage_required_generator(source, output)
+
+            installed = output / "nuget-packages/elsa.platform.packagemanifest.generator/0.0.1-preview.50"
+            self.assertEqual(b"verified artifact bytes", (installed / "tasks/net8.0/Generator.dll").read_bytes())
+            self.assertEqual("0.0.1-preview.50", result["version"])
+            self.assertEqual(2, json.loads((installed / ".nupkg.metadata").read_text())["version"])
+
+    def test_explicit_generator_package_is_hash_checked_before_staging(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "generator"
+            source.mkdir()
+            output = root / "output"
+            (output / "nuget-packages").mkdir(parents=True)
+            (source / "elsa.platform.packagemanifest.generator.0.0.1-preview.50.nupkg").write_bytes(b"wrong package")
+
+            with self.assertRaisesRegex(ProofError, "reviewed pinned nupkg"):
+                stage_required_generator(source, output)
+            self.assertFalse((output / "nuget-packages/elsa.platform.packagemanifest.generator").exists())
+
+    def test_dotnet_and_nuget_caches_ignore_inherited_locations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sentinel = "/outside/should-not-be-used"
+            with mock.patch.dict(os.environ, {
+                "DOTNET_CLI_HOME": sentinel,
+                "NUGET_PACKAGES": sentinel,
+                "NUGET_HTTP_CACHE_PATH": sentinel,
+            }):
+                environment = isolated_dotnet_environment(root)
+
+            for variable in ("DOTNET_CLI_HOME", "NUGET_PACKAGES", "NUGET_HTTP_CACHE_PATH"):
+                location = Path(environment[variable])
+                self.assertTrue(location.is_dir())
+                self.assertEqual(root, location.parent)
+                self.assertNotEqual(sentinel, environment[variable])
+
     def test_project_reference_override_requires_exactly_one_expected_reference(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

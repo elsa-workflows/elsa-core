@@ -36,10 +36,13 @@ The [fixture](../../../scripts/integration-program/github-activity-id-compatibil
 
 Use clean source checkouts at the pins in the evidence receipt. The runner creates a disposable Extensions source archive, applies the reviewed patch, and redirects the sibling Core project reference only in that disposable copy. The supplied Core checkout must have clean build inputs under `src/` and the package/build props. Builds write ignored `bin/obj` outputs into the supplied Core checkout.
 
+The pinned Extensions project also requires `Elsa.Platform.PackageManifest.Generator` `0.0.1-preview.50`. A run with an empty NuGet cache could not restore that package from the configured feeds in this environment, although the earlier proof used an existing package cache. Supply an extracted cache folder for this one package using `--generator-cache`; the runner requires the exact nupkg SHA-256 `56310f3c6606c793bce875f0dee5746dc5f42721d0cbbfde5fa3c4b61e6f15aa`, then extracts only that verified nupkg into its own cache. It does not trust the previously extracted files in the supplied folder. Other .NET and NuGet cache locations are newly created beneath the output directory. This pins the local artifact bytes but does not independently verify its feed provenance or guarantee that every developer can download it; resolve its release provenance in #8260 before claiming a fully portable build.
+
 ```sh
 python3 scripts/integration-program/run_github_activity_id_compatibility.py \
   --extensions-source /path/to/clean/elsa-extensions \
   --core-source /path/to/pinned/elsa-core \
+  --generator-cache /path/to/elsa.platform.packagemanifest.generator/0.0.1-preview.50 \
   --output-dir /tmp/github-activity-id-proof-run
 
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
@@ -48,6 +51,6 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
   -s scripts/integration-program -p test_run_github_activity_id_compatibility.py
 ```
 
-The reviewed replay passed 6/6 focused .NET tests on net10.0 and the offline utilities passed 20 Python tests. The receipt and raw test log/TRX are in [the evidence directory](github-activity-id-compatibility-evidence/); the receipt hashes both result files and the applied patch. The build reported the existing v1 hidden-member warnings, a Fody configuration warning, and empty SourceLink data from the Git-archive staging tree. This was a test-only source replay; no `.nupkg` was packed, no feed was published, and no automatic publisher was invoked. The warnings and absent SourceLink data are not treated as release provenance evidence.
+The reviewed replay passed 6/6 focused .NET tests on net10.0 with isolated caches and the exact seeded generator artifact; the offline utilities passed 23 Python tests in standard and optimized modes. The receipt and raw test log/TRX are in [the evidence directory](github-activity-id-compatibility-evidence/); the receipt hashes both result files and the applied patch. The build reported the existing v1 hidden-member warnings, a Fody configuration warning, and empty SourceLink data from the Git-archive staging tree. This was a test-only source replay; no `.nupkg` was packed, no feed was published, and no automatic publisher was invoked. The warnings and absent SourceLink data are not treated as release provenance evidence.
 
 This proof does not establish net8.0/net9.0 results, all-upstream solution tests, actual history-preserving import, SourceLink against imported Git history, behavior against production workflow documents, or provider side effects. Explicit-version v1 payloads and versionless latest-dispatch rejection are covered by focused tests; mixed legacy `WorkflowDefinitionModel` serialization, the original historical workflow corpus, and unsupported graph topologies require later imported-source validation. Do not close #8325 or claim release readiness from this mapped-source proof alone.

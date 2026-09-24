@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -12,6 +13,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Any
 from xml.etree.ElementTree import ParseError
@@ -26,6 +28,9 @@ PATCH_PATH = HERE / "github-activity-id-compatibility/extensions-v2.patch"
 CORE_SHA = "6f493809eae0e1652ca185b901a982984f4ef799"
 EXTENSIONS_SHA = "33fa0bfd28c7585240e3d4f665058c067b17e287"
 EXPECTED_TESTS = 6
+GENERATOR_ID = "elsa.platform.packagemanifest.generator"
+GENERATOR_VERSION = "0.0.1-preview.50"
+GENERATOR_NUPKG_SHA256 = "56310f3c6606c793bce875f0dee5746dc5f42721d0cbbfde5fa3c4b61e6f15aa"
 GITHUB_PROJECT = Path("src/modules/devops/Elsa.DevOps.GitHub/Elsa.DevOps.GitHub.csproj")
 CORE_REFERENCE = br'ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa\Elsa.csproj"'
 BUILD_INPUT_NAMES = {
@@ -102,6 +107,59 @@ def output_directory(path: Path, source_roots: tuple[Path, ...]) -> Path:
             raise ProofError(f"Proof output must be outside inspected source: {source_root}")
     result.mkdir()
     return result
+
+
+def isolated_dotnet_environment(output: Path) -> dict[str, str]:
+    environment = os.environ.copy()
+    for name, relative in (
+        ("DOTNET_CLI_HOME", "dotnet-home"),
+        ("NUGET_PACKAGES", "nuget-packages"),
+        ("NUGET_HTTP_CACHE_PATH", "nuget-http-cache"),
+    ):
+        location = output / relative
+        location.mkdir()
+        environment[name] = str(location)
+    environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1"
+    environment["DOTNET_NOLOGO"] = "1"
+    return environment
+
+
+def stage_required_generator(source: Path, output: Path) -> dict[str, str]:
+    """Stage one exact pinned package that the historic feed no longer restores here."""
+    source = source.expanduser()
+    if source.is_symlink() or not source.is_dir():
+        raise ProofError("Generator package cache must be an ordinary directory")
+    source = source.resolve(strict=True)
+    nupkg = source / f"{GENERATOR_ID}.{GENERATOR_VERSION}.nupkg"
+    if not nupkg.is_file() or nupkg.is_symlink() or sha256(nupkg) != GENERATOR_NUPKG_SHA256:
+        raise ProofError("Generator package cache is not the reviewed pinned nupkg")
+    destination = output / "nuget-packages" / GENERATOR_ID / GENERATOR_VERSION
+    destination.mkdir(parents=True, exist_ok=False)
+    with zipfile.ZipFile(nupkg) as archive:
+        names: set[str] = set()
+        for member in archive.infolist():
+            relative = PurePosixPath(member.filename)
+            if relative.is_absolute() or ".." in relative.parts or member.filename in names:
+                raise ProofError(f"Invalid generator package entry: {member.filename!r}")
+            names.add(member.filename)
+            target = destination.joinpath(*relative.parts)
+            if member.is_dir():
+                target.mkdir(parents=True, exist_ok=True)
+            else:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with archive.open(member) as stream, target.open("xb") as file:
+                    shutil.copyfileobj(stream, file)
+    package_bytes = nupkg.read_bytes()
+    (destination / nupkg.name).write_bytes(package_bytes)
+    content_hash = base64.b64encode(hashlib.sha512(package_bytes).digest()).decode("ascii")
+    (destination / f"{nupkg.name}.sha512").write_text(content_hash, encoding="ascii")
+    (destination / ".nupkg.metadata").write_text(json.dumps({
+        "version": 2,
+        "contentHash": content_hash,
+        "source": "explicitly supplied local nupkg",
+    }), encoding="utf-8")
+    return {"id": GENERATOR_ID, "version": GENERATOR_VERSION, "nupkgSha256": GENERATOR_NUPKG_SHA256,
+            "source": "Explicit local artifact; NuGet feed provenance is not independently verified by this replay"}
 
 
 def extract_source_archive(source: Path, commit: str, destination: Path) -> None:
@@ -285,9 +343,13 @@ def run(args: argparse.Namespace) -> int:
                 "--results-directory",
                 str(results_dir),
             ]
-            environment = os.environ.copy()
-            environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1"
-            environment["DOTNET_NOLOGO"] = "1"
+            environment = isolated_dotnet_environment(output)
+            receipt["test"]["seededPackage"] = stage_required_generator(args.generator_cache, output)
+            receipt["test"]["cacheIsolation"] = {
+                "dotnetCliHome": "dotnet-home",
+                "nugetPackages": "nuget-packages",
+                "nugetHttpCache": "nuget-http-cache",
+            }
             with log_path.open("wb") as log_file:
                 try:
                     completed = subprocess.run(
@@ -346,6 +408,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--core-source", type=Path, required=True, help="Core checkout with pinned project/build inputs")
     parser.add_argument("--output-dir", type=Path, required=True, help="New output directory outside both source trees")
     parser.add_argument("--dotnet", default="dotnet", help="dotnet executable or path")
+    parser.add_argument("--generator-cache", type=Path, required=True,
+                        help="Extracted Elsa.Platform.PackageManifest.Generator 0.0.1-preview.50 cache folder; exact nupkg SHA is validated")
     parser.add_argument("--timeout-seconds", type=int, default=600)
     args = parser.parse_args(argv)
     if args.timeout_seconds < 1:
