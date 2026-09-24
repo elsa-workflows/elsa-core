@@ -46,6 +46,17 @@ jobs:
             --report-out "$RUNNER_TEMP/secrets-postgresql-upgrade-report.json"
           diff -u scripts/integration-program/secrets-postgresql-upgrade/observed-result.json \
             "$RUNNER_TEMP/secrets-postgresql-upgrade-report.json"
+      - name: Prove synthetic PostgreSQL Secrets fresh-destination bridge
+        run: |
+          python scripts/integration-program/run_secrets_postgresql_bridge.py \
+            --report-out "$RUNNER_TEMP/secrets-postgresql-bridge-report.json"
+      - name: Retain redacted PostgreSQL bridge report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: secrets-postgresql-bridge-report
+          path: ${{ runner.temp }}/secrets-postgresql-bridge-report.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Characterize published Secrets SQL Server upgrade failure
         run: |
           python scripts/integration-program/run_secrets_sqlserver_upgrade_fixture.py \
