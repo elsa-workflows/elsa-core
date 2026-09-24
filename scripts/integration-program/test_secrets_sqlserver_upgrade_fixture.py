@@ -1,9 +1,11 @@
 import copy
 import json
 from pathlib import Path
+import subprocess
 import unittest
+from unittest.mock import patch
 
-from run_secrets_sqlserver_upgrade_fixture import validate_known_baseline
+from run_secrets_sqlserver_upgrade_fixture import docker_run, validate_known_baseline
 
 
 FIXTURE = Path(__file__).resolve().parent / 'secrets-sqlserver-upgrade'
@@ -38,7 +40,7 @@ class KnownBaselineTests(unittest.TestCase):
     def test_rejects_changed_database_or_old_reader(self):
         report = copy.deepcopy(self.report)
         report['databaseAfterCore']['columns'][0]['dataType'] = 'changed'
-        with self.assertRaisesRegex(ValueError, 'complete SQL Server state'):
+        with self.assertRaisesRegex(ValueError, 'captured SQL Server state'):
             self.validate(report)
 
         report = copy.deepcopy(self.report)
@@ -62,6 +64,22 @@ class KnownBaselineTests(unittest.TestCase):
                        'SYNTHETIC-CIPHERTEXT-SENTINEL'):
             with self.subTest(marker=marker):
                 self.assertNotIn(marker, rendered)
+
+    def test_docker_failure_captures_output_before_redacting_password(self):
+        password = 'synthetic-runtime-password-for-test'
+
+        def fail(command, **kwargs):
+            self.assertEqual(kwargs['stdout'], subprocess.PIPE)
+            self.assertEqual(kwargs['stderr'], subprocess.STDOUT)
+            raise subprocess.CalledProcessError(1, command, output=f'failed with {password}')
+
+        with patch('run_secrets_sqlserver_upgrade_fixture.subprocess.run', side_effect=fail):
+            with self.assertRaises(RuntimeError) as caught:
+                docker_run(['run', '--env', f'MSSQL_SA_PASSWORD={password}'], redact=(password,))
+
+        self.assertNotIn(password, str(caught.exception))
+        self.assertIn('<redacted>', str(caught.exception))
+        self.assertIsNone(caught.exception.__cause__)
 
 
 if __name__ == '__main__':

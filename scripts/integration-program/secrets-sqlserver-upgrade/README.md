@@ -35,10 +35,13 @@ string, and synthetic ciphertext values.
 The checked-in [`observed-result.json`](observed-result.json) records the
 exact pinned baseline. Extensions applies `20241011092820_V3_3`. Core sees
 `20260531141743_Initial` as pending, then SQL Server reports error 2714:
-`There is already an object named 'Secrets' in the database.` The complete
-captured schema, indexes, migration history, and synthetic rows remain equal
-before and after that failed migration. A fresh Extensions 3.8.1 process
-still reads both versions. The legacy `ExpiresIn` column is a SQL Server
+`There is already an object named 'Secrets' in the database.` The recorded
+column names/types, index names/flags, migration history, and synthetic row
+fields/hashes remain equal before and after that failed migration. The
+snapshot does not include complete index or constraint definitions or
+fractional-second components of temporal fields; equality is limited to the
+recorded projection. A fresh Extensions 3.8.1 process still reads both
+versions. The legacy `ExpiresIn` column is a SQL Server
 `time` value. Microsoft's [documented `time` range](https://learn.microsoft.com/en-us/sql/t-sql/data-types/time-transact-sql)
 ends before 24 hours; this is a storage-boundary inference, not a live
 greater-than-24-hour write test. The separate duration-overflow and

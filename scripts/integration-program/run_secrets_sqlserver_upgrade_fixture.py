@@ -258,13 +258,15 @@ def run_phase(project, config, packages_dir, action, connection_string):
     except subprocess.CalledProcessError as error:
         password = connection_string.split('Password=', 1)[1].split(';', 1)[0]
         safe_output = (error.stdout or '').replace(connection_string, '<redacted connection string>')
-        raise RuntimeError(safe_output.replace(password, '<redacted>')) from error
+        raise RuntimeError(safe_output.replace(password, '<redacted>')) from None
     return json.loads(next(line for line in reversed(output.splitlines()) if line.startswith('{')))
 
 
-def docker_run(command, *, capture=False, input_text=None, redact=()):
+def docker_run(command, *, redact=()):
     try:
-        return run(['docker', *command], capture=capture, input_text=input_text)
+        # Docker may echo environment arguments on failure. Never inherit its
+        # stdout/stderr for calls that carry the disposable SQL password.
+        return run(['docker', *command], capture=True)
     except subprocess.CalledProcessError as error:
         output = error.stdout or ''
         safe_command = ' '.join(command)
@@ -272,7 +274,7 @@ def docker_run(command, *, capture=False, input_text=None, redact=()):
         for value in redact:
             safe_command = safe_command.replace(value, '<redacted>')
             safe_output = safe_output.replace(value, '<redacted>')
-        raise RuntimeError(f'docker {safe_command} failed: {safe_output}') from error
+        raise RuntimeError(f'docker {safe_command} failed: {safe_output}') from None
 
 
 def start_sqlserver(image):
@@ -288,7 +290,7 @@ def start_sqlserver(image):
         '--publish', '127.0.0.1::1433', image,
     ], redact=(password,))
     try:
-        ports = json.loads(docker_run(['inspect', '--format', '{{json .NetworkSettings.Ports}}', name], capture=True).stdout)
+        ports = json.loads(docker_run(['inspect', '--format', '{{json .NetworkSettings.Ports}}', name]).stdout)
         port = int(ports['1433/tcp'][0]['HostPort'])
         for _ in range(120):
             try:
@@ -374,7 +376,7 @@ def validate_known_baseline(old_migration, core_upgrade, before, after, old_reop
     if actual_indexes != EXPECTED_INDEXES:
         raise ValueError(f'Unexpected pre-upgrade SQL Server indexes: {actual_indexes}')
     if after != before:
-        raise ValueError(f'Core failure changed the complete SQL Server state: before={before}, after={after}')
+        raise ValueError(f'Core failure changed the captured SQL Server state: before={before}, after={after}')
     if old_reopen != expected_old_reopen():
         raise ValueError(f'Extensions 3.8.1 could not reopen and read the unchanged rows: {old_reopen}')
 
