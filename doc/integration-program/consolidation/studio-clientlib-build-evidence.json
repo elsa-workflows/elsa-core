@@ -1,0 +1,51 @@
+{
+  "checkedDate": "2026-09-24",
+  "sourcePins": {
+    "core": "95a658b96107ad4dbb280a13972479af74bc6a30",
+    "extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287",
+    "studio": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822"
+  },
+  "mappedRehearsalCommit": "8fe2bdbdedacd06c99d83b72764fdca9f325bc0c",
+  "layoutPatchSha256": "5885fb95cd2e1ec5524f0092fdc0c0ad3ad080d1ea5cd6bec96acc25bd90522b",
+  "nodeVersion": "22.22.1",
+  "designerGeneratedBpmnTypesCheck": "passed against Bpmn.Model 0.2.0",
+  "designerTests": {
+    "passed": 253,
+    "failed": 0,
+    "typeErrors": 0
+  },
+  "designerWebpack": "passed",
+  "domInteropWebpack": "passed",
+  "requiredAssets": {
+    "src/studio/framework/Elsa.Studio.DomInterop/wwwroot/dom.entry.js": {
+      "bytes": 9835,
+      "sha256": "2f73757bcf89a8ce980c9b62cbe03d173e852f52d73d4f423dfe38b146146efa"
+    },
+    "src/studio/framework/Elsa.Studio.DomInterop/wwwroot/clipboard.entry.js": {
+      "bytes": 4338,
+      "sha256": "cd9f895109f2d6e662a68056c0e4bce85b960c6e417416a245932dfc14b9082c"
+    },
+    "src/studio/framework/Elsa.Studio.DomInterop/wwwroot/files.entry.js": {
+      "bytes": 4823,
+      "sha256": "fd2a7ffa35aa7ce5269daebe6c16e2f2533d26ecac757ac5e461fa0aa908db91"
+    },
+    "src/studio/modules/Elsa.Studio.Workflows.Designer/wwwroot/designer.entry.js": {
+      "bytes": 3792947,
+      "sha256": "2c3731492966b6061dfb3b4da606fa31552c07389775df706ea1c3e581ac59f3"
+    },
+    "src/studio/modules/Elsa.Studio.Workflows.Designer/wwwroot/react-designer.entry.js": {
+      "bytes": 2217180,
+      "sha256": "1e1688338ee657e96187974df01562c6a9056a4a0c373fb811a973c828b7fe88"
+    },
+    "src/studio/modules/Elsa.Studio.Workflows.Designer/wwwroot/designer.css": {
+      "bytes": 5782,
+      "sha256": "5291afcec6ba61e9e02138c89991eb84f39dcfdf249f85d0fed8f614e578f25b"
+    }
+  },
+  "npmLockfilesCreated": false,
+  "scope": "Isolated mapped-source clone; no history-bearing import or required CI gate yet.",
+  "warnings": [
+    "Designer npm audit: 3 moderate and 1 high advisories.",
+    "Dotnet restore: NU1902 for Microsoft.Build.Tasks.Git 10.0.103."
+  ]
+}
