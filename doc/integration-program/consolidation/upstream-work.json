@@ -1,295 +1,366 @@
 {
-  "checkedAt": "2026-09-23T21:29:09.092675+00:00",
-  "scope": "Read-only inventory of open source PRs; no approval or abandonment inferred",
+  "checkedAt": "2026-09-24T01:50:26.322491+00:00",
+  "scope": "Read-only refresh after raw95 rehearsal creation and before canonical build; does not claim this read preceded candidate creation Both repositories have the same open-PR number-to-head-SHA sets as the previously recorded ledger.",
   "repositories": {
     "elsa-extensions": {
       "main": "33fa0bfd28c7585240e3d4f665058c067b17e287",
+      "openCount": 17,
+      "headSetMatchesPriorLedger": true,
       "openPullRequests": [
         {
-          "headRefName": "cursor/packages-base-version-3-10-0-27a3",
-          "headRefOid": "b6ed67fde0c7ea966c7d921a487c3c8a0c4c4407",
           "number": 216,
           "title": "chore: set packages base_version to 3.10.0",
+          "headRefName": "cursor/packages-base-version-3-10-0-27a3",
+          "headRefOid": "b6ed67fde0c7ea966c7d921a487c3c8a0c4c4407",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-22T08:13:43Z",
           "url": "https://github.com/elsa-workflows/elsa-extensions/pull/216",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "feature/mcp-server",
-          "headRefOid": "3121af8f04e6d08afddfb21a8e1844a7cc745497",
           "number": 209,
           "title": "feat(mcp): expose Elsa workflows as MCP tools",
+          "headRefName": "feature/mcp-server",
+          "headRefOid": "3121af8f04e6d08afddfb21a8e1844a7cc745497",
+          "baseRefName": "main",
+          "isDraft": true,
           "updatedAt": "2026-09-19T22:25:24Z",
           "url": "https://github.com/elsa-workflows/elsa-extensions/pull/209",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "feature/azure-devops",
-          "headRefOid": "c07d62ad77376a9aed2b07a64decb7fcfa778821",
           "number": 199,
           "title": "feat(devops): add the Elsa.DevOps.AzureDevOps module",
+          "headRefName": "feature/azure-devops",
+          "headRefOid": "c07d62ad77376a9aed2b07a64decb7fcfa778821",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-19T22:25:25Z",
           "url": "https://github.com/elsa-workflows/elsa-extensions/pull/199",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "bugfix/nuke-sdk-10-0-400",
-          "headRefOid": "c16e92bc36821ad76438687bf260ab5f88224519",
           "number": 175,
           "title": "build: bump NuGet.Packaging to 7.9.0 to unbreak the NUKE build on SDK 10.0.400",
+          "headRefName": "bugfix/nuke-sdk-10-0-400",
+          "headRefOid": "c16e92bc36821ad76438687bf260ab5f88224519",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-19T22:25:26Z",
           "url": "https://github.com/elsa-workflows/elsa-extensions/pull/175",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "dependabot/nuget/build/nuget-a690243288",
-          "headRefOid": "db6da257b9272eebbe045711d9bcc8fd3e45df66",
           "number": 166,
           "title": "Bump the nuget group with 1 update",
+          "headRefName": "dependabot/nuget/build/nuget-a690243288",
+          "headRefOid": "db6da257b9272eebbe045711d9bcc8fd3e45df66",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-07-21T03:58:57Z",
           "url": "https://github.com/elsa-workflows/elsa-extensions/pull/166",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "dependabot/nuget/nuget-94b6bde6d6",
-          "headRefOid": "8aca91af390ba9ace1d3de558a237d75665f0b67",
           "number": 165,
           "title": "Bump the nuget group with 2 updates",
+          "headRefName": "dependabot/nuget/nuget-94b6bde6d6",
+          "headRefOid": "8aca91af390ba9ace1d3de558a237d75665f0b67",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-07-21T03:44:19Z",
           "url": "https://github.com/elsa-workflows/elsa-extensions/pull/165",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "main",
-          "headRefOid": "4841e29e70acc4a8b29203c085b96e99c533fe79",
           "number": 163,
           "title": "Remove obsolete methods to fix security vulnerability",
+          "headRefName": "main",
+          "headRefOid": "4841e29e70acc4a8b29203c085b96e99c533fe79",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-19T22:25:27Z",
           "url": "https://github.com/elsa-workflows/elsa-extensions/pull/163",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "feature/sqlresultstype",
-          "headRefOid": "29e350e94256b97ee453dcb19effbe5fe170b15d",
           "number": 154,
           "title": "Feature: Sql Query Results Handling #153",
+          "headRefName": "feature/sqlresultstype",
+          "headRefOid": "29e350e94256b97ee453dcb19effbe5fe170b15d",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-14T07:07:05Z",
           "url": "https://github.com/elsa-workflows/elsa-extensions/pull/154",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "Fix/Use-new-tenantId-property-to-consistently-use-default-tenant",
-          "headRefOid": "73e9efd1a9a3491e04e2d43b784632ee2b2e28f8",
           "number": 150,
           "title": "Fix: consistently use the TenantId property to make sure to properly apply the new default TenantId (empty string instead of null)",
+          "headRefName": "Fix/Use-new-tenantId-property-to-consistently-use-default-tenant",
+          "headRefOid": "73e9efd1a9a3491e04e2d43b784632ee2b2e28f8",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-14T07:07:08Z",
           "url": "https://github.com/elsa-workflows/elsa-extensions/pull/150",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "feature/servicebus-processor-options",
-          "headRefOid": "a7166e0b2d5bed1f8c8f48ef80e51b68b3fd0e23",
           "number": 140,
           "title": "feature: Add option to configure custom azure servicebus processor options",
+          "headRefName": "feature/servicebus-processor-options",
+          "headRefOid": "a7166e0b2d5bed1f8c8f48ef80e51b68b3fd0e23",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-14T07:07:07Z",
           "url": "https://github.com/elsa-workflows/elsa-extensions/pull/140",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "dependabot/nuget/nuget-0c428dbeb2",
-          "headRefOid": "ff4661613ccea088f5fe68033ff154a7023dd590",
           "number": 138,
           "title": "Bump the nuget group with 1 update",
+          "headRefName": "dependabot/nuget/nuget-0c428dbeb2",
+          "headRefOid": "ff4661613ccea088f5fe68033ff154a7023dd590",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-05-04T14:36:39Z",
           "url": "https://github.com/elsa-workflows/elsa-extensions/pull/138",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "dapper",
-          "headRefOid": "6ef525d00f2df16b05ce4dd79cbea50f174f6b1e",
           "number": 132,
           "title": "Split Elsa.Persistence.Dapper project #131",
+          "headRefName": "dapper",
+          "headRefOid": "6ef525d00f2df16b05ce4dd79cbea50f174f6b1e",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-14T07:07:06Z",
           "url": "https://github.com/elsa-workflows/elsa-extensions/pull/132",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "feature/fakedata-module",
-          "headRefOid": "cf5ff51dab4e8c01ba7aa73fc44877b4ff3346e8",
           "number": 129,
           "title": "Feature: add fake data module",
+          "headRefName": "feature/fakedata-module",
+          "headRefOid": "cf5ff51dab4e8c01ba7aa73fc44877b4ff3346e8",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-14T07:07:05Z",
           "url": "https://github.com/elsa-workflows/elsa-extensions/pull/129",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "dependabot/nuget/nuget-335537b6a2",
-          "headRefOid": "702ae372e8aafbe0061d6791a04c6234b3c851fa",
           "number": 128,
           "title": "Bump the nuget group with 1 update",
+          "headRefName": "dependabot/nuget/nuget-335537b6a2",
+          "headRefOid": "702ae372e8aafbe0061d6791a04c6234b3c851fa",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-04-21T09:58:54Z",
           "url": "https://github.com/elsa-workflows/elsa-extensions/pull/128",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "bugfix/prevent-hangfire-nre-when-getting-recurring-jobs",
-          "headRefOid": "15bb3559d3c2a61c17d249edcca73dc1ed14e179",
           "number": 123,
           "title": "Add defensive check to `GetRecurringJobIds` to prevent null reference exception",
+          "headRefName": "bugfix/prevent-hangfire-nre-when-getting-recurring-jobs",
+          "headRefOid": "15bb3559d3c2a61c17d249edcca73dc1ed14e179",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-19T22:25:28Z",
           "url": "https://github.com/elsa-workflows/elsa-extensions/pull/123",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "dependabot/nuget/nuget-bbc7aa4865",
-          "headRefOid": "6e199fde2f7e923030b16734da5f56a676a6355d",
           "number": 122,
           "title": "Bump the nuget group with 1 update",
+          "headRefName": "dependabot/nuget/nuget-bbc7aa4865",
+          "headRefOid": "6e199fde2f7e923030b16734da5f56a676a6355d",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-04-21T09:58:54Z",
           "url": "https://github.com/elsa-workflows/elsa-extensions/pull/122",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "copilot/fix-53",
-          "headRefOid": "380047e63b91902543fc973512d43e9c1622bafa",
           "number": 54,
           "title": "Fix EFCoreActivityExecutionStore.SaveManyAsync to call IEntitySavingHandler instances",
+          "headRefName": "copilot/fix-53",
+          "headRefOid": "380047e63b91902543fc973512d43e9c1622bafa",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-14T07:07:02Z",
           "url": "https://github.com/elsa-workflows/elsa-extensions/pull/54",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         }
       ]
     },
     "elsa-studio": {
       "main": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822",
+      "openCount": 14,
+      "headSetMatchesPriorLedger": true,
       "openPullRequests": [
         {
-          "headRefName": "codex/role-management-mobile-qa-fixes",
-          "headRefOid": "d5d7d1dabfea1a7bbbb698586b6528bb1ebdea5f",
           "number": 999,
           "title": "Improve role administration and permission-aware Studio UX",
+          "headRefName": "codex/role-management-mobile-qa-fixes",
+          "headRefOid": "d5d7d1dabfea1a7bbbb698586b6528bb1ebdea5f",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-08T01:37:10Z",
           "url": "https://github.com/elsa-workflows/elsa-studio/pull/999",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "fix/version-history-tab-missing-workspace",
-          "headRefOid": "e935ca2646f14c48d8b70e5dfb857713221ddd6c",
           "number": 994,
           "title": "fix(workflows): keep the version history tab alive without a cascading workspace",
+          "headRefName": "fix/version-history-tab-missing-workspace",
+          "headRefOid": "e935ca2646f14c48d8b70e5dfb857713221ddd6c",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-19T22:25:23Z",
           "url": "https://github.com/elsa-workflows/elsa-studio/pull/994",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "copilot/fix-blazored-fluentvalidation-dependency",
-          "headRefOid": "33d8c964231ca8b30cd9a23037f824cb2bea2a10",
           "number": 935,
           "title": "Replace archived Blazored.FluentValidation with Blazilla",
+          "headRefName": "copilot/fix-blazored-fluentvalidation-dependency",
+          "headRefOid": "33d8c964231ca8b30cd9a23037f824cb2bea2a10",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-14T19:21:00Z",
           "url": "https://github.com/elsa-workflows/elsa-studio/pull/935",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "dependabot/nuget/main/Elsa.Api.Client-3.8.0-preview.5410",
-          "headRefOid": "7d865818de0fa7ed72b7a1af4ff956da1d77592b",
           "number": 932,
           "title": "deps: Bump Elsa.Api.Client from 3.8.0-preview.5397 to 3.8.0-preview.5410",
+          "headRefName": "dependabot/nuget/main/Elsa.Api.Client-3.8.0-preview.5410",
+          "headRefOid": "7d865818de0fa7ed72b7a1af4ff956da1d77592b",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-08-03T04:31:37Z",
           "url": "https://github.com/elsa-workflows/elsa-studio/pull/932",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "dependabot/npm_and_yarn/src/wrappers/npm_and_yarn-cfeaca08f7",
-          "headRefOid": "74f8f1db182712663a7d4deaf3d94f40a0a3e4c8",
           "number": 916,
           "title": "Bump the npm_and_yarn group across 1 directory with 8 updates",
+          "headRefName": "dependabot/npm_and_yarn/src/wrappers/npm_and_yarn-cfeaca08f7",
+          "headRefOid": "74f8f1db182712663a7d4deaf3d94f40a0a3e4c8",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-07-02T12:18:27Z",
           "url": "https://github.com/elsa-workflows/elsa-studio/pull/916",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "codex/resolve-warnings-20260622",
-          "headRefOid": "ee21aae4b15d4d73401b7f4df3c10b577fc9efbb",
           "number": 907,
           "title": "Resolve focused Studio warnings",
+          "headRefName": "codex/resolve-warnings-20260622",
+          "headRefOid": "ee21aae4b15d4d73401b7f4df3c10b577fc9efbb",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-06-22T23:09:23Z",
           "url": "https://github.com/elsa-workflows/elsa-studio/pull/907",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "codex/resolve-warnings-20260615",
-          "headRefOid": "7efc2faabb4787f17dde71cd75690ceb58cfda78",
           "number": 901,
           "title": "Resolve focused build warnings",
+          "headRefName": "codex/resolve-warnings-20260615",
+          "headRefOid": "7efc2faabb4787f17dde71cd75690ceb58cfda78",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-06-15T06:23:11Z",
           "url": "https://github.com/elsa-workflows/elsa-studio/pull/901",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "feat-adding-RedirectUriPrefix",
-          "headRefOid": "e865a7cb3ada16d15e32fad122f1f90113f51bd9",
           "number": 809,
           "title": "feat: add RedirectUriPrefix support to OpenIdConnectConfiguration for sub-path deployments",
+          "headRefName": "feat-adding-RedirectUriPrefix",
+          "headRefOid": "e865a7cb3ada16d15e32fad122f1f90113f51bd9",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-14T07:07:03Z",
           "url": "https://github.com/elsa-workflows/elsa-studio/pull/809",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "dependabot/npm_and_yarn/src/modules/Elsa.Studio.Workflows.Designer/ClientLib/npm_and_yarn-998b9f9285",
-          "headRefOid": "55e75c8f11a438b97ad9d419a3dbcf439bd8804f",
           "number": 806,
           "title": "Bump the npm_and_yarn group across 3 directories with 6 updates",
+          "headRefName": "dependabot/npm_and_yarn/src/modules/Elsa.Studio.Workflows.Designer/ClientLib/npm_and_yarn-998b9f9285",
+          "headRefOid": "55e75c8f11a438b97ad9d419a3dbcf439bd8804f",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-05-03T16:42:12Z",
           "url": "https://github.com/elsa-workflows/elsa-studio/pull/806",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "feature/remove-rendering-before--login",
-          "headRefOid": "bc5cb5f70338c6de84ecd7083e68133dc735003a",
           "number": 742,
           "title": "update login and logout ",
+          "headRefName": "feature/remove-rendering-before--login",
+          "headRefOid": "bc5cb5f70338c6de84ecd7083e68133dc735003a",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-14T07:07:01Z",
           "url": "https://github.com/elsa-workflows/elsa-studio/pull/742",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "dependabot/npm_and_yarn/src/wrappers/npm_and_yarn-1ad9977b7d",
-          "headRefOid": "21bba822b90bd540c2f6d2b03cc2dd21f1554cdd",
           "number": 598,
           "title": "Bump the npm_and_yarn group across 1 directory with 5 updates",
+          "headRefName": "dependabot/npm_and_yarn/src/wrappers/npm_and_yarn-1ad9977b7d",
+          "headRefOid": "21bba822b90bd540c2f6d2b03cc2dd21f1554cdd",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2025-12-10T18:00:45Z",
           "url": "https://github.com/elsa-workflows/elsa-studio/pull/598",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "MovableNodesOnReadOnly",
-          "headRefOid": "74e6fdb589851b4f5643bbb893c97a1371d59193",
           "number": 516,
           "title": "Movable Activities on read only",
+          "headRefName": "MovableNodesOnReadOnly",
+          "headRefOid": "74e6fdb589851b4f5643bbb893c97a1371d59193",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-14T07:07:00Z",
           "url": "https://github.com/elsa-workflows/elsa-studio/pull/516",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "DesignerEmbeddedActivitySelectFix",
-          "headRefOid": "fa7a4021370bd85bd68195e160e9a33bc124e485",
           "number": 514,
           "title": "Designer embedded activity select fix",
+          "headRefName": "DesignerEmbeddedActivitySelectFix",
+          "headRefOid": "fa7a4021370bd85bd68195e160e9a33bc124e485",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-14T07:06:59Z",
           "url": "https://github.com/elsa-workflows/elsa-studio/pull/514",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         },
         {
-          "headRefName": "conditional-inputs-elsa-3",
-          "headRefOid": "f457ed8a7c44e55785668c454fb9785e24e803eb",
           "number": 188,
           "title": "Conditional inputs Elsa 3",
+          "headRefName": "conditional-inputs-elsa-3",
+          "headRefOid": "f457ed8a7c44e55785668c454fb9785e24e803eb",
+          "baseRefName": "main",
+          "isDraft": false,
           "updatedAt": "2026-09-14T07:06:58Z",
           "url": "https://github.com/elsa-workflows/elsa-studio/pull/188",
-          "disposition": "Preserve upstream PR; reconcile exact head against final imported source before publisher cutover. Not merged or rejected by this program."
+          "disposition": "Preserve upstream PR and reconcile at final source import; no merge, rejection or reparenting performed."
         }
       ]
     }
+  },
+  "refreshEvidence": {
+    "headSetsMatchPreviouslyRecordedLedger": true,
+    "extensionsOpenPullRequestCount": 17,
+    "studioOpenPullRequestCount": 14
   }
 }

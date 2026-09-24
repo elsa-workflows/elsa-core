@@ -1,0 +1,230 @@
+{
+  "verifiedAtUtc": "2026-09-24T01:39:07Z",
+  "verificationMethod": "git ls-remote <repository> refs/heads/main",
+  "upstreamMainAtVerification": {
+    "core": {
+      "repository": "https://github.com/elsa-workflows/elsa-core.git",
+      "commit": "77f3ca92eb3e514af959404f67ea538b07cba98f"
+    },
+    "extensions": {
+      "repository": "https://github.com/elsa-workflows/elsa-extensions.git",
+      "commit": "33fa0bfd28c7585240e3d4f665058c067b17e287"
+    },
+    "studio": {
+      "repository": "https://github.com/elsa-workflows/elsa-studio.git",
+      "commit": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822"
+    }
+  },
+  "supportedRehearsalProfiles": [
+    {
+      "name": "original-history-baseline",
+      "sourceCommits": {
+        "core": "8e893e02c4ac089d526b0a0d294a8546f021d072",
+        "extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287",
+        "studio": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822"
+      },
+      "status": "Retained original source profile; no canonical-solution property or build result is claimed here."
+    },
+    {
+      "name": "core-076-property-profile",
+      "sourceCommits": {
+        "core": "076f022cc174d497af26fc8e26414970e61a79b1",
+        "extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287",
+        "studio": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822"
+      },
+      "evidence": "canonical-packability-076-evidence.json.gz",
+      "status": "Retained property-only evidence profile; canonical build and test proof remains false."
+    },
+    {
+      "name": "core-95a658-followup-profile",
+      "sourceCommits": {
+        "core": "95a658b96107ad4dbb280a13972479af74bc6a30",
+        "extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287",
+        "studio": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822"
+      },
+      "status": "This pin was verified as Core main at profile-selection time; current Core main is recorded separately above. The exact raw rehearsal, canonical preparer, and 2,586-case property evaluation are complete. Four supplemental current-main compatibility/test-layout patches were applied after the property evaluation. The canonical NUKE Test target is running; no build/test completion is asserted yet."
+    }
+  ],
+  "core076To95a658BuildInputComparison": {
+    "core076IsAncestorOf95a658": true,
+    "unchangedTrackedBuildInputs": [
+      {
+        "path": "Directory.Build.props",
+        "blob": "969fcc3f5c104d1be78231c0ac23ed3ab3737736"
+      },
+      {
+        "path": "Directory.Build.targets",
+        "blob": "2a61364c98e134dfbbf6ba8c5d6498f0bffcb81b"
+      },
+      {
+        "path": "Directory.Packages.props",
+        "blob": "85f6b2ae7f5f8e54f947d70d79c9a24b11712d69"
+      },
+      {
+        "path": "NuGet.Config",
+        "blob": "1ec3544b7f8af520075affc7cf0e32cbc768476a"
+      },
+      {
+        "path": "src/Directory.Build.props",
+        "blob": "4daf7065cff42f1f3bbc4ed1fc3a7daffd58883e"
+      },
+      {
+        "path": "build/Build.cs",
+        "blob": "840f70e4260bc534064198d5346f9ccff34ef611"
+      }
+    ],
+    "absentAtBothPins": [
+      "global.json",
+      "Directory.Solution.props",
+      "Directory.Solution.targets",
+      "src/Directory.Build.targets"
+    ],
+    "changedSolution": {
+      "path": "Elsa.sln",
+      "oldBlob": "de6e2cabdb565aa5155a02b1c82b12820b742148",
+      "newBlob": "7f9ceaefe28f578ef9a91ce1b0faa2b1c7d3501b",
+      "addedProjects": [
+        "src/modules/Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql/Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql.csproj",
+        "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+        "test/integration/Elsa.Secrets.Api.IntegrationTests/Elsa.Secrets.Api.IntegrationTests.csproj"
+      ]
+    },
+    "changedWorkflows": [
+      ".github/workflows/integration-program-tools.yml",
+      ".github/workflows/secrets-api-studio-contract.yml"
+    ],
+    "packagePublisherWorkflowUnchanged": {
+      "path": ".github/workflows/packages.yml",
+      "blob": "8cd229e2d5f6307826f144ee0b1de37f86f93ed8"
+    },
+    "sourceIntegrationPatchPathReview": {
+      "path": "scripts/integration-program/consolidated-build/source-integration.patch",
+      "sha256": "b091576a7f8d51c8b469645eea4b868556ebfadb084d7afbc4287ea36155433d",
+      "patchPaths": 185,
+      "corePathsChangedSince076": 277,
+      "overlappingPaths": [],
+      "interpretation": "Path-overlap screening only; the patch has not been applied or checked against a fresh 95a658 rehearsal."
+    },
+    "scope": "This compares build configuration, solution membership, and the named workflows. It is not a complete source diff or build result."
+  },
+  "coreMainDeltaAfter95a658": {
+    "candidateCorePin": "95a658b96107ad4dbb280a13972479af74bc6a30",
+    "verifiedCurrentMain": "77f3ca92eb3e514af959404f67ea538b07cba98f",
+    "firstParentCommits": [
+      {
+        "commit": "871da8c8a82ad7d25ccedbd0688c98a86a779e1d",
+        "subject": "Preserve and prove Slack independent package boundaries (#8318)",
+        "changedPaths": 9,
+        "classification": "Package-boundary tooling, workflow, documentation, and the source-integration patch; no Core runtime source change."
+      },
+      {
+        "commit": "280a1ed23188ce7d20478acef04f08f0c7f2ca6e",
+        "subject": "[Connections] Verify credential lifecycle across PostgreSQL workers",
+        "changedPaths": 14,
+        "classification": "PostgreSQL credential worker integration fixtures and supporting documentation; no Core runtime source change."
+      },
+      {
+        "commit": "77f3ca92eb3e514af959404f67ea538b07cba98f",
+        "subject": "Prepare imported projects in canonical Elsa.sln",
+        "changedPaths": 4,
+        "classification": "Canonical preparation tooling, property evidence, and tests; no Core runtime source change."
+      }
+    ],
+    "interpretation": "The 95a rehearsal is a deliberate historical profile and does not contain these later main commits. Refresh the source pins and reconcile active work before the actual history import."
+  },
+  "raw95aRehearsalEvidence": {
+    "rehearsalCommit": "8fe2bdbdedacd06c99d83b72764fdca9f325bc0c",
+    "importReceiptSha256": "af0dddb5e1c70a299d016db42fe7531747946825143e7e51ff626461a8331327",
+    "coreFilesPreserved": 6222,
+    "mappedUpstreamFilesPreserved": 3771,
+    "totalExactBlobsAndModes": 9993,
+    "originalHistoriesReachable": true,
+    "rootIndependentVerification": true,
+    "buildOrTestClaimed": false,
+    "publicationAuthorized": false
+  },
+  "upstreamWorkRefresh": {
+    "checkedAtUtc": "2026-09-24T01:50:26.322491+00:00",
+    "scope": "Read-only open-PR refresh after the raw 95a rehearsal was created and before the canonical Test run; it does not claim the read preceded candidate creation or infer approval/abandonment.",
+    "snapshotPathAtCapture": "/tmp/elsa-8194/upstream-work-refresh-95a.json",
+    "repositories": {
+      "extensions": {
+        "verifiedMain": "33fa0bfd28c7585240e3d4f665058c067b17e287",
+        "openPullRequests": 17,
+        "headSetMatchesPriorLedger": true
+      },
+      "studio": {
+        "verifiedMain": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822",
+        "openPullRequests": 14,
+        "headSetMatchesPriorLedger": true
+      }
+    }
+  },
+  "canonicalPreparationEvidence": {
+    "rehearsalCommit": "8fe2bdbdedacd06c99d83b72764fdca9f325bc0c",
+    "canonicalSolution": "Elsa.sln",
+    "importedProjectCount": 166,
+    "addedTestProjects": [
+      "test/extensions/modules/agents/Elsa.Studio.Agents.Tests/Elsa.Studio.Agents.Tests.csproj"
+    ],
+    "preparationReceiptSha256": "5fd5df724698e010932a741633936a12d39e506743195482b33e68d9154d0238",
+    "sourceIntegrationPatchSha256": "b091576a7f8d51c8b469645eea4b868556ebfadb084d7afbc4287ea36155433d",
+    "toolSourceHashesAtEvaluation": {
+      "prepareConsolidatedBuildSha256": "9372f90f876bb78f6aa3c44ad199e5df98a42779d0538aece7cb65f00209c2f5",
+      "prepareConsolidatedBuildTestsSha256": "14eafda1eaa0030e95887effb31f404bcb6a3fc26347f4f6fa6d23e35519ae12"
+    },
+    "propertyMatrix": {
+      "sdk": "10.0.300",
+      "projectCount": 167,
+      "evaluationCount": 2586,
+      "configurations": [
+        "Debug",
+        "Release"
+      ],
+      "referenceModes": [
+        "default",
+        "source",
+        "package"
+      ],
+      "allPackageIdsNonEmptyAndStable": true,
+      "allProjectsNonPackable": true,
+      "allProjectsDisablePackageOnBuild": true,
+      "reportSha256": "5b720229d7f58da91a4c62aaf19670acea6212638c013dfcc676713fba6b5d18",
+      "supplementalPatchesAppliedAfterEvaluation": true
+    },
+    "supplementalPatchesAppliedAfterPropertyEvaluation": [
+      {
+        "name": "Dapper atomic updates",
+        "path": "scripts/integration-program/consolidated-build/dapper-atomic-updates.patch",
+        "sha256": "0b73ba77d301b4288de1929bd22cf2d5ffc70947eccc2437a1d8f00392e6aa21",
+        "changedPaths": 4
+      },
+      {
+        "name": "Mongo atomic updates",
+        "path": "scripts/integration-program/consolidated-build/mongo-atomic-updates.patch",
+        "sha256": "b06b99672ad3304413a8ea1093da3c6483db6b93a9a429a4c6312e62e29d841f",
+        "changedPaths": 3
+      },
+      {
+        "name": "Workbench canonical Secrets sample",
+        "path": "scripts/integration-program/consolidated-build/workbench-canonical-secrets.patch",
+        "sha256": "5dd4667190c538279f3b89cea80b81681402775555a89d89248001c2e22aa446",
+        "changedPaths": 2
+      },
+      {
+        "name": "Studio test layout",
+        "path": "scripts/integration-program/consolidated-build/studio-test-layout.patch",
+        "sha256": "ea0b94db04f126356194620cacb39a6bbeda0965caa54159089641aeb88b81a7",
+        "changedPaths": 7
+      }
+    ],
+    "canonicalTestRun": {
+      "command": "env -u NUKE_ENTERPRISE_TOKEN ./build.sh --host Terminal --target Test",
+      "status": "in-progress",
+      "includesRestoreCompileAndTest": true,
+      "packPushPublishTargetsInvoked": false,
+      "expectedNukeTestProjectCount": 95,
+      "actualProjectAndFrameworkExecutionInventory": "pending completion and log analysis"
+    }
+  }
+}

@@ -24,8 +24,11 @@ SOURCE_COMMITS = {
     'core': '8e893e02c4ac089d526b0a0d294a8546f021d072',
     **rehearsal.PINS,
 }
-# Reviewed Core integration adds the credential lifecycle/bindings and EF/BPMN CAS fixes.
-CURRENT_CORE_COMMIT = '076f022cc174d497af26fc8e26414970e61a79b1'
+# Keep prior reviewed profiles accepted while adding the verified upstream-main tip.
+SUPPORTED_CORE_PROFILE_COMMITS = (
+    '076f022cc174d497af26fc8e26414970e61a79b1',
+    '95a658b96107ad4dbb280a13972479af74bc6a30',
+)
 PATCH = HERE / 'consolidated-build/source-integration.patch'
 ADDED_TEST = 'test/extensions/modules/agents/Elsa.Studio.Agents.Tests/Elsa.Studio.Agents.Tests.csproj'
 CONFIGURATIONS = ('Debug', 'Release')
@@ -202,7 +205,9 @@ def verify_workspace(root):
     require(receipt_path.is_file() and not receipt_path.is_symlink(), 'Missing regular import receipt')
     receipt = json.loads(receipt_path.read_text())
     source_commits = receipt['sourceCommits']
-    supported_pins = (SOURCE_COMMITS, {**SOURCE_COMMITS, 'core': CURRENT_CORE_COMMIT})
+    supported_pins = (SOURCE_COMMITS,) + tuple(
+        {**SOURCE_COMMITS, 'core': core_commit} for core_commit in SUPPORTED_CORE_PROFILE_COMMITS
+    )
     require(source_commits in supported_pins, 'Unsupported source pins; re-review the patch for new source commits')
     head = rehearsal.git(root, 'rev-parse', 'HEAD').decode().strip()
     require(head == receipt['rehearsalCommit'], 'HEAD is not the recorded rehearsal')

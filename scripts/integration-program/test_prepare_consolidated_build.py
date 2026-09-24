@@ -111,13 +111,38 @@ new file mode 100644
     def test_current_core_profile_preserves_actual_pins_and_parent_checks(self):
         actual_core = build.SOURCE_COMMITS['core']
         with patch.dict(build.SOURCE_COMMITS, {'core': 'f' * 40}), \
-                patch.object(build, 'CURRENT_CORE_COMMIT', actual_core), \
+                patch.object(build, 'SUPPORTED_CORE_PROFILE_COMMITS', (actual_core,)), \
                 contextlib.redirect_stdout(io.StringIO()):
             self.prepare_with_fake_packability()
         receipt = json.loads((self.output / 'consolidated-build-receipt.json').read_text())
         self.assertEqual(receipt['sourceCommits']['core'], actual_core)
         self.assertFalse(receipt['buildCompatibilityVerified'])
         self.assertFalse(receipt['canonicalBuildAndTestsVerified'])
+
+    def test_current_core_candidate_preserves_prior_profiles_and_refreshes_source_pins(self):
+        expected_core_profiles = (
+            '076f022cc174d497af26fc8e26414970e61a79b1',
+            '95a658b96107ad4dbb280a13972479af74bc6a30',
+        )
+        self.assertEqual(build.SUPPORTED_CORE_PROFILE_COMMITS, expected_core_profiles)
+        ledger_path = build.HERE.parent.parent / 'doc/integration-program/consolidation/canonical-source-profile-ledger.json'
+        ledger = json.loads(ledger_path.read_text())
+        self.assertEqual([row['sourceCommits']['core'] for row in ledger['supportedRehearsalProfiles']], [
+            '8e893e02c4ac089d526b0a0d294a8546f021d072', *expected_core_profiles,
+        ])
+        upstream = ledger['upstreamMainAtVerification']
+        candidate = ledger['supportedRehearsalProfiles'][-1]['sourceCommits']
+        self.assertEqual(upstream['core']['commit'], '77f3ca92eb3e514af959404f67ea538b07cba98f')
+        self.assertEqual(candidate['core'], expected_core_profiles[-1])
+        self.assertNotEqual(candidate['core'], upstream['core']['commit'])
+        self.assertEqual(candidate['extensions'], upstream['extensions']['commit'])
+        self.assertEqual(candidate['studio'], upstream['studio']['commit'])
+        raw_rehearsal = ledger['raw95aRehearsalEvidence']
+        self.assertEqual(raw_rehearsal['rehearsalCommit'], '8fe2bdbdedacd06c99d83b72764fdca9f325bc0c')
+        self.assertEqual(raw_rehearsal['totalExactBlobsAndModes'], 9993)
+        self.assertTrue(raw_rehearsal['rootIndependentVerification'])
+        patch_review = ledger['core076To95a658BuildInputComparison']['sourceIntegrationPatchPathReview']
+        self.assertEqual(patch_review['sha256'], hashlib.sha256(SOURCE_INTEGRATION_PATCH.read_bytes()).hexdigest())
 
     def test_rejects_dirty_tracked_source_without_overwriting(self):
         original_solution = (self.output / 'Elsa.sln').read_text()
