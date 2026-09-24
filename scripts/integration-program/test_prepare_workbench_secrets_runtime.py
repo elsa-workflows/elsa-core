@@ -409,6 +409,21 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
         finally:
             FIXTURE.cleanup_fixture(fixture_root, host_stopped=True)
 
+    def test_rejects_mixed_supplemental_patch_set_before_build(self):
+        program = self.source / 'Program.cs'
+        relative = program.relative_to(self.rehearsal).as_posix()
+        before = program.read_text()
+        after = before + '// applied supplemental overlay\n'
+        applied_patch = self.base / 'applied-supplemental-overlay.patch'
+        applied_patch.write_text(self.make_patch(relative, before, after))
+        subprocess.run(['git', 'apply', str(applied_patch)], cwd=self.rehearsal, check=True)
+
+        build = self.fake_build
+        with mock.patch.object(FIXTURE, 'build_host', wraps=build) as build_host:
+            with self.assertRaisesRegex(ValueError, 'Only part of the supplemental patch set is present'):
+                self.prepare(supplemental_patches=(applied_patch, self.menu_patch))
+        build_host.assert_not_called()
+
     def test_rejects_receipt_pin_mismatch_before_build(self):
         path = self.rehearsal / 'import-receipt.json'
         receipt = json.loads(path.read_text())
