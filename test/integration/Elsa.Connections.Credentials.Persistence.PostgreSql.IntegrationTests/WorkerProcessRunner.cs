@@ -65,15 +65,26 @@ internal sealed class ProcessRun(Process process) : IAsyncDisposable
     public async Task WaitForLineAsync(string expectedLine, TimeSpan? timeout = null)
     {
         using var cancellation = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(30));
-        while (await _stdoutChannel.Reader.WaitToReadAsync(cancellation.Token))
+        try
         {
-            while (_stdoutChannel.Reader.TryRead(out var line))
+            while (await _stdoutChannel.Reader.WaitToReadAsync(cancellation.Token))
             {
-                if (line == expectedLine)
+                while (_stdoutChannel.Reader.TryRead(out var line))
                 {
-                    return;
+                    if (line == expectedLine)
+                        return;
                 }
             }
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            // Print only test-owned page counts, never the worker's arbitrary output or provider payloads.
+            var pageCounts = _stdout
+                .Where(line => line.StartsWith("DUE_PAGE:", StringComparison.Ordinal) &&
+                               int.TryParse(line["DUE_PAGE:".Length..], out _))
+                .GroupBy(line => line)
+                .Select(group => $"{group.Key} x{group.Count()}");
+            throw new TimeoutException($"worker_expected_boundary_missing: {expectedLine}; {string.Join(", ", pageCounts)}");
         }
 
         throw new InvalidOperationException("worker_expected_boundary_missing");

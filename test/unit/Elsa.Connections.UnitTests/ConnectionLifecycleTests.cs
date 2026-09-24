@@ -1318,6 +1318,29 @@ public sealed class ConnectionLifecycleTests
     }
 
     [Fact]
+    public async Task BackgroundRefreshUsesHostMintedSystemIdentityAndScopedManagePurpose()
+    {
+        await using var database = new TestDatabase();
+        var provider = new SyntheticCredentialProvider(block: false);
+        await using var worker = await Worker.CreateAsync(database.Path, MakeKey(32), provider);
+        var connectionId = await SeedAsync(worker);
+        using var tenant = worker.TenantAccessor.PushContext(TenantContext());
+        using var scope = worker.Services.CreateScope();
+
+        var result = await scope.ServiceProvider.GetRequiredService<IConnectionLifecycleRecoveryService>()
+            .RefreshAsync(TenantId, EnvironmentId, connectionId);
+
+        Assert.True(result.Succeeded);
+        var request = ((AllowUseAuthorizer)worker.Services.GetRequiredService<IConnectionUseAuthorizer>()).LastBackgroundRequest!;
+        Assert.Equal(ConnectionUseKind.BackgroundSystem, request.Kind);
+        Assert.Equal("Elsa.Connections.Server", request.Principal.Identity!.AuthenticationType);
+        Assert.Equal("manage:refresh", request.Purpose);
+        Assert.Equal(TenantId, request.TenantId);
+        Assert.Equal(EnvironmentId, request.EnvironmentId);
+        Assert.Equal(connectionId, request.ConnectionId);
+    }
+
+    [Fact]
     public async Task CleanupRejectsCurrentAndUnresolvedStagedGenerations()
     {
         await using var database = new TestDatabase();
@@ -1620,7 +1643,7 @@ public sealed class ConnectionLifecycleTests
                                                : request.Principal.HasClaim("permission", "connections.manage")),
                 ConnectionUseKind.BackgroundSystem => identity?.IsAuthenticated == true && identity.AuthenticationType == "Elsa.Connections.Server" &&
                                                       request.Principal.HasClaim("elsa:identity-kind", "system") && inScope &&
-                                                      request.Purpose is "use" or "manage:reconcile",
+                                                      request.Purpose is "use" or "manage:reconcile" or "manage:refresh" or "manage:cleanup",
                 _ => false
             };
             return Task.FromResult(allowed);

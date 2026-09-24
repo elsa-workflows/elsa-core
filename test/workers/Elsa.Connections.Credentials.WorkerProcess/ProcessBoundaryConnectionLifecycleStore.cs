@@ -71,6 +71,16 @@ public class ProcessBoundaryConnectionLifecycleStore : DispatchProxy
         }
 
         var result = await (Task<TResult>)method.Invoke(_inner, args)!;
+        if (method.Name == "TryClaimRefreshAsync" && result is null)
+        {
+            var rejectedClaimPath = Environment.GetEnvironmentVariable("ELSA_TEST_REJECTED_CLAIM_PATH");
+            if (!string.IsNullOrWhiteSpace(rejectedClaimPath))
+                await File.WriteAllTextAsync(rejectedClaimPath, "rejected");
+
+            Console.WriteLine("BOUNDARY:refresh-claim-rejected");
+            await Console.Out.FlushAsync();
+        }
+
         if (crashBoundary is not null && IsSuccessfulResult(result))
         {
             await ProcessBoundary.PauseAsync(crashBoundary);

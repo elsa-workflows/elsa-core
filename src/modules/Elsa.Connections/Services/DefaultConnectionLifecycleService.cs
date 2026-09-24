@@ -509,9 +509,15 @@ public sealed class DefaultConnectionLifecycleService(
         return await GetOffboardingResultAsync(claimed.Id, tenantId, environmentId, connectionId, true, null, cancellationToken);
     }
 
-    public async Task<ConnectionLifecycleResult> RefreshAsync(ClaimsPrincipal principal, string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken = default)
+    public Task<ConnectionLifecycleResult> RefreshAsync(ClaimsPrincipal principal, string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken = default) =>
+        RefreshCoreAsync(principal, ConnectionUseKind.Human, tenantId, environmentId, connectionId, cancellationToken);
+
+    public Task<ConnectionLifecycleResult> RefreshAsync(string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken = default) =>
+        RefreshCoreAsync(SystemPrincipal, ConnectionUseKind.BackgroundSystem, tenantId, environmentId, connectionId, cancellationToken);
+
+    private async Task<ConnectionLifecycleResult> RefreshCoreAsync(ClaimsPrincipal principal, ConnectionUseKind useKind, string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken)
     {
-        if (!await AuthorizeAsync(principal, ConnectionUseKind.Human, tenantId, environmentId, connectionId, "manage:refresh", cancellationToken))
+        if (!await AuthorizeAsync(principal, useKind, tenantId, environmentId, connectionId, "manage:refresh", cancellationToken))
         {
             return new ConnectionLifecycleResult(false, "connection_unavailable", null);
         }
@@ -650,15 +656,33 @@ public sealed class DefaultConnectionLifecycleService(
         }
     }
 
-    public async Task<ConnectionLifecycleResult> CleanupGenerationAsync(
+    public Task<ConnectionLifecycleResult> CleanupGenerationAsync(
         ClaimsPrincipal principal,
         string tenantId,
         string environmentId,
         string connectionId,
         string generationId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        CleanupGenerationCoreAsync(principal, ConnectionUseKind.Human, tenantId, environmentId, connectionId, generationId, cancellationToken);
+
+    public Task<ConnectionLifecycleResult> CleanupGenerationAsync(
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        string generationId,
+        CancellationToken cancellationToken = default) =>
+        CleanupGenerationCoreAsync(SystemPrincipal, ConnectionUseKind.BackgroundSystem, tenantId, environmentId, connectionId, generationId, cancellationToken);
+
+    private async Task<ConnectionLifecycleResult> CleanupGenerationCoreAsync(
+        ClaimsPrincipal principal,
+        ConnectionUseKind useKind,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        string generationId,
+        CancellationToken cancellationToken)
     {
-        if (!await AuthorizeAsync(principal, ConnectionUseKind.Human, tenantId, environmentId, connectionId, "manage:cleanup", cancellationToken))
+        if (!await AuthorizeAsync(principal, useKind, tenantId, environmentId, connectionId, "manage:cleanup", cancellationToken))
         {
             return new ConnectionLifecycleResult(false, "connection_unavailable", null);
         }

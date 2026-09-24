@@ -17,7 +17,7 @@ internal sealed class WorkerConnectionUseAuthorizer : IConnectionUseAuthorizer
             var allowed = allowedSystemScope && identity?.IsAuthenticated == true && identity.AuthenticationType == "Elsa.Connections.Server" &&
                           request.Principal.HasClaim("elsa:identity-kind", "system") &&
                           request.TenantId == settings.TenantId && request.EnvironmentId == settings.EnvironmentId &&
-                          request.Purpose is "use" or "manage:reconcile";
+                          request.Purpose is "use" or "manage:reconcile" or "manage:refresh" or "manage:cleanup";
             return Task.FromResult(allowed);
         }
 
