@@ -169,7 +169,11 @@ var useStudioServer = configuration.GetValue("Studio:HostingModel", "Wasm").Equa
 
 if (useStudioServer)
 {
-    services.AddServerSideBlazor(options => options.RootComponents.MaxJSRootComponents = 1000);
+    services.AddServerSideBlazor(options =>
+    {
+        options.RootComponents.RegisterCustomElsaStudioElements();
+        options.RootComponents.MaxJSRootComponents = 1000;
+    });
 
     var selectedAuthProvider = ConfigureStudioAuthenticationMode(services, configuration);
     var authenticationHandler = ConfigureStudioAuthentication(services, configuration);
