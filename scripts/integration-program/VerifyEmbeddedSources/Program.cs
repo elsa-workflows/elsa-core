@@ -27,9 +27,8 @@ var embeddedFiles = new Dictionary<string, string>(StringComparer.Ordinal);
 using var pdbStream = File.OpenRead(pdbPath);
 using var provider = MetadataReaderProvider.FromPortablePdbStream(pdbStream);
 var reader = provider.GetMetadataReader();
-foreach (var handle in reader.CustomDebugInformation)
+foreach (var information in reader.CustomDebugInformation.Select(reader.GetCustomDebugInformation))
 {
-    var information = reader.GetCustomDebugInformation(handle);
     if (reader.GetGuid(information.Kind) != embeddedSourceKind || information.Parent.Kind != HandleKind.Document)
     {
         continue;
@@ -76,7 +75,15 @@ foreach (var handle in reader.CustomDebugInformation)
         }
     }
 
-    var sourcePath = Path.GetFullPath(Path.Combine(sourceRoot, relativePath.Replace('/', Path.DirectorySeparatorChar)));
+    var normalizedRelativePath = relativePath.Replace('/', Path.DirectorySeparatorChar);
+    if (Path.IsPathRooted(normalizedRelativePath)
+        || normalizedRelativePath.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries)
+            .Any(segment => segment is "." or ".."))
+    {
+        throw new InvalidDataException($"Embedded Slack source path is not a safe relative path: {relativePath}");
+    }
+
+    var sourcePath = Path.GetFullPath(Path.Join(sourceRoot, normalizedRelativePath));
     var sourceRootPrefix = sourceRoot.EndsWith(Path.DirectorySeparatorChar)
         ? sourceRoot
         : sourceRoot + Path.DirectorySeparatorChar;
