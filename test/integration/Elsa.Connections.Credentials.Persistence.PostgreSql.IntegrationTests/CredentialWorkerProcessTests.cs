@@ -28,12 +28,12 @@ public sealed class CredentialWorkerProcessTests(PostgreSqlConnectionsFixture fi
             ("ELSA_TEST_BARRIER_METHOD", "TryClaimRefreshAsync"),
             ("ELSA_TEST_BARRIER_PARTICIPANT", "hosted-first"),
             ("ELSA_TEST_BARRIER_DIRECTORY", barrierDirectory),
-            ("ELSA_TEST_REJECTED_CLAIM_PATH", Path.Combine(barrierDirectory, "claim-rejected")));
+            ("ELSA_TEST_REJECTED_CLAIM_PATH", Path.Join(barrierDirectory, "claim-rejected")));
         var secondEnvironment = ProcessTestEnvironment.With(workerEnvironment,
             ("ELSA_TEST_BARRIER_METHOD", "TryClaimRefreshAsync"),
             ("ELSA_TEST_BARRIER_PARTICIPANT", "hosted-second"),
             ("ELSA_TEST_BARRIER_DIRECTORY", barrierDirectory),
-            ("ELSA_TEST_REJECTED_CLAIM_PATH", Path.Combine(barrierDirectory, "claim-rejected")));
+            ("ELSA_TEST_REJECTED_CLAIM_PATH", Path.Join(barrierDirectory, "claim-rejected")));
         await using var firstWorker = _workers.Start(["hosted-worker"], firstEnvironment);
         ProcessRun? secondWorker = null;
         ProcessRunResult? firstOutput = null;
@@ -43,9 +43,9 @@ public sealed class CredentialWorkerProcessTests(PostgreSqlConnectionsFixture fi
             await firstWorker.WaitForLineAsync("BARRIER_READY:hosted-first", TimeSpan.FromSeconds(30));
             secondWorker = _workers.Start(["hosted-worker"], secondEnvironment);
             await secondWorker.WaitForLineAsync("BARRIER_READY:hosted-second", TimeSpan.FromSeconds(30));
-            await File.WriteAllTextAsync(Path.Combine(barrierDirectory, "go"), "go");
+            await File.WriteAllTextAsync(Path.Join(barrierDirectory, "go"), "go");
             await provider.WaitForRefreshAsync(TimeSpan.FromSeconds(30));
-            await WaitForFileAsync(Path.Combine(barrierDirectory, "claim-rejected"), TimeSpan.FromSeconds(30));
+            await WaitForFileAsync(Path.Join(barrierDirectory, "claim-rejected"), TimeSpan.FromSeconds(30));
             provider.ReleaseRefresh();
 
             var finalState = await WaitForOperationStatusAsync(connectionId, originalGenerationId, "Completed", workerEnvironment);

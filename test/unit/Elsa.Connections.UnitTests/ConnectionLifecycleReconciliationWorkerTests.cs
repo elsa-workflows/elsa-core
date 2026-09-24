@@ -248,6 +248,118 @@ public sealed class ConnectionLifecycleReconciliationWorkerTests
     }
 
     [Fact]
+    public async Task FailedTenantDoesNotDelayAnotherTenant()
+    {
+        var failedScope = new ConnectionLifecycleScope("tenant-a", "production");
+        var healthyScope = new ConnectionLifecycleScope("tenant-b", "production");
+        var dueStore = Substitute.For<IConnectionDueCandidateStore>();
+        var recovery = Substitute.For<IConnectionLifecycleRecoveryService>();
+        var healthyDispatched = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        foreach (var scope in new[] { failedScope, healthyScope })
+        {
+            var candidate = new ConnectionDueCandidate(scope.TenantId, scope.EnvironmentId, "connection",
+                ConnectionDueCandidateKind.RecoveryRequired, "recovery", DateTimeOffset.MinValue);
+            dueStore.FindDueCandidatesAsync(scope.TenantId, scope.EnvironmentId, Arg.Any<DateTimeOffset>(), 1,
+                    Arg.Any<string?>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(new ConnectionDueCandidatePage([candidate], null)));
+        }
+
+        recovery.ReconcileAsync(failedScope.TenantId, failedScope.EnvironmentId, "connection", Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new ConnectionLifecycleResult(false, null, 1)));
+        recovery.ReconcileAsync(healthyScope.TenantId, healthyScope.EnvironmentId, "connection", Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                healthyDispatched.TrySetResult();
+                return Task.FromResult(new ConnectionLifecycleResult(true, null, 1));
+            });
+
+        var services = new ServiceCollection();
+        services.AddSingleton<ITenantAccessor, DefaultTenantAccessor>();
+        services.AddSingleton(dueStore);
+        services.AddSingleton<IConnectionLifecycleRecoveryService>(recovery);
+        services.AddSingleton<IConnectionLifecycleScopeProvider>(new AlternatingScopeProvider(failedScope, healthyScope));
+        await using var provider = services.BuildServiceProvider();
+        using var worker = new ConnectionLifecycleReconciliationWorker(provider.GetRequiredService<IServiceScopeFactory>(),
+            Options.Create(new ConnectionLifecycleReconciliationOptions
+            {
+                BatchSize = 1,
+                Interval = TimeSpan.FromMilliseconds(10),
+                RetryBackoff = TimeSpan.FromSeconds(2),
+                MaxRetryBackoff = TimeSpan.FromSeconds(2)
+            }), TimeProvider.System, NullLogger<ConnectionLifecycleReconciliationWorker>.Instance);
+
+        await worker.StartAsync(CancellationToken.None);
+        try
+        {
+            await healthyDispatched.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        }
+        finally
+        {
+            await worker.StopAsync(CancellationToken.None);
+        }
+
+        await recovery.Received(1).ReconcileAsync(failedScope.TenantId, failedScope.EnvironmentId, "connection", Arg.Any<CancellationToken>());
+        await recovery.Received(1).ReconcileAsync(healthyScope.TenantId, healthyScope.EnvironmentId, "connection", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task FailedPageRetriesBeforeAdvancingCursor()
+    {
+        var scope = new ConnectionLifecycleScope("trusted-tenant", "production");
+        var candidate = new ConnectionDueCandidate(scope.TenantId, scope.EnvironmentId, "connection",
+            ConnectionDueCandidateKind.RecoveryRequired, "recovery", DateTimeOffset.MinValue);
+        var dueStore = Substitute.For<IConnectionDueCandidateStore>();
+        var recovery = Substitute.For<IConnectionLifecycleRecoveryService>();
+        var cursors = new List<string?>();
+        var pageAdvanced = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var attempts = 0;
+
+        dueStore.FindDueCandidatesAsync(scope.TenantId, scope.EnvironmentId, Arg.Any<DateTimeOffset>(), 1,
+                Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var cursor = call.ArgAt<string?>(4);
+                cursors.Add(cursor);
+                if (cursor == "next-page")
+                    pageAdvanced.TrySetResult();
+                return Task.FromResult(cursor is null
+                    ? new ConnectionDueCandidatePage([candidate], "next-page")
+                    : new ConnectionDueCandidatePage([], null));
+            });
+        recovery.ReconcileAsync(scope.TenantId, scope.EnvironmentId, "connection", Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult(new ConnectionLifecycleResult(Interlocked.Increment(ref attempts) > 1, null, 1)));
+
+        var services = new ServiceCollection();
+        services.AddSingleton<ITenantAccessor, DefaultTenantAccessor>();
+        services.AddSingleton(dueStore);
+        services.AddSingleton<IConnectionLifecycleRecoveryService>(recovery);
+        services.AddSingleton<IConnectionLifecycleScopeProvider>(new SingleScopeProvider(scope));
+        await using var provider = services.BuildServiceProvider();
+        using var worker = new ConnectionLifecycleReconciliationWorker(provider.GetRequiredService<IServiceScopeFactory>(),
+            Options.Create(new ConnectionLifecycleReconciliationOptions
+            {
+                BatchSize = 1,
+                Interval = TimeSpan.FromMilliseconds(5),
+                RetryBackoff = TimeSpan.FromMilliseconds(20),
+                MaxRetryBackoff = TimeSpan.FromMilliseconds(20)
+            }), TimeProvider.System, NullLogger<ConnectionLifecycleReconciliationWorker>.Instance);
+
+        await worker.StartAsync(CancellationToken.None);
+        try
+        {
+            await pageAdvanced.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        }
+        finally
+        {
+            await worker.StopAsync(CancellationToken.None);
+        }
+
+        Assert.Equal(new string?[] { null, null, "next-page" }, cursors.Take(3));
+        Assert.Equal(2, attempts);
+    }
+
+    [Fact]
     public async Task DisabledWorkerDoesNotResolveScopeOrQueryDueCandidates()
     {
         var dueStore = Substitute.For<IConnectionDueCandidateStore>();
@@ -280,6 +392,14 @@ public sealed class ConnectionLifecycleReconciliationWorkerTests
     private sealed class SingleScopeProvider(ConnectionLifecycleScope scope) : IConnectionLifecycleScopeProvider
     {
         public Task<ConnectionLifecycleScope?> GetNextScopeAsync(CancellationToken cancellationToken = default) => Task.FromResult<ConnectionLifecycleScope?>(scope);
+    }
+
+    private sealed class AlternatingScopeProvider(params ConnectionLifecycleScope[] scopes) : IConnectionLifecycleScopeProvider
+    {
+        private int _index;
+
+        public Task<ConnectionLifecycleScope?> GetNextScopeAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<ConnectionLifecycleScope?>(scopes[_index++ % scopes.Length]);
     }
 
     private static void UpdateMax(ref int target, int value)
