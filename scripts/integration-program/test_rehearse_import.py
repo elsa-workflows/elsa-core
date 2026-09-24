@@ -5,6 +5,8 @@ import unittest
 import tempfile
 import subprocess
 import json
+import os
+import errno
 from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('rehearsal', Path(__file__).with_name('rehearse-import.py'))
@@ -102,6 +104,11 @@ class FullHistoryTests(unittest.TestCase):
                 self.assertFalse(output.exists())
                 rehearsal.rehearse(repos['core'], {k: repos[k] for k in ('extensions', 'studio')}, output)
             tip = rehearsal.git(output, 'rev-parse', 'rehearsal').strip()
+            self.assertEqual(rehearsal.git(output, 'rev-parse', 'HEAD').strip(), tip)
+            self.assertEqual(rehearsal.git(output, 'diff', '--name-only', 'HEAD'), b'')
+            self.assertEqual(rehearsal.git(output, 'diff', '--cached', '--name-only'), b'')
+            self.assertEqual(rehearsal.git(output, 'status', '--porcelain', '-z'),
+                             b'?? import-receipt.json\0')
             for name, repo in repos.items():
                 self.assertEqual(rehearsal.git(repo, 'rev-parse', 'HEAD').decode().strip(), refs[name])
                 self.assertEqual(rehearsal.git(repo, 'status', '--porcelain'), statuses[name])
@@ -112,6 +119,12 @@ class FullHistoryTests(unittest.TestCase):
             self.assertEqual(raw['destination'].encode('utf-8', errors='surrogateescape'),
                              b'src/extensions/raw-\xff.cs')
             self.assertIn(b'src/extensions/raw-\xff.cs\0', rehearsal.git(output, 'ls-tree', '-r', '-z', 'rehearsal'))
+            raw_worktree_path = os.fsencode(output) + b'/src/extensions/raw-\xff.cs'
+            if os.path.exists(raw_worktree_path):
+                with open(raw_worktree_path, 'rb') as materialized:
+                    self.assertEqual(materialized.read(), b'raw path contents')
+            else:
+                self.assertTrue(rehearsal._is_unrepresentable_worktree_path(raw['destination'], output))
             with patch.dict(rehearsal.PINS, {k: refs[k] for k in ('extensions', 'studio')}):
                 with self.assertRaisesRegex(ValueError, 'Output must not exist'):
                     rehearsal.rehearse(repos['core'], {k: repos[k] for k in ('extensions', 'studio')}, output)
@@ -125,6 +138,36 @@ class FullHistoryTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'Unsupported source profile'):
                 rehearsal.rehearse(repos['core'], {k: repos[k] for k in ('extensions', 'studio')},
                                    root / 'invalid-profile', source_profile='unreviewed')
+
+
+class WorktreePathTests(unittest.TestCase):
+    def test_surrogateescape_bytes_are_checked_on_output_filesystem(self):
+        path = 'raw-\udcff.cs'
+        encoded = os.fsencode(path)
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            candidate = os.fsencode(temporary_directory) + b'/' + encoded
+            try:
+                descriptor = os.open(candidate, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+                os.close(descriptor)
+            except OSError:
+                expected = True
+            else:
+                os.unlink(candidate)
+                expected = False
+            with patch.object(rehearsal.os, 'open', wraps=os.open) as probed_open:
+                self.assertEqual(rehearsal._is_unrepresentable_worktree_path(path, temporary_directory), expected)
+            self.assertEqual(probed_open.call_args.args[0], candidate)
+
+    def test_non_surrogateescape_surrogate_is_unrepresentable(self):
+        with tempfile.TemporaryDirectory() as output:
+            self.assertTrue(rehearsal._is_unrepresentable_worktree_path('raw-\ud800.cs', output))
+
+    def test_resource_failure_does_not_skip_a_representable_path(self):
+        with tempfile.TemporaryDirectory() as output:
+            with patch.object(rehearsal.os, 'open', side_effect=OSError(errno.ENOSPC, 'full')):
+                with self.assertRaises(OSError) as failure:
+                    rehearsal._is_unrepresentable_worktree_path('raw-\udcff.cs', output)
+        self.assertEqual(failure.exception.errno, errno.ENOSPC)
 
 
 if __name__ == '__main__':

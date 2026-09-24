@@ -7,6 +7,7 @@ is an evidence artifact, not a buildable consolidation or a publishable branch.
 import argparse
 import json
 import os
+import errno
 from pathlib import Path, PurePosixPath
 import subprocess
 import shutil
@@ -143,6 +144,27 @@ def rehearse(core, sources, output, source_profile='baseline'):
         commit = subprocess.check_output(command, input=b'Disposable integration history rehearsal\n',
                                          env=env).decode().strip()
         git(output, 'update-ref', 'refs/heads/rehearsal', commit)
+        # Make the disposable repository directly consumable by the preparation
+        # verifier.  The synthetic index already describes the exact mapped tree,
+        # so attach HEAD to the rehearsal ref and materialize that tree without
+        # introducing a checkout or remote in any source repository.
+        git(output, 'symbolic-ref', 'HEAD', 'refs/heads/rehearsal')
+        git(output, 'read-tree', '--reset', 'rehearsal')
+        # Git can retain byte paths that the host filesystem cannot represent
+        # (for example, macOS rejects a filename containing an invalid UTF-8
+        # byte). Keep those entries in the exact index/tree and leave them
+        # skip-worktree; all normal paths are still materialized below.
+        unsupported_paths = [path for path in expected
+                             if _is_unrepresentable_worktree_path(path, output)]
+        if unsupported_paths:
+            git(output, 'update-index', '--skip-worktree', '--', *unsupported_paths)
+        git(output, 'checkout-index', '--all', '--force')
+        if git(output, 'rev-parse', 'HEAD').decode().strip() != commit:
+            raise ValueError('Rehearsal HEAD does not resolve to the recorded commit')
+        if git(output, 'diff', '--name-only', 'HEAD').strip():
+            raise ValueError('Rehearsal worktree differs from the exact mapped tree')
+        if git(output, 'diff', '--cached', '--name-only').strip():
+            raise ValueError('Rehearsal index differs from the exact mapped tree')
         if tree(output, commit) != expected:
             raise ValueError('Rehearsal tree differs from exact source blob/mode mapping')
         for ref in refs.values():
@@ -165,6 +187,32 @@ def rehearse(core, sources, output, source_profile='baseline'):
         except OSError as cleanup_error:
             raise RuntimeError(f'Rehearsal failed; could not remove new output {output}: {cleanup_error}') from error
         raise
+
+
+def _is_unrepresentable_worktree_path(path, output):
+    """Return whether a Git path cannot be represented by the output filesystem."""
+    try:
+        encoded = os.fsencode(path)
+    except UnicodeEncodeError:
+        return True
+
+    # Ordinary Unicode paths need no probe. A surrogateescape path represents
+    # raw bytes from Git; test those bytes against the actual host filesystem
+    # instead of rejecting them merely because strict UTF-8 rejects surrogates.
+    if not any('\udc80' <= character <= '\udcff' for character in path):
+        return False
+
+    candidate = os.path.join(os.fsencode(output), encoded)
+    try:
+        os.makedirs(os.path.dirname(candidate), exist_ok=True)
+        descriptor = os.open(candidate, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    except OSError as error:
+        if error.errno in (errno.EILSEQ, errno.EINVAL, errno.ENAMETOOLONG):
+            return True
+        raise
+    os.close(descriptor)
+    os.unlink(candidate)
+    return False
 
 
 
