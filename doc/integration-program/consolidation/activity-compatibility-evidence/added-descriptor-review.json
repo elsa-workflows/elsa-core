@@ -1,7 +1,7 @@
 {
-  "scope": "Post-review exact-identity comparison against unchanged recorded C# host evidence",
-  "runnerSha256": "946d4d3e26a3e7351107db0f9291b180968026f0ebc5ad486c13b9833be1171d",
-  "matrixSha256": "73e032a3f24e88b5f627501937c1fbc28ed51c68bb8fafcbf9082ef5d466d317",
+  "scope": "Post-review complete normalized source-only descriptor comparison against unchanged recorded C# host evidence",
+  "runnerSha256": "254e97449dfe23c8af6629639c4bffd30986ce7b60e130fbe12aea90104a45d7",
+  "matrixSha256": "5eb6437d3d3788bb101c30743af6e0dac30e5cfe657cda245b804663ea3ff8a5",
   "frameworks": [
     {
       "framework": "net8.0",

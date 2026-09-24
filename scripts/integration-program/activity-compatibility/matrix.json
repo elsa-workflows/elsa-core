@@ -30,39 +30,325 @@
     "releasedVersion": null,
     "allowedSourceDescriptors": [
       {
+        "Assembly": "Elsa.Ldap",
         "ClrType": "Elsa.Ldap.Activities.AddLdapEntry",
         "TypeName": "Elsa.AddLdapEntry",
-        "Version": 1
+        "Version": 1,
+        "Kind": "Action",
+        "Inputs": [
+          {
+            "Name": "Attributes",
+            "ContractType": "System.Collections.Generic.IEnumerable`1<System.DirectoryServices.Protocols.DirectoryAttribute, System.DirectoryServices.Protocols, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a>, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "ConnectionName",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "EntryDn",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          }
+        ],
+        "Outputs": [
+          {
+            "Name": "Result",
+            "ContractType": "System.Boolean, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": null
+          }
+        ],
+        "Ports": [
+          {
+            "Name": "Failure",
+            "Type": "Flow"
+          },
+          {
+            "Name": "Success",
+            "Type": "Flow"
+          }
+        ]
       },
       {
+        "Assembly": "Elsa.Ldap",
         "ClrType": "Elsa.Ldap.Activities.CompareLdapEntry",
         "TypeName": "Elsa.CompareLdapEntry",
-        "Version": 1
+        "Version": 1,
+        "Kind": "Action",
+        "Inputs": [
+          {
+            "Name": "Attribute",
+            "ContractType": "System.DirectoryServices.Protocols.DirectoryAttribute, System.DirectoryServices.Protocols, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "IsSerializable": true
+          },
+          {
+            "Name": "ConnectionName",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "EntryDn",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          }
+        ],
+        "Outputs": [
+          {
+            "Name": "Result",
+            "ContractType": "System.Boolean, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": null
+          }
+        ],
+        "Ports": [
+          {
+            "Name": "False",
+            "Type": "Flow"
+          },
+          {
+            "Name": "True",
+            "Type": "Flow"
+          }
+        ]
       },
       {
+        "Assembly": "Elsa.Ldap",
         "ClrType": "Elsa.Ldap.Activities.DeleteLdapEntry",
         "TypeName": "Elsa.DeleteLdapEntry",
-        "Version": 1
+        "Version": 1,
+        "Kind": "Action",
+        "Inputs": [
+          {
+            "Name": "ConnectionName",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "EntryDn",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          }
+        ],
+        "Outputs": [
+          {
+            "Name": "Result",
+            "ContractType": "System.Boolean, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": null
+          }
+        ],
+        "Ports": [
+          {
+            "Name": "Failure",
+            "Type": "Flow"
+          },
+          {
+            "Name": "Success",
+            "Type": "Flow"
+          }
+        ]
       },
       {
+        "Assembly": "Elsa.Ldap",
         "ClrType": "Elsa.Ldap.Activities.ModifyLdapEntry",
         "TypeName": "Elsa.ModifyLdapEntry",
-        "Version": 1
+        "Version": 1,
+        "Kind": "Action",
+        "Inputs": [
+          {
+            "Name": "ConnectionName",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "EntryDn",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "Modifications",
+            "ContractType": "System.Collections.Generic.IEnumerable`1<System.DirectoryServices.Protocols.DirectoryAttributeModification, System.DirectoryServices.Protocols, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a>, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          }
+        ],
+        "Outputs": [
+          {
+            "Name": "Result",
+            "ContractType": "System.Boolean, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": null
+          }
+        ],
+        "Ports": [
+          {
+            "Name": "Failure",
+            "Type": "Flow"
+          },
+          {
+            "Name": "Success",
+            "Type": "Flow"
+          }
+        ]
       },
       {
+        "Assembly": "Elsa.Ldap",
         "ClrType": "Elsa.Ldap.Activities.MoveLdapEntry",
         "TypeName": "Elsa.MoveLdapEntry",
-        "Version": 1
+        "Version": 1,
+        "Kind": "Action",
+        "Inputs": [
+          {
+            "Name": "ConnectionName",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "EntryDn",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "NewCn",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "NewParentDn",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          }
+        ],
+        "Outputs": [
+          {
+            "Name": "Result",
+            "ContractType": "System.Boolean, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": null
+          }
+        ],
+        "Ports": [
+          {
+            "Name": "Failure",
+            "Type": "Flow"
+          },
+          {
+            "Name": "Success",
+            "Type": "Flow"
+          }
+        ]
       },
       {
+        "Assembly": "Elsa.Ldap",
         "ClrType": "Elsa.Ldap.Activities.SearchLdapEntries",
         "TypeName": "Elsa.SearchLdapEntries",
-        "Version": 1
+        "Version": 1,
+        "Kind": "Task",
+        "Inputs": [
+          {
+            "Name": "Attributes",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e[]",
+            "IsSerializable": true
+          },
+          {
+            "Name": "BaseDn",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "ConnectionName",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "Filter",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "Scope",
+            "ContractType": "System.DirectoryServices.Protocols.SearchScope, System.DirectoryServices.Protocols, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "IsSerializable": true
+          }
+        ],
+        "Outputs": [
+          {
+            "Name": "Result",
+            "ContractType": "System.Collections.Generic.IEnumerable`1<System.DirectoryServices.Protocols.SearchResultEntry, System.DirectoryServices.Protocols, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a>, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": null
+          },
+          {
+            "Name": "SearchResults",
+            "ContractType": "System.Collections.Generic.IEnumerable`1<System.Collections.Generic.Dictionary`2<System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e,System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e[]>, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e>, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          }
+        ],
+        "Ports": [
+          {
+            "Name": "Multiple entries found",
+            "Type": "Flow"
+          },
+          {
+            "Name": "No entries found",
+            "Type": "Flow"
+          },
+          {
+            "Name": "One entry found",
+            "Type": "Flow"
+          }
+        ]
       },
       {
+        "Assembly": "Elsa.Ldap",
         "ClrType": "Elsa.Ldap.Activities.SearchLdapEntry",
         "TypeName": "Elsa.SearchLdapEntry",
-        "Version": 1
+        "Version": 1,
+        "Kind": "Task",
+        "Inputs": [
+          {
+            "Name": "Attributes",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e[]",
+            "IsSerializable": true
+          },
+          {
+            "Name": "BaseDn",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "ConnectionName",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "Filter",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "Scope",
+            "ContractType": "System.DirectoryServices.Protocols.SearchScope, System.DirectoryServices.Protocols, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "IsSerializable": true
+          }
+        ],
+        "Outputs": [
+          {
+            "Name": "Result",
+            "ContractType": "System.DirectoryServices.Protocols.SearchResultEntry, System.DirectoryServices.Protocols, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "IsSerializable": null
+          },
+          {
+            "Name": "SearchResult",
+            "ContractType": "System.Collections.Generic.Dictionary`2<System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e,System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e[]>, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          }
+        ],
+        "Ports": [
+          {
+            "Name": "Found",
+            "Type": "Flow"
+          },
+          {
+            "Name": "Not Found",
+            "Type": "Flow"
+          }
+        ]
       }
     ]
   },
@@ -77,14 +363,87 @@
     "releasedVersion": null,
     "allowedSourceDescriptors": [
       {
+        "Assembly": "Elsa.Mqtt",
         "ClrType": "Elsa.Mqtt.Activities.MqttMessageReceived",
         "TypeName": "Elsa.MqttMessageReceived",
-        "Version": 1
+        "Version": 1,
+        "Kind": "Trigger",
+        "Inputs": [
+          {
+            "Name": "ConnectionName",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "Topics",
+            "ContractType": "System.Collections.Generic.ICollection`1<System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e>, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          }
+        ],
+        "Outputs": [
+          {
+            "Name": "Result",
+            "ContractType": "System.Object, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": null
+          },
+          {
+            "Name": "TransportMessage",
+            "ContractType": "Elsa.Mqtt.Models.MqttMessage, Elsa.Mqtt, Culture=neutral, PublicKeyToken=null",
+            "IsSerializable": true
+          }
+        ],
+        "Ports": []
       },
       {
+        "Assembly": "Elsa.Mqtt",
         "ClrType": "Elsa.Mqtt.Activities.PublishMqttMessage",
         "TypeName": "Elsa.PublishMqttMessage",
-        "Version": 1
+        "Version": 1,
+        "Kind": "Action",
+        "Inputs": [
+          {
+            "Name": "ConnectionName",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "Message",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "QualityOfServiceLevel",
+            "ContractType": "MQTTnet.Protocol.MqttQualityOfServiceLevel, MQTTnet, Culture=neutral, PublicKeyToken=fdb7629f2e364a63",
+            "IsSerializable": true
+          },
+          {
+            "Name": "Retain",
+            "ContractType": "System.Boolean, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          },
+          {
+            "Name": "Topic",
+            "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": true
+          }
+        ],
+        "Outputs": [
+          {
+            "Name": "Result",
+            "ContractType": "System.Boolean, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+            "IsSerializable": null
+          }
+        ],
+        "Ports": [
+          {
+            "Name": "Failure",
+            "Type": "Flow"
+          },
+          {
+            "Name": "Success",
+            "Type": "Flow"
+          }
+        ]
       }
     ]
   },

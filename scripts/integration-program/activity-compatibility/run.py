@@ -65,13 +65,14 @@ def descriptor_map(result):
 
 
 def classify_added_descriptors(before, after, matrix):
-    reviewed = {
-        (entry['assembly'], row['ClrType'], row['TypeName'], row['Version'])
+    reviewed = [
+        row
         for entry in matrix if entry['releasedVersion'] is None
         for row in entry.get('allowedSourceDescriptors', [])
-    }
+        if row['Assembly'] == entry['assembly']
+    ]
     added = sorted(after.keys() - before.keys())
-    allowed = [key for key in added if tuple(after[key][field] for field in ['Assembly', 'ClrType', 'TypeName', 'Version']) in reviewed]
+    allowed = [key for key in added if after[key] in reviewed]
     unexpected = sorted(set(added) - set(allowed))
     return allowed, unexpected
 
