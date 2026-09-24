@@ -12,6 +12,8 @@ from unittest.mock import patch
 
 import prepare_consolidated_build as build
 
+SOURCE_INTEGRATION_PATCH = build.PATCH
+
 SOLUTION = '''Microsoft Visual Studio Solution File, Format Version 12.00
 Global
 \tGlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -314,6 +316,24 @@ new file mode 100644
         with patch.object(build.subprocess, 'run', return_value=completed) as run:
             self.assertEqual(build.sdk_version(self.root), '10.0.300')
         self.assertEqual(run.call_args.kwargs['cwd'], self.root.resolve())
+    def test_slack_preparation_preserves_package_and_project_reference_modes(self):
+        patch = SOURCE_INTEGRATION_PATCH.read_text()
+        marker = 'diff --git a/src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj '
+        slack_diff = patch.split(marker, 1)[1].split('\ndiff --git ', 1)[0]
+        package_mode = slack_diff.split("Condition=\"'$(UseProjectReferences)' != 'true'\">", 1)[1].split('</ItemGroup>', 1)[0]
+        project_mode = slack_diff.split("Condition=\"'$(UseProjectReferences)' == 'true'\">", 1)[1].split('</ItemGroup>', 1)[0]
+
+        self.assertIn('<PackageReference Include="Elsa" />', package_mode)
+        self.assertNotIn('ProjectReference', package_mode)
+        self.assertIn('+        <ProjectReference Include="../../../modules/Elsa/Elsa.csproj" />', project_mode)
+        self.assertNotIn('PackageReference', project_mode)
+
+    def test_extensions_package_icon_remains_linked_from_the_canonical_root_file(self):
+        patch = SOURCE_INTEGRATION_PATCH.read_text()
+        marker = 'diff --git a/src/extensions/Directory.Build.props '
+        extensions_props_diff = patch.split(marker, 1)[1].split('\ndiff --git ', 1)[0]
+
+        self.assertIn('+    <None Include="..\\..\\..\\..\\icon.png" Pack="true" PackagePath="\\" />', extensions_props_diff)
 
 
 if __name__ == '__main__':

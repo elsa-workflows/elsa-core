@@ -6,10 +6,15 @@ on:
       - 'scripts/integration-program/package_impact.py'
       - 'scripts/integration-program/package_closure.py'
       - 'scripts/integration-program/run_slack_package_proof.py'
+      - 'scripts/integration-program/run_mapped_slack_package_proof.py'
+      - 'scripts/integration-program/VerifyEmbeddedSources/**'
       - 'scripts/integration-program/test_*.py'
+      - 'scripts/integration-program/consolidated-build/source-integration.patch'
       - 'doc/integration-program/inventory/inventory.json'
       - 'doc/integration-program/package-closure.md'
       - 'doc/integration-program/slack-package-proof.md'
+      - 'doc/integration-program/consolidation/build-preparation.md'
+      - 'doc/integration-program/consolidation/mapped-slack-package-proof.md'
       - '.github/workflows/package-impact-closure.yml'
   workflow_dispatch:
     inputs:
@@ -189,11 +194,115 @@ jobs:
             ${{ runner.temp }}/elsa-slack-proof-${{ github.run_id }}-${{ github.run_attempt }}/Source-NuGet.Config
           if-no-files-found: warn
           retention-days: 14
-      - name: Upload the local proof package only
+      - name: Upload the local released-source proof package only
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: elsa-slack-local-proof-nupkg
           path: ${{ runner.temp }}/elsa-slack-proof-${{ github.run_id }}-${{ github.run_attempt }}/local-feed/Elsa.Slack.3.8.5-proof.154ba15.nupkg
+          if-no-files-found: warn
+          retention-days: 14
+
+  mapped-source-artifact-proof:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Read the pinned integration source commits
+        id: source-pins
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import re
+          import sys
+          sys.path.insert(0, "scripts/integration-program")
+          import run_mapped_slack_package_proof as proof
+
+          for name, commit in proof.SOURCE_COMMITS.items():
+              if not re.fullmatch(r"[0-9a-f]{40}", commit):
+                  raise SystemExit(f"Invalid {name} source commit: {commit!r}")
+              print(f"{name}={commit}")
+          PY
+      - name: Checkout pinned Core source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: elsa-workflows/elsa-core
+          ref: ${{ steps.source-pins.outputs.core }}
+          path: sources/elsa-core
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Checkout pinned Extensions source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: elsa-workflows/elsa-extensions
+          ref: ${{ steps.source-pins.outputs.extensions }}
+          path: sources/elsa-extensions
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Checkout pinned Studio source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: elsa-workflows/elsa-studio
+          ref: ${{ steps.source-pins.outputs.studio }}
+          path: sources/elsa-studio
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+      - name: Prepare a disposable history-mapped Slack source tree
+        env:
+          REHEARSAL: ${{ runner.temp }}/elsa-slack-rehearsal-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python scripts/integration-program/rehearse-import.py \
+            --core sources/elsa-core \
+            --extensions sources/elsa-extensions \
+            --studio sources/elsa-studio \
+            --output "$REHEARSAL"
+          git -C "$REHEARSAL" -c advice.detachedHead=false switch --quiet --detach rehearsal
+          git -C "$REHEARSAL" reset --hard --quiet HEAD
+          python scripts/integration-program/prepare_consolidated_build.py --rehearsal "$REHEARSAL"
+      - name: Pack and verify mapped Slack locally
+        env:
+          REHEARSAL: ${{ runner.temp }}/elsa-slack-rehearsal-${{ github.run_id }}-${{ github.run_attempt }}
+          PROOF_OUTPUT: ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python scripts/integration-program/run_mapped_slack_package_proof.py \
+            --rehearsal "$REHEARSAL" \
+            --core-source sources/elsa-core \
+            --extensions-source sources/elsa-extensions \
+            --studio-source sources/elsa-studio \
+            --output-dir "$PROOF_OUTPUT"
+      - name: Upload mapped-source proof receipts, logs, and consumer inputs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: slack-mapped-source-proof-evidence
+          path: |
+            ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}/evidence.json
+            ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}/current-source-impact-selection.json
+            ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}/logs/**
+            ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}/test-results/**/*.trx
+            ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}/consumers/**/*.cs
+            ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}/consumers/**/*.csproj
+            ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}/consumers/**/NuGet.Config
+            ${{ runner.temp }}/elsa-slack-rehearsal-${{ github.run_id }}-${{ github.run_attempt }}/import-receipt.json
+            ${{ runner.temp }}/elsa-slack-rehearsal-${{ github.run_id }}-${{ github.run_attempt }}/consolidated-build-receipt.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Upload the local mapped-source package only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: elsa-slack-mapped-local-proof-nupkg
+          path: ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}/local-feed/Elsa.Slack.3.8.5-proof.nupkg
           if-no-files-found: warn
           retention-days: 14
