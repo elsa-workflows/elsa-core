@@ -182,22 +182,6 @@ public sealed class PostgreSqlConnectionsPersistenceTests(PostgreSqlConnectionsF
     }
 
     [Fact]
-    public void PostgreSqlConflictClassifierAcceptsOnlyUniqueViolationSqlState()
-    {
-        var classifier = new PostgreSqlConnectionCredentialBindingConflictClassifier();
-        var uniqueViolation = new DbUpdateException("write failed", new PostgresException("duplicate", "ERROR", "ERROR", PostgresErrorCodes.UniqueViolation));
-        var serializationFailure = new DbUpdateException("write failed", new PostgresException("retry", "ERROR", "ERROR", PostgresErrorCodes.SerializationFailure));
-        var nonProviderFailure = new DbUpdateException("write failed", new InvalidOperationException("not a database conflict"));
-
-        Assert.True(classifier.IsDuplicateBindingKey(uniqueViolation));
-        Assert.False(classifier.IsDuplicateBindingKey(serializationFailure));
-        Assert.False(classifier.IsDuplicateBindingKey(nonProviderFailure));
-        Assert.True(classifier.IsConcurrentGrantIssuanceConflict(uniqueViolation));
-        Assert.True(classifier.IsConcurrentGrantIssuanceConflict(serializationFailure));
-        Assert.False(classifier.IsConcurrentGrantIssuanceConflict(nonProviderFailure));
-    }
-
-    [Fact]
     public async Task ConcurrentGrantIssuanceReturnsOneSuccessAndOneControlledConflict()
     {
         await fixture.ResetSchemaAsync();
@@ -355,6 +339,25 @@ public sealed class PostgreSqlConnectionsPersistenceTests(PostgreSqlConnectionsF
             CreatedAt = now,
             UpdatedAt = now
         };
+    }
+}
+
+public sealed class PostgreSqlConflictClassifierTests
+{
+    [Fact]
+    public void RecognizesOnlyProviderConflictsForConcurrentGrantIssuance()
+    {
+        var classifier = new PostgreSqlConnectionCredentialBindingConflictClassifier();
+        var uniqueViolation = new DbUpdateException("write failed", new PostgresException("duplicate", "ERROR", "ERROR", PostgresErrorCodes.UniqueViolation));
+        var serializationFailure = new DbUpdateException("write failed", new PostgresException("retry", "ERROR", "ERROR", PostgresErrorCodes.SerializationFailure));
+        var nonProviderFailure = new DbUpdateException("write failed", new InvalidOperationException("not a database conflict"));
+
+        Assert.True(classifier.IsDuplicateBindingKey(uniqueViolation));
+        Assert.False(classifier.IsDuplicateBindingKey(serializationFailure));
+        Assert.False(classifier.IsDuplicateBindingKey(nonProviderFailure));
+        Assert.True(classifier.IsConcurrentGrantIssuanceConflict(uniqueViolation));
+        Assert.True(classifier.IsConcurrentGrantIssuanceConflict(serializationFailure));
+        Assert.False(classifier.IsConcurrentGrantIssuanceConflict(nonProviderFailure));
     }
 }
 
