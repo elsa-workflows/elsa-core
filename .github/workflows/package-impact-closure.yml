@@ -8,6 +8,7 @@ on:
       - 'scripts/integration-program/source_bindings.py'
       - 'scripts/integration-program/refresh_canonical_dependency_graph.py'
       - 'scripts/integration-program/release_unit_manifest.py'
+      - 'scripts/integration-program/check_publisher_handoff.py'
       - 'scripts/integration-program/run_slack_package_proof.py'
       - 'scripts/integration-program/run_mapped_slack_package_proof.py'
       - 'scripts/integration-program/verify_mapped_slack_consumer_provenance.py'
@@ -19,6 +20,7 @@ on:
       - 'scripts/integration-program/consolidated-build/source-integration.patch'
       - 'doc/integration-program/inventory/inventory.json'
       - 'doc/integration-program/release-units.json'
+      - 'doc/integration-program/publisher-handoff.md'
       - 'doc/integration-program/package-closure.md'
       - 'doc/integration-program/consolidation/canonical-95a-impact-closure.json'
       - 'doc/integration-program/slack-package-proof.md'
@@ -66,6 +68,10 @@ jobs:
         run: |
           python -m unittest discover -s scripts/integration-program -p 'test_*.py'
           python -O -m unittest discover -s scripts/integration-program -p 'test_*.py'
+      - name: Validate current publisher ownership without cutover
+        run: |
+          python scripts/integration-program/check_publisher_handoff.py \
+            --manifest doc/integration-program/release-units.json
       - name: Rehearse the Core-to-Slack dependency selection
         run: >-
           python scripts/integration-program/package_closure.py

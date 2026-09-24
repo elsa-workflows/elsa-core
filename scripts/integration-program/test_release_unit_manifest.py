@@ -11,6 +11,7 @@ from package_impact import InventoryGraph
 from release_unit_manifest import (
     DEFAULT_UNIT_ID,
     MANIFEST_PATH,
+    get_current_publisher,
     get_unit,
     load_manifest,
     require_tested_artifact_dependencies,
@@ -54,7 +55,7 @@ class ReleaseUnitManifestTests(unittest.TestCase):
         ))
         self.assertFalse(self.unit["versioning"]["local_proof_is_release_allocation"])
         self.assertFalse(self.unit["versioning"]["local_proof_may_publish"])
-        self.assertEqual("elsa-extensions", self.unit["publisher"]["repository"])
+        self.assertEqual("elsa-extensions", get_current_publisher(self.unit)["repository"])
 
     def test_unknown_release_unit_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "Unknown release unit"):
@@ -67,6 +68,29 @@ class ReleaseUnitManifestTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "multiple release-unit owners"):
             self.load_document(duplicate_document)
+
+    def test_missing_current_publisher_is_rejected(self):
+        invalid = copy.deepcopy(self.document)
+        invalid["release_units"][0]["publisher"]["current_publishers"] = []
+
+        with self.assertRaisesRegex(ValueError, "exactly one current publisher"):
+            self.load_document(invalid)
+
+    def test_multiple_current_publishers_are_rejected(self):
+        invalid = copy.deepcopy(self.document)
+        duplicate = copy.deepcopy(invalid["release_units"][0]["publisher"]["current_publishers"][0])
+        duplicate["repository"] = "elsa-core"
+        invalid["release_units"][0]["publisher"]["current_publishers"].append(duplicate)
+
+        with self.assertRaisesRegex(ValueError, "exactly one current publisher"):
+            self.load_document(invalid)
+
+    def test_short_source_provenance_sha_is_rejected(self):
+        invalid = copy.deepcopy(self.document)
+        invalid["release_units"][0]["mapped"]["source_commits"]["elsa-core"] = "8e893e02"
+
+        with self.assertRaisesRegex(ValueError, "full lowercase Git commit SHA"):
+            self.load_document(invalid)
 
     def test_unsafe_source_project_path_is_rejected(self):
         invalid = copy.deepcopy(self.document)

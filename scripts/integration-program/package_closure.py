@@ -19,6 +19,7 @@ from package_impact import InventoryGraph, ProjectKey
 from release_unit_manifest import (
     DEFAULT_UNIT_ID,
     MANIFEST_PATH,
+    get_current_publisher,
     get_unit,
     load_manifest,
     source_project_key,
@@ -379,7 +380,7 @@ def build_plan(
             "package_id": unit["package_id"],
             "package_target_frameworks": unit["target_frameworks"],
             "tested_artifact_dependencies": unit["tested_artifact_dependencies"],
-            "current_publisher": unit["publisher"]["repository"],
+            "current_publisher": get_current_publisher(unit)["repository"],
             "local_proof_version": unit["versioning"]["local_proof_version"],
             "local_proof_publishable": unit["versioning"]["local_proof_may_publish"],
         },

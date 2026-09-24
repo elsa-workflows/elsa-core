@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 import json
 import re
 from pathlib import Path, PurePosixPath
@@ -16,6 +17,8 @@ SEMVER_PATTERN = re.compile(
     r"(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?"
     r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
 )
+GIT_SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
 def _require_keys(value: Any, required: set[str], path: str) -> dict[str, Any]:
@@ -64,6 +67,33 @@ def _is_semver2(value: Any) -> bool:
     )
 
 
+def _validate_source_commits(value: Any, expected_repositories: set[str], path: str) -> dict[str, str]:
+    if not isinstance(value, dict) or set(value) != expected_repositories:
+        raise ValueError(f"{path} must pin exactly these repositories: {sorted(expected_repositories)}")
+    for repository, commit in value.items():
+        if not isinstance(commit, str) or not GIT_SHA_PATTERN.fullmatch(commit):
+            raise ValueError(f"{path}.{repository} must be a full lowercase Git commit SHA")
+    return value
+
+
+def _validate_publisher(value: Any, path: str) -> dict[str, str]:
+    publisher = _require_keys(value, {"repository", "workflow_path"}, path)
+    if not isinstance(publisher["repository"], str) or not publisher["repository"].strip():
+        raise ValueError(f"{path}.repository must be a nonempty string")
+    workflow_path = publisher["workflow_path"]
+    if not isinstance(workflow_path, str) or not workflow_path:
+        raise ValueError(f"{path}.workflow_path must be a repository-relative workflow path")
+    parsed_path = PurePosixPath(workflow_path)
+    if (
+        parsed_path.is_absolute()
+        or ".." in parsed_path.parts
+        or parsed_path.as_posix() != workflow_path
+        or parsed_path.suffix not in {".yml", ".yaml"}
+    ):
+        raise ValueError(f"{path}.workflow_path must be a safe repository-relative YAML path")
+    return publisher
+
+
 def _validate_unit(unit: Any, index: int) -> dict[str, Any]:
     prefix = f"release_units[{index}]"
     unit = _require_keys(
@@ -80,10 +110,24 @@ def _validate_unit(unit: Any, index: int) -> dict[str, Any]:
     if not PACKAGE_ID_PATTERN.fullmatch(unit["package_id"]):
         raise ValueError(f"{prefix}.package_id is not a valid package identity")
 
-    source = _require_keys(unit["source"], {"repository", "project_path", "test_projects"}, f"{prefix}.source")
+    source = _require_keys(
+        unit["source"], {"repository", "project_path", "provenance", "test_projects"}, f"{prefix}.source"
+    )
     if not isinstance(source["repository"], str) or not source["repository"].strip():
         raise ValueError(f"{prefix}.source.repository must be a nonempty string")
     _relative_project_path(source["project_path"], f"{prefix}.source.project_path")
+    source_provenance = _require_keys(
+        source["provenance"], {"source_commits", "released_artifact_sha256"}, f"{prefix}.source.provenance"
+    )
+    _validate_source_commits(
+        source_provenance["source_commits"],
+        {"elsa-core", "elsa-extensions"},
+        f"{prefix}.source.provenance.source_commits",
+    )
+    if not isinstance(source_provenance["released_artifact_sha256"], str) or not SHA256_PATTERN.fullmatch(
+        source_provenance["released_artifact_sha256"]
+    ):
+        raise ValueError(f"{prefix}.source.provenance.released_artifact_sha256 must be a SHA-256 digest")
     target_frameworks = _frameworks(unit["target_frameworks"], f"{prefix}.target_frameworks")
     if not isinstance(source["test_projects"], list) or not source["test_projects"]:
         raise ValueError(f"{prefix}.source.test_projects must be a nonempty list")
@@ -99,10 +143,17 @@ def _validate_unit(unit: Any, index: int) -> dict[str, Any]:
         if not set(test_frameworks).issubset(target_frameworks):
             raise ValueError(f"{test_prefix} uses a framework outside the package matrix")
 
-    mapped = _require_keys(unit["mapped"], {"repository", "project_path", "test_projects"}, f"{prefix}.mapped")
+    mapped = _require_keys(
+        unit["mapped"], {"repository", "project_path", "source_commits", "test_projects"}, f"{prefix}.mapped"
+    )
     if not isinstance(mapped["repository"], str) or not mapped["repository"].strip():
         raise ValueError(f"{prefix}.mapped.repository must be a nonempty string")
     _relative_project_path(mapped["project_path"], f"{prefix}.mapped.project_path")
+    _validate_source_commits(
+        mapped["source_commits"],
+        {"elsa-core", "elsa-extensions", "elsa-studio"},
+        f"{prefix}.mapped.source_commits",
+    )
     if not isinstance(mapped["test_projects"], list):
         raise ValueError(f"{prefix}.mapped.test_projects must be a list")
     mapped_tests: dict[str, str] = {}
@@ -140,14 +191,16 @@ def _validate_unit(unit: Any, index: int) -> dict[str, Any]:
             raise ValueError(f"{dependency_prefix}.scope is not supported")
 
     publisher = _require_keys(
-        unit["publisher"],
-        {"repository", "status", "cutover_requires_review"},
-        f"{prefix}.publisher",
+        unit["publisher"], {"current_publishers", "cutover_requires_review"}, f"{prefix}.publisher"
     )
-    if publisher["repository"] != source["repository"]:
+    current_publishers = publisher["current_publishers"]
+    if not isinstance(current_publishers, list) or len(current_publishers) != 1:
+        raise ValueError(f"{prefix}.publisher.current_publishers must contain exactly one current publisher")
+    current_publisher = _validate_publisher(current_publishers[0], f"{prefix}.publisher.current_publishers[0]")
+    if current_publisher["repository"] != source["repository"]:
         raise ValueError(f"{prefix} publisher must match the current source repository")
-    if publisher["status"] != "sole-current-publisher" or publisher["cutover_requires_review"] is not True:
-        raise ValueError(f"{prefix} must identify the sole current publisher and require reviewed cutover")
+    if publisher["cutover_requires_review"] is not True:
+        raise ValueError(f"{prefix}.publisher.cutover_requires_review must be true")
 
     versioning = _require_keys(
         unit["versioning"],
@@ -206,6 +259,157 @@ def load_manifest(path: Path = MANIFEST_PATH) -> dict[str, Any]:
             raise ValueError(f"Package {unit['package_id']} has multiple release-unit owners: {previous}, {unit['id']}")
         package_owners[package_id] = unit["id"]
     return document
+
+
+def get_current_publisher(unit: dict[str, Any]) -> dict[str, str]:
+    publishers = unit["publisher"]["current_publishers"]
+    if len(publishers) != 1:
+        raise ValueError(f"Release unit {unit['id']!r} must have exactly one current publisher")
+    return publishers[0]
+
+
+def validate_publisher_handoff(
+    unit: dict[str, Any],
+    proposed_publisher: dict[str, str] | None = None,
+    receipt: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Validate current ownership or a dry-run cutover receipt without changing live ownership."""
+    current = get_current_publisher(unit)
+    provenance = {
+        "released_source_commits": unit["source"]["provenance"]["source_commits"],
+        "mapped_source_commits": unit["mapped"]["source_commits"],
+        "released_artifact_sha256": unit["source"]["provenance"]["released_artifact_sha256"],
+        "local_proof_version": unit["versioning"]["local_proof_version"],
+        "local_proof_publishable": unit["versioning"]["local_proof_may_publish"],
+    }
+    if proposed_publisher is None and receipt is None:
+        return {
+            "package_id": unit["package_id"],
+            "current_publisher": current,
+            "provenance": provenance,
+            "handoff_status": "not-cut-over",
+            "publication_performed": False,
+            "live_publisher_changed": False,
+        }
+    if proposed_publisher is None or receipt is None:
+        raise ValueError("A proposed publisher and reviewed cutover receipt are both required")
+
+    proposed = _validate_publisher(proposed_publisher, "proposed_publisher")
+    if proposed == current:
+        raise ValueError("Proposed publisher must differ from the current publisher")
+    if not unit["publisher"]["cutover_requires_review"]:
+        raise ValueError("Publisher cutover must require review")
+
+    receipt = _require_keys(
+        receipt,
+        {
+            "schema_version", "mode", "package_id", "source_commits", "release_version",
+            "from_publisher", "to_publisher", "review", "old_publisher_disabled",
+            "new_publisher_enabled", "publication_performed",
+        },
+        "handoff_receipt",
+    )
+    if type(receipt["schema_version"]) is not int or receipt["schema_version"] != 1:
+        raise ValueError("handoff_receipt.schema_version must be 1")
+    if receipt["mode"] != "simulation":
+        raise ValueError("handoff_receipt.mode must be simulation for this nonpublishing preflight")
+    if receipt["package_id"] != unit["package_id"]:
+        raise ValueError("handoff_receipt.package_id differs from the release unit")
+    if receipt["publication_performed"] is not False:
+        raise ValueError("Publisher handoff preflight must not perform publication")
+
+    expected_commits = unit["mapped"]["source_commits"]
+    _validate_source_commits(receipt["source_commits"], set(expected_commits), "handoff_receipt.source_commits")
+    if receipt["source_commits"] != expected_commits:
+        raise ValueError("handoff_receipt.source_commits are stale relative to the release-unit manifest")
+
+    source_publisher = _validate_publisher(receipt["from_publisher"], "handoff_receipt.from_publisher")
+    target_publisher = _validate_publisher(receipt["to_publisher"], "handoff_receipt.to_publisher")
+    if source_publisher != current:
+        raise ValueError("handoff_receipt.from_publisher differs from the current publisher")
+    if target_publisher != proposed:
+        raise ValueError("handoff_receipt.to_publisher differs from the proposed publisher")
+
+    release_version = receipt["release_version"]
+    proof_version = unit["versioning"]["local_proof_version"]
+    if not isinstance(release_version, str):
+        raise ValueError("handoff_receipt.release_version must be a SemVer string")
+    if release_version == proof_version or "proof" in release_version.casefold():
+        raise ValueError("A local proof version cannot be used as a release version")
+    if not _is_semver2(release_version) or "-" in release_version:
+        raise ValueError("handoff_receipt.release_version must be a stable SemVer version")
+
+    review = _require_keys(
+        receipt["review"], {"status", "reference", "commit_sha"}, "handoff_receipt.review"
+    )
+    if review["status"] != "approved":
+        raise ValueError("handoff_receipt.review.status must be approved")
+    _validate_https_evidence(review["reference"], "handoff_receipt.review.reference")
+    _validate_git_sha(review["commit_sha"], "handoff_receipt.review.commit_sha")
+
+    disabled = _validate_workflow_evidence(
+        receipt["old_publisher_disabled"], "disabled", "handoff_receipt.old_publisher_disabled"
+    )
+    enabled = _validate_workflow_evidence(
+        receipt["new_publisher_enabled"], "enabled", "handoff_receipt.new_publisher_enabled"
+    )
+    if {key: disabled[key] for key in ("repository", "workflow_path")} != source_publisher:
+        raise ValueError("Old publisher evidence must identify the current publisher workflow")
+    if {key: enabled[key] for key in ("repository", "workflow_path")} != target_publisher:
+        raise ValueError("New publisher evidence must identify the proposed publisher workflow")
+    if disabled["observed_at"] >= enabled["observed_at"]:
+        raise ValueError("The old publisher must be disabled before the new publisher is enabled")
+
+    return {
+        "package_id": unit["package_id"],
+        "current_publisher": current,
+        "simulated_publisher": proposed,
+        "provenance": provenance,
+        "handoff_status": "simulated-receipt-valid",
+        "publication_performed": False,
+        "live_publisher_changed": False,
+    }
+
+
+def _validate_git_sha(value: Any, path: str) -> str:
+    if not isinstance(value, str) or not GIT_SHA_PATTERN.fullmatch(value):
+        raise ValueError(f"{path} must be a full lowercase Git commit SHA")
+    return value
+
+
+def _validate_https_evidence(value: Any, path: str) -> str:
+    if not isinstance(value, str) or not value.startswith("https://"):
+        raise ValueError(f"{path} must be an HTTPS evidence reference")
+    return value
+
+
+def _validate_workflow_evidence(value: Any, expected_state: str, path: str) -> dict[str, Any]:
+    evidence = _require_keys(
+        value,
+        {"state", "repository", "workflow_path", "commit_sha", "workflow_sha256", "evidence_url", "observed_at"},
+        path,
+    )
+    if evidence["state"] != expected_state:
+        raise ValueError(f"{path}.state must be {expected_state!r}")
+    publisher = _validate_publisher(
+        {"repository": evidence["repository"], "workflow_path": evidence["workflow_path"]}, path
+    )
+    _validate_git_sha(evidence["commit_sha"], f"{path}.commit_sha")
+    if not isinstance(evidence["workflow_sha256"], str) or not SHA256_PATTERN.fullmatch(
+        evidence["workflow_sha256"]
+    ):
+        raise ValueError(f"{path}.workflow_sha256 must be a SHA-256 digest")
+    _validate_https_evidence(evidence["evidence_url"], f"{path}.evidence_url")
+    observed_at = evidence["observed_at"]
+    if not isinstance(observed_at, str):
+        raise ValueError(f"{path}.observed_at must be an ISO-8601 timestamp with timezone")
+    try:
+        parsed = datetime.fromisoformat(observed_at.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise ValueError(f"{path}.observed_at must be an ISO-8601 timestamp with timezone") from error
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError(f"{path}.observed_at must include a timezone")
+    return {**publisher, **evidence, "observed_at": parsed}
 
 
 def get_unit(document: dict[str, Any], unit_id: str = DEFAULT_UNIT_ID) -> dict[str, Any]:

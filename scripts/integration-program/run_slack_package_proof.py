@@ -22,12 +22,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from xml.etree import ElementTree
 
-CORE_SHA = "33181ae3048f628f591a0155b5665a8e4d1bcea2"
-EXTENSIONS_SHA = "154ba15fb4da85b4bebecfbe43639579cbda1d0d"
-OFFICIAL_SHA256 = "6df6fd1c3e7558c7c1124fa232879cfa539196fa35a3edd9055cfcc2e0a178e6"
+from release_unit_manifest import get_unit, load_manifest
+
+RELEASE_UNIT = get_unit(load_manifest())
+RELEASE_SOURCE_COMMITS = RELEASE_UNIT["source"]["provenance"]["source_commits"]
+CORE_SHA = RELEASE_SOURCE_COMMITS["elsa-core"]
+EXTENSIONS_SHA = RELEASE_SOURCE_COMMITS["elsa-extensions"]
+OFFICIAL_SHA256 = RELEASE_UNIT["source"]["provenance"]["released_artifact_sha256"]
 TFMS = ("net8.0", "net9.0", "net10.0")
 PACKAGE_ID = "Elsa.Slack"
-PROOF_VERSION = "3.8.5-proof.154ba15"
+PROOF_VERSION = f"{RELEASE_UNIT['versioning']['local_proof_version']}.{EXTENSIONS_SHA[:7]}"
 PROJECT_RELATIVE = Path("src/modules/communication/Elsa.Slack/Elsa.Slack.csproj")
 TEST_RELATIVE = Path("test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj")
 INVENTORY_RELATIVE = Path("doc/integration-program/inventory/inventory.json")
