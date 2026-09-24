@@ -31,7 +31,7 @@ internal static class Program
     private const string DataProtectionApplicationName = "Elsa-Secrets-Bridge-Contract-Synthetic";
     private const string DataProtectionPurpose = "Elsa.Secrets.Encryption";
     private const string SidecarTable = "ElsaSecretsLegacyV381";
-    private const string TargetCoreCommit = "7b06b82d0ea89c12d49c3c28da8d770bfca13faf";
+    private const string TargetCoreCommit = "c37e9d7a2fa7e7c2af802b211e3d59db45fc2f6f";
     private static readonly byte[] CoreKey = Enumerable.Range(1, 32).Select(value => (byte)value).ToArray();
     private static readonly byte[] WrongCoreKey = Enumerable.Range(33, 32).Select(value => (byte)value).ToArray();
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
@@ -808,26 +808,28 @@ internal static class Program
         await using (var scope = services.CreateAsyncScope())
         {
             var repository = scope.ServiceProvider.GetRequiredService<EFCoreSecretRepository>();
+            const string novelName = "tenant-b:forged-novel";
             var crossTenantWriteDenied = false;
             try
             {
                 await repository.SaveAsync(new Secret
                 {
                     Id = "forged-tenant-b-id",
-                    Name = "tenant-b:exclusive",
+                    Name = novelName,
                     DisplayName = "forged tenant B write",
                     TenantId = "tenant-b"
                 });
             }
-            catch (Exception error) when (error is DbUpdateException or InvalidOperationException)
+            catch (InvalidOperationException)
             {
                 crossTenantWriteDenied = true;
             }
 
-            var tenantAStillIsolated = (await repository.ListAsync()).All(row => row.Name != "tenant-b:exclusive");
+            var tenantAStillIsolated = (await repository.ListAsync()).All(row => row.Name != novelName);
             var tenantBAfter = await ReadVisibleAsync(services, tenantAccessor, "tenant-b");
             var tenantBRowUnchanged = tenantBAfter.SingleOrDefault(row => row.Name == "tenant-b:exclusive")?.Id == "legacy-aggregate-tenant-b-exclusive";
-            return crossTenantWriteDenied && tenantAStillIsolated && tenantBRowUnchanged;
+            var forgedRowAbsent = tenantBAfter.All(row => row.Name != novelName);
+            return crossTenantWriteDenied && tenantAStillIsolated && tenantBRowUnchanged && forgedRowAbsent;
         }
     }
 

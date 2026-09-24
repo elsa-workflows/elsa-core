@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-import re
 import unittest
 
 
@@ -14,7 +13,7 @@ class PostgreSqlSecretsBridgeFixtureTests(unittest.TestCase):
         collision = json.loads((FIXTURE.parent / 'secrets-postgresql-upgrade/artifacts.json').read_text())
         sqlite = json.loads((FIXTURE.parent / 'secrets-sqlite-bridge-contract/artifacts.json').read_text())
 
-        self.assertEqual(bridge['targetCoreSourceCommit'], '7b06b82d0ea89c12d49c3c28da8d770bfca13faf')
+        self.assertEqual(bridge['targetCoreSourceCommit'], 'c37e9d7a2fa7e7c2af802b211e3d59db45fc2f6f')
         for phase in ('extensions-3.8.1', 'core-3.8.4'):
             self.assertEqual(bridge['phases'][phase]['packages'], collision['phases'][phase]['packages'])
             self.assertEqual(bridge['phases'][phase]['sourceCommit'], collision['phases'][phase]['sourceCommit'])
@@ -44,6 +43,9 @@ class PostgreSqlSecretsBridgeFixtureTests(unittest.TestCase):
         self.assertIn('ciphertextPrinted = false', runner)
         self.assertIn('plaintextPrinted = false', source)
         self.assertIn('cutoverAllowed = false', runner)
+        self.assertIn('const string novelName = "tenant-b:forged-novel"', runner)
+        self.assertIn('var forgedRowAbsent = tenantBAfter.All(row => row.Name != novelName);', runner)
+        self.assertNotIn('error is DbUpdateException or InvalidOperationException', runner)
         self.assertNotRegex(script, r'(?i)dotnet\s+nuget\s+push|nuget\s+push|gh\s+release')
 
     def test_ci_runs_and_retains_only_the_redacted_report(self):

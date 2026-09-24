@@ -19,7 +19,7 @@ FIXTURE = Path(__file__).resolve().parent / 'secrets-postgresql-bridge'
 MANIFEST = FIXTURE / 'artifacts.json'
 OLD_PROJECT = FIXTURE / 'extensions-3.8.1/ExtensionsRunner.csproj'
 CURRENT_PROJECT = FIXTURE / 'current-core/PostgreSqlBridgeRunner.csproj'
-PINNED_CORE_COMMIT = '7b06b82d0ea89c12d49c3c28da8d770bfca13faf'
+PINNED_CORE_COMMIT = 'c37e9d7a2fa7e7c2af802b211e3d59db45fc2f6f'
 PINNED_SDK = '10.0.300'
 CURRENT_STAGE = 'startup'
 
