@@ -92,9 +92,18 @@ class SqlServerSecretsBridgeFixtureTests(unittest.TestCase):
         graph = lock['dependencies']['net10.0']
 
         self.assertIn('<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>', project_text)
-        self.assertGreater(len(graph), 0)
+        self.assertEqual(21, sum(package.get('type') == 'Project' for package in graph.values()))
+        self.assertEqual(75, sum(package.get('type') != 'Project' for package in graph.values()))
+        for project_id in ('Elsa.Common', 'Elsa.Persistence.EFCore.Common', 'Elsa.Persistence.EFCore',
+                           'Elsa.Persistence.EFCore.SqlServer', 'Elsa.Secrets',
+                           'Elsa.Secrets.Persistence.EFCore', 'Elsa.Secrets.Persistence.EFCore.SqlServer', 'Elsa.Tenants'):
+            self.assertIn(project_id.casefold(), (name.casefold() for name in graph if graph[name]['type'] == 'Project'))
         for package_id, package in graph.items():
             with self.subTest(package=package_id):
+                if package['type'] == 'Project':
+                    if 'dependencies' in package:
+                        self.assertIsInstance(package['dependencies'], dict)
+                    continue
                 self.assertTrue(package.get('resolved'))
                 self.assertRegex(package.get('contentHash', ''), r'^[A-Za-z0-9+/]+={0,2}$')
         self.assertRegex(script, r"'currentCorePackageLock':\s*core_lock")

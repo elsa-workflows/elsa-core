@@ -170,13 +170,26 @@ def verify_current_core_lock(project):
     packages = lock.get('dependencies', {}).get('net10.0')
     if not isinstance(packages, dict) or not packages:
         raise ValueError('Pinned-Core lockfile has no net10.0 dependency graph')
+    package_count = 0
+    project_count = 0
     for package_id, package in packages.items():
-        if not isinstance(package, dict) or not package.get('resolved') or not package.get('contentHash'):
+        if not isinstance(package, dict):
             raise ValueError(f'Pinned-Core lock entry is incomplete: {package_id}')
+        if package.get('type') == 'Project':
+            if 'dependencies' in package and not isinstance(package['dependencies'], dict):
+                raise ValueError(f'Pinned-Core project lock entry is incomplete: {package_id}')
+            project_count += 1
+        elif package.get('type') in {'Direct', 'Transitive', 'CentralTransitive'} and package.get('resolved') and package.get('contentHash'):
+            package_count += 1
+        else:
+            raise ValueError(f'Pinned-Core package lock entry is incomplete: {package_id}')
+    if project_count < 8:
+        raise ValueError('Pinned-Core lockfile omits the direct project-reference graph')
     return {
         'sha256': hashlib.sha256(lock_path.read_bytes()).hexdigest(),
         'targetFramework': 'net10.0',
-        'packageCount': len(packages),
+        'packageCount': package_count,
+        'projectReferenceCount': project_count,
     }
 
 
