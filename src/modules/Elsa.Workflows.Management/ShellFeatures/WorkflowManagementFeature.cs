@@ -89,6 +89,8 @@ public class WorkflowManagementFeature : IShellFeature
         services
             .AddMemoryStore<WorkflowDefinition, MemoryWorkflowDefinitionStore>()
             .AddMemoryStore<WorkflowInstance, MemoryWorkflowInstanceStore>()
+            .AddSingleton<MemoryWorkflowDefinitionRegistryGenerationStore>()
+            .AddScoped<IWorkflowDefinitionRegistryGenerationStore>(sp => sp.GetRequiredService<MemoryWorkflowDefinitionRegistryGenerationStore>())
             .AddActivityProvider<TypedActivityProvider>()
             .AddActivityProvider<WorkflowDefinitionActivityProvider>()
             .AddScoped<WorkflowDefinitionActivityDescriptorFactory>()

@@ -13,6 +13,11 @@ public interface IWorkflowDefinitionActivityRegistryUpdater
     Task AddToRegistry(string workflowDefinitionVersionId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Reconciles workflow-as-activity descriptors for the current tenant from the definition store.
+    /// </summary>
+    Task ReconcileRegistryAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Removes workflow definition activities from the <see cref="IActivityRegistry"/>.
     /// </summary>
     /// <param name="workflowDefinitionId">The ID of the workflow definition to remove.</param>

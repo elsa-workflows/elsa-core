@@ -272,6 +272,8 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
         Services
              .AddMemoryStore<WorkflowDefinition, MemoryWorkflowDefinitionStore>()
              .AddMemoryStore<WorkflowInstance, MemoryWorkflowInstanceStore>()
+             .AddSingleton<MemoryWorkflowDefinitionRegistryGenerationStore>()
+             .AddScoped<IWorkflowDefinitionRegistryGenerationStore>(sp => sp.GetRequiredService<MemoryWorkflowDefinitionRegistryGenerationStore>())
              .AddActivityProvider<TypedActivityProvider>()
              .AddActivityProvider<WorkflowDefinitionActivityProvider>()
              .AddActivityProvider<HostMethodActivityProvider>()

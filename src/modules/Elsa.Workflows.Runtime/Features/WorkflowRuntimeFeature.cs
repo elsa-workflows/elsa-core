@@ -277,6 +277,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         {
             options.Channels.AddRange(WorkflowDispatcherChannels.Values);
         });
+        Services.TryAddSingleton(TimeProvider.System);
         Services.AddGracefulShutdownOptions(GracefulShutdown);
 
         // Graceful-shutdown core (US1 — quiescence machinery).
@@ -408,6 +409,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddRecurringTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(10))
             .AddRecurringTask<RestartInterruptedWorkflowsTask>(TimeSpan.FromMinutes(5)) // Same default as the workflow liveness threshold.
             .AddRecurringTask<ProcessWorkflowDispatchOutboxRecurringTask>(TimeSpan.FromSeconds(10))
+            .AddRecurringTask<RefreshWorkflowDefinitionActivityRegistryTask>(TimeSpan.FromSeconds(5))
             
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)

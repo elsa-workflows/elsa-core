@@ -1,5 +1,6 @@
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Contracts;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,6 +16,7 @@ public abstract class EFCoreWorkflowDefinitionPersistenceShellFeatureBase : Pers
     protected override void OnConfiguring(IServiceCollection services)
     {
         services.AddScoped<IWorkflowDefinitionStore, EFCoreWorkflowDefinitionStore>();
+        services.AddScoped<IWorkflowDefinitionRegistryGenerationStore, EFCoreWorkflowDefinitionRegistryGenerationStore>();
         AddEntityStore<WorkflowDefinition, EFCoreWorkflowDefinitionStore>(services);
     }
 }

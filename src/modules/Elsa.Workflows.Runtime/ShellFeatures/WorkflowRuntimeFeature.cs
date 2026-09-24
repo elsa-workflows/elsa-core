@@ -194,6 +194,7 @@ public class WorkflowRuntimeFeature : IShellFeature
         {
             options.Channels.AddRange(WorkflowDispatcherChannels.Values);
         });
+        services.TryAddSingleton(TimeProvider.System);
         services.AddGracefulShutdownOptions(options =>
         {
             if (GracefulShutdown == null)
@@ -329,6 +330,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddRecurringTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(10))
             .AddRecurringTask<RestartInterruptedWorkflowsTask>(TimeSpan.FromMinutes(5)) // Same default as the workflow liveness threshold.
             .AddRecurringTask<ProcessWorkflowDispatchOutboxRecurringTask>(TimeSpan.FromSeconds(10))
+            .AddRecurringTask<RefreshWorkflowDefinitionActivityRegistryTask>(TimeSpan.FromSeconds(5))
 
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)

@@ -18,7 +18,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Management
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.10")
+                .HasAnnotation("ProductVersion", "10.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -115,6 +115,20 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Management
                         .HasDatabaseName("IX_WorkflowDefinition_DefinitionId_Version");
 
                     b.ToTable("WorkflowDefinitions", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Workflows.Management.Entities.WorkflowDefinitionRegistryGeneration", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.Property<long>("Generation")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("TenantId");
+
+                    b.ToTable("WorkflowDefinitionRegistryGenerations", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Management.Entities.WorkflowInstance", b =>

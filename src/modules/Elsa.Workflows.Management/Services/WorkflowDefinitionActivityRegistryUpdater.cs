@@ -1,5 +1,8 @@
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Caching;
+using Elsa.Common.Multitenancy;
+using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Management.Services;
@@ -7,9 +10,14 @@ namespace Elsa.Workflows.Management.Services;
 /// <summary>
 /// Service responsible for updating the activity registry based on activity providers.
 /// </summary>
-public class WorkflowDefinitionActivityRegistryUpdater(WorkflowDefinitionActivityProvider provider, IActivityRegistry registry) : IWorkflowDefinitionActivityRegistryUpdater
+public class WorkflowDefinitionActivityRegistryUpdater(
+    WorkflowDefinitionActivityProvider provider,
+    IActivityRegistry registry,
+    ICacheManager cacheManager,
+    ITenantAccessor tenantAccessor) : IWorkflowDefinitionActivityRegistryUpdater
 {
     private readonly Type _providerType = typeof(WorkflowDefinitionActivityProvider);
+    private static readonly SemaphoreSlim RegistryLock = new(1, 1);
     
     /// <inheritdoc />
     public async Task AddToRegistry(string workflowDefinitionVersionId, CancellationToken cancellationToken)
@@ -20,37 +28,82 @@ public class WorkflowDefinitionActivityRegistryUpdater(WorkflowDefinitionActivit
                 d.CustomProperties.TryGetValue("WorkflowDefinitionVersionId", out var val) &&
                 val.ToString() == workflowDefinitionVersionId);
         
-        if (descriptorToAdd is not null)
+        if (descriptorToAdd is null)
+            return;
+
+        await RegistryLock.WaitAsync(cancellationToken);
+        try
+        {
             registry.Add(_providerType, descriptorToAdd);
+        }
+        finally
+        {
+            RegistryLock.Release();
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task ReconcileRegistryAsync(CancellationToken cancellationToken = default)
+    {
+        await RegistryLock.WaitAsync(cancellationToken);
+        try
+        {
+            // A cache warmed on this node before a remote write would otherwise hide the new store state.
+            await cacheManager.TriggerTokenAsync(CachingWorkflowDefinitionStore.GetTenantReconciliationTokenKey(tenantAccessor.TenantId), cancellationToken);
+
+            // Read the authoritative set before mutating the live registry. A failed or cancelled
+            // store read must leave the currently usable descriptors in place.
+            var descriptors = (await provider.GetDescriptorsAsync(cancellationToken)).ToList();
+
+            // ListByProvider is tenant-aware: it exposes only the current tenant plus agnostic descriptors.
+            // Removing that visible set first also handles an empty provider result, which the generic
+            // ActivityRegistry.RefreshDescriptorsAsync currently does not clear.
+            foreach (var descriptor in registry.ListByProvider(_providerType).ToList())
+                registry.Remove(_providerType, descriptor);
+
+            foreach (var descriptor in descriptors)
+                registry.Add(_providerType, descriptor);
+        }
+        finally
+        {
+            RegistryLock.Release();
+        }
     }
 
     /// <inheritdoc />
     public void RemoveDefinitionFromRegistry(string workflowDefinitionId)
     {
-        var providerDescriptors = registry.ListByProvider(_providerType);
-        
-        var descriptorsToRemove = providerDescriptors
-            .Where(d =>
-                d.CustomProperties.TryGetValue("WorkflowDefinitionId", out var val) &&
-                val.ToString() == workflowDefinitionId).ToList();
-
-        foreach (ActivityDescriptor activityDescriptor in descriptorsToRemove)
+        RegistryLock.Wait();
+        try
         {
-            registry.Remove(_providerType, activityDescriptor);
+            var descriptorsToRemove = registry.ListByProvider(_providerType)
+                .Where(d => d.CustomProperties.TryGetValue("WorkflowDefinitionId", out var val) && val.ToString() == workflowDefinitionId)
+                .ToList();
+
+            foreach (var activityDescriptor in descriptorsToRemove)
+                registry.Remove(_providerType, activityDescriptor);
+        }
+        finally
+        {
+            RegistryLock.Release();
         }
     }
 
     /// <inheritdoc />
     public void RemoveDefinitionVersionFromRegistry(string workflowDefinitionVersionId)
     {
-        var providerDescriptors = registry.ListByProvider(_providerType);
-        
-        var descriptorToRemove = providerDescriptors
-            .FirstOrDefault(d =>
-                d.CustomProperties.TryGetValue("WorkflowDefinitionVersionId", out var val) &&
-                val.ToString() == workflowDefinitionVersionId);
+        RegistryLock.Wait();
+        try
+        {
+            var descriptorToRemove = registry.ListByProvider(_providerType)
+                .FirstOrDefault(d => d.CustomProperties.TryGetValue("WorkflowDefinitionVersionId", out var val) && val.ToString() == workflowDefinitionVersionId);
 
-        if (descriptorToRemove is not null)
-            registry.Remove(_providerType, descriptorToRemove);
+            if (descriptorToRemove is not null)
+                registry.Remove(_providerType, descriptorToRemove);
+        }
+        finally
+        {
+            RegistryLock.Release();
+        }
     }
 }

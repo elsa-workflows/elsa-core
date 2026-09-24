@@ -1,4 +1,5 @@
 using Elsa.Mediator.Contracts;
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
@@ -10,13 +11,18 @@ namespace Elsa.Workflows.Runtime.Handlers;
 /// Refreshes the <see cref="IActivityRegistry"/> for the <see cref="WorkflowDefinitionActivityProvider"/> provider whenever workflow definitions are reloaded.
 /// </summary>
 [PublicAPI]
-public class RefreshActivityRegistry(IWorkflowDefinitionActivityRegistryUpdater workflowDefinitionActivityRegistryUpdater) : INotificationHandler<WorkflowDefinitionsReloaded>
+public class RefreshActivityRegistry(
+    IWorkflowDefinitionActivityRegistryUpdater workflowDefinitionActivityRegistryUpdater,
+    IWorkflowDefinitionRegistryGenerationStore generationStore,
+    ITenantAccessor tenantAccessor) : INotificationHandler<WorkflowDefinitionsReloaded>
 {
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionsReloaded notification, CancellationToken cancellationToken)
     {
         foreach (var reloadedWorkflowDefinition in notification.ReloadedWorkflowDefinitions)
             await UpdateDefinition(reloadedWorkflowDefinition.DefinitionVersionId, reloadedWorkflowDefinition.UsableAsActivity);
+
+        await generationStore.IncrementAsync(tenantAccessor.TenantId, cancellationToken);
     }
 
     private Task UpdateDefinition(string definitionVersionId, bool? usableAsActivity)
