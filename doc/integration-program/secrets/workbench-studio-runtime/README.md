@@ -94,3 +94,26 @@ routes, route count, canonical assembly ownership result, and the absence of
 legacy routes and `Elsa.Secrets.Api`, `Elsa.Secrets.Management`, and
 `Elsa.Secrets.Scripting` assemblies. Do not commit the raw endpoint metadata,
 private host configuration, credentials, or process logs.
+
+### Verified disposable route run (2026-09-24)
+
+The probe ran against a disposable mapped copy at Core
+`1855a2ef2719d536a66181dec604e781bfdd42a9`, Extensions
+`ba8b71d91c15ffe5be4b2c539cf9f712e74af775`, and Studio
+`20ceaeeed7e671f0c9662003e82063026f2216de` (synthetic rehearsal source commit
+`f39c2e0b47c45f959f6cbfea2fb8faf5b9a91077`). The Workbench project
+built for `net10.0` with zero errors and 227 warnings. A private, loopback-only
+host started with `ASPNETCORE_ENVIRONMENT=Production`, an ephemeral signing key,
+an isolated SQLite database, and the two explicit Secrets feature overrides.
+The raw probe response was passed through `validate_route_probe_payload`; only
+the [sanitized route receipt](route-probe-receipt.json) is retained here. It
+records ten canonical Core-owned routes and six canonical Secrets assemblies,
+with no legacy Secrets route or assembly. The host was stopped after the probe.
+
+The focused fixture suite passed 17/17 in both normal and optimized Python
+modes; root independently reran the normal suite. The mapped host source was a
+disposable rehearsal, not the final history import. Development startup on
+this mapped tip fails existing Secrets service-lifetime validation, so this
+Production-mode route observation does not clear that separate host issue.
+The route probe does not establish tenant-membership policy, Studio browser
+behavior, published-package upgrade compatibility, or release readiness.
