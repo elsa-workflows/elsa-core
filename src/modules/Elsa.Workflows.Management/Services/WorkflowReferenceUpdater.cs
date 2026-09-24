@@ -147,9 +147,10 @@ public class WorkflowReferenceUpdater(
         if (draft.MaterializerName != JsonWorkflowMaterializer.MaterializerName)
         {
             logger.LogWarning(
-                "Skipping auto reference-update for workflow '{DefinitionId}' because its materializer '{MaterializerName}' is source-based. Auto reference-update is not supported for source-materialized (e.g. ElsaScript) workflows",
+                "Skipping reference update for workflow definition {ConsumerDefinitionId}: it is authored in a non-JSON source format and must be updated manually to reference {ReferencedDefinitionId} version {ReferencedVersion}.",
                 draft.DefinitionId,
-                draft.MaterializerName);
+                target.DefinitionId,
+                target.Version);
             return null;
         }
 

@@ -55,8 +55,9 @@ public class WorkflowReferenceUpdaterOriginalSourceTests
         await publisher.Received(1).SaveDraftAsync(jsonConsumer, Arg.Any<CancellationToken>());
         Assert.Contains(logger.Messages, message =>
             message.Contains(elsaScriptConsumer.DefinitionId, StringComparison.Ordinal)
-            && message.Contains("ElsaScript", StringComparison.Ordinal)
-            && message.Contains("not supported", StringComparison.OrdinalIgnoreCase));
+            && message.Contains(target.DefinitionId, StringComparison.Ordinal)
+            && message.Contains(target.Version.ToString(), StringComparison.Ordinal)
+            && message.Contains("must be updated manually", StringComparison.Ordinal));
     }
 
     private static WorkflowReferenceUpdater CreateUpdater(
