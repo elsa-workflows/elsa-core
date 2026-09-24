@@ -44,3 +44,5 @@ jobs:
         run: |
           python scripts/integration-program/run_secrets_postgresql_upgrade_fixture.py \
             --report-out "$RUNNER_TEMP/secrets-postgresql-upgrade-report.json"
+          diff -u scripts/integration-program/secrets-postgresql-upgrade/observed-result.json \
+            "$RUNNER_TEMP/secrets-postgresql-upgrade-report.json"
