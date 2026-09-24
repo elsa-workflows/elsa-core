@@ -208,12 +208,12 @@ def main():
         env['NUGET_PACKAGES'] = str(packages)
         CURRENT_STAGE = 'pinned-core-restore'
         run(['dotnet', 'restore', str(current_project), '--configfile', str(config),
-             '--packages', str(packages), '-m:1'], cwd=target_source, env=env, capture=True, timeout=600)
+             '--packages', str(packages), '-m:1'], cwd=FIXTURE, env=env, capture=True, timeout=600)
         CURRENT_STAGE = 'runner-builds'
         run(['dotnet', 'build', str(OLD_PROJECT), '--no-restore', '--configuration', 'Release', '-m:1'],
-            cwd=ROOT, env=env, capture=True, timeout=900)
+            cwd=FIXTURE, env=env, capture=True, timeout=900)
         run(['dotnet', 'build', str(current_project), '--no-restore', '--configuration', 'Release', '-m:1'],
-            cwd=target_source, env=env, capture=True, timeout=900)
+            cwd=FIXTURE, env=env, capture=True, timeout=900)
 
         container = None
         try:

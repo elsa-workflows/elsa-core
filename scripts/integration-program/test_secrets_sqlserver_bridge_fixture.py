@@ -12,10 +12,13 @@ SCRIPT = ROOT / 'scripts/integration-program/run_secrets_sqlserver_bridge.py'
 class SqlServerSecretsBridgeFixtureTests(unittest.TestCase):
     def test_reuses_reviewed_artifact_and_core_source_pins(self):
         bridge = json.loads((FIXTURE / 'artifacts.json').read_text())
+        sdk = json.loads((FIXTURE / 'global.json').read_text())
         collision = json.loads((FIXTURE.parent / 'secrets-sqlserver-upgrade/artifacts.json').read_text())
         sqlite = json.loads((FIXTURE.parent / 'secrets-sqlite-bridge-contract/artifacts.json').read_text())
 
         self.assertEqual(bridge['targetCoreSourceCommit'], 'c37e9d7a2fa7e7c2af802b211e3d59db45fc2f6f')
+        self.assertEqual(sdk['sdk']['version'], '10.0.300')
+        self.assertEqual(sdk['sdk']['rollForward'], 'disable')
         self.assertEqual(bridge['sqlServerImage'], collision['sqlServerImage'])
         for phase in ('extensions-3.8.1', 'core-3.8.4'):
             self.assertEqual(bridge['phases'][phase]['packages'], collision['phases'][phase]['packages'])
@@ -70,6 +73,7 @@ class SqlServerSecretsBridgeFixtureTests(unittest.TestCase):
         self.assertIn("safe = safe.replace(connection, '<redacted connection string>')", script)
         self.assertIn("print(f'Fixture failed at {CURRENT_STAGE}: {type(error).__name__}{detail}', file=sys.stderr)", script)
         self.assertIn("'bin/Release/net10.0/SqlServerBridgeRunner.dll'", script)
+        self.assertIn("'--packages', str(packages), '-m:1'], cwd=FIXTURE", script)
         self.assertIn("result.get('originalDestinationUnchanged') is not expected_original_unchanged", script)
 
 
