@@ -41,6 +41,23 @@ class PackageClosureTests(unittest.TestCase):
             ["elsa-extensions:test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj"],
         )
         self.assertEqual(plan["module_change_scenario"]["packages_to_pack"], ["Elsa.Slack"])
+        paired = plan["paired_selector_assertions"]
+        self.assertEqual(paired["status"], "passed")
+        self.assertEqual(paired["slack_only_change"]["package_ids_to_pack"], ["Elsa.Slack"])
+        self.assertTrue(paired["slack_only_change"]["test_projects_match_manifest"])
+        self.assertTrue(paired["slack_only_change"]["only_release_unit_package_selected"])
+        self.assertEqual(paired["shared_core_change"]["affected_test_project_count"], 51)
+        self.assertTrue(paired["shared_core_change"]["release_unit_tests_in_closure"])
+        self.assertTrue(paired["shared_core_change"]["test_closure_expanded"])
+        self.assertEqual(
+            paired["shared_core_change"]["package_selection_basis"],
+            "explicit release-unit manifest; not a Core release package plan",
+        )
+        self.assertEqual(paired["shared_core_change"]["package_ids_to_pack"], ["Elsa.Slack"])
+        self.assertEqual(paired["unchanged_package_control"], {
+            "package_id": "Elsa.Mqtt",
+            "selected_for_pack": False,
+        })
         self.assertEqual(plan["release_unit_manifest"]["unit_id"], "elsa-slack")
         self.assertEqual(plan["release_unit_manifest"]["package_id"], "Elsa.Slack")
         self.assertEqual(plan["release_unit_manifest"]["local_proof_version"], "3.8.5-proof")
