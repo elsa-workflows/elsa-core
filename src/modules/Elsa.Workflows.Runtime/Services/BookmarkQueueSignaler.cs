@@ -9,7 +9,11 @@ public class BookmarkQueueSignaler : IBookmarkQueueSignaler
     private readonly ConcurrentDictionary<string, Channel<object?>> _channels = new();
     private readonly ITenantAccessor? _tenantAccessor;
 
-    public BookmarkQueueSignaler(ITenantAccessor? tenantAccessor = null)
+    public BookmarkQueueSignaler()
+    {
+    }
+
+    public BookmarkQueueSignaler(ITenantAccessor tenantAccessor)
     {
         _tenantAccessor = tenantAccessor;
     }
@@ -21,7 +25,12 @@ public class BookmarkQueueSignaler : IBookmarkQueueSignaler
 
     public Task TriggerAsync(CancellationToken cancellationToken = default)
     {
-        GetChannel().Writer.TryWrite(null);
+        return TriggerAsync(CurrentTenantId(), cancellationToken);
+    }
+
+    public Task TriggerAsync(string tenantId, CancellationToken cancellationToken = default)
+    {
+        GetChannel(tenantId).Writer.TryWrite(null);
         return Task.CompletedTask;
     }
 
@@ -30,9 +39,9 @@ public class BookmarkQueueSignaler : IBookmarkQueueSignaler
         _channels.TryRemove(tenantId.NormalizeTenantId(), out _);
     }
 
-    private Channel<object?> GetChannel()
+    private Channel<object?> GetChannel(string? tenantId = null)
     {
-        return _channels.GetOrAdd(CurrentTenantId(), static _ => CreateChannel());
+        return _channels.GetOrAdd((tenantId ?? CurrentTenantId()).NormalizeTenantId(), static _ => CreateChannel());
     }
 
     private string CurrentTenantId() => (_tenantAccessor?.TenantId).NormalizeTenantId();

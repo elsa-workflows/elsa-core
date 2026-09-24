@@ -8,7 +8,6 @@ using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Stores;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using NSubstitute;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Services;
@@ -25,8 +24,8 @@ public class BookmarkQueueTenantIsolationTests
         var resumed = new List<string>();
         var tenantsProvider = Substitute.For<ITenantsProvider>();
 
-        var workerA = CreateResumingWorker(signaler, accessor, tenantA, "bookmark-a", resumed, tenantsProvider);
-        var workerB = CreateResumingWorker(signaler, accessor, tenantB, "bookmark-b", resumed, tenantsProvider);
+        var (workerA, processorA) = CreateResumingWorker(signaler, accessor, tenantA, "bookmark-a", resumed, tenantsProvider);
+        var (workerB, processorB) = CreateResumingWorker(signaler, accessor, tenantB, "bookmark-b", resumed, tenantsProvider);
 
         try
         {
@@ -44,6 +43,8 @@ public class BookmarkQueueTenantIsolationTests
 
             Assert.Contains("bookmark-a", resumed);
             Assert.Contains("bookmark-b", resumed);
+            Assert.Equal(["tenant-a"], processorA.AmbientTenantIds);
+            Assert.Equal(["tenant-b"], processorB.AmbientTenantIds);
             await tenantsProvider.DidNotReceive().ListAsync(Arg.Any<CancellationToken>());
         }
         finally
@@ -78,6 +79,43 @@ public class BookmarkQueueTenantIsolationTests
     }
 
     [Fact]
+    public async Task SignalingEmptyQueue_ProcessesOnlyThatTenant()
+    {
+        var accessor = new DefaultTenantAccessor();
+        var signaler = new BookmarkQueueSignaler(accessor);
+        var tenantA = Tenant("tenant-a");
+        var tenantB = Tenant("tenant-b");
+        var tenantsProvider = Substitute.For<ITenantsProvider>();
+        var (workerA, processorA, scopesA) = CreateCountingWorker(signaler, accessor, tenantA, tenantsProvider);
+        var (workerB, processorB, scopesB) = CreateCountingWorker(signaler, accessor, tenantB, tenantsProvider);
+
+        try
+        {
+            using (accessor.PushContext(tenantA))
+                workerA.Start();
+            using (accessor.PushContext(tenantB))
+                workerB.Start();
+
+            using (accessor.PushContext(tenantA))
+                await signaler.TriggerAsync();
+
+            await WaitUntilAsync(() => processorA.Calls == 1);
+
+            Assert.Equal(["tenant-a"], processorA.AmbientTenantIds);
+            Assert.Equal(["tenant-a"], scopesA.OpenedTenantIds);
+            Assert.Equal(0, processorB.Calls);
+            Assert.Empty(processorB.AmbientTenantIds);
+            Assert.Empty(scopesB.OpenedTenantIds);
+            await tenantsProvider.DidNotReceive().ListAsync(Arg.Any<CancellationToken>());
+        }
+        finally
+        {
+            workerA.Stop();
+            workerB.Stop();
+        }
+    }
+
+    [Fact]
     public async Task SignalFromTenantA_DoesNotWakeTenantB()
     {
         var accessor = new DefaultTenantAccessor();
@@ -102,6 +140,7 @@ public class BookmarkQueueTenantIsolationTests
 
             await Task.Delay(50);
             Assert.Equal(0, processorB.Calls);
+            Assert.Equal(["tenant-a"], processorA.AmbientTenantIds);
             Assert.Equal(["tenant-a"], scopesA.OpenedTenantIds);
             await tenantsProvider.DidNotReceive().ListAsync(Arg.Any<CancellationToken>());
         }
@@ -115,16 +154,15 @@ public class BookmarkQueueTenantIsolationTests
     [Fact]
     public async Task SingleTenant_WithoutMultitenancy_StillProcessesQueue()
     {
-        var processor = new CountingProcessor();
+        var processor = new TenantRecordingProcessor();
         var services = new ServiceCollection()
             .AddSingleton<IBookmarkQueueProcessor>(processor)
             .BuildServiceProvider();
         var signaler = new BookmarkQueueSignaler();
-        var worker = new BookmarkQueueWorker(
+        var worker = new ImmediateBookmarkQueueWorker(
             signaler,
             services.GetRequiredService<IServiceScopeFactory>(),
-            NullLogger<BookmarkQueueWorker>.Instance,
-            processThrottle: TimeSpan.Zero);
+            NullLogger<BookmarkQueueWorker>.Instance);
 
         try
         {
@@ -138,7 +176,32 @@ public class BookmarkQueueTenantIsolationTests
         }
     }
 
-    private static BookmarkQueueWorker CreateResumingWorker(
+    [Fact]
+    public async Task SingleTenant_DefaultTenant_WakesWhenSignaledWithoutAmbientTenant()
+    {
+        var accessor = new DefaultTenantAccessor();
+        var signaler = new BookmarkQueueSignaler(accessor);
+        var tenantsProvider = Substitute.For<ITenantsProvider>();
+        var (worker, processor, _) = CreateCountingWorker(signaler, accessor, Elsa.Common.Multitenancy.Tenant.Default, tenantsProvider);
+
+        try
+        {
+            using (accessor.PushContext(Elsa.Common.Multitenancy.Tenant.Default))
+                worker.Start();
+
+            Assert.Null(accessor.Tenant);
+            await signaler.TriggerAsync();
+            await WaitUntilAsync(() => processor.Calls == 1);
+
+            Assert.Equal([Elsa.Common.Multitenancy.Tenant.DefaultTenantId], processor.AmbientTenantIds);
+        }
+        finally
+        {
+            worker.Stop();
+        }
+    }
+
+    private static (BookmarkQueueWorker Worker, TenantRecordingProcessor Processor) CreateResumingWorker(
         BookmarkQueueSignaler signaler,
         DefaultTenantAccessor accessor,
         Tenant tenant,
@@ -167,24 +230,25 @@ public class BookmarkQueueTenantIsolationTests
                 };
             });
 
-        var processor = new BookmarkQueueProcessor(
+        var inner = new BookmarkQueueProcessor(
             store,
             Substitute.For<IBookmarkQueueDeadLetterManager>(),
             resumer,
             Substitute.For<ISystemClock>(),
             Microsoft.Extensions.Options.Options.Create(new BookmarkQueuePurgeOptions()),
             NullLogger<BookmarkQueueProcessor>.Instance);
+        var processor = new TenantRecordingProcessor(accessor, inner);
 
-        return CreateWorker(signaler, accessor, tenant, processor, tenantsProvider).Worker;
+        return (CreateWorker(signaler, accessor, tenant, processor, tenantsProvider).Worker, processor);
     }
 
-    private static (BookmarkQueueWorker Worker, CountingProcessor Processor, RecordingTenantScopeFactory Scopes) CreateCountingWorker(
+    private static (BookmarkQueueWorker Worker, TenantRecordingProcessor Processor, RecordingTenantScopeFactory Scopes) CreateCountingWorker(
         BookmarkQueueSignaler signaler,
         DefaultTenantAccessor accessor,
         Tenant tenant,
         ITenantsProvider tenantsProvider)
     {
-        var processor = new CountingProcessor();
+        var processor = new TenantRecordingProcessor(accessor);
         var created = CreateWorker(signaler, accessor, tenant, processor, tenantsProvider);
         return (created.Worker, processor, created.Scopes);
     }
@@ -195,7 +259,7 @@ public class BookmarkQueueTenantIsolationTests
         Tenant tenant,
         ITenantsProvider tenantsProvider)
     {
-        var created = CreateWorker(signaler, accessor, tenant, new CountingProcessor(), tenantsProvider);
+        var created = CreateWorker(signaler, accessor, tenant, new TenantRecordingProcessor(accessor), tenantsProvider);
         return (created.Worker, created.Scopes);
     }
 
@@ -215,13 +279,12 @@ public class BookmarkQueueTenantIsolationTests
 
         using (accessor.PushContext(tenant))
         {
-            var worker = new BookmarkQueueWorker(
+            var worker = new ImmediateBookmarkQueueWorker(
                 signaler,
                 scopeFactory,
                 NullLogger<BookmarkQueueWorker>.Instance,
                 scopes,
-                accessor,
-                TimeSpan.Zero);
+                accessor);
             return (worker, scopes);
         }
     }
@@ -239,14 +302,17 @@ public class BookmarkQueueTenantIsolationTests
 
     private static Tenant Tenant(string id) => new() { Id = id, Name = id };
 
-    private sealed class CountingProcessor : IBookmarkQueueProcessor
+    private sealed class TenantRecordingProcessor(ITenantAccessor? accessor = null, IBookmarkQueueProcessor? inner = null) : IBookmarkQueueProcessor
     {
         public int Calls { get; private set; }
+        public List<string> AmbientTenantIds { get; } = [];
 
-        public Task ProcessAsync(CancellationToken cancellationToken = default)
+        public async Task ProcessAsync(CancellationToken cancellationToken = default)
         {
             Calls++;
-            return Task.CompletedTask;
+            AmbientTenantIds.Add((accessor?.TenantId).NormalizeTenantId());
+            if (inner is not null)
+                await inner.ProcessAsync(cancellationToken);
         }
     }
 

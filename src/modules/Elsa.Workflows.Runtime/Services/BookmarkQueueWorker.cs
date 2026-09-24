@@ -8,7 +8,6 @@ namespace Elsa.Workflows.Runtime;
 public class BookmarkQueueWorker : IBookmarkQueueWorker
 {
     private readonly RateLimitedFunc<CancellationToken, Task>? _rateLimitedProcessAsync;
-    private readonly TimeSpan _processThrottle;
     private CancellationTokenSource _cts = null!;
     private bool _running;
     private readonly IServiceScopeFactory _scopeFactory;
@@ -18,14 +17,24 @@ public class BookmarkQueueWorker : IBookmarkQueueWorker
     private Tenant? _tenant;
     protected IBookmarkQueueSignaler Signaler { get; }
     protected internal string CapturedTenantId => (_tenant?.Id).NormalizeTenantId();
-    
+
     public BookmarkQueueWorker(
         IBookmarkQueueSignaler signaler,
         IServiceScopeFactory scopeFactory,
         ILogger<BookmarkQueueWorker> logger,
         ITenantScopeFactory? tenantScopeFactory = null,
-        ITenantAccessor? tenantAccessor = null,
-        TimeSpan? processThrottle = null)
+        ITenantAccessor? tenantAccessor = null)
+        : this(signaler, scopeFactory, logger, tenantScopeFactory, tenantAccessor, TimeSpan.FromMilliseconds(500))
+    {
+    }
+
+    protected BookmarkQueueWorker(
+        IBookmarkQueueSignaler signaler,
+        IServiceScopeFactory scopeFactory,
+        ILogger<BookmarkQueueWorker> logger,
+        ITenantScopeFactory? tenantScopeFactory,
+        ITenantAccessor? tenantAccessor,
+        TimeSpan processThrottle)
     {
         Signaler = signaler;
         _scopeFactory = scopeFactory;
@@ -33,9 +42,8 @@ public class BookmarkQueueWorker : IBookmarkQueueWorker
         _tenantAccessor = tenantAccessor;
         _logger = logger;
         _tenant = tenantAccessor?.Tenant;
-        _processThrottle = processThrottle ?? TimeSpan.FromMilliseconds(500);
-        if (_processThrottle > TimeSpan.Zero)
-            _rateLimitedProcessAsync = Throttler.Throttle<CancellationToken, Task>(ProcessAsync, _processThrottle);
+        if (processThrottle > TimeSpan.Zero)
+            _rateLimitedProcessAsync = Throttler.Throttle<CancellationToken, Task>(ProcessAsync, processThrottle);
     }
 
     public void Start()
@@ -56,6 +64,7 @@ public class BookmarkQueueWorker : IBookmarkQueueWorker
         {
             _running = false;
             _cts.Cancel();
+            // Release is on the concrete type so IBookmarkQueueSignaler stays unchanged; a decorated signaler is left as-is.
             if (Signaler is BookmarkQueueSignaler bookmarkQueueSignaler)
                 bookmarkQueueSignaler.Release(CapturedTenantId);
         }

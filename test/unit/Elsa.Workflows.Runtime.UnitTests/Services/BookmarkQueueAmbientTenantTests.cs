@@ -36,13 +36,12 @@ public class BookmarkQueueAmbientTenantTests
         var accessor = new DefaultTenantAccessor();
         var tenant = Tenant("tenant-a");
         var services = new ServiceCollection().AddSingleton<IBookmarkQueueProcessor>(new RecordingBookmarkQueueProcessor()).BuildServiceProvider();
-        var worker = new BookmarkQueueWorker(
+        var worker = new ImmediateBookmarkQueueWorker(
             new BookmarkQueueSignaler(accessor),
             services.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<BookmarkQueueWorker>.Instance,
             new DefaultTenantScopeFactory(accessor, services.GetRequiredService<IServiceScopeFactory>()),
-            accessor,
-            TimeSpan.Zero);
+            accessor);
 
         using (accessor.PushContext(tenant))
             worker.Start();
@@ -63,13 +62,12 @@ public class BookmarkQueueAmbientTenantTests
         var accessor = new DefaultTenantAccessor();
         var signaler = new BookmarkQueueSignaler(accessor);
         var services = new ServiceCollection().AddSingleton<IBookmarkQueueProcessor>(new RecordingBookmarkQueueProcessor()).BuildServiceProvider();
-        var worker = new BookmarkQueueWorker(
+        var worker = new ImmediateBookmarkQueueWorker(
             signaler,
             services.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<BookmarkQueueWorker>.Instance,
             new DefaultTenantScopeFactory(accessor, services.GetRequiredService<IServiceScopeFactory>()),
-            accessor,
-            TimeSpan.Zero);
+            accessor);
         var task = new TriggerBookmarkQueueRecurringTask(worker, signaler, accessor);
         var tenant = Tenant("tenant-a");
         var awaiter = AwaitTenantAsync(signaler, accessor, "tenant-a");

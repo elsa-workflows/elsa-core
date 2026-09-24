@@ -8,6 +8,15 @@ namespace Elsa.Workflows.Runtime.UnitTests.Services;
 
 public class DistributedBookmarkQueueWorkerTests
 {
+    [Theory]
+    [InlineData(null, nameof(DistributedBookmarkQueueWorker))]
+    [InlineData("", nameof(DistributedBookmarkQueueWorker))]
+    [InlineData("tenant-a", $"{nameof(DistributedBookmarkQueueWorker)}:tenant-a")]
+    public void GetLockName_KeepsLegacyNameForDefaultTenant(string? tenantId, string expected)
+    {
+        Assert.Equal(expected, DistributedBookmarkQueueWorker.GetLockName(tenantId));
+    }
+
     [Fact]
     public async Task ProcessAsync_LockNameIncludesCapturedTenantId()
     {
@@ -28,8 +37,32 @@ public class DistributedBookmarkQueueWorkerTests
 
             await WaitUntilAsync(() => processor.Calls == 1);
 
-            Assert.Contains($"{nameof(DistributedBookmarkQueueWorker)}:tenant-a", lockProvider.Names);
-            Assert.DoesNotContain(nameof(DistributedBookmarkQueueWorker), lockProvider.Names);
+            Assert.Equal([$"{nameof(DistributedBookmarkQueueWorker)}:tenant-a"], lockProvider.Names);
+        }
+        finally
+        {
+            worker.Stop();
+        }
+    }
+
+    [Fact]
+    public async Task ProcessAsync_DefaultTenant_UsesLegacyLockName()
+    {
+        var accessor = new DefaultTenantAccessor();
+        var signaler = new BookmarkQueueSignaler(accessor);
+        var lockProvider = new RecordingLockProvider { Succeeds = true };
+        var processor = new CountingProcessor();
+        var worker = CreateWorker(signaler, accessor, Elsa.Common.Multitenancy.Tenant.Default, lockProvider, processor);
+
+        try
+        {
+            using (accessor.PushContext(Elsa.Common.Multitenancy.Tenant.Default))
+                worker.Start();
+
+            await signaler.TriggerAsync();
+            await WaitUntilAsync(() => processor.Calls == 1);
+
+            Assert.Equal([nameof(DistributedBookmarkQueueWorker)], lockProvider.Names);
         }
         finally
         {
