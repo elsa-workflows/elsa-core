@@ -4,6 +4,9 @@ on:
   pull_request:
     paths:
       - 'src/studio/**/ClientLib/**'
+      - 'src/studio/Directory.Packages.props'
+      - 'src/studio/Directory.Build.props'
+      - 'src/Directory.Build.props'
       - 'scripts/integration-program/build_studio_clientlibs.sh'
       - 'scripts/integration-program/consolidated-build/studio-bpmn-generator-layout.patch'
       - 'scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/**'
@@ -45,16 +48,7 @@ jobs:
       - name: Build pinned Studio ClientLibs on Linux before import
         if: steps.source.outputs.mapped == 'false'
         run: |
-          cp scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/designer.package-lock.json \
-            pinned-studio/src/modules/Elsa.Studio.Workflows.Designer/ClientLib/package-lock.json
-          cp scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/dom-interop.package-lock.json \
-            pinned-studio/src/framework/Elsa.Studio.DomInterop/ClientLib/package-lock.json
-          dotnet restore pinned-studio/src/modules/Elsa.Studio.Workflows.Designer/Elsa.Studio.Workflows.Designer.csproj
-          (cd pinned-studio/src/modules/Elsa.Studio.Workflows.Designer/ClientLib && npm ci --force && npm run check:generated && npm test && npm run build)
-          (cd pinned-studio/src/framework/Elsa.Studio.DomInterop/ClientLib && npm ci --force && npm run build)
-          test -s pinned-studio/src/modules/Elsa.Studio.Workflows.Designer/wwwroot/designer.entry.js
-          test -s pinned-studio/src/modules/Elsa.Studio.Workflows.Designer/wwwroot/react-designer.entry.js
-          test -s pinned-studio/src/framework/Elsa.Studio.DomInterop/wwwroot/dom.entry.js
+          scripts/integration-program/build_studio_clientlibs.sh pinned-studio
       - name: Build consolidated Studio ClientLibs after import
         if: steps.source.outputs.mapped == 'true'
         run: scripts/integration-program/build_studio_clientlibs.sh .

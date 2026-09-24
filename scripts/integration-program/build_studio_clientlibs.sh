@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
-# Build the two Studio browser bundles from a consolidated elsa-core checkout.
+# Build the two Studio browser bundles from mapped or pinned standalone source.
 set -euo pipefail
 
 root="${1:-.}"
 root="$(cd "$root" && pwd -P)"
-designer="$root/src/studio/modules/Elsa.Studio.Workflows.Designer"
-dom="$root/src/studio/framework/Elsa.Studio.DomInterop"
+if [[ -f "$root/src/studio/modules/Elsa.Studio.Workflows.Designer/ClientLib/package.json" ]]; then
+    studio="$root/src/studio"
+else
+    studio="$root/src"
+fi
+designer="$studio/modules/Elsa.Studio.Workflows.Designer"
+dom="$studio/framework/Elsa.Studio.DomInterop"
 locks="$(cd "$(dirname "${BASH_SOURCE[0]}")/consolidated-build/studio-clientlib-lockfiles" && pwd -P)"
 
 for package in "$designer/ClientLib/package.json" "$dom/ClientLib/package.json"; do
