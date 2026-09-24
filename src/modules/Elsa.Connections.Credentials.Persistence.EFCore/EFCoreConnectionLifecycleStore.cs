@@ -119,7 +119,9 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
             value += new string('=', (4 - value.Length % 4) % 4);
             var decoded = JsonSerializer.Deserialize<DueCandidateCursor>(Convert.FromBase64String(value))
                           ?? throw new FormatException();
-            if (decoded.DueAt.Offset != TimeSpan.Zero || !Enum.IsDefined(typeof(ConnectionDueCandidateKind), decoded.Kind) ||
+            // Legacy cleanup/offboarding rows can carry an offset even though new service writes use UTC.
+            // Preserve the returned value for the next keyset comparison instead of rejecting our own cursor.
+            if (!Enum.IsDefined(typeof(ConnectionDueCandidateKind), decoded.Kind) ||
                 string.IsNullOrWhiteSpace(decoded.ConnectionId) || string.IsNullOrWhiteSpace(decoded.CandidateId))
                 throw new FormatException();
             return decoded;

@@ -156,6 +156,51 @@ public sealed class ConnectionLifecycleTests
     }
 
     [Fact]
+    public async Task DueCandidateCursorPagesPastPersistedNonUtcCleanupLease()
+    {
+        await using var database = new TestDatabase();
+        await using var worker = await Worker.CreateAsync(database.Path, MakeKey(32), new SyntheticCredentialProvider(block: false));
+        using var tenant = worker.TenantAccessor.PushContext(TenantContext());
+        using var scope = worker.Services.CreateScope();
+        var dueStore = scope.ServiceProvider.GetRequiredService<IConnectionDueCandidateStore>();
+
+        await using (var db = await scope.ServiceProvider.GetRequiredService<IDbContextFactory<ConnectionsElsaDbContext>>().CreateDbContextAsync())
+        {
+            db.GenerationCleanups.AddRange(
+                new ConnectionGenerationCleanup
+                {
+                    ConnectionId = "cleanup-offset",
+                    TenantId = TenantId,
+                    EnvironmentId = EnvironmentId,
+                    GenerationId = "offset",
+                    Status = ConnectionGenerationCleanupStatus.Deleting,
+                    LeaseExpiresAt = new DateTimeOffset(2026, 9, 24, 14, 0, 0, TimeSpan.FromHours(2))
+                },
+                new ConnectionGenerationCleanup
+                {
+                    ConnectionId = "cleanup-later",
+                    TenantId = TenantId,
+                    EnvironmentId = EnvironmentId,
+                    GenerationId = "later",
+                    Status = ConnectionGenerationCleanupStatus.Deleting,
+                    LeaseExpiresAt = new DateTimeOffset(2026, 9, 24, 15, 0, 0, TimeSpan.Zero)
+                });
+            await db.SaveChangesAsync();
+        }
+
+        var now = new DateTimeOffset(2026, 9, 24, 18, 0, 0, TimeSpan.Zero);
+        var first = await dueStore.FindDueCandidatesAsync(TenantId, EnvironmentId, now, 1);
+        var candidate = Assert.Single(first.Items);
+        Assert.Equal("offset", candidate.CandidateId);
+        Assert.Equal(TimeSpan.FromHours(2), candidate.DueAt.Offset);
+        Assert.NotNull(first.NextCursor);
+
+        var second = await dueStore.FindDueCandidatesAsync(TenantId, EnvironmentId, now, 1, first.NextCursor);
+        Assert.Equal("later", Assert.Single(second.Items).CandidateId);
+        Assert.Null(second.NextCursor);
+    }
+
+    [Fact]
     public async Task AbandonedCredentialClaimClearsStagedSchedulingMetadata()
     {
         await using var database = new TestDatabase();
