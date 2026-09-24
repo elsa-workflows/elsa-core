@@ -14,6 +14,11 @@ public sealed class SqliteConnectionCredentialBindingConflictClassifier : IConne
             .OfType<SqliteException>()
             .Any(sqliteException => sqliteException.SqliteExtendedErrorCode is SqliteConstraintPrimaryKey or SqliteConstraintUnique);
 
+    public bool IsConcurrentGrantIssuanceConflict(Exception exception) =>
+        EnumerateExceptions(exception)
+            .OfType<SqliteException>()
+            .Any(sqliteException => sqliteException.SqliteExtendedErrorCode is SqliteConstraintPrimaryKey or SqliteConstraintUnique);
+
     private static IEnumerable<Exception> EnumerateExceptions(Exception exception)
     {
         for (var current = exception; current is not null; current = current.InnerException)

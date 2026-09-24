@@ -338,6 +338,192 @@ public sealed class WorkflowCredentialBindingTests
     }
 
     [Fact]
+    public async Task DurableGrantRequiresSeparatePolicy_AndWithdrawalStopsSubsequentUse()
+    {
+        await using var worker = await Worker.CreateAsync(EnvironmentId, allow: true, useGrants: true);
+        await worker.SeedConnectionAsync("connection-a", TenantId, EnvironmentId);
+        using var tenant = worker.TenantAccessor.PushContext(TenantContext());
+        using var scope = worker.Services.CreateScope();
+        var bindingManager = scope.ServiceProvider.GetRequiredService<IWorkflowCredentialBindingManager>();
+        Assert.True((await bindingManager.CreateAsync(Principal(), LogicalBindingId, "connection-a")).Succeeded);
+
+        var manager = scope.ServiceProvider.GetRequiredService<IWorkflowCredentialGrantManager>();
+        var resolver = scope.ServiceProvider.GetRequiredService<IWorkflowCredentialResolver>();
+        using var context = await CreateActivityContextAsync("granted-workflow");
+        await Assert.ThrowsAsync<ConnectionUnavailableException>(() =>
+            resolver.ResolveAsync(context.WorkflowExecutionContext, LogicalBindingId));
+        Assert.False((await manager.IssueAsync(Principal(), "granted-workflow", LogicalBindingId, 1)).Succeeded);
+        Assert.Equal(0, worker.CredentialService.CallCount);
+
+        worker.GrantAuthorizer.Allow = true;
+        var issued = await manager.IssueAsync(Principal(), "granted-workflow", LogicalBindingId, 1);
+        Assert.True(issued.Succeeded);
+        Assert.Equal(1, issued.Revision);
+        Assert.Equal(ConnectionCredentialGrantAction.Issue, worker.GrantAuthorizer.LastRequest?.Action);
+        Assert.Equal("access-connection-a", (await resolver.ResolveAsync(
+            context.WorkflowExecutionContext, LogicalBindingId)).AccessToken);
+
+        var store = scope.ServiceProvider.GetRequiredService<IConnectionCredentialUseGrantStore>();
+        var grant = await store.FindAsync(TenantId, EnvironmentId, "granted-workflow", LogicalBindingId);
+        Assert.Equal("test-user", grant?.IssuedByActorId);
+        Assert.Equal(1, grant?.BindingRevision);
+        Assert.DoesNotContain("access-connection-a", JsonSerializer.Serialize(grant));
+
+        var withdrawn = await manager.WithdrawAsync(Principal(), "granted-workflow", LogicalBindingId, 1);
+        Assert.True(withdrawn.Succeeded);
+        Assert.Equal(2, withdrawn.Revision);
+        Assert.Equal(ConnectionCredentialGrantAction.Withdraw, worker.GrantAuthorizer.LastRequest?.Action);
+        Assert.False((await manager.WithdrawAsync(Principal(), "granted-workflow", LogicalBindingId, 1)).Succeeded);
+        Assert.False((await manager.IssueAsync(Principal(), "granted-workflow", LogicalBindingId, 1)).Succeeded);
+        await Assert.ThrowsAsync<ConnectionUnavailableException>(() =>
+            resolver.ResolveAsync(context.WorkflowExecutionContext, LogicalBindingId));
+        Assert.Equal(1, worker.CredentialService.CallCount);
+    }
+
+    [Fact]
+    public async Task GrantFeatureWithoutHostPolicyOrPersistenceFailsClosed()
+    {
+        var services = new ServiceCollection();
+        var module = services.CreateModule();
+        module.Configure<ConnectionsFeature>();
+        module.Configure<WorkflowCredentialBindingsFeature>(feature => feature.EnvironmentId = EnvironmentId);
+        module.Configure<WorkflowCredentialUseGrantsFeature>();
+        module.Apply();
+        await using var provider = services.BuildServiceProvider();
+        using var scope = provider.CreateScope();
+
+        var authorizer = scope.ServiceProvider.GetRequiredService<IConnectionCredentialGrantManagementAuthorizer>();
+        Assert.False(await authorizer.AuthorizeAsync(Principal(), new ConnectionCredentialGrantManagementRequest(
+            TenantId, EnvironmentId, "workflow-1", LogicalBindingId, "connection-a", 1,
+            ConnectionCredentialGrantAction.Issue)));
+        Assert.IsType<AllowGrantControlledConnectionCredentialBindingUseAuthorizer>(
+            scope.ServiceProvider.GetRequiredService<IConnectionCredentialBindingUseAuthorizer>());
+        Assert.IsType<StoredConnectionCredentialBindingUseAuthorizer>(
+            scope.ServiceProvider.GetRequiredService<StoredConnectionCredentialBindingUseAuthorizer>());
+        Assert.Null(await scope.ServiceProvider.GetRequiredService<IConnectionCredentialUseGrantStore>()
+            .FindAsync(TenantId, EnvironmentId, "workflow-1", LogicalBindingId));
+    }
+
+    [Fact]
+    public async Task GrantIsBoundToTenantEnvironmentWorkflowAndBindingRevision()
+    {
+        await using var worker = await Worker.CreateAsync(EnvironmentId, allow: true, useGrants: true, allowGrants: true);
+        await worker.SeedConnectionAsync("connection-a", TenantId, EnvironmentId);
+        await worker.SeedConnectionAsync("connection-b", TenantId, EnvironmentId);
+        using var tenant = worker.TenantAccessor.PushContext(TenantContext());
+        using var scope = worker.Services.CreateScope();
+        var bindingManager = scope.ServiceProvider.GetRequiredService<IWorkflowCredentialBindingManager>();
+        Assert.True((await bindingManager.CreateAsync(Principal(), LogicalBindingId, "connection-a")).Succeeded);
+        var grantManager = scope.ServiceProvider.GetRequiredService<IWorkflowCredentialGrantManager>();
+        var resolver = scope.ServiceProvider.GetRequiredService<IWorkflowCredentialResolver>();
+        Assert.True((await grantManager.IssueAsync(Principal(), "workflow-a", LogicalBindingId, 1)).Succeeded);
+        Assert.False((await grantManager.IssueAsync(Principal(), "workflow-b", LogicalBindingId, 2)).Succeeded);
+        Assert.Null(await scope.ServiceProvider.GetRequiredService<IConnectionCredentialUseGrantStore>()
+            .FindAsync(TenantId, "other-environment", "workflow-a", LogicalBindingId));
+        Assert.Null(await scope.ServiceProvider.GetRequiredService<IConnectionCredentialUseGrantStore>()
+            .FindAsync("tenant-b", EnvironmentId, "workflow-a", LogicalBindingId));
+
+        using (var wrongWorkflow = await CreateActivityContextAsync("workflow-b"))
+        {
+            await Assert.ThrowsAsync<ConnectionUnavailableException>(() =>
+                resolver.ResolveAsync(wrongWorkflow.WorkflowExecutionContext, LogicalBindingId));
+        }
+        using var allowed = await CreateActivityContextAsync("workflow-a");
+        Assert.Equal("access-connection-a", (await resolver.ResolveAsync(
+            allowed.WorkflowExecutionContext, LogicalBindingId)).AccessToken);
+
+        Assert.True((await bindingManager.RebindAsync(Principal(), LogicalBindingId, 1, "connection-b")).Succeeded);
+        await Assert.ThrowsAsync<ConnectionUnavailableException>(() =>
+            resolver.ResolveAsync(allowed.WorkflowExecutionContext, LogicalBindingId));
+        Assert.False((await grantManager.IssueAsync(Principal(), "workflow-a", LogicalBindingId, 1)).Succeeded);
+        Assert.Equal(1, worker.CredentialService.CallCount);
+
+        Assert.True((await grantManager.IssueAsync(Principal(), "workflow-c", LogicalBindingId, 2)).Succeeded);
+        using var beforeDisconnect = await CreateActivityContextAsync("workflow-c");
+        Assert.Equal("access-connection-b", (await resolver.ResolveAsync(
+            beforeDisconnect.WorkflowExecutionContext, LogicalBindingId)).AccessToken);
+        var disconnected = await scope.ServiceProvider.GetRequiredService<IConnectionLifecycleStore>()
+            .TryDisconnectAndRecordAsync("connection-b", TenantId, EnvironmentId, 1, new ConnectionOffboardingOperation
+            {
+                Id = "disconnect-b",
+                TenantId = TenantId,
+                EnvironmentId = EnvironmentId,
+                ConnectionId = "connection-b",
+                ProviderId = "synthetic",
+                ProviderAccountId = "account-connection-b",
+                Kind = ConnectionOffboardingOperationKind.LocalDisconnect,
+                Status = ConnectionOffboardingOperationStatus.Completed,
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow
+            });
+        Assert.Equal(ConnectionStatus.Disconnected, disconnected?.Status);
+        await Assert.ThrowsAsync<ConnectionUnavailableException>(() =>
+            resolver.ResolveAsync(beforeDisconnect.WorkflowExecutionContext, LogicalBindingId));
+        Assert.Equal(2, worker.CredentialService.CallCount);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task GrantDoesNotBypassHostUsePolicyRegardlessOfRegistrationOrder(bool registerBeforeModule)
+    {
+        await using var worker = await Worker.CreateAsync(EnvironmentId, allow: true, useGrants: true,
+            allowGrants: true, includeHostUsePolicy: true, registerHostUsePolicyBeforeModule: registerBeforeModule);
+        await worker.SeedConnectionAsync("connection-a", TenantId, EnvironmentId);
+        using var tenant = worker.TenantAccessor.PushContext(TenantContext());
+        using var scope = worker.Services.CreateScope();
+        Assert.True((await scope.ServiceProvider.GetRequiredService<IWorkflowCredentialBindingManager>()
+            .CreateAsync(Principal(), LogicalBindingId, "connection-a")).Succeeded);
+        Assert.True((await scope.ServiceProvider.GetRequiredService<IWorkflowCredentialGrantManager>()
+            .IssueAsync(Principal(), "workflow-host-policy", LogicalBindingId, 1)).Succeeded);
+
+        worker.Authorizers.UseAllowed = false;
+        using var activity = await CreateActivityContextAsync("workflow-host-policy");
+        await Assert.ThrowsAsync<ConnectionUnavailableException>(() =>
+            scope.ServiceProvider.GetRequiredService<IWorkflowCredentialResolver>()
+                .ResolveAsync(activity.WorkflowExecutionContext, LogicalBindingId));
+        Assert.Equal("workflow-host-policy", worker.Authorizers.LastUseRequest?.WorkflowInstanceId);
+        Assert.Equal(0, worker.CredentialService.CallCount);
+    }
+
+    [Fact]
+    public async Task ConcurrentWorkersCannotDuplicateOrResurrectAWithdrawnGrant()
+    {
+        await using var first = await Worker.CreateAsync(EnvironmentId, allow: true, useGrants: true,
+            allowGrants: true, deleteDatabaseOnDispose: false);
+        await first.SeedConnectionAsync("connection-a", TenantId, EnvironmentId);
+        await using var second = await Worker.CreateForDatabaseAsync(first.DatabasePath, EnvironmentId,
+            allow: true, deleteDatabaseOnDispose: true, useGrants: true, allowGrants: true);
+        using var tenant = first.TenantAccessor.PushContext(TenantContext());
+        using var scope = first.Services.CreateScope();
+        Assert.True((await scope.ServiceProvider.GetRequiredService<IWorkflowCredentialBindingManager>()
+            .CreateAsync(Principal(), LogicalBindingId, "connection-a")).Succeeded);
+
+        using var firstScope = first.Services.CreateScope();
+        using var secondScope = second.Services.CreateScope();
+        var firstStore = firstScope.ServiceProvider.GetRequiredService<IConnectionCredentialUseGrantStore>();
+        var secondStore = secondScope.ServiceProvider.GetRequiredService<IConnectionCredentialUseGrantStore>();
+        var now = DateTimeOffset.UtcNow;
+        var issues = await Task.WhenAll(
+            firstStore.TryIssueAsync(TenantId, EnvironmentId, "workflow-concurrent", LogicalBindingId,
+                "connection-a", 1, "actor", now),
+            secondStore.TryIssueAsync(TenantId, EnvironmentId, "workflow-concurrent", LogicalBindingId,
+                "connection-a", 1, "actor", now));
+        Assert.Single(issues, issue => issue is not null);
+
+        var withdrawals = await Task.WhenAll(
+            firstStore.TryWithdrawAsync(TenantId, EnvironmentId, "workflow-concurrent", LogicalBindingId, 1, now),
+            secondStore.TryWithdrawAsync(TenantId, EnvironmentId, "workflow-concurrent", LogicalBindingId, 1, now));
+        Assert.Single(withdrawals, withdrawn => withdrawn);
+        var stored = await firstStore.FindAsync(TenantId, EnvironmentId, "workflow-concurrent", LogicalBindingId);
+        Assert.NotNull(stored);
+        Assert.False(stored.IsActive);
+        Assert.Equal(2, stored.Revision);
+        Assert.Null(await secondStore.TryIssueAsync(TenantId, EnvironmentId, "workflow-concurrent", LogicalBindingId,
+            "connection-a", 1, "actor", now));
+    }
+
+    [Fact]
     public async Task MissingBindingStoreFailsClosedBeforeResolvingLifecycleService()
     {
         var tenantAccessor = new DefaultTenantAccessor();
@@ -492,12 +678,13 @@ public sealed class WorkflowCredentialBindingTests
 
     private static Tenant TenantContext() => new() { Id = TenantId, Name = TenantId };
 
-    private sealed class Worker(ServiceProvider services, string databasePath, DefaultTenantAccessor tenantAccessor, TestBindingAuthorizers authorizers, TestCredentialService credentialService) : IAsyncDisposable
+    private sealed class Worker(ServiceProvider services, string databasePath, DefaultTenantAccessor tenantAccessor, TestBindingAuthorizers authorizers, TestGrantAuthorizer grantAuthorizer, TestCredentialService credentialService) : IAsyncDisposable
     {
         public ServiceProvider Services { get; } = services;
         public string DatabasePath { get; } = databasePath;
         public DefaultTenantAccessor TenantAccessor { get; } = tenantAccessor;
         public TestBindingAuthorizers Authorizers { get; } = authorizers;
+        public TestGrantAuthorizer GrantAuthorizer { get; } = grantAuthorizer;
         public TestCredentialService CredentialService { get; } = credentialService;
         private bool DeleteDatabaseOnDispose { get; init; } = true;
 
@@ -505,10 +692,15 @@ public sealed class WorkflowCredentialBindingTests
             string? environmentId,
             bool allow,
             bool deleteDatabaseOnDispose = true,
-            SaveChangesInterceptor? saveChangesInterceptor = null)
+            SaveChangesInterceptor? saveChangesInterceptor = null,
+            bool useGrants = false,
+            bool allowGrants = false,
+            bool includeHostUsePolicy = false,
+            bool registerHostUsePolicyBeforeModule = false)
         {
             var path = Path.Join(Path.GetTempPath(), $"elsa-workflow-credential-binding-{Guid.NewGuid():N}.db");
-            return CreateForDatabaseAsync(path, environmentId, allow, deleteDatabaseOnDispose, saveChangesInterceptor);
+            return CreateForDatabaseAsync(path, environmentId, allow, deleteDatabaseOnDispose, saveChangesInterceptor,
+                useGrants, allowGrants, includeHostUsePolicy, registerHostUsePolicyBeforeModule);
         }
 
         public static async Task<Worker> CreateForDatabaseAsync(
@@ -516,17 +708,26 @@ public sealed class WorkflowCredentialBindingTests
             string? environmentId,
             bool allow,
             bool deleteDatabaseOnDispose,
-            SaveChangesInterceptor? saveChangesInterceptor = null)
+            SaveChangesInterceptor? saveChangesInterceptor = null,
+            bool useGrants = false,
+            bool allowGrants = false,
+            bool includeHostUsePolicy = false,
+            bool registerHostUsePolicyBeforeModule = false)
         {
             var connectionString = $"Data Source={path};Cache=Shared;Pooling=False;";
             var tenantAccessor = new DefaultTenantAccessor();
             var authorizers = new TestBindingAuthorizers(allow);
+            var grantAuthorizer = new TestGrantAuthorizer(allowGrants);
             var credentialService = new TestCredentialService();
             var services = new ServiceCollection();
             services.AddLogging();
             services.AddSingleton<ITenantAccessor>(tenantAccessor);
             services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
             services.Configure<TenantsOptions>(options => options.IsEnabled = false);
+            if (includeHostUsePolicy && registerHostUsePolicyBeforeModule)
+            {
+                services.AddSingleton<IConnectionCredentialBindingUseAuthorizer>(authorizers);
+            }
 
             var module = services.CreateModule();
             module.Configure<ConnectionsFeature>();
@@ -546,10 +747,21 @@ public sealed class WorkflowCredentialBindingTests
             module.Configure<WorkflowManagementFeature>();
             module.Configure<EFCoreWorkflowInstancePersistenceFeature>(feature => feature.UseSqlite(connectionString));
             module.Configure<WorkflowCredentialBindingsFeature>(feature => feature.EnvironmentId = environmentId);
+            if (useGrants)
+            {
+                module.Configure<WorkflowCredentialUseGrantsFeature>();
+            }
             module.Apply();
 
-            services.AddSingleton<IConnectionCredentialBindingUseAuthorizer>(authorizers);
+            if (!useGrants || includeHostUsePolicy && !registerHostUsePolicyBeforeModule)
+            {
+                services.AddSingleton<IConnectionCredentialBindingUseAuthorizer>(authorizers);
+            }
             services.AddSingleton<IConnectionCredentialBindingManagementAuthorizer>(authorizers);
+            if (useGrants)
+            {
+                services.AddSingleton<IConnectionCredentialGrantManagementAuthorizer>(grantAuthorizer);
+            }
             services.AddSingleton<IConnectionBackgroundUseService>(credentialService);
             var serviceProvider = services.BuildServiceProvider();
 
@@ -562,7 +774,7 @@ public sealed class WorkflowCredentialBindingTests
                 await context.Database.MigrateAsync();
             }
 
-            return new Worker(serviceProvider, path, tenantAccessor, authorizers, credentialService)
+            return new Worker(serviceProvider, path, tenantAccessor, authorizers, grantAuthorizer, credentialService)
             {
                 DeleteDatabaseOnDispose = deleteDatabaseOnDispose
             };
@@ -627,6 +839,8 @@ public sealed class WorkflowCredentialBindingTests
 
     private sealed class TestBindingAuthorizers(bool allow) : IConnectionCredentialBindingUseAuthorizer, IConnectionCredentialBindingManagementAuthorizer
     {
+        private readonly bool _managementAllowed = allow;
+        public bool UseAllowed { get; set; } = allow;
         public int ManagementCallCount { get; private set; }
         public ConnectionCredentialBindingUseRequest? LastUseRequest { get; private set; }
         public Func<ConnectionCredentialBindingUseRequest, Task>? BeforeUseAuthorization { get; set; }
@@ -639,13 +853,27 @@ public sealed class WorkflowCredentialBindingTests
                 await BeforeUseAuthorization(request);
             }
 
-            return allow;
+            return UseAllowed;
         }
 
         public Task<bool> AuthorizeAsync(ClaimsPrincipal principal, ConnectionCredentialBindingManagementRequest request, CancellationToken cancellationToken = default)
         {
             ManagementCallCount++;
-            return Task.FromResult(allow && principal.Identity?.IsAuthenticated == true && request.TenantId == TenantId && request.EnvironmentId == EnvironmentId);
+            return Task.FromResult(_managementAllowed && principal.Identity?.IsAuthenticated == true && request.TenantId == TenantId && request.EnvironmentId == EnvironmentId);
+        }
+    }
+
+    private sealed class TestGrantAuthorizer(bool allow) : IConnectionCredentialGrantManagementAuthorizer
+    {
+        public bool Allow { get; set; } = allow;
+        public ConnectionCredentialGrantManagementRequest? LastRequest { get; private set; }
+
+        public Task<bool> AuthorizeAsync(ClaimsPrincipal principal, ConnectionCredentialGrantManagementRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            LastRequest = request;
+            return Task.FromResult(Allow && principal.Identity?.IsAuthenticated == true &&
+                request.TenantId == TenantId && request.EnvironmentId == EnvironmentId);
         }
     }
 

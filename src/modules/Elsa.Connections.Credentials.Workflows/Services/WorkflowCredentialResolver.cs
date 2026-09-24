@@ -49,6 +49,12 @@ public sealed class WorkflowCredentialResolver(
             throw new ConnectionUnavailableException();
         }
 
+        var grantPolicy = serviceProvider.GetService<StoredConnectionCredentialBindingUseAuthorizer>();
+        if (grantPolicy != null && !await grantPolicy.AuthorizeAsync(request, cancellationToken))
+        {
+            throw new ConnectionUnavailableException();
+        }
+
         var current = await bindingStore.FindAsync(tenantId, environmentId, logicalBindingId, cancellationToken);
         if (current is null || current.Revision != binding.Revision || current.ConnectionId != binding.ConnectionId)
         {

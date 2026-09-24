@@ -6,9 +6,13 @@ namespace Elsa.Connections.Credentials.Persistence.EFCore;
 public interface IConnectionCredentialBindingConflictClassifier
 {
     bool IsDuplicateBindingKey(DbUpdateException exception);
+
+    bool IsConcurrentGrantIssuanceConflict(Exception exception);
 }
 
 internal sealed class NoConnectionCredentialBindingConflictClassifier : IConnectionCredentialBindingConflictClassifier
 {
     public bool IsDuplicateBindingKey(DbUpdateException exception) => false;
+
+    public bool IsConcurrentGrantIssuanceConflict(Exception exception) => false;
 }
