@@ -291,17 +291,17 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
     [Fact]
     public async Task HttpTenantResolutionSeparatesSameNameSecretsAcrossTenants()
     {
-        using var tenantAClient = CreateClient("secrets:view,secrets:write,secrets:delete", "tenant-a", out var tenantACapture);
-        using var tenantBClient = CreateClient("secrets:view,secrets:write", "tenant-b", out var tenantBCapture);
-        using var tenantCClient = CreateClient("secrets:view,secrets:write,secrets:delete", "tenant-c", out var tenantCCapture);
+        using var tenantAClient = CreateClient("secrets:view,secrets:write,secrets:delete,secrets:test", "tenant-a", out var tenantACapture);
+        using var tenantBClient = CreateClient("secrets:view,secrets:write,secrets:test", "tenant-b", out var tenantBCapture);
+        using var tenantCClient = CreateClient("secrets:view,secrets:write,secrets:delete,secrets:test", "tenant-c", out var tenantCCapture);
         using var defaultTenantClient = CreateClient("secrets:view,secrets:write,secrets:delete", null, out var defaultTenantCapture);
         var tenantA = RestService.For<ISecretsApi>(tenantAClient);
         var tenantB = RestService.For<ISecretsApi>(tenantBClient);
         var tenantC = RestService.For<ISecretsApi>(tenantCClient);
         const string sharedName = "tenant-scoped-contract";
 
-        var secretA = await tenantA.CreateAsync(new CreateSecretRequest { Name = sharedName, Value = "tenant-a-secret" });
-        var secretB = await tenantB.CreateAsync(new CreateSecretRequest { Name = sharedName, Value = "tenant-b-secret" });
+        var secretA = await tenantA.CreateAsync(new CreateSecretRequest { Name = sharedName, Scope = "workflow", Value = "tenant-a-secret" });
+        var secretB = await tenantB.CreateAsync(new CreateSecretRequest { Name = sharedName, Scope = "workflow", Value = "tenant-b-secret" });
 
         Assert.NotEqual(secretA.Id, secretB.Id);
         Assert.Equal(secretA.Id, (await tenantA.GetAsync(sharedName)).Id);
@@ -310,6 +310,23 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
         Assert.DoesNotContain((await tenantA.ListAsync()).Items, item => item.Id == secretB.Id);
         Assert.Contains((await tenantB.ListAsync()).Items, item => item.Id == secretB.Id);
         Assert.DoesNotContain((await tenantB.ListAsync()).Items, item => item.Id == secretA.Id);
+
+        var pickerRequest = new SecretPickerRequest
+        {
+            TypeNames = [SecretTypeNames.Text],
+            StoreNames = [SecretStoreNames.Encrypted],
+            Scope = "workflow"
+        };
+        Assert.Collection((await tenantA.PickAsync(pickerRequest)).Items, item => Assert.Equal(secretA.Id, item.Id));
+        Assert.Collection((await tenantB.PickAsync(pickerRequest)).Items, item => Assert.Equal(secretB.Id, item.Id));
+        var tenantCPicker = await tenantC.PickAsync(pickerRequest);
+        Assert.Empty(tenantCPicker.Items);
+
+        Assert.True((await tenantA.TestAsync(sharedName)).Succeeded);
+        Assert.True((await tenantB.TestAsync(sharedName)).Succeeded);
+        var tenantCTest = await tenantC.TestAsync(sharedName);
+        Assert.False(tenantCTest.Succeeded);
+        Assert.Contains("not found", tenantCTest.Error, StringComparison.OrdinalIgnoreCase);
 
         foreach (var isolatedTenant in new[] { tenantC, RestService.For<ISecretsApi>(defaultTenantClient) })
         {
