@@ -1,4 +1,6 @@
+using System.IO.Compression;
 using System.Net;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
 using Elsa;
@@ -68,6 +70,8 @@ public sealed class WorkflowInstanceExportHttpTests
         {
             string workflowInstanceId;
             string resumeBookmarkId;
+            string secondWorkflowInstanceId;
+            string secondResumeBookmarkId;
 
             await using (var first = await TestHost.StartAsync(databasePath))
             {
@@ -86,21 +90,16 @@ public sealed class WorkflowInstanceExportHttpTests
                     .CreateAsync(principal, LogicalBindingId, connectionId);
                 Assert.True(binding.Succeeded, binding.SafeErrorCode);
 
-                var runtime = services.GetRequiredService<IWorkflowRuntime>();
-                var client = await runtime.CreateClientAsync();
-                var started = await client.CreateAndRunInstanceAsync(new CreateAndRunWorkflowInstanceRequest
-                {
-                    WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(
-                        ApiKeyExportWorkflow.DefinitionId, VersionOptions.Latest)
-                });
-                workflowInstanceId = started.WorkflowInstanceId;
-                resumeBookmarkId = Assert.Single(await services.GetRequiredService<IBookmarkStore>()
-                    .FindManyAsync(new BookmarkFilter { WorkflowInstanceId = workflowInstanceId })).Id;
+                (workflowInstanceId, resumeBookmarkId) = await StartSuspendedWorkflowAsync(services);
+                (secondWorkflowInstanceId, secondResumeBookmarkId) = await StartSuspendedWorkflowAsync(services);
 
                 Assert.Empty(first.Probe.Credentials);
                 var grant = await services.GetRequiredService<IWorkflowCredentialGrantManager>()
                     .IssueAsync(principal, workflowInstanceId, LogicalBindingId, binding.Revision!.Value);
                 Assert.True(grant.Succeeded, grant.SafeErrorCode);
+                var secondGrant = await services.GetRequiredService<IWorkflowCredentialGrantManager>()
+                    .IssueAsync(principal, secondWorkflowInstanceId, LogicalBindingId, binding.Revision.Value);
+                Assert.True(secondGrant.Succeeded, secondGrant.SafeErrorCode);
 
                 var persisted = await services.GetRequiredService<IWorkflowInstanceStore>().FindAsync(workflowInstanceId);
                 Assert.NotNull(persisted);
@@ -116,8 +115,11 @@ public sealed class WorkflowInstanceExportHttpTests
                 var runtime = services.GetRequiredService<IWorkflowRuntime>();
                 var client = await runtime.CreateClientAsync(workflowInstanceId);
                 await client.RunInstanceAsync(new RunWorkflowInstanceRequest { BookmarkId = resumeBookmarkId });
+                client = await runtime.CreateClientAsync(secondWorkflowInstanceId);
+                await client.RunInstanceAsync(new RunWorkflowInstanceRequest { BookmarkId = secondResumeBookmarkId });
 
-                Assert.Equal(ApiKey, Assert.Single(second.Probe.Credentials));
+                Assert.Equal(2, second.Probe.Credentials.Count);
+                Assert.All(second.Probe.Credentials, credential => Assert.Equal(ApiKey, credential));
                 var response = await second.HttpClient.GetAsync(
                     $"/workflow-instances/{workflowInstanceId}/export?includeBookmarks=true&includeActivityExecutionLog=true&includeWorkflowExecutionLog=true");
 
@@ -130,22 +132,54 @@ public sealed class WorkflowInstanceExportHttpTests
                 Assert.True(exported.GetProperty("ActivityExecutionRecords").GetArrayLength() > 0);
                 Assert.True(exported.GetProperty("WorkflowExecutionLogRecords").GetArrayLength() > 0);
 
-                var persisted = await services.GetRequiredService<IWorkflowInstanceStore>().FindAsync(workflowInstanceId);
-                Assert.NotNull(persisted);
-                Assert.DoesNotContain(ApiKey, JsonSerializer.Serialize(persisted), StringComparison.Ordinal);
+                var postResponse = await second.HttpClient.PostAsJsonAsync(
+                    $"/workflow-instances/{workflowInstanceId}/export",
+                    new { includeBookmarks = true, includeActivityExecutionLog = true, includeWorkflowExecutionLog = true });
+                Assert.Equal(HttpStatusCode.OK, postResponse.StatusCode);
+                Assert.Equal(workflowInstanceId, AssertExportBodyExcludesCredential(await postResponse.Content.ReadAsStringAsync()));
+
+                var bulkResponse = await second.HttpClient.PostAsJsonAsync(
+                    "/bulk-actions/export/workflow-instances",
+                    new
+                    {
+                        ids = new[] { workflowInstanceId, secondWorkflowInstanceId },
+                        includeBookmarks = true,
+                        includeActivityExecutionLog = true,
+                        includeWorkflowExecutionLog = true
+                    });
+                Assert.Equal(HttpStatusCode.OK, bulkResponse.StatusCode);
+                await using (var zipStream = await bulkResponse.Content.ReadAsStreamAsync())
+                using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Read))
+                {
+                    Assert.Equal(2, archive.Entries.Count);
+                    var exportedIds = new HashSet<string>(StringComparer.Ordinal);
+                    foreach (var entry in archive.Entries)
+                    {
+                        using var reader = new StreamReader(entry.Open());
+                        Assert.True(exportedIds.Add(AssertExportBodyExcludesCredential(await reader.ReadToEndAsync())));
+                    }
+                    Assert.Equal(new[] { workflowInstanceId, secondWorkflowInstanceId }.Order(), exportedIds.Order());
+                }
 
                 await using var database = await services.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>()
                     .CreateDbContextAsync();
                 var connection = database.Database.GetDbConnection();
                 await connection.OpenAsync();
-                await using var command = connection.CreateCommand();
-                command.CommandText = "SELECT Data FROM WorkflowInstances WHERE Id = @id";
-                var idParameter = command.CreateParameter();
-                idParameter.ParameterName = "@id";
-                idParameter.Value = workflowInstanceId;
-                command.Parameters.Add(idParameter);
-                var rawState = Assert.IsType<string>(await command.ExecuteScalarAsync());
-                Assert.DoesNotContain(ApiKey, rawState, StringComparison.Ordinal);
+                foreach (var instanceId in new[] { workflowInstanceId, secondWorkflowInstanceId })
+                {
+                    var persisted = await services.GetRequiredService<IWorkflowInstanceStore>().FindAsync(instanceId);
+                    Assert.NotNull(persisted);
+                    Assert.DoesNotContain(ApiKey, JsonSerializer.Serialize(persisted), StringComparison.Ordinal);
+
+                    await using var command = connection.CreateCommand();
+                    command.CommandText = "SELECT Data FROM WorkflowInstances WHERE Id = @id";
+                    var idParameter = command.CreateParameter();
+                    idParameter.ParameterName = "@id";
+                    idParameter.Value = instanceId;
+                    command.Parameters.Add(idParameter);
+                    var rawState = Assert.IsType<string>(await command.ExecuteScalarAsync());
+                    Assert.DoesNotContain(ApiKey, rawState, StringComparison.Ordinal);
+                }
             }
         }
         finally
@@ -154,6 +188,30 @@ public sealed class WorkflowInstanceExportHttpTests
             if (File.Exists(databasePath))
                 File.Delete(databasePath);
         }
+    }
+
+    private static async Task<(string WorkflowInstanceId, string BookmarkId)> StartSuspendedWorkflowAsync(IServiceProvider services)
+    {
+        var client = await services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync();
+        var started = await client.CreateAndRunInstanceAsync(new CreateAndRunWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(
+                ApiKeyExportWorkflow.DefinitionId, VersionOptions.Latest)
+        });
+        var bookmark = Assert.Single(await services.GetRequiredService<IBookmarkStore>()
+            .FindManyAsync(new BookmarkFilter { WorkflowInstanceId = started.WorkflowInstanceId }));
+        return (started.WorkflowInstanceId, bookmark.Id);
+    }
+
+    private static string AssertExportBodyExcludesCredential(string body)
+    {
+        Assert.DoesNotContain(ApiKey, body, StringComparison.Ordinal);
+        using var document = JsonDocument.Parse(body);
+        var exported = document.RootElement;
+        Assert.True(exported.GetProperty("Bookmarks").GetArrayLength() > 0);
+        Assert.True(exported.GetProperty("ActivityExecutionRecords").GetArrayLength() > 0);
+        Assert.True(exported.GetProperty("WorkflowExecutionLogRecords").GetArrayLength() > 0);
+        return exported.GetProperty("WorkflowState").GetProperty("id").GetString()!;
     }
 
     private static ClaimsPrincipal Principal() => new(new ClaimsIdentity(
