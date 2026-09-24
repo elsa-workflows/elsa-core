@@ -1,6 +1,8 @@
-# Consolidated source build preparation
+# Canonical solution build preparation
 
 Program #8194, feature #8214, story #8286, task #8287. This is a disposable build experiment after the history rehearsal, not the history-bearing import or a release candidate.
+
+This preparation now adds the imported projects to Core's canonical `Elsa.sln` in the disposable rehearsal. The previously recorded full build and targeted tests used `Consolidated.sln`; they do not prove the canonical solution builds or tests. Canonical build and test validation remains pending until run against the output of this preparer.
 
 ## Recorded inputs and active work
 
@@ -12,7 +14,7 @@ The rehearsal preserved 9,635 file blobs/modes (5,864 Core, 1,665 Extensions, 2,
 
 The preparer also accepts Core `076f022cc174d497af26fc8e26414970e61a79b1` with the same recorded Extensions and Studio commits. This explicitly reviewed profile includes the merged credential lifecycle and workflow bindings plus EF/BPMN compare-and-swap corrections. Core's root dependency/build properties are unchanged from the original profile; its solution adds the credential projects. Solution generation reads that profile's actual Core solution and preserves its existing projects.
 
-Both exact profiles retain the same source-integration patch. Arbitrary Core commits remain rejected; source trees, original parents, complete relocation mapping, clean workspace and patch application are verified for the selected profile. The receipt records the actual selected commits rather than reporting the historical baseline. The original pinned recipe below remains reproducible. See the [current-Core build proof](current-core-build.md) for the successful 340-project build and 214 targeted tests at this profile.
+Both exact profiles retain the same source-integration patch. Arbitrary Core commits remain rejected; source trees, original parents, complete relocation mapping, clean workspace and patch application are verified for the selected profile. The receipt records the actual selected commits rather than reporting the historical baseline. The original pinned recipe below remains reproducible. The [current-Core build proof](current-core-build.md) records a successful 340-project `Consolidated.sln` build and 214 targeted tests; that historical result is not canonical `Elsa.sln` validation.
 
 ## Repeat the preparation
 
@@ -25,11 +27,13 @@ python3 scripts/integration-program/prepare_consolidated_build.py \
   --rehearsal /path/to/new-rehearsal
 ```
 
-The preparer recomputes the relocation map from pinned Git trees, verifies all parent commits and the exact rehearsal tree, and rejects tracked edits, remotes, unexpected files (including ignored files), receipt drift, and different source pins. It never resets or deletes user work. It applies the checked-in patch only after `git apply --check` passes, generates stable solution project GUIDs, and writes `consolidated-build-receipt.json` with the patch digest and resulting file hashes. It does not invoke .NET, commit, push, pack or publish. Re-running against an already prepared checkout is rejected: keep the log and use another disposable rehearsal when the patch changes.
+The preparer recomputes the relocation map from pinned Git trees, verifies all parent commits and the exact rehearsal tree, and rejects tracked edits, remotes, unexpected files (including ignored files), receipt drift, and different source pins. It never resets or deletes user work. It applies the checked-in patch only after `git apply --check` passes, generates stable solution project GUIDs in `Elsa.sln`, and writes `canonical-solution-preparation-receipt.json` plus a `canonical-packability-report.json`. The report records effective `PackageId`, `IsPackable`, and `GeneratePackageOnBuild` for every mapped imported project and the added test project, for each evaluated target framework in Debug and Release, with default, source-reference (`UseProjectReferences=true`), and package-reference (`UseProjectReferences=false`) property modes. It fails unless every imported project is non-packable and disables package generation on build. These are property-evaluation checks, not a compile, test, pack or publisher execution. The preparer does not commit, push or publish. Re-running against an already prepared checkout is rejected: keep the log and use another disposable rehearsal when the patch changes.
 
 This tool trusts the local Git installation and the reviewed tool/patch. Builds additionally trust the installed SDK, environment, user NuGet configuration and caches. Use a trusted development account; this preparation is not a sandbox or a hermetic release proof.
 
-The patch integrates 166 imported projects and one new regression-test project with Core's existing solution. It rewrites references to local Core/Studio/Extensions projects, retains separate upstream central dependency baselines, keeps external CShells dependencies as packages, repairs relocated assets, and scopes build properties/targets. Test/sample central-version wrappers import their corresponding source baseline instead of duplicating it. A static comparison also confirms that all 166 imported project files retain their explicit `PackageId`, `AssemblyName` and `RootNamespace` declarations; evaluated and packed public identity checks remain a later gate. Imported projects are nonpackable and automatic generation of packages is disabled; original upstream publishing workflows remain inert. Fody behavior remains scoped to its original product instead of silently inheriting Core's different guard.
+The patch integrates 166 mapped imported projects and one new regression-test project into Core's canonical solution. It rewrites references to local Core/Studio/Extensions projects, retains separate upstream central dependency baselines, keeps external CShells dependencies as packages, repairs relocated assets, and scopes build properties/targets. Test/sample central-version wrappers import their corresponding source baseline instead of duplicating it. The preparation matrix evaluates effective package identity and exclusion properties per project/TFM/configuration/reference mode; it does not create or inspect `.nupkg` files. The repository's original publishing workflows remain inert in this disposable rehearsal and are not enabled by this change. Fody behavior remains scoped to its original product instead of silently inheriting Core's different guard.
+
+The imported `.csproj` inventory under `test/extensions` and `test/studio` is also checked against NUKE's `TestProjects` selector in `build/Build.cs`, which selects solution projects whose names end in `Tests`. The pinned inventory has 17 test-tree projects: 16 match the test selector, and `Elsa.TestServer.Web` is the one test-tree project intentionally excluded from test execution because it is a host. All added solution projects remain included in the default solution build. The Nuke selector and solution membership are preparation evidence only until canonical `./build.sh Compile Test` is run.
 
 Two diagnosed compatibility changes are explicit in the patch:
 
@@ -38,7 +42,9 @@ Two diagnosed compatibility changes are explicit in the patch:
 
 ## Validation and remaining gates
 
-Run builds with each project's declared target frameworks. Do not force every project to net10: Core's MySQL provider currently declares only net8/net9.
+The existing build receipts below preserve results from `Consolidated.sln`; do not use them as canonical solution evidence. After the preparer writes canonical `Elsa.sln`, run builds and tests with each project's declared target frameworks. Do not force every project to net10: Core's MySQL provider currently declares only net8/net9. The required canonical proof is the root contributor target and test target against `Elsa.sln`, followed by an exact-head hosted PR CI run. Do not infer successful root `Pack`/publication from the property matrix.
+
+A local property-only matrix was run against the already-prepared Core `076f022cc174d497af26fc8e26414970e61a79b1`, Extensions `33fa0bfd28c7585240e3d4f665058c067b17e287`, and upstream-main Studio `9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822` rehearsal using SDK 10.0.300. It evaluated all 167 imported/added projects across 2,586 framework/configuration/reference-mode cases; every effective `PackageId` was non-empty and stable, and every case had `IsPackable=false` and `GeneratePackageOnBuild=false`. The rehearsal's Git status was unchanged. This property audit is not canonical build/test evidence and uses the older 076 Core profile; rerun it against the fresh source pins selected for the actual import.
 
 ```sh
 cd /path/to/new-rehearsal

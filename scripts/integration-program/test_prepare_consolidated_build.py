@@ -28,8 +28,14 @@ class ConsolidatedPreparationTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         repos, refs = {}, {}
         for name, files in {
-            'core': {'Elsa.sln': SOLUTION, '.gitignore': 'ignored/\n'},
-            'extensions': {'src/modules/Module/Module.csproj': '<Project />\n'},
+            'core': {
+                'Elsa.sln': SOLUTION,
+                '.gitignore': 'ignored/\n',
+            },
+            'extensions': {
+                'src/modules/Module/Module.csproj': '<Project />\n',
+                'test/workbench/Elsa.TestServer.Web/Elsa.TestServer.Web.csproj': '<Project />\n',
+            },
             'studio': {'src/UI/UI.csproj': '<Project />\n'},
         }.items():
             repo = self.root / name
@@ -58,19 +64,37 @@ new file mode 100644
 +++ b/{build.ADDED_TEST}
 @@ -0,0 +1 @@
 +<Project />
-''')
+        ''')
         self.enterContext(patch.object(build, 'PATCH', self.fixture_patch))
+
+    def prepare_with_fake_packability(self):
+        with patch.object(build, 'evaluate_packability', return_value={
+                'sdkVersion': '10.0.300', 'projectCount': 4, 'evaluationCount': 24,
+                'configurations': ['Debug', 'Release'], 'referenceModes': build.REFERENCE_MODES,
+                'allProjectsNonPackable': True, 'allProjectsDisablePackageOnBuild': True,
+                'projects': [],
+        }):
+            build.prepare(self.output)
 
     def test_applies_once_preserves_history_and_reports_unverified_build(self):
         before = build.rehearsal.git(self.output, 'rev-parse', 'HEAD')
         with contextlib.redirect_stdout(io.StringIO()):
-            build.prepare(self.output)
-        receipt = json.loads((self.output / 'consolidated-build-receipt.json').read_text())
-        self.assertFalse(receipt['buildCompatibilityVerified'])
+            self.prepare_with_fake_packability()
+        receipt = json.loads((self.output / 'canonical-solution-preparation-receipt.json').read_text())
+        self.assertFalse(receipt['canonicalBuildAndTestsVerified'])
         self.assertFalse(receipt['publicationAuthorized'])
-        self.assertEqual(receipt['importedProjects'], 2)
+        self.assertEqual(receipt['importedProjects'], 3)
         self.assertEqual(build.rehearsal.git(self.output, 'rev-parse', 'HEAD'), before)
-        self.assertIn('Module.csproj', (self.output / 'Consolidated.sln').read_text())
+        solution = (self.output / 'Elsa.sln').read_text()
+        self.assertIn('Module.csproj', solution)
+        self.assertIn('Elsa.TestServer.Web.csproj', solution)
+        self.assertIn('Elsa.Studio.Agents.Tests.csproj', solution)
+        self.assertFalse((self.output / 'Consolidated.sln').exists())
+        self.assertEqual(receipt['nukeTestDiscovery']['projects'], 2)
+        self.assertEqual(len(receipt['nukeTestDiscovery']['selectedByNameSuffix']), 1)
+        self.assertEqual(receipt['nukeTestDiscovery']['nonTestHostProjects'], [
+            'test/extensions/workbench/Elsa.TestServer.Web/Elsa.TestServer.Web.csproj'
+        ])
         with self.assertRaises(ValueError):
             build.prepare(self.output)
 
@@ -79,18 +103,19 @@ new file mode 100644
         with patch.dict(build.SOURCE_COMMITS, {'core': 'f' * 40}), \
                 patch.object(build, 'CURRENT_CORE_COMMIT', actual_core), \
                 contextlib.redirect_stdout(io.StringIO()):
-            build.prepare(self.output)
-        receipt = json.loads((self.output / 'consolidated-build-receipt.json').read_text())
+            self.prepare_with_fake_packability()
+        receipt = json.loads((self.output / 'canonical-solution-preparation-receipt.json').read_text())
         self.assertEqual(receipt['sourceCommits']['core'], actual_core)
-        self.assertFalse(receipt['buildCompatibilityVerified'])
+        self.assertFalse(receipt['canonicalBuildAndTestsVerified'])
 
     def test_rejects_dirty_tracked_source_without_overwriting(self):
+        original_solution = (self.output / 'Elsa.sln').read_text()
         path = self.output / 'src/studio/UI/UI.csproj'
         path.write_text('user edit')
         with self.assertRaisesRegex(ValueError, 'changes'):
             build.prepare(self.output)
         self.assertEqual(path.read_text(), 'user edit')
-        self.assertFalse((self.output / 'Consolidated.sln').exists())
+        self.assertEqual((self.output / 'Elsa.sln').read_text(), original_solution)
 
     def test_rejects_even_ignored_ambient_files(self):
         path = self.output / 'ignored/Directory.Build.targets'
@@ -101,11 +126,12 @@ new file mode 100644
         self.assertEqual(path.read_text(), 'ambient input')
 
     def test_rejects_symlink_root_before_modifying_target(self):
+        original_solution = (self.output / 'Elsa.sln').read_text()
         link = self.root / 'linked-rehearsal'
         link.symlink_to(self.output, target_is_directory=True)
         with self.assertRaisesRegex(ValueError, 'real disposable'):
             build.prepare(link)
-        self.assertFalse((self.output / 'Consolidated.sln').exists())
+        self.assertEqual((self.output / 'Elsa.sln').read_text(), original_solution)
         self.assertFalse((self.output / build.ADDED_TEST).exists())
 
     def test_rejects_remote(self):
@@ -134,6 +160,75 @@ new file mode 100644
         self.assertEqual(build.solution_with_projects(SOLUTION, paths), build.solution_with_projects(SOLUTION, paths[::-1]))
         with self.assertRaisesRegex(ValueError, 'Invalid project path'):
             build.solution_with_projects(SOLUTION, ['../outside.csproj'])
+
+    def test_packability_matrix_covers_configurations_frameworks_and_reference_modes(self):
+        root = self.root / 'matrix'
+        project_path = root / 'src/extensions/Example/Example.csproj'
+        project_path.parent.mkdir(parents=True)
+        project_path.write_text('<Project />\n')
+        calls = []
+
+        def evaluator(path, configuration, target_framework, use_project_references):
+            calls.append((configuration, target_framework, use_project_references))
+            return {
+                'TargetFramework': target_framework,
+                'TargetFrameworks': '' if target_framework else 'net8.0;net9.0',
+                'PackageId': 'Example.Package',
+                'IsPackable': 'false',
+                'GeneratePackageOnBuild': 'false',
+                'UseProjectReferences': use_project_references or 'true',
+            }
+
+        report = build.evaluate_packability(root, ['src/extensions/Example/Example.csproj'], evaluator=evaluator)
+        self.assertEqual(report['projectCount'], 1)
+        self.assertEqual(report['evaluationCount'], 12)
+        self.assertEqual({row['configuration'] for row in report['projects'][0]['evaluations']}, {'Debug', 'Release'})
+        self.assertEqual({row['targetFramework'] for row in report['projects'][0]['evaluations']}, {'net8.0', 'net9.0'})
+        self.assertEqual({row['referenceMode'] for row in report['projects'][0]['evaluations']}, {'default', 'source', 'package'})
+        self.assertTrue(all(row['properties']['PackageId'] == 'Example.Package' for row in report['projects'][0]['evaluations']))
+        self.assertEqual(len(calls), 18)  # 6 outer discovery + 12 inner evaluations.
+
+    def test_packability_matrix_rejects_any_packable_framework_configuration(self):
+        root = self.root / 'matrix'
+        project_path = root / 'src/extensions/Example/Example.csproj'
+        project_path.parent.mkdir(parents=True)
+        project_path.write_text('<Project />\n')
+
+        def evaluator(path, configuration, target_framework, use_project_references):
+            is_packable = 'true' if (configuration, target_framework, use_project_references) == ('Release', 'net9.0', 'false') else 'false'
+            return {
+                'TargetFramework': target_framework,
+                'TargetFrameworks': '' if target_framework else 'net8.0;net9.0',
+                'PackageId': 'Example.Package',
+                'IsPackable': is_packable,
+                'GeneratePackageOnBuild': 'false',
+                'UseProjectReferences': use_project_references or 'true',
+            }
+
+        with self.assertRaisesRegex(ValueError, r'Example.csproj \(Release, package, net9.0\): IsPackable'):
+            build.evaluate_packability(root, ['src/extensions/Example/Example.csproj'], evaluator=evaluator)
+
+    def test_packability_matrix_rejects_missing_or_conditionally_changed_package_id(self):
+        root = self.root / 'matrix'
+        project_path = root / 'src/extensions/Example/Example.csproj'
+        project_path.parent.mkdir(parents=True)
+        project_path.write_text('<Project />\n')
+
+        def evaluator(path, configuration, target_framework, use_project_references):
+            package_id = 'Example.Package'
+            if configuration == 'Release' and target_framework == 'net9.0' and use_project_references == 'false':
+                package_id = 'Example.Package.PackageMode'
+            return {
+                'TargetFramework': target_framework,
+                'TargetFrameworks': '' if target_framework else 'net8.0;net9.0',
+                'PackageId': package_id,
+                'IsPackable': 'false',
+                'GeneratePackageOnBuild': 'false',
+                'UseProjectReferences': use_project_references or 'true',
+            }
+
+        with self.assertRaisesRegex(ValueError, 'effective PackageId is missing or varies'):
+            build.evaluate_packability(root, ['src/extensions/Example/Example.csproj'], evaluator=evaluator)
 
 
 if __name__ == '__main__':
