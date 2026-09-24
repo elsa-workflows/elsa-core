@@ -175,20 +175,24 @@ def prepare(inventory: dict, core: Path, pristine: Path, overlay: Path) -> dict:
         if git(root, "rev-parse", "HEAD").decode().strip() != inventory["repositories"][name]["commit"]:
             raise ValueError(f"Source pin mismatch before overlay creation: {name}")
     git(pristine, "worktree", "add", "--detach", str(overlay), "HEAD")
-    rows = expected_files(inventory, core, overlay)
-    for row in rows:
-        (overlay / row["project"]).write_bytes(row["content"])
-    receipt = {
-        "schema_version": 1,
-        "core": str(core.resolve()),
-        "pristine_extensions": str(pristine.resolve()),
-        "overlay_extensions": str(overlay.resolve()),
-        "core_commit": inventory["repositories"][CORE]["commit"],
-        "extensions_commit": inventory["repositories"][EXTENSIONS]["commit"],
-        "files": [{key: value for key, value in row.items() if key != "content"} for row in rows],
-    }
-    verify_overlay(inventory, core, pristine, overlay, receipt)
-    return receipt
+    try:
+        rows = expected_files(inventory, core, overlay)
+        for row in rows:
+            (overlay / row["project"]).write_bytes(row["content"])
+        receipt = {
+            "schema_version": 1,
+            "core": str(core.resolve()),
+            "pristine_extensions": str(pristine.resolve()),
+            "overlay_extensions": str(overlay.resolve()),
+            "core_commit": inventory["repositories"][CORE]["commit"],
+            "extensions_commit": inventory["repositories"][EXTENSIONS]["commit"],
+            "files": [{key: value for key, value in row.items() if key != "content"} for row in rows],
+        }
+        verify_overlay(inventory, core, pristine, overlay, receipt)
+        return receipt
+    except Exception:
+        git(pristine, "worktree", "remove", "--force", str(overlay))
+        raise
 
 
 def main() -> int:
@@ -199,11 +203,18 @@ def main() -> int:
     parser.add_argument("--overlay", type=Path, required=True)
     parser.add_argument("--receipt", type=Path, required=True)
     args = parser.parse_args()
+    if args.receipt.exists() or args.receipt.is_symlink():
+        raise ValueError(f"Refusing to overwrite source-binding receipt: {args.receipt}")
     inventory = json.loads(args.inventory.read_text(encoding="utf-8"))
     core, pristine, overlay = (path.resolve() for path in (args.core, args.extensions, args.overlay))
     receipt = prepare(inventory, core, pristine, overlay)
-    args.receipt.parent.mkdir(parents=True, exist_ok=True)
-    args.receipt.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+    try:
+        args.receipt.parent.mkdir(parents=True, exist_ok=True)
+        args.receipt.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+    except Exception:
+        args.receipt.unlink(missing_ok=True)
+        git(pristine, "worktree", "remove", "--force", str(overlay))
+        raise
     print(f"Prepared {len(receipt['files'])} disposable source-bound Extensions projects: {overlay}")
     return 0
 

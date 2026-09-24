@@ -89,6 +89,14 @@ class SourceBindingTests(unittest.TestCase):
                 (overlay / "src/Consumer.csproj").write_text("tampered")
                 with self.assertRaisesRegex(ValueError, "changed since receipt"):
                     verify_overlay(inventory, core, pristine, overlay, receipt)
+                subprocess.run(["git", "-C", str(pristine), "worktree", "remove", "--force", str(overlay)], check=True)
+                with patch("source_bindings.expected_files", side_effect=ValueError("invalid mapping")):
+                    with self.assertRaisesRegex(ValueError, "invalid mapping"):
+                        prepare(inventory, core, pristine, overlay)
+                self.assertFalse(overlay.exists())
+                self.assertNotIn(str(overlay), subprocess.check_output(
+                    ["git", "-C", str(pristine), "worktree", "list"], text=True))
+                self.assertFalse(subprocess.check_output(["git", "-C", str(pristine), "status", "--porcelain"]))
 
 
 if __name__ == "__main__":
