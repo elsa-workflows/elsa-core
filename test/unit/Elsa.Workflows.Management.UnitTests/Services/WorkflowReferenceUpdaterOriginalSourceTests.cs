@@ -1,4 +1,6 @@
 using Elsa.Common.Models;
+using Elsa.Dsl.ElsaScript.Contracts;
+using Elsa.Dsl.ElsaScript.Materializers;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
@@ -43,12 +45,12 @@ public class WorkflowReferenceUpdaterOriginalSourceTests
         Assert.Equal("ElsaScript", elsaScriptConsumer.MaterializerName);
         Assert.Equal("consumer-elsascript-v1", elsaScriptConsumer.Id);
 
-        var materialized = MaterializeAsElsaScript(elsaScriptConsumer);
-        Assert.Equal(ElsaScriptSource, materialized.WorkflowMetadata.Name);
-        var writeLine = Assert.IsType<WriteLine>(materialized.Root);
-        Assert.Equal("compiled-from-original-source", writeLine.Id);
-        Assert.Equal(elsaScriptConsumer.DefinitionId, materialized.Identity.DefinitionId);
-        Assert.Equal(elsaScriptConsumer.Id, materialized.Identity.Id);
+        var compiler = Substitute.For<IElsaScriptCompiler>();
+        compiler.CompileAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(new Workflow());
+        var materializer = new ElsaScriptWorkflowMaterializer(compiler);
+        await materializer.MaterializeAsync(elsaScriptConsumer, CancellationToken.None);
+        await compiler.Received(1).CompileAsync(ElsaScriptSource, Arg.Any<CancellationToken>());
 
         await publisher.DidNotReceive().SaveDraftAsync(elsaScriptConsumer, Arg.Any<CancellationToken>());
         await publisher.DidNotReceive().PublishAsync(elsaScriptConsumer, Arg.Any<CancellationToken>());
@@ -188,25 +190,6 @@ public class WorkflowReferenceUpdaterOriginalSourceTests
         rootNode.AddChild(childNode);
 
         return new(workflow, rootNode, [rootNode, childNode]);
-    }
-
-    /// <summary>
-    /// Same contract as <c>ElsaScriptWorkflowMaterializer</c>: compile <see cref="WorkflowDefinition.OriginalSource"/> only.
-    /// The compiled graph is distinctive so a silent StringData rewrite cannot pass as the original workflow.
-    /// </summary>
-    private static Workflow MaterializeAsElsaScript(WorkflowDefinition definition)
-    {
-        var source = definition.OriginalSource ?? string.Empty;
-        IActivity root = string.IsNullOrEmpty(source)
-            ? new Sequence { Id = "empty-elsascript" }
-            : new WriteLine(source) { Id = "compiled-from-original-source" };
-
-        return new()
-        {
-            Identity = new(definition.DefinitionId, definition.Version, definition.Id, definition.TenantId),
-            Root = root,
-            WorkflowMetadata = new() { Name = source }
-        };
     }
 
     private sealed class CollectingLogger : ILogger<WorkflowReferenceUpdater>

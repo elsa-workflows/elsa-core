@@ -141,9 +141,15 @@ public class WorkflowReferenceUpdater(
         var draft = await GetOrCreateDraftAsync(id, draftCache, cancellationToken);
         if (draft == null) return null;
 
+        var newGraph = await workflowDefinitionService.MaterializeWorkflowAsync(draft, cancellationToken);
+        var outdated = FindActivities(newGraph.Root, target.DefinitionId)
+            .Where(a => a.WorkflowDefinitionVersionId != target.Id)
+            .ToList();
+
+        if (!outdated.Any()) return null;
+
         // Source-based materializers (ElsaScript, etc.) compile OriginalSource and ignore StringData.
-        // Rewriting StringData would silently drop the version bump; clearing OriginalSource would
-        // compile empty source. Skip these consumers instead of pretending the update applied.
+        // Warn only when this consumer actually references an outdated version.
         if (draft.MaterializerName != JsonWorkflowMaterializer.MaterializerName)
         {
             logger.LogWarning(
@@ -153,13 +159,6 @@ public class WorkflowReferenceUpdater(
                 target.Version);
             return null;
         }
-
-        var newGraph = await workflowDefinitionService.MaterializeWorkflowAsync(draft, cancellationToken);
-        var outdated = FindActivities(newGraph.Root, target.DefinitionId)
-            .Where(a => a.WorkflowDefinitionVersionId != target.Id)
-            .ToList();
-
-        if (!outdated.Any()) return null;
 
         foreach (var act in outdated)
         {
