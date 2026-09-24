@@ -114,6 +114,42 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
     }
 
     /// <inheritdoc />
+    public async Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
+        WorkflowDefinitionFilter filter,
+        Func<WorkflowDefinition, bool> matchesExpected,
+        Func<WorkflowDefinition, WorkflowDefinition> update,
+        CancellationToken cancellationToken = default)
+    {
+        var record = await store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
+
+        if (record is null)
+            return WorkflowDefinitionUpdateResult.NotFound();
+
+        var current = Map(record);
+
+        if (!current.IsLatest || !matchesExpected(current))
+            return WorkflowDefinitionUpdateResult.Conflict();
+
+        var next = update(current);
+
+        if (next.TenantId != record.TenantId || next.DefinitionId != record.DefinitionId)
+            throw new InvalidOperationException("An atomic workflow update cannot change its tenant or logical definition.");
+
+        var nextRecord = Map(next);
+        // ToolVersion is stored on the record but not on the public entity; keep the loaded column.
+        nextRecord.ToolVersion = record.ToolVersion;
+
+        if (next.Id != record.Id)
+        {
+            record.IsLatest = false;
+            await store.SaveAsync(record, cancellationToken);
+        }
+
+        await store.SaveAsync(nextRecord, cancellationToken);
+        return WorkflowDefinitionUpdateResult.Updated(next);
+    }
+
+    /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
         var records = definitions.Select(Map).ToList();

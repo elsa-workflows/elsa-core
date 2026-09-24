@@ -15,7 +15,7 @@ on:
     # published covers stable releases and prereleases; subscribe once.
     types: [ published ]
 env:
-  base_version: '3.8.0'
+  base_version: '3.10.0'
   feedz_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
   nuget_feed_source: 'https://api.nuget.org/v3/index.json'
   # The username of the Trusted Publishing policy creator, not the organization that owns the packages.

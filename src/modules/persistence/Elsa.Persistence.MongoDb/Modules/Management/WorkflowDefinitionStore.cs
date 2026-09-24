@@ -122,6 +122,67 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
     }
 
     /// <inheritdoc />
+    public async Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
+        WorkflowDefinitionFilter filter,
+        Func<WorkflowDefinition, bool> matchesExpected,
+        Func<WorkflowDefinition, WorkflowDefinition> update,
+        CancellationToken cancellationToken = default)
+    {
+        var current = await FindAsync(filter, cancellationToken);
+
+        if (current is null)
+            return WorkflowDefinitionUpdateResult.NotFound();
+
+        if (!current.IsLatest || !matchesExpected(current))
+            return WorkflowDefinitionUpdateResult.Conflict();
+
+        var expectedId = current.Id;
+        var expectedVersion = current.Version;
+        var expectedStringData = current.StringData;
+        var expectedName = current.Name;
+        var expectedDescription = current.Description;
+        var expectedTenantId = current.TenantId;
+        var expectedDefinitionId = current.DefinitionId;
+        var next = update(current);
+
+        if (!string.Equals(next.DefinitionId, expectedDefinitionId, StringComparison.Ordinal))
+            throw new InvalidOperationException("An atomic workflow update cannot change its logical definition.");
+
+        next.TenantId = expectedTenantId;
+
+        var snapshotFilter = Builders<WorkflowDefinition>.Filter.And(
+            Builders<WorkflowDefinition>.Filter.Eq(x => x.Id, expectedId),
+            Builders<WorkflowDefinition>.Filter.Eq(x => x.Version, expectedVersion),
+            Builders<WorkflowDefinition>.Filter.Eq(x => x.IsLatest, true),
+            Builders<WorkflowDefinition>.Filter.Eq(x => x.StringData, expectedStringData),
+            Builders<WorkflowDefinition>.Filter.Eq(x => x.Name, expectedName),
+            Builders<WorkflowDefinition>.Filter.Eq(x => x.Description, expectedDescription),
+            Builders<WorkflowDefinition>.Filter.Eq(x => x.TenantId, expectedTenantId));
+
+        var collection = mongoDbStore.GetCollection();
+
+        if (next.Id == expectedId)
+        {
+            var replaceResult = await collection.ReplaceOneAsync(snapshotFilter, next, cancellationToken: cancellationToken);
+            return replaceResult.MatchedCount == 1
+                ? WorkflowDefinitionUpdateResult.Updated(next)
+                : WorkflowDefinitionUpdateResult.Conflict();
+        }
+
+        var unmarked = await collection.UpdateOneAsync(
+            snapshotFilter,
+            Builders<WorkflowDefinition>.Update.Set(x => x.IsLatest, false),
+            cancellationToken: cancellationToken);
+
+        if (unmarked.MatchedCount != 1)
+            return WorkflowDefinitionUpdateResult.Conflict();
+
+        next.IsLatest = true;
+        await collection.InsertOneAsync(next, cancellationToken: cancellationToken);
+        return WorkflowDefinitionUpdateResult.Updated(next);
+    }
+
+    /// <inheritdoc />
     public Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
         return mongoDbStore.SaveManyAsync(definitions.Select(i => i), cancellationToken);

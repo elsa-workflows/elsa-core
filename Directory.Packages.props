@@ -137,6 +137,7 @@
         <PackageVersion Include="Azure.ResourceManager.ServiceBus" Version="1.1.0"/>
         <PackageVersion Include="Azure.Storage.Blobs" Version="12.26.0"/>
         <PackageVersion Include="BenchmarkDotNet" Version="0.15.8"/>
+        <PackageVersion Include="Blazored.FluentValidation" Version="2.2.0"/>
         <PackageVersion Include="Bogus" Version="35.6.5"/>
         <PackageVersion Include="ConfigureAwait.Fody" Version="3.3.2"/>
         <PackageVersion Include="Confluent.Kafka" Version="2.12.0"/>
