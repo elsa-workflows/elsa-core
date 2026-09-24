@@ -1,6 +1,6 @@
 # Core a13ac consolidated preparation receipt
 
-Program #8194; story #8286; task #8287. This is a disposable, no-remote source-history rehearsal. It does not import the repositories into `main`, build the combined solution, pack a package, or authorize publication.
+Program #8194; story #8286; task #8287. This is a disposable, no-remote source-history rehearsal. The preparation receipt alone does not import the repositories into `main`, build the combined solution, pack a package, or authorize publication. A subsequent [mapped solution build](mapped-solution-build.json) is recorded separately below.
 
 The source commits are Core `a13ac7a412e037280d7a568fd9dd87b06ff8b724`, Extensions `ba8b71d91c15ffe5be4b2c539cf9f712e74af775`, and Studio `20ceaeeed7e671f0c9662003e82063026f2216de`. The synthetic rehearsal commit is `372ed7ed3973c90fa581bf6003040900137bc093`. The [import receipt](import-receipt.json.gz) reports 6,361 Core files and 3,771 mapped Extensions/Studio files (10,132 total), exact blob/mode mapping, and reachable original histories. Its uncompressed SHA-256 is `dd31bc0073b897d5d34e30edef59780b3825ada9b68b3e3ad9580ff680ad6f72`.
 
@@ -16,3 +16,15 @@ python3 -O -m unittest discover -s scripts/integration-program -p test_prepare_c
 ```
 
 The preparation suite passed 23/23 in each Python mode on 2026-09-24. The receipts explicitly retain `buildCompatibilityVerified=false`, `canonicalBuildAndTestsVerified=false`, and `publicationAuthorized=false`. Workbench/Studio fixture overlays applied **after** these receipts are separately verified by `prepare_workbench_secrets_runtime.py`; this receipt makes no runtime-host claim. The synthetic commit must never be pushed or used as a release commit.
+
+## Subsequent mapped solution build
+
+On 2026-09-24, the same disposable rehearsal was prepared for source-reference builds and compiled with SDK 10.0.300. The mapped `Elsa.sln` contained 343 projects. The command below completed with exit code 0, 0 errors and 1,824 warnings in 32 minutes 32 seconds. It built each project's declared frameworks, including Core, Extensions, Studio, Workbench, test projects and Studio hosts. The private raw log's SHA-256 and the exact solution hash are in the [sanitized build receipt](mapped-solution-build.json).
+
+```text
+dotnet build Elsa.sln -p:UseProjectReferences=true -p:IsPackable=false -p:GeneratePackageOnBuild=false -m:1
+```
+
+This run included the reviewed canonical Workbench Secrets, Studio Secrets menu, Studio BPMN generator layout, two-tenant Workbench, and fixture-only Secrets route-probe overlays. It therefore proves compilation of that prepared mapped source, not a clean import without overlays. The no-remote source emitted SourceLink warnings and produced no usable source provenance for release packages. Other package-audit and compiler warnings remain in the log; this receipt does not classify them as resolved. No package was packed or published.
+
+The mapped Core Secrets unit project then passed 141/141 tests on `net10.0` with zero skips using source project references. The exact command and private log hash are in the receipt. This is one targeted test project, not verification of the full combined test suite, Studio browser behavior, clean package consumption, or release provenance. Those checks, the production publisher transition, and the history-bearing import remain separate gates.

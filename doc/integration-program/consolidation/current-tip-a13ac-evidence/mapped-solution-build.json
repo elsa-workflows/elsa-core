@@ -1,0 +1,44 @@
+{
+  "checkedAt": "2026-09-24",
+  "sourcePins": {
+    "core": "a13ac7a412e037280d7a568fd9dd87b06ff8b724",
+    "extensions": "ba8b71d91c15ffe5be4b2c539cf9f712e74af775",
+    "studio": "20ceaeeed7e671f0c9662003e82063026f2216de"
+  },
+  "syntheticRehearsalCommit": "372ed7ed3973c90fa581bf6003040900137bc093",
+  "sdkVersion": "10.0.300",
+  "solutionProjectCount": 343,
+  "solutionSha256": "84663f74a91d7ac7f7f1ded59c4a51023c91c69c4dec2d709ed13d68fecbb6a0",
+  "command": "dotnet build Elsa.sln -p:UseProjectReferences=true -p:IsPackable=false -p:GeneratePackageOnBuild=false -m:1",
+  "exitCode": 0,
+  "errorCount": 0,
+  "warningCount": 1824,
+  "elapsed": "00:32:32.51",
+  "rawPrivateLogSha256": "babcf33dab00ff80be08ae9396c17dcc71bc81e05c03833c75babd5f0bf4ea0e",
+  "appliedOverlays": [
+    "workbench-canonical-secrets.patch",
+    "studio-secrets-menu.patch",
+    "studio-bpmn-generator-layout.patch",
+    "workbench-two-tenant-multitenancy.patch",
+    "workbench-secrets-route-probe.patch"
+  ],
+  "targetedTests": [
+    {
+      "project": "test/unit/Elsa.Secrets.UnitTests/Elsa.Secrets.UnitTests.csproj",
+      "framework": "net10.0",
+      "command": "dotnet test test/unit/Elsa.Secrets.UnitTests/Elsa.Secrets.UnitTests.csproj -f net10.0 -p:UseProjectReferences=true -p:IsPackable=false -p:GeneratePackageOnBuild=false --no-restore --logger 'console;verbosity=minimal'",
+      "passed": 141,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "rawPrivateLogSha256": "89beaa1c75840b0fac9ef203ee1146944efa50e3700060c8c8f1d353d487b119"
+    }
+  ],
+  "mappedSolutionBuildVerified": true,
+  "canonicalImportBuilt": false,
+  "targetedRuntimeTestsVerified": true,
+  "fullCombinedTestSuiteVerified": false,
+  "cleanPackageConsumerVerified": false,
+  "releaseSourceLinkVerified": false,
+  "packagePublicationAuthorized": false
+}
