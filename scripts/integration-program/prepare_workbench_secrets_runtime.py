@@ -28,7 +28,8 @@ SUPPLEMENTAL_PATCHES = (
 OPTIONAL_FIXTURE_PATCHES = (
     HERE / 'consolidated-build' / 'studio-secrets-menu.patch',
     HERE / 'consolidated-build' / 'studio-bpmn-generator-layout.patch',
-    HERE / 'consolidated-build' / 'workbench-two-tenant-multitenancy.patch'
+    HERE / 'consolidated-build' / 'workbench-two-tenant-multitenancy.patch',
+    HERE / 'consolidated-build' / 'workbench-secrets-route-probe.patch'
 )
 SOURCE_PROJECT = Path('samples/extensions/workbench/Elsa.Server.Web')
 REQUIRED_PROGRAM_MARKERS = (
@@ -53,11 +54,103 @@ REQUIRED_SECRETS_ASSEMBLIES = (
     'Elsa.Secrets.Persistence.EFCore.Sqlite',
     'Elsa.Secrets.Persistence.EFCore.SqlServer'
 )
+ROUTE_PROBE_PATCH_NAME = 'workbench-secrets-route-probe.patch'
+ROUTE_PROBE_PATH = '/__fixture/secrets/routes'
+OBSERVED_SECRETS_ROUTE_PREFIXES = (
+    '/secrets',
+    '/actions/secrets/',
+    '/bulk-actions/secrets/',
+    '/queries/secrets/',
+)
+FORBIDDEN_LEGACY_SECRETS_ROUTE_PREFIXES = (
+    '/actions/secrets/',
+    '/bulk-actions/secrets/',
+    '/queries/secrets/',
+)
+CANONICAL_ENDPOINT_TYPE_PREFIX = 'Elsa.Secrets.Endpoints.Secrets.'
+EXPECTED_CANONICAL_SECRETS_ROUTES = (
+    ('DELETE', '/secrets/{name}'),
+    ('GET', '/secrets'),
+    ('GET', '/secrets/descriptors'),
+    ('GET', '/secrets/{name}'),
+    ('POST', '/secrets'),
+    ('POST', '/secrets/picker'),
+    ('POST', '/secrets/{name}'),
+    ('POST', '/secrets/{name}/revoke'),
+    ('POST', '/secrets/{name}/rotate'),
+    ('POST', '/secrets/{name}/test'),
+)
+FORBIDDEN_LEGACY_SECRETS_ROUTES = (
+    ('GET', '/secrets/{id}/input'),
+    ('POST', '/actions/secrets/generate-unique-name'),
+    ('POST', '/bulk-actions/secrets/delete'),
+    ('POST', '/queries/secrets/is-unique-name'),
+)
+FORBIDDEN_LEGACY_SECRETS_ASSEMBLIES = (
+    'Elsa.Secrets.Api',
+    'Elsa.Secrets.Management',
+    'Elsa.Secrets.Scripting',
+)
 
 
 def require(condition, message):
     if not condition:
         raise ValueError(message)
+
+
+def validate_route_probe_payload(payload):
+    """Validate and sanitize the fixture-only host route probe response."""
+    require(isinstance(payload, dict), 'Route probe payload must be an object')
+    raw_routes = payload.get('routes')
+    require(isinstance(raw_routes, list), 'Route probe payload is missing routes')
+
+    routes = []
+    for route in raw_routes:
+        require(isinstance(route, dict), 'Route probe route entries must be objects')
+        path = route.get('path')
+        methods = route.get('methods')
+        require(isinstance(path, str) and (
+            path == '/secrets'
+            or path.startswith('/secrets/')
+            or any(path.startswith(prefix) for prefix in OBSERVED_SECRETS_ROUTE_PREFIXES[1:])),
+                'Route probe contains an unsafe route path')
+        require(isinstance(methods, list) and all(isinstance(method, str) for method in methods),
+                'Route probe route methods must be strings')
+        require(not any(value in path for value in ('?', '#', '://')),
+                'Route probe route path contains an unsafe value')
+        route_key = (tuple(sorted(methods)), path)
+        routes.append(route_key)
+
+        if path == '/secrets/{id}/input' or any(
+                path.startswith(prefix) for prefix in FORBIDDEN_LEGACY_SECRETS_ROUTE_PREFIXES):
+            raise ValueError(f'Route probe contains a forbidden legacy Secrets route: {methods} {path}')
+
+        endpoint_type = route.get('endpointType')
+        require(isinstance(endpoint_type, str) and endpoint_type.startswith(CANONICAL_ENDPOINT_TYPE_PREFIX),
+                f'Route probe cannot prove Core endpoint ownership for {methods} {path}')
+
+    normalized = sorted((method, path) for methods, path in routes for method in methods)
+    expected = sorted(EXPECTED_CANONICAL_SECRETS_ROUTES)
+    require(normalized == expected,
+            f'Route probe canonical route set differs: expected={expected}, actual={normalized}')
+    require(len(routes) == len(set(routes)), 'Route probe contains duplicate route entries')
+    assemblies = payload.get('secretAssemblies')
+    require(isinstance(assemblies, list) and all(isinstance(name, str) for name in assemblies),
+            'Route probe payload is missing secret assembly names')
+    require('Elsa.Secrets' in assemblies, 'Route probe did not load the canonical Secrets assembly')
+    require(not set(assemblies) & set(FORBIDDEN_LEGACY_SECRETS_ASSEMBLIES),
+            'Route probe loaded a forbidden legacy Secrets assembly')
+
+    # Return only reviewable route and assembly facts. Do not retain display names,
+    # handler types, or arbitrary metadata emitted by a private fixture host.
+    return {
+        'routeCount': len(normalized),
+        'routes': [{'method': method, 'path': path} for method, path in normalized],
+        'secretAssemblies': sorted(assemblies),
+        'canonicalOwnershipVerified': True,
+        'legacyRoutesAbsent': True,
+        'legacyAssembliesAbsent': True,
+    }
 
 
 def is_within(path, parent):
@@ -563,7 +656,8 @@ def write_private(path, content):
         file.write(content)
 
 
-def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_parent=None, two_tenant=False):
+def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_parent=None,
+                    two_tenant=False, route_probe=False):
     pins = {'core': core_sha, 'extensions': extensions_sha, 'studio': studio_sha}
     for name, commit in pins.items():
         require(len(commit) == 40 and all(character in '0123456789abcdef' for character in commit),
@@ -575,6 +669,9 @@ def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_p
     tenant_patch_name = 'workbench-two-tenant-multitenancy.patch'
     menu_patch_name = 'studio-secrets-menu.patch'
     studio_layout_patch_name = 'studio-bpmn-generator-layout.patch'
+    if route_probe:
+        require(ROUTE_PROBE_PATCH_NAME in optional_paths,
+                'Route probe mode requires the reviewed fixture route-probe patch in the isolated mapped source')
     if two_tenant:
         require(tenant_patch_name in optional_paths,
                 'Two-tenant mode requires the reviewed Workbench multitenancy patch in the isolated mapped source')
@@ -749,6 +846,17 @@ def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_p
         'privateAppsettingsSha256': hashlib.sha256(appsettings_bytes).hexdigest(),
         'loopbackUrl': database_url,
         'secretsEnabledOnlyByExplicitLaunchOverride': '--Features:Secrets:Enabled=true',
+        'routeProbeEnabledOnlyByExplicitLaunchOverride': (
+            f'--Features:Secrets:RouteProbe=true' if route_probe else None),
+        'routeProbe': ({
+            'enabled': True,
+            'path': ROUTE_PROBE_PATH,
+            'patch': ROUTE_PROBE_PATCH_NAME,
+            'expectedRouteCount': len(EXPECTED_CANONICAL_SECRETS_ROUTES),
+            'forbiddenLegacyRouteCount': len(FORBIDDEN_LEGACY_SECRETS_ROUTES),
+            'forbiddenLegacyAssemblies': list(FORBIDDEN_LEGACY_SECRETS_ASSEMBLIES),
+            'receiptPolicy': 'Retain only validate_route_probe_payload output; discard raw endpoint metadata.'
+        } if route_probe else {'enabled': False}),
         'appsettingsContainsSecretsEnabled': False,
         'configuredWebhookSinkCount': 0,
         'dropInsDirectory': str(drop_ins),
@@ -776,6 +884,8 @@ def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_p
         '--urls', database_url,
         '--Features:Secrets:Enabled=true'
     ]
+    if route_probe:
+        launch_args.append('--Features:Secrets:RouteProbe=true')
     shell_env = [
         'env -i',
         f'PATH={shlex.quote(os.environ.get("PATH", "/usr/bin:/bin"))}',
@@ -808,6 +918,7 @@ def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_p
         'lockDirectory': str(locks),
         'configuredWebhookSinkCount': 0,
         'twoTenantMode': two_tenant,
+        'routeProbeMode': route_probe,
         'launchCommandFile': str(fixture_root / 'launch-command.txt'),
         'launchApproved': False
     }, indent=2))
@@ -840,6 +951,8 @@ def main():
     parser.add_argument('--temp-parent', type=Path)
     parser.add_argument('--two-tenant', action='store_true',
                         help='Prepare two synthetic tenant-scoped identities; requires the reviewed fixture patches in the mapped source.')
+    parser.add_argument('--route-probe', action='store_true',
+                        help='Prepare the guarded private route-ownership probe; requires its reviewed fixture patch in the mapped source.')
     parser.add_argument('--cleanup', type=Path)
     parser.add_argument('--host-stopped', action='store_true')
     args = parser.parse_args()
@@ -854,7 +967,7 @@ def main():
     require(args.core_sha and args.extensions_sha and args.studio_sha, 'Pass all three pinned source SHAs')
     require(not args.host_stopped, '--host-stopped is valid only with --cleanup')
     prepare_fixture(args.rehearsal_root, args.core_sha, args.extensions_sha, args.studio_sha,
-                    args.temp_parent, args.two_tenant)
+                    args.temp_parent, args.two_tenant, args.route_probe)
 
 
 if __name__ == '__main__':

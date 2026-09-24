@@ -32,7 +32,9 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
             'var builder = WebApplication.CreateBuilder(args);\n'
             'var configuration = builder.Configuration;\n'
             'UseSecretsManagement();\nUpdateExpiredSecretsRecurringTask();\n'
-            'elsa.AddActivitiesFrom<Program>();\nelsa.AddWorkflowsFrom<Program>();\n')
+            'elsa.AddActivitiesFrom<Program>();\nelsa.AddWorkflowsFrom<Program>();\n'
+            'if (useSignalR)\n    app.UseWorkflowsSignalRHubs();\n\n'
+            'await app.RunAsync();\n')
         self.base_project = '<Project>\n  <Reference Include="legacy-secrets" />\n</Project>\n'
         (self.source / 'Elsa.Server.Web.csproj').write_text(self.base_project)
         (self.source / 'Program.cs').write_text(self.base_program)
@@ -179,6 +181,16 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
             'var useSecrets = configuration.GetValue("Features:Secrets:Enabled", false);\n'
             'var useMultitenancy = configuration.GetValue("Features:Multitenancy:Enabled", false);\n')
         self.tenant_patch.write_text(self.make_patch(program, mapped_program, tenant_program))
+        route_probe_before = mapped_program
+        route_probe_after = route_probe_before.replace(
+            'await app.RunAsync();\n',
+            'if (configuration.GetValue("Features:Secrets:RouteProbe", false))\n'
+            '{\n'
+            '    app.MapGet("/__fixture/secrets/routes", () => Results.Json(new { routes = Array.Empty<object>(), secretAssemblies = Array.Empty<string>() }));\n'
+            '}\n\n'
+            'await app.RunAsync();\n')
+        self.route_patch = self.base / 'workbench-secrets-route-probe.patch'
+        self.route_patch.write_text(self.make_patch(program, route_probe_before, route_probe_after))
 
     @staticmethod
     def make_patch(relative, before, after):
@@ -191,6 +203,9 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
         subprocess.run(['git', 'apply', str(self.menu_patch)], cwd=self.rehearsal, check=True)
         subprocess.run(['git', 'apply', str(self.layout_patch)], cwd=self.rehearsal, check=True)
         subprocess.run(['git', 'apply', str(self.tenant_patch)], cwd=self.rehearsal, check=True)
+
+    def apply_route_probe_patch(self):
+        subprocess.run(['git', 'apply', str(self.route_patch)], cwd=self.rehearsal, check=True)
 
     def fake_build(self, source, log_parent):
         host_dll = source / 'bin' / 'Debug' / 'net10.0' / 'Elsa.Server.Web.dll'
@@ -304,6 +319,115 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
         program.write_text(program.read_text().replace('var useSecrets = configuration.GetValue("Features:Secrets:Enabled", false);', 'const bool useSecrets = false;'))
         with self.assertRaisesRegex(ValueError, 'Mapped rehearsal does not match patch'):
             self.prepare()
+
+    def test_route_probe_normalizes_the_configured_api_prefix_before_filtering(self):
+        patch = FIXTURE.OPTIONAL_FIXTURE_PATCHES[-1].read_text()
+        self.assertIn('configuredRoutePrefix', patch)
+        self.assertIn('item.path[configuredRoutePrefix.Length..]', patch)
+        self.assertIn('item.path.StartsWith("/actions/secrets/"', patch)
+
+    def test_route_probe_mode_requires_the_reviewed_private_patch_before_build(self):
+        build = self.fake_build
+        with mock.patch.object(FIXTURE, 'build_host', wraps=build) as build_host:
+            with self.assertRaisesRegex(ValueError, 'requires the reviewed fixture route-probe patch'):
+                self.prepare(route_probe=True, optional_fixture_patches=())
+        build_host.assert_not_called()
+
+    def test_route_probe_plan_and_sanitized_receipt_cover_only_canonical_routes(self):
+        self.apply_route_probe_patch()
+        fixture_root = self.prepare(route_probe=True, optional_fixture_patches=(self.route_patch,))
+        try:
+            plan = json.loads((fixture_root / 'launch-plan.json').read_text())
+            command = (fixture_root / 'launch-command.txt').read_text()
+            self.assertTrue(plan['routeProbe']['enabled'])
+            self.assertEqual(FIXTURE.ROUTE_PROBE_PATH, plan['routeProbe']['path'])
+            self.assertEqual(FIXTURE.ROUTE_PROBE_PATCH_NAME, plan['routeProbe']['patch'])
+            self.assertEqual(10, plan['routeProbe']['expectedRouteCount'])
+            self.assertIn('--Features:Secrets:RouteProbe=true', command)
+            self.assertEqual(
+                self.route_patch.name,
+                plan['sourcePatchChain']['optionalFixturePatches'][0]['path'])
+
+            payload = {
+                'routes': [
+                    {
+                        'path': path,
+                        'methods': [method],
+                        'endpointType': f'Elsa.Secrets.Endpoints.Secrets.Endpoint',
+                        'displayName': f'Elsa.Secrets.Endpoints.Secrets.{path}',
+                        'handlerType': 'Elsa.Secrets.EndpointHandler',
+                        'metadataTypes': ['Microsoft.AspNetCore.Routing.HttpMethodMetadata']
+                    }
+                    for method, path in FIXTURE.EXPECTED_CANONICAL_SECRETS_ROUTES
+                ],
+                'secretAssemblies': ['Elsa.Secrets', 'Elsa.Secrets.JavaScript']
+            }
+            receipt = FIXTURE.validate_route_probe_payload(payload)
+            self.assertEqual(10, receipt['routeCount'])
+            self.assertTrue(receipt['canonicalOwnershipVerified'])
+            self.assertTrue(receipt['legacyRoutesAbsent'])
+            self.assertTrue(receipt['legacyAssembliesAbsent'])
+            self.assertNotIn('displayName', json.dumps(receipt))
+            self.assertNotIn('handlerType', json.dumps(receipt))
+        finally:
+            FIXTURE.cleanup_fixture(fixture_root, host_stopped=True)
+
+    def test_route_probe_rejects_legacy_routes_or_assemblies(self):
+        payload = {
+            'routes': [
+                {
+                    'path': path,
+                    'methods': [method],
+                    'endpointType': 'Elsa.Secrets.Endpoints.Secrets.Endpoint',
+                    'displayName': 'Elsa.Secrets.Endpoints.Secrets.Endpoint',
+                    'handlerType': 'Elsa.Secrets.EndpointHandler',
+                }
+                for method, path in FIXTURE.EXPECTED_CANONICAL_SECRETS_ROUTES
+            ],
+            'secretAssemblies': ['Elsa.Secrets', 'Elsa.Secrets.Api']
+        }
+        payload['routes'].append({
+            'path': '/secrets/{id}/input',
+            'methods': ['GET'],
+            'displayName': 'Elsa.Secrets.Api.Endpoints.Secrets.GetInputModel.Endpoint',
+            'handlerType': 'Elsa.Secrets.Api.EndpointHandler',
+        })
+        with self.assertRaisesRegex(ValueError, 'forbidden legacy'):
+            FIXTURE.validate_route_probe_payload(payload)
+
+    def test_route_probe_observes_and_rejects_each_legacy_route_family(self):
+        for path in (
+            '/actions/secrets/generate-unique-name',
+            '/bulk-actions/secrets/delete',
+            '/queries/secrets/is-unique-name',
+        ):
+            payload = {
+                'routes': [{
+                    'path': path,
+                    'methods': ['POST'],
+                    'endpointType': 'Elsa.Secrets.Api.Endpoint',
+                }],
+                'secretAssemblies': ['Elsa.Secrets', 'Elsa.Secrets.Api'],
+            }
+            with self.assertRaisesRegex(ValueError, 'forbidden legacy'):
+                FIXTURE.validate_route_probe_payload(payload)
+
+    def test_route_probe_does_not_claim_ownership_from_arbitrary_metadata(self):
+        payload = {
+            'routes': [
+                {
+                    'path': path,
+                    'methods': [method],
+                    'endpointType': 'Some.Unrelated.Endpoint',
+                    'displayName': 'Elsa.Secrets.Endpoints.Secrets.Endpoint',
+                    'handlerType': 'Elsa.Secrets.EndpointHandler',
+                }
+                for method, path in FIXTURE.EXPECTED_CANONICAL_SECRETS_ROUTES
+            ],
+            'secretAssemblies': ['Elsa.Secrets'],
+        }
+        with self.assertRaisesRegex(ValueError, 'cannot prove Core endpoint ownership'):
+            FIXTURE.validate_route_probe_payload(payload)
 
     def test_two_tenant_fixture_uses_scoped_synthetic_users_and_one_fresh_database(self):
         self.apply_two_tenant_patches()

@@ -63,3 +63,34 @@ The fixture used different technical names for each tenant, so same-name
 storage isolation was not proven. It also did not record a switch back to
 tenant A after using B or inspect the saved `{name,typeName}` reference shape.
 Those checks remain open for the imported-source browser repeat.
+
+## Default-host route probe
+
+The optional `workbench-secrets-route-probe.patch` is a fixture-only overlay. It
+adds a guarded loopback endpoint at `/__fixture/secrets/routes`; the endpoint is
+registered only when the private launch override
+`--Features:Secrets:RouteProbe=true` is supplied. It reports the active
+`/secrets`, `/actions/secrets/`, `/bulk-actions/secrets/`, and
+`/queries/secrets/` route metadata and loaded assemblies so the mapped Workbench
+host can be checked after startup; it normalizes the configured API route
+prefix before evaluating the route families. It reads the FastEndpoints
+`EndpointDefinition.EndpointType` metadata and requires every retained route to
+be owned by `Elsa.Secrets.Endpoints.Secrets.*`. It does not add a production
+route or enable the legacy API.
+
+Prepare the route probe only after applying the reviewed overlay to the mapped
+canonical Workbench source:
+
+```text
+python3 scripts/integration-program/prepare_workbench_secrets_runtime.py \
+  --rehearsal-root /private/owned/mapped-workbench \
+  --core-sha <core-sha> --extensions-sha <extensions-sha> --studio-sha <studio-sha> \
+  --route-probe
+```
+
+The sanitized receipt must be produced by
+`validate_route_probe_payload(...)`. It retains only the ten canonical Core
+routes, route count, canonical assembly ownership result, and the absence of
+legacy routes and `Elsa.Secrets.Api`, `Elsa.Secrets.Management`, and
+`Elsa.Secrets.Scripting` assemblies. Do not commit the raw endpoint metadata,
+private host configuration, credentials, or process logs.
