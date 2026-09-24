@@ -30,13 +30,15 @@ The next implementation slice belongs in existing #8214/#8215 work; this proposa
 4. The PR path is non-publishing. The retained Extensions and Studio publisher workflows remain inert until one publisher per package ID, cutover ordering, upgrade, and rollback are separately accepted.
 5. Each ledger row is changed to implemented or retired only with a reviewable evidence link/commit and exact-head validation. Remove a `.source` copy only when its disposition is complete; otherwise preserve it with the recorded rationale.
 
-Validate the ledger's fields, row count, uniqueness, source pins, and mapped path shape with:
+The validator checks the ledger against a frozen projection of the actual rehearsal receipt. The projection records the exact SHA-256 of the full receipt (`5716731dfff80733dfd1e9ca1aaa814c237ceec672e9fa60ab8c9af080611a75`) and retains its 163 inert-asset source/destination/blob/mode rows. The validator pins both the projection hash and source-receipt hash, compares the full mapping, requires normalized relative Git paths and supported regular-file modes (`100644` or `100755`), and accepts only the ledger's current pending/candidate statuses. Completion statuses remain rejected until the ledger defines and validates structured completion evidence.
+
+Validate the ledger against that frozen source evidence with:
 
 ```sh
 python3 scripts/integration-program/validate_legacy_asset_dispositions.py
 ```
 
-For exact byte-provenance validation against the rehearsal receipt, pass the receipt path:
+For exact validation against a freshly materialized rehearsal, pass the full live receipt path instead:
 
 ```sh
 python3 scripts/integration-program/validate_legacy_asset_dispositions.py \
