@@ -4,10 +4,10 @@ import os
 import sys
 import tempfile
 import unittest
+import unittest.mock as mock
 import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
-from unittest import mock
 
 from run_github_activity_id_compatibility import (
     CORE_REFERENCE,
