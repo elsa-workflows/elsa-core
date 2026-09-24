@@ -76,6 +76,52 @@ public sealed class GenerationAvailabilityProbeTests
         Assert.Equal(2, metadataReads);
     }
 
+    [Theory]
+    [InlineData(SecretStatus.Revoked)]
+    [InlineData(SecretStatus.Retired)]
+    public async Task PersistedPayloadPresenceIsIndependentOfGenerationAvailability(SecretStatus status)
+    {
+        var secretManager = Substitute.For<ISecretManager>();
+        var managedSecretManager = Substitute.For<IManagedSecretManager>();
+        var secretRepository = Substitute.For<ISecretRepository>();
+        var unavailableSecret = CreateSecret(ownerMatches: true, generationMatches: true, status, hasActiveVersion: false);
+        unavailableSecret.Versions =
+        [
+            new SecretVersion
+            {
+                Version = 1,
+                Status = SecretStatus.Expired,
+                Payload = new SecretPayload { Metadata = new Dictionary<string, string> { ["protectedValue"] = "synthetic-encrypted-marker" } }
+            }
+        ];
+        secretManager.GetAsync(SecretName, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<Secret?>(unavailableSecret));
+        secretRepository.GetAsync(SecretName, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<Secret?>(unavailableSecret));
+        using var services = CreateServices(secretManager, managedSecretManager, secretRepository);
+
+        Assert.False(await WorkerCommandHost.IsGenerationAvailableAsync(services, ConnectionId, GenerationId));
+        var unavailableState = await WorkerCommandHost.InspectGenerationPayloadAsync(services, ConnectionId, GenerationId);
+        Assert.True(unavailableState.RecordPresent);
+        Assert.Equal(status.ToString(), unavailableState.Status);
+        Assert.True(unavailableState.OwnershipPreserved);
+        Assert.True(unavailableState.ProtectedPayloadPresent);
+        Assert.False(unavailableState.PlaintextValuePresent);
+
+        // Cleanup keeps the immutable secret-name tombstone but removes the protected credential payload.
+        unavailableSecret.Status = SecretStatus.Deleted;
+        unavailableSecret.Versions[0].Payload.Metadata.Clear();
+        secretRepository.GetAsync(SecretName, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<Secret?>(unavailableSecret));
+
+        var deletedState = await WorkerCommandHost.InspectGenerationPayloadAsync(services, ConnectionId, GenerationId);
+        Assert.True(deletedState.RecordPresent);
+        Assert.Equal(SecretStatus.Deleted.ToString(), deletedState.Status);
+        Assert.True(deletedState.OwnershipPreserved);
+        Assert.False(deletedState.ProtectedPayloadPresent);
+        Assert.False(deletedState.PlaintextValuePresent);
+    }
+
     private static Secret CreateSecret(bool ownerMatches, bool generationMatches, SecretStatus status, bool hasActiveVersion)
     {
         return new Secret
@@ -88,11 +134,15 @@ public sealed class GenerationAvailabilityProbeTests
         };
     }
 
-    private static ServiceProvider CreateServices(ISecretManager secretManager, IManagedSecretManager managedSecretManager)
+    private static ServiceProvider CreateServices(
+        ISecretManager secretManager,
+        IManagedSecretManager managedSecretManager,
+        ISecretRepository? secretRepository = null)
     {
         return new ServiceCollection()
             .AddSingleton(secretManager)
             .AddSingleton(managedSecretManager)
+            .AddSingleton(secretRepository ?? Substitute.For<ISecretRepository>())
             .BuildServiceProvider();
     }
 }

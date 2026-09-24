@@ -290,6 +290,9 @@ public static class WorkerCommandHost
                             ? null
                             : await store.FindGenerationCleanupAsync(connectionId, settings.TenantId, settings.EnvironmentId, generationId);
                         var generationAvailable = false;
+                        var persistedGeneration = generationId is null
+                            ? new GenerationPayloadInspection(false, null, false, false, false)
+                            : await InspectGenerationPayloadAsync(services, connectionId, generationId);
                         if (generationId is not null)
                         {
                             generationAvailable = await IsGenerationAvailableAsync(services, connectionId, generationId);
@@ -306,6 +309,11 @@ public static class WorkerCommandHost
                             connection.StagedGenerationId,
                             cleanupStatus = cleanup?.Status.ToString(),
                             generationAvailable,
+                            generationRecordPresent = persistedGeneration.RecordPresent,
+                            generationStatus = persistedGeneration.Status,
+                            generationOwnershipPreserved = persistedGeneration.OwnershipPreserved,
+                            generationPayloadPresent = persistedGeneration.ProtectedPayloadPresent,
+                            generationPlaintextValuePresent = persistedGeneration.PlaintextValuePresent,
                             operations = operations.Select(operation => new
                             {
                                 operation.Id,
@@ -420,6 +428,33 @@ public static class WorkerCommandHost
             return false;
         }
     }
+
+    internal static async Task<GenerationPayloadInspection> InspectGenerationPayloadAsync(IServiceProvider services, string connectionId, string generationId)
+    {
+        var name = ManagedSecretNames.ForGeneration(connectionId, generationId);
+        var secret = await services.GetRequiredService<ISecretRepository>().GetAsync(name);
+        if (secret is null)
+        {
+            return new GenerationPayloadInspection(false, null, false, false, false);
+        }
+
+        // Cleanup keeps a Deleted secret tombstone to prevent generation-name reuse; only the encrypted payload is removed.
+        var ownerMatches = string.Equals(secret.ManagedOwnerId, connectionId, StringComparison.Ordinal);
+        var generationMatches = string.Equals(secret.ManagedGenerationId, generationId, StringComparison.Ordinal);
+        return new GenerationPayloadInspection(
+            true,
+            secret.Status.ToString(),
+            ownerMatches && generationMatches,
+            secret.Versions.Any(version => version.Payload.Metadata.ContainsKey("protectedValue")),
+            secret.Versions.Any(version => version.Payload.Value is not null));
+    }
+
+    internal sealed record GenerationPayloadInspection(
+        bool RecordPresent,
+        string? Status,
+        bool OwnershipPreserved,
+        bool ProtectedPayloadPresent,
+        bool PlaintextValuePresent);
 
     private static bool IsGenerationMetadataAvailable(Secret? secret, string connectionId, string generationId)
     {

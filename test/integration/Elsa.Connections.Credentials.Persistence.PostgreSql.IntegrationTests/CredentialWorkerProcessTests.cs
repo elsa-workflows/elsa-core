@@ -267,6 +267,10 @@ public sealed class CredentialWorkerProcessTests(PostgreSqlConnectionsFixture fi
             Assert.Equal(1, kind == "revocation" ? provider.RevocationEffects : provider.UninstallEffects);
             var operationIds = kind == "revocation" ? provider.RevocationCallIds : provider.UninstallCallIds;
             Assert.Equal(new[] { operationId, operationId }, operationIds);
+            if (kind == "revocation")
+            {
+                Assert.True(state.GetProperty("generationPayloadPresent").GetBoolean());
+            }
         }
         else
         {
@@ -275,6 +279,11 @@ public sealed class CredentialWorkerProcessTests(PostgreSqlConnectionsFixture fi
             Assert.Equal("UnknownOutcome", operation.GetProperty("status").GetString());
             Assert.Equal(1, kind == "revocation" ? provider.RevocationCalls : provider.UninstallCalls);
             Assert.Equal(1, kind == "revocation" ? provider.RevocationEffects : provider.UninstallEffects);
+            if (kind == "revocation")
+            {
+                Assert.True(state.GetProperty("generationAvailable").GetBoolean());
+                Assert.True(state.GetProperty("generationPayloadPresent").GetBoolean());
+            }
         }
 
         if (kind == "revocation" && stableOperationId)
@@ -283,6 +292,11 @@ public sealed class CredentialWorkerProcessTests(PostgreSqlConnectionsFixture fi
             Assert.True(cleanup.ReadResult().GetProperty("succeeded").GetBoolean());
             var afterCleanup = (await _workers.RunAsync(["inspect", connectionId, generationId], recoveryEnvironment)).ReadResult();
             Assert.False(afterCleanup.GetProperty("generationAvailable").GetBoolean());
+            Assert.True(afterCleanup.GetProperty("generationRecordPresent").GetBoolean());
+            Assert.Equal("Deleted", afterCleanup.GetProperty("generationStatus").GetString());
+            Assert.True(afterCleanup.GetProperty("generationOwnershipPreserved").GetBoolean());
+            Assert.False(afterCleanup.GetProperty("generationPayloadPresent").GetBoolean());
+            Assert.False(afterCleanup.GetProperty("generationPlaintextValuePresent").GetBoolean());
             Assert.Equal(JsonValueKind.Null, afterCleanup.GetProperty("currentGenerationId").ValueKind);
         }
         else if (kind == "revocation")
@@ -346,6 +360,7 @@ public sealed class CredentialWorkerProcessTests(PostgreSqlConnectionsFixture fi
             {
                 Assert.False(isCleaned);
                 Assert.True(state.GetProperty("generationAvailable").GetBoolean());
+                Assert.True(state.GetProperty("generationPayloadPresent").GetBoolean());
                 Assert.Equal(generationId, state.GetProperty("currentGenerationId").GetString());
                 var revocation = Assert.Single(
                     state.GetProperty("operations").EnumerateArray(),
@@ -356,6 +371,11 @@ public sealed class CredentialWorkerProcessTests(PostgreSqlConnectionsFixture fi
             {
                 Assert.True(isCleaned);
                 Assert.False(state.GetProperty("generationAvailable").GetBoolean());
+                Assert.True(state.GetProperty("generationRecordPresent").GetBoolean());
+                Assert.Equal("Deleted", state.GetProperty("generationStatus").GetString());
+                Assert.True(state.GetProperty("generationOwnershipPreserved").GetBoolean());
+                Assert.False(state.GetProperty("generationPayloadPresent").GetBoolean());
+                Assert.False(state.GetProperty("generationPlaintextValuePresent").GetBoolean());
                 Assert.Equal("Deleted", state.GetProperty("cleanupStatus").GetString());
                 Assert.Equal(JsonValueKind.Null, state.GetProperty("currentGenerationId").ValueKind);
                 Assert.DoesNotContain(
