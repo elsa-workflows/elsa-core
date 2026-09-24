@@ -28,7 +28,7 @@ What that means for you:
 
 | Deployment | Existing secrets after upgrade |
 | --- | --- |
-| Single-tenant | Visible and unchanged. The filter is only installed when multitenancy is enabled, so nothing applies at all. |
+| Single-tenant | Visible subject to any host-configured query filter. The tenant condition checks the current context setting and allows all tenant IDs while multitenancy is disabled. |
 | Multi-tenant | **Not visible** to any named tenant. Assign each secret to its owning tenant, or set `TenantId` to `*` to share it across all of them. |
 
 The multi-tenant case is a deliberate, visible failure. The alternative — leaving every pre-existing secret

@@ -1,9 +1,11 @@
 using Elsa.Common.Entities;
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
+using Elsa.Tenants.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Persistence.EFCore;
 
@@ -21,6 +23,8 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     protected IServiceProvider ServiceProvider { get; }
     private readonly ElsaDbContextOptions? _elsaDbContextOptions;
     public string? TenantId { get; set; }
+
+    public bool IsTenantFilteringEnabled { get; }
 
     /// <summary>
     /// The default schema used by Elsa.
@@ -45,6 +49,8 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
 
         // ReSharper disable once VirtualMemberCallInConstructor
         Schema = !string.IsNullOrWhiteSpace(_elsaDbContextOptions?.SchemaName) ? _elsaDbContextOptions.SchemaName : ElsaSchema;
+
+        IsTenantFilteringEnabled = serviceProvider.GetService<IOptions<TenantsOptions>>()?.Value.IsEnabled ?? false;
 
         var tenantAccessor = serviceProvider.GetService<ITenantAccessor>();
         var tenantId = (tenantAccessor?.TenantId).NormalizeTenantId();
