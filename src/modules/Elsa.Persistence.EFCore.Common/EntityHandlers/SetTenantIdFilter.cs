@@ -11,16 +11,18 @@ namespace Elsa.Persistence.EFCore.EntityHandlers;
 /// <summary>
 /// Represents a class that applies a filter to set the TenantId for entities.
 /// </summary>
-public class SetTenantIdFilter(IOptions<TenantsOptions> tenantsOptions) : IEntityModelCreatingHandler
+public class SetTenantIdFilter : IEntityModelCreatingHandler
 {
+    public SetTenantIdFilter(IOptions<TenantsOptions> tenantsOptions) => ArgumentNullException.ThrowIfNull(tenantsOptions);
+
     /// <inheritdoc />
+    /// <remarks>
+    /// The filter is always part of the model. Whether it is active is read from the current context so
+    /// EF Core model caching cannot retain the tenant setting of the first context that built the model.
+    /// </remarks>
     public void Handle(ElsaDbContextBase dbContext, ModelBuilder modelBuilder, IMutableEntityType entityType)
     {
         if (!typeof(Entity).IsAssignableFrom(entityType.ClrType))
-            return;
-
-        // Only apply the tenant filter if multitenancy is enabled
-        if (!tenantsOptions.Value.IsEnabled)
             return;
 
         modelBuilder
@@ -44,6 +46,10 @@ public class SetTenantIdFilter(IOptions<TenantsOptions> tenantsOptions) : IEntit
             Expression.Constant(dbContext),
             nameof(ElsaDbContextBase.TenantId));
 
+        var tenantFilteringEnabled = Expression.Property(
+            Expression.Constant(dbContext),
+            nameof(ElsaDbContextBase.IsTenantFilteringEnabled));
+
         var equalityCheck = Expression.Equal(tenantIdProperty, tenantIdOnContext);
         var agnosticCheck = Expression.Equal(tenantIdProperty, Expression.Constant(Tenant.AgnosticTenantId, typeof(string)));
 
@@ -52,9 +58,10 @@ public class SetTenantIdFilter(IOptions<TenantsOptions> tenantsOptions) : IEntit
         var emptyContextCheck = Expression.Equal(tenantIdOnContext, Expression.Constant(string.Empty, typeof(string)));
         var backwardsCompatibilityCheck = Expression.AndAlso(nullTenantCheck, emptyContextCheck);
 
-        var body = Expression.OrElse(
+        var tenantVisibilityCheck = Expression.OrElse(
             Expression.OrElse(equalityCheck, agnosticCheck),
             backwardsCompatibilityCheck);
+        var body = Expression.OrElse(Expression.Not(tenantFilteringEnabled), tenantVisibilityCheck);
 
         return Expression.Lambda(body, parameter);
     }

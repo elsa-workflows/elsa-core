@@ -155,12 +155,7 @@ public class EFCoreSecretRepository(
         if (_tenancyEnabled.HasValue)
             return _tenancyEnabled.Value;
 
-        var entityType = dbContext.Model.FindEntityType(typeof(Secret));
-#if NET10_0_OR_GREATER
-        return entityType?.GetDeclaredQueryFilters().Any() == true;
-#else
-        return entityType?.FindAnnotation("QueryFilter")?.Value is not null;
-#endif
+        return dbContext.IsTenantFilteringEnabled;
     }
 
     private static bool IsNewSecretTenantOwnedByWriter(Secret secret, SecretsElsaDbContext dbContext, bool tenancyEnabled) =>
