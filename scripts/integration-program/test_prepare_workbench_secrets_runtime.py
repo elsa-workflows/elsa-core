@@ -335,8 +335,8 @@ diff --git a/{project} b/{project}
         for name in FIXTURE.REQUIRED_SECRETS_ASSEMBLIES:
             project_output = self.rehearsal / 'src' / 'modules' / name / 'bin' / 'Debug' / 'net10.0' / f'{name}.dll'
             project_output.parent.mkdir(parents=True)
-            project_output.write_bytes(name.encode())
-            (host_dll.parent / f'{name}.dll').write_bytes(name.encode())
+            project_output.write_bytes(b'synthetic assembly bytes')
+            (host_dll.parent / f'{name}.dll').write_bytes(b'synthetic assembly bytes')
         results = [
             subprocess.CompletedProcess([], 0, 'restore passed', ''),
             subprocess.CompletedProcess([], 0, 'build passed', '')
