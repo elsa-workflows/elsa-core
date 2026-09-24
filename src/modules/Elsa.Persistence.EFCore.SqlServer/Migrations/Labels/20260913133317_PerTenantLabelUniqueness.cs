@@ -48,10 +48,12 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Labels
                         HAVING COUNT(*) > 1
                     ) AS Duplicates;
 
-                    THROW 50001, CONCAT(
+                    DECLARE @ErrorMessage nvarchar(2048);
+                    SET @ErrorMessage = CONCAT(
                         N'Cannot create unique index IX_Label_TenantId_NormalizedName because leftover duplicate (TenantId, NormalizedName) rows exist. Operators must resolve leftover (TenantId, NormalizedName) rows before upgrade. Duplicate keys: ',
                         LEFT(@DuplicateKeys, 1500)
-                    ), 1;
+                    );
+                    THROW 50001, @ErrorMessage, 1;
                 END
                 """);
 
@@ -69,10 +71,12 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Labels
                     FROM [{_schema.Schema}].[Labels]
                     WHERE LEN([Name]) > 255 OR LEN([NormalizedName]) > 255;
 
-                    THROW 50002, CONCAT(
+                    DECLARE @ErrorMessage nvarchar(2048);
+                    SET @ErrorMessage = CONCAT(
                         N'Cannot alter Labels.Name / Labels.NormalizedName to nvarchar(255) because leftover rows exceed 255 characters. Operators must shorten or remove those rows before upgrade. Over-length Ids: ',
                         LEFT(@OverLengthIds, 1500)
-                    ), 1;
+                    );
+                    THROW 50002, @ErrorMessage, 1;
                 END
                 """);
 
