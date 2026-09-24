@@ -38,44 +38,43 @@ public sealed class EFCoreConnectionCredentialUseGrantStore(
         }
 
         await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
-        var binding = await db.CredentialBindings.AsNoTracking().SingleOrDefaultAsync(x =>
-            x.TenantId == tenantId && x.EnvironmentId == environmentId && x.LogicalBindingId == logicalBindingId,
-            cancellationToken);
-        if (binding is null || binding.Revision != bindingRevision || binding.ConnectionId != connectionId ||
-            !await db.Connections.AnyAsync(x => x.Id == connectionId && x.TenantId == tenantId &&
-                x.EnvironmentId == environmentId && x.Status == ConnectionStatus.Active, cancellationToken) ||
-            await GrantQuery(db, tenantId, environmentId, workflowInstanceId, logicalBindingId).AnyAsync(cancellationToken))
-        {
-            return null;
-        }
-
-        var grant = new ConnectionCredentialUseGrant
-        {
-            TenantId = tenantId,
-            EnvironmentId = environmentId,
-            WorkflowInstanceId = workflowInstanceId,
-            LogicalBindingId = logicalBindingId,
-            ConnectionId = connectionId,
-            BindingRevision = bindingRevision,
-            Revision = 1,
-            IsActive = true,
-            IssuedByActorId = actorId,
-            IssuedAt = issuedAt
-        };
-        db.CredentialUseGrants.Add(grant);
         try
         {
+            await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+            var binding = await db.CredentialBindings.AsNoTracking().SingleOrDefaultAsync(x =>
+                x.TenantId == tenantId && x.EnvironmentId == environmentId && x.LogicalBindingId == logicalBindingId,
+                cancellationToken);
+            if (binding is null || binding.Revision != bindingRevision || binding.ConnectionId != connectionId ||
+                !await db.Connections.AnyAsync(x => x.Id == connectionId && x.TenantId == tenantId &&
+                    x.EnvironmentId == environmentId && x.Status == ConnectionStatus.Active, cancellationToken) ||
+                await GrantQuery(db, tenantId, environmentId, workflowInstanceId, logicalBindingId).AnyAsync(cancellationToken))
+            {
+                return null;
+            }
+
+            var grant = new ConnectionCredentialUseGrant
+            {
+                TenantId = tenantId,
+                EnvironmentId = environmentId,
+                WorkflowInstanceId = workflowInstanceId,
+                LogicalBindingId = logicalBindingId,
+                ConnectionId = connectionId,
+                BindingRevision = bindingRevision,
+                Revision = 1,
+                IsActive = true,
+                IssuedByActorId = actorId,
+                IssuedAt = issuedAt
+            };
+            db.CredentialUseGrants.Add(grant);
             await db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+            return grant;
         }
-        catch (DbUpdateException exception) when (
-            !cancellationToken.IsCancellationRequested && conflictClassifier.IsDuplicateBindingKey(exception))
+        catch (Exception exception) when (!cancellationToken.IsCancellationRequested &&
+            conflictClassifier.IsConcurrentGrantIssuanceConflict(exception))
         {
             return null;
         }
-
-        return grant;
     }
 
     public async Task<bool> TryWithdrawAsync(

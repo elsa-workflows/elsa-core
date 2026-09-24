@@ -18,7 +18,17 @@ public sealed class WorkflowCredentialUseGrantsFeature(IModule module) : Feature
         Services.TryAddScoped<IConnectionCredentialUseGrantStore, UnavailableConnectionCredentialUseGrantStore>();
         Services.TryAddScoped<IConnectionCredentialGrantManagementAuthorizer, DenyAllConnectionCredentialGrantManagementAuthorizer>();
         Services.AddScoped<IWorkflowCredentialGrantManager, WorkflowCredentialGrantManager>();
-        Services.AddScoped<IConnectionCredentialBindingUseAuthorizer>(sp => new StoredConnectionCredentialBindingUseAuthorizer(
+        var defaultUsePolicy = Services.FirstOrDefault(descriptor =>
+            descriptor.ServiceType == typeof(IConnectionCredentialBindingUseAuthorizer) &&
+            descriptor.ImplementationType == typeof(DenyAllConnectionCredentialBindingUseAuthorizer));
+        if (defaultUsePolicy != null)
+        {
+            Services.Remove(defaultUsePolicy);
+        }
+
+        // Grants replace only the adapter's default denial. A host's additional use policy remains in force.
+        Services.TryAddScoped<IConnectionCredentialBindingUseAuthorizer, AllowGrantControlledConnectionCredentialBindingUseAuthorizer>();
+        Services.AddScoped(sp => new StoredConnectionCredentialBindingUseAuthorizer(
             sp.GetRequiredService<IConnectionCredentialUseGrantStore>(), sp.GetService<IConnectionLifecycleStore>()));
     }
 }

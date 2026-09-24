@@ -192,6 +192,36 @@ public sealed class PostgreSqlConnectionsPersistenceTests(PostgreSqlConnectionsF
         Assert.True(classifier.IsDuplicateBindingKey(uniqueViolation));
         Assert.False(classifier.IsDuplicateBindingKey(serializationFailure));
         Assert.False(classifier.IsDuplicateBindingKey(nonProviderFailure));
+        Assert.True(classifier.IsConcurrentGrantIssuanceConflict(uniqueViolation));
+        Assert.True(classifier.IsConcurrentGrantIssuanceConflict(serializationFailure));
+        Assert.False(classifier.IsConcurrentGrantIssuanceConflict(nonProviderFailure));
+    }
+
+    [Fact]
+    public async Task ConcurrentGrantIssuanceReturnsOneSuccessAndOneControlledConflict()
+    {
+        await fixture.ResetSchemaAsync();
+        var saveGate = new TwoSaveChangesGate(useGrant: true);
+        await using var firstWorker = CreateWorker(fixture.ConnectionString, saveGate: saveGate);
+        await MigrateAsync(firstWorker);
+        await firstWorker.GetRequiredService<IConnectionLifecycleStore>()
+            .CreateAsync(Connection("conn-grant-race", "tenant-a", "env-a"));
+        Assert.NotNull(await firstWorker.GetRequiredService<IConnectionCredentialBindingStore>()
+            .TryCreateAsync("tenant-a", "env-a", "binding-race", "conn-grant-race"));
+        await using var secondWorker = CreateWorker(fixture.ConnectionString, saveGate: saveGate);
+        var now = DateTimeOffset.UtcNow;
+        saveGate.Arm();
+
+        var results = await Task.WhenAll(
+            firstWorker.GetRequiredService<IConnectionCredentialUseGrantStore>().TryIssueAsync(
+                "tenant-a", "env-a", "workflow-race", "binding-race", "conn-grant-race", 1, "actor-1", now),
+            secondWorker.GetRequiredService<IConnectionCredentialUseGrantStore>().TryIssueAsync(
+                "tenant-a", "env-a", "workflow-race", "binding-race", "conn-grant-race", 1, "actor-2", now));
+
+        Assert.Single(results, grant => grant is not null);
+        Assert.Single(results, grant => grant is null);
+        Assert.NotNull(await firstWorker.GetRequiredService<IConnectionCredentialUseGrantStore>()
+            .FindAsync("tenant-a", "env-a", "workflow-race", "binding-race"));
     }
 
     [Fact]
@@ -328,7 +358,7 @@ public sealed class PostgreSqlConnectionsPersistenceTests(PostgreSqlConnectionsF
     }
 }
 
-public sealed class TwoSaveChangesGate : SaveChangesInterceptor
+public sealed class TwoSaveChangesGate(bool useGrant = false) : SaveChangesInterceptor
 {
     private readonly TaskCompletionSource _bothArrived = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private int _armed;
@@ -341,8 +371,12 @@ public sealed class TwoSaveChangesGate : SaveChangesInterceptor
         InterceptionResult<int> result,
         CancellationToken cancellationToken = default)
     {
-        if (Volatile.Read(ref _armed) == 1 && eventData.Context?.ChangeTracker.Entries<ConnectionCredentialBinding>()
-                .Any(entry => entry.State == EntityState.Added) == true)
+        var addingTarget = useGrant
+            ? eventData.Context?.ChangeTracker.Entries<ConnectionCredentialUseGrant>()
+                .Any(entry => entry.State == EntityState.Added) == true
+            : eventData.Context?.ChangeTracker.Entries<ConnectionCredentialBinding>()
+                .Any(entry => entry.State == EntityState.Added) == true;
+        if (Volatile.Read(ref _armed) == 1 && addingTarget)
         {
             if (Interlocked.Increment(ref _arrivals) == 2)
             {
