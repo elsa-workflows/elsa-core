@@ -23,7 +23,11 @@ def main():
     dll = evidence / 'consolidated/bin/Debug' / receipt['framework'] / 'ActivityContract.dll'
     assembly_list = ','.join(row['assembly'] for row in receipt['matrix'])
     results = []
-    for name in ['unknown-type', 'changed-id', 'changed-version', 'changed-literal', 'first-write-id']:
+    cases = ['unknown-type', 'changed-id', 'changed-version', 'changed-literal', 'first-write-id']
+    generated_agents = [d['TypeName'] for d in baseline['descriptors'] if (d.get('Provider') or '').endswith('AgentActivityProvider')]
+    if generated_agents:
+        cases.append('generated-literal')
+    for name in cases:
         changed = copy.deepcopy(baseline)
         workflow_field = 'firstWriteWorkflow' if name == 'first-write-id' else 'serializedWorkflow'
         workflow = json.loads(changed[workflow_field])
@@ -34,6 +38,9 @@ def main():
             activity['id'] = 'different-id'
         elif name == 'changed-version':
             activity['version'] = 99999
+        elif name == 'generated-literal':
+            generated = next(item for item in workflow['activities'] if item['type'] == generated_agents[0])
+            generated['text']['expression']['value'] = 'changed-generated-probe'
         else:
             candidates = [value['expression'] for item in workflow['activities'] for value in item.values() if isinstance(value, dict) and isinstance(value.get('expression'), dict) and value['expression'].get('type') == 'Literal' and value['expression'].get('value') == 'compatibility-probe']
             if not candidates:

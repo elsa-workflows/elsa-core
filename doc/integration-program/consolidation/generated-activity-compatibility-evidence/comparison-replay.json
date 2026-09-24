@@ -1,0 +1,61 @@
+{
+  "scope": "Comparison-only replay; original host receipts and hashes unchanged",
+  "runnerSha256": "78fa4b266d29f0aa8e384b70b10981b511c4a5fcb9bf145ded969d59ba54d4c7",
+  "matrixSha256": "5eb6437d3d3788bb101c30743af6e0dac30e5cfe657cda245b804663ea3ff8a5",
+  "frameworks": [
+    {
+      "framework": "net8.0",
+      "allowedSourceContracts": [
+        "Elsa.AddLdapEntry:1",
+        "Elsa.CompareLdapEntry:1",
+        "Elsa.DeleteLdapEntry:1",
+        "Elsa.ModifyLdapEntry:1",
+        "Elsa.MoveLdapEntry:1",
+        "Elsa.MqttMessageReceived:1",
+        "Elsa.PublishMqttMessage:1",
+        "Elsa.SearchLdapEntries:1",
+        "Elsa.SearchLdapEntry:1"
+      ],
+      "unexpectedAdditions": [],
+      "changedContracts": [],
+      "releasedSha256": "ff5501c2ef54d257ae346982a8f6a34d64ca9ebc6eeff06402c3f05b6a609e93",
+      "consolidatedSha256": "b48b14a4d77a1577f212f497ec8abead6448c088deffef379ae6684363323fc8"
+    },
+    {
+      "framework": "net9.0",
+      "allowedSourceContracts": [
+        "Elsa.AddLdapEntry:1",
+        "Elsa.CompareLdapEntry:1",
+        "Elsa.DeleteLdapEntry:1",
+        "Elsa.ModifyLdapEntry:1",
+        "Elsa.MoveLdapEntry:1",
+        "Elsa.MqttMessageReceived:1",
+        "Elsa.PublishMqttMessage:1",
+        "Elsa.SearchLdapEntries:1",
+        "Elsa.SearchLdapEntry:1"
+      ],
+      "unexpectedAdditions": [],
+      "changedContracts": [],
+      "releasedSha256": "9c676a9ea75977111b779f37dff83b8816acc310b48e43d6589f9a70281c0f2b",
+      "consolidatedSha256": "8dc96d8c21debf127eed979ef2c5d3be7baacaab5f16b5ea4422f306ff99d62c"
+    },
+    {
+      "framework": "net10.0",
+      "allowedSourceContracts": [
+        "Elsa.AddLdapEntry:1",
+        "Elsa.CompareLdapEntry:1",
+        "Elsa.DeleteLdapEntry:1",
+        "Elsa.ModifyLdapEntry:1",
+        "Elsa.MoveLdapEntry:1",
+        "Elsa.MqttMessageReceived:1",
+        "Elsa.PublishMqttMessage:1",
+        "Elsa.SearchLdapEntries:1",
+        "Elsa.SearchLdapEntry:1"
+      ],
+      "unexpectedAdditions": [],
+      "changedContracts": [],
+      "releasedSha256": "e4a884735b19a0e668fa0494585fe09adc21b8379be997fe22169c59b48c5b16",
+      "consolidatedSha256": "b570dce0a8503591f4c2cec574d285d0ee9313e2623a1aa1d192cca23c819c9b"
+    }
+  ]
+}

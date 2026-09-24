@@ -45,11 +45,13 @@ def write_project(host, framework, entries, source):
             ET.SubElement(items, 'PackageReference', Include=entry['assembly'], Version='[' + entry['releasedVersion'] + ']')
     ET.indent(project)
     ET.ElementTree(project).write(host / 'ActivityContract.csproj', encoding='unicode')
-    shutil.copyfile(HERE / 'Program.cs', host / 'Program.cs')
+    for code in HERE.glob('*.cs'):
+        shutil.copyfile(code, host / code.name)
 
 
 def normalized_descriptor(descriptor):
     descriptor = json.loads(json.dumps(descriptor))
+    descriptor.pop("Provider", None)  # Provider provenance is retained in receipts, not a workflow contract.
     for group in ['Inputs', 'Outputs']:
         for field in descriptor[group]:
             field.pop('Type')  # Raw assembly-qualified types remain in host receipts.
@@ -58,10 +60,28 @@ def normalized_descriptor(descriptor):
 
 def descriptor_map(result):
     descriptors = result['descriptors']
-    keys = [descriptor['ClrType'] for descriptor in descriptors]
-    if len(keys) != len(set(keys)):
+    assemblies_by_type = {}
+    for descriptor in descriptors:
+        assemblies_by_type.setdefault(descriptor['ClrType'], set()).add(descriptor['Assembly'])
+    if any(len(assemblies) > 1 for assemblies in assemblies_by_type.values()):
         raise ValueError('Duplicate CLR full names across descriptor assemblies; comparison would be ambiguous.')
-    return {descriptor['ClrType']: normalized_descriptor(descriptor) for descriptor in descriptors}
+    keys = [(descriptor['TypeName'], descriptor['Version']) for descriptor in descriptors]
+    if len(keys) != len(set(keys)):
+        raise ValueError('Duplicate activity identity in descriptor evidence.')
+    return {f"{descriptor['TypeName']}:{descriptor['Version']}": normalized_descriptor(descriptor) for descriptor in descriptors}
+
+
+def classify_added_descriptors(before, after, matrix):
+    reviewed = [
+        row
+        for entry in matrix if entry['releasedVersion'] is None
+        for row in entry.get('allowedSourceDescriptors', [])
+        if row['Assembly'] == entry['assembly']
+    ]
+    added = sorted(after.keys() - before.keys())
+    allowed = [key for key in added if after[key] in reviewed]
+    unexpected = sorted(set(added) - set(allowed))
+    return allowed, unexpected
 
 
 def classify_added_descriptors(before, after, matrix):
@@ -99,7 +119,7 @@ def main():
         (output / name).write_text('<Project/>\n')
     before_inputs = source_inputs(source)
     (output / 'source-inputs.json').write_text(json.dumps(before_inputs, indent=2) + '\n')
-    receipt = {'framework': args.framework, 'sdk': '10.0.300', 'matrix': entries, 'sourceHead': subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip(), 'sourceStatus': subprocess.check_output(['git', '-C', str(source), 'status', '--porcelain'], text=True), 'harness': [{'path': p.name, 'sha256': digest(p)} for p in [HERE / 'Program.cs', HERE / 'matrix.json', Path(__file__).resolve()]], 'hosts': {}}
+    receipt = {'framework': args.framework, 'sdk': '10.0.300', 'matrix': entries, 'sourceHead': subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip(), 'sourceStatus': subprocess.check_output(['git', '-C', str(source), 'status', '--porcelain'], text=True), 'harness': [{'path': p.name, 'sha256': digest(p)} for p in [*sorted(HERE.glob('*.cs')), HERE / 'matrix.json', Path(__file__).resolve()]], 'hosts': {}}
     for name in ['released', 'consolidated']:
         host = output / name
         host.mkdir()

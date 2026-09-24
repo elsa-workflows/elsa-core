@@ -41,6 +41,17 @@ class ContractComparisonTests(unittest.TestCase):
             runner.descriptor_map({'descriptors': [first, second]})
 
 
+    def test_generated_variants_can_share_clr_type(self):
+        first = self.descriptor()
+        second = dict(first, TypeName='Example.Generated')
+        self.assertEqual(2, len(runner.descriptor_map({'descriptors': [first, second]})))
+
+    def test_duplicate_activity_identity_is_rejected(self):
+        first = self.descriptor()
+        second = dict(first, ClrType='Example.Other')
+        with self.assertRaisesRegex(ValueError, 'Duplicate activity identity'):
+            runner.descriptor_map({'descriptors': [first, second]})
+
     def test_added_descriptor_in_released_assembly_is_rejected(self):
         before = {'original': self.descriptor()}
         after = dict(before, added=self.descriptor())
