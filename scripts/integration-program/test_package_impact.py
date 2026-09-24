@@ -1,5 +1,7 @@
 import sys
 import unittest
+import fnmatch
+import re
 from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent
@@ -10,6 +12,16 @@ from package_impact import InventoryGraph  # noqa: E402
 
 
 class PackageImpactTests(unittest.TestCase):
+    def test_workflow_filters_cover_every_executed_proof_helper(self):
+        workflow = (REPOSITORY / '.github/workflows/package-impact-closure.yml').read_text()
+        pull_request_paths = workflow.split('  pull_request:\n', 1)[1].split('  workflow_dispatch:', 1)[0]
+        filters = re.findall(r"^\s+- '([^']+)'$", pull_request_paths, re.MULTILINE)
+        invoked_scripts = set(re.findall(r'python\s+(scripts/integration-program/[\w.-]+\.py)', workflow))
+
+        uncovered = sorted(script for script in invoked_scripts
+                           if not any(fnmatch.fnmatchcase(script, pattern) for pattern in filters))
+        self.assertEqual([], uncovered)
+
     @classmethod
     def setUpClass(cls):
         cls.graph = InventoryGraph.from_path(

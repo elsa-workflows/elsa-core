@@ -260,6 +260,53 @@ def build_plan(
             f"Expected the manifest's release-unit tests {sorted(declared_unit_tests)} "
             f"for a module-only change; selector returned {module_impacted}"
         )
+    release_test_keys = set(declared_unit_tests)
+    if not release_test_keys.issubset(set(impacted)):
+        raise ValueError(
+            "The shared Core change must include every declared release-unit test: "
+            f"missing={sorted(release_test_keys - set(impacted))}"
+        )
+    if len(impacted) <= len(module_impacted):
+        raise ValueError(
+            "The shared Core change must expand the test closure beyond the release-unit-only change: "
+            f"shared={len(impacted)}, release_unit={len(module_impacted)}"
+        )
+    if "Elsa.Mqtt" in packages:
+        raise ValueError("The unchanged Elsa.Mqtt connector must not be selected for the Slack release unit")
+
+    shared_test_projects = [f"{repository}:{path}" for repository, path in impacted]
+    release_test_projects = [f"{repository}:{path}" for repository, path in module_impacted]
+    selector_assertions = {
+        "status": "passed",
+        "release_unit": {
+            "id": unit["id"],
+            "package_id": unit["package_id"],
+            "package_projects_to_pack": packages,
+        },
+        "slack_only_change": {
+            "changed_project": f"{release_unit_key[0]}:{release_unit_key[1]}",
+            "affected_test_projects": release_test_projects,
+            "affected_test_project_count": len(release_test_projects),
+            "package_ids_to_pack": packages,
+            "test_projects_match_manifest": sorted(release_test_projects) == sorted([
+                f"{repository}:{path}" for repository, path in declared_unit_tests
+            ]),
+            "only_release_unit_package_selected": packages == [unit["package_id"]],
+        },
+        "shared_core_change": {
+            "changed_project": f"{CHANGED_PROJECT[0]}:{CHANGED_PROJECT[1]}",
+            "affected_test_projects": shared_test_projects,
+            "affected_test_project_count": len(shared_test_projects),
+            "package_selection_basis": "explicit release-unit manifest; not a Core release package plan",
+            "package_ids_to_pack": packages,
+            "release_unit_tests_in_closure": release_test_keys.issubset(set(impacted)),
+            "test_closure_expanded": len(shared_test_projects) > len(release_test_projects),
+        },
+        "unchanged_package_control": {
+            "package_id": "Elsa.Mqtt",
+            "selected_for_pack": "Elsa.Mqtt" in packages,
+        },
+    }
 
     source_receipts: dict[str, dict[str, str]] = {}
     for repository, source_path in sources.items():
@@ -315,6 +362,7 @@ def build_plan(
             "packages_to_pack": packages,
             "affected_test_project_count": len(impacted),
         },
+        "paired_selector_assertions": selector_assertions,
         "module_change_scenario": {
             "changed_project": f"{release_unit_key[0]}:{release_unit_key[1]}",
             "affected_test_projects": [f"{repository}:{path}" for repository, path in module_impacted],
