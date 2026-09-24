@@ -534,9 +534,18 @@ if __name__ == '__main__':
         detail = ''
         if CURRENT_STAGE == 'pinned-core-restore':
             # The restore precedes all database/key creation. Emit only diagnostic
-            # codes, never NuGet output that may contain environment-specific paths.
+            # codes and NuGet's package-graph mismatch text, never command output
+            # or environment-specific paths.
             codes = sorted(set(re.findall(r'\b(?:NU|NETSDK)\d{4}\b', str(error))))
             detail = f': restore codes={",".join(codes) if codes else "none"}'
+            mismatches = []
+            for line in str(error).splitlines():
+                match = re.search(r'\bNU1004:\s*(.*)', line)
+                if match:
+                    mismatch = re.sub(r'https?://\S+|(?:/[A-Za-z0-9_.-]+)+', '<path>', match.group(1))
+                    mismatches.append(mismatch[:300])
+            if mismatches:
+                detail += '; lock mismatch=' + ' | '.join(mismatches[:3])
         match = re.search(r'Bridge fixture failed(?: at [A-Za-z0-9_-]+)?: [A-Za-z0-9_]+(?: SQL error number=[0-9]+)?', str(error))
         if match and not detail:
             detail = f': {match.group(0)}'
