@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 import json
 import re
 from pathlib import Path, PurePosixPath
@@ -197,8 +197,8 @@ def _validate_unit(unit: Any, index: int) -> dict[str, Any]:
     if not isinstance(current_publishers, list) or len(current_publishers) != 1:
         raise ValueError(f"{prefix}.publisher.current_publishers must contain exactly one current publisher")
     current_publisher = _validate_publisher(current_publishers[0], f"{prefix}.publisher.current_publishers[0]")
-    if current_publisher["repository"] != source["repository"]:
-        raise ValueError(f"{prefix} publisher must match the current source repository")
+    if current_publisher["repository"] not in {source["repository"], mapped["repository"]}:
+        raise ValueError(f"{prefix} publisher must be the released or mapped source repository")
     if publisher["cutover_requires_review"] is not True:
         raise ValueError(f"{prefix}.publisher.cutover_requires_review must be true")
 
@@ -206,7 +206,7 @@ def _validate_unit(unit: Any, index: int) -> dict[str, Any]:
         unit["versioning"],
         {
             "scheme", "stable_authority", "stable_must_increase", "published_versions_are_never_reused",
-            "bump_rules", "preview_format", "local_proof_version", "local_proof_is_release_allocation",
+            "last_known_published_stable", "bump_rules", "preview_format", "local_proof_version", "local_proof_is_release_allocation",
             "local_proof_may_publish",
         },
         f"{prefix}.versioning",
@@ -217,6 +217,19 @@ def _validate_unit(unit: Any, index: int) -> dict[str, Any]:
         raise ValueError(f"{prefix}.versioning must use the current publisher and package history as stable authority")
     if versioning["stable_must_increase"] is not True or versioning["published_versions_are_never_reused"] is not True:
         raise ValueError(f"{prefix}.versioning must require monotonic, non-reused stable versions")
+    floor = _require_keys(
+        versioning["last_known_published_stable"], {"version", "source_url", "checked_on"},
+        f"{prefix}.versioning.last_known_published_stable",
+    )
+    if not _is_semver2(floor["version"]) or "-" in floor["version"] or "+" in floor["version"]:
+        raise ValueError(f"{prefix}.versioning.last_known_published_stable.version must be stable SemVer")
+    official_index = f"https://api.nuget.org/v3-flatcontainer/{unit['package_id'].lower()}/index.json"
+    if floor["source_url"] != official_index:
+        raise ValueError(f"{prefix}.versioning.last_known_published_stable.source_url must be the official package index")
+    try:
+        date.fromisoformat(floor["checked_on"])
+    except (TypeError, ValueError) as error:
+        raise ValueError(f"{prefix}.versioning.last_known_published_stable.checked_on must be a date") from error
     expected_bump_rules = {
         "compatible_fix": "patch",
         "compatible_feature": "minor",
@@ -281,6 +294,7 @@ def validate_publisher_handoff(
         "released_artifact_sha256": unit["source"]["provenance"]["released_artifact_sha256"],
         "local_proof_version": unit["versioning"]["local_proof_version"],
         "local_proof_publishable": unit["versioning"]["local_proof_may_publish"],
+        "last_known_published_stable": unit["versioning"]["last_known_published_stable"],
     }
     if proposed_publisher is None and receipt is None:
         return {
@@ -290,6 +304,7 @@ def validate_publisher_handoff(
             "handoff_status": "not-cut-over",
             "publication_performed": False,
             "live_publisher_changed": False,
+            "live_feed_history_verified": False,
         }
     if proposed_publisher is None or receipt is None:
         raise ValueError("A proposed publisher and reviewed cutover receipt are both required")
@@ -336,8 +351,11 @@ def validate_publisher_handoff(
         raise ValueError("handoff_receipt.release_version must be a SemVer string")
     if release_version == proof_version or "proof" in release_version.casefold():
         raise ValueError("A local proof version cannot be used as a release version")
-    if not _is_semver2(release_version) or "-" in release_version:
+    if not _is_semver2(release_version) or "-" in release_version or "+" in release_version:
         raise ValueError("handoff_receipt.release_version must be a stable SemVer version")
+    floor_version = unit["versioning"]["last_known_published_stable"]["version"]
+    if tuple(map(int, release_version.split('.'))) <= tuple(map(int, floor_version.split('.'))):
+        raise ValueError("handoff_receipt.release_version must exceed the last known published stable version")
 
     review = _require_keys(
         receipt["review"], {"status", "reference", "commit_sha"}, "handoff_receipt.review"
@@ -368,6 +386,7 @@ def validate_publisher_handoff(
         "handoff_status": "simulated-receipt-valid",
         "publication_performed": False,
         "live_publisher_changed": False,
+        "live_feed_history_verified": False,
     }
 
 

@@ -40,6 +40,7 @@ class PublisherHandoffTests(unittest.TestCase):
         self.assertFalse(result["provenance"]["local_proof_publishable"])
         self.assertFalse(result["publication_performed"])
         self.assertFalse(result["live_publisher_changed"])
+        self.assertFalse(result["live_feed_history_verified"])
         self.assertEqual("elsa-extensions", get_current_publisher(self.unit)["repository"])
 
     def test_proposed_publisher_without_receipt_fails_closed(self):
@@ -68,6 +69,31 @@ class PublisherHandoffTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "proof version cannot be used"):
             validate_publisher_handoff(self.unit, self.proposed, receipt)
+
+    def test_published_stable_version_cannot_be_reused(self):
+        for version in ("3.8.4", "3.8.3"):
+            with self.subTest(version=version):
+                receipt = self.receipt()
+                receipt["release_version"] = version
+                with self.assertRaisesRegex(ValueError, "exceed the last known published stable"):
+                    validate_publisher_handoff(self.unit, self.proposed, receipt)
+
+    def test_build_metadata_cannot_disguise_a_published_version(self):
+        receipt = self.receipt()
+        receipt["release_version"] = "3.8.4+repack"
+        with self.assertRaisesRegex(ValueError, "stable SemVer version"):
+            validate_publisher_handoff(self.unit, self.proposed, receipt)
+
+    def test_completed_handoff_can_record_core_without_rewriting_released_source_provenance(self):
+        document = copy.deepcopy(self.document)
+        unit = document["release_units"][0]
+        unit["publisher"]["current_publishers"] = [dict(self.proposed)]
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "release-units.json"
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            loaded = get_unit(load_manifest(manifest), DEFAULT_UNIT_ID)
+        self.assertEqual("elsa-core", get_current_publisher(loaded)["repository"])
+        self.assertEqual("elsa-extensions", loaded["source"]["repository"])
 
     def test_unapproved_receipt_is_rejected(self):
         receipt = self.receipt()

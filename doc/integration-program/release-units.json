@@ -55,6 +55,11 @@
         "stable_authority": "current-publisher-and-package-feed-history",
         "stable_must_increase": true,
         "published_versions_are_never_reused": true,
+        "last_known_published_stable": {
+          "version": "3.8.4",
+          "source_url": "https://api.nuget.org/v3-flatcontainer/elsa.slack/index.json",
+          "checked_on": "2026-09-24"
+        },
         "bump_rules": {
           "compatible_fix": "patch",
           "compatible_feature": "minor",
