@@ -4,6 +4,7 @@ import gzip
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -30,6 +31,15 @@ class ConsolidatedPreparationTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
+        # Git can spawn auto-maintenance after fixture commits. Keep the
+        # temporary object stores quiescent before unittest removes them.
+        self.enterContext(patch.dict(os.environ, {
+            'GIT_CONFIG_COUNT': '2',
+            'GIT_CONFIG_KEY_0': 'maintenance.auto',
+            'GIT_CONFIG_VALUE_0': 'false',
+            'GIT_CONFIG_KEY_1': 'gc.auto',
+            'GIT_CONFIG_VALUE_1': '0',
+        }))
         self.root = Path(self.temp.name)
         repos, refs = {}, {}
         for name, files in {
