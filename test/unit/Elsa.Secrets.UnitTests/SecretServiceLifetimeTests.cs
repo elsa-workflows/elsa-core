@@ -1,5 +1,7 @@
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
+using Elsa.ExternalAuthentication.Contracts;
+using Elsa.ExternalAuthentication.Services;
 using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Features;
 using Elsa.Secrets.Persistence.EFCore.Extensions;
@@ -11,8 +13,10 @@ namespace Elsa.Secrets.UnitTests;
 
 public sealed class SecretServiceLifetimeTests
 {
-    [Fact]
-    public void EntityFrameworkCoreSecretsServicesPassValidateOnBuild()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void EntityFrameworkCoreSecretsServicesPassValidateOnBuild(bool withExternalAuthenticationBridge)
     {
         var services = new ServiceCollection();
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
@@ -21,6 +25,11 @@ public sealed class SecretServiceLifetimeTests
         var secrets = module.Configure<SecretsFeature>();
         secrets.UseEntityFrameworkCore(feature => feature.UseSqlite("Data Source=:memory:"));
         module.Apply();
+        if (withExternalAuthenticationBridge)
+        {
+            services.AddSingleton<IExternalAuthenticationHandleHasher>(new HmacExternalAuthenticationHandleHasher());
+            services.AddElsaSecretsExternalAuthentication();
+        }
 
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions
         {
@@ -31,5 +40,10 @@ public sealed class SecretServiceLifetimeTests
         using var scope = provider.CreateScope();
         Assert.NotNull(scope.ServiceProvider.GetRequiredService<ISecretManager>());
         Assert.NotNull(scope.ServiceProvider.GetRequiredService<ISecretResolver>());
+        if (withExternalAuthenticationBridge)
+        {
+            Assert.NotNull(scope.ServiceProvider.GetRequiredService<ISecretBindingResolver>());
+            Assert.NotNull(scope.ServiceProvider.GetRequiredService<IManagedSecretBindingWriter>());
+        }
     }
 }
