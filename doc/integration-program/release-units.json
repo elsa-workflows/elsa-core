@@ -7,6 +7,13 @@
       "source": {
         "repository": "elsa-extensions",
         "project_path": "src/modules/communication/Elsa.Slack/Elsa.Slack.csproj",
+        "provenance": {
+          "source_commits": {
+            "elsa-core": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+            "elsa-extensions": "154ba15fb4da85b4bebecfbe43639579cbda1d0d"
+          },
+          "released_artifact_sha256": "6df6fd1c3e7558c7c1124fa232879cfa539196fa35a3edd9055cfcc2e0a178e6"
+        },
         "test_projects": [
           {
             "project_path": "test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj",
@@ -17,6 +24,11 @@
       "mapped": {
         "repository": "elsa-core",
         "project_path": "src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj",
+        "source_commits": {
+          "elsa-core": "8e893e02c4ac089d526b0a0d294a8546f021d072",
+          "elsa-extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287",
+          "elsa-studio": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822"
+        },
         "test_projects": [
           {
             "source_project_path": "test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj",
@@ -30,8 +42,12 @@
         {"package_id": "SlackNet", "version": "0.17.7", "scope": "external"}
       ],
       "publisher": {
-        "repository": "elsa-extensions",
-        "status": "sole-current-publisher",
+        "current_publishers": [
+          {
+            "repository": "elsa-extensions",
+            "workflow_path": ".github/workflows/packages.yml"
+          }
+        ],
         "cutover_requires_review": true
       },
       "versioning": {
@@ -39,6 +55,11 @@
         "stable_authority": "current-publisher-and-package-feed-history",
         "stable_must_increase": true,
         "published_versions_are_never_reused": true,
+        "last_known_published_stable": {
+          "version": "3.8.4",
+          "source_url": "https://api.nuget.org/v3-flatcontainer/elsa.slack/index.json",
+          "checked_on": "2026-09-24"
+        },
         "bump_rules": {
           "compatible_fix": "patch",
           "compatible_feature": "minor",

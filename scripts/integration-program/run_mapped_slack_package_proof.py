@@ -25,6 +25,7 @@ import run_slack_package_proof as shared
 from package_impact import InventoryGraph
 from release_unit_manifest import (
     MANIFEST_PATH,
+    get_current_publisher,
     get_unit,
     load_manifest,
     map_source_project_path,
@@ -33,14 +34,15 @@ from release_unit_manifest import (
     validate_against_inventory,
 )
 
-CORE_SHA = "8e893e02c4ac089d526b0a0d294a8546f021d072"
-EXTENSIONS_SHA = "33fa0bfd28c7585240e3d4f665058c067b17e287"
-STUDIO_SHA = "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822"
+RELEASE_UNIT = get_unit(load_manifest(MANIFEST_PATH))
+PINNED_MAPPED_COMMITS = RELEASE_UNIT["mapped"]["source_commits"]
+CORE_SHA = PINNED_MAPPED_COMMITS["elsa-core"]
+EXTENSIONS_SHA = PINNED_MAPPED_COMMITS["elsa-extensions"]
+STUDIO_SHA = PINNED_MAPPED_COMMITS["elsa-studio"]
 SOURCE_COMMITS = {"core": CORE_SHA, "extensions": EXTENSIONS_SHA, "studio": STUDIO_SHA}
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 INVENTORY_RELATIVE = Path("doc/integration-program/inventory/inventory.json")
 INVENTORY_PATH = REPOSITORY_ROOT / INVENTORY_RELATIVE
-RELEASE_UNIT = get_unit(load_manifest(MANIFEST_PATH))
 INVENTORY_DOCUMENT = json.loads(INVENTORY_PATH.read_text(encoding="utf-8"))
 validate_against_inventory(RELEASE_UNIT, INVENTORY_DOCUMENT)
 PACKAGE_ID = RELEASE_UNIT["package_id"]
@@ -571,7 +573,7 @@ def selector_evidence(output: Path, rehearsal: Path | None = None, imported: dic
         "unit_id": RELEASE_UNIT["id"],
         "package_id": PACKAGE_ID,
         "local_proof_version": PACKAGE_VERSION,
-        "current_publisher": RELEASE_UNIT["publisher"]["repository"],
+        "current_publisher": get_current_publisher(RELEASE_UNIT)["repository"],
         "local_proof_publishable": RELEASE_UNIT["versioning"]["local_proof_may_publish"],
     }
     if selection.get("package_ids_to_pack") != [PACKAGE_ID]:
@@ -980,7 +982,7 @@ def main() -> int:
             "mapped_project_path": RELEASE_UNIT["mapped"]["project_path"],
             "target_frameworks": list(TFMS),
             "tested_artifact_dependencies": RELEASE_UNIT["tested_artifact_dependencies"],
-            "current_publisher": RELEASE_UNIT["publisher"]["repository"],
+            "current_publisher": get_current_publisher(RELEASE_UNIT)["repository"],
             "stable_version_policy": RELEASE_UNIT["versioning"]["scheme"],
             "local_proof_version": PACKAGE_VERSION,
             "local_proof_is_release_allocation": RELEASE_UNIT["versioning"]["local_proof_is_release_allocation"],

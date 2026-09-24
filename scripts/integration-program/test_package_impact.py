@@ -22,6 +22,12 @@ class PackageImpactTests(unittest.TestCase):
                            if not any(fnmatch.fnmatchcase(script, pattern) for pattern in filters))
         self.assertEqual([], uncovered)
 
+    def test_read_only_publisher_preflight_is_part_of_the_pr_lane(self):
+        workflow = (REPOSITORY / '.github/workflows/package-impact-closure.yml').read_text()
+        self.assertIn("Validate current publisher ownership without cutover", workflow)
+        self.assertIn("check_publisher_handoff.py", workflow)
+        self.assertIn("permissions:\n  contents: read", workflow)
+
     @classmethod
     def setUpClass(cls):
         cls.graph = InventoryGraph.from_path(
