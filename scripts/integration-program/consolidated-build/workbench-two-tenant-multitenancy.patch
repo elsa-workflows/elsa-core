@@ -1,0 +1,16 @@
+diff --git a/samples/extensions/workbench/Elsa.Server.Web/Program.cs b/samples/extensions/workbench/Elsa.Server.Web/Program.cs
+--- a/samples/extensions/workbench/Elsa.Server.Web/Program.cs
++++ b/samples/extensions/workbench/Elsa.Server.Web/Program.cs
+@@ -91,5 +91,4 @@ const WorkflowRuntime workflowRuntime = WorkflowRuntime.Distributed;
+ const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
+ const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
+-const bool useMultitenancy = false;
+ const bool useTenantsFromConfiguration = true;
+ const bool disableVariableWrappers = false;
+@@ -103,5 +102,6 @@ var configuration = builder.Configuration;
+ var configuration = builder.Configuration;
+ var useSecrets = configuration.GetValue("Features:Secrets:Enabled", false);
++var useMultitenancy = configuration.GetValue("Features:Multitenancy:Enabled", false);
+ var identitySection = configuration.GetSection("Identity");
+ var identityTokenSection = identitySection.GetSection("Tokens");
+ var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;

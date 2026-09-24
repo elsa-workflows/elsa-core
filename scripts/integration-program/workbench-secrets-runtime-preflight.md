@@ -65,4 +65,50 @@ The pinned `generate-bpmn-types.js` assumes the standalone Studio layout (`src/m
 
 Use an isolated npm cache and user configuration, and save each generated lockfile, exact Node/npm versions, package versions, and build logs in the private fixture. The 2026-09-24 local repair used Node 25.8.0/npm 11.11.0 for DomInterop and Node 22.22.1/npm 10.9.4 for Designer; it therefore does not establish a single pinned Node toolchain for the future CI step. After both bundles are built, restore the Studio host and its project-reference graph inside the clone, then run a normal incremental net10 build with project references enabled so every static-assets manifest uses clone-local source roots. The 2026-09-24 receipt records 44 content roots (38 clone-local and 6 NuGet), zero original rehearsal roots, and 408 manifest assets. The Workbench host's build uses `BuildProjectReferences=false`; do not apply that shortcut to Studio because it can leave client assets out of the runtime manifest. Start Studio as a separate process bound only to `http://127.0.0.1:<studio-port>`, with the private environment and no extra credentials. If HTTP redirects or a host attempts an unexpected external connection, stop and capture the logs rather than weakening middleware or broadening network access. In a browser, authenticate through Studio and verify Secrets directly. Record UI evidence separately from the API result; direct routes do not prove the navigation menu is wired.
 
-The proof remains a single-tenant synthetic fixture. It does not establish multitenant isolation, real provider-account behavior, external revocation, production readiness, or package publication. If the mapped feature name does not produce a Secrets navigation item, record direct-route coverage separately and leave navigation incomplete until a scoped compatibility fix is integrated.
+## Two-tenant Workbench and Studio proof
+
+The default preparation above remains single-tenant. The `--two-tenant` mode is an opt-in fixture-only proof: it writes a shared fresh SQLite path, two synthetic tenant administrators, one synthetic denied user, tenant-specific host mappings, a random signing/encryption key, and private credentials. It does not add a provider or change the production Workbench defaults.
+
+Workbench currently declares `const bool useMultitenancy = false`, so appsettings cannot enable the tenant middleware. In a fresh disposable mapped rehearsal, apply both reviewed fixture patches from the Core checkout. The first is the merged #8332 Studio menu compatibility patch; the second changes only the Workbench compile-time switch into a configuration lookup whose default remains disabled:
+
+```sh
+git -C "$MAPPED_REHEARSAL" apply --check "$CORE_CHECKOUT/scripts/integration-program/consolidated-build/studio-secrets-menu.patch"
+git -C "$MAPPED_REHEARSAL" apply "$CORE_CHECKOUT/scripts/integration-program/consolidated-build/studio-secrets-menu.patch"
+git -C "$MAPPED_REHEARSAL" apply --check "$CORE_CHECKOUT/scripts/integration-program/consolidated-build/workbench-two-tenant-multitenancy.patch"
+git -C "$MAPPED_REHEARSAL" apply "$CORE_CHECKOUT/scripts/integration-program/consolidated-build/workbench-two-tenant-multitenancy.patch"
+```
+
+The preparer accepts these changes only when every patch target is present and the exact patch reverses cleanly. It records both SHA-256 values and the replay ledger in `launch-plan.json`. Do not apply these patches to upstream trees or a shared checkout. Run the regular Studio layout patch and ClientLib build from #8334 in this disposable source as well:
+
+```sh
+git -C "$MAPPED_REHEARSAL" apply --check "$CORE_CHECKOUT/scripts/integration-program/consolidated-build/studio-bpmn-generator-layout.patch"
+git -C "$MAPPED_REHEARSAL" apply "$CORE_CHECKOUT/scripts/integration-program/consolidated-build/studio-bpmn-generator-layout.patch"
+```
+
+Use the exact three source pins and fresh selected-Core mapped rehearsal for preparation:
+
+```sh
+TMPDIR=/private/tmp python3 "$CORE_CHECKOUT/scripts/integration-program/prepare_workbench_secrets_runtime.py" \
+  --rehearsal-root "$MAPPED_REHEARSAL" \
+  --core-sha <40-character-core-sha> \
+  --extensions-sha <40-character-extensions-sha> \
+  --studio-sha <40-character-studio-sha> \
+  --temp-parent /private/tmp \
+  --two-tenant
+```
+
+After the Workbench fixture has been prepared, build both Studio browser bundles with the pinned Node 22 lane. This emits the required Designer and DomInterop assets for the Studio host build:
+
+```sh
+bash "$CORE_CHECKOUT/scripts/integration-program/build_studio_clientlibs.sh" "$MAPPED_REHEARSAL"
+```
+
+Review the generated plan and private `content-root/appsettings.json` before launch. It enables `Features:Multitenancy:Enabled` only in this fixture. `tenant-a` maps to `127.0.0.1:<workbench-port>` and `tenant-b` maps to `tenant-b.localhost:<workbench-port>`; `AllowedHosts` includes both. The configuration-backed ElsaIdentity users carry matching `TenantId` claims and each administrator role is scoped to its tenant. Host resolution selects a tenant before login and the token claim preserves that selection after login. Both tenants point to the same new SQLite database so success demonstrates tenant scoping rather than separate-database isolation. `synthetic-denied` has no roles and is scoped to tenant A.
+
+Start Workbench with the generated `launch-command.txt`. Build the mapped `Elsa.Studio.Host.Server` with its normal project references after the ClientLib script has emitted all six assets. Create two private Studio content roots and two local override files, with separate ports so their ElsaIdentity browser sessions do not share cookies. Point tenant A at `http://127.0.0.1:<workbench-port>/elsa/api` and tenant B at `http://tenant-b.localhost:<workbench-port>/elsa/api`. Bind both Studio processes to loopback. Use separate browser tabs/process origins for the two Studio ports.
+
+In Studio, sign in as tenant A, create a secret using a technical name that will also be used in tenant B, and create one tenant-A-only secret name. Confirm the A list and picker show only A data. In the second Studio origin, sign in as tenant B and create the same technical name with distinct synthetic metadata/value. Confirm that the operation succeeds, the B list and picker show only B data, and a request for the tenant-A-only name returns no metadata. Switch back to A and confirm its metadata is unchanged. Sign in as `synthetic-denied` and record list/detail denial and the Create control state; server authorization remains the security boundary even if the control is visible.
+
+Create one unpublished draft per tenant, select that tenant's same-name secret through the workflow expression picker, save, and inspect the stored references. Confirm each reference has the expected `{name,typeName}` shape, no plaintext appears in responses, workflow payloads, logs, database/WAL/SHM files, and neither workflow is published or executed. Record actual host identity/membership, tenant host mapping, browser actions, permission statuses, exact patch/source/asset hashes, cleanup, and all limitations in the sanitized evidence receipt. Stop all three processes before running the ownership-guarded cleanup command. A browser check with this temporary patch still does not satisfy the eventual history-preserving import rerun.
+
+The #8334 ClientLib command requires Node 22 and normal .NET restore access; the mapped Studio generator fix remains an import-time patch. The fresh schema/startup/scheduler behavior of enabling Workbench tenancy has not yet been run and must be observed in the fixture. Do not claim browser or imported-history validation until those steps actually pass. This fixture proves only synthetic local tenants and does not cover provider accounts, production readiness, package publication, or cutover.

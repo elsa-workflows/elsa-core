@@ -34,7 +34,12 @@ An unauthorized user could still see an enabled Create Secret control on the
 direct page, while the server rejected its requests. Existing Studio PR #999
 adds separate permission-aware navigation behavior and needs reconciliation.
 
-The proof does not establish actual Workbench tenant separation, use of real
-provider accounts, published static assets, a history-bearing source import or
-production readiness. Repeat the backend/Studio smoke after the import and
+The recorded browser receipt does not establish actual Workbench tenant
+separation, use of real provider accounts, published static assets, a
+history-bearing source import or production readiness. The preparer now has an
+opt-in `--two-tenant` mode for a separate synthetic host/browser run. That
+mode requires the hashed, fixture-only Workbench multitenancy activation patch
+and the merged Studio Secrets menu patch to be applied in a fresh mapped clone;
+it has not been launched or browser-verified. See the runbook for its exact
+patch, build and cleanup steps. Repeat the smoke after the history import and
 reconcile those gates before closing #8326 or #8275.
