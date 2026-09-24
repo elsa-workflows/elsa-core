@@ -25,6 +25,7 @@ from release_unit_manifest import (
     source_test_project_keys,
     validate_against_inventory,
 )
+from source_bindings import verify_overlay
 
 CHANGED_PROJECT: ProjectKey = ("elsa-core", "src/modules/Elsa/Elsa.csproj")
 RELEASE_UNIT_ID = DEFAULT_UNIT_ID
@@ -238,8 +239,11 @@ def build_plan(
     inventory_path: Path,
     sources: dict[str, Path],
     release_manifest_path: Path = MANIFEST_PATH,
+    source_binding: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    if source_binding is not None and set(sources) != {"elsa-core", "elsa-extensions"}:
+        raise ValueError("Source-bound proof requires both pinned Core and Extensions mappings")
     manifest = load_manifest(release_manifest_path)
     unit = get_unit(manifest, RELEASE_UNIT_ID)
     validate_against_inventory(unit, inventory)
@@ -264,12 +268,17 @@ def build_plan(
             raise ValueError(f"Source checkout does not exist: {source_path}")
         actual = git_head(source_path)
         verify_source_pin(repository, expected, actual)
-        initial_status = git_status(source_path)
-        verify_source_clean(repository, initial_status)
+        if repository == "elsa-extensions" and source_binding is not None:
+            verify_overlay(inventory, sources["elsa-core"],
+                           Path(source_binding["pristine_extensions"]), source_path, source_binding)
+            initial_status = "reviewed source-bound overlay"
+        else:
+            initial_status = git_status(source_path)
+            verify_source_clean(repository, initial_status)
         source_receipts[repository] = {
             "expected_commit": expected,
             "actual_commit": actual,
-            "initial_working_tree": "clean",
+            "initial_working_tree": initial_status if source_binding is not None and repository == "elsa-extensions" else "clean",
         }
 
     entries = []
@@ -332,6 +341,7 @@ def build_plan(
             for repository in ("elsa-core", "elsa-extensions")
         },
         "source_checkouts": source_receipts,
+        "source_binding": source_binding,
         "source_package_ids": sorted({
             project["package_id"] for repository in ("elsa-core", "elsa-extensions")
             for project in inventory["project_inventory"][repository] if project.get("package_id")
@@ -424,6 +434,8 @@ def execute_plan(
     include_docker: bool,
     only_projects: set[str] | None = None,
     command_timeout_seconds: int = DEFAULT_COMMAND_TIMEOUT_SECONDS,
+    source_binding: dict[str, Any] | None = None,
+    inventory: dict[str, Any] | None = None,
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     lane_by_name = {"local-test", "build-only"}
@@ -545,9 +557,16 @@ def execute_plan(
         expected = plan["source_pins"][repository]
         actual = git_head(source_path)
         verify_source_pin(repository, expected, actual)
-        status = git_status(source_path)
-        verify_source_clean(repository, status)
-        final_sources[repository] = {"final_commit": actual, "working_tree": "clean"}
+        if repository == "elsa-extensions" and source_binding is not None:
+            if inventory is None:
+                raise ValueError("Source-bound final check requires the inventory")
+            verify_overlay(inventory, sources["elsa-core"],
+                           Path(source_binding["pristine_extensions"]), source_path, source_binding)
+            final_sources[repository] = {"final_commit": actual, "working_tree": "reviewed source-bound overlay"}
+        else:
+            status = git_status(source_path)
+            verify_source_clean(repository, status)
+            final_sources[repository] = {"final_commit": actual, "working_tree": "clean"}
     plan["final_source_checkouts"] = final_sources
 
 
@@ -618,7 +637,9 @@ def write_failure_output(
         "requested": {
             "inventory": str(args.inventory),
             "sources": args.source,
+            "source_binding_receipt": str(args.source_binding_receipt) if args.source_binding_receipt else None,
             "run": args.run,
+            "preflight_only": args.preflight_only,
             "include_docker": args.include_docker,
             "only": args.only,
             "command_timeout_seconds": args.command_timeout_seconds,
@@ -645,7 +666,10 @@ def main() -> int:
     parser.add_argument("--inventory", type=Path, required=True)
     parser.add_argument("--release-manifest", type=Path, default=MANIFEST_PATH)
     parser.add_argument("--source", action="append", default=[], help="Pinned checkout mapping REPOSITORY=PATH")
+    parser.add_argument("--source-binding-receipt", type=Path,
+                        help="Reviewed disposable Extensions source-binding receipt; original checkouts stay clean")
     parser.add_argument("--run", action="store_true", help="Run local tests and the build-only host")
+    parser.add_argument("--preflight-only", action="store_true", help="Evaluate the complete source graph without claiming test execution")
     parser.add_argument("--include-docker", action="store_true", help="Also run projects declaring Testcontainers dependencies")
     parser.add_argument("--only", action="append", default=[], help="Run only this selected repository:path entry (repeatable)")
     parser.add_argument(
@@ -662,8 +686,9 @@ def main() -> int:
     plan: dict[str, Any] | None = None
     try:
         sources = parse_sources(args.source)
+        source_binding = json.loads(args.source_binding_receipt.read_text(encoding="utf-8")) if args.source_binding_receipt else None
         phase = "plan construction and source preflight"
-        plan = build_plan(args.inventory, sources, args.release_manifest)
+        plan = build_plan(args.inventory, sources, args.release_manifest, source_binding)
         if args.command_timeout_seconds <= 0:
             raise ValueError("--command-timeout-seconds must be greater than zero")
         if args.github_output:
@@ -672,7 +697,9 @@ def main() -> int:
             with args.github_output.open("a", encoding="utf-8") as output:
                 for repository, output_name in (("elsa-core", "core"), ("elsa-extensions", "extensions")):
                     output.write(f"{output_name}={inventory['repositories'][repository]['commit']}\n")
-        if args.run:
+        if args.run and args.preflight_only:
+            raise ValueError("--run and --preflight-only cannot be combined")
+        if args.run or args.preflight_only:
             phase = "execution preflight"
             if set(sources) != {"elsa-core", "elsa-extensions"}:
                 raise ValueError("Execution requires pinned --source mappings for elsa-core and elsa-extensions")
@@ -680,15 +707,18 @@ def main() -> int:
             run_artifact_dir = artifact_root / f"run-{uuid4().hex[:12]}"
             plan["artifact_directory"] = str(run_artifact_dir.resolve())
             verify_resolved_project_graph(plan, sources, args.command_timeout_seconds)
-            phase = "project test and host execution"
-            execute_plan(
-                plan,
-                sources,
-                run_artifact_dir,
-                args.include_docker,
-                set(args.only) if args.only else None,
-                args.command_timeout_seconds,
-            )
+            if args.run:
+                phase = "project test and host execution"
+                execute_plan(
+                    plan,
+                    sources,
+                    run_artifact_dir,
+                    args.include_docker,
+                    set(args.only) if args.only else None,
+                    args.command_timeout_seconds,
+                    source_binding,
+                    json.loads(args.inventory.read_text(encoding="utf-8")) if source_binding else None,
+                )
         phase = "success receipt writing"
         write_output(plan, args.output)
         if any(result.get("status") == "failed" for result in plan["execution"]):
