@@ -1,0 +1,54 @@
+name: Studio ClientLib build
+
+on:
+  pull_request:
+    paths:
+      - 'src/studio/**/ClientLib/**'
+      - 'src/studio/Directory.Packages.props'
+      - 'src/studio/Directory.Build.props'
+      - 'src/Directory.Build.props'
+      - 'scripts/integration-program/build_studio_clientlibs.sh'
+      - 'scripts/integration-program/consolidated-build/studio-bpmn-generator-layout.patch'
+      - 'scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/**'
+      - '.github/workflows/studio-clientlib-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  studio-clientlibs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '10.0.300'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Detect imported Studio source
+        id: source
+        run: |
+          if test -f src/studio/modules/Elsa.Studio.Workflows.Designer/ClientLib/package.json; then
+            echo 'mapped=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'mapped=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Checkout the pinned standalone Studio source before import
+        if: steps.source.outputs.mapped == 'false'
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: elsa-workflows/elsa-studio
+          ref: 9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822
+          path: pinned-studio
+          persist-credentials: false
+      - name: Build pinned Studio ClientLibs on Linux before import
+        if: steps.source.outputs.mapped == 'false'
+        run: |
+          scripts/integration-program/build_studio_clientlibs.sh pinned-studio
+      - name: Build consolidated Studio ClientLibs after import
+        if: steps.source.outputs.mapped == 'true'
+        run: scripts/integration-program/build_studio_clientlibs.sh .
