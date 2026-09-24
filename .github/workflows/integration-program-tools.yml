@@ -46,3 +46,9 @@ jobs:
             --report-out "$RUNNER_TEMP/secrets-postgresql-upgrade-report.json"
           diff -u scripts/integration-program/secrets-postgresql-upgrade/observed-result.json \
             "$RUNNER_TEMP/secrets-postgresql-upgrade-report.json"
+      - name: Characterize published Secrets SQL Server upgrade failure
+        run: |
+          python scripts/integration-program/run_secrets_sqlserver_upgrade_fixture.py \
+            --report-out "$RUNNER_TEMP/secrets-sqlserver-upgrade-report.json"
+          diff -u scripts/integration-program/secrets-sqlserver-upgrade/observed-result.json \
+            "$RUNNER_TEMP/secrets-sqlserver-upgrade-report.json"
