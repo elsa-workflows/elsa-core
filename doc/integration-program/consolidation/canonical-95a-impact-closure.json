@@ -3,15 +3,15 @@
   "scope": "Prepared canonical Elsa.sln project-impact graph and exact 95a run reconciliation; no source writes or package actions.",
   "toolCheckout": {
     "repository": "elsa-workflows/elsa-core",
-    "gitHead": "a4facf241dcc7cd0da970de8ff529f9d7e5e12f5",
+    "gitHead": "cff707086a2665d4d95289f6d42d825c66d09d95",
     "workingTreeFileHashesAreAuthoritative": true,
     "worktreePathKind": "tooling checkout; the CLI and manifest are read from this checkout",
     "files": {
-      "scripts/integration-program/refresh_canonical_dependency_graph.py": "a697b5b383b76e60d38974b09294649c10bfcf6aa18f61ea1cb38286104421c4",
+      "scripts/integration-program/refresh_canonical_dependency_graph.py": "d18e723c45e8afaaac258da162e663d5637bff88229ce250bb6e3439c1837ad8",
       "scripts/integration-program/package_impact.py": "81b3bce46340db93ae1080b21862f1f9d410efe075cbf53aa21bd2172f6e0dd2",
       "scripts/integration-program/package_closure.py": "b429c6be409cfee525ecf2cebbb86755e1899f025e6d2994850ed484bb172de7",
       "scripts/integration-program/release_unit_manifest.py": "1ebf80786cff34404436c0654c8fd412da97742e5a1f121bc157d26a533096bb",
-      "scripts/integration-program/test_refresh_canonical_dependency_graph.py": "44530a867018a66d619ee74d28c03d6cd7e92183ca0acc7ec4aac5b06de266cb",
+      "scripts/integration-program/test_refresh_canonical_dependency_graph.py": "4318bd5ec301b18919d6bf2996d4440dc2439fea0ad6ea86590a77cc3e8abba3",
       "scripts/integration-program/prepare_consolidated_build.py": "9372f90f876bb78f6aa3c44ad199e5df98a42779d0538aece7cb65f00209c2f5",
       "scripts/integration-program/test_prepare_consolidated_build.py": "14eafda1eaa0030e95887effb31f404bcb6a3fc26347f4f6fa6d23e35519ae12",
       "scripts/integration-program/consolidated-build/source-integration.patch": "b091576a7f8d51c8b469645eea4b868556ebfadb084d7afbc4287ea36155433d",

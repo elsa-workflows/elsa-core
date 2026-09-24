@@ -159,6 +159,87 @@ def _tfm_moniker(target_framework: str) -> str:
     return f".NETCoreApp,Version=v{match.group(1)}.{match.group(2)}"
 
 
+def _validated_framework_summary(evidence: dict[str, Any]) -> dict[str, Any]:
+    """Recompute global totals and reject a stale summary header."""
+    summary = evidence["observedTestResults"]["frameworkConsoleSummaries"]
+    runs = summary.get("runs")
+    if not isinstance(runs, list) or not runs:
+        raise ValueError("Framework console evidence has no per-framework run rows")
+
+    totals = Counter({"passed": 0, "failed": 0, "skipped": 0, "total": 0})
+    for run in runs:
+        if run.get("status") != "Passed!":
+            raise ValueError(f"Framework console run did not pass: {run.get('assembly')} ({run.get('framework')})")
+        counts = {}
+        for field in ("passed", "failed", "skipped", "total"):
+            value = run.get(field)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"Framework console run has invalid {field} count: {run.get('assembly')} ({run.get('framework')})")
+            counts[field] = value
+        if counts["failed"] != 0:
+            raise ValueError(f"Framework console run reports failures: {run.get('assembly')} ({run.get('framework')})")
+        if counts["total"] != counts["passed"] + counts["failed"] + counts["skipped"]:
+            raise ValueError(f"Framework console run totals do not reconcile: {run.get('assembly')} ({run.get('framework')})")
+        totals.update(counts)
+
+    expected_totals = dict(totals)
+    if summary.get("assemblyFrameworkRuns") != len(runs):
+        raise ValueError("Framework summary run count differs from the detailed run rows")
+    if summary.get("totalsFromPassedSummaries") != expected_totals:
+        raise ValueError("Framework summary header totals differ from recomputed per-framework run rows")
+    return {"totals": expected_totals, "runCount": len(runs)}
+
+
+def _validated_retained_trx_summary(evidence: dict[str, Any]) -> dict[str, int]:
+    """Recompute retained TRX totals and reject a stale aggregate header."""
+    retained = evidence["observedTestResults"]["retainedTrx"]
+    rows = retained.get("rows")
+    if not isinstance(rows, list):
+        raise ValueError("Retained TRX evidence has no row list")
+
+    totals = Counter({"passed": 0, "failed": 0, "executed": 0, "totalIncludingSkipped": 0})
+    seen_files: set[str] = set()
+    for row in rows:
+        file_name = row.get("file")
+        if not isinstance(file_name, str) or not file_name or file_name in seen_files:
+            raise ValueError(f"Retained TRX evidence has a missing or duplicate file name: {file_name}")
+        seen_files.add(file_name)
+        counters = row.get("counters")
+        if not isinstance(counters, dict):
+            raise ValueError(f"Retained TRX evidence has no counters: {file_name}")
+        values = {}
+        for field in ("total", "executed", "passed", "failed", "error", "timeout", "aborted"):
+            value = counters.get(field)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"Retained TRX row has invalid {field} count: {file_name}")
+            values[field] = value
+        if values["executed"] > values["total"]:
+            raise ValueError(f"Retained TRX executed count exceeds total: {file_name}")
+        completed = sum(values[field] for field in ("passed", "failed", "error", "timeout", "aborted"))
+        if completed != values["executed"]:
+            raise ValueError(f"Retained TRX execution counters do not reconcile: {file_name}")
+        if any(values[field] for field in ("failed", "error", "timeout", "aborted")):
+            raise ValueError(f"Retained TRX row reports a failed or incomplete test: {file_name}")
+        totals.update({
+            "passed": values["passed"],
+            "failed": values["failed"],
+            "executed": values["executed"],
+            "totalIncludingSkipped": values["total"],
+        })
+
+    expected = {
+        "files": len(rows),
+        "passed": totals["passed"],
+        "failed": totals["failed"],
+        "skipped": totals["totalIncludingSkipped"] - totals["executed"],
+        "executed": totals["executed"],
+        "totalIncludingSkipped": totals["totalIncludingSkipped"],
+    }
+    if {field: retained.get(field) for field in expected} != expected:
+        raise ValueError("Retained TRX summary header totals differ from recomputed row counters")
+    return expected
+
+
 def _node_key(project_path: str, framework: str) -> str:
     return f"{project_path}@@{framework}"
 
@@ -241,6 +322,8 @@ def _framework_graph(
 
 
 def _parse_test_run_evidence(evidence: dict[str, Any], root: Path, projects: list[tuple[str, str]]) -> dict[str, Any]:
+    framework_summary = _validated_framework_summary(evidence)
+    retained_trx_summary = _validated_retained_trx_summary(evidence)
     selection = evidence["selection"]
     expected_entries = sorted(
         ({"name": name, "path": path} for name, path in projects if name.endswith("Tests")),
@@ -317,6 +400,9 @@ def _parse_test_run_evidence(evidence: dict[str, Any], root: Path, projects: lis
         "runByPathFramework": run_by_path_framework,
         "trxByPathFramework": trx_by_path_framework,
         "selectedWithoutPass": no_pass_rows,
+        "frameworkSummaryTotals": framework_summary["totals"],
+        "frameworkSummaryCount": framework_summary["runCount"],
+        "retainedTrxSummary": retained_trx_summary,
     }
 
 
@@ -669,9 +755,9 @@ def refresh_receipt(rehearsal: Path, evidence_path: Path, inventory_path: Path, 
         "canonicalRun": {
             "selectedByNukeSuffix": "Project.Name.EndsWith(\"Tests\") from pinned build/Build.cs",
             "selectedProjectCount": len([name for name, _ in projects if name.endswith("Tests")]),
-            "frameworkSummaryTotals": evidence["observedTestResults"]["frameworkConsoleSummaries"]["totalsFromPassedSummaries"],
-            "frameworkSummaryCount": evidence["observedTestResults"]["frameworkConsoleSummaries"]["assemblyFrameworkRuns"],
-            "retainedTrxSummary": {key: value for key, value in evidence["observedTestResults"]["retainedTrx"].items() if key != "rows"},
+            "frameworkSummaryTotals": run_evidence["frameworkSummaryTotals"],
+            "frameworkSummaryCount": run_evidence["frameworkSummaryCount"],
+            "retainedTrxSummary": run_evidence["retainedTrxSummary"],
         },
         "coreSourceChangeImpact": {
             "changedProject": f"elsa-core:{CHANGED_PROJECT[1]}",
