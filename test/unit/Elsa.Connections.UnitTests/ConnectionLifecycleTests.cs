@@ -234,10 +234,11 @@ public sealed class ConnectionLifecycleTests
         var connected = await apiKeys.ConnectApiKeyAsync(Principal(), new ConnectApiKeyConnectionRequest(
             TenantId, EnvironmentId, "synthetic-api-key", "account-test", "concurrent-api-key-v1"));
         var connectionId = Assert.IsType<string>(connected.ConnectionId);
+        var revision = Assert.IsType<long>(connected.Revision);
 
         var results = await Task.WhenAll(
-            apiKeys.ReplaceApiKeyAsync(Principal(), TenantId, EnvironmentId, connectionId, connected.Revision!.Value, "concurrent-api-key-v2"),
-            apiKeys.ReplaceApiKeyAsync(Principal(), TenantId, EnvironmentId, connectionId, connected.Revision.Value, "concurrent-api-key-v3"));
+            apiKeys.ReplaceApiKeyAsync(Principal(), TenantId, EnvironmentId, connectionId, revision, "concurrent-api-key-v2"),
+            apiKeys.ReplaceApiKeyAsync(Principal(), TenantId, EnvironmentId, connectionId, revision, "concurrent-api-key-v3"));
 
         Assert.Single(results, result => result.Succeeded);
         Assert.Single(results, result => !result.Succeeded);

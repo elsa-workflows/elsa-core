@@ -429,12 +429,14 @@ public sealed class DefaultConnectionLifecycleService(
                 var secretName = ManagedSecretNames.ForGeneration(connectionId, claimed.GenerationId);
                 var payload = await secrets.ResolveGenerationAsync(secretName, connectionId, claimed.GenerationId, cancellationToken);
                 var envelope = Deserialize(payload.Value);
-                if (envelope is not { Kind: null or ConnectionCredentialKind.OAuth, AccessToken: not null, RefreshToken: not null, AccessTokenExpiresAt: not null })
+                var accessTokenExpiresAt = envelope?.AccessTokenExpiresAt;
+                if (envelope is not { Kind: null or ConnectionCredentialKind.OAuth, AccessToken: not null, RefreshToken: not null } ||
+                    !accessTokenExpiresAt.HasValue)
                 {
                     throw new ConnectionUnavailableException();
                 }
 
-                credentials = new CredentialMaterial(envelope.AccessToken, envelope.RefreshToken, envelope.AccessTokenExpiresAt.Value);
+                credentials = new CredentialMaterial(envelope.AccessToken, envelope.RefreshToken, accessTokenExpiresAt.Value);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
