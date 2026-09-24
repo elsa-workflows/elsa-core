@@ -388,6 +388,42 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
         finally:
             FIXTURE.cleanup_fixture(fixture_root, host_stopped=True)
 
+    def test_unapplied_overlay_sharing_prepared_file_is_not_inferred(self):
+        program = self.source / 'Program.cs'
+        before = program.read_text()
+        after = before + '// supplemental fixture overlay\n'
+        relative = program.relative_to(self.rehearsal).as_posix()
+        diff = ''.join(difflib.unified_diff(
+            before.splitlines(keepends=True), after.splitlines(keepends=True),
+            fromfile=f'a/{relative}', tofile=f'b/{relative}'))
+        patch = self.base / 'unapplied-supplemental-overlay.patch'
+        patch.write_text(f'diff --git a/{relative} b/{relative}\n{diff}')
+
+        fixture_root = self.prepare(supplemental_patches=(patch,))
+        try:
+            plan = json.loads((fixture_root / 'launch-plan.json').read_text())
+            self.assertEqual([], plan['sourcePatchChain']['supplementalPatches'])
+            self.assertEqual(['workbench.patch'], [
+                Path(item['patch']).name for item in plan['sourcePatchChain']['reverseReplay']
+            ])
+        finally:
+            FIXTURE.cleanup_fixture(fixture_root, host_stopped=True)
+
+    def test_rejects_mixed_supplemental_patch_set_before_build(self):
+        program = self.source / 'Program.cs'
+        relative = program.relative_to(self.rehearsal).as_posix()
+        before = program.read_text()
+        after = before + '// applied supplemental overlay\n'
+        applied_patch = self.base / 'applied-supplemental-overlay.patch'
+        applied_patch.write_text(self.make_patch(relative, before, after))
+        subprocess.run(['git', 'apply', str(applied_patch)], cwd=self.rehearsal, check=True)
+
+        build = self.fake_build
+        with mock.patch.object(FIXTURE, 'build_host', wraps=build) as build_host:
+            with self.assertRaisesRegex(ValueError, 'Only part of the supplemental patch set is present'):
+                self.prepare(supplemental_patches=(applied_patch, self.menu_patch))
+        build_host.assert_not_called()
+
     def test_rejects_receipt_pin_mismatch_before_build(self):
         path = self.rehearsal / 'import-receipt.json'
         receipt = json.loads(path.read_text())
