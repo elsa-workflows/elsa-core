@@ -25,9 +25,16 @@ public class SetTenantIdFilter : IEntityModelCreatingHandler
         if (!typeof(Entity).IsAssignableFrom(entityType.ClrType))
             return;
 
-        modelBuilder
-            .Entity(entityType.ClrType)
-            .HasQueryFilter(CreateTenantFilterExpression(dbContext, entityType.ClrType));
+        var tenantFilter = CreateTenantFilterExpression(dbContext, entityType.ClrType);
+        var existingFilter = entityType.GetQueryFilter();
+        if (existingFilter is not null)
+        {
+            var parameter = tenantFilter.Parameters[0];
+            var existingBody = new ParameterReplacementVisitor(existingFilter.Parameters[0], parameter).Visit(existingFilter.Body)!;
+            tenantFilter = Expression.Lambda(Expression.AndAlso(existingBody, tenantFilter.Body), parameter);
+        }
+
+        modelBuilder.Entity(entityType.ClrType).HasQueryFilter(tenantFilter);
     }
 
     private LambdaExpression CreateTenantFilterExpression(ElsaDbContextBase dbContext, Type clrType)
@@ -64,5 +71,10 @@ public class SetTenantIdFilter : IEntityModelCreatingHandler
         var body = Expression.OrElse(Expression.Not(tenantFilteringEnabled), tenantVisibilityCheck);
 
         return Expression.Lambda(body, parameter);
+    }
+
+    private sealed class ParameterReplacementVisitor(ParameterExpression source, ParameterExpression replacement) : ExpressionVisitor
+    {
+        protected override Expression VisitParameter(ParameterExpression node) => node == source ? replacement : base.VisitParameter(node);
     }
 }
