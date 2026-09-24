@@ -63,3 +63,57 @@ The fixture used different technical names for each tenant, so same-name
 storage isolation was not proven. It also did not record a switch back to
 tenant A after using B or inspect the saved `{name,typeName}` reference shape.
 Those checks remain open for the imported-source browser repeat.
+
+## Default-host route probe
+
+The optional `workbench-secrets-route-probe.patch` is a fixture-only overlay. It
+adds a guarded loopback endpoint at `/__fixture/secrets/routes`; the endpoint is
+registered only when the private launch override
+`--Features:Secrets:RouteProbe=true` is supplied. It reports the active
+`/secrets`, `/actions/secrets/`, `/bulk-actions/secrets/`, and
+`/queries/secrets/` route metadata and loaded assemblies so the mapped Workbench
+host can be checked after startup; it normalizes the configured API route
+prefix before evaluating the route families. It reads the FastEndpoints
+`EndpointDefinition.EndpointType` metadata and requires every retained route to
+be owned by `Elsa.Secrets.Endpoints.Secrets.*`. It does not add a production
+route or enable the legacy API.
+
+Prepare the route probe only after applying the reviewed overlay to the mapped
+canonical Workbench source:
+
+```text
+python3 scripts/integration-program/prepare_workbench_secrets_runtime.py \
+  --rehearsal-root /private/owned/mapped-workbench \
+  --core-sha <core-sha> --extensions-sha <extensions-sha> --studio-sha <studio-sha> \
+  --route-probe
+```
+
+The sanitized receipt must be produced by
+`validate_route_probe_payload(...)`. It retains only the ten canonical Core
+routes, route count, canonical assembly ownership result, and the absence of
+legacy routes and `Elsa.Secrets.Api`, `Elsa.Secrets.Management`, and
+`Elsa.Secrets.Scripting` assemblies. Do not commit the raw endpoint metadata,
+private host configuration, credentials, or process logs.
+
+### Verified disposable route run (2026-09-24)
+
+The probe ran against a disposable mapped copy at Core
+`1855a2ef2719d536a66181dec604e781bfdd42a9`, Extensions
+`ba8b71d91c15ffe5be4b2c539cf9f712e74af775`, and Studio
+`20ceaeeed7e671f0c9662003e82063026f2216de` (synthetic rehearsal source commit
+`f39c2e0b47c45f959f6cbfea2fb8faf5b9a91077`). The Workbench project
+built for `net10.0` with zero errors and 227 warnings. A private, loopback-only
+host started with `ASPNETCORE_ENVIRONMENT=Production`, an ephemeral signing key,
+an isolated SQLite database, and the two explicit Secrets feature overrides.
+The raw probe response was passed through `validate_route_probe_payload`; only
+the [sanitized route receipt](route-probe-receipt.json) is retained here. It
+records ten canonical Core-owned routes and six canonical Secrets assemblies,
+with no legacy Secrets route or assembly. The host was stopped after the probe.
+
+The focused fixture suite passed 17/17 in both normal and optimized Python
+modes; root independently reran the normal suite. The mapped host source was a
+disposable rehearsal, not the final history import. Development startup on
+this mapped tip fails existing Secrets service-lifetime validation, so this
+Production-mode route observation does not clear that separate host issue.
+The route probe does not establish tenant-membership policy, Studio browser
+behavior, published-package upgrade compatibility, or release readiness.
