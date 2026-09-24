@@ -31,6 +31,7 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Exceptions;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Tasks;
@@ -702,6 +703,7 @@ public sealed class WorkflowCredentialBindingTests
                 .FindManyAsync(new() { WorkflowInstanceId = workflowInstanceId }));
             bookmarkId = bookmark.Id;
             Assert.Empty(first.Services.GetRequiredService<SyntheticCredentialCallProbe>().Calls);
+            Assert.Empty(first.Services.GetRequiredService<SyntheticCredentialCallProbe>().Attempts);
 
             var grantManager = scope.ServiceProvider.GetRequiredService<IWorkflowCredentialGrantManager>();
             if (scenario != "no-grant")
@@ -752,22 +754,40 @@ public sealed class WorkflowCredentialBindingTests
         var restartedClient = await restartedRuntime.CreateClientAsync(workflowInstanceId);
         var runError = await Record.ExceptionAsync(() => restartedClient.RunInstanceAsync(
             new RunWorkflowInstanceRequest { BookmarkId = bookmarkId }));
-        var calls = second.Services.GetRequiredService<SyntheticCredentialCallProbe>().Calls;
+        var probe = second.Services.GetRequiredService<SyntheticCredentialCallProbe>();
+        var calls = probe.Calls;
         var completed = await restartedScope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>()
             .FindAsync(workflowInstanceId);
-        if (scenario == "allowed")
+        if (scenario == "wrong-tenant")
+        {
+            Assert.True(runError is null or WorkflowInstanceNotFoundException);
+            Assert.Null(completed);
+            Assert.Empty(probe.Attempts);
+        }
+        else
         {
             Assert.Null(runError);
+            Assert.Equal(workflowInstanceId, Assert.Single(probe.Attempts));
+            Assert.Equal(WorkflowStatus.Finished, completed?.Status);
+        }
+        if (scenario == "allowed")
+        {
             var call = Assert.Single(calls);
             Assert.Equal(workflowInstanceId, call.WorkflowInstanceId);
             Assert.Equal("access-connection-a", call.AccessToken);
             Assert.Equal((TenantId, EnvironmentId, "connection-a"), second.CredentialService.LastRequest);
-            Assert.Equal(WorkflowStatus.Finished, completed?.Status);
+            Assert.Empty(completed!.WorkflowState.Incidents);
         }
         else
         {
             Assert.Empty(calls);
             Assert.Equal(0, second.CredentialService.CallCount);
+            if (scenario != "wrong-tenant")
+            {
+                var incident = Assert.Single(completed!.WorkflowState.Incidents);
+                Assert.Equal(typeof(SyntheticCredentialUseActivity).FullName, incident.ActivityType);
+                Assert.Equal("The connection is unavailable.", incident.Exception?.Message);
+            }
         }
         await using var database = await restartedScope.ServiceProvider
             .GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync();
@@ -1100,16 +1120,20 @@ public sealed class SyntheticCredentialUseActivity : CodeActivity
 {
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        var probe = context.GetRequiredService<SyntheticCredentialCallProbe>();
+        probe.RecordAttempt(context.WorkflowExecutionContext.Id);
         var credential = await context.GetRequiredService<IWorkflowCredentialResolver>()
             .ResolveAsync(context.WorkflowExecutionContext, "payments");
-        context.GetRequiredService<SyntheticCredentialCallProbe>()
-            .Record(context.WorkflowExecutionContext.Id, credential.AccessToken);
+        probe.Record(context.WorkflowExecutionContext.Id, credential.AccessToken);
     }
 }
 
 public sealed class SyntheticCredentialCallProbe
 {
+    public List<string> Attempts { get; } = [];
     public List<(string WorkflowInstanceId, string AccessToken)> Calls { get; } = [];
+
+    public void RecordAttempt(string workflowInstanceId) => Attempts.Add(workflowInstanceId);
 
     public void Record(string workflowInstanceId, string accessToken) => Calls.Add((workflowInstanceId, accessToken));
 }
