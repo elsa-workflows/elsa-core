@@ -297,6 +297,34 @@ jobs:
           python scripts/integration-program/verify_mapped_slack_consumer_provenance.py \
             --evidence "$PROOF_OUTPUT/evidence.json" \
             --output "$RECHECK_RECEIPT"
+      - name: Bundle portable mapped Slack provenance inputs
+        if: success()
+        env:
+          PROOF_OUTPUT: ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}
+          PORTABLE_BUNDLE: ${{ runner.temp }}/elsa-slack-portable-proof-${{ github.run_id }}-${{ github.run_attempt }}.tar.gz
+        run: |
+          python scripts/integration-program/create_mapped_slack_portable_bundle.py \
+            --evidence "$PROOF_OUTPUT/evidence.json" \
+            --output "$PORTABLE_BUNDLE"
+      - name: Recheck the extracted portable bundle
+        if: success()
+        env:
+          PROOF_OUTPUT: ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}
+          PORTABLE_BUNDLE: ${{ runner.temp }}/elsa-slack-portable-proof-${{ github.run_id }}-${{ github.run_attempt }}.tar.gz
+        run: |
+          extracted="$(mktemp -d)"
+          tar -xzf "$PORTABLE_BUNDLE" -C "$extracted"
+          python scripts/integration-program/verify_mapped_slack_consumer_provenance.py \
+            --evidence "$extracted/evidence.json" \
+            --output "$PROOF_OUTPUT/portable-recheck.json"
+      - name: Upload portable mapped Slack provenance bundle
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: slack-mapped-portable-provenance
+          path: ${{ runner.temp }}/elsa-slack-portable-proof-${{ github.run_id }}-${{ github.run_attempt }}.tar.gz
+          if-no-files-found: warn
+          retention-days: 14
       - name: Upload mapped-source proof receipts, logs, and consumer inputs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

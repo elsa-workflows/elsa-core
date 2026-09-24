@@ -3,6 +3,7 @@ import base64
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -47,6 +48,25 @@ class MappedSlackPackageProofTests(unittest.TestCase):
             self.assertTrue(receipt["target_framework_assets_match"])
             self.assertTrue(receipt["package_cache_isolated"])
             self.assertEqual("local-proof-feed", receipt["restore_source"])
+            self.assertTrue(receipt["metadata_source_matches_local_feed"])
+            self.assertTrue(receipt["consumer_assembly_matches_package"])
+
+    def test_retained_consumer_provenance_survives_bundle_relocation(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            parent = Path(temporary_directory)
+            recorded_root = parent / "recorded-runner-path"
+            recorded_root.mkdir()
+            self.consumption_fixture(recorded_root)
+            extracted_root = parent / "downloaded-artifact"
+            shutil.copytree(recorded_root, extracted_root)
+            receipt = proof.verify_local_package_consumption(
+                consumer_dir=extracted_root / "consumer",
+                framework="net10.0",
+                package=extracted_root / f"{proof.PACKAGE_ID}.{proof.PACKAGE_VERSION}.nupkg",
+                package_cache=extracted_root / "isolated-cache",
+                local_feed=extracted_root / "local-feed",
+                recorded_proof_root=recorded_root.resolve(),
+            )
             self.assertTrue(receipt["metadata_source_matches_local_feed"])
             self.assertTrue(receipt["consumer_assembly_matches_package"])
 

@@ -99,6 +99,25 @@ class CanonicalDependencyGraphTests(unittest.TestCase):
         parsed = _parse_test_run_evidence(evidence, Path("/unused"), [(project["name"], project["path"])])
         self.assertEqual({"passed": 3, "failed": 0, "skipped": 1, "total": 4}, parsed["frameworkSummaryTotals"])
 
+        evidence["invocation"]["workingDirectory"] = "/unused"
+        relocated = _parse_test_run_evidence(evidence, Path("/relocated"), [(project["name"], project["path"])])
+        self.assertEqual(parsed["frameworkSummaryTotals"], relocated["frameworkSummaryTotals"])
+        original_code_bases = list(evidence["observedTestResults"]["retainedTrx"]["rows"][0]["codeBases"])
+        evidence["invocation"]["workingDirectory"] = "/tmp/recorded-rehearsal"
+        evidence["observedTestResults"]["retainedTrx"]["rows"][0]["codeBases"] = [
+            "/private/tmp/recorded-rehearsal/test/A.Tests/bin/Debug/net10.0/A.Tests.dll"
+        ]
+        aliased = _parse_test_run_evidence(evidence, Path("/relocated"), [(project["name"], project["path"])])
+        self.assertEqual(parsed["frameworkSummaryTotals"], aliased["frameworkSummaryTotals"])
+        evidence["invocation"]["workingDirectory"] = "/unused"
+        evidence["observedTestResults"]["retainedTrx"]["rows"][0]["codeBases"] = original_code_bases
+        evidence["observedTestResults"]["retainedTrx"]["rows"][0]["codeBases"] = [
+            "/elsewhere/test/A.Tests/bin/Debug/net10.0/A.Tests.dll"
+        ]
+        with self.assertRaisesRegex(ValueError, "escapes recorded rehearsal"):
+            _parse_test_run_evidence(evidence, Path("/relocated"), [(project["name"], project["path"])])
+        evidence["observedTestResults"]["retainedTrx"]["rows"][0]["codeBases"] = original_code_bases
+
         evidence["observedTestResults"]["frameworkConsoleSummaries"]["totalsFromPassedSummaries"]["passed"] = 2
         with self.assertRaisesRegex(ValueError, "Framework summary header totals"):
             _parse_test_run_evidence(evidence, Path("/unused"), [(project["name"], project["path"])])
