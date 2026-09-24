@@ -6,6 +6,7 @@ import tempfile
 import subprocess
 import json
 import os
+import errno
 from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('rehearsal', Path(__file__).with_name('rehearse-import.py'))
@@ -118,7 +119,7 @@ class FullHistoryTests(unittest.TestCase):
             self.assertEqual(raw['destination'].encode('utf-8', errors='surrogateescape'),
                              b'src/extensions/raw-\xff.cs')
             self.assertIn(b'src/extensions/raw-\xff.cs\0', rehearsal.git(output, 'ls-tree', '-r', '-z', 'rehearsal'))
-            if not rehearsal._is_unrepresentable_worktree_path(raw['destination']):
+            if not rehearsal._is_unrepresentable_worktree_path(raw['destination'], output):
                 raw_worktree_path = os.fsencode(output) + b'/src/extensions/raw-\xff.cs'
                 with open(raw_worktree_path, 'rb') as materialized:
                     self.assertEqual(materialized.read(), b'raw path contents')
@@ -138,7 +139,7 @@ class FullHistoryTests(unittest.TestCase):
 
 
 class WorktreePathTests(unittest.TestCase):
-    def test_surrogateescape_bytes_are_checked_against_host_filesystem(self):
+    def test_surrogateescape_bytes_are_checked_on_output_filesystem(self):
         path = 'raw-\udcff.cs'
         encoded = os.fsencode(path)
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -151,10 +152,20 @@ class WorktreePathTests(unittest.TestCase):
             else:
                 os.unlink(candidate)
                 expected = False
-        self.assertEqual(rehearsal._is_unrepresentable_worktree_path(path), expected)
+            with patch.object(rehearsal.os, 'open', wraps=os.open) as probed_open:
+                self.assertEqual(rehearsal._is_unrepresentable_worktree_path(path, temporary_directory), expected)
+            self.assertEqual(probed_open.call_args.args[0], candidate)
 
     def test_non_surrogateescape_surrogate_is_unrepresentable(self):
-        self.assertTrue(rehearsal._is_unrepresentable_worktree_path('raw-\ud800.cs'))
+        with tempfile.TemporaryDirectory() as output:
+            self.assertTrue(rehearsal._is_unrepresentable_worktree_path('raw-\ud800.cs', output))
+
+    def test_resource_failure_does_not_skip_a_representable_path(self):
+        with tempfile.TemporaryDirectory() as output:
+            with patch.object(rehearsal.os, 'open', side_effect=OSError(errno.ENOSPC, 'full')):
+                with self.assertRaises(OSError) as failure:
+                    rehearsal._is_unrepresentable_worktree_path('raw-\udcff.cs', output)
+        self.assertEqual(failure.exception.errno, errno.ENOSPC)
 
 
 if __name__ == '__main__':

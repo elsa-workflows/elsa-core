@@ -7,10 +7,10 @@ is an evidence artifact, not a buildable consolidation or a publishable branch.
 import argparse
 import json
 import os
+import errno
 from pathlib import Path, PurePosixPath
 import subprocess
 import shutil
-import tempfile
 
 PINS = {
     'extensions': '33fa0bfd28c7585240e3d4f665058c067b17e287',
@@ -155,7 +155,7 @@ def rehearse(core, sources, output, source_profile='baseline'):
         # byte). Keep those entries in the exact index/tree and leave them
         # skip-worktree; all normal paths are still materialized below.
         unsupported_paths = [path for path in expected
-                             if _is_unrepresentable_worktree_path(path)]
+                             if _is_unrepresentable_worktree_path(path, output)]
         if unsupported_paths:
             git(output, 'update-index', '--skip-worktree', '--', *unsupported_paths)
         git(output, 'checkout-index', '--all', '--force')
@@ -189,8 +189,8 @@ def rehearse(core, sources, output, source_profile='baseline'):
         raise
 
 
-def _is_unrepresentable_worktree_path(path):
-    """Return whether a Git path cannot be represented by the host filesystem."""
+def _is_unrepresentable_worktree_path(path, output):
+    """Return whether a Git path cannot be represented by the output filesystem."""
     try:
         encoded = os.fsencode(path)
     except UnicodeEncodeError:
@@ -202,20 +202,16 @@ def _is_unrepresentable_worktree_path(path):
     if not any('\udc80' <= character <= '\udcff' for character in path):
         return False
 
-    with tempfile.TemporaryDirectory(prefix='elsa-import-path-') as temporary_directory:
-        root = os.fsencode(temporary_directory)
-        candidate = root + b'/' + encoded
-        try:
-            os.makedirs(os.path.dirname(candidate), exist_ok=True)
-            descriptor = os.open(candidate, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-            os.close(descriptor)
-        except OSError:
+    candidate = os.path.join(os.fsencode(output), encoded)
+    try:
+        os.makedirs(os.path.dirname(candidate), exist_ok=True)
+        descriptor = os.open(candidate, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    except OSError as error:
+        if error.errno in (errno.EILSEQ, errno.EINVAL, errno.ENAMETOOLONG):
             return True
-        finally:
-            try:
-                os.unlink(candidate)
-            except OSError:
-                pass
+        raise
+    os.close(descriptor)
+    os.unlink(candidate)
     return False
 
 
