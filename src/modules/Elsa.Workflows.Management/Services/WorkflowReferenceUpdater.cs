@@ -3,6 +3,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
 
@@ -156,7 +157,11 @@ public class WorkflowReferenceUpdater(
         if (newGraph.Root.Activity is Workflow wf)
         {
             draft.StringData = serializer.Serialize(wf.Root);
-            draft.OriginalSource = null;
+
+            // Only JSON materializes from StringData via WorkflowDefinitionMapper.
+            // Source-based materializers (ElsaScript, etc.) read OriginalSource only.
+            if (draft.MaterializerName == JsonWorkflowMaterializer.MaterializerName)
+                draft.OriginalSource = null;
         }
 
         return new(draft, newGraph);
