@@ -1,15 +1,21 @@
+import base64
+import hashlib
 import json
 import os
 import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
+from unittest.mock import patch
 
 SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS))
 
+from package_impact import InventoryGraph
 import run_mapped_slack_package_proof as proof  # noqa: E402
+import verify_mapped_slack_consumer_provenance as provenance_recheck  # noqa: E402
 
 
 class MappedSlackPackageProofTests(unittest.TestCase):
@@ -28,6 +34,98 @@ class MappedSlackPackageProofTests(unittest.TestCase):
                 set(selection["inventory_source_commits"]),
             )
             self.assertEqual(selection, json.loads(Path(receipt["receipt"]).read_text(encoding="utf-8")))
+
+    def test_retained_consumer_provenance_matches_the_exact_local_package(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            fixture = self.consumption_fixture(Path(temporary_directory))
+
+            receipt = proof.verify_local_package_consumption(**fixture["arguments"])
+
+            self.assertTrue(receipt["package_sha512_matches_nupkg"])
+            self.assertTrue(receipt["target_framework_assets_match"])
+            self.assertTrue(receipt["package_cache_isolated"])
+            self.assertEqual("local-proof-feed", receipt["restore_source"])
+            self.assertTrue(receipt["metadata_source_matches_local_feed"])
+            self.assertTrue(receipt["consumer_assembly_matches_package"])
+
+    def test_retained_consumer_provenance_rejects_wrong_feed_hash_or_version(self):
+        mutations = (
+            (
+                "feed",
+                "unexpected feed",
+                lambda fixture: self.update_metadata(fixture, source="https://api.nuget.org/v3/index.json"),
+            ),
+            ("hash", "different .* archive", lambda fixture: self.update_asset_hash(fixture, "wrong-hash")),
+            (
+                "cached archive",
+                "Cached .* archive differs",
+                lambda fixture: self.update_cached_archive(fixture, b"different archive"),
+            ),
+            ("version", "do not select exactly", lambda fixture: self.update_asset_identity(fixture, "3.8.4")),
+            ("framework", "compile and runtime assets", self.update_target_framework),
+        )
+        for _name, message, mutate in mutations:
+            with self.subTest(case=_name), tempfile.TemporaryDirectory() as temporary_directory:
+                fixture = self.consumption_fixture(Path(temporary_directory))
+                mutate(fixture)
+
+                with self.assertRaisesRegex(RuntimeError, message):
+                    proof.verify_local_package_consumption(**fixture["arguments"])
+
+    def test_inventory_closure_maps_all_51_paths_without_claiming_execution(self):
+        graph = InventoryGraph(proof.INVENTORY_DOCUMENT)
+        affected = graph.affected_tests([("elsa-core", "src/modules/Elsa/Elsa.csproj")])
+        mapping = []
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            rehearsal = Path(temporary_directory)
+            for repository, source_path in sorted(affected):
+                if repository == "elsa-extensions":
+                    destination = "test/extensions/" + source_path.removeprefix("test/")
+                    mapping.append({"repository": "extensions", "source": source_path, "destination": destination})
+                else:
+                    destination = source_path
+                destination_path = rehearsal / destination
+                destination_path.parent.mkdir(parents=True, exist_ok=True)
+                destination_path.touch()
+
+            imported = {
+                "mapping": mapping,
+                "sourceCommits": {
+                    "core": proof.CORE_SHA,
+                    "extensions": proof.EXTENSIONS_SHA,
+                    "studio": proof.STUDIO_SHA,
+                },
+            }
+            selection = {"affected_test_projects": [f"{repo}:{path}" for repo, path in sorted(affected)]}
+
+            receipt = proof.map_impact_selection(selection, rehearsal, imported)
+
+        self.assertEqual("path-and-framework-plan-only", receipt["status"])
+        self.assertEqual(51, receipt["selected_project_count"])
+        self.assertFalse(receipt["source_compatibility_verified"])
+        self.assertFalse(receipt["test_execution_performed"])
+        self.assertTrue(all(row["mapped_project_exists"] for row in receipt["selected_projects"]))
+        self.assertEqual(
+            {row["inventory_project"] for row in receipt["selected_projects"]},
+            set(selection["affected_test_projects"]),
+        )
+
+    def test_retained_provenance_recheck_rejects_dotdot_output_alias(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory).resolve()
+            proof_root = root / "proof"
+            proof_root.mkdir()
+            evidence = proof_root / "evidence.json"
+            evidence.write_text("{}", encoding="utf-8")
+            output = proof_root / ".." / "proof" / "recheck.json"
+
+            with patch.object(sys, "argv", [
+                "verify_mapped_slack_consumer_provenance.py",
+                "--evidence", str(evidence),
+                "--output", str(output),
+            ]):
+                with self.assertRaisesRegex(ValueError, "outside the retained proof directory"):
+                    provenance_recheck.main()
 
     def test_pinned_source_guard_rejects_wrong_commit_and_dirty_worktree(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -115,6 +213,112 @@ class MappedSlackPackageProofTests(unittest.TestCase):
             proof.run(command, cwd=rehearsal, env=os.environ.copy(), log=log)
 
             self.assertIn(f"fake-dotnet-cwd={rehearsal.resolve()}", log.read_text(encoding="utf-8"))
+
+    @staticmethod
+    def consumption_fixture(root: Path) -> dict:
+        framework = "net10.0"
+        package_version = proof.PACKAGE_VERSION
+        package = root / f"{proof.PACKAGE_ID}.{package_version}.nupkg"
+        assembly = b"pinned-package-assembly"
+        with zipfile.ZipFile(package, "w") as archive:
+            archive.writestr(f"lib/{framework}/{proof.PACKAGE_ID}.dll", assembly)
+
+        feed = root / "local-feed"
+        feed.mkdir()
+        package_cache = root / "isolated-cache"
+        package_cache.mkdir()
+        consumer = root / "consumer"
+        (consumer / "obj").mkdir(parents=True)
+        output = consumer / "bin/Debug/net10.0"
+        output.mkdir(parents=True)
+        (output / f"{proof.PACKAGE_ID}.dll").write_bytes(assembly)
+
+        digest = base64.b64encode(hashlib.sha512(package.read_bytes()).digest()).decode("ascii")
+        relative_path = Path(proof.PACKAGE_ID.casefold()) / package_version.casefold()
+        cached_package = package_cache / relative_path
+        cached_package.mkdir(parents=True)
+        (cached_package / ".nupkg.metadata").write_text(
+            json.dumps({"source": str(feed.resolve()), "contentHash": digest}),
+            encoding="utf-8",
+        )
+        (cached_package / f"{proof.PACKAGE_ID.casefold()}.{package_version.casefold()}.nupkg.sha512").write_text(
+            digest,
+            encoding="utf-8",
+        )
+        assets_path = consumer / "obj/project.assets.json"
+        assets_path.write_text(json.dumps({
+            "targets": {
+                framework: {
+                    f"{proof.PACKAGE_ID}/{package_version}": {
+                        "type": "package",
+                        "compile": {f"lib/{framework}/{proof.PACKAGE_ID}.dll": {"related": ".xml"}},
+                        "runtime": {f"lib/{framework}/{proof.PACKAGE_ID}.dll": {"related": ".xml"}},
+                    },
+                },
+            },
+            "libraries": {
+                f"{proof.PACKAGE_ID}/{package_version}": {
+                    "type": "package",
+                    "path": relative_path.as_posix(),
+                    "sha512": digest,
+                },
+            },
+            "packageFolders": {str(package_cache.resolve()) + os.sep: {}},
+        }), encoding="utf-8")
+        cached_archive = cached_package / f"{proof.PACKAGE_ID.casefold()}.{package_version.casefold()}.nupkg"
+        cached_archive.write_bytes(package.read_bytes())
+
+        return {
+            "arguments": {
+                "consumer_dir": consumer,
+                "framework": framework,
+                "package": package,
+                "package_cache": package_cache,
+                "local_feed": feed,
+            },
+            "assets_path": assets_path,
+            "metadata_path": cached_package / ".nupkg.metadata",
+        }
+
+    @staticmethod
+    def update_metadata(fixture: dict, *, source: str) -> None:
+        metadata_path = fixture["metadata_path"]
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        metadata["source"] = source
+        metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+
+    @staticmethod
+    def update_asset_hash(fixture: dict, value: str) -> None:
+        assets = json.loads(fixture["assets_path"].read_text(encoding="utf-8"))
+        library = next(iter(assets["libraries"].values()))
+        library["sha512"] = value
+        fixture["assets_path"].write_text(json.dumps(assets), encoding="utf-8")
+
+    @staticmethod
+    def update_asset_identity(fixture: dict, version: str) -> None:
+        assets = json.loads(fixture["assets_path"].read_text(encoding="utf-8"))
+        library = assets["libraries"].pop(next(iter(assets["libraries"])))
+        library["path"] = f"{proof.PACKAGE_ID.casefold()}/{version.casefold()}"
+        assets["libraries"][f"{proof.PACKAGE_ID}/{version}"] = library
+        fixture["assets_path"].write_text(json.dumps(assets), encoding="utf-8")
+
+    @staticmethod
+    def update_cached_archive(fixture: dict, content: bytes) -> None:
+        package_version = proof.PACKAGE_VERSION.casefold()
+        cached_archive = (
+            fixture["arguments"]["package_cache"]
+            / proof.PACKAGE_ID.casefold()
+            / package_version
+            / f"{proof.PACKAGE_ID.casefold()}.{package_version}.nupkg"
+        )
+        cached_archive.write_bytes(content)
+
+    @staticmethod
+    def update_target_framework(fixture: dict) -> None:
+        assets = json.loads(fixture["assets_path"].read_text(encoding="utf-8"))
+        target_package = next(iter(assets["targets"]["net10.0"].values()))
+        target_package["runtime"] = {"lib/net9.0/Elsa.Slack.dll": {}}
+        fixture["assets_path"].write_text(json.dumps(assets), encoding="utf-8")
 
     @staticmethod
     def properties():

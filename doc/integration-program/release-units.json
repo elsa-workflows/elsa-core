@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "release_units": [
+    {
+      "id": "elsa-slack",
+      "package_id": "Elsa.Slack",
+      "source": {
+        "repository": "elsa-extensions",
+        "project_path": "src/modules/communication/Elsa.Slack/Elsa.Slack.csproj",
+        "test_projects": [
+          {
+            "project_path": "test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj",
+            "target_frameworks": ["net10.0"]
+          }
+        ]
+      },
+      "mapped": {
+        "repository": "elsa-core",
+        "project_path": "src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj",
+        "test_projects": [
+          {
+            "source_project_path": "test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj",
+            "project_path": "test/extensions/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj"
+          }
+        ]
+      },
+      "target_frameworks": ["net8.0", "net9.0", "net10.0"],
+      "tested_artifact_dependencies": [
+        {"package_id": "Elsa", "version": "3.8.4", "scope": "internal-compatibility-baseline"},
+        {"package_id": "SlackNet", "version": "0.17.7", "scope": "external"}
+      ],
+      "publisher": {
+        "repository": "elsa-extensions",
+        "status": "sole-current-publisher",
+        "cutover_requires_review": true
+      },
+      "versioning": {
+        "scheme": "independent-per-package-semver2",
+        "stable_authority": "current-publisher-and-package-feed-history",
+        "stable_must_increase": true,
+        "published_versions_are_never_reused": true,
+        "bump_rules": {
+          "compatible_fix": "patch",
+          "compatible_feature": "minor",
+          "breaking_public_or_serialized_identity_change": "major"
+        },
+        "preview_format": "{next_stable}-preview.{run_number}.{run_attempt}.{source_sha}",
+        "local_proof_version": "3.8.5-proof",
+        "local_proof_is_release_allocation": false,
+        "local_proof_may_publish": false
+      }
+    }
+  ]
+}

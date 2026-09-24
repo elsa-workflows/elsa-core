@@ -4,13 +4,15 @@ This is a local-only artifact and consumer proof for the source-mapped consolida
 
 ## Exact release unit and source boundary
 
-- Release unit: `Elsa.Slack` only.
+- Release unit: `Elsa.Slack` only, described by the machine-validated [`release-units.json`](../release-units.json) manifest.
 - Package project: `src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj` in the prepared rehearsal.
 - Source project: `src/modules/communication/Elsa.Slack/Elsa.Slack.csproj` in Extensions.
 - Core, Extensions and Studio source pins: `8e893e02c4ac089d526b0a0d294a8546f021d072`, `33fa0bfd28c7585240e3d4f665058c067b17e287` and `9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822`.
 - Rehearsal commit: `0feffeea6ca994c78bbaeb02db203e3a62078ec5`.
 - Preparation patch SHA-256: `b091576a7f8d51c8b469645eea4b868556ebfadb084d7afbc4287ea36155433d`.
 - Local package identity: `Elsa.Slack` `3.8.5-proof`; the Elsa dependency remains `3.8.4` and SlackNet is `0.17.7`.
+
+The package's Elsa 3.8.4 dependency is the tested artifact compatibility baseline. The separate current-source inventory graph records Elsa `3.8.0-preview.5557` references at different pins. The mapped proof overrides the release project's dependency to 3.8.4 explicitly and does not infer or allocate an Extensions-wide release version.
 
 Package mode evaluates exactly one `PackageReference` to Elsa and no project references. The source-debug mode evaluates a single project reference to the mapped Core `src/modules/Elsa/Elsa.csproj` and no Elsa package reference. These modes are separately evaluated; only package mode is packed and consumed by this proof.
 
@@ -22,11 +24,13 @@ The final `.nupkg` SHA-256 is `3303615cbb228d4819be937708b45eff3fb0caecaff6b2723
 
 Three consumer projects restored using NuGet.org and the isolated local feed, then started on net8.0, net9.0 and net10.0. Each registered `Elsa.Slack.Channels.CreateChannel`, version 1, through the Elsa activity registry. A separate net10.0 consumer invoked `CreateChannel` through a deterministic fake Slack client. It asserted the channel name, private flag and team ID in the request, the returned channel ID/name, and exactly one `Conversations.Create` call.
 
+For each consumer and the offline smoke, the runner checks that `project.assets.json` selected exactly this package ID/version, NuGet used only that consumer's private package cache, `.nupkg.metadata` identifies the proof's local feed, and NuGet's SHA-512 agrees with the exact local `.nupkg`. It also byte-compares the consumer's output assembly with the assembly inside that package. The manual job replays these checks from retained files and uploads a separate recheck receipt; it does not restore or rebuild during that replay.
+
 The source test project also ran on net10.0. Its retained TRX records exactly one `NotExecuted` result, `CreateChannelTests.ExecuteAsync`, skipped as `Not implemented yet.`, with zero executed or passed tests and no failure counters. This is an incomplete upstream test gate. The separate fake-client smoke is narrow behavior evidence and does not turn the skipped test into a pass.
 
 For each TFM, all 41 embedded Slack C# files in the symbol package were decompressed and byte-compared with the pinned Extensions project. The synthetic rehearsal has no remote, so its PDBs contain no SourceLink URLs. This embedded-source check does not prove final Core-repository SourceLink URLs; that remains a history-import gate.
 
-The selector receipt uses the separate 2026-09-23 inventory graph, whose recorded Core/Extensions/Studio commits are `610790ec57ae9d5c334181d50c1e65f99613fd86`, `33fa0bfd28c7585240e3d4f665058c067b17e287` and `9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822`; the inventory SHA-256 is `297569201d879f4ef14943a3d30631912d4803d1e24e69327c6beb6e30fa7842`. These are the impact-selection graph pins. The packed source rehearsal uses its separately recorded Core `8e893e02c4ac089d526b0a0d294a8546f021d072`, Extensions `33fa0bfd28c7585240e3d4f665058c067b17e287` and Studio `9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822` pins. The selector chooses `Elsa.Slack` as the sole package for the requested release unit and records 51 affected test/build inputs for a Core `Elsa.csproj` change, including the Slack test project. Those 51 inputs were not executed by this artifact proof. Dependency-aware closure execution remains incomplete as documented in [package closure](../package-closure.md).
+The selector receipt uses the separate 2026-09-23 inventory graph, whose recorded Core/Extensions/Studio commits are `610790ec57ae9d5c334181d50c1e65f99613fd86`, `33fa0bfd28c7585240e3d4f665058c067b17e287` and `9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822`; the inventory SHA-256 is `297569201d879f4ef14943a3d30631912d4803d1e24e69327c6beb6e30fa7842`. These are the impact-selection graph pins. The packed source rehearsal uses its separately recorded Core `8e893e02c4ac089d526b0a0d294a8546f021d072`, Extensions `33fa0bfd28c7585240e3d4f665058c067b17e287` and Studio `9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822` pins. The selector chooses `Elsa.Slack` as the sole package for the requested release unit and records 51 affected test/build inputs for a Core `Elsa.csproj` change, including the Slack test project. The updated runner adds their exact import-mapped paths, frameworks, and pin comparisons as a plan-only receipt; those 51 inputs were not executed by this artifact proof. Dependency-aware closure execution remains incomplete as documented in [package closure](../package-closure.md).
 
 ## Reproduce
 
@@ -48,8 +52,11 @@ python3 scripts/integration-program/run_mapped_slack_package_proof.py \
   --extensions-source /path/to/elsa-extensions \
   --studio-source /path/to/elsa-studio \
   --output-dir /tmp/elsa-slack-mapped-proof
+python3 scripts/integration-program/verify_mapped_slack_consumer_provenance.py \
+  --evidence /tmp/elsa-slack-mapped-proof/evidence.json \
+  --output /private/tmp/elsa-slack-consumer-provenance-recheck.json
 ```
 
-The runner rejects wrong or dirty source pins, mismatched rehearsal receipts or patch hashes, changed prepared inputs, output aliases into inspected trees, an unrelated package in the local feed, an unexpected evaluated reference mode, a mismatched `.nuspec`, a changed icon or embedded source, an invalid activity descriptor, or a changed test baseline. Its builds write ignored `bin/` and `obj/` files only inside the disposable rehearsal; proof logs, caches, consumers, local packages and receipts stay in the new output directory.
+The runner rejects wrong or dirty source pins, mismatched rehearsal receipts or patch hashes, changed prepared inputs, output aliases into inspected trees, an unrelated package in the local feed, an unexpected evaluated reference mode, a mismatched `.nuspec`, a changed icon or embedded source, an invalid activity descriptor, or a changed test baseline. Its builds write ignored `bin/` and `obj/` files only inside the disposable rehearsal; proof logs, caches, consumers, local packages and receipts stay in the new output directory. The provenance recheck reads the retained evidence, private caches and consumer outputs only. Its new receipt must be outside the retained proof directory; it does not restore or rebuild.
 
-The `Package impact closure rehearsal` manual workflow has a separate `mapped-source-artifact-proof` job. It checks out the same pinned sources with full history, creates a disposable preparation, runs this proof, retains logs/receipts and generated consumer inputs for 14 days, and uploads only the local `.nupkg` as the package artifact. The workflow grants read-only repository permission and configures no publish credential or push step.
+The `Package impact closure rehearsal` manual workflow has a separate `mapped-source-artifact-proof` job. It checks out the same pinned sources with full history, creates a disposable preparation, runs this proof, replays the consumer provenance checks from retained files, retains logs/receipts and generated consumer inputs for 14 days, and uploads only the manifest-selected local `.nupkg` as the package artifact. The workflow grants read-only repository permission and configures no publish credential or push step.

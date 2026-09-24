@@ -41,6 +41,10 @@ class PackageClosureTests(unittest.TestCase):
             ["elsa-extensions:test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj"],
         )
         self.assertEqual(plan["module_change_scenario"]["packages_to_pack"], ["Elsa.Slack"])
+        self.assertEqual(plan["release_unit_manifest"]["unit_id"], "elsa-slack")
+        self.assertEqual(plan["release_unit_manifest"]["package_id"], "Elsa.Slack")
+        self.assertEqual(plan["release_unit_manifest"]["local_proof_version"], "3.8.5-proof")
+        self.assertFalse(plan["release_unit_manifest"]["local_proof_publishable"])
         self.assertEqual(plan["ambiguous_package_edges_resolved_conservatively"], 0)
         self.assertEqual(
             plan["lane_counts"],
@@ -135,7 +139,13 @@ class PackageClosureTests(unittest.TestCase):
             for path in (slack, elsa, helper):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.touch()
-            plan = {"source_package_ids": ["Elsa"], "projects": []}
+            plan = {
+                "source_package_ids": ["Elsa"],
+                "projects": [],
+                "module_change_scenario": {
+                    "changed_project": "elsa-extensions:src/modules/communication/Elsa.Slack/Elsa.Slack.csproj",
+                },
+            }
             yield plan, {"elsa-core": core, "elsa-extensions": extensions}, slack, elsa, helper
 
     def test_transitive_cached_source_package_is_rejected_before_execution(self):
@@ -262,7 +272,7 @@ class PackageClosureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             temporary = Path(directory) / "inventory.json"
             temporary.write_text(json.dumps(data), encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "Expected only Elsa.Slack"):
+            with self.assertRaisesRegex(ValueError, "package identity or packability differs"):
                 build_plan(temporary, {})
 
     def test_requested_receipt_path_gets_a_failure_receipt_with_partial_plan(self):

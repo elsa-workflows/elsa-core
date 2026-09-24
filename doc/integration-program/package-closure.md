@@ -2,6 +2,8 @@
 
 This rehearsal compares two source-change shapes at the integration-program inventory pins. A change to Core's `src/modules/Elsa/Elsa.csproj` reaches 51 test/build inputs; a Slack module-only change reaches only `Elsa.Slack.Tests`. Both select `Elsa.Slack` as the release unit, and `Elsa.Mqtt` is asserted absent as the unchanged connector control. The inventory graph records zero ambiguous package edges for these paths. These are current-source impact checks, not the separately documented 3.8.4 artifact-proof source commits.
 
+[`release-units.json`](release-units.json) is the validated per-package manifest for the bounded Slack unit. It records the source and mapped project/test paths, framework matrix, tested artifact dependency baseline, sole current publisher, and independent per-package SemVer 2 policy. The inventory graph's source `Elsa` dependency is `3.8.0-preview.5557`; the tested artifact compatibility baseline is `Elsa` `3.8.4`. Those graphs serve different checks. The local `3.8.5-proof` identity is not a release allocation and cannot be published. This manifest does not change the current Extensions publisher or the repository's shared release workflows.
+
 ## Clean-run limitation discovered on 2026-09-23
 
 [Manual CI run 35908901399](https://github.com/elsa-workflows/elsa-core/actions/runs/35908901399) passed the released-artifact proof and selector, but failed the source closure. Five Extensions projects (Logging, LDAP, MQTT, Quartz and Service Bus) could not restore explicit `Elsa.*` package references to `3.8.0-preview.5557`. `UseProjectReferences=true` does not replace those test/host package edges. The clean CI run recorded 3,717 passed tests, 3 skips and 5 project restore failures; missing TRX files are reported as failures, never passing tests. The fourth baseline skip belongs to the Service Bus project that did not execute.
@@ -9,6 +11,8 @@ This rehearsal compares two source-change shapes at the integration-program inve
 Earlier local counts below remain historical execution with a populated package cache. They **do not establish clean pinned-source closure**. The source gate is not accepted. Corrected preflight now rejects source-owned package edges before test execution and records the exact project/package references in its failure receipt. A live check of the clean pinned sources stops at Logging's `Elsa.Testing.Shared`, `Elsa.Testing.Shared.Integration`, and `Elsa.Workflows.Core` package references. No packages were published to make this test pass, and source pins were not silently rewritten.
 
 The final closure proof must run against the reviewed consolidated source graph after #8287, including the actual source-reference transformations and a fresh CI environment. Until then, the historical two-repository baseline remains blocked. This fail-closed characterization does not complete #8260.
+
+The mapped-source artifact job also writes a path-and-framework plan for all selector results into its impact receipt. For Extensions paths, each inventory project is mapped through the recorded import relocation rows; Core paths remain in place. The plan records both inventory and mapped source pins and whether each pin matches. It is explicitly not test evidence: no test is counted as executed unless a later TRX receipt matches the mapped path, framework, source revision, and evaluated inputs.
 
 The planner classifies the selected inputs from their recorded project metadata:
 
