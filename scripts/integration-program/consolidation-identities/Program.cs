@@ -240,7 +240,12 @@ static ProjectIdentity EvaluateProject(string projectPath, string repository, st
 
 static IdentityProperties Evaluate(string projectPath, Dictionary<string, string> globals, string scratchKey, ProjectCollection collection, string scratchRoot, Dictionary<string, string> evaluatedInputs)
 {
-    var scratchPath = Path.Combine(scratchRoot, $"{Guid.NewGuid():N}-{SafePath(scratchKey)}") + Path.DirectorySeparatorChar;
+    var scratchLeaf = $"{Guid.NewGuid():N}-{SafePath(scratchKey)}";
+    Require(!Path.IsPathRooted(scratchLeaf)
+        && !scratchLeaf.Contains(Path.DirectorySeparatorChar)
+        && !scratchLeaf.Contains(Path.AltDirectorySeparatorChar),
+        $"Expected a safe relative scratch directory name, found '{scratchLeaf}'.");
+    var scratchPath = Path.Join(scratchRoot, scratchLeaf) + Path.DirectorySeparatorChar;
     Directory.CreateDirectory(scratchPath);
     Require(!Directory.EnumerateFileSystemEntries(scratchPath).Any(), $"MSBuildProjectExtensionsPath was not empty before evaluating {scratchKey}.");
     globals["MSBuildProjectExtensionsPath"] = scratchPath;
@@ -506,7 +511,13 @@ static IReadOnlyCollection<ImportedFileEvidence> VerifyAndHashImportedInputs(IRe
         var paths = sourceInputs[root.Name].Keys.OrderBy(path => path, StringComparer.Ordinal).ToArray();
         VerifyPathsAtHead(root.Path, paths, root.Name);
         VerifyTrackedPaths(root.Path, paths, root.Name);
-        evidence.AddRange(paths.Select(path => new ImportedFileEvidence(root.Name, path, FileSha256(Path.Combine(root.Path, path)), sourceInputs[root.Name][path])));
+        evidence.AddRange(paths.Select(path =>
+        {
+            Require(!Path.IsPathRooted(path), $"Expected a relative imported input path in {root.Name}, found '{path}'.");
+            var importedPath = Path.Join(root.Path, path);
+            Require(IsWithin(root.Path, importedPath), $"Imported input path '{path}' escapes source root '{root.Name}'.");
+            return new ImportedFileEvidence(root.Name, path, FileSha256(importedPath), sourceInputs[root.Name][path]);
+        }));
     }
 
     evidence.AddRange(sdkInputs
