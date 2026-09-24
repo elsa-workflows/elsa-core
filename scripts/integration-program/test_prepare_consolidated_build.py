@@ -1,5 +1,7 @@
 """Protect source history, unrelated work, and repeatable solution generation."""
 import contextlib
+import gzip
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -229,6 +231,29 @@ new file mode 100644
 
         with self.assertRaisesRegex(ValueError, 'effective PackageId is missing or varies'):
             build.evaluate_packability(root, ['src/extensions/Example/Example.csproj'], evaluator=evaluator)
+
+    def test_retained_packability_evidence_is_pinned_and_property_only(self):
+        path = build.HERE.parent.parent / 'doc/integration-program/consolidation/canonical-packability-076-evidence.json.gz'
+        compressed = path.read_bytes()
+        self.assertEqual(hashlib.sha256(compressed).hexdigest(), '640afa1a61b472fb2f054312168a11c6ba85595a312441976785dd04ac7537a7')
+        evidence = json.loads(gzip.decompress(compressed))
+        self.assertEqual(evidence['sourceCommits'], {
+            'core': '076f022cc174d497af26fc8e26414970e61a79b1',
+            'extensions': '33fa0bfd28c7585240e3d4f665058c067b17e287',
+            'studio': '9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822',
+        })
+        self.assertTrue(evidence['workspaceStatusUnchanged'])
+        self.assertFalse(evidence['canonicalBuildAndTestsVerified'])
+        matrix = evidence['propertyMatrix']
+        self.assertEqual((matrix['projectCount'], matrix['evaluationCount']), (167, 2586))
+        self.assertTrue(matrix['allProjectsNonPackable'])
+        self.assertTrue(matrix['allProjectsDisablePackageOnBuild'])
+        for project in matrix['projects']:
+            evaluations = project['evaluations']
+            self.assertEqual(len({row['properties']['PackageId'] for row in evaluations}), 1)
+            self.assertTrue(all(row['properties']['PackageId'] for row in evaluations))
+            self.assertTrue(all(row['properties']['IsPackable'] == 'false' for row in evaluations))
+            self.assertTrue(all(row['properties']['GeneratePackageOnBuild'] == 'false' for row in evaluations))
 
 
 if __name__ == '__main__':
