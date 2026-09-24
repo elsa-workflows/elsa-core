@@ -2,6 +2,8 @@
 """Verify a synthetic old Data Protection -> Core AES-GCM Secrets bridge."""
 import argparse
 import base64
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 import hashlib
 import json
 import os
@@ -80,11 +82,26 @@ def download_package(url):
             with urllib.request.urlopen(url, timeout=60) as response:
                 return response.read()
         except urllib.error.HTTPError as error:
+            delay = 2 ** attempt
+            if error.code == 429 and error.headers:
+                retry_after = error.headers.get('Retry-After')
+                if retry_after:
+                    try:
+                        requested_delay = float(retry_after)
+                    except ValueError:
+                        try:
+                            requested_at = parsedate_to_datetime(retry_after)
+                            if requested_at.tzinfo is None:
+                                requested_at = requested_at.replace(tzinfo=timezone.utc)
+                            requested_delay = (requested_at - datetime.now(timezone.utc)).total_seconds()
+                        except (TypeError, ValueError):
+                            requested_delay = 0
+                    delay = max(delay, min(30, max(0, requested_delay)))
             error.close()
             if error.code not in TRANSIENT_PACKAGE_HTTP_CODES or attempt == 3:
                 raise
             print(f'Transient package HTTP {error.code}; retrying fixture download', file=sys.stderr)
-            time.sleep(2 ** attempt)
+            time.sleep(delay)
     raise RuntimeError('Package download exhausted retries without a response')
 
 
