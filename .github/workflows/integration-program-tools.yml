@@ -40,3 +40,7 @@ jobs:
         run: |
           python scripts/integration-program/run_secrets_sqlite_bridge_contract.py \
             --report-out "$RUNNER_TEMP/secrets-sqlite-bridge-report.json"
+      - name: Characterize published Secrets PostgreSQL upgrade and rollback
+        run: |
+          python scripts/integration-program/run_secrets_postgresql_upgrade_fixture.py \
+            --report-out "$RUNNER_TEMP/secrets-postgresql-upgrade-report.json"

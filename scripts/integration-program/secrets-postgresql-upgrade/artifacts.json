@@ -1,0 +1,38 @@
+{
+  "targetFramework": "net10.0",
+  "postgresImage": "postgres@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94",
+  "phases": {
+    "extensions-3.8.1": {
+      "repository": "https://github.com/elsa-workflows/elsa-extensions",
+      "sourceCommit": "01bf9ad70d0399afadae9609fe820703d3de290d",
+      "packages": [
+        {
+          "id": "Elsa.Secrets.Persistence.EFCore",
+          "version": "3.8.1",
+          "sha512": "00ffb499bb1164fb740c28bf669aaf26cf37e891dded5a5e88a33d41a48a6c9c8b1118554770fb12657c91e4307cc53cf72637c3e2c0dccd878610e6b11dd803"
+        },
+        {
+          "id": "Elsa.Secrets.Persistence.EFCore.PostgreSql",
+          "version": "3.8.1",
+          "sha512": "2f5422f6e275d4e74dba0bb8fb575a9e69910b731d7d271e4215733b8d2dded4069436795f2ae70bfccdad1f54846edf0e79b1673fb0400a19302632b1034285"
+        }
+      ]
+    },
+    "core-3.8.4": {
+      "repository": "https://github.com/elsa-workflows/elsa-core",
+      "sourceCommit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+      "packages": [
+        {
+          "id": "Elsa.Secrets.Persistence.EFCore",
+          "version": "3.8.4",
+          "sha512": "1c6855fcd9785db2f7c90f17bc75817c78db9a5bf630d5eb0ddfaa0c383b7ad1a3d64866e392dbabcfb762267a40e21fa564b112dfd9f4c9502c3c3bed92aeb8"
+        },
+        {
+          "id": "Elsa.Secrets.Persistence.EFCore.PostgreSql",
+          "version": "3.8.4",
+          "sha512": "c91718e729a11f2671a3c8c3c56e646dcfa0841218a9cb4076214163d75137f40efcc1064a10e3345a231d4541d040b92438e1986555b2703ac1dc3f505ca057"
+        }
+      ]
+    }
+  }
+}

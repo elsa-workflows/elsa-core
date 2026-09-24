@@ -1,0 +1,628 @@
+{
+  "fixture": "Extensions 3.8.1 -> Core 3.8.4 PostgreSQL",
+  "targetFramework": "net10.0",
+  "postgresImage": "postgres@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94",
+  "verifiedPackages": {
+    "extensions-3.8.1": [
+      {
+        "id": "Elsa.Secrets.Persistence.EFCore",
+        "version": "3.8.1",
+        "url": "https://api.nuget.org/v3-flatcontainer/elsa.secrets.persistence.efcore/3.8.1/elsa.secrets.persistence.efcore.3.8.1.nupkg",
+        "bytes": 48662,
+        "sha512": "00ffb499bb1164fb740c28bf669aaf26cf37e891dded5a5e88a33d41a48a6c9c8b1118554770fb12657c91e4307cc53cf72637c3e2c0dccd878610e6b11dd803",
+        "sha512Base64": "AP+0mbsRZPt0DCi/ZpqvJs836JHd7VpeiKM9QaSKbJyLERhVR3D7EmV8keQwfMU89yY3w+LA3M2HhhDmsR3YAw==",
+        "repository": "https://github.com/elsa-workflows/elsa-extensions",
+        "sourceCommit": "01bf9ad70d0399afadae9609fe820703d3de290d"
+      },
+      {
+        "id": "Elsa.Secrets.Persistence.EFCore.PostgreSql",
+        "version": "3.8.1",
+        "url": "https://api.nuget.org/v3-flatcontainer/elsa.secrets.persistence.efcore.postgresql/3.8.1/elsa.secrets.persistence.efcore.postgresql.3.8.1.nupkg",
+        "bytes": 47869,
+        "sha512": "2f5422f6e275d4e74dba0bb8fb575a9e69910b731d7d271e4215733b8d2dded4069436795f2ae70bfccdad1f54846edf0e79b1673fb0400a19302632b1034285",
+        "sha512Base64": "L1Qi9uJ11OdNugu4+1danmmRC3MdfSceQhVzO40t3tQGlDZ5XyrnC/zNrR9UhG7fDnmxZz+wQAoZMCYysQNChQ==",
+        "repository": "https://github.com/elsa-workflows/elsa-extensions",
+        "sourceCommit": "01bf9ad70d0399afadae9609fe820703d3de290d"
+      }
+    ],
+    "core-3.8.4": [
+      {
+        "id": "Elsa.Secrets.Persistence.EFCore",
+        "version": "3.8.4",
+        "url": "https://api.nuget.org/v3-flatcontainer/elsa.secrets.persistence.efcore/3.8.4/elsa.secrets.persistence.efcore.3.8.4.nupkg",
+        "bytes": 71326,
+        "sha512": "1c6855fcd9785db2f7c90f17bc75817c78db9a5bf630d5eb0ddfaa0c383b7ad1a3d64866e392dbabcfb762267a40e21fa564b112dfd9f4c9502c3c3bed92aeb8",
+        "sha512Base64": "HGhV/Nl4XbL3yQ8XvHWBfHjbmlv2MNXrDd+qDDg7etGj1khm45Lbq8+3YiZ6QOIfpWSxEt/Z9MlQLDw77ZKuuA==",
+        "repository": "https://github.com/elsa-workflows/elsa-core",
+        "sourceCommit": "33181ae3048f628f591a0155b5665a8e4d1bcea2"
+      },
+      {
+        "id": "Elsa.Secrets.Persistence.EFCore.PostgreSql",
+        "version": "3.8.4",
+        "url": "https://api.nuget.org/v3-flatcontainer/elsa.secrets.persistence.efcore.postgresql/3.8.4/elsa.secrets.persistence.efcore.postgresql.3.8.4.nupkg",
+        "bytes": 58806,
+        "sha512": "c91718e729a11f2671a3c8c3c56e646dcfa0841218a9cb4076214163d75137f40efcc1064a10e3345a231d4541d040b92438e1986555b2703ac1dc3f505ca057",
+        "sha512Base64": "yRcY5ymhHyZxo8jDxW5kbc+ghBIYqctAdiFBY9dRN/QO/MEGShDjNFojHUVB0EC5JDjhmGVVsnA6wdw/UFygVw==",
+        "repository": "https://github.com/elsa-workflows/elsa-core",
+        "sourceCommit": "33181ae3048f628f591a0155b5665a8e4d1bcea2"
+      }
+    ]
+  },
+  "packageLocks": {
+    "extensions-3.8.1": {
+      "sha256": "d90afaf3cc790ffdee7267014fb73b08dd4e7ca4914d9613705f640e2b3e9657",
+      "directPackages": {
+        "Elsa.Secrets.Persistence.EFCore": {
+          "version": "3.8.1",
+          "requested": "[3.8.1, 3.8.1]",
+          "nugetLockContentHash": "rfEHtf8geAdofSBrOwhCB1TE0LEnLjP043ASDlxddSw23UaaCUP34tqPRP6qy6jA9OR5I/CywW4rkQf2h/XW9A==",
+          "nugetCachedContentHash": "rfEHtf8geAdofSBrOwhCB1TE0LEnLjP043ASDlxddSw23UaaCUP34tqPRP6qy6jA9OR5I/CywW4rkQf2h/XW9A==",
+          "verifiedArtifactSha512": "00ffb499bb1164fb740c28bf669aaf26cf37e891dded5a5e88a33d41a48a6c9c8b1118554770fb12657c91e4307cc53cf72637c3e2c0dccd878610e6b11dd803",
+          "cachedPackageSha512": "00ffb499bb1164fb740c28bf669aaf26cf37e891dded5a5e88a33d41a48a6c9c8b1118554770fb12657c91e4307cc53cf72637c3e2c0dccd878610e6b11dd803",
+          "packageCachePath": "elsa.secrets.persistence.efcore/3.8.1/elsa.secrets.persistence.efcore.3.8.1.nupkg",
+          "assetsLibraryPath": "elsa.secrets.persistence.efcore/3.8.1",
+          "restoredFromVerifiedFeed": true
+        },
+        "Elsa.Secrets.Persistence.EFCore.PostgreSql": {
+          "version": "3.8.1",
+          "requested": "[3.8.1, 3.8.1]",
+          "nugetLockContentHash": "pb3Q84yKDy4OEAYCjgbh3L3eTDUNRx93/ywGGK5l5S+pb3PKRQ3GewaLHok582Y6DC59eoop61HJKOcF185PkA==",
+          "nugetCachedContentHash": "pb3Q84yKDy4OEAYCjgbh3L3eTDUNRx93/ywGGK5l5S+pb3PKRQ3GewaLHok582Y6DC59eoop61HJKOcF185PkA==",
+          "verifiedArtifactSha512": "2f5422f6e275d4e74dba0bb8fb575a9e69910b731d7d271e4215733b8d2dded4069436795f2ae70bfccdad1f54846edf0e79b1673fb0400a19302632b1034285",
+          "cachedPackageSha512": "2f5422f6e275d4e74dba0bb8fb575a9e69910b731d7d271e4215733b8d2dded4069436795f2ae70bfccdad1f54846edf0e79b1673fb0400a19302632b1034285",
+          "packageCachePath": "elsa.secrets.persistence.efcore.postgresql/3.8.1/elsa.secrets.persistence.efcore.postgresql.3.8.1.nupkg",
+          "assetsLibraryPath": "elsa.secrets.persistence.efcore.postgresql/3.8.1",
+          "restoredFromVerifiedFeed": true
+        }
+      }
+    },
+    "core-3.8.4": {
+      "sha256": "1389b6c47685d3582154722a33a9520471e33b8c7126d3a016704d50c621f7bc",
+      "directPackages": {
+        "Elsa.Secrets.Persistence.EFCore": {
+          "version": "3.8.4",
+          "requested": "[3.8.4, 3.8.4]",
+          "nugetLockContentHash": "tKHRx8C0QEuhlEorCtDr9yTkffnLCe0Yx/wBydUO0qzqo6d7EPEUOxJmWl+bwwFeHVZbzoroATPYQf/oBU9jPg==",
+          "nugetCachedContentHash": "tKHRx8C0QEuhlEorCtDr9yTkffnLCe0Yx/wBydUO0qzqo6d7EPEUOxJmWl+bwwFeHVZbzoroATPYQf/oBU9jPg==",
+          "verifiedArtifactSha512": "1c6855fcd9785db2f7c90f17bc75817c78db9a5bf630d5eb0ddfaa0c383b7ad1a3d64866e392dbabcfb762267a40e21fa564b112dfd9f4c9502c3c3bed92aeb8",
+          "cachedPackageSha512": "1c6855fcd9785db2f7c90f17bc75817c78db9a5bf630d5eb0ddfaa0c383b7ad1a3d64866e392dbabcfb762267a40e21fa564b112dfd9f4c9502c3c3bed92aeb8",
+          "packageCachePath": "elsa.secrets.persistence.efcore/3.8.4/elsa.secrets.persistence.efcore.3.8.4.nupkg",
+          "assetsLibraryPath": "elsa.secrets.persistence.efcore/3.8.4",
+          "restoredFromVerifiedFeed": true
+        },
+        "Elsa.Secrets.Persistence.EFCore.PostgreSql": {
+          "version": "3.8.4",
+          "requested": "[3.8.4, 3.8.4]",
+          "nugetLockContentHash": "hNWORUXo/eLo9j4jk2OQk3UOpyXmkcTYr6B9v51+8LfEXPwe4J4M9+bltiVNUlMYapa9whbw/0JQz6vVhEQv7Q==",
+          "nugetCachedContentHash": "hNWORUXo/eLo9j4jk2OQk3UOpyXmkcTYr6B9v51+8LfEXPwe4J4M9+bltiVNUlMYapa9whbw/0JQz6vVhEQv7Q==",
+          "verifiedArtifactSha512": "c91718e729a11f2671a3c8c3c56e646dcfa0841218a9cb4076214163d75137f40efcc1064a10e3345a231d4541d040b92438e1986555b2703ac1dc3f505ca057",
+          "cachedPackageSha512": "c91718e729a11f2671a3c8c3c56e646dcfa0841218a9cb4076214163d75137f40efcc1064a10e3345a231d4541d040b92438e1986555b2703ac1dc3f505ca057",
+          "packageCachePath": "elsa.secrets.persistence.efcore.postgresql/3.8.4/elsa.secrets.persistence.efcore.postgresql.3.8.4.nupkg",
+          "assetsLibraryPath": "elsa.secrets.persistence.efcore.postgresql/3.8.4",
+          "restoredFromVerifiedFeed": true
+        }
+      }
+    }
+  },
+  "oldMigration": {
+    "phase": "extensions-3.8.1",
+    "result": "migrated",
+    "appliedMigrations": [
+      "20241011082142_V3_3"
+    ]
+  },
+  "databaseBeforeCore": {
+    "columns": [
+      {
+        "table": "Secrets",
+        "name": "Id",
+        "dataType": "text",
+        "udtName": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "SecretId",
+        "dataType": "text",
+        "udtName": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "Name",
+        "dataType": "text",
+        "udtName": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "Scope",
+        "dataType": "text",
+        "udtName": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "EncryptedValue",
+        "dataType": "text",
+        "udtName": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "Description",
+        "dataType": "text",
+        "udtName": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "Version",
+        "dataType": "integer",
+        "udtName": "int4",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "IsLatest",
+        "dataType": "boolean",
+        "udtName": "bool",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "Status",
+        "dataType": "integer",
+        "udtName": "int4",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "ExpiresIn",
+        "dataType": "interval",
+        "udtName": "interval",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "ExpiresAt",
+        "dataType": "timestamp with time zone",
+        "udtName": "timestamptz",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "LastAccessedAt",
+        "dataType": "timestamp with time zone",
+        "udtName": "timestamptz",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "TenantId",
+        "dataType": "text",
+        "udtName": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "CreatedAt",
+        "dataType": "timestamp with time zone",
+        "udtName": "timestamptz",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "UpdatedAt",
+        "dataType": "timestamp with time zone",
+        "udtName": "timestamptz",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "Owner",
+        "dataType": "text",
+        "udtName": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "table": "__EFMigrationsHistory",
+        "name": "MigrationId",
+        "dataType": "character varying",
+        "udtName": "varchar",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "__EFMigrationsHistory",
+        "name": "ProductVersion",
+        "dataType": "character varying",
+        "udtName": "varchar",
+        "nullable": "NO",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "table": "Secrets",
+        "name": "IX_Secret_ExpiresAt",
+        "definition": "CREATE INDEX \"IX_Secret_ExpiresAt\" ON \"Elsa\".\"Secrets\" USING btree (\"ExpiresAt\")"
+      },
+      {
+        "table": "Secrets",
+        "name": "IX_Secret_LastAccessedAt",
+        "definition": "CREATE INDEX \"IX_Secret_LastAccessedAt\" ON \"Elsa\".\"Secrets\" USING btree (\"LastAccessedAt\")"
+      },
+      {
+        "table": "Secrets",
+        "name": "IX_Secret_Name",
+        "definition": "CREATE INDEX \"IX_Secret_Name\" ON \"Elsa\".\"Secrets\" USING btree (\"Name\")"
+      },
+      {
+        "table": "Secrets",
+        "name": "IX_Secret_Scope",
+        "definition": "CREATE INDEX \"IX_Secret_Scope\" ON \"Elsa\".\"Secrets\" USING btree (\"Scope\")"
+      },
+      {
+        "table": "Secrets",
+        "name": "IX_Secret_Status",
+        "definition": "CREATE INDEX \"IX_Secret_Status\" ON \"Elsa\".\"Secrets\" USING btree (\"Status\")"
+      },
+      {
+        "table": "Secrets",
+        "name": "IX_Secret_TenantId",
+        "definition": "CREATE INDEX \"IX_Secret_TenantId\" ON \"Elsa\".\"Secrets\" USING btree (\"TenantId\")"
+      },
+      {
+        "table": "Secrets",
+        "name": "IX_Secret_Version",
+        "definition": "CREATE INDEX \"IX_Secret_Version\" ON \"Elsa\".\"Secrets\" USING btree (\"Version\")"
+      },
+      {
+        "table": "Secrets",
+        "name": "PK_Secrets",
+        "definition": "CREATE UNIQUE INDEX \"PK_Secrets\" ON \"Elsa\".\"Secrets\" USING btree (\"Id\")"
+      },
+      {
+        "table": "__EFMigrationsHistory",
+        "name": "PK___EFMigrationsHistory",
+        "definition": "CREATE UNIQUE INDEX \"PK___EFMigrationsHistory\" ON \"Elsa\".\"__EFMigrationsHistory\" USING btree (\"MigrationId\")"
+      }
+    ],
+    "migrationHistory": [
+      [
+        "20241011082142_V3_3",
+        "10.0.9"
+      ]
+    ],
+    "syntheticRows": [
+      {
+        "Id": "synthetic-row-version-1",
+        "SecretId": "synthetic-secret-for-upgrade-fixture",
+        "Name": "synthetic-credential",
+        "Scope": "fixture-only",
+        "Description": "synthetic fixture row; not a credential",
+        "Version": 1,
+        "IsLatest": false,
+        "Status": 0,
+        "TenantId": "synthetic-tenant",
+        "Owner": "synthetic-owner",
+        "ExpiresIn": "00:15:00",
+        "ExpiresAt": "2030-01-02T03:04:05Z",
+        "LastAccessedAt": "2026-09-23T10:00:00Z",
+        "CreatedAt": "2026-09-23T09:00:00Z",
+        "UpdatedAt": "2026-09-23T09:00:00Z",
+        "encryptedValueSha512": "bcfd4700367aba3db06aa3e0b9a353456cfd6e36c5521173beceaac62afcca33889add4d14a984e1209b9d7057373d1b500d3c292bd1ad2f6f72ee77eeddbed3"
+      },
+      {
+        "Id": "synthetic-row-version-2",
+        "SecretId": "synthetic-secret-for-upgrade-fixture",
+        "Name": "synthetic-credential",
+        "Scope": "fixture-only",
+        "Description": "synthetic fixture row; not a credential",
+        "Version": 2,
+        "IsLatest": true,
+        "Status": 0,
+        "TenantId": "synthetic-tenant",
+        "Owner": "synthetic-owner",
+        "ExpiresIn": "00:15:00",
+        "ExpiresAt": "2030-01-02T03:04:05Z",
+        "LastAccessedAt": "2026-09-23T10:00:00Z",
+        "CreatedAt": "2026-09-23T09:00:00Z",
+        "UpdatedAt": "2026-09-23T10:00:00Z",
+        "encryptedValueSha512": "748cd8da11f262d97fb1a3c32c4b8902f50d314ed3e3e03d1b482f24d8ce0d18066b14d540ebcdafa1889e4c0a60c59fd4e715b12cd4e0f2e169939c18ce487f"
+      }
+    ]
+  },
+  "coreUpgrade": {
+    "phase": "core-3.8.4",
+    "result": "failed",
+    "appliedMigrationsBeforeUpgrade": [
+      "20241011082142_V3_3"
+    ],
+    "pendingMigrationsBeforeUpgrade": [
+      "20260531141856_Initial"
+    ],
+    "exceptionType": "Npgsql.PostgresException",
+    "exceptionMessage": "42P07: relation \"Secrets\" already exists",
+    "sqlState": "42P07"
+  },
+  "databaseAfterCore": {
+    "columns": [
+      {
+        "table": "Secrets",
+        "name": "Id",
+        "dataType": "text",
+        "udtName": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "SecretId",
+        "dataType": "text",
+        "udtName": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "Name",
+        "dataType": "text",
+        "udtName": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "Scope",
+        "dataType": "text",
+        "udtName": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "EncryptedValue",
+        "dataType": "text",
+        "udtName": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "Description",
+        "dataType": "text",
+        "udtName": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "Version",
+        "dataType": "integer",
+        "udtName": "int4",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "IsLatest",
+        "dataType": "boolean",
+        "udtName": "bool",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "Status",
+        "dataType": "integer",
+        "udtName": "int4",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "ExpiresIn",
+        "dataType": "interval",
+        "udtName": "interval",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "ExpiresAt",
+        "dataType": "timestamp with time zone",
+        "udtName": "timestamptz",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "LastAccessedAt",
+        "dataType": "timestamp with time zone",
+        "udtName": "timestamptz",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "TenantId",
+        "dataType": "text",
+        "udtName": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "CreatedAt",
+        "dataType": "timestamp with time zone",
+        "udtName": "timestamptz",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "UpdatedAt",
+        "dataType": "timestamp with time zone",
+        "udtName": "timestamptz",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "Secrets",
+        "name": "Owner",
+        "dataType": "text",
+        "udtName": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "table": "__EFMigrationsHistory",
+        "name": "MigrationId",
+        "dataType": "character varying",
+        "udtName": "varchar",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "table": "__EFMigrationsHistory",
+        "name": "ProductVersion",
+        "dataType": "character varying",
+        "udtName": "varchar",
+        "nullable": "NO",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "table": "Secrets",
+        "name": "IX_Secret_ExpiresAt",
+        "definition": "CREATE INDEX \"IX_Secret_ExpiresAt\" ON \"Elsa\".\"Secrets\" USING btree (\"ExpiresAt\")"
+      },
+      {
+        "table": "Secrets",
+        "name": "IX_Secret_LastAccessedAt",
+        "definition": "CREATE INDEX \"IX_Secret_LastAccessedAt\" ON \"Elsa\".\"Secrets\" USING btree (\"LastAccessedAt\")"
+      },
+      {
+        "table": "Secrets",
+        "name": "IX_Secret_Name",
+        "definition": "CREATE INDEX \"IX_Secret_Name\" ON \"Elsa\".\"Secrets\" USING btree (\"Name\")"
+      },
+      {
+        "table": "Secrets",
+        "name": "IX_Secret_Scope",
+        "definition": "CREATE INDEX \"IX_Secret_Scope\" ON \"Elsa\".\"Secrets\" USING btree (\"Scope\")"
+      },
+      {
+        "table": "Secrets",
+        "name": "IX_Secret_Status",
+        "definition": "CREATE INDEX \"IX_Secret_Status\" ON \"Elsa\".\"Secrets\" USING btree (\"Status\")"
+      },
+      {
+        "table": "Secrets",
+        "name": "IX_Secret_TenantId",
+        "definition": "CREATE INDEX \"IX_Secret_TenantId\" ON \"Elsa\".\"Secrets\" USING btree (\"TenantId\")"
+      },
+      {
+        "table": "Secrets",
+        "name": "IX_Secret_Version",
+        "definition": "CREATE INDEX \"IX_Secret_Version\" ON \"Elsa\".\"Secrets\" USING btree (\"Version\")"
+      },
+      {
+        "table": "Secrets",
+        "name": "PK_Secrets",
+        "definition": "CREATE UNIQUE INDEX \"PK_Secrets\" ON \"Elsa\".\"Secrets\" USING btree (\"Id\")"
+      },
+      {
+        "table": "__EFMigrationsHistory",
+        "name": "PK___EFMigrationsHistory",
+        "definition": "CREATE UNIQUE INDEX \"PK___EFMigrationsHistory\" ON \"Elsa\".\"__EFMigrationsHistory\" USING btree (\"MigrationId\")"
+      }
+    ],
+    "migrationHistory": [
+      [
+        "20241011082142_V3_3",
+        "10.0.9"
+      ]
+    ],
+    "syntheticRows": [
+      {
+        "Id": "synthetic-row-version-1",
+        "SecretId": "synthetic-secret-for-upgrade-fixture",
+        "Name": "synthetic-credential",
+        "Scope": "fixture-only",
+        "Description": "synthetic fixture row; not a credential",
+        "Version": 1,
+        "IsLatest": false,
+        "Status": 0,
+        "TenantId": "synthetic-tenant",
+        "Owner": "synthetic-owner",
+        "ExpiresIn": "00:15:00",
+        "ExpiresAt": "2030-01-02T03:04:05Z",
+        "LastAccessedAt": "2026-09-23T10:00:00Z",
+        "CreatedAt": "2026-09-23T09:00:00Z",
+        "UpdatedAt": "2026-09-23T09:00:00Z",
+        "encryptedValueSha512": "bcfd4700367aba3db06aa3e0b9a353456cfd6e36c5521173beceaac62afcca33889add4d14a984e1209b9d7057373d1b500d3c292bd1ad2f6f72ee77eeddbed3"
+      },
+      {
+        "Id": "synthetic-row-version-2",
+        "SecretId": "synthetic-secret-for-upgrade-fixture",
+        "Name": "synthetic-credential",
+        "Scope": "fixture-only",
+        "Description": "synthetic fixture row; not a credential",
+        "Version": 2,
+        "IsLatest": true,
+        "Status": 0,
+        "TenantId": "synthetic-tenant",
+        "Owner": "synthetic-owner",
+        "ExpiresIn": "00:15:00",
+        "ExpiresAt": "2030-01-02T03:04:05Z",
+        "LastAccessedAt": "2026-09-23T10:00:00Z",
+        "CreatedAt": "2026-09-23T09:00:00Z",
+        "UpdatedAt": "2026-09-23T10:00:00Z",
+        "encryptedValueSha512": "748cd8da11f262d97fb1a3c32c4b8902f50d314ed3e3e03d1b482f24d8ce0d18066b14d540ebcdafa1889e4c0a60c59fd4e715b12cd4e0f2e169939c18ce487f"
+      }
+    ]
+  },
+  "oldPackageReopenAfterFailure": {
+    "phase": "extensions-3.8.1",
+    "result": "readable",
+    "rowCount": 2,
+    "versions": [
+      1,
+      2
+    ],
+    "secretIds": [
+      "synthetic-secret-for-upgrade-fixture"
+    ],
+    "latestFlags": [
+      false,
+      true
+    ],
+    "encryptedValueSha256": [
+      "2CEF360A72B4723C2D0524EB0961834955B0DCB2648D686C4B4B402E8952329E",
+      "4B139718F2E965735950C0B5A88D2035C7A8CD470BD97E2A101E804A1DA81777"
+    ]
+  },
+  "schemaMigrationCodeChanged": false,
+  "credentialConversionVerified": false,
+  "downgradeExecuted": false
+}
