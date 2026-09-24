@@ -11,6 +11,8 @@ import sqlite3
 import subprocess
 import sys
 import tempfile
+import time
+import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 import zipfile
@@ -36,6 +38,7 @@ PINNED_CORE_BUILD_INPUTS = (
     'NuGet.Config',
     'nuget.config',
 )
+TRANSIENT_PACKAGE_HTTP_CODES = {429, 500, 502, 503, 504}
 
 
 def run(command, *, cwd=None, env=None, capture=False, timeout=None):
@@ -71,10 +74,22 @@ def package_url(package):
     return f'{NUGET_FLAT}/{package_id}/{version}/{package_id}.{version}.nupkg'
 
 
+def download_package(url):
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(url, timeout=60) as response:
+                return response.read()
+        except urllib.error.HTTPError as error:
+            error.close()
+            if error.code not in TRANSIENT_PACKAGE_HTTP_CODES or attempt == 3:
+                raise
+            print(f'Transient package HTTP {error.code}; retrying fixture download', file=sys.stderr)
+            time.sleep(2 ** attempt)
+
+
 def verify_package(package, phase, feed_dir):
     url = package_url(package)
-    with urllib.request.urlopen(url, timeout=60) as response:
-        content = response.read()
+    content = download_package(url)
     digest = hashlib.sha512(content).digest()
     if digest.hex() != package['sha512']:
         raise ValueError(f"SHA-512 mismatch for {package['id']} {package['version']}")
