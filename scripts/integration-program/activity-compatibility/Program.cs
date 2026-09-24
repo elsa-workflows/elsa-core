@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text.Json;
 using Elsa.Extensions;
 using Elsa.Expressions.Contracts;
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
@@ -33,13 +34,20 @@ var serializer = provider.GetRequiredService<IActivitySerializer>();
 var descriptors = new List<object>();
 var exclusions = new List<object>();
 var failures = new List<object>();
-var activities = new List<IActivity>();
 var firstWriteActivities = new List<IActivity>();
 var activityIdentities = new HashSet<(string, int)>();
 var roundTrips = new List<object>();
 await registry.RegisterAsync(typeof(Sequence));
-foreach (var type in types)
+var candidates = types.Select(type => (Type: type, Descriptor: (ActivityDescriptor?)null, Instance: (IActivity?)null, Provider: (string?)null)).ToList();
+foreach (var generated in await GeneratedActivityFixtures.DescribeAsync(provider))
 {
+    var context = new ActivityConstructorContext(generated.Descriptor, type => new ActivityConstructionResult(CreateDefaultActivity(type)));
+    var activity = generated.Descriptor.Constructor(context).Activity;
+    candidates.Add((activity.GetType(), generated.Descriptor, activity, generated.Provider));
+}
+foreach (var candidate in candidates)
+{
+    var type = candidate.Type;
     if (type.IsAbstract || type.ContainsGenericParameters)
     {
         exclusions.Add(new { ClrType = type.FullName, Reason = type.IsAbstract ? "abstract" : "open-generic-requires-host-configuration" });
@@ -48,7 +56,7 @@ foreach (var type in types)
 
     try
     {
-        var descriptor = await describer.DescribeActivityAsync(type);
+        var descriptor = candidate.Descriptor ?? await describer.DescribeActivityAsync(type);
         if (!activityIdentities.Add((descriptor.TypeName, descriptor.Version)))
         {
             throw new InvalidOperationException($"Duplicate activity identity: {descriptor.TypeName} v{descriptor.Version}.");
@@ -57,6 +65,7 @@ foreach (var type in types)
         descriptors.Add(new
         {
             Assembly = type.Assembly.GetName().Name,
+            candidate.Provider,
             ClrType = type.FullName,
             descriptor.TypeName,
             descriptor.Version,
@@ -69,17 +78,15 @@ foreach (var type in types)
                 .Select(port => new { port.Name, Type = port.Type.ToString() }).ToArray()
         });
 
-        var constructor = type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-            .Where(candidate => candidate.IsPublic || candidate.GetCustomAttribute<System.Text.Json.Serialization.JsonConstructorAttribute>() is not null)
-            .FirstOrDefault(candidate => candidate.GetParameters().All(parameter => parameter.HasDefaultValue));
-        if (constructor is null)
+        var constructor = FindDefaultConstructor(type);
+        if (constructor is null && candidate.Instance is null)
         {
             exclusions.Add(new { ClrType = type.FullName, Reason = "constructor-requires-services-or-inputs" });
             continue;
         }
 
-        var activity = (IActivity)constructor.Invoke(constructor.GetParameters().Select(parameter => parameter.DefaultValue).ToArray());
-        activity.Id = $"compatibility-{activities.Count + 1}";
+        var activity = candidate.Instance ?? CreateDefaultActivity(type);
+        activity.Id = $"compatibility-{firstWriteActivities.Count + 1}";
         activity.Type = descriptor.TypeName;
         activity.Version = descriptor.Version;
         foreach (var property in type.GetProperties().Where(property => property.CanWrite))
@@ -101,6 +108,21 @@ foreach (var type in types)
                 property.SetValue(activity, new Input<bool>(true));
             }
         }
+        foreach (var input in descriptor.Inputs.Where(input => input.IsSynthetic))
+        {
+            if (input.Type == typeof(string))
+            {
+                input.ValueSetter(activity, new Input<string>("compatibility-probe"));
+            }
+            else if (input.Type == typeof(int))
+            {
+                input.ValueSetter(activity, new Input<int>(42));
+            }
+        }
+        if (candidate.Provider is not null && activity is Elsa.ServiceBus.MassTransit.Activities.PublishMessage message)
+        {
+            message.Message = new Input<object>(new CompatibilityMessage("compatibility-probe"));
+        }
         var serialized = serializer.Serialize(activity);
         try
         {
@@ -112,21 +134,21 @@ foreach (var type in types)
             var stableRoundTrip = serializer.Serialize(serializer.Deserialize(roundTrip));
             var semanticSerialized = NormalizeLiterals(serialized, type, literalValues);
             var semanticRoundTrip = NormalizeLiterals(roundTrip, type, restoredLiteralValues);
-            var preserved = identityPreserved && AllowsDefaultEnrichment(semanticSerialized, semanticRoundTrip) && JsonEqual(roundTrip, stableRoundTrip);
-            roundTrips.Add(new { ClrType = type.FullName, Serialized = serialized, RoundTrip = roundTrip, IdentityPreserved = identityPreserved, LiteralValues = literalValues, RestoredLiteralValues = restoredLiteralValues, Preserved = preserved });
-            if (preserved)
+            var literalValuesPreserved = JsonEqual(JsonSerializer.Serialize(literalValues), JsonSerializer.Serialize(restoredLiteralValues));
+            var preserved = identityPreserved && literalValuesPreserved && AllowsDefaultEnrichment(semanticSerialized, semanticRoundTrip) && JsonEqual(roundTrip, stableRoundTrip);
+            roundTrips.Add(new { ClrType = type.FullName, descriptor.TypeName, descriptor.Version, candidate.Provider, Serialized = serialized, RoundTrip = roundTrip, IdentityPreserved = identityPreserved, LiteralValues = literalValues, RestoredLiteralValues = restoredLiteralValues, LiteralValuesPreserved = literalValuesPreserved, Preserved = preserved });
+            if (identityPreserved)
             {
-                activities.Add(restoredActivity);
                 firstWriteActivities.Add(activity);
             }
-            else
+            if (!preserved)
             {
-                failures.Add(new { ClrType = type.FullName, Stage = "individual-round-trip", ErrorType = "JsonMismatch", Message = "Serialized activity changed during same-host round-trip." });
+                failures.Add(new { ClrType = type.FullName, descriptor.TypeName, descriptor.Version, candidate.Provider, Stage = "individual-round-trip", ErrorType = "JsonMismatch", Message = "Serialized activity changed during same-host round-trip." });
             }
         }
         catch (Exception exception)
         {
-            failures.Add(new { ClrType = type.FullName, Stage = "individual-round-trip", Serialized = serialized, ErrorType = exception.GetType().FullName, exception.Message });
+            failures.Add(new { ClrType = type.FullName, descriptor.TypeName, descriptor.Version, candidate.Provider, Stage = "individual-round-trip", Serialized = serialized, ErrorType = exception.GetType().FullName, exception.Message });
         }
     }
     catch (Exception exception)
@@ -135,23 +157,29 @@ foreach (var type in types)
     }
 }
 
-var workflow = CreateWorkflow(activities);
-var firstWriteWorkflow = serializer.Serialize(CreateWorkflow(firstWriteActivities));
-var originalWorkflow = serializer.Serialize(workflow);
+var workflow = CreateWorkflow(firstWriteActivities);
+var firstWriteWorkflow = serializer.Serialize(workflow);
+var originalWorkflow = firstWriteWorkflow;
 var serializedWorkflow = originalWorkflow;
 var selfRoundTrip = string.Empty;
 var selfPreserved = false;
 try
 {
-    serializedWorkflow = serializer.Serialize(serializer.Deserialize(originalWorkflow));
+    var restoredWorkflow = (Sequence)serializer.Deserialize(originalWorkflow);
+    serializedWorkflow = serializer.Serialize(restoredWorkflow);
     selfRoundTrip = serializer.Serialize(serializer.Deserialize(serializedWorkflow));
-    selfPreserved = AllowsDefaultEnrichment(originalWorkflow, serializedWorkflow) && JsonEqual(serializedWorkflow, selfRoundTrip);
+    var originalContracts = await WorkflowContracts(firstWriteActivities, provider);
+    var restoredContracts = await WorkflowContracts(restoredWorkflow.Activities, provider);
+    var semanticOriginal = await NormalizeWorkflow(originalWorkflow, firstWriteActivities, provider);
+    var semanticRestored = await NormalizeWorkflow(serializedWorkflow, restoredWorkflow.Activities, provider);
+    selfPreserved = JsonEqual(JsonSerializer.Serialize(originalContracts), JsonSerializer.Serialize(restoredContracts))
+        && AllowsDefaultEnrichment(semanticOriginal, semanticRestored) && JsonEqual(serializedWorkflow, selfRoundTrip);
 }
 catch (Exception exception)
 {
     failures.Add(new { ClrType = typeof(Sequence).FullName, Stage = "workflow-round-trip", ErrorType = exception.GetType().FullName, exception.Message });
 }
-var workflowContracts = await WorkflowContracts(activities, provider);
+var workflowContracts = await WorkflowContracts(firstWriteActivities, provider);
 string? importedRoundTrip = null;
 bool? importedContractsPreserved = null;
 bool? importedFirstWritePreserved = null;
@@ -195,7 +223,7 @@ await using (var output = new FileStream(outputPath, FileMode.CreateNew, FileAcc
         exclusions,
         failures,
         roundTrips,
-        serializedActivities = activities.Count,
+        serializedActivities = firstWriteActivities.Count,
         workflowContracts,
         importedContractsPreserved,
         importedFirstWritePreserved,
@@ -209,7 +237,7 @@ await using (var output = new FileStream(outputPath, FileMode.CreateNew, FileAcc
         executedActivities = 0
     }, new JsonSerializerOptions { WriteIndented = true });
 }
-Console.WriteLine($"Descriptors={descriptors.Count}; serialized activities={activities.Count}; exclusions={exclusions.Count}; failures={failures.Count}; self round-trip={selfPreserved}; historical round-trip={importedPreserved}");
+Console.WriteLine($"Descriptors={descriptors.Count}; serialized activities={firstWriteActivities.Count}; exclusions={exclusions.Count}; failures={failures.Count}; self round-trip={selfPreserved}; historical round-trip={importedPreserved}");
 return failures.Count == 0 && selfPreserved && importedPreserved is not false ? 0 : 1;
 
 static bool JsonEqual(string left, string right)
@@ -259,7 +287,25 @@ static async Task<SortedDictionary<string, JsonElement>> LiteralValues(IActivity
         }
         var context = new ExpressionExecutionContext(provider, new MemoryRegister());
         var value = await evaluator.EvaluateAsync(expression, input.Type, context);
-        values.Add(property.Name, value is Type type ? JsonSerializer.SerializeToElement(TypeIdentity(type)) : JsonSerializer.SerializeToElement(value, input.Type));
+        var targetType = input.Type;
+        // PublishMessage executes this exact conversion before sending. Evaluate
+        // it offline to compare its typed payload without invoking a bus.
+        if (activity is Elsa.ServiceBus.MassTransit.Activities.PublishMessage { MessageType: not null } message && property.Name == nameof(message.Message))
+        {
+            targetType = message.MessageType;
+            value = value.ConvertTo(targetType);
+        }
+        values.Add(property.Name, value is Type type ? JsonSerializer.SerializeToElement(TypeIdentity(type)) : JsonSerializer.SerializeToElement(value, targetType));
+    }
+    var descriptor = provider.GetRequiredService<IActivityRegistry>().Find(activity.Type, activity.Version);
+    foreach (var inputDescriptor in descriptor?.Inputs.Where(input => input.IsSynthetic) ?? [])
+    {
+        if (inputDescriptor.ValueGetter(activity) is not Input { Expression: { Type: "Literal" } expression } input)
+        {
+            continue;
+        }
+        var value = await evaluator.EvaluateAsync(expression, input.Type, new ExpressionExecutionContext(provider, new MemoryRegister()));
+        values.Add(inputDescriptor.Name, value is Type type ? JsonSerializer.SerializeToElement(TypeIdentity(type)) : JsonSerializer.SerializeToElement(value, input.Type));
     }
     return values;
 }
@@ -287,8 +333,8 @@ static string NormalizeLiterals(string json, Type activityType, SortedDictionary
     var root = System.Text.Json.Nodes.JsonNode.Parse(json)!.AsObject();
     foreach (var pair in values)
     {
-        var property = activityType.GetProperties().Single(property => property.Name == pair.Key && typeof(Input).IsAssignableFrom(property.PropertyType));
-        var name = property.GetCustomAttribute<System.Text.Json.Serialization.JsonPropertyNameAttribute>()?.Name ?? JsonNamingPolicy.CamelCase.ConvertName(pair.Key);
+        var property = activityType.GetProperties().SingleOrDefault(property => property.Name == pair.Key && typeof(Input).IsAssignableFrom(property.PropertyType));
+        var name = property?.GetCustomAttribute<System.Text.Json.Serialization.JsonPropertyNameAttribute>()?.Name ?? JsonNamingPolicy.CamelCase.ConvertName(pair.Key);
         if (root[name] is System.Text.Json.Nodes.JsonObject input && input["expression"] is System.Text.Json.Nodes.JsonObject expression && expression["type"]?.GetValue<string>() == "Literal")
         {
             expression["value"] = System.Text.Json.Nodes.JsonNode.Parse(pair.Value.GetRawText());
@@ -316,3 +362,32 @@ static string AssemblyIdentity(Assembly assembly)
 }
 
 static Sequence CreateWorkflow(List<IActivity> activities) => new() { Id = "compatibility-root", Activities = activities };
+
+static ConstructorInfo? FindDefaultConstructor(Type type) => type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+    .Where(candidate => candidate.IsPublic || candidate.GetCustomAttribute<System.Text.Json.Serialization.JsonConstructorAttribute>() is not null)
+    .FirstOrDefault(candidate => candidate.GetParameters().All(parameter => parameter.HasDefaultValue));
+
+static IActivity CreateDefaultActivity(Type type)
+{
+    var constructor = FindDefaultConstructor(type)
+        ?? throw new InvalidOperationException($"No supported constructor for {type.FullName}.");
+    return (IActivity)constructor.Invoke(constructor.GetParameters().Select(parameter => parameter.DefaultValue).ToArray());
+}
+
+static async Task<string> NormalizeWorkflow(string json, IEnumerable<IActivity> activities, IServiceProvider provider)
+{
+    var root = System.Text.Json.Nodes.JsonNode.Parse(json)!.AsObject();
+    var nodes = root["activities"]!.AsArray();
+    var instances = activities.ToArray();
+    if (nodes.Count != instances.Length)
+    {
+        throw new InvalidOperationException("Workflow JSON/activity counts differ.");
+    }
+    for (var index = 0; index < instances.Length; index++)
+    {
+        var activity = instances[index];
+        var values = await LiteralValues(activity, provider);
+        nodes[index] = System.Text.Json.Nodes.JsonNode.Parse(NormalizeLiterals(nodes[index]!.ToJsonString(), activity.GetType(), values));
+    }
+    return root.ToJsonString();
+}
