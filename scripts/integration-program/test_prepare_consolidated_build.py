@@ -156,14 +156,15 @@ new file mode 100644
 
     def test_current_tip_profile_is_additive_and_prunes_only_obsolete_blazored_refs(self):
         current = {
-            'core': '1855a2ef2719d536a66181dec604e781bfdd42a9',
+            'core': 'a13ac7a412e037280d7a568fd9dd87b06ff8b724',
             'extensions': 'ba8b71d91c15ffe5be4b2c539cf9f712e74af775',
             'studio': '20ceaeeed7e671f0c9662003e82063026f2216de',
         }
         profiles = build.supported_source_profiles()
         self.assertEqual(profiles[-1], current)
+        self.assertEqual(profiles[-2], build.PREVIOUS_CURRENT_TIP_SOURCE_COMMITS)
         self.assertEqual(profiles[0], build.SOURCE_COMMITS)
-        self.assertEqual(len(profiles), 4)
+        self.assertEqual(len(profiles), 5)
 
         agent = self.root / 'src/extensions/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj'
         contexts = self.root / 'src/extensions/workflows/Elsa.Studio.WorkflowContexts/Elsa.Studio.WorkflowContexts.csproj'
@@ -172,6 +173,8 @@ new file mode 100644
             path.parent.mkdir(parents=True)
             path.write_text('<Project>\n\n  <ItemGroup>\n    <PackageReference Include="Blazored.FluentValidation"/>\n  </ItemGroup>\n\n</Project>\n')
         agent.write_bytes(agent.read_bytes().replace(b'\n', b'\r\n'))
+        original_agent = agent.read_bytes()
+        original_contexts = contexts.read_bytes()
 
         build.remove_unused_blazored_references(self.root, current)
 
@@ -179,6 +182,12 @@ new file mode 100644
             self.assertNotIn('Blazored.FluentValidation', path.read_text())
         self.assertNotIn(b'\n', agent.read_bytes().replace(b'\r\n', b''))
         self.assertIn('Blazored.FluentValidation', secrets.read_text())
+
+        agent.write_bytes(original_agent)
+        contexts.write_bytes(original_contexts)
+        build.remove_unused_blazored_references(self.root, build.PREVIOUS_CURRENT_TIP_SOURCE_COMMITS)
+        self.assertNotIn('Blazored.FluentValidation', agent.read_text())
+        self.assertNotIn('Blazored.FluentValidation', contexts.read_text())
 
     def test_current_tip_rehearsal_receipt_prepares_and_applies_patch(self):
         repos = {name: self.root / name for name in ('core', 'extensions', 'studio')}

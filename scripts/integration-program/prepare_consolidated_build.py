@@ -24,10 +24,15 @@ SOURCE_COMMITS = {
     'core': '8e893e02c4ac089d526b0a0d294a8546f021d072',
     **rehearsal.PINS,
 }
-# New source tips differ only in the upstream validation package references;
-# keep the reviewed 3.8-era source profile available for existing receipts.
-CURRENT_TIP_SOURCE_COMMITS = {
+# Keep both reviewed Extensions/Studio tips and exact Core commits available for
+# existing receipts. The newer Core tip includes merged Secrets and integration
+# changes, so its full mapped source must be evaluated again.
+PREVIOUS_CURRENT_TIP_SOURCE_COMMITS = {
     'core': '1855a2ef2719d536a66181dec604e781bfdd42a9',
+    **rehearsal.CURRENT_TIP_PINS,
+}
+CURRENT_TIP_SOURCE_COMMITS = {
+    'core': 'a13ac7a412e037280d7a568fd9dd87b06ff8b724',
     **rehearsal.CURRENT_TIP_PINS,
 }
 # Keep prior reviewed profiles accepted alongside the current-tip rehearsal.
@@ -58,6 +63,7 @@ def supported_source_profiles():
     return (
         SOURCE_COMMITS,
         *({**SOURCE_COMMITS, 'core': core_commit} for core_commit in SUPPORTED_CORE_PROFILE_COMMITS),
+        PREVIOUS_CURRENT_TIP_SOURCE_COMMITS,
         CURRENT_TIP_SOURCE_COMMITS,
     )
 
@@ -288,7 +294,7 @@ def remove_unused_blazored_references(root, source_commits):
     and removes WorkflowContexts' unused Razor import. Secrets is deliberately
     retained under the inert duplicate-source tree, so it needs no active edit.
     """
-    if source_commits != CURRENT_TIP_SOURCE_COMMITS:
+    if source_commits not in (PREVIOUS_CURRENT_TIP_SOURCE_COMMITS, CURRENT_TIP_SOURCE_COMMITS):
         return
 
     references = (
