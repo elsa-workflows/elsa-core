@@ -362,7 +362,7 @@ index 000000000..fc11d5c11
 +  <Import Project="../../src/studio/Directory.Packages.props" />
 +</Project>
 diff --git a/src/extensions/Directory.Build.props b/src/extensions/Directory.Build.props
-index c457c8e6d..c027e87b4 100644
+index c457c8e6d..22f4a350e 100644
 --- a/src/extensions/Directory.Build.props
 +++ b/src/extensions/Directory.Build.props
 @@ -1,13 +1,56 @@
@@ -420,7 +420,7 @@ index c457c8e6d..c027e87b4 100644
  
    <ItemGroup Label="Files">
 -    <None Include="..\..\..\..\icon.png" Pack="true" PackagePath="\" />
-+
++    <None Include="..\..\..\..\icon.png" Pack="true" PackagePath="\" />
    </ItemGroup>
  
    <ItemGroup>

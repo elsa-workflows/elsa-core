@@ -149,6 +149,13 @@ new file mode 100644
         self.assertIn('+        <ProjectReference Include="../../../modules/Elsa/Elsa.csproj" />', project_mode)
         self.assertNotIn('PackageReference', project_mode)
 
+    def test_extensions_package_icon_remains_linked_from_the_canonical_root_file(self):
+        patch = SOURCE_INTEGRATION_PATCH.read_text()
+        marker = 'diff --git a/src/extensions/Directory.Build.props '
+        extensions_props_diff = patch.split(marker, 1)[1].split('\ndiff --git ', 1)[0]
+
+        self.assertIn('+    <None Include="..\\..\\..\\..\\icon.png" Pack="true" PackagePath="\\" />', extensions_props_diff)
+
 
 if __name__ == '__main__':
     unittest.main()
