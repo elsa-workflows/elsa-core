@@ -17,5 +17,6 @@ internal sealed class ConnectionGenerationCleanupConfiguration : IEntityTypeConf
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(24).IsRequired();
         builder.Property(x => x.LeaseExpiresAt);
         builder.HasIndex(x => new { x.TenantId, x.EnvironmentId, x.ConnectionId });
+        builder.HasIndex(x => new { x.TenantId, x.EnvironmentId, x.Status, x.LeaseExpiresAt, x.ConnectionId, x.GenerationId }).HasDatabaseName("IX_Cleanup_Due");
     }
 }

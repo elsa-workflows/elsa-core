@@ -80,12 +80,14 @@ public sealed class ConnectionLifecycleTests
         var provider = new SyntheticCredentialProvider(block: false);
         await using var worker = await Worker.CreateAsync(database.Path, MakeKey(32), provider);
         provider.IssueRefreshToken("refresh-initial");
+        var expiresAt = DateTimeOffset.UtcNow.AddHours(1);
 
+        using var tenant = worker.TenantAccessor.PushContext(TenantContext());
         using var scope = worker.Services.CreateScope();
         var result = await scope.ServiceProvider.GetRequiredService<IConnectionLifecycleService>().ConnectAsync(
             Principal(),
             new ConnectConnectionRequest(TenantId, EnvironmentId, "synthetic-oauth", "account-test",
-                new CredentialMaterial("access-initial", "refresh-initial", DateTimeOffset.UtcNow.AddHours(1))));
+                new CredentialMaterial("access-initial", "refresh-initial", expiresAt)));
 
         Assert.True(result.Succeeded);
         Assert.NotNull(result.ConnectionId);
@@ -96,8 +98,109 @@ public sealed class ConnectionLifecycleTests
         Assert.Equal(ConnectionStatus.Active, metadata.Status);
         Assert.Equal(2, metadata.Revision);
         Assert.NotNull(metadata.GenerationId);
+        var persisted = await scope.ServiceProvider.GetRequiredService<IConnectionLifecycleStore>()
+            .FindAsync(result.ConnectionId, TenantId, EnvironmentId);
+        Assert.Equal(ConnectionCredentialKind.OAuth, persisted!.CredentialKind);
+        Assert.Equal(expiresAt, persisted.CredentialExpiresAt);
         Assert.DoesNotContain("access-initial", JsonSerializer.Serialize(result));
         Assert.DoesNotContain("refresh-initial", JsonSerializer.Serialize(result));
+    }
+
+    [Fact]
+    public async Task DueCandidateQueryRunsOnSqliteAndUsesStableBinaryOrdering()
+    {
+        await using var database = new TestDatabase();
+        await using var worker = await Worker.CreateAsync(database.Path, MakeKey(32), new SyntheticCredentialProvider(block: false));
+        using var tenant = worker.TenantAccessor.PushContext(TenantContext());
+        using var scope = worker.Services.CreateScope();
+        var lifecycleStore = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleStore>();
+        var dueStore = scope.ServiceProvider.GetRequiredService<IConnectionDueCandidateStore>();
+        var now = new DateTimeOffset(2026, 9, 24, 12, 0, 0, TimeSpan.Zero);
+
+        foreach (var id in new[] { "due-A", "due-a", "due-b" })
+        {
+            await lifecycleStore.CreateAsync(new IntegrationConnection
+            {
+                Id = id,
+                TenantId = TenantId,
+                EnvironmentId = EnvironmentId,
+                ProviderId = "synthetic-oauth",
+                ProviderAccountId = "account-test",
+                Status = ConnectionStatus.Active,
+                Revision = 1,
+                OperationStatus = CredentialOperationStatus.None,
+                CredentialKind = ConnectionCredentialKind.OAuth,
+                // The EF store must canonicalize offsets before SQLite persists and compares DateTimeOffset text.
+                CredentialExpiresAt = id == "due-A" ? now.ToOffset(TimeSpan.FromHours(2)) : now
+            });
+        }
+
+        await using (var db = await scope.ServiceProvider.GetRequiredService<IDbContextFactory<ConnectionsElsaDbContext>>().CreateDbContextAsync())
+        {
+            var stored = await db.Connections.AsNoTracking().Where(x => x.TenantId == TenantId && x.EnvironmentId == EnvironmentId).ToListAsync();
+            Assert.Equal(3, stored.Count);
+            Assert.All(stored, x => Assert.Equal(now, x.CredentialExpiresAt));
+            Assert.All(stored, x => Assert.Equal(TimeSpan.Zero, x.CredentialExpiresAt!.Value.Offset));
+        }
+
+        var observed = new List<string>();
+        string? cursor = null;
+        do
+        {
+            var page = await dueStore.FindDueCandidatesAsync(TenantId, EnvironmentId, now, 1, cursor);
+            observed.AddRange(page.Items.Select(x => x.ConnectionId));
+            cursor = page.NextCursor;
+        } while (cursor != null);
+
+        Assert.Equal(new[] { "due-A", "due-a", "due-b" }, observed);
+    }
+
+    [Fact]
+    public async Task AbandonedCredentialClaimClearsStagedSchedulingMetadata()
+    {
+        await using var database = new TestDatabase();
+        await using var worker = await Worker.CreateAsync(database.Path, MakeKey(32), new SyntheticCredentialProvider(block: false));
+        using var tenant = worker.TenantAccessor.PushContext(TenantContext());
+        using var scope = worker.Services.CreateScope();
+        var store = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleStore>();
+        var connection = new IntegrationConnection
+        {
+            Id = "stale-stage-claim",
+            TenantId = TenantId,
+            EnvironmentId = EnvironmentId,
+            ProviderId = "synthetic-oauth",
+            ProviderAccountId = "account-test",
+            Status = ConnectionStatus.Active,
+            Revision = 1,
+            OperationStatus = CredentialOperationStatus.Completed,
+            CredentialKind = ConnectionCredentialKind.OAuth,
+            CredentialExpiresAt = DateTimeOffset.UtcNow.AddHours(1),
+            StagedCredentialKind = ConnectionCredentialKind.ApiKey,
+            StagedCredentialExpiresAt = DateTimeOffset.UtcNow.AddHours(2)
+        };
+        await store.CreateAsync(connection);
+
+        var claimed = await store.TryClaimCredentialUpdateAsync(connection.Id, TenantId, EnvironmentId, 1, "next-operation",
+            DateTimeOffset.UtcNow.AddMinutes(2));
+
+        Assert.NotNull(claimed);
+        var afterClaim = await store.FindAsync(connection.Id, TenantId, EnvironmentId);
+        Assert.Null(afterClaim!.StagedCredentialKind);
+        Assert.Null(afterClaim.StagedCredentialExpiresAt);
+
+        await using (var db = await scope.ServiceProvider.GetRequiredService<IDbContextFactory<ConnectionsElsaDbContext>>().CreateDbContextAsync())
+        {
+            await db.Connections.Where(x => x.Id == connection.Id && x.TenantId == TenantId && x.EnvironmentId == EnvironmentId)
+                .ExecuteUpdateAsync(update => update
+                    .SetProperty(x => x.StagedCredentialKind, ConnectionCredentialKind.ApiKey)
+                    .SetProperty(x => x.StagedCredentialExpiresAt, DateTimeOffset.UtcNow.AddHours(2)));
+        }
+
+        Assert.True(await store.TryReleaseUnstartedRefreshAsync(connection.Id, TenantId, EnvironmentId,
+            "next-operation", claimed!.OperationFence, "provider_unavailable"));
+        var afterRelease = await store.FindAsync(connection.Id, TenantId, EnvironmentId);
+        Assert.Null(afterRelease!.StagedCredentialKind);
+        Assert.Null(afterRelease.StagedCredentialExpiresAt);
     }
 
     [Fact]
@@ -199,6 +302,10 @@ public sealed class ConnectionLifecycleTests
             .ReconcileAsync(TenantId, EnvironmentId, connectionId);
 
         Assert.True(recovered.Succeeded);
+        var recoveredRow = await scope.ServiceProvider.GetRequiredService<IConnectionLifecycleStore>()
+            .FindAsync(connectionId, TenantId, EnvironmentId);
+        Assert.Equal(ConnectionCredentialKind.ApiKey, recoveredRow!.CredentialKind);
+        Assert.Null(recoveredRow.CredentialExpiresAt);
         var credential = await scope.ServiceProvider.GetRequiredService<IConnectionLifecycleService>()
             .ResolveForUseAsync(Principal(canManage: false), TenantId, EnvironmentId, connectionId);
         Assert.Equal(ConnectionCredentialKind.ApiKey, credential.Kind);
@@ -804,6 +911,11 @@ public sealed class ConnectionLifecycleTests
             Assert.Equal(ConnectionStatus.Active, row!.Status);
             Assert.Equal(CredentialOperationStatus.Completed, row.OperationStatus);
             Assert.Equal(row.PlannedGenerationId, row.CurrentGenerationId);
+            Assert.Equal(ConnectionCredentialKind.OAuth, row.CredentialKind);
+            Assert.NotNull(row.CredentialExpiresAt);
+            var due = await reconcileScope.ServiceProvider.GetRequiredService<IConnectionDueCandidateStore>()
+                .FindDueCandidatesAsync(TenantId, EnvironmentId, row.CredentialExpiresAt.Value, 10);
+            Assert.Contains(due.Items, candidate => candidate.Kind == ConnectionDueCandidateKind.OAuthRefresh && candidate.ConnectionId == connectionId);
         }
 
         using (var nextRefreshScope = restartedWorker.Services.CreateScope())
@@ -1629,8 +1741,17 @@ public sealed class ConnectionLifecycleTests
             }
             return store.TryRecordStagedGenerationAsync(id, tenantId, environmentId, expectedRevision, operationId, fence, secretName, generationId, cancellationToken);
         }
+        public Task<bool> TryRecordStagedGenerationAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, string secretName, string generationId, ConnectionCredentialKind? credentialKind, DateTimeOffset? credentialExpiresAt, CancellationToken cancellationToken = default)
+        {
+            if (stageWriteFault.ShouldFailStageWrite())
+            {
+                throw new TimeoutException("synthetic lost stage write response");
+            }
+            return store.TryRecordStagedGenerationAsync(id, tenantId, environmentId, expectedRevision, operationId, fence, secretName, generationId, credentialKind, credentialExpiresAt, cancellationToken);
+        }
         public Task<bool> TryPublishGenerationAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, CancellationToken cancellationToken = default) => store.TryPublishGenerationAsync(id, tenantId, environmentId, expectedRevision, operationId, fence, cancellationToken);
         public Task<bool> TryPromoteRecoveryGenerationAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, CancellationToken cancellationToken = default) => store.TryPromoteRecoveryGenerationAsync(id, tenantId, environmentId, expectedRevision, operationId, fence, cancellationToken);
+        public Task<bool> TryPromoteRecoveryGenerationAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, ConnectionCredentialKind? credentialKind, DateTimeOffset? credentialExpiresAt, CancellationToken cancellationToken = default) => store.TryPromoteRecoveryGenerationAsync(id, tenantId, environmentId, expectedRevision, operationId, fence, credentialKind, credentialExpiresAt, cancellationToken);
         public Task<bool> MarkRecoveryRequiredAsync(string id, string tenantId, string environmentId, string operationId, long fence, string safeErrorCode, CancellationToken cancellationToken = default) => store.MarkRecoveryRequiredAsync(id, tenantId, environmentId, operationId, fence, safeErrorCode, cancellationToken);
         public Task<bool> TryMarkRecoveryRequiredIfLeaseExpiredAsync(string id, string tenantId, string environmentId, string operationId, long fence, DateTimeOffset now, string safeErrorCode, CancellationToken cancellationToken = default) => store.TryMarkRecoveryRequiredIfLeaseExpiredAsync(id, tenantId, environmentId, operationId, fence, now, safeErrorCode, cancellationToken);
         public Task<bool> TryRestoreSourceGenerationAfterMissingPlanAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, string sourceGenerationId, string safeErrorCode, CancellationToken cancellationToken = default) => store.TryRestoreSourceGenerationAfterMissingPlanAsync(id, tenantId, environmentId, expectedRevision, operationId, fence, sourceGenerationId, safeErrorCode, cancellationToken);

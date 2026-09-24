@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.Connections.Contracts;
 using Elsa.Connections.Models;
 using Elsa.Secrets.Models;
@@ -6,10 +7,135 @@ using Microsoft.EntityFrameworkCore;
 namespace Elsa.Connections.Credentials.Persistence.EFCore;
 
 /// <summary>Database-owned lifecycle state. Every mutation is a scoped conditional update for cross-worker CAS.</summary>
-public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<ConnectionsElsaDbContext> dbContextFactory) : IConnectionLifecycleStore
+public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<ConnectionsElsaDbContext> dbContextFactory) : IConnectionLifecycleStore, IConnectionDueCandidateStore
 {
+    private const int MaximumDueCandidatePageSize = 500;
+
+    public async Task<ConnectionDueCandidatePage> FindDueCandidatesAsync(
+        string tenantId,
+        string environmentId,
+        DateTimeOffset now,
+        int pageSize,
+        string? cursor = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(tenantId) || string.IsNullOrWhiteSpace(environmentId))
+            throw new ArgumentException("Tenant and environment scope are required.");
+        if (pageSize is < 1 or > MaximumDueCandidatePageSize)
+            throw new ArgumentOutOfRangeException(nameof(pageSize), $"Page size must be between 1 and {MaximumDueCandidatePageSize}.");
+
+        // SQLite persists DateTimeOffset values with their original offset and compares their textual form.
+        // Normalize the query boundary to match the UTC invariant applied by this store on credential metadata writes.
+        now = now.ToUniversalTime();
+        var after = cursor == null ? null : DecodeCursor(cursor);
+        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        var idCollation = db.Database.ProviderName switch
+        {
+            "Npgsql.EntityFrameworkCore.PostgreSQL" => "C",
+            "Microsoft.EntityFrameworkCore.Sqlite" => "BINARY",
+            _ => throw new NotSupportedException($"Due-candidate ordering is not configured for provider '{db.Database.ProviderName}'.")
+        };
+
+        var oauth = db.Connections.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.EnvironmentId == environmentId &&
+                        x.Status == ConnectionStatus.Active && x.CredentialKind == ConnectionCredentialKind.OAuth &&
+                        x.CredentialExpiresAt != null && x.CredentialExpiresAt <= now)
+            .Select(x => new { TenantId = x.TenantId!, x.EnvironmentId, ConnectionId = x.Id,
+                Kind = ConnectionDueCandidateKind.OAuthRefresh, CandidateId = x.Id, DueAt = x.CredentialExpiresAt!.Value });
+
+        var expiredOperations = db.Connections.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.EnvironmentId == environmentId &&
+                        x.OperationLeaseExpiresAt != null && x.OperationLeaseExpiresAt <= now &&
+                        (x.OperationStatus == CredentialOperationStatus.Claimed ||
+                         x.OperationStatus == CredentialOperationStatus.ProviderCallStarted ||
+                         x.OperationStatus == CredentialOperationStatus.CredentialReceived ||
+                         x.OperationStatus == CredentialOperationStatus.Staged))
+            .Select(x => new { TenantId = x.TenantId!, x.EnvironmentId, ConnectionId = x.Id,
+                Kind = ConnectionDueCandidateKind.ExpiredConnectionOperation, CandidateId = x.OperationId ?? x.Id, DueAt = x.OperationLeaseExpiresAt!.Value });
+
+        var recovery = db.Connections.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.EnvironmentId == environmentId &&
+                        (x.Status == ConnectionStatus.RecoveryRequired || x.OperationStatus == CredentialOperationStatus.RecoveryRequired))
+            .Select(x => new { TenantId = x.TenantId!, x.EnvironmentId, ConnectionId = x.Id,
+                Kind = ConnectionDueCandidateKind.RecoveryRequired, CandidateId = x.OperationId ?? x.Id, DueAt = DateTimeOffset.MinValue });
+
+        var cleanups = db.GenerationCleanups.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.EnvironmentId == environmentId &&
+                        x.Status == ConnectionGenerationCleanupStatus.Deleting &&
+                        (x.LeaseExpiresAt == null || x.LeaseExpiresAt <= now))
+            .Select(x => new { x.TenantId, x.EnvironmentId, ConnectionId = x.ConnectionId,
+                Kind = ConnectionDueCandidateKind.GenerationCleanup, CandidateId = x.GenerationId, DueAt = x.LeaseExpiresAt ?? DateTimeOffset.MinValue });
+
+        var offboarding = db.OffboardingOperations.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.EnvironmentId == environmentId &&
+                        (x.Status == ConnectionOffboardingOperationStatus.Pending && x.CreatedAt <= now ||
+                         x.Status == ConnectionOffboardingOperationStatus.RetryScheduled && (x.NextAttemptAt == null || x.NextAttemptAt <= now) ||
+                         x.Status == ConnectionOffboardingOperationStatus.UnknownOutcome && (x.NextAttemptAt == null || x.NextAttemptAt <= now) ||
+                         (x.Status == ConnectionOffboardingOperationStatus.Claimed || x.Status == ConnectionOffboardingOperationStatus.ProviderCallStarted) &&
+                         x.LeaseExpiresAt != null && x.LeaseExpiresAt <= now))
+            .Select(x => new { x.TenantId, x.EnvironmentId, ConnectionId = x.ConnectionId,
+                Kind = ConnectionDueCandidateKind.Offboarding, CandidateId = x.Id,
+                DueAt = x.Status == ConnectionOffboardingOperationStatus.Pending ? x.CreatedAt :
+                    x.Status == ConnectionOffboardingOperationStatus.RetryScheduled || x.Status == ConnectionOffboardingOperationStatus.UnknownOutcome
+                        ? x.NextAttemptAt ?? x.CreatedAt : x.LeaseExpiresAt!.Value });
+
+        var query = oauth.Concat(expiredOperations).Concat(recovery).Concat(cleanups).Concat(offboarding);
+        if (after != null)
+        {
+            query = query.Where(x => x.DueAt > after.DueAt ||
+                x.DueAt == after.DueAt && ((int)x.Kind > after.Kind ||
+                (int)x.Kind == after.Kind && (string.Compare(EF.Functions.Collate(x.ConnectionId, idCollation), after.ConnectionId) > 0 ||
+                EF.Functions.Collate(x.ConnectionId, idCollation) == after.ConnectionId &&
+                string.Compare(EF.Functions.Collate(x.CandidateId, idCollation), after.CandidateId) > 0)));
+        }
+
+        var ordered = await query.OrderBy(x => x.DueAt).ThenBy(x => x.Kind)
+            .ThenBy(x => EF.Functions.Collate(x.ConnectionId, idCollation))
+            .ThenBy(x => EF.Functions.Collate(x.CandidateId, idCollation))
+            .Take(pageSize + 1)
+            .Select(x => new ConnectionDueCandidate(x.TenantId, x.EnvironmentId, x.ConnectionId, x.Kind, x.CandidateId, x.DueAt))
+            .ToListAsync(cancellationToken);
+        var hasMore = ordered.Count > pageSize;
+        var items = ordered.Take(pageSize).ToArray();
+        var nextCursor = hasMore ? EncodeCursor(ordered[pageSize - 1]) : null;
+        return new ConnectionDueCandidatePage(items, nextCursor);
+    }
+
+    private static string EncodeCursor(ConnectionDueCandidate candidate)
+    {
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(new DueCandidateCursor(candidate.DueAt, (int)candidate.Kind,
+            candidate.ConnectionId, candidate.CandidateId));
+        return Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+    }
+
+    private static DueCandidateCursor DecodeCursor(string cursor)
+    {
+        try
+        {
+            if (cursor.Length is 0 or > 2048 || cursor.Any(character =>
+                    !(character is >= 'A' and <= 'Z' or >= 'a' and <= 'z' or >= '0' and <= '9' or '-' or '_')))
+                throw new FormatException();
+            var value = cursor.Replace('-', '+').Replace('_', '/');
+            value += new string('=', (4 - value.Length % 4) % 4);
+            var decoded = JsonSerializer.Deserialize<DueCandidateCursor>(Convert.FromBase64String(value))
+                          ?? throw new FormatException();
+            if (decoded.DueAt.Offset != TimeSpan.Zero || !Enum.IsDefined(typeof(ConnectionDueCandidateKind), decoded.Kind) ||
+                string.IsNullOrWhiteSpace(decoded.ConnectionId) || string.IsNullOrWhiteSpace(decoded.CandidateId))
+                throw new FormatException();
+            return decoded;
+        }
+        catch (Exception exception) when (exception is FormatException or JsonException)
+        {
+            throw new ArgumentException("The due-candidate cursor is invalid.", nameof(cursor), exception);
+        }
+    }
+
+    private sealed record DueCandidateCursor(DateTimeOffset DueAt, int Kind, string ConnectionId, string CandidateId);
+
     public async Task CreateAsync(IntegrationConnection connection, CancellationToken cancellationToken = default)
     {
+        connection.CredentialExpiresAt = connection.CredentialExpiresAt?.ToUniversalTime();
+        connection.StagedCredentialExpiresAt = connection.StagedCredentialExpiresAt?.ToUniversalTime();
         await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         db.Connections.Add(connection);
         await db.SaveChangesAsync(cancellationToken);
@@ -426,6 +552,8 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
                 .SetProperty(x => x.PlannedSecretName, ManagedSecretNames.ForGeneration(id, operationId))
                 .SetProperty(x => x.StagedSecretName, (string?)null)
                 .SetProperty(x => x.StagedGenerationId, (string?)null)
+                .SetProperty(x => x.StagedCredentialKind, (ConnectionCredentialKind?)null)
+                .SetProperty(x => x.StagedCredentialExpiresAt, (DateTimeOffset?)null)
                 .SetProperty(x => x.LastSafeErrorCode, (string?)null), cancellationToken);
         if (rows != 1)
         {
@@ -527,6 +655,8 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
             .SetProperty(x => x.PlannedGenerationId, (string?)null)
             .SetProperty(x => x.StagedSecretName, (string?)null)
             .SetProperty(x => x.StagedGenerationId, (string?)null)
+            .SetProperty(x => x.StagedCredentialKind, (ConnectionCredentialKind?)null)
+            .SetProperty(x => x.StagedCredentialExpiresAt, (DateTimeOffset?)null)
             .SetProperty(x => x.LastSafeErrorCode, safeErrorCode), cancellationToken) == 1;
     }
 
@@ -539,8 +669,24 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
         long fence,
         string secretName,
         string generationId,
+        CancellationToken cancellationToken = default) =>
+        await TryRecordStagedGenerationAsync(id, tenantId, environmentId, expectedRevision, operationId, fence,
+            secretName, generationId, null, null, cancellationToken);
+
+    public async Task<bool> TryRecordStagedGenerationAsync(
+        string id,
+        string tenantId,
+        string environmentId,
+        long expectedRevision,
+        string operationId,
+        long fence,
+        string secretName,
+        string generationId,
+        ConnectionCredentialKind? credentialKind,
+        DateTimeOffset? credentialExpiresAt,
         CancellationToken cancellationToken = default)
     {
+        credentialExpiresAt = credentialExpiresAt?.ToUniversalTime();
         await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         return await Scoped(db, id, tenantId, environmentId)
             // Staging deliberately ignores current Connection.Revision and Status: disconnect or another state
@@ -552,6 +698,8 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(x => x.StagedSecretName, secretName)
                 .SetProperty(x => x.StagedGenerationId, generationId)
+                .SetProperty(x => x.StagedCredentialKind, credentialKind)
+                .SetProperty(x => x.StagedCredentialExpiresAt, credentialExpiresAt)
                 .SetProperty(x => x.OperationStatus, CredentialOperationStatus.Staged), cancellationToken) == 1;
     }
 
@@ -566,13 +714,28 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(x => x.CurrentSecretName, x => x.StagedSecretName)
                 .SetProperty(x => x.CurrentGenerationId, x => x.StagedGenerationId)
+                .SetProperty(x => x.CredentialKind, x => x.StagedCredentialKind)
+                .SetProperty(x => x.CredentialExpiresAt, x => x.StagedCredentialExpiresAt)
                 .SetProperty(x => x.OperationStatus, CredentialOperationStatus.Completed)
                 .SetProperty(x => x.OperationLeaseExpiresAt, (DateTimeOffset?)null)
                 .SetProperty(x => x.Revision, x => x.Revision + 1), cancellationToken) == 1;
     }
 
-    public async Task<bool> TryPromoteRecoveryGenerationAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, CancellationToken cancellationToken = default)
+    public Task<bool> TryPromoteRecoveryGenerationAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, CancellationToken cancellationToken = default) =>
+        TryPromoteRecoveryGenerationAsync(id, tenantId, environmentId, expectedRevision, operationId, fence, null, null, cancellationToken);
+
+    public async Task<bool> TryPromoteRecoveryGenerationAsync(
+        string id,
+        string tenantId,
+        string environmentId,
+        long expectedRevision,
+        string operationId,
+        long fence,
+        ConnectionCredentialKind? credentialKind,
+        DateTimeOffset? credentialExpiresAt,
+        CancellationToken cancellationToken = default)
     {
+        credentialExpiresAt = credentialExpiresAt?.ToUniversalTime();
         await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         return await Scoped(db, id, tenantId, environmentId)
             .Where(x => x.Revision == expectedRevision && x.Status == ConnectionStatus.RecoveryRequired &&
@@ -587,6 +750,8 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(x => x.CurrentSecretName, x => x.PlannedSecretName)
                 .SetProperty(x => x.CurrentGenerationId, x => x.PlannedGenerationId)
+                .SetProperty(x => x.CredentialKind, credentialKind)
+                .SetProperty(x => x.CredentialExpiresAt, credentialExpiresAt)
                 .SetProperty(x => x.Status, ConnectionStatus.Active)
                 .SetProperty(x => x.OperationStatus, CredentialOperationStatus.Completed)
                 .SetProperty(x => x.OperationLeaseExpiresAt, (DateTimeOffset?)null)

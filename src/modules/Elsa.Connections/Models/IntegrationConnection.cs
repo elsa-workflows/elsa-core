@@ -10,6 +10,12 @@ public sealed class IntegrationConnection : Entity
     public string ProviderAccountId { get; set; } = default!;
     public ConnectionStatus Status { get; set; } = ConnectionStatus.Active;
     public long Revision { get; set; } = 1;
+    /// <summary>Nonsecret scheduling classification for the published generation. Null means legacy or unknown and is never scheduled for OAuth refresh.</summary>
+    [JsonIgnore]
+    public ConnectionCredentialKind? CredentialKind { get; set; }
+    /// <summary>OAuth access-token expiry copied atomically when its generation is published. API keys have no expiry.</summary>
+    [JsonIgnore]
+    public DateTimeOffset? CredentialExpiresAt { get; set; }
     [JsonIgnore]
     public string? CurrentSecretName { get; set; }
 
@@ -36,6 +42,10 @@ public sealed class IntegrationConnection : Entity
     public string? StagedSecretName { get; set; }
     [JsonIgnore]
     public string? StagedGenerationId { get; set; }
+    [JsonIgnore]
+    public ConnectionCredentialKind? StagedCredentialKind { get; set; }
+    [JsonIgnore]
+    public DateTimeOffset? StagedCredentialExpiresAt { get; set; }
     [JsonIgnore]
     public string? LastSafeErrorCode { get; set; }
 }

@@ -22,5 +22,7 @@ internal sealed class ConnectionOffboardingOperationConfiguration : IEntityTypeC
         builder.Property(x => x.LastSafeErrorCode).HasMaxLength(100);
         builder.HasIndex(x => new { x.TenantId, x.EnvironmentId, x.ConnectionId, x.Status, x.CreatedAt });
         builder.HasIndex(x => new { x.TenantId, x.EnvironmentId, x.ConnectionId, x.GenerationId, x.Status });
+        builder.HasIndex(x => new { x.TenantId, x.EnvironmentId, x.Status, x.NextAttemptAt, x.ConnectionId, x.Id }).HasDatabaseName("IX_Offboarding_Retry");
+        builder.HasIndex(x => new { x.TenantId, x.EnvironmentId, x.Status, x.LeaseExpiresAt, x.ConnectionId, x.Id }).HasDatabaseName("IX_Offboarding_Lease");
     }
 }
