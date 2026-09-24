@@ -58,6 +58,7 @@ namespace Elsa.Workflows.Management.Services
             var variables = _variableDefinitionMapper.Map(model.Variables).ToList();
 
             draft!.StringData = stringData;
+            draft.OriginalSource = null; // The imported model replaces any previous file snapshot.
             draft.MaterializerName = JsonWorkflowMaterializer.MaterializerName;
             draft.Name = model.Name?.Trim();
             draft.Description = model.Description?.Trim();

@@ -154,7 +154,10 @@ public class WorkflowReferenceUpdater(
         }
 
         if (newGraph.Root.Activity is Workflow wf)
+        {
             draft.StringData = serializer.Serialize(wf.Root);
+            draft.OriginalSource = null;
+        }
 
         return new(draft, newGraph);
     }
