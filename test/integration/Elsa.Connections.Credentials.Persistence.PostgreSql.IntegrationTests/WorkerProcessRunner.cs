@@ -158,6 +158,8 @@ internal static class ProcessTestEnvironment
     public const string EnvironmentId = "integration";
     public const string AccessMarker = "access-never-log-8a6f";
     public const string RefreshMarker = "refresh-never-log-1f92";
+    public const string RotatedAccessTokenPrefix = "access-rotated-";
+    public const string RotatedRefreshTokenPrefix = "refresh-rotated-";
 
     public static readonly DateTimeOffset InitialTime = new(2026, 9, 24, 12, 0, 0, TimeSpan.Zero);
     public static readonly byte[] EncryptionKey = Enumerable.Range(1, 32).Select(value => (byte)value).ToArray();

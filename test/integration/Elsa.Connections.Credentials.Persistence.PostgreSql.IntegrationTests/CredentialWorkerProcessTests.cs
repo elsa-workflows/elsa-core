@@ -467,7 +467,10 @@ public sealed class CredentialWorkerProcessTests(PostgreSqlConnectionsFixture fi
 
     private static void AssertSafeOutput(ProcessRunResult result, params string[] markers)
     {
-        foreach (var marker in markers.Append(Convert.ToBase64String(ProcessTestEnvironment.EncryptionKey)))
+        foreach (var marker in markers
+                     .Append(ProcessTestEnvironment.RotatedAccessTokenPrefix)
+                     .Append(ProcessTestEnvironment.RotatedRefreshTokenPrefix)
+                     .Append(Convert.ToBase64String(ProcessTestEnvironment.EncryptionKey)))
         {
             Assert.DoesNotContain(marker, result.CapturedOutput, StringComparison.Ordinal);
         }
