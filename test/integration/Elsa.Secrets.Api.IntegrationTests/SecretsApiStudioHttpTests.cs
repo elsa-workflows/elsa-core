@@ -349,6 +349,10 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
         Assert.Equal(SecretStatus.Active, (await tenantB.GetAsync(sharedName)).Status);
         await tenantA.DeleteAsync(sharedName);
         Assert.Equal(secretB.Id, (await tenantB.GetAsync(sharedName)).Id);
+        var tenantATestAfterDelete = await tenantA.TestAsync(sharedName);
+        Assert.False(tenantATestAfterDelete.Succeeded);
+        Assert.Contains("not found", tenantATestAfterDelete.Error, StringComparison.OrdinalIgnoreCase);
+        Assert.True((await tenantB.TestAsync(sharedName)).Succeeded);
 
         AssertNoSecretMaterial(
             tenantACapture.ResponseBodies
