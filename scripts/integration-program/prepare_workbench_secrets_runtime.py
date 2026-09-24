@@ -392,15 +392,13 @@ def verify_patch_chain(root, prepared_files, expected_pins, actual_files):
         previous_patch = root / PATCH_RELATIVE
         require(get_patch_targets(previous_patch) == workbench_targets,
                 'Previous Workbench patch targets differ from the current patch')
-        require(file_sha256(previous_patch) != file_sha256(PATCH),
-                'Previous and current Workbench patches must be distinct')
-        transition_args = [
-            (str(previous_patch),),
-            ('--reverse', str(previous_patch)),
-            (str(PATCH),),
-            *((str(patch),) for patch, _ in supplemental),
-            *((str(patch),) for patch, _ in optional_supplementals)
-        ]
+        previous_is_current = file_sha256(previous_patch) == file_sha256(PATCH)
+        transition_args = []
+        if not previous_is_current:
+            transition_args.extend([(str(previous_patch),), ('--reverse', str(previous_patch))])
+        transition_args.append((str(PATCH),))
+        transition_args.extend((str(patch),) for patch, _ in supplemental)
+        transition_args.extend((str(patch),) for patch, _ in optional_supplementals)
         for args in transition_args:
             try:
                 subprocess.run(['git', 'apply', '--check', *args], cwd=patch_root,
@@ -408,7 +406,7 @@ def verify_patch_chain(root, prepared_files, expected_pins, actual_files):
                 subprocess.run(['git', 'apply', *args], cwd=patch_root,
                                check=True, capture_output=True)
             except subprocess.CalledProcessError as error:
-                raise ValueError('Pinned Workbench patch transition cannot be replayed') from error
+                raise ValueError('Pinned Workbench patch chain cannot be replayed') from error
         for relative in all_targets:
             require(hash_optional_file(patch_root / relative) == hash_optional_file(root / relative),
                     f'Patch transition does not restore mapped source for {relative}')
@@ -444,7 +442,8 @@ def verify_patch_chain(root, prepared_files, expected_pins, actual_files):
             for patch, targets in optional_supplementals
         ],
         'reverseReplay': ledger_entries,
-        'previousToCurrentTransitionVerified': True
+        'previousToCurrentTransitionVerified': not previous_is_current,
+        'currentWorkbenchPatchReplayVerified': True
     }
 
 
@@ -532,8 +531,8 @@ def validate_source_root(rehearsal_root, expected_pins):
     previous_patch = root / PATCH_RELATIVE
     require(previous_patch.is_file() and not previous_patch.is_symlink(),
             'Mapped rehearsal is missing its previous canonical Workbench patch artifact')
-    require(file_sha256(previous_patch) == CANONICAL_WORKBENCH_BASE_PATCH_SHA256,
-            'Mapped rehearsal Workbench patch artifact is not the reviewed baseline')
+    require(file_sha256(previous_patch) in (CANONICAL_WORKBENCH_BASE_PATCH_SHA256, file_sha256(PATCH)),
+            'Mapped rehearsal Workbench patch artifact is not a reviewed version')
 
     prepared_file_items = build_receipt.get('files', [])
     prepared_files = {item['path']: item['sha256'] for item in prepared_file_items}
@@ -850,7 +849,10 @@ def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_p
         'sourceIntegrationPatchSha256': build_receipt['patchSha256'],
         'workbenchPatchSha256': patch_sha,
         'previousWorkbenchPatchSha256': patch_chain['previousWorkbenchPatchSha256'],
-        'patchTransition': 'reverse the verified previous Workbench patch, then apply the current opt-in patch in this isolated source clone',
+        'patchTransition': (
+            'replay the reviewed current Workbench patch in this isolated source clone'
+            if not patch_chain['previousToCurrentTransitionVerified'] else
+            'reverse the verified previous Workbench patch, then apply the current opt-in patch in this isolated source clone'),
         'sourcePatchChain': patch_chain,
         'mappedProgramSha256': file_sha256(source / 'Program.cs'),
         'mappedProjectSha256': file_sha256(source / 'Elsa.Server.Web.csproj'),

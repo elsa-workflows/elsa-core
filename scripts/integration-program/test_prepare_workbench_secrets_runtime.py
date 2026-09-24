@@ -539,6 +539,33 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
         finally:
             FIXTURE.cleanup_fixture(fixture_root, host_stopped=True)
 
+    def test_current_workbench_patch_is_replayed_without_a_previous_transition(self):
+        self.previous_workbench_patch.write_bytes(self.workbench_patch.read_bytes())
+        subprocess.run(['git', 'add', str(FIXTURE.PATCH_RELATIVE)], cwd=self.rehearsal, check=True)
+        subprocess.run([
+            'git', '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid',
+            '-c', 'commit.gpgsign=false', 'commit', '--amend', '--no-edit', '--quiet'
+        ], cwd=self.rehearsal, check=True)
+        self.rehearsal_commit = subprocess.check_output(
+            ['git', 'rev-parse', 'HEAD'], cwd=self.rehearsal, text=True).strip()
+        for name in ('import-receipt.json', 'consolidated-build-receipt.json'):
+            receipt_path = self.rehearsal / name
+            receipt = json.loads(receipt_path.read_text())
+            receipt['rehearsalCommit'] = self.rehearsal_commit
+            receipt_path.write_text(json.dumps(receipt))
+
+        fixture_root = self.prepare()
+        try:
+            plan = json.loads((fixture_root / 'launch-plan.json').read_text())
+            chain = plan['sourcePatchChain']
+            self.assertTrue(chain['verified'])
+            self.assertTrue(chain['currentWorkbenchPatchReplayVerified'])
+            self.assertFalse(chain['previousToCurrentTransitionVerified'])
+            self.assertEqual(chain['previousWorkbenchPatchSha256'], chain['workbenchPatch']['sha256'])
+            self.assertIn('replay the reviewed current Workbench patch', plan['patchTransition'])
+        finally:
+            FIXTURE.cleanup_fixture(fixture_root, host_stopped=True)
+
     def test_unapplied_overlay_sharing_prepared_file_is_not_inferred(self):
         program = self.source / 'Program.cs'
         before = program.read_text()
