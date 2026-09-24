@@ -53,10 +53,12 @@ namespace Elsa.Secrets.Persistence.EFCore.SqlServer.Migrations.Secrets
                         HAVING COUNT(*) > 1
                     ) AS Duplicates;
 
-                    THROW 50001, CONCAT(
+                    DECLARE @ErrorMessage nvarchar(2048);
+                    SET @ErrorMessage = CONCAT(
                         N'Cannot create unique index IX_Secret_TenantId_NormalizedName because leftover duplicate (TenantId, NormalizedName) rows exist. Operators must resolve leftover (TenantId, NormalizedName) rows before upgrade. Duplicate keys: ',
                         LEFT(@DuplicateKeys, 1500)
-                    ), 1;
+                    );
+                    THROW 50001, @ErrorMessage, 1;
                 END
                 """);
 
