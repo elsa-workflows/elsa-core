@@ -298,7 +298,7 @@ public static class WorkerCommandHost
                                 await services.GetRequiredService<IManagedSecretManager>().ResolveGenerationAsync(name, connectionId, generationId);
                                 generationAvailable = true;
                             }
-                            catch (Exception)
+                            catch (KeyNotFoundException)
                             {
                                 generationAvailable = false;
                             }

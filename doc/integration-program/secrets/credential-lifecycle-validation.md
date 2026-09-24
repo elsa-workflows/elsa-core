@@ -21,6 +21,8 @@ On 2026-09-24, the complete Connections unit-test project passed against the cur
 
 This is unit-test evidence for the SQLite adapter only. It is not a fresh production-project build matrix or evidence for another EF provider.
 
+Separate-process persistence proof for the PostgreSQL Connections and Secrets EF providers is tracked independently in [credential lifecycle PostgreSQL process conformance](credential-lifecycle-postgresql-conformance.md). That suite is net10-only and uses Testcontainers plus a local synthetic OAuth/offboarding server; it does not extend the SQLite test result into an upgrade or migration claim.
+
 ## First implementation slice
 
 Prove one tenant-owned connection from synthetic OAuth grant through authorized token resolution and a one-time rotating refresh, using SQLite-backed lifecycle state and the existing encrypted Secrets store. The fake provider must model token consumption and expose a pause/failure point around the refresh response. Use synthetic tenant, environment, account, and token values only; make no vendor network calls.

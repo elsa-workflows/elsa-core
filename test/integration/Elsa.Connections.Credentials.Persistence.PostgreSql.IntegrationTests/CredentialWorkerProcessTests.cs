@@ -129,6 +129,84 @@ public sealed class CredentialWorkerProcessTests(PostgreSqlConnectionsFixture fi
         AssertSafeOutput(inspect, ProcessTestEnvironment.AccessMarker, ProcessTestEnvironment.RefreshMarker);
     }
 
+    [Fact]
+    public async Task DisconnectWhileProviderCallIsInFlight_PreventsStaleWorkerAndExpiredLeaseRecoveryFromReactivating()
+    {
+        await fixture.ResetSchemaAsync();
+        await using var provider = await SyntheticOAuthServer.StartAsync();
+        provider.BlockRefresh = true;
+        provider.IssueRefreshToken(ProcessTestEnvironment.RefreshMarker);
+        var environment = await MigrateAsync(provider);
+        var (connectionId, originalGenerationId, _) = await ConnectAsync(environment);
+
+        await using var staleRefreshWorker = _workers.Start(["refresh", connectionId], environment);
+        ProcessRunResult? disconnect = null;
+        ProcessRunResult? liveLeaseReconciliation = null;
+        ProcessRunResult? disconnectedInspect = null;
+        try
+        {
+            await provider.WaitForRefreshAsync(TimeSpan.FromSeconds(30));
+            disconnect = await _workers.RunAsync(["disconnect", connectionId], environment);
+            Assert.True(disconnect.ReadResult().GetProperty("accepted").GetBoolean());
+            liveLeaseReconciliation = await _workers.RunAsync(["reconcile", connectionId], environment);
+            Assert.False(liveLeaseReconciliation.ReadResult().GetProperty("succeeded").GetBoolean());
+            Assert.Equal("operation_in_progress", liveLeaseReconciliation.ReadResult().GetProperty("safeErrorCode").GetString());
+            Assert.Equal(1, provider.RefreshCalls);
+            disconnectedInspect = await _workers.RunAsync(["inspect", connectionId, originalGenerationId], environment);
+            var disconnectedState = disconnectedInspect.ReadResult();
+            Assert.Equal("Disconnected", disconnectedState.GetProperty("status").GetString());
+            Assert.Equal("ProviderCallStarted", disconnectedState.GetProperty("operationStatus").GetString());
+            Assert.Equal(originalGenerationId, disconnectedState.GetProperty("currentGenerationId").GetString());
+        }
+        finally
+        {
+            provider.ReleaseRefresh();
+        }
+
+        var staleRefresh = await staleRefreshWorker.CompleteAsync();
+        Assert.False(staleRefresh.ReadResult().GetProperty("succeeded").GetBoolean());
+        Assert.Equal(1, provider.RefreshCalls);
+        Assert.Equal(1, provider.AcceptedRefreshCalls);
+        Assert.True(provider.IsRefreshTokenConsumed(ProcessTestEnvironment.RefreshMarker));
+
+        var afterStaleCompletion = await _workers.RunAsync(["inspect", connectionId, originalGenerationId], environment);
+        var staleState = afterStaleCompletion.ReadResult();
+        Assert.Equal("Disconnected", staleState.GetProperty("status").GetString());
+        Assert.Equal("RecoveryRequired", staleState.GetProperty("operationStatus").GetString());
+        Assert.Equal(originalGenerationId, staleState.GetProperty("currentGenerationId").GetString());
+
+        var expiredLease = ProcessTestEnvironment.With(
+            environment,
+            ("ELSA_TEST_NOW_UTC", ProcessTestEnvironment.InitialTime.AddMinutes(3).ToString("O")));
+        var reconciliation = await _workers.RunAsync(["reconcile", connectionId], expiredLease);
+        Assert.False(reconciliation.ReadResult().GetProperty("succeeded").GetBoolean());
+        Assert.Equal("recovery_required", reconciliation.ReadResult().GetProperty("safeErrorCode").GetString());
+        Assert.Equal(1, provider.RefreshCalls);
+
+        var finalInspect = await _workers.RunAsync(["inspect", connectionId, originalGenerationId], expiredLease);
+        var finalState = finalInspect.ReadResult();
+        Assert.Equal("Disconnected", finalState.GetProperty("status").GetString());
+        Assert.Equal("RecoveryRequired", finalState.GetProperty("operationStatus").GetString());
+        Assert.Equal(originalGenerationId, finalState.GetProperty("currentGenerationId").GetString());
+        var plannedGenerationId = finalState.GetProperty("plannedGenerationId").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(plannedGenerationId));
+        Assert.NotEqual(originalGenerationId, plannedGenerationId);
+        Assert.Equal(plannedGenerationId, finalState.GetProperty("stagedGenerationId").GetString());
+        Assert.True(finalState.GetProperty("generationAvailable").GetBoolean());
+
+        var stagedInspect = await _workers.RunAsync(["inspect", connectionId, plannedGenerationId!], expiredLease);
+        Assert.True(stagedInspect.ReadResult().GetProperty("generationAvailable").GetBoolean());
+
+        AssertSafeOutput(disconnect!, ProcessTestEnvironment.AccessMarker, ProcessTestEnvironment.RefreshMarker);
+        AssertSafeOutput(liveLeaseReconciliation!, ProcessTestEnvironment.AccessMarker, ProcessTestEnvironment.RefreshMarker);
+        AssertSafeOutput(disconnectedInspect!, ProcessTestEnvironment.AccessMarker, ProcessTestEnvironment.RefreshMarker);
+        AssertSafeOutput(staleRefresh, ProcessTestEnvironment.AccessMarker, ProcessTestEnvironment.RefreshMarker);
+        AssertSafeOutput(afterStaleCompletion, ProcessTestEnvironment.AccessMarker, ProcessTestEnvironment.RefreshMarker);
+        AssertSafeOutput(reconciliation, ProcessTestEnvironment.AccessMarker, ProcessTestEnvironment.RefreshMarker);
+        AssertSafeOutput(finalInspect, ProcessTestEnvironment.AccessMarker, ProcessTestEnvironment.RefreshMarker);
+        AssertSafeOutput(stagedInspect, ProcessTestEnvironment.AccessMarker, ProcessTestEnvironment.RefreshMarker);
+    }
+
     [Theory]
     [InlineData("revocation", false)]
     [InlineData("revocation", true)]
