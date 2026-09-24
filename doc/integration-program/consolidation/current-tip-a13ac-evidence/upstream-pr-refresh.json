@@ -1,0 +1,834 @@
+{
+  "checkedAt": "2026-09-24T21:50:08.534213+00:00",
+  "importDisposition": "No open source PR was auto-merged, rejected, closed, reparented, or incorporated solely by this refresh; the selected source tips are explicit.",
+  "priorLedger": "../upstream-work.json",
+  "priorLedgerCheckedAt": "2026-09-24T01:50:26.322491+00:00",
+  "repositories": {
+    "elsa-extensions": {
+      "collectionEvidence": {
+        "method": "GitHub REST GET, state=open, per_page=100; explicitly fetch pages 1 and 2, require page 1 < 100 and page 2 empty",
+        "page1": {
+          "apiPath": "repos/elsa-workflows/elsa-extensions/pulls?state=open&per_page=100&page=1",
+          "count": 16,
+          "nativeFieldSnapshot": [
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": true,
+              "head": {
+                "ref": "feature/mcp-server",
+                "sha": "3121af8f04e6d08afddfb21a8e1844a7cc745497"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-extensions/pull/209",
+              "number": 209,
+              "title": "feat(mcp): expose Elsa workflows as MCP tools",
+              "updated_at": "2026-09-19T22:25:24Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "feature/azure-devops",
+                "sha": "c07d62ad77376a9aed2b07a64decb7fcfa778821"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-extensions/pull/199",
+              "number": 199,
+              "title": "feat(devops): add the Elsa.DevOps.AzureDevOps module",
+              "updated_at": "2026-09-19T22:25:25Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "bugfix/nuke-sdk-10-0-400",
+                "sha": "c16e92bc36821ad76438687bf260ab5f88224519"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-extensions/pull/175",
+              "number": 175,
+              "title": "build: bump NuGet.Packaging to 7.9.0 to unbreak the NUKE build on SDK 10.0.400",
+              "updated_at": "2026-09-19T22:25:26Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "dependabot/nuget/build/nuget-a690243288",
+                "sha": "db6da257b9272eebbe045711d9bcc8fd3e45df66"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-extensions/pull/166",
+              "number": 166,
+              "title": "Bump the nuget group with 1 update",
+              "updated_at": "2026-07-21T03:58:57Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "dependabot/nuget/nuget-94b6bde6d6",
+                "sha": "8aca91af390ba9ace1d3de558a237d75665f0b67"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-extensions/pull/165",
+              "number": 165,
+              "title": "Bump the nuget group with 2 updates",
+              "updated_at": "2026-07-21T03:44:19Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "main",
+                "sha": "4841e29e70acc4a8b29203c085b96e99c533fe79"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-extensions/pull/163",
+              "number": 163,
+              "title": "Remove obsolete methods to fix security vulnerability",
+              "updated_at": "2026-09-19T22:25:27Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "feature/sqlresultstype",
+                "sha": "29e350e94256b97ee453dcb19effbe5fe170b15d"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-extensions/pull/154",
+              "number": 154,
+              "title": "Feature: Sql Query Results Handling #153",
+              "updated_at": "2026-09-14T07:07:05Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "Fix/Use-new-tenantId-property-to-consistently-use-default-tenant",
+                "sha": "73e9efd1a9a3491e04e2d43b784632ee2b2e28f8"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-extensions/pull/150",
+              "number": 150,
+              "title": "Fix: consistently use the TenantId property to make sure to properly apply the new default TenantId (empty string instead of null)",
+              "updated_at": "2026-09-14T07:07:08Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "feature/servicebus-processor-options",
+                "sha": "a7166e0b2d5bed1f8c8f48ef80e51b68b3fd0e23"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-extensions/pull/140",
+              "number": 140,
+              "title": "feature: Add option to configure custom azure servicebus processor options",
+              "updated_at": "2026-09-14T07:07:07Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "dependabot/nuget/nuget-0c428dbeb2",
+                "sha": "ff4661613ccea088f5fe68033ff154a7023dd590"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-extensions/pull/138",
+              "number": 138,
+              "title": "Bump the nuget group with 1 update",
+              "updated_at": "2026-05-04T14:36:39Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "dapper",
+                "sha": "6ef525d00f2df16b05ce4dd79cbea50f174f6b1e"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-extensions/pull/132",
+              "number": 132,
+              "title": "Split Elsa.Persistence.Dapper project #131",
+              "updated_at": "2026-09-14T07:07:06Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "feature/fakedata-module",
+                "sha": "cf5ff51dab4e8c01ba7aa73fc44877b4ff3346e8"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-extensions/pull/129",
+              "number": 129,
+              "title": "Feature: add fake data module",
+              "updated_at": "2026-09-14T07:07:05Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "dependabot/nuget/nuget-335537b6a2",
+                "sha": "702ae372e8aafbe0061d6791a04c6234b3c851fa"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-extensions/pull/128",
+              "number": 128,
+              "title": "Bump the nuget group with 1 update",
+              "updated_at": "2026-04-21T09:58:54Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "bugfix/prevent-hangfire-nre-when-getting-recurring-jobs",
+                "sha": "15bb3559d3c2a61c17d249edcca73dc1ed14e179"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-extensions/pull/123",
+              "number": 123,
+              "title": "Add defensive check to `GetRecurringJobIds` to prevent null reference exception",
+              "updated_at": "2026-09-19T22:25:28Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "dependabot/nuget/nuget-bbc7aa4865",
+                "sha": "6e199fde2f7e923030b16734da5f56a676a6355d"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-extensions/pull/122",
+              "number": 122,
+              "title": "Bump the nuget group with 1 update",
+              "updated_at": "2026-04-21T09:58:54Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "copilot/fix-53",
+                "sha": "380047e63b91902543fc973512d43e9c1622bafa"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-extensions/pull/54",
+              "number": 54,
+              "title": "Fix EFCoreActivityExecutionStore.SaveManyAsync to call IEntitySavingHandler instances",
+              "updated_at": "2026-09-14T07:07:02Z"
+            }
+          ],
+          "rawResponseSha256": "7f21d3e7d1e37a6aef2e1e1ebf6414fbb87536f0e10e57909d576323b7ef2488"
+        },
+        "page2": {
+          "apiPath": "repos/elsa-workflows/elsa-extensions/pulls?state=open&per_page=100&page=2",
+          "count": 0,
+          "nativeFieldSnapshot": [],
+          "rawResponseSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "projectionCheck": "The page-1 (number, head.sha) set exactly equals openPullRequests (number, headRefOid); page 2 returned []."
+      },
+      "currentMainTip": "ba8b71d91c15ffe5be4b2c539cf9f712e74af775",
+      "openCount": 16,
+      "openPullRequests": [
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "feature/mcp-server",
+          "headRefOid": "3121af8f04e6d08afddfb21a8e1844a7cc745497",
+          "isDraft": true,
+          "number": 209,
+          "title": "feat(mcp): expose Elsa workflows as MCP tools",
+          "updatedAt": "2026-09-19T22:25:24Z",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/209"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "feature/azure-devops",
+          "headRefOid": "c07d62ad77376a9aed2b07a64decb7fcfa778821",
+          "isDraft": false,
+          "number": 199,
+          "title": "feat(devops): add the Elsa.DevOps.AzureDevOps module",
+          "updatedAt": "2026-09-19T22:25:25Z",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/199"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "bugfix/nuke-sdk-10-0-400",
+          "headRefOid": "c16e92bc36821ad76438687bf260ab5f88224519",
+          "isDraft": false,
+          "number": 175,
+          "title": "build: bump NuGet.Packaging to 7.9.0 to unbreak the NUKE build on SDK 10.0.400",
+          "updatedAt": "2026-09-19T22:25:26Z",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/175"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "dependabot/nuget/build/nuget-a690243288",
+          "headRefOid": "db6da257b9272eebbe045711d9bcc8fd3e45df66",
+          "isDraft": false,
+          "number": 166,
+          "title": "Bump the nuget group with 1 update",
+          "updatedAt": "2026-07-21T03:58:57Z",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/166"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "dependabot/nuget/nuget-94b6bde6d6",
+          "headRefOid": "8aca91af390ba9ace1d3de558a237d75665f0b67",
+          "isDraft": false,
+          "number": 165,
+          "title": "Bump the nuget group with 2 updates",
+          "updatedAt": "2026-07-21T03:44:19Z",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/165"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "main",
+          "headRefOid": "4841e29e70acc4a8b29203c085b96e99c533fe79",
+          "isDraft": false,
+          "number": 163,
+          "title": "Remove obsolete methods to fix security vulnerability",
+          "updatedAt": "2026-09-19T22:25:27Z",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/163"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "feature/sqlresultstype",
+          "headRefOid": "29e350e94256b97ee453dcb19effbe5fe170b15d",
+          "isDraft": false,
+          "number": 154,
+          "title": "Feature: Sql Query Results Handling #153",
+          "updatedAt": "2026-09-14T07:07:05Z",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/154"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "Fix/Use-new-tenantId-property-to-consistently-use-default-tenant",
+          "headRefOid": "73e9efd1a9a3491e04e2d43b784632ee2b2e28f8",
+          "isDraft": false,
+          "number": 150,
+          "title": "Fix: consistently use the TenantId property to make sure to properly apply the new default TenantId (empty string instead of null)",
+          "updatedAt": "2026-09-14T07:07:08Z",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/150"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "feature/servicebus-processor-options",
+          "headRefOid": "a7166e0b2d5bed1f8c8f48ef80e51b68b3fd0e23",
+          "isDraft": false,
+          "number": 140,
+          "title": "feature: Add option to configure custom azure servicebus processor options",
+          "updatedAt": "2026-09-14T07:07:07Z",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/140"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "dependabot/nuget/nuget-0c428dbeb2",
+          "headRefOid": "ff4661613ccea088f5fe68033ff154a7023dd590",
+          "isDraft": false,
+          "number": 138,
+          "title": "Bump the nuget group with 1 update",
+          "updatedAt": "2026-05-04T14:36:39Z",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/138"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "dapper",
+          "headRefOid": "6ef525d00f2df16b05ce4dd79cbea50f174f6b1e",
+          "isDraft": false,
+          "number": 132,
+          "title": "Split Elsa.Persistence.Dapper project #131",
+          "updatedAt": "2026-09-14T07:07:06Z",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/132"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "feature/fakedata-module",
+          "headRefOid": "cf5ff51dab4e8c01ba7aa73fc44877b4ff3346e8",
+          "isDraft": false,
+          "number": 129,
+          "title": "Feature: add fake data module",
+          "updatedAt": "2026-09-14T07:07:05Z",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/129"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "dependabot/nuget/nuget-335537b6a2",
+          "headRefOid": "702ae372e8aafbe0061d6791a04c6234b3c851fa",
+          "isDraft": false,
+          "number": 128,
+          "title": "Bump the nuget group with 1 update",
+          "updatedAt": "2026-04-21T09:58:54Z",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/128"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "bugfix/prevent-hangfire-nre-when-getting-recurring-jobs",
+          "headRefOid": "15bb3559d3c2a61c17d249edcca73dc1ed14e179",
+          "isDraft": false,
+          "number": 123,
+          "title": "Add defensive check to `GetRecurringJobIds` to prevent null reference exception",
+          "updatedAt": "2026-09-19T22:25:28Z",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/123"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "dependabot/nuget/nuget-bbc7aa4865",
+          "headRefOid": "6e199fde2f7e923030b16734da5f56a676a6355d",
+          "isDraft": false,
+          "number": 122,
+          "title": "Bump the nuget group with 1 update",
+          "updatedAt": "2026-04-21T09:58:54Z",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/122"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "copilot/fix-53",
+          "headRefOid": "380047e63b91902543fc973512d43e9c1622bafa",
+          "isDraft": false,
+          "number": 54,
+          "title": "Fix EFCoreActivityExecutionStore.SaveManyAsync to call IEntitySavingHandler instances",
+          "updatedAt": "2026-09-14T07:07:02Z",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/54"
+        }
+      ],
+      "pinMatchesCurrentMain": true,
+      "selectedImportPin": "ba8b71d91c15ffe5be4b2c539cf9f712e74af775"
+    },
+    "elsa-studio": {
+      "collectionEvidence": {
+        "method": "GitHub REST GET, state=open, per_page=100; explicitly fetch pages 1 and 2, require page 1 < 100 and page 2 empty",
+        "page1": {
+          "apiPath": "repos/elsa-workflows/elsa-studio/pulls?state=open&per_page=100&page=1",
+          "count": 14,
+          "nativeFieldSnapshot": [
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "codex/role-management-mobile-qa-fixes",
+                "sha": "d5d7d1dabfea1a7bbbb698586b6528bb1ebdea5f"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-studio/pull/999",
+              "number": 999,
+              "title": "Improve role administration and permission-aware Studio UX",
+              "updated_at": "2026-09-08T01:37:10Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "fix/version-history-tab-missing-workspace",
+                "sha": "e935ca2646f14c48d8b70e5dfb857713221ddd6c"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-studio/pull/994",
+              "number": 994,
+              "title": "fix(workflows): keep the version history tab alive without a cascading workspace",
+              "updated_at": "2026-09-19T22:25:23Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "copilot/fix-blazored-fluentvalidation-dependency",
+                "sha": "33d8c964231ca8b30cd9a23037f824cb2bea2a10"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-studio/pull/935",
+              "number": 935,
+              "title": "Replace archived Blazored.FluentValidation with Blazilla",
+              "updated_at": "2026-09-14T19:21:00Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "dependabot/nuget/main/Elsa.Api.Client-3.8.0-preview.5410",
+                "sha": "7d865818de0fa7ed72b7a1af4ff956da1d77592b"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-studio/pull/932",
+              "number": 932,
+              "title": "deps: Bump Elsa.Api.Client from 3.8.0-preview.5397 to 3.8.0-preview.5410",
+              "updated_at": "2026-08-03T04:31:37Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "dependabot/npm_and_yarn/src/wrappers/npm_and_yarn-cfeaca08f7",
+                "sha": "74f8f1db182712663a7d4deaf3d94f40a0a3e4c8"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-studio/pull/916",
+              "number": 916,
+              "title": "Bump the npm_and_yarn group across 1 directory with 8 updates",
+              "updated_at": "2026-07-02T12:18:27Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "codex/resolve-warnings-20260622",
+                "sha": "ee21aae4b15d4d73401b7f4df3c10b577fc9efbb"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-studio/pull/907",
+              "number": 907,
+              "title": "Resolve focused Studio warnings",
+              "updated_at": "2026-06-22T23:09:23Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "codex/resolve-warnings-20260615",
+                "sha": "7efc2faabb4787f17dde71cd75690ceb58cfda78"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-studio/pull/901",
+              "number": 901,
+              "title": "Resolve focused build warnings",
+              "updated_at": "2026-06-15T06:23:11Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "feat-adding-RedirectUriPrefix",
+                "sha": "e865a7cb3ada16d15e32fad122f1f90113f51bd9"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-studio/pull/809",
+              "number": 809,
+              "title": "feat: add RedirectUriPrefix support to OpenIdConnectConfiguration for sub-path deployments",
+              "updated_at": "2026-09-14T07:07:03Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "dependabot/npm_and_yarn/src/modules/Elsa.Studio.Workflows.Designer/ClientLib/npm_and_yarn-998b9f9285",
+                "sha": "55e75c8f11a438b97ad9d419a3dbcf439bd8804f"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-studio/pull/806",
+              "number": 806,
+              "title": "Bump the npm_and_yarn group across 3 directories with 6 updates",
+              "updated_at": "2026-05-03T16:42:12Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "feature/remove-rendering-before--login",
+                "sha": "bc5cb5f70338c6de84ecd7083e68133dc735003a"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-studio/pull/742",
+              "number": 742,
+              "title": "update login and logout ",
+              "updated_at": "2026-09-14T07:07:01Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "dependabot/npm_and_yarn/src/wrappers/npm_and_yarn-1ad9977b7d",
+                "sha": "21bba822b90bd540c2f6d2b03cc2dd21f1554cdd"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-studio/pull/598",
+              "number": 598,
+              "title": "Bump the npm_and_yarn group across 1 directory with 5 updates",
+              "updated_at": "2025-12-10T18:00:45Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "MovableNodesOnReadOnly",
+                "sha": "74e6fdb589851b4f5643bbb893c97a1371d59193"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-studio/pull/516",
+              "number": 516,
+              "title": "Movable Activities on read only",
+              "updated_at": "2026-09-14T07:07:00Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "DesignerEmbeddedActivitySelectFix",
+                "sha": "fa7a4021370bd85bd68195e160e9a33bc124e485"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-studio/pull/514",
+              "number": 514,
+              "title": "Designer embedded activity select fix",
+              "updated_at": "2026-09-14T07:06:59Z"
+            },
+            {
+              "base": {
+                "ref": "main"
+              },
+              "draft": false,
+              "head": {
+                "ref": "conditional-inputs-elsa-3",
+                "sha": "f457ed8a7c44e55785668c454fb9785e24e803eb"
+              },
+              "html_url": "https://github.com/elsa-workflows/elsa-studio/pull/188",
+              "number": 188,
+              "title": "Conditional inputs Elsa 3",
+              "updated_at": "2026-09-14T07:06:58Z"
+            }
+          ],
+          "rawResponseSha256": "5767bcc014e4f012b80a83b2f35e82db12c0111fdb86b17a3969f71078897de8"
+        },
+        "page2": {
+          "apiPath": "repos/elsa-workflows/elsa-studio/pulls?state=open&per_page=100&page=2",
+          "count": 0,
+          "nativeFieldSnapshot": [],
+          "rawResponseSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "projectionCheck": "The page-1 (number, head.sha) set exactly equals openPullRequests (number, headRefOid); page 2 returned []."
+      },
+      "currentMainTip": "20ceaeeed7e671f0c9662003e82063026f2216de",
+      "openCount": 14,
+      "openPullRequests": [
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "codex/role-management-mobile-qa-fixes",
+          "headRefOid": "d5d7d1dabfea1a7bbbb698586b6528bb1ebdea5f",
+          "isDraft": false,
+          "number": 999,
+          "title": "Improve role administration and permission-aware Studio UX",
+          "updatedAt": "2026-09-08T01:37:10Z",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/999"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "fix/version-history-tab-missing-workspace",
+          "headRefOid": "e935ca2646f14c48d8b70e5dfb857713221ddd6c",
+          "isDraft": false,
+          "number": 994,
+          "title": "fix(workflows): keep the version history tab alive without a cascading workspace",
+          "updatedAt": "2026-09-19T22:25:23Z",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/994"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "copilot/fix-blazored-fluentvalidation-dependency",
+          "headRefOid": "33d8c964231ca8b30cd9a23037f824cb2bea2a10",
+          "isDraft": false,
+          "number": 935,
+          "title": "Replace archived Blazored.FluentValidation with Blazilla",
+          "updatedAt": "2026-09-14T19:21:00Z",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/935"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "dependabot/nuget/main/Elsa.Api.Client-3.8.0-preview.5410",
+          "headRefOid": "7d865818de0fa7ed72b7a1af4ff956da1d77592b",
+          "isDraft": false,
+          "number": 932,
+          "title": "deps: Bump Elsa.Api.Client from 3.8.0-preview.5397 to 3.8.0-preview.5410",
+          "updatedAt": "2026-08-03T04:31:37Z",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/932"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "dependabot/npm_and_yarn/src/wrappers/npm_and_yarn-cfeaca08f7",
+          "headRefOid": "74f8f1db182712663a7d4deaf3d94f40a0a3e4c8",
+          "isDraft": false,
+          "number": 916,
+          "title": "Bump the npm_and_yarn group across 1 directory with 8 updates",
+          "updatedAt": "2026-07-02T12:18:27Z",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/916"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "codex/resolve-warnings-20260622",
+          "headRefOid": "ee21aae4b15d4d73401b7f4df3c10b577fc9efbb",
+          "isDraft": false,
+          "number": 907,
+          "title": "Resolve focused Studio warnings",
+          "updatedAt": "2026-06-22T23:09:23Z",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/907"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "codex/resolve-warnings-20260615",
+          "headRefOid": "7efc2faabb4787f17dde71cd75690ceb58cfda78",
+          "isDraft": false,
+          "number": 901,
+          "title": "Resolve focused build warnings",
+          "updatedAt": "2026-06-15T06:23:11Z",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/901"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "feat-adding-RedirectUriPrefix",
+          "headRefOid": "e865a7cb3ada16d15e32fad122f1f90113f51bd9",
+          "isDraft": false,
+          "number": 809,
+          "title": "feat: add RedirectUriPrefix support to OpenIdConnectConfiguration for sub-path deployments",
+          "updatedAt": "2026-09-14T07:07:03Z",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/809"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "dependabot/npm_and_yarn/src/modules/Elsa.Studio.Workflows.Designer/ClientLib/npm_and_yarn-998b9f9285",
+          "headRefOid": "55e75c8f11a438b97ad9d419a3dbcf439bd8804f",
+          "isDraft": false,
+          "number": 806,
+          "title": "Bump the npm_and_yarn group across 3 directories with 6 updates",
+          "updatedAt": "2026-05-03T16:42:12Z",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/806"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "feature/remove-rendering-before--login",
+          "headRefOid": "bc5cb5f70338c6de84ecd7083e68133dc735003a",
+          "isDraft": false,
+          "number": 742,
+          "title": "update login and logout ",
+          "updatedAt": "2026-09-14T07:07:01Z",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/742"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "dependabot/npm_and_yarn/src/wrappers/npm_and_yarn-1ad9977b7d",
+          "headRefOid": "21bba822b90bd540c2f6d2b03cc2dd21f1554cdd",
+          "isDraft": false,
+          "number": 598,
+          "title": "Bump the npm_and_yarn group across 1 directory with 5 updates",
+          "updatedAt": "2025-12-10T18:00:45Z",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/598"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "MovableNodesOnReadOnly",
+          "headRefOid": "74e6fdb589851b4f5643bbb893c97a1371d59193",
+          "isDraft": false,
+          "number": 516,
+          "title": "Movable Activities on read only",
+          "updatedAt": "2026-09-14T07:07:00Z",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/516"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "DesignerEmbeddedActivitySelectFix",
+          "headRefOid": "fa7a4021370bd85bd68195e160e9a33bc124e485",
+          "isDraft": false,
+          "number": 514,
+          "title": "Designer embedded activity select fix",
+          "updatedAt": "2026-09-14T07:06:59Z",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/514"
+        },
+        {
+          "baseRefName": "main",
+          "disposition": "Remain open in the source repository; preserve for owner review at canonical import, without automatic merge, rejection, or reparenting.",
+          "headRefName": "conditional-inputs-elsa-3",
+          "headRefOid": "f457ed8a7c44e55785668c454fb9785e24e803eb",
+          "isDraft": false,
+          "number": 188,
+          "title": "Conditional inputs Elsa 3",
+          "updatedAt": "2026-09-14T07:06:58Z",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/188"
+        }
+      ],
+      "pinMatchesCurrentMain": true,
+      "selectedImportPin": "20ceaeeed7e671f0c9662003e82063026f2216de"
+    }
+  },
+  "scope": "Read-only GitHub REST refresh after the synthetic a13ac Core/ba8b Extensions/20cea Studio rehearsal was created. This does not retroactively precede that candidate. The recorded open-PR result is a point-in-time page snapshot; preserve each still-open source PR for owner disposition at final import.",
+  "transitionsSincePriorLedger": {
+    "elsa-extensions": {
+      "changedOpenHeads": [],
+      "newOpenNumbers": [],
+      "noLongerOpen": [
+        {
+          "currentHeadRefOid": "b775f02807768ab66cff119ef23574e4a8807092",
+          "includedAtSelectedImportPin": true,
+          "mergeCommitOid": "ba8b71d91c15ffe5be4b2c539cf9f712e74af775",
+          "mergedAt": "2026-09-24T07:33:26Z",
+          "number": 216,
+          "previousHeadRefOid": "b6ed67fde0c7ea966c7d921a487c3c8a0c4c4407",
+          "state": "MERGED",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/216"
+        }
+      ],
+      "previousOpenCount": 17
+    },
+    "elsa-studio": {
+      "changedOpenHeads": [],
+      "newOpenNumbers": [],
+      "noLongerOpen": [],
+      "previousOpenCount": 14
+    }
+  }
+}
