@@ -63,3 +63,13 @@ jobs:
             --report-out "$RUNNER_TEMP/secrets-sqlserver-upgrade-report.json"
           diff -u scripts/integration-program/secrets-sqlserver-upgrade/observed-result.json \
             "$RUNNER_TEMP/secrets-sqlserver-upgrade-report.json"
+      - name: Verify synthetic Secrets SQL Server fresh-destination bridge
+        run: |
+          python scripts/integration-program/run_secrets_sqlserver_bridge.py \
+            --report-out "$RUNNER_TEMP/secrets-sqlserver-bridge-report.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: secrets-sqlserver-bridge-report
+          path: ${{ runner.temp }}/secrets-sqlserver-bridge-report.json
+          if-no-files-found: error
+          retention-days: 30

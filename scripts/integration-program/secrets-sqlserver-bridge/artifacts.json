@@ -1,0 +1,50 @@
+{
+  "targetFramework": "net10.0",
+  "phases": {
+    "extensions-3.8.1": {
+      "repository": "https://github.com/elsa-workflows/elsa-extensions",
+      "sourceCommit": "01bf9ad70d0399afadae9609fe820703d3de290d",
+      "packages": [
+        {
+          "id": "Elsa.Secrets.Persistence.EFCore",
+          "version": "3.8.1",
+          "sha512": "00ffb499bb1164fb740c28bf669aaf26cf37e891dded5a5e88a33d41a48a6c9c8b1118554770fb12657c91e4307cc53cf72637c3e2c0dccd878610e6b11dd803"
+        },
+        {
+          "id": "Elsa.Secrets.Persistence.EFCore.SqlServer",
+          "version": "3.8.1",
+          "sha512": "c18f324f6d353c515ea57e22cef055e01d4fb739f9bde44a8f7c4c7a57e77bf866f8673dfed64fcb130f7ef84904145fc6a959240d848bd289a773fe8408f009"
+        }
+      ]
+    },
+    "core-3.8.4": {
+      "repository": "https://github.com/elsa-workflows/elsa-core",
+      "sourceCommit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+      "packages": [
+        {
+          "id": "Elsa.Secrets.Persistence.EFCore",
+          "version": "3.8.4",
+          "sha512": "1c6855fcd9785db2f7c90f17bc75817c78db9a5bf630d5eb0ddfaa0c383b7ad1a3d64866e392dbabcfb762267a40e21fa564b112dfd9f4c9502c3c3bed92aeb8"
+        },
+        {
+          "id": "Elsa.Secrets.Persistence.EFCore.SqlServer",
+          "version": "3.8.4",
+          "sha512": "88c8eac11c63292ddcd1f5712a69802bc95a884a7b8c59563c534c61493680ac56d396de705fd84ad8c548201ee235e68d14aba5bdf9e5c01655811a4daa9dce"
+        }
+      ]
+    }
+  },
+  "targetCoreSourceCommit": "7b06b82d0ea89c12d49c3c28da8d770bfca13faf",
+  "source-build-tooling": {
+    "sourceCommit": "728b2461bf0073e072fdc7ee61c7ece1f42ac8bb",
+    "packages": [
+      {
+        "id": "Elsa.Platform.PackageManifest.Generator",
+        "version": "0.0.1-preview.53",
+        "localPath": "tooling-feed/elsa.platform.packagemanifest.generator.0.0.1-preview.53.nupkg",
+        "sha512": "f634e94a5d330f4b43db314fbc69bdf7e7f0fab5b77f5d5dbb6440085a77f1978ba43c6f0f4e4f1f3c474b3f8d5af07f29778d7b1b4b42601b0e3d0daacf3320"
+      }
+    ]
+  },
+  "sqlServerImage": "mcr.microsoft.com/mssql/server@sha256:ea73825f3d88a23c355ac2f9fdc6bd960fec90171c12c572109b36a558f77bb8"
+}

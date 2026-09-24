@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../../../../src/modules/Elsa.Common/Elsa.Common.csproj" />
+    <ProjectReference Include="../../../../src/modules/Elsa.Persistence.EFCore.Common/Elsa.Persistence.EFCore.Common.csproj" />
+    <ProjectReference Include="../../../../src/modules/Elsa.Persistence.EFCore/Elsa.Persistence.EFCore.csproj" />
+    <ProjectReference Include="../../../../src/modules/Elsa.Persistence.EFCore.SqlServer/Elsa.Persistence.EFCore.SqlServer.csproj" />
+    <ProjectReference Include="../../../../src/modules/Elsa.Secrets/Elsa.Secrets.csproj" />
+    <ProjectReference Include="../../../../src/modules/Elsa.Secrets.Persistence.EFCore/Elsa.Secrets.Persistence.EFCore.csproj" />
+    <ProjectReference Include="../../../../src/modules/Elsa.Secrets.Persistence.EFCore.SqlServer/Elsa.Secrets.Persistence.EFCore.SqlServer.csproj" />
+    <ProjectReference Include="../../../../src/modules/Elsa.Tenants/Elsa.Tenants.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Scrutor" />
+  </ItemGroup>
+</Project>
