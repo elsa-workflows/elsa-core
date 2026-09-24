@@ -23,7 +23,7 @@ public class ElsaScriptWorkflowMaterializerTests
             StringData = """{ "id": "stale-json" }"""
         };
 
-        var workflow = await materializer.MaterializeAsync(definition);
+        var workflow = await materializer.MaterializeAsync(definition, CancellationToken.None);
 
         Assert.Equal("workflow FromFile { }", compiler.LastSource);
         Assert.Equal(definition.DefinitionId, workflow.Identity.DefinitionId);
