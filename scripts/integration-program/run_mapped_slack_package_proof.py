@@ -28,6 +28,7 @@ from release_unit_manifest import (
     get_unit,
     load_manifest,
     map_source_project_path,
+    require_tested_artifact_dependencies,
     source_project_key,
     validate_against_inventory,
 )
@@ -44,9 +45,9 @@ INVENTORY_DOCUMENT = json.loads(INVENTORY_PATH.read_text(encoding="utf-8"))
 validate_against_inventory(RELEASE_UNIT, INVENTORY_DOCUMENT)
 PACKAGE_ID = RELEASE_UNIT["package_id"]
 PACKAGE_VERSION = RELEASE_UNIT["versioning"]["local_proof_version"]
-TESTED_DEPENDENCIES = {row["package_id"]: row["version"] for row in RELEASE_UNIT["tested_artifact_dependencies"]}
-ELSA_VERSION = TESTED_DEPENDENCIES["Elsa"]
-SLACK_NET_VERSION = TESTED_DEPENDENCIES["SlackNet"]
+REQUIRED_PROOF_DEPENDENCIES = require_tested_artifact_dependencies(RELEASE_UNIT, ("Elsa", "SlackNet"))
+ELSA_VERSION = REQUIRED_PROOF_DEPENDENCIES["Elsa"]
+SLACK_NET_VERSION = REQUIRED_PROOF_DEPENDENCIES["SlackNet"]
 TFMS = tuple(RELEASE_UNIT["target_frameworks"])
 REPOSITORY_URL = "https://github.com/elsa-workflows/elsa-extensions"
 SLACK_RELATIVE = Path(RELEASE_UNIT["mapped"]["project_path"]).parent
@@ -458,13 +459,19 @@ def verify_release_unit_mapping(imported: dict) -> dict[str, str]:
     mapping = imported.get("mapping")
     if not isinstance(mapping, list):
         raise RuntimeError("Import receipt has no project path mapping")
-    expected = {
-        RELEASE_UNIT["source"]["project_path"]: RELEASE_UNIT["mapped"]["project_path"],
-        **{
-            test["project_path"]: mapped_test["project_path"]
-            for test, mapped_test in zip(RELEASE_UNIT["source"]["test_projects"], RELEASE_UNIT["mapped"]["test_projects"], strict=True)
-        },
+    source_tests = RELEASE_UNIT["source"]["test_projects"]
+    mapped_tests = {
+        test["source_project_path"]: test["project_path"]
+        for test in RELEASE_UNIT["mapped"]["test_projects"]
     }
+    source_test_paths = {test["project_path"] for test in source_tests}
+    if set(mapped_tests) != source_test_paths:
+        raise RuntimeError(
+            "Release-unit manifest source and mapped test projects differ: "
+            f"source={sorted(source_test_paths)}, mapped={sorted(mapped_tests)}"
+        )
+    expected = {RELEASE_UNIT["source"]["project_path"]: RELEASE_UNIT["mapped"]["project_path"]}
+    expected.update({test["project_path"]: mapped_tests[test["project_path"]] for test in source_tests})
     actual = {
         source_path: map_source_project_path("elsa-extensions", source_path, mapping)
         for source_path in expected
@@ -678,34 +685,139 @@ def verify_offline_activity(output: Path, packages: Path, env: dict[str, str], c
     return {"result": "passed", "framework": "net10.0", "receipt": result, "package_provenance": provenance}
 
 
-def verify_upstream_test_baseline(output: Path, rehearsal: Path, env: dict[str, str], cache_root: Path, config: Path, dotnet: Path) -> dict:
-    test_path = RELEASE_UNIT["mapped"]["test_projects"][0]["project_path"]
-    test_project = rehearsal / test_path
-    if not test_project.is_file():
-        raise RuntimeError(f"Pinned Slack test project is missing: {test_project}")
-    test_env = env.copy()
-    test_env["NUGET_PACKAGES"] = str(cache_root / "upstream-test")
-    run(
-        [str(dotnet), "restore", str(test_project), "--configfile", str(config), "-p:UseProjectReferences=false", f"-p:ElsaVersion={ELSA_VERSION}"],
-        cwd=rehearsal,
-        env=test_env,
-        log=output / "logs/upstream-test-restore.log",
-    )
-    results = output / "test-results"
-    results.mkdir()
-    run(
-        [
-            str(dotnet), "test", str(test_project), "--no-restore", "--configuration", "Release",
-            "--framework", "net10.0", "--logger", "trx;LogFileName=Slack.Tests.net10.0.trx",
-            "--results-directory", str(results), "-p:UseProjectReferences=false",
-            f"-p:ElsaVersion={ELSA_VERSION}", "-m:1",
-        ],
-        cwd=rehearsal,
-        env=test_env,
-        log=output / "logs/upstream-test-net10.0.log",
-    )
-    receipt = shared.read_focused_test_receipt(results)
-    return {"result": "baseline-recorded", "framework": "net10.0", "receipt": receipt}
+def read_declared_test_receipt(results_dir: Path, source_project_path: str, framework: str) -> dict:
+    known_slack_test = shared.TEST_RELATIVE.as_posix()
+    if source_project_path == known_slack_test and framework == "net10.0":
+        return {"result": "known-baseline-skip", "receipt": shared.read_focused_test_receipt(results_dir)}
+
+    trx_files = sorted(results_dir.rglob("*.trx"))
+    if not trx_files:
+        raise RuntimeError(f"Declared test run produced no TRX result: {source_project_path} {framework}")
+
+    aggregate = {name: 0 for name in shared.TRX_COUNTERS}
+    unit_tests = []
+    file_receipts = []
+    for trx_path in trx_files:
+        root = ElementTree.parse(trx_path).getroot()
+        summary = root.find("{*}ResultSummary")
+        counters = summary.find("{*}Counters") if summary is not None else None
+        if summary is None or counters is None or summary.get("outcome") != "Completed":
+            raise RuntimeError(f"Declared test run has no completed summary: {trx_path}")
+        run_info_errors = [
+            info.get("outcome")
+            for info in root.findall(".//{*}RunInfo")
+            if info.get("outcome") in {"Error", "Abort"}
+        ]
+        if run_info_errors:
+            raise RuntimeError(f"Declared test TRX has failed or aborted run information in {trx_path}: {run_info_errors}")
+
+        file_counts = {}
+        for name in shared.TRX_COUNTERS:
+            raw_count = counters.get(name)
+            if raw_count is None:
+                raise RuntimeError(f"Declared test TRX is missing {name} counter: {trx_path}")
+            try:
+                file_counts[name] = int(raw_count)
+            except ValueError as error:
+                raise RuntimeError(f"Declared test TRX has invalid {name} counter: {trx_path}") from error
+            if file_counts[name] < 0:
+                raise RuntimeError(f"Declared test TRX has negative {name} counter: {trx_path}")
+            aggregate[name] += file_counts[name]
+
+        results = root.findall(".//{*}UnitTestResult")
+        if file_counts["total"] != len(results):
+            raise RuntimeError(
+                f"Declared test TRX total does not match its results in {trx_path}: "
+                f"{file_counts['total']} != {len(results)}"
+            )
+        for result in results:
+            outcome = result.get("outcome")
+            if outcome != "Passed":
+                raise RuntimeError(
+                    f"Undocumented non-passing result in declared test TRX {trx_path}: "
+                    f"{result.get('testName')!r} outcome={outcome!r}"
+                )
+            unit_tests.append({"name": result.get("testName"), "outcome": outcome})
+        file_receipts.append({"file": trx_path.name, "counters": file_counts, "unit_result_count": len(results)})
+
+    if not unit_tests or aggregate["passed"] != aggregate["total"] or aggregate["executed"] != aggregate["total"]:
+        raise RuntimeError(
+            f"Declared test results are incomplete for {source_project_path} {framework}: "
+            f"total={aggregate['total']} executed={aggregate['executed']} passed={aggregate['passed']}"
+        )
+    if any(aggregate[name] for name in (
+        "failed", "error", "timeout", "aborted", "passedButRunAborted", "notRunnable",
+        "notExecuted", "disconnected", "inconclusive", "inProgress", "pending",
+    )):
+        raise RuntimeError(f"Declared test counters contain non-passing results: {aggregate}")
+
+    return {
+        "result": "passed",
+        "receipt": {"result": aggregate, "trx_files": file_receipts, "unit_tests": unit_tests},
+    }
+
+
+def verify_upstream_test_baseline(
+    output: Path,
+    rehearsal: Path,
+    env: dict[str, str],
+    cache_root: Path,
+    config: Path,
+    dotnet: Path,
+    imported: dict,
+) -> dict:
+    mapped_paths = verify_release_unit_mapping(imported)
+    test_runs = []
+    framework_count = 0
+    for test_index, source_test in enumerate(RELEASE_UNIT["source"]["test_projects"], start=1):
+        source_path = source_test["project_path"]
+        mapped_path = mapped_paths[source_path]
+        test_project = rehearsal / mapped_path
+        if not test_project.is_file():
+            raise RuntimeError(f"Mapped release-unit test project is missing: {test_project}")
+
+        safe_name = f"{test_index:02d}-{source_path.removesuffix('.csproj').replace('/', '__')}"
+        test_env = env.copy()
+        test_env["NUGET_PACKAGES"] = str(cache_root / "upstream-tests" / safe_name)
+        run(
+            [str(dotnet), "restore", str(test_project), "--configfile", str(config), "-p:UseProjectReferences=false", f"-p:ElsaVersion={ELSA_VERSION}"],
+            cwd=rehearsal,
+            env=test_env,
+            log=output / "logs" / f"upstream-test-restore-{safe_name}.log",
+        )
+
+        for framework in source_test["target_frameworks"]:
+            framework_count += 1
+            results = output / "test-results" / safe_name / framework
+            results.mkdir(parents=True)
+            run(
+                [
+                    str(dotnet), "test", str(test_project), "--no-restore", "--configuration", "Release",
+                    "--framework", framework, "--logger", f"trx;LogFileName={safe_name}.{framework}.trx",
+                    "--results-directory", str(results), "-p:UseProjectReferences=false",
+                    f"-p:ElsaVersion={ELSA_VERSION}", "-m:1",
+                ],
+                cwd=rehearsal,
+                env=test_env,
+                log=output / "logs" / f"upstream-test-{safe_name}-{framework}.log",
+            )
+            test_runs.append({
+                "source_project_path": source_path,
+                "mapped_project_path": mapped_path,
+                "framework": framework,
+                **read_declared_test_receipt(results, source_path, framework),
+            })
+
+    if not test_runs:
+        raise RuntimeError("Release-unit manifest declares no test-project/framework runs")
+    has_known_skip = any(row["result"] == "known-baseline-skip" for row in test_runs)
+    return {
+        "result": "baseline-recorded" if has_known_skip else "passed",
+        "manifest_declared_test_project_count": len(RELEASE_UNIT["source"]["test_projects"]),
+        "manifest_declared_framework_count": framework_count,
+        "all_declared_project_frameworks_ran": len(test_runs) == framework_count,
+        "runs": test_runs,
+    }
 
 
 def verify_embedded_sources(output: Path, symbols: Path, extensions: Path, env: dict[str, str], config: Path, dotnet: Path) -> list[dict]:
@@ -849,7 +961,7 @@ def main() -> int:
         raise RuntimeError(f"Local feed contains unrelated or missing symbol packages: {[path.name for path in snupkgs]}")
     artifact = inspect_artifact(nupkgs[0], snupkgs[0], extensions / "icon.png")
 
-    upstream_test = verify_upstream_test_baseline(output, rehearsal, env, cache_root, pack_config, dotnet)
+    upstream_test = verify_upstream_test_baseline(output, rehearsal, env, cache_root, pack_config, dotnet, imported)
     current_selection = selector_evidence(output, rehearsal, imported)
     consumers = verify_consumers(output, packages, env, cache_root / "consumers", dotnet)
     offline_activity = verify_offline_activity(output, packages, env, cache_root, dotnet)
@@ -918,10 +1030,10 @@ def main() -> int:
             + [offline_activity["package_provenance"]],
         },
         "offline_activity": offline_activity,
-        "upstream_slack_test": upstream_test,
+        "release_unit_tests": upstream_test,
         "embedded_source_verification": embedded_sources,
         "current_source_impact_selection": current_selection,
-        "known_test_limit": "The pinned Slack test project ran on net10.0 and produced the exact known baseline: one NotExecuted CreateChannelTests.ExecuteAsync result ('Not implemented yet'), zero executed or passed tests, and no other test results or nonzero failure counters. This remains an incomplete test gate; the separate offline CreateChannel smoke is narrow behavior evidence and does not unskip or replace the upstream test.",
+        "known_test_limit": "Every test project and target framework declared by the release-unit manifest was executed and is listed in release_unit_tests.runs. The current Slack net10.0 run records the exact known baseline skip (CreateChannelTests.ExecuteAsync, 'Not implemented yet') with no executed or passed tests, so this remains an incomplete test gate; the separate offline CreateChannel smoke is narrow behavior evidence and does not unskip or replace the upstream test.",
         "publication_authorized": False,
         "commands": sorted(str(path.relative_to(output)) for path in (output / "logs").glob("*.log")),
         "source_state": {

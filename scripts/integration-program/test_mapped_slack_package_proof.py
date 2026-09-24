@@ -1,3 +1,4 @@
+import copy
 import base64
 import hashlib
 import json
@@ -9,6 +10,7 @@ import unittest
 import zipfile
 from pathlib import Path
 from unittest.mock import patch
+from xml.etree import ElementTree
 
 SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS))
@@ -108,6 +110,73 @@ class MappedSlackPackageProofTests(unittest.TestCase):
         self.assertEqual(
             {row["inventory_project"] for row in receipt["selected_projects"]},
             set(selection["affected_test_projects"]),
+        )
+
+    def test_declared_test_projects_map_by_source_and_run_every_framework(self):
+        unit = copy.deepcopy(proof.RELEASE_UNIT)
+        unit["source"]["test_projects"] = [
+            {"project_path": "test/one/One.Tests.csproj", "target_frameworks": ["net8.0", "net10.0"]},
+            {"project_path": "test/two/Two.Tests.csproj", "target_frameworks": ["net9.0"]},
+        ]
+        unit["mapped"]["test_projects"] = [
+            {"source_project_path": "test/two/Two.Tests.csproj", "project_path": "test/extensions/two/Two.Tests.csproj"},
+            {"source_project_path": "test/one/One.Tests.csproj", "project_path": "test/extensions/one/One.Tests.csproj"},
+        ]
+        mapping = [
+            {"repository": "extensions", "source": unit["source"]["project_path"], "destination": unit["mapped"]["project_path"]},
+            {"repository": "extensions", "source": "test/one/One.Tests.csproj", "destination": "test/extensions/one/One.Tests.csproj"},
+            {"repository": "extensions", "source": "test/two/Two.Tests.csproj", "destination": "test/extensions/two/Two.Tests.csproj"},
+        ]
+        imported = {"mapping": mapping}
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            rehearsal = root / "rehearsal"
+            for mapped_test in unit["mapped"]["test_projects"]:
+                test_path = rehearsal / mapped_test["project_path"]
+                test_path.parent.mkdir(parents=True, exist_ok=True)
+                test_path.touch()
+
+            commands = []
+
+            def fake_run(command, *, cwd, env, log):
+                commands.append(command)
+                log.parent.mkdir(parents=True, exist_ok=True)
+                log.write_text("fixture command\n", encoding="utf-8")
+                if command[1] == "test":
+                    results_dir = Path(command[command.index("--results-directory") + 1])
+                    results_dir.mkdir(parents=True, exist_ok=True)
+                    result = ElementTree.Element("TestRun")
+                    results = ElementTree.SubElement(result, "Results")
+                    ElementTree.SubElement(results, "UnitTestResult", testName=f"{command[command.index('--framework') + 1]}.Passes", outcome="Passed")
+                    summary = ElementTree.SubElement(result, "ResultSummary", outcome="Completed")
+                    counters = {name: "0" for name in proof.shared.TRX_COUNTERS}
+                    counters.update(total="1", executed="1", passed="1")
+                    ElementTree.SubElement(summary, "Counters", counters)
+                    ElementTree.ElementTree(result).write(results_dir / "result.trx", encoding="utf-8", xml_declaration=True)
+
+            with patch.object(proof, "RELEASE_UNIT", unit), patch.object(proof, "run", side_effect=fake_run):
+                verified_mapping = proof.verify_release_unit_mapping(imported)
+                receipt = proof.verify_upstream_test_baseline(
+                    root / "output", rehearsal, {}, root / "cache", root / "NuGet.Config", Path("/dotnet"), imported
+                )
+
+        self.assertEqual("test/extensions/one/One.Tests.csproj", verified_mapping["test/one/One.Tests.csproj"])
+        self.assertEqual("test/extensions/two/Two.Tests.csproj", verified_mapping["test/two/Two.Tests.csproj"])
+        self.assertEqual(2, receipt["manifest_declared_test_project_count"])
+        self.assertEqual(3, receipt["manifest_declared_framework_count"])
+        self.assertTrue(receipt["all_declared_project_frameworks_ran"])
+        self.assertEqual(
+            {("test/one/One.Tests.csproj", "net8.0"), ("test/one/One.Tests.csproj", "net10.0"), ("test/two/Two.Tests.csproj", "net9.0")},
+            {(row["source_project_path"], row["framework"]) for row in receipt["runs"]},
+        )
+        test_commands = [command for command in commands if command[1] == "test"]
+        restore_commands = [command for command in commands if command[1] == "restore"]
+        self.assertEqual(3, len(test_commands))
+        self.assertEqual(2, len(restore_commands))
+        self.assertEqual(
+            {"test/extensions/one/One.Tests.csproj", "test/extensions/two/Two.Tests.csproj"},
+            {Path(command[2]).relative_to(rehearsal).as_posix() for command in test_commands},
         )
 
     def test_retained_provenance_recheck_rejects_dotdot_output_alias(self):

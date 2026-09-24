@@ -224,6 +224,21 @@ def source_test_project_keys(unit: dict[str, Any]) -> list[tuple[str, str]]:
     return [(repository, row["project_path"]) for row in unit["source"]["test_projects"]]
 
 
+def require_tested_artifact_dependencies(
+    unit: dict[str, Any], package_ids: list[str] | tuple[str, ...]
+) -> dict[str, str]:
+    """Return required tested dependency versions or a manifest-specific error."""
+    declared = {
+        dependency["package_id"].casefold(): dependency["version"]
+        for dependency in unit["tested_artifact_dependencies"]
+    }
+    missing = [package_id for package_id in package_ids if package_id.casefold() not in declared]
+    if missing:
+        required = ", ".join(missing)
+        raise ValueError(f"Release unit {unit['id']!r} must declare tested artifact dependencies: {required}")
+    return {package_id: declared[package_id.casefold()] for package_id in package_ids}
+
+
 def validate_against_inventory(unit: dict[str, Any], inventory: dict[str, Any]) -> None:
     repository = unit["source"]["repository"]
     rows = inventory["project_inventory"].get(repository)

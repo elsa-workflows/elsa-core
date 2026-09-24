@@ -13,6 +13,7 @@ from release_unit_manifest import (
     MANIFEST_PATH,
     get_unit,
     load_manifest,
+    require_tested_artifact_dependencies,
     validate_against_inventory,
 )
 
@@ -107,6 +108,18 @@ class ReleaseUnitManifestTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "External dependency version differs"):
             validate_against_inventory(unit, self.inventory)
+
+    def test_package_proof_dependencies_are_required_with_a_domain_error(self):
+        for package_id in ("Elsa", "SlackNet"):
+            with self.subTest(package_id=package_id):
+                unit = copy.deepcopy(self.unit)
+                unit["tested_artifact_dependencies"] = [
+                    row for row in unit["tested_artifact_dependencies"]
+                    if row["package_id"].casefold() != package_id.casefold()
+                ]
+
+                with self.assertRaisesRegex(ValueError, f"must declare tested artifact dependencies: {package_id}"):
+                    require_tested_artifact_dependencies(unit, ("Elsa", "SlackNet"))
 
     @staticmethod
     def load_document(document):
