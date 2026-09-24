@@ -400,7 +400,7 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
             .ExecuteDeleteAsync(cancellationToken) == 1;
     }
 
-    public async Task<IntegrationConnection?> TryClaimRefreshAsync(
+    public async Task<IntegrationConnection?> TryClaimCredentialUpdateAsync(
         string id,
         string tenantId,
         string environmentId,
@@ -433,6 +433,34 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
         }
 
         return await Scoped(db, id, tenantId, environmentId).AsNoTracking().SingleOrDefaultAsync(x => x.OperationId == operationId, cancellationToken);
+    }
+
+    public Task<IntegrationConnection?> TryClaimRefreshAsync(
+        string id,
+        string tenantId,
+        string environmentId,
+        long expectedRevision,
+        string operationId,
+        DateTimeOffset leaseExpiresAt,
+        CancellationToken cancellationToken = default) =>
+        TryClaimCredentialUpdateAsync(id, tenantId, environmentId, expectedRevision, operationId, leaseExpiresAt, cancellationToken);
+
+    public async Task<bool> TryAcceptCredentialUpdateAsync(
+        string id,
+        string tenantId,
+        string environmentId,
+        long expectedRevision,
+        string operationId,
+        long fence,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await Scoped(db, id, tenantId, environmentId)
+            .Where(x => x.Revision == expectedRevision && x.OperationExpectedRevision == expectedRevision && x.OperationId == operationId &&
+                        x.OperationFence == fence && x.Status == ConnectionStatus.Active && x.OperationStatus == CredentialOperationStatus.Claimed &&
+                        x.OperationLeaseExpiresAt != null && x.OperationLeaseExpiresAt > now)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.OperationStatus, CredentialOperationStatus.CredentialReceived), cancellationToken) == 1;
     }
 
     public async Task<bool> TryStartProviderCallAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, DateTimeOffset now, CancellationToken cancellationToken = default)

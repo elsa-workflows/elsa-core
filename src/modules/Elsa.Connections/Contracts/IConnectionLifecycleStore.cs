@@ -115,6 +115,19 @@ public interface IConnectionLifecycleStore
         DateTimeOffset leaseExpiresAt,
         CancellationToken cancellationToken = default);
 
+    Task<IntegrationConnection?> TryClaimCredentialUpdateAsync(
+        string id,
+        string tenantId,
+        string environmentId,
+        long expectedRevision,
+        string operationId,
+        DateTimeOffset leaseExpiresAt,
+        CancellationToken cancellationToken = default) =>
+        TryClaimRefreshAsync(id, tenantId, environmentId, expectedRevision, operationId, leaseExpiresAt, cancellationToken);
+
+    Task<bool> TryAcceptCredentialUpdateAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, DateTimeOffset now, CancellationToken cancellationToken = default) =>
+        Task.FromResult(false);
+
     Task<bool> TryStartProviderCallAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, DateTimeOffset now, CancellationToken cancellationToken = default);
 
     Task<bool> TryReleaseUnstartedRefreshAsync(string id, string tenantId, string environmentId, string operationId, long fence, string safeErrorCode, CancellationToken cancellationToken = default);

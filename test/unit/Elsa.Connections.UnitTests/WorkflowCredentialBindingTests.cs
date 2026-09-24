@@ -19,7 +19,12 @@ using Elsa.Persistence.EFCore;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Persistence.EFCore.Modules.Runtime;
+using Elsa.Secrets.Contracts;
+using Elsa.Secrets.Features;
 using Elsa.Secrets.Models;
+using Elsa.Secrets.Persistence.EFCore;
+using Elsa.Secrets.Persistence.EFCore.Extensions;
+using Elsa.Secrets.Persistence.EFCore.Sqlite.Extensions;
 using Elsa.Tenants.Options;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
@@ -816,6 +821,141 @@ public sealed class WorkflowCredentialBindingTests
             message => message.Contains("access-connection-a", StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData("allowed")]
+    [InlineData("rotated")]
+    [InlineData("disconnected")]
+    [InlineData("wrong-tenant")]
+    [InlineData("wrong-environment")]
+    public async Task StaticApiKeyIsGrantedAndResolvedOnlyAfterPersistedWorkflowResume(string scenario)
+    {
+        var databasePath = Path.Join(Path.GetTempPath(), $"elsa-workflow-api-key-{Guid.NewGuid():N}.db");
+        const string originalKey = "synthetic-api-key-v1";
+        const string rotatedKey = "synthetic-api-key-v2";
+        string workflowInstanceId;
+        string bookmarkId;
+        await using (var first = await Worker.CreateForDatabaseAsync(databasePath, EnvironmentId, allow: true,
+            deleteDatabaseOnDispose: false, useGrants: true, allowGrants: true, useRuntime: true, useApiKeyLifecycle: true))
+        {
+            using var tenant = first.TenantAccessor.PushContext(TenantContext());
+            using var scope = first.Services.CreateScope();
+            var apiKeys = scope.ServiceProvider.GetRequiredService<IStaticApiKeyLifecycleService>();
+            var connected = await apiKeys.ConnectApiKeyAsync(Principal(), new ConnectApiKeyConnectionRequest(
+                TenantId, EnvironmentId, "synthetic-api-key", "account-test", originalKey));
+            Assert.True(connected.Succeeded, connected.SafeErrorCode);
+            var connectionId = Assert.IsType<string>(connected.ConnectionId);
+            var connectionStore = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleStore>();
+            var firstConnection = await connectionStore.FindAsync(connectionId, TenantId, EnvironmentId);
+            var firstGeneration = Assert.IsType<string>(firstConnection?.CurrentGenerationId);
+            var firstSecretName = Assert.IsType<string>(firstConnection?.CurrentSecretName);
+
+            var bindingManager = scope.ServiceProvider.GetRequiredService<IWorkflowCredentialBindingManager>();
+            Assert.True((await bindingManager.CreateAsync(Principal(), LogicalBindingId, connectionId)).Succeeded);
+            var runtime = scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
+            var client = await runtime.CreateClientAsync();
+            var started = await client.CreateAndRunInstanceAsync(new CreateAndRunWorkflowInstanceRequest
+            {
+                WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(
+                    SyntheticCredentialUseWorkflow.DefinitionId, VersionOptions.Latest)
+            });
+            workflowInstanceId = started.WorkflowInstanceId;
+            bookmarkId = Assert.Single(await scope.ServiceProvider.GetRequiredService<IBookmarkStore>()
+                .FindManyAsync(new() { WorkflowInstanceId = workflowInstanceId })).Id;
+            Assert.Empty(first.Services.GetRequiredService<SyntheticCredentialCallProbe>().Calls);
+
+            var grantManager = scope.ServiceProvider.GetRequiredService<IWorkflowCredentialGrantManager>();
+            Assert.True((await grantManager.IssueAsync(Principal(), workflowInstanceId, LogicalBindingId, 1)).Succeeded);
+
+            if (scenario == "rotated")
+            {
+                var rotated = await apiKeys.ReplaceApiKeyAsync(Principal(), TenantId, EnvironmentId, connectionId,
+                    connected.Revision!.Value, rotatedKey);
+                Assert.True(rotated.Succeeded);
+                var cleanup = await scope.ServiceProvider.GetRequiredService<IConnectionLifecycleService>()
+                    .CleanupGenerationAsync(Principal(), TenantId, EnvironmentId, connectionId, firstGeneration);
+                Assert.True(cleanup.Succeeded);
+                await Assert.ThrowsAnyAsync<Exception>(() => scope.ServiceProvider.GetRequiredService<IManagedSecretManager>()
+                    .ResolveGenerationAsync(firstSecretName, connectionId, firstGeneration));
+            }
+            else if (scenario == "disconnected")
+            {
+                var disconnected = await scope.ServiceProvider.GetRequiredService<IConnectionLifecycleService>()
+                    .DisconnectAsync(Principal(), TenantId, EnvironmentId, connectionId);
+                Assert.True(disconnected.Accepted);
+            }
+
+            var persisted = await scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>().FindAsync(workflowInstanceId);
+            Assert.DoesNotContain(originalKey, JsonSerializer.Serialize(persisted), StringComparison.Ordinal);
+            Assert.DoesNotContain(rotatedKey, JsonSerializer.Serialize(persisted), StringComparison.Ordinal);
+        }
+
+        var restartedEnvironment = scenario == "wrong-environment" ? "other-environment" : EnvironmentId;
+        await using var second = await Worker.CreateForDatabaseAsync(databasePath, restartedEnvironment, allow: true,
+            deleteDatabaseOnDispose: true, useGrants: true, allowGrants: true, useRuntime: true, useApiKeyLifecycle: true);
+        using var restartedTenant = second.TenantAccessor.PushContext(scenario == "wrong-tenant"
+            ? new Tenant { Id = "tenant-b", Name = "tenant-b" }
+            : TenantContext());
+        using var restartedScope = second.Services.CreateScope();
+        var restartedRuntime = restartedScope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
+        var restartedClient = await restartedRuntime.CreateClientAsync(workflowInstanceId);
+        var runError = await Record.ExceptionAsync(() => restartedClient.RunInstanceAsync(
+            new RunWorkflowInstanceRequest { BookmarkId = bookmarkId }));
+        var probe = second.Services.GetRequiredService<SyntheticCredentialCallProbe>();
+        var completed = await restartedScope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>().FindAsync(workflowInstanceId);
+
+        if (scenario == "wrong-tenant")
+        {
+            Assert.True(runError is null or WorkflowInstanceNotFoundException);
+            Assert.Null(completed);
+            Assert.Empty(probe.Attempts);
+        }
+        else
+        {
+            Assert.Null(runError);
+            Assert.Equal(workflowInstanceId, Assert.Single(probe.Attempts));
+            Assert.Equal(WorkflowStatus.Finished, completed?.Status);
+        }
+
+        if (scenario is "allowed" or "rotated")
+        {
+            var call = Assert.Single(probe.Calls);
+            Assert.Equal(scenario == "rotated" ? rotatedKey : originalKey, call.AccessToken);
+            Assert.Equal(ConnectionCredentialKind.ApiKey, call.Kind);
+        }
+        else
+        {
+            Assert.Empty(probe.Calls);
+            if (scenario != "wrong-tenant")
+            {
+                var incident = Assert.Single(completed!.WorkflowState.Incidents);
+                Assert.Equal("The connection is unavailable.", incident.Exception?.Message);
+            }
+        }
+
+        await using var database = await restartedScope.ServiceProvider
+            .GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync();
+        var connection = database.Database.GetDbConnection();
+        await connection.OpenAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT Data FROM WorkflowInstances WHERE Id = @id";
+        var idParameter = command.CreateParameter();
+        idParameter.ParameterName = "@id";
+        idParameter.Value = workflowInstanceId;
+        command.Parameters.Add(idParameter);
+        var persistedStateJson = Assert.IsType<string>(await command.ExecuteScalarAsync());
+        Assert.DoesNotContain(originalKey, persistedStateJson, StringComparison.Ordinal);
+        Assert.DoesNotContain(rotatedKey, persistedStateJson, StringComparison.Ordinal);
+        if (completed != null)
+        {
+            var exportedState = restartedScope.ServiceProvider.GetRequiredService<IWorkflowStateSerializer>()
+                .SerializeToElement(completed.WorkflowState).GetRawText();
+            Assert.DoesNotContain(originalKey, exportedState, StringComparison.Ordinal);
+            Assert.DoesNotContain(rotatedKey, exportedState, StringComparison.Ordinal);
+        }
+        Assert.DoesNotContain(second.Logs.Messages, message =>
+            message.Contains(originalKey, StringComparison.Ordinal) || message.Contains(rotatedKey, StringComparison.Ordinal));
+    }
+
     private static async Task<ActivityExecutionContext> CreateActivityContextAsync(string id, bool includeForgedInput = false)
     {
         var fixture = new ActivityTestFixture(new WriteLine("credential binding test"));
@@ -859,11 +999,12 @@ public sealed class WorkflowCredentialBindingTests
             bool allowGrants = false,
             bool includeHostUsePolicy = false,
             bool registerHostUsePolicyBeforeModule = false,
-            bool useRuntime = false)
+            bool useRuntime = false,
+            bool useApiKeyLifecycle = false)
         {
             var path = Path.Join(Path.GetTempPath(), $"elsa-workflow-credential-binding-{Guid.NewGuid():N}.db");
             return CreateForDatabaseAsync(path, environmentId, allow, deleteDatabaseOnDispose, saveChangesInterceptor,
-                useGrants, allowGrants, includeHostUsePolicy, registerHostUsePolicyBeforeModule, useRuntime);
+                useGrants, allowGrants, includeHostUsePolicy, registerHostUsePolicyBeforeModule, useRuntime, useApiKeyLifecycle);
         }
 
         public static async Task<Worker> CreateForDatabaseAsync(
@@ -876,7 +1017,8 @@ public sealed class WorkflowCredentialBindingTests
             bool allowGrants = false,
             bool includeHostUsePolicy = false,
             bool registerHostUsePolicyBeforeModule = false,
-            bool useRuntime = false)
+            bool useRuntime = false,
+            bool useApiKeyLifecycle = false)
         {
             var connectionString = $"Data Source={path};Cache=Shared;Pooling=False;";
             var tenantAccessor = new DefaultTenantAccessor();
@@ -889,12 +1031,23 @@ public sealed class WorkflowCredentialBindingTests
             services.AddSingleton<ITenantAccessor>(tenantAccessor);
             services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
             services.Configure<TenantsOptions>(options => options.IsEnabled = useRuntime);
+            if (useApiKeyLifecycle)
+            {
+                services.AddSingleton<IConnectionUseAuthorizer, TestConnectionLifecycleAuthorizer>();
+                services.AddSingleton<IConnectionCredentialProvider, UnusedCredentialProvider>();
+            }
             if (includeHostUsePolicy && registerHostUsePolicyBeforeModule)
             {
                 services.AddSingleton<IConnectionCredentialBindingUseAuthorizer>(authorizers);
             }
 
             var module = services.CreateModule();
+            if (useApiKeyLifecycle)
+            {
+                var secretsFeature = module.Configure<SecretsFeature>();
+                secretsFeature.ConfigureOptions = options => options.EncryptionKey = Enumerable.Range(1, 32).Select(x => (byte)x).ToArray();
+                secretsFeature.UseEntityFrameworkCore(feature => feature.UseSqlite(connectionString));
+            }
             module.Configure<ConnectionsFeature>();
             module.Configure<EFCoreConnectionsPersistenceFeature>(feature =>
             {
@@ -933,7 +1086,10 @@ public sealed class WorkflowCredentialBindingTests
             {
                 services.AddSingleton<IConnectionCredentialGrantManagementAuthorizer>(grantAuthorizer);
             }
-            services.AddSingleton<IConnectionBackgroundUseService>(credentialService);
+            if (!useApiKeyLifecycle)
+            {
+                services.AddSingleton<IConnectionBackgroundUseService>(credentialService);
+            }
             if (useRuntime)
             {
                 services.AddSingleton<SyntheticCredentialCallProbe>();
@@ -942,6 +1098,11 @@ public sealed class WorkflowCredentialBindingTests
 
             await using (var context = await serviceProvider.GetRequiredService<IDbContextFactory<ConnectionsElsaDbContext>>().CreateDbContextAsync())
             {
+                await context.Database.MigrateAsync();
+            }
+            if (useApiKeyLifecycle)
+            {
+                await using var context = await serviceProvider.GetRequiredService<IDbContextFactory<SecretsElsaDbContext>>().CreateDbContextAsync();
                 await context.Database.MigrateAsync();
             }
             await using (var context = await serviceProvider.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync())
@@ -1077,6 +1238,34 @@ public sealed class WorkflowCredentialBindingTests
         }
     }
 
+    private sealed class TestConnectionLifecycleAuthorizer : IConnectionUseAuthorizer
+    {
+        public Task<bool> AuthorizeAsync(ConnectionUseRequest request, CancellationToken cancellationToken = default)
+        {
+            if (request.TenantId != TenantId || request.EnvironmentId != EnvironmentId)
+            {
+                return Task.FromResult(false);
+            }
+
+            var identity = request.Principal.Identity;
+            var authenticated = identity?.IsAuthenticated == true;
+            var allowed = request.Kind switch
+            {
+                ConnectionUseKind.Human => authenticated && identity!.AuthenticationType == "synthetic",
+                ConnectionUseKind.BackgroundSystem => authenticated && identity!.AuthenticationType == "Elsa.Connections.Server" &&
+                    request.Principal.HasClaim("elsa:identity-kind", "system"),
+                _ => false
+            };
+            return Task.FromResult(allowed);
+        }
+    }
+
+    private sealed class UnusedCredentialProvider : IConnectionCredentialProvider
+    {
+        public Task<CredentialMaterial> RefreshAsync(string providerId, string accountId, string refreshToken, CancellationToken cancellationToken = default) =>
+            Task.FromException<CredentialMaterial>(new InvalidOperationException("The API-key fixture must not refresh OAuth credentials."));
+    }
+
     private sealed class TestCredentialService : IConnectionBackgroundUseService
     {
         public int CallCount { get; private set; }
@@ -1124,16 +1313,17 @@ public sealed class SyntheticCredentialUseActivity : CodeActivity
         probe.RecordAttempt(context.WorkflowExecutionContext.Id);
         var credential = await context.GetRequiredService<IWorkflowCredentialResolver>()
             .ResolveAsync(context.WorkflowExecutionContext, "payments");
-        probe.Record(context.WorkflowExecutionContext.Id, credential.AccessToken);
+        probe.Record(context.WorkflowExecutionContext.Id, credential);
     }
 }
 
 public sealed class SyntheticCredentialCallProbe
 {
     public List<string> Attempts { get; } = [];
-    public List<(string WorkflowInstanceId, string AccessToken)> Calls { get; } = [];
+    public List<(string WorkflowInstanceId, string AccessToken, ConnectionCredentialKind Kind)> Calls { get; } = [];
 
     public void RecordAttempt(string workflowInstanceId) => Attempts.Add(workflowInstanceId);
 
-    public void Record(string workflowInstanceId, string accessToken) => Calls.Add((workflowInstanceId, accessToken));
+    public void Record(string workflowInstanceId, ConnectionAccessCredential credential) =>
+        Calls.Add((workflowInstanceId, credential.AccessToken, credential.Kind));
 }

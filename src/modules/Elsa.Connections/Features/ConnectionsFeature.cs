@@ -22,6 +22,7 @@ public sealed class ConnectionsFeature(IModule module) : FeatureBase(module)
         Services.TryAddScoped<IConnectionUseAuthorizer, DenyAllConnectionUseAuthorizer>();
         Services.TryAddScoped<DefaultConnectionLifecycleService>();
         Services.TryAddScoped<IConnectionLifecycleService>(sp => sp.GetRequiredService<DefaultConnectionLifecycleService>());
+        Services.TryAddScoped<IStaticApiKeyLifecycleService>(sp => sp.GetRequiredService<DefaultConnectionLifecycleService>());
         Services.TryAddScoped<IConnectionBackgroundUseService>(sp => sp.GetRequiredService<DefaultConnectionLifecycleService>());
         Services.TryAddScoped<IConnectionLifecycleRecoveryService>(sp => sp.GetRequiredService<DefaultConnectionLifecycleService>());
     }

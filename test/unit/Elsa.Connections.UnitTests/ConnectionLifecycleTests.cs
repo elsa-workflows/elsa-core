@@ -101,6 +101,109 @@ public sealed class ConnectionLifecycleTests
     }
 
     [Fact]
+    public async Task ApiKeyConnectReplaceRetireAndDisconnectUseManagedGenerationsWithoutOAuthRefresh()
+    {
+        await using var database = new TestDatabase();
+        var provider = new SyntheticCredentialProvider(block: false);
+        await using var worker = await Worker.CreateAsync(database.Path, MakeKey(32), provider);
+        using var tenant = worker.TenantAccessor.PushContext(TenantContext());
+        using var scope = worker.Services.CreateScope();
+        var lifecycle = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleService>();
+        var apiKeys = Assert.IsAssignableFrom<IStaticApiKeyLifecycleService>(lifecycle);
+        var secrets = scope.ServiceProvider.GetRequiredService<IManagedSecretManager>();
+
+        var connected = await apiKeys.ConnectApiKeyAsync(Principal(), new ConnectApiKeyConnectionRequest(
+            TenantId, EnvironmentId, "synthetic-api-key", "account-test", "synthetic-api-key-v1"));
+
+        Assert.True(connected.Succeeded);
+        Assert.DoesNotContain("synthetic-api-key-v1", JsonSerializer.Serialize(connected));
+        var connectionId = Assert.IsType<string>(connected.ConnectionId);
+        var first = await scope.ServiceProvider.GetRequiredService<IConnectionLifecycleStore>()
+            .FindAsync(connectionId, TenantId, EnvironmentId);
+        var firstGeneration = Assert.IsType<string>(first?.CurrentGenerationId);
+        var firstSecretName = Assert.IsType<string>(first?.CurrentSecretName);
+        var firstPayload = await secrets.ResolveGenerationAsync(firstSecretName, connectionId, firstGeneration);
+        Assert.Contains("synthetic-api-key-v1", firstPayload.Value, StringComparison.Ordinal);
+
+        var replacement = await apiKeys.ReplaceApiKeyAsync(Principal(), TenantId, EnvironmentId, connectionId,
+            connected.Revision!.Value, "synthetic-api-key-v2");
+
+        Assert.True(replacement.Succeeded);
+        var current = await lifecycle.ResolveForUseAsync(Principal(canManage: false), TenantId, EnvironmentId, connectionId);
+        Assert.Equal(ConnectionCredentialKind.ApiKey, current.Kind);
+        Assert.Equal("synthetic-api-key-v2", current.AccessToken);
+        Assert.Null(current.ExpiresAt);
+        Assert.DoesNotContain("synthetic-api-key-v2", current.ToString(), StringComparison.Ordinal);
+        Assert.False((await apiKeys.ReplaceApiKeyAsync(Principal(), TenantId, EnvironmentId, connectionId,
+            connected.Revision!.Value, "stale-api-key")).Succeeded);
+        Assert.Equal("synthetic-api-key-v2", (await lifecycle.ResolveForUseAsync(Principal(canManage: false), TenantId, EnvironmentId, connectionId)).AccessToken);
+        Assert.Equal("credential_refresh_unsupported", (await lifecycle.RefreshAsync(Principal(), TenantId, EnvironmentId, connectionId)).SafeErrorCode);
+        Assert.False((await lifecycle.RequestTokenRevocationAsync(Principal(), TenantId, EnvironmentId, connectionId, firstGeneration)).Accepted);
+
+        var cleanup = await lifecycle.CleanupGenerationAsync(Principal(), TenantId, EnvironmentId, connectionId, firstGeneration);
+        Assert.True(cleanup.Succeeded);
+        await Assert.ThrowsAnyAsync<Exception>(() => secrets.ResolveGenerationAsync(firstSecretName, connectionId, firstGeneration));
+
+        var disconnect = await lifecycle.DisconnectAsync(Principal(), TenantId, EnvironmentId, connectionId);
+        Assert.True(disconnect.Accepted);
+        await Assert.ThrowsAsync<ConnectionUnavailableException>(() => lifecycle.ResolveForUseAsync(Principal(canManage: false), TenantId, EnvironmentId, connectionId));
+        Assert.Equal(0, provider.CallCount);
+    }
+
+    [Fact]
+    public async Task ConcurrentApiKeyReplacementUsesOneFencedGenerationWinner()
+    {
+        await using var database = new TestDatabase();
+        var provider = new SyntheticCredentialProvider(block: false);
+        await using var worker = await Worker.CreateAsync(database.Path, MakeKey(32), provider);
+        using var tenant = worker.TenantAccessor.PushContext(TenantContext());
+        using var scope = worker.Services.CreateScope();
+        var apiKeys = scope.ServiceProvider.GetRequiredService<IStaticApiKeyLifecycleService>();
+        var connected = await apiKeys.ConnectApiKeyAsync(Principal(), new ConnectApiKeyConnectionRequest(
+            TenantId, EnvironmentId, "synthetic-api-key", "account-test", "concurrent-api-key-v1"));
+        var connectionId = Assert.IsType<string>(connected.ConnectionId);
+
+        var results = await Task.WhenAll(
+            apiKeys.ReplaceApiKeyAsync(Principal(), TenantId, EnvironmentId, connectionId, connected.Revision!.Value, "concurrent-api-key-v2"),
+            apiKeys.ReplaceApiKeyAsync(Principal(), TenantId, EnvironmentId, connectionId, connected.Revision.Value, "concurrent-api-key-v3"));
+
+        Assert.Single(results, result => result.Succeeded);
+        Assert.Single(results, result => !result.Succeeded);
+        var current = await scope.ServiceProvider.GetRequiredService<IConnectionLifecycleService>()
+            .ResolveForUseAsync(Principal(canManage: false), TenantId, EnvironmentId, connectionId);
+        Assert.Contains(current.AccessToken, new[] { "concurrent-api-key-v2", "concurrent-api-key-v3" });
+        Assert.Equal(ConnectionCredentialKind.ApiKey, current.Kind);
+    }
+
+    [Fact]
+    public async Task ApiKeyReplacementCanRecoverAfterLostGenerationStageWrite()
+    {
+        await using var database = new TestDatabase();
+        var provider = new SyntheticCredentialProvider(block: false);
+        await using var worker = await Worker.CreateAsync(database.Path, MakeKey(32), provider, failBeforeStageWrite: true);
+        using var tenant = worker.TenantAccessor.PushContext(TenantContext());
+        using var scope = worker.Services.CreateScope();
+        var apiKeys = scope.ServiceProvider.GetRequiredService<IStaticApiKeyLifecycleService>();
+        var connected = await apiKeys.ConnectApiKeyAsync(Principal(), new ConnectApiKeyConnectionRequest(
+            TenantId, EnvironmentId, "synthetic-api-key", "account-test", "recover-api-key-v1"));
+        var connectionId = Assert.IsType<string>(connected.ConnectionId);
+        worker.StageWriteFault!.FailNextStageWrite();
+
+        var replacement = await apiKeys.ReplaceApiKeyAsync(Principal(), TenantId, EnvironmentId, connectionId,
+            connected.Revision!.Value, "recover-api-key-v2");
+
+        Assert.False(replacement.Succeeded);
+        Assert.Equal("rotation_outcome_unknown", replacement.SafeErrorCode);
+        var recovered = await scope.ServiceProvider.GetRequiredService<IConnectionLifecycleRecoveryService>()
+            .ReconcileAsync(TenantId, EnvironmentId, connectionId);
+        Assert.True(recovered.Succeeded);
+        var current = await scope.ServiceProvider.GetRequiredService<IConnectionLifecycleService>()
+            .ResolveForUseAsync(Principal(canManage: false), TenantId, EnvironmentId, connectionId);
+        Assert.Equal("recover-api-key-v2", current.AccessToken);
+        Assert.Equal(ConnectionCredentialKind.ApiKey, current.Kind);
+    }
+
+    [Fact]
     public async Task DisconnectAndExplicitOffboardingAreDurableScopedAndKeepRevocationGenerationPinned()
     {
         await using var database = new TestDatabase();
@@ -597,7 +700,7 @@ public sealed class ConnectionLifecycleTests
             var store = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleStore>();
             var original = await store.FindAsync(connectionId, TenantId, EnvironmentId);
             var operationId = $"unstarted-{Guid.NewGuid():N}";
-            var claimed = await store.TryClaimRefreshAsync(
+            var claimed = await store.TryClaimCredentialUpdateAsync(
                 connectionId, TenantId, EnvironmentId, original!.Revision, operationId, clock.GetUtcNow() + TimeSpan.FromMinutes(2));
             Assert.NotNull(claimed);
 
@@ -640,7 +743,7 @@ public sealed class ConnectionLifecycleTests
             var store = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleStore>();
             var original = await store.FindAsync(connectionId, TenantId, EnvironmentId);
             var operationId = $"unstarted-disconnect-{Guid.NewGuid():N}";
-            var claimed = await store.TryClaimRefreshAsync(
+            var claimed = await store.TryClaimCredentialUpdateAsync(
                 connectionId, TenantId, EnvironmentId, original!.Revision, operationId, clock.GetUtcNow() + TimeSpan.FromMinutes(2));
             Assert.NotNull(claimed);
             Assert.True(await store.TryDisconnectAsync(connectionId, TenantId, EnvironmentId, claimed.Revision));
@@ -676,7 +779,7 @@ public sealed class ConnectionLifecycleTests
             var store = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleStore>();
             var current = await store.FindAsync(connectionId, TenantId, EnvironmentId);
             var operationId = "crash-after-provider-call-start";
-            var claimed = await store.TryClaimRefreshAsync(connectionId, TenantId, EnvironmentId, current!.Revision, operationId, clock.GetUtcNow() + TimeSpan.FromMinutes(2));
+            var claimed = await store.TryClaimCredentialUpdateAsync(connectionId, TenantId, EnvironmentId, current!.Revision, operationId, clock.GetUtcNow() + TimeSpan.FromMinutes(2));
             Assert.NotNull(claimed);
             Assert.True(await store.TryStartProviderCallAsync(connectionId, TenantId, EnvironmentId, claimed.OperationExpectedRevision, operationId, claimed.OperationFence, DateTimeOffset.UtcNow));
         }
@@ -913,7 +1016,7 @@ public sealed class ConnectionLifecycleTests
             Assert.Contains("access-initial", retainedCurrent);
 
             var operationId = $"staged-{Guid.NewGuid():N}";
-            var claimed = await store.TryClaimRefreshAsync(connectionId, TenantId, EnvironmentId, connection.Revision, operationId, DateTimeOffset.UtcNow.AddMinutes(2));
+            var claimed = await store.TryClaimCredentialUpdateAsync(connectionId, TenantId, EnvironmentId, connection.Revision, operationId, DateTimeOffset.UtcNow.AddMinutes(2));
             Assert.NotNull(claimed);
             Assert.True(await store.TryStartProviderCallAsync(connectionId, TenantId, EnvironmentId, claimed.OperationExpectedRevision, operationId, claimed.OperationFence, DateTimeOffset.UtcNow));
             var stagedName = ManagedSecretNames.ForGeneration(connectionId, operationId);
@@ -1335,6 +1438,9 @@ public sealed class ConnectionLifecycleTests
         public Task<bool> TryCompleteOffboardingOperationAsync(string operationId, string tenantId, string environmentId, string connectionId, long fence, DateTimeOffset completedAt, CancellationToken cancellationToken = default) => store.TryCompleteOffboardingOperationAsync(operationId, tenantId, environmentId, connectionId, fence, completedAt, cancellationToken);
         public Task<bool> TryRecordOffboardingFailureAsync(string operationId, string tenantId, string environmentId, string connectionId, long fence, ConnectionOffboardingOperationStatus status, DateTimeOffset updatedAt, DateTimeOffset? nextAttemptAt, string safeErrorCode, CancellationToken cancellationToken = default) => store.TryRecordOffboardingFailureAsync(operationId, tenantId, environmentId, connectionId, fence, status, updatedAt, nextAttemptAt, safeErrorCode, cancellationToken);
         public Task<IntegrationConnection?> TryClaimRefreshAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, DateTimeOffset leaseExpiresAt, CancellationToken cancellationToken = default) => store.TryClaimRefreshAsync(id, tenantId, environmentId, expectedRevision, operationId, leaseExpiresAt, cancellationToken);
+
+        public Task<IntegrationConnection?> TryClaimCredentialUpdateAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, DateTimeOffset leaseExpiresAt, CancellationToken cancellationToken = default) => store.TryClaimCredentialUpdateAsync(id, tenantId, environmentId, expectedRevision, operationId, leaseExpiresAt, cancellationToken);
+        public Task<bool> TryAcceptCredentialUpdateAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, DateTimeOffset now, CancellationToken cancellationToken = default) => store.TryAcceptCredentialUpdateAsync(id, tenantId, environmentId, expectedRevision, operationId, fence, now, cancellationToken);
         public Task<bool> TryStartProviderCallAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, DateTimeOffset now, CancellationToken cancellationToken = default) => store.TryStartProviderCallAsync(id, tenantId, environmentId, expectedRevision, operationId, fence, now, cancellationToken);
         public Task<bool> TryReleaseUnstartedRefreshAsync(string id, string tenantId, string environmentId, string operationId, long fence, string safeErrorCode, CancellationToken cancellationToken = default) => store.TryReleaseUnstartedRefreshAsync(id, tenantId, environmentId, operationId, fence, safeErrorCode, cancellationToken);
         public Task<bool> TryReleaseExpiredRefreshClaimAsync(string id, string tenantId, string environmentId, string operationId, long fence, DateTimeOffset now, string safeErrorCode, CancellationToken cancellationToken = default) => store.TryReleaseExpiredRefreshClaimAsync(id, tenantId, environmentId, operationId, fence, now, safeErrorCode, cancellationToken);
