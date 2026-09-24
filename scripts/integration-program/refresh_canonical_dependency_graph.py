@@ -342,9 +342,16 @@ def _parse_test_run_evidence(evidence: dict[str, Any], root: Path, projects: lis
     invocation = evidence["invocation"]
     recorded_root_text = invocation.get("workingDirectory", str(root))
     recorded_root = Path(recorded_root_text)
-    if not recorded_root.is_absolute():
-        raise ValueError("Canonical Test evidence working directory is not absolute")
-    recorded_root = recorded_root.resolve()
+    if not recorded_root.is_absolute() or ".." in recorded_root.parts:
+        raise ValueError("Canonical Test evidence working directory is not a clean absolute path")
+    recorded_roots = [recorded_root]
+    # The retained macOS run used /tmp for its working directory while VSTest
+    # recorded the same volume under /private/tmp. Compare these recorded
+    # paths lexically so a Linux recheck does not depend on the host's aliases.
+    if recorded_root.parts[:2] == ("/", "tmp"):
+        recorded_roots.append(Path("/private") / recorded_root.relative_to("/"))
+    elif recorded_root.parts[:3] == ("/", "private", "tmp"):
+        recorded_roots.append(Path("/") / recorded_root.relative_to("/private"))
     targets = invocation.get("targets", {})
     if invocation.get("exitCode") != 0 or any(targets.get(name) != "succeeded" for name in ("restore", "compile", "test")):
         raise ValueError("Canonical Restore/Compile/Test evidence is not successful")
@@ -363,12 +370,17 @@ def _parse_test_run_evidence(evidence: dict[str, Any], root: Path, projects: lis
         resolved_records = set()
         for code_base in code_bases:
             recorded_assembly = Path(code_base)
-            if not recorded_assembly.is_absolute():
-                raise ValueError(f"Retained TRX codeBase is not absolute: {code_base}")
-            try:
-                source_relative = recorded_assembly.resolve().relative_to(recorded_root)
-            except ValueError as error:
-                raise ValueError(f"Retained TRX codeBase escapes recorded rehearsal: {code_base}") from error
+            if not recorded_assembly.is_absolute() or ".." in recorded_assembly.parts:
+                raise ValueError(f"Retained TRX codeBase is not a clean absolute path: {code_base}")
+            source_relative = None
+            for candidate in recorded_roots:
+                try:
+                    source_relative = recorded_assembly.relative_to(candidate)
+                    break
+                except ValueError:
+                    continue
+            if source_relative is None:
+                raise ValueError(f"Retained TRX codeBase escapes recorded rehearsal: {code_base}")
             relative = _relative_path(root, root / source_relative)
             parts = PurePosixPath(relative).parts
             if "bin" not in parts:

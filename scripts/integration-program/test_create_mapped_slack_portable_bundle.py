@@ -84,7 +84,7 @@ class PortableSlackBundleTests(unittest.TestCase):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(b"synthetic verifier input")
             (root / "evidence.json").write_text(json.dumps({
-                "result": "passed", "publication_authorized": False,
+                "result": "passed", "publication_authorized": False, "proof_root": str(root),
             }))
             (root / "private-not-for-upload.txt").write_text("excluded")
             output = parent / "portable.tar.gz"
@@ -104,7 +104,7 @@ class PortableSlackBundleTests(unittest.TestCase):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(b"synthetic verifier input")
             (root / "evidence.json").write_text(json.dumps({
-                "result": "passed", "publication_authorized": False,
+                "result": "passed", "publication_authorized": False, "proof_root": str(root),
             }))
             target = root / required_paths()[-1]
             target.unlink()
@@ -113,6 +113,14 @@ class PortableSlackBundleTests(unittest.TestCase):
             target.symlink_to(root / "evidence.json")
             with self.assertRaisesRegex(ValueError, "Missing or unsafe"):
                 create_bundle(root / "evidence.json", parent / "symlink.tar.gz")
+
+    def test_older_receipt_without_recorded_root_cannot_claim_portability(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            evidence = root / "evidence.json"
+            evidence.write_text(json.dumps({"result": "passed", "publication_authorized": False}))
+            with self.assertRaisesRegex(ValueError, "recorded proof root"):
+                create_bundle(evidence, root.parent / "legacy-portable.tar.gz")
 
 
 if __name__ == "__main__":

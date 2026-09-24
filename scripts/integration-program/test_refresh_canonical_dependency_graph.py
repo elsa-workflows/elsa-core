@@ -103,6 +103,14 @@ class CanonicalDependencyGraphTests(unittest.TestCase):
         relocated = _parse_test_run_evidence(evidence, Path("/relocated"), [(project["name"], project["path"])])
         self.assertEqual(parsed["frameworkSummaryTotals"], relocated["frameworkSummaryTotals"])
         original_code_bases = list(evidence["observedTestResults"]["retainedTrx"]["rows"][0]["codeBases"])
+        evidence["invocation"]["workingDirectory"] = "/tmp/recorded-rehearsal"
+        evidence["observedTestResults"]["retainedTrx"]["rows"][0]["codeBases"] = [
+            "/private/tmp/recorded-rehearsal/test/A.Tests/bin/Debug/net10.0/A.Tests.dll"
+        ]
+        aliased = _parse_test_run_evidence(evidence, Path("/relocated"), [(project["name"], project["path"])])
+        self.assertEqual(parsed["frameworkSummaryTotals"], aliased["frameworkSummaryTotals"])
+        evidence["invocation"]["workingDirectory"] = "/unused"
+        evidence["observedTestResults"]["retainedTrx"]["rows"][0]["codeBases"] = original_code_bases
         evidence["observedTestResults"]["retainedTrx"]["rows"][0]["codeBases"] = [
             "/elsewhere/test/A.Tests/bin/Debug/net10.0/A.Tests.dll"
         ]

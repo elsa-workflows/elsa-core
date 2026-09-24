@@ -35,6 +35,9 @@ def create_bundle(evidence_path: Path, output_path: Path):
     evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
     if evidence.get("result") != "passed" or evidence.get("publication_authorized") is not False:
         raise ValueError("Only a passed nonpublishing Slack proof can be bundled")
+    recorded_root = evidence.get("proof_root")
+    if not isinstance(recorded_root, str) or not Path(recorded_root).is_absolute() or ".." in Path(recorded_root).parts:
+        raise ValueError("Portable Slack bundle requires a clean absolute recorded proof root")
     output_path = output_path.expanduser().resolve(strict=False)
     if output_path == root or root in output_path.parents:
         raise ValueError("Portable bundle output must be outside the proof root")

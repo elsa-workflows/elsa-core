@@ -318,7 +318,7 @@ jobs:
             --evidence "$extracted/evidence.json" \
             --output "$PROOF_OUTPUT/portable-recheck.json"
       - name: Upload portable mapped Slack provenance bundle
-        if: always()
+        if: success()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: slack-mapped-portable-provenance
