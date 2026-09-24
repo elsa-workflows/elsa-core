@@ -20,7 +20,9 @@ The route response returned HTTP 200 with ten canonical routes. Every route's
 six expected Secrets assemblies. The fixture retains the emitted endpoint
 metadata needed by the validator and contains no credentials, database path,
 signing key, loopback port, or process environment. The response was validated
-with `validate_route_probe_payload` before it was retained.
+with `validate_route_probe_payload` before it was retained. The checked-in JSON
+is pretty-printed without changing its content; the original HTTP response
+body had SHA-256 `289bc70332038061cf846aaf6d567c6a0d24a5f46463bc0f25bd93e637cce85c`.
 
 These pins are the baseline profile used for this capture. The earlier
 current-tip receipt remains separate and does not establish per-route assembly
