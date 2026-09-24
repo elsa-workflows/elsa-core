@@ -115,6 +115,16 @@ class FullHistoryTests(unittest.TestCase):
             with patch.dict(rehearsal.PINS, {k: refs[k] for k in ('extensions', 'studio')}):
                 with self.assertRaisesRegex(ValueError, 'Output must not exist'):
                     rehearsal.rehearse(repos['core'], {k: repos[k] for k in ('extensions', 'studio')}, output)
+            current_output = root / 'current-tip-output'
+            with patch.dict(rehearsal.CURRENT_TIP_PINS, {k: refs[k] for k in ('extensions', 'studio')}):
+                rehearsal.rehearse(repos['core'], {k: repos[k] for k in ('extensions', 'studio')},
+                                   current_output, source_profile='current-tip')
+            current_receipt = json.loads((current_output / 'import-receipt.json').read_text())
+            self.assertEqual(current_receipt['sourceCommits'], refs)
+            self.assertTrue(current_receipt['exactBlobAndModeMapping'])
+            with self.assertRaisesRegex(ValueError, 'Unsupported source profile'):
+                rehearsal.rehearse(repos['core'], {k: repos[k] for k in ('extensions', 'studio')},
+                                   root / 'invalid-profile', source_profile='unreviewed')
 
 
 if __name__ == '__main__':

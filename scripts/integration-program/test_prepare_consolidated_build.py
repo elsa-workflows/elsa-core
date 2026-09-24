@@ -154,6 +154,84 @@ new file mode 100644
         patch_review = ledger['core076To95a658BuildInputComparison']['sourceIntegrationPatchPathReview']
         self.assertEqual(patch_review['sha256'], hashlib.sha256(SOURCE_INTEGRATION_PATCH.read_bytes()).hexdigest())
 
+    def test_current_tip_profile_is_additive_and_prunes_only_obsolete_blazored_refs(self):
+        current = {
+            'core': '1855a2ef2719d536a66181dec604e781bfdd42a9',
+            'extensions': 'ba8b71d91c15ffe5be4b2c539cf9f712e74af775',
+            'studio': '20ceaeeed7e671f0c9662003e82063026f2216de',
+        }
+        profiles = build.supported_source_profiles()
+        self.assertEqual(profiles[-1], current)
+        self.assertEqual(profiles[0], build.SOURCE_COMMITS)
+        self.assertEqual(len(profiles), 4)
+
+        agent = self.root / 'src/extensions/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj'
+        contexts = self.root / 'src/extensions/workflows/Elsa.Studio.WorkflowContexts/Elsa.Studio.WorkflowContexts.csproj'
+        secrets = self.root / 'doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Studio.Secrets/Elsa.Studio.Secrets.csproj.source'
+        for path in (agent, contexts, secrets):
+            path.parent.mkdir(parents=True)
+            path.write_text('<Project>\n\n  <ItemGroup>\n    <PackageReference Include="Blazored.FluentValidation"/>\n  </ItemGroup>\n\n</Project>\n')
+        agent.write_bytes(agent.read_bytes().replace(b'\n', b'\r\n'))
+
+        build.remove_unused_blazored_references(self.root, current)
+
+        for path in (agent, contexts):
+            self.assertNotIn('Blazored.FluentValidation', path.read_text())
+        self.assertNotIn(b'\n', agent.read_bytes().replace(b'\r\n', b''))
+        self.assertIn('Blazored.FluentValidation', secrets.read_text())
+
+    def test_current_tip_rehearsal_receipt_prepares_and_applies_patch(self):
+        repos = {name: self.root / name for name in ('core', 'extensions', 'studio')}
+        extension_files = (
+            'src/modules/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj',
+            'src/modules/workflows/Elsa.Studio.WorkflowContexts/Elsa.Studio.WorkflowContexts.csproj',
+        )
+        for relative in extension_files:
+            path = repos['extensions'] / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('<Project>\n\n  <ItemGroup>\n'
+                            '    <PackageReference Include="Blazored.FluentValidation"/>\n'
+                            '  </ItemGroup>\n\n</Project>\n')
+        build.rehearsal.git(repos['extensions'], 'add', '.')
+        build.rehearsal.git(repos['extensions'], '-c', 'user.name=Test',
+                            '-c', 'user.email=test@example.invalid', '-c', 'commit.gpgsign=false',
+                            'commit', '--quiet', '-m', 'Current tip fixture')
+        refs = {name: build.rehearsal.git(repo, 'rev-parse', 'HEAD').decode().strip()
+                for name, repo in repos.items()}
+        output = self.root / 'current-tip-rehearsal'
+        with patch.dict(build.CURRENT_TIP_SOURCE_COMMITS, refs, clear=True), \
+                patch.dict(build.rehearsal.CURRENT_TIP_PINS,
+                           {name: refs[name] for name in ('extensions', 'studio')}, clear=True):
+            with contextlib.redirect_stdout(io.StringIO()):
+                build.rehearsal.rehearse(repos['core'],
+                                          {name: repos[name] for name in ('extensions', 'studio')},
+                                          output, source_profile='current-tip')
+            build.rehearsal.git(output, 'checkout', '--quiet', 'rehearsal')
+            build.rehearsal.git(output, 'restore', '--source=HEAD', '--worktree', '.')
+            with patch.object(build, 'evaluate_packability', return_value={
+                    'sdkVersion': '10.0.300', 'projectCount': 6, 'evaluationCount': 36,
+                    'configurations': ['Debug', 'Release'], 'referenceModes': build.REFERENCE_MODES,
+                    'allProjectsNonPackable': True, 'allProjectsDisablePackageOnBuild': True,
+                    'projects': [],
+            }), contextlib.redirect_stdout(io.StringIO()):
+                build.prepare(output)
+        receipt = json.loads((output / 'consolidated-build-receipt.json').read_text())
+        self.assertEqual(receipt['sourceCommits'], refs)
+        self.assertTrue((output / build.ADDED_TEST).is_file())
+        for relative in extension_files:
+            mapped = relative.replace('src/modules/', 'src/extensions/', 1)
+            self.assertNotIn('Blazored.FluentValidation', (output / mapped).read_text())
+
+    def test_old_profiles_leave_blazored_references_unchanged(self):
+        path = self.root / 'src/extensions/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj'
+        path.parent.mkdir(parents=True)
+        original = '<Project><PackageReference Include="Blazored.FluentValidation"/></Project>\n'
+        path.write_text(original)
+
+        build.remove_unused_blazored_references(self.root, build.SOURCE_COMMITS)
+
+        self.assertEqual(path.read_text(), original)
+
     def test_rejects_dirty_tracked_source_without_overwriting(self):
         original_solution = (self.output / 'Elsa.sln').read_text()
         path = self.output / 'src/studio/UI/UI.csproj'
