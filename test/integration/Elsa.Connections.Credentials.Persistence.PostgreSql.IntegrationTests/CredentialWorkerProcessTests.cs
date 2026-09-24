@@ -8,6 +8,175 @@ public sealed class CredentialWorkerProcessTests(PostgreSqlConnectionsFixture fi
     private readonly WorkerProcessRunner _workers = new();
 
     [Fact]
+    public async Task HostedWorkersInSeparateProcesses_OnlyOneClaimsRefresh_AndRepeatedWakesStaySafe()
+    {
+        await fixture.ResetSchemaAsync();
+        await using var provider = await SyntheticOAuthServer.StartAsync();
+        provider.BlockRefresh = true;
+        provider.IssueRefreshToken(ProcessTestEnvironment.RefreshMarker);
+        var environment = await MigrateAsync(provider);
+        var (connectionId, originalGenerationId, connectResult) = await ConnectAsync(environment);
+        var dueAt = ProcessTestEnvironment.InitialTime.AddHours(1);
+        var workerEnvironment = ProcessTestEnvironment.With(environment,
+            ("ELSA_TEST_ALLOW_BACKGROUND", "true"),
+            ("ELSA_TEST_NOW_UTC", dueAt.ToString("O")),
+            ("ELSA_TEST_WORKER_INTERVAL_MS", "50"));
+        var barrierDirectory = Path.Combine(Path.GetTempPath(), $"elsa-8378-worker-race-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(barrierDirectory);
+
+        var firstEnvironment = ProcessTestEnvironment.With(workerEnvironment,
+            ("ELSA_TEST_BARRIER_METHOD", "TryClaimRefreshAsync"),
+            ("ELSA_TEST_BARRIER_PARTICIPANT", "hosted-first"),
+            ("ELSA_TEST_BARRIER_DIRECTORY", barrierDirectory),
+            ("ELSA_TEST_REJECTED_CLAIM_PATH", Path.Combine(barrierDirectory, "claim-rejected")));
+        var secondEnvironment = ProcessTestEnvironment.With(workerEnvironment,
+            ("ELSA_TEST_BARRIER_METHOD", "TryClaimRefreshAsync"),
+            ("ELSA_TEST_BARRIER_PARTICIPANT", "hosted-second"),
+            ("ELSA_TEST_BARRIER_DIRECTORY", barrierDirectory),
+            ("ELSA_TEST_REJECTED_CLAIM_PATH", Path.Combine(barrierDirectory, "claim-rejected")));
+        await using var firstWorker = _workers.Start(["hosted-worker"], firstEnvironment);
+        ProcessRun? secondWorker = null;
+        ProcessRunResult? firstOutput = null;
+        ProcessRunResult? secondOutput = null;
+        try
+        {
+            await firstWorker.WaitForLineAsync("BARRIER_READY:hosted-first", TimeSpan.FromSeconds(30));
+            secondWorker = _workers.Start(["hosted-worker"], secondEnvironment);
+            await secondWorker.WaitForLineAsync("BARRIER_READY:hosted-second", TimeSpan.FromSeconds(30));
+            await File.WriteAllTextAsync(Path.Combine(barrierDirectory, "go"), "go");
+            await provider.WaitForRefreshAsync(TimeSpan.FromSeconds(30));
+            await WaitForFileAsync(Path.Combine(barrierDirectory, "claim-rejected"), TimeSpan.FromSeconds(30));
+            provider.ReleaseRefresh();
+
+            var finalState = await WaitForOperationStatusAsync(connectionId, originalGenerationId, "Completed", workerEnvironment);
+            Assert.Equal("Active", finalState.GetProperty("status").GetString());
+            Assert.NotEqual(originalGenerationId, finalState.GetProperty("currentGenerationId").GetString());
+            Assert.Equal(1, provider.RefreshCalls);
+            Assert.Equal(1, provider.AcceptedRefreshCalls);
+
+            // The active generation now expires in the future, so repeated worker wakes only see empty pages.
+            await firstWorker.WaitForLineAsync("DUE_PAGE:0", TimeSpan.FromSeconds(30));
+            await firstWorker.WaitForLineAsync("DUE_PAGE:0", TimeSpan.FromSeconds(30));
+            Assert.Equal(1, provider.RefreshCalls);
+        }
+        finally
+        {
+            provider.ReleaseRefresh();
+            firstOutput = await firstWorker.TerminateAsync();
+            if (secondWorker != null)
+                secondOutput = await secondWorker.TerminateAsync();
+            Directory.Delete(barrierDirectory, recursive: true);
+        }
+
+        var otherScope = ProcessTestEnvironment.With(workerEnvironment, ("ELSA_TEST_TENANT_ID", "other-tenant"));
+        await using var wrongScopeWorker = _workers.Start(["hosted-worker"], otherScope);
+        await wrongScopeWorker.WaitForLineAsync("DUE_PAGE:0", TimeSpan.FromSeconds(30));
+        var wrongScopeOutput = await wrongScopeWorker.TerminateAsync();
+        Assert.Equal(1, provider.RefreshCalls);
+
+        AssertSafeOutput(connectResult, ProcessTestEnvironment.AccessMarker, ProcessTestEnvironment.RefreshMarker);
+        AssertSafeOutput(firstOutput!, ProcessTestEnvironment.AccessMarker, ProcessTestEnvironment.RefreshMarker);
+        AssertSafeOutput(secondOutput!, ProcessTestEnvironment.AccessMarker, ProcessTestEnvironment.RefreshMarker);
+        AssertSafeOutput(wrongScopeOutput, ProcessTestEnvironment.AccessMarker, ProcessTestEnvironment.RefreshMarker);
+    }
+
+    [Fact]
+    public async Task HostedWorkerRestartAfterProviderCallBoundary_HoldsUnknownOutcomeWithoutReplay()
+    {
+        await fixture.ResetSchemaAsync();
+        await using var provider = await SyntheticOAuthServer.StartAsync();
+        provider.IssueRefreshToken(ProcessTestEnvironment.RefreshMarker);
+        var environment = await MigrateAsync(provider);
+        var (connectionId, originalGenerationId, connectResult) = await ConnectAsync(environment);
+        var dueAt = ProcessTestEnvironment.InitialTime.AddHours(1);
+        var workerEnvironment = ProcessTestEnvironment.With(environment,
+            ("ELSA_TEST_ALLOW_BACKGROUND", "true"),
+            ("ELSA_TEST_NOW_UTC", dueAt.ToString("O")),
+            ("ELSA_TEST_WORKER_INTERVAL_MS", "50"),
+            ("ELSA_TEST_CRASH_AFTER", "refresh-provider-started"));
+
+        await using var crashedWorker = _workers.Start(["hosted-worker"], workerEnvironment);
+        await crashedWorker.WaitForLineAsync("BOUNDARY:refresh-provider-started", TimeSpan.FromSeconds(30));
+        var crashOutput = await crashedWorker.TerminateAsync();
+        Assert.Equal(0, provider.RefreshCalls);
+
+        var recoveryEnvironment = ProcessTestEnvironment.With(workerEnvironment,
+            ("ELSA_TEST_CRASH_AFTER", ""),
+            ("ELSA_TEST_NOW_UTC", dueAt.AddMinutes(3).ToString("O")));
+        await using var resumedWorker = _workers.Start(["hosted-worker"], recoveryEnvironment);
+        await resumedWorker.WaitForLineAsync("DUE_PAGE:2", TimeSpan.FromSeconds(30));
+        await resumedWorker.WaitForLineAsync("DUE_PAGE:1", TimeSpan.FromSeconds(30));
+        await resumedWorker.WaitForLineAsync("DUE_PAGE:1", TimeSpan.FromSeconds(30));
+        var resumedOutput = await resumedWorker.TerminateAsync();
+        var finalInspect = await _workers.RunAsync(["inspect", connectionId, originalGenerationId], recoveryEnvironment);
+        var finalState = finalInspect.ReadResult();
+
+        Assert.Equal("RecoveryRequired", finalState.GetProperty("status").GetString());
+        Assert.Equal("RecoveryRequired", finalState.GetProperty("operationStatus").GetString());
+        Assert.Equal(originalGenerationId, finalState.GetProperty("currentGenerationId").GetString());
+        Assert.Equal(0, provider.RefreshCalls);
+        AssertSafeOutput(connectResult, ProcessTestEnvironment.AccessMarker, ProcessTestEnvironment.RefreshMarker);
+        AssertSafeOutput(crashOutput, ProcessTestEnvironment.AccessMarker, ProcessTestEnvironment.RefreshMarker);
+        AssertSafeOutput(resumedOutput, ProcessTestEnvironment.AccessMarker, ProcessTestEnvironment.RefreshMarker);
+        AssertSafeOutput(finalInspect, ProcessTestEnvironment.AccessMarker, ProcessTestEnvironment.RefreshMarker);
+    }
+
+    [Fact]
+    public async Task HostedWorkerDoesNotScheduleApiKeyForOAuthRefresh()
+    {
+        await fixture.ResetSchemaAsync();
+        await using var provider = await SyntheticOAuthServer.StartAsync();
+        var environment = await MigrateAsync(provider);
+        var apiKey = $"synthetic-api-key-{Guid.NewGuid():N}";
+        var connectOutput = await _workers.RunAsync(["connect-api-key"],
+            ProcessTestEnvironment.With(environment, ("ELSA_TEST_API_KEY", apiKey)));
+        Assert.Equal(0, connectOutput.ExitCode);
+        var connectionId = connectOutput.ReadResult().GetProperty("connectionId").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(connectionId));
+
+        var dueAt = ProcessTestEnvironment.InitialTime.AddHours(1);
+        var workerEnvironment = ProcessTestEnvironment.With(environment,
+            ("ELSA_TEST_NOW_UTC", dueAt.ToString("O")),
+            ("ELSA_TEST_WORKER_INTERVAL_MS", "50"));
+        await using var worker = _workers.Start(["hosted-worker"], workerEnvironment);
+        await worker.WaitForLineAsync("DUE_PAGE:0", TimeSpan.FromSeconds(30));
+        await worker.WaitForLineAsync("DUE_PAGE:0", TimeSpan.FromSeconds(30));
+        var workerOutput = await worker.TerminateAsync();
+
+        Assert.Equal(0, provider.RefreshCalls);
+        AssertSafeOutput(connectOutput, apiKey);
+        AssertSafeOutput(workerOutput, apiKey);
+    }
+
+    private async Task<JsonElement> WaitForOperationStatusAsync(
+        string connectionId,
+        string generationId,
+        string expectedStatus,
+        IReadOnlyDictionary<string, string> environment)
+    {
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(30);
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            var result = await _workers.RunAsync(["inspect", connectionId, generationId], environment);
+            AssertSafeOutput(result, ProcessTestEnvironment.AccessMarker, ProcessTestEnvironment.RefreshMarker);
+            var state = result.ReadResult();
+            if (state.GetProperty("operationStatus").GetString() == expectedStatus)
+                return state;
+
+            await Task.Delay(50);
+        }
+
+        throw new TimeoutException("hosted_worker_operation_status_timeout");
+    }
+
+    private static async Task WaitForFileAsync(string path, TimeSpan timeout)
+    {
+        using var cancellation = new CancellationTokenSource(timeout);
+        while (!File.Exists(path))
+            await Task.Delay(10, cancellation.Token);
+    }
+
+    [Fact]
     public async Task SeparateProcesses_RefreshOneSingleUseToken_AndEmitOnlySafeMetadata()
     {
         await fixture.ResetSchemaAsync();

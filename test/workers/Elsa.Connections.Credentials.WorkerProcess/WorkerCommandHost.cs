@@ -38,6 +38,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 
@@ -51,12 +52,13 @@ public static class WorkerCommandHost
     {
         try
         {
-            await using var serviceProvider = CreateServiceProvider();
             var command = args.FirstOrDefault();
             if (string.IsNullOrWhiteSpace(command))
             {
                 return WriteError("command_required");
             }
+
+            await using var serviceProvider = CreateServiceProvider(args);
 
             if (command == "migrate")
             {
@@ -71,6 +73,19 @@ public static class WorkerCommandHost
                     new Tenant { Id = settings.TenantId, Name = settings.TenantId });
             using var scope = serviceProvider.CreateScope();
             var services = scope.ServiceProvider;
+
+            if (command == "hosted-worker")
+            {
+                var hostedService = serviceProvider.GetServices<IHostedService>()
+                    .OfType<ConnectionLifecycleReconciliationWorker>()
+                    .Single();
+                await hostedService.StartAsync(CancellationToken.None);
+                Console.WriteLine("BOUNDARY:hosted-worker-started");
+                await Console.Out.FlushAsync();
+                await Task.Delay(Timeout.InfiniteTimeSpan);
+                return 0;
+            }
+
             var tenantId = args.Length > 2 && command is "refresh" or "reconcile" or "disconnect" or "request-revocation" or "request-uninstall" or "reconcile-offboarding" or "cleanup"
                 ? args[2]
                 : settings.TenantId;
@@ -94,6 +109,14 @@ public static class WorkerCommandHost
                                 RequiredEnvironment("ELSA_TEST_INITIAL_ACCESS_TOKEN"),
                                 RequiredEnvironment("ELSA_TEST_INITIAL_REFRESH_TOKEN"),
                                 settings.TimeProvider.GetUtcNow().AddHours(1))));
+                    return WriteResult(result);
+                }
+                case "connect-api-key":
+                {
+                    var lifecycle = services.GetRequiredService<IStaticApiKeyLifecycleService>();
+                    var result = await lifecycle.ConnectApiKeyAsync(settings.Principal,
+                        new ConnectApiKeyConnectionRequest(settings.TenantId, settings.EnvironmentId,
+                            "synthetic-api-key", "synthetic-account", RequiredEnvironment("ELSA_TEST_API_KEY")));
                     return WriteResult(result);
                 }
                 case "refresh":
@@ -338,7 +361,7 @@ public static class WorkerCommandHost
         }
     }
 
-    private static ServiceProvider CreateServiceProvider()
+    private static ServiceProvider CreateServiceProvider(string[] args)
     {
         var settings = WorkerSettings.FromEnvironment();
         var services = new ServiceCollection();
@@ -363,6 +386,17 @@ public static class WorkerCommandHost
         secretsFeature.UseEntityFrameworkCore(feature => feature.UsePostgreSql(settings.ConnectionString));
         module.Configure<ConnectionsFeature>();
         module.Configure<EFCoreConnectionsPersistenceFeature>(feature => feature.UsePostgreSql(settings.ConnectionString));
+        if (args.FirstOrDefault() == "hosted-worker")
+        {
+            services.AddSingleton<IConnectionLifecycleScopeProvider, FixedConnectionLifecycleScopeProvider>();
+            services.Configure<ConnectionLifecycleReconciliationOptions>(options =>
+            {
+                options.Interval = TimeSpan.FromMilliseconds(GetEnvironmentInt("ELSA_TEST_WORKER_INTERVAL_MS", 3_600_000));
+                options.BatchSize = GetEnvironmentInt("ELSA_TEST_WORKER_BATCH_SIZE", 100);
+                options.MaxConcurrency = GetEnvironmentInt("ELSA_TEST_WORKER_MAX_CONCURRENCY", 4);
+            });
+            module.Configure<ConnectionLifecycleReconciliationFeature>();
+        }
         module.Configure<WorkflowCredentialBindingsFeature>(feature => feature.EnvironmentId = settings.EnvironmentId);
         module.Configure<WorkflowManagementFeature>();
         module.Configure<EFCoreWorkflowInstancePersistenceFeature>(feature => feature.UsePostgreSql(settings.ConnectionString));
@@ -375,6 +409,12 @@ public static class WorkerCommandHost
                 provider.GetRequiredService<EFCoreConnectionLifecycleStore>());
             return proxy;
         }));
+
+        if (args.FirstOrDefault() == "hosted-worker")
+        {
+            services.Replace(ServiceDescriptor.Scoped<IConnectionDueCandidateStore>(provider =>
+                new ProcessBoundaryConnectionDueCandidateStore(provider.GetRequiredService<EFCoreConnectionLifecycleStore>())));
+        }
 
         return services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
     }
@@ -469,6 +509,9 @@ public static class WorkerCommandHost
     private static string RequiredArgument(string[] args, int index) =>
         args.Length > index && !string.IsNullOrWhiteSpace(args[index]) ? args[index] : throw new InvalidOperationException("required_argument_missing");
 
+    private static int GetEnvironmentInt(string name, int defaultValue) =>
+        int.TryParse(Environment.GetEnvironmentVariable(name), out var value) ? value : defaultValue;
+
     private static int WriteResult(object result)
     {
         Console.WriteLine($"RESULT:{JsonSerializer.Serialize(result, JsonOptions)}");
@@ -479,6 +522,15 @@ public static class WorkerCommandHost
     {
         Console.WriteLine($"RESULT:{JsonSerializer.Serialize(new { succeeded = false, safeErrorCode }, JsonOptions)}");
         return 2;
+    }
+}
+
+internal sealed class FixedConnectionLifecycleScopeProvider : IConnectionLifecycleScopeProvider
+{
+    public Task<ConnectionLifecycleScope?> GetNextScopeAsync(CancellationToken cancellationToken = default)
+    {
+        var settings = WorkerSettings.FromEnvironment();
+        return Task.FromResult<ConnectionLifecycleScope?>(new ConnectionLifecycleScope(settings.TenantId, settings.EnvironmentId));
     }
 }
 

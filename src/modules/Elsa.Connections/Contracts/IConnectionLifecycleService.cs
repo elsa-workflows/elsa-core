@@ -34,6 +34,10 @@ public interface IConnectionLifecycleRecoveryService
     Task<ConnectionLifecycleResult> ReconcileAsync(string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken = default);
 
     Task<ConnectionOffboardingOperationResult> ReconcileOffboardingAsync(string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken = default);
+
+    Task<ConnectionLifecycleResult> RefreshAsync(string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken = default);
+
+    Task<ConnectionLifecycleResult> CleanupGenerationAsync(string tenantId, string environmentId, string connectionId, string generationId, CancellationToken cancellationToken = default);
 }
 
 public sealed record ConnectConnectionRequest(string TenantId, string EnvironmentId, string ProviderId, string ProviderAccountId, Elsa.Connections.Models.CredentialMaterial InitialCredentials);
