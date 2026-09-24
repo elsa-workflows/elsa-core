@@ -68,6 +68,7 @@ FORBIDDEN_LEGACY_SECRETS_ROUTE_PREFIXES = (
     '/queries/secrets/',
 )
 CANONICAL_ENDPOINT_TYPE_PREFIX = 'Elsa.Secrets.Endpoints.Secrets.'
+CANONICAL_ENDPOINT_ASSEMBLY = 'Elsa.Secrets'
 EXPECTED_CANONICAL_SECRETS_ROUTES = (
     ('DELETE', '/secrets/{name}'),
     ('GET', '/secrets'),
@@ -128,6 +129,9 @@ def validate_route_probe_payload(payload):
         endpoint_type = route.get('endpointType')
         require(isinstance(endpoint_type, str) and endpoint_type.startswith(CANONICAL_ENDPOINT_TYPE_PREFIX),
                 f'Route probe cannot prove Core endpoint ownership for {methods} {path}')
+        endpoint_assembly = route.get('endpointAssembly')
+        require(endpoint_assembly == CANONICAL_ENDPOINT_ASSEMBLY,
+                f'Route probe cannot prove Core assembly ownership for {methods} {path}')
 
     normalized = sorted((method, path) for methods, path in routes for method in methods)
     expected = sorted(EXPECTED_CANONICAL_SECRETS_ROUTES)
@@ -137,7 +141,7 @@ def validate_route_probe_payload(payload):
     assemblies = payload.get('secretAssemblies')
     require(isinstance(assemblies, list) and all(isinstance(name, str) for name in assemblies),
             'Route probe payload is missing secret assembly names')
-    require('Elsa.Secrets' in assemblies, 'Route probe did not load the canonical Secrets assembly')
+    require(CANONICAL_ENDPOINT_ASSEMBLY in assemblies, 'Route probe did not load the canonical Secrets assembly')
     require(not set(assemblies) & set(FORBIDDEN_LEGACY_SECRETS_ASSEMBLIES),
             'Route probe loaded a forbidden legacy Secrets assembly')
 
@@ -297,6 +301,7 @@ def verify_patch_chain(root, prepared_files, expected_pins, actual_files):
 
     optional_supplementals = []
     optional_targets = set()
+    applied_optional_targets = []
     for patch in OPTIONAL_FIXTURE_PATCHES:
         if not patch.exists() and not patch.is_symlink():
             continue
@@ -304,10 +309,19 @@ def verify_patch_chain(root, prepared_files, expected_pins, actual_files):
                 f'Missing regular optional fixture patch: {patch.name}')
         targets = get_patch_targets(patch)
         if is_patch_applied(root, patch, targets):
-            require(not (optional_targets & set(targets))
-                    and not (supplemental_targets & set(targets)),
+            for previous_patch, previous_targets in applied_optional_targets:
+                overlap = set(previous_targets) & set(targets)
+                allowed_ordered_pair = (
+                    previous_patch.name == 'workbench-two-tenant-multitenancy.patch'
+                    and patch.name == ROUTE_PROBE_PATCH_NAME
+                    and overlap == {SOURCE_PROJECT.joinpath('Program.cs').as_posix()}
+                )
+                require(not overlap or allowed_ordered_pair,
+                        f'Applied optional fixture patch targets overlap: {patch.name}')
+            require(not (supplemental_targets & set(targets)),
                     f'Applied optional fixture patch targets overlap: {patch.name}')
             optional_supplementals.append((patch, targets))
+            applied_optional_targets.append((patch, targets))
             optional_targets.update(targets)
 
     all_targets = set(workbench_targets) | supplemental_targets | optional_targets
