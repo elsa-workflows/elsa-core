@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -95,6 +96,25 @@ class MappedSlackPackageProofTests(unittest.TestCase):
             self.write_evaluation(log, properties, items)
             with self.assertRaisesRegex(RuntimeError, "mapped Core project"):
                 proof.verify_evaluation(log, root, package_mode=False)
+
+    def test_relative_dotnet_path_remains_runnable_from_a_changed_working_directory(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            executable = root / "tools" / "dotnet"
+            executable.parent.mkdir()
+            executable.write_text("#!/bin/sh\nprintf 'fake-dotnet-cwd=%s\\n' \"$PWD\"\n", encoding="utf-8")
+            executable.chmod(0o755)
+            rehearsal = root / "rehearsal"
+            rehearsal.mkdir()
+
+            relative_executable = Path(os.path.relpath(executable, Path.cwd()))
+            command = proof.dotnet_command(relative_executable, "pack")
+            self.assertEqual(executable.resolve(), Path(command[0]))
+
+            log = root / "dotnet.log"
+            proof.run(command, cwd=rehearsal, env=os.environ.copy(), log=log)
+
+            self.assertIn(f"fake-dotnet-cwd={rehearsal.resolve()}", log.read_text(encoding="utf-8"))
 
     @staticmethod
     def properties():

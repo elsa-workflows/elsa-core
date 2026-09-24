@@ -55,6 +55,10 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def dotnet_command(dotnet: Path, *arguments: str) -> list[str]:
+    return [str(dotnet.resolve(strict=True)), *arguments]
+
+
 def git_value(root: Path, *args: str) -> str:
     return subprocess.check_output(["git", *args], cwd=root, text=True).strip()
 
@@ -587,18 +591,19 @@ def main() -> int:
     project_reference_evaluation_receipt = verify_evaluation(project_reference_evaluation, rehearsal, package_mode=False)
 
     run(
-        [str(args.dotnet), "restore", str(project), "--configfile", str(pack_config), *package_properties],
+        dotnet_command(dotnet, "restore", str(project), "--configfile", str(pack_config), *package_properties),
         cwd=rehearsal,
         env=env,
         log=output / "logs/pack-restore.log",
     )
     run(
-        [
-            str(args.dotnet), "pack", str(project), "--no-restore", "--configuration", "Release",
+        dotnet_command(
+            dotnet,
+            "pack", str(project), "--no-restore", "--configuration", "Release",
             "--output", str(packages), *package_properties,
             "-p:ContinuousIntegrationBuild=true", "-p:EmbedAllSources=true",
             "-p:IncludeSymbols=true", "-p:SymbolPackageFormat=snupkg",
-        ],
+        ),
         cwd=rehearsal,
         env=env,
         log=output / "logs/pack.log",
