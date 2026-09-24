@@ -110,6 +110,20 @@ def _escape_pointer_segment(value: str) -> str:
     return value.replace("~", "~0").replace("/", "~1")
 
 
+def _has_untraversed_legacy_activity(value: Any) -> bool:
+    if isinstance(value, list):
+        return any(_has_untraversed_legacy_activity(item) for item in value)
+    if not isinstance(value, dict):
+        return False
+    if isinstance(value.get("type"), str) and value["type"] in LEGACY_TYPES:
+        return True
+    return any(
+        _has_untraversed_legacy_activity(child)
+        for key, child in value.items()
+        if key not in ("customProperties", "CustomProperties")
+    )
+
+
 def _workflow_activity_nodes(workflow: Any) -> list[tuple[str, dict[str, Any]]]:
     if not isinstance(workflow, dict):
         raise MigrationError("Supported input must be an exported workflow object with a root activity")
@@ -163,6 +177,15 @@ def _workflow_activity_nodes(workflow: Any) -> list[tuple[str, dict[str, Any]]]:
         if "activities" in node and isinstance(node["activities"], (dict, list)):
             raise MigrationError(
                 f"Unsupported nested activity topology at {pointer}: {type_name}; "
+                "only Elsa.Sequence children are supported"
+            )
+        if any(
+            _has_untraversed_legacy_activity(child)
+            for key, child in node.items()
+            if key not in ("customProperties", "CustomProperties")
+        ):
+            raise MigrationError(
+                f"Unsupported nested legacy activity at {pointer}: {type_name}; "
                 "only Elsa.Sequence children are supported"
             )
 
