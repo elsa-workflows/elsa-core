@@ -5,12 +5,15 @@ on:
     paths:
       - 'scripts/integration-program/package_impact.py'
       - 'scripts/integration-program/package_closure.py'
+      - 'scripts/integration-program/release_unit_manifest.py'
       - 'scripts/integration-program/run_slack_package_proof.py'
       - 'scripts/integration-program/run_mapped_slack_package_proof.py'
+      - 'scripts/integration-program/verify_mapped_slack_consumer_provenance.py'
       - 'scripts/integration-program/VerifyEmbeddedSources/**'
       - 'scripts/integration-program/test_*.py'
       - 'scripts/integration-program/consolidated-build/source-integration.patch'
       - 'doc/integration-program/inventory/inventory.json'
+      - 'doc/integration-program/release-units.json'
       - 'doc/integration-program/package-closure.md'
       - 'doc/integration-program/slack-package-proof.md'
       - 'doc/integration-program/consolidation/build-preparation.md'
@@ -227,6 +230,8 @@ jobs:
               if not re.fullmatch(r"[0-9a-f]{40}", commit):
                   raise SystemExit(f"Invalid {name} source commit: {commit!r}")
               print(f"{name}={commit}")
+          print(f"package_id={proof.PACKAGE_ID}")
+          print(f"package_version={proof.PACKAGE_VERSION}")
           PY
       - name: Checkout pinned Core source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -281,6 +286,15 @@ jobs:
             --extensions-source sources/elsa-extensions \
             --studio-source sources/elsa-studio \
             --output-dir "$PROOF_OUTPUT"
+      - name: Recheck exact local package provenance from retained consumer outputs
+        if: success()
+        env:
+          PROOF_OUTPUT: ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}
+          RECHECK_RECEIPT: ${{ runner.temp }}/elsa-slack-consumer-provenance-${{ github.run_id }}-${{ github.run_attempt }}.json
+        run: |
+          python scripts/integration-program/verify_mapped_slack_consumer_provenance.py \
+            --evidence "$PROOF_OUTPUT/evidence.json" \
+            --output "$RECHECK_RECEIPT"
       - name: Upload mapped-source proof receipts, logs, and consumer inputs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -291,6 +305,7 @@ jobs:
             ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}/current-source-impact-selection.json
             ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}/logs/**
             ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}/test-results/**/*.trx
+            ${{ runner.temp }}/elsa-slack-consumer-provenance-${{ github.run_id }}-${{ github.run_attempt }}.json
             ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}/consumers/**/*.cs
             ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}/consumers/**/*.csproj
             ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}/consumers/**/NuGet.Config
@@ -303,6 +318,6 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: elsa-slack-mapped-local-proof-nupkg
-          path: ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}/local-feed/Elsa.Slack.3.8.5-proof.nupkg
+          path: ${{ runner.temp }}/elsa-slack-mapped-proof-${{ github.run_id }}-${{ github.run_attempt }}/local-feed/${{ steps.source-pins.outputs.package_id }}.${{ steps.source-pins.outputs.package_version }}.nupkg
           if-no-files-found: warn
           retention-days: 14

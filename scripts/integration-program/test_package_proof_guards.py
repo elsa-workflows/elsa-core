@@ -93,6 +93,10 @@ class PackageProofGuardTests(unittest.TestCase):
                               "notExecuted": 0, "disconnected": 0, "warning": 0, "completed": 0,
                               "inProgress": 0, "pending": 0, "skipped": 1}, receipt["result"])
             self.assertEqual(["first.trx"], [item["file"] for item in receipt["trx_files"]])
+            self.assertEqual(
+                [{"name": proof.EXPECTED_SKIPPED_TEST, "outcome": "NotExecuted", "skip_message": proof.EXPECTED_SKIP_MESSAGE}],
+                receipt["unit_tests"],
+            )
 
     def test_focused_test_receipt_rejects_failure_in_a_later_trx_file(self):
         with tempfile.TemporaryDirectory() as temporary_directory:

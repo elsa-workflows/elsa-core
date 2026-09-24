@@ -18,6 +18,7 @@ import subprocess
 import sys
 import urllib.request
 import zipfile
+from dataclasses import dataclass
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -37,6 +38,13 @@ TRX_COUNTERS = (
     "inconclusive", "passedButRunAborted", "notRunnable", "notExecuted", "disconnected",
     "warning", "completed", "inProgress", "pending",
 )
+
+
+@dataclass(frozen=True)
+class TestTrxResults:
+    counters: dict[str, int]
+    files: list[dict]
+    unit_results: list[ElementTree.Element]
 
 
 def run(command: list[str], *, cwd: Path, env: dict[str, str], log: Path) -> str:
@@ -161,10 +169,10 @@ def require_sourcelink_tool(tool_path: Path) -> tuple[Path, str, str]:
     return assembly_path, matching[0][1], payload_hash
 
 
-def read_focused_test_receipt(results_dir: Path) -> dict:
+def read_test_trx_results(results_dir: Path, *, missing_results_message: str) -> TestTrxResults:
     trx_files = sorted(results_dir.rglob("*.trx"))
     if not trx_files:
-        raise RuntimeError("Focused Slack test command produced no TRX result")
+        raise RuntimeError(missing_results_message)
 
     file_receipts = []
     unit_results = []
@@ -206,6 +214,15 @@ def read_focused_test_receipt(results_dir: Path) -> dict:
         unit_results.extend(results)
         file_receipts.append({"file": trx_path.name, "counters": file_counts, "unit_result_count": len(results)})
 
+    return TestTrxResults(aggregate, file_receipts, unit_results)
+
+
+def read_focused_test_receipt(results_dir: Path) -> dict:
+    parsed = read_test_trx_results(
+        results_dir,
+        missing_results_message="Focused Slack test command produced no TRX result",
+    )
+    unit_results = parsed.unit_results
     if len(unit_results) != 1:
         raise RuntimeError(f"Expected exactly one Slack test result across all TRX files, found {len(unit_results)}")
 
@@ -224,14 +241,14 @@ def read_focused_test_receipt(results_dir: Path) -> dict:
 
     expected_counters = {name: 0 for name in TRX_COUNTERS}
     expected_counters["total"] = 1
-    if aggregate != expected_counters:
+    if parsed.counters != expected_counters:
         raise RuntimeError(
-            f"Unexpected focused Slack test counters across all TRX files: {aggregate}; "
+            f"Unexpected focused Slack test counters across all TRX files: {parsed.counters}; "
             f"expected {expected_counters}"
         )
     return {
-        "result": {**aggregate, "skipped": 1},
-        "trx_files": file_receipts,
+        "result": {**parsed.counters, "skipped": 1},
+        "trx_files": parsed.files,
         "unit_tests": [
             {"name": result.get("testName"), "outcome": result.get("outcome"), "skip_message": skip_message}
         ],

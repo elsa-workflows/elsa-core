@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -15,16 +16,18 @@ from typing import Any
 from uuid import uuid4
 
 from package_impact import InventoryGraph, ProjectKey
+from release_unit_manifest import (
+    DEFAULT_UNIT_ID,
+    MANIFEST_PATH,
+    get_unit,
+    load_manifest,
+    source_project_key,
+    source_test_project_keys,
+    validate_against_inventory,
+)
 
 CHANGED_PROJECT: ProjectKey = ("elsa-core", "src/modules/Elsa/Elsa.csproj")
-RELEASE_UNIT: ProjectKey = (
-    "elsa-extensions",
-    "src/modules/communication/Elsa.Slack/Elsa.Slack.csproj",
-)
-SLACK_TEST: ProjectKey = (
-    "elsa-extensions",
-    "test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj",
-)
+RELEASE_UNIT_ID = DEFAULT_UNIT_ID
 KNOWN_BASELINE_SKIPS = {
     "elsa-extensions:test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj": {
         "Elsa.Slack.Tests.Activities.Channels.CreateChannelTests.ExecuteAsync": "Not implemented yet.",
@@ -152,7 +155,10 @@ def resolved_project_inputs(project_file: Path, timeout_seconds: int, use_projec
 def verify_resolved_project_graph(plan: dict[str, Any], sources: dict[str, Path], timeout_seconds: int) -> None:
     core_source = sources["elsa-core"].resolve()
     extensions_source = sources["elsa-extensions"].resolve()
-    slack_project = (extensions_source / RELEASE_UNIT[1]).resolve()
+    release_repository, release_project_path = plan["module_change_scenario"]["changed_project"].split(":", 1)
+    if release_repository != "elsa-extensions":
+        raise ValueError(f"Source-binding preflight does not support the release-unit repository: {release_repository}")
+    slack_project = (extensions_source / release_project_path).resolve()
     source_package_ids = {package.casefold() for package in plan["source_package_ids"]}
     # A Core root uses package references for external infrastructure. An Extensions root passes
     # UseProjectReferences=true to its whole build graph, including referenced Core projects.
@@ -228,16 +234,28 @@ def parse_sources(values: list[str]) -> dict[str, Path]:
     return sources
 
 
-def build_plan(inventory_path: Path, sources: dict[str, Path]) -> dict[str, Any]:
+def build_plan(
+    inventory_path: Path,
+    sources: dict[str, Path],
+    release_manifest_path: Path = MANIFEST_PATH,
+) -> dict[str, Any]:
     inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    manifest = load_manifest(release_manifest_path)
+    unit = get_unit(manifest, RELEASE_UNIT_ID)
+    validate_against_inventory(unit, inventory)
     graph = InventoryGraph(inventory)
     impacted = sorted(graph.affected_tests([CHANGED_PROJECT]))
-    module_impacted = sorted(graph.affected_tests([RELEASE_UNIT]))
-    packages = sorted(graph.package_ids([RELEASE_UNIT]))
-    if packages != ["Elsa.Slack"]:
-        raise ValueError(f"Expected only Elsa.Slack in the release unit; selector returned {packages}")
-    if module_impacted != [SLACK_TEST]:
-        raise ValueError(f"Expected a Slack module change to select only its Slack test project; selector returned {module_impacted}")
+    release_unit_key = source_project_key(unit)
+    declared_unit_tests = source_test_project_keys(unit)
+    module_impacted = sorted(graph.affected_tests([release_unit_key]))
+    packages = sorted(graph.package_ids([release_unit_key]))
+    if packages != [unit["package_id"]]:
+        raise ValueError(f"Expected only {unit['package_id']} in the release unit; selector returned {packages}")
+    if module_impacted != sorted(declared_unit_tests):
+        raise ValueError(
+            f"Expected the manifest's release-unit tests {sorted(declared_unit_tests)} "
+            f"for a module-only change; selector returned {module_impacted}"
+        )
 
     source_receipts: dict[str, dict[str, str]] = {}
     for repository, source_path in sources.items():
@@ -284,16 +302,29 @@ def build_plan(inventory_path: Path, sources: dict[str, Path]) -> dict[str, Any]
     return {
         "scenario": {
             "changed_project": f"{CHANGED_PROJECT[0]}:{CHANGED_PROJECT[1]}",
-            "release_unit_projects": [f"{RELEASE_UNIT[0]}:{RELEASE_UNIT[1]}"],
+            "release_unit_projects": [f"{release_unit_key[0]}:{release_unit_key[1]}"],
             "packages_to_pack": packages,
             "affected_test_project_count": len(impacted),
         },
         "module_change_scenario": {
-            "changed_project": f"{RELEASE_UNIT[0]}:{RELEASE_UNIT[1]}",
+            "changed_project": f"{release_unit_key[0]}:{release_unit_key[1]}",
             "affected_test_projects": [f"{repository}:{path}" for repository, path in module_impacted],
             "affected_test_project_count": len(module_impacted),
-            "release_unit_projects": [f"{RELEASE_UNIT[0]}:{RELEASE_UNIT[1]}"],
+            "release_unit_projects": [f"{release_unit_key[0]}:{release_unit_key[1]}"],
             "packages_to_pack": packages,
+        },
+        "release_unit_manifest": {
+            "path": "doc/integration-program/release-units.json"
+            if release_manifest_path.resolve() == MANIFEST_PATH.resolve()
+            else release_manifest_path.name,
+            "sha256": hashlib.sha256(release_manifest_path.read_bytes()).hexdigest(),
+            "unit_id": unit["id"],
+            "package_id": unit["package_id"],
+            "package_target_frameworks": unit["target_frameworks"],
+            "tested_artifact_dependencies": unit["tested_artifact_dependencies"],
+            "current_publisher": unit["publisher"]["repository"],
+            "local_proof_version": unit["versioning"]["local_proof_version"],
+            "local_proof_publishable": unit["versioning"]["local_proof_may_publish"],
         },
         "inventory_snapshot_date": inventory["snapshot_date"],
         "source_pins": {
@@ -612,6 +643,7 @@ def write_failure_output(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--inventory", type=Path, required=True)
+    parser.add_argument("--release-manifest", type=Path, default=MANIFEST_PATH)
     parser.add_argument("--source", action="append", default=[], help="Pinned checkout mapping REPOSITORY=PATH")
     parser.add_argument("--run", action="store_true", help="Run local tests and the build-only host")
     parser.add_argument("--include-docker", action="store_true", help="Also run projects declaring Testcontainers dependencies")
@@ -631,7 +663,7 @@ def main() -> int:
     try:
         sources = parse_sources(args.source)
         phase = "plan construction and source preflight"
-        plan = build_plan(args.inventory, sources)
+        plan = build_plan(args.inventory, sources, args.release_manifest)
         if args.command_timeout_seconds <= 0:
             raise ValueError("--command-timeout-seconds must be greater than zero")
         if args.github_output:

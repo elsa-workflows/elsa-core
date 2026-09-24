@@ -9,6 +9,7 @@ for source packing and NuGet.org plus the isolated local feed for consumers.
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import html
 import json
@@ -21,26 +22,42 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 import run_slack_package_proof as shared
+from package_impact import InventoryGraph
+from release_unit_manifest import (
+    MANIFEST_PATH,
+    get_unit,
+    load_manifest,
+    map_source_project_path,
+    require_tested_artifact_dependencies,
+    source_project_key,
+    validate_against_inventory,
+)
 
 CORE_SHA = "8e893e02c4ac089d526b0a0d294a8546f021d072"
 EXTENSIONS_SHA = "33fa0bfd28c7585240e3d4f665058c067b17e287"
 STUDIO_SHA = "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822"
 SOURCE_COMMITS = {"core": CORE_SHA, "extensions": EXTENSIONS_SHA, "studio": STUDIO_SHA}
-PACKAGE_ID = "Elsa.Slack"
-PACKAGE_VERSION = "3.8.5-proof"
-ELSA_VERSION = "3.8.4"
-SLACK_NET_VERSION = "0.17.7"
-TFMS = ("net8.0", "net9.0", "net10.0")
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+INVENTORY_RELATIVE = Path("doc/integration-program/inventory/inventory.json")
+INVENTORY_PATH = REPOSITORY_ROOT / INVENTORY_RELATIVE
+RELEASE_UNIT = get_unit(load_manifest(MANIFEST_PATH))
+INVENTORY_DOCUMENT = json.loads(INVENTORY_PATH.read_text(encoding="utf-8"))
+validate_against_inventory(RELEASE_UNIT, INVENTORY_DOCUMENT)
+PACKAGE_ID = RELEASE_UNIT["package_id"]
+PACKAGE_VERSION = RELEASE_UNIT["versioning"]["local_proof_version"]
+REQUIRED_PROOF_DEPENDENCIES = require_tested_artifact_dependencies(RELEASE_UNIT, ("Elsa", "SlackNet"))
+ELSA_VERSION = REQUIRED_PROOF_DEPENDENCIES["Elsa"]
+SLACK_NET_VERSION = REQUIRED_PROOF_DEPENDENCIES["SlackNet"]
+TFMS = tuple(RELEASE_UNIT["target_frameworks"])
 REPOSITORY_URL = "https://github.com/elsa-workflows/elsa-extensions"
-SLACK_RELATIVE = Path("src/extensions/communication/Elsa.Slack")
-EXTENSIONS_SLACK_RELATIVE = Path("src/modules/communication/Elsa.Slack")
+SLACK_RELATIVE = Path(RELEASE_UNIT["mapped"]["project_path"]).parent
+EXTENSIONS_SLACK_RELATIVE = Path(RELEASE_UNIT["source"]["project_path"]).parent
 ICON_SHA256 = "82fd76d734d59efc6132af0b0b999146254fa5a296ea5d64f85597bb1cda524e"
 PATCH_RELATIVE = Path("scripts/integration-program/consolidated-build/source-integration.patch")
 PREPARED_RECEIPT = "consolidated-build-receipt.json"
 IMPORT_RECEIPT = "import-receipt.json"
 CREATED_RECEIPTS = {PREPARED_RECEIPT, IMPORT_RECEIPT}
 DOTNET = shutil.which("dotnet")
-INVENTORY_RELATIVE = Path("doc/integration-program/inventory/inventory.json")
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -286,6 +303,113 @@ def parse_evaluation(log: Path) -> dict:
     return evaluation
 
 
+def verify_local_package_consumption(
+    consumer_dir: Path,
+    framework: str,
+    package: Path,
+    package_cache: Path,
+    local_feed: Path,
+    configuration: str = "Debug",
+) -> dict:
+    """Prove restore selected this exact local package and execution loaded its assembly."""
+    assets_path = consumer_dir / "obj/project.assets.json"
+    if not assets_path.is_file():
+        raise RuntimeError(f"Consumer restore did not create project.assets.json: {assets_path}")
+    assets = json.loads(assets_path.read_text(encoding="utf-8"))
+    package_cache = package_cache.resolve(strict=True)
+    package_path = package.resolve(strict=True)
+    feed_path = local_feed.resolve(strict=True)
+    package_sha512 = base64.b64encode(hashlib.sha512(package_path.read_bytes()).digest()).decode("ascii")
+    expected_key = f"{PACKAGE_ID}/{PACKAGE_VERSION}"
+    matching_libraries = [
+        (key, value)
+        for key, value in assets.get("libraries", {}).items()
+        if key.casefold() == expected_key.casefold()
+    ]
+    same_id_libraries = [
+        key for key in assets.get("libraries", {})
+        if key.casefold().startswith(PACKAGE_ID.casefold() + "/")
+    ]
+    if len(matching_libraries) != 1:
+        raise RuntimeError(
+            f"Consumer assets do not select exactly {expected_key}: {same_id_libraries}"
+        )
+    if len(same_id_libraries) != 1:
+        raise RuntimeError(f"Consumer assets contain multiple versions of {PACKAGE_ID}: {same_id_libraries}")
+    library_key, library = matching_libraries[0]
+    if library.get("type") != "package":
+        raise RuntimeError(f"Consumer did not restore {expected_key} as a NuGet package")
+    if library.get("sha512") != package_sha512:
+        raise RuntimeError(f"Consumer restored a different {expected_key} archive than the proof package")
+    target = assets.get("targets", {}).get(framework)
+    target_packages = target if isinstance(target, dict) else {}
+    target_package = next(
+        (value for key, value in target_packages.items() if key.casefold() == expected_key.casefold()),
+        None,
+    )
+    expected_asset = f"lib/{framework}/{PACKAGE_ID}.dll"
+    if (
+        not isinstance(target_package, dict)
+        or expected_asset not in target_package.get("compile", {})
+        or expected_asset not in target_package.get("runtime", {})
+    ):
+        raise RuntimeError(f"Consumer assets do not resolve {expected_key} compile and runtime assets for {framework}")
+
+    package_folders = assets.get("packageFolders")
+    if not isinstance(package_folders, dict):
+        raise RuntimeError("Consumer assets do not record package folders")
+    resolved_folders = {str(Path(folder).resolve(strict=False)) for folder in package_folders}
+    if resolved_folders != {str(package_cache)}:
+        raise RuntimeError(f"Consumer restore used a shared or unexpected package cache: {sorted(resolved_folders)}")
+
+    relative_package_path = Path(library.get("path", ""))
+    if relative_package_path.is_absolute() or ".." in relative_package_path.parts:
+        raise RuntimeError(f"Consumer assets contain an unsafe package cache path: {library.get('path')!r}")
+    expected_relative_path = Path(PACKAGE_ID.casefold()) / PACKAGE_VERSION.casefold()
+    if relative_package_path != expected_relative_path:
+        raise RuntimeError(f"Consumer package cache path differs from selected identity: {relative_package_path}")
+    cached_package = (package_cache / relative_package_path).resolve(strict=True)
+    if package_cache not in cached_package.parents:
+        raise RuntimeError(f"Restored package escaped its isolated cache: {cached_package}")
+    metadata_path = cached_package / ".nupkg.metadata"
+    checksum_path = cached_package / f"{PACKAGE_ID.casefold()}.{PACKAGE_VERSION.casefold()}.nupkg.sha512"
+    if not metadata_path.is_file() or not checksum_path.is_file():
+        raise RuntimeError(f"Restored package cache lacks its provenance metadata: {cached_package}")
+    cached_archive = cached_package / f"{PACKAGE_ID.casefold()}.{PACKAGE_VERSION.casefold()}.nupkg"
+    if not cached_archive.is_file() or sha256_file(cached_archive) != sha256_file(package_path):
+        raise RuntimeError(f"Cached {expected_key} archive differs from the exact proof package")
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    if metadata.get("source") != str(feed_path):
+        raise RuntimeError(f"Consumer selected {expected_key} from an unexpected feed: {metadata.get('source')!r}")
+    if (
+        metadata.get("contentHash") != package_sha512
+        or checksum_path.read_text(encoding="utf-8").strip() != package_sha512
+    ):
+        raise RuntimeError(f"Consumer cache content hash differs from the proof nupkg for {expected_key}")
+
+    assembly_entry = f"lib/{framework}/{PACKAGE_ID}.dll"
+    with zipfile.ZipFile(package_path) as archive:
+        try:
+            expected_assembly = archive.read(assembly_entry)
+        except KeyError as error:
+            raise RuntimeError(f"Proof package does not contain {assembly_entry}") from error
+    consumer_assembly = consumer_dir / "bin" / configuration / framework / f"{PACKAGE_ID}.dll"
+    if not consumer_assembly.is_file() or consumer_assembly.read_bytes() != expected_assembly:
+        raise RuntimeError(f"Consumer output does not contain the exact {assembly_entry} from the proof package")
+
+    return {
+        "selected_package": library_key,
+        "package_sha512_matches_nupkg": True,
+        "cached_archive_matches_nupkg": True,
+        "target_framework_assets_match": True,
+        "package_cache_isolated": True,
+        "restore_source": "local-proof-feed",
+        "metadata_source_matches_local_feed": True,
+        "consumer_assembly_matches_package": True,
+        "target_framework": framework,
+    }
+
+
 def verify_evaluation(log: Path, rehearsal: Path, *, package_mode: bool) -> dict:
     evaluation = parse_evaluation(log)
     properties = evaluation["Properties"]
@@ -331,9 +455,84 @@ def verify_evaluation(log: Path, rehearsal: Path, *, package_mode: bool) -> dict
     }
 
 
-def selector_evidence(output: Path) -> dict:
-    inventory = Path(__file__).resolve().parents[2] / INVENTORY_RELATIVE
-    inventory_document = json.loads(inventory.read_text(encoding="utf-8"))
+def verify_release_unit_mapping(imported: dict) -> dict[str, str]:
+    mapping = imported.get("mapping")
+    if not isinstance(mapping, list):
+        raise RuntimeError("Import receipt has no project path mapping")
+    source_tests = RELEASE_UNIT["source"]["test_projects"]
+    mapped_tests = {
+        test["source_project_path"]: test["project_path"]
+        for test in RELEASE_UNIT["mapped"]["test_projects"]
+    }
+    source_test_paths = {test["project_path"] for test in source_tests}
+    if set(mapped_tests) != source_test_paths:
+        raise RuntimeError(
+            "Release-unit manifest source and mapped test projects differ: "
+            f"source={sorted(source_test_paths)}, mapped={sorted(mapped_tests)}"
+        )
+    expected = {RELEASE_UNIT["source"]["project_path"]: RELEASE_UNIT["mapped"]["project_path"]}
+    expected.update({test["project_path"]: mapped_tests[test["project_path"]] for test in source_tests})
+    actual = {
+        source_path: map_source_project_path("elsa-extensions", source_path, mapping)
+        for source_path in expected
+    }
+    if actual != expected:
+        raise RuntimeError(f"Release-unit manifest differs from the exact import relocation map: {actual} != {expected}")
+    return actual
+
+
+def map_impact_selection(selection: dict, rehearsal: Path, imported: dict) -> dict:
+    mapping = imported.get("mapping")
+    if not isinstance(mapping, list):
+        raise RuntimeError("Import receipt has no project path mapping")
+    graph = InventoryGraph(INVENTORY_DOCUMENT)
+    mapped_commits = imported.get("sourceCommits", {})
+    inventory_commits = {
+        key: repository["commit"]
+        for key, repository in INVENTORY_DOCUMENT["repositories"].items()
+    }
+    product_keys = {"elsa-core": "core", "elsa-extensions": "extensions", "elsa-studio": "studio"}
+    rows = []
+    for project_key_text in selection["affected_test_projects"]:
+        repository, relative_path = project_key_text.split(":", 1)
+        product = product_keys.get(repository)
+        if product is None:
+            raise RuntimeError(f"No imported source pin is recorded for {repository}")
+        destination = map_source_project_path(repository, relative_path, mapping)
+        destination_file = rehearsal / destination
+        if not destination_file.is_file():
+            raise RuntimeError(f"Mapped impact project is missing from the rehearsal: {destination}")
+        project = graph.projects[(repository, relative_path)]
+        inventory_sha = inventory_commits[repository]
+        mapped_sha = mapped_commits[product]
+        rows.append({
+            "inventory_project": project_key_text,
+            "mapped_project": destination,
+            "inventory_target_frameworks": project.get("target_frameworks", []),
+            "inventory_source_sha": inventory_sha,
+            "mapped_source_sha": mapped_sha,
+            "project_repository_pin_matches": inventory_sha == mapped_sha,
+            "mapped_project_exists": True,
+        })
+    return {
+        "status": "path-and-framework-plan-only",
+        "inventory_pins": inventory_commits,
+        "mapped_source_pins": mapped_commits,
+        "selected_project_count": len(rows),
+        "selected_projects": rows,
+        "source_compatibility_verified": False,
+        "test_execution_performed": False,
+        "receipt_matching_rule": (
+            "A canonical TRX can satisfy an inventory project only after matching its mapped project path, "
+            "target framework, source revision, and evaluated project/import inputs. Path mapping alone is not test evidence."
+        ),
+    }
+
+
+def selector_evidence(output: Path, rehearsal: Path | None = None, imported: dict | None = None) -> dict:
+    inventory = INVENTORY_PATH
+    inventory_document = INVENTORY_DOCUMENT
+    release_project = source_project_key(RELEASE_UNIT)
     selector = Path(__file__).with_name("package_impact.py")
     result = subprocess.run(
         [
@@ -344,7 +543,7 @@ def selector_evidence(output: Path) -> dict:
             "--changed",
             "elsa-core:src/modules/Elsa/Elsa.csproj",
             "--release-unit",
-            "elsa-extensions:src/modules/communication/Elsa.Slack/Elsa.Slack.csproj",
+            f"{release_project[0]}:{release_project[1]}",
         ],
         text=True,
         capture_output=True,
@@ -359,6 +558,15 @@ def selector_evidence(output: Path) -> dict:
         name: repository["commit"]
         for name, repository in inventory_document["repositories"].items()
     }
+    selection["release_unit_manifest"] = {
+        "path": "doc/integration-program/release-units.json",
+        "sha256": sha256_file(MANIFEST_PATH),
+        "unit_id": RELEASE_UNIT["id"],
+        "package_id": PACKAGE_ID,
+        "local_proof_version": PACKAGE_VERSION,
+        "current_publisher": RELEASE_UNIT["publisher"]["repository"],
+        "local_proof_publishable": RELEASE_UNIT["versioning"]["local_proof_may_publish"],
+    }
     if selection.get("package_ids_to_pack") != [PACKAGE_ID]:
         raise RuntimeError(f"Shared Core change did not select only Slack as release unit: {selection}")
     slack_tests = [
@@ -368,17 +576,26 @@ def selector_evidence(output: Path) -> dict:
     ]
     if not slack_tests:
         raise RuntimeError(f"Shared Core change did not select the Slack test project: {selection}")
+    if rehearsal is not None or imported is not None:
+        if rehearsal is None or imported is None:
+            raise RuntimeError("Both the rehearsal and import receipt are required for mapped closure evidence")
+        verify_release_unit_mapping(imported)
+        selection["mapped_closure_plan"] = map_impact_selection(selection, rehearsal, imported)
     path = output / "current-source-impact-selection.json"
     path.write_text(json.dumps(selection, indent=2) + "\n", encoding="utf-8")
     return {
         "selection": selection,
         "receipt": str(path),
-        "scope_note": "Selector uses the current inventory graph pins; artifact source pins are recorded separately and are not inferred from this graph.",
+        "scope_note": (
+            "Selector uses inventory source pins; mapped path rows are plan-only. Artifact source pins are separate, "
+            "and no selected project is counted as executed by this receipt."
+        ),
     }
 
 
 def verify_consumers(output: Path, packages: Path, env: dict[str, str], cache_root: Path, dotnet: Path) -> list[dict]:
     results = []
+    package = packages / f"{PACKAGE_ID}.{PACKAGE_VERSION}.nupkg"
     package_sources = [
         ("nuget.org", "https://api.nuget.org/v3/index.json"),
         ("local-proof-feed", str(packages)),
@@ -390,7 +607,8 @@ def verify_consumers(output: Path, packages: Path, env: dict[str, str], cache_ro
         config = consumer_dir / "NuGet.Config"
         write_config(config, package_sources)
         consumer_env = env.copy()
-        consumer_env["NUGET_PACKAGES"] = str(cache_root / framework)
+        consumer_cache = cache_root / framework
+        consumer_env["NUGET_PACKAGES"] = str(consumer_cache)
         run(
             [str(dotnet), "restore", str(project), "--configfile", str(config)],
             cwd=consumer_dir,
@@ -403,10 +621,22 @@ def verify_consumers(output: Path, packages: Path, env: dict[str, str], cache_ro
             env=consumer_env,
             log=output / "logs" / f"consumer-{framework}.log",
         )
+        provenance = verify_local_package_consumption(
+            consumer_dir,
+            framework,
+            package,
+            consumer_cache,
+            packages,
+        )
         descriptor = parse_marker(output / "logs" / f"consumer-{framework}.log", "ELSA_ACTIVITY_DESCRIPTOR=")
         if not descriptor.get("TypeName") or descriptor.get("Version", 0) < 1:
             raise RuntimeError(f"Invalid runtime ActivityDescriptor from {framework} consumer: {descriptor}")
-        results.append({"framework": framework, "result": "passed", "descriptor": descriptor})
+        results.append({
+            "framework": framework,
+            "result": "passed",
+            "descriptor": descriptor,
+            "package_provenance": provenance,
+        })
     if any(row["descriptor"] != results[0]["descriptor"] for row in results[1:]):
         raise RuntimeError(f"Package consumer ActivityDescriptor differs across TFMs: {results}")
     return results
@@ -422,7 +652,8 @@ def verify_offline_activity(output: Path, packages: Path, env: dict[str, str], c
         [("nuget.org", "https://api.nuget.org/v3/index.json"), ("local-proof-feed", str(packages))],
     )
     smoke_env = env.copy()
-    smoke_env["NUGET_PACKAGES"] = str(cache_root / "offline-activity-smoke")
+    smoke_cache = cache_root / "offline-activity-smoke"
+    smoke_env["NUGET_PACKAGES"] = str(smoke_cache)
     run(
         [str(dotnet), "restore", str(project), "--configfile", str(config)],
         cwd=root,
@@ -444,36 +675,117 @@ def verify_offline_activity(output: Path, packages: Path, env: dict[str, str], c
     result = parse_marker(runtime_log, "ELSA_OFFLINE_ACTIVITY_SMOKE=")
     if result.get("fakeCalls") != 1 or result.get("output", {}).get("Id") != "C_OFFLINE_PROOF":
         raise RuntimeError(f"Offline CreateChannel contract failed: {result}")
-    return {"result": "passed", "framework": "net10.0", "receipt": result}
+    provenance = verify_local_package_consumption(
+        root,
+        "net10.0",
+        packages / f"{PACKAGE_ID}.{PACKAGE_VERSION}.nupkg",
+        smoke_cache,
+        packages,
+    )
+    return {"result": "passed", "framework": "net10.0", "receipt": result, "package_provenance": provenance}
 
 
-def verify_upstream_test_baseline(output: Path, rehearsal: Path, env: dict[str, str], cache_root: Path, config: Path, dotnet: Path) -> dict:
-    test_project = rehearsal / "test/extensions/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj"
-    if not test_project.is_file():
-        raise RuntimeError(f"Pinned Slack test project is missing: {test_project}")
-    test_env = env.copy()
-    test_env["NUGET_PACKAGES"] = str(cache_root / "upstream-test")
-    run(
-        [str(dotnet), "restore", str(test_project), "--configfile", str(config), "-p:UseProjectReferences=false", f"-p:ElsaVersion={ELSA_VERSION}"],
-        cwd=rehearsal,
-        env=test_env,
-        log=output / "logs/upstream-test-restore.log",
+def read_declared_test_receipt(results_dir: Path, source_project_path: str, framework: str) -> dict:
+    known_slack_test = shared.TEST_RELATIVE.as_posix()
+    if source_project_path == known_slack_test and framework == "net10.0":
+        return {"result": "known-baseline-skip", "receipt": shared.read_focused_test_receipt(results_dir)}
+
+    parsed = shared.read_test_trx_results(
+        results_dir,
+        missing_results_message=f"Declared test run produced no TRX result: {source_project_path} {framework}",
     )
-    results = output / "test-results"
-    results.mkdir()
-    run(
-        [
-            str(dotnet), "test", str(test_project), "--no-restore", "--configuration", "Release",
-            "--framework", "net10.0", "--logger", "trx;LogFileName=Slack.Tests.net10.0.trx",
-            "--results-directory", str(results), "-p:UseProjectReferences=false",
-            f"-p:ElsaVersion={ELSA_VERSION}", "-m:1",
-        ],
-        cwd=rehearsal,
-        env=test_env,
-        log=output / "logs/upstream-test-net10.0.log",
-    )
-    receipt = shared.read_focused_test_receipt(results)
-    return {"result": "baseline-recorded", "framework": "net10.0", "receipt": receipt}
+    unit_tests = []
+    for result in parsed.unit_results:
+        outcome = result.get("outcome")
+        if outcome != "Passed":
+            raise RuntimeError(
+                f"Undocumented non-passing result in declared test TRX {source_project_path} {framework}: "
+                f"{result.get('testName')!r} outcome={outcome!r}"
+            )
+        unit_tests.append({"name": result.get("testName"), "outcome": outcome})
+
+    if (
+        not unit_tests
+        or parsed.counters["passed"] != parsed.counters["total"]
+        or parsed.counters["executed"] != parsed.counters["total"]
+    ):
+        raise RuntimeError(
+            f"Declared test results are incomplete for {source_project_path} {framework}: "
+            f"total={parsed.counters['total']} executed={parsed.counters['executed']} passed={parsed.counters['passed']}"
+        )
+    if any(parsed.counters[name] for name in (
+        "failed", "error", "timeout", "aborted", "passedButRunAborted", "notRunnable",
+        "notExecuted", "disconnected", "inconclusive", "inProgress", "pending",
+    )):
+        raise RuntimeError(f"Declared test counters contain non-passing results: {parsed.counters}")
+
+    return {
+        "result": "passed",
+        "receipt": {"result": parsed.counters, "trx_files": parsed.files, "unit_tests": unit_tests},
+    }
+
+
+def verify_upstream_test_baseline(
+    output: Path,
+    rehearsal: Path,
+    env: dict[str, str],
+    cache_root: Path,
+    config: Path,
+    dotnet: Path,
+    imported: dict,
+) -> dict:
+    mapped_paths = verify_release_unit_mapping(imported)
+    test_runs = []
+    framework_count = 0
+    for test_index, source_test in enumerate(RELEASE_UNIT["source"]["test_projects"], start=1):
+        source_path = source_test["project_path"]
+        mapped_path = mapped_paths[source_path]
+        test_project = rehearsal / mapped_path
+        if not test_project.is_file():
+            raise RuntimeError(f"Mapped release-unit test project is missing: {test_project}")
+
+        safe_name = f"{test_index:02d}-{source_path.removesuffix('.csproj').replace('/', '__')}"
+        test_env = env.copy()
+        test_env["NUGET_PACKAGES"] = str(cache_root / "upstream-tests" / safe_name)
+        run(
+            [str(dotnet), "restore", str(test_project), "--configfile", str(config), "-p:UseProjectReferences=false", f"-p:ElsaVersion={ELSA_VERSION}"],
+            cwd=rehearsal,
+            env=test_env,
+            log=output / "logs" / f"upstream-test-restore-{safe_name}.log",
+        )
+
+        for framework in source_test["target_frameworks"]:
+            framework_count += 1
+            results = output / "test-results" / safe_name / framework
+            results.mkdir(parents=True)
+            run(
+                [
+                    str(dotnet), "test", str(test_project), "--no-restore", "--configuration", "Release",
+                    "--framework", framework, "--logger", f"trx;LogFileName={safe_name}.{framework}.trx",
+                    "--results-directory", str(results), "-p:UseProjectReferences=false",
+                    f"-p:ElsaVersion={ELSA_VERSION}", "-m:1",
+                ],
+                cwd=rehearsal,
+                env=test_env,
+                log=output / "logs" / f"upstream-test-{safe_name}-{framework}.log",
+            )
+            test_runs.append({
+                "source_project_path": source_path,
+                "mapped_project_path": mapped_path,
+                "framework": framework,
+                **read_declared_test_receipt(results, source_path, framework),
+            })
+
+    if not test_runs:
+        raise RuntimeError("Release-unit manifest declares no test-project/framework runs")
+    has_known_skip = any(row["result"] == "known-baseline-skip" for row in test_runs)
+    return {
+        "result": "baseline-recorded" if has_known_skip else "passed",
+        "manifest_declared_test_project_count": len(RELEASE_UNIT["source"]["test_projects"]),
+        "manifest_declared_framework_count": framework_count,
+        "all_declared_project_frameworks_ran": len(test_runs) == framework_count,
+        "runs": test_runs,
+    }
 
 
 def verify_embedded_sources(output: Path, symbols: Path, extensions: Path, env: dict[str, str], config: Path, dotnet: Path) -> list[dict]:
@@ -617,8 +929,8 @@ def main() -> int:
         raise RuntimeError(f"Local feed contains unrelated or missing symbol packages: {[path.name for path in snupkgs]}")
     artifact = inspect_artifact(nupkgs[0], snupkgs[0], extensions / "icon.png")
 
-    upstream_test = verify_upstream_test_baseline(output, rehearsal, env, cache_root, pack_config, dotnet)
-    current_selection = selector_evidence(output)
+    upstream_test = verify_upstream_test_baseline(output, rehearsal, env, cache_root, pack_config, dotnet, imported)
+    current_selection = selector_evidence(output, rehearsal, imported)
     consumers = verify_consumers(output, packages, env, cache_root / "consumers", dotnet)
     offline_activity = verify_offline_activity(output, packages, env, cache_root, dotnet)
     embedded_sources = verify_embedded_sources(output, snupkgs[0], extensions, env, pack_config, dotnet)
@@ -651,6 +963,21 @@ def main() -> int:
             "core_commit": CORE_SHA,
             "studio_commit": STUDIO_SHA,
         },
+        "release_unit_manifest": {
+            "path": "doc/integration-program/release-units.json",
+            "sha256": sha256_file(MANIFEST_PATH),
+            "unit_id": RELEASE_UNIT["id"],
+            "package_id": PACKAGE_ID,
+            "source_project_path": RELEASE_UNIT["source"]["project_path"],
+            "mapped_project_path": RELEASE_UNIT["mapped"]["project_path"],
+            "target_frameworks": list(TFMS),
+            "tested_artifact_dependencies": RELEASE_UNIT["tested_artifact_dependencies"],
+            "current_publisher": RELEASE_UNIT["publisher"]["repository"],
+            "stable_version_policy": RELEASE_UNIT["versioning"]["scheme"],
+            "local_proof_version": PACKAGE_VERSION,
+            "local_proof_is_release_allocation": RELEASE_UNIT["versioning"]["local_proof_is_release_allocation"],
+            "local_proof_may_publish": RELEASE_UNIT["versioning"]["local_proof_may_publish"],
+        },
         "versions": {
             "local_package_version": PACKAGE_VERSION,
             "elsa_package_dependency": ELSA_VERSION,
@@ -663,11 +990,18 @@ def main() -> int:
             "source_link_note": "The synthetic history rehearsal has no remote, so source linking is not fabricated. All 41 C# sources embedded in each target-framework PDB were byte-verified against the pinned Extensions project. Final Core-repository SourceLink URLs remain a post-import remote-history gate.",
         },
         "consumers": consumers,
+        "package_consumption_provenance": {
+            "result": "passed",
+            "package_sha256": artifact["nupkg_sha256"],
+            "consumer_count": len(consumers) + 1,
+            "consumers": [row["package_provenance"] for row in consumers]
+            + [offline_activity["package_provenance"]],
+        },
         "offline_activity": offline_activity,
-        "upstream_slack_test": upstream_test,
+        "release_unit_tests": upstream_test,
         "embedded_source_verification": embedded_sources,
         "current_source_impact_selection": current_selection,
-        "known_test_limit": "The pinned Slack test project ran on net10.0 and produced the exact known baseline: one NotExecuted CreateChannelTests.ExecuteAsync result ('Not implemented yet'), zero executed or passed tests, and no other test results or nonzero failure counters. This remains an incomplete test gate; the separate offline CreateChannel smoke is narrow behavior evidence and does not unskip or replace the upstream test.",
+        "known_test_limit": "Every test project and target framework declared by the release-unit manifest was executed and is listed in release_unit_tests.runs. The current Slack net10.0 run records the exact known baseline skip (CreateChannelTests.ExecuteAsync, 'Not implemented yet') with no executed or passed tests, so this remains an incomplete test gate; the separate offline CreateChannel smoke is narrow behavior evidence and does not unskip or replace the upstream test.",
         "publication_authorized": False,
         "commands": sorted(str(path.relative_to(output)) for path in (output / "logs").glob("*.log")),
         "source_state": {
