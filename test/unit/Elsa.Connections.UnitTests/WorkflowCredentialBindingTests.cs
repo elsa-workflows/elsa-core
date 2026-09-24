@@ -865,6 +865,11 @@ public sealed class WorkflowCredentialBindingTests
 
             var grantManager = scope.ServiceProvider.GetRequiredService<IWorkflowCredentialGrantManager>();
             Assert.True((await grantManager.IssueAsync(Principal(), workflowInstanceId, LogicalBindingId, 1)).Succeeded);
+            var grant = await scope.ServiceProvider.GetRequiredService<IConnectionCredentialUseGrantStore>()
+                .FindAsync(TenantId, EnvironmentId, workflowInstanceId, LogicalBindingId);
+            Assert.NotNull(grant);
+            Assert.DoesNotContain(originalKey, JsonSerializer.Serialize(grant), StringComparison.Ordinal);
+            Assert.DoesNotContain(rotatedKey, JsonSerializer.Serialize(grant), StringComparison.Ordinal);
 
             if (scenario == "rotated")
             {
