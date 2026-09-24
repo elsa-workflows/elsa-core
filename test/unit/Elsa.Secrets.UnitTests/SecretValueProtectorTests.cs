@@ -23,7 +23,7 @@ public class SecretValueProtectorTests
     [Fact]
     public void Unprotect_DecryptsNistAesGcmKnownAnswerVector()
     {
-        // NIST GCM Test Case 2: https://csrc.nist.gov/Projects/Cryptographic-Algorithm-Validation-Program/CAVP-TESTING-BLOCK-CIPHER-MODES
+        // McGrew/Viega GCM submission to NIST, Appendix B, Test Case 2.
         var key = new byte[16];
         var nonce = new byte[12];
         var tag = Convert.FromHexString("ab6e47d42cec13bdf53a67b21257bddf");
