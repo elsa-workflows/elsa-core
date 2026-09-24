@@ -102,6 +102,11 @@ class FullHistoryTests(unittest.TestCase):
                 self.assertFalse(output.exists())
                 rehearsal.rehearse(repos['core'], {k: repos[k] for k in ('extensions', 'studio')}, output)
             tip = rehearsal.git(output, 'rev-parse', 'rehearsal').strip()
+            self.assertEqual(rehearsal.git(output, 'rev-parse', 'HEAD').strip(), tip)
+            self.assertEqual(rehearsal.git(output, 'diff', '--name-only', 'HEAD'), b'')
+            self.assertEqual(rehearsal.git(output, 'diff', '--cached', '--name-only'), b'')
+            self.assertEqual(rehearsal.git(output, 'status', '--porcelain', '-z'),
+                             b'?? import-receipt.json\0')
             for name, repo in repos.items():
                 self.assertEqual(rehearsal.git(repo, 'rev-parse', 'HEAD').decode().strip(), refs[name])
                 self.assertEqual(rehearsal.git(repo, 'status', '--porcelain'), statuses[name])
