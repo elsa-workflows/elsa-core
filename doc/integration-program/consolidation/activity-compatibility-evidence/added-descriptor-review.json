@@ -1,0 +1,58 @@
+{
+  "scope": "Post-review complete normalized source-only descriptor comparison against unchanged recorded C# host evidence",
+  "runnerSha256": "254e97449dfe23c8af6629639c4bffd30986ce7b60e130fbe12aea90104a45d7",
+  "matrixSha256": "5eb6437d3d3788bb101c30743af6e0dac30e5cfe657cda245b804663ea3ff8a5",
+  "frameworks": [
+    {
+      "framework": "net8.0",
+      "allowedSourceOnlyAddedDescriptors": [
+        "Elsa.Ldap.Activities.AddLdapEntry",
+        "Elsa.Ldap.Activities.CompareLdapEntry",
+        "Elsa.Ldap.Activities.DeleteLdapEntry",
+        "Elsa.Ldap.Activities.ModifyLdapEntry",
+        "Elsa.Ldap.Activities.MoveLdapEntry",
+        "Elsa.Ldap.Activities.SearchLdapEntries",
+        "Elsa.Ldap.Activities.SearchLdapEntry",
+        "Elsa.Mqtt.Activities.MqttMessageReceived",
+        "Elsa.Mqtt.Activities.PublishMqttMessage"
+      ],
+      "unexpectedAddedDescriptors": [],
+      "releasedSha256": "a237a951855d9a4405511d3a14a8cf3b1d9e855df362bc9bc058c0c7fb9ef747",
+      "consolidatedSha256": "a98fb5f35647e559765ff89526f96180b430e6d62773195db4732ae6376decb6"
+    },
+    {
+      "framework": "net9.0",
+      "allowedSourceOnlyAddedDescriptors": [
+        "Elsa.Ldap.Activities.AddLdapEntry",
+        "Elsa.Ldap.Activities.CompareLdapEntry",
+        "Elsa.Ldap.Activities.DeleteLdapEntry",
+        "Elsa.Ldap.Activities.ModifyLdapEntry",
+        "Elsa.Ldap.Activities.MoveLdapEntry",
+        "Elsa.Ldap.Activities.SearchLdapEntries",
+        "Elsa.Ldap.Activities.SearchLdapEntry",
+        "Elsa.Mqtt.Activities.MqttMessageReceived",
+        "Elsa.Mqtt.Activities.PublishMqttMessage"
+      ],
+      "unexpectedAddedDescriptors": [],
+      "releasedSha256": "65c2c0202c3a1ec974375e066fd9ed02cf44f11e2c65a4ab4a83d8a003e00be1",
+      "consolidatedSha256": "d73e1a994dfb40ed8a0ab2cacb718943fbedd232ddebd7d010979b60827fb06a"
+    },
+    {
+      "framework": "net10.0",
+      "allowedSourceOnlyAddedDescriptors": [
+        "Elsa.Ldap.Activities.AddLdapEntry",
+        "Elsa.Ldap.Activities.CompareLdapEntry",
+        "Elsa.Ldap.Activities.DeleteLdapEntry",
+        "Elsa.Ldap.Activities.ModifyLdapEntry",
+        "Elsa.Ldap.Activities.MoveLdapEntry",
+        "Elsa.Ldap.Activities.SearchLdapEntries",
+        "Elsa.Ldap.Activities.SearchLdapEntry",
+        "Elsa.Mqtt.Activities.MqttMessageReceived",
+        "Elsa.Mqtt.Activities.PublishMqttMessage"
+      ],
+      "unexpectedAddedDescriptors": [],
+      "releasedSha256": "049968297e13f0a224994451785bc20e8fdb83c6a65a2b90d7f27c2fdbd72d66",
+      "consolidatedSha256": "00e754914a088d0436c3e558bdbdfef089a280dd936add6761a2c395593a163c"
+    }
+  ]
+}
