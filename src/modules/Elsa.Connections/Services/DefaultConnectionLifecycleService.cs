@@ -14,11 +14,11 @@ namespace Elsa.Connections.Services;
 public sealed class DefaultConnectionLifecycleService(
     IConnectionLifecycleStore store,
     IConnectionUseAuthorizer authorizer,
-    IConnectionCredentialProvider provider,
     IManagedSecretManager secrets,
     TimeProvider timeProvider,
     ITenantAccessor tenantAccessor,
-    IConnectionOffboardingProvider? offboardingProvider = null) : IConnectionLifecycleService, IConnectionBackgroundUseService, IConnectionLifecycleRecoveryService
+    IConnectionCredentialProvider? provider = null,
+    IConnectionOffboardingProvider? offboardingProvider = null) : IConnectionLifecycleService, IStaticApiKeyLifecycleService, IConnectionBackgroundUseService, IConnectionLifecycleRecoveryService
 {
     private static readonly TimeSpan OperationLeaseDuration = TimeSpan.FromMinutes(2);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -28,11 +28,6 @@ public sealed class DefaultConnectionLifecycleService(
 
     public async Task<ConnectionLifecycleResult> ConnectAsync(ClaimsPrincipal principal, ConnectConnectionRequest request, CancellationToken cancellationToken = default)
     {
-        if (!await AuthorizeAsync(principal, ConnectionUseKind.Human, request.TenantId, request.EnvironmentId, "", "manage:connect", cancellationToken))
-        {
-            return new ConnectionLifecycleResult(false, "connection_unavailable", null);
-        }
-
         if (string.IsNullOrWhiteSpace(request.TenantId) || string.IsNullOrWhiteSpace(request.EnvironmentId) ||
             string.IsNullOrWhiteSpace(request.ProviderId) || string.IsNullOrWhiteSpace(request.ProviderAccountId) ||
             string.IsNullOrWhiteSpace(request.InitialCredentials.AccessToken) || string.IsNullOrWhiteSpace(request.InitialCredentials.RefreshToken) ||
@@ -41,17 +36,48 @@ public sealed class DefaultConnectionLifecycleService(
             return new ConnectionLifecycleResult(false, "connection_input_invalid", null);
         }
 
-        using var tenantContext = PushTenant(request.TenantId);
+        return await ConnectCoreAsync(principal, request.TenantId, request.EnvironmentId, request.ProviderId,
+            request.ProviderAccountId, Serialize(request.InitialCredentials), cancellationToken);
+    }
+
+    public async Task<ConnectionLifecycleResult> ConnectApiKeyAsync(ClaimsPrincipal principal, ConnectApiKeyConnectionRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.TenantId) || string.IsNullOrWhiteSpace(request.EnvironmentId) ||
+            string.IsNullOrWhiteSpace(request.ProviderId) || string.IsNullOrWhiteSpace(request.ProviderAccountId) ||
+            string.IsNullOrWhiteSpace(request.ApiKey))
+        {
+            return new ConnectionLifecycleResult(false, "connection_input_invalid", null);
+        }
+
+        return await ConnectCoreAsync(principal, request.TenantId, request.EnvironmentId, request.ProviderId,
+            request.ProviderAccountId, SerializeApiKey(request.ApiKey), cancellationToken);
+    }
+
+    private async Task<ConnectionLifecycleResult> ConnectCoreAsync(
+        ClaimsPrincipal principal,
+        string tenantId,
+        string environmentId,
+        string providerId,
+        string providerAccountId,
+        string encryptedEnvelope,
+        CancellationToken cancellationToken)
+    {
+        if (!await AuthorizeAsync(principal, ConnectionUseKind.Human, tenantId, environmentId, "", "manage:connect", cancellationToken))
+        {
+            return new ConnectionLifecycleResult(false, "connection_unavailable", null);
+        }
+
+        using var tenantContext = PushTenant(tenantId);
         var connectionId = Guid.NewGuid().ToString("N");
         var operationId = Guid.NewGuid().ToString("N");
         var secretName = ManagedSecretNames.ForGeneration(connectionId, operationId);
         var connection = new IntegrationConnection
         {
             Id = connectionId,
-            TenantId = request.TenantId,
-            EnvironmentId = request.EnvironmentId,
-            ProviderId = request.ProviderId,
-            ProviderAccountId = request.ProviderAccountId,
+            TenantId = tenantId,
+            EnvironmentId = environmentId,
+            ProviderId = providerId,
+            ProviderAccountId = providerAccountId,
             Status = ConnectionStatus.Active,
             Revision = 1,
             OperationId = operationId,
@@ -78,22 +104,22 @@ public sealed class DefaultConnectionLifecycleService(
         }
         try
         {
-            await secrets.CreateGenerationAsync(connectionId, operationId, Serialize(request.InitialCredentials), cancellationToken);
-            if (!await store.TryRecordStagedGenerationAsync(connectionId, request.TenantId, request.EnvironmentId, 1, operationId, 1, secretName, operationId, cancellationToken) ||
-                !await store.TryPublishGenerationAsync(connectionId, request.TenantId, request.EnvironmentId, 1, operationId, 1, cancellationToken))
+            await secrets.CreateGenerationAsync(connectionId, operationId, encryptedEnvelope, cancellationToken);
+            if (!await store.TryRecordStagedGenerationAsync(connectionId, tenantId, environmentId, 1, operationId, 1, secretName, operationId, cancellationToken) ||
+                !await store.TryPublishGenerationAsync(connectionId, tenantId, environmentId, 1, operationId, 1, cancellationToken))
             {
-                await TryMarkRecoveryRequiredAsync(connection, request.TenantId, request.EnvironmentId, "connection_publish_conflict");
+                await TryMarkRecoveryRequiredAsync(connection, tenantId, environmentId, "connection_publish_conflict");
                 return new ConnectionLifecycleResult(false, "connection_publish_conflict", 1, connectionId);
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            await TryMarkRecoveryRequiredAsync(connection, request.TenantId, request.EnvironmentId, "connection_outcome_unknown");
+            await TryMarkRecoveryRequiredAsync(connection, tenantId, environmentId, "connection_outcome_unknown");
             throw new OperationCanceledException("Connection setup was cancelled; creation outcome is unknown.", cancellationToken);
         }
         catch (Exception)
         {
-            await TryMarkRecoveryRequiredAsync(connection, request.TenantId, request.EnvironmentId, "connection_outcome_unknown");
+            await TryMarkRecoveryRequiredAsync(connection, tenantId, environmentId, "connection_outcome_unknown");
             return new ConnectionLifecycleResult(false, "connection_outcome_unknown", 1, connectionId);
         }
 
@@ -102,6 +128,85 @@ public sealed class DefaultConnectionLifecycleService(
         connection.OperationStatus = CredentialOperationStatus.Completed;
         connection.Revision = 2;
         return new ConnectionLifecycleResult(true, null, connection.Revision, connectionId, ToMetadata(connection));
+    }
+
+    public async Task<ConnectionLifecycleResult> ReplaceApiKeyAsync(
+        ClaimsPrincipal principal,
+        string tenantId,
+        string environmentId,
+        string connectionId,
+        long expectedRevision,
+        string apiKey,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(apiKey) || expectedRevision <= 0 ||
+            !await AuthorizeAsync(principal, ConnectionUseKind.Human, tenantId, environmentId, connectionId, "manage:rotate", cancellationToken))
+        {
+            return new ConnectionLifecycleResult(false, "connection_unavailable", null);
+        }
+
+        using var tenantContext = PushTenant(tenantId);
+        var current = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+        if (current is not { Status: ConnectionStatus.Active } || current.Revision != expectedRevision ||
+            !await IsApiKeyGenerationAsync(current, cancellationToken))
+        {
+            return new ConnectionLifecycleResult(false, "connection_unavailable", current?.Revision, connectionId,
+                current == null ? null : ToMetadata(current));
+        }
+
+        var operationId = Guid.NewGuid().ToString("N");
+        var claimed = await store.TryClaimCredentialUpdateAsync(connectionId, tenantId, environmentId,
+            expectedRevision, operationId, timeProvider.GetUtcNow() + OperationLeaseDuration, cancellationToken);
+        if (claimed == null)
+        {
+            var latest = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+            return new ConnectionLifecycleResult(false, "connection_conflict", latest?.Revision, connectionId,
+                latest == null ? null : ToMetadata(latest));
+        }
+
+        var expectedOperationRevision = claimed.OperationExpectedRevision;
+        var fence = claimed.OperationFence;
+        var secretName = ManagedSecretNames.ForGeneration(connectionId, operationId);
+        try
+        {
+            if (!await store.TryAcceptCredentialUpdateAsync(connectionId, tenantId, environmentId,
+                    expectedOperationRevision, operationId, fence, timeProvider.GetUtcNow(), cancellationToken))
+            {
+                await TryReleaseUnstartedRefreshAsync(claimed, tenantId, environmentId, "rotation_conflict");
+                return new ConnectionLifecycleResult(false, "rotation_conflict", expectedOperationRevision, connectionId);
+            }
+
+            await secrets.CreateGenerationAsync(connectionId, operationId, SerializeApiKey(apiKey), cancellationToken);
+            if (!await store.TryRecordStagedGenerationAsync(connectionId, tenantId, environmentId, expectedOperationRevision,
+                    operationId, fence, secretName, operationId, cancellationToken))
+            {
+                await CleanupUnreferencedOrphanGenerationAsync(connectionId, tenantId, environmentId, operationId, cancellationToken);
+                await TryMarkRecoveryRequiredAsync(claimed, tenantId, environmentId, "rotation_publish_conflict");
+                return new ConnectionLifecycleResult(false, "rotation_publish_conflict", expectedOperationRevision, connectionId);
+            }
+
+            if (!await store.TryPublishGenerationAsync(connectionId, tenantId, environmentId, expectedOperationRevision,
+                    operationId, fence, cancellationToken))
+            {
+                await TryMarkRecoveryRequiredAsync(claimed, tenantId, environmentId, "rotation_publish_conflict");
+                return new ConnectionLifecycleResult(false, "rotation_publish_conflict", expectedOperationRevision, connectionId);
+            }
+
+            var published = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+            return published == null
+                ? new ConnectionLifecycleResult(false, "connection_unavailable", null)
+                : new ConnectionLifecycleResult(true, null, published.Revision, connectionId, ToMetadata(published));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            await TryMarkRecoveryRequiredAsync(claimed, tenantId, environmentId, "rotation_outcome_unknown");
+            throw new OperationCanceledException("API-key replacement outcome is unknown.", cancellationToken);
+        }
+        catch (Exception)
+        {
+            await TryMarkRecoveryRequiredAsync(claimed, tenantId, environmentId, "rotation_outcome_unknown");
+            return new ConnectionLifecycleResult(false, "rotation_outcome_unknown", expectedOperationRevision, connectionId);
+        }
     }
 
     public async Task<ConnectionAccessCredential> ResolveForUseAsync(ClaimsPrincipal principal, string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken = default)
@@ -133,7 +238,7 @@ public sealed class DefaultConnectionLifecycleService(
             throw new ConnectionUnavailableException();
         }
 
-        CredentialMaterial? material;
+        CredentialEnvelope? material;
         try
         {
             var payload = await secrets.ResolveGenerationAsync(connection!.CurrentSecretName!, connection.Id, connection.CurrentGenerationId!, cancellationToken);
@@ -148,10 +253,14 @@ public sealed class DefaultConnectionLifecycleService(
             throw new ConnectionUnavailableException();
         }
 
-        if (material == null || material.AccessTokenExpiresAt <= timeProvider.GetUtcNow())
+        if (!IsValidEnvelope(material) ||
+            (material!.Kind ?? ConnectionCredentialKind.OAuth) == ConnectionCredentialKind.OAuth &&
+            material.AccessTokenExpiresAt <= timeProvider.GetUtcNow())
         {
             throw new ConnectionUnavailableException();
         }
+
+        var validMaterial = material!;
 
         var latest = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
         if (latest == null || latest.Status != ConnectionStatus.Active ||
@@ -162,7 +271,9 @@ public sealed class DefaultConnectionLifecycleService(
             throw new ConnectionUnavailableException();
         }
 
-        return new ConnectionAccessCredential(material.AccessToken, material.AccessTokenExpiresAt);
+        return validMaterial.Kind == ConnectionCredentialKind.ApiKey
+            ? new ConnectionAccessCredential(ConnectionCredentialKind.ApiKey, validMaterial.AccessToken!, null)
+            : new ConnectionAccessCredential(ConnectionCredentialKind.OAuth, validMaterial.AccessToken!, validMaterial.AccessTokenExpiresAt);
     }
 
     public async Task<ConnectionOffboardingOperationResult> DisconnectAsync(
@@ -317,11 +428,15 @@ public sealed class DefaultConnectionLifecycleService(
 
                 var secretName = ManagedSecretNames.ForGeneration(connectionId, claimed.GenerationId);
                 var payload = await secrets.ResolveGenerationAsync(secretName, connectionId, claimed.GenerationId, cancellationToken);
-                credentials = Deserialize(payload.Value);
-                if (credentials == null)
+                var envelope = Deserialize(payload.Value);
+                var accessTokenExpiresAt = envelope?.AccessTokenExpiresAt;
+                if (envelope is not { Kind: null or ConnectionCredentialKind.OAuth, AccessToken: not null, RefreshToken: not null } ||
+                    !accessTokenExpiresAt.HasValue)
                 {
                     throw new ConnectionUnavailableException();
                 }
+
+                credentials = new CredentialMaterial(envelope.AccessToken, envelope.RefreshToken, accessTokenExpiresAt.Value);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -409,6 +524,36 @@ public sealed class DefaultConnectionLifecycleService(
             return new ConnectionLifecycleResult(false, code, current.Revision, connectionId, ToMetadata(current));
         }
 
+        // Read before claiming so a static key never advances the revision through an unsupported
+        // refresh. A failed read is still a safe, pre-provider failure and leaves the connection usable.
+        CredentialEnvelope? currentMaterial;
+        var preflightReadFailed = false;
+        try
+        {
+            var payload = await secrets.ResolveGenerationAsync(current.CurrentSecretName!, current.Id, current.CurrentGenerationId!, cancellationToken);
+            currentMaterial = Deserialize(payload.Value);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            currentMaterial = null;
+            preflightReadFailed = true;
+        }
+
+        if (currentMaterial?.Kind == ConnectionCredentialKind.ApiKey && IsValidEnvelope(currentMaterial))
+        {
+            return new ConnectionLifecycleResult(false, "credential_refresh_unsupported", current.Revision, connectionId, ToMetadata(current));
+        }
+
+        if (provider == null)
+        {
+            var code = IsValidEnvelope(currentMaterial) ? "credential_provider_unavailable" : "credential_unavailable";
+            return new ConnectionLifecycleResult(false, code, current.Revision, connectionId, ToMetadata(current));
+        }
+
         var operationId = Guid.NewGuid().ToString("N");
         var claimed = await store.TryClaimRefreshAsync(connectionId, tenantId, environmentId, current!.Revision, operationId, timeProvider.GetUtcNow() + OperationLeaseDuration, cancellationToken);
         if (claimed == null)
@@ -426,9 +571,20 @@ public sealed class DefaultConnectionLifecycleService(
         var providerCallStarted = false;
         try
         {
+            if (preflightReadFailed)
+            {
+                return await ReleaseUnstartedRefreshAsync(claimed, tenantId, environmentId, "refresh_not_started");
+            }
+
             var oldPayload = await secrets.ResolveGenerationAsync(claimed.CurrentSecretName!, claimed.Id, claimed.CurrentGenerationId!, cancellationToken);
             var oldMaterial = Deserialize(oldPayload.Value);
-            if (oldMaterial == null || string.IsNullOrWhiteSpace(oldMaterial.RefreshToken))
+            if (oldMaterial?.Kind == ConnectionCredentialKind.ApiKey)
+            {
+                return await ReleaseUnstartedRefreshAsync(claimed, tenantId, environmentId, "credential_refresh_unsupported");
+            }
+
+            if (oldMaterial == null || oldMaterial.Kind is not null and not ConnectionCredentialKind.OAuth ||
+                string.IsNullOrWhiteSpace(oldMaterial.AccessToken) || string.IsNullOrWhiteSpace(oldMaterial.RefreshToken) || !oldMaterial.AccessTokenExpiresAt.HasValue)
             {
                 return await ReleaseUnstartedRefreshAsync(claimed, tenantId, environmentId, "credential_unavailable");
             }
@@ -616,6 +772,20 @@ public sealed class DefaultConnectionLifecycleService(
             var expired = await store.TryMarkRecoveryRequiredIfLeaseExpiredAsync(connection.Id, tenantId, environmentId, connection.OperationId!, connection.OperationFence, timeProvider.GetUtcNow(), "refresh_outcome_unknown", cancellationToken);
             if (expired)
             {
+                if (connection.OperationStatus == CredentialOperationStatus.CredentialReceived &&
+                    await IsApiKeySourceGenerationAsync(connection, cancellationToken))
+                {
+                    var recovery = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+                    if (recovery != null)
+                    {
+                        var restored = await RestoreApiKeySourceIfPlanMissingAsync(recovery, tenantId, environmentId, cancellationToken);
+                        if (restored != null)
+                        {
+                            return restored;
+                        }
+                    }
+                }
+
                 return new ConnectionLifecycleResult(false, "refresh_outcome_unknown", connection.Revision + (connection.Status == ConnectionStatus.Active ? 1 : 0));
             }
 
@@ -644,9 +814,21 @@ public sealed class DefaultConnectionLifecycleService(
             try
             {
                 var payload = await secrets.ResolveGenerationAsync(connection.PlannedSecretName, connection.Id, connection.PlannedGenerationId, cancellationToken);
-                if (Deserialize(payload.Value) is not null && await store.TryPromoteRecoveryGenerationAsync(connectionId, tenantId, environmentId, connection.Revision, connection.OperationId!, connection.OperationFence, cancellationToken))
+                if (Deserialize(payload.Value) is { } envelope && IsValidEnvelope(envelope) &&
+                    (envelope.Kind == ConnectionCredentialKind.ApiKey
+                        ? await CanPromoteApiKeyRecoveryAsync(connection, cancellationToken)
+                        : envelope.Kind is null or ConnectionCredentialKind.OAuth) &&
+                    await store.TryPromoteRecoveryGenerationAsync(connectionId, tenantId, environmentId, connection.Revision, connection.OperationId!, connection.OperationFence, cancellationToken))
                 {
                     return new ConnectionLifecycleResult(true, null, connection.Revision + 1);
+                }
+            }
+            catch (KeyNotFoundException)
+            {
+                var restored = await RestoreApiKeySourceIfPlanMissingAsync(connection, tenantId, environmentId, cancellationToken);
+                if (restored != null)
+                {
+                    return restored;
                 }
             }
             catch (Exception)
@@ -695,7 +877,7 @@ public sealed class DefaultConnectionLifecycleService(
             try
             {
                 var payload = await secrets.ResolveGenerationAsync(ManagedSecretNames.ForGeneration(connectionId, generationId!), connectionId, generationId!, cancellationToken);
-                if (Deserialize(payload.Value) == null)
+                if (Deserialize(payload.Value) is not { Kind: null or ConnectionCredentialKind.OAuth })
                 {
                     throw new ConnectionUnavailableException();
                 }
@@ -853,9 +1035,12 @@ public sealed class DefaultConnectionLifecycleService(
     }
 
     private static string Serialize(CredentialMaterial material) => JsonSerializer.Serialize(
-        new CredentialEnvelope(material.AccessToken, material.RefreshToken, material.AccessTokenExpiresAt), JsonOptions);
+        new CredentialEnvelope(ConnectionCredentialKind.OAuth, material.AccessToken, material.RefreshToken, material.AccessTokenExpiresAt), JsonOptions);
 
-    private static CredentialMaterial? Deserialize(string? json)
+    private static string SerializeApiKey(string apiKey) => JsonSerializer.Serialize(
+        new CredentialEnvelope(ConnectionCredentialKind.ApiKey, apiKey, null, null), JsonOptions);
+
+    private static CredentialEnvelope? Deserialize(string? json)
     {
         if (string.IsNullOrWhiteSpace(json))
         {
@@ -864,12 +1049,154 @@ public sealed class DefaultConnectionLifecycleService(
 
         try
         {
-            var envelope = JsonSerializer.Deserialize<CredentialEnvelope>(json, JsonOptions);
-            return envelope == null ? null : new CredentialMaterial(envelope.AccessToken, envelope.RefreshToken, envelope.AccessTokenExpiresAt);
+            return JsonSerializer.Deserialize<CredentialEnvelope>(json, JsonOptions);
         }
         catch (JsonException)
         {
             return null;
+        }
+    }
+
+    private async Task<bool> IsApiKeyGenerationAsync(IntegrationConnection connection, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(connection.CurrentSecretName) || string.IsNullOrWhiteSpace(connection.CurrentGenerationId))
+        {
+            return false;
+        }
+
+        try
+        {
+            var payload = await secrets.ResolveGenerationAsync(connection.CurrentSecretName, connection.Id, connection.CurrentGenerationId, cancellationToken);
+            var envelope = Deserialize(payload.Value);
+            return envelope?.Kind == ConnectionCredentialKind.ApiKey && IsValidEnvelope(envelope);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private async Task<bool> IsApiKeySourceGenerationAsync(IntegrationConnection connection, CancellationToken cancellationToken)
+    {
+        var generationId = connection.OperationSourceGenerationId;
+        if (string.IsNullOrWhiteSpace(generationId) || connection.CurrentGenerationId != generationId)
+        {
+            return false;
+        }
+
+        try
+        {
+            var name = ManagedSecretNames.ForGeneration(connection.Id, generationId);
+            var payload = await secrets.ResolveGenerationAsync(name, connection.Id, generationId, cancellationToken);
+            var envelope = Deserialize(payload.Value);
+            return envelope?.Kind == ConnectionCredentialKind.ApiKey && IsValidEnvelope(envelope);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private async Task<bool> CanPromoteApiKeyRecoveryAsync(IntegrationConnection connection, CancellationToken cancellationToken) =>
+        await IsApiKeySourceGenerationAsync(connection, cancellationToken) ||
+        string.IsNullOrWhiteSpace(connection.CurrentGenerationId) && string.IsNullOrWhiteSpace(connection.OperationSourceGenerationId);
+
+    private static bool IsValidEnvelope(CredentialEnvelope? envelope)
+    {
+        if (envelope == null || string.IsNullOrWhiteSpace(envelope.AccessToken))
+        {
+            return false;
+        }
+
+        return envelope.Kind switch
+        {
+            null or ConnectionCredentialKind.OAuth => !string.IsNullOrWhiteSpace(envelope.RefreshToken) && envelope.AccessTokenExpiresAt.HasValue,
+            ConnectionCredentialKind.ApiKey => envelope.RefreshToken is null && !envelope.AccessTokenExpiresAt.HasValue,
+            _ => false
+        };
+    }
+
+    private async Task<ConnectionLifecycleResult?> RestoreApiKeySourceIfPlanMissingAsync(
+        IntegrationConnection connection,
+        string tenantId,
+        string environmentId,
+        CancellationToken cancellationToken)
+    {
+        if (connection.Status != ConnectionStatus.RecoveryRequired ||
+            connection.OperationStatus != CredentialOperationStatus.RecoveryRequired ||
+            string.IsNullOrWhiteSpace(connection.OperationId) ||
+            string.IsNullOrWhiteSpace(connection.PlannedSecretName) ||
+            string.IsNullOrWhiteSpace(connection.PlannedGenerationId) ||
+            !await IsApiKeySourceGenerationAsync(connection, cancellationToken))
+        {
+            return null;
+        }
+
+        try
+        {
+            await secrets.ResolveGenerationAsync(connection.PlannedSecretName, connection.Id, connection.PlannedGenerationId, cancellationToken);
+            return null;
+        }
+        catch (KeyNotFoundException)
+        {
+            var restored = await store.TryRestoreSourceGenerationAfterMissingPlanAsync(
+                connection.Id, tenantId, environmentId, connection.Revision, connection.OperationId,
+                connection.OperationFence, connection.OperationSourceGenerationId!, "api_key_replacement_not_staged", cancellationToken);
+            if (!restored)
+            {
+                return null;
+            }
+
+            var latest = await store.FindAsync(connection.Id, tenantId, environmentId, cancellationToken);
+            return latest == null
+                ? new ConnectionLifecycleResult(false, "connection_unavailable", null)
+                : new ConnectionLifecycleResult(true, null, latest.Revision, connection.Id, ToMetadata(latest));
+        }
+    }
+
+    private async Task CleanupUnreferencedOrphanGenerationAsync(
+        string connectionId,
+        string tenantId,
+        string environmentId,
+        string generationId,
+        CancellationToken cancellationToken)
+    {
+        var connection = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
+        if (connection == null)
+        {
+            return;
+        }
+
+        var now = timeProvider.GetUtcNow();
+        var claim = await store.TryClaimGenerationCleanupAsync(connectionId, tenantId, environmentId,
+            connection.Revision, generationId, now, now + OperationLeaseDuration, cancellationToken);
+        if (claim == null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (await secrets.DeleteGenerationAsync(ManagedSecretNames.ForGeneration(connectionId, generationId), connectionId, generationId, cancellationToken))
+            {
+                await store.CompleteGenerationCleanupAsync(connectionId, tenantId, environmentId, generationId, claim.Fence, cancellationToken);
+            }
+            else
+            {
+                await store.CancelGenerationCleanupAsync(connectionId, tenantId, environmentId, generationId, claim.Fence, CancellationToken.None);
+            }
+        }
+        catch (Exception)
+        {
+            // Keep the durable cleanup claim for idempotent retry; do not affect the restored current generation.
         }
     }
 
@@ -891,5 +1218,5 @@ public sealed class DefaultConnectionLifecycleService(
         }
     }
 
-    private sealed record CredentialEnvelope(string AccessToken, string RefreshToken, DateTimeOffset AccessTokenExpiresAt);
+    private sealed record CredentialEnvelope(ConnectionCredentialKind? Kind, string? AccessToken, string? RefreshToken, DateTimeOffset? AccessTokenExpiresAt);
 }

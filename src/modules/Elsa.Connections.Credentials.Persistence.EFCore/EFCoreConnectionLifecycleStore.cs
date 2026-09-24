@@ -400,7 +400,7 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
             .ExecuteDeleteAsync(cancellationToken) == 1;
     }
 
-    public async Task<IntegrationConnection?> TryClaimRefreshAsync(
+    public async Task<IntegrationConnection?> TryClaimCredentialUpdateAsync(
         string id,
         string tenantId,
         string environmentId,
@@ -433,6 +433,34 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
         }
 
         return await Scoped(db, id, tenantId, environmentId).AsNoTracking().SingleOrDefaultAsync(x => x.OperationId == operationId, cancellationToken);
+    }
+
+    public Task<IntegrationConnection?> TryClaimRefreshAsync(
+        string id,
+        string tenantId,
+        string environmentId,
+        long expectedRevision,
+        string operationId,
+        DateTimeOffset leaseExpiresAt,
+        CancellationToken cancellationToken = default) =>
+        TryClaimCredentialUpdateAsync(id, tenantId, environmentId, expectedRevision, operationId, leaseExpiresAt, cancellationToken);
+
+    public async Task<bool> TryAcceptCredentialUpdateAsync(
+        string id,
+        string tenantId,
+        string environmentId,
+        long expectedRevision,
+        string operationId,
+        long fence,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await Scoped(db, id, tenantId, environmentId)
+            .Where(x => x.Revision == expectedRevision && x.OperationExpectedRevision == expectedRevision && x.OperationId == operationId &&
+                        x.OperationFence == fence && x.Status == ConnectionStatus.Active && x.OperationStatus == CredentialOperationStatus.Claimed &&
+                        x.OperationLeaseExpiresAt != null && x.OperationLeaseExpiresAt > now)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.OperationStatus, CredentialOperationStatus.CredentialReceived), cancellationToken) == 1;
     }
 
     public async Task<bool> TryStartProviderCallAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, DateTimeOffset now, CancellationToken cancellationToken = default)
@@ -550,7 +578,9 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
             .Where(x => x.Revision == expectedRevision && x.Status == ConnectionStatus.RecoveryRequired &&
                         x.OperationStatus == CredentialOperationStatus.RecoveryRequired && x.OperationId == operationId &&
                         x.OperationFence == fence && x.OperationExpectedRevision < expectedRevision &&
-                        x.CurrentGenerationId == x.OperationSourceGenerationId && x.PlannedSecretName != null && x.PlannedGenerationId != null &&
+                        (x.CurrentGenerationId == x.OperationSourceGenerationId ||
+                         (x.CurrentGenerationId == null && x.OperationSourceGenerationId == null)) &&
+                        x.PlannedSecretName != null && x.PlannedGenerationId != null &&
                         (x.StagedSecretName == null || x.StagedSecretName == x.PlannedSecretName) &&
                         (x.StagedGenerationId == null || x.StagedGenerationId == x.PlannedGenerationId) &&
                         !db.GenerationCleanups.Any(cleanup => cleanup.ConnectionId == id && cleanup.GenerationId == x.PlannedGenerationId))
@@ -591,6 +621,40 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
                 .SetProperty(x => x.LastSafeErrorCode, safeErrorCode)
                 .SetProperty(x => x.OperationLeaseExpiresAt, (DateTimeOffset?)null)
                 .SetProperty(x => x.Revision, x => x.Revision + (x.Status == ConnectionStatus.Active ? 1 : 0)), cancellationToken) == 1;
+    }
+
+    public async Task<bool> TryRestoreSourceGenerationAfterMissingPlanAsync(
+        string id,
+        string tenantId,
+        string environmentId,
+        long expectedRevision,
+        string operationId,
+        long fence,
+        string sourceGenerationId,
+        string safeErrorCode,
+        CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await Scoped(db, id, tenantId, environmentId)
+            .Where(x => x.Revision == expectedRevision && x.Status == ConnectionStatus.RecoveryRequired &&
+                        x.OperationStatus == CredentialOperationStatus.RecoveryRequired && x.OperationId == operationId &&
+                        x.OperationFence == fence && x.OperationExpectedRevision < expectedRevision &&
+                        x.CurrentGenerationId == sourceGenerationId && x.OperationSourceGenerationId == sourceGenerationId &&
+                        x.PlannedGenerationId == operationId && x.StagedGenerationId == null &&
+                        x.StagedSecretName == null && x.OperationLeaseExpiresAt == null)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.Status, ConnectionStatus.Active)
+                .SetProperty(x => x.OperationId, (string?)null)
+                .SetProperty(x => x.OperationExpectedRevision, 0)
+                .SetProperty(x => x.OperationFence, x => x.OperationFence + 1)
+                .SetProperty(x => x.OperationSourceGenerationId, (string?)null)
+                .SetProperty(x => x.PlannedSecretName, (string?)null)
+                .SetProperty(x => x.PlannedGenerationId, (string?)null)
+                .SetProperty(x => x.StagedSecretName, (string?)null)
+                .SetProperty(x => x.StagedGenerationId, (string?)null)
+                .SetProperty(x => x.OperationStatus, CredentialOperationStatus.Completed)
+                .SetProperty(x => x.LastSafeErrorCode, safeErrorCode)
+                .SetProperty(x => x.Revision, x => x.Revision + 1), cancellationToken) == 1;
     }
 
     public async Task<bool> TryDisconnectAsync(string id, string tenantId, string environmentId, long expectedRevision, CancellationToken cancellationToken = default)
