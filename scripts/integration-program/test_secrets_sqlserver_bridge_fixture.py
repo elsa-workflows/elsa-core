@@ -15,7 +15,7 @@ class SqlServerSecretsBridgeFixtureTests(unittest.TestCase):
         collision = json.loads((FIXTURE.parent / 'secrets-sqlserver-upgrade/artifacts.json').read_text())
         sqlite = json.loads((FIXTURE.parent / 'secrets-sqlite-bridge-contract/artifacts.json').read_text())
 
-        self.assertEqual(bridge['targetCoreSourceCommit'], '0b20ab54a60a61b025d51a268f5b747e3a3c4860')
+        self.assertEqual(bridge['targetCoreSourceCommit'], 'c37e9d7a2fa7e7c2af802b211e3d59db45fc2f6f')
         self.assertEqual(bridge['sqlServerImage'], collision['sqlServerImage'])
         for phase in ('extensions-3.8.1', 'core-3.8.4'):
             self.assertEqual(bridge['phases'][phase]['packages'], collision['phases'][phase]['packages'])

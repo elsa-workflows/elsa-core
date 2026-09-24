@@ -20,7 +20,7 @@ FIXTURE = Path(__file__).resolve().parent / 'secrets-sqlserver-bridge'
 MANIFEST = FIXTURE / 'artifacts.json'
 OLD_PROJECT = FIXTURE / 'extensions-3.8.1/ExtensionsRunner.csproj'
 CURRENT_PROJECT = FIXTURE / 'current-core/SqlServerBridgeRunner.csproj'
-PINNED_CORE_COMMIT = '0b20ab54a60a61b025d51a268f5b747e3a3c4860'
+PINNED_CORE_COMMIT = 'c37e9d7a2fa7e7c2af802b211e3d59db45fc2f6f'
 PINNED_SDK = '10.0.300'
 CURRENT_STAGE = 'startup'
 

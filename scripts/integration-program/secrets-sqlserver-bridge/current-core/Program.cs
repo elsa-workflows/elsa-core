@@ -33,7 +33,7 @@ internal static class Program
     private const string DataProtectionApplicationName = "Elsa-Secrets-Bridge-Contract-Synthetic";
     private const string DataProtectionPurpose = "Elsa.Secrets.Encryption";
     private const string SidecarTable = "ElsaSecretsLegacyV381";
-    private const string TargetCoreCommit = "0b20ab54a60a61b025d51a268f5b747e3a3c4860";
+    private const string TargetCoreCommit = "c37e9d7a2fa7e7c2af802b211e3d59db45fc2f6f";
     private static string DiagnosticStage = "startup";
     private static readonly byte[] CoreKey = Enumerable.Range(1, 32).Select(value => (byte)value).ToArray();
     private static readonly byte[] WrongCoreKey = Enumerable.Range(33, 32).Select(value => (byte)value).ToArray();
