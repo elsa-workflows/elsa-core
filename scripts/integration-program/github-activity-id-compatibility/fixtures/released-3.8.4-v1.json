@@ -1,0 +1,171 @@
+{
+  "source": {
+    "receipt": "doc/integration-program/consolidation/activity-compatibility-evidence/net10-released.json.gz",
+    "receipt_sha256": "ad6608a5e4e226232683576a7bdd8d61388e2b50abac289b96cc5d0e1dd5554b",
+    "extensions_commit": "33fa0bfd28c7585240e3d4f665058c067b17e287",
+    "note": "WorkflowDefinitionModel fields Root, DefinitionId, and Name use PascalCase in the Studio CodeView export envelope. The mapped-source IActivitySerializer test captures the model/root Sequence shape; nested activity payloads are exact released 3.8.4 Serialized records from the pinned receipt."
+  },
+  "workflow": {
+    "Id": "workflow-8325-fixture",
+    "DefinitionId": "github-id-migration-fixture",
+    "Name": "GitHub activity ID compatibility fixture",
+    "CreatedAt": "2026-09-24T00:00:00+00:00",
+    "Version": 1,
+    "CustomProperties": {
+      "unrelated": {
+        "id": {
+          "typeName": "Object",
+          "expression": {
+            "type": "Literal",
+            "value": 42
+          }
+        }
+      }
+    },
+    "IsReadonly": false,
+    "IsSystem": false,
+    "IsLatest": true,
+    "IsPublished": false,
+    "Root": {
+      "activities": [
+        {
+          "owner": {
+            "typeName": "String",
+            "expression": {
+              "type": "Literal",
+              "value": "compatibility-probe"
+            }
+          },
+          "repository": {
+            "typeName": "String",
+            "expression": {
+              "type": "Literal",
+              "value": "compatibility-probe"
+            }
+          },
+          "id": {
+            "typeName": "Int32",
+            "expression": {
+              "type": "Literal",
+              "value": 42
+            }
+          },
+          "token": {
+            "typeName": "String",
+            "expression": {
+              "type": "Literal",
+              "value": "compatibility-probe"
+            }
+          },
+          "type": "Elsa.GitHub.Comments.GetComment",
+          "version": 1,
+          "customProperties": {},
+          "metadata": {}
+        },
+        {
+          "owner": {
+            "typeName": "String",
+            "expression": {
+              "type": "Literal",
+              "value": "compatibility-probe"
+            }
+          },
+          "repository": {
+            "typeName": "String",
+            "expression": {
+              "type": "Literal",
+              "value": "compatibility-probe"
+            }
+          },
+          "id": {
+            "typeName": "Int32",
+            "expression": {
+              "type": "Literal",
+              "value": 42
+            }
+          },
+          "token": {
+            "typeName": "String",
+            "expression": {
+              "type": "Literal",
+              "value": "compatibility-probe"
+            }
+          },
+          "type": "Elsa.GitHub.Comments.DeleteComment",
+          "version": 1,
+          "customProperties": {},
+          "metadata": {}
+        },
+        {
+          "owner": {
+            "typeName": "String",
+            "expression": {
+              "type": "Literal",
+              "value": "compatibility-probe"
+            }
+          },
+          "repository": {
+            "typeName": "String",
+            "expression": {
+              "type": "Literal",
+              "value": "compatibility-probe"
+            }
+          },
+          "id": {
+            "typeName": "Int32",
+            "expression": {
+              "type": "Literal",
+              "value": 42
+            }
+          },
+          "body": {
+            "typeName": "String",
+            "expression": {
+              "type": "Literal",
+              "value": "compatibility-probe"
+            }
+          },
+          "token": {
+            "typeName": "String",
+            "expression": {
+              "type": "Literal",
+              "value": "compatibility-probe"
+            }
+          },
+          "type": "Elsa.GitHub.Comments.UpdateComment",
+          "version": 1,
+          "customProperties": {},
+          "metadata": {}
+        },
+        {
+          "id": {
+            "typeName": "String",
+            "expression": {
+              "type": "Literal",
+              "value": "compatibility-probe"
+            }
+          },
+          "token": {
+            "typeName": "String",
+            "expression": {
+              "type": "Literal",
+              "value": "compatibility-probe"
+            }
+          },
+          "type": "Elsa.GitHub.Gists.GetGist",
+          "version": 1,
+          "customProperties": {},
+          "metadata": {}
+        }
+      ],
+      "variables": [],
+      "id": "preexisting-sequence-id",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.Sequence",
+      "version": 1,
+      "customProperties": {},
+      "metadata": {}
+    }
+  }
+}
