@@ -1,0 +1,1154 @@
+{
+  "provenance": {
+    "sourceReceipt": "original pinned rehearsal import-receipt.json; full artifact retained outside this projection",
+    "sourceReceiptSha256": "5716731dfff80733dfd1e9ca1aaa814c237ceec672e9fa60ab8c9af080611a75"
+  },
+  "sourceCommits": {
+    "core": "076f022cc174d497af26fc8e26414970e61a79b1",
+    "extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287",
+    "studio": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822"
+  },
+  "mapping": [
+    {
+      "repository": "extensions",
+      "source": ".build/ElsaStudio.ProjectReferences.targets",
+      "destination": "doc/integration-program/legacy/extensions/.build/ElsaStudio.ProjectReferences.targets.source",
+      "blob": "b8616ef3ba85243159438aaaea45c5ce8b4d1907",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": ".editorconfig",
+      "destination": "doc/integration-program/legacy/extensions/.editorconfig.source",
+      "blob": "31a97b0835a6371d8c3e591bebe56bd5698dfb0c",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": ".github/agents/release-notes.agent.md",
+      "destination": "doc/integration-program/legacy/extensions/.github/agents/release-notes.agent.md.source",
+      "blob": "81b30d1db0fbcaf235c164352d92351e4fc212f4",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": ".github/copilot-release-notes-playbook.md",
+      "destination": "doc/integration-program/legacy/extensions/.github/copilot-release-notes-playbook.md.source",
+      "blob": "885b25074c67b593fa9ed93e11dfbc183126ca9d",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": ".github/dependabot.yml",
+      "destination": "doc/integration-program/legacy/extensions/.github/dependabot.yml.source",
+      "blob": "719b1522cd811fccadf4236dca1b8ea3301535e6",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": ".github/workflows/copilot-setup-steps.yml.yml",
+      "destination": "doc/integration-program/legacy/extensions/.github/workflows/copilot-setup-steps.yml.yml.source",
+      "blob": "d76e7229e523afa8da884cfe7003a72999e7f128",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": ".github/workflows/packages.yml",
+      "destination": "doc/integration-program/legacy/extensions/.github/workflows/packages.yml.source",
+      "blob": "661b7a2779637e23c2b53cad950c0179e1e91bec",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": ".github/workflows/pr.yml",
+      "destination": "doc/integration-program/legacy/extensions/.github/workflows/pr.yml.source",
+      "blob": "743b29cd2cbe47815f61ccfa2ee55ba0405870aa",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": ".gitignore",
+      "destination": "doc/integration-program/legacy/extensions/.gitignore.source",
+      "blob": "4150e8ad0639cd367acf8f2c4ece518355b2a8f2",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": ".nuke/build.schema.json",
+      "destination": "doc/integration-program/legacy/extensions/.nuke/build.schema.json.source",
+      "blob": "8391009603dad514cbbac678cd26dec287d5b378",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": ".nuke/parameters.json",
+      "destination": "doc/integration-program/legacy/extensions/.nuke/parameters.json.source",
+      "blob": "95ed63cfb3bc8768fbecd0d2f42eccf1e5ff4ab8",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "CONTRIBUTING.md",
+      "destination": "doc/integration-program/legacy/extensions/CONTRIBUTING.md.source",
+      "blob": "77c8a2ffee6660fbf8622210eb30439dcc5fb0ea",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "Directory.Build.props",
+      "destination": "doc/integration-program/legacy/extensions/Directory.Build.props.source",
+      "blob": "f84eccde5ff0ad4b7c87dbe08c641e61075ac158",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "Directory.Build.targets",
+      "destination": "doc/integration-program/legacy/extensions/Directory.Build.targets.source",
+      "blob": "143bfd8dc2fef88c095179b0a28bfdcee92ad123",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "Directory.Packages.props",
+      "destination": "doc/integration-program/legacy/extensions/Directory.Packages.props.source",
+      "blob": "80cc818159176ac32e1e2026f57cf038eb5531d3",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "Elsa.Extensions.sln",
+      "destination": "doc/integration-program/legacy/extensions/Elsa.Extensions.sln.source",
+      "blob": "c38e1696d9b749db089839b74de411aecad33217",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "Elsa.Extensions.sln.DotSettings",
+      "destination": "doc/integration-program/legacy/extensions/Elsa.Extensions.sln.DotSettings.source",
+      "blob": "432e764cd1f38c3f1286cb435bace305dcff3e55",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "LICENSE",
+      "destination": "doc/integration-program/legacy/extensions/LICENSE.source",
+      "blob": "b01aa9c2072fe9133613b489d9b41f4d90e2bd5b",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "NuGet.Config",
+      "destination": "doc/integration-program/legacy/extensions/NuGet.Config.source",
+      "blob": "e3f020ab738262a079598ac58a5d22d6429db064",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "README-TEMPLATE.md",
+      "destination": "doc/integration-program/legacy/extensions/README-TEMPLATE.md.source",
+      "blob": "a909597a4e34eac30796f18a62fa794a5c352d52",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "README.md",
+      "destination": "doc/integration-program/legacy/extensions/README.md.source",
+      "blob": "c04cac7c9527281b42eb49d93164089bdc4261f3",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "SHELL_FEATURES_MIGRATION.md",
+      "destination": "doc/integration-program/legacy/extensions/SHELL_FEATURES_MIGRATION.md.source",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "build.cmd",
+      "destination": "doc/integration-program/legacy/extensions/build.cmd.source",
+      "blob": "b08cc590f4c39e05283116619a75b76a6010c539",
+      "mode": "100755"
+    },
+    {
+      "repository": "extensions",
+      "source": "build.ps1",
+      "destination": "doc/integration-program/legacy/extensions/build.ps1.source",
+      "blob": "4634dc03e9f83f93e8ade1957547e0320fba0332",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "build.sh",
+      "destination": "doc/integration-program/legacy/extensions/build.sh.source",
+      "blob": "fdff0c623663cbbe1226165447a1a7e1d06d042e",
+      "mode": "100755"
+    },
+    {
+      "repository": "extensions",
+      "source": "build/.editorconfig",
+      "destination": "doc/integration-program/legacy/extensions/build/.editorconfig.source",
+      "blob": "31e43dcd8e5b5114d731ab0172aceeb7d7c2edb9",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "build/Build.CI.GitHubActions.cs",
+      "destination": "doc/integration-program/legacy/extensions/build/Build.CI.GitHubActions.cs.source",
+      "blob": "7030d4717383af1594af56903033ff1bc27610c1",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "build/Build.cs",
+      "destination": "doc/integration-program/legacy/extensions/build/Build.cs.source",
+      "blob": "b39a758717f88096e9b0226ff63a17ebfa58277d",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "build/Directory.Build.props",
+      "destination": "doc/integration-program/legacy/extensions/build/Directory.Build.props.source",
+      "blob": "61fd9f44b85b914b0d3d8996c055de86b67b3026",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "build/Directory.Build.targets",
+      "destination": "doc/integration-program/legacy/extensions/build/Directory.Build.targets.source",
+      "blob": "253260956d504935e80ddc02a0695a148d9f2a1e",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "build/_build.csproj",
+      "destination": "doc/integration-program/legacy/extensions/build/_build.csproj.source",
+      "blob": "24319083da5c04240f5da58037d5a4895bc70196",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "build/_build.csproj.DotSettings",
+      "destination": "doc/integration-program/legacy/extensions/build/_build.csproj.DotSettings.source",
+      "blob": "c815d363e82b2e04ddc6c04638996d6b5f8ffb90",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "icon.png",
+      "destination": "doc/integration-program/legacy/extensions/icon.png.source",
+      "blob": "47e1cadea43af0b7d1a5c489e0d46cf72ecf87eb",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.PostgreSql/DbContextFactories.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.PostgreSql/DbContextFactories.cs.source",
+      "blob": "095545f5178b41a240f079ec736e1fb99e09e667",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.PostgreSql/Elsa.Secrets.Persistence.EFCore.PostgreSql.csproj",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.PostgreSql/Elsa.Secrets.Persistence.EFCore.PostgreSql.csproj.source",
+      "blob": "2982d0f1aa9fa47bd90fc0af39c61cae491b53e0",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.PostgreSql/FodyWeavers.xml",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.PostgreSql/FodyWeavers.xml.source",
+      "blob": "00e1d9a1c1865f0cbea0c7ec14556db068072126",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.PostgreSql/Migrations/20241011082142_V3_3.Designer.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.PostgreSql/Migrations/20241011082142_V3_3.Designer.cs.source",
+      "blob": "91ae10a2af79b9488e586d113d75e90568ad1c7f",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.PostgreSql/Migrations/20241011082142_V3_3.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.PostgreSql/Migrations/20241011082142_V3_3.cs.source",
+      "blob": "e17b80d7b2aac554c849d82d262a591bc69fc426",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.PostgreSql/Migrations/SecretsDbContextModelSnapshot.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.PostgreSql/Migrations/SecretsDbContextModelSnapshot.cs.source",
+      "blob": "3d67f246ec143393d7aaefc12382197ce233b9c6",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.PostgreSql/PostgreSqlProvidersExtensions.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.PostgreSql/PostgreSqlProvidersExtensions.cs.source",
+      "blob": "56b1cd9a8dc1caddb6ce223415fa2a2b61f63d52",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.PostgreSql/efcore-3.3.sh",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.PostgreSql/efcore-3.3.sh.source",
+      "blob": "1989b1c276b641e2a6487569987faf95155f6d17",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.SqlServer/DbContextFactories.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.SqlServer/DbContextFactories.cs.source",
+      "blob": "ca3e22a60c16b3fa9d99fed5d0d26dfcf33ed939",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.SqlServer/Elsa.Secrets.Persistence.EFCore.SqlServer.csproj",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.SqlServer/Elsa.Secrets.Persistence.EFCore.SqlServer.csproj.source",
+      "blob": "75e6915a900d27b33ac4e2d3f0206ac99d3baa29",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.SqlServer/FodyWeavers.xml",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.SqlServer/FodyWeavers.xml.source",
+      "blob": "00e1d9a1c1865f0cbea0c7ec14556db068072126",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.SqlServer/Migrations/20241011092820_V3_3.Designer.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.SqlServer/Migrations/20241011092820_V3_3.Designer.cs.source",
+      "blob": "985fd946c9b6ee3dc48163f8c7d32496c1360b03",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.SqlServer/Migrations/20241011092820_V3_3.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.SqlServer/Migrations/20241011092820_V3_3.cs.source",
+      "blob": "c27c8dcd620ec791bbb4eaaf7ead4935802a9634",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.SqlServer/Migrations/SecretsDbContextModelSnapshot.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.SqlServer/Migrations/SecretsDbContextModelSnapshot.cs.source",
+      "blob": "77cc44aea2c1e1ccfca3762c6f813c19f4a1baed",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.SqlServer/SqlServerProvidersExtensions.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.SqlServer/SqlServerProvidersExtensions.cs.source",
+      "blob": "b95546aacdedc77e4d927f9f606577d064bcb081",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.SqlServer/efcore-3.3.sh",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.SqlServer/efcore-3.3.sh.source",
+      "blob": "1989b1c276b641e2a6487569987faf95155f6d17",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.Sqlite/DbContextFactories.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.Sqlite/DbContextFactories.cs.source",
+      "blob": "96ac86d10e1a4607cf80a49423be774c633ffb78",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.Sqlite/Elsa.Secrets.Persistence.EFCore.Sqlite.csproj",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.Sqlite/Elsa.Secrets.Persistence.EFCore.Sqlite.csproj.source",
+      "blob": "7035b8f8e6bf15ec87becc4f98382a2090d6994f",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.Sqlite/FodyWeavers.xml",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.Sqlite/FodyWeavers.xml.source",
+      "blob": "00e1d9a1c1865f0cbea0c7ec14556db068072126",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.Sqlite/Migrations/20240915164114_V3_3.Designer.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.Sqlite/Migrations/20240915164114_V3_3.Designer.cs.source",
+      "blob": "977e17ec10677a71a9086f26808b8457cc26d5c9",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.Sqlite/Migrations/20240915164114_V3_3.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.Sqlite/Migrations/20240915164114_V3_3.cs.source",
+      "blob": "65d5032475815b5959d5c43481ee1ee3d86342ac",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.Sqlite/Migrations/SecretsDbContextModelSnapshot.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.Sqlite/Migrations/SecretsDbContextModelSnapshot.cs.source",
+      "blob": "88901179469c36b8d6d0d93f02b0cdf370d2bcdc",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.Sqlite/SqliteProvidersExtensions.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.Sqlite/SqliteProvidersExtensions.cs.source",
+      "blob": "27a66533b79665121a20549c59f7b6aa780491c0",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.Sqlite/efcore-3.3.sh",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.Sqlite/efcore-3.3.sh.source",
+      "blob": "1989b1c276b641e2a6487569987faf95155f6d17",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore/Configurations.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore/Configurations.cs.source",
+      "blob": "dd9b0383d66c2b49a1058a067da3c660f456fcac",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore/DbContext.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore/DbContext.cs.source",
+      "blob": "25b450cd4cceb05cbaca1114fb1e44a7f03e2c0d",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore/EFCoreSecretStore.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore/EFCoreSecretStore.cs.source",
+      "blob": "834769d0cf1d1588d4b2d9eacffddffd099665d8",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore/Elsa.Secrets.Persistence.EFCore.csproj",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore/Elsa.Secrets.Persistence.EFCore.csproj.source",
+      "blob": "c4ddfeed637ba2069f2a22f7c9d9f5d14366bb5f",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore/Extensions.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore/Extensions.cs.source",
+      "blob": "a0fa7dd860518bea53f85d5db5d2502943be33b8",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore/Feature.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore/Feature.cs.source",
+      "blob": "7052c85eec8c724026c4819e9dbaa8da7ffc4204",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore/FodyWeavers.xml",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Secrets.Persistence.EFCore/FodyWeavers.xml.source",
+      "blob": "00e1d9a1c1865f0cbea0c7ec14556db068072126",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Studio.Secrets/Client/ISecretsApi.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Studio.Secrets/Client/ISecretsApi.cs.source",
+      "blob": "b3594b53180948a65c2938aa2404c2236be108eb",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Studio.Secrets/Elsa.Studio.Secrets.csproj",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Studio.Secrets/Elsa.Studio.Secrets.csproj.source",
+      "blob": "bc4672e08eb0ba34774c2943dc67f86e8cbb9ee1",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Studio.Secrets/Elsa.Studio.Secrets.csproj.DotSettings",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Studio.Secrets/Elsa.Studio.Secrets.csproj.DotSettings.source",
+      "blob": "17962b139d098c85a7dd10251ac275a3c0be1674",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Studio.Secrets/Extensions/ServiceCollectionExtensions.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Studio.Secrets/Extensions/ServiceCollectionExtensions.cs.source",
+      "blob": "f5b8ecf5926f2c5b9163f1ab5ef91a811a667e57",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Studio.Secrets/Extensions/TimeSpanExtensions.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Studio.Secrets/Extensions/TimeSpanExtensions.cs.source",
+      "blob": "a465b2ef9420943170e61d20fe1498ed2c259591",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Studio.Secrets/FodyWeavers.xml",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Studio.Secrets/FodyWeavers.xml.source",
+      "blob": "00e1d9a1c1865f0cbea0c7ec14556db068072126",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Studio.Secrets/Menu/SecretsMenu.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Studio.Secrets/Menu/SecretsMenu.cs.source",
+      "blob": "d0a4348148a1548dda7138a2493302a9f2373470",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Studio.Secrets/Module.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Studio.Secrets/Module.cs.source",
+      "blob": "112ea3ca260cb24dcc55fcb056c2b1e4df738b36",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Studio.Secrets/UI/Components/CreateSecretDialog.razor",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Studio.Secrets/UI/Components/CreateSecretDialog.razor.source",
+      "blob": "0d37f4aa912b5dcefb29b45abfe7f3597d8294da",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Studio.Secrets/UI/Components/CreateSecretDialog.razor.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Studio.Secrets/UI/Components/CreateSecretDialog.razor.cs.source",
+      "blob": "ae01ef9535885732c4596a8c4cfd30256432cffd",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Studio.Secrets/UI/Pages/Secret.razor",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Studio.Secrets/UI/Pages/Secret.razor.source",
+      "blob": "a5e75b2c44881cb450de49a5c6c8b4826244c1bf",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Studio.Secrets/UI/Pages/Secret.razor.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Studio.Secrets/UI/Pages/Secret.razor.cs.source",
+      "blob": "09174f8a5b60590cfc6c57eadff632d2ec676091",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Studio.Secrets/UI/Pages/Secrets.razor",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Studio.Secrets/UI/Pages/Secrets.razor.source",
+      "blob": "a20062d4168ba15cdfba01c3b5b960619bd899dc",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Studio.Secrets/UI/Pages/Secrets.razor.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Studio.Secrets/UI/Pages/Secrets.razor.cs.source",
+      "blob": "28dce1a70a2ad0743d964d6c4b159bfbe22557cb",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Studio.Secrets/UI/Validators/SecretInputModelValidator.cs",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Studio.Secrets/UI/Validators/SecretInputModelValidator.cs.source",
+      "blob": "975d02318753a8a503805f5e48a089b27350de72",
+      "mode": "100644"
+    },
+    {
+      "repository": "extensions",
+      "source": "src/modules/secrets/Elsa.Studio.Secrets/_Imports.razor",
+      "destination": "doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Studio.Secrets/_Imports.razor.source",
+      "blob": "cdf191fdcdd7f23c105c87d147561fb55ca32737",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".agents/skills/speckit-analyze/SKILL.md",
+      "destination": "doc/integration-program/legacy/studio/.agents/skills/speckit-analyze/SKILL.md.source",
+      "blob": "d8028026a07d2c618ae30ce5acf0e4caa495ff37",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".agents/skills/speckit-checklist/SKILL.md",
+      "destination": "doc/integration-program/legacy/studio/.agents/skills/speckit-checklist/SKILL.md.source",
+      "blob": "c5896332dd23225b7fa17e2c10252d6a51ffea22",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".agents/skills/speckit-clarify/SKILL.md",
+      "destination": "doc/integration-program/legacy/studio/.agents/skills/speckit-clarify/SKILL.md.source",
+      "blob": "70a8a074dc15826d4479fe131042af8df3c0a6bb",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".agents/skills/speckit-constitution/SKILL.md",
+      "destination": "doc/integration-program/legacy/studio/.agents/skills/speckit-constitution/SKILL.md.source",
+      "blob": "3c56c2ec67d5445ae68a5553325ff6a9ab950549",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".agents/skills/speckit-git-commit/SKILL.md",
+      "destination": "doc/integration-program/legacy/studio/.agents/skills/speckit-git-commit/SKILL.md.source",
+      "blob": "6d1f29a271289da58624180bfcfa06e9a4c617f8",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".agents/skills/speckit-git-feature/SKILL.md",
+      "destination": "doc/integration-program/legacy/studio/.agents/skills/speckit-git-feature/SKILL.md.source",
+      "blob": "d1c79044c7e21c8efdba60f0e0f660accb71b53c",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".agents/skills/speckit-git-initialize/SKILL.md",
+      "destination": "doc/integration-program/legacy/studio/.agents/skills/speckit-git-initialize/SKILL.md.source",
+      "blob": "2e31d97ce5d266d1a5785afa5503cd78c1f3521c",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".agents/skills/speckit-git-remote/SKILL.md",
+      "destination": "doc/integration-program/legacy/studio/.agents/skills/speckit-git-remote/SKILL.md.source",
+      "blob": "50bfc3d88f1182a64a1dd7ce6ef16c47df78a461",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".agents/skills/speckit-git-validate/SKILL.md",
+      "destination": "doc/integration-program/legacy/studio/.agents/skills/speckit-git-validate/SKILL.md.source",
+      "blob": "7655e3a09936f9a296fe73ca53e1ee545b73b066",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".agents/skills/speckit-implement/SKILL.md",
+      "destination": "doc/integration-program/legacy/studio/.agents/skills/speckit-implement/SKILL.md.source",
+      "blob": "0f3989a33de3de8bdd55639b305a1b3d8a6c060c",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".agents/skills/speckit-plan/SKILL.md",
+      "destination": "doc/integration-program/legacy/studio/.agents/skills/speckit-plan/SKILL.md.source",
+      "blob": "5c35077fd9b0b70b6e8b181b6ea29e24057652f6",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".agents/skills/speckit-specify/SKILL.md",
+      "destination": "doc/integration-program/legacy/studio/.agents/skills/speckit-specify/SKILL.md.source",
+      "blob": "693cd101efb1ebef7f128cab4182a1fda19fc075",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".agents/skills/speckit-tasks/SKILL.md",
+      "destination": "doc/integration-program/legacy/studio/.agents/skills/speckit-tasks/SKILL.md.source",
+      "blob": "d6d520a8b55296eb820ff0c132e652821e594805",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".agents/skills/speckit-taskstoissues/SKILL.md",
+      "destination": "doc/integration-program/legacy/studio/.agents/skills/speckit-taskstoissues/SKILL.md.source",
+      "blob": "7d303b19e72acce5528620cfae66c1d87a2518f5",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".dockerignore",
+      "destination": "doc/integration-program/legacy/studio/.dockerignore.source",
+      "blob": "38bece4e1ed9968d70beb5815ba4dcead8b592d5",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/RELEASE_NOTES_3.6.0-rc1.md",
+      "destination": "doc/integration-program/legacy/studio/.github/RELEASE_NOTES_3.6.0-rc1.md.source",
+      "blob": "4b3251bdcbe0fd58aad3ff2b2e1f06fa79f28107",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/agents/release-notes.agent.md",
+      "destination": "doc/integration-program/legacy/studio/.github/agents/release-notes.agent.md.source",
+      "blob": "9c91f9e69c6c224629fa6a893d34bcde6d57a36a",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/agents/speckit.git.commit.agent.md",
+      "destination": "doc/integration-program/legacy/studio/.github/agents/speckit.git.commit.agent.md.source",
+      "blob": "c7de63ee014d61b2e3a74b92edffdc3343142889",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/agents/speckit.git.feature.agent.md",
+      "destination": "doc/integration-program/legacy/studio/.github/agents/speckit.git.feature.agent.md.source",
+      "blob": "080b52c9a65451699438775e87305e9448a2eaae",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/agents/speckit.git.initialize.agent.md",
+      "destination": "doc/integration-program/legacy/studio/.github/agents/speckit.git.initialize.agent.md.source",
+      "blob": "f7522c105a88c6445babc7fe55497cb70e99b8e4",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/agents/speckit.git.remote.agent.md",
+      "destination": "doc/integration-program/legacy/studio/.github/agents/speckit.git.remote.agent.md.source",
+      "blob": "b8f0fb8b8e9ef20f4e91c001d2aba1a0e9aeffec",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/agents/speckit.git.validate.agent.md",
+      "destination": "doc/integration-program/legacy/studio/.github/agents/speckit.git.validate.agent.md.source",
+      "blob": "dfd751f2af0cb09ae74a5dd52c13b6141f55e5da",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/copilot-instructions.md",
+      "destination": "doc/integration-program/legacy/studio/.github/copilot-instructions.md.source",
+      "blob": "77cf1d383f98b50e35b73772cf9bf85f268b446a",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/copilot-release-notes-playbook.md",
+      "destination": "doc/integration-program/legacy/studio/.github/copilot-release-notes-playbook.md.source",
+      "blob": "16b81489e0d2dd0142b63aa268117fc416b827b9",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/dependabot.yml",
+      "destination": "doc/integration-program/legacy/studio/.github/dependabot.yml.source",
+      "blob": "f47194e637f16967c564ce811896fe92bc15f195",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/prompts/speckit.git.commit.prompt.md",
+      "destination": "doc/integration-program/legacy/studio/.github/prompts/speckit.git.commit.prompt.md.source",
+      "blob": "d87e3dfb942e4e56323c584499634e4048e70035",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/prompts/speckit.git.feature.prompt.md",
+      "destination": "doc/integration-program/legacy/studio/.github/prompts/speckit.git.feature.prompt.md.source",
+      "blob": "91ae09b1619897c0dcafd7caad40eda29cd5d4c8",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/prompts/speckit.git.initialize.prompt.md",
+      "destination": "doc/integration-program/legacy/studio/.github/prompts/speckit.git.initialize.prompt.md.source",
+      "blob": "02c279cd5ada9636469f26c7a95f3d5c9b99cb0d",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/prompts/speckit.git.remote.prompt.md",
+      "destination": "doc/integration-program/legacy/studio/.github/prompts/speckit.git.remote.prompt.md.source",
+      "blob": "a521d9de3d40f3c373e8dd40ae81c8aa49bc59ff",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/prompts/speckit.git.validate.prompt.md",
+      "destination": "doc/integration-program/legacy/studio/.github/prompts/speckit.git.validate.prompt.md.source",
+      "blob": "18ac70feba448a25fbfa373bc3b19d84fdf939c0",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/pull_request_template.md",
+      "destination": "doc/integration-program/legacy/studio/.github/pull_request_template.md.source",
+      "blob": "e52b47382d92aed7b56faf67c7f8417c75b43d3b",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/workflows/copilot-setup-steps.yml.yml",
+      "destination": "doc/integration-program/legacy/studio/.github/workflows/copilot-setup-steps.yml.yml.source",
+      "blob": "f5f80a5d39a33f5cc3cb7bf84a29e40af01c1e7c",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/workflows/packages.yml",
+      "destination": "doc/integration-program/legacy/studio/.github/workflows/packages.yml.source",
+      "blob": "021633e6d6e2a88914fd8401a1e8598af64af5ff",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".github/workflows/pr.yml",
+      "destination": "doc/integration-program/legacy/studio/.github/workflows/pr.yml.source",
+      "blob": "a7059fc7be5cde4f83c2b6b30faa4f9088fdfd4a",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".gitignore",
+      "destination": "doc/integration-program/legacy/studio/.gitignore.source",
+      "blob": "06afca4eb6353c6eb153b29aec7e3c302187cb37",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".interface-design/system.md",
+      "destination": "doc/integration-program/legacy/studio/.interface-design/system.md.source",
+      "blob": "3a5059c6d654e2ab51a46884638effa3625f1b4c",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions.yml",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions.yml.source",
+      "blob": "efbbda974437e49bd3903e28f8d2663bad9f7413",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions/.registry",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions/.registry.source",
+      "blob": "735f37952d941ad3c01685bc8fb05be819cc99aa",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions/git/README.md",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions/git/README.md.source",
+      "blob": "31ba75c30f23e1af082a405c24260b75305582fe",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions/git/commands/speckit.git.commit.md",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions/git/commands/speckit.git.commit.md.source",
+      "blob": "e606f911df9d85bd6adcb94ec282f4a70940d996",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions/git/commands/speckit.git.feature.md",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions/git/commands/speckit.git.feature.md.source",
+      "blob": "1a9c5e35da8e14d9bccf73da610e5e4c5b977073",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions/git/commands/speckit.git.initialize.md",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions/git/commands/speckit.git.initialize.md.source",
+      "blob": "4451ee6b77cb73331d0696ca55742497c7f7db38",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions/git/commands/speckit.git.remote.md",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions/git/commands/speckit.git.remote.md.source",
+      "blob": "712a3e8b8c7853a3360814e6465f58575ac9a28c",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions/git/commands/speckit.git.validate.md",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions/git/commands/speckit.git.validate.md.source",
+      "blob": "dd84618cb81bc0b1e1d8f7b034855965a4f7228d",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions/git/config-template.yml",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions/git/config-template.yml.source",
+      "blob": "8c414babe65d0045d7afc817582cd142c3e925bc",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions/git/extension.yml",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions/git/extension.yml.source",
+      "blob": "13c1977ea173a6b6dcf0aa4cea649a6ae75508d5",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions/git/git-config.yml",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions/git/git-config.yml.source",
+      "blob": "8c414babe65d0045d7afc817582cd142c3e925bc",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions/git/scripts/bash/auto-commit.sh",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions/git/scripts/bash/auto-commit.sh.source",
+      "blob": "f0b423187b6ec5f46a03faddb08f183c84ec6413",
+      "mode": "100755"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions/git/scripts/bash/create-new-feature.sh",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions/git/scripts/bash/create-new-feature.sh.source",
+      "blob": "f7aa31610e35e4a721514970c575cf8a13e8ba3e",
+      "mode": "100755"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions/git/scripts/bash/git-common.sh",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions/git/scripts/bash/git-common.sh.source",
+      "blob": "b78356d1c6914121921325d0f69031193604a817",
+      "mode": "100755"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions/git/scripts/bash/initialize-repo.sh",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions/git/scripts/bash/initialize-repo.sh.source",
+      "blob": "296e363b94d0732f52ab65f84f7412daa9cf8c12",
+      "mode": "100755"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions/git/scripts/powershell/auto-commit.ps1",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions/git/scripts/powershell/auto-commit.ps1.source",
+      "blob": "4a8b0e00cdf05d3658aeaadd3d8b9f73da8fa5cb",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions/git/scripts/powershell/create-new-feature.ps1",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions/git/scripts/powershell/create-new-feature.ps1.source",
+      "blob": "b579f051608e02cabc45f9bc4b00e3314de2f8bf",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions/git/scripts/powershell/git-common.ps1",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions/git/scripts/powershell/git-common.ps1.source",
+      "blob": "82210000b696db8649607d16f3e18990280c01ad",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/extensions/git/scripts/powershell/initialize-repo.ps1",
+      "destination": "doc/integration-program/legacy/studio/.specify/extensions/git/scripts/powershell/initialize-repo.ps1.source",
+      "blob": "324240a3e745357ffb40f1834d31aebf5c5bf182",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/init-options.json",
+      "destination": "doc/integration-program/legacy/studio/.specify/init-options.json.source",
+      "blob": "03a742befdd273e43504e66d5b5b17a6663a995a",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/integration.json",
+      "destination": "doc/integration-program/legacy/studio/.specify/integration.json.source",
+      "blob": "f8eb97695467fb231dfe80b8702691ca7d63326d",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/integrations/codex.manifest.json",
+      "destination": "doc/integration-program/legacy/studio/.specify/integrations/codex.manifest.json.source",
+      "blob": "a8f0cb32e5b7d1d81e4f966ec72b37af5f2b0ded",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/integrations/speckit.manifest.json",
+      "destination": "doc/integration-program/legacy/studio/.specify/integrations/speckit.manifest.json.source",
+      "blob": "cd22232e042d70588429f234b5515973493fa0ff",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/memory/constitution.md",
+      "destination": "doc/integration-program/legacy/studio/.specify/memory/constitution.md.source",
+      "blob": "ab4ef099d45d933fdf5b02b2d50d9f8e40ece792",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/scripts/bash/check-prerequisites.sh",
+      "destination": "doc/integration-program/legacy/studio/.specify/scripts/bash/check-prerequisites.sh.source",
+      "blob": "88a555946070c3d6de2479a53b9345b404c6d737",
+      "mode": "100755"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/scripts/bash/common.sh",
+      "destination": "doc/integration-program/legacy/studio/.specify/scripts/bash/common.sh.source",
+      "blob": "03141e4462d35a40aa020226119c104a90008603",
+      "mode": "100755"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/scripts/bash/create-new-feature.sh",
+      "destination": "doc/integration-program/legacy/studio/.specify/scripts/bash/create-new-feature.sh.source",
+      "blob": "c3537704f6e432d3bbdedec4d55c529055a6df13",
+      "mode": "100755"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/scripts/bash/setup-plan.sh",
+      "destination": "doc/integration-program/legacy/studio/.specify/scripts/bash/setup-plan.sh.source",
+      "blob": "f2d2f6e6fcb5d426053b80ce34be7416384852cd",
+      "mode": "100755"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/scripts/bash/setup-tasks.sh",
+      "destination": "doc/integration-program/legacy/studio/.specify/scripts/bash/setup-tasks.sh.source",
+      "blob": "3f6a40b12d18efa3b0a35461dbbe9e84f50cc93c",
+      "mode": "100755"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/templates/checklist-template.md",
+      "destination": "doc/integration-program/legacy/studio/.specify/templates/checklist-template.md.source",
+      "blob": "c4aa1666eaa973bf249d1683fcab49b4717898e0",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/templates/constitution-template.md",
+      "destination": "doc/integration-program/legacy/studio/.specify/templates/constitution-template.md.source",
+      "blob": "a4670ff46919b276a4c9663b4ca51830108fcfc0",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/templates/plan-template.md",
+      "destination": "doc/integration-program/legacy/studio/.specify/templates/plan-template.md.source",
+      "blob": "8d5e68d2c359363b659daf21e6f2be436efedadf",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/templates/spec-template.md",
+      "destination": "doc/integration-program/legacy/studio/.specify/templates/spec-template.md.source",
+      "blob": "4581e40529d044f49f5c68e4d542f2bb0467a619",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/templates/tasks-template.md",
+      "destination": "doc/integration-program/legacy/studio/.specify/templates/tasks-template.md.source",
+      "blob": "c9f73c00db34c9658133a50a8a910164b507cdc6",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/workflows/speckit/workflow.yml",
+      "destination": "doc/integration-program/legacy/studio/.specify/workflows/speckit/workflow.yml.source",
+      "blob": "bf18451029e514ba10811af9adf3a502c39050a9",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": ".specify/workflows/workflow-registry.json",
+      "destination": "doc/integration-program/legacy/studio/.specify/workflows/workflow-registry.json.source",
+      "blob": "be49cd6af0c534f1152b59eb7f5cd4d08fc80e7f",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": "AGENTS.md",
+      "destination": "doc/integration-program/legacy/studio/AGENTS.md.source",
+      "blob": "ef274f298a82b717a922a8c507b391efd03d499b",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": "CONTRIBUTING.md",
+      "destination": "doc/integration-program/legacy/studio/CONTRIBUTING.md.source",
+      "blob": "77c8a2ffee6660fbf8622210eb30439dcc5fb0ea",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": "Directory.Build.props",
+      "destination": "doc/integration-program/legacy/studio/Directory.Build.props.source",
+      "blob": "1c9cfca9da288018e3ab09f7be327587e143c850",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": "Directory.Packages.props",
+      "destination": "doc/integration-program/legacy/studio/Directory.Packages.props.source",
+      "blob": "36f1fed75630477567417831e712feb791c38acb",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": "Elsa.Studio.sln",
+      "destination": "doc/integration-program/legacy/studio/Elsa.Studio.sln.source",
+      "blob": "d4bc19a67c8e88ab772dd8f4c4a002712f3f0b56",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": "Elsa.Studio.sln.DotSettings",
+      "destination": "doc/integration-program/legacy/studio/Elsa.Studio.sln.DotSettings.source",
+      "blob": "6df5f691bc22253c89c17d8c7804df41de9d8bed",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": "LICENSE",
+      "destination": "doc/integration-program/legacy/studio/LICENSE.source",
+      "blob": "737c5cd8039ebaad5360b7d49756584b06194874",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": "NuGet.Config",
+      "destination": "doc/integration-program/legacy/studio/NuGet.Config.source",
+      "blob": "9d34ddc36d733ad34aa9fe605e8783632c0562c0",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": "PERFORMANCE_OPTIMIZATIONS.md",
+      "destination": "doc/integration-program/legacy/studio/PERFORMANCE_OPTIMIZATIONS.md.source",
+      "blob": "c6e96edb95815e591c0f3c092c5a2c8442220a58",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": "README.md",
+      "destination": "doc/integration-program/legacy/studio/README.md.source",
+      "blob": "d1b23bc8d67e931e311c43d06a9a0b10b7cde101",
+      "mode": "100644"
+    },
+    {
+      "repository": "studio",
+      "source": "icon.png",
+      "destination": "doc/integration-program/legacy/studio/icon.png.source",
+      "blob": "47e1cadea43af0b7d1a5c489e0d46cf72ecf87eb",
+      "mode": "100644"
+    }
+  ]
+}

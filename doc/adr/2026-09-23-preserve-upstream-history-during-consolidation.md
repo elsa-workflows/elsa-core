@@ -46,7 +46,7 @@ Before merging real history-bearing imports, #8214 must demonstrate:
 
 1. Refresh source tips and active PRs; reconcile new commits without rewriting or silently abandoning upstream work. Save final pinned inputs and a fresh receipt.
 2. Resolve all five package collisions with public API, persistence and UI compatibility evidence; name the sole publisher and cutover ordering.
-3. Integrate central versions, props/targets, Fody/icon paths, generator inputs and local project references; classify every retained build/document/sample asset as integrated or explicitly retired with rationale.
+3. Integrate central versions, props/targets, Fody/icon paths, generator inputs and local project references; classify every retained build/document/sample asset as integrated or explicitly retired with rationale. Track current evidence and pending decisions in the [legacy asset disposition ledger](../integration-program/consolidation/legacy-asset-dispositions.md).
 4. Build the consolidated solution and representative supported target frameworks; export and compare runtime activity descriptors against the old hosts, including type/version identities and serialized workflow round trips.
 5. Verify independently packed artifacts, clean consumers, and a real backend/Blazor debug session. Test shared-dependency impact without republishing unrelated units.
 6. Preserve original ancestors on the final merge. Verify source commit reachability and receipt after GitHub integration; do not infer preservation merely from a local branch.

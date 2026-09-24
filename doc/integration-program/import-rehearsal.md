@@ -31,3 +31,5 @@ The disposable tree has **9,604 files**, with exact blob/mode equality and no de
 The mapping regressions reject existing Core overwrites, file/directory collisions, two input paths collapsing to one output, and path escapes. They also check inactive workflow/build inputs, the five duplicate-package projects, and complete file/blob/mode retention. Both regular and optimized Python runs passed.
 
 No solution build, runtime descriptor comparison, package publication, backend/Studio debug session, canonical-source compatibility or cutover is claimed. Those gates remain in #8214, #8215 and #8259–#8260. In particular, retained `.source` assets require explicit integration or retirement, and the candidate Secrets source ownership must pass API/storage/UI compatibility review before the real import.
+
+The exact path-by-path proposal for all 163 retained `.source` assets is recorded in the [legacy asset disposition ledger](consolidation/legacy-asset-dispositions.md). It distinguishes candidate behavior in the disposable build patch from changes actually integrated into the history-bearing source tree.
