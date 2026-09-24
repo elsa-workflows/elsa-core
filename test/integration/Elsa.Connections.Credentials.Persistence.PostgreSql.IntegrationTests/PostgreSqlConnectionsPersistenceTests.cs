@@ -57,8 +57,9 @@ public sealed class PostgreSqlConnectionsPersistenceTests(PostgreSqlConnectionsF
         await using var db = await contextFactory.CreateDbContextAsync();
 
         var migrations = db.Database.GetMigrations().ToArray();
-        Assert.Single(migrations);
+        Assert.Equal(2, migrations.Length);
         Assert.EndsWith("_Initial", migrations[0]);
+        Assert.EndsWith("_WorkflowCredentialUseGrants", migrations[1]);
         await db.Database.MigrateAsync();
         Assert.Equal(migrations, (await db.Database.GetAppliedMigrationsAsync()).ToArray());
 
@@ -191,6 +192,41 @@ public sealed class PostgreSqlConnectionsPersistenceTests(PostgreSqlConnectionsF
         Assert.True(classifier.IsDuplicateBindingKey(uniqueViolation));
         Assert.False(classifier.IsDuplicateBindingKey(serializationFailure));
         Assert.False(classifier.IsDuplicateBindingKey(nonProviderFailure));
+    }
+
+    [Fact]
+    public async Task PostgreSqlGrantPersistsExactScopeAndWithdrawsWithCompareAndSwap()
+    {
+        await fixture.ResetSchemaAsync();
+        await using var first = CreateWorker(fixture.ConnectionString);
+        await MigrateAsync(first);
+        await first.GetRequiredService<IConnectionLifecycleStore>().CreateAsync(Connection("conn-grant", "tenant-a", "env-a"));
+        Assert.NotNull(await first.GetRequiredService<IConnectionCredentialBindingStore>()
+            .TryCreateAsync("tenant-a", "env-a", "binding-grant", "conn-grant"));
+
+        var firstStore = first.GetRequiredService<IConnectionCredentialUseGrantStore>();
+        var now = DateTimeOffset.UtcNow;
+        var issued = await firstStore.TryIssueAsync("tenant-a", "env-a", "workflow-1", "binding-grant",
+            "conn-grant", 1, "actor-1", now);
+        Assert.NotNull(issued);
+        Assert.Null(await firstStore.TryIssueAsync("tenant-a", "env-a", "workflow-1", "binding-grant",
+            "conn-grant", 1, "actor-2", now));
+        Assert.Null(await firstStore.TryIssueAsync("tenant-a", "env-a", "workflow-2", "binding-grant",
+            "conn-grant", 2, "actor-1", now));
+        Assert.Null(await firstStore.FindAsync("tenant-b", "env-a", "workflow-1", "binding-grant"));
+        Assert.Null(await firstStore.FindAsync("tenant-a", "env-b", "workflow-1", "binding-grant"));
+
+        await using var second = CreateWorker(fixture.ConnectionString);
+        var secondStore = second.GetRequiredService<IConnectionCredentialUseGrantStore>();
+        var reloaded = await secondStore.FindAsync("tenant-a", "env-a", "workflow-1", "binding-grant");
+        Assert.Equal("actor-1", reloaded?.IssuedByActorId);
+        Assert.True(await secondStore.TryWithdrawAsync("tenant-a", "env-a", "workflow-1", "binding-grant", 1, now));
+        Assert.False(await firstStore.TryWithdrawAsync("tenant-a", "env-a", "workflow-1", "binding-grant", 1, now));
+        var withdrawn = await firstStore.FindAsync("tenant-a", "env-a", "workflow-1", "binding-grant");
+        Assert.False(withdrawn?.IsActive);
+        Assert.Equal(2, withdrawn?.Revision);
+        Assert.Null(await secondStore.TryIssueAsync("tenant-a", "env-a", "workflow-1", "binding-grant",
+            "conn-grant", 1, "actor-2", now));
     }
 
     private static ServiceProvider CreateWorker(string connectionString, TwoSaveChangesGate? saveGate = null)

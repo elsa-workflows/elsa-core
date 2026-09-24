@@ -19,6 +19,7 @@ public sealed class EFCoreConnectionsPersistenceFeature(IModule module)
         Services.AddScoped<IConnectionLifecycleStore>(sp => sp.GetRequiredService<EFCoreConnectionLifecycleStore>());
         Services.AddScoped<EFCoreConnectionCredentialBindingStore>();
         Services.AddScoped<IConnectionCredentialBindingStore>(sp => sp.GetRequiredService<EFCoreConnectionCredentialBindingStore>());
+        Services.AddScoped<IConnectionCredentialUseGrantStore, EFCoreConnectionCredentialUseGrantStore>();
         Services.TryAddSingleton<IConnectionCredentialBindingConflictClassifier, NoConnectionCredentialBindingConflictClassifier>();
     }
 }

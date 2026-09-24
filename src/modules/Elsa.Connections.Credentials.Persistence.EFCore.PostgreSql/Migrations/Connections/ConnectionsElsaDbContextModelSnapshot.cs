@@ -50,6 +50,54 @@ namespace Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql.Migrations.
                     b.ToTable("ConnectionCredentialBindings", "Elsa");
                 });
 
+            modelBuilder.Entity("Elsa.Connections.Models.ConnectionCredentialUseGrant", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("EnvironmentId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("LogicalBindingId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<long>("BindingRevision")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ConnectionId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("IssuedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IssuedByActorId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<long>("Revision")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("WithdrawnAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("TenantId", "EnvironmentId", "WorkflowInstanceId", "LogicalBindingId");
+
+                    b.ToTable("ConnectionCredentialUseGrants", "Elsa");
+                });
+
             modelBuilder.Entity("Elsa.Connections.Models.ConnectionGenerationCleanup", b =>
                 {
                     b.Property<string>("ConnectionId")
