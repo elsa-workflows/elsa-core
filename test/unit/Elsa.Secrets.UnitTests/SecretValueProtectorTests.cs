@@ -54,8 +54,10 @@ public class SecretValueProtectorTests
         var nonce = Convert.FromBase64String(parts[1]);
         var tag = Convert.FromBase64String(parts[2]);
         var ciphertext = Convert.FromBase64String(parts[3]);
+        Assert.Equal(12, nonce.Length);
+        Assert.Equal(16, tag.Length);
         var plaintext = new byte[ciphertext.Length];
-        using var aes = new AesGcm(key, tag.Length);
+        using var aes = new AesGcm(key, 16);
         aes.Decrypt(nonce, ciphertext, tag, plaintext);
 
         Assert.Equal(expectedPlaintext, Encoding.UTF8.GetString(plaintext));
