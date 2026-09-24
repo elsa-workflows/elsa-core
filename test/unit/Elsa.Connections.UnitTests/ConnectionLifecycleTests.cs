@@ -132,7 +132,8 @@ public sealed class ConnectionLifecycleTests
         var current = await lifecycle.ResolveForUseAsync(Principal(canManage: false), TenantId, EnvironmentId, connectionId);
         Assert.Equal(ConnectionCredentialKind.ApiKey, current.Kind);
         Assert.Equal("synthetic-api-key-v2", current.AccessToken);
-        Assert.Null(current.ExpiresAt);
+        Assert.Equal("synthetic-api-key-v2", current.ApiKey);
+        Assert.DoesNotContain("synthetic-api-key-v2", JsonSerializer.Serialize(current), StringComparison.Ordinal);
         Assert.DoesNotContain("synthetic-api-key-v2", current.ToString(), StringComparison.Ordinal);
         Assert.False((await apiKeys.ReplaceApiKeyAsync(Principal(), TenantId, EnvironmentId, connectionId,
             connected.Revision!.Value, "stale-api-key")).Succeeded);
@@ -148,6 +149,49 @@ public sealed class ConnectionLifecycleTests
         Assert.True(disconnect.Accepted);
         await Assert.ThrowsAsync<ConnectionUnavailableException>(() => lifecycle.ResolveForUseAsync(Principal(canManage: false), TenantId, EnvironmentId, connectionId));
         Assert.Equal(0, provider.CallCount);
+    }
+
+    [Fact]
+    public async Task ApiKeyConnectCanRecoverAfterLostGenerationStageWrite()
+    {
+        await using var database = new TestDatabase();
+        var provider = new SyntheticCredentialProvider(block: false);
+        await using var worker = await Worker.CreateAsync(database.Path, MakeKey(32), provider, failBeforeStageWrite: true);
+        using var tenant = worker.TenantAccessor.PushContext(TenantContext());
+        using var scope = worker.Services.CreateScope();
+        var apiKeys = scope.ServiceProvider.GetRequiredService<IStaticApiKeyLifecycleService>();
+        worker.StageWriteFault!.FailNextStageWrite();
+
+        var connected = await apiKeys.ConnectApiKeyAsync(Principal(), new ConnectApiKeyConnectionRequest(
+            TenantId, EnvironmentId, "synthetic-api-key", "account-test", "recover-connect-api-key"));
+
+        Assert.False(connected.Succeeded);
+        var connectionId = Assert.IsType<string>(connected.ConnectionId);
+        var recovered = await scope.ServiceProvider.GetRequiredService<IConnectionLifecycleRecoveryService>()
+            .ReconcileAsync(TenantId, EnvironmentId, connectionId);
+
+        Assert.True(recovered.Succeeded);
+        var credential = await scope.ServiceProvider.GetRequiredService<IConnectionLifecycleService>()
+            .ResolveForUseAsync(Principal(canManage: false), TenantId, EnvironmentId, connectionId);
+        Assert.Equal(ConnectionCredentialKind.ApiKey, credential.Kind);
+        Assert.Equal("recover-connect-api-key", credential.ApiKey);
+    }
+
+    [Fact]
+    public void ApiKeyRequestAndCredentialDiagnosticsRedactSecretAndPreserveOAuthExpiryContract()
+    {
+        var request = new ConnectApiKeyConnectionRequest(TenantId, EnvironmentId, "provider", "account", "request-secret");
+        Assert.DoesNotContain("request-secret", request.ToString(), StringComparison.Ordinal);
+
+        var apiKey = new ConnectionAccessCredential(ConnectionCredentialKind.ApiKey, "credential-secret", null);
+        Assert.Equal("credential-secret", apiKey.ApiKey);
+        Assert.Throws<InvalidOperationException>(() => _ = apiKey.ExpiresAt);
+        Assert.DoesNotContain("credential-secret", JsonSerializer.Serialize(apiKey), StringComparison.Ordinal);
+
+        var expiresAt = DateTimeOffset.UtcNow.AddHours(1);
+        var oauth = new ConnectionAccessCredential("oauth-access", expiresAt);
+        Assert.Equal(expiresAt, oauth.ExpiresAt);
+        Assert.DoesNotContain("oauth-access", JsonSerializer.Serialize(oauth), StringComparison.Ordinal);
     }
 
     [Fact]

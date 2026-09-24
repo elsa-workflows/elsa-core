@@ -38,7 +38,10 @@ public interface IConnectionLifecycleRecoveryService
 
 public sealed record ConnectConnectionRequest(string TenantId, string EnvironmentId, string ProviderId, string ProviderAccountId, Elsa.Connections.Models.CredentialMaterial InitialCredentials);
 
-public sealed record ConnectApiKeyConnectionRequest(string TenantId, string EnvironmentId, string ProviderId, string ProviderAccountId, string ApiKey);
+public sealed record ConnectApiKeyConnectionRequest(string TenantId, string EnvironmentId, string ProviderId, string ProviderAccountId, string ApiKey)
+{
+    public override string ToString() => "ConnectApiKeyConnectionRequest { Redacted = true }";
+}
 
 /// <summary>Non-secret identity and lifecycle metadata returned to authorized connection managers.</summary>
 public sealed record ConnectionLifecycleMetadata(

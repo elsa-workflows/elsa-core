@@ -578,7 +578,9 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
             .Where(x => x.Revision == expectedRevision && x.Status == ConnectionStatus.RecoveryRequired &&
                         x.OperationStatus == CredentialOperationStatus.RecoveryRequired && x.OperationId == operationId &&
                         x.OperationFence == fence && x.OperationExpectedRevision < expectedRevision &&
-                        x.CurrentGenerationId == x.OperationSourceGenerationId && x.PlannedSecretName != null && x.PlannedGenerationId != null &&
+                        (x.CurrentGenerationId == x.OperationSourceGenerationId ||
+                         (x.CurrentGenerationId == null && x.OperationSourceGenerationId == null)) &&
+                        x.PlannedSecretName != null && x.PlannedGenerationId != null &&
                         (x.StagedSecretName == null || x.StagedSecretName == x.PlannedSecretName) &&
                         (x.StagedGenerationId == null || x.StagedGenerationId == x.PlannedGenerationId) &&
                         !db.GenerationCleanups.Any(cleanup => cleanup.ConnectionId == id && cleanup.GenerationId == x.PlannedGenerationId))

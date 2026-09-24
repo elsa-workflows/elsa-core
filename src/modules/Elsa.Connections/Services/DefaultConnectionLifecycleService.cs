@@ -271,7 +271,9 @@ public sealed class DefaultConnectionLifecycleService(
             throw new ConnectionUnavailableException();
         }
 
-        return new ConnectionAccessCredential(validMaterial.Kind ?? ConnectionCredentialKind.OAuth, validMaterial.AccessToken!, validMaterial.AccessTokenExpiresAt);
+        return validMaterial.Kind == ConnectionCredentialKind.ApiKey
+            ? new ConnectionAccessCredential(ConnectionCredentialKind.ApiKey, validMaterial.AccessToken!, null)
+            : new ConnectionAccessCredential(ConnectionCredentialKind.OAuth, validMaterial.AccessToken!, validMaterial.AccessTokenExpiresAt);
     }
 
     public async Task<ConnectionOffboardingOperationResult> DisconnectAsync(
@@ -777,7 +779,7 @@ public sealed class DefaultConnectionLifecycleService(
                 var payload = await secrets.ResolveGenerationAsync(connection.PlannedSecretName, connection.Id, connection.PlannedGenerationId, cancellationToken);
                 if (Deserialize(payload.Value) is { } envelope && IsValidEnvelope(envelope) &&
                     (envelope.Kind == ConnectionCredentialKind.ApiKey
-                        ? await IsApiKeySourceGenerationAsync(connection, cancellationToken)
+                        ? await CanPromoteApiKeyRecoveryAsync(connection, cancellationToken)
                         : envelope.Kind is null or ConnectionCredentialKind.OAuth) &&
                     await store.TryPromoteRecoveryGenerationAsync(connectionId, tenantId, environmentId, connection.Revision, connection.OperationId!, connection.OperationFence, cancellationToken))
                 {
@@ -1065,6 +1067,10 @@ public sealed class DefaultConnectionLifecycleService(
             return false;
         }
     }
+
+    private async Task<bool> CanPromoteApiKeyRecoveryAsync(IntegrationConnection connection, CancellationToken cancellationToken) =>
+        await IsApiKeySourceGenerationAsync(connection, cancellationToken) ||
+        string.IsNullOrWhiteSpace(connection.CurrentGenerationId) && string.IsNullOrWhiteSpace(connection.OperationSourceGenerationId);
 
     private static bool IsValidEnvelope(CredentialEnvelope? envelope)
     {
