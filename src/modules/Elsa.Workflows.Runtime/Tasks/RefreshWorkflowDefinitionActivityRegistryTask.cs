@@ -12,7 +12,7 @@ namespace Elsa.Workflows.Runtime.Tasks;
 [UsedImplicitly]
 public class RefreshWorkflowDefinitionActivityRegistryTask(
     IWorkflowDefinitionRegistryGenerationStore generationStore,
-    IWorkflowDefinitionActivityRegistryUpdater registryUpdater,
+    IWorkflowDefinitionActivityRegistryReconciler registryUpdater,
     ITenantAccessor tenantAccessor,
     TimeProvider timeProvider) : RecurringTask
 {

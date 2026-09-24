@@ -13,11 +13,19 @@ namespace Elsa.Workflows.Management.Services;
 public class WorkflowDefinitionActivityRegistryUpdater(
     WorkflowDefinitionActivityProvider provider,
     IActivityRegistry registry,
-    ICacheManager cacheManager,
-    ITenantAccessor tenantAccessor) : IWorkflowDefinitionActivityRegistryUpdater
+    ICacheManager? cacheManager,
+    ITenantAccessor? tenantAccessor) : IWorkflowDefinitionActivityRegistryUpdater, IWorkflowDefinitionActivityRegistryReconciler
 {
     private readonly Type _providerType = typeof(WorkflowDefinitionActivityProvider);
     private static readonly SemaphoreSlim RegistryLock = new(1, 1);
+
+    /// <summary>
+    /// Preserves the existing constructor for hosts that only use local registry updates.
+    /// </summary>
+    public WorkflowDefinitionActivityRegistryUpdater(WorkflowDefinitionActivityProvider provider, IActivityRegistry registry)
+        : this(provider, registry, null, null)
+    {
+    }
     
     /// <inheritdoc />
     public async Task AddToRegistry(string workflowDefinitionVersionId, CancellationToken cancellationToken)
@@ -45,6 +53,9 @@ public class WorkflowDefinitionActivityRegistryUpdater(
     /// <inheritdoc />
     public async Task ReconcileRegistryAsync(CancellationToken cancellationToken = default)
     {
+        if (cacheManager is null || tenantAccessor is null)
+            throw new InvalidOperationException("Registry reconciliation requires cache and tenant services.");
+
         await RegistryLock.WaitAsync(cancellationToken);
         try
         {

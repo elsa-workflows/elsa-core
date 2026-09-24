@@ -13,7 +13,7 @@ public class RefreshWorkflowDefinitionActivityRegistryTaskTests
     public async Task ExecuteAsync_ReconcilesOncePerGenerationAndCatchesUpAfterOfflineChanges()
     {
         var generations = new SharedGenerationStore();
-        var updater = Substitute.For<IWorkflowDefinitionActivityRegistryUpdater>();
+        var updater = Substitute.For<IWorkflowDefinitionActivityRegistryReconciler>();
         var tenantAccessor = new TestTenantAccessor("tenant-a");
         var task = new RefreshWorkflowDefinitionActivityRegistryTask(generations, updater, tenantAccessor, TimeProvider.System);
 
@@ -31,7 +31,7 @@ public class RefreshWorkflowDefinitionActivityRegistryTaskTests
     public async Task ExecuteAsync_ReconcilesTenantWhenAgnosticGenerationChanges()
     {
         var generations = new SharedGenerationStore();
-        var updater = Substitute.For<IWorkflowDefinitionActivityRegistryUpdater>();
+        var updater = Substitute.For<IWorkflowDefinitionActivityRegistryReconciler>();
         var tenantAccessor = new TestTenantAccessor("tenant-a");
         var task = new RefreshWorkflowDefinitionActivityRegistryTask(generations, updater, tenantAccessor, TimeProvider.System);
 
@@ -46,7 +46,7 @@ public class RefreshWorkflowDefinitionActivityRegistryTaskTests
     public async Task ExecuteAsync_DoesNotPollNodeLocalGenerationStore()
     {
         var generations = new MemoryWorkflowDefinitionRegistryGenerationStore();
-        var updater = Substitute.For<IWorkflowDefinitionActivityRegistryUpdater>();
+        var updater = Substitute.For<IWorkflowDefinitionActivityRegistryReconciler>();
         var tenantAccessor = new TestTenantAccessor("tenant-a");
         var task = new RefreshWorkflowDefinitionActivityRegistryTask(generations, updater, tenantAccessor, TimeProvider.System);
 
@@ -61,7 +61,7 @@ public class RefreshWorkflowDefinitionActivityRegistryTaskTests
         var generations = new SharedGenerationStore();
         await generations.IncrementAsync("tenant-a");
         await generations.IncrementAsync(Tenant.AgnosticTenantId);
-        var updater = Substitute.For<IWorkflowDefinitionActivityRegistryUpdater>();
+        var updater = Substitute.For<IWorkflowDefinitionActivityRegistryReconciler>();
         var task = new RefreshWorkflowDefinitionActivityRegistryTask(
             generations,
             updater,
@@ -77,7 +77,7 @@ public class RefreshWorkflowDefinitionActivityRegistryTaskTests
     public async Task ExecuteAsync_PerformsFullReconciliationAfterOneMinuteWithoutGenerationChange()
     {
         var generations = new SharedGenerationStore();
-        var updater = Substitute.For<IWorkflowDefinitionActivityRegistryUpdater>();
+        var updater = Substitute.For<IWorkflowDefinitionActivityRegistryReconciler>();
         var timeProvider = new ManualTimeProvider();
         var task = new RefreshWorkflowDefinitionActivityRegistryTask(
             generations,
