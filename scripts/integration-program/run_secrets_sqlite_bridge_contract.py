@@ -2,6 +2,8 @@
 """Verify a synthetic old Data Protection -> Core AES-GCM Secrets bridge."""
 import argparse
 import base64
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 import hashlib
 import json
 import os
@@ -11,6 +13,8 @@ import sqlite3
 import subprocess
 import sys
 import tempfile
+import time
+import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 import zipfile
@@ -36,6 +40,7 @@ PINNED_CORE_BUILD_INPUTS = (
     'NuGet.Config',
     'nuget.config',
 )
+TRANSIENT_PACKAGE_HTTP_CODES = {429, 500, 502, 503, 504}
 
 
 def run(command, *, cwd=None, env=None, capture=False, timeout=None):
@@ -71,10 +76,38 @@ def package_url(package):
     return f'{NUGET_FLAT}/{package_id}/{version}/{package_id}.{version}.nupkg'
 
 
+def download_package(url):
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(url, timeout=60) as response:
+                return response.read()
+        except urllib.error.HTTPError as error:
+            delay = 2 ** attempt
+            if error.code == 429 and error.headers:
+                retry_after = error.headers.get('Retry-After')
+                if retry_after:
+                    try:
+                        requested_delay = float(retry_after)
+                    except ValueError:
+                        try:
+                            requested_at = parsedate_to_datetime(retry_after)
+                            if requested_at.tzinfo is None:
+                                requested_at = requested_at.replace(tzinfo=timezone.utc)
+                            requested_delay = (requested_at - datetime.now(timezone.utc)).total_seconds()
+                        except (TypeError, ValueError):
+                            requested_delay = 0
+                    delay = max(delay, min(30, max(0, requested_delay)))
+            error.close()
+            if error.code not in TRANSIENT_PACKAGE_HTTP_CODES or attempt == 3:
+                raise
+            print(f'Transient package HTTP {error.code}; retrying fixture download', file=sys.stderr)
+            time.sleep(delay)
+    raise RuntimeError('Package download exhausted retries without a response')
+
+
 def verify_package(package, phase, feed_dir):
     url = package_url(package)
-    with urllib.request.urlopen(url, timeout=60) as response:
-        content = response.read()
+    content = download_package(url)
     digest = hashlib.sha512(content).digest()
     if digest.hex() != package['sha512']:
         raise ValueError(f"SHA-512 mismatch for {package['id']} {package['version']}")
