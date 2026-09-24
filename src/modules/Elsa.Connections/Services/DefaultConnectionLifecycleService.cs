@@ -555,7 +555,7 @@ public sealed class DefaultConnectionLifecycleService(
         }
 
         var operationId = Guid.NewGuid().ToString("N");
-        var claimed = await store.TryClaimCredentialUpdateAsync(connectionId, tenantId, environmentId, current!.Revision, operationId, timeProvider.GetUtcNow() + OperationLeaseDuration, cancellationToken);
+        var claimed = await store.TryClaimRefreshAsync(connectionId, tenantId, environmentId, current!.Revision, operationId, timeProvider.GetUtcNow() + OperationLeaseDuration, cancellationToken);
         if (claimed == null)
         {
             // Another worker may already have claimed or completed the refresh. Return state reloaded after the
