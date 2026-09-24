@@ -6,6 +6,7 @@ import io
 import json
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -82,7 +83,9 @@ new file mode 100644
         before = build.rehearsal.git(self.output, 'rev-parse', 'HEAD')
         with contextlib.redirect_stdout(io.StringIO()):
             self.prepare_with_fake_packability()
-        receipt = json.loads((self.output / 'canonical-solution-preparation-receipt.json').read_text())
+        receipt = json.loads((self.output / 'consolidated-build-receipt.json').read_text())
+        self.assertEqual(receipt['canonicalSolution'], 'Elsa.sln')
+        self.assertFalse(receipt['buildCompatibilityVerified'])
         self.assertFalse(receipt['canonicalBuildAndTestsVerified'])
         self.assertFalse(receipt['publicationAuthorized'])
         self.assertEqual(receipt['importedProjects'], 3)
@@ -97,6 +100,9 @@ new file mode 100644
         self.assertEqual(receipt['nukeTestDiscovery']['nonTestHostProjects'], [
             'test/extensions/workbench/Elsa.TestServer.Web/Elsa.TestServer.Web.csproj'
         ])
+        packability_path = self.output / 'canonical-packability-report.json'
+        packability_entry = next(row for row in receipt['files'] if row['path'] == packability_path.name)
+        self.assertEqual(packability_entry['sha256'], build.sha256(packability_path.read_bytes()))
         with self.assertRaises(ValueError):
             build.prepare(self.output)
 
@@ -106,8 +112,9 @@ new file mode 100644
                 patch.object(build, 'CURRENT_CORE_COMMIT', actual_core), \
                 contextlib.redirect_stdout(io.StringIO()):
             self.prepare_with_fake_packability()
-        receipt = json.loads((self.output / 'canonical-solution-preparation-receipt.json').read_text())
+        receipt = json.loads((self.output / 'consolidated-build-receipt.json').read_text())
         self.assertEqual(receipt['sourceCommits']['core'], actual_core)
+        self.assertFalse(receipt['buildCompatibilityVerified'])
         self.assertFalse(receipt['canonicalBuildAndTestsVerified'])
 
     def test_rejects_dirty_tracked_source_without_overwriting(self):
@@ -254,6 +261,22 @@ new file mode 100644
             self.assertTrue(all(row['properties']['PackageId'] for row in evaluations))
             self.assertTrue(all(row['properties']['IsPackable'] == 'false' for row in evaluations))
             self.assertTrue(all(row['properties']['GeneratePackageOnBuild'] == 'false' for row in evaluations))
+
+    def test_msbuild_evaluation_uses_project_directory_for_sdk_selection(self):
+        project = self.root / 'rehearsal' / 'src' / 'Example' / 'Example.csproj'
+        project.parent.mkdir(parents=True)
+        project.write_text('<Project />\n')
+        payload = {'Properties': {name: '' for name in build.PACK_PROPERTIES}}
+        completed = SimpleNamespace(returncode=0, stdout=json.dumps(payload), stderr='')
+        with patch.object(build.subprocess, 'run', return_value=completed) as run:
+            build.msbuild_properties(project, 'Debug', 'net10.0', 'true')
+        self.assertEqual(run.call_args.kwargs['cwd'], project.parent.resolve())
+
+    def test_sdk_version_uses_rehearsal_root_for_sdk_selection(self):
+        completed = SimpleNamespace(stdout='10.0.300\n')
+        with patch.object(build.subprocess, 'run', return_value=completed) as run:
+            self.assertEqual(build.sdk_version(self.root), '10.0.300')
+        self.assertEqual(run.call_args.kwargs['cwd'], self.root.resolve())
 
 
 if __name__ == '__main__':

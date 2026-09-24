@@ -94,7 +94,8 @@ def msbuild_properties(project, configuration, target_framework, use_project_ref
         command.append(f'-p:TargetFramework={target_framework}')
     if use_project_references is not None:
         command.append(f'-p:UseProjectReferences={use_project_references}')
-    result = subprocess.run(command, capture_output=True, text=True, check=False)
+    result = subprocess.run(command, capture_output=True, text=True, check=False,
+                            cwd=project.parent.resolve())
     if result.returncode:
         raise ValueError(
             f"MSBuild property evaluation failed for {project} ({configuration}, "
@@ -109,6 +110,12 @@ def msbuild_properties(project, configuration, target_framework, use_project_ref
     if not isinstance(properties, dict) or any(name not in properties for name in PACK_PROPERTIES):
         raise ValueError(f'MSBuild omitted one or more requested properties for {project}: {properties!r}')
     return properties
+
+
+def sdk_version(root):
+    result = subprocess.run(['dotnet', '--version'], capture_output=True, text=True,
+                            check=True, cwd=Path(root).resolve())
+    return result.stdout.strip()
 
 
 def evaluate_packability(root, project_paths, evaluator=msbuild_properties, max_workers=8):
@@ -174,7 +181,7 @@ def evaluate_packability(root, project_paths, evaluator=msbuild_properties, max_
             violations.append(f"{project['path']}: effective PackageId is missing or varies across the evaluation matrix: {sorted(package_ids)!r}")
     require(not violations, 'Imported project packability is not excluded:\n' + '\n'.join(violations[:30]))
     return dict(
-        sdkVersion=subprocess.run(['dotnet', '--version'], capture_output=True, text=True, check=True).stdout.strip(),
+        sdkVersion=sdk_version(root),
         projectCount=len(projects),
         evaluationCount=sum(len(project['evaluations']) for project in projects),
         configurations=list(CONFIGURATIONS),
@@ -246,9 +253,12 @@ def prepare(root):
                                          configurations=packability['configurations'], referenceModes=packability['referenceModes']),
                   nukeTestDiscovery=dict(projects=len(test_tree_projects), selectedByNameSuffix=nuke_test_projects,
                                          nonTestHostProjects=non_test_hosts),
-                  canonicalBuildAndTestsVerified=False, publicationAuthorized=False,
+                  # Keep the established receipt path and status field for downstream
+                  # readers; canonical proof is additive and remains explicitly false.
+                  buildCompatibilityVerified=False, canonicalBuildAndTestsVerified=False,
+                  publicationAuthorized=False,
                   files=[dict(path=path, sha256=sha256((root / path).read_bytes())) for path in sorted(touched)])
-    (root / 'canonical-solution-preparation-receipt.json').write_text(json.dumps(report, indent=2) + '\n')
+    (root / 'consolidated-build-receipt.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps({k: v for k, v in report.items() if k != 'files'}, indent=2))
 
 
