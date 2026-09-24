@@ -24,7 +24,14 @@ SOURCE_COMMITS = {
     'core': '8e893e02c4ac089d526b0a0d294a8546f021d072',
     **rehearsal.PINS,
 }
-# Keep prior reviewed profiles accepted while adding the verified upstream-main tip.
+# New source tips differ only in the upstream validation package references;
+# keep the reviewed 3.8-era source profile available for existing receipts.
+CURRENT_TIP_SOURCE_COMMITS = {
+    'core': '1855a2ef2719d536a66181dec604e781bfdd42a9',
+    'extensions': 'ba8b71d91c15ffe5be4b2c539cf9f712e74af775',
+    'studio': '20ceaeeed7e671f0c9662003e82063026f2216de',
+}
+# Keep prior reviewed profiles accepted alongside the current-tip rehearsal.
 SUPPORTED_CORE_PROFILE_COMMITS = (
     '076f022cc174d497af26fc8e26414970e61a79b1',
     '95a658b96107ad4dbb280a13972479af74bc6a30',
@@ -46,6 +53,14 @@ PACK_PROPERTIES = (
 def require(condition, message):
     if not condition:
         raise ValueError(message)
+
+
+def supported_source_profiles():
+    return (
+        SOURCE_COMMITS,
+        *({**SOURCE_COMMITS, 'core': core_commit} for core_commit in SUPPORTED_CORE_PROFILE_COMMITS),
+        CURRENT_TIP_SOURCE_COMMITS,
+    )
 
 
 def sha256(data):
@@ -205,10 +220,8 @@ def verify_workspace(root):
     require(receipt_path.is_file() and not receipt_path.is_symlink(), 'Missing regular import receipt')
     receipt = json.loads(receipt_path.read_text())
     source_commits = receipt['sourceCommits']
-    supported_pins = (SOURCE_COMMITS,) + tuple(
-        {**SOURCE_COMMITS, 'core': core_commit} for core_commit in SUPPORTED_CORE_PROFILE_COMMITS
-    )
-    require(source_commits in supported_pins, 'Unsupported source pins; re-review the patch for new source commits')
+    require(source_commits in supported_source_profiles(),
+            'Unsupported source pins; re-review the patch for new source commits')
     head = rehearsal.git(root, 'rev-parse', 'HEAD').decode().strip()
     require(head == receipt['rehearsalCommit'], 'HEAD is not the recorded rehearsal')
     parents = rehearsal.git(root, 'show', '-s', '--format=%P', head).decode().split()
@@ -234,6 +247,7 @@ def prepare_in_place(root):
     projects = mapped_projects + [ADDED_TEST]
     require(len(projects) == len(set(projects)), 'Duplicate imported project paths')
     solution = solution_with_projects((root / 'Elsa.sln').read_text(), projects)
+    remove_unused_blazored_references(root, receipt['sourceCommits'])
     patch = PATCH.read_bytes()
     # git apply checks every hunk before changing any file. It rejects unsafe paths
     # by default; the patch is a reviewed repository artifact, never caller input.
@@ -266,6 +280,33 @@ def prepare_in_place(root):
                   files=[dict(path=path, sha256=sha256((root / path).read_bytes())) for path in sorted(touched)])
     (root / 'consolidated-build-receipt.json').write_text(json.dumps(report, indent=2) + '\n')
     return report
+
+
+def remove_unused_blazored_references(root, source_commits):
+    """Drop new references made obsolete by the reviewed integration patch.
+
+    The patch replaces Agents' Blazored validator with the local submit validator
+    and removes WorkflowContexts' unused Razor import. Secrets is deliberately
+    retained under the inert duplicate-source tree, so it needs no active edit.
+    """
+    if source_commits != CURRENT_TIP_SOURCE_COMMITS:
+        return
+
+    references = (
+        'src/extensions/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj',
+        'src/extensions/workflows/Elsa.Studio.WorkflowContexts/Elsa.Studio.WorkflowContexts.csproj',
+    )
+    pattern = re.compile(
+        r'(?m)^[ \t]*\r?\n[ \t]*<ItemGroup>[ \t]*\r?\n'
+        r'[ \t]*<PackageReference Include="Blazored\.FluentValidation"[ \t]*/>[ \t]*\r?\n'
+        r'[ \t]*</ItemGroup>[ \t]*(?:\r?\n|$)'
+    )
+    for relative in references:
+        path = root / relative
+        content = path.read_text()
+        updated, count = pattern.subn('', content)
+        require(count == 1, f'Expected one obsolete Blazored.FluentValidation item group in {relative}; found {count}')
+        path.write_text(updated)
 
 
 def prepare(root):

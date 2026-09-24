@@ -154,6 +154,40 @@ new file mode 100644
         patch_review = ledger['core076To95a658BuildInputComparison']['sourceIntegrationPatchPathReview']
         self.assertEqual(patch_review['sha256'], hashlib.sha256(SOURCE_INTEGRATION_PATCH.read_bytes()).hexdigest())
 
+    def test_current_tip_profile_is_additive_and_prunes_only_obsolete_blazored_refs(self):
+        current = {
+            'core': '1855a2ef2719d536a66181dec604e781bfdd42a9',
+            'extensions': 'ba8b71d91c15ffe5be4b2c539cf9f712e74af775',
+            'studio': '20ceaeeed7e671f0c9662003e82063026f2216de',
+        }
+        profiles = build.supported_source_profiles()
+        self.assertEqual(profiles[-1], current)
+        self.assertEqual(profiles[0], build.SOURCE_COMMITS)
+        self.assertEqual(len(profiles), 4)
+
+        agent = self.root / 'src/extensions/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj'
+        contexts = self.root / 'src/extensions/workflows/Elsa.Studio.WorkflowContexts/Elsa.Studio.WorkflowContexts.csproj'
+        secrets = self.root / 'doc/integration-program/legacy/extensions/src/modules/secrets/Elsa.Studio.Secrets/Elsa.Studio.Secrets.csproj.source'
+        for path in (agent, contexts, secrets):
+            path.parent.mkdir(parents=True)
+            path.write_text('<Project>\n\n  <ItemGroup>\n    <PackageReference Include="Blazored.FluentValidation"/>\n  </ItemGroup>\n\n</Project>\n')
+
+        build.remove_unused_blazored_references(self.root, current)
+
+        for path in (agent, contexts):
+            self.assertNotIn('Blazored.FluentValidation', path.read_text())
+        self.assertIn('Blazored.FluentValidation', secrets.read_text())
+
+    def test_old_profiles_leave_blazored_references_unchanged(self):
+        path = self.root / 'src/extensions/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj'
+        path.parent.mkdir(parents=True)
+        original = '<Project><PackageReference Include="Blazored.FluentValidation"/></Project>\n'
+        path.write_text(original)
+
+        build.remove_unused_blazored_references(self.root, build.SOURCE_COMMITS)
+
+        self.assertEqual(path.read_text(), original)
+
     def test_rejects_dirty_tracked_source_without_overwriting(self):
         original_solution = (self.output / 'Elsa.sln').read_text()
         path = self.output / 'src/studio/UI/UI.csproj'
