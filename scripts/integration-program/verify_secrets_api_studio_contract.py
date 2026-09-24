@@ -174,6 +174,33 @@ def assert_equal(label, actual, expected):
         fail(f'{label} differs from pinned contract fixture.\nExpected: {json.dumps(expected, sort_keys=True)}\nActual: {json.dumps(actual, sort_keys=True)}')
 
 
+def verify_legacy_identity_disposition(fixture, core_secret, core_version, legacy_entity, legacy_update, legacy_delete):
+    expected = {
+        'decision': 'unsupported',
+        'legacyIdAdapterEnabled': False,
+        'legacyOwnerMappedToManagedOwner': False,
+        'legacyPlaintextInputEnabled': False,
+        'sidecarUse': 'provenance-only',
+        'legacyConsumerUsage': 'unknown',
+        'clientMigration': 'separate-legacy-host-until-reviewed-bridge-and-name-route-client-upgrade',
+    }
+    assert_equal('Legacy identity disposition', fixture['legacyIdentityDisposition'], expected)
+    if 'public string SecretId { get; set; }' not in legacy_entity or 'Id = Id' not in legacy_entity:
+        fail('Pinned legacy row and logical secret IDs are no longer distinct in the entity')
+    # A base class could provide Id even when SecretVersion declares no such property.
+    # Any new inheritance requires source review before this unsupported policy remains valid.
+    if re.search(r'\bclass\s+SecretVersion\s*:\s*[^\{]+\{', core_version) or 'Id' in property_names(core_version, 'SecretVersion'):
+        fail('Core SecretVersion gained an ID; review the unsupported adapter decision')
+    core_properties = property_names(core_secret, 'Secret')
+    if 'Owner' in core_properties or not {'ManagedOwnerId', 'ManagedGenerationId'} <= set(core_properties):
+        fail('Core ownership fields changed; review the unsupported Owner mapping decision')
+    if 'var id = Route<string>("id")' not in legacy_update or 'manager.GetAsync(id' not in legacy_update:
+        fail('Pinned legacy update no longer loads the route row ID')
+    if 'manager.GetAsync(req.Id' not in legacy_delete:
+        fail('Pinned legacy delete no longer loads the route row ID')
+    return expected
+
+
 def verify(core_repo, extensions_repo, studio_repo, fixture):
     pins = fixture['sourcePins']
     for name, repo in [('core', core_repo), ('extensions', extensions_repo), ('studio', studio_repo)]:
@@ -249,6 +276,13 @@ def verify(core_repo, extensions_repo, studio_repo, fixture):
     legacy_get = read_source(extensions_repo, pins['extensions'], fixture['sourcePaths']['legacyGetEndpoint'])
     if fixture['coreLookupMarker'] not in core_get or fixture['legacyLookupMarker'] not in legacy_get:
         fail('Core name lookup and legacy row-ID lookup semantics changed')
+    identity = verify_legacy_identity_disposition(
+        fixture,
+        read_source(core_repo, pins['core'], fixture['sourcePaths']['coreSecretModel']),
+        read_source(core_repo, pins['core'], fixture['sourcePaths']['coreVersionModel']),
+        legacy_entity,
+        read_source(extensions_repo, pins['extensions'], fixture['sourcePaths']['legacyUpdateEndpoint']),
+        read_source(extensions_repo, pins['extensions'], fixture['sourcePaths']['legacyDeleteEndpoint']))
 
     core_feature = read_source(core_repo, pins['core'], fixture['sourcePaths']['coreFeature'])
     legacy_feature = read_source(extensions_repo, pins['extensions'], fixture['sourcePaths']['legacyFeature'])
@@ -269,6 +303,7 @@ def verify(core_repo, extensions_repo, studio_repo, fixture):
         'legacyOwnerFieldHasNoEndpointAuthorizationUse': True,
         'studioRoutesHaveOneCoreTemplateOwner': True,
         'coreFeatureAndLegacyApiAreSeparateRegistrations': True,
+        'legacyIdentityDisposition': identity,
         'consolidatedSampleBuildObservation': fixture['consolidatedSampleBuildObservation'],
         'defaultHostRuntimeRouteCompositionVerified': False,
         'crossTenantHttpRequestsVerifiedBySourceContract': False,

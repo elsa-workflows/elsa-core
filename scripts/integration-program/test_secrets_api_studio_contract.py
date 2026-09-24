@@ -111,6 +111,40 @@ class SecretsApiStudioContractTests(unittest.TestCase):
         self.assertIn(plaintext_route, legacy)
         self.assertNotIn(plaintext_route, core)
 
+    def test_legacy_id_policy_fails_closed_if_adapter_or_plaintext_route_is_enabled(self):
+        sources = (
+            'public class Secret {\npublic string? ManagedOwnerId { get; set; }\n'
+            'public string? ManagedGenerationId { get; set; }\n}',
+            'public class SecretVersion {\npublic int Version { get; set; }\n}',
+            'public class Secret { public string SecretId { get; set; }\n Id = Id;\n}',
+            'var id = Route<string>("id")!; await manager.GetAsync(id, ct);',
+            'await manager.GetAsync(req.Id, ct);',
+        )
+        disposition = CONTRACT.verify_legacy_identity_disposition(self.fixture, *sources)
+        self.assertEqual('unsupported', disposition['decision'])
+
+        for field, unsafe_value in (
+            ('decision', 'supported'),
+            ('legacyIdAdapterEnabled', True),
+            ('legacyOwnerMappedToManagedOwner', True),
+            ('legacyPlaintextInputEnabled', True),
+            ('legacyConsumerUsage', 'none'),
+        ):
+            with self.subTest(field=field):
+                unsafe_fixture = json.loads(json.dumps(self.fixture))
+                unsafe_fixture['legacyIdentityDisposition'][field] = unsafe_value
+                with self.assertRaisesRegex(ValueError, 'Legacy identity disposition'):
+                    CONTRACT.verify_legacy_identity_disposition(unsafe_fixture, *sources)
+
+        with self.assertRaisesRegex(ValueError, 'Core SecretVersion gained an ID'):
+            CONTRACT.verify_legacy_identity_disposition(
+                self.fixture, sources[0],
+                'public class SecretVersion {\npublic string Id { get; set; }\n}', *sources[2:])
+        with self.assertRaisesRegex(ValueError, 'Core SecretVersion gained an ID'):
+            CONTRACT.verify_legacy_identity_disposition(
+                self.fixture, sources[0],
+                'public class SecretVersion : Entity {\npublic int Version { get; set; }\n}', *sources[2:])
+
     def test_safe_studio_dto_omissions_are_explicit(self):
         differences = self.fixture['dtoProjectionDifferences']
 
