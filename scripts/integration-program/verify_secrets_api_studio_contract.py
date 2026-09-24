@@ -187,7 +187,9 @@ def verify_legacy_identity_disposition(fixture, core_secret, core_version, legac
     assert_equal('Legacy identity disposition', fixture['legacyIdentityDisposition'], expected)
     if 'public string SecretId { get; set; }' not in legacy_entity or 'Id = Id' not in legacy_entity:
         fail('Pinned legacy row and logical secret IDs are no longer distinct in the entity')
-    if 'Id' in property_names(core_version, 'SecretVersion'):
+    # A base class could provide Id even when SecretVersion declares no such property.
+    # Any new inheritance requires source review before this unsupported policy remains valid.
+    if re.search(r'\bclass\s+SecretVersion\s*:\s*[^\{]+\{', core_version) or 'Id' in property_names(core_version, 'SecretVersion'):
         fail('Core SecretVersion gained an ID; review the unsupported adapter decision')
     core_properties = property_names(core_secret, 'Secret')
     if 'Owner' in core_properties or not {'ManagedOwnerId', 'ManagedGenerationId'} <= set(core_properties):

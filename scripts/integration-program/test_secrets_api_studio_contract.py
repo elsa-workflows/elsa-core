@@ -140,6 +140,10 @@ class SecretsApiStudioContractTests(unittest.TestCase):
             CONTRACT.verify_legacy_identity_disposition(
                 self.fixture, sources[0],
                 'public class SecretVersion {\npublic string Id { get; set; }\n}', *sources[2:])
+        with self.assertRaisesRegex(ValueError, 'Core SecretVersion gained an ID'):
+            CONTRACT.verify_legacy_identity_disposition(
+                self.fixture, sources[0],
+                'public class SecretVersion : Entity {\npublic int Version { get; set; }\n}', *sources[2:])
 
     def test_safe_studio_dto_omissions_are_explicit(self):
         differences = self.fixture['dtoProjectionDifferences']
