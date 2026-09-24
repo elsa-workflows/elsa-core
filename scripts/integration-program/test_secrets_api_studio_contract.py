@@ -141,12 +141,14 @@ class SecretsApiStudioContractTests(unittest.TestCase):
             line[1:] for line in patch.splitlines()
             if line.startswith('+') and not line.startswith('+++'))
         for marker in (
+            'var useSecrets = configuration.GetValue("Features:Secrets:Enabled", false);',
             '.UseSecrets(secrets =>',
             'secrets.ConfigureOptions = options => configuration.GetSection("Secrets").Bind(options);',
             'secrets.UseEntityFrameworkCore(ef =>',
             '.UseSecretsJavaScript();'
         ):
             self.assertIn(marker, added_source)
+        self.assertIn('-const bool useSecrets = false;', patch)
         self.assertIn('ef.UseSqlite(sp => sp.GetSqliteConnectionString());', patch)
         self.assertIn('-    options.Schedule.ConfigureTask<UpdateExpiredSecretsRecurringTask>', patch)
 
