@@ -152,7 +152,7 @@ def _workflow_activity_nodes(workflow: Any) -> list[tuple[str, dict[str, Any]]]:
             return
 
         short_name = type_name.rsplit(".", 1)[-1]
-        if short_name in UNSUPPORTED_CONTAINER_NAMES or any(
+        if (type_name.startswith("Elsa.") and short_name in UNSUPPORTED_CONTAINER_NAMES) or any(
             isinstance(node.get(property_name), (dict, list))
             for property_name in UNSUPPORTED_TOPOLOGY_PROPERTY_CASES
         ):

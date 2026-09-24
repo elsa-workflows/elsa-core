@@ -171,7 +171,7 @@ class GitHubActivityIdMigrationTests(unittest.TestCase):
         nested = copy.deepcopy(self.workflow["Root"]["activities"][0])
         containers = (
             {"type": "Elsa.For", "id": "loop", "body": nested},
-            {"type": "Elsa.StateMachine", "id": "state-machine", "states": [{"name": "active", "activity": nested}]},
+            {"type": "Elsa.StateMachine", "id": "state-machine", "states": [{"name": "active", "entry": nested}]},
         )
         for container in containers:
             with self.subTest(container=container["type"]):
@@ -195,6 +195,17 @@ class GitHubActivityIdMigrationTests(unittest.TestCase):
                     )
                     self.assertEqual(2, result.returncode, result.stderr)
                     self.assertFalse(output.exists())
+
+    def test_unrelated_custom_leaf_with_container_short_name_is_preserved(self):
+        for type_name in ("Acme.For", "Acme.StateMachine"):
+            with self.subTest(type_name=type_name):
+                document = copy.deepcopy(self.workflow)
+                leaf = {"type": type_name, "id": "custom-leaf", "version": 1}
+                document["Root"]["activities"].append(leaf)
+                mapping = mapping_for_document(document)
+                migrated = migrate_document(document, mapping, WORKFLOW_KEY, mapping["workflow_sha256"])
+                self.assertEqual(leaf, migrated["Root"]["activities"][-1])
+                self.assertEqual("activity-get-comment", migrated["Root"]["activities"][0]["id"])
 
     def test_unsupported_references_on_workflow_or_sequence_are_rejected(self):
         workflows = (
