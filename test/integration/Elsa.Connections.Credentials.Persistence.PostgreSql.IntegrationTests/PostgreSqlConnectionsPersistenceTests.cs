@@ -216,6 +216,16 @@ public sealed class PostgreSqlConnectionsPersistenceTests(PostgreSqlConnectionsF
         Assert.Null(await firstStore.FindAsync("tenant-b", "env-a", "workflow-1", "binding-grant"));
         Assert.Null(await firstStore.FindAsync("tenant-a", "env-b", "workflow-1", "binding-grant"));
 
+        // Each accepted identifier can occupy 600 UTF-8 bytes at the 200 UTF-16-code-unit limit.
+        // Exercise all four composite-key fields at that boundary against PostgreSQL itself.
+        var longScope = new string('\u0800', 200);
+        await first.GetRequiredService<IConnectionLifecycleStore>()
+            .CreateAsync(Connection("conn-long-scope", longScope, longScope));
+        Assert.NotNull(await first.GetRequiredService<IConnectionCredentialBindingStore>()
+            .TryCreateAsync(longScope, longScope, longScope, "conn-long-scope"));
+        Assert.NotNull(await firstStore.TryIssueAsync(longScope, longScope, longScope, longScope,
+            "conn-long-scope", 1, "actor-1", now));
+
         await using var second = CreateWorker(fixture.ConnectionString);
         var secondStore = second.GetRequiredService<IConnectionCredentialUseGrantStore>();
         var reloaded = await secondStore.FindAsync("tenant-a", "env-a", "workflow-1", "binding-grant");
