@@ -24,8 +24,9 @@ SOURCE_COMMITS = {
     'core': '8e893e02c4ac089d526b0a0d294a8546f021d072',
     **rehearsal.PINS,
 }
-# New source tips differ only in the upstream validation package references;
-# keep the reviewed 3.8-era source profile available for existing receipts.
+# Keep both reviewed Extensions/Studio tips and exact Core commits available for
+# existing receipts. The newer Core tip includes merged Secrets and integration
+# changes, so its full mapped source must be evaluated again.
 PREVIOUS_CURRENT_TIP_SOURCE_COMMITS = {
     'core': '1855a2ef2719d536a66181dec604e781bfdd42a9',
     **rehearsal.CURRENT_TIP_PINS,
