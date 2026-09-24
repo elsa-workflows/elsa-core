@@ -42,7 +42,7 @@
         "extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287",
         "studio": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822"
       },
-      "status": "This pin was verified as Core main at profile-selection time; current Core main is recorded separately above. The exact raw rehearsal, canonical preparer, and 2,586-case property evaluation are complete. Four supplemental current-main compatibility/test-layout patches were applied after the property evaluation. The canonical NUKE Test target is running; no build/test completion is asserted yet."
+      "status": "Canonical NUKE Restore, Compile, and Test completed successfully for this disposable 95a profile plus the four recorded supplemental patches. This remains a historical rehearsal pin, not current Core main."
     }
   ],
   "core076To95a658BuildInputComparison": {
@@ -220,11 +220,46 @@
     ],
     "canonicalTestRun": {
       "command": "env -u NUKE_ENTERPRISE_TOKEN ./build.sh --host Terminal --target Test",
-      "status": "in-progress",
+      "status": "completed",
       "includesRestoreCompileAndTest": true,
       "packPushPublishTargetsInvoked": false,
       "expectedNukeTestProjectCount": 95,
-      "actualProjectAndFrameworkExecutionInventory": "pending completion and log analysis"
+      "actualProjectAndFrameworkExecutionInventory": "pending completion and log analysis",
+      "exitCode": 0,
+      "completedAtUtc": "2026-09-24T04:08:42Z",
+      "canonicalSolutionProjectEntries": 343,
+      "actualProjectCommandCount": 95,
+      "uniqueProjectCommandPaths": 95,
+      "retainedTrxCount": 94,
+      "nukeSummary": {
+        "passed": 6056,
+        "skipped": 148,
+        "failed": 0
+      },
+      "allFrameworkConsoleSummaries": {
+        "uniqueAssemblyFrameworkRuns": 94,
+        "passed": 6222,
+        "skipped": 146,
+        "failed": 0
+      },
+      "allFrameworkIncludingTwoZeroExecutedTrx": {
+        "passed": 6222,
+        "skipped": 148,
+        "failed": 0
+      },
+      "designerFrameworkResults": {
+        "net8.0": 83,
+        "net9.0": 83,
+        "net10.0": 83
+      },
+      "compile": {
+        "errors": 0,
+        "warnings": 1570
+      },
+      "logPath": "/tmp/elsa-8194/95a-canonical-compile-test.log",
+      "logSha256": "39b8e102204e1f2a02029acc3589d3b8d982ec94fdffd61f5a547e7e393ffe2b",
+      "durableEvidencePath": "doc/integration-program/consolidation/canonical-95a-nuke-test-evidence.json",
+      "hostedPullRequestChecks": "pending exact-head hosted CI"
     }
   }
 }
