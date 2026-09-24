@@ -8,7 +8,7 @@ using Nuke.Components;
 [CustomGitHubActions(
         "pr",
         GitHubActionsImage.UbuntuLatest,
-        OnPullRequestBranches = ["main", "patch/*", "develop/*"],
+        OnPullRequestBranches = ["main", "patch/*", "develop/*", "release/*"],
         OnPullRequestIncludePaths = ["**/*"],
         PublishArtifacts = false,
         InvokedTargets = [nameof(ICompile.Compile), nameof(ITest.Test)],
