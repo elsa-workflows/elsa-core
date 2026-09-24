@@ -117,3 +117,25 @@ this mapped tip fails existing Secrets service-lifetime validation, so this
 Production-mode route observation does not clear that separate host issue.
 The route probe does not establish tenant-membership policy, Studio browser
 behavior, published-package upgrade compatibility, or release readiness.
+
+### Newer Core pin and Development startup (2026-09-24)
+
+The [newer-pin receipt](current-core-route-probe-receipt.json) records a second
+disposable, no-remote import rehearsal at Core
+`a13ac7a412e037280d7a568fd9dd87b06ff8b724`, the same Extensions and Studio
+pins above, and synthetic rehearsal commit
+`372ed7ed3973c90fa581bf6003040900137bc093`. This mapped source includes the
+merged Secrets service-lifetime correction in #8370. The reviewed Workbench,
+Studio menu, BPMN layout, two-tenant, and fixture-only route-probe overlays were
+applied to the disposable source before building the `net10.0` Workbench host.
+
+The host started in both Production and Development. In each mode, the private
+loopback probe response passed `validate_route_probe_payload`: all ten routes
+were owned by the canonical Core Secrets endpoint assembly and no legacy route
+or assembly was present. The Development run therefore clears the specific
+service-lifetime startup failure observed at the older Core pin. The fixture
+deliberately had no sign-in credentials, and Elsa emitted its expected identity
+bootstrap diagnostic; management authorization was not exercised. Both hosts
+were stopped and the private fixture was removed. This is still a mapped-source
+host check, not the imported-source Studio browser repeat or consumer upgrade
+proof required before closing #8326.
