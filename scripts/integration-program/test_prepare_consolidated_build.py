@@ -171,12 +171,56 @@ new file mode 100644
         for path in (agent, contexts, secrets):
             path.parent.mkdir(parents=True)
             path.write_text('<Project>\n\n  <ItemGroup>\n    <PackageReference Include="Blazored.FluentValidation"/>\n  </ItemGroup>\n\n</Project>\n')
+        agent.write_bytes(agent.read_bytes().replace(b'\n', b'\r\n'))
 
         build.remove_unused_blazored_references(self.root, current)
 
         for path in (agent, contexts):
             self.assertNotIn('Blazored.FluentValidation', path.read_text())
+        self.assertNotIn(b'\n', agent.read_bytes().replace(b'\r\n', b''))
         self.assertIn('Blazored.FluentValidation', secrets.read_text())
+
+    def test_current_tip_rehearsal_receipt_prepares_and_applies_patch(self):
+        repos = {name: self.root / name for name in ('core', 'extensions', 'studio')}
+        extension_files = (
+            'src/modules/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj',
+            'src/modules/workflows/Elsa.Studio.WorkflowContexts/Elsa.Studio.WorkflowContexts.csproj',
+        )
+        for relative in extension_files:
+            path = repos['extensions'] / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('<Project>\n\n  <ItemGroup>\n'
+                            '    <PackageReference Include="Blazored.FluentValidation"/>\n'
+                            '  </ItemGroup>\n\n</Project>\n')
+        build.rehearsal.git(repos['extensions'], 'add', '.')
+        build.rehearsal.git(repos['extensions'], '-c', 'user.name=Test',
+                            '-c', 'user.email=test@example.invalid', '-c', 'commit.gpgsign=false',
+                            'commit', '--quiet', '-m', 'Current tip fixture')
+        refs = {name: build.rehearsal.git(repo, 'rev-parse', 'HEAD').decode().strip()
+                for name, repo in repos.items()}
+        output = self.root / 'current-tip-rehearsal'
+        with patch.dict(build.CURRENT_TIP_SOURCE_COMMITS, refs, clear=True), \
+                patch.dict(build.rehearsal.CURRENT_TIP_PINS,
+                           {name: refs[name] for name in ('extensions', 'studio')}, clear=True):
+            with contextlib.redirect_stdout(io.StringIO()):
+                build.rehearsal.rehearse(repos['core'],
+                                          {name: repos[name] for name in ('extensions', 'studio')},
+                                          output, source_profile='current-tip')
+            build.rehearsal.git(output, 'checkout', '--quiet', 'rehearsal')
+            build.rehearsal.git(output, 'restore', '--source=HEAD', '--worktree', '.')
+            with patch.object(build, 'evaluate_packability', return_value={
+                    'sdkVersion': '10.0.300', 'projectCount': 6, 'evaluationCount': 36,
+                    'configurations': ['Debug', 'Release'], 'referenceModes': build.REFERENCE_MODES,
+                    'allProjectsNonPackable': True, 'allProjectsDisablePackageOnBuild': True,
+                    'projects': [],
+            }), contextlib.redirect_stdout(io.StringIO()):
+                build.prepare(output)
+        receipt = json.loads((output / 'consolidated-build-receipt.json').read_text())
+        self.assertEqual(receipt['sourceCommits'], refs)
+        self.assertTrue((output / build.ADDED_TEST).is_file())
+        for relative in extension_files:
+            mapped = relative.replace('src/modules/', 'src/extensions/', 1)
+            self.assertNotIn('Blazored.FluentValidation', (output / mapped).read_text())
 
     def test_old_profiles_leave_blazored_references_unchanged(self):
         path = self.root / 'src/extensions/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj'

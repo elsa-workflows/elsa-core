@@ -15,6 +15,11 @@ PINS = {
     'extensions': '33fa0bfd28c7585240e3d4f665058c067b17e287',
     'studio': '9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822',
 }
+CURRENT_TIP_PINS = {
+    'extensions': 'ba8b71d91c15ffe5be4b2c539cf9f712e74af775',
+    'studio': '20ceaeeed7e671f0c9662003e82063026f2216de',
+}
+PIN_PROFILES = {'baseline': PINS, 'current-tip': CURRENT_TIP_PINS}
 # Preserve competing implementations as inert evidence until compatibility review.
 DUPLICATES = (
     'src/modules/secrets/Elsa.Secrets.Persistence.EFCore',
@@ -91,7 +96,10 @@ def relocation_plan(core, sources):
     return destinations, records
 
 
-def rehearse(core, sources, output):
+def rehearse(core, sources, output, source_profile='baseline'):
+    if source_profile not in PIN_PROFILES:
+        raise ValueError(f'Unsupported source profile: {source_profile}')
+    pins = PIN_PROFILES[source_profile]
     repositories = {'core': Path(core).resolve(), **{k: Path(v).resolve() for k, v in sources.items()}}
     repositories = {k: Path(git(v, 'rev-parse', '--show-toplevel').decode().strip()).resolve()
                     for k, v in repositories.items()}
@@ -103,7 +111,7 @@ def rehearse(core, sources, output):
     for product, repo in repositories.items():
         if git(repo, 'rev-parse', '--is-shallow-repository').strip() != b'false':
             raise ValueError(f'Full history required: {product}; fetch --unshallow first')
-        ref = 'HEAD' if product == 'core' else PINS[product]
+        ref = 'HEAD' if product == 'core' else pins[product]
         refs[product] = git(repo, 'rev-parse', '--verify', ref + '^{commit}').decode().strip()
     core_tree = tree(repositories['core'], refs['core'])
     sources_tree = {k: tree(repositories[k], refs[k]) for k in sources}
@@ -166,8 +174,11 @@ def main():
     parser.add_argument('--extensions', required=True)
     parser.add_argument('--studio', required=True)
     parser.add_argument('--output', required=True)
+    parser.add_argument('--source-profile', choices=PIN_PROFILES, default='baseline',
+                        help='Use only a reviewed Extensions/Studio source-tip pair')
     args = parser.parse_args()
-    rehearse(args.core, {'extensions': args.extensions, 'studio': args.studio}, args.output)
+    rehearse(args.core, {'extensions': args.extensions, 'studio': args.studio}, args.output,
+             source_profile=args.source_profile)
 
 
 if __name__ == '__main__':

@@ -28,8 +28,7 @@ SOURCE_COMMITS = {
 # keep the reviewed 3.8-era source profile available for existing receipts.
 CURRENT_TIP_SOURCE_COMMITS = {
     'core': '1855a2ef2719d536a66181dec604e781bfdd42a9',
-    'extensions': 'ba8b71d91c15ffe5be4b2c539cf9f712e74af775',
-    'studio': '20ceaeeed7e671f0c9662003e82063026f2216de',
+    **rehearsal.CURRENT_TIP_PINS,
 }
 # Keep prior reviewed profiles accepted alongside the current-tip rehearsal.
 SUPPORTED_CORE_PROFILE_COMMITS = (
@@ -297,16 +296,16 @@ def remove_unused_blazored_references(root, source_commits):
         'src/extensions/workflows/Elsa.Studio.WorkflowContexts/Elsa.Studio.WorkflowContexts.csproj',
     )
     pattern = re.compile(
-        r'(?m)^[ \t]*\r?\n[ \t]*<ItemGroup>[ \t]*\r?\n'
-        r'[ \t]*<PackageReference Include="Blazored\.FluentValidation"[ \t]*/>[ \t]*\r?\n'
-        r'[ \t]*</ItemGroup>[ \t]*(?:\r?\n|$)'
+        rb'(?m)^[ \t]*\r?\n[ \t]*<ItemGroup>[ \t]*\r?\n'
+        rb'[ \t]*<PackageReference Include="Blazored\.FluentValidation"[ \t]*/>[ \t]*\r?\n'
+        rb'[ \t]*</ItemGroup>[ \t]*(?:\r?\n|$)'
     )
     for relative in references:
         path = root / relative
-        content = path.read_text()
-        updated, count = pattern.subn('', content)
+        content = path.read_bytes()
+        updated, count = pattern.subn(b'', content)
         require(count == 1, f'Expected one obsolete Blazored.FluentValidation item group in {relative}; found {count}')
-        path.write_text(updated)
+        path.write_bytes(updated)
 
 
 def prepare(root):
