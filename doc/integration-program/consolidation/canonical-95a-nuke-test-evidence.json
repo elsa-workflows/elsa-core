@@ -1,0 +1,2879 @@
+{
+  "schemaVersion": 1,
+  "profile": {
+    "core": "95a658b96107ad4dbb280a13972479af74bc6a30",
+    "extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287",
+    "studio": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822",
+    "rawRehearsalCommit": "8fe2bdbdedacd06c99d83b72764fdca9f325bc0c",
+    "canonicalSolution": "Elsa.sln",
+    "supplementalPatches": [
+      {
+        "name": "Dapper atomic updates",
+        "sha256": "0b73ba77d301b4288de1929bd22cf2d5ffc70947eccc2437a1d8f00392e6aa21"
+      },
+      {
+        "name": "Mongo atomic updates",
+        "sha256": "b06b99672ad3304413a8ea1093da3c6483db6b93a9a429a4c6312e62e29d841f"
+      },
+      {
+        "name": "Workbench canonical Secrets sample",
+        "sha256": "5dd4667190c538279f3b89cea80b81681402775555a89d89248001c2e22aa446"
+      },
+      {
+        "name": "Studio test layout",
+        "sha256": "ea0b94db04f126356194620cacb39a6bbeda0965caa54159089641aeb88b81a7"
+      }
+    ],
+    "scopeNote": "The 2,586-case package-property matrix ran before the four supplemental patches; the NUKE run below includes them."
+  },
+  "invocation": {
+    "command": "env -u NUKE_ENTERPRISE_TOKEN ./build.sh --host Terminal --target Test",
+    "workingDirectory": "/tmp/elsa-8194-core-95a-rehearsal",
+    "logPath": "/tmp/elsa-8194/95a-canonical-compile-test.log",
+    "logSha256": "39b8e102204e1f2a02029acc3589d3b8d982ec94fdffd61f5a547e7e393ffe2b",
+    "exitCode": 0,
+    "targets": {
+      "restore": "succeeded",
+      "compile": "succeeded",
+      "test": "succeeded",
+      "pack": false,
+      "push": false,
+      "publish": false
+    },
+    "duration": {
+      "restore": "00:00:19",
+      "compile": "00:04:53",
+      "test": "00:09:10",
+      "total": "00:14:23"
+    },
+    "compile": {
+      "errors": 0,
+      "warnings": 1570
+    },
+    "nukeSummary": {
+      "passed": 6056,
+      "skipped": 148,
+      "failed": 0
+    }
+  },
+  "selection": {
+    "canonicalSolutionProjectEntries": 343,
+    "nukeSelectedTestProjects": 95,
+    "commandsObserved": 95,
+    "uniqueCommandProjectPaths": 95,
+    "projects": [
+      {
+        "name": "Elsa.Workflows.IntegrationTests",
+        "path": "test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Workflows.Core.UnitTests",
+        "path": "test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Workflows.Runtime.UnitTests",
+        "path": "test/unit/Elsa.Workflows.Runtime.UnitTests/Elsa.Workflows.Runtime.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Workflows.ComponentTests",
+        "path": "test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj"
+      },
+      {
+        "name": "Elsa.Workflows.PerformanceTests",
+        "path": "test/performance/Elsa.Workflows.PerformanceTests/Elsa.Workflows.PerformanceTests.csproj"
+      },
+      {
+        "name": "Elsa.Activities.IntegrationTests",
+        "path": "test/integration/Elsa.Activities.IntegrationTests/Elsa.Activities.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.JavaScript.IntegrationTests",
+        "path": "test/integration/Elsa.JavaScript.IntegrationTests/Elsa.JavaScript.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Resilience.IntegrationTests",
+        "path": "test/integration/Elsa.Resilience.IntegrationTests/Elsa.Resilience.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Http.UnitTests",
+        "path": "test/unit/Elsa.Http.UnitTests/Elsa.Http.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.SasTokens.UnitTests",
+        "path": "test/unit/Elsa.SasTokens.UnitTests/Elsa.SasTokens.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Alterations.IntegrationTests",
+        "path": "test/integration/Elsa.Alterations.IntegrationTests/Elsa.Alterations.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Activities.UnitTests",
+        "path": "test/unit/Elsa.Activities.UnitTests/Elsa.Activities.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Workflows.Management.UnitTests",
+        "path": "test/unit/Elsa.Workflows.Management.UnitTests/Elsa.Workflows.Management.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Expressions.UnitTests",
+        "path": "test/unit/Elsa.Expressions.UnitTests/Elsa.Expressions.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Scheduling.UnitTests",
+        "path": "test/unit/Elsa.Scheduling.UnitTests/Elsa.Scheduling.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Bpmn.UnitTests",
+        "path": "test/unit/Elsa.Bpmn.UnitTests/Elsa.Bpmn.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Bpmn.Interchange.UnitTests",
+        "path": "test/unit/Elsa.Bpmn.Interchange.UnitTests/Elsa.Bpmn.Interchange.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Common.IntegrationTests",
+        "path": "test/integration/Elsa.Common.IntegrationTests/Elsa.Common.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Bpmn.IntegrationTests",
+        "path": "test/integration/Elsa.Bpmn.IntegrationTests/Elsa.Bpmn.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Bpmn.Interchange.IntegrationTests",
+        "path": "test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Elsa.Bpmn.Interchange.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Dsl.ElsaScript.IntegrationTests",
+        "path": "test/integration/Elsa.Dsl.ElsaScript.IntegrationTests/Elsa.Dsl.ElsaScript.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Resilience.Core.UnitTests",
+        "path": "test/unit/Elsa.Resilience.Core.UnitTests/Elsa.Resilience.Core.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Common.UnitTests",
+        "path": "test/unit/Elsa.Common.UnitTests/Elsa.Common.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Http.IntegrationTests",
+        "path": "test/integration/Elsa.Http.IntegrationTests/Elsa.Http.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Tenants.UnitTests",
+        "path": "test/unit/Elsa.Tenants.UnitTests/Elsa.Tenants.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Features.UnitTests",
+        "path": "test/unit/Elsa.Features.UnitTests/Elsa.Features.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Shells.Api.Tests",
+        "path": "test/unit/Elsa.Shells.Api.Tests/Elsa.Shells.Api.Tests.csproj"
+      },
+      {
+        "name": "Elsa.Identity.UnitTests",
+        "path": "test/unit/Elsa.Identity.UnitTests/Elsa.Identity.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Diagnostics.StructuredLogs.UnitTests",
+        "path": "test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Elsa.Diagnostics.StructuredLogs.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Diagnostics.StructuredLogs.IntegrationTests",
+        "path": "test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests/Elsa.Diagnostics.StructuredLogs.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests",
+        "path": "test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests",
+        "path": "test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Diagnostics.ConsoleLogs.UnitTests",
+        "path": "test/unit/Elsa.Diagnostics.ConsoleLogs.UnitTests/Elsa.Diagnostics.ConsoleLogs.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Diagnostics.ConsoleLogs.IntegrationTests",
+        "path": "test/integration/Elsa.Diagnostics.ConsoleLogs.IntegrationTests/Elsa.Diagnostics.ConsoleLogs.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Secrets.UnitTests",
+        "path": "test/unit/Elsa.Secrets.UnitTests/Elsa.Secrets.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Workflows.Api.UnitTests",
+        "path": "test/unit/Elsa.Workflows.Api.UnitTests/Elsa.Workflows.Api.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Diagnostics.OpenTelemetry.UnitTests",
+        "path": "test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Elsa.Diagnostics.OpenTelemetry.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Diagnostics.OpenTelemetry.IntegrationTests",
+        "path": "test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/Elsa.Diagnostics.OpenTelemetry.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Dashboard.Api.UnitTests",
+        "path": "test/unit/Elsa.Dashboard.Api.UnitTests/Elsa.Dashboard.Api.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Persistence.VNext.UnitTests",
+        "path": "test/unit/Elsa.Persistence.VNext.UnitTests/Elsa.Persistence.VNext.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Persistence.EFCore.UnitTests",
+        "path": "test/unit/Elsa.Persistence.EFCore.UnitTests/Elsa.Persistence.EFCore.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.AI.Abstractions.UnitTests",
+        "path": "test/unit/Elsa.AI.Abstractions.UnitTests/Elsa.AI.Abstractions.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.AI.Copilot.UnitTests",
+        "path": "test/unit/Elsa.AI.Copilot.UnitTests/Elsa.AI.Copilot.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.AI.Host.UnitTests",
+        "path": "test/unit/Elsa.AI.Host.UnitTests/Elsa.AI.Host.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.AI.Persistence.EFCore.UnitTests",
+        "path": "test/unit/Elsa.AI.Persistence.EFCore.UnitTests/Elsa.AI.Persistence.EFCore.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.AI.IntegrationTests",
+        "path": "test/integration/Elsa.AI.IntegrationTests/Elsa.AI.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Platform.Integration.UnitTests",
+        "path": "test/unit/Elsa.Platform.Integration.UnitTests/Elsa.Platform.Integration.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Hosting.Management.UnitTests",
+        "path": "test/unit/Elsa.Hosting.Management.UnitTests/Elsa.Hosting.Management.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.ExternalAuthentication.UnitTests",
+        "path": "test/unit/Elsa.ExternalAuthentication.UnitTests/Elsa.ExternalAuthentication.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.ExternalAuthentication.IntegrationTests",
+        "path": "test/integration/Elsa.ExternalAuthentication.IntegrationTests/Elsa.ExternalAuthentication.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Api.Common.UnitTests",
+        "path": "test/unit/Elsa.Api.Common.UnitTests/Elsa.Api.Common.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.UserTasks.UnitTests",
+        "path": "test/unit/Elsa.UserTasks.UnitTests/Elsa.UserTasks.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.UserTasks.Persistence.EFCore.UnitTests",
+        "path": "test/unit/Elsa.UserTasks.Persistence.EFCore.UnitTests/Elsa.UserTasks.Persistence.EFCore.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.UserTasks.Persistence.ConformanceTests",
+        "path": "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/Elsa.UserTasks.Persistence.ConformanceTests.csproj"
+      },
+      {
+        "name": "Elsa.Hosts.SmokeTests",
+        "path": "test/integration/Elsa.Hosts.SmokeTests/Elsa.Hosts.SmokeTests.csproj"
+      },
+      {
+        "name": "Elsa.Labels.UnitTests",
+        "path": "test/unit/Elsa.Labels.UnitTests/Elsa.Labels.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Alterations.Core.UnitTests",
+        "path": "test/unit/Elsa.Alterations.Core.UnitTests/Elsa.Alterations.Core.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Workflows.Persistence.ConformanceTests",
+        "path": "test/integration/Elsa.Workflows.Persistence.ConformanceTests/Elsa.Workflows.Persistence.ConformanceTests.csproj"
+      },
+      {
+        "name": "Elsa.Labels.Persistence.ConformanceTests",
+        "path": "test/integration/Elsa.Labels.Persistence.ConformanceTests/Elsa.Labels.Persistence.ConformanceTests.csproj"
+      },
+      {
+        "name": "Elsa.Alterations.Persistence.ConformanceTests",
+        "path": "test/integration/Elsa.Alterations.Persistence.ConformanceTests/Elsa.Alterations.Persistence.ConformanceTests.csproj"
+      },
+      {
+        "name": "Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests",
+        "path": "test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests/Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests.csproj"
+      },
+      {
+        "name": "Elsa.Connections.UnitTests",
+        "path": "test/unit/Elsa.Connections.UnitTests/Elsa.Connections.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests",
+        "path": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Secrets.Api.IntegrationTests",
+        "path": "test/integration/Elsa.Secrets.Api.IntegrationTests/Elsa.Secrets.Api.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Studio.Core.Tests",
+        "path": "src/studio/framework/Elsa.Studio.Core.Tests/Elsa.Studio.Core.Tests.csproj"
+      },
+      {
+        "name": "Elsa.Studio.AI.Tests",
+        "path": "src/studio/modules/Elsa.Studio.AI.Tests/Elsa.Studio.AI.Tests.csproj"
+      },
+      {
+        "name": "Elsa.Studio.Administration.Tests",
+        "path": "src/studio/modules/Elsa.Studio.Administration.Tests/Elsa.Studio.Administration.Tests.csproj"
+      },
+      {
+        "name": "Elsa.Studio.Authentication.UI.Tests",
+        "path": "src/studio/modules/Elsa.Studio.Authentication.UI.Tests/Elsa.Studio.Authentication.UI.Tests.csproj"
+      },
+      {
+        "name": "Elsa.Studio.Dashboard.Tests",
+        "path": "src/studio/modules/Elsa.Studio.Dashboard.Tests/Elsa.Studio.Dashboard.Tests.csproj"
+      },
+      {
+        "name": "Elsa.Studio.Diagnostics.ConsoleLogs.Tests",
+        "path": "src/studio/modules/Elsa.Studio.Diagnostics.ConsoleLogs.Tests/Elsa.Studio.Diagnostics.ConsoleLogs.Tests.csproj"
+      },
+      {
+        "name": "Elsa.Studio.Diagnostics.OpenTelemetry.Tests",
+        "path": "src/studio/modules/Elsa.Studio.Diagnostics.OpenTelemetry.Tests/Elsa.Studio.Diagnostics.OpenTelemetry.Tests.csproj"
+      },
+      {
+        "name": "Elsa.Studio.Diagnostics.StructuredLogs.Tests",
+        "path": "src/studio/modules/Elsa.Studio.Diagnostics.StructuredLogs.Tests/Elsa.Studio.Diagnostics.StructuredLogs.Tests.csproj"
+      },
+      {
+        "name": "Elsa.Studio.Environments.Tests",
+        "path": "src/studio/modules/Elsa.Studio.Environments.Tests/Elsa.Studio.Environments.Tests.csproj"
+      },
+      {
+        "name": "Elsa.Studio.ExternalAuthentication.Tests",
+        "path": "src/studio/modules/Elsa.Studio.ExternalAuthentication.Tests/Elsa.Studio.ExternalAuthentication.Tests.csproj"
+      },
+      {
+        "name": "Elsa.Studio.PlatformIntegration.Tests",
+        "path": "src/studio/modules/Elsa.Studio.PlatformIntegration.Tests/Elsa.Studio.PlatformIntegration.Tests.csproj"
+      },
+      {
+        "name": "Elsa.Studio.Security.Tests",
+        "path": "src/studio/modules/Elsa.Studio.Security.Tests/Elsa.Studio.Security.Tests.csproj"
+      },
+      {
+        "name": "Elsa.Studio.UserTasks.Tests",
+        "path": "src/studio/modules/Elsa.Studio.UserTasks.Tests/Elsa.Studio.UserTasks.Tests.csproj"
+      },
+      {
+        "name": "Elsa.Studio.Workflows.Designer.Tests",
+        "path": "src/studio/modules/Elsa.Studio.Workflows.Designer.Tests/Elsa.Studio.Workflows.Designer.Tests.csproj"
+      },
+      {
+        "name": "Elsa.Studio.Workflows.Tests",
+        "path": "src/studio/modules/Elsa.Studio.Workflows.Tests/Elsa.Studio.Workflows.Tests.csproj"
+      },
+      {
+        "name": "Elsa.Actors.ProtoActor.UnitTests",
+        "path": "test/extensions/modules/actors/Elsa.Actors.ProtoActor.UnitTests/Elsa.Actors.ProtoActor.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Studio.Agents.Tests",
+        "path": "test/extensions/modules/agents/Elsa.Studio.Agents.Tests/Elsa.Studio.Agents.Tests.csproj"
+      },
+      {
+        "name": "Elsa.Caching.Distributed.ProtoActor.IntegrationTests",
+        "path": "test/extensions/modules/caching/Elsa.Caching.Distributed.ProtoActor.IntegrationTests/Elsa.Caching.Distributed.ProtoActor.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Logging.Core.IntegrationTests",
+        "path": "test/extensions/modules/diagnostics/Elsa.Logging.Core.IntegrationTests/Elsa.Logging.Core.IntegrationTests.csproj"
+      },
+      {
+        "name": "Elsa.Logging.Core.UnitTests",
+        "path": "test/extensions/modules/diagnostics/Elsa.Logging.Core.UnitTests/Elsa.Logging.Core.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Ldap.UnitTests",
+        "path": "test/extensions/modules/ldap/Elsa.Ldap.UnitTests/Elsa.Ldap.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Mqtt.UnitTests",
+        "path": "test/extensions/modules/mqtt/Elsa.Mqtt.UnitTests/Elsa.Mqtt.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.MongoDb.UnitTests",
+        "path": "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Persistence.Dapper.UnitTests",
+        "path": "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Workflows.Runtime.ProtoActor.UnitTests",
+        "path": "test/extensions/modules/runtimes/Elsa.Workflows.Runtime.ProtoActor.UnitTests/Elsa.Workflows.Runtime.ProtoActor.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Scheduling.Hangfire.UnitTests",
+        "path": "test/extensions/modules/scheduling/Elsa.Scheduling.Hangfire.UnitTests/Elsa.Scheduling.Hangfire.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Scheduling.Quartz.ComponentTests",
+        "path": "test/extensions/modules/scheduling/Elsa.Scheduling.Quartz.ComponentTests/Elsa.Scheduling.Quartz.ComponentTests.csproj"
+      },
+      {
+        "name": "Elsa.Scheduling.Quartz.UnitTests",
+        "path": "test/extensions/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/Elsa.Scheduling.Quartz.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.ServiceBus.AzureServiceBus.ComponentTests",
+        "path": "test/extensions/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj"
+      },
+      {
+        "name": "Elsa.ServiceBus.MassTransit.UnitTests",
+        "path": "test/extensions/modules/servicebus/Elsa.ServiceBus.MassTransit.UnitTests/Elsa.ServiceBus.MassTransit.UnitTests.csproj"
+      },
+      {
+        "name": "Elsa.Slack.Tests",
+        "path": "test/extensions/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj"
+      }
+    ]
+  },
+  "observedTestResults": {
+    "retainedTrx": {
+      "files": 94,
+      "passed": 6056,
+      "failed": 0,
+      "skipped": 148,
+      "executed": 6056,
+      "totalIncludingSkipped": 6204,
+      "rows": [
+        {
+          "file": "Elsa.AI.Abstractions.UnitTests.trx",
+          "counters": {
+            "total": 3,
+            "executed": 3,
+            "passed": 3,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.AI.Abstractions.UnitTests/bin/Debug/net10.0/Elsa.AI.Abstractions.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.AI.Copilot.UnitTests.trx",
+          "counters": {
+            "total": 3,
+            "executed": 3,
+            "passed": 3,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.AI.Copilot.UnitTests/bin/Debug/net10.0/Elsa.AI.Copilot.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.AI.Host.UnitTests.trx",
+          "counters": {
+            "total": 50,
+            "executed": 50,
+            "passed": 50,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.AI.Host.UnitTests/bin/Debug/net10.0/Elsa.AI.Host.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.AI.IntegrationTests.trx",
+          "counters": {
+            "total": 69,
+            "executed": 69,
+            "passed": 69,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.AI.IntegrationTests/bin/Debug/net10.0/Elsa.AI.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.AI.Persistence.EFCore.UnitTests.trx",
+          "counters": {
+            "total": 36,
+            "executed": 36,
+            "passed": 36,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.AI.Persistence.EFCore.UnitTests/bin/Debug/net10.0/Elsa.AI.Persistence.EFCore.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Activities.IntegrationTests.trx",
+          "counters": {
+            "total": 125,
+            "executed": 125,
+            "passed": 125,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Activities.IntegrationTests/bin/Debug/net10.0/Elsa.Activities.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Activities.UnitTests.trx",
+          "counters": {
+            "total": 426,
+            "executed": 426,
+            "passed": 426,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Activities.UnitTests/bin/Debug/net10.0/Elsa.Activities.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Actors.ProtoActor.UnitTests.trx",
+          "counters": {
+            "total": 23,
+            "executed": 23,
+            "passed": 23,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/extensions/modules/actors/Elsa.Actors.ProtoActor.UnitTests/bin/Debug/net10.0/Elsa.Actors.ProtoActor.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Alterations.Core.UnitTests.trx",
+          "counters": {
+            "total": 38,
+            "executed": 38,
+            "passed": 38,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Alterations.Core.UnitTests/bin/Debug/net10.0/Elsa.Alterations.Core.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Alterations.IntegrationTests.trx",
+          "counters": {
+            "total": 16,
+            "executed": 16,
+            "passed": 16,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Alterations.IntegrationTests/bin/Debug/net10.0/Elsa.Alterations.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Alterations.Persistence.ConformanceTests.trx",
+          "counters": {
+            "total": 39,
+            "executed": 39,
+            "passed": 39,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Alterations.Persistence.ConformanceTests/bin/Debug/net10.0/Elsa.Alterations.Persistence.ConformanceTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Api.Common.UnitTests.trx",
+          "counters": {
+            "total": 83,
+            "executed": 83,
+            "passed": 83,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Api.Common.UnitTests/bin/Debug/net10.0/Elsa.Api.Common.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Bpmn.IntegrationTests.trx",
+          "counters": {
+            "total": 63,
+            "executed": 63,
+            "passed": 63,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Bpmn.IntegrationTests/bin/Debug/net10.0/Elsa.Bpmn.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Bpmn.Interchange.IntegrationTests.trx",
+          "counters": {
+            "total": 127,
+            "executed": 127,
+            "passed": 127,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Bpmn.Interchange.IntegrationTests/bin/Debug/net10.0/Elsa.Bpmn.Interchange.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Bpmn.Interchange.UnitTests.trx",
+          "counters": {
+            "total": 21,
+            "executed": 21,
+            "passed": 21,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Bpmn.Interchange.UnitTests/bin/Debug/net10.0/Elsa.Bpmn.Interchange.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Bpmn.UnitTests.trx",
+          "counters": {
+            "total": 30,
+            "executed": 30,
+            "passed": 30,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Bpmn.UnitTests/bin/Debug/net10.0/Elsa.Bpmn.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Caching.Distributed.ProtoActor.IntegrationTests.trx",
+          "counters": {
+            "total": 8,
+            "executed": 8,
+            "passed": 8,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/extensions/modules/caching/Elsa.Caching.Distributed.ProtoActor.IntegrationTests/bin/Debug/net10.0/Elsa.Caching.Distributed.ProtoActor.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Common.IntegrationTests.trx",
+          "counters": {
+            "total": 9,
+            "executed": 9,
+            "passed": 9,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Common.IntegrationTests/bin/Debug/net10.0/Elsa.Common.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Common.UnitTests.trx",
+          "counters": {
+            "total": 97,
+            "executed": 97,
+            "passed": 97,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Common.UnitTests/bin/Debug/net10.0/Elsa.Common.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.trx",
+          "counters": {
+            "total": 4,
+            "executed": 4,
+            "passed": 4,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/bin/Debug/net10.0/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Connections.UnitTests.trx",
+          "counters": {
+            "total": 36,
+            "executed": 36,
+            "passed": 36,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Connections.UnitTests/bin/Debug/net10.0/Elsa.Connections.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Dashboard.Api.UnitTests.trx",
+          "counters": {
+            "total": 19,
+            "executed": 19,
+            "passed": 19,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Dashboard.Api.UnitTests/bin/Debug/net10.0/Elsa.Dashboard.Api.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Diagnostics.ConsoleLogs.IntegrationTests.trx",
+          "counters": {
+            "total": 26,
+            "executed": 26,
+            "passed": 26,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Diagnostics.ConsoleLogs.IntegrationTests/bin/Debug/net10.0/Elsa.Diagnostics.ConsoleLogs.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Diagnostics.ConsoleLogs.UnitTests.trx",
+          "counters": {
+            "total": 23,
+            "executed": 23,
+            "passed": 23,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Diagnostics.ConsoleLogs.UnitTests/bin/Debug/net10.0/Elsa.Diagnostics.ConsoleLogs.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Diagnostics.OpenTelemetry.IntegrationTests.trx",
+          "counters": {
+            "total": 23,
+            "executed": 23,
+            "passed": 23,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/bin/Debug/net10.0/Elsa.Diagnostics.OpenTelemetry.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Diagnostics.OpenTelemetry.UnitTests.trx",
+          "counters": {
+            "total": 23,
+            "executed": 23,
+            "passed": 23,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/bin/Debug/net10.0/Elsa.Diagnostics.OpenTelemetry.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Diagnostics.StructuredLogs.IntegrationTests.trx",
+          "counters": {
+            "total": 6,
+            "executed": 6,
+            "passed": 6,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests/bin/Debug/net10.0/Elsa.Diagnostics.StructuredLogs.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests.trx",
+          "counters": {
+            "total": 22,
+            "executed": 22,
+            "passed": 22,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests/bin/Debug/net10.0/Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests.trx",
+          "counters": {
+            "total": 25,
+            "executed": 25,
+            "passed": 25,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/bin/Debug/net10.0/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.trx",
+          "counters": {
+            "total": 26,
+            "executed": 26,
+            "passed": 26,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/bin/Debug/net10.0/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Diagnostics.StructuredLogs.UnitTests.trx",
+          "counters": {
+            "total": 39,
+            "executed": 39,
+            "passed": 39,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/bin/Debug/net10.0/Elsa.Diagnostics.StructuredLogs.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Dsl.ElsaScript.IntegrationTests.trx",
+          "counters": {
+            "total": 23,
+            "executed": 23,
+            "passed": 23,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Dsl.ElsaScript.IntegrationTests/bin/Debug/net10.0/Elsa.Dsl.ElsaScript.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Expressions.UnitTests.trx",
+          "counters": {
+            "total": 23,
+            "executed": 23,
+            "passed": 23,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Expressions.UnitTests/bin/Debug/net10.0/Elsa.Expressions.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.ExternalAuthentication.IntegrationTests.trx",
+          "counters": {
+            "total": 168,
+            "executed": 168,
+            "passed": 168,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.ExternalAuthentication.IntegrationTests/bin/Debug/net10.0/Elsa.ExternalAuthentication.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.ExternalAuthentication.UnitTests.trx",
+          "counters": {
+            "total": 205,
+            "executed": 205,
+            "passed": 205,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.ExternalAuthentication.UnitTests/bin/Debug/net10.0/Elsa.ExternalAuthentication.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Features.UnitTests.trx",
+          "counters": {
+            "total": 10,
+            "executed": 10,
+            "passed": 10,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Features.UnitTests/bin/Debug/net10.0/Elsa.Features.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Hosting.Management.UnitTests.trx",
+          "counters": {
+            "total": 16,
+            "executed": 16,
+            "passed": 16,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Hosting.Management.UnitTests/bin/Debug/net10.0/Elsa.Hosting.Management.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Hosts.SmokeTests.trx",
+          "counters": {
+            "total": 8,
+            "executed": 8,
+            "passed": 8,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Hosts.SmokeTests/bin/Debug/net10.0/Elsa.Hosts.SmokeTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Http.IntegrationTests.trx",
+          "counters": {
+            "total": 2,
+            "executed": 2,
+            "passed": 2,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Http.IntegrationTests/bin/Debug/net10.0/Elsa.Http.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Http.UnitTests.trx",
+          "counters": {
+            "total": 37,
+            "executed": 37,
+            "passed": 37,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Http.UnitTests/bin/Debug/net10.0/Elsa.Http.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Identity.UnitTests.trx",
+          "counters": {
+            "total": 178,
+            "executed": 178,
+            "passed": 178,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Identity.UnitTests/bin/Debug/net10.0/Elsa.Identity.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.JavaScript.IntegrationTests.trx",
+          "counters": {
+            "total": 158,
+            "executed": 158,
+            "passed": 158,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.JavaScript.IntegrationTests/bin/Debug/net10.0/Elsa.JavaScript.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Labels.Persistence.ConformanceTests.trx",
+          "counters": {
+            "total": 12,
+            "executed": 12,
+            "passed": 12,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Labels.Persistence.ConformanceTests/bin/Debug/net10.0/Elsa.Labels.Persistence.ConformanceTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Labels.UnitTests.trx",
+          "counters": {
+            "total": 31,
+            "executed": 31,
+            "passed": 31,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Labels.UnitTests/bin/Debug/net10.0/Elsa.Labels.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Ldap.UnitTests.trx",
+          "counters": {
+            "total": 41,
+            "executed": 41,
+            "passed": 41,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/extensions/modules/ldap/Elsa.Ldap.UnitTests/bin/Debug/net10.0/Elsa.Ldap.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Logging.Core.IntegrationTests.trx",
+          "counters": {
+            "total": 2,
+            "executed": 2,
+            "passed": 2,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/extensions/modules/diagnostics/Elsa.Logging.Core.IntegrationTests/bin/Debug/net10.0/Elsa.Logging.Core.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Logging.Core.UnitTests.trx",
+          "counters": {
+            "total": 18,
+            "executed": 18,
+            "passed": 18,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/extensions/modules/diagnostics/Elsa.Logging.Core.UnitTests/bin/Debug/net10.0/Elsa.Logging.Core.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.MongoDb.UnitTests.trx",
+          "counters": {
+            "total": 20,
+            "executed": 20,
+            "passed": 20,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/bin/Debug/net10.0/Elsa.MongoDb.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Mqtt.UnitTests.trx",
+          "counters": {
+            "total": 57,
+            "executed": 57,
+            "passed": 57,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/extensions/modules/mqtt/Elsa.Mqtt.UnitTests/bin/Debug/net10.0/Elsa.Mqtt.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Persistence.Dapper.UnitTests.trx",
+          "counters": {
+            "total": 29,
+            "executed": 29,
+            "passed": 29,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/bin/Debug/net10.0/Elsa.Persistence.Dapper.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Persistence.EFCore.UnitTests.trx",
+          "counters": {
+            "total": 61,
+            "executed": 61,
+            "passed": 61,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Persistence.EFCore.UnitTests/bin/Debug/net10.0/Elsa.Persistence.EFCore.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Persistence.VNext.UnitTests.trx",
+          "counters": {
+            "total": 50,
+            "executed": 50,
+            "passed": 50,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Persistence.VNext.UnitTests/bin/Debug/net10.0/Elsa.Persistence.VNext.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Platform.Integration.UnitTests.trx",
+          "counters": {
+            "total": 4,
+            "executed": 4,
+            "passed": 4,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Platform.Integration.UnitTests/bin/Debug/net10.0/Elsa.Platform.Integration.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Resilience.Core.UnitTests.trx",
+          "counters": {
+            "total": 96,
+            "executed": 96,
+            "passed": 96,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Resilience.Core.UnitTests/bin/Debug/net10.0/Elsa.Resilience.Core.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Resilience.IntegrationTests.trx",
+          "counters": {
+            "total": 12,
+            "executed": 12,
+            "passed": 12,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Resilience.IntegrationTests/bin/Debug/net10.0/Elsa.Resilience.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.SasTokens.UnitTests.trx",
+          "counters": {
+            "total": 6,
+            "executed": 6,
+            "passed": 6,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.SasTokens.UnitTests/bin/Debug/net10.0/Elsa.SasTokens.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Scheduling.Hangfire.UnitTests.trx",
+          "counters": {
+            "total": 25,
+            "executed": 25,
+            "passed": 25,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/extensions/modules/scheduling/Elsa.Scheduling.Hangfire.UnitTests/bin/Debug/net10.0/Elsa.Scheduling.Hangfire.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Scheduling.Quartz.ComponentTests.trx",
+          "counters": {
+            "total": 7,
+            "executed": 7,
+            "passed": 7,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/extensions/modules/scheduling/Elsa.Scheduling.Quartz.ComponentTests/bin/Debug/net10.0/Elsa.Scheduling.Quartz.ComponentTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Scheduling.Quartz.UnitTests.trx",
+          "counters": {
+            "total": 159,
+            "executed": 159,
+            "passed": 159,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/extensions/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/bin/Debug/net10.0/Elsa.Scheduling.Quartz.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Scheduling.UnitTests.trx",
+          "counters": {
+            "total": 62,
+            "executed": 62,
+            "passed": 62,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Scheduling.UnitTests/bin/Debug/net10.0/Elsa.Scheduling.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Secrets.Api.IntegrationTests.trx",
+          "counters": {
+            "total": 4,
+            "executed": 4,
+            "passed": 4,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Secrets.Api.IntegrationTests/bin/Debug/net10.0/Elsa.Secrets.Api.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Secrets.UnitTests.trx",
+          "counters": {
+            "total": 129,
+            "executed": 129,
+            "passed": 129,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Secrets.UnitTests/bin/Debug/net10.0/Elsa.Secrets.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.ServiceBus.AzureServiceBus.ComponentTests.trx",
+          "counters": {
+            "total": 1,
+            "executed": 0,
+            "passed": 0,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/extensions/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/bin/Debug/net10.0/Elsa.ServiceBus.AzureServiceBus.ComponentTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.ServiceBus.MassTransit.UnitTests.trx",
+          "counters": {
+            "total": 2,
+            "executed": 2,
+            "passed": 2,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/extensions/modules/servicebus/Elsa.ServiceBus.MassTransit.UnitTests/bin/Debug/net10.0/Elsa.ServiceBus.MassTransit.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Shells.Api.Tests.trx",
+          "counters": {
+            "total": 6,
+            "executed": 6,
+            "passed": 6,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Shells.Api.Tests/bin/Debug/net10.0/Elsa.Shells.Api.Tests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Slack.Tests.trx",
+          "counters": {
+            "total": 1,
+            "executed": 0,
+            "passed": 0,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/extensions/modules/slack/Elsa.Slack.Tests/bin/Debug/net10.0/Elsa.Slack.Tests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Studio.AI.Tests.trx",
+          "counters": {
+            "total": 12,
+            "executed": 12,
+            "passed": 12,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/src/studio/modules/Elsa.Studio.AI.Tests/bin/Debug/net10.0/Elsa.Studio.AI.Tests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Studio.Administration.Tests.trx",
+          "counters": {
+            "total": 44,
+            "executed": 44,
+            "passed": 44,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/src/studio/modules/Elsa.Studio.Administration.Tests/bin/Debug/net10.0/Elsa.Studio.Administration.Tests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Studio.Agents.Tests.trx",
+          "counters": {
+            "total": 6,
+            "executed": 6,
+            "passed": 6,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/extensions/modules/agents/Elsa.Studio.Agents.Tests/bin/Debug/net10.0/Elsa.Studio.Agents.Tests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Studio.Authentication.UI.Tests.trx",
+          "counters": {
+            "total": 25,
+            "executed": 25,
+            "passed": 25,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/src/studio/modules/Elsa.Studio.Authentication.UI.Tests/bin/Debug/net10.0/Elsa.Studio.Authentication.UI.Tests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Studio.Core.Tests.trx",
+          "counters": {
+            "total": 28,
+            "executed": 28,
+            "passed": 28,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/src/studio/framework/Elsa.Studio.Core.Tests/bin/Debug/net10.0/Elsa.Studio.Core.Tests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Studio.Dashboard.Tests.trx",
+          "counters": {
+            "total": 50,
+            "executed": 50,
+            "passed": 50,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/src/studio/modules/Elsa.Studio.Dashboard.Tests/bin/Debug/net10.0/Elsa.Studio.Dashboard.Tests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Studio.Diagnostics.ConsoleLogs.Tests.trx",
+          "counters": {
+            "total": 48,
+            "executed": 48,
+            "passed": 48,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/src/studio/modules/Elsa.Studio.Diagnostics.ConsoleLogs.Tests/bin/Debug/net10.0/Elsa.Studio.Diagnostics.ConsoleLogs.Tests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Studio.Diagnostics.OpenTelemetry.Tests.trx",
+          "counters": {
+            "total": 35,
+            "executed": 35,
+            "passed": 35,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/src/studio/modules/Elsa.Studio.Diagnostics.OpenTelemetry.Tests/bin/Debug/net10.0/Elsa.Studio.Diagnostics.OpenTelemetry.Tests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Studio.Diagnostics.StructuredLogs.Tests.trx",
+          "counters": {
+            "total": 23,
+            "executed": 23,
+            "passed": 23,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/src/studio/modules/Elsa.Studio.Diagnostics.StructuredLogs.Tests/bin/Debug/net10.0/Elsa.Studio.Diagnostics.StructuredLogs.Tests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Studio.Environments.Tests.trx",
+          "counters": {
+            "total": 6,
+            "executed": 6,
+            "passed": 6,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/src/studio/modules/Elsa.Studio.Environments.Tests/bin/Debug/net10.0/Elsa.Studio.Environments.Tests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Studio.ExternalAuthentication.Tests.trx",
+          "counters": {
+            "total": 232,
+            "executed": 232,
+            "passed": 232,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/src/studio/modules/Elsa.Studio.ExternalAuthentication.Tests/bin/Debug/net10.0/Elsa.Studio.ExternalAuthentication.Tests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Studio.PlatformIntegration.Tests.trx",
+          "counters": {
+            "total": 14,
+            "executed": 14,
+            "passed": 14,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/src/studio/modules/Elsa.Studio.PlatformIntegration.Tests/bin/Debug/net10.0/Elsa.Studio.PlatformIntegration.Tests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Studio.Security.Tests.trx",
+          "counters": {
+            "total": 107,
+            "executed": 107,
+            "passed": 107,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/src/studio/modules/Elsa.Studio.Security.Tests/bin/Debug/net10.0/Elsa.Studio.Security.Tests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Studio.UserTasks.Tests.trx",
+          "counters": {
+            "total": 29,
+            "executed": 29,
+            "passed": 29,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/src/studio/modules/Elsa.Studio.UserTasks.Tests/bin/Debug/net10.0/Elsa.Studio.UserTasks.Tests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Studio.Workflows.Designer.Tests.trx",
+          "counters": {
+            "total": 83,
+            "executed": 83,
+            "passed": 83,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/src/studio/modules/Elsa.Studio.Workflows.Designer.Tests/bin/Debug/net9.0/Elsa.Studio.Workflows.Designer.Tests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Studio.Workflows.Tests.trx",
+          "counters": {
+            "total": 447,
+            "executed": 447,
+            "passed": 447,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/src/studio/modules/Elsa.Studio.Workflows.Tests/bin/Debug/net10.0/Elsa.Studio.Workflows.Tests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Tenants.UnitTests.trx",
+          "counters": {
+            "total": 8,
+            "executed": 8,
+            "passed": 8,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Tenants.UnitTests/bin/Debug/net10.0/Elsa.Tenants.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.UserTasks.Persistence.ConformanceTests.trx",
+          "counters": {
+            "total": 291,
+            "executed": 147,
+            "passed": 147,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.UserTasks.Persistence.ConformanceTests/bin/Debug/net10.0/Elsa.UserTasks.Persistence.ConformanceTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.UserTasks.Persistence.EFCore.UnitTests.trx",
+          "counters": {
+            "total": 4,
+            "executed": 4,
+            "passed": 4,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.UserTasks.Persistence.EFCore.UnitTests/bin/Debug/net10.0/Elsa.UserTasks.Persistence.EFCore.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.UserTasks.UnitTests.trx",
+          "counters": {
+            "total": 109,
+            "executed": 109,
+            "passed": 109,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.UserTasks.UnitTests/bin/Debug/net10.0/Elsa.UserTasks.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Workflows.Api.UnitTests.trx",
+          "counters": {
+            "total": 34,
+            "executed": 34,
+            "passed": 34,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Workflows.Api.UnitTests/bin/Debug/net10.0/Elsa.Workflows.Api.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Workflows.ComponentTests.trx",
+          "counters": {
+            "total": 205,
+            "executed": 203,
+            "passed": 203,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/component/Elsa.Workflows.ComponentTests/bin/Debug/net10.0/Elsa.Workflows.ComponentTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Workflows.Core.UnitTests.trx",
+          "counters": {
+            "total": 318,
+            "executed": 318,
+            "passed": 318,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Workflows.Core.UnitTests/bin/Debug/net10.0/Elsa.Workflows.Core.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Workflows.IntegrationTests.trx",
+          "counters": {
+            "total": 323,
+            "executed": 323,
+            "passed": 323,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Workflows.IntegrationTests/bin/Debug/net10.0/Elsa.Workflows.IntegrationTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Workflows.Management.UnitTests.trx",
+          "counters": {
+            "total": 118,
+            "executed": 118,
+            "passed": 118,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Workflows.Management.UnitTests/bin/Debug/net10.0/Elsa.Workflows.Management.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Workflows.Persistence.ConformanceTests.trx",
+          "counters": {
+            "total": 26,
+            "executed": 26,
+            "passed": 26,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/integration/Elsa.Workflows.Persistence.ConformanceTests/bin/Debug/net10.0/Elsa.Workflows.Persistence.ConformanceTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Workflows.Runtime.ProtoActor.UnitTests.trx",
+          "counters": {
+            "total": 4,
+            "executed": 4,
+            "passed": 4,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/extensions/modules/runtimes/Elsa.Workflows.Runtime.ProtoActor.UnitTests/bin/Debug/net10.0/Elsa.Workflows.Runtime.ProtoActor.UnitTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Workflows.Runtime.UnitTests.trx",
+          "counters": {
+            "total": 374,
+            "executed": 374,
+            "passed": 374,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/unit/Elsa.Workflows.Runtime.UnitTests/bin/Debug/net10.0/Elsa.Workflows.Runtime.UnitTests.dll"
+          ]
+        }
+      ]
+    },
+    "frameworkConsoleSummaries": {
+      "assemblyFrameworkRuns": 94,
+      "totalsFromPassedSummaries": {
+        "passed": 6222,
+        "failed": 0,
+        "skipped": 146,
+        "total": 6368
+      },
+      "runs": [
+        {
+          "assembly": "Elsa.ServiceBus.MassTransit.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "total": 2
+        },
+        {
+          "assembly": "Elsa.Scheduling.Quartz.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 159,
+          "failed": 0,
+          "skipped": 0,
+          "total": 159
+        },
+        {
+          "assembly": "Elsa.Scheduling.Quartz.ComponentTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0,
+          "total": 7
+        },
+        {
+          "assembly": "Elsa.Scheduling.Hangfire.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 25,
+          "failed": 0,
+          "skipped": 0,
+          "total": 25
+        },
+        {
+          "assembly": "Elsa.Workflows.Runtime.ProtoActor.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "total": 4
+        },
+        {
+          "assembly": "Elsa.Persistence.Dapper.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 29,
+          "failed": 0,
+          "skipped": 0,
+          "total": 29
+        },
+        {
+          "assembly": "Elsa.MongoDb.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 20,
+          "failed": 0,
+          "skipped": 0,
+          "total": 20
+        },
+        {
+          "assembly": "Elsa.Mqtt.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 57,
+          "failed": 0,
+          "skipped": 0,
+          "total": 57
+        },
+        {
+          "assembly": "Elsa.Ldap.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 41,
+          "failed": 0,
+          "skipped": 0,
+          "total": 41
+        },
+        {
+          "assembly": "Elsa.Logging.Core.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 18,
+          "failed": 0,
+          "skipped": 0,
+          "total": 18
+        },
+        {
+          "assembly": "Elsa.Logging.Core.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "total": 2
+        },
+        {
+          "assembly": "Elsa.Caching.Distributed.ProtoActor.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "total": 8
+        },
+        {
+          "assembly": "Elsa.Studio.Agents.Tests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0,
+          "total": 6
+        },
+        {
+          "assembly": "Elsa.Actors.ProtoActor.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 23,
+          "failed": 0,
+          "skipped": 0,
+          "total": 23
+        },
+        {
+          "assembly": "Elsa.Studio.Workflows.Tests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 447,
+          "failed": 0,
+          "skipped": 0,
+          "total": 447
+        },
+        {
+          "assembly": "Elsa.Studio.Workflows.Designer.Tests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 83,
+          "failed": 0,
+          "skipped": 0,
+          "total": 83
+        },
+        {
+          "assembly": "Elsa.Studio.Workflows.Designer.Tests.dll",
+          "framework": "net8.0",
+          "status": "Passed!",
+          "passed": 83,
+          "failed": 0,
+          "skipped": 0,
+          "total": 83
+        },
+        {
+          "assembly": "Elsa.Studio.Workflows.Designer.Tests.dll",
+          "framework": "net9.0",
+          "status": "Passed!",
+          "passed": 83,
+          "failed": 0,
+          "skipped": 0,
+          "total": 83
+        },
+        {
+          "assembly": "Elsa.Studio.UserTasks.Tests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 29,
+          "failed": 0,
+          "skipped": 0,
+          "total": 29
+        },
+        {
+          "assembly": "Elsa.Studio.Security.Tests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 107,
+          "failed": 0,
+          "skipped": 0,
+          "total": 107
+        },
+        {
+          "assembly": "Elsa.Studio.PlatformIntegration.Tests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 14,
+          "failed": 0,
+          "skipped": 0,
+          "total": 14
+        },
+        {
+          "assembly": "Elsa.Studio.ExternalAuthentication.Tests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 232,
+          "failed": 0,
+          "skipped": 0,
+          "total": 232
+        },
+        {
+          "assembly": "Elsa.Studio.Environments.Tests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0,
+          "total": 6
+        },
+        {
+          "assembly": "Elsa.Studio.Diagnostics.StructuredLogs.Tests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 23,
+          "failed": 0,
+          "skipped": 0,
+          "total": 23
+        },
+        {
+          "assembly": "Elsa.Studio.Diagnostics.OpenTelemetry.Tests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 35,
+          "failed": 0,
+          "skipped": 0,
+          "total": 35
+        },
+        {
+          "assembly": "Elsa.Studio.Diagnostics.ConsoleLogs.Tests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 48,
+          "failed": 0,
+          "skipped": 0,
+          "total": 48
+        },
+        {
+          "assembly": "Elsa.Studio.Dashboard.Tests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 50,
+          "failed": 0,
+          "skipped": 0,
+          "total": 50
+        },
+        {
+          "assembly": "Elsa.Studio.Authentication.UI.Tests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 25,
+          "failed": 0,
+          "skipped": 0,
+          "total": 25
+        },
+        {
+          "assembly": "Elsa.Studio.Administration.Tests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 44,
+          "failed": 0,
+          "skipped": 0,
+          "total": 44
+        },
+        {
+          "assembly": "Elsa.Studio.AI.Tests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 12,
+          "failed": 0,
+          "skipped": 0,
+          "total": 12
+        },
+        {
+          "assembly": "Elsa.Studio.Core.Tests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 28,
+          "failed": 0,
+          "skipped": 0,
+          "total": 28
+        },
+        {
+          "assembly": "Elsa.Secrets.Api.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "total": 4
+        },
+        {
+          "assembly": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "total": 4
+        },
+        {
+          "assembly": "Elsa.Connections.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 36,
+          "failed": 0,
+          "skipped": 0,
+          "total": 36
+        },
+        {
+          "assembly": "Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 22,
+          "failed": 0,
+          "skipped": 0,
+          "total": 22
+        },
+        {
+          "assembly": "Elsa.Alterations.Persistence.ConformanceTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 39,
+          "failed": 0,
+          "skipped": 0,
+          "total": 39
+        },
+        {
+          "assembly": "Elsa.Labels.Persistence.ConformanceTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 12,
+          "failed": 0,
+          "skipped": 0,
+          "total": 12
+        },
+        {
+          "assembly": "Elsa.Workflows.Persistence.ConformanceTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 26,
+          "failed": 0,
+          "skipped": 0,
+          "total": 26
+        },
+        {
+          "assembly": "Elsa.Alterations.Core.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 38,
+          "failed": 0,
+          "skipped": 0,
+          "total": 38
+        },
+        {
+          "assembly": "Elsa.Labels.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 31,
+          "failed": 0,
+          "skipped": 0,
+          "total": 31
+        },
+        {
+          "assembly": "Elsa.Hosts.SmokeTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "total": 8
+        },
+        {
+          "assembly": "Elsa.UserTasks.Persistence.ConformanceTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 147,
+          "failed": 0,
+          "skipped": 144,
+          "total": 291
+        },
+        {
+          "assembly": "Elsa.UserTasks.Persistence.EFCore.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "total": 4
+        },
+        {
+          "assembly": "Elsa.UserTasks.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 109,
+          "failed": 0,
+          "skipped": 0,
+          "total": 109
+        },
+        {
+          "assembly": "Elsa.Api.Common.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 83,
+          "failed": 0,
+          "skipped": 0,
+          "total": 83
+        },
+        {
+          "assembly": "Elsa.ExternalAuthentication.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 168,
+          "failed": 0,
+          "skipped": 0,
+          "total": 168
+        },
+        {
+          "assembly": "Elsa.ExternalAuthentication.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 205,
+          "failed": 0,
+          "skipped": 0,
+          "total": 205
+        },
+        {
+          "assembly": "Elsa.Hosting.Management.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 16,
+          "failed": 0,
+          "skipped": 0,
+          "total": 16
+        },
+        {
+          "assembly": "Elsa.Platform.Integration.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "total": 4
+        },
+        {
+          "assembly": "Elsa.AI.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 69,
+          "failed": 0,
+          "skipped": 0,
+          "total": 69
+        },
+        {
+          "assembly": "Elsa.AI.Persistence.EFCore.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 36,
+          "failed": 0,
+          "skipped": 0,
+          "total": 36
+        },
+        {
+          "assembly": "Elsa.AI.Host.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 50,
+          "failed": 0,
+          "skipped": 0,
+          "total": 50
+        },
+        {
+          "assembly": "Elsa.AI.Copilot.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "total": 3
+        },
+        {
+          "assembly": "Elsa.AI.Abstractions.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "total": 3
+        },
+        {
+          "assembly": "Elsa.Persistence.EFCore.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 61,
+          "failed": 0,
+          "skipped": 0,
+          "total": 61
+        },
+        {
+          "assembly": "Elsa.Persistence.VNext.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 50,
+          "failed": 0,
+          "skipped": 0,
+          "total": 50
+        },
+        {
+          "assembly": "Elsa.Dashboard.Api.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 19,
+          "failed": 0,
+          "skipped": 0,
+          "total": 19
+        },
+        {
+          "assembly": "Elsa.Diagnostics.OpenTelemetry.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 23,
+          "failed": 0,
+          "skipped": 0,
+          "total": 23
+        },
+        {
+          "assembly": "Elsa.Diagnostics.OpenTelemetry.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 23,
+          "failed": 0,
+          "skipped": 0,
+          "total": 23
+        },
+        {
+          "assembly": "Elsa.Workflows.Api.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 34,
+          "failed": 0,
+          "skipped": 0,
+          "total": 34
+        },
+        {
+          "assembly": "Elsa.Secrets.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 129,
+          "failed": 0,
+          "skipped": 0,
+          "total": 129
+        },
+        {
+          "assembly": "Elsa.Diagnostics.ConsoleLogs.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 26,
+          "failed": 0,
+          "skipped": 0,
+          "total": 26
+        },
+        {
+          "assembly": "Elsa.Diagnostics.ConsoleLogs.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 23,
+          "failed": 0,
+          "skipped": 0,
+          "total": 23
+        },
+        {
+          "assembly": "Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 26,
+          "failed": 0,
+          "skipped": 0,
+          "total": 26
+        },
+        {
+          "assembly": "Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 25,
+          "failed": 0,
+          "skipped": 0,
+          "total": 25
+        },
+        {
+          "assembly": "Elsa.Diagnostics.StructuredLogs.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0,
+          "total": 6
+        },
+        {
+          "assembly": "Elsa.Diagnostics.StructuredLogs.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 39,
+          "failed": 0,
+          "skipped": 0,
+          "total": 39
+        },
+        {
+          "assembly": "Elsa.Identity.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 178,
+          "failed": 0,
+          "skipped": 0,
+          "total": 178
+        },
+        {
+          "assembly": "Elsa.Shells.Api.Tests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0,
+          "total": 6
+        },
+        {
+          "assembly": "Elsa.Features.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "total": 10
+        },
+        {
+          "assembly": "Elsa.Tenants.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "total": 8
+        },
+        {
+          "assembly": "Elsa.Http.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "total": 2
+        },
+        {
+          "assembly": "Elsa.Common.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 97,
+          "failed": 0,
+          "skipped": 0,
+          "total": 97
+        },
+        {
+          "assembly": "Elsa.Resilience.Core.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 96,
+          "failed": 0,
+          "skipped": 0,
+          "total": 96
+        },
+        {
+          "assembly": "Elsa.Dsl.ElsaScript.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 23,
+          "failed": 0,
+          "skipped": 0,
+          "total": 23
+        },
+        {
+          "assembly": "Elsa.Bpmn.Interchange.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 127,
+          "failed": 0,
+          "skipped": 0,
+          "total": 127
+        },
+        {
+          "assembly": "Elsa.Bpmn.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 63,
+          "failed": 0,
+          "skipped": 0,
+          "total": 63
+        },
+        {
+          "assembly": "Elsa.Common.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 9,
+          "failed": 0,
+          "skipped": 0,
+          "total": 9
+        },
+        {
+          "assembly": "Elsa.Bpmn.Interchange.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 21,
+          "failed": 0,
+          "skipped": 0,
+          "total": 21
+        },
+        {
+          "assembly": "Elsa.Bpmn.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 30,
+          "failed": 0,
+          "skipped": 0,
+          "total": 30
+        },
+        {
+          "assembly": "Elsa.Scheduling.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 62,
+          "failed": 0,
+          "skipped": 0,
+          "total": 62
+        },
+        {
+          "assembly": "Elsa.Expressions.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 23,
+          "failed": 0,
+          "skipped": 0,
+          "total": 23
+        },
+        {
+          "assembly": "Elsa.Workflows.Management.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 118,
+          "failed": 0,
+          "skipped": 0,
+          "total": 118
+        },
+        {
+          "assembly": "Elsa.Activities.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 426,
+          "failed": 0,
+          "skipped": 0,
+          "total": 426
+        },
+        {
+          "assembly": "Elsa.Alterations.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 16,
+          "failed": 0,
+          "skipped": 0,
+          "total": 16
+        },
+        {
+          "assembly": "Elsa.SasTokens.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0,
+          "total": 6
+        },
+        {
+          "assembly": "Elsa.Http.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 37,
+          "failed": 0,
+          "skipped": 0,
+          "total": 37
+        },
+        {
+          "assembly": "Elsa.Resilience.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 12,
+          "failed": 0,
+          "skipped": 0,
+          "total": 12
+        },
+        {
+          "assembly": "Elsa.JavaScript.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 158,
+          "failed": 0,
+          "skipped": 0,
+          "total": 158
+        },
+        {
+          "assembly": "Elsa.Activities.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 125,
+          "failed": 0,
+          "skipped": 0,
+          "total": 125
+        },
+        {
+          "assembly": "Elsa.Workflows.ComponentTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 203,
+          "failed": 0,
+          "skipped": 2,
+          "total": 205
+        },
+        {
+          "assembly": "Elsa.Workflows.Runtime.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 374,
+          "failed": 0,
+          "skipped": 0,
+          "total": 374
+        },
+        {
+          "assembly": "Elsa.Workflows.Core.UnitTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 318,
+          "failed": 0,
+          "skipped": 0,
+          "total": 318
+        },
+        {
+          "assembly": "Elsa.Workflows.IntegrationTests.dll",
+          "framework": "net10.0",
+          "status": "Passed!",
+          "passed": 323,
+          "failed": 0,
+          "skipped": 0,
+          "total": 323
+        }
+      ],
+      "zeroExecutedTrxRowsIncludedInFollowingTotals": [
+        {
+          "file": "Elsa.ServiceBus.AzureServiceBus.ComponentTests.trx",
+          "counters": {
+            "total": 1,
+            "executed": 0,
+            "passed": 0,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0,
+            "inconclusive": 0,
+            "passedButRunAborted": 0,
+            "notRunnable": 0,
+            "notExecuted": 0,
+            "disconnected": 0,
+            "warning": 0,
+            "completed": 0,
+            "inProgress": 0,
+            "pending": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/extensions/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/bin/Debug/net10.0/Elsa.ServiceBus.AzureServiceBus.ComponentTests.dll"
+          ]
+        },
+        {
+          "file": "Elsa.Slack.Tests.trx",
+          "counters": {
+            "total": 1,
+            "executed": 0,
+            "passed": 0,
+            "failed": 0,
+            "error": 0,
+            "timeout": 0,
+            "aborted": 0,
+            "inconclusive": 0,
+            "passedButRunAborted": 0,
+            "notRunnable": 0,
+            "notExecuted": 0,
+            "disconnected": 0,
+            "warning": 0,
+            "completed": 0,
+            "inProgress": 0,
+            "pending": 0
+          },
+          "codeBases": [
+            "/private/tmp/elsa-8194-core-95a-rehearsal/test/extensions/modules/slack/Elsa.Slack.Tests/bin/Debug/net10.0/Elsa.Slack.Tests.dll"
+          ]
+        }
+      ],
+      "allFrameworkTotalsIncludingZeroExecuted": {
+        "passed": 6222,
+        "failed": 0,
+        "skipped": 148,
+        "total": 6370
+      },
+      "multiTargetCaveat": "NUKE uses one fixed TRX filename per project. Elsa.Studio.Workflows.Designer.Tests ran 83/83 on net8.0, net9.0 and net10.0; the retained TRX is net9.0, so the other two 83-pass framework runs are represented by console summaries only."
+    },
+    "selectedProjectsWithoutPassingTestCases": [
+      {
+        "path": "test/performance/Elsa.Workflows.PerformanceTests/Elsa.Workflows.PerformanceTests.csproj",
+        "outcome": "Selected by NUKE and built, but no test run or TRX was produced. The project file has no Microsoft.NET.Test.Sdk; its sources are BenchmarkDotNet benchmark entrypoints."
+      },
+      {
+        "path": "test/extensions/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj",
+        "outcome": "Selected; retained TRX records one case with zero executed tests; the test is explicitly skipped with reason TODO."
+      },
+      {
+        "path": "test/extensions/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj",
+        "outcome": "Selected; retained TRX records one case with zero executed tests; the test is explicitly skipped with reason Not implemented yet."
+      }
+    ]
+  },
+  "historicalComparison": {
+    "profile": "Core 076, Consolidated.sln; separate earlier rehearsal, not same source/profile.",
+    "earlierTotals": {
+      "passed": 6169,
+      "failed": 21,
+      "skipped": 148
+    },
+    "currentAllFrameworkTotals": {
+      "passed": 6222,
+      "failed": 0,
+      "skipped": 148
+    },
+    "reconciliation": "The 21 earlier Studio path-resolution failures (Core 13, Authentication UI 6, Dashboard 2) pass in this profile. Thirty-two additional cases are present: Connections unit +6, Secrets unit +4, Workflows Core unit +14, Credentials PostgreSQL integration +4, Secrets API integration +4. Therefore the +53 all-framework pass delta is 21 prior failures now passing plus 32 additional cases; skipped count remains 148."
+  },
+  "warningClasses": {
+    "compileWarningTotal": 1570,
+    "observed": [
+      "NU1902/NU1903 dependency security advisories",
+      "NU1608 package-version constraint (Pomelo.EntityFrameworkCore.MySql 8.0.1 with EF Relational 10.0.9)",
+      "NETSDK1206",
+      "CS1574 XML cref",
+      "CS860x/CS861x/CS876x and other nullable/compiler warnings",
+      "IL2090/IL2111 trimming warnings",
+      "xUnit2029 and MUD0002 analyzer warnings",
+      "SourceLink warnings because the disposable rehearsal has no remote/source-control metadata"
+    ],
+    "packageAdvisories": [
+      {
+        "package": "Microsoft.Build.Tasks.Git",
+        "versions": [
+          "8.0.0",
+          "10.0.103"
+        ],
+        "severity": "moderate",
+        "advisory": "GHSA-23fw-v26w-5fgq"
+      },
+      {
+        "package": "SQLitePCLRaw.lib.e_sqlite3",
+        "versions": [
+          "2.0.4",
+          "2.1.10",
+          "2.1.11"
+        ],
+        "severity": "high",
+        "advisory": "GHSA-2m69-gcr7-jv3q"
+      },
+      {
+        "package": "SSH.NET",
+        "versions": [
+          "2025.1.0"
+        ],
+        "severity": "high",
+        "advisories": [
+          "GHSA-mggc-4xg6-vcxf",
+          "GHSA-q939-rpr3-3284"
+        ]
+      },
+      {
+        "package": "SharpCompress",
+        "versions": [
+          "0.30.1"
+        ],
+        "severity": "moderate",
+        "advisory": "GHSA-6c8g-7p36-r338"
+      },
+      {
+        "package": "AngleSharp",
+        "versions": [
+          "1.4.0"
+        ],
+        "severity": "moderate",
+        "advisory": "GHSA-pgww-w46g-26qg"
+      }
+    ],
+    "disposition": "These inherited warnings/advisories remain unresolved; no dependency changes were made as part of this evidence run."
+  },
+  "limitations": [
+    "This validates the disposable 95a658 profile plus four named supplemental patches, not current Core main or the final merged-history import.",
+    "The property matrix preceded supplemental patches and does not independently establish their effective package properties.",
+    "The fixed per-project TRX path means the net8.0 and net10.0 Designer outcomes are console evidence, not retained TRX evidence.",
+    "The run did not execute Pack, Push or Publish and does not authorize a release or source-history import."
+  ]
+}
