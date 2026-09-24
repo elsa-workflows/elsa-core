@@ -7,6 +7,7 @@ using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence.EFCore.Repositories;
 using Elsa.Secrets.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Secrets.Persistence.EFCore.Features;
 
@@ -22,9 +23,9 @@ public class EFCoreSecretsPersistenceFeature(IModule module) : PersistenceFeatur
         base.Apply();
         AddStore<Secret, EFCoreSecretRepository>();
         Services.AddScoped<ISecretRepository, EFCoreSecretRepository>();
-        Services.AddScoped<DefaultSecretManager>();
-        Services.AddScoped<ISecretManager>(sp => sp.GetRequiredService<DefaultSecretManager>());
-        Services.AddScoped<IManagedSecretManager>(sp => sp.GetRequiredService<DefaultSecretManager>());
-        Services.AddScoped<ISecretResolver, DefaultSecretResolver>();
+        Services.Replace(ServiceDescriptor.Describe(typeof(DefaultSecretManager), typeof(DefaultSecretManager), ServiceLifetime.Scoped));
+        Services.Replace(ServiceDescriptor.Scoped<ISecretManager>(sp => sp.GetRequiredService<DefaultSecretManager>()));
+        Services.Replace(ServiceDescriptor.Scoped<IManagedSecretManager>(sp => sp.GetRequiredService<DefaultSecretManager>()));
+        Services.Replace(ServiceDescriptor.Scoped<ISecretResolver, DefaultSecretResolver>());
     }
 }
