@@ -49,7 +49,9 @@ class SqlServerSecretsBridgeFixtureTests(unittest.TestCase):
         self.assertIn('ciphertextPrinted = false', runner)
         self.assertIn('plaintextPrinted = false', source)
         self.assertIn('cutoverAllowed = false', runner)
-        self.assertIn('tenant write authorization is outside this fixture', readme.lower())
+        self.assertIn('const string novelName = "tenant-b:forged-novel"', runner)
+        self.assertIn('var forgedRowAbsent = tenantBAfter.All(row => row.Name != novelName);', runner)
+        self.assertIn('repository write isolation', readme.lower())
         self.assertNotRegex(script, r'(?i)dotnet\s+nuget\s+push|nuget\s+push|gh\s+release')
 
     def test_ci_runs_and_retains_redacted_report(self):

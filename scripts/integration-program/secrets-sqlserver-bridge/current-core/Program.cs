@@ -317,7 +317,7 @@ internal static class Program
                 defaultTenantStoredAsEmpty = converted.Where(secret => secret.Id == "legacy-aggregate-default").All(secret => secret.TenantId == Tenant.DefaultTenantId),
                 crossTenantReadIsolationVerified = repositoryIsolation,
                 crossTenantSameNameVerified = true,
-                crossTenantWriteIsolationTested = false,
+                crossTenantWriteIsolationVerified = repositoryIsolation,
                 sidecarFieldValuesExact = sidecarExact,
                 lifecycleOwnershipMarkersNotInvented,
                 encryptedValuesRewritten = encryption.RoundTrip,
@@ -887,10 +887,28 @@ internal static class Program
         await using (var scope = services.CreateAsyncScope())
         {
             var repository = scope.ServiceProvider.GetRequiredService<EFCoreSecretRepository>();
-            var tenantAStillIsolated = (await repository.ListAsync()).All(row => row.Name != "tenant-b:exclusive");
+            const string novelName = "tenant-b:forged-novel";
+            var crossTenantWriteDenied = false;
+            try
+            {
+                await repository.SaveAsync(new Secret
+                {
+                    Id = "forged-tenant-b-id",
+                    Name = novelName,
+                    DisplayName = "forged tenant B write",
+                    TenantId = "tenant-b"
+                });
+            }
+            catch (InvalidOperationException)
+            {
+                crossTenantWriteDenied = true;
+            }
+
+            var tenantAStillIsolated = (await repository.ListAsync()).All(row => row.Name != novelName && row.Name != "tenant-b:exclusive");
             var tenantBAfter = await ReadVisibleAsync(services, tenantAccessor, "tenant-b");
             var tenantBRowUnchanged = tenantBAfter.SingleOrDefault(row => row.Name == "tenant-b:exclusive")?.Id == "legacy-aggregate-tenant-b-exclusive";
-            return tenantAStillIsolated && tenantBRowUnchanged;
+            var forgedRowAbsent = tenantBAfter.All(row => row.Name != novelName);
+            return crossTenantWriteDenied && tenantAStillIsolated && tenantBRowUnchanged && forgedRowAbsent;
         }
     }
 
