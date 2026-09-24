@@ -89,16 +89,17 @@ public sealed class WorkflowInstanceExportHttpTests
                 var binding = await services.GetRequiredService<IWorkflowCredentialBindingManager>()
                     .CreateAsync(principal, LogicalBindingId, connectionId);
                 Assert.True(binding.Succeeded, binding.SafeErrorCode);
+                var bindingRevision = Assert.IsType<long>(binding.Revision);
 
                 (workflowInstanceId, resumeBookmarkId) = await StartSuspendedWorkflowAsync(services);
                 (secondWorkflowInstanceId, secondResumeBookmarkId) = await StartSuspendedWorkflowAsync(services);
 
                 Assert.Empty(first.Probe.Credentials);
                 var grant = await services.GetRequiredService<IWorkflowCredentialGrantManager>()
-                    .IssueAsync(principal, workflowInstanceId, LogicalBindingId, binding.Revision!.Value);
+                    .IssueAsync(principal, workflowInstanceId, LogicalBindingId, bindingRevision);
                 Assert.True(grant.Succeeded, grant.SafeErrorCode);
                 var secondGrant = await services.GetRequiredService<IWorkflowCredentialGrantManager>()
-                    .IssueAsync(principal, secondWorkflowInstanceId, LogicalBindingId, binding.Revision.Value);
+                    .IssueAsync(principal, secondWorkflowInstanceId, LogicalBindingId, bindingRevision);
                 Assert.True(secondGrant.Succeeded, secondGrant.SafeErrorCode);
 
                 var persisted = await services.GetRequiredService<IWorkflowInstanceStore>().FindAsync(workflowInstanceId);
