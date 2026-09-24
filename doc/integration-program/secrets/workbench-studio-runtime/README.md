@@ -27,19 +27,31 @@ claim.
 The UI initially failed because DomInterop and Designer static bundles were
 absent. Building both pinned ClientLibs and rebuilding Studio's static-assets
 manifest enabled the picker. The mapped BPMN generator needed a temporary
-path adjustment for that local build. The durable build/CI integration remains
-open under #8287. Secrets navigation also remained absent because Studio
-queried a legacy feature name; #8332 prepares the isolated compatibility fix.
+path adjustment for that local build. The durable imported-source build/CI
+integration remains open under #8287. Secrets navigation also remained absent
+because Studio queried a legacy feature name; #8332 merged the isolated
+compatibility fix, which the two-tenant follow-up below applied.
 An unauthorized user could still see an enabled Create Secret control on the
 direct page, while the server rejected its requests. Existing Studio PR #999
 adds separate permission-aware navigation behavior and needs reconciliation.
 
-The recorded browser receipt does not establish actual Workbench tenant
-separation, use of real provider accounts, published static assets, a
-history-bearing source import or production readiness. The preparer now has an
-opt-in `--two-tenant` mode for a separate synthetic host/browser run. That
-mode requires the hashed, fixture-only Workbench multitenancy activation patch
-and the merged Studio Secrets menu patch to be applied in a fresh mapped clone;
-it has not been launched or browser-verified. See the runbook for its exact
-patch, build and cleanup steps. Repeat the smoke after the history import and
-reconcile those gates before closing #8326 or #8275.
+The follow-up [two-tenant receipt](two-tenant-receipt.json) records a fresh
+synthetic run of the opt-in `--two-tenant` fixture, with the reviewed
+Workbench multitenancy and Studio menu patches. The mapped preparation
+evaluated 167 projects and 2,586 properties; both Workbench and Studio hosts
+built and started against a fresh shared SQLite database. Two tenant logins
+returned matching tenant claims. Tenant A listed its own two secrets, tenant B
+listed only its own one, tenant B received 404 for tenant A's private secret,
+and a roleless tenant A user received 403. The actual Studio secret pickers
+showed the corresponding tenant-scoped records, and each tenant saved an
+unpublished, unexecuted draft selecting its own secret. The bounded scan
+found no synthetic plaintext markers in the runtime logs or shared database.
+
+This run used separate origins in the same Codex in-app browser because the
+locked Mac could not create separate browser profiles. The source was a
+disposable mapped rehearsal, not the history-bearing import. The matrix is
+preparation evidence, not a build or test result. The browser did not publish
+or execute either draft, and no provider account was contacted. The fixture
+and processes were removed after the run. Repeat the relevant host and browser
+smoke after the actual import before closing #8326 or #8275; the durable
+frontend build and permission-aware Studio navigation remain separate gates.
