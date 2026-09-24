@@ -17,4 +17,4 @@ python scripts/integration-program/run_secrets_sqlserver_bridge.py \
   --report-out /tmp/secrets-sqlserver-bridge-report.json
 ```
 
-All databases and key rings are disposable. The workflow runs this synthetic proof and retains its redacted report as a CI artifact. The current pinned Core SQL Server target is **NotProven**: the live run stops with SQL Server error 102 while applying `20260914120000_SecretDefaultTenantUniqueness`. See `live-evidence.md`; the fixture does not patch production migration code. It does not publish or push packages, modify any production database, or grant cutover approval.
+All databases and key rings are disposable. The workflow runs this synthetic proof and retains its redacted report as a CI artifact. A local run against the unmerged SQL Server migration fix in #8358 completed; see `live-evidence.md`. The fixture must be repinned and rerun against the accepted Core merge before this can be final compatibility evidence. It does not patch production migration code, publish packages, modify a production database, or grant cutover approval.

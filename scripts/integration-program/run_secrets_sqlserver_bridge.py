@@ -20,7 +20,7 @@ FIXTURE = Path(__file__).resolve().parent / 'secrets-sqlserver-bridge'
 MANIFEST = FIXTURE / 'artifacts.json'
 OLD_PROJECT = FIXTURE / 'extensions-3.8.1/ExtensionsRunner.csproj'
 CURRENT_PROJECT = FIXTURE / 'current-core/SqlServerBridgeRunner.csproj'
-PINNED_CORE_COMMIT = '7b06b82d0ea89c12d49c3c28da8d770bfca13faf'
+PINNED_CORE_COMMIT = '0b20ab54a60a61b025d51a268f5b747e3a3c4860'
 PINNED_SDK = '10.0.300'
 CURRENT_STAGE = 'startup'
 
@@ -144,10 +144,15 @@ def run_rejection(project, config, packages, source, target_name, container, bas
         raise RuntimeError(f'{expected} rejection changed source data')
     result['sourceUnchanged'] = True
     if result.get('result') != 'rejected' or result.get('rejectionCode') != expected:
+        print(json.dumps({'expectedCode': expected, 'actualCode': result.get('rejectionCode'),
+                          'actualResult': result.get('result')}), file=sys.stderr)
         raise RuntimeError(f'Expected {expected} rejection, got {result}')
     if result.get('conversionWritesUnchanged') is not True:
+        print(json.dumps({'expectedCode': expected, 'conversionWritesUnchanged': result.get('conversionWritesUnchanged')}), file=sys.stderr)
         raise RuntimeError(f'{expected} rejection changed the destination: {result}')
     if result.get('originalDestinationUnchanged') is not expected_original_unchanged:
+        print(json.dumps({'expectedCode': expected, 'expectedOriginalUnchanged': expected_original_unchanged,
+                          'actualOriginalUnchanged': result.get('originalDestinationUnchanged')}), file=sys.stderr)
         raise RuntimeError(f'{expected} rejection changed its original fresh destination state: {result}')
     return result
 
@@ -287,15 +292,17 @@ def main():
                     ('wrong-data-protection-context', 'wrong-data-protection-context', 'OldKeyUnavailable', True),
                     ('wrong-core-key', 'wrong-core-key', 'WrongCoreKey', True),
                     ('missing-core-key', 'missing-core-key', 'MissingCoreKey', True)):
+                CURRENT_STAGE = f'rejection-{suffix}'
                 failure_scenarios[suffix] = run_rejection(
                     current_project, config, packages, source, f'bridge_{suffix}_{os.getpid()}',
                     container, base_connection, password, old_key, wrong_key, missing_key, tenant_map,
                     scenario, target_source, expected, expected_original_unchanged=expected_original)
 
+            CURRENT_STAGE = 'rejection-preexisting-destination-schema'
             schema_target = f'bridge_schema_collision_{os.getpid()}'
             create_database(container, schema_target, password)
-            execute_sql(container, schema_target,
-                        'CREATE SCHEMA [Elsa]; CREATE TABLE [Elsa].[Existing] ([Id] int)', password)
+            execute_sql(container, schema_target, 'CREATE SCHEMA [Elsa]', password)
+            execute_sql(container, schema_target, 'CREATE TABLE [Elsa].[Existing] ([Id] int)', password)
             schema_collision = run_current(current_project, config, packages, source,
                 connection_for(base_connection, schema_target), old_key, wrong_key, missing_key,
                 tenant_map, 'success', target_source)
@@ -305,11 +312,13 @@ def main():
                 raise RuntimeError('Existing target schema did not fail closed')
             failure_scenarios['preexistingDestinationSchema'] = schema_collision
 
+            CURRENT_STAGE = 'rejection-preexisting-destination-history'
             history_target = f'bridge_history_collision_{os.getpid()}'
             create_database(container, history_target, password)
+            execute_sql(container, history_target, 'CREATE SCHEMA [Elsa]', password)
             execute_sql(container, history_target,
-                'CREATE SCHEMA [Elsa]; CREATE TABLE [Elsa].[__EFMigrationsHistory] '
-                '([MigrationId] nvarchar(150) NOT NULL PRIMARY KEY, [ProductVersion] nvarchar(32) NOT NULL)', password)
+                        'CREATE TABLE [Elsa].[__EFMigrationsHistory] '
+                        '([MigrationId] nvarchar(150) NOT NULL PRIMARY KEY, [ProductVersion] nvarchar(32) NOT NULL)', password)
             history_collision = run_current(current_project, config, packages, source,
                 connection_for(base_connection, history_target), old_key, wrong_key, missing_key,
                 tenant_map, 'success', target_source)
@@ -327,6 +336,7 @@ def main():
                 ('invalid-latest-marker', "UPDATE [Elsa].[Secrets] SET [IsLatest] = 0 WHERE [Id] = 'legacy-row-default-v2'", 'InvalidLatestMarker'),
             )
             for suffix, mutation, expected in source_scenarios:
+                CURRENT_STAGE = f'source-rejection-{suffix}'
                 bad_source_name = f'bridge_{suffix}_{os.getpid()}'
                 create_database(container, bad_source_name, password)
                 bad_source = connection_for(base_connection, bad_source_name)
