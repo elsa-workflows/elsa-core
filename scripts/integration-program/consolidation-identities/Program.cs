@@ -199,15 +199,15 @@ static void ConfigureMsBuildEnvironment(string sdkToolsPath)
     {
         Environment.SetEnvironmentVariable("SystemRoot", systemRoot);
     }
-    Environment.SetEnvironmentVariable("MSBuildSDKsPath", Path.Combine(sdkRoot, "Sdks"));
-    Environment.SetEnvironmentVariable("MSBUILD_EXE_PATH", Path.Combine(sdkRoot, "MSBuild.dll"));
-    Environment.SetEnvironmentVariable("DOTNET_MSBUILD_SDK_RESOLVER_SDKS_DIR", Path.Combine(sdkRoot, "Sdks"));
+    Environment.SetEnvironmentVariable("MSBuildSDKsPath", Path.Join(sdkRoot, "Sdks"));
+    Environment.SetEnvironmentVariable("MSBUILD_EXE_PATH", Path.Join(sdkRoot, "MSBuild.dll"));
+    Environment.SetEnvironmentVariable("DOTNET_MSBUILD_SDK_RESOLVER_SDKS_DIR", Path.Join(sdkRoot, "Sdks"));
     Environment.SetEnvironmentVariable("DOTNET_ROOT", dotnetRoot);
     Environment.SetEnvironmentVariable("MSBuildExtensionsPath", sdkRoot);
     Environment.SetEnvironmentVariable("MSBuildExtensionsPath32", sdkRoot);
     Environment.SetEnvironmentVariable("MSBuildExtensionsPath64", sdkRoot);
     Environment.SetEnvironmentVariable("GIT_CONFIG_NOSYSTEM", "1");
-    Environment.SetEnvironmentVariable("GIT_CONFIG_GLOBAL", Path.Combine(tempPath, "codex-identity-audit-no-global-git-config"));
+    Environment.SetEnvironmentVariable("GIT_CONFIG_GLOBAL", Path.Join(tempPath, "codex-identity-audit-no-global-git-config"));
 }
 
 static ProjectIdentity EvaluateProject(string projectPath, string repository, string relativePath, string configuration, ProjectCollection collection, string scratchRoot, Dictionary<string, string> evaluatedInputs)
@@ -440,7 +440,7 @@ static IReadOnlyCollection<string> FindGlobalJsonInputs(IReadOnlyDictionary<stri
         var directory = File.Exists(project) ? Path.GetDirectoryName(project) : Path.GetFullPath(project);
         while (!string.IsNullOrEmpty(directory))
         {
-            var globalJson = Path.Combine(directory, "global.json");
+            var globalJson = Path.Join(directory, "global.json");
             if (File.Exists(globalJson))
             {
                 results.Add(ResolvePhysicalPath(globalJson));
@@ -464,7 +464,7 @@ static IReadOnlyCollection<ImportedFileEvidence> VerifyAndHashImportedInputs(IRe
     var physicalSdkRoot = ResolvePhysicalPath(sdkToolsPath);
     var physicalDotnetRoot = ResolvePhysicalPath(Directory.GetParent(physicalSdkRoot)?.Parent?.FullName
         ?? throw new InvalidOperationException($"Could not determine the .NET root from selected SDK '{sdkToolsPath}'."));
-    var sdkManifestRoot = ResolvePhysicalPath(Path.Combine(physicalDotnetRoot, "sdk-manifests"));
+    var sdkManifestRoot = ResolvePhysicalPath(Path.Join(physicalDotnetRoot, "sdk-manifests"));
     var roots = sourceRoots
         .Select(pair => new InputRoot(pair.Key, ResolvePhysicalPath(pair.Value)))
         .Append(new InputRoot("consolidated", ResolvePhysicalPath(consolidatedRoot)))
@@ -568,7 +568,7 @@ static string ResolveInside(string root, string relativePath)
 {
     var fullRoot = ResolvePhysicalPath(root);
     Require(!Path.IsPathRooted(relativePath), $"Expected a path relative to '{root}', found '{relativePath}'.");
-    var fullPath = ResolvePhysicalPath(Path.Combine(fullRoot, relativePath));
+    var fullPath = ResolvePhysicalPath(Path.Join(fullRoot, relativePath));
     Require(IsWithin(fullRoot, fullPath), $"Project path '{relativePath}' escapes root '{root}'.");
     Require(File.Exists(fullPath), $"Mapped file does not exist: {fullPath}.");
     return fullPath;
@@ -590,7 +590,7 @@ static string ResolvePhysicalPath(string path)
     var current = root;
     for (var index = 0; index < remaining.Length; index++)
     {
-        var candidate = Path.Combine(current, remaining[index]);
+        var candidate = Path.Join(current, remaining[index]);
         FileSystemInfo info = Directory.Exists(candidate) ? new DirectoryInfo(candidate) : new FileInfo(candidate);
         var linkTarget = info.LinkTarget;
         if (!string.IsNullOrEmpty(linkTarget))
@@ -604,7 +604,7 @@ static string ResolvePhysicalPath(string path)
         {
             for (var remainingIndex = index; remainingIndex < remaining.Length; remainingIndex++)
             {
-                current = Path.Combine(current, remaining[remainingIndex]);
+                current = Path.Join(current, remaining[remainingIndex]);
             }
 
             break;
@@ -766,7 +766,7 @@ internal sealed class EvaluationScratch : IDisposable
 {
     public EvaluationScratch()
     {
-        var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"elsa-consolidation-identity-eval-{Guid.NewGuid():N}");
+        var path = System.IO.Path.Join(System.IO.Path.GetTempPath(), $"elsa-consolidation-identity-eval-{Guid.NewGuid():N}");
         Directory.CreateDirectory(path);
         RootPath = System.IO.Path.GetFullPath(path);
         if (Directory.EnumerateFileSystemEntries(RootPath).Any())
