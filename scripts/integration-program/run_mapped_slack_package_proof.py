@@ -310,6 +310,7 @@ def verify_local_package_consumption(
     package_cache: Path,
     local_feed: Path,
     configuration: str = "Debug",
+    recorded_proof_root: Path | None = None,
 ) -> dict:
     """Prove restore selected this exact local package and execution loaded its assembly."""
     assets_path = consumer_dir / "obj/project.assets.json"
@@ -319,6 +320,13 @@ def verify_local_package_consumption(
     package_cache = package_cache.resolve(strict=True)
     package_path = package.resolve(strict=True)
     feed_path = local_feed.resolve(strict=True)
+    proof_root = feed_path.parent
+    recorded_root = recorded_proof_root or proof_root
+    if not recorded_root.is_absolute():
+        raise RuntimeError("Recorded proof root is not absolute")
+    recorded_root = recorded_root.resolve(strict=False)
+    recorded_cache = recorded_root / package_cache.relative_to(proof_root)
+    recorded_feed = recorded_root / feed_path.relative_to(proof_root)
     package_sha512 = base64.b64encode(hashlib.sha512(package_path.read_bytes()).digest()).decode("ascii")
     expected_key = f"{PACKAGE_ID}/{PACKAGE_VERSION}"
     matching_libraries = [
@@ -359,7 +367,7 @@ def verify_local_package_consumption(
     if not isinstance(package_folders, dict):
         raise RuntimeError("Consumer assets do not record package folders")
     resolved_folders = {str(Path(folder).resolve(strict=False)) for folder in package_folders}
-    if resolved_folders != {str(package_cache)}:
+    if resolved_folders != {str(recorded_cache)}:
         raise RuntimeError(f"Consumer restore used a shared or unexpected package cache: {sorted(resolved_folders)}")
 
     relative_package_path = Path(library.get("path", ""))
@@ -379,7 +387,7 @@ def verify_local_package_consumption(
     if not cached_archive.is_file() or sha256_file(cached_archive) != sha256_file(package_path):
         raise RuntimeError(f"Cached {expected_key} archive differs from the exact proof package")
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-    if metadata.get("source") != str(feed_path):
+    if metadata.get("source") != str(recorded_feed):
         raise RuntimeError(f"Consumer selected {expected_key} from an unexpected feed: {metadata.get('source')!r}")
     if (
         metadata.get("contentHash") != package_sha512
@@ -946,6 +954,7 @@ def main() -> int:
 
     evidence = {
         "result": "passed",
+        "proof_root": str(output),
         "scope": "mapped Elsa.Slack local pack and clean package-only consumers; no package feed publication",
         "package": artifact,
         "evaluated_modes": {

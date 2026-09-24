@@ -340,6 +340,11 @@ def _parse_test_run_evidence(evidence: dict[str, Any], root: Path, projects: lis
         raise ValueError("Run evidence does not contain one unique Test command for every selected project")
 
     invocation = evidence["invocation"]
+    recorded_root_text = invocation.get("workingDirectory", str(root))
+    recorded_root = Path(recorded_root_text)
+    if not recorded_root.is_absolute():
+        raise ValueError("Canonical Test evidence working directory is not absolute")
+    recorded_root = recorded_root.resolve()
     targets = invocation.get("targets", {})
     if invocation.get("exitCode") != 0 or any(targets.get(name) != "succeeded" for name in ("restore", "compile", "test")):
         raise ValueError("Canonical Restore/Compile/Test evidence is not successful")
@@ -357,8 +362,14 @@ def _parse_test_run_evidence(evidence: dict[str, Any], root: Path, projects: lis
             raise ValueError(f"Retained TRX has no codeBase path: {row.get('file')}")
         resolved_records = set()
         for code_base in code_bases:
-            absolute = Path(code_base).resolve()
-            relative = _relative_path(root, absolute)
+            recorded_assembly = Path(code_base)
+            if not recorded_assembly.is_absolute():
+                raise ValueError(f"Retained TRX codeBase is not absolute: {code_base}")
+            try:
+                source_relative = recorded_assembly.resolve().relative_to(recorded_root)
+            except ValueError as error:
+                raise ValueError(f"Retained TRX codeBase escapes recorded rehearsal: {code_base}") from error
+            relative = _relative_path(root, root / source_relative)
             parts = PurePosixPath(relative).parts
             if "bin" not in parts:
                 raise ValueError(f"TRX codeBase is outside a project bin directory: {code_base}")

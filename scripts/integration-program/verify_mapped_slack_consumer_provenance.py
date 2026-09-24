@@ -24,6 +24,9 @@ def verify_retained_evidence(evidence_path: Path) -> dict:
     evidence_path = evidence_path.resolve(strict=True)
     proof_root = evidence_path.parent
     evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+    recorded_proof_root = Path(evidence.get("proof_root", str(proof_root)))
+    if not recorded_proof_root.is_absolute():
+        raise ValueError("Retained evidence proof root is not absolute")
     if evidence.get("result") != "passed" or evidence.get("publication_authorized") is not False:
         raise ValueError("Retained evidence is not a successful nonpublishing package proof")
     package_receipt = evidence.get("package")
@@ -48,6 +51,7 @@ def verify_retained_evidence(evidence_path: Path) -> dict:
                 package,
                 package_cache,
                 package.parent,
+                recorded_proof_root=recorded_proof_root,
             ),
         })
 
@@ -60,6 +64,7 @@ def verify_retained_evidence(evidence_path: Path) -> dict:
             package,
             proof_root / "package-caches" / "offline-activity-smoke",
             package.parent,
+            recorded_proof_root=recorded_proof_root,
         ),
     })
 
