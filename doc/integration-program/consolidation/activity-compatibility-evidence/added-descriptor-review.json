@@ -1,6 +1,7 @@
 {
-  "scope": "Post-review added-descriptor comparison against unchanged recorded C# host evidence",
-  "runnerSha256": "a1dec117c6009dc23e246b14baad944b29f303f2e6406a6f1bb510f57b9b5f03",
+  "scope": "Post-review exact-identity comparison against unchanged recorded C# host evidence",
+  "runnerSha256": "946d4d3e26a3e7351107db0f9291b180968026f0ebc5ad486c13b9833be1171d",
+  "matrixSha256": "73e032a3f24e88b5f627501937c1fbc28ed51c68bb8fafcbf9082ef5d466d317",
   "frameworks": [
     {
       "framework": "net8.0",
@@ -15,7 +16,9 @@
         "Elsa.Mqtt.Activities.MqttMessageReceived",
         "Elsa.Mqtt.Activities.PublishMqttMessage"
       ],
-      "unexpectedAddedDescriptors": []
+      "unexpectedAddedDescriptors": [],
+      "releasedSha256": "a237a951855d9a4405511d3a14a8cf3b1d9e855df362bc9bc058c0c7fb9ef747",
+      "consolidatedSha256": "a98fb5f35647e559765ff89526f96180b430e6d62773195db4732ae6376decb6"
     },
     {
       "framework": "net9.0",
@@ -30,7 +33,9 @@
         "Elsa.Mqtt.Activities.MqttMessageReceived",
         "Elsa.Mqtt.Activities.PublishMqttMessage"
       ],
-      "unexpectedAddedDescriptors": []
+      "unexpectedAddedDescriptors": [],
+      "releasedSha256": "65c2c0202c3a1ec974375e066fd9ed02cf44f11e2c65a4ab4a83d8a003e00be1",
+      "consolidatedSha256": "d73e1a994dfb40ed8a0ab2cacb718943fbedd232ddebd7d010979b60827fb06a"
     },
     {
       "framework": "net10.0",
@@ -45,7 +50,9 @@
         "Elsa.Mqtt.Activities.MqttMessageReceived",
         "Elsa.Mqtt.Activities.PublishMqttMessage"
       ],
-      "unexpectedAddedDescriptors": []
+      "unexpectedAddedDescriptors": [],
+      "releasedSha256": "049968297e13f0a224994451785bc20e8fdb83c6a65a2b90d7f27c2fdbd72d66",
+      "consolidatedSha256": "00e754914a088d0436c3e558bdbdfef089a280dd936add6761a2c395593a163c"
     }
   ]
 }

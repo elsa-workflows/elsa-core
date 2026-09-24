@@ -27,7 +27,44 @@
   {
     "assembly": "Elsa.Ldap",
     "sourceProject": "src/extensions/ldap/Elsa.Ldap/Elsa.Ldap.csproj",
-    "releasedVersion": null
+    "releasedVersion": null,
+    "allowedSourceDescriptors": [
+      {
+        "ClrType": "Elsa.Ldap.Activities.AddLdapEntry",
+        "TypeName": "Elsa.AddLdapEntry",
+        "Version": 1
+      },
+      {
+        "ClrType": "Elsa.Ldap.Activities.CompareLdapEntry",
+        "TypeName": "Elsa.CompareLdapEntry",
+        "Version": 1
+      },
+      {
+        "ClrType": "Elsa.Ldap.Activities.DeleteLdapEntry",
+        "TypeName": "Elsa.DeleteLdapEntry",
+        "Version": 1
+      },
+      {
+        "ClrType": "Elsa.Ldap.Activities.ModifyLdapEntry",
+        "TypeName": "Elsa.ModifyLdapEntry",
+        "Version": 1
+      },
+      {
+        "ClrType": "Elsa.Ldap.Activities.MoveLdapEntry",
+        "TypeName": "Elsa.MoveLdapEntry",
+        "Version": 1
+      },
+      {
+        "ClrType": "Elsa.Ldap.Activities.SearchLdapEntries",
+        "TypeName": "Elsa.SearchLdapEntries",
+        "Version": 1
+      },
+      {
+        "ClrType": "Elsa.Ldap.Activities.SearchLdapEntry",
+        "TypeName": "Elsa.SearchLdapEntry",
+        "Version": 1
+      }
+    ]
   },
   {
     "assembly": "Elsa.Logging",
@@ -37,7 +74,19 @@
   {
     "assembly": "Elsa.Mqtt",
     "sourceProject": "src/extensions/mqtt/Elsa.Mqtt/Elsa.Mqtt.csproj",
-    "releasedVersion": null
+    "releasedVersion": null,
+    "allowedSourceDescriptors": [
+      {
+        "ClrType": "Elsa.Mqtt.Activities.MqttMessageReceived",
+        "TypeName": "Elsa.MqttMessageReceived",
+        "Version": 1
+      },
+      {
+        "ClrType": "Elsa.Mqtt.Activities.PublishMqttMessage",
+        "TypeName": "Elsa.PublishMqttMessage",
+        "Version": 1
+      }
+    ]
   },
   {
     "assembly": "Elsa.OrchardCore",

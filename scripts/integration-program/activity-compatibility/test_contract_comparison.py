@@ -48,12 +48,23 @@ class ContractComparisonTests(unittest.TestCase):
         self.assertEqual([], allowed)
         self.assertEqual(['added'], unexpected)
 
-    def test_only_explicit_source_only_assemblies_allow_added_descriptors(self):
+    def test_only_exact_reviewed_source_descriptors_are_allowed(self):
         row = self.descriptor()
         row['Assembly'] = 'Elsa.Ldap'
-        allowed, unexpected = runner.classify_added_descriptors({}, {'ldap': row}, [{'assembly': 'Elsa.Ldap', 'releasedVersion': None}])
+        allowed, unexpected = runner.classify_added_descriptors({}, {'ldap': row}, [{'assembly': 'Elsa.Ldap', 'releasedVersion': None, 'allowedSourceDescriptors': [{key: row[key] for key in ['ClrType', 'TypeName', 'Version']}]}])
         self.assertEqual(['ldap'], allowed)
         self.assertEqual([], unexpected)
+
+    def test_unreviewed_descriptor_in_source_only_assembly_is_rejected(self):
+        row = self.descriptor()
+        row['Assembly'] = 'Elsa.Ldap'
+        reviewed = {key: row[key] for key in ['ClrType', 'TypeName', 'Version']}
+        for field, value in [('ClrType', 'Other.Clr'), ('TypeName', 'Other.Activity'), ('Version', 2)]:
+            with self.subTest(field=field):
+                changed = dict(row, **{field: value})
+                allowed, unexpected = runner.classify_added_descriptors({}, {'added': changed}, [{'assembly': 'Elsa.Ldap', 'releasedVersion': None, 'allowedSourceDescriptors': [reviewed]}])
+                self.assertEqual([], allowed)
+                self.assertEqual(['added'], unexpected)
 
     def test_unlisted_assembly_addition_is_rejected(self):
         allowed, unexpected = runner.classify_added_descriptors({}, {'unknown': self.descriptor()}, [{'assembly': 'Elsa.Ldap', 'releasedVersion': None}])
