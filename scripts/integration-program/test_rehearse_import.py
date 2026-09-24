@@ -5,6 +5,7 @@ import unittest
 import tempfile
 import subprocess
 import json
+import os
 from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('rehearsal', Path(__file__).with_name('rehearse-import.py'))
@@ -130,6 +131,26 @@ class FullHistoryTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'Unsupported source profile'):
                 rehearsal.rehearse(repos['core'], {k: repos[k] for k in ('extensions', 'studio')},
                                    root / 'invalid-profile', source_profile='unreviewed')
+
+
+class WorktreePathTests(unittest.TestCase):
+    def test_surrogateescape_bytes_are_checked_against_host_filesystem(self):
+        path = 'raw-\udcff.cs'
+        encoded = os.fsencode(path)
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            candidate = os.fsencode(temporary_directory) + b'/' + encoded
+            try:
+                descriptor = os.open(candidate, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+                os.close(descriptor)
+            except OSError:
+                expected = True
+            else:
+                os.unlink(candidate)
+                expected = False
+        self.assertEqual(rehearsal._is_unrepresentable_worktree_path(path), expected)
+
+    def test_non_surrogateescape_surrogate_is_unrepresentable(self):
+        self.assertTrue(rehearsal._is_unrepresentable_worktree_path('raw-\ud800.cs'))
 
 
 if __name__ == '__main__':

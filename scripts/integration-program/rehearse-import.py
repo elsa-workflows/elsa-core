@@ -10,6 +10,7 @@ import os
 from pathlib import Path, PurePosixPath
 import subprocess
 import shutil
+import tempfile
 
 PINS = {
     'extensions': '33fa0bfd28c7585240e3d4f665058c067b17e287',
@@ -189,11 +190,32 @@ def rehearse(core, sources, output, source_profile='baseline'):
 
 
 def _is_unrepresentable_worktree_path(path):
-    """Return whether a Git path cannot be encoded by the host filesystem."""
+    """Return whether a Git path cannot be represented by the host filesystem."""
     try:
-        path.encode('utf-8')
+        encoded = os.fsencode(path)
     except UnicodeEncodeError:
         return True
+
+    # Ordinary Unicode paths need no probe. A surrogateescape path represents
+    # raw bytes from Git; test those bytes against the actual host filesystem
+    # instead of rejecting them merely because strict UTF-8 rejects surrogates.
+    if not any('\udc80' <= character <= '\udcff' for character in path):
+        return False
+
+    with tempfile.TemporaryDirectory(prefix='elsa-import-path-') as temporary_directory:
+        root = os.fsencode(temporary_directory)
+        candidate = root + b'/' + encoded
+        try:
+            os.makedirs(os.path.dirname(candidate), exist_ok=True)
+            descriptor = os.open(candidate, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+            os.close(descriptor)
+        except OSError:
+            return True
+        finally:
+            try:
+                os.unlink(candidate)
+            except OSError:
+                pass
     return False
 
 
