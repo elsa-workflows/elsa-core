@@ -44,6 +44,7 @@ public class EFCoreSecretRepository(
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
         AssignDefaultTenantId(secret, dbContext);
+        EnsureNewSecretTenantIsOwnedByWriter(secret, dbContext, IsTenancyEnabled(dbContext));
         var normalizedName = secretNameValidator.Normalize(secret.Name);
         if (await ExistsByNormalizedNameAsync(dbContext, normalizedName, cancellationToken))
             throw new InvalidOperationException($"A secret named '{secret.Name}' already exists.");
@@ -63,6 +64,9 @@ public class EFCoreSecretRepository(
 
         if (existingSecret == null)
         {
+            if (!IsNewSecretTenantOwnedByWriter(secret, dbContext, tenancyEnabled))
+                return false;
+
             await dbContext.Secrets.AddAsync(secret, cancellationToken);
             SetNormalizedName(dbContext, secret);
             SecretSerialization.StoreSerializedProperties(dbContext, secret);
@@ -103,6 +107,7 @@ public class EFCoreSecretRepository(
 
         if (existingSecret == null)
         {
+            EnsureNewSecretTenantIsOwnedByWriter(secret, dbContext, tenancyEnabled);
             await dbContext.Secrets.AddAsync(secret, cancellationToken);
             SetNormalizedName(dbContext, secret);
             SecretSerialization.StoreSerializedProperties(dbContext, secret);
@@ -156,6 +161,15 @@ public class EFCoreSecretRepository(
 #else
         return entityType?.FindAnnotation("QueryFilter")?.Value is not null;
 #endif
+    }
+
+    private static bool IsNewSecretTenantOwnedByWriter(Secret secret, SecretsElsaDbContext dbContext, bool tenancyEnabled) =>
+        !tenancyEnabled || secret.TenantId is null || secret.TenantId == (dbContext.TenantId ?? Tenant.DefaultTenantId);
+
+    private static void EnsureNewSecretTenantIsOwnedByWriter(Secret secret, SecretsElsaDbContext dbContext, bool tenancyEnabled)
+    {
+        if (!IsNewSecretTenantOwnedByWriter(secret, dbContext, tenancyEnabled))
+            throw new InvalidOperationException($"A secret named '{secret.Name}' belongs to another tenant.");
     }
 
     private static Task<bool> ExistsByNormalizedNameAsync(SecretsElsaDbContext dbContext, string normalizedName, CancellationToken cancellationToken)

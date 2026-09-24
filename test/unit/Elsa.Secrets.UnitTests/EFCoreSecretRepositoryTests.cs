@@ -262,6 +262,65 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         });
     }
 
+    [Theory]
+    [InlineData("add", "tenant-b")]
+    [InlineData("save", "tenant-b")]
+    [InlineData("try-add-or-replace", "tenant-b")]
+    [InlineData("add", Tenant.AgnosticTenantId)]
+    [InlineData("save", Tenant.AgnosticTenantId)]
+    [InlineData("try-add-or-replace", Tenant.AgnosticTenantId)]
+    public async Task NewSecretCannotBeInsertedForAnotherTenant(string operation, string targetTenantId)
+    {
+        await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
+        {
+            var name = $"novel:{operation}:{targetTenantId}";
+            using (UseTenant(tenantAccessor, "tenant-a"))
+            {
+                var secret = new Secret
+                {
+                    Id = "forged-secret",
+                    Name = name,
+                    DisplayName = "Forged secret",
+                    TenantId = targetTenantId
+                };
+
+                if (operation == "try-add-or-replace")
+                    Assert.False(await repository.TryAddOrReplaceDeletedAsync(secret));
+                else
+                {
+                    var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                        operation == "add" ? repository.AddAsync(secret) : repository.SaveAsync(secret));
+                    Assert.Equal($"A secret named '{name}' belongs to another tenant.", error.Message);
+                }
+
+                Assert.Null(await repository.GetAsync(name));
+            }
+
+            using (UseTenant(tenantAccessor, targetTenantId))
+                Assert.Null(await repository.GetAsync(name));
+        });
+    }
+
+    [Fact]
+    public async Task PreTenancyConstructor_CannotInsertNewSecretForAnotherTenant()
+    {
+        await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
+        {
+            using (UseTenant(tenantAccessor, "tenant-a"))
+            {
+                await Assert.ThrowsAsync<InvalidOperationException>(() => repository.SaveAsync(new Secret
+                {
+                    Id = "forged-secret",
+                    Name = "novel:legacy-constructor",
+                    TenantId = "tenant-b"
+                }));
+            }
+
+            using (UseTenant(tenantAccessor, "tenant-b"))
+                Assert.Null(await repository.GetAsync("novel:legacy-constructor"));
+        }, useLegacyConstructor: true);
+    }
+
     [Fact]
     public async Task TryAddOrReplaceDeletedAsync_WhenTenancyIsDisabled_PreservesLegacyReplacementBehavior()
     {
