@@ -302,6 +302,26 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task PreTenancyConstructor_CannotInsertNewSecretForAnotherTenant()
+    {
+        await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
+        {
+            using (UseTenant(tenantAccessor, "tenant-a"))
+            {
+                await Assert.ThrowsAsync<InvalidOperationException>(() => repository.SaveAsync(new Secret
+                {
+                    Id = "forged-secret",
+                    Name = "novel:legacy-constructor",
+                    TenantId = "tenant-b"
+                }));
+            }
+
+            using (UseTenant(tenantAccessor, "tenant-b"))
+                Assert.Null(await repository.GetAsync("novel:legacy-constructor"));
+        }, useLegacyConstructor: true);
+    }
+
+    [Fact]
     public async Task TryAddOrReplaceDeletedAsync_WhenTenancyIsDisabled_PreservesLegacyReplacementBehavior()
     {
         await using var scope = _serviceProvider.CreateAsyncScope();
