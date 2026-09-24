@@ -322,9 +322,8 @@ def verify_local_package_consumption(
     feed_path = local_feed.resolve(strict=True)
     proof_root = feed_path.parent
     recorded_root = recorded_proof_root or proof_root
-    if not recorded_root.is_absolute():
-        raise RuntimeError("Recorded proof root is not absolute")
-    recorded_root = recorded_root.resolve(strict=False)
+    if not recorded_root.is_absolute() or ".." in recorded_root.parts:
+        raise RuntimeError("Recorded proof root is not a clean absolute path")
     recorded_cache = recorded_root / package_cache.relative_to(proof_root)
     recorded_feed = recorded_root / feed_path.relative_to(proof_root)
     package_sha512 = base64.b64encode(hashlib.sha512(package_path.read_bytes()).digest()).decode("ascii")
@@ -366,9 +365,9 @@ def verify_local_package_consumption(
     package_folders = assets.get("packageFolders")
     if not isinstance(package_folders, dict):
         raise RuntimeError("Consumer assets do not record package folders")
-    resolved_folders = {str(Path(folder).resolve(strict=False)) for folder in package_folders}
-    if resolved_folders != {str(recorded_cache)}:
-        raise RuntimeError(f"Consumer restore used a shared or unexpected package cache: {sorted(resolved_folders)}")
+    recorded_folders = {str(Path(folder)) for folder in package_folders}
+    if recorded_folders != {str(recorded_cache)}:
+        raise RuntimeError(f"Consumer restore used a shared or unexpected package cache: {sorted(recorded_folders)}")
 
     relative_package_path = Path(library.get("path", ""))
     if relative_package_path.is_absolute() or ".." in relative_package_path.parts:

@@ -29,15 +29,19 @@ class PortableSlackBundleTests(unittest.TestCase):
             package_sha512 = base64.b64encode(hashlib.sha512(package_bytes).digest()).decode()
             identity = f"{PACKAGE_ID}/{PACKAGE_VERSION}"
             cache_relative = Path(PACKAGE_ID.casefold()) / PACKAGE_VERSION.casefold()
+            recorded_runner_root = Path('/home/runner/work/_temp/elsa-slack-proof-fixture')
             for consumer, framework in [*((name, name) for name in TFMS),
                                         ("offline-activity-smoke", "net10.0")]:
                 directory = root / "consumers" / consumer if consumer != "offline-activity-smoke" else root / consumer
                 cache = (root / "package-caches" / "consumers" / consumer if consumer != "offline-activity-smoke"
                          else root / "package-caches" / consumer)
+                recorded_cache = (recorded_runner_root / "package-caches" / "consumers" / consumer
+                                  if consumer != "offline-activity-smoke"
+                                  else recorded_runner_root / "package-caches" / consumer)
                 cached_package = cache / cache_relative
                 cached_package.mkdir(parents=True)
                 (cached_package / ".nupkg.metadata").write_text(json.dumps({
-                    "source": str(feed.resolve()), "contentHash": package_sha512,
+                    "source": str(recorded_runner_root / "local-feed"), "contentHash": package_sha512,
                 }))
                 (cached_package / f"{PACKAGE_ID.casefold()}.{PACKAGE_VERSION.casefold()}.nupkg.sha512").write_text(package_sha512)
                 (cached_package / f"{PACKAGE_ID.casefold()}.{PACKAGE_VERSION.casefold()}.nupkg").write_bytes(package_bytes)
@@ -49,13 +53,13 @@ class PortableSlackBundleTests(unittest.TestCase):
                                                       "runtime": {assembly_asset: {}}}}},
                     "libraries": {identity: {"type": "package", "path": cache_relative.as_posix(),
                                               "sha512": package_sha512}},
-                    "packageFolders": {str(cache.resolve()) + os.sep: {}},
+                    "packageFolders": {str(recorded_cache) + os.sep: {}},
                 }))
                 output_assembly = directory / "bin" / "Debug" / framework / f"{PACKAGE_ID}.dll"
                 output_assembly.parent.mkdir(parents=True)
                 output_assembly.write_bytes(framework.encode())
             (root / "evidence.json").write_text(json.dumps({
-                "result": "passed", "publication_authorized": False, "proof_root": str(root.resolve()),
+                "result": "passed", "publication_authorized": False, "proof_root": str(recorded_runner_root),
                 "package": {"package_id": PACKAGE_ID, "package_version": PACKAGE_VERSION,
                             "nupkg_sha256": package_hash},
             }))

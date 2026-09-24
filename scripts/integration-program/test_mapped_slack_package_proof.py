@@ -65,7 +65,7 @@ class MappedSlackPackageProofTests(unittest.TestCase):
                 package=extracted_root / f"{proof.PACKAGE_ID}.{proof.PACKAGE_VERSION}.nupkg",
                 package_cache=extracted_root / "isolated-cache",
                 local_feed=extracted_root / "local-feed",
-                recorded_proof_root=recorded_root,
+                recorded_proof_root=recorded_root.resolve(),
             )
             self.assertTrue(receipt["metadata_source_matches_local_feed"])
             self.assertTrue(receipt["consumer_assembly_matches_package"])
