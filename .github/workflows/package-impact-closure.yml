@@ -5,6 +5,7 @@ on:
     paths:
       - 'scripts/integration-program/package_impact.py'
       - 'scripts/integration-program/package_closure.py'
+      - 'scripts/integration-program/source_bindings.py'
       - 'scripts/integration-program/refresh_canonical_dependency_graph.py'
       - 'scripts/integration-program/release_unit_manifest.py'
       - 'scripts/integration-program/run_slack_package_proof.py'
@@ -93,6 +94,12 @@ jobs:
           dotnet-version: 10.0.x
       - name: Execute the pinned dependency closure
         run: |
+          python scripts/integration-program/source_bindings.py \
+            --inventory doc/integration-program/inventory/inventory.json \
+            --core sources/elsa-core \
+            --extensions sources/elsa-extensions \
+            --overlay sources/source-bound-extensions \
+            --receipt "${RUNNER_TEMP}/source-binding.json"
           args=()
           if [ "${{ inputs.include_docker }}" = "true" ]; then
             args+=(--include-docker)
@@ -100,7 +107,8 @@ jobs:
           python scripts/integration-program/package_closure.py \
             --inventory doc/integration-program/inventory/inventory.json \
             --source elsa-core=sources/elsa-core \
-            --source elsa-extensions=sources/elsa-extensions \
+            --source elsa-extensions=sources/source-bound-extensions \
+            --source-binding-receipt "${RUNNER_TEMP}/source-binding.json" \
             --run "${args[@]}" \
             --output "${RUNNER_TEMP}/package-closure.json"
       - name: Upload source, TRX, and build receipts
@@ -110,6 +118,7 @@ jobs:
           name: package-closure-source-test-receipts
           path: |
             ${{ runner.temp }}/source-pins-plan.json
+            ${{ runner.temp }}/source-binding.json
             ${{ runner.temp }}/package-closure.json
             ${{ runner.temp }}/artifacts/**
           if-no-files-found: warn

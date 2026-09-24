@@ -10,7 +10,32 @@ This rehearsal compares two source-change shapes at the integration-program inve
 
 Earlier local counts below remain historical execution with a populated package cache. They **do not establish clean pinned-source closure**. The source gate is not accepted. Corrected preflight now rejects source-owned package edges before test execution and records the exact project/package references in its failure receipt. A live check of the clean pinned sources stops at Logging's `Elsa.Testing.Shared`, `Elsa.Testing.Shared.Integration`, and `Elsa.Workflows.Core` package references. No packages were published to make this test pass, and source pins were not silently rewritten.
 
-The final closure proof must run against the reviewed consolidated source graph after #8287, including the actual source-reference transformations and a fresh CI environment. Until then, the historical two-repository baseline remains blocked. This fail-closed characterization does not complete #8260.
+The final closure proof must run against the reviewed consolidated source graph after #8287, including the actual source-reference transformations and a fresh CI environment. A disposable, inventory-pinned source-binding overlay now provides a separate way to execute the historical two-repository graph without treating cached package restores as source execution. It does not substitute for the final imported graph or complete #8260.
+
+### Disposable source-binding overlay
+
+`source_bindings.py` requires clean Core `610790ec` and Extensions `33fa0bfd` checkouts. It creates a detached Extensions worktree beside the Core checkout and rewrites only the reviewed source-bound edges: 17 reachable Extensions projects reference 26 uniquely owned Core package IDs. Two additional MassTransit projects have no Core package conversion but carry explicit CShells source edges. Across four projects, the external `CShells.Abstractions` project edge becomes the centrally declared `0.0.28` package dependency. The overlay therefore changes 19 project files in total. It retains every original checkout and commit untouched, writes before/after SHA-256 values and exact package-to-project mappings, and rejects an altered overlay or receipt before and after test execution. The conversion preserves each existing conditional `ItemGroup`; unsupported package-reference shapes fail rather than being guessed.
+
+The runner then evaluates outer builds and every declared TFM recursively. Any source-owned package edge, missing project, or reference outside the two supplied source trees still fails before tests. A successful `--preflight-only` command means that graph evaluation passed; it never marks test closure complete. The nonpublishing manual workflow uses the same overlay and uploads its receipt.
+
+On 2026-09-24, the local `--preflight-only` run against those exact pins passed 175 distinct project/property-mode nodes and found zero remaining source-owned package references. It selected the recorded 51 test/build inputs and left `correctness_closure_complete=false` because it did not execute them. This is evaluated source-binding evidence only; the historical 51-input execution, its four known skips, final imported-source closure and publisher cutover remain separate gates.
+
+A focused `--run --only elsa-extensions:test/modules/diagnostics/Elsa.Logging.Core.IntegrationTests/Elsa.Logging.Core.IntegrationTests.csproj` repeated the same passing 175-node preflight and then executed the first formerly blocked project: 2 passed, 0 failed or skipped, with the original Core checkout still clean and the overlay matching its 19-file receipt after execution. The runner returned 3 because 49 required test/build inputs were deliberately deferred by `--only`; it did not report a complete closure. Fresh manual CI remains necessary for the full pinned-source lane.
+
+```sh
+python3 scripts/integration-program/source_bindings.py \
+  --inventory doc/integration-program/inventory/inventory.json \
+  --core /path/to/sources/elsa-core \
+  --extensions /path/to/sources/elsa-extensions \
+  --overlay /path/to/sources/source-bound-extensions \
+  --receipt /tmp/source-binding.json
+python3 scripts/integration-program/package_closure.py \
+  --inventory doc/integration-program/inventory/inventory.json \
+  --source elsa-core=/path/to/sources/elsa-core \
+  --source elsa-extensions=/path/to/sources/source-bound-extensions \
+  --source-binding-receipt /tmp/source-binding.json \
+  --preflight-only --output /tmp/source-bound-preflight.json
+```
 
 The mapped-source artifact job also writes a path-and-framework plan for all selector results into its impact receipt. For Extensions paths, each inventory project is mapped through the recorded import relocation rows; Core paths remain in place. The plan records both inventory and mapped source pins and whether each pin matches. It is explicitly not test evidence: no test is counted as executed unless a later TRX receipt matches the mapped path, framework, source revision, and evaluated inputs.
 
@@ -35,7 +60,7 @@ python scripts/integration-program/package_closure.py \
   --output /tmp/package-closure-plan.json
 ```
 
-To reproduce the historical baseline (currently an expected preflight failure), check out the Core and Extensions commits listed in `inventory.json` as sibling directories named `elsa-core` and `elsa-extensions`, then run:
+To reproduce the historical unmodified baseline (an expected preflight failure), check out the Core and Extensions commits listed in `inventory.json` as sibling directories named `elsa-core` and `elsa-extensions`, then run:
 
 ```sh
 python scripts/integration-program/package_closure.py \
