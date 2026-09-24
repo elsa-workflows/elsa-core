@@ -39,6 +39,17 @@ public class SqlServerUniquenessMigrationsTests(App app)
 
             Assert.Equal(2, await ScalarAsync(context, "SELECT COUNT(*) FROM [Elsa].[Secrets] WHERE [TenantId] = N''"));
             Assert.Equal(0, await ScalarAsync(context, "SELECT COUNT(*) FROM [Elsa].[Secrets] WHERE [TenantId] IS NULL"));
+            var duplicate = await Assert.ThrowsAsync<SqlException>(() => context.Database.ExecuteSqlRawAsync("""
+                INSERT INTO [Elsa].[Secrets]
+                    ([Id], [Name], [NormalizedName], [DisplayName], [TypeName], [StoreName], [Status], [CreatedAt], [Tags], [Versions], [TenantId])
+                VALUES (N'secret-duplicate', N'duplicate', N'ONE', N'duplicate', N'type', N'store', N'Active', SYSUTCDATETIME(), N'[]', N'[]', N'');
+                """));
+            Assert.True(duplicate.Number is 2601 or 2627);
+            await context.Database.ExecuteSqlRawAsync("""
+                INSERT INTO [Elsa].[Secrets]
+                    ([Id], [Name], [NormalizedName], [DisplayName], [TypeName], [StoreName], [Status], [CreatedAt], [Tags], [Versions], [TenantId])
+                VALUES (N'secret-other-tenant', N'other tenant', N'ONE', N'other tenant', N'type', N'store', N'Active', SYSUTCDATETIME(), N'[]', N'[]', N'tenant-b');
+                """);
         });
     }
 
@@ -81,6 +92,15 @@ public class SqlServerUniquenessMigrationsTests(App app)
 
             Assert.Equal(2, await ScalarAsync(context, "SELECT COUNT(*) FROM [Elsa].[Labels] WHERE [TenantId] = N''"));
             Assert.Equal(0, await ScalarAsync(context, "SELECT COUNT(*) FROM [Elsa].[Labels] WHERE [TenantId] IS NULL"));
+            var duplicate = await Assert.ThrowsAsync<SqlException>(() => context.Database.ExecuteSqlRawAsync("""
+                INSERT INTO [Elsa].[Labels] ([Id], [Name], [NormalizedName], [Description], [Color], [TenantId])
+                VALUES (N'label-duplicate', N'duplicate', N'ONE', NULL, NULL, N'');
+                """));
+            Assert.True(duplicate.Number is 2601 or 2627);
+            await context.Database.ExecuteSqlRawAsync("""
+                INSERT INTO [Elsa].[Labels] ([Id], [Name], [NormalizedName], [Description], [Color], [TenantId])
+                VALUES (N'label-other-tenant', N'other tenant', N'ONE', NULL, NULL, N'tenant-b');
+                """);
         });
     }
 
