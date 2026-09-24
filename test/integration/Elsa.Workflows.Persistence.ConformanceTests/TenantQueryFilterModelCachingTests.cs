@@ -53,17 +53,17 @@ public class TenantQueryFilterModelCachingTests
     private sealed class Fixture : IAsyncDisposable
     {
         private readonly ServiceProvider _serviceProvider;
-        private readonly IDbContextFactory<ManagementElsaDbContext> _contextFactory;
+        private readonly Func<ManagementElsaDbContext> _createContext;
         private readonly SqliteConnection _connection;
 
         private Fixture(
             ServiceProvider serviceProvider,
-            IDbContextFactory<ManagementElsaDbContext> contextFactory,
+            Func<ManagementElsaDbContext> createContext,
             SqliteConnection connection,
             TenantsOptions tenantsOptions)
         {
             _serviceProvider = serviceProvider;
-            _contextFactory = contextFactory;
+            _createContext = createContext;
             _connection = connection;
             TenantsOptions = tenantsOptions;
         }
@@ -76,20 +76,26 @@ public class TenantQueryFilterModelCachingTests
             var connection = new SqliteConnection("Data Source=:memory:");
             await connection.OpenAsync();
             var elsaOptions = new ElsaDbContextOptions();
-            elsaOptions.ConfigureModel<ManagementElsaDbContext>(modelBuilder =>
-                modelBuilder.Entity<WorkflowInstance>().HasQueryFilter(instance => instance.Id != "hidden"));
+            if (hostFilter)
+                elsaOptions.ConfigureModel<HostFilteredManagementElsaDbContext>(modelBuilder =>
+                    modelBuilder.Entity<WorkflowInstance>().HasQueryFilter(instance => instance.Id != "hidden"));
 
             var services = new ServiceCollection()
                 .AddLogging()
                 .AddSingleton<IOptions<TenantsOptions>>(Microsoft.Extensions.Options.Options.Create(tenantsOptions))
                 .AddScoped<IEntityModelCreatingHandler, SetTenantIdFilter>()
-                .AddSqliteEntityModelCreatingHandlers()
-                .AddDbContextFactory<ManagementElsaDbContext>(builder => builder.UseSqlite(connection).UseElsaDbContextOptions(elsaOptions));
+                .AddSqliteEntityModelCreatingHandlers();
             var serviceProvider = services.BuildServiceProvider();
-            var contextFactory = serviceProvider.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>();
-            var fixture = new Fixture(serviceProvider, contextFactory, connection, tenantsOptions);
+            var optionsBuilder = new DbContextOptionsBuilder<ManagementElsaDbContext>();
+            optionsBuilder.UseSqlite(connection);
+            optionsBuilder.UseElsaDbContextOptions(elsaOptions);
+            var options = optionsBuilder.Options;
+            ManagementElsaDbContext CreateContext() => hostFilter
+                ? new HostFilteredManagementElsaDbContext(options, serviceProvider)
+                : new ManagementElsaDbContext(options, serviceProvider);
+            var fixture = new Fixture(serviceProvider, CreateContext, connection, tenantsOptions);
 
-            await using var dbContext = await contextFactory.CreateDbContextAsync();
+            await using var dbContext = CreateContext();
             await dbContext.Database.EnsureCreatedAsync();
             dbContext.WorkflowInstances.AddRange(
                 CreateWorkflowInstance("tenant-a", "tenant-a"),
@@ -106,7 +112,7 @@ public class TenantQueryFilterModelCachingTests
 
         public async Task<IReadOnlyList<string>> QueryIdsAsync(string tenantId)
         {
-            await using var dbContext = await _contextFactory.CreateDbContextAsync();
+            await using var dbContext = _createContext();
             dbContext.TenantId = tenantId;
             return await dbContext.WorkflowInstances.OrderBy(x => x.Id).Select(x => x.Id).ToListAsync();
         }
@@ -128,4 +134,7 @@ public class TenantQueryFilterModelCachingTests
             UpdatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    private sealed class HostFilteredManagementElsaDbContext(DbContextOptions<ManagementElsaDbContext> options, IServiceProvider serviceProvider)
+        : ManagementElsaDbContext(options, serviceProvider);
 }
