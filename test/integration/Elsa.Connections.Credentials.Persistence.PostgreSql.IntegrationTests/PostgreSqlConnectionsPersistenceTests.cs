@@ -57,10 +57,21 @@ public sealed class PostgreSqlConnectionsPersistenceTests(PostgreSqlConnectionsF
         await using var db = await contextFactory.CreateDbContextAsync();
 
         var migrations = db.Database.GetMigrations().ToArray();
-        Assert.Equal(2, migrations.Length);
+        Assert.Equal(3, migrations.Length);
         Assert.EndsWith("_Initial", migrations[0]);
         Assert.EndsWith("_WorkflowCredentialUseGrants", migrations[1]);
+        Assert.EndsWith("_DueCredentialLifecycleCandidates", migrations[2]);
+        await db.Database.MigrateAsync(migrations[1]);
+        await db.Database.ExecuteSqlRawAsync("""
+            INSERT INTO "Elsa"."Connections"
+                ("Id", "EnvironmentId", "ProviderId", "ProviderAccountId", "Status", "Revision", "OperationExpectedRevision", "OperationFence", "OperationStatus", "TenantId")
+            VALUES ('conn-legacy-migration', 'env-a', 'synthetic-provider', 'synthetic-account', 'Active', 1, 0, 0, 'None', 'tenant-a')
+            """);
         await db.Database.MigrateAsync();
+        var legacyAfterMigration = await worker.GetRequiredService<IConnectionLifecycleStore>()
+            .FindAsync("conn-legacy-migration", "tenant-a", "env-a");
+        Assert.Null(legacyAfterMigration!.CredentialKind);
+        Assert.Null(legacyAfterMigration.CredentialExpiresAt);
         Assert.Equal(migrations, (await db.Database.GetAppliedMigrationsAsync()).ToArray());
 
         var lifecycleStore = worker.GetRequiredService<IConnectionLifecycleStore>();
@@ -92,6 +103,268 @@ public sealed class PostgreSqlConnectionsPersistenceTests(PostgreSqlConnectionsF
     }
 
     [Fact]
+    public async Task DueCandidateQueryIsScopedBoundedAndUsesOnlyNonsecretPublishedMetadata()
+    {
+        await fixture.ResetSchemaAsync();
+        await using var worker = CreateWorker(fixture.ConnectionString);
+        await MigrateAsync(worker);
+        var lifecycle = worker.GetRequiredService<IConnectionLifecycleStore>();
+        var dueStore = worker.GetRequiredService<IConnectionDueCandidateStore>();
+        var now = new DateTimeOffset(2026, 9, 24, 12, 0, 0, TimeSpan.Zero);
+
+        var oauth = Connection("due-oauth", "tenant-a", "env-a");
+        oauth.CredentialKind = ConnectionCredentialKind.OAuth;
+        oauth.CredentialExpiresAt = now;
+        await lifecycle.CreateAsync(oauth);
+
+        var apiKey = Connection("due-api-key", "tenant-a", "env-a");
+        apiKey.CredentialKind = ConnectionCredentialKind.ApiKey;
+        await lifecycle.CreateAsync(apiKey);
+
+        var legacy = Connection("due-legacy", "tenant-a", "env-a");
+        legacy.CredentialExpiresAt = now;
+        await lifecycle.CreateAsync(legacy);
+
+        var otherTenant = Connection("due-other-tenant", "tenant-b", "env-a");
+        otherTenant.CredentialKind = ConnectionCredentialKind.OAuth;
+        otherTenant.CredentialExpiresAt = now;
+        await lifecycle.CreateAsync(otherTenant);
+
+        var expiredClaim = Connection("due-expired-claim", "tenant-a", "env-a");
+        expiredClaim.OperationId = "due-expired-operation";
+        expiredClaim.OperationStatus = CredentialOperationStatus.Claimed;
+        expiredClaim.OperationLeaseExpiresAt = now;
+        await lifecycle.CreateAsync(expiredClaim);
+
+        var recovery = Connection("due-recovery", "tenant-a", "env-a");
+        recovery.Status = ConnectionStatus.RecoveryRequired;
+        recovery.OperationStatus = CredentialOperationStatus.RecoveryRequired;
+        recovery.OperationId = "due-recovery-operation";
+        await lifecycle.CreateAsync(recovery);
+
+        await using (var db = await worker.GetRequiredService<IDbContextFactory<ConnectionsElsaDbContext>>().CreateDbContextAsync())
+        {
+            db.GenerationCleanups.Add(new ConnectionGenerationCleanup
+            {
+                ConnectionId = apiKey.Id,
+                TenantId = apiKey.TenantId!,
+                EnvironmentId = apiKey.EnvironmentId,
+                GenerationId = "old-api-key-generation",
+                Status = ConnectionGenerationCleanupStatus.Deleting,
+                Fence = 1,
+                LeaseExpiresAt = now
+            });
+            db.GenerationCleanups.Add(new ConnectionGenerationCleanup
+            {
+                ConnectionId = apiKey.Id,
+                TenantId = apiKey.TenantId!,
+                EnvironmentId = apiKey.EnvironmentId,
+                GenerationId = "null-lease-api-key-generation",
+                Status = ConnectionGenerationCleanupStatus.Deleting,
+                Fence = 1,
+                LeaseExpiresAt = null
+            });
+            db.GenerationCleanups.Add(new ConnectionGenerationCleanup
+            {
+                ConnectionId = apiKey.Id,
+                TenantId = apiKey.TenantId!,
+                EnvironmentId = apiKey.EnvironmentId,
+                GenerationId = "future-lease-api-key-generation",
+                Status = ConnectionGenerationCleanupStatus.Deleting,
+                Fence = 1,
+                LeaseExpiresAt = now.AddMinutes(1)
+            });
+            db.OffboardingOperations.Add(new ConnectionOffboardingOperation
+            {
+                Id = "due-offboarding",
+                TenantId = "tenant-a",
+                EnvironmentId = "env-a",
+                ConnectionId = apiKey.Id,
+                ProviderId = apiKey.ProviderId,
+                ProviderAccountId = apiKey.ProviderAccountId,
+                Kind = ConnectionOffboardingOperationKind.InstallationUninstall,
+                Status = ConnectionOffboardingOperationStatus.Pending,
+                Fence = 1,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+            db.OffboardingOperations.Add(new ConnectionOffboardingOperation
+            {
+                Id = "unknown-outcome-offboarding",
+                TenantId = "tenant-a",
+                EnvironmentId = "env-a",
+                ConnectionId = apiKey.Id,
+                ProviderId = apiKey.ProviderId,
+                ProviderAccountId = apiKey.ProviderAccountId,
+                Kind = ConnectionOffboardingOperationKind.InstallationUninstall,
+                Status = ConnectionOffboardingOperationStatus.UnknownOutcome,
+                Fence = 1,
+                CreatedAt = now,
+                UpdatedAt = now,
+                NextAttemptAt = null
+            });
+            db.OffboardingOperations.Add(new ConnectionOffboardingOperation
+            {
+                Id = "claimed-without-lease-offboarding",
+                TenantId = "tenant-a",
+                EnvironmentId = "env-a",
+                ConnectionId = apiKey.Id,
+                ProviderId = apiKey.ProviderId,
+                ProviderAccountId = apiKey.ProviderAccountId,
+                Kind = ConnectionOffboardingOperationKind.InstallationUninstall,
+                Status = ConnectionOffboardingOperationStatus.Claimed,
+                Fence = 1,
+                CreatedAt = now,
+                UpdatedAt = now,
+                LeaseExpiresAt = null
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var collected = new List<ConnectionDueCandidate>();
+        string? cursor = null;
+        do
+        {
+            var page = await dueStore.FindDueCandidatesAsync("tenant-a", "env-a", now, 2, cursor);
+            Assert.True(page.Items.Count <= 2);
+            collected.AddRange(page.Items);
+            cursor = page.NextCursor;
+        } while (cursor != null);
+
+        Assert.Equal(7, collected.Count);
+        Assert.Contains(collected, x => x.Kind == ConnectionDueCandidateKind.OAuthRefresh && x.ConnectionId == oauth.Id && x.DueAt == now);
+        Assert.Contains(collected, x => x.Kind == ConnectionDueCandidateKind.ExpiredConnectionOperation && x.CandidateId == expiredClaim.OperationId);
+        Assert.Contains(collected, x => x.Kind == ConnectionDueCandidateKind.RecoveryRequired && x.ConnectionId == recovery.Id);
+        Assert.Contains(collected, x => x.Kind == ConnectionDueCandidateKind.GenerationCleanup && x.ConnectionId == apiKey.Id);
+        Assert.Contains(collected, x => x.Kind == ConnectionDueCandidateKind.GenerationCleanup &&
+            x.CandidateId == "null-lease-api-key-generation" && x.DueAt == DateTimeOffset.MinValue);
+        Assert.Contains(collected, x => x.Kind == ConnectionDueCandidateKind.Offboarding && x.CandidateId == "due-offboarding");
+        Assert.Contains(collected, x => x.Kind == ConnectionDueCandidateKind.Offboarding && x.CandidateId == "unknown-outcome-offboarding");
+        Assert.DoesNotContain(collected, x => x.CandidateId is "future-lease-api-key-generation" or "claimed-without-lease-offboarding");
+        Assert.DoesNotContain(collected, x => x.Kind == ConnectionDueCandidateKind.OAuthRefresh &&
+            x.ConnectionId is "due-api-key" or "due-legacy" or "due-other-tenant");
+        Assert.Empty((await dueStore.FindDueCandidatesAsync("tenant-a", "env-b", now, 25)).Items);
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => dueStore.FindDueCandidatesAsync("tenant-a", "env-a", now, 0));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => dueStore.FindDueCandidatesAsync("tenant-a", "env-a", now, 501));
+        await Assert.ThrowsAsync<ArgumentException>(() => dueStore.FindDueCandidatesAsync("tenant-a", "env-a", now, 10, "bad-cursor"));
+        var unknownKindCursor = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(
+            "{\"DueAt\":\"2026-09-24T12:00:00+00:00\",\"Kind\":999,\"ConnectionId\":\"a\",\"CandidateId\":\"a\"}"))
+            .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        await Assert.ThrowsAsync<ArgumentException>(() => dueStore.FindDueCandidatesAsync("tenant-a", "env-a", now, 10, unknownKindCursor));
+
+        await using var connection = new NpgsqlConnection(fixture.ConnectionString);
+        await connection.OpenAsync();
+        await using var indexCommand = new NpgsqlCommand("SELECT count(*) FROM pg_indexes WHERE schemaname = 'Elsa' AND indexname = ANY (@names)", connection);
+        indexCommand.Parameters.AddWithValue("names", new[] { "IX_Conn_Due", "IX_Conn_Lease", "IX_Cleanup_Due", "IX_Offboarding_Retry", "IX_Offboarding_Lease" });
+        Assert.Equal(5L, (long)(await indexCommand.ExecuteScalarAsync())!);
+    }
+
+    [Fact]
+    public async Task DueCandidateKeysetRemainsStableAcrossRevisionChangesAndNewRows()
+    {
+        await fixture.ResetSchemaAsync();
+        await using var worker = CreateWorker(fixture.ConnectionString);
+        await MigrateAsync(worker);
+        var lifecycle = worker.GetRequiredService<IConnectionLifecycleStore>();
+        var dueStore = worker.GetRequiredService<IConnectionDueCandidateStore>();
+        var now = new DateTimeOffset(2026, 9, 24, 12, 0, 0, TimeSpan.Zero);
+        foreach (var id in new[] { "due-A", "due-a", "due-b" })
+        {
+            var connection = Connection(id, "tenant-a", "env-a");
+            connection.CredentialKind = ConnectionCredentialKind.OAuth;
+            connection.CredentialExpiresAt = now;
+            await lifecycle.CreateAsync(connection);
+        }
+
+        var first = await dueStore.FindDueCandidatesAsync("tenant-a", "env-a", now, 1);
+        Assert.Equal("due-A", Assert.Single(first.Items).ConnectionId);
+        await using (var db = await worker.GetRequiredService<IDbContextFactory<ConnectionsElsaDbContext>>().CreateDbContextAsync())
+        {
+            await db.Connections.Where(x => x.Id == "due-A").ExecuteUpdateAsync(setters => setters.SetProperty(x => x.Revision, x => x.Revision + 1));
+        }
+
+        var inserted = Connection("due-z", "tenant-a", "env-a");
+        inserted.CredentialKind = ConnectionCredentialKind.OAuth;
+        inserted.CredentialExpiresAt = now;
+        await lifecycle.CreateAsync(inserted);
+
+        var observed = first.Items.Select(x => x.ConnectionId).ToList();
+        var cursor = first.NextCursor;
+        while (cursor != null)
+        {
+            var page = await dueStore.FindDueCandidatesAsync("tenant-a", "env-a", now, 1, cursor);
+            observed.AddRange(page.Items.Select(x => x.ConnectionId));
+            cursor = page.NextCursor;
+        }
+
+        Assert.Equal(new[] { "due-A", "due-a", "due-b", "due-z" }, observed);
+        Assert.Equal(observed.Count, observed.Distinct(StringComparer.Ordinal).Count());
+    }
+
+    [Fact]
+    public async Task DueCandidateQueryPagesMoreThanOneThousandRowsWithoutOffsetScanning()
+    {
+        await fixture.ResetSchemaAsync();
+        await using var worker = CreateWorker(fixture.ConnectionString);
+        await MigrateAsync(worker);
+        var now = new DateTimeOffset(2026, 9, 24, 12, 0, 0, TimeSpan.Zero);
+        await using (var db = await worker.GetRequiredService<IDbContextFactory<ConnectionsElsaDbContext>>().CreateDbContextAsync())
+        {
+            for (var start = 0; start < 1_100; start += 250)
+            {
+                db.Connections.AddRange(Enumerable.Range(start, Math.Min(250, 1_100 - start)).Select(index =>
+                {
+                    var connection = Connection($"large-{index:D4}", "tenant-a", "env-a");
+                    connection.CredentialKind = ConnectionCredentialKind.OAuth;
+                    connection.CredentialExpiresAt = now;
+                    return connection;
+                }));
+                await db.SaveChangesAsync();
+            }
+        }
+
+        var dueStore = worker.GetRequiredService<IConnectionDueCandidateStore>();
+        var ids = new List<string>();
+        string? cursor = null;
+        do
+        {
+            var page = await dueStore.FindDueCandidatesAsync("tenant-a", "env-a", now, 127, cursor);
+            ids.AddRange(page.Items.Select(x => x.ConnectionId));
+            cursor = page.NextCursor;
+        } while (cursor != null);
+
+        Assert.Equal(1_100, ids.Count);
+        Assert.Equal(ids.Count, ids.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal("large-0000", ids[0]);
+        Assert.Equal("large-1099", ids[^1]);
+
+        await using var connection = new NpgsqlConnection(fixture.ConnectionString);
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        await using (var planner = new NpgsqlCommand("SET LOCAL enable_seqscan = off", connection, transaction))
+            await planner.ExecuteNonQueryAsync();
+        await using var explain = new NpgsqlCommand("""
+            EXPLAIN (COSTS OFF)
+            SELECT "Id", "CredentialExpiresAt"
+            FROM "Elsa"."Connections"
+            WHERE "TenantId" = @tenant AND "EnvironmentId" = @environment AND "Status" = 'Active'
+              AND "CredentialKind" = 'OAuth' AND "CredentialExpiresAt" <= @now
+            ORDER BY "CredentialExpiresAt", "Id"
+            LIMIT 128
+            """, connection, transaction);
+        explain.Parameters.AddWithValue("tenant", "tenant-a");
+        explain.Parameters.AddWithValue("environment", "env-a");
+        explain.Parameters.AddWithValue("now", now);
+        var plan = new List<string>();
+        await using (var reader = await explain.ExecuteReaderAsync())
+        {
+            while (await reader.ReadAsync())
+                plan.Add(reader.GetString(0));
+        }
+        Assert.Contains("IX_Conn_Due", string.Join('\n', plan));
+    }
+
+    [Fact]
     public async Task LifecycleStoreScopesCasDisconnectQueueAndCleanupToTheExactTenantEnvironment()
     {
         await fixture.ResetSchemaAsync();
@@ -112,14 +385,18 @@ public sealed class PostgreSqlConnectionsPersistenceTests(PostgreSqlConnectionsF
         Assert.Null(await store.TryClaimRefreshAsync(connection.Id, "tenant-a", "env-a", 1, "operation-stale", DateTimeOffset.UtcNow.AddMinutes(2)));
         Assert.False(await store.TryStartProviderCallAsync(connection.Id, "tenant-b", "env-a", claimed.Revision, "operation-refresh", claimed.OperationFence, DateTimeOffset.UtcNow));
         Assert.True(await store.TryStartProviderCallAsync(connection.Id, "tenant-a", "env-a", claimed.Revision, "operation-refresh", claimed.OperationFence, DateTimeOffset.UtcNow));
+        var accessTokenExpiry = new DateTimeOffset(2026, 9, 25, 12, 0, 0, TimeSpan.Zero);
         Assert.True(await store.TryRecordStagedGenerationAsync(
             connection.Id, "tenant-a", "env-a", claimed.OperationExpectedRevision, "operation-refresh", claimed.OperationFence,
-            claimed.PlannedSecretName!, claimed.PlannedGenerationId!));
+            claimed.PlannedSecretName!, claimed.PlannedGenerationId!, ConnectionCredentialKind.OAuth, accessTokenExpiry));
+        Assert.Null((await store.FindAsync(connection.Id, "tenant-a", "env-a"))!.CredentialKind);
         Assert.False(await store.TryPublishGenerationAsync(connection.Id, "tenant-a", "env-a", claimed.Revision + 1, "operation-refresh", claimed.OperationFence));
         Assert.True(await store.TryPublishGenerationAsync(connection.Id, "tenant-a", "env-a", claimed.Revision, "operation-refresh", claimed.OperationFence));
 
         var published = await store.FindAsync(connection.Id, "tenant-a", "env-a");
         Assert.Equal("operation-refresh", published!.CurrentGenerationId);
+        Assert.Equal(ConnectionCredentialKind.OAuth, published.CredentialKind);
+        Assert.Equal(accessTokenExpiry, published.CredentialExpiresAt);
         Assert.Equal(3, published.Revision);
         var disconnect = LocalDisconnect("disconnect-lifecycle", connection.Id, "tenant-a", "env-a");
         var disconnected = await store.TryDisconnectAndRecordAsync(connection.Id, "tenant-a", "env-a", published.Revision, disconnect);

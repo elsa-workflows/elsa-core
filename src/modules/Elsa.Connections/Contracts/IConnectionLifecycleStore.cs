@@ -145,9 +145,35 @@ public interface IConnectionLifecycleStore
         string generationId,
         CancellationToken cancellationToken = default);
 
+    Task<bool> TryRecordStagedGenerationAsync(
+        string id,
+        string tenantId,
+        string environmentId,
+        long expectedRevision,
+        string operationId,
+        long fence,
+        string secretName,
+        string generationId,
+        ConnectionCredentialKind? credentialKind,
+        DateTimeOffset? credentialExpiresAt,
+        CancellationToken cancellationToken = default) =>
+        TryRecordStagedGenerationAsync(id, tenantId, environmentId, expectedRevision, operationId, fence, secretName, generationId, cancellationToken);
+
     Task<bool> TryPublishGenerationAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, CancellationToken cancellationToken = default);
 
     Task<bool> TryPromoteRecoveryGenerationAsync(string id, string tenantId, string environmentId, long expectedRevision, string operationId, long fence, CancellationToken cancellationToken = default);
+
+    Task<bool> TryPromoteRecoveryGenerationAsync(
+        string id,
+        string tenantId,
+        string environmentId,
+        long expectedRevision,
+        string operationId,
+        long fence,
+        ConnectionCredentialKind? credentialKind,
+        DateTimeOffset? credentialExpiresAt,
+        CancellationToken cancellationToken = default) =>
+        TryPromoteRecoveryGenerationAsync(id, tenantId, environmentId, expectedRevision, operationId, fence, cancellationToken);
 
     Task<bool> MarkRecoveryRequiredAsync(string id, string tenantId, string environmentId, string operationId, long fence, string safeErrorCode, CancellationToken cancellationToken = default);
 

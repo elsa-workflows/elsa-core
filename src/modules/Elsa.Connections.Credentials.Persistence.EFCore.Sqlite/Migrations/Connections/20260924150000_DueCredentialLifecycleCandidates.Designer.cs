@@ -2,6 +2,7 @@
 using Elsa.Connections.Credentials.Persistence.EFCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -9,9 +10,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Connections.Credentials.Persistence.EFCore.Sqlite.Migrations.Connections
 {
     [DbContext(typeof(ConnectionsElsaDbContext))]
-    partial class ConnectionsElsaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260924150000_DueCredentialLifecycleCandidates")]
+    partial class DueCredentialLifecycleCandidates
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -129,8 +131,7 @@ namespace Elsa.Connections.Credentials.Persistence.EFCore.Sqlite.Migrations.Conn
 
                     b.HasIndex("TenantId", "EnvironmentId", "ConnectionId");
 
-                    b.HasIndex("TenantId", "EnvironmentId", "Status", "LeaseExpiresAt", "ConnectionId", "GenerationId")
-                        .HasDatabaseName("IX_Cleanup_Due");
+                    b.HasIndex("TenantId", "EnvironmentId", "Status", "LeaseExpiresAt", "ConnectionId", "GenerationId");
 
                     b.ToTable("ConnectionGenerationCleanups", "Elsa");
                 });
@@ -208,11 +209,9 @@ namespace Elsa.Connections.Credentials.Persistence.EFCore.Sqlite.Migrations.Conn
 
                     b.HasIndex("TenantId", "EnvironmentId", "ConnectionId", "GenerationId", "Status");
 
-                    b.HasIndex("TenantId", "EnvironmentId", "Status", "NextAttemptAt", "ConnectionId", "Id")
-                        .HasDatabaseName("IX_Offboarding_Retry");
+                    b.HasIndex("TenantId", "EnvironmentId", "Status", "NextAttemptAt", "ConnectionId", "Id");
 
-                    b.HasIndex("TenantId", "EnvironmentId", "Status", "LeaseExpiresAt", "ConnectionId", "Id")
-                        .HasDatabaseName("IX_Offboarding_Lease");
+                    b.HasIndex("TenantId", "EnvironmentId", "Status", "LeaseExpiresAt", "ConnectionId", "Id");
 
                     b.HasIndex("TenantId", "EnvironmentId", "ConnectionId", "Status", "CreatedAt");
 
@@ -321,11 +320,9 @@ namespace Elsa.Connections.Credentials.Persistence.EFCore.Sqlite.Migrations.Conn
                     b.HasIndex("TenantId", "EnvironmentId", "Id")
                         .IsUnique();
 
-                    b.HasIndex("TenantId", "EnvironmentId", "CredentialKind", "CredentialExpiresAt", "Id")
-                        .HasDatabaseName("IX_Conn_Due");
+                    b.HasIndex("TenantId", "EnvironmentId", "CredentialKind", "CredentialExpiresAt", "Id");
 
-                    b.HasIndex("TenantId", "EnvironmentId", "Status", "OperationStatus", "OperationLeaseExpiresAt", "Id")
-                        .HasDatabaseName("IX_Conn_Lease");
+                    b.HasIndex("TenantId", "EnvironmentId", "Status", "OperationStatus", "OperationLeaseExpiresAt", "Id");
 
                     b.ToTable("Connections", "Elsa");
                 });

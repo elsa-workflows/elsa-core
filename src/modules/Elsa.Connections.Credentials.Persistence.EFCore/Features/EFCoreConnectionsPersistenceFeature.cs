@@ -17,6 +17,7 @@ public sealed class EFCoreConnectionsPersistenceFeature(IModule module)
         base.Apply();
         Services.AddScoped<EFCoreConnectionLifecycleStore>();
         Services.AddScoped<IConnectionLifecycleStore>(sp => sp.GetRequiredService<EFCoreConnectionLifecycleStore>());
+        Services.AddScoped<IConnectionDueCandidateStore>(sp => sp.GetRequiredService<EFCoreConnectionLifecycleStore>());
         Services.AddScoped<EFCoreConnectionCredentialBindingStore>();
         Services.AddScoped<IConnectionCredentialBindingStore>(sp => sp.GetRequiredService<EFCoreConnectionCredentialBindingStore>());
         Services.AddScoped<IConnectionCredentialUseGrantStore, EFCoreConnectionCredentialUseGrantStore>();

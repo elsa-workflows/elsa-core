@@ -13,6 +13,37 @@ This guide records the boundaries and operational limits of the initial Core cre
 - Tenant, environment, connection, and generation identity are checked together on reads and mutations. Copying an environment's logical connection configuration does not copy its token generation or encryption key. Do not export or promote raw token material.
 - Local disconnect, token-pair revocation, and installation uninstall are distinct authorized actions. Disconnect commits `Disconnected` and its completed local operation record in one SQLite-tested transaction; it does not imply remote revoke or uninstall. A token-revocation request must name a lifecycle-owned generation, and that generation stays pinned while the operation is unresolved. Installation uninstall uses provider-owned host credentials and stores no Connections generation reference. It must not silently fall back to the connection's OAuth token.
 
+## Due-candidate discovery
+
+`IConnectionDueCandidateStore.FindDueCandidatesAsync` accepts a tenant and environment supplied by the trusted host, a fixed `now`, a page size from 1 through 500, and an opaque keyset cursor. The caller must also establish Elsa's ambient tenant context for the current service scope; passing explicit IDs does not disable the EF global tenant filter, and a missing ambient context can return an empty page. Background workers should push the tenant context for each scope. The query returns only tenant/environment/connection identity, candidate kind and ID, and due time. The scheduler must re-read each candidate and use the existing lifecycle CAS/fence operations; a candidate is not a claim or authorization to replay an unknown provider outcome. Expiry, lease, retry, and cleanup boundaries are inclusive (`<= now`). Null cleanup leases are due immediately, null offboarding retry times are surfaced for recovery attention, and claimed/provider-call offboarding rows without a lease are not due. Ordering is `(DueAt, Kind, ConnectionId, CandidateId)` and the cursor omits mutable revision values, so ordinary connection revision changes do not reorder a candidate. Recovery-required candidates sort at `DateTimeOffset.MinValue`; a worker with a per-wake cap must carry the cursor forward or partition/rotate work by kind so persistent recovery rows do not starve timed candidates. New or moved work before the cursor is picked up on the next scan.
+
+OAuth expiry and credential kind are copied from the encrypted credential envelope into nullable nonsecret fields when a staged generation is published. Generation publication changes the active generation pointer, kind, and expiry in the same conditional database update. API-key generations are marked `ApiKey` with no expiry; they can appear for cleanup/offboarding but never as OAuth refresh candidates. The migration deliberately leaves existing rows null. There is no bulk backfill: preexisting rows with unknown kind or expiry are on-demand only and are never silently scheduled for OAuth refresh. An operator must explicitly reconnect or rotate/update such a credential through an authorized lifecycle operation to establish current scheduling metadata.
+
+The EF Connections store normalizes credential expiry metadata to UTC on both direct connection creation and staged-generation writes, and normalizes the `now` query boundary to UTC. This keeps SQLite's textual `DateTimeOffset` comparisons aligned to instant semantics even when a caller supplies a nonzero offset; a SQLite execution test persists `12:00Z` as `14:00+02:00` and verifies it is selected at the inclusive `12:00Z` boundary.
+
+The built-in lifecycle service also creates operation, cleanup, and offboarding timestamps from `TimeProvider.GetUtcNow()`. Callers that invoke lower-level persistence methods directly must supply UTC `OperationLeaseExpiresAt`, cleanup/offboarding lease, creation, update, and retry timestamps; those existing timestamp inputs are not normalized by every store method, and existing legacy values are not backfilled. SQLite instant ordering for externally supplied non-UTC values in those existing columns is therefore outside this change's guarantee. A returned cursor preserves the stored offset so a legacy non-UTC cleanup/offboarding row cannot make the next page invalid; this does not make its textual due ordering instant-correct.
+
+Custom `IConnectionLifecycleStore` implementations remain source-compatible through default overloads, but that fallback drops the new scheduling metadata. A custom store must implement metadata-aware stage and recovery-promotion overloads plus `IConnectionDueCandidateStore` before a host enables due-candidate reconciliation.
+
+Due-candidate ordering is configured for the SQLite and PostgreSQL Connections providers only (`BINARY` and `C` string collations). Connections has no SQL Server persistence provider, so SQL Server is outside this query/migration scope.
+
+The query has scoped indexes on `Connections(TenantId, EnvironmentId, CredentialKind, CredentialExpiresAt, Id)` and `Connections(TenantId, EnvironmentId, Status, OperationStatus, OperationLeaseExpiresAt, Id)`, plus matching due indexes on cleanup status/lease and offboarding status/retry or lease. PostgreSQL plan inspection in tests forces sequential scans off and confirms the OAuth candidate branch can use `IX_Conn_Due`; this is branch evidence, not a claim that the full union/keyset query is index-only. The union may still require a per-page merge/sort. Inspection of the OAuth path can be repeated with:
+
+```sql
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT "Id", "CredentialExpiresAt"
+FROM "Elsa"."Connections"
+WHERE "TenantId" = 'tenant-a'
+  AND "EnvironmentId" = 'environment-a'
+  AND "Status" = 'Active'
+  AND "CredentialKind" = 'OAuth'
+  AND "CredentialExpiresAt" <= TIMESTAMPTZ '2026-09-24 12:00:00+00'
+ORDER BY "CredentialExpiresAt", "Id"
+LIMIT 101;
+```
+
+The migration adds only nullable metadata columns and nonunique indexes, so existing rows remain readable without payload decryption or a data rewrite. Rollback is application-only: deploy an earlier binary while retaining the additive columns and indexes. Compatibility of an earlier binary with this newer schema has not been verified, and schema rollback has no supported `Down` path because removing the metadata and indexes would disable scheduled lifecycle discovery. If an earlier binary cannot run against the retained schema, restore the matching pre-upgrade database backup and application together; do not drop the new columns or indexes manually.
+
 ## Operation and recovery behavior
 
 Connect and refresh record an operation ID, fence, planned generation, and a two-minute lease before work can be reconciled; refresh also records the source generation. An owning operation that observes a failure marks recovery immediately. A separate worker may reconcile an in-flight operation only after the persisted lease expires; the expiry check is part of the database conditional update. Reconciliation never calls the provider with the prior refresh token.
