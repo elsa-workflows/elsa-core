@@ -388,6 +388,27 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
         finally:
             FIXTURE.cleanup_fixture(fixture_root, host_stopped=True)
 
+    def test_unapplied_overlay_sharing_prepared_file_is_not_inferred(self):
+        program = self.source / 'Program.cs'
+        before = program.read_text()
+        after = before + '// supplemental fixture overlay\n'
+        relative = program.relative_to(self.rehearsal).as_posix()
+        diff = ''.join(difflib.unified_diff(
+            before.splitlines(keepends=True), after.splitlines(keepends=True),
+            fromfile=f'a/{relative}', tofile=f'b/{relative}'))
+        patch = self.base / 'unapplied-supplemental-overlay.patch'
+        patch.write_text(f'diff --git a/{relative} b/{relative}\n{diff}')
+
+        fixture_root = self.prepare(supplemental_patches=(patch,))
+        try:
+            plan = json.loads((fixture_root / 'launch-plan.json').read_text())
+            self.assertEqual([], plan['sourcePatchChain']['supplementalPatches'])
+            self.assertEqual(['workbench.patch'], [
+                Path(item['patch']).name for item in plan['sourcePatchChain']['reverseReplay']
+            ])
+        finally:
+            FIXTURE.cleanup_fixture(fixture_root, host_stopped=True)
+
     def test_rejects_receipt_pin_mismatch_before_build(self):
         path = self.rehearsal / 'import-receipt.json'
         receipt = json.loads(path.read_text())

@@ -182,10 +182,22 @@ def verify_patch_chain(root, prepared_files, expected_pins, actual_files):
         supplemental_targets.update(targets)
         supplemental.append((patch, targets))
 
-    applied_supplementals = bool(supplemental_targets & actual_files)
+    # Source-integration preparation can touch the same files as a supplemental
+    # overlay (notably the Studio test projects). File overlap therefore cannot
+    # establish that an overlay was applied. Reverse-check each patch instead;
+    # this also preserves the partial-application guard in is_patch_applied().
+    applied_supplementals = []
+    for patch, targets in supplemental:
+        if is_patch_applied(root, patch, targets):
+            applied_supplementals.append((patch, targets))
+
     if applied_supplementals:
-        require(supplemental_targets.issubset(actual_files),
-                f'Only part of the supplemental patch set is present: {sorted(supplemental_targets - actual_files)}')
+        applied_targets = {target for _, targets in applied_supplementals for target in targets}
+        require(applied_targets == supplemental_targets,
+                f'Only part of the supplemental patch set is present: '
+                f'{sorted(supplemental_targets - applied_targets)}')
+        supplemental = applied_supplementals
+        supplemental_targets = applied_targets
     else:
         supplemental = []
         supplemental_targets = set()
