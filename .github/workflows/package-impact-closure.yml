@@ -11,6 +11,9 @@ on:
       - 'scripts/integration-program/run_slack_package_proof.py'
       - 'scripts/integration-program/run_mapped_slack_package_proof.py'
       - 'scripts/integration-program/verify_mapped_slack_consumer_provenance.py'
+      - 'scripts/integration-program/create_mapped_slack_portable_bundle.py'
+      - 'scripts/integration-program/rehearse-import.py'
+      - 'scripts/integration-program/prepare_consolidated_build.py'
       - 'scripts/integration-program/VerifyEmbeddedSources/**'
       - 'scripts/integration-program/test_*.py'
       - 'scripts/integration-program/consolidated-build/source-integration.patch'
@@ -258,7 +261,7 @@ jobs:
           retention-days: 14
 
   mapped-source-artifact-proof:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
+    if: ${{ always() && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && needs.selector-and-plan.result == 'success')) }}
     needs: selector-and-plan
     runs-on: ubuntu-24.04
     timeout-minutes: 90
