@@ -65,7 +65,7 @@ class PostgreSqlSecretsBridgeFixtureTests(unittest.TestCase):
                         runner.index('await MigrateTargetAsync(services);'))
         self.assertIn('except RuntimeError as error:', script)
         self.assertIn("safe = safe.replace(connection, '<redacted connection string>')", script)
-        self.assertIn("print(f'Fixture failed: {type(error).__name__}', file=sys.stderr)", script)
+        self.assertIn("print(f'Fixture failed at {CURRENT_STAGE}: {type(error).__name__}', file=sys.stderr)", script)
         self.assertIn("'bin/Release/net10.0/PostgreSqlBridgeRunner.dll'", script)
         self.assertIn("result.get('originalDestinationUnchanged') is not expected_original_unchanged", script)
 

@@ -21,6 +21,7 @@ OLD_PROJECT = FIXTURE / 'extensions-3.8.1/ExtensionsRunner.csproj'
 CURRENT_PROJECT = FIXTURE / 'current-core/PostgreSqlBridgeRunner.csproj'
 PINNED_CORE_COMMIT = '7b06b82d0ea89c12d49c3c28da8d770bfca13faf'
 PINNED_SDK = '10.0.300'
+CURRENT_STAGE = 'startup'
 
 
 def run(command, *, cwd=None, env=None, capture=False, timeout=900):
@@ -138,12 +139,14 @@ def run_rejection(project, config, packages, source, target_name, connection, ol
 
 
 def main():
+    global CURRENT_STAGE
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--report-out', type=Path)
     args = parser.parse_args()
     manifest = json.loads(MANIFEST.read_text())
     if manifest['targetFramework'] != 'net10.0' or manifest['targetCoreSourceCommit'] != PINNED_CORE_COMMIT:
         raise ValueError('Unexpected fixture target framework or Core source pin')
+    CURRENT_STAGE = 'sdk-version'
     sdk = subprocess.run(['dotnet', '--version'], cwd=FIXTURE, check=True, text=True,
                          stdout=subprocess.PIPE).stdout.strip()
     if sdk != PINNED_SDK:
@@ -157,6 +160,7 @@ def main():
         packages.mkdir()
         artifact_phases = dict(manifest['phases'])
         artifact_phases['source-build-tooling'] = manifest['source-build-tooling']
+        CURRENT_STAGE = 'verified-package-artifacts'
         verified = {
             phase: [verify_local_tooling(package, feed, data.get('sourceCommit')) if 'localPath' in package
                     else postgres.verify_package(package, data, feed)
@@ -175,14 +179,18 @@ def main():
             f'<packageSource key="verified-artifacts">{patterns}</packageSource>'
             '<packageSource key="nuget.org"><package pattern="*" /></packageSource>'
             '</packageSourceMapping></configuration>\n')
+        CURRENT_STAGE = 'old-package-restore'
         postgres.restore(OLD_PROJECT, config, packages, update_lockfiles=False)
         old_locks = postgres.verify_lock(OLD_PROJECT, manifest['phases']['extensions-3.8.1']['packages'], packages, feed)
         target_source = temp / 'pinned-core'
+        CURRENT_STAGE = 'pinned-core-checkout'
         current_project = prepare_pinned_core(target_source)
         env = os.environ.copy()
         env['NUGET_PACKAGES'] = str(packages)
+        CURRENT_STAGE = 'pinned-core-restore'
         run(['dotnet', 'restore', str(current_project), '--configfile', str(config),
              '--packages', str(packages), '-m:1'], cwd=target_source, env=env, capture=True, timeout=600)
+        CURRENT_STAGE = 'runner-builds'
         run(['dotnet', 'build', str(OLD_PROJECT), '--no-restore', '--configuration', 'Release', '-m:1'],
             cwd=ROOT, env=env, capture=True, timeout=900)
         run(['dotnet', 'build', str(current_project), '--no-restore', '--configuration', 'Release', '-m:1'],
@@ -190,6 +198,7 @@ def main():
 
         container = None
         try:
+            CURRENT_STAGE = 'postgres-startup'
             container, base_connection = postgres.start_postgres(manifest['postgresImage'])
             source_name = f'bridge_source_{os.getpid()}'
             target_name = f'bridge_target_{os.getpid()}'
@@ -200,14 +209,17 @@ def main():
             old_key = temp / 'old-key-ring'
             wrong_key = temp / 'wrong-key-ring'
             missing_key = temp / 'missing-key-ring'
+            CURRENT_STAGE = 'released-source-seed'
             seed = run_old('seed', source, packages, old_key)
             if seed.get('result') != 'seeded' or seed.get('appliedMigrations') != ['20241011082142_V3_3']:
                 raise RuntimeError(f'Unexpected released-package seed result: {seed}')
 
             tenant_map = temp / 'tenant-map.json'
             tenant_map.write_text(json.dumps({'tenant-a': 'tenant-a', 'tenant-b': 'tenant-b'}))
+            CURRENT_STAGE = 'core-conversion'
             converted = run_current(current_project, config, packages, source, target, old_key,
                                     wrong_key, missing_key, tenant_map, 'success', target_source)
+            CURRENT_STAGE = 'released-source-reopen'
             reopened = run_old('inspect', source, packages, old_key)
             if reopened.get('result') != 'readable' or reopened.get('sourceUnchangedReadable') is not True:
                 raise RuntimeError(f'Released package could not read source after conversion: {reopened}')
@@ -238,6 +250,7 @@ def main():
                     'wrongDataProtectionContextRejected')):
                 raise RuntimeError(f'Bridge proof did not verify every required behavior: {converted}')
 
+            CURRENT_STAGE = 'rejection-scenarios'
             failure_scenarios = {}
             for suffix, scenario, expected in (
                     ('id-collision', 'id-collision', 'AggregateIdCollision'),
@@ -296,6 +309,7 @@ def main():
                     f'bridge_{suffix}_target_{os.getpid()}', (container, base_connection),
                     old_key, wrong_key, missing_key, tenant_map, 'success', target_source, expected)
 
+            CURRENT_STAGE = 'redacted-report'
             report = {
                 'fixture': 'Extensions 3.8.1 -> pinned Core PostgreSQL Secrets fresh-destination bridge',
                 'targetFramework': manifest['targetFramework'],
@@ -339,5 +353,5 @@ if __name__ == '__main__':
     try:
         sys.exit(main())
     except Exception as error:
-        print(f'Fixture failed: {type(error).__name__}', file=sys.stderr)
+        print(f'Fixture failed at {CURRENT_STAGE}: {type(error).__name__}', file=sys.stderr)
         sys.exit(1)
