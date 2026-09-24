@@ -9,6 +9,7 @@ using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Models;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace Elsa.Workflows.Management.UnitTests.Services;
@@ -18,51 +19,86 @@ public class WorkflowReferenceUpdaterOriginalSourceTests
     private const string ElsaScriptSource = "workflow Consumer { WriteLine(\"from-elsascript\"); }";
 
     [Fact]
-    public async Task UpdateWorkflowReferencesAsync_WhenElsaScriptConsumerIsUpdated_KeepsOriginalSourceAndStillMaterializes()
+    public async Task UpdateWorkflowReferencesAsync_SkipsElsaScriptConsumerAndUpdatesJsonConsumer()
     {
         var target = CreateTargetDefinition();
-        var consumer = CreateElsaScriptConsumer();
-        var consumerGraph = CreateConsumerGraph(consumer, target);
-        var updater = CreateUpdater(target, consumer, consumerGraph);
+        var elsaScriptConsumer = CreateElsaScriptConsumer();
+        var jsonConsumer = CreateJsonConsumer();
+        var elsaScriptGraph = CreateConsumerGraph(elsaScriptConsumer, target, "elsa-consumer-workflow");
+        var jsonGraph = CreateConsumerGraph(jsonConsumer, target, "json-consumer-workflow");
+        var logger = new CollectingLogger();
+        var publisher = Substitute.For<IWorkflowDefinitionPublisher>();
+        var updater = CreateUpdater(target, [elsaScriptConsumer, jsonConsumer], [elsaScriptGraph, jsonGraph], publisher, logger);
 
         var result = await updater.UpdateWorkflowReferencesAsync(target);
 
         var updated = Assert.Single(result.UpdatedWorkflows);
-        Assert.Equal(ElsaScriptSource, updated.OriginalSource);
-        Assert.Equal("ElsaScript", updated.MaterializerName);
+        Assert.Equal(jsonConsumer.DefinitionId, updated.DefinitionId);
+        Assert.Equal("serialized-root", updated.StringData);
+        Assert.Null(updated.OriginalSource);
+        Assert.Equal(JsonWorkflowMaterializer.MaterializerName, updated.MaterializerName);
 
-        var materialized = await MaterializeAsElsaScriptAsync(updated);
+        Assert.Equal(ElsaScriptSource, elsaScriptConsumer.OriginalSource);
+        Assert.Null(elsaScriptConsumer.StringData);
+        Assert.Equal("ElsaScript", elsaScriptConsumer.MaterializerName);
+        Assert.Equal("consumer-elsascript-v1", elsaScriptConsumer.Id);
 
-        Assert.Equal(consumer.DefinitionId, materialized.Identity.DefinitionId);
-        Assert.Equal(consumer.Id, materialized.Identity.Id);
+        var materialized = MaterializeAsElsaScript(elsaScriptConsumer);
+        Assert.Equal(ElsaScriptSource, materialized.WorkflowMetadata.Name);
+        var writeLine = Assert.IsType<WriteLine>(materialized.Root);
+        Assert.Equal("compiled-from-original-source", writeLine.Id);
+        Assert.Equal(elsaScriptConsumer.DefinitionId, materialized.Identity.DefinitionId);
+        Assert.Equal(elsaScriptConsumer.Id, materialized.Identity.Id);
+
+        await publisher.DidNotReceive().SaveDraftAsync(elsaScriptConsumer, Arg.Any<CancellationToken>());
+        await publisher.DidNotReceive().PublishAsync(elsaScriptConsumer, Arg.Any<CancellationToken>());
+        await publisher.Received(1).SaveDraftAsync(jsonConsumer, Arg.Any<CancellationToken>());
+        Assert.Contains(logger.Messages, message =>
+            message.Contains(elsaScriptConsumer.DefinitionId, StringComparison.Ordinal)
+            && message.Contains("ElsaScript", StringComparison.Ordinal)
+            && message.Contains("not supported", StringComparison.OrdinalIgnoreCase));
     }
 
     private static WorkflowReferenceUpdater CreateUpdater(
         WorkflowDefinition target,
-        WorkflowDefinition consumer,
-        WorkflowGraph consumerGraph)
+        IReadOnlyCollection<WorkflowDefinition> consumers,
+        IReadOnlyCollection<WorkflowGraph> consumerGraphs,
+        IWorkflowDefinitionPublisher publisher,
+        ILogger<WorkflowReferenceUpdater> logger)
     {
-        var publisher = Substitute.For<IWorkflowDefinitionPublisher>();
         var workflowDefinitionService = Substitute.For<IWorkflowDefinitionService>();
         var store = Substitute.For<IWorkflowDefinitionStore>();
         var graphBuilder = Substitute.For<IWorkflowReferenceGraphBuilder>();
         var serializer = Substitute.For<IApiSerializer>();
+        var consumersById = consumers.ToDictionary(c => c.DefinitionId);
 
         graphBuilder.BuildGraphAsync(target.DefinitionId, Arg.Any<CancellationToken>())
-            .Returns(new WorkflowReferenceGraph([target.DefinitionId], [new WorkflowReferenceEdge(consumer.DefinitionId, target.DefinitionId)]));
+            .Returns(new WorkflowReferenceGraph(
+                [target.DefinitionId],
+                consumers.Select(c => new WorkflowReferenceEdge(c.DefinitionId, target.DefinitionId)).ToList()));
 
         workflowDefinitionService.FindWorkflowGraphsAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>())
-            .Returns([consumerGraph]);
-        workflowDefinitionService.MaterializeWorkflowAsync(consumer, Arg.Any<CancellationToken>())
-            .Returns(consumerGraph);
+            .Returns(consumerGraphs);
+
+        foreach (var (consumer, graph) in consumers.Zip(consumerGraphs))
+        {
+            workflowDefinitionService.MaterializeWorkflowAsync(consumer, Arg.Any<CancellationToken>())
+                .Returns(graph);
+            publisher.GetDraftAsync(consumer.DefinitionId, VersionOptions.Latest, Arg.Any<CancellationToken>())
+                .Returns(consumer);
+        }
 
         store.FindManyAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>())
             .Returns([target]);
         store.FindAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>())
-            .Returns(consumer);
+            .Returns(call =>
+            {
+                var filter = call.Arg<WorkflowDefinitionFilter>();
+                return filter.DefinitionId != null && consumersById.TryGetValue(filter.DefinitionId, out var consumer)
+                    ? consumer
+                    : consumers.First();
+            });
 
-        publisher.GetDraftAsync(consumer.DefinitionId, VersionOptions.Latest, Arg.Any<CancellationToken>())
-            .Returns(consumer);
         publisher.SaveDraftAsync(Arg.Any<WorkflowDefinition>(), Arg.Any<CancellationToken>())
             .Returns(call => call.Arg<WorkflowDefinition>());
 
@@ -75,7 +111,8 @@ public class WorkflowReferenceUpdaterOriginalSourceTests
             graphBuilder,
             new WorkflowDefinitionActivityDescriptorFactory(),
             Substitute.For<IActivityRegistry>(),
-            serializer);
+            serializer,
+            logger);
     }
 
     private static WorkflowDefinition CreateTargetDefinition()
@@ -101,9 +138,9 @@ public class WorkflowReferenceUpdaterOriginalSourceTests
     {
         return new()
         {
-            Id = "consumer-v1",
-            DefinitionId = "consumer-def",
-            Name = "Consumer",
+            Id = "consumer-elsascript-v1",
+            DefinitionId = "consumer-elsascript",
+            Name = "ElsaScript Consumer",
             Version = 1,
             IsPublished = false,
             IsLatest = true,
@@ -113,18 +150,34 @@ public class WorkflowReferenceUpdaterOriginalSourceTests
         };
     }
 
-    private static WorkflowGraph CreateConsumerGraph(WorkflowDefinition consumer, WorkflowDefinition target)
+    private static WorkflowDefinition CreateJsonConsumer()
+    {
+        return new()
+        {
+            Id = "consumer-json-v1",
+            DefinitionId = "consumer-json",
+            Name = "Json Consumer",
+            Version = 1,
+            IsPublished = false,
+            IsLatest = true,
+            MaterializerName = JsonWorkflowMaterializer.MaterializerName,
+            OriginalSource = "FILE_JSON",
+            StringData = "OLD_JSON"
+        };
+    }
+
+    private static WorkflowGraph CreateConsumerGraph(WorkflowDefinition consumer, WorkflowDefinition target, string workflowId)
     {
         var referencedActivity = new WorkflowDefinitionActivity
         {
-            Id = "ref-activity",
+            Id = $"{workflowId}-ref",
             WorkflowDefinitionId = target.DefinitionId,
             WorkflowDefinitionVersionId = "target-v1",
             Version = 1
         };
         var workflow = new Workflow
         {
-            Id = "consumer-workflow",
+            Id = workflowId,
             Identity = new(consumer.DefinitionId, consumer.Version, consumer.Id),
             Publication = new(consumer.IsLatest, consumer.IsPublished),
             Root = referencedActivity
@@ -137,16 +190,43 @@ public class WorkflowReferenceUpdaterOriginalSourceTests
     }
 
     /// <summary>
-    /// Mirrors <c>ElsaScriptWorkflowMaterializer</c>: compile <see cref="WorkflowDefinition.OriginalSource"/> only.
+    /// Same contract as <c>ElsaScriptWorkflowMaterializer</c>: compile <see cref="WorkflowDefinition.OriginalSource"/> only.
+    /// The compiled graph is distinctive so a silent StringData rewrite cannot pass as the original workflow.
     /// </summary>
-    private static Task<Workflow> MaterializeAsElsaScriptAsync(WorkflowDefinition definition)
+    private static Workflow MaterializeAsElsaScript(WorkflowDefinition definition)
     {
         var source = definition.OriginalSource ?? string.Empty;
-        Assert.False(string.IsNullOrEmpty(source), "ElsaScript materializer would compile empty source.");
+        IActivity root = string.IsNullOrEmpty(source)
+            ? new Sequence { Id = "empty-elsascript" }
+            : new WriteLine(source) { Id = "compiled-from-original-source" };
 
-        return Task.FromResult(new Workflow
+        return new()
         {
-            Identity = new(definition.DefinitionId, definition.Version, definition.Id, definition.TenantId)
-        });
+            Identity = new(definition.DefinitionId, definition.Version, definition.Id, definition.TenantId),
+            Root = root,
+            WorkflowMetadata = new() { Name = source }
+        };
+    }
+
+    private sealed class CollectingLogger : ILogger<WorkflowReferenceUpdater>
+    {
+        public List<string> Messages { get; } = [];
+
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            Messages.Add(formatter(state, exception));
+        }
+
+        private sealed class NullScope : IDisposable
+        {
+            public static readonly NullScope Instance = new();
+            public void Dispose()
+            {
+            }
+        }
     }
 }

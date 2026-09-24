@@ -6,6 +6,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Management.Services;
 
@@ -18,7 +19,8 @@ public class WorkflowReferenceUpdater(
     IWorkflowReferenceGraphBuilder workflowReferenceGraphBuilder,
     WorkflowDefinitionActivityDescriptorFactory workflowDefinitionActivityDescriptorFactory,
     IActivityRegistry activityRegistry,
-    IApiSerializer serializer)
+    IApiSerializer serializer,
+    ILogger<WorkflowReferenceUpdater> logger)
     : IWorkflowReferenceUpdater
 {
     private bool _isUpdating;
@@ -139,6 +141,18 @@ public class WorkflowReferenceUpdater(
         var draft = await GetOrCreateDraftAsync(id, draftCache, cancellationToken);
         if (draft == null) return null;
 
+        // Source-based materializers (ElsaScript, etc.) compile OriginalSource and ignore StringData.
+        // Rewriting StringData would silently drop the version bump; clearing OriginalSource would
+        // compile empty source. Skip these consumers instead of pretending the update applied.
+        if (draft.MaterializerName != JsonWorkflowMaterializer.MaterializerName)
+        {
+            logger.LogWarning(
+                "Skipping auto reference-update for workflow '{DefinitionId}' because its materializer '{MaterializerName}' is source-based. Auto reference-update is not supported for source-materialized (e.g. ElsaScript) workflows",
+                draft.DefinitionId,
+                draft.MaterializerName);
+            return null;
+        }
+
         var newGraph = await workflowDefinitionService.MaterializeWorkflowAsync(draft, cancellationToken);
         var outdated = FindActivities(newGraph.Root, target.DefinitionId)
             .Where(a => a.WorkflowDefinitionVersionId != target.Id)
@@ -157,11 +171,7 @@ public class WorkflowReferenceUpdater(
         if (newGraph.Root.Activity is Workflow wf)
         {
             draft.StringData = serializer.Serialize(wf.Root);
-
-            // Only JSON materializes from StringData via WorkflowDefinitionMapper.
-            // Source-based materializers (ElsaScript, etc.) read OriginalSource only.
-            if (draft.MaterializerName == JsonWorkflowMaterializer.MaterializerName)
-                draft.OriginalSource = null;
+            draft.OriginalSource = null;
         }
 
         return new(draft, newGraph);
