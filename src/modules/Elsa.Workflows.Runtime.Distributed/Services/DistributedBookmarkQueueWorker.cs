@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -8,13 +9,17 @@ public class DistributedBookmarkQueueWorker(
     IDistributedLockProvider distributedLockProvider,
     IBookmarkQueueSignaler signaler,
     IServiceScopeFactory scopeFactory,
-    ILogger<DistributedBookmarkQueueWorker> logger) : BookmarkQueueWorker(signaler, scopeFactory, logger)
+    ILogger<DistributedBookmarkQueueWorker> logger,
+    ITenantScopeFactory? tenantScopeFactory = null,
+    ITenantAccessor? tenantAccessor = null,
+    TimeSpan? processThrottle = null) : BookmarkQueueWorker(signaler, scopeFactory, logger, tenantScopeFactory, tenantAccessor, processThrottle)
 {
-    private static readonly TimeSpan LockRetryDelay = TimeSpan.FromSeconds(2);
+    protected virtual TimeSpan LockRetryDelay => TimeSpan.FromSeconds(2);
 
     protected override async Task ProcessAsync(CancellationToken cancellationToken)
     {
-        await using var handle = await distributedLockProvider.TryAcquireLockAsync(nameof(DistributedBookmarkQueueWorker), TimeSpan.Zero, cancellationToken);
+        var lockName = $"{nameof(DistributedBookmarkQueueWorker)}:{CapturedTenantId}";
+        await using var handle = await distributedLockProvider.TryAcquireLockAsync(lockName, TimeSpan.Zero, cancellationToken);
 
         if (handle == null)
         {
