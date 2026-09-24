@@ -5,6 +5,7 @@ on:
     paths:
       - 'scripts/integration-program/package_impact.py'
       - 'scripts/integration-program/package_closure.py'
+      - 'scripts/integration-program/refresh_canonical_dependency_graph.py'
       - 'scripts/integration-program/release_unit_manifest.py'
       - 'scripts/integration-program/run_slack_package_proof.py'
       - 'scripts/integration-program/run_mapped_slack_package_proof.py'
@@ -15,6 +16,7 @@ on:
       - 'doc/integration-program/inventory/inventory.json'
       - 'doc/integration-program/release-units.json'
       - 'doc/integration-program/package-closure.md'
+      - 'doc/integration-program/consolidation/canonical-95a-impact-closure.json'
       - 'doc/integration-program/slack-package-proof.md'
       - 'doc/integration-program/consolidation/build-preparation.md'
       - 'doc/integration-program/consolidation/mapped-slack-package-proof.md'
