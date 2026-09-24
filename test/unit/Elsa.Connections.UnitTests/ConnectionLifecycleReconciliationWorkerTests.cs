@@ -360,6 +360,69 @@ public sealed class ConnectionLifecycleReconciliationWorkerTests
     }
 
     [Fact]
+    public async Task UnknownNonReplayableOffboardingDoesNotHoldLaterPages()
+    {
+        var scope = new ConnectionLifecycleScope("trusted-tenant", "production");
+        var offboarding = new ConnectionDueCandidate(scope.TenantId, scope.EnvironmentId, "connection-a",
+            ConnectionDueCandidateKind.Offboarding, "offboarding", DateTimeOffset.MinValue);
+        var refresh = new ConnectionDueCandidate(scope.TenantId, scope.EnvironmentId, "connection-b",
+            ConnectionDueCandidateKind.OAuthRefresh, "refresh", DateTimeOffset.MinValue);
+        var dueStore = Substitute.For<IConnectionDueCandidateStore>();
+        var recovery = Substitute.For<IConnectionLifecycleRecoveryService>();
+        var refreshed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var cursors = new List<string?>();
+
+        dueStore.FindDueCandidatesAsync(scope.TenantId, scope.EnvironmentId, Arg.Any<DateTimeOffset>(), 1,
+                Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var cursor = call.ArgAt<string?>(4);
+                cursors.Add(cursor);
+                return Task.FromResult(cursor is null
+                    ? new ConnectionDueCandidatePage([offboarding], "next-page")
+                    : new ConnectionDueCandidatePage([refresh], null));
+            });
+        recovery.ReconcileOffboardingAsync(scope.TenantId, scope.EnvironmentId, offboarding.ConnectionId, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new ConnectionOffboardingOperationResult(false, "offboarding_outcome_unknown",
+                offboarding.CandidateId, ConnectionOffboardingOperationStatus.UnknownOutcome, 1)));
+        recovery.RefreshAsync(scope.TenantId, scope.EnvironmentId, refresh.ConnectionId, Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                refreshed.TrySetResult();
+                return Task.FromResult(new ConnectionLifecycleResult(true, null, 2));
+            });
+
+        var services = new ServiceCollection();
+        services.AddSingleton<ITenantAccessor, DefaultTenantAccessor>();
+        services.AddSingleton(dueStore);
+        services.AddSingleton<IConnectionLifecycleRecoveryService>(recovery);
+        services.AddSingleton<IConnectionLifecycleScopeProvider>(new SingleScopeProvider(scope));
+        await using var provider = services.BuildServiceProvider();
+        using var worker = new ConnectionLifecycleReconciliationWorker(provider.GetRequiredService<IServiceScopeFactory>(),
+            Options.Create(new ConnectionLifecycleReconciliationOptions
+            {
+                BatchSize = 1,
+                Interval = TimeSpan.FromMilliseconds(5),
+                RetryBackoff = TimeSpan.FromSeconds(1),
+                MaxRetryBackoff = TimeSpan.FromSeconds(1)
+            }), TimeProvider.System, NullLogger<ConnectionLifecycleReconciliationWorker>.Instance);
+
+        await worker.StartAsync(CancellationToken.None);
+        try
+        {
+            await refreshed.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        }
+        finally
+        {
+            await worker.StopAsync(CancellationToken.None);
+        }
+
+        Assert.Equal(new string?[] { null, "next-page" }, cursors.Take(2));
+        await recovery.Received().RefreshAsync(scope.TenantId, scope.EnvironmentId, refresh.ConnectionId,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task DisabledWorkerDoesNotResolveScopeOrQueryDueCandidates()
     {
         var dueStore = Substitute.For<IConnectionDueCandidateStore>();

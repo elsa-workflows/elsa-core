@@ -158,8 +158,11 @@ public sealed class ConnectionLifecycleReconciliationWorker(
                 return (await lifecycle.CleanupGenerationAsync(candidate.TenantId, candidate.EnvironmentId,
                     candidate.ConnectionId, candidate.CandidateId, cancellationToken)).Succeeded;
             case ConnectionDueCandidateKind.Offboarding:
-                return (await lifecycle.ReconcileOffboardingAsync(candidate.TenantId, candidate.EnvironmentId,
-                    candidate.ConnectionId, cancellationToken)).Accepted;
+                var offboarding = await lifecycle.ReconcileOffboardingAsync(candidate.TenantId, candidate.EnvironmentId,
+                    candidate.ConnectionId, cancellationToken);
+                // An unknown, non-replayable provider outcome needs operator attention. Do not
+                // let that durable state hold every later due candidate behind this page.
+                return offboarding.Accepted || offboarding.SafeErrorCode == "offboarding_outcome_unknown";
             default:
                 throw new InvalidOperationException("Unsupported credential lifecycle candidate kind.");
         }
