@@ -621,6 +621,40 @@ public sealed class EFCoreConnectionLifecycleStore(IDbContextFactory<Connections
                 .SetProperty(x => x.Revision, x => x.Revision + (x.Status == ConnectionStatus.Active ? 1 : 0)), cancellationToken) == 1;
     }
 
+    public async Task<bool> TryRestoreSourceGenerationAfterMissingPlanAsync(
+        string id,
+        string tenantId,
+        string environmentId,
+        long expectedRevision,
+        string operationId,
+        long fence,
+        string sourceGenerationId,
+        string safeErrorCode,
+        CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await Scoped(db, id, tenantId, environmentId)
+            .Where(x => x.Revision == expectedRevision && x.Status == ConnectionStatus.RecoveryRequired &&
+                        x.OperationStatus == CredentialOperationStatus.RecoveryRequired && x.OperationId == operationId &&
+                        x.OperationFence == fence && x.OperationExpectedRevision < expectedRevision &&
+                        x.CurrentGenerationId == sourceGenerationId && x.OperationSourceGenerationId == sourceGenerationId &&
+                        x.PlannedGenerationId == operationId && x.StagedGenerationId == null &&
+                        x.StagedSecretName == null && x.OperationLeaseExpiresAt == null)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.Status, ConnectionStatus.Active)
+                .SetProperty(x => x.OperationId, (string?)null)
+                .SetProperty(x => x.OperationExpectedRevision, 0)
+                .SetProperty(x => x.OperationFence, x => x.OperationFence + 1)
+                .SetProperty(x => x.OperationSourceGenerationId, (string?)null)
+                .SetProperty(x => x.PlannedSecretName, (string?)null)
+                .SetProperty(x => x.PlannedGenerationId, (string?)null)
+                .SetProperty(x => x.StagedSecretName, (string?)null)
+                .SetProperty(x => x.StagedGenerationId, (string?)null)
+                .SetProperty(x => x.OperationStatus, CredentialOperationStatus.Completed)
+                .SetProperty(x => x.LastSafeErrorCode, safeErrorCode)
+                .SetProperty(x => x.Revision, x => x.Revision + 1), cancellationToken) == 1;
+    }
+
     public async Task<bool> TryDisconnectAsync(string id, string tenantId, string environmentId, long expectedRevision, CancellationToken cancellationToken = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);

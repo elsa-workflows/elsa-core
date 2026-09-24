@@ -153,5 +153,16 @@ public interface IConnectionLifecycleStore
 
     Task<bool> TryMarkRecoveryRequiredIfLeaseExpiredAsync(string id, string tenantId, string environmentId, string operationId, long fence, DateTimeOffset now, string safeErrorCode, CancellationToken cancellationToken = default);
 
+    Task<bool> TryRestoreSourceGenerationAfterMissingPlanAsync(
+        string id,
+        string tenantId,
+        string environmentId,
+        long expectedRevision,
+        string operationId,
+        long fence,
+        string sourceGenerationId,
+        string safeErrorCode,
+        CancellationToken cancellationToken = default) => Task.FromResult(false);
+
     Task<bool> TryDisconnectAsync(string id, string tenantId, string environmentId, long expectedRevision, CancellationToken cancellationToken = default);
 }
