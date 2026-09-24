@@ -294,6 +294,7 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
         using var tenantAClient = CreateClient("secrets:view,secrets:write,secrets:delete", "tenant-a", out var tenantACapture);
         using var tenantBClient = CreateClient("secrets:view,secrets:write", "tenant-b", out var tenantBCapture);
         using var tenantCClient = CreateClient("secrets:view,secrets:write,secrets:delete", "tenant-c", out var tenantCCapture);
+        using var defaultTenantClient = CreateClient("secrets:view,secrets:write,secrets:delete", null, out var defaultTenantCapture);
         var tenantA = RestService.For<ISecretsApi>(tenantAClient);
         var tenantB = RestService.For<ISecretsApi>(tenantBClient);
         var tenantC = RestService.For<ISecretsApi>(tenantCClient);
@@ -310,12 +311,15 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
         Assert.Contains((await tenantB.ListAsync()).Items, item => item.Id == secretB.Id);
         Assert.DoesNotContain((await tenantB.ListAsync()).Items, item => item.Id == secretA.Id);
 
-        var missing = await Assert.ThrowsAsync<ApiException>(() => tenantC.GetAsync(sharedName));
-        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
-        var missingUpdate = await Assert.ThrowsAsync<ApiException>(() => tenantC.UpdateAsync(sharedName, new UpdateSecretRequest { DisplayName = "Must not cross tenants" }));
-        Assert.Equal(HttpStatusCode.NotFound, missingUpdate.StatusCode);
-        var missingDelete = await Assert.ThrowsAsync<ApiException>(() => tenantC.DeleteAsync(sharedName));
-        Assert.Equal(HttpStatusCode.NotFound, missingDelete.StatusCode);
+        foreach (var isolatedTenant in new[] { tenantC, RestService.For<ISecretsApi>(defaultTenantClient) })
+        {
+            var missing = await Assert.ThrowsAsync<ApiException>(() => isolatedTenant.GetAsync(sharedName));
+            Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+            var missingUpdate = await Assert.ThrowsAsync<ApiException>(() => isolatedTenant.UpdateAsync(sharedName, new UpdateSecretRequest { DisplayName = "Must not cross tenants" }));
+            Assert.Equal(HttpStatusCode.NotFound, missingUpdate.StatusCode);
+            var missingDelete = await Assert.ThrowsAsync<ApiException>(() => isolatedTenant.DeleteAsync(sharedName));
+            Assert.Equal(HttpStatusCode.NotFound, missingDelete.StatusCode);
+        }
 
         await tenantA.UpdateAsync(sharedName, new UpdateSecretRequest { DisplayName = "Tenant A only" });
         Assert.NotEqual("Tenant A only", (await tenantB.GetAsync(sharedName)).DisplayName);
@@ -329,7 +333,8 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
         AssertNoSecretMaterial(
             tenantACapture.ResponseBodies
                 .Concat(tenantBCapture.ResponseBodies)
-                .Concat(tenantCCapture.ResponseBodies),
+                .Concat(tenantCCapture.ResponseBodies)
+                .Concat(defaultTenantCapture.ResponseBodies),
             "tenant-a-secret", "tenant-b-secret", "tenant-a-rotated");
     }
 
