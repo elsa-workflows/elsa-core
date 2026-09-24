@@ -1,0 +1,55 @@
+# Mapped-source Elsa.Slack package proof
+
+This is a local-only artifact and consumer proof for the source-mapped consolidation rehearsal. It does not publish a package or prove final import readiness. It is distinct from the released 3.8.4 package compatibility proof in [Slack package proof](../slack-package-proof.md).
+
+## Exact release unit and source boundary
+
+- Release unit: `Elsa.Slack` only.
+- Package project: `src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj` in the prepared rehearsal.
+- Source project: `src/modules/communication/Elsa.Slack/Elsa.Slack.csproj` in Extensions.
+- Core, Extensions and Studio source pins: `8e893e02c4ac089d526b0a0d294a8546f021d072`, `33fa0bfd28c7585240e3d4f665058c067b17e287` and `9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822`.
+- Rehearsal commit: `0feffeea6ca994c78bbaeb02db203e3a62078ec5`.
+- Preparation patch SHA-256: `b091576a7f8d51c8b469645eea4b868556ebfadb084d7afbc4287ea36155433d`.
+- Local package identity: `Elsa.Slack` `3.8.5-proof`; the Elsa dependency remains `3.8.4` and SlackNet is `0.17.7`.
+
+Package mode evaluates exactly one `PackageReference` to Elsa and no project references. The source-debug mode evaluates a single project reference to the mapped Core `src/modules/Elsa/Elsa.csproj` and no Elsa package reference. These modes are separately evaluated; only package mode is packed and consumed by this proof.
+
+## Retained local result
+
+The completed receipt and logs are at `/private/tmp/elsa-8260-slack-package-final-proof-3/evidence.json` and the adjacent `logs/` directory. Earlier attempts and their failure logs are retained in its `attempts/` directory. The completed run records `publication_authorized: false`.
+
+The final `.nupkg` SHA-256 is `3303615cbb228d4819be937708b45eff3fb0caecaff6b272308c8b47d1ec9baf`; the `.snupkg` SHA-256 is `7f8984f2b9b78ce15c0f245679f8817b0cd1f4d606f05ff7ab3f293194c7fda5`. An earlier successful proof attempt with the same source pins is retained separately under `attempts/` and has a different package hash; the final receipt and artifact hashes above are authoritative. The package contains its canonical root icon (`icon.png`, SHA-256 `82fd76d734d59efc6132af0b0b999146254fa5a296ea5d64f85597bb1cda524e`) and `lib` assemblies/XML documentation for net8.0, net9.0 and net10.0. The `.nuspec` names only Elsa 3.8.4 and SlackNet 0.17.7 on all three target frameworks and records the pinned Extensions repository and source commit.
+
+Three consumer projects restored using NuGet.org and the isolated local feed, then started on net8.0, net9.0 and net10.0. Each registered `Elsa.Slack.Channels.CreateChannel`, version 1, through the Elsa activity registry. A separate net10.0 consumer invoked `CreateChannel` through a deterministic fake Slack client. It asserted the channel name, private flag and team ID in the request, the returned channel ID/name, and exactly one `Conversations.Create` call.
+
+The source test project also ran on net10.0. Its retained TRX records exactly one `NotExecuted` result, `CreateChannelTests.ExecuteAsync`, skipped as `Not implemented yet.`, with zero executed or passed tests and no failure counters. This is an incomplete upstream test gate. The separate fake-client smoke is narrow behavior evidence and does not turn the skipped test into a pass.
+
+For each TFM, all 41 embedded Slack C# files in the symbol package were decompressed and byte-compared with the pinned Extensions project. The synthetic rehearsal has no remote, so its PDBs contain no SourceLink URLs. This embedded-source check does not prove final Core-repository SourceLink URLs; that remains a history-import gate.
+
+The selector receipt uses the separate 2026-09-23 inventory graph, whose recorded Core/Extensions/Studio commits are `610790ec57ae9d5c334181d50c1e65f99613fd86`, `33fa0bfd28c7585240e3d4f665058c067b17e287` and `9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822`; the inventory SHA-256 is `297569201d879f4ef14943a3d30631912d4803d1e24e69327c6beb6e30fa7842`. These are the impact-selection graph pins. The packed source rehearsal uses its separately recorded Core `8e893e02c4ac089d526b0a0d294a8546f021d072`, Extensions `33fa0bfd28c7585240e3d4f665058c067b17e287` and Studio `9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822` pins. The selector chooses `Elsa.Slack` as the sole package for the requested release unit and records 51 affected test/build inputs for a Core `Elsa.csproj` change, including the Slack test project. Those 51 inputs were not executed by this artifact proof. Dependency-aware closure execution remains incomplete as documented in [package closure](../package-closure.md).
+
+## Reproduce
+
+Use clean full-history checkouts at the three exact commits above and a new disposable rehearsal and output directory:
+
+```sh
+python3 scripts/integration-program/rehearse-import.py \
+  --core /path/to/elsa-core \
+  --extensions /path/to/elsa-extensions \
+  --studio /path/to/elsa-studio \
+  --output /tmp/elsa-slack-mapped-rehearsal
+git -C /tmp/elsa-slack-mapped-rehearsal switch --quiet --detach rehearsal
+git -C /tmp/elsa-slack-mapped-rehearsal reset --hard --quiet HEAD
+python3 scripts/integration-program/prepare_consolidated_build.py \
+  --rehearsal /tmp/elsa-slack-mapped-rehearsal
+python3 scripts/integration-program/run_mapped_slack_package_proof.py \
+  --rehearsal /tmp/elsa-slack-mapped-rehearsal \
+  --core-source /path/to/elsa-core \
+  --extensions-source /path/to/elsa-extensions \
+  --studio-source /path/to/elsa-studio \
+  --output-dir /tmp/elsa-slack-mapped-proof
+```
+
+The runner rejects wrong or dirty source pins, mismatched rehearsal receipts or patch hashes, changed prepared inputs, output aliases into inspected trees, an unrelated package in the local feed, an unexpected evaluated reference mode, a mismatched `.nuspec`, a changed icon or embedded source, an invalid activity descriptor, or a changed test baseline. Its builds write ignored `bin/` and `obj/` files only inside the disposable rehearsal; proof logs, caches, consumers, local packages and receipts stay in the new output directory.
+
+The `Package impact closure rehearsal` manual workflow has a separate `mapped-source-artifact-proof` job. It checks out the same pinned sources with full history, creates a disposable preparation, runs this proof, retains logs/receipts and generated consumer inputs for 14 days, and uploads only the local `.nupkg` as the package artifact. The workflow grants read-only repository permission and configures no publish credential or push step.
