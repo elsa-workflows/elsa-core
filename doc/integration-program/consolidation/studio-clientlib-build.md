@@ -24,7 +24,11 @@ The six expected assets matched the bounded Workbench/Studio runtime receipt
 in PR #8333; the build evidence includes both sets of SHA-256 values so this
 comparison remains reviewable while that PR is open.
 The pinned Studio source contains no npm lockfiles. This PR includes reviewed
-lockfiles for both ClientLibs; the command installs them with `npm ci --force`
+lockfiles for both ClientLibs, generated from the pinned manifests in empty
+directories so Linux native optional packages are included. A clean
+`npm ci --ignore-scripts --force --os=linux --cpu=x64` installed the Designer
+tree and its Linux Rollup/esbuild packages; the command installs the reviewed
+locks with `npm ci --force`
 and rejects a different lockfile in the mapped source. It removes the six
 untracked browser assets before building, so stale bundles cannot satisfy the
 output check. The integration commit should place these lockfiles at their
@@ -32,7 +36,11 @@ mapped ClientLib paths when the history-preserving source import lands.
 
 This is a local mapped-source proof. The history-bearing import and a
 required CI build on the imported Studio source remain open under #8286 and
-#8287. The package install reported four Designer dependency advisories
+#8287. The new `Studio ClientLib build` workflow runs the pinned standalone
+Studio source and reviewed lockfiles on Linux before import, then switches to
+the mapped-source command when `src/studio` is present. Its passing
+pre-import run cannot substitute for the later imported-source run. The
+package install reported four Designer dependency advisories
 (three moderate, one high); the .NET restore reported `NU1902` for
 `Microsoft.Build.Tasks.Git 10.0.103`. Those warnings did not fail this proof
 and require separate dependency review before release.
