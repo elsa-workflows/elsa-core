@@ -20,10 +20,15 @@ Core `95a658b96107ad4dbb280a13972479af74bc6a30`, Extensions
 `9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822`, with that patch applied.
 Node was `22.22.1`; `npm run check:generated` matched `Bpmn.Model 0.2.0`,
 Designer passed 253 tests and type checking, and both webpack builds passed.
-The six expected assets matched the earlier bounded Workbench/Studio runtime
-receipt in `doc/integration-program/secrets/workbench-studio-runtime/receipt.json`.
-The script used the pinned Studio PR's `npm install --force` behavior while
-disabling lockfile creation, since that source pin contains no npm lockfiles.
+The six expected assets matched the bounded Workbench/Studio runtime receipt
+in PR #8333; the build evidence includes both sets of SHA-256 values so this
+comparison remains reviewable while that PR is open.
+The pinned Studio source contains no npm lockfiles. This PR includes reviewed
+lockfiles for both ClientLibs; the command installs them with `npm ci --force`
+and rejects a different lockfile in the mapped source. It removes the six
+untracked browser assets before building, so stale bundles cannot satisfy the
+output check. The integration commit should place these lockfiles at their
+mapped ClientLib paths when the history-preserving source import lands.
 
 This is a local mapped-source proof. The history-bearing import and a
 required CI build on the imported Studio source remain open under #8286 and

@@ -6,6 +6,7 @@ root="${1:-.}"
 root="$(cd "$root" && pwd -P)"
 designer="$root/src/studio/modules/Elsa.Studio.Workflows.Designer"
 dom="$root/src/studio/framework/Elsa.Studio.DomInterop"
+locks="$(cd "$(dirname "${BASH_SOURCE[0]}")/consolidated-build/studio-clientlib-lockfiles" && pwd -P)"
 
 for package in "$designer/ClientLib/package.json" "$dom/ClientLib/package.json"; do
     if [[ ! -f "$package" ]]; then
@@ -20,29 +21,62 @@ if [[ "$node_major" != 22 ]]; then
     exit 1
 fi
 
-# --package-lock=false avoids creating untracked lockfiles absent from the pinned
-# Studio source. The standalone Studio PR build likewise installs with --force.
+for entry in "$designer/ClientLib:$locks/designer.package-lock.json" \
+             "$dom/ClientLib:$locks/dom-interop.package-lock.json"; do
+    clientlib="${entry%%:*}"
+    reviewed_lock="${entry#*:}"
+    checkout_lock="$clientlib/package-lock.json"
+    if [[ -L "$checkout_lock" ]]; then
+        echo "Studio package lockfile cannot be a symlink: $checkout_lock" >&2
+        exit 1
+    fi
+    if [[ -e "$checkout_lock" ]]; then
+        if ! cmp -s "$reviewed_lock" "$checkout_lock"; then
+            echo "Studio package lockfile differs from the reviewed lock: $checkout_lock" >&2
+            exit 1
+        fi
+    else
+        cp "$reviewed_lock" "$checkout_lock"
+    fi
+done
+
+assets=(
+    "$designer/wwwroot/designer.entry.js"
+    "$designer/wwwroot/react-designer.entry.js"
+    "$designer/wwwroot/designer.css"
+    "$dom/wwwroot/dom.entry.js"
+    "$dom/wwwroot/clipboard.entry.js"
+    "$dom/wwwroot/files.entry.js"
+)
+for asset in "${assets[@]}"; do
+    if [[ -L "$asset" ]]; then
+        echo "Studio browser asset cannot be a symlink: $asset" >&2
+        exit 1
+    fi
+    if git -C "$root" ls-files --error-unmatch -- "${asset#"$root"/}" >/dev/null 2>&1; then
+        echo "Refusing to remove tracked Studio browser asset: $asset" >&2
+        exit 1
+    fi
+    if [[ -e "$asset" ]]; then
+        rm -- "$asset"
+    fi
+done
+
 dotnet restore "$designer/Elsa.Studio.Workflows.Designer.csproj"
 (
     cd "$designer/ClientLib"
-    npm install --force --package-lock=false --no-save
+    npm ci --force
     npm run check:generated
     npm test
     npm run build
 )
 (
     cd "$dom/ClientLib"
-    npm install --force --package-lock=false --no-save
+    npm ci --force
     npm run build
 )
 
-for asset in \
-    "$designer/wwwroot/designer.entry.js" \
-    "$designer/wwwroot/react-designer.entry.js" \
-    "$designer/wwwroot/designer.css" \
-    "$dom/wwwroot/dom.entry.js" \
-    "$dom/wwwroot/clipboard.entry.js" \
-    "$dom/wwwroot/files.entry.js"; do
+for asset in "${assets[@]}"; do
     if [[ ! -s "$asset" ]]; then
         echo "Studio ClientLib build omitted a required browser asset: $asset" >&2
         exit 1
