@@ -13,6 +13,7 @@ import json
 from pathlib import Path, PurePosixPath
 import re
 import subprocess
+import tempfile
 import uuid
 
 HERE = Path(__file__).resolve().parent
@@ -219,7 +220,7 @@ def verify_workspace(root):
     return receipt, mapping
 
 
-def prepare(root):
+def prepare_in_place(root):
     require(not Path(root).is_symlink(), 'Expected a real disposable repository directory')
     root = Path(root).resolve()
     receipt, mapping = verify_workspace(root)
@@ -259,7 +260,69 @@ def prepare(root):
                   publicationAuthorized=False,
                   files=[dict(path=path, sha256=sha256((root / path).read_bytes())) for path in sorted(touched)])
     (root / 'consolidated-build-receipt.json').write_text(json.dumps(report, indent=2) + '\n')
-    print(json.dumps({k: v for k, v in report.items() if k != 'files'}, indent=2))
+    return report
+
+
+def prepare(root):
+    """Build the preparation in an isolated worktree, then apply it if inputs stayed pristine."""
+    require(not Path(root).is_symlink(), 'Expected a real disposable repository directory')
+    root = Path(root).resolve()
+    receipt_path = root / 'import-receipt.json'
+    original_receipt_bytes = receipt_path.read_bytes()
+    receipt, _ = verify_workspace(root)
+    head = receipt['rehearsalCommit']
+
+    with tempfile.TemporaryDirectory(prefix='elsa-canonical-prep-') as temporary_directory:
+        staged_root = Path(temporary_directory) / 'rehearsal'
+        rehearsal.git(root, 'worktree', 'add', '--quiet', '--detach', str(staged_root), head)
+        try:
+            (staged_root / 'import-receipt.json').write_bytes(original_receipt_bytes)
+            report = prepare_in_place(staged_root)
+
+            staged_receipt = json.loads((staged_root / 'consolidated-build-receipt.json').read_text())
+            expected_paths = {entry['path'] for entry in staged_receipt['files']}
+            expected_paths.add('consolidated-build-receipt.json')
+            changed = set(rehearsal.git(staged_root, 'diff', '--name-only', '-z', 'HEAD')
+                          .decode('utf-8', errors='surrogateescape').split('\0')) - {''}
+            untracked = set(rehearsal.git(staged_root, 'ls-files', '--others', '--exclude-standard', '-z')
+                            .decode('utf-8', errors='surrogateescape').split('\0')) - {'', 'import-receipt.json'}
+            require(expected_paths == changed | untracked,
+                    'Staged preparation receipt does not describe every generated file')
+            for relative in expected_paths:
+                path = PurePosixPath(relative)
+                require(not path.is_absolute() and '..' not in path.parts,
+                        f'Unsafe staged output path: {relative!r}')
+                output = staged_root.joinpath(*path.parts)
+                current = staged_root
+                for part in path.parts:
+                    current = current / part
+                    require(not current.is_symlink(), f'Refusing staged symlink output: {relative!r}')
+                require(output.is_file(), f'Missing staged output file: {relative!r}')
+
+            rehearsal.git(staged_root, 'add', '-N', '--', *sorted(expected_paths))
+            prepared_diff = rehearsal.git(staged_root, 'diff', '--binary', '--no-ext-diff', 'HEAD')
+            rehearsal.git(root, 'apply', '--check', '--whitespace=error', '-', data=prepared_diff)
+
+            # Long property evaluation happens only in the private worktree. A user
+            # change made to the source rehearsal during that work therefore blocks
+            # copy-back without being overwritten.
+            current_receipt, _ = verify_workspace(root)
+            require((root / 'import-receipt.json').read_bytes() == original_receipt_bytes
+                    and current_receipt == receipt,
+                    'Source receipt changed during preparation; original workspace was left untouched')
+            rehearsal.git(root, 'apply', '--whitespace=error', '-', data=prepared_diff)
+
+            for entry in staged_receipt['files']:
+                output = root.joinpath(*PurePosixPath(entry['path']).parts)
+                require(output.is_file() and not output.is_symlink()
+                        and sha256(output.read_bytes()) == entry['sha256'],
+                        f'Applied output differs from staged receipt: {entry["path"]!r}')
+            require((root / 'consolidated-build-receipt.json').read_bytes()
+                    == (staged_root / 'consolidated-build-receipt.json').read_bytes(),
+                    'Applied preparation receipt differs from staged receipt')
+            print(json.dumps({k: v for k, v in report.items() if k != 'files'}, indent=2))
+        finally:
+            rehearsal.git(root, 'worktree', 'remove', '--force', str(staged_root))
 
 
 def main():

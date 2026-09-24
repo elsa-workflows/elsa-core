@@ -143,6 +143,43 @@ new file mode 100644
         self.assertEqual((self.output / 'Elsa.sln').read_text(), original_solution)
         self.assertFalse((self.output / build.ADDED_TEST).exists())
 
+    def test_packability_failure_leaves_original_rehearsal_untouched(self):
+        original_solution = (self.output / 'Elsa.sln').read_bytes()
+        original_status = build.rehearsal.git(self.output, 'status', '--porcelain', '-z')
+        with patch.object(build, 'evaluate_packability', side_effect=ValueError('matrix failure')):
+            with self.assertRaisesRegex(ValueError, 'matrix failure'):
+                build.prepare(self.output)
+        self.assertEqual((self.output / 'Elsa.sln').read_bytes(), original_solution)
+        self.assertEqual(build.rehearsal.git(self.output, 'status', '--porcelain', '-z'), original_status)
+        self.assertFalse((self.output / build.ADDED_TEST).exists())
+        self.assertFalse((self.output / 'canonical-packability-report.json').exists())
+        self.assertFalse((self.output / 'consolidated-build-receipt.json').exists())
+
+    def test_concurrent_source_edit_during_evaluation_blocks_copyback(self):
+        original_solution = (self.output / 'Elsa.sln').read_bytes()
+        concurrent_path = self.output / 'src/studio/UI/UI.csproj'
+
+        def edit_source_during_matrix(root, projects):
+            concurrent_path.write_text('concurrent user edit\n')
+            return {
+                'sdkVersion': '10.0.300', 'projectCount': 4, 'evaluationCount': 24,
+                'configurations': ['Debug', 'Release'], 'referenceModes': build.REFERENCE_MODES,
+                'allProjectsNonPackable': True, 'allProjectsDisablePackageOnBuild': True,
+                'projects': [],
+            }
+
+        output = io.StringIO()
+        with patch.object(build, 'evaluate_packability', side_effect=edit_source_during_matrix):
+            with contextlib.redirect_stdout(output):
+                with self.assertRaisesRegex(ValueError, 'changes'):
+                    build.prepare(self.output)
+        self.assertEqual(output.getvalue(), '')
+        self.assertEqual(concurrent_path.read_text(), 'concurrent user edit\n')
+        self.assertEqual((self.output / 'Elsa.sln').read_bytes(), original_solution)
+        self.assertFalse((self.output / build.ADDED_TEST).exists())
+        self.assertFalse((self.output / 'canonical-packability-report.json').exists())
+        self.assertFalse((self.output / 'consolidated-build-receipt.json').exists())
+
     def test_rejects_remote(self):
         build.rehearsal.git(self.output, 'remote', 'add', 'origin', 'https://example.invalid/repo')
         with self.assertRaisesRegex(ValueError, 'no remotes'):
