@@ -152,6 +152,34 @@ public sealed class ConnectionLifecycleTests
     }
 
     [Fact]
+    public async Task ApiKeyOnlyHostResolvesLifecycleAndUnsupportedRefreshDoesNotAdvanceRevision()
+    {
+        await using var database = new TestDatabase();
+        var provider = new SyntheticCredentialProvider(block: false);
+        await using var worker = await Worker.CreateAsync(database.Path, MakeKey(32), provider, registerCredentialProvider: false);
+        using var tenant = worker.TenantAccessor.PushContext(TenantContext());
+        using var scope = worker.Services.CreateScope();
+        var apiKeys = scope.ServiceProvider.GetRequiredService<IStaticApiKeyLifecycleService>();
+        var lifecycle = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleService>();
+        var connected = await apiKeys.ConnectApiKeyAsync(Principal(), new ConnectApiKeyConnectionRequest(
+            TenantId, EnvironmentId, "synthetic-api-key", "account-test", "api-key-only"));
+        Assert.True(connected.Succeeded);
+        var connectionId = Assert.IsType<string>(connected.ConnectionId);
+        var revision = Assert.IsType<long>(connected.Revision);
+
+        var refresh = await lifecycle.RefreshAsync(Principal(), TenantId, EnvironmentId, connectionId);
+        Assert.Equal("credential_refresh_unsupported", refresh.SafeErrorCode);
+        Assert.Equal(revision, refresh.Revision);
+
+        var replaced = await apiKeys.ReplaceApiKeyAsync(Principal(), TenantId, EnvironmentId, connectionId,
+            revision, "api-key-only-replacement");
+        Assert.True(replaced.Succeeded);
+        Assert.Equal("api-key-only-replacement", (await lifecycle.ResolveForUseAsync(
+            Principal(canManage: false), TenantId, EnvironmentId, connectionId)).ApiKey);
+        Assert.Equal(0, provider.CallCount);
+    }
+
+    [Fact]
     public async Task ApiKeyConnectCanRecoverAfterLostGenerationStageWrite()
     {
         await using var database = new TestDatabase();
@@ -1456,7 +1484,7 @@ public sealed class ConnectionLifecycleTests
         public DefaultTenantAccessor TenantAccessor { get; }
         public StageWriteFault? StageWriteFault { get; }
 
-        public static async Task<Worker> CreateAsync(string databasePath, byte[]? encryptionKey, SyntheticCredentialProvider provider, bool migrate = true, bool failBeforeStageWrite = false, TimeProvider? timeProvider = null, ConnectGenerationGate? connectGenerationGate = null, SecretResolveFault? secretResolveFault = null, ConnectGenerationGate? secretResolveGate = null, LateGenerationCreateGate? lateGenerationCreateGate = null)
+        public static async Task<Worker> CreateAsync(string databasePath, byte[]? encryptionKey, SyntheticCredentialProvider provider, bool migrate = true, bool failBeforeStageWrite = false, TimeProvider? timeProvider = null, ConnectGenerationGate? connectGenerationGate = null, SecretResolveFault? secretResolveFault = null, ConnectGenerationGate? secretResolveGate = null, LateGenerationCreateGate? lateGenerationCreateGate = null, bool registerCredentialProvider = true)
         {
             var tenantAccessor = new DefaultTenantAccessor();
             var services = new ServiceCollection();
@@ -1466,7 +1494,10 @@ public sealed class ConnectionLifecycleTests
             services.AddSingleton<ITenantAccessor>(tenantAccessor);
             services.Configure<TenantsOptions>(options => options.IsEnabled = true);
             services.AddSingleton<IConnectionUseAuthorizer, AllowUseAuthorizer>();
-            services.AddSingleton<IConnectionCredentialProvider>(provider);
+            if (registerCredentialProvider)
+            {
+                services.AddSingleton<IConnectionCredentialProvider>(provider);
+            }
             if (provider is IConnectionOffboardingProvider offboardingProvider)
             {
                 services.AddSingleton(offboardingProvider);

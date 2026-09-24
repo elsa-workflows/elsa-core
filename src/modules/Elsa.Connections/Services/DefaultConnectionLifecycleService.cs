@@ -14,10 +14,10 @@ namespace Elsa.Connections.Services;
 public sealed class DefaultConnectionLifecycleService(
     IConnectionLifecycleStore store,
     IConnectionUseAuthorizer authorizer,
-    IConnectionCredentialProvider provider,
     IManagedSecretManager secrets,
     TimeProvider timeProvider,
     ITenantAccessor tenantAccessor,
+    IConnectionCredentialProvider? provider = null,
     IConnectionOffboardingProvider? offboardingProvider = null) : IConnectionLifecycleService, IStaticApiKeyLifecycleService, IConnectionBackgroundUseService, IConnectionLifecycleRecoveryService
 {
     private static readonly TimeSpan OperationLeaseDuration = TimeSpan.FromMinutes(2);
@@ -522,6 +522,36 @@ public sealed class DefaultConnectionLifecycleService(
             return new ConnectionLifecycleResult(false, code, current.Revision, connectionId, ToMetadata(current));
         }
 
+        // Read before claiming so a static key never advances the revision through an unsupported
+        // refresh. A failed read is still a safe, pre-provider failure and leaves the connection usable.
+        CredentialEnvelope? currentMaterial;
+        var preflightReadFailed = false;
+        try
+        {
+            var payload = await secrets.ResolveGenerationAsync(current.CurrentSecretName!, current.Id, current.CurrentGenerationId!, cancellationToken);
+            currentMaterial = Deserialize(payload.Value);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            currentMaterial = null;
+            preflightReadFailed = true;
+        }
+
+        if (currentMaterial?.Kind == ConnectionCredentialKind.ApiKey && IsValidEnvelope(currentMaterial))
+        {
+            return new ConnectionLifecycleResult(false, "credential_refresh_unsupported", current.Revision, connectionId, ToMetadata(current));
+        }
+
+        if (provider == null)
+        {
+            var code = IsValidEnvelope(currentMaterial) ? "credential_provider_unavailable" : "credential_unavailable";
+            return new ConnectionLifecycleResult(false, code, current.Revision, connectionId, ToMetadata(current));
+        }
+
         var operationId = Guid.NewGuid().ToString("N");
         var claimed = await store.TryClaimCredentialUpdateAsync(connectionId, tenantId, environmentId, current!.Revision, operationId, timeProvider.GetUtcNow() + OperationLeaseDuration, cancellationToken);
         if (claimed == null)
@@ -539,6 +569,11 @@ public sealed class DefaultConnectionLifecycleService(
         var providerCallStarted = false;
         try
         {
+            if (preflightReadFailed)
+            {
+                return await ReleaseUnstartedRefreshAsync(claimed, tenantId, environmentId, "refresh_not_started");
+            }
+
             var oldPayload = await secrets.ResolveGenerationAsync(claimed.CurrentSecretName!, claimed.Id, claimed.CurrentGenerationId!, cancellationToken);
             var oldMaterial = Deserialize(oldPayload.Value);
             if (oldMaterial?.Kind == ConnectionCredentialKind.ApiKey)
