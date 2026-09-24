@@ -6,6 +6,8 @@ The source patch is [extensions-v2.patch](../../../scripts/integration-program/g
 
 The mapping tool is deliberately narrow. It accepts one exported workflow `Root` or `root` activity and recursively follows only `Elsa.Sequence.activities`. It preserves that input casing and all unrelated JSON values. It refuses ambiguous duplicate root properties, a top-level activities list, unsupported containers or topology properties, duplicate JSON keys, unknown target versions, malformed old input wrappers, and missing, unused, duplicate, or colliding caller-supplied activity IDs. A mapping includes the exact original-file SHA-256 and a workflow label; the output is atomically created at a new path and the source is not overwritten. Decimal JSON tokens are retained without a float conversion. Arbitrary business-data objects named `type` or `id` are not traversed.
 
+`Elsa.For` and `Elsa.StateMachine` are explicitly unsupported containers. When either appears inside a supported Sequence, the tool rejects the entire workflow before writing output, including any earlier top-level activity that it could otherwise migrate. An unrelated custom leaf with the same short name, such as `Acme.For`, remains supported if it has no nested topology. A custom container holding a serialized legacy GitHub activity in an untraversed property is also rejected; a business classification that only uses the same `type` string is not an activity. Opaque `customProperties` business data is not treated as workflow topology. An operator must use a reviewed migration for rejected container topology; a partial success receipt is not acceptable.
+
 For a real workflow, create a mapping file such as:
 
 ```json

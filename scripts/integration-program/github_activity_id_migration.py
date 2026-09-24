@@ -23,8 +23,9 @@ LEGACY_TYPES = {
     "Elsa.GitHub.Gists.GetGist": ("gistId", "String"),
 }
 SEQUENCE_TYPE = "Elsa.Sequence"
-UNSUPPORTED_CONTAINER_NAMES = {
-    "Flowchart", "ForEach", "ForEachV2", "Fork", "If", "Join", "Parallel", "Switch", "While"
+UNSUPPORTED_CONTAINER_TYPES = {
+    "Elsa.Flowchart", "Elsa.For", "Elsa.ForEach", "Elsa.ForEachV2", "Elsa.Fork", "Elsa.If",
+    "Elsa.Join", "Elsa.Parallel", "Elsa.StateMachine", "Elsa.Switch", "Elsa.While"
 }
 UNSUPPORTED_TOPOLOGY_PROPERTIES = {"branches", "connections", "nodes"}
 UNSUPPORTED_TOPOLOGY_PROPERTY_CASES = UNSUPPORTED_TOPOLOGY_PROPERTIES | {
@@ -109,6 +110,25 @@ def _escape_pointer_segment(value: str) -> str:
     return value.replace("~", "~0").replace("/", "~1")
 
 
+def _has_untraversed_legacy_activity(value: Any) -> bool:
+    if isinstance(value, list):
+        return any(_has_untraversed_legacy_activity(item) for item in value)
+    if not isinstance(value, dict):
+        return False
+    type_name = value.get("type")
+    if isinstance(type_name, str) and type_name in LEGACY_TYPES:
+        provider_input = value.get("id")
+        _, expected_type = LEGACY_TYPES[type_name]
+        if (isinstance(provider_input, dict) and provider_input.get("typeName") == expected_type
+                and isinstance(provider_input.get("expression"), dict)):
+            return True
+    return any(
+        _has_untraversed_legacy_activity(child)
+        for key, child in value.items()
+        if key not in ("customProperties", "CustomProperties")
+    )
+
+
 def _workflow_activity_nodes(workflow: Any) -> list[tuple[str, dict[str, Any]]]:
     if not isinstance(workflow, dict):
         raise MigrationError("Supported input must be an exported workflow object with a root activity")
@@ -151,8 +171,7 @@ def _workflow_activity_nodes(workflow: Any) -> list[tuple[str, dict[str, Any]]]:
                 visit(child, pointer + "/activities/" + str(index))
             return
 
-        short_name = type_name.rsplit(".", 1)[-1]
-        if short_name in UNSUPPORTED_CONTAINER_NAMES or any(
+        if type_name in UNSUPPORTED_CONTAINER_TYPES or any(
             isinstance(node.get(property_name), (dict, list))
             for property_name in UNSUPPORTED_TOPOLOGY_PROPERTY_CASES
         ):
@@ -163,6 +182,15 @@ def _workflow_activity_nodes(workflow: Any) -> list[tuple[str, dict[str, Any]]]:
         if "activities" in node and isinstance(node["activities"], (dict, list)):
             raise MigrationError(
                 f"Unsupported nested activity topology at {pointer}: {type_name}; "
+                "only Elsa.Sequence children are supported"
+            )
+        if any(
+            _has_untraversed_legacy_activity(child)
+            for key, child in node.items()
+            if key not in ("customProperties", "CustomProperties")
+        ):
+            raise MigrationError(
+                f"Unsupported nested legacy activity at {pointer}: {type_name}; "
                 "only Elsa.Sequence children are supported"
             )
 

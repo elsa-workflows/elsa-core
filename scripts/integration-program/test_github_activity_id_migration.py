@@ -167,6 +167,83 @@ class GitHubActivityIdMigrationTests(unittest.TestCase):
         with self.assertRaisesRegex(MigrationError, "only a single root activity and Elsa.Sequence children"):
             migrate_document(document, mapping, WORKFLOW_KEY, mapping["workflow_sha256"])
 
+    def test_for_and_state_machine_nested_activities_fail_before_partial_migration(self):
+        nested = copy.deepcopy(self.workflow["Root"]["activities"][0])
+        containers = (
+            {"type": "Elsa.For", "id": "loop", "body": nested},
+            {"type": "Elsa.StateMachine", "id": "state-machine", "states": [{"name": "active", "entry": nested}]},
+        )
+        for container in containers:
+            with self.subTest(container=container["type"]):
+                document = copy.deepcopy(self.workflow)
+                document["Root"]["activities"].append(container)
+                original = copy.deepcopy(document)
+                mapping = mapping_for_document(document)
+                with self.assertRaisesRegex(MigrationError, "Unsupported workflow container"):
+                    migrate_document(document, mapping, WORKFLOW_KEY, mapping["workflow_sha256"])
+                self.assertEqual(original, document)
+                with tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    source, mapping_path, output = (root / name for name in ("workflow.json", "mapping.json", "output.json"))
+                    source.write_text(encode_json(document), encoding="utf-8")
+                    mapping_path.write_text(json.dumps(mapping), encoding="utf-8")
+                    result = subprocess.run(
+                        [sys.executable, str(SCRIPTS / "github_activity_id_migration.py"),
+                         "--input", str(source), "--mapping", str(mapping_path),
+                         "--workflow-key", WORKFLOW_KEY, "--output", str(output)],
+                        check=False, capture_output=True, text=True,
+                    )
+                    self.assertEqual(2, result.returncode, result.stderr)
+                    self.assertFalse(output.exists())
+
+    def test_unrelated_custom_leaf_with_container_short_name_is_preserved(self):
+        for type_name in ("Acme.For", "Acme.StateMachine", "Elsa.Custom.For"):
+            with self.subTest(type_name=type_name):
+                document = copy.deepcopy(self.workflow)
+                leaf = {"type": type_name, "id": "custom-leaf", "version": 1}
+                document["Root"]["activities"].append(leaf)
+                mapping = mapping_for_document(document)
+                migrated = migrate_document(document, mapping, WORKFLOW_KEY, mapping["workflow_sha256"])
+                self.assertEqual(leaf, migrated["Root"]["activities"][-1])
+                self.assertEqual("activity-get-comment", migrated["Root"]["activities"][0]["id"])
+
+    def test_custom_container_cannot_hide_unmigrated_legacy_activity(self):
+        document = copy.deepcopy(self.workflow)
+        document["Root"]["activities"].append({
+            "type": "Acme.For", "id": "custom-container",
+            "body": copy.deepcopy(self.workflow["Root"]["activities"][0]),
+        })
+        original = copy.deepcopy(document)
+        mapping = mapping_for_document(document)
+        with self.assertRaisesRegex(MigrationError, "Unsupported nested legacy activity"):
+            migrate_document(document, mapping, WORKFLOW_KEY, mapping["workflow_sha256"])
+        self.assertEqual(original, document)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source, mapping_path, output = (root / name for name in ("workflow.json", "mapping.json", "output.json"))
+            source.write_text(encode_json(document), encoding="utf-8")
+            mapping_path.write_text(json.dumps(mapping), encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(SCRIPTS / "github_activity_id_migration.py"),
+                 "--input", str(source), "--mapping", str(mapping_path),
+                 "--workflow-key", WORKFLOW_KEY, "--output", str(output)],
+                check=False, capture_output=True, text=True,
+            )
+            self.assertEqual(2, result.returncode, result.stderr)
+            self.assertFalse(output.exists())
+
+    def test_custom_leaf_business_type_name_is_not_an_activity(self):
+        document = copy.deepcopy(self.workflow)
+        leaf = {
+            "type": "Acme.Classify", "id": "custom-leaf",
+            "businessData": {"externalEvent": {"type": "Elsa.GitHub.Comments.GetComment", "category": "crm"}},
+        }
+        document["Root"]["activities"].append(leaf)
+        mapping = mapping_for_document(document)
+        migrated = migrate_document(document, mapping, WORKFLOW_KEY, mapping["workflow_sha256"])
+        self.assertEqual(leaf, migrated["Root"]["activities"][-1])
+        self.assertEqual("activity-get-comment", migrated["Root"]["activities"][0]["id"])
+
     def test_unsupported_references_on_workflow_or_sequence_are_rejected(self):
         workflows = (
             {"root": {"type": "Elsa.Sequence", "activities": []}, "connections": []},
