@@ -957,9 +957,9 @@ public sealed class ConnectionLifecycleTests
             Assert.Equal(CredentialOperationStatus.Completed, row.OperationStatus);
             Assert.Equal(row.PlannedGenerationId, row.CurrentGenerationId);
             Assert.Equal(ConnectionCredentialKind.OAuth, row.CredentialKind);
-            Assert.NotNull(row.CredentialExpiresAt);
+            var credentialExpiresAt = Assert.IsType<DateTimeOffset>(row.CredentialExpiresAt);
             var due = await reconcileScope.ServiceProvider.GetRequiredService<IConnectionDueCandidateStore>()
-                .FindDueCandidatesAsync(TenantId, EnvironmentId, row.CredentialExpiresAt.Value, 10);
+                .FindDueCandidatesAsync(TenantId, EnvironmentId, credentialExpiresAt, 10);
             Assert.Contains(due.Items, candidate => candidate.Kind == ConnectionDueCandidateKind.OAuthRefresh && candidate.ConnectionId == connectionId);
         }
 
