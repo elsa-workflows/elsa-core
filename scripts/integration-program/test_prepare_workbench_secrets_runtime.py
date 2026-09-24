@@ -72,7 +72,7 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
                 mock.patch.object(FIXTURE, 'SUPPLEMENTAL_PATCHES', supplemental_patches), \
                 mock.patch.object(
                     FIXTURE, 'CANONICAL_WORKBENCH_BASE_PATCH_SHA256',
-                    hashlib.sha256(self.workbench_patch.read_bytes()).hexdigest()), \
+                    hashlib.sha256(self.previous_workbench_patch.read_bytes()).hexdigest()), \
                 mock.patch.object(FIXTURE, 'get_compile_items', compile_items_provider or self.fake_compile_items):
             return FIXTURE.prepare_fixture(**options)
 
@@ -113,7 +113,18 @@ diff --git a/{project} b/{project}
 ''')
         baseline_patch = self.rehearsal / FIXTURE.PATCH_RELATIVE
         baseline_patch.parent.mkdir(parents=True, exist_ok=True)
-        baseline_patch.write_text(self.workbench_patch.read_text())
+        self.previous_workbench_patch = baseline_patch
+        previous_program = self.base_program.replace('const bool useSecrets = false;', 'const bool useSecrets = true;')
+        previous_project = self.base_project.replace('legacy-secrets', 'previous-secrets')
+        previous_program_diff = ''.join(difflib.unified_diff(
+            self.base_program.splitlines(keepends=True), previous_program.splitlines(keepends=True),
+            fromfile=f'a/{program}', tofile=f'b/{program}'))
+        previous_project_diff = ''.join(difflib.unified_diff(
+            self.base_project.splitlines(keepends=True), previous_project.splitlines(keepends=True),
+            fromfile=f'a/{project}', tofile=f'b/{project}'))
+        baseline_patch.write_text(
+            f'diff --git a/{program} b/{program}\n{previous_program_diff}'
+            f'diff --git a/{project} b/{project}\n{previous_project_diff}')
         git = lambda *args: subprocess.run(['git', '-C', str(self.rehearsal), *args], check=True, capture_output=True)
         git('init', '--quiet')
         git('add', '.')
@@ -276,6 +287,8 @@ diff --git a/{project} b/{project}
             chain = plan['sourcePatchChain']
             self.assertEqual(1, len(chain['supplementalPatches']))
             self.assertEqual(2, len(chain['reverseReplay']))
+            self.assertTrue(chain['previousToCurrentTransitionVerified'])
+            self.assertNotEqual(chain['previousWorkbenchPatchSha256'], chain['workbenchPatch']['sha256'])
             self.assertEqual(patch.name, chain['supplementalPatches'][0]['path'])
             self.assertTrue(chain['reverseReplay'][0]['patch'].endswith('supplemental-overlay.patch'))
             self.assertTrue(chain['reverseReplay'][1]['patch'].endswith('workbench.patch'))
@@ -311,7 +324,7 @@ diff --git a/{project} b/{project}
         self.assertEqual(str(self.source / 'Program.cs'), items[0]['FullPath'])
         self.assertEqual(self.source, Path(run.call_args.kwargs['cwd']))
 
-    def test_host_build_uses_clone_local_restore_and_skips_dependency_rebuilds(self):
+    def test_host_build_uses_clone_local_restore_and_rebuilds_project_references(self):
         project = self.source / 'Elsa.Server.Web.csproj'
         assets = self.source / 'obj' / 'project.assets.json'
         assets.parent.mkdir(parents=True)
@@ -319,6 +332,11 @@ diff --git a/{project} b/{project}
         host_dll = self.source / 'bin' / 'Debug' / 'net10.0' / 'Elsa.Server.Web.dll'
         host_dll.parent.mkdir(parents=True)
         host_dll.write_bytes(b'host')
+        for name in FIXTURE.REQUIRED_SECRETS_ASSEMBLIES:
+            project_output = self.rehearsal / 'src' / 'modules' / name / 'bin' / 'Debug' / 'net10.0' / f'{name}.dll'
+            project_output.parent.mkdir(parents=True)
+            project_output.write_bytes(name.encode())
+            (host_dll.parent / f'{name}.dll').write_bytes(name.encode())
         results = [
             subprocess.CompletedProcess([], 0, 'restore passed', ''),
             subprocess.CompletedProcess([], 0, 'build passed', '')
@@ -332,9 +350,17 @@ diff --git a/{project} b/{project}
         self.assertIn('--force-evaluate', restore_command)
         build_command = run.call_args_list[1].args[0]
         self.assertIn('--no-restore', build_command)
-        self.assertIn('-p:BuildProjectReferences=false', build_command)
+        self.assertIn('--no-incremental', build_command)
+        self.assertNotIn('-p:BuildProjectReferences=false', build_command)
         self.assertEqual(0, build['exitCode'])
         self.assertEqual(str(host_dll.resolve()), build['hostDll'])
+        self.assertEqual(set(FIXTURE.REQUIRED_SECRETS_ASSEMBLIES),
+                         {item['name'] for item in build['secretsAssemblies']})
+
+        (host_dll.parent / f'{FIXTURE.REQUIRED_SECRETS_ASSEMBLIES[0]}.dll').write_bytes(b'stale host copy')
+        with mock.patch.object(FIXTURE.subprocess, 'run', side_effect=results):
+            with self.assertRaisesRegex(ValueError, 'Host Secrets assembly differs'):
+                FIXTURE.build_host(self.source, self.temp_parent)
 
 
 if __name__ == '__main__':

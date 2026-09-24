@@ -39,6 +39,14 @@ TENANT_ID = ''
 ADMIN_ROLE_ID = 'workbench-synthetic-admin'
 PBKDF2_ITERATIONS = 600_000
 CANONICAL_WORKBENCH_BASE_PATCH_SHA256 = '5dd4667190c538279f3b89cea80b81681402775555a89d89248001c2e22aa446'
+REQUIRED_SECRETS_ASSEMBLIES = (
+    'Elsa.Secrets',
+    'Elsa.Secrets.JavaScript',
+    'Elsa.Secrets.Persistence.EFCore',
+    'Elsa.Secrets.Persistence.EFCore.PostgreSql',
+    'Elsa.Secrets.Persistence.EFCore.Sqlite',
+    'Elsa.Secrets.Persistence.EFCore.SqlServer'
+)
 
 
 def require(condition, message):
@@ -217,6 +225,24 @@ def verify_patch_chain(root, prepared_files, expected_pins, actual_files):
             require(actual_hash == expected_hash,
                     f'Reversing patch chain does not restore the expected base for {relative}')
 
+        previous_patch = root / PATCH_RELATIVE
+        require(get_patch_targets(previous_patch) == workbench_targets,
+                'Previous Workbench patch targets differ from the current patch')
+        require(file_sha256(previous_patch) != file_sha256(PATCH),
+                'Previous and current Workbench patches must be distinct')
+        for args in ((str(previous_patch),), ('--reverse', str(previous_patch)),
+                     (str(PATCH),), *((str(patch),) for patch, _ in supplemental)):
+            try:
+                subprocess.run(['git', 'apply', '--check', *args], cwd=patch_root,
+                               check=True, capture_output=True)
+                subprocess.run(['git', 'apply', *args], cwd=patch_root,
+                               check=True, capture_output=True)
+            except subprocess.CalledProcessError as error:
+                raise ValueError('Pinned Workbench patch transition cannot be replayed') from error
+        for relative in all_targets:
+            require(hash_optional_file(patch_root / relative) == hash_optional_file(root / relative),
+                    f'Patch transition does not restore mapped source for {relative}')
+
     for relative, expected_hash in prepared_hashes.items():
         if relative not in all_targets:
             require(file_sha256(root / relative) == expected_hash,
@@ -239,7 +265,8 @@ def verify_patch_chain(root, prepared_files, expected_pins, actual_files):
             }
             for patch, targets in supplemental
         ],
-        'reverseReplay': ledger_entries
+        'reverseReplay': ledger_entries,
+        'previousToCurrentTransitionVerified': True
     }
 
 
@@ -378,7 +405,7 @@ def build_host(source, log_parent):
     command = [
         'dotnet', 'build', str(source / 'Elsa.Server.Web.csproj'),
         '--configuration', 'Debug', '--framework', 'net10.0', '--no-restore', '--no-incremental',
-        '-p:BuildProjectReferences=false', '--verbosity', 'minimal'
+        '--verbosity', 'minimal'
     ]
     started_at = datetime.now(timezone.utc)
     if restore_result.returncode:
@@ -406,6 +433,20 @@ def build_host(source, log_parent):
     restored_project_path = Path(assets.get('project', {}).get('restore', {}).get('projectPath', '')).resolve(strict=False)
     require(restored_project_path == project.resolve(strict=True),
             'Workbench project assets do not point at the isolated runtime clone')
+    clone_root = source.parents[3]
+    secret_assemblies = []
+    for name in REQUIRED_SECRETS_ASSEMBLIES:
+        project_output = clone_root / 'src' / 'modules' / name / 'bin' / 'Debug' / 'net10.0' / f'{name}.dll'
+        host_output = host_dll.parent / f'{name}.dll'
+        require(project_output.is_file() and not project_output.is_symlink(),
+                f'Full graph build omitted a regular Secrets project assembly: {name}')
+        require(host_output.is_file() and not host_output.is_symlink(),
+                f'Full graph build omitted a regular host Secrets assembly: {name}')
+        digest = file_sha256(project_output)
+        require(file_sha256(host_output) == digest,
+                f'Host Secrets assembly differs from the built project output: {name}')
+        secret_assemblies.append({'name': name, 'sha256': digest,
+                                  'projectOutput': str(project_output), 'hostOutput': str(host_output)})
     return {
         'restoreCommand': restore_command,
         'restoreExitCode': restore_result.returncode,
@@ -417,6 +458,7 @@ def build_host(source, log_parent):
         'hostDll': str(host_dll.resolve(strict=True)),
         'hostDllSha256': file_sha256(host_dll),
         'hostDllSizeBytes': host_dll.stat().st_size,
+        'secretsAssemblies': secret_assemblies,
         'log': build_log
     }
 

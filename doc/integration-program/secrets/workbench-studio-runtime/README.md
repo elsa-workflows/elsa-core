@@ -7,6 +7,14 @@ Studio ClientLib bundles and browser/API observations. The private fixture
 configuration, credentials, database and raw logs are excluded from this
 repository.
 
+The follow-up [host build provenance](host-build-provenance.json) addresses
+the original host-only build receipt: the isolated net10.0 build now restores
+and rebuilds the full project-reference graph without incremental compilation.
+The receipt records matching SHA-256 values for all six Secrets project outputs
+and their Workbench host copies. It also verifies that the distinct pinned old
+Workbench patch can apply to the mapped baseline, reverse cleanly, and yield
+the same mapped source after the current patch is applied.
+
 The browser completed list, detail, create, metadata update, rotate, revoke,
 delete, active/revoked test and workflow picker steps. It saved a named secret
 reference in an unpublished draft without executing it. The draft was removed;
