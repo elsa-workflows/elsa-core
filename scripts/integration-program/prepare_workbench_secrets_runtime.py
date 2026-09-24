@@ -25,12 +25,18 @@ SUPPLEMENTAL_PATCHES = (
     HERE / 'consolidated-build' / 'mongo-atomic-updates.patch',
     HERE / 'consolidated-build' / 'studio-test-layout.patch'
 )
+OPTIONAL_FIXTURE_PATCHES = (
+    HERE / 'consolidated-build' / 'studio-secrets-menu.patch',
+    HERE / 'consolidated-build' / 'studio-bpmn-generator-layout.patch',
+    HERE / 'consolidated-build' / 'workbench-two-tenant-multitenancy.patch'
+)
 SOURCE_PROJECT = Path('samples/extensions/workbench/Elsa.Server.Web')
 REQUIRED_PROGRAM_MARKERS = (
     'var useSecrets = configuration.GetValue("Features:Secrets:Enabled", false);',
     '.UseSecrets(secrets =>',
     '.UseSecretsJavaScript();'
 )
+TWO_TENANT_MULTITENANCY_MARKER = 'var useMultitenancy = configuration.GetValue("Features:Multitenancy:Enabled", false);'
 FORBIDDEN_PROGRAM_MARKERS = (
     'UseSecretsManagement(',
     'UpdateExpiredSecretsRecurringTask'
@@ -124,6 +130,30 @@ def hash_optional_file(path):
     return file_sha256(path)
 
 
+def is_patch_applied(root, patch, targets):
+    with tempfile.TemporaryDirectory(prefix='fixture-patch-detect-') as directory:
+        patch_root = Path(directory)
+        for relative in targets:
+            source_file = root / relative
+            if source_file.exists():
+                require(source_file.is_file() and not source_file.is_symlink(),
+                        f'Patch target is not a regular file: {relative}')
+                target = patch_root / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source_file, target)
+
+        applied = []
+        for relative in targets:
+            result = subprocess.run(
+                ['git', 'apply', '--reverse', '--check', f'--include={relative}', str(patch)],
+                cwd=patch_root, check=False, capture_output=True)
+            applied.append(result.returncode == 0)
+
+    require(not any(applied) or all(applied),
+            f'Only part of optional fixture patch is present: {patch.name}')
+    return all(applied)
+
+
 def display_patch_path(patch):
     try:
         return str(patch.relative_to(HERE))
@@ -160,7 +190,22 @@ def verify_patch_chain(root, prepared_files, expected_pins, actual_files):
         supplemental = []
         supplemental_targets = set()
 
-    all_targets = set(workbench_targets) | supplemental_targets
+    optional_supplementals = []
+    optional_targets = set()
+    for patch in OPTIONAL_FIXTURE_PATCHES:
+        if not patch.exists() and not patch.is_symlink():
+            continue
+        require(patch.is_file() and not patch.is_symlink(),
+                f'Missing regular optional fixture patch: {patch.name}')
+        targets = get_patch_targets(patch)
+        if is_patch_applied(root, patch, targets):
+            require(not (optional_targets & set(targets))
+                    and not (supplemental_targets & set(targets)),
+                    f'Applied optional fixture patch targets overlap: {patch.name}')
+            optional_supplementals.append((patch, targets))
+            optional_targets.update(targets)
+
+    all_targets = set(workbench_targets) | supplemental_targets | optional_targets
     expected_files = set(prepared_hashes) | all_targets
     require(actual_files == expected_files,
             f'Mapped rehearsal file set differs from the reviewed patch chain: '
@@ -180,7 +225,7 @@ def verify_patch_chain(root, prepared_files, expected_pins, actual_files):
         # The reviewed chain applies the Workbench opt-in first, then the supplemental
         # patches. Reverse it in the opposite order so overlays of a patched file are
         # removed before the base Workbench patch is reversed.
-        ordered_patches = [*reversed(supplemental), (PATCH, workbench_targets)]
+        ordered_patches = [*reversed(optional_supplementals), *reversed(supplemental), (PATCH, workbench_targets)]
         ledger_entries = []
         for patch, targets in ordered_patches:
             preimages = {path: hash_optional_file(patch_root / path) for path in targets}
@@ -230,8 +275,14 @@ def verify_patch_chain(root, prepared_files, expected_pins, actual_files):
                 'Previous Workbench patch targets differ from the current patch')
         require(file_sha256(previous_patch) != file_sha256(PATCH),
                 'Previous and current Workbench patches must be distinct')
-        for args in ((str(previous_patch),), ('--reverse', str(previous_patch)),
-                     (str(PATCH),), *((str(patch),) for patch, _ in supplemental)):
+        transition_args = [
+            (str(previous_patch),),
+            ('--reverse', str(previous_patch)),
+            (str(PATCH),),
+            *((str(patch),) for patch, _ in supplemental),
+            *((str(patch),) for patch, _ in optional_supplementals)
+        ]
+        for args in transition_args:
             try:
                 subprocess.run(['git', 'apply', '--check', *args], cwd=patch_root,
                                check=True, capture_output=True)
@@ -264,6 +315,14 @@ def verify_patch_chain(root, prepared_files, expected_pins, actual_files):
                 'targets': targets
             }
             for patch, targets in supplemental
+        ],
+        'optionalFixturePatches': [
+            {
+                'path': display_patch_path(patch),
+                'sha256': file_sha256(patch),
+                'targets': targets
+            }
+            for patch, targets in optional_supplementals
         ],
         'reverseReplay': ledger_entries,
         'previousToCurrentTransitionVerified': True
@@ -492,13 +551,28 @@ def write_private(path, content):
         file.write(content)
 
 
-def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_parent=None):
+def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_parent=None, two_tenant=False):
     pins = {'core': core_sha, 'extensions': extensions_sha, 'studio': studio_sha}
     for name, commit in pins.items():
         require(len(commit) == 40 and all(character in '0123456789abcdef' for character in commit),
                 f'{name} source pin must be a full lowercase commit SHA')
 
     root, source, _, import_receipt, build_receipt, source_inventory, patch_chain = validate_source_root(rehearsal_root, pins)
+    program = (source / 'Program.cs').read_text()
+    optional_paths = {Path(item['path']).name for item in patch_chain['optionalFixturePatches']}
+    tenant_patch_name = 'workbench-two-tenant-multitenancy.patch'
+    menu_patch_name = 'studio-secrets-menu.patch'
+    studio_layout_patch_name = 'studio-bpmn-generator-layout.patch'
+    if two_tenant:
+        require(tenant_patch_name in optional_paths,
+                'Two-tenant mode requires the reviewed Workbench multitenancy patch in the isolated mapped source')
+        require(menu_patch_name in optional_paths,
+                'Two-tenant mode requires the merged Studio Secrets menu patch in the mapped source')
+        require(studio_layout_patch_name in optional_paths,
+                'Two-tenant mode requires the Studio mapped-layout patch in the isolated source')
+        require(TWO_TENANT_MULTITENANCY_MARKER in program,
+                'Two-tenant mode requires configuration-gated Workbench multitenancy')
+
     parent = validate_temp_parent(temp_parent or tempfile.gettempdir(), source)
     build = build_host(source, parent)
     fixture_root = Path(tempfile.mkdtemp(prefix='elsa-workbench-secrets-', dir=parent)).resolve(strict=True)
@@ -515,22 +589,78 @@ def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_p
 
     database_path = (content_app_data / 'workbench.sqlite').resolve()
     database_url = f'http://127.0.0.1:{choose_loopback_port()}'
+    workbench_port = database_url.rsplit(':', 1)[1]
     login_name = 'synthetic-admin'
     login_password = secrets.token_urlsafe(32)
-    password_salt = secrets.token_bytes(32)
     signing_key = base64.b64encode(secrets.token_bytes(64)).decode('ascii')
     encryption_key = list(secrets.token_bytes(32))
-    user_id = uuid.uuid4().hex
-    user = {
-        'Id': user_id,
-        'Name': login_name,
-        'HashedPassword': hash_password(login_password, password_salt),
-        'HashedPasswordSalt': base64.b64encode(password_salt).decode('ascii'),
-        'Roles': [ADMIN_ROLE_ID],
-        'TenantId': TENANT_ID
-    }
+    users = []
+    roles = []
+    credential_lines = ['Local-only synthetic Workbench credentials. Delete this fixture after both hosts are stopped.']
+    if two_tenant:
+        tenant_ids = ('tenant-a', 'tenant-b')
+        for tenant_id in tenant_ids:
+            username = f'synthetic-{tenant_id}-admin'
+            password = secrets.token_urlsafe(32)
+            password_salt = secrets.token_bytes(32)
+            role_id = f'workbench-{tenant_id}-admin'
+            users.append({
+                'Id': uuid.uuid4().hex,
+                'Name': username,
+                'HashedPassword': hash_password(password, password_salt),
+                'HashedPasswordSalt': base64.b64encode(password_salt).decode('ascii'),
+                'Roles': [role_id],
+                'TenantId': tenant_id
+            })
+            roles.append({
+                'Id': role_id,
+                'Name': f'Synthetic {tenant_id} Administrator',
+                'Permissions': ['*'],
+                'TenantId': tenant_id
+            })
+            credential_lines.extend(['', f'Tenant: {tenant_id}', f'Username: {username}', f'Password: {password}'])
+        tenants = [{
+            'Id': tenant_id,
+            'Name': f'Synthetic {tenant_id}',
+            'Configuration': {
+                'Http': {
+                    'Prefix': '',
+                    'Host': f'{"127.0.0.1" if tenant_id == "tenant-a" else "tenant-b.localhost"}:{workbench_port}'
+                },
+                'ConnectionStrings': {'Sqlite': f'Data Source={database_path};Cache=Shared;'}
+            }
+        } for tenant_id in tenant_ids]
+        denied_password = secrets.token_urlsafe(32)
+        denied_salt = secrets.token_bytes(32)
+        users.append({
+            'Id': uuid.uuid4().hex,
+            'Name': 'synthetic-denied',
+            'HashedPassword': hash_password(denied_password, denied_salt),
+            'HashedPasswordSalt': base64.b64encode(denied_salt).decode('ascii'),
+            'Roles': [],
+            'TenantId': 'tenant-a'
+        })
+        credential_lines.extend(['', 'Tenant: tenant-a', 'Username: synthetic-denied',
+                                 f'Password: {denied_password}', 'Permissions: none'])
+    else:
+        password_salt = secrets.token_bytes(32)
+        users.append({
+            'Id': uuid.uuid4().hex,
+            'Name': login_name,
+            'HashedPassword': hash_password(login_password, password_salt),
+            'HashedPasswordSalt': base64.b64encode(password_salt).decode('ascii'),
+            'Roles': [ADMIN_ROLE_ID],
+            'TenantId': TENANT_ID
+        })
+        roles.append({
+            'Id': ADMIN_ROLE_ID,
+            'Name': 'Synthetic Workbench Administrator',
+            'Permissions': ['*'],
+            'TenantId': TENANT_ID
+        })
+        credential_lines.extend(['', f'Username: {login_name}', f'Password: {login_password}'])
     configuration = {
-        'AllowedHosts': '127.0.0.1;localhost',
+        'AllowedHosts': '127.0.0.1;localhost' + (';tenant-b.localhost' if two_tenant else ''),
         'ConnectionStrings': {
             'Sqlite': f'Data Source={database_path};Cache=Shared;'
         },
@@ -541,13 +671,8 @@ def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_p
                 'AccessTokenLifetime': '00:05:00',
                 'RefreshTokenLifetime': '00:15:00'
             },
-            'Roles': [{
-                'Id': ADMIN_ROLE_ID,
-                'Name': 'Synthetic Workbench Administrator',
-                'Permissions': ['*'],
-                'TenantId': TENANT_ID
-            }],
-            'Users': [user],
+            'Roles': roles,
+            'Users': users,
             'Applications': []
         },
         'AppRole': 'Default',
@@ -572,8 +697,12 @@ def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_p
         'Smtp': {},
         'Mqtt': {'Host': '127.0.0.1', 'Port': 1}
     }
+    if two_tenant:
+        configuration['Features'] = {'Multitenancy': {'Enabled': True}}
+        configuration['Multitenancy'] = {'Tenants': tenants}
 
-    write_private(content_root / 'appsettings.json', (json.dumps(configuration, indent=2) + '\n').encode('utf-8'))
+    appsettings_bytes = (json.dumps(configuration, indent=2) + '\n').encode('utf-8')
+    write_private(content_root / 'appsettings.json', appsettings_bytes)
     write_private(content_root / 'appsettings.Production.json', b'{}\n')
     marker = {
         'schemaVersion': 1,
@@ -584,8 +713,7 @@ def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_p
     write_private(fixture_root / '.elsa-workbench-fixture.json', (json.dumps(marker, indent=2) + '\n').encode('utf-8'))
     write_private(
         fixture_root / 'synthetic-credentials.txt',
-        ('Local-only synthetic Workbench credentials. Delete this fixture after the host is stopped.\n'
-         f'Username: {login_name}\nPassword: {login_password}\n').encode('utf-8'))
+        ('\n'.join(credential_lines) + '\n').encode('utf-8'))
     write_private(fixture_root / 'host-build.log', build['log'].encode('utf-8'))
 
     patch_sha = file_sha256(PATCH)
@@ -606,6 +734,7 @@ def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_p
         'hostAssemblySourceInventory': source_inventory,
         'freshBuild': {key: value for key, value in build.items() if key != 'log'},
         'databasePath': str(database_path),
+        'privateAppsettingsSha256': hashlib.sha256(appsettings_bytes).hexdigest(),
         'loopbackUrl': database_url,
         'secretsEnabledOnlyByExplicitLaunchOverride': '--Features:Secrets:Enabled=true',
         'appsettingsContainsSecretsEnabled': False,
@@ -615,7 +744,16 @@ def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_p
         'freshSqliteDatabase': True,
         'workflowRowsExpectedAtFirstStart': 0,
         'launchApproved': False,
-        'hostIdentityPolicy': 'Synthetic administrator and role use the empty default tenant ID. Workbench multitenancy remains disabled by its source constant.'
+        'twoTenantMode': two_tenant,
+        'multitenancyEnabledOnlyInFixtureConfiguration': two_tenant,
+        'tenantIsolationPolicy': ({
+            'multitenancyEnabledByPrivateConfiguration': True,
+            'selection': 'Tenant-specific request hosts select the tenant before login; matching ElsaIdentity TenantId claims resolve subsequent authenticated requests.',
+            'tenants': ['tenant-a', 'tenant-b'],
+            'databasePathShared': True,
+            'rolePermissions': 'Each synthetic administrator role is scoped to its matching tenant.'
+        } if two_tenant else None),
+        'hostIdentityPolicy': ('Two configuration-backed synthetic ElsaIdentity administrators are scoped to tenant-a and tenant-b; both tenants share the fresh fixture database.' if two_tenant else 'Synthetic administrator and role use the empty default tenant ID. Workbench multitenancy remains disabled by its source constant.')
     }
     write_private(fixture_root / 'launch-plan.json', (json.dumps(plan, indent=2) + '\n').encode('utf-8'))
 
@@ -657,6 +795,7 @@ def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_p
         'dropInsDirectory': str(drop_ins),
         'lockDirectory': str(locks),
         'configuredWebhookSinkCount': 0,
+        'twoTenantMode': two_tenant,
         'launchCommandFile': str(fixture_root / 'launch-command.txt'),
         'launchApproved': False
     }, indent=2))
@@ -687,6 +826,8 @@ def main():
     parser.add_argument('--extensions-sha')
     parser.add_argument('--studio-sha')
     parser.add_argument('--temp-parent', type=Path)
+    parser.add_argument('--two-tenant', action='store_true',
+                        help='Prepare two synthetic tenant-scoped identities; requires the reviewed fixture patches in the mapped source.')
     parser.add_argument('--cleanup', type=Path)
     parser.add_argument('--host-stopped', action='store_true')
     args = parser.parse_args()
@@ -700,7 +841,8 @@ def main():
     require(args.rehearsal_root is not None, 'Pass --rehearsal-root for fixture preparation')
     require(args.core_sha and args.extensions_sha and args.studio_sha, 'Pass all three pinned source SHAs')
     require(not args.host_stopped, '--host-stopped is valid only with --cleanup')
-    prepare_fixture(args.rehearsal_root, args.core_sha, args.extensions_sha, args.studio_sha, args.temp_parent)
+    prepare_fixture(args.rehearsal_root, args.core_sha, args.extensions_sha, args.studio_sha,
+                    args.temp_parent, args.two_tenant)
 
 
 if __name__ == '__main__':

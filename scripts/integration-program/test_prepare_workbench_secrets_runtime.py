@@ -28,7 +28,10 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
         self.source = self.rehearsal / FIXTURE.SOURCE_PROJECT
         self.source.mkdir(parents=True)
         self.base_program = (
-            'const bool useSecrets = false;\nUseSecretsManagement();\nUpdateExpiredSecretsRecurringTask();\n'
+            'const bool useMultitenancy = false;\nconst bool useSecrets = false;\n'
+            'var builder = WebApplication.CreateBuilder(args);\n'
+            'var configuration = builder.Configuration;\n'
+            'UseSecretsManagement();\nUpdateExpiredSecretsRecurringTask();\n'
             'elsa.AddActivitiesFrom<Program>();\nelsa.AddWorkflowsFrom<Program>();\n')
         self.base_project = '<Project>\n  <Reference Include="legacy-secrets" />\n</Project>\n'
         (self.source / 'Elsa.Server.Web.csproj').write_text(self.base_project)
@@ -58,6 +61,7 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
 
     def prepare(self, compile_items_provider=None, **overrides):
         supplemental_patches = overrides.pop('supplemental_patches', FIXTURE.SUPPLEMENTAL_PATCHES)
+        optional_fixture_patches = overrides.pop('optional_fixture_patches', FIXTURE.OPTIONAL_FIXTURE_PATCHES)
         options = dict(
             rehearsal_root=self.rehearsal,
             core_sha=self.pins[0],
@@ -69,6 +73,7 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()), \
                 mock.patch.object(FIXTURE, 'build_host', self.fake_build), \
                 mock.patch.object(FIXTURE, 'SUPPLEMENTAL_PATCHES', supplemental_patches), \
+                mock.patch.object(FIXTURE, 'OPTIONAL_FIXTURE_PATCHES', optional_fixture_patches), \
                 mock.patch.object(
                     FIXTURE, 'CANONICAL_WORKBENCH_BASE_PATCH_SHA256',
                     hashlib.sha256(self.previous_workbench_patch.read_bytes()).hexdigest()), \
@@ -89,27 +94,32 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
         self.workbench_patch = self.base / 'workbench.patch'
         project = (FIXTURE.SOURCE_PROJECT / 'Elsa.Server.Web.csproj').as_posix()
         program = (FIXTURE.SOURCE_PROJECT / 'Program.cs').as_posix()
-        self.workbench_patch.write_text(f'''diff --git a/{program} b/{program}
---- a/{program}
-+++ b/{program}
-@@ -1,5 +1,5 @@
--const bool useSecrets = false;
--UseSecretsManagement();
--UpdateExpiredSecretsRecurringTask();
-+var useSecrets = configuration.GetValue("Features:Secrets:Enabled", false);
-+elsa.UseSecrets(secrets => secrets.UseEntityFrameworkCore(ef => {{ }}));
-+elsa.UseSecretsJavaScript();
- elsa.AddActivitiesFrom<Program>();
- elsa.AddWorkflowsFrom<Program>();
-diff --git a/{project} b/{project}
---- a/{project}
-+++ b/{project}
-@@ -1,3 +1,3 @@
- <Project>
--  <Reference Include="legacy-secrets" />
-+  <Reference Include="core-secrets" />
- </Project>
-''')
+        self.mapped_studio_root = self.rehearsal / 'src/studio/modules/Elsa.Studio.Secrets/Menu'
+        self.mapped_studio_root.mkdir(parents=True)
+        self.menu_file = self.mapped_studio_root / 'SecretsMenu.cs'
+        self.menu_before = 'namespace Elsa.Studio.Secrets;\npublic class SecretsMenu {}\n'
+        self.menu_after = 'namespace Elsa.Studio.Secrets;\npublic class SecretsMenu { public const string TenantProof = "enabled"; }\n'
+        self.menu_file.write_text(self.menu_before)
+        self.layout_file = self.rehearsal / 'src/studio/modules/Elsa.Studio.Workflows.Designer/ClientLib/generate-bpmn-types.js'
+        self.layout_file.parent.mkdir(parents=True)
+        self.layout_before = 'const propsRoot = path.resolve(__dirname, "../../../../../");\n'
+        self.layout_after = 'const propsRoot = locateStudioPropsRoot(__dirname);\n'
+        self.layout_file.write_text(self.layout_before)
+
+        canonical_program = self.base_program.replace('const bool useSecrets = false;\n', '')
+        canonical_program = canonical_program.replace(
+            'var configuration = builder.Configuration;\n',
+            'var configuration = builder.Configuration;\n'
+            'var useSecrets = configuration.GetValue("Features:Secrets:Enabled", false);\n')
+        canonical_program = canonical_program.replace(
+            'UseSecretsManagement();\nUpdateExpiredSecretsRecurringTask();\n',
+            'elsa.UseSecrets(secrets => secrets.UseEntityFrameworkCore(ef => { }));\n'
+            'elsa.UseSecretsJavaScript();\n')
+        project_before = self.base_project
+        project_after = project_before.replace('legacy-secrets', 'core-secrets')
+        self.workbench_patch.write_text(
+            self.make_patch(program, self.base_program, canonical_program)
+            + self.make_patch(project, project_before, project_after))
         baseline_patch = self.rehearsal / FIXTURE.PATCH_RELATIVE
         baseline_patch.parent.mkdir(parents=True, exist_ok=True)
         self.previous_workbench_patch = baseline_patch
@@ -131,6 +141,7 @@ diff --git a/{project} b/{project}
         self.rehearsal_commit = git('rev-parse', 'HEAD').stdout.decode().strip()
 
         prepared_files = []
+        menu_relative = 'src/studio/modules/Elsa.Studio.Secrets/Menu/SecretsMenu.cs'
         for relative, content in ((program, self.base_program), (project, self.base_project)):
             prepared_files.append({'path': relative, 'sha256': hashlib.sha256(content.encode()).hexdigest()})
         (self.rehearsal / 'import-receipt.json').write_text(json.dumps({
@@ -153,6 +164,33 @@ diff --git a/{project} b/{project}
         FIXTURE.SOURCE_PATCH = self.source_patch
         FIXTURE.PATCH = self.workbench_patch
         subprocess.run(['git', 'apply', str(self.workbench_patch)], cwd=self.rehearsal, check=True)
+
+        self.menu_patch = self.base / 'studio-secrets-menu.patch'
+        self.menu_patch.write_text(self.make_patch(menu_relative, self.menu_before, self.menu_after))
+        self.layout_patch = self.base / 'studio-bpmn-generator-layout.patch'
+        self.layout_patch.write_text(self.make_patch(
+            'src/studio/modules/Elsa.Studio.Workflows.Designer/ClientLib/generate-bpmn-types.js',
+            self.layout_before, self.layout_after))
+        self.tenant_patch = self.base / 'workbench-two-tenant-multitenancy.patch'
+        mapped_program = (self.source / 'Program.cs').read_text()
+        tenant_program = mapped_program.replace('const bool useMultitenancy = false;\n', '')
+        tenant_program = tenant_program.replace(
+            'var useSecrets = configuration.GetValue("Features:Secrets:Enabled", false);\n',
+            'var useSecrets = configuration.GetValue("Features:Secrets:Enabled", false);\n'
+            'var useMultitenancy = configuration.GetValue("Features:Multitenancy:Enabled", false);\n')
+        self.tenant_patch.write_text(self.make_patch(program, mapped_program, tenant_program))
+
+    @staticmethod
+    def make_patch(relative, before, after):
+        diff = ''.join(difflib.unified_diff(
+            before.splitlines(keepends=True), after.splitlines(keepends=True),
+            fromfile=f'a/{relative}', tofile=f'b/{relative}'))
+        return f'diff --git a/{relative} b/{relative}\n{diff}'
+
+    def apply_two_tenant_patches(self):
+        subprocess.run(['git', 'apply', str(self.menu_patch)], cwd=self.rehearsal, check=True)
+        subprocess.run(['git', 'apply', str(self.layout_patch)], cwd=self.rehearsal, check=True)
+        subprocess.run(['git', 'apply', str(self.tenant_patch)], cwd=self.rehearsal, check=True)
 
     def fake_build(self, source, log_parent):
         host_dll = source / 'bin' / 'Debug' / 'net10.0' / 'Elsa.Server.Web.dll'
@@ -266,6 +304,62 @@ diff --git a/{project} b/{project}
         program.write_text(program.read_text().replace('var useSecrets = configuration.GetValue("Features:Secrets:Enabled", false);', 'const bool useSecrets = false;'))
         with self.assertRaisesRegex(ValueError, 'Mapped rehearsal does not match patch'):
             self.prepare()
+
+    def test_two_tenant_fixture_uses_scoped_synthetic_users_and_one_fresh_database(self):
+        self.apply_two_tenant_patches()
+        original_program = (self.source / 'Program.cs').read_bytes()
+        fixture_root = self.prepare(two_tenant=True,
+                                    optional_fixture_patches=(self.menu_patch, self.layout_patch, self.tenant_patch))
+        try:
+            content_root = fixture_root / 'content-root'
+            config = json.loads((content_root / 'appsettings.json').read_text())
+            plan = json.loads((fixture_root / 'launch-plan.json').read_text())
+            users = config['Identity']['Users']
+            roles = config['Identity']['Roles']
+            tenants = config['Multitenancy']['Tenants']
+            credentials = (fixture_root / 'synthetic-credentials.txt').read_text()
+
+            self.assertEqual({'tenant-a', 'tenant-b'}, {user['TenantId'] for user in users})
+            self.assertEqual(3, len(users))
+            denied = next(user for user in users if user['Name'] == 'synthetic-denied')
+            self.assertEqual('tenant-a', denied['TenantId'])
+            self.assertEqual([], denied['Roles'])
+            self.assertEqual({'tenant-a', 'tenant-b'}, {role['TenantId'] for role in roles})
+            self.assertTrue(all(role['Permissions'] == ['*'] for role in roles))
+            self.assertEqual({'tenant-a', 'tenant-b'}, {tenant['Id'] for tenant in tenants})
+            self.assertEqual({'127.0.0.1', 'tenant-b.localhost'},
+                             {tenant['Configuration']['Http']['Host'].split(':')[0] for tenant in tenants})
+            self.assertEqual(1, len({tenant['Configuration']['ConnectionStrings']['Sqlite'] for tenant in tenants}))
+            self.assertEqual(config['ConnectionStrings']['Sqlite'], tenants[0]['Configuration']['ConnectionStrings']['Sqlite'])
+            self.assertTrue(FIXTURE.is_within(Path(plan['databasePath']), content_root))
+            self.assertEqual(hashlib.sha256((content_root / 'appsettings.json').read_bytes()).hexdigest(),
+                             plan['privateAppsettingsSha256'])
+            self.assertTrue(config['Features']['Multitenancy']['Enabled'])
+            self.assertNotIn('Secrets', config['Features'])
+            self.assertIn('--Features:Secrets:Enabled=true', (fixture_root / 'launch-command.txt').read_text())
+            self.assertIn('TenantId claims', plan['tenantIsolationPolicy']['selection'])
+            self.assertTrue(plan['tenantIsolationPolicy']['databasePathShared'])
+            self.assertTrue(plan['twoTenantMode'])
+            self.assertTrue(plan['multitenancyEnabledOnlyInFixtureConfiguration'])
+            self.assertEqual({'studio-secrets-menu.patch', 'studio-bpmn-generator-layout.patch',
+                              'workbench-two-tenant-multitenancy.patch'},
+                             {Path(item['path']).name for item in plan['sourcePatchChain']['optionalFixturePatches']})
+            self.assertTrue(all(len(item['sha256']) == 64
+                                for item in plan['sourcePatchChain']['optionalFixturePatches']))
+            self.assertEqual(2, credentials.count('Username: synthetic-tenant-'))
+            self.assertIn('Username: synthetic-denied', credentials)
+            self.assertEqual(3, credentials.count('Password: '))
+            self.assertEqual(original_program, (self.source / 'Program.cs').read_bytes())
+        finally:
+            FIXTURE.cleanup_fixture(fixture_root, host_stopped=True)
+
+    def test_two_tenant_mode_requires_both_fixture_patches_before_build(self):
+        build = self.fake_build
+        with mock.patch.object(FIXTURE, 'build_host', wraps=build) as build_host:
+            with self.assertRaisesRegex(ValueError, 'requires the reviewed Workbench multitenancy patch'):
+                self.prepare(two_tenant=True,
+                             optional_fixture_patches=(self.menu_patch, self.layout_patch, self.tenant_patch))
+        build_host.assert_not_called()
 
     def test_supplemental_patch_overlay_is_reversed_before_workbench_patch(self):
         program = self.source / 'Program.cs'
