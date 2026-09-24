@@ -24,7 +24,7 @@ LEGACY_TYPES = {
 }
 SEQUENCE_TYPE = "Elsa.Sequence"
 UNSUPPORTED_CONTAINER_NAMES = {
-    "Flowchart", "ForEach", "ForEachV2", "Fork", "If", "Join", "Parallel", "Switch", "While"
+    "Flowchart", "For", "ForEach", "ForEachV2", "Fork", "If", "Join", "Parallel", "StateMachine", "Switch", "While"
 }
 UNSUPPORTED_TOPOLOGY_PROPERTIES = {"branches", "connections", "nodes"}
 UNSUPPORTED_TOPOLOGY_PROPERTY_CASES = UNSUPPORTED_TOPOLOGY_PROPERTIES | {
