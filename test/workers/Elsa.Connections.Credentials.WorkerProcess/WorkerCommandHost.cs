@@ -292,16 +292,7 @@ public static class WorkerCommandHost
                         var generationAvailable = false;
                         if (generationId is not null)
                         {
-                            try
-                            {
-                                var name = ManagedSecretNames.ForGeneration(connectionId, generationId);
-                                await services.GetRequiredService<IManagedSecretManager>().ResolveGenerationAsync(name, connectionId, generationId);
-                                generationAvailable = true;
-                            }
-                            catch (KeyNotFoundException)
-                            {
-                                generationAvailable = false;
-                            }
+                            generationAvailable = await IsGenerationAvailableAsync(services, connectionId, generationId);
                         }
 
                         return WriteResult(new
@@ -390,6 +381,51 @@ public static class WorkerCommandHost
         await secrets.Database.MigrateAsync();
         await using var management = await services.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync();
         await management.Database.MigrateAsync();
+    }
+
+    internal static async Task<bool> IsGenerationAvailableAsync(IServiceProvider services, string connectionId, string generationId)
+    {
+        var name = ManagedSecretNames.ForGeneration(connectionId, generationId);
+        var secretManager = services.GetRequiredService<ISecretManager>();
+        var managedSecretManager = services.GetRequiredService<IManagedSecretManager>();
+        var secret = await secretManager.GetAsync(name);
+        if (!IsGenerationMetadataAvailable(secret, connectionId, generationId))
+        {
+            return false;
+        }
+
+        try
+        {
+            await managedSecretManager.ResolveGenerationAsync(name, connectionId, generationId);
+            return true;
+        }
+        catch (KeyNotFoundException)
+        {
+            secret = await secretManager.GetAsync(name);
+            if (IsGenerationMetadataAvailable(secret, connectionId, generationId))
+            {
+                throw;
+            }
+
+            return false;
+        }
+        catch (InvalidOperationException)
+        {
+            secret = await secretManager.GetAsync(name);
+            if (IsGenerationMetadataAvailable(secret, connectionId, generationId))
+            {
+                throw;
+            }
+
+            return false;
+        }
+    }
+
+    private static bool IsGenerationMetadataAvailable(Secret? secret, string connectionId, string generationId)
+    {
+        return secret is { Status: SecretStatus.Active, LatestActiveVersion: not null } &&
+               string.Equals(secret.ManagedOwnerId, connectionId, StringComparison.Ordinal) &&
+               string.Equals(secret.ManagedGenerationId, generationId, StringComparison.Ordinal);
     }
 
     private static string RequiredEnvironment(string name) =>
