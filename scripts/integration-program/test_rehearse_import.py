@@ -119,10 +119,12 @@ class FullHistoryTests(unittest.TestCase):
             self.assertEqual(raw['destination'].encode('utf-8', errors='surrogateescape'),
                              b'src/extensions/raw-\xff.cs')
             self.assertIn(b'src/extensions/raw-\xff.cs\0', rehearsal.git(output, 'ls-tree', '-r', '-z', 'rehearsal'))
-            if not rehearsal._is_unrepresentable_worktree_path(raw['destination'], output):
-                raw_worktree_path = os.fsencode(output) + b'/src/extensions/raw-\xff.cs'
+            raw_worktree_path = os.fsencode(output) + b'/src/extensions/raw-\xff.cs'
+            if os.path.exists(raw_worktree_path):
                 with open(raw_worktree_path, 'rb') as materialized:
                     self.assertEqual(materialized.read(), b'raw path contents')
+            else:
+                self.assertTrue(rehearsal._is_unrepresentable_worktree_path(raw['destination'], output))
             with patch.dict(rehearsal.PINS, {k: refs[k] for k in ('extensions', 'studio')}):
                 with self.assertRaisesRegex(ValueError, 'Output must not exist'):
                     rehearsal.rehearse(repos['core'], {k: repos[k] for k in ('extensions', 'studio')}, output)
