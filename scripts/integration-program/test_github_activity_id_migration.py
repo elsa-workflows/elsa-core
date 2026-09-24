@@ -197,7 +197,7 @@ class GitHubActivityIdMigrationTests(unittest.TestCase):
                     self.assertFalse(output.exists())
 
     def test_unrelated_custom_leaf_with_container_short_name_is_preserved(self):
-        for type_name in ("Acme.For", "Acme.StateMachine"):
+        for type_name in ("Acme.For", "Acme.StateMachine", "Elsa.Custom.For"):
             with self.subTest(type_name=type_name):
                 document = copy.deepcopy(self.workflow)
                 leaf = {"type": type_name, "id": "custom-leaf", "version": 1}

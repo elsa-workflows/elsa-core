@@ -23,8 +23,9 @@ LEGACY_TYPES = {
     "Elsa.GitHub.Gists.GetGist": ("gistId", "String"),
 }
 SEQUENCE_TYPE = "Elsa.Sequence"
-UNSUPPORTED_CONTAINER_NAMES = {
-    "Flowchart", "For", "ForEach", "ForEachV2", "Fork", "If", "Join", "Parallel", "StateMachine", "Switch", "While"
+UNSUPPORTED_CONTAINER_TYPES = {
+    "Elsa.Flowchart", "Elsa.For", "Elsa.ForEach", "Elsa.ForEachV2", "Elsa.Fork", "Elsa.If",
+    "Elsa.Join", "Elsa.Parallel", "Elsa.StateMachine", "Elsa.Switch", "Elsa.While"
 }
 UNSUPPORTED_TOPOLOGY_PROPERTIES = {"branches", "connections", "nodes"}
 UNSUPPORTED_TOPOLOGY_PROPERTY_CASES = UNSUPPORTED_TOPOLOGY_PROPERTIES | {
@@ -151,8 +152,7 @@ def _workflow_activity_nodes(workflow: Any) -> list[tuple[str, dict[str, Any]]]:
                 visit(child, pointer + "/activities/" + str(index))
             return
 
-        short_name = type_name.rsplit(".", 1)[-1]
-        if (type_name.startswith("Elsa.") and short_name in UNSUPPORTED_CONTAINER_NAMES) or any(
+        if type_name in UNSUPPORTED_CONTAINER_TYPES or any(
             isinstance(node.get(property_name), (dict, list))
             for property_name in UNSUPPORTED_TOPOLOGY_PROPERTY_CASES
         ):
