@@ -6,13 +6,12 @@ import hashlib
 import importlib.util
 import io
 import json
-import os
 from pathlib import Path
 import stat
 import subprocess
 import tempfile
 import unittest
-from unittest import mock
+import unittest.mock as mock
 
 
 SCRIPT = Path(__file__).with_name('prepare_workbench_secrets_runtime.py')
