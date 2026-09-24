@@ -23,6 +23,113 @@ CURRENT_PROJECT = FIXTURE / 'current-core/SqlServerBridgeRunner.csproj'
 PINNED_CORE_COMMIT = 'c37e9d7a2fa7e7c2af802b211e3d59db45fc2f6f'
 PINNED_SDK = '10.0.300'
 CURRENT_STAGE = 'startup'
+HEX_SHA256 = re.compile(r'[0-9A-F]{64}\Z')
+SOURCE_AGGREGATE_IDS = (
+    'legacy-aggregate-default', 'legacy-aggregate-tenant-a',
+    'legacy-aggregate-tenant-b', 'legacy-aggregate-tenant-b-exclusive',
+)
+HASH_FIELDS = {'sourceRowHashSha256', 'targetSnapshotSha256'}
+HASH_LIST_FIELDS = {'plaintextSha256', 'ciphertextSha256', 'sourceRowIdsSha256'}
+SOURCE_RESULT_FIELDS = {
+    'phase', 'result', 'appliedMigrations', 'sourceRows', 'sourceAggregateIds',
+    'plaintextSha256', 'sourceRowHashSha256', 'ciphertextSha256',
+    'sourceRowIdsSha256', 'expiresInMaximumTicks',
+    'expiresInAllRepresentableBySqlTime', 'sourceUnchangedReadable',
+    'plaintextPrinted', 'keysPrinted', 'ciphertextPrinted',
+}
+CORE_RESULT_FIELDS = {
+    'phase', 'result', 'targetCoreSourceCommit', 'targetMigrationIds',
+    'targetSnapshotSha256', 'sourceRows', 'sourceAggregateIds',
+    'targetAggregates', 'targetVersions', 'persistedAggregates',
+    'persistedVersions', 'sidecarRows', 'expiresAtMappingExact',
+    'expiresInSidecarExact', 'statusMappingExact', 'tenantMappingExact',
+    'sourceExpiresInValuesSqlTimeRepresentable', 'nativeTenantMappingVerified',
+    'defaultTenantStoredAsEmpty', 'crossTenantReadIsolationVerified',
+    'crossTenantSameNameVerified', 'crossTenantWriteIsolationVerified',
+    'sidecarFieldValuesExact', 'lifecycleOwnershipMarkersNotInvented',
+    'encryptedValuesRewritten', 'rawLegacyCiphertextRejectedByCoreStore',
+    'wrongCoreKeyRejected', 'missingCoreKeyRejected', 'wrongOldKeyRejected',
+    'missingOldKeyRejected', 'wrongDataProtectionContextRejected',
+    'legacyOwnerAuthorizationAdapterRequired', 'legacyIdCompatibilityAdapterRequired',
+    'cutoverAllowed', 'plaintextSha256', 'plaintextPrinted', 'keysPrinted',
+    'ciphertextPrinted', 'rejectionCode', 'conversionWritesUnchanged',
+    'originalDestinationUnchanged',
+}
+REJECTION_CODES = {
+    'AggregateIdCollision', 'InjectedWriteFailure', 'OldKeyUnavailable',
+    'WrongCoreKey', 'MissingCoreKey', 'TargetAlreadyExists',
+    'UnknownSourceMigrationHistory', 'UnknownSourceSchema', 'UnknownStatus',
+    'InvalidVersionSequence', 'InvalidLatestMarker',
+}
+
+
+def validate_runner_result(result, *, source):
+    """Reject unexpected runner output before it can enter a public CI artifact."""
+    allowed = SOURCE_RESULT_FIELDS if source else CORE_RESULT_FIELDS
+    if not isinstance(result, dict) or set(result) - allowed:
+        raise RuntimeError('Runner returned an unexpected report field')
+    phase = 'extensions-3.8.1-sqlserver' if source else 'current-core-sqlserver-bridge'
+    results = {'seeded', 'snapshotted', 'readable'} if source else {'converted', 'rejected'}
+    if result.get('phase') != phase or result.get('result') not in results:
+        raise RuntimeError('Runner returned an unexpected phase or result')
+    if not source and result.get('targetCoreSourceCommit') != PINNED_CORE_COMMIT:
+        raise RuntimeError('Runner returned an unexpected Core source pin')
+    if result['result'] != 'snapshotted' and any(result.get(key) is not False for key in (
+            'plaintextPrinted', 'keysPrinted', 'ciphertextPrinted')):
+        raise RuntimeError('Runner did not prove its redaction flags')
+    if result['result'] == 'converted' and result.get('cutoverAllowed') is not False:
+        raise RuntimeError('Runner did not deny cutover')
+    if 'rejectionCode' in result and result['rejectionCode'] not in REJECTION_CODES:
+        raise RuntimeError('Runner returned an unexpected rejection code')
+    for key, value in result.items():
+        if key in ('phase', 'result', 'targetCoreSourceCommit', 'rejectionCode'):
+            continue
+        if key in HASH_FIELDS and (not isinstance(value, str) or not HEX_SHA256.fullmatch(value)):
+            raise RuntimeError(f'Runner returned an unsafe {key}')
+        if key in HASH_LIST_FIELDS and (not isinstance(value, list) or
+                                        not all(isinstance(item, str) and HEX_SHA256.fullmatch(item) for item in value)):
+            raise RuntimeError(f'Runner returned an unsafe {key}')
+        if key == 'sourceAggregateIds' and value != list(SOURCE_AGGREGATE_IDS):
+            raise RuntimeError('Runner returned unexpected synthetic aggregate IDs')
+        if key == 'appliedMigrations' and value not in (
+                ['20241011092820_V3_3'],
+                ['unexpected-history'] if result['result'] == 'snapshotted' else []):
+            raise RuntimeError('Runner returned unexpected source migrations')
+        if key == 'targetMigrationIds' and value != [
+                '20260531141743_Initial', '20260825230253_SecretTenancy',
+                '20260914120000_SecretDefaultTenantUniqueness',
+                '20260923164247_ManagedSecretOwnership']:
+            raise RuntimeError('Runner returned unexpected target migrations')
+        if key in HASH_FIELDS | HASH_LIST_FIELDS | {'sourceAggregateIds', 'appliedMigrations', 'targetMigrationIds'}:
+            continue
+        if key in {'sourceRows', 'targetAggregates', 'targetVersions',
+                   'persistedAggregates', 'persistedVersions', 'sidecarRows', 'expiresInMaximumTicks'}:
+            if type(value) is not int or value < 0:
+                raise RuntimeError(f'Runner returned an unsafe {key}')
+            continue
+        if type(value) is not bool:
+            raise RuntimeError(f'Runner returned an unsafe {key}')
+        if key in {'plaintextPrinted', 'keysPrinted', 'ciphertextPrinted', 'cutoverAllowed'} and value:
+            raise RuntimeError(f'Runner reported unsafe {key}')
+    return result
+
+
+def assert_report_redacted(report, *, connections, password):
+    rendered = json.dumps(report, indent=2) + '\n'
+    synthetic_plaintext = (
+        'Synthetic default tenant secret version one',
+        'Synthetic default tenant secret version two',
+        'Synthetic tenant A secret value',
+        'Synthetic tenant B secret value',
+        'Synthetic tenant B exclusive value',
+    )
+    if any(material and material in rendered for material in (*connections, password, *synthetic_plaintext)):
+        raise RuntimeError('Report contains protected synthetic material')
+    if not all(report.get(key) is False for key in (
+            'sourceConnectionStringPrinted', 'generatedPasswordPrinted',
+            'plaintextPrinted', 'keysPrinted', 'ciphertextPrinted', 'cutoverAllowed')):
+        raise RuntimeError('Report redaction/cutover flags are unsafe')
+    return rendered
 
 
 def run(command, *, cwd=None, env=None, capture=False, timeout=900):
@@ -53,6 +160,24 @@ def verify_local_tooling(package, feed, source_commit):
         raise ValueError('Pinned package-manifest tooling nuspec source commit mismatch')
     return {'id': package['id'], 'version': package['version'], 'sha512': digest,
             'sourceCommit': source_commit, 'localArtifactVerified': True}
+
+
+def verify_current_core_lock(project):
+    lock_path = project.parent / 'packages.lock.json'
+    if not lock_path.is_file():
+        raise FileNotFoundError(f'Missing pinned-Core lockfile: {lock_path}')
+    lock = json.loads(lock_path.read_text())
+    packages = lock.get('dependencies', {}).get('net10.0')
+    if not isinstance(packages, dict) or not packages:
+        raise ValueError('Pinned-Core lockfile has no net10.0 dependency graph')
+    for package_id, package in packages.items():
+        if not isinstance(package, dict) or not package.get('resolved') or not package.get('contentHash'):
+            raise ValueError(f'Pinned-Core lock entry is incomplete: {package_id}')
+    return {
+        'sha256': hashlib.sha256(lock_path.read_bytes()).hexdigest(),
+        'targetFramework': 'net10.0',
+        'packageCount': len(packages),
+    }
 
 
 def sql_server_password(connection):
@@ -94,7 +219,8 @@ def run_old(action, connection, packages_dir, key_ring=None):
         output = run(command, cwd=ROOT, env=env, capture=True).stdout
     except RuntimeError as error:
         raise RuntimeError(str(error).replace(connection, '<redacted connection string>')) from error
-    return json.loads(next(line for line in reversed(output.splitlines()) if line.startswith('{')))
+    result = json.loads(next(line for line in reversed(output.splitlines()) if line.startswith('{')))
+    return validate_runner_result(result, source=True)
 
 
 def prepare_pinned_core(destination):
@@ -128,7 +254,8 @@ def run_current(project, config, packages_dir, source_connection, target_connect
         for connection in (source_connection, target_connection):
             safe = safe.replace(connection, '<redacted connection string>')
         raise RuntimeError(safe) from error
-    return json.loads(next(line for line in reversed(output.splitlines()) if line.startswith('{')))
+    result = json.loads(next(line for line in reversed(output.splitlines()) if line.startswith('{')))
+    return validate_runner_result(result, source=False)
 
 
 def run_rejection(project, config, packages, source, target_name, container, base_connection, password,
@@ -144,16 +271,11 @@ def run_rejection(project, config, packages, source, target_name, container, bas
         raise RuntimeError(f'{expected} rejection changed source data')
     result['sourceUnchanged'] = True
     if result.get('result') != 'rejected' or result.get('rejectionCode') != expected:
-        print(json.dumps({'expectedCode': expected, 'actualCode': result.get('rejectionCode'),
-                          'actualResult': result.get('result')}), file=sys.stderr)
-        raise RuntimeError(f'Expected {expected} rejection, got {result}')
+        raise RuntimeError(f'Expected {expected} rejection')
     if result.get('conversionWritesUnchanged') is not True:
-        print(json.dumps({'expectedCode': expected, 'conversionWritesUnchanged': result.get('conversionWritesUnchanged')}), file=sys.stderr)
-        raise RuntimeError(f'{expected} rejection changed the destination: {result}')
+        raise RuntimeError(f'{expected} rejection changed the destination')
     if result.get('originalDestinationUnchanged') is not expected_original_unchanged:
-        print(json.dumps({'expectedCode': expected, 'expectedOriginalUnchanged': expected_original_unchanged,
-                          'actualOriginalUnchanged': result.get('originalDestinationUnchanged')}), file=sys.stderr)
-        raise RuntimeError(f'{expected} rejection changed its original fresh destination state: {result}')
+        raise RuntimeError(f'{expected} rejection changed its original fresh destination state')
     return result
 
 
@@ -161,6 +283,8 @@ def main():
     global CURRENT_STAGE
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--report-out', type=Path)
+    parser.add_argument('--update-core-lockfile', action='store_true',
+                        help='Regenerate the pinned Core runner lockfile with the verified fixture feed')
     args = parser.parse_args()
     manifest = json.loads(MANIFEST.read_text())
     if manifest['targetFramework'] != 'net10.0' or manifest['targetCoreSourceCommit'] != PINNED_CORE_COMMIT:
@@ -207,8 +331,16 @@ def main():
         env = os.environ.copy()
         env['NUGET_PACKAGES'] = str(packages)
         CURRENT_STAGE = 'pinned-core-restore'
-        run(['dotnet', 'restore', str(current_project), '--configfile', str(config),
-             '--packages', str(packages), '-m:1'], cwd=FIXTURE, env=env, capture=True, timeout=600)
+        core_restore = ['dotnet', 'restore', str(current_project), '--configfile', str(config),
+                        '--packages', str(packages), '-m:1']
+        if not args.update_core_lockfile:
+            core_restore.append('--locked-mode')
+        run(core_restore, cwd=FIXTURE, env=env, capture=True, timeout=600)
+        core_lock = verify_current_core_lock(current_project)
+        if args.update_core_lockfile:
+            shutil.copyfile(current_project.parent / 'packages.lock.json', CURRENT_PROJECT.parent / 'packages.lock.json')
+            print(json.dumps({'pinnedCorePackageLock': core_lock}, indent=2))
+            return 0
         CURRENT_STAGE = 'runner-builds'
         run(['dotnet', 'build', str(OLD_PROJECT), '--no-restore', '--configuration', 'Release', '-m:1'],
             cwd=FIXTURE, env=env, capture=True, timeout=900)
@@ -358,10 +490,12 @@ def main():
                 'fixtureCodeCommit': run(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], capture=True).stdout.strip(),
                 'checkedSourceFiles': {
                     str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
-                    for path in (Path(__file__).resolve(), CURRENT_PROJECT.parent / 'Program.cs', OLD_PROJECT.parent / 'Program.cs')
+                    for path in (Path(__file__).resolve(), CURRENT_PROJECT.parent / 'Program.cs',
+                                 CURRENT_PROJECT.parent / 'packages.lock.json', OLD_PROJECT.parent / 'Program.cs')
                 },
                 'verifiedPackages': verified,
                 'oldPackageLock': old_locks,
+                'currentCorePackageLock': core_lock,
                 'oldPackageSeed': seed,
                 'bridge': converted,
                 'oldPackageReopenAfterBridge': reopened,
@@ -380,7 +514,7 @@ def main():
                     'legacy SQL Server ExpiresIn values of 24 hours or longer'
                 ]
             }
-            rendered = json.dumps(report, indent=2) + '\n'
+            rendered = assert_report_redacted(report, connections=(source, target, base_connection), password=password)
             if args.report_out:
                 args.report_out.parent.mkdir(parents=True, exist_ok=True)
                 args.report_out.write_text(rendered)

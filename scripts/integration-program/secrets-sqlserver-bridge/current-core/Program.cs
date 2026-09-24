@@ -244,16 +244,18 @@ internal static class Program
             var targetAfter = await SnapshotTargetAsync(services);
             DiagnosticStage = "verify-sidecar";
             var sidecarExact = await VerifySidecarAsync(services, source, converted);
-            var expiryMappingExact = converted.SelectMany(secret => secret.Versions.Select(version =>
+            // Compare the source with a fresh repository read, not the objects prepared for SaveAsync.
+            var persistedSecrets = await ReadAllTenantVisibleAsync(services, tenantAccessor);
+            var expiryMappingExact = persistedSecrets.SelectMany(secret => secret.Versions.Select(version =>
             {
                 var sourceRow = source.Single(row => row.SecretId == secret.Id && row.Version == version.Version);
                 return (sourceRow.ExpiresAt is null && version.ExpiresAt is null)
                     || (sourceRow.ExpiresAt is { } expiresAt && version.ExpiresAt is { } targetExpiry && expiresAt.EqualsExact(targetExpiry));
             })).All(exact => exact);
-            var statusMappingExact = converted.All(secret =>
+            var statusMappingExact = persistedSecrets.All(secret =>
                 secret.Status == MapStatus(source.Single(row => row.SecretId == secret.Id && row.IsLatest).Status)
                 && secret.Versions.All(version => version.Status == MapStatus(source.Single(row => row.SecretId == secret.Id && row.Version == version.Version).Status)));
-            var tenantMappingExact = converted.All(secret =>
+            var tenantMappingExact = persistedSecrets.All(secret =>
             {
                 var sourceTenant = NormalizeLegacyTenant(source.First(row => row.SecretId == secret.Id).TenantIdRaw);
                 var expectedTenant = sourceTenant == Tenant.DefaultTenantId ? Tenant.DefaultTenantId : tenantMap[sourceTenant];
@@ -262,7 +264,6 @@ internal static class Program
             DiagnosticStage = "verify-expiry-and-tenant";
             var repositoryIsolation = await VerifyTenantRepositoryAsync(services, tenantAccessor);
             DiagnosticStage = "verify-encryption";
-            var persistedSecrets = await ReadAllTenantVisibleAsync(services, tenantAccessor);
             var encryption = await VerifyEncryptionAsync(persistedSecrets, source, plaintextByLegacyId, encryptedStore, coreProtector);
             var lifecycleOwnershipMarkersNotInvented = persistedSecrets.All(secret =>
                 secret.ManagedOwnerId == null && secret.ManagedGenerationId == null);
@@ -314,7 +315,7 @@ internal static class Program
                 tenantMappingExact,
                 sourceExpiresInValuesSqlTimeRepresentable = source.All(row => row.ExpiresInRaw == null || TimeSpan.Parse(row.ExpiresInRaw, CultureInfo.InvariantCulture) < TimeSpan.FromDays(1)),
                 nativeTenantMappingVerified = tenantMappingExact,
-                defaultTenantStoredAsEmpty = converted.Where(secret => secret.Id == "legacy-aggregate-default").All(secret => secret.TenantId == Tenant.DefaultTenantId),
+                defaultTenantStoredAsEmpty = persistedSecrets.Where(secret => secret.Id == "legacy-aggregate-default").All(secret => secret.TenantId == Tenant.DefaultTenantId),
                 crossTenantReadIsolationVerified = repositoryIsolation,
                 crossTenantSameNameVerified = true,
                 crossTenantWriteIsolationVerified = repositoryIsolation,

@@ -1,7 +1,8 @@
 import json
 from pathlib import Path
-import re
 import unittest
+
+from run_secrets_sqlserver_bridge import assert_report_redacted, validate_runner_result
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -54,7 +55,11 @@ class SqlServerSecretsBridgeFixtureTests(unittest.TestCase):
         self.assertIn('cutoverAllowed = false', runner)
         self.assertIn('const string novelName = "tenant-b:forged-novel"', runner)
         self.assertIn('var forgedRowAbsent = tenantBAfter.All(row => row.Name != novelName);', runner)
-        self.assertIn('repository write isolation', readme.lower())
+        self.assertLess(runner.index('var persistedSecrets = await ReadAllTenantVisibleAsync'),
+                        runner.index('var expiryMappingExact = persistedSecrets.SelectMany'))
+        self.assertIn('var statusMappingExact = persistedSecrets.All', runner)
+        self.assertIn('var tenantMappingExact = persistedSecrets.All', runner)
+        self.assertIn('rejects a repository write with a novel cross-tenant name', readme.lower())
         self.assertNotRegex(script, r'(?i)dotnet\s+nuget\s+push|nuget\s+push|gh\s+release')
 
     def test_ci_runs_and_retains_redacted_report(self):
@@ -73,8 +78,60 @@ class SqlServerSecretsBridgeFixtureTests(unittest.TestCase):
         self.assertIn("safe = safe.replace(connection, '<redacted connection string>')", script)
         self.assertIn("print(f'Fixture failed at {CURRENT_STAGE}: {type(error).__name__}{detail}', file=sys.stderr)", script)
         self.assertIn("'bin/Release/net10.0/SqlServerBridgeRunner.dll'", script)
-        self.assertIn("'--packages', str(packages), '-m:1'], cwd=FIXTURE", script)
+        self.assertIn("'--packages', str(packages), '-m:1']", script)
+        self.assertIn("core_restore.append('--locked-mode')", script)
+        self.assertIn('verify_current_core_lock(current_project)', script)
         self.assertIn("result.get('originalDestinationUnchanged') is not expected_original_unchanged", script)
+
+    def test_pinned_core_restore_uses_committed_full_lock_graph(self):
+        project = FIXTURE / 'current-core/SqlServerBridgeRunner.csproj'
+        lock_path = project.parent / 'packages.lock.json'
+        script = SCRIPT.read_text()
+        project_text = project.read_text()
+        lock = json.loads(lock_path.read_text())
+        graph = lock['dependencies']['net10.0']
+
+        self.assertIn('<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>', project_text)
+        self.assertGreater(len(graph), 0)
+        for package_id, package in graph.items():
+            with self.subTest(package=package_id):
+                self.assertTrue(package.get('resolved'))
+                self.assertRegex(package.get('contentHash', ''), r'^[A-Za-z0-9+/]+={0,2}$')
+        self.assertRegex(script, r"'currentCorePackageLock':\s*core_lock")
+        self.assertIn("CURRENT_PROJECT.parent / 'packages.lock.json'", script)
+        self.assertIn("args.update_core_lockfile", script)
+
+    def test_report_guard_rejects_injected_material_and_unexpected_fields(self):
+        valid = {
+            'phase': 'extensions-3.8.1-sqlserver', 'result': 'seeded',
+            'sourceRows': 5, 'plaintextPrinted': False, 'keysPrinted': False,
+            'ciphertextPrinted': False,
+        }
+        self.assertEqual(validate_runner_result(valid, source=True), valid)
+        with self.assertRaisesRegex(RuntimeError, 'unexpected report field'):
+            validate_runner_result({**valid, 'secretValue': 'Synthetic tenant A secret value'}, source=True)
+        with self.assertRaisesRegex(RuntimeError, 'unsafe sourceRowHashSha256'):
+            validate_runner_result({**valid, 'sourceRowHashSha256': 'Synthetic tenant A secret value'}, source=True)
+        with self.assertRaisesRegex(RuntimeError, 'did not prove its redaction flags'):
+            validate_runner_result({**valid, 'plaintextPrinted': True}, source=True)
+        self.assertEqual(validate_runner_result({
+            'phase': 'extensions-3.8.1-sqlserver', 'result': 'snapshotted',
+            'appliedMigrations': ['unexpected-history'],
+        }, source=True)['result'], 'snapshotted')
+
+        report = dict(sourceConnectionStringPrinted=False, generatedPasswordPrinted=False,
+                      plaintextPrinted=False, keysPrinted=False, ciphertextPrinted=False,
+                      cutoverAllowed=False, oldPackageSeed=valid)
+        self.assertIn('"oldPackageSeed"', assert_report_redacted(
+            report, connections=('Server=synthetic;Password=synthetic-password',),
+            password='synthetic-password'))
+        with self.assertRaisesRegex(RuntimeError, 'protected synthetic material'):
+            assert_report_redacted({**report, 'injected': 'synthetic-password'},
+                                   connections=('Server=synthetic;Password=synthetic-password',),
+                                   password='synthetic-password')
+        with self.assertRaisesRegex(RuntimeError, 'protected synthetic material'):
+            assert_report_redacted({**report, 'injected': 'Synthetic tenant A secret value'},
+                                   connections=(), password='synthetic-password')
 
 
 if __name__ == '__main__':
