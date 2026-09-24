@@ -179,6 +179,34 @@ class MappedSlackPackageProofTests(unittest.TestCase):
             {Path(command[2]).relative_to(rehearsal).as_posix() for command in test_commands},
         )
 
+    def test_declared_test_receipt_rejects_an_unexpected_skip(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            results_dir = Path(temporary_directory)
+            result = ElementTree.Element("TestRun")
+            results = ElementTree.SubElement(result, "Results")
+            ElementTree.SubElement(
+                results,
+                "UnitTestResult",
+                testName="Unexpected.Test.Skip",
+                outcome="NotExecuted",
+            )
+            summary = ElementTree.SubElement(result, "ResultSummary", outcome="Completed")
+            counters = {name: "0" for name in proof.shared.TRX_COUNTERS}
+            counters.update(total="1", notExecuted="1")
+            ElementTree.SubElement(summary, "Counters", counters)
+            ElementTree.ElementTree(result).write(
+                results_dir / "unexpected-skip.trx",
+                encoding="utf-8",
+                xml_declaration=True,
+            )
+
+            with self.assertRaisesRegex(RuntimeError, "Undocumented non-passing result.*Unexpected.Test.Skip"):
+                proof.read_declared_test_receipt(
+                    results_dir,
+                    "test/other/Other.Tests.csproj",
+                    "net8.0",
+                )
+
     def test_retained_provenance_recheck_rejects_dotdot_output_alias(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory).resolve()

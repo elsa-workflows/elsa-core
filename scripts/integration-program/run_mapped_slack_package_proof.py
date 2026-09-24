@@ -690,70 +690,38 @@ def read_declared_test_receipt(results_dir: Path, source_project_path: str, fram
     if source_project_path == known_slack_test and framework == "net10.0":
         return {"result": "known-baseline-skip", "receipt": shared.read_focused_test_receipt(results_dir)}
 
-    trx_files = sorted(results_dir.rglob("*.trx"))
-    if not trx_files:
-        raise RuntimeError(f"Declared test run produced no TRX result: {source_project_path} {framework}")
-
-    aggregate = {name: 0 for name in shared.TRX_COUNTERS}
+    parsed = shared.read_test_trx_results(
+        results_dir,
+        missing_results_message=f"Declared test run produced no TRX result: {source_project_path} {framework}",
+    )
     unit_tests = []
-    file_receipts = []
-    for trx_path in trx_files:
-        root = ElementTree.parse(trx_path).getroot()
-        summary = root.find("{*}ResultSummary")
-        counters = summary.find("{*}Counters") if summary is not None else None
-        if summary is None or counters is None or summary.get("outcome") != "Completed":
-            raise RuntimeError(f"Declared test run has no completed summary: {trx_path}")
-        run_info_errors = [
-            info.get("outcome")
-            for info in root.findall(".//{*}RunInfo")
-            if info.get("outcome") in {"Error", "Abort"}
-        ]
-        if run_info_errors:
-            raise RuntimeError(f"Declared test TRX has failed or aborted run information in {trx_path}: {run_info_errors}")
-
-        file_counts = {}
-        for name in shared.TRX_COUNTERS:
-            raw_count = counters.get(name)
-            if raw_count is None:
-                raise RuntimeError(f"Declared test TRX is missing {name} counter: {trx_path}")
-            try:
-                file_counts[name] = int(raw_count)
-            except ValueError as error:
-                raise RuntimeError(f"Declared test TRX has invalid {name} counter: {trx_path}") from error
-            if file_counts[name] < 0:
-                raise RuntimeError(f"Declared test TRX has negative {name} counter: {trx_path}")
-            aggregate[name] += file_counts[name]
-
-        results = root.findall(".//{*}UnitTestResult")
-        if file_counts["total"] != len(results):
+    for result in parsed.unit_results:
+        outcome = result.get("outcome")
+        if outcome != "Passed":
             raise RuntimeError(
-                f"Declared test TRX total does not match its results in {trx_path}: "
-                f"{file_counts['total']} != {len(results)}"
+                f"Undocumented non-passing result in declared test TRX {source_project_path} {framework}: "
+                f"{result.get('testName')!r} outcome={outcome!r}"
             )
-        for result in results:
-            outcome = result.get("outcome")
-            if outcome != "Passed":
-                raise RuntimeError(
-                    f"Undocumented non-passing result in declared test TRX {trx_path}: "
-                    f"{result.get('testName')!r} outcome={outcome!r}"
-                )
-            unit_tests.append({"name": result.get("testName"), "outcome": outcome})
-        file_receipts.append({"file": trx_path.name, "counters": file_counts, "unit_result_count": len(results)})
+        unit_tests.append({"name": result.get("testName"), "outcome": outcome})
 
-    if not unit_tests or aggregate["passed"] != aggregate["total"] or aggregate["executed"] != aggregate["total"]:
+    if (
+        not unit_tests
+        or parsed.counters["passed"] != parsed.counters["total"]
+        or parsed.counters["executed"] != parsed.counters["total"]
+    ):
         raise RuntimeError(
             f"Declared test results are incomplete for {source_project_path} {framework}: "
-            f"total={aggregate['total']} executed={aggregate['executed']} passed={aggregate['passed']}"
+            f"total={parsed.counters['total']} executed={parsed.counters['executed']} passed={parsed.counters['passed']}"
         )
-    if any(aggregate[name] for name in (
+    if any(parsed.counters[name] for name in (
         "failed", "error", "timeout", "aborted", "passedButRunAborted", "notRunnable",
         "notExecuted", "disconnected", "inconclusive", "inProgress", "pending",
     )):
-        raise RuntimeError(f"Declared test counters contain non-passing results: {aggregate}")
+        raise RuntimeError(f"Declared test counters contain non-passing results: {parsed.counters}")
 
     return {
         "result": "passed",
-        "receipt": {"result": aggregate, "trx_files": file_receipts, "unit_tests": unit_tests},
+        "receipt": {"result": parsed.counters, "trx_files": parsed.files, "unit_tests": unit_tests},
     }
 
 
