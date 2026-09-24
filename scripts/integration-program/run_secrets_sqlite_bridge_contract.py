@@ -85,6 +85,7 @@ def download_package(url):
                 raise
             print(f'Transient package HTTP {error.code}; retrying fixture download', file=sys.stderr)
             time.sleep(2 ** attempt)
+    raise RuntimeError('Package download exhausted retries without a response')
 
 
 def verify_package(package, phase, feed_dir):
