@@ -31,8 +31,16 @@ class LegacyAssetDispositionTests(unittest.TestCase):
         self.assertEqual(2, self.ledger["schema_version"])
         self.assertEqual(163, len(self.ledger["assets"]))
         self.assertEqual({"extensions": 80, "studio": 83, "total": 163}, self.ledger["asset_counts"])
-        self.assertEqual(5, sum(row["status"] == "represented_in_core" for row in self.ledger["assets"]))
+        self.assertEqual(55, sum(row["status"] == "represented_in_core" for row in self.ledger["assets"]))
         self.assertEqual(1, sum(row["status"] == "retired_from_active_tree" for row in self.ledger["assets"]))
+        studio_tooling = [row for row in self.ledger["assets"]
+                          if row["category"] == "studio_agent_specification_tooling"]
+        self.assertEqual(50, len(studio_tooling))
+        self.assertTrue(all(row["status"] == "represented_in_core" for row in studio_tooling))
+        self.assertEqual({"identical": 42, "expanded": 8}, {
+            representation: sum(row["completion"]["representation"] == representation for row in studio_tooling)
+            for representation in ("identical", "expanded")
+        })
 
     def test_frozen_real_receipt_projection_matches_and_is_hash_pinned(self) -> None:
         fixture_hash = hashlib.sha256(DEFAULT_RECEIPT.read_bytes()).hexdigest()
