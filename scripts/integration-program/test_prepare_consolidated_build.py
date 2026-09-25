@@ -191,15 +191,20 @@ new file mode 100644
             'studio': '20ceaeeed7e671f0c9662003e82063026f2216de',
         }
         profiles = build.supported_source_profiles()
-        self.assertEqual(profiles[-2], current)
-        self.assertEqual(profiles[-3], build.PREVIOUS_CURRENT_TIP_SOURCE_COMMITS)
-        self.assertEqual(profiles[-1], {
+        self.assertEqual(profiles[-3], current)
+        self.assertEqual(profiles[-4], build.PREVIOUS_CURRENT_TIP_SOURCE_COMMITS)
+        self.assertEqual(profiles[-2], {
             'core': 'c4b3ce150160e3c9062b57f7b158fd6b968e1631',
             'extensions': current['extensions'],
             'studio': current['studio'],
         })
+        self.assertEqual(profiles[-1], {
+            'core': 'e96fd36f4f9a838c6289fd48cf07669ea3229a5e',
+            'extensions': current['extensions'],
+            'studio': current['studio'],
+        })
         self.assertEqual(profiles[0], build.SOURCE_COMMITS)
-        self.assertEqual(len(profiles), 6)
+        self.assertEqual(len(profiles), 7)
 
         agent = self.root / 'src/extensions/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj'
         contexts = self.root / 'src/extensions/workflows/Elsa.Studio.WorkflowContexts/Elsa.Studio.WorkflowContexts.csproj'
@@ -230,6 +235,12 @@ new file mode 100644
         self.assertNotIn('Blazored.FluentValidation', agent.read_text())
         self.assertNotIn('Blazored.FluentValidation', contexts.read_text())
 
+        agent.write_bytes(original_agent)
+        contexts.write_bytes(original_contexts)
+        build.remove_unused_blazored_references(self.root, build.CORE_E96_SOURCE_COMMITS)
+        self.assertNotIn('Blazored.FluentValidation', agent.read_text())
+        self.assertNotIn('Blazored.FluentValidation', contexts.read_text())
+
     def test_current_tip_profiles_rehearsal_receipts_prepare_and_apply_patch(self):
         repos = {name: self.root / name for name in ('core', 'extensions', 'studio')}
         extension_files = (
@@ -251,6 +262,7 @@ new file mode 100644
         for name, profile in (
             ('a13ac', build.CURRENT_TIP_SOURCE_COMMITS),
             ('c4b3ce', build.POST_REGISTRY_SOURCE_COMMITS),
+            ('e96fd', build.CORE_E96_SOURCE_COMMITS),
         ):
             with self.subTest(profile=name):
                 output = self.root / f'{name}-rehearsal'
