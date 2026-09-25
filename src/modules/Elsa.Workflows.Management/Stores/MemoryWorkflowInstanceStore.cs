@@ -16,6 +16,7 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
 {
     private readonly MemoryStore<WorkflowInstance> _store;
     private readonly ITenantAccessor? _tenantAccessor;
+    private readonly object _sync = new();
 
     /// <summary>
     /// Constructor.
@@ -126,31 +127,41 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        ApplyCurrentTenant(instance);
-        _store.Save(instance, x => x.Id);
+        lock (_sync)
+        {
+            ApplyCurrentTenant(instance);
+            _store.Save(instance, x => x.Id);
+        }
         return ValueTask.CompletedTask;
     }
 
     public ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        ApplyCurrentTenant(instance);
-        _store.Add(instance, GetId);
+        lock (_sync)
+        {
+            ApplyCurrentTenant(instance);
+            _store.Add(instance, GetId);
+        }
         return ValueTask.CompletedTask;
     }
 
     public ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        _store.Update(instance, GetId);
+        lock (_sync)
+            _store.Update(instance, GetId);
         return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
     public ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
-        var instanceList = instances.ToList();
-        foreach (var instance in instanceList)
-            ApplyCurrentTenant(instance);
-        _store.SaveMany(instanceList, GetId);
+        lock (_sync)
+        {
+            var instanceList = instances.ToList();
+            foreach (var instance in instanceList)
+                ApplyCurrentTenant(instance);
+            _store.SaveMany(instanceList, GetId);
+        }
         return ValueTask.CompletedTask;
     }
 
@@ -174,6 +185,40 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
             throw new InvalidOperationException($"Workflow instance with ID '{workflowInstanceId}' does not exist.");
         
         workflowInstance.UpdatedAt = value;
+    }
+
+    /// <inheritdoc />
+    public ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false)
+    {
+        // Same lock as Save/Update so a runner's terminal persist cannot land between the
+        // non-terminal check and the Interrupted mutations.
+        lock (_sync)
+        {
+            var instance = _store.Find(x => x.Id == workflowInstanceId);
+            if (instance is null)
+                return ValueTask.FromResult(false);
+
+            if (instance.Status == WorkflowStatus.Finished)
+            {
+                if (!allowFinishedCancelled || instance.SubStatus != WorkflowSubStatus.Cancelled)
+                    return ValueTask.FromResult(false);
+            }
+
+            instance.Status = WorkflowStatus.Running;
+            instance.SubStatus = WorkflowSubStatus.Interrupted;
+            instance.IsExecuting = false;
+
+            // In-place completion on the same object does not take this lock. If Status became
+            // Finished, do not keep Interrupted or report success.
+            if (instance.Status == WorkflowStatus.Finished)
+            {
+                instance.SubStatus = WorkflowSubStatus.Finished;
+                instance.IsExecuting = false;
+                return ValueTask.FromResult(false);
+            }
+
+            return ValueTask.FromResult(true);
+        }
     }
 
     private static string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;

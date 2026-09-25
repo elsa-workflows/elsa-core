@@ -52,6 +52,7 @@ public class UserCancelDuringDrainTests
         var cycles = _services.GetRequiredService<IExecutionCycleRegistry>();
         var runTask = Task.Run(() => client.RunInstanceAsync(RunWorkflowInstanceRequest.Empty));
         await WaitUntilAsync(() => cycles.ActiveCount > 0, TimeSpan.FromSeconds(2));
+        var originalHandle = Assert.Single(cycles.ListActiveCycles(), handle => handle.WorkflowInstanceId == client.WorkflowInstanceId);
 
         await client.CancelAsync();
 
@@ -63,7 +64,8 @@ public class UserCancelDuringDrainTests
             return current is { Status: WorkflowStatus.Finished, SubStatus: WorkflowSubStatus.Cancelled };
         }, TimeSpan.FromSeconds(2));
 
-        Assert.True(cycles.ActiveCount > 0, "The original execution cycle must still be active when drain starts.");
+        Assert.Contains(cycles.ListActiveCycles(), handle => handle.Id == originalHandle.Id);
+        Assert.False(originalHandle.Disposed.IsCompleted, "The original execution cycle must still be active when drain starts.");
 
         await _orchestrator.DrainAsync(DrainTrigger.HostStopSignal);
 

@@ -17,8 +17,8 @@ public class InterruptedRecoveryScannerTests
     private readonly ILogger<InterruptedRecoveryScanner> _logger = Substitute.For<ILogger<InterruptedRecoveryScanner>>();
     private readonly RuntimeOptions _runtimeOptions = new() { RestartInterruptedWorkflowsBatchSize = 10 };
 
-    [Fact(DisplayName = "Scan filters by SubStatus = Interrupted")]
-    public async Task FiltersBySubStatus()
+    [Fact(DisplayName = "Scan filters by SubStatus = Interrupted and Status = Running")]
+    public async Task FiltersByInterruptedAndRunning()
     {
         StubInstances(new[] { Summary("a") });
         var sut = BuildSut();
@@ -26,7 +26,9 @@ public class InterruptedRecoveryScannerTests
         await sut.ScanAndRequeueAsync(CancellationToken.None);
 
         await _instanceStore.Received().SummarizeManyAsync(
-            Arg.Is<WorkflowInstanceFilter>(f => f.WorkflowSubStatus == WorkflowSubStatus.Interrupted),
+            Arg.Is<WorkflowInstanceFilter>(f =>
+                f.WorkflowSubStatus == WorkflowSubStatus.Interrupted
+                && f.WorkflowStatus == WorkflowStatus.Running),
             Arg.Any<PageArgs>(),
             Arg.Any<CancellationToken>());
     }
