@@ -196,9 +196,16 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false)
     {
+        // allowFinishedCancelled is unused: drain no longer promotes Finished/Cancelled (#8419).
+        // The parameter remains so the 3.8.4 signature stays binary-compatible.
+        _ = allowFinishedCancelled;
+
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+        // SetTenantIdFilter's global query filter applies to ExecuteUpdateAsync unless
+        // IgnoreQueryFilters is used. This store does not ignore it, so a tenant-B
+        // caller cannot mark a tenant-A row.
         var updated = await dbContext.WorkflowInstances
-            .Where(x => x.Id == workflowInstanceId && (x.Status != WorkflowStatus.Finished || (allowFinishedCancelled && x.SubStatus == WorkflowSubStatus.Cancelled)))
+            .Where(x => x.Id == workflowInstanceId && x.Status != WorkflowStatus.Finished)
             .ExecuteUpdateAsync(
                 setters => setters
                     .SetProperty(x => x.Status, WorkflowStatus.Running)

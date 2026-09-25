@@ -190,19 +190,19 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false)
     {
+        // allowFinishedCancelled is unused: drain no longer promotes Finished/Cancelled (#8419).
+        // The parameter remains so the 3.8.4 signature stays binary-compatible.
+        _ = allowFinishedCancelled;
+
         // Same lock as Save/Update so a runner's terminal persist cannot land between the
-        // non-terminal check and the Interrupted mutations.
+        // tenant/status check and the Interrupted mutations. Every condition is evaluated
+        // once inside this lock — no pre-lock read.
         lock (_sync)
         {
-            var instance = _store.Find(x => x.Id == workflowInstanceId);
-            if (instance is null)
+            var ambientTenantId = _tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
+            var instance = _store.Find(x => x.Id == workflowInstanceId && TenantVisibility.IsVisible(x.TenantId, ambientTenantId));
+            if (instance is null || instance.Status == WorkflowStatus.Finished)
                 return ValueTask.FromResult(false);
-
-            if (instance.Status == WorkflowStatus.Finished)
-            {
-                if (!allowFinishedCancelled || instance.SubStatus != WorkflowSubStatus.Cancelled)
-                    return ValueTask.FromResult(false);
-            }
 
             instance.Status = WorkflowStatus.Running;
             instance.SubStatus = WorkflowSubStatus.Interrupted;
