@@ -10,7 +10,7 @@
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="$(UseProjectReferences) != true">
-        <ProjectReference Include="../../../studio/modules/Elsa.Studio.Workflows/Elsa.Studio.Workflows.csproj"/>
+        <PackageReference Include="Elsa.Studio.Workflows"/>
     </ItemGroup>
 
     <ItemGroup>
