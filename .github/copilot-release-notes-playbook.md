@@ -14,9 +14,13 @@ Draft developer-facing notes for one named Elsa release unit between two reviewe
 - From tag/ref: `<FROM>` for the previous release of this unit
 - To tag/ref: `<TO>` for this unit's proposed release
 
-Also provide ONE of:
-- `git log --oneline <FROM>..<TO>` output (preferred), OR
-- compare URL for the actual source repository and refs
+Provide access to the actual repository at both refs so changed paths and
+shared-dependency effects can be inspected. If that is unavailable, provide an
+evidenced unit-scoped change list with commit/PR IDs, changed paths, and the
+rationale for each included shared change. A `git log --oneline` list or compare
+URL alone is an index into the history, not proof that a change affects the
+release unit. Leave scope unresolved rather than producing complete notes from
+subjects alone.
 
 If the range crosses the history import, identify the old repository/tag and the
 corresponding imported ancestor explicitly. Do not infer the previous release
@@ -112,6 +116,7 @@ If none are provided, omit the section entirely.
 - Every bullet has suffix `(#NNNN)` or `(sha)` where available
 - No PR numbers are guessed
 - Full changelog includes all relevant release-unit changes from the range and states the path/package filter used
+- A single-package draft uses `doc/changelogs/<package-id>/<version>.md`; a Core-wide multi-package draft keeps `doc/changelogs/<version>.md`; another multi-package unit uses a reviewed unit ID in `doc/changelogs/<unit-id>/<version>.md`
 - Optional sections (Developer-facing / Tests / CI / Known issues) are omitted if empty
 
 ## Example prompt for a new session

@@ -112,32 +112,13 @@ Compare: `<FROM>...<TO>` (repository and release-unit filter stated)
 
 ## Output location
 
-After generating the release notes, **save the draft Markdown file in the repository under**:
+Save the draft Markdown file in `doc/changelogs/`:
 
-```
+- One-package unit: `doc/changelogs/<package-id>/<version>.md`
+- Core-wide multi-package unit: `doc/changelogs/<version>.md`
+- Other multi-package unit: `doc/changelogs/<release-unit-id>/<version>.md`
 
-doc/changelogs
-
-```
-
-The filename must follow this convention:
-
-```
-
-doc/changelogs/<package-id>/<version>.md
-
-```
-
-Use the public package ID as `<package-id>` and the allocated semantic version without a leading `v`. This package-scoped path prevents two independent units at the same version from overwriting each other's notes. Keep an existing Core-wide changelog at its current path when updating that same release; do not move historical files as part of a connector draft.
-
-Examples:
-
-```
-
-doc/changelogs/Elsa.Slack/<version>.md
-doc/changelogs/Elsa.Studio/<version>.md
-
-```
+Use the public package ID for a single-package unit and the allocated semantic version without a leading `v`. A new Core-wide multi-package draft uses the existing root changelog convention. For another multi-package unit, use its reviewed unit identifier; if it has none, ask the release owner before choosing a path. These paths prevent independent units at the same version from overwriting each other's notes. Do not move historical files as part of a connector draft.
 
 If the directory does not exist, create it.
 
