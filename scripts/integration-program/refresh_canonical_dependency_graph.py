@@ -647,8 +647,8 @@ def _validate_test_profile_pins(
     return source_receipts
 
 
-def _verify_overlays_applied(root: Path, overlays: list[dict[str, str]]) -> None:
-    """Reverse the reviewed patch series in a temporary copy of its touched files."""
+def _verify_overlays_applied(root: Path, overlays: list[dict[str, str]], prepared_files: list[dict[str, str]]) -> None:
+    """Reverse reviewed overlays and compare every touched file with the prepared source."""
     patch_paths = [REPOSITORY_ROOT / CURRENT_TIP_PATCH_PATHS[row["name"]] for row in overlays]
     touched_paths: set[str] = set()
     for patch_path in patch_paths:
@@ -659,6 +659,7 @@ def _verify_overlays_applied(root: Path, overlays: list[dict[str, str]]) -> None
             touched_paths.add(normalized.as_posix())
     if not touched_paths:
         raise ValueError("Reviewed overlays contain no file paths")
+    prepared_hashes = {row["path"]: row["sha256"] for row in prepared_files}
 
     with tempfile.TemporaryDirectory(prefix="elsa-overlay-check-") as temp:
         temporary_root = Path(temp)
@@ -683,6 +684,22 @@ def _verify_overlays_applied(root: Path, overlays: list[dict[str, str]]) -> None
             )
             if result.returncode:
                 raise ValueError(f"Prepared source does not contain the reviewed overlay series: {result.stderr.strip()}")
+        for relative in touched_paths:
+            reverted = temporary_root / relative
+            if relative in prepared_hashes:
+                if not reverted.is_file() or sha256(reverted) != prepared_hashes[relative]:
+                    raise ValueError(f"Reversed overlay differs from the prepared file receipt: {relative}")
+                continue
+            baseline = subprocess.run(
+                ["git", "-C", str(root), "show", f"HEAD:{relative}"],
+                capture_output=True,
+                check=False,
+            )
+            if baseline.returncode:
+                if reverted.exists():
+                    raise ValueError(f"Reversed overlay left a file absent from the imported source: {relative}")
+            elif not reverted.is_file() or hashlib.sha256(reverted.read_bytes()).digest() != hashlib.sha256(baseline.stdout).digest():
+                raise ValueError(f"Reversed overlay differs from the imported source: {relative}")
 
 
 def _validate_current_tip_profile(
@@ -738,7 +755,7 @@ def _validate_current_tip_profile(
         raise ValueError("Current preparation/import receipts differ from accepted c4b3 evidence beyond the rehearsal commit")
 
     patches = _validate_overlay_receipt(overlay_receipt_path)
-    _verify_overlays_applied(root, patches)
+    _verify_overlays_applied(root, patches, prep_receipt["files"])
     build_receipt = None
     if overlay_build_receipt_path is not None:
         build_receipt = _validate_overlay_build_receipt(overlay_build_receipt_path, patches, rehearsal_commit)
