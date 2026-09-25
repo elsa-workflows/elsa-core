@@ -7,6 +7,7 @@ on:
       - '.github/**'
       - 'build/**'
       - 'scripts/integration-program/**'
+      - 'samples/**'
       - 'src/**'
       - 'test/**'
       - 'doc/integration-program/release-units.json'

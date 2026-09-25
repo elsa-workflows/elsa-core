@@ -69,7 +69,7 @@ class CurrentImportedImpactTests(unittest.TestCase):
     def test_workflow_triggers_for_selector_graph_dependencies(self):
         workflow = Path(__file__).resolve().parents[2] / ".github/workflows/current-import-impact.yml"
         text = workflow.read_text(encoding="utf-8")
-        input_roots = (".github/**", "build/**", "scripts/integration-program/**", "src/**", "test/**")
+        input_roots = (".github/**", "build/**", "samples/**", "scripts/integration-program/**", "src/**", "test/**")
         for input_root in input_roots:
             with self.subTest(input_root=input_root):
                 self.assertIn(f"      - '{input_root}'", text)
