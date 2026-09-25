@@ -102,6 +102,16 @@ def reject_overlap(output: Path, inputs: list[Path]) -> None:
             raise RuntimeError(f"Output directory overlaps an inspected source root: {output} and {input_root}")
 
 
+def load_canonical_preparer():
+    preparer_path = Path(__file__).with_name("prepare_consolidated_build.py")
+    spec = importlib.util.spec_from_file_location("canonical_preparer", preparer_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Cannot load the reviewed canonical preparation profiles")
+    preparer = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(preparer)
+    return preparer
+
+
 def source_commits_for_profile(profile: str, rehearsal: Path) -> dict[str, str]:
     if profile == "manifest":
         return SOURCE_COMMITS.copy()
@@ -116,12 +126,7 @@ def source_commits_for_profile(profile: str, rehearsal: Path) -> dict[str, str]:
     if not isinstance(source_commits, dict):
         raise RuntimeError("The prepared source profile has no source commit map")
 
-    preparer_path = Path(__file__).with_name("prepare_consolidated_build.py")
-    spec = importlib.util.spec_from_file_location("canonical_preparer", preparer_path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError("Cannot load the reviewed canonical preparation profiles")
-    preparer = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(preparer)
+    preparer = load_canonical_preparer()
     if source_commits not in preparer.supported_source_profiles():
         raise RuntimeError(f"The prepared source commits are not a reviewed profile: {source_commits}")
     return source_commits
@@ -143,6 +148,7 @@ def require_prepared_rehearsal(root: Path, source_commits: dict[str, str] | None
     prepared = json.loads(prepared_path.read_text(encoding="utf-8"))
     if imported.get("sourceCommits") != source_commits:
         raise RuntimeError(f"Unexpected rehearsal source pins: {imported.get('sourceCommits')}")
+    load_canonical_preparer().verify_import_lineage(root, imported)
     if not imported.get("exactBlobAndModeMapping") or not imported.get("originalHistoriesReachable"):
         raise RuntimeError("The rehearsal receipt does not prove exact source blob/mode history mapping")
     if imported.get("buildCompatibilityVerified") or imported.get("publicationAuthorized"):

@@ -22,11 +22,29 @@ Package mode evaluates exactly one `PackageReference` to Elsa and no project ref
 
 The runner also completed against the later reviewed import profile: Core `c4b3ce150160e3c9062b57f7b158fd6b968e1631`, Extensions `ba8b71d91c15ffe5be4b2c539cf9f712e74af775`, and Studio `20ceaeeed7e671f0c9662003e82063026f2216de`. The disposable import commit was `668a10dda46000c90a87bc7d35758420179b6c0c`; its preparer receipt records the same source pins and patch SHA-256 `b091576a7f8d51c8b469645eea4b868556ebfadb084d7afbc4287ea36155433d`. The runner's `--source-profile prepared` option accepts only source maps already reviewed by `prepare_consolidated_build.py` and checks both receipts and all three clean source checkouts before and after the proof. The default `manifest` profile retains the original pins above for existing automation.
 
-The local receipt is `/private/tmp/elsa-8260-current-tip-local-proof-2/evidence.json`; a separate retained-file provenance recheck is `/private/tmp/elsa-8260-current-tip-local-proof-2-provenance-recheck.json`. The local feed contains only `Elsa.Slack` `3.8.5-proof` and its symbols. Their SHA-256 values are `592bf02cb4a673e6620e5c8792ca518a2419de694aa3bf7b0e3a3d2c2ab9a344` and `791220b678954aa2834dab1ee0e1a2c23efa454a16a4416f361cd000be85c993`. The nuspec retains Elsa `3.8.4` and SlackNet `0.17.7` dependencies on net8.0, net9.0, and net10.0. Package mode had one Elsa package reference and no project references; source-debug mode had one mapped Core project reference and no Elsa package reference. Three isolated package-only consumers passed, as did the offline fake-client CreateChannel smoke. All 41 Slack C# files embedded in each framework's symbol PDB matched the pinned Extensions source bytes. The independent provenance replay passed for all four consumers.
+The local receipt is `/private/tmp/elsa-8260-current-tip-local-proof-3/evidence.json`; a separate retained-file provenance recheck is `/private/tmp/elsa-8260-current-tip-local-proof-3-provenance-recheck.json`. This final run includes the committed source-ancestry and relocated-tree guard. The local feed contains only `Elsa.Slack` `3.8.5-proof` and its symbols. Their SHA-256 values are `52abf97d8521c67452860e5f33d5935ab96f932a6e7a2540981f1e2a9dab5e20` and `0fe898f26ca3be684d9983ffd437099c5db436116d079313e5d224ef3ad0dd7d`. The nuspec retains Elsa `3.8.4` and SlackNet `0.17.7` dependencies on net8.0, net9.0, and net10.0. Package mode had one Elsa package reference and no project references; source-debug mode had one mapped Core project reference and no Elsa package reference. Three isolated package-only consumers passed, as did the offline fake-client CreateChannel smoke. All 41 Slack C# files embedded in each framework's symbol PDB matched the pinned Extensions source bytes. The independent provenance replay passed for all four consumers.
 
 The declared upstream `CreateChannelTests.ExecuteAsync` still has one known `NotExecuted` skip and zero passing tests; the fake-client smoke provides separate narrow behavior evidence. The synthetic import has no remote, so final Core SourceLink URLs remain unverified. The selector's 51 affected inputs are a plan, not an executed dependency closure. This local-only proof did not publish a package (`publication_authorized: false`) or allocate a real `3.8.5` release.
 
-To repeat this profile from clean full-history checkouts at those three commits, create a new import and run the preparation commands below, then pass `--source-profile prepared` to the package proof command. Use fresh output directories. The CLI derives the exact source pins from the import receipt only after checking they belong to a preparer-reviewed profile. Rollback is removal of these disposable rehearsal/output directories and use of the unchanged default `manifest` profile; no release state or remote feed was changed.
+To repeat this profile from clean full-history checkouts at those three commits, use fresh disposable rehearsal and output directories:
+
+```sh
+python3 scripts/integration-program/rehearse-import.py \
+  --core /path/to/elsa-core --extensions /path/to/elsa-extensions \
+  --studio /path/to/elsa-studio --source-profile current-tip \
+  --output /tmp/elsa-slack-current-rehearsal
+git -C /tmp/elsa-slack-current-rehearsal switch --quiet --detach rehearsal
+git -C /tmp/elsa-slack-current-rehearsal reset --hard --quiet HEAD
+python3 scripts/integration-program/prepare_consolidated_build.py \
+  --rehearsal /tmp/elsa-slack-current-rehearsal
+python3 scripts/integration-program/run_mapped_slack_package_proof.py \
+  --rehearsal /tmp/elsa-slack-current-rehearsal \
+  --core-source /path/to/elsa-core --extensions-source /path/to/elsa-extensions \
+  --studio-source /path/to/elsa-studio --source-profile prepared \
+  --output-dir /tmp/elsa-slack-current-proof
+```
+
+The CLI derives the exact source pins from the import receipt only after checking they belong to a preparer-reviewed profile, then verifies the rehearsal commit's source parents and relocated tree. Rollback is removal of these disposable rehearsal/output directories and use of the unchanged default `manifest` profile; no release state or remote feed was changed.
 
 ### Original manifest profile
 
