@@ -61,56 +61,57 @@ public class DrainRecoveryEndToEndTests
         Assert.False(created.CannotStart);
 
         var recoverableRun = Task.Run(() => recoverableClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty));
-        await ResumeGate.Current.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
-
-        using var arrangeScope = _services.CreateScope();
-        var instanceStore = arrangeScope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
-        await WaitUntilAsync(async () =>
-        {
-            var current = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = recoverableClient.WorkflowInstanceId });
-            return current is { Status: WorkflowStatus.Running }
-                   && current.WorkflowState.ActivityExecutionContexts.Any(context => context.IsExecuting)
-                   && _capturingTextWriter.Lines.Contains("first");
-        }, TimeSpan.FromSeconds(5));
-
-        Assert.Equal(["first"], _capturingTextWriter.Lines.ToList());
-
-        var activityState = new ObservableActivityState();
-        var drainWorkflow = new TestWorkflow(builder => builder.Root = new ObservableActivity
-        {
-            State = activityState,
-            DelayMs = 500,
-        });
-        var drainTask = Task.Run(() => _workflowRunner.RunAsync(drainWorkflow));
-        await activityState.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
-
-        var outcome = await _orchestrator.DrainAsync(DrainTrigger.HostStopSignal);
-
-        try { await drainTask.WaitAsync(TimeSpan.FromSeconds(5)); }
-        catch (Exception ex) when (!ex.IsFatal()) { /* runner may complete normally or surface OCE */ }
-
-        Assert.Equal(DrainResult.DeadlineExceeded, outcome.OverallResult);
-        Assert.Equal(2, outcome.ExecutionCyclesForceCancelledCount);
-        Assert.Contains(recoverableClient.WorkflowInstanceId, outcome.ForceCancelledInstanceIds);
-        var cancelledId = Assert.Single(outcome.ForceCancelledInstanceIds, id => id != recoverableClient.WorkflowInstanceId);
-
-        var interrupted = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = recoverableClient.WorkflowInstanceId });
-        Assert.NotNull(interrupted);
-        Assert.Equal(WorkflowStatus.Running, interrupted.Status);
-        Assert.Equal(WorkflowSubStatus.Interrupted, interrupted.SubStatus);
-        Assert.False(interrupted.IsExecuting);
-        Assert.Equal(["first"], _capturingTextWriter.Lines.ToList());
-
-        var cancelled = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = cancelledId });
-        Assert.NotNull(cancelled);
-        Assert.Equal(WorkflowStatus.Finished, cancelled.Status);
-        Assert.Equal(WorkflowSubStatus.Cancelled, cancelled.SubStatus);
-
-        var commandProcessor = _services.GetServices<IHostedService>().OfType<BackgroundCommandSenderHostedService>().Single();
-        await commandProcessor.StartAsync(CancellationToken.None);
-
+        BackgroundCommandSenderHostedService? commandProcessor = null;
+        var drainLive = new DrainLiveGate();
+        Task? drainTask = null;
         try
         {
+            await ResumeGate.Current.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+            using var arrangeScope = _services.CreateScope();
+            var instanceStore = arrangeScope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+            await WaitUntilAsync(async () =>
+            {
+                var current = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = recoverableClient.WorkflowInstanceId });
+                return current is { Status: WorkflowStatus.Running }
+                       && current.WorkflowState.ActivityExecutionContexts.Any(context => context.IsExecuting)
+                       && _capturingTextWriter.Lines.Contains("first");
+            }, TimeSpan.FromSeconds(5));
+
+            Assert.Equal(["first"], _capturingTextWriter.Lines.ToList());
+
+            var drainWorkflow = new TestWorkflow(builder => builder.Root = new DrainLiveActivity { Gate = drainLive });
+            drainTask = Task.Run(() => _workflowRunner.RunAsync(drainWorkflow));
+            await drainLive.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+
+            var outcome = await _orchestrator.DrainAsync(DrainTrigger.HostStopSignal);
+
+            // Drain marks the workflow Cancelled but does not cancel ActivityExecutionContext.CancellationToken.
+            // Release only after DrainAsync so this cycle cannot finish before force-cancel.
+            drainLive.Continue.TrySetResult();
+            try { await drainTask.WaitAsync(TimeSpan.FromSeconds(5)); }
+            catch (Exception ex) when (!ex.IsFatal()) { /* runner may complete normally or surface OCE */ }
+
+            Assert.Equal(DrainResult.DeadlineExceeded, outcome.OverallResult);
+            Assert.Equal(2, outcome.ExecutionCyclesForceCancelledCount);
+            Assert.Contains(recoverableClient.WorkflowInstanceId, outcome.ForceCancelledInstanceIds);
+            var cancelledId = Assert.Single(outcome.ForceCancelledInstanceIds, id => id != recoverableClient.WorkflowInstanceId);
+
+            var interrupted = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = recoverableClient.WorkflowInstanceId });
+            Assert.NotNull(interrupted);
+            Assert.Equal(WorkflowStatus.Running, interrupted.Status);
+            Assert.Equal(WorkflowSubStatus.Interrupted, interrupted.SubStatus);
+            Assert.False(interrupted.IsExecuting);
+            Assert.Equal(["first"], _capturingTextWriter.Lines.ToList());
+
+            var cancelled = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = cancelledId });
+            Assert.NotNull(cancelled);
+            Assert.Equal(WorkflowStatus.Finished, cancelled.Status);
+            Assert.Equal(WorkflowSubStatus.Cancelled, cancelled.SubStatus);
+
+            commandProcessor = _services.GetServices<IHostedService>().OfType<BackgroundCommandSenderHostedService>().Single();
+            await commandProcessor.StartAsync(CancellationToken.None);
+
             using var recoverScope = _services.CreateScope();
             var scanner = recoverScope.ServiceProvider.GetRequiredService<IInterruptedRecoveryScanner>();
             var requeued = await scanner.ScanAndRequeueAsync(CancellationToken.None);
@@ -139,10 +140,18 @@ public class DrainRecoveryEndToEndTests
         }
         finally
         {
+            drainLive.Continue.TrySetResult();
+            if (drainTask is not null)
+            {
+                try { await drainTask.WaitAsync(TimeSpan.FromSeconds(5)); }
+                catch (Exception ex) when (!ex.IsFatal()) { /* runner may complete normally or surface OCE */ }
+            }
+
             ResumeGate.Current.Continue.TrySetResult();
             try { await recoverableRun.WaitAsync(TimeSpan.FromSeconds(5)); }
             catch (Exception ex) when (!ex.IsFatal()) { /* original cycle may surface OCE after drain */ }
-            await commandProcessor.StopAsync(CancellationToken.None);
+            if (commandProcessor is not null)
+                await commandProcessor.StopAsync(CancellationToken.None);
         }
     }
 
@@ -157,6 +166,30 @@ public class DrainRecoveryEndToEndTests
         }
 
         throw new TimeoutException($"Condition was not met within {timeout}.");
+    }
+}
+
+/// <summary>Gate for <see cref="DrainLiveActivity"/> so the drain-cancelled workflow stays live until after force-cancel.</summary>
+public sealed class DrainLiveGate
+{
+    public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public TaskCompletionSource Continue { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+}
+
+/// <summary>
+/// Stays executing until the test releases <see cref="DrainLiveGate.Continue"/>. Drain force-cancel marks the
+/// workflow Cancelled but does not cancel <see cref="ActivityExecutionContext.CancellationToken"/>, so a delay
+/// on that token cannot keep the cycle live.
+/// </summary>
+public class DrainLiveActivity : CodeActivity
+{
+    public DrainLiveGate? Gate { get; set; }
+
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
+    {
+        var gate = Gate ?? throw new InvalidOperationException("DrainLiveActivity.Gate must be set.");
+        gate.Started.TrySetResult();
+        await gate.Continue.Task;
     }
 }
 
