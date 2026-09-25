@@ -15,4 +15,6 @@ The script restores the solution with source references, rejects missing or esca
 
 For a change to `src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj`, the selected tests must match the mapped `Elsa.Slack` release-unit manifest exactly. A change to shared `src/modules/Elsa/Elsa.csproj` must include the Slack test and select more test/TFM nodes. Both scenarios keep the package-to-pack list at the single declared `Elsa.Slack` release unit; that list is **not** a Core package release plan. `Elsa.Mqtt` remains an unchanged package control.
 
+The restored graph currently represents first-party Elsa references as project references. The selector rejects package-type dependencies named `Elsa` or `Elsa.*` except for the known external `Elsa.Platform.PackageManifest.Generator`; it does not infer package-to-source project edges. If another Elsa package-only dependency appears, selection fails until its source mapping is reviewed and represented.
+
 This receipt is **selection evidence only**. It does not execute the selected tests, establish that runtime service effects are absent, certify package compatibility, or authorize any package/feed publication. Run the selected current-source tests and inspect their actual TRX/skips before accepting the dependency-closure gate. The history import and one-publisher handoff remain separate gates.

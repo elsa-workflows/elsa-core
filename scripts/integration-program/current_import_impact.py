@@ -18,6 +18,7 @@ from release_unit_manifest import DEFAULT_UNIT_ID, get_unit, load_manifest
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "doc/integration-program/release-units.json"
 CORE_PROJECT = "src/modules/Elsa/Elsa.csproj"
+KNOWN_EXTERNAL_ELSA_PACKAGES = {"elsa.platform.packagemanifest.generator"}
 
 
 def sha256(path: Path) -> str:
@@ -31,6 +32,20 @@ def git_output(root: Path, *arguments: str) -> str:
     if result.returncode:
         raise ValueError(f"Cannot inspect source Git state: {result.stderr.strip()}")
     return result.stdout.strip()
+
+
+def reject_unmapped_elsa_packages(asset_documents: dict[str, dict[str, Any]]) -> None:
+    for project_path, document in asset_documents.items():
+        for key, library in document.get("libraries", {}).items():
+            package_id = key.partition("/")[0]
+            if (
+                library.get("type") == "package"
+                and (package_id.casefold() == "elsa" or package_id.casefold().startswith("elsa."))
+                and package_id.casefold() not in KNOWN_EXTERNAL_ELSA_PACKAGES
+            ):
+                raise ValueError(
+                    f"Restored graph has an unmapped Elsa package dependency {package_id} in {project_path}"
+                )
 
 
 def restored_test_projects(asset_documents: dict[str, dict[str, Any]]) -> set[str]:
@@ -139,6 +154,7 @@ def receipt(root: Path, manifest_path: Path, expected_head: str | None) -> dict[
     project_names = {path: name for name, path in entries}
     assets = {path: graph_reader._assets_for_project(root, path)[1] for path in project_names}
     graph_reader._include_restored_project_references(root, project_names, assets)
+    reject_unmapped_elsa_packages(assets)
     tests = restored_test_projects(assets)
     graph, _, _ = graph_reader._framework_graph(root, project_names, assets, tests)
     unit = get_unit(load_manifest(manifest_path), DEFAULT_UNIT_ID)
@@ -174,6 +190,7 @@ def receipt(root: Path, manifest_path: Path, expected_head: str | None) -> dict[
         "scenarios": scenarios,
         "limitations": [
             "Project-reference impact is evaluated from this checkout's restored assets; runtime service effects are not inferred.",
+            "Package-type Elsa dependencies other than the known package-manifest generator are rejected because package-to-source project edges are not inferred.",
             "This receipt selects tests but does not execute them or publish packages.",
             "The release-unit manifest selects one Slack package; it is not a Core release package plan.",
         ],

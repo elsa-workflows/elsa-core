@@ -2,6 +2,7 @@ import unittest
 
 from current_import_impact import (
     CORE_PROJECT,
+    reject_unmapped_elsa_packages,
     restored_test_projects,
     select_scenarios,
 )
@@ -57,6 +58,25 @@ def unit():
 
 
 class CurrentImportedImpactTests(unittest.TestCase):
+    def test_rejects_unmapped_elsa_package_type_dependencies(self):
+        with self.assertRaisesRegex(ValueError, "unmapped Elsa package dependency Elsa.Workflows.Core"):
+            reject_unmapped_elsa_packages({
+                SLACK_TEST: {
+                    "libraries": {
+                        "Elsa.Workflows.Core/3.8.0": {"type": "package"},
+                        "Elsa.Platform.PackageManifest.Generator/0.0.1-preview.50": {"type": "package"},
+                    },
+                },
+            })
+
+        reject_unmapped_elsa_packages({
+            SLACK_TEST: {
+                "libraries": {
+                    "Elsa.Platform.PackageManifest.Generator/0.0.1-preview.50": {"type": "package"},
+                },
+            },
+        })
+
     def test_uses_restored_test_sdk_identity_including_relocated_studio_paths(self):
         documents = assets()
         documents["src/studio/Elsa.Studio.Core.Tests.csproj"] = {
