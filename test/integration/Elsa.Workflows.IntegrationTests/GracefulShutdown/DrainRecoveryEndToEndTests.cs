@@ -82,7 +82,8 @@ public class DrainRecoveryEndToEndTests
             var drainWorkflow = new TestWorkflow(builder => builder.Root = new ObservableActivity
             {
                 State = activityState,
-                DelayMs = 500,
+                // Stay live until drain cancels the cycle. A fixed delay can finish first if drain is slow.
+                DelayMs = Timeout.Infinite,
             });
             var drainTask = Task.Run(() => _workflowRunner.RunAsync(drainWorkflow));
             await activityState.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
