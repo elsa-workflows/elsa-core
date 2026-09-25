@@ -59,10 +59,11 @@ jobs:
               raise SystemExit(f'Unexpected tested dependencies: {dependencies}')
           print(f"elsa_version={dependencies['Elsa']}")
           print(f"slacknet_version={dependencies['SlackNet']}")
+          print(f"proof_base_version={units[0]['versioning']['local_proof_version']}")
           PY
       - name: Pack only Elsa.Slack with a proof version
         env:
-          PACKAGE_VERSION: 0.0.0-proof.${{ github.run_id }}.${{ github.run_attempt }}
+          PACKAGE_VERSION: ${{ steps.dependency.outputs.proof_base_version }}.${{ github.run_id }}.${{ github.run_attempt }}
           ELSA_VERSION: ${{ steps.dependency.outputs.elsa_version }}
           SLACKNET_VERSION: ${{ steps.dependency.outputs.slacknet_version }}
           EXPECTED_SOURCE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
@@ -142,7 +143,7 @@ jobs:
           PY
       - name: Restore and run a clean package consumer
         env:
-          PACKAGE_VERSION: 0.0.0-proof.${{ github.run_id }}.${{ github.run_attempt }}
+          PACKAGE_VERSION: ${{ steps.dependency.outputs.proof_base_version }}.${{ github.run_id }}.${{ github.run_attempt }}
           ELSA_VERSION: ${{ steps.dependency.outputs.elsa_version }}
           SLACKNET_VERSION: ${{ steps.dependency.outputs.slacknet_version }}
         run: |

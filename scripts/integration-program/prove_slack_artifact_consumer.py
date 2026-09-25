@@ -8,6 +8,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -26,8 +27,14 @@ def main() -> None:
     parser.add_argument("--slacknet-version", required=True)
     args = parser.parse_args()
 
-    if not args.version.startswith("0.0.0-proof."):
-        parser.error("A non-release proof version is required")
+    manifest = json.loads((Path(__file__).resolve().parents[2] / "doc/integration-program/release-units.json")
+                          .read_text(encoding="utf-8"))
+    units = [unit for unit in manifest["release_units"] if unit["package_id"] == "Elsa.Slack"]
+    if len(units) != 1:
+        parser.error(f"Expected one Elsa.Slack release unit, got {len(units)}")
+    proof_base = units[0]["versioning"]["local_proof_version"]
+    if not re.fullmatch(rf"{re.escape(proof_base)}\.[0-9]+\.[0-9]+", args.version):
+        parser.error(f"Expected a {proof_base}.<run-id>.<attempt> proof version")
 
     artifacts = args.artifacts.resolve(strict=True)
     package = artifacts / f"Elsa.Slack.{args.version}.nupkg"
