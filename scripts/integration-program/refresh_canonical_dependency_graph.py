@@ -15,6 +15,7 @@ from collections import Counter
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+import prepare_consolidated_build as preparation
 from package_closure import CHANGED_PROJECT, build_plan
 from package_impact import InventoryGraph
 from release_unit_manifest import (
@@ -608,6 +609,8 @@ def _validate_overlay_receipt(path: Path) -> list[dict[str, str]]:
             raise ValueError(f"Reviewed overlay patch hash differs from tooling checkout: {name}")
         names.add(name)
         normalized.append({"name": name, "sha256": digest})
+    if [row["name"] for row in normalized] != list(CURRENT_TIP_PATCH_PATHS):
+        raise ValueError("Reviewed overlay receipt must list the complete current-tip patch set in order")
     return normalized
 
 
@@ -653,7 +656,7 @@ def _validate_test_profile_pins(
     return source_receipts
 
 
-def _verify_overlays_applied(root: Path, overlays: list[dict[str, str]], prepared_files: list[dict[str, str]]) -> None:
+def _verify_overlays_applied(root: Path, overlays: list[dict[str, str]], prepared_files: list[dict[str, str]]) -> set[str]:
     """Reverse reviewed overlays and compare every touched file with the prepared source."""
     patch_paths = [REPOSITORY_ROOT / CURRENT_TIP_PATCH_PATHS[row["name"]] for row in overlays]
     touched_paths: set[str] = set()
@@ -706,6 +709,30 @@ def _verify_overlays_applied(root: Path, overlays: list[dict[str, str]], prepare
                     raise ValueError(f"Reversed overlay left a file absent from the imported source: {relative}")
             elif not reverted.is_file() or hashlib.sha256(reverted.read_bytes()).digest() != hashlib.sha256(baseline.stdout).digest():
                 raise ValueError(f"Reversed overlay differs from the imported source: {relative}")
+    return touched_paths
+
+
+def _verify_prepared_source_files(root: Path, prepared_files: list[dict[str, str]], overlay_paths: set[str]) -> None:
+    """Reject changes outside the exact prepared source and reviewed overlay series."""
+    prepared_hashes = {row["path"]: row["sha256"] for row in prepared_files}
+    if len(prepared_hashes) != len(prepared_files):
+        raise ValueError("Prepared source receipt repeats a file path")
+    for relative, expected_hash in prepared_hashes.items():
+        if relative in overlay_paths:
+            continue  # Reversing every overlay already checks this file against its prepared hash.
+        source = root / relative
+        if not source.is_file() or source.is_symlink() or sha256(source) != expected_hash:
+            raise ValueError(f"Prepared source file differs from its accepted receipt: {relative}")
+
+    permitted = set(prepared_hashes) | overlay_paths
+    changed = set(git_output(root, "diff", "HEAD", "--name-only").splitlines())
+    unexpected_changes = changed - permitted
+    if unexpected_changes:
+        raise ValueError(f"Imported source differs outside reviewed preparation and overlays: {sorted(unexpected_changes)}")
+    untracked = set(git_output(root, "ls-files", "--others", "--exclude-standard").splitlines())
+    unexpected_untracked = untracked - permitted - {"import-receipt.json", "consolidated-build-receipt.json"}
+    if unexpected_untracked:
+        raise ValueError(f"Unreviewed files were added to the prepared source: {sorted(unexpected_untracked)}")
 
 
 def _validate_current_tip_profile(
@@ -736,8 +763,6 @@ def _validate_current_tip_profile(
         raise ValueError("Current preparation receipt does not match the reviewed source-integration patch")
 
     accepted_dir = REPOSITORY_ROOT / "doc/integration-program/consolidation/current-tip-c4b3-evidence"
-    accepted_import = read_json(accepted_dir / "import-receipt.json.gz")
-    accepted_prep = read_json(accepted_dir / "consolidated-build-receipt.json.gz")
     # Compare the exact uncompressed public receipts, not merely their summary fields.
     accepted_import_bytes = gzip.decompress((accepted_dir / "import-receipt.json.gz").read_bytes())
     accepted_prep_bytes = gzip.decompress((accepted_dir / "consolidated-build-receipt.json.gz").read_bytes())
@@ -760,8 +785,10 @@ def _validate_current_tip_profile(
     if comparable_prep != accepted_prep or comparable_import != accepted_import:
         raise ValueError("Current preparation/import receipts differ from accepted c4b3 evidence beyond the rehearsal commit")
 
+    preparation.verify_import_lineage(root, import_receipt)
     patches = _validate_overlay_receipt(overlay_receipt_path)
-    _verify_overlays_applied(root, patches, prep_receipt["files"])
+    overlay_paths = _verify_overlays_applied(root, patches, prep_receipt["files"])
+    _verify_prepared_source_files(root, prep_receipt["files"], overlay_paths)
     build_receipt = None
     if overlay_build_receipt_path is not None:
         build_receipt = _validate_overlay_build_receipt(overlay_build_receipt_path, patches, rehearsal_commit)

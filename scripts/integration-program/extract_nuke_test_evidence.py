@@ -10,6 +10,7 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 from collections import Counter
+from datetime import datetime, timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -138,13 +139,37 @@ def _counter_values(root: ET.Element) -> dict[str, int]:
         raise ValueError("TRX has incomplete or invalid result counters") from error
 
 
-def _trx_rows(results_dir: Path) -> list[dict[str, Any]]:
+def _nuke_run_window(log_lines: list[str]) -> tuple[datetime, datetime]:
+    starts = [match.group(1) for line in log_lines
+              if (match := re.match(r"^(\d{2}:\d{2}:\d{2}) \[INF\] BUILD SETUP:", line))]
+    finishes = [match.group(1) for line in log_lines
+                if (match := re.match(r"^Build succeeded on (\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2})\.", line))]
+    if len(starts) != 1 or len(finishes) != 1:
+        raise ValueError("NUKE log must contain one timed setup and one successful finish")
+    finished_at = datetime.strptime(finishes[0], "%d/%m/%Y %H:%M:%S")
+    started_at = datetime.combine(finished_at.date(), datetime.strptime(starts[0], "%H:%M:%S").time())
+    if started_at > finished_at:
+        started_at -= timedelta(days=1)
+    return started_at, finished_at
+
+
+def _trx_rows(results_dir: Path, run_started: datetime, run_finished: datetime) -> list[dict[str, Any]]:
     rows = []
     for path in sorted(results_dir.glob("*.trx"), key=lambda candidate: candidate.name):
         try:
             document = ET.parse(path).getroot()
         except ET.ParseError as error:
             raise ValueError(f"Malformed retained TRX {path.name}: {error}") from error
+        times = document.find(f"{NAMESPACE}Times")
+        if times is None or not times.attrib.get("start") or not times.attrib.get("finish"):
+            raise ValueError(f"Retained TRX has no start/finish timestamps: {path.name}")
+        try:
+            started_at = datetime.fromisoformat(times.attrib["start"]).replace(tzinfo=None)
+            finished_at = datetime.fromisoformat(times.attrib["finish"]).replace(tzinfo=None)
+        except ValueError as error:
+            raise ValueError(f"Retained TRX has invalid run timestamps: {path.name}") from error
+        if not run_started <= started_at <= finished_at <= run_finished:
+            raise ValueError(f"Retained TRX falls outside recorded NUKE run: {path.name}")
         code_bases = sorted({node.attrib["codeBase"] for node in document.iter(f"{NAMESPACE}TestMethod") if node.attrib.get("codeBase")})
         if not code_bases:
             raise ValueError(f"Retained TRX has no TestMethod codeBase: {path.name}")
@@ -155,7 +180,8 @@ def _trx_rows(results_dir: Path) -> list[dict[str, Any]]:
             raise ValueError(f"TRX counters do not reconcile: {path.name}")
         if any(counters[key] for key in ("failed", "error", "timeout", "aborted")):
             raise ValueError(f"TRX reports failing or incomplete tests: {path.name}")
-        rows.append({"file": path.name, "counters": counters, "codeBases": code_bases})
+        rows.append({"file": path.name, "counters": counters, "codeBases": code_bases,
+                     "startedAt": times.attrib["start"], "finishedAt": times.attrib["finish"]})
     return rows
 
 
@@ -251,7 +277,8 @@ def extract(log_path: Path, root: Path, prep_path: Path, import_path: Path, patc
     results_dir = root / "testresults"
     if not results_dir.is_dir():
         raise ValueError(f"Prepared rehearsal has no testresults directory: {results_dir}")
-    trx_rows = _trx_rows(results_dir)
+    run_started, run_finished = _nuke_run_window(log_lines)
+    trx_rows = _trx_rows(results_dir, run_started, run_finished)
     expected_trx_names = {Path(path).stem + ".trx" for path in selected}
     actual_trx_names = {row["file"] for row in trx_rows}
     if actual_trx_names - expected_trx_names:
@@ -348,6 +375,7 @@ def extract(log_path: Path, root: Path, prep_path: Path, import_path: Path, patc
             "workingDirectory": str(root),
             "logPath": str(log_path.resolve()),
             "logSha256": sha256(log_path),
+            "runWindow": {"startLocal": run_started.isoformat(), "finishLocal": run_finished.isoformat()},
             "exitCode": 0,
             "targets": {"restore": "succeeded", "compile": "succeeded", "test": "succeeded", **forbidden_targets},
             "duration": {"restore": target_durations["Restore"], "compile": target_durations["Compile"], "test": target_durations["Test"], "total": duration(total_duration)},

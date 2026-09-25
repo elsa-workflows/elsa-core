@@ -1,6 +1,7 @@
 import copy
 import hashlib
 import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -12,6 +13,7 @@ from refresh_canonical_dependency_graph import (
     _validate_overlay_build_receipt,
     _validate_overlay_receipt,
     _validate_test_profile_pins,
+    _verify_prepared_source_files,
     _assets_for_project,
     _framework_graph,
     _include_restored_project_references,
@@ -325,11 +327,43 @@ class CanonicalDependencyGraphTests(unittest.TestCase):
             }), encoding="utf-8")
             self.assertEqual(rows, _validate_overlay_receipt(receipt_path))
 
+            for incomplete in (rows[:-1], rows[::-1]):
+                receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+                receipt["reviewedOverlayReceipt"] = incomplete
+                invalid_path = Path(temp) / "incomplete.json"
+                invalid_path.write_text(json.dumps(receipt), encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "complete current-tip patch set in order"):
+                    _validate_overlay_receipt(invalid_path)
+
             receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
             receipt["sourcePins"]["core"] = "0" * 40
             receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "does not pin the accepted c4b3ce"):
                 _validate_overlay_receipt(receipt_path)
+
+    def test_current_tip_source_verifier_rejects_non_overlay_imported_edit(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            unchanged = root / "src/Unchanged.csproj"
+            prepared = root / "src/Prepared.csproj"
+            unchanged.parent.mkdir()
+            unchanged.write_text("<Project />\n", encoding="utf-8")
+            prepared.write_text("<Project />\n", encoding="utf-8")
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            subprocess.run(["git", "-C", str(root), "add", "."], check=True)
+            subprocess.run(["git", "-C", str(root), "-c", "user.name=Source Test",
+                            "-c", "user.email=source-test@example.invalid", "commit", "-qm", "source"], check=True)
+            prepared.write_text("<Project Sdk=\"Microsoft.NET.Sdk\" />\n", encoding="utf-8")
+            files = [{"path": "src/Prepared.csproj", "sha256": hashlib.sha256(prepared.read_bytes()).hexdigest()}]
+            _verify_prepared_source_files(root, files, set())
+
+            unchanged.write_text("<Project TargetFramework=\"net9.0\" />\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "outside reviewed preparation"):
+                _verify_prepared_source_files(root, files, set())
+            unchanged.write_text("<Project />\n", encoding="utf-8")
+            prepared.write_text("<Project TargetFramework=\"net9.0\" />\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "differs from its accepted receipt"):
+                _verify_prepared_source_files(root, files, set())
 
     def test_current_tip_overlay_build_receipt_must_prove_same_overlay_set(self):
         overlays = [{"name": "patch.patch", "sha256": "a" * 64}]

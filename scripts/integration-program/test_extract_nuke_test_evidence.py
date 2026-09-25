@@ -58,6 +58,7 @@ class ExtractNukeTestEvidenceTests(unittest.TestCase):
 
     def _write_log(self, test_summary: str = "  Test               Succeeded       0:02   // Passed: 1, Skipped: 0\n") -> None:
         lines = [
+            "12:00:00 [INF] BUILD SETUP:",
             "╔ Restore",
             "  Restore            Succeeded       0:01",
             "╔ Compile",
@@ -68,7 +69,7 @@ class ExtractNukeTestEvidenceTests(unittest.TestCase):
             "Passed! - Failed: 0, Passed: 1, Skipped: 0, Total: 1, Duration: 10 ms - Alpha.Tests.dll (.NETCoreApp,Version=v10.0)",
             "Skipped! - Failed: 0, Passed: 0, Skipped: 1, Total: 1, Duration: 1 ms - Beta.Tests.dll (.NETCoreApp,Version=v10.0)",
             test_summary,
-            "Build succeeded on 25/09/2026 12:00:00.",
+            "Build succeeded on 25/09/2026 12:00:10.",
         ]
         self.log_path.write_text("\n".join(lines) + "\n")
 
@@ -76,6 +77,7 @@ class ExtractNukeTestEvidenceTests(unittest.TestCase):
         code_base = self.root / "test/unit/Alpha.Tests/bin/Debug/net10.0/Alpha.Tests.dll"
         xml = f'''<?xml version="1.0" encoding="utf-8"?>
 <TestRun xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times start="2026-09-25T12:00:05+02:00" finish="2026-09-25T12:00:06+02:00" />
   <TestDefinitions><UnitTest><TestMethod codeBase="{code_base}" /></UnitTest></TestDefinitions>
   <ResultSummary><Counters total="1" executed="1" passed="1" failed="0" error="0" timeout="0" aborted="0" /></ResultSummary>
 </TestRun>'''
@@ -96,12 +98,21 @@ class ExtractNukeTestEvidenceTests(unittest.TestCase):
         self.assertEqual({"files": 1, "passed": 1, "failed": 0, "skipped": 0, "executed": 1, "totalIncludingSkipped": 1}, {key: retained[key] for key in ("files", "passed", "failed", "skipped", "executed", "totalIncludingSkipped")})
         self.assertEqual(str(self.root / "test/unit/Alpha.Tests/bin/Debug/net10.0/Alpha.Tests.dll"), retained["rows"][0]["codeBases"][0])
         self.assertEqual(self._hash(self.log_path), evidence["invocation"]["logSha256"])
+        self.assertEqual({"startLocal": "2026-09-25T12:00:00", "finishLocal": "2026-09-25T12:00:10"},
+                         evidence["invocation"]["runWindow"])
         self.assertEqual("succeeded", evidence["invocation"]["targets"]["test"])
         self.assertIn("Skipped!", evidence["observedTestResults"]["selectedProjectsWithoutPassingTestCases"][0]["outcome"])
 
     def test_rejects_incomplete_nuke_target_summary(self) -> None:
         self._write_log(test_summary="")
         with self.assertRaisesRegex(ValueError, "incomplete or failed"):
+            self._extract()
+
+    def test_rejects_retained_trx_from_an_earlier_run(self) -> None:
+        log = self.log_path.read_text()
+        self.log_path.write_text(log.replace("12:00:00 [INF] BUILD SETUP:", "13:00:00 [INF] BUILD SETUP:")
+                                 .replace("25/09/2026 12:00:10", "25/09/2026 13:00:10"))
+        with self.assertRaisesRegex(ValueError, "outside recorded NUKE run"):
             self._extract()
 
     def test_rejects_import_receipt_that_does_not_pin_preparation(self) -> None:
