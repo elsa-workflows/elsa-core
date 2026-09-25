@@ -40,8 +40,9 @@ python3 scripts/integration-program/run_mapped_slack_package_proof.py \
 
 That command documents the runner at `7abe24b`; use that commit's script to
 reproduce the archived receipt. The current script additionally requires an
-explicit `--expected-import-head` and verifies the [refreshed source-tip
-receipt](source-tip-refresh-2026-09-25.md) at the candidate head. For the
+explicit `--expected-import-head` and verifies both the [first source-tip
+receipt](source-tip-refresh-2026-09-25.md) and the [later Extensions persistence
+refresh](source-tip-refresh-2026-09-25-r2.md) at the candidate head. For the
 current draft, run it from a clean, full-history elsa-core checkout with its
 GitHub `origin` and pass the exact 40-character checkout HEAD. A changed head
 requires a fresh local proof and receipt:

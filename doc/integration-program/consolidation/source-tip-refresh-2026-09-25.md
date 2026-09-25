@@ -1,5 +1,7 @@
 # Refreshed Extensions and Studio source tips
 
+The later [Extensions persistence refresh](source-tip-refresh-2026-09-25-r2.md) carries the subsequent Extensions main tip and its tests. This page remains evidence for the first refresh.
+
 Program #8194; story #8286; draft import PR #8409. The initial history-bearing
 import kept Core `e96fd36`, Extensions `ba8b71d` and Studio `20ceaee` as its
 parents. After the [pinned import head](https://github.com/elsa-workflows/elsa-core/pull/8409)
