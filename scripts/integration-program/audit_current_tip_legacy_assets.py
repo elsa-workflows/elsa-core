@@ -108,7 +108,8 @@ def compare_studio_spec_representation(
             continue
         content = path.read_bytes()
         blob = hashlib.sha1(f"blob {len(content)}\0".encode() + content).hexdigest()
-        (represented if blob == current["blob"] else different).append(source_path)
+        mode = "100755" if path.stat().st_mode & stat.S_IXUSR else "100644"
+        (represented if blob == current["blob"] and mode == current["mode"] else different).append(source_path)
 
     pending = decision.get("pendingDifferences")
     if not isinstance(pending, dict) or set(pending) != set(different) or not all(

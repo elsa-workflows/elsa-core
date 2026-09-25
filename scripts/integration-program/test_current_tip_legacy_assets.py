@@ -5,11 +5,12 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
 
-from audit_current_tip_legacy_assets import (EVIDENCE, STUDIO_SPEC_REPRESENTATION,
+from audit_current_tip_legacy_assets import (EVIDENCE, ROOT, STUDIO_SPEC_REPRESENTATION,
                                              compare_assets, compare_studio_spec_representation,
                                              load_pinned_receipt, verify_mapped_files)
 from validate_legacy_asset_dispositions import DEFAULT_LEDGER
@@ -92,6 +93,24 @@ class CurrentTipLegacyAssetsTests(unittest.TestCase):
         source["blob"] = "0" * 40
         errors, _ = compare_studio_spec_representation(self.ledger, receipt, self.studio_decision)
         self.assertTrue(any("pending-difference" in error for error in errors))
+
+    def test_studio_tooling_executable_mode_is_part_of_representation(self) -> None:
+        paths = [row["original_path"] for row in self.ledger["assets"]
+                 if row["category"] == "studio_agent_specification_tooling"]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for relative in paths:
+                target = root / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(ROOT / relative, target)
+            errors, _ = compare_studio_spec_representation(self.ledger, self.receipt,
+                                                             self.studio_decision, root)
+            self.assertEqual([], errors)
+            script = root / ".specify/scripts/bash/common.sh"
+            script.chmod(0o644)
+            errors, _ = compare_studio_spec_representation(self.ledger, self.receipt,
+                                                             self.studio_decision, root)
+            self.assertTrue(any("pending-difference" in error for error in errors))
 
 
 if __name__ == "__main__":

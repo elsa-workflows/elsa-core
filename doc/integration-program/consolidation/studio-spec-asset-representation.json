@@ -6,7 +6,7 @@
     "studio": "20ceaeeed7e671f0c9662003e82063026f2216de"
   },
   "category": "studio_agent_specification_tooling",
-  "decision": "Exact Studio duplicates are represented by the active Core-root file; the retained .source copy preserves history and stays inert.",
+  "decision": "Studio assets with identical Git blob and mode are represented by the active Core-root file; the retained .source copy preserves history and stays inert.",
   "representedCount": 42,
   "pendingDifferences": {
     ".agents/skills/speckit-git-feature/SKILL.md": "Review the Studio/Core command spelling before retiring the Studio variant.",

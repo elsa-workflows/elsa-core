@@ -3,12 +3,12 @@
 Program #8194; story #8286. This decision covers the 50 retained Studio
 `studio_agent_specification_tooling` assets in the frozen
 [legacy-asset ledger](legacy-asset-dispositions.md). It compares the Studio
-`20ceaee` Git blobs in the pinned E96 history-import receipt with the active
-Core-root files in this change. The [machine-readable decision](studio-spec-asset-representation.json)
+`20ceaee` Git blobs and modes in the pinned E96 history-import receipt with
+the active Core-root files in this change. The [machine-readable decision](studio-spec-asset-representation.json)
 and [auditor](../../../scripts/integration-program/audit_current_tip_legacy_assets.py)
 fail if source pins, paths, active files, or the classification drift.
 
-**42 files are byte-identical.** Their active representation is the Core-root
+**42 files have identical bytes and Git modes.** Their active representation is the Core-root
 file at the same relative path. The mapped Studio `.source` copy is retained
 as inert provenance and must not be installed as a second Spec Kit command,
 skill, template, or workflow. This is an explicit disposition for those 42
