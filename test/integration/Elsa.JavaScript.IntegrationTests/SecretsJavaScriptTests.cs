@@ -36,6 +36,22 @@ public class SecretsJavaScriptTests
     }
 
     [Fact]
+    public async Task PinnedLegacyNamedAccessorExpression_IsUnsupportedByCoreSecretsFeature()
+    {
+        // Extensions 3.8.4 (154ba15) generated `secrets.get{PascalizedName}Async()` accessors.
+        // Core exposes `getSecret(name)` instead, so old expression source is not drop-in compatible.
+        var legacyExpressionException = await Assert.ThrowsAnyAsync<Exception>(
+            () => EvaluateScriptAsync<string>("return secrets.getApiKeyAsync();"));
+        Assert.Contains("secrets", legacyExpressionException.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(_secretResolver.ResolvedNames);
+
+        var currentExpressionResult = await EvaluateScriptAsync<string>("return getSecret('apiKey');");
+
+        Assert.Equal("secret-value", currentExpressionResult);
+        Assert.Equal(["apiKey"], _secretResolver.ResolvedNames);
+    }
+
+    [Fact]
     public async Task GetSecret_ComposesWithThen()
     {
         var result = await EvaluateScriptAsync<string>("return getSecret('api:key').then(value => value + '-suffix');");
@@ -89,7 +105,8 @@ public class SecretsJavaScriptTests
     {
         private readonly Dictionary<string, string> _secrets = new(StringComparer.OrdinalIgnoreCase)
         {
-            ["api:key"] = "secret-value"
+            ["api:key"] = "secret-value",
+            ["apiKey"] = "secret-value"
         };
 
         public List<string> ResolvedNames { get; } = [];
