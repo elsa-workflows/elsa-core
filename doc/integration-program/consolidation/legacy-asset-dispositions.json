@@ -249,8 +249,8 @@
       "mode": "100644",
       "category": "scoped_build_targets",
       "owning_workstream": "Feature #8214 build integration; package owners",
-      "proposed_disposition": "Preserve UseProjectReferences=false as the package-consumer default; opt into local project references only in the dedicated disposable/source-validation build. Retire the old wrapper after both package and project-reference modes are verified.",
-      "evidence_or_gate": "The pinned target sets UseProjectReferences=false. The build-only patch switches scoped imported sources to project references, so that experiment must not become an unreviewed publishing default.",
+      "proposed_disposition": "Retire this Extensions-specific target as the active monorepo default: the shared Core root target selects project references for joint development. Keep package-consumer mode explicit with UseProjectReferences=false and retain this source copy as import provenance until the #8260 package-mode gate passes.",
+      "evidence_or_gate": "Pinned source blob 143bfd8 sets UseProjectReferences=false. The active Core Directory.Build.targets blob 2a61364 sets it true in both origin/main and the history-import branch. Build-preparation documents the false override and Slack PackageReference, but its evaluations/build evidence do not prove a clean package-mode restore or compatibility; do not complete the row before #8260 proves the consumer path.",
       "status": "pending_package_vs_project_reference_validation"
     },
     {
@@ -332,8 +332,8 @@
       "mode": "100644",
       "category": "nuget_source_mapping",
       "owning_workstream": "Build/package maintainers",
-      "proposed_disposition": "Merge the NuGet.org and Elsa Feedz sources and package-source mapping into the one active root config only after validating current package consumers and trust boundaries.",
-      "evidence_or_gate": "Pinned Extensions config maps Elsa and Elsa.* packages to the Elsa preview Feedz source while retaining NuGet.org for all packages; neither source config is active at its legacy/.source path.",
+      "proposed_disposition": "Do not copy or union the broad Extensions Elsa/Elsa.* Feedz mapping. Keep Core's active root config as the monorepo source policy; add only package-specific mappings shown necessary by a clean package-mode restore and reviewed against feed trust. Retain this source file as import provenance until that #8260 restore/feed gate passes.",
+      "evidence_or_gate": "Pinned source blob e3f020a maps Elsa and every Elsa.* package to Elsa preview Feedz. Active Core NuGet.Config blob 1ec3544 instead maps only Elsa.Platform.PackageManifest.Generator and Elsa.Platform.PackageManifest to that Feedz and routes the wildcard to NuGet.org. The Slack package-mode reference to Elsa at ElsaVersion 3.8.0-preview.5557 is documented, but no clean restore against this active mapping or source/trust decision proves whether broader mappings are required; leave this row pending until #8260 records that evidence.",
       "status": "pending_restore_and_feed_review"
     },
     {
@@ -1548,9 +1548,18 @@
       "mode": "100644",
       "category": "repository_ignore_rules",
       "owning_workstream": "Central repository/build maintainers",
-      "proposed_disposition": "Keep these exclusions scoped to the Studio Docker build context or translate them to the consolidated Docker context; do not apply them to a broader root context without checking the image inputs.",
-      "evidence_or_gate": "The pinned rules exclude bin/obj, node_modules, Docker files, LICENSE, and README. Core has no root .dockerignore; verify Docker build context and ensure broad root exclusions do not remove required legal/docs inputs.",
-      "status": "pending_path_scope_review"
+      "proposed_disposition": "Use the consolidated root .dockerignore for repository-root Docker builds. Do not copy these standalone Studio exclusions into the broader root context because they exclude root README.md, LICENSE, and Dockerfile inputs.",
+      "evidence_or_gate": "At Studio tip 099402226daba80e473a306bbd1243b8994465b8, this path still matches the pinned blob. docker-ca.yml and Compose use repository-root context, where the consolidated root .dockerignore from #8461 applies. The checked-in scripts/docker/build-and-run-all-in-one-web-docker.sh uses a scripts/docker context without required Dockerfile inputs; root ignore policy does not apply to that script. No checked-in invocation uses the old standalone Studio context.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-readme-and-dockerignore-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8461",
+        "merge_commit": "eab0bbf825ff42f4e7ba344dfdf0ae2fd9f094c0",
+        "active_path": ".dockerignore",
+        "active_blob": "9fd202e8fac99839317ea15a5b6a9fe600081ab6",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -2923,9 +2932,18 @@
       "mode": "100644",
       "category": "product_readme",
       "owning_workstream": "Studio product documentation",
-      "proposed_disposition": "Preserve Studio-specific user/developer material at a named Studio documentation path and update links for the consolidated tree; keep the root README focused on repository navigation.",
-      "evidence_or_gate": "This remains the Studio repository landing page in the pinned source; no consolidated documentation move is recorded.",
-      "status": "pending_document_refresh"
+      "proposed_disposition": "Use the consolidated Studio developer guide at doc/studio/README.md instead of the standalone repository landing page. Keep the exact upstream README in the inert .source provenance tree.",
+      "evidence_or_gate": "At Studio tip 099402226daba80e473a306bbd1243b8994465b8, this path still matches the pinned blob. The active guide uses the canonical Elsa.sln, Node 22 ClientLib build script, and current src/studio paths; Core README links to it. The standalone clone, solution, and project paths no longer describe the imported layout.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-readme-and-dockerignore-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8459",
+        "merge_commit": "c01f9c53f07a3db6ec48b15ea97e784272363df9",
+        "active_path": "doc/studio/README.md",
+        "active_blob": "1bcbeee61947bc6b56b79a5d8a9b97d9a83252e7",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
