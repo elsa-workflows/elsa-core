@@ -22,6 +22,26 @@ import verify_mapped_slack_consumer_provenance as provenance_recheck  # noqa: E4
 
 
 class MappedSlackPackageProofTests(unittest.TestCase):
+    def test_prepared_source_profile_accepts_only_reviewed_source_commits(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            rehearsal = Path(temporary_directory)
+            self.assertEqual(proof.SOURCE_COMMITS, proof.source_commits_for_profile("manifest", rehearsal))
+
+            reviewed = {
+                "core": "c4b3ce150160e3c9062b57f7b158fd6b968e1631",
+                "extensions": "ba8b71d91c15ffe5be4b2c539cf9f712e74af775",
+                "studio": "20ceaeeed7e671f0c9662003e82063026f2216de",
+            }
+            receipt = rehearsal / proof.IMPORT_RECEIPT
+            receipt.write_text(json.dumps({"sourceCommits": reviewed}), encoding="utf-8")
+            self.assertEqual(reviewed, proof.source_commits_for_profile("prepared", rehearsal))
+
+            receipt.write_text(json.dumps({"sourceCommits": {**reviewed, "core": "0" * 40}}), encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "not a reviewed profile"):
+                proof.source_commits_for_profile("prepared", rehearsal)
+            with self.assertRaisesRegex(ValueError, "Unknown mapped source profile"):
+                proof.source_commits_for_profile("unknown", rehearsal)
+
     def test_impact_selection_receipt_records_the_inventory_graph_pins(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             output = Path(temporary_directory)

@@ -12,6 +12,7 @@ import argparse
 import base64
 import hashlib
 import html
+import importlib.util
 import json
 import os
 import shutil
@@ -101,7 +102,34 @@ def reject_overlap(output: Path, inputs: list[Path]) -> None:
             raise RuntimeError(f"Output directory overlaps an inspected source root: {output} and {input_root}")
 
 
-def require_prepared_rehearsal(root: Path) -> tuple[dict, dict, str]:
+def source_commits_for_profile(profile: str, rehearsal: Path) -> dict[str, str]:
+    if profile == "manifest":
+        return SOURCE_COMMITS.copy()
+    if profile != "prepared":
+        raise ValueError(f"Unknown mapped source profile: {profile}")
+
+    import_path = rehearsal / IMPORT_RECEIPT
+    if not import_path.is_file():
+        raise RuntimeError("The prepared source profile requires an import receipt")
+    imported = json.loads(import_path.read_text(encoding="utf-8"))
+    source_commits = imported.get("sourceCommits")
+    if not isinstance(source_commits, dict):
+        raise RuntimeError("The prepared source profile has no source commit map")
+
+    preparer_path = Path(__file__).with_name("prepare_consolidated_build.py")
+    spec = importlib.util.spec_from_file_location("canonical_preparer", preparer_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Cannot load the reviewed canonical preparation profiles")
+    preparer = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(preparer)
+    if source_commits not in preparer.supported_source_profiles():
+        raise RuntimeError(f"The prepared source commits are not a reviewed profile: {source_commits}")
+    return source_commits
+
+
+def require_prepared_rehearsal(root: Path, source_commits: dict[str, str] | None = None) -> tuple[dict, dict, str]:
+    if source_commits is None:
+        source_commits = SOURCE_COMMITS
     if git_value(root, "rev-parse", "--show-toplevel") != str(root):
         raise RuntimeError("Pass the physical rehearsal Git root")
     if git_value(root, "remote"):
@@ -113,13 +141,13 @@ def require_prepared_rehearsal(root: Path) -> tuple[dict, dict, str]:
         raise RuntimeError("The rehearsal must have both import and consolidated-build receipts")
     imported = json.loads(import_path.read_text(encoding="utf-8"))
     prepared = json.loads(prepared_path.read_text(encoding="utf-8"))
-    if imported.get("sourceCommits") != SOURCE_COMMITS:
+    if imported.get("sourceCommits") != source_commits:
         raise RuntimeError(f"Unexpected rehearsal source pins: {imported.get('sourceCommits')}")
     if not imported.get("exactBlobAndModeMapping") or not imported.get("originalHistoriesReachable"):
         raise RuntimeError("The rehearsal receipt does not prove exact source blob/mode history mapping")
     if imported.get("buildCompatibilityVerified") or imported.get("publicationAuthorized"):
         raise RuntimeError("The rehearsal receipt has inconsistent build/publication claims")
-    if prepared.get("sourceCommits") != SOURCE_COMMITS:
+    if prepared.get("sourceCommits") != source_commits:
         raise RuntimeError(f"Unexpected prepared source pins: {prepared.get('sourceCommits')}")
     if prepared.get("rehearsalCommit") != imported.get("rehearsalCommit"):
         raise RuntimeError("Prepared and import receipts identify different rehearsal commits")
@@ -223,7 +251,7 @@ def run(command: list[str], *, cwd: Path, env: dict[str, str], log: Path, timeou
         raise RuntimeError(f"Command failed ({result.returncode}); see {log}")
 
 
-def inspect_artifact(package: Path, symbols: Path, icon_path: Path) -> dict:
+def inspect_artifact(package: Path, symbols: Path, icon_path: Path, extensions_sha: str = EXTENSIONS_SHA) -> dict:
     with zipfile.ZipFile(package) as archive:
         nuspec_files = [name for name in archive.namelist() if name.lower().endswith(".nuspec")]
         if len(nuspec_files) != 1:
@@ -258,7 +286,7 @@ def inspect_artifact(package: Path, symbols: Path, icon_path: Path) -> dict:
     expected_dependencies = sorted((("Elsa", ELSA_VERSION), ("SlackNet", SLACK_NET_VERSION)))
     if package_id != PACKAGE_ID or package_version != PACKAGE_VERSION:
         raise RuntimeError(f"Unexpected package identity {package_id} {package_version}")
-    if repository_url != REPOSITORY_URL or repository_commit != EXTENSIONS_SHA:
+    if repository_url != REPOSITORY_URL or repository_commit != extensions_sha:
         raise RuntimeError(f"Unexpected package source provenance: {repository_url} {repository_commit}")
     if package_icon != "icon.png" or package_icon_sha != ICON_SHA256 or sha256_file(icon_path) != ICON_SHA256:
         raise RuntimeError("Packaged icon differs from the pinned canonical Extensions root icon")
@@ -845,6 +873,8 @@ def main() -> int:
     parser.add_argument("--extensions-source", type=Path, required=True)
     parser.add_argument("--studio-source", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--source-profile", choices=("manifest", "prepared"), default="manifest",
+                        help="Use the manifest pins or a preparer-reviewed source profile in the import receipt")
     parser.add_argument("--dotnet", type=Path, default=Path(DOTNET) if DOTNET else None)
     args = parser.parse_args()
 
@@ -855,10 +885,14 @@ def main() -> int:
     core = resolved_directory(args.core_source, "Core source")
     extensions = resolved_directory(args.extensions_source, "Extensions source")
     studio = resolved_directory(args.studio_source, "Studio source")
-    require_pinned_source(core, CORE_SHA, "Core")
-    require_pinned_source(extensions, EXTENSIONS_SHA, "Extensions")
-    require_pinned_source(studio, STUDIO_SHA, "Studio")
-    imported, prepared, patch_hash = require_prepared_rehearsal(rehearsal)
+    source_commits = source_commits_for_profile(args.source_profile, rehearsal)
+    core_sha = source_commits["core"]
+    extensions_sha = source_commits["extensions"]
+    studio_sha = source_commits["studio"]
+    require_pinned_source(core, core_sha, "Core")
+    require_pinned_source(extensions, extensions_sha, "Extensions")
+    require_pinned_source(studio, studio_sha, "Studio")
+    imported, prepared, patch_hash = require_prepared_rehearsal(rehearsal, source_commits)
 
     output_argument = args.output_dir.expanduser().absolute()
     reject_symlink_ancestors(output_argument)
@@ -891,7 +925,7 @@ def main() -> int:
         "-p:UseProjectReferences=false",
         f"-p:ElsaVersion={ELSA_VERSION}",
         f"-p:PackageVersion={PACKAGE_VERSION}",
-        f"-p:RepositoryCommit={EXTENSIONS_SHA}",
+        f"-p:RepositoryCommit={extensions_sha}",
         f"-p:RepositoryUrl={REPOSITORY_URL}",
     ]
     package_evaluation = output / "logs/package-mode-evaluation.log"
@@ -936,7 +970,7 @@ def main() -> int:
         raise RuntimeError(f"Local feed contains unrelated or missing packages: {[path.name for path in nupkgs]}")
     if [path.name for path in snupkgs] != [f"{PACKAGE_ID}.{PACKAGE_VERSION}.snupkg"]:
         raise RuntimeError(f"Local feed contains unrelated or missing symbol packages: {[path.name for path in snupkgs]}")
-    artifact = inspect_artifact(nupkgs[0], snupkgs[0], extensions / "icon.png")
+    artifact = inspect_artifact(nupkgs[0], snupkgs[0], extensions / "icon.png", extensions_sha)
 
     upstream_test = verify_upstream_test_baseline(output, rehearsal, env, cache_root, pack_config, dotnet, imported)
     current_selection = selector_evidence(output, rehearsal, imported)
@@ -946,10 +980,10 @@ def main() -> int:
 
     # Recheck the source and preparation receipt after all builds. Ignored bin/obj
     # outputs are allowed only inside the disposable rehearsal.
-    require_pinned_source(core, CORE_SHA, "Core")
-    require_pinned_source(extensions, EXTENSIONS_SHA, "Extensions")
-    require_pinned_source(studio, STUDIO_SHA, "Studio")
-    imported_after, prepared_after, patch_hash_after = require_prepared_rehearsal(rehearsal)
+    require_pinned_source(core, core_sha, "Core")
+    require_pinned_source(extensions, extensions_sha, "Extensions")
+    require_pinned_source(studio, studio_sha, "Studio")
+    imported_after, prepared_after, patch_hash_after = require_prepared_rehearsal(rehearsal, source_commits)
     if imported_after != imported or prepared_after != prepared or patch_hash_after != patch_hash:
         raise RuntimeError("Pinned source or prepared input receipt changed during package proof")
 
@@ -957,6 +991,7 @@ def main() -> int:
         "result": "passed",
         "proof_root": str(output),
         "scope": "mapped Elsa.Slack local pack and clean package-only consumers; no package feed publication",
+        "source_profile": args.source_profile,
         "package": artifact,
         "evaluated_modes": {
             "package": package_evaluation_receipt,
@@ -964,14 +999,14 @@ def main() -> int:
         },
         "release_unit_source": {
             "repository": REPOSITORY_URL,
-            "extensions_commit": EXTENSIONS_SHA,
+            "extensions_commit": extensions_sha,
             "rehearsal_commit": imported["rehearsalCommit"],
             "source_integration_patch_sha256": patch_hash,
             "mapped_slack_project_sha256": sha256_file(project),
             "mapped_source_file_count": len(source_files),
             "mapped_source_files": source_files,
-            "core_commit": CORE_SHA,
-            "studio_commit": STUDIO_SHA,
+            "core_commit": core_sha,
+            "studio_commit": studio_sha,
         },
         "release_unit_manifest": {
             "path": "doc/integration-program/release-units.json",
