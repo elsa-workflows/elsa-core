@@ -68,8 +68,20 @@ def select_scenarios(
     slack_project = unit["mapped"]["project_path"]
     slack = selected_tests(graph, asset_documents, slack_project)
     shared = selected_tests(graph, asset_documents, CORE_PROJECT)
-    declared = {row["project_path"] for row in unit["mapped"]["test_projects"]}
-    if {row["project"] for row in slack} != declared or len(slack) != len(declared):
+    mapped_tests = unit["mapped"]["test_projects"]
+    source_tests = {
+        row["project_path"]: row["target_frameworks"]
+        for row in unit["source"]["test_projects"]
+    }
+    expected_slack = set()
+    for row in mapped_tests:
+        source_path = row["source_project_path"]
+        frameworks = source_tests.get(source_path)
+        if not isinstance(frameworks, list) or not frameworks:
+            raise ValueError(f"Mapped Slack test has no source framework declaration: {source_path}")
+        expected_slack.update((row["project_path"], framework) for framework in frameworks)
+    actual_slack = {(row["project"], row["framework"]) for row in slack}
+    if actual_slack != expected_slack or len(slack) != len(expected_slack):
         raise ValueError(f"Current Slack test closure differs from the release-unit manifest: {slack}")
     if not set((row["project"], row["framework"]) for row in slack).issubset(
         (row["project"], row["framework"]) for row in shared

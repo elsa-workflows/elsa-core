@@ -13,13 +13,14 @@ CORE_TEST = "test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTes
 
 
 class FakeGraph:
-    def __init__(self, shared_tests):
+    def __init__(self, shared_tests, slack_framework="net10.0"):
         self.shared_tests = shared_tests
+        self.slack_framework = slack_framework
 
     def affected_tests(self, roots):
         project = roots[0][1].split("@@", 1)[0]
         if project == SLACK_PROJECT:
-            return {("elsa-core", f"{SLACK_TEST}@@net10.0")}
+            return {("elsa-core", f"{SLACK_TEST}@@{self.slack_framework}")}
         if project == CORE_PROJECT:
             return self.shared_tests
         raise AssertionError(project)
@@ -38,10 +39,19 @@ def unit():
     return {
         "id": "elsa-slack",
         "package_id": "Elsa.Slack",
+        "source": {
+            "test_projects": [{
+                "project_path": "test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj",
+                "target_frameworks": ["net10.0"],
+            }],
+        },
         "mapped": {
             "repository": "elsa-core",
             "project_path": SLACK_PROJECT,
-            "test_projects": [{"project_path": SLACK_TEST}],
+            "test_projects": [{
+                "source_project_path": "test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj",
+                "project_path": SLACK_TEST,
+            }],
         },
     }
 
@@ -74,6 +84,15 @@ class CurrentImportedImpactTests(unittest.TestCase):
         self.assertFalse(result["testExecutionPerformed"])
         self.assertFalse(result["publicationPerformed"])
 
+    def test_slack_test_framework_must_match_mapped_source_manifest(self):
+        graph = FakeGraph(
+            {("elsa-core", f"{CORE_TEST}@@net10.0")},
+            slack_framework="net9.0",
+        )
+
+        with self.assertRaisesRegex(ValueError, "differs from the release-unit manifest"):
+            select_scenarios(graph, assets(), unit())
+
     def test_missing_slack_test_in_shared_core_closure_fails(self):
         graph = FakeGraph({("elsa-core", f"{CORE_TEST}@@net10.0")})
 
@@ -82,7 +101,10 @@ class CurrentImportedImpactTests(unittest.TestCase):
 
     def test_release_unit_manifest_mismatch_fails(self):
         configured = unit()
-        configured["mapped"]["test_projects"] = [{"project_path": CORE_TEST}]
+        configured["mapped"]["test_projects"] = [{
+            "source_project_path": "test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj",
+            "project_path": CORE_TEST,
+        }]
         graph = FakeGraph({
             ("elsa-core", f"{SLACK_TEST}@@net10.0"),
             ("elsa-core", f"{CORE_TEST}@@net10.0"),

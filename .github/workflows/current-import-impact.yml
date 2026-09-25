@@ -7,6 +7,18 @@ on:
       - 'scripts/integration-program/current_import_impact.py'
       - 'scripts/integration-program/test_current_import_impact.py'
       - 'doc/integration-program/release-units.json'
+      # These inputs can change the restored project/TFM graph without changing
+      # the package source paths below.
+      - '**/*.sln'
+      - '**/*.slnx'
+      - '**/*.csproj'
+      - '**/*.props'
+      - '**/*.targets'
+      - '**/*.rsp'
+      - '**/NuGet.Config'
+      - '**/nuget.config'
+      - '**/packages.lock.json'
+      - '**/global.json'
       - 'src/modules/Elsa/**'
       - 'src/extensions/communication/Elsa.Slack/**'
       - 'test/extensions/modules/slack/**'
