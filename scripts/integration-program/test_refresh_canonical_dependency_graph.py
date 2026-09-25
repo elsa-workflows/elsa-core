@@ -1,9 +1,16 @@
 import copy
+import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
 
 from refresh_canonical_dependency_graph import (
+    CURRENT_TIP_PATCH_PATHS,
+    CURRENT_TIP_SOURCE_COMMITS,
+    _validate_overlay_build_receipt,
+    _validate_overlay_receipt,
+    _validate_test_profile_pins,
     _assets_for_project,
     _framework_graph,
     _node_key,
@@ -228,6 +235,72 @@ class CanonicalDependencyGraphTests(unittest.TestCase):
             project.touch()
             with self.assertRaisesRegex(ValueError, "missing project.assets.json"):
                 _assets_for_project(root, "src/Core/Core.csproj")
+
+    def test_current_tip_overlay_receipt_pins_reviewed_source_and_patch_bytes(self):
+        rows = [
+            {"name": name, "sha256": hashlib.sha256(
+                (Path(__file__).resolve().parents[2] / patch_path).read_bytes()
+            ).hexdigest()}
+            for name, patch_path in CURRENT_TIP_PATCH_PATHS.items()
+        ]
+        with tempfile.TemporaryDirectory() as temp:
+            receipt_path = Path(temp) / "overlays.json"
+            receipt_path.write_text(json.dumps({
+                "sourcePins": CURRENT_TIP_SOURCE_COMMITS,
+                "reviewedOverlayReceipt": rows,
+                "publicationAuthorized": False,
+            }), encoding="utf-8")
+            self.assertEqual(rows, _validate_overlay_receipt(receipt_path))
+
+            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+            receipt["sourcePins"]["core"] = "0" * 40
+            receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "does not pin the accepted c4b3ce"):
+                _validate_overlay_receipt(receipt_path)
+
+    def test_current_tip_overlay_build_receipt_must_prove_same_overlay_set(self):
+        overlays = [{"name": "patch.patch", "sha256": "a" * 64}]
+        receipt = {
+            "sourcePins": CURRENT_TIP_SOURCE_COMMITS,
+            "syntheticRehearsalCommit": "b" * 40,
+            "canonicalImportBuilt": False,
+            "fullCombinedTestSuiteVerified": False,
+            "builds": {"overlaid": {"exitCode": 0, "errorCount": 0, "appliedOverlays": overlays}},
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            receipt_path = Path(temp) / "mapped-solution-build.json"
+            receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+            self.assertEqual(receipt, _validate_overlay_build_receipt(receipt_path, overlays, "b" * 40))
+            receipt["builds"]["overlaid"]["errorCount"] = 1
+            receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "does not record a passing overlaid build"):
+                _validate_overlay_build_receipt(receipt_path, overlays, "b" * 40)
+
+    def test_current_tip_test_evidence_must_pin_receipts_and_overlay_hashes(self):
+        source_receipts = {
+            "preparationReceiptSha256": "a" * 64,
+            "importReceiptSha256": "b" * 64,
+            "sourceIntegrationPatchSha256": "c" * 64,
+        }
+        overlays = [{"name": "workbench-canonical-secrets.patch", "sha256": "d" * 64}]
+        evidence = {"profile": {
+            **CURRENT_TIP_SOURCE_COMMITS,
+            "rawRehearsalCommit": "e" * 40,
+            "canonicalSolution": "Elsa.sln",
+            "sourceReceipts": source_receipts,
+            "supplementalPatches": overlays,
+            "overlayReceiptSha256": "f" * 64,
+        }}
+        self.assertEqual(source_receipts, _validate_test_profile_pins(
+            evidence, CURRENT_TIP_SOURCE_COMMITS, "e" * 40, source_receipts, overlays, "f" * 64,
+        ))
+        evidence["profile"]["supplementalPatches"] = []
+        with self.assertRaisesRegex(ValueError, "differ from the reviewed overlay receipt"):
+            _validate_test_profile_pins(evidence, CURRENT_TIP_SOURCE_COMMITS, "e" * 40, source_receipts, overlays, "f" * 64)
+        evidence["profile"]["supplementalPatches"] = overlays
+        evidence["profile"]["overlayReceiptSha256"] = "0" * 64
+        with self.assertRaisesRegex(ValueError, "does not hash the reviewed overlay receipt"):
+            _validate_test_profile_pins(evidence, CURRENT_TIP_SOURCE_COMMITS, "e" * 40, source_receipts, overlays, "f" * 64)
 
     def test_solution_allows_same_non_test_display_name_but_rejects_duplicate_test_name(self):
         with tempfile.TemporaryDirectory() as temp:
