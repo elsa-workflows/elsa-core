@@ -17,6 +17,7 @@ from validate_legacy_asset_dispositions import DEFAULT_LEDGER, DEFAULT_RECEIPT, 
 
 ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE = ROOT / "doc/integration-program/consolidation/current-tip-e96-evidence"
+STUDIO_SPEC_REPRESENTATION = ROOT / "doc/integration-program/consolidation/studio-spec-asset-representation.json"
 EXPECTED_RECEIPT_SHA256 = "06cd198a338d5c6d49fa6b0183bbda6b602252f39f622f18084e60342880bb75"
 
 
@@ -81,6 +82,45 @@ def verify_mapped_files(import_root: Path, receipt: dict[str, Any]) -> list[str]
     return errors
 
 
+def compare_studio_spec_representation(
+    ledger: dict[str, Any], receipt: dict[str, Any], decision: dict[str, Any], core_root: Path = ROOT
+) -> tuple[list[str], dict[str, Any]]:
+    """Prove which retained Studio tooling assets already exist byte-for-byte in Core."""
+    errors: list[str] = []
+    rows = [row for row in ledger["assets"] if row["category"] == "studio_agent_specification_tooling"]
+    mapped = {(row["repository"], row["source"]): row for row in receipt["mapping"]}
+    if decision.get("schemaVersion") != 1 or decision.get("category") != "studio_agent_specification_tooling":
+        errors.append("Studio tooling decision schema or category changed")
+    if decision.get("sourcePins") != receipt.get("sourceCommits"):
+        errors.append("Studio tooling decision source pins differ from the E96 receipt")
+
+    represented: list[str] = []
+    different: list[str] = []
+    for row in rows:
+        source_path = row["original_path"]
+        current = mapped.get(("studio", source_path))
+        if current is None or current.get("destination") != row["mapped_path"]:
+            errors.append(f"Studio tooling source mapping changed: {source_path}")
+            continue
+        path = core_root / source_path
+        if not path.is_file() or path.is_symlink():
+            errors.append(f"Active Core tooling file is missing or not regular: {source_path}")
+            continue
+        content = path.read_bytes()
+        blob = hashlib.sha1(f"blob {len(content)}\0".encode() + content).hexdigest()
+        (represented if blob == current["blob"] else different).append(source_path)
+
+    pending = decision.get("pendingDifferences")
+    if not isinstance(pending, dict) or set(pending) != set(different) or not all(
+        isinstance(reason, str) and reason.strip() for reason in pending.values()
+    ):
+        errors.append("Studio tooling pending-difference paths or reasons differ from the source comparison")
+    if decision.get("representedCount") != len(represented) or len(rows) != len(represented) + len(different):
+        errors.append("Studio tooling represented count does not match the source comparison")
+    return errors, {"total": len(rows), "representedByIdenticalCoreRoot": len(represented),
+                    "pendingDifferentPaths": sorted(different)}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--import-root", type=Path, help="optional materialized history-import tree")
@@ -90,6 +130,9 @@ def main() -> int:
         receipt = load_pinned_receipt()
         profile = json.loads((EVIDENCE / "reviewed-overlays-six.json").read_text(encoding="utf-8"))
         errors, changed = compare_assets(ledger, receipt, profile["sourcePins"])
+        studio_decision = json.loads(STUDIO_SPEC_REPRESENTATION.read_text(encoding="utf-8"))
+        studio_errors, studio_summary = compare_studio_spec_representation(ledger, receipt, studio_decision)
+        errors.extend(studio_errors)
         if args.import_root:
             errors.extend(verify_mapped_files(args.import_root, receipt))
     except (OSError, ValueError, KeyError, TypeError, gzip.BadGzipFile) as error:
@@ -103,6 +146,7 @@ def main() -> int:
         "sourceCommits": receipt["sourceCommits"],
         "retainedAssets": len(ledger["assets"]),
         "changedBlobs": changed,
+        "studioSpecRepresentation": studio_summary,
         "materializedFilesVerified": args.import_root is not None,
     }, indent=2))
     return 0
