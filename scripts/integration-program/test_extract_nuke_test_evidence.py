@@ -121,6 +121,13 @@ class ExtractNukeTestEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "publication target ran"):
             self._extract()
 
+    def test_rejects_failed_nuke_run_before_parsing_repeated_failure_output(self) -> None:
+        self.log_path.write_text(self.log_path.read_text().replace(
+            "Build succeeded on", "Build failed on"
+        ))
+        with self.assertRaisesRegex(ValueError, "NUKE run failed"):
+            self._extract()
+
     def test_pins_current_tip_overlay_patch_bytes(self) -> None:
         overlay = self.root / "workbench.patch"
         overlay.write_text("reviewed overlay\n")

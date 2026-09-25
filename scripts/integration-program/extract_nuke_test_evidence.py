@@ -176,6 +176,8 @@ def extract(log_path: Path, root: Path, prep_path: Path, import_path: Path, patc
         raise ValueError("Recorded invocation selects a publication target")
     log_text = log_path.read_text(encoding="utf-8", errors="replace")
     log_lines = log_text.splitlines()
+    if any(re.match(r"^\s*Build failed on ", line) for line in log_lines):
+        raise ValueError("NUKE run failed; no passing Test evidence can be extracted")
     root = root.resolve()
     solution = root / "Elsa.sln"
     if not solution.is_file():
@@ -188,6 +190,8 @@ def extract(log_path: Path, root: Path, prep_path: Path, import_path: Path, patc
     profile = _pin_profile(root, prep_path, import_path, patch_path, profile_template)
     commands: dict[str, dict[str, str]] = {}
     for line in log_lines:
+        if "[INF] > " not in line and not line.startswith("> dotnet test "):
+            continue
         match = COMMAND_RE.search(line)
         if not match:
             continue
