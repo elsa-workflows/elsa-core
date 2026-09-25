@@ -116,6 +116,40 @@ public class WorkflowDefinitionActivityRegistryUpdaterTests
         }
     }
 
+    [Fact]
+    public async Task ReconcileRegistryAsync_DeleteDuringProviderReadDoesNotRestoreRemovedDescriptor()
+    {
+        var readStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseStaleRead = new TaskCompletionSource<IEnumerable<WorkflowDefinition>>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var reads = 0;
+        var store = Substitute.For<IWorkflowDefinitionStore>();
+        store.FindManyAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                if (Interlocked.Increment(ref reads) != 1)
+                    return Task.FromResult<IEnumerable<WorkflowDefinition>>([]);
+
+                readStarted.TrySetResult();
+                return releaseStaleRead.Task;
+            });
+        var tenantAccessor = new TestTenantAccessor("tenant-a");
+        var provider = new WorkflowDefinitionActivityProvider(store, new WorkflowDefinitionActivityDescriptorFactory(), tenantAccessor);
+        var registry = new ActivityRegistry(Substitute.For<IActivityDescriber>(), [], tenantAccessor, NullLogger<ActivityRegistry>.Instance);
+        var descriptor = CreateDescriptor("Deleted", "tenant-a");
+        descriptor.CustomProperties["WorkflowDefinitionId"] = "deleted";
+        registry.Add(typeof(WorkflowDefinitionActivityProvider), descriptor);
+        var updater = new WorkflowDefinitionActivityRegistryUpdater(provider, registry, Substitute.For<ICacheManager>(), tenantAccessor);
+
+        var reconciliation = updater.ReconcileRegistryAsync();
+        await readStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        updater.RemoveDefinitionFromRegistry("deleted");
+        releaseStaleRead.SetResult([CreateDefinition("deleted", "Deleted", "tenant-a")]);
+        await reconciliation.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Null(registry.Find("Deleted"));
+        Assert.Equal(2, reads);
+    }
+
     private static WorkflowDefinitionActivityRegistryUpdater CreateUpdater(IWorkflowDefinitionStore store, TestTenantAccessor tenantAccessor)
     {
         var provider = new WorkflowDefinitionActivityProvider(store, new WorkflowDefinitionActivityDescriptorFactory(), tenantAccessor);

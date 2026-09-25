@@ -16,6 +16,8 @@ Persist a monotonically increasing generation for each tenant and a separate `*`
 
 Ambiguous bulk, deletion and runtime reload notifications carry no tenant IDs; their handlers advance both the ambient tenant and `*` generations because tenant-scoped store operations can also affect tenant-agnostic definitions. Draft-save notifications do not publish workflow-as-activity descriptors and do not advance a registry generation. Reconciliation clears the visible provider set before adding the fetched set, including when it is empty, and fetches successfully before mutating the live registry. Cache invalidation and store reads happen outside the process-wide registry mutation lock, so a slow tenant read cannot block another tenant's registry update.
 
+The local updater tracks registry mutations while it reads from the store. If a local removal, addition, or another reconciliation changes the registry after that read starts, it invalidates the cache and reads again before replacing descriptors. This prevents an older local snapshot from restoring a definition removed during reconciliation. Remote changes remain subject to the next generation poll or periodic full reconciliation.
+
 ## Consequences
 
 Registry changes are eventually consistent across pods. With the default schedule, ordinary changes are observed within one poll interval plus query and reconciliation time; the periodic full reconciliation bounds recovery from missed signals to about one minute. The protocol requires every node to share both the generation database and workflow-definition source. The default in-memory generation store is node-local and does not enable cross-pod synchronization.
