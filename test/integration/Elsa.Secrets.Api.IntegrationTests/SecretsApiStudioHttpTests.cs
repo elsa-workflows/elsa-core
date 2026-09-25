@@ -394,8 +394,9 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
             Assert.Equal(HttpStatusCode.NotFound, missingDelete.StatusCode);
         }
 
-        Assert.Equal(SecretStatus.Active, (await tenantB.GetAsync(sharedName)).Status);
-        Assert.Equal(1, (await tenantB.GetAsync(sharedName)).CurrentVersion);
+        var tenantBBeforeCrossTenantMutation = await tenantB.GetAsync(sharedName);
+        Assert.Equal(SecretStatus.Active, tenantBBeforeCrossTenantMutation.Status);
+        Assert.Equal(1, tenantBBeforeCrossTenantMutation.CurrentVersion);
 
         await tenantA.UpdateAsync(sharedName, new UpdateSecretRequest { DisplayName = "Tenant A only" });
         Assert.NotEqual("Tenant A only", (await tenantB.GetAsync(sharedName)).DisplayName);
