@@ -31,8 +31,8 @@ class LegacyAssetDispositionTests(unittest.TestCase):
         self.assertEqual(2, self.ledger["schema_version"])
         self.assertEqual(163, len(self.ledger["assets"]))
         self.assertEqual({"extensions": 80, "studio": 83, "total": 163}, self.ledger["asset_counts"])
-        self.assertEqual(57, sum(row["status"] == "represented_in_core" for row in self.ledger["assets"]))
-        self.assertEqual(1, sum(row["status"] == "retired_from_active_tree" for row in self.ledger["assets"]))
+        self.assertEqual(82, sum(row["status"] == "represented_in_core" for row in self.ledger["assets"]))
+        self.assertEqual(2, sum(row["status"] == "retired_from_active_tree" for row in self.ledger["assets"]))
         license_rows = [row for row in self.ledger["assets"] if row["category"] == "license_notice"]
         self.assertEqual(2, len(license_rows))
         self.assertTrue(all(row["status"] == "represented_in_core" and row["completion"]["active_path"] == "LICENSE"
