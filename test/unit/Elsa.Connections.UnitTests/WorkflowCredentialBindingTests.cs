@@ -428,6 +428,27 @@ public sealed class WorkflowCredentialBindingTests
     }
 
     [Fact]
+    public async Task GrantManagementPermissionCannotIssueWithoutAHostSharePolicy()
+    {
+        await using var worker = await Worker.CreateAsync(EnvironmentId, allow: true, useGrants: true,
+            allowGrants: true, registerShareAuthorizer: false);
+        await worker.SeedConnectionAsync("connection-a", TenantId, EnvironmentId);
+        using var tenant = worker.TenantAccessor.PushContext(TenantContext());
+        using var scope = worker.Services.CreateScope();
+        Assert.True((await scope.ServiceProvider.GetRequiredService<IWorkflowCredentialBindingManager>()
+            .CreateAsync(Principal(), LogicalBindingId, "connection-a")).Succeeded);
+        var result = await scope.ServiceProvider.GetRequiredService<IWorkflowCredentialGrantManager>()
+            .IssueAsync(Principal(), "workflow-no-share-policy", LogicalBindingId, 1);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(ConnectionCredentialGrantAction.Issue, worker.GrantAuthorizer.LastRequest?.Action);
+        Assert.Null(worker.ShareAuthorizer.LastRequest);
+        Assert.Null(await scope.ServiceProvider.GetRequiredService<IConnectionCredentialUseGrantStore>()
+            .FindAsync(TenantId, EnvironmentId, "workflow-no-share-policy", LogicalBindingId));
+        Assert.Equal(0, worker.CredentialService.CallCount);
+    }
+
+    [Fact]
     public async Task GrantFeatureWithoutHostPolicyOrPersistenceFailsClosed()
     {
         var services = new ServiceCollection();
@@ -1044,12 +1065,13 @@ public sealed class WorkflowCredentialBindingTests
             bool registerHostUsePolicyBeforeModule = false,
             bool useRuntime = false,
             bool useApiKeyLifecycle = false,
-            bool allowShares = true)
+            bool allowShares = true,
+            bool registerShareAuthorizer = true)
         {
             var path = Path.Join(Path.GetTempPath(), $"elsa-workflow-credential-binding-{Guid.NewGuid():N}.db");
             return CreateForDatabaseAsync(path, environmentId, allow, deleteDatabaseOnDispose, saveChangesInterceptor,
                 useGrants, allowGrants, includeHostUsePolicy, registerHostUsePolicyBeforeModule, useRuntime, useApiKeyLifecycle,
-                allowShares);
+                allowShares, registerShareAuthorizer);
         }
 
         public static async Task<Worker> CreateForDatabaseAsync(
@@ -1064,7 +1086,8 @@ public sealed class WorkflowCredentialBindingTests
             bool registerHostUsePolicyBeforeModule = false,
             bool useRuntime = false,
             bool useApiKeyLifecycle = false,
-            bool allowShares = true)
+            bool allowShares = true,
+            bool registerShareAuthorizer = true)
         {
             var connectionString = $"Data Source={path};Cache=Shared;Pooling=False;";
             var tenantAccessor = new DefaultTenantAccessor();
@@ -1132,7 +1155,10 @@ public sealed class WorkflowCredentialBindingTests
             if (useGrants)
             {
                 services.AddSingleton<IConnectionCredentialGrantManagementAuthorizer>(grantAuthorizer);
-                services.AddSingleton<IConnectionCredentialShareAuthorizer>(shareAuthorizer);
+                if (registerShareAuthorizer)
+                {
+                    services.AddSingleton<IConnectionCredentialShareAuthorizer>(shareAuthorizer);
+                }
             }
             if (!useApiKeyLifecycle)
             {
