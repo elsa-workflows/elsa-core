@@ -3,8 +3,11 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Management.Services;
 
@@ -17,7 +20,8 @@ public class WorkflowReferenceUpdater(
     IWorkflowReferenceGraphBuilder workflowReferenceGraphBuilder,
     WorkflowDefinitionActivityDescriptorFactory workflowDefinitionActivityDescriptorFactory,
     IActivityRegistry activityRegistry,
-    IApiSerializer serializer)
+    IApiSerializer serializer,
+    ILogger<WorkflowReferenceUpdater> logger)
     : IWorkflowReferenceUpdater
 {
     private bool _isUpdating;
@@ -135,6 +139,34 @@ public class WorkflowReferenceUpdater(
             return null;
 
         var id = graph.Workflow.Identity.DefinitionId;
+        var latest = await workflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter
+        {
+            DefinitionId = id,
+            VersionOptions = VersionOptions.Latest
+        }, cancellationToken);
+
+        if (latest == null)
+            return null;
+
+        // Decide skip before creating a draft. GetOrCreateDraftAsync clones published
+        // consumers and registers that unsaved version as latest in the activity registry.
+        if (latest.MaterializerName != JsonWorkflowMaterializer.MaterializerName)
+        {
+            var outdatedOnLatest = FindActivities(graph.Root, target.DefinitionId)
+                .Any(a => a.WorkflowDefinitionVersionId != target.Id);
+
+            if (outdatedOnLatest)
+            {
+                logger.LogWarning(
+                    "Skipping reference update for workflow definition {ConsumerDefinitionId}: it is authored in a non-JSON source format and must be updated manually to reference {ReferencedDefinitionId} version {ReferencedVersion}.",
+                    latest.DefinitionId,
+                    target.DefinitionId,
+                    target.Version);
+            }
+
+            return null;
+        }
+
         var draft = await GetOrCreateDraftAsync(id, draftCache, cancellationToken);
         if (draft == null) return null;
 
@@ -154,7 +186,10 @@ public class WorkflowReferenceUpdater(
         }
 
         if (newGraph.Root.Activity is Workflow wf)
+        {
             draft.StringData = serializer.Serialize(wf.Root);
+            draft.OriginalSource = null;
+        }
 
         return new(draft, newGraph);
     }
