@@ -24,14 +24,33 @@ Integration-program tooling tests passed 271/271 in both normal and optimized Py
 
 This is a passing **pinned rehearsal**, not the history-bearing import at the later Core `main`. Final remote SourceLink, package-mode dependency closure, one-publisher handoff, imported-host behavior, and supported historical Secrets upgrades remain open. No packages were packed or published, and no production change was made.
 
-To repeat from this tooling checkout with full-history source repositories at the exact commits:
+To rerun from this tooling checkout, use full-history checkouts at the three exact source commits above. Keep the tooling checkout as the working directory and choose a new disposable output path:
 
-```text
-python3 scripts/integration-program/rehearse-import.py --core <core-checkout> --extensions <extensions-checkout> --studio <studio-checkout> --output <new-disposable-directory> --source-profile current-tip
-python3 scripts/integration-program/prepare_consolidated_build.py --rehearsal <new-disposable-directory>
-python3 -m unittest discover -s scripts/integration-program -p test_prepare_consolidated_build.py
+```sh
+rehearsal=/path/to/new-disposable-e96-rehearsal
+tooling="$PWD"
+python3 scripts/integration-program/rehearse-import.py \
+  --core /path/to/core-at-e96 --extensions /path/to/extensions-at-ba8b \
+  --studio /path/to/studio-at-20cea --source-profile current-tip --output "$rehearsal"
+python3 scripts/integration-program/prepare_consolidated_build.py --rehearsal "$rehearsal"
+for patch in workbench-canonical-secrets.patch studio-secrets-menu.patch studio-bpmn-generator-layout.patch \
+  workbench-two-tenant-multitenancy.patch workbench-secrets-route-probe.patch studio-test-layout-current-tip.patch; do
+  git -C "$rehearsal" apply --check "$tooling/scripts/integration-program/consolidated-build/$patch"
+  git -C "$rehearsal" apply "$tooling/scripts/integration-program/consolidated-build/$patch"
+done
+(cd "$rehearsal" && env -u NUKE_ENTERPRISE_TOKEN ./build.sh --host Terminal --target Test > "$rehearsal-nuke.log" 2>&1)
+python3 scripts/integration-program/extract_nuke_test_evidence.py \
+  --log "$rehearsal-nuke.log" --rehearsal "$rehearsal" \
+  --preparation-receipt "$rehearsal/consolidated-build-receipt.json" \
+  --import-receipt "$rehearsal/import-receipt.json" \
+  --source-integration-patch scripts/integration-program/consolidated-build/source-integration.patch \
+  --profile-template doc/integration-program/consolidation/current-tip-e96-evidence/reviewed-overlays-six.json \
+  --command 'env -u NUKE_ENTERPRISE_TOKEN ./build.sh --host Terminal --target Test' \
+  --output "$rehearsal-test-evidence.json"
+python3 scripts/integration-program/refresh_canonical_dependency_graph.py \
+  --source-profile current-tip-e96 --rehearsal "$rehearsal" \
+  --overlay-receipt doc/integration-program/consolidation/current-tip-e96-evidence/reviewed-overlays-six.json \
+  --evidence "$rehearsal-test-evidence.json" --output "$rehearsal-tested-closure.json"
 ```
 
-Never push the synthetic rehearsal commit or publish packages from it.
-
-To recheck dependency closure from this tooling checkout and this exact disposable source tree, decompress `full-suite-nuke-test-evidence.json.gz` and pass it with `--source-profile current-tip-e96`, `--rehearsal`, and `--overlay-receipt reviewed-overlays-six.json` to `scripts/integration-program/refresh_canonical_dependency_graph.py`. The restored assets and source files must still match the recorded hashes.
+For the **archived** receipt, use the original exact prepared tree rather than a new synthetic commit, decompress `full-suite-nuke-test-evidence.json.gz`, and pass that JSON as `--evidence` in the final command. The verifier rejects source, overlay, restored-asset, and rehearsal-commit drift. Never push the synthetic rehearsal commit or publish packages from it.

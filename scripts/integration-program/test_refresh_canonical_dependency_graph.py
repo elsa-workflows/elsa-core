@@ -42,6 +42,15 @@ class CanonicalDependencyGraphTests(unittest.TestCase):
                     self.assertEqual(profile[digest_key], hashlib.sha256(raw).hexdigest())
                     self.assertEqual(profile["sourceCommits"], json.loads(raw)["sourceCommits"])
 
+        e96 = repository / "doc/integration-program/consolidation/current-tip-e96-evidence"
+        for receipt, expected_sha256 in (
+            ("full-suite-nuke-test-evidence.json.gz", "be4926862ba5457d6ee6fdb91d9611f4aa4e99045e7a654c39ad76fa2361e20a"),
+            ("canonical-dependency-closure-tested.json.gz", "263692b07bff0d2851e11e762bb628b3593359caa9c8ecac9c42b3d14eda4f89"),
+        ):
+            with self.subTest(receipt=receipt):
+                raw = gzip.decompress((e96 / receipt).read_bytes())
+                self.assertEqual(expected_sha256, hashlib.sha256(raw).hexdigest())
+
     def test_current_tip_explicit_skip_requires_matching_zero_execution_trx(self):
         path = "test/extensions/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj"
         counters = {"total": 1, "executed": 0, "passed": 0, "failed": 0}
