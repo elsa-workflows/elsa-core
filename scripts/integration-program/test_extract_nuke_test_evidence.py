@@ -109,6 +109,32 @@ class ExtractNukeTestEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "source pins differ"):
             self._extract()
 
+    def test_uses_dotnet_compile_warning_summary(self) -> None:
+        log = self.log_path.read_text()
+        self.log_path.write_text(log.replace("╔ Test", "[WRN] Compile: one displayed warning\n[DBG]     7 Warning(s)\n╔ Test"))
+        self.assertEqual(7, self._extract()["invocation"]["compile"]["warnings"])
+
+    def test_rejects_publication_target_in_nuke_log(self) -> None:
+        self.log_path.write_text(self.log_path.read_text().replace("╔ Test", "║ Publish\n╔ Test"))
+        with self.assertRaisesRegex(ValueError, "publication target ran"):
+            self._extract()
+
+    def test_pins_current_tip_overlay_patch_bytes(self) -> None:
+        overlay = self.root / "workbench.patch"
+        overlay.write_text("reviewed overlay\n")
+        receipt = self.root / "overlay-receipt.json"
+        receipt.write_text(json.dumps({
+            "sourcePins": json.loads(self.prep_path.read_text())["sourceCommits"],
+            "reviewedOverlayReceipt": [{"name": overlay.name, "sha256": self._hash(overlay)}],
+        }))
+        evidence = extract(self.log_path, self.root, self.prep_path, self.import_path,
+                           self.patch_path, receipt, "./build.sh --target Test")
+        self.assertEqual(self._hash(receipt), evidence["profile"]["overlayReceiptSha256"])
+        overlay.write_text("changed overlay\n")
+        with self.assertRaisesRegex(ValueError, "Overlay patch bytes differ"):
+            extract(self.log_path, self.root, self.prep_path, self.import_path,
+                    self.patch_path, receipt, "./build.sh --target Test")
+
 
 if __name__ == "__main__":
     unittest.main()

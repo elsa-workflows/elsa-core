@@ -75,7 +75,13 @@ def _pin_profile(root: Path, prep_path: Path, import_path: Path, patch_path: Pat
         "canonicalSolution": "Elsa.sln",
     }
     if profile_template:
-        template = json_file(profile_template).get("profile", {})
+        document = json_file(profile_template)
+        overlay_receipt = "reviewedOverlayReceipt" in document
+        template = document if overlay_receipt else document.get("profile", {})
+        if not isinstance(template, dict):
+            raise ValueError("Profile template must contain an object")
+        if overlay_receipt and template.get("sourcePins") != commits:
+            raise ValueError("Overlay receipt source pins differ from preparation receipt")
         expected_pins = {
             "core": commits["core"],
             "extensions": commits["extensions"],
@@ -86,7 +92,7 @@ def _pin_profile(root: Path, prep_path: Path, import_path: Path, patch_path: Pat
         for key, value in expected_pins.items():
             if key in template and template[key] != value:
                 raise ValueError(f"Profile template {key} differs from source receipts")
-        supplemental = template.get("supplementalPatches", [])
+        supplemental = template.get("reviewedOverlayReceipt" if overlay_receipt else "supplementalPatches", [])
         if not isinstance(supplemental, list):
             raise ValueError("Profile template supplementalPatches must be a list")
         names = set()
@@ -96,7 +102,15 @@ def _pin_profile(root: Path, prep_path: Path, import_path: Path, patch_path: Pat
             if item["name"] in names:
                 raise ValueError(f"Profile template repeats supplemental patch: {item['name']}")
             names.add(item["name"])
+            if overlay_receipt:
+                if Path(item["name"]).name != item["name"] or not item["name"].endswith(".patch"):
+                    raise ValueError(f"Overlay receipt has an unsafe patch name: {item['name']}")
+                candidate = patch_path.parent / item["name"]
+                if not candidate.is_file() or sha256(candidate) != item["sha256"]:
+                    raise ValueError(f"Overlay patch bytes differ from receipt: {item['name']}")
         profile["supplementalPatches"] = supplemental
+        if overlay_receipt:
+            profile["overlayReceiptSha256"] = sha256(profile_template)
     profile["sourceReceipts"] = {
         "preparationReceiptSha256": sha256(prep_path),
         "importReceiptSha256": sha256(import_path),
@@ -154,6 +168,10 @@ def _duration_seconds(value: str) -> int:
 
 def extract(log_path: Path, root: Path, prep_path: Path, import_path: Path, patch_path: Path,
             profile_template: Path | None, command: str) -> dict[str, Any]:
+    if not re.search(r"(?:^|\s)--target\s+Test(?:\s|$)", command):
+        raise ValueError("Recorded invocation must select the NUKE Test target")
+    if re.search(r"(?:^|\s)--target\s+(?:Pack|Push|Publish)(?:\s|$)", command, re.IGNORECASE):
+        raise ValueError("Recorded invocation selects a publication target")
     log_text = log_path.read_text(encoding="utf-8", errors="replace")
     log_lines = log_text.splitlines()
     root = root.resolve()
@@ -297,12 +315,20 @@ def extract(log_path: Path, root: Path, prep_path: Path, import_path: Path, patc
         raise ValueError("NUKE run contains test failures")
     if (nuke_passed, nuke_skipped) != (retained["passed"], retained["skipped"]):
         raise ValueError("NUKE summary totals differ from retained TRX counters")
-    compile_warnings = sum(1 for line in log_lines if "[WRN] Compile:" in line)
+    warning_summaries = [int(match.group(1)) for line in log_lines
+                         if (match := re.search(r"\[DBG\]\s+(\d+) Warning\(s\)$", line))]
+    if len(warning_summaries) > 1:
+        raise ValueError("NUKE log repeats the compile warning summary")
+    compile_warnings = warning_summaries[0] if warning_summaries else sum(
+        1 for line in log_lines if "[WRN] Compile:" in line
+    )
     compile_errors = sum(1 for line in log_lines if "[ERR] Compile:" in line)
     if compile_errors:
         raise ValueError(f"NUKE compile emitted {compile_errors} error line(s)")
     forbidden_targets = {name: False for name in ("pack", "push", "publish")}
-    if any(re.search(rf"\b{target.title()}\s+Succeeded\b", line) for line in log_lines for target in forbidden_targets):
+    if any(re.match(r"^║\s*(?:Pack|Push|Publish)\s*$", line, re.IGNORECASE) or
+           re.search(r"\b(?:Pack|Push|Publish)\s+(?:Succeeded|Failed)\b", line)
+           for line in log_lines):
         raise ValueError("NUKE log shows a package or publication target ran")
     total_duration = sum(_duration_seconds(value) for value in target_durations.values())
     duration = lambda seconds: f"{seconds // 60:02d}:{seconds % 60:02d}"
