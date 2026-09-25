@@ -23,24 +23,39 @@ public sealed class ConnectionLifecycleReconciliationWorkerTests
         var recovery = Substitute.For<IConnectionLifecycleRecoveryService>();
         var candidates = new[]
         {
-            new ConnectionDueCandidate(scope.TenantId, scope.EnvironmentId, "connection-secret-marker",
+            new ConnectionDueCandidate(scope.TenantId, scope.EnvironmentId, "recovery-existing-secret-marker",
                 ConnectionDueCandidateKind.RecoveryRequired, "recovery", DateTimeOffset.MinValue),
-            new ConnectionDueCandidate(scope.TenantId, scope.EnvironmentId, "connection-secret-marker",
+            new ConnectionDueCandidate(scope.TenantId, scope.EnvironmentId, "recovery-expired-secret-marker",
+                ConnectionDueCandidateKind.ExpiredConnectionOperation, "expired", DateTimeOffset.MinValue),
+            new ConnectionDueCandidate(scope.TenantId, scope.EnvironmentId, "recovery-conflict-secret-marker",
+                ConnectionDueCandidateKind.RecoveryRequired, "conflict", DateTimeOffset.MinValue),
+            new ConnectionDueCandidate(scope.TenantId, scope.EnvironmentId, "offboarding-existing-secret-marker",
                 ConnectionDueCandidateKind.Offboarding, "offboarding", DateTimeOffset.MinValue),
+            new ConnectionDueCandidate(scope.TenantId, scope.EnvironmentId, "offboarding-transition-secret-marker",
+                ConnectionDueCandidateKind.Offboarding, "offboarding-transition", DateTimeOffset.MinValue),
             new ConnectionDueCandidate("other-tenant", scope.EnvironmentId, "connection-secret-marker",
                 ConnectionDueCandidateKind.OAuthRefresh, "refresh", DateTimeOffset.MinValue)
         };
         var queries = 0;
-        dueStore.FindDueCandidatesAsync(scope.TenantId, scope.EnvironmentId, Arg.Any<DateTimeOffset>(), 3,
+        dueStore.FindDueCandidatesAsync(scope.TenantId, scope.EnvironmentId, Arg.Any<DateTimeOffset>(), 6,
                 Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(_ => Task.FromResult(Interlocked.Increment(ref queries) == 1
                 ? new ConnectionDueCandidatePage(candidates, null)
                 : new ConnectionDueCandidatePage([], null)));
         recovery.ReconcileAsync(scope.TenantId, scope.EnvironmentId, Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(new ConnectionLifecycleResult(false, "recovery_required", 1)));
+            .Returns(call => Task.FromResult(new ConnectionLifecycleResult(false,
+                call.ArgAt<string>(2) switch
+                {
+                    "recovery-expired-secret-marker" => "refresh_outcome_unknown",
+                    "recovery-conflict-secret-marker" => "generation_publish_conflict",
+                    _ => "recovery_required"
+                }, 1)));
         recovery.ReconcileOffboardingAsync(scope.TenantId, scope.EnvironmentId, Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(new ConnectionOffboardingOperationResult(false, "offboarding_outcome_unknown",
-                "offboarding", ConnectionOffboardingOperationStatus.UnknownOutcome, 1)));
+            .Returns(call => Task.FromResult(call.ArgAt<string>(2) == "offboarding-transition-secret-marker"
+                ? new ConnectionOffboardingOperationResult(true, null, "offboarding-transition",
+                    ConnectionOffboardingOperationStatus.UnknownOutcome, 1)
+                : new ConnectionOffboardingOperationResult(false, "offboarding_outcome_unknown",
+                    "offboarding", ConnectionOffboardingOperationStatus.UnknownOutcome, 1)));
 
         var measurements = new ConcurrentQueue<(string Name, long Value, int TagCount)>();
         var completedPage = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -72,7 +87,7 @@ public sealed class ConnectionLifecycleReconciliationWorkerTests
         using var worker = new ConnectionLifecycleReconciliationWorker(provider.GetRequiredService<IServiceScopeFactory>(),
             Options.Create(new ConnectionLifecycleReconciliationOptions
             {
-                BatchSize = 3,
+                BatchSize = 6,
                 Interval = TimeSpan.FromMilliseconds(5),
                 RetryBackoff = TimeSpan.FromMilliseconds(20),
                 MaxRetryBackoff = TimeSpan.FromMilliseconds(20)
@@ -110,11 +125,13 @@ public sealed class ConnectionLifecycleReconciliationWorkerTests
                  {
                      "elsa.connections.reconciliation.pages.failed",
                      "elsa.connections.reconciliation.pages.completed",
-                     "elsa.connections.reconciliation.scans.failed",
-                     "elsa.connections.reconciliation.attention.recovery_required",
-                     "elsa.connections.reconciliation.attention.offboarding_outcome_unknown"
+                     "elsa.connections.reconciliation.scans.failed"
                  })
             Assert.Contains(measurements, measurement => measurement.Name == name && measurement.Value == 1);
+        Assert.Equal(3, measurements.Count(measurement =>
+            measurement.Name == "elsa.connections.reconciliation.attention.recovery_required" && measurement.Value == 1));
+        Assert.Equal(2, measurements.Count(measurement =>
+            measurement.Name == "elsa.connections.reconciliation.attention.offboarding_outcome_unknown" && measurement.Value == 1));
         Assert.All(measurements, measurement =>
         {
             Assert.Equal(0, measurement.TagCount);

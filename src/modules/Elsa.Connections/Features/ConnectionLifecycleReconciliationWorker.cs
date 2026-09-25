@@ -157,9 +157,9 @@ public sealed class ConnectionLifecycleReconciliationWorker(
             case ConnectionDueCandidateKind.RecoveryRequired:
                 var reconciliation = await lifecycle.ReconcileAsync(candidate.TenantId, candidate.EnvironmentId,
                     candidate.ConnectionId, cancellationToken);
-                // RecoveryRequired with no promotable generation needs operator attention. It is handled
-                // for this scan, not a successful recovery, so later pages are not held behind it.
-                if (reconciliation.SafeErrorCode == "recovery_required")
+                // Report both an existing RecoveryRequired state and transitions that may enter it.
+                // Only the established recovery_required result is handled for this scan.
+                if (reconciliation.SafeErrorCode is "recovery_required" or "refresh_outcome_unknown" or "generation_publish_conflict")
                     ConnectionLifecycleReconciliationMetrics.RecordRecoveryRequired();
                 return reconciliation.Succeeded || reconciliation.SafeErrorCode == "recovery_required";
             case ConnectionDueCandidateKind.GenerationCleanup:
@@ -168,9 +168,10 @@ public sealed class ConnectionLifecycleReconciliationWorker(
             case ConnectionDueCandidateKind.Offboarding:
                 var offboarding = await lifecycle.ReconcileOffboardingAsync(candidate.TenantId, candidate.EnvironmentId,
                     candidate.ConnectionId, cancellationToken);
-                // An unknown, non-replayable provider outcome needs operator attention. Do not
-                // let that durable state hold every later due candidate behind this page.
-                if (offboarding.SafeErrorCode == "offboarding_outcome_unknown")
+                // Report UnknownOutcome even when the service accepts the reconciliation with no error code.
+                // A non-replayable unknown is handled for this scan so later candidates are not held behind it.
+                if (offboarding.SafeErrorCode == "offboarding_outcome_unknown" ||
+                    offboarding.Status == ConnectionOffboardingOperationStatus.UnknownOutcome)
                     ConnectionLifecycleReconciliationMetrics.RecordUnknownOffboarding();
                 return offboarding.Accepted || offboarding.SafeErrorCode == "offboarding_outcome_unknown";
             default:
