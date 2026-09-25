@@ -13,7 +13,7 @@ The executable source comparison uses these exact commits:
 | Extensions Secrets 3.8.1 | [`01bf9ad`](https://github.com/elsa-workflows/elsa-extensions/commit/01bf9ad70d0399afadae9609fe820703d3de290d) | Public NuGet source commit for the old Extensions EF/API/UI implementation at 3.8.1. |
 | Extensions 3.8.4 | [`154ba15`](https://github.com/elsa-workflows/elsa-extensions/commit/154ba15fb4da85b4bebecfbe43639579cbda1d0d) | Public source commit for the separate legacy Secrets API/Core/Management/Scripting packages. |
 | Studio Secrets 3.8.4 | [`9bff3f7`](https://github.com/elsa-workflows/elsa-studio/commit/9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae) | Public NuGet source commit for `Elsa.Studio.Secrets` at 3.8.4. |
-| Studio import tip | [`f0eeb3c`](https://github.com/elsa-workflows/elsa-studio/commit/f0eeb3c7428443b09512049fe890635fa4f7b427) | Source selected by draft import #8409. The Secrets Refit interface and DTO Git blobs equal those at previous `20ceaee` and `9afd3e3` pins. The Secrets page changed after `20ceaee`; source-contract equality does not replace the imported browser repeat. |
+| Studio draft-import tip | [`f0eeb3c`](https://github.com/elsa-workflows/elsa-studio/commit/f0eeb3c7428443b09512049fe890635fa4f7b427) | Source selected by draft import #8409 and this API/client contract. The checked-in `rehearse-import.py` `current-tip` profile remains a historical `20ceaee` rehearsal, not a selection of this newer tip. The Secrets Refit interface and DTO Git blobs equal those at `20ceaee` and `9afd3e3`; the Secrets page changed after `20ceaee`, so source-contract equality does not replace the imported browser repeat. |
 
 The report can be reproduced with local Core and Extensions clones:
 
