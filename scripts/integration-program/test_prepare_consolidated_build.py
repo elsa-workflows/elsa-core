@@ -161,10 +161,15 @@ new file mode 100644
             'studio': '20ceaeeed7e671f0c9662003e82063026f2216de',
         }
         profiles = build.supported_source_profiles()
-        self.assertEqual(profiles[-1], current)
-        self.assertEqual(profiles[-2], build.PREVIOUS_CURRENT_TIP_SOURCE_COMMITS)
+        self.assertEqual(profiles[-2], current)
+        self.assertEqual(profiles[-3], build.PREVIOUS_CURRENT_TIP_SOURCE_COMMITS)
+        self.assertEqual(profiles[-1], {
+            'core': 'c4b3ce150160e3c9062b57f7b158fd6b968e1631',
+            'extensions': current['extensions'],
+            'studio': current['studio'],
+        })
         self.assertEqual(profiles[0], build.SOURCE_COMMITS)
-        self.assertEqual(len(profiles), 5)
+        self.assertEqual(len(profiles), 6)
 
         agent = self.root / 'src/extensions/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj'
         contexts = self.root / 'src/extensions/workflows/Elsa.Studio.WorkflowContexts/Elsa.Studio.WorkflowContexts.csproj'
@@ -186,6 +191,12 @@ new file mode 100644
         agent.write_bytes(original_agent)
         contexts.write_bytes(original_contexts)
         build.remove_unused_blazored_references(self.root, build.PREVIOUS_CURRENT_TIP_SOURCE_COMMITS)
+        self.assertNotIn('Blazored.FluentValidation', agent.read_text())
+        self.assertNotIn('Blazored.FluentValidation', contexts.read_text())
+
+        agent.write_bytes(original_agent)
+        contexts.write_bytes(original_contexts)
+        build.remove_unused_blazored_references(self.root, build.POST_REGISTRY_SOURCE_COMMITS)
         self.assertNotIn('Blazored.FluentValidation', agent.read_text())
         self.assertNotIn('Blazored.FluentValidation', contexts.read_text())
 

@@ -35,6 +35,15 @@ CURRENT_TIP_SOURCE_COMMITS = {
     'core': 'a13ac7a412e037280d7a568fd9dd87b06ff8b724',
     **rehearsal.CURRENT_TIP_PINS,
 }
+POST_REGISTRY_SOURCE_COMMITS = {
+    'core': 'c4b3ce150160e3c9062b57f7b158fd6b968e1631',
+    **rehearsal.CURRENT_TIP_PINS,
+}
+CURRENT_TIP_SOURCE_PROFILES = (
+    PREVIOUS_CURRENT_TIP_SOURCE_COMMITS,
+    CURRENT_TIP_SOURCE_COMMITS,
+    POST_REGISTRY_SOURCE_COMMITS,
+)
 # Keep prior reviewed profiles accepted alongside the current-tip rehearsal.
 SUPPORTED_CORE_PROFILE_COMMITS = (
     '076f022cc174d497af26fc8e26414970e61a79b1',
@@ -63,8 +72,7 @@ def supported_source_profiles():
     return (
         SOURCE_COMMITS,
         *({**SOURCE_COMMITS, 'core': core_commit} for core_commit in SUPPORTED_CORE_PROFILE_COMMITS),
-        PREVIOUS_CURRENT_TIP_SOURCE_COMMITS,
-        CURRENT_TIP_SOURCE_COMMITS,
+        *CURRENT_TIP_SOURCE_PROFILES,
     )
 
 
@@ -294,7 +302,7 @@ def remove_unused_blazored_references(root, source_commits):
     and removes WorkflowContexts' unused Razor import. Secrets is deliberately
     retained under the inert duplicate-source tree, so it needs no active edit.
     """
-    if source_commits not in (PREVIOUS_CURRENT_TIP_SOURCE_COMMITS, CURRENT_TIP_SOURCE_COMMITS):
+    if source_commits not in CURRENT_TIP_SOURCE_PROFILES:
         return
 
     references = (
