@@ -78,21 +78,36 @@ class CurrentTipLegacyAssetsTests(unittest.TestCase):
         self.assertEqual([], errors)
         self.assertEqual(50, summary["total"])
         self.assertEqual(42, summary["representedByIdenticalCoreRoot"])
-        self.assertEqual(8, len(summary["pendingDifferentPaths"]))
-        self.assertIn(".specify/memory/constitution.md", summary["pendingDifferentPaths"])
+        self.assertEqual(6, len(summary["reviewedDifferentPaths"]))
+        self.assertEqual({
+            ".agents/skills/speckit-plan/SKILL.md",
+            ".specify/memory/constitution.md",
+        }, set(summary["pendingPolicyPaths"]))
 
     def test_studio_tooling_representation_rejects_unreviewed_blob_or_decision_drift(self) -> None:
         decision = copy.deepcopy(self.studio_decision)
-        decision["pendingDifferences"].pop(".specify/memory/constitution.md")
+        decision["sourceDifferences"].pop(".specify/memory/constitution.md")
         errors, _ = compare_studio_spec_representation(self.ledger, self.receipt, decision)
-        self.assertTrue(any("pending-difference" in error for error in errors))
+        self.assertTrue(any("source-difference" in error for error in errors))
 
         receipt = copy.deepcopy(self.receipt)
         source = next(row for row in receipt["mapping"] if row["repository"] == "studio"
                       and row["source"] == ".agents/skills/speckit-analyze/SKILL.md")
         source["blob"] = "0" * 40
         errors, _ = compare_studio_spec_representation(self.ledger, receipt, self.studio_decision)
-        self.assertTrue(any("pending-difference" in error for error in errors))
+        self.assertTrue(any("source-difference" in error for error in errors))
+
+    def test_reviewed_studio_tooling_difference_fails_on_active_blob_or_mode_drift(self) -> None:
+        decision = copy.deepcopy(self.studio_decision)
+        path = ".specify/integrations/codex.manifest.json"
+        decision["sourceDifferences"][path]["activeBlob"] = "0" * 40
+        errors, _ = compare_studio_spec_representation(self.ledger, self.receipt, decision)
+        self.assertTrue(any("reviewed difference changed" in error for error in errors))
+
+        decision = copy.deepcopy(self.studio_decision)
+        decision["sourceDifferences"][path]["activeMode"] = "100755"
+        errors, _ = compare_studio_spec_representation(self.ledger, self.receipt, decision)
+        self.assertTrue(any("reviewed difference changed" in error for error in errors))
 
     def test_studio_tooling_executable_mode_is_part_of_representation(self) -> None:
         paths = [row["original_path"] for row in self.ledger["assets"]
@@ -110,7 +125,7 @@ class CurrentTipLegacyAssetsTests(unittest.TestCase):
             script.chmod(0o644)
             errors, _ = compare_studio_spec_representation(self.ledger, self.receipt,
                                                              self.studio_decision, root)
-            self.assertTrue(any("pending-difference" in error for error in errors))
+            self.assertTrue(any("source-difference" in error for error in errors))
 
 
 if __name__ == "__main__":
