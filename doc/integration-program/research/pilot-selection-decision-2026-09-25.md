@@ -2,7 +2,7 @@
 
 ## Decision
 
-For [#8212](https://github.com/elsa-workflows/elsa-core/issues/8212), retain OneDrive, Moneybird, and Slack together in the catalog's rank-1 **validation cohort**. Select no customer-facing or live-provider pilot at this checkpoint. This is a decision to validate three complementary workflow shapes, not an authorization to contact providers, register apps, access accounts, implement integrations, or publish packages.
+For [#8212](https://github.com/elsa-workflows/elsa-core/issues/8212), retain OneDrive, Moneybird, and Slack together in the catalog's rank-1 **validation cohort**. Select no customer-facing or live-provider pilot at this checkpoint. This decision validates three complementary workflow shapes; it does not by itself justify provider-backed implementation, contacting providers, registering apps, accessing accounts, or publishing packages.
 
 The catalog's numeric demand scores are null for every candidate, and its demand-sensitivity intervals overlap for all 18 deep assessments. There is no evidence-backed winner within the cohort or against the other cohorts. The cohort order is conditional sequencing from program scope, operation coverage, reuse, and effort assumptions; it is not a popularity ranking. Revisit the candidate set when a specific user/sponsor, Elsa owner, and provider test path are documented.
 
