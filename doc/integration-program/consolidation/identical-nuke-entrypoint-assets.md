@@ -10,7 +10,7 @@ and Core `main` at `34de0aa24bb785cd0b0ed4d5a237efb19dda2122`.
 | Extensions asset and active Core path | Git blob | Mode |
 | --- | --- | --- |
 | [`build.cmd`](../../../build.cmd) | `b08cc590f4c39e05283116619a75b76a6010c539` | `100755` |
-| [`build.ps1`](../../../build.ps1) | `4634dc03e9f83f93e8ade1957547e0320fba0332f` | `100644` |
+| [`build.ps1`](../../../build.ps1) | `4634dc03e9f83f93e8ade1957547e0320fba0332` | `100644` |
 | [`build.sh`](../../../build.sh) | `fdff0c623663cbbe1226165447a1a7e1d06d042e` | `100755` |
 | [`build/.editorconfig`](../../../build/.editorconfig) | `31e43dcd8e5b5114d731ab0172aceeb7d7c2edb9` | `100644` |
 | [`build/_build.csproj.DotSettings`](../../../build/_build.csproj.DotSettings) | `c815d363e82b2e04ddc6c04638996d6b5f8ffb90` | `100644` |
