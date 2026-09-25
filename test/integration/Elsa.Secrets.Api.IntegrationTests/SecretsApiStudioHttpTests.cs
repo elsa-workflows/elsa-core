@@ -386,9 +386,17 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
             Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
             var missingUpdate = await Assert.ThrowsAsync<ApiException>(() => isolatedTenant.UpdateAsync(sharedName, new UpdateSecretRequest { DisplayName = "Must not cross tenants" }));
             Assert.Equal(HttpStatusCode.NotFound, missingUpdate.StatusCode);
+            var missingRotate = await Assert.ThrowsAsync<ApiException>(() => isolatedTenant.RotateAsync(sharedName, new RotateSecretRequest { Value = "must-not-cross-tenants" }));
+            Assert.Equal(HttpStatusCode.NotFound, missingRotate.StatusCode);
+            var missingRevoke = await Assert.ThrowsAsync<ApiException>(() => isolatedTenant.RevokeAsync(sharedName));
+            Assert.Equal(HttpStatusCode.NotFound, missingRevoke.StatusCode);
             var missingDelete = await Assert.ThrowsAsync<ApiException>(() => isolatedTenant.DeleteAsync(sharedName));
             Assert.Equal(HttpStatusCode.NotFound, missingDelete.StatusCode);
         }
+
+        var tenantBAfterDeniedMutations = await tenantB.GetAsync(sharedName);
+        Assert.Equal(SecretStatus.Active, tenantBAfterDeniedMutations.Status);
+        Assert.Equal(1, tenantBAfterDeniedMutations.CurrentVersion);
 
         await tenantA.UpdateAsync(sharedName, new UpdateSecretRequest { DisplayName = "Tenant A only" });
         Assert.NotEqual("Tenant A only", (await tenantB.GetAsync(sharedName)).DisplayName);

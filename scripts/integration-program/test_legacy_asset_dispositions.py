@@ -31,7 +31,7 @@ class LegacyAssetDispositionTests(unittest.TestCase):
         self.assertEqual(2, self.ledger["schema_version"])
         self.assertEqual(163, len(self.ledger["assets"]))
         self.assertEqual({"extensions": 80, "studio": 83, "total": 163}, self.ledger["asset_counts"])
-        self.assertEqual(84, sum(row["status"] == "represented_in_core" for row in self.ledger["assets"]))
+        self.assertEqual(90, sum(row["status"] == "represented_in_core" for row in self.ledger["assets"]))
         self.assertEqual(2, sum(row["status"] == "retired_from_active_tree" for row in self.ledger["assets"]))
         license_rows = [row for row in self.ledger["assets"] if row["category"] == "license_notice"]
         self.assertEqual(2, len(license_rows))
@@ -52,6 +52,14 @@ class LegacyAssetDispositionTests(unittest.TestCase):
         self.assertEqual(EXPECTED_SOURCE_RECEIPT_SHA256, self.receipt["provenance"]["sourceReceiptSha256"])
         self.assertEqual(163, len(self.receipt["mapping"]))
         self.assertEqual([], validate_ledger(self.ledger, self.receipt))
+
+    def test_studio_readme_and_dockerignore_use_consolidated_paths(self) -> None:
+        rows = {row["original_path"]: row for row in self.ledger["assets"]
+                if row["original_repository"] == "studio"}
+        self.assertEqual("doc/studio/README.md", rows["README.md"]["completion"]["active_path"])
+        self.assertEqual(".dockerignore", rows[".dockerignore"]["completion"]["active_path"])
+        self.assertEqual("represented_in_core", rows["README.md"]["status"])
+        self.assertEqual("represented_in_core", rows[".dockerignore"]["status"])
 
     def test_receipt_mutations_fail_closed(self) -> None:
         mutations = (
