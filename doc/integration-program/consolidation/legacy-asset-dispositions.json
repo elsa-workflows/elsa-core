@@ -1549,7 +1549,7 @@
       "category": "repository_ignore_rules",
       "owning_workstream": "Central repository/build maintainers",
       "proposed_disposition": "Use the consolidated root .dockerignore for repository-root Docker builds. Do not copy these standalone Studio exclusions into the broader root context because they exclude root README.md, LICENSE, and Dockerfile inputs.",
-      "evidence_or_gate": "At Studio tip 099402226daba80e473a306bbd1243b8994465b8, this path still matches the pinned blob. Current imported Docker builds use repository-root context; the consolidated root .dockerignore from #8461 scopes generated and sensitive files while preserving README.md, LICENSE, and Dockerfiles. No current build uses the old standalone Studio context.",
+      "evidence_or_gate": "At Studio tip 099402226daba80e473a306bbd1243b8994465b8, this path still matches the pinned blob. docker-ca.yml and Compose use repository-root context, where the consolidated root .dockerignore from #8461 applies. The checked-in scripts/docker/build-and-run-all-in-one-web-docker.sh uses a scripts/docker context without required Dockerfile inputs; root ignore policy does not apply to that script. No checked-in invocation uses the old standalone Studio context.",
       "status": "represented_in_core",
       "completion": {
         "decision_path": "doc/integration-program/consolidation/studio-readme-and-dockerignore-dispositions.md",

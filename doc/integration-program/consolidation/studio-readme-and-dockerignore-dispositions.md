@@ -27,15 +27,18 @@ badges and the original Weblate status widget remain in the inert source copy;
 they are not presented as current consolidated-build or localization status.
 
 The old `.dockerignore` was the root policy for the separate Studio repository.
-In the consolidated tree, current image builds use the repository root as their
-context: `docker-ca.yml` invokes `docker build … .`, and the Docker Compose
-configuration uses `context: ../.`. The root `.dockerignore` is the active
-policy for that context. It excludes generated output and developer-local or
-sensitive files while preserving root `README.md`, `LICENSE`, and Dockerfile
-inputs. Copying the Studio rules wholesale would add root exclusions for those
-files and would not create a scoped Studio context. No current build invocation
-uses the old standalone Studio context. The source rules therefore map to the
-expanded consolidated root policy, not to a second active `.dockerignore`.
+The `docker-ca.yml` build and Docker Compose use the consolidated repository root
+as their context (`docker build … .` and `context: ../.` respectively), so the
+root `.dockerignore` applies to them. It excludes generated output and
+developer-local or sensitive files while preserving root `README.md`, `LICENSE`,
+and Dockerfile inputs. Copying the Studio rules wholesale would exclude those
+root inputs. The checked-in `scripts/docker/build-and-run-all-in-one-web-docker.sh`
+is an exception: its relative `.` context is `scripts/docker` when run from that
+directory, so the root `.dockerignore` does not apply. That context lacks inputs
+required by its referenced Dockerfile; this disposition does not establish that
+the script builds successfully. No checked-in invocation uses the old standalone
+Studio context. The source rules therefore map to the expanded root policy for
+root-context builds, not to a second active `.dockerignore`.
 
 Reproduce the pinned and active identities with:
 
