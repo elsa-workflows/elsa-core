@@ -21,6 +21,7 @@ using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Tenants;
 using Elsa.Tenants.Extensions;
 using Elsa.Common.Features;
+using Elsa.Common.RecurringTasks;
 using Elsa.Workflows.ComponentTests.Services;
 using FluentStorage;
 using JetBrains.Annotations;
@@ -148,6 +149,9 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
 
         builder.ConfigureTestServices(services =>
         {
+            services.Configure<RecurringTaskOptions>(options =>
+                options.Schedule.ConfigureTask<Elsa.Workflows.Runtime.Tasks.RefreshWorkflowDefinitionActivityRegistryTask>(TimeSpan.FromSeconds(2)));
+
             // Decorate IDistributedLockProvider with SelectiveMockLockProvider
             // This allows tests to selectively mock specific locks without affecting background operations
             services.Decorate<IDistributedLockProvider, SelectiveMockLockProvider>();

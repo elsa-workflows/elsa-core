@@ -4,6 +4,7 @@ using Elsa.Persistence.EFCore.Modules.Management;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Persistence.EFCore.MySql.Migrations.Management
 {
     [DbContext(typeof(ManagementElsaDbContext))]
-    partial class ManagementElsaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260924222151_WorkflowDefinitionRegistryGeneration")]
+    partial class WorkflowDefinitionRegistryGeneration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

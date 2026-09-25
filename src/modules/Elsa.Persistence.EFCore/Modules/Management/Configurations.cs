@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Elsa.Persistence.EFCore.Modules.Management;
 
-internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IEntityTypeConfiguration<WorkflowInstance>
+internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IEntityTypeConfiguration<WorkflowInstance>, IEntityTypeConfiguration<WorkflowDefinitionRegistryGeneration>
 {
     private static Expression<Func<Version?, string?>> VersionToStringConverter => v => v != null ? v.ToString() : null;
     private static Expression<Func<string?, Version?>> StringToVersionConverter => v => v != null ? Version.Parse(v) : null;
@@ -53,5 +53,12 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
         builder.HasIndex(x => x.FinishedAt).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.FinishedAt)}");
         builder.HasIndex(x => x.IsSystem).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.IsSystem)}");
         builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.TenantId)}");
+    }
+
+    public void Configure(EntityTypeBuilder<WorkflowDefinitionRegistryGeneration> builder)
+    {
+        builder.HasKey(x => x.TenantId);
+        builder.Property(x => x.TenantId).HasMaxLength(450);
+        builder.ToTable("WorkflowDefinitionRegistryGenerations");
     }
 }

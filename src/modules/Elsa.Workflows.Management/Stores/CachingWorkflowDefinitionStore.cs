@@ -15,6 +15,11 @@ public class CachingWorkflowDefinitionStore(IWorkflowDefinitionStore decoratedSt
 {
     private static readonly string CacheInvalidationTokenKey = typeof(CachingWorkflowDefinitionStore).FullName!;
 
+    /// <summary>
+    /// Gets the local reconciliation token for a tenant's workflow-definition view.
+    /// </summary>
+    internal static string GetTenantReconciliationTokenKey(string tenantId) => $"{CacheInvalidationTokenKey}:Reconcile:{tenantId}";
+
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
@@ -157,10 +162,11 @@ public class CachingWorkflowDefinitionStore(IWorkflowDefinitionStore decoratedSt
         var internalKey = $"{tenantIdPrefix}{typeof(T).Name}:{key}";
         return await cacheManager.FindOrCreateAsync(internalKey, async entry =>
         {
-            var invalidationRequestToken = cacheManager.GetToken(CacheInvalidationTokenKey);
-            entry.AddExpirationToken(invalidationRequestToken);
+            entry.AddExpirationToken(cacheManager.GetToken(CacheInvalidationTokenKey));
+            entry.AddExpirationToken(cacheManager.GetToken(GetTenantReconciliationTokenKey(tenantId)));
             entry.SetSlidingExpiration(cacheManager.CachingOptions.Value.CacheDuration);
             return await factory();
         });
     }
+
 }

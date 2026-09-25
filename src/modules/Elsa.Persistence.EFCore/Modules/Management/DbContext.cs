@@ -21,6 +21,11 @@ public class ManagementElsaDbContext : ElsaDbContextBase
     public DbSet<WorkflowDefinition> WorkflowDefinitions { get; set; } = null!;
 
     /// <summary>
+    /// Durable workflow-as-activity registry generations.
+    /// </summary>
+    public DbSet<WorkflowDefinitionRegistryGeneration> WorkflowDefinitionRegistryGenerations { get; set; } = null!;
+
+    /// <summary>
     /// The workflow instances.
     /// </summary>
     public DbSet<WorkflowInstance> WorkflowInstances { get; set; } = null!;
@@ -34,6 +39,7 @@ public class ManagementElsaDbContext : ElsaDbContextBase
         var config = new Configurations();
         modelBuilder.ApplyConfiguration<WorkflowDefinition>(config);
         modelBuilder.ApplyConfiguration<WorkflowInstance>(config);
+        modelBuilder.ApplyConfiguration<WorkflowDefinitionRegistryGeneration>(config);
         
         base.OnModelCreating(modelBuilder);
     }

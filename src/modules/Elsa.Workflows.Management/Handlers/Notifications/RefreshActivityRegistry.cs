@@ -1,4 +1,5 @@
 using Elsa.Mediator.Contracts;
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
@@ -11,7 +12,10 @@ namespace Elsa.Workflows.Management.Handlers.Notifications;
 /// Refreshes the <see cref="IActivityRegistry"/> for the <see cref="WorkflowDefinitionActivityProvider"/> provider whenever an <see cref="WorkflowDefinition"/> is published, retracted or deleted.
 /// </summary>
 [PublicAPI]
-public class RefreshActivityRegistry(IWorkflowDefinitionActivityRegistryUpdater workflowDefinitionActivityRegistryUpdater) :
+public class RefreshActivityRegistry(
+    IWorkflowDefinitionActivityRegistryUpdater workflowDefinitionActivityRegistryUpdater,
+    IWorkflowDefinitionRegistryGenerationStore generationStore,
+    ITenantAccessor tenantAccessor) :
     INotificationHandler<WorkflowDefinitionPublished>,
     INotificationHandler<WorkflowDefinitionRetracted>,
     INotificationHandler<WorkflowDefinitionVersionRetracted>,
@@ -22,66 +26,73 @@ public class RefreshActivityRegistry(IWorkflowDefinitionActivityRegistryUpdater 
     INotificationHandler<WorkflowDefinitionVersionsUpdated>
 {
     /// <inheritdoc />
-    public Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken)
     {
-        return UpdateDefinition(notification.WorkflowDefinition.Id, notification.WorkflowDefinition.Options.UsableAsActivity);
+        await UpdateDefinition(notification.WorkflowDefinition.Id, notification.WorkflowDefinition.Options.UsableAsActivity);
+        await generationStore.IncrementAsync(notification.WorkflowDefinition.TenantId, cancellationToken);
     }
 
     /// <inheritdoc />
-    public Task HandleAsync(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken)
     { 
-        return UpdateDefinition(notification.WorkflowDefinition.Id, notification.WorkflowDefinition.Options.UsableAsActivity);
+        await UpdateDefinition(notification.WorkflowDefinition.Id, notification.WorkflowDefinition.Options.UsableAsActivity);
+        await generationStore.IncrementAsync(notification.WorkflowDefinition.TenantId, cancellationToken);
     }
 
     /// <inheritdoc />
-    public Task HandleAsync(WorkflowDefinitionVersionRetracted notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(WorkflowDefinitionVersionRetracted notification, CancellationToken cancellationToken)
     { 
-        return UpdateDefinition(notification.WorkflowDefinition.Id, notification.WorkflowDefinition.Options.UsableAsActivity);
+        await UpdateDefinition(notification.WorkflowDefinition.Id, notification.WorkflowDefinition.Options.UsableAsActivity);
+        await generationStore.IncrementAsync(notification.WorkflowDefinition.TenantId, cancellationToken);
     }
 
     /// <inheritdoc />
-    public Task HandleAsync(WorkflowDefinitionDeleted notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(WorkflowDefinitionDeleted notification, CancellationToken cancellationToken)
     { 
         workflowDefinitionActivityRegistryUpdater.RemoveDefinitionFromRegistry(notification.DefinitionId);
-        return Task.CompletedTask;
+        await IncrementTenantAndAgnosticGenerationsAsync(tenantAccessor.TenantId, cancellationToken);
     }
     
     /// <inheritdoc />
-    public Task HandleAsync(WorkflowDefinitionsDeleted notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(WorkflowDefinitionsDeleted notification, CancellationToken cancellationToken)
     {
         foreach (string id in notification.DefinitionIds)
         {
             workflowDefinitionActivityRegistryUpdater.RemoveDefinitionFromRegistry(id);
         }
 
-        return Task.CompletedTask;
+        await IncrementTenantAndAgnosticGenerationsAsync(tenantAccessor.TenantId, cancellationToken);
     }
 
     /// <inheritdoc />
-    public Task HandleAsync(WorkflowDefinitionVersionDeleted notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(WorkflowDefinitionVersionDeleted notification, CancellationToken cancellationToken)
     { 
         workflowDefinitionActivityRegistryUpdater.RemoveDefinitionVersionFromRegistry(notification.WorkflowDefinition.Id);
-        return Task.CompletedTask;
+        await generationStore.IncrementAsync(notification.WorkflowDefinition.TenantId, cancellationToken);
     }
 
     /// <inheritdoc />
-    public Task HandleAsync(WorkflowDefinitionVersionsDeleted notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(WorkflowDefinitionVersionsDeleted notification, CancellationToken cancellationToken)
     {
         foreach (string id in notification.Ids)
         {
             workflowDefinitionActivityRegistryUpdater.RemoveDefinitionVersionFromRegistry(id);
         }
 
-        return Task.CompletedTask;
+        await IncrementTenantAndAgnosticGenerationsAsync(tenantAccessor.TenantId, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionVersionsUpdated notification, CancellationToken cancellationToken)
     {
-        foreach (var definition in notification.WorkflowDefinitions)
+        var definitions = notification.WorkflowDefinitions.ToList();
+        foreach (var definition in definitions)
         {
             await UpdateDefinition(definition.Id, definition.Options.UsableAsActivity);
         }
+
+        foreach (var tenantId in definitions.Select(x => x.TenantId).Distinct())
+            await generationStore.IncrementAsync(tenantId, cancellationToken);
     }
 
     private Task UpdateDefinition(string id, bool? usableAsActivity)
@@ -92,5 +103,14 @@ public class RefreshActivityRegistry(IWorkflowDefinitionActivityRegistryUpdater 
 
         workflowDefinitionActivityRegistryUpdater.RemoveDefinitionVersionFromRegistry(id);
         return Task.CompletedTask;
+    }
+
+    private async Task IncrementTenantAndAgnosticGenerationsAsync(string? tenantId, CancellationToken cancellationToken)
+    {
+        var normalizedTenantId = tenantId.NormalizeTenantId();
+        if (normalizedTenantId != Tenant.AgnosticTenantId)
+            await generationStore.IncrementAsync(Tenant.AgnosticTenantId, cancellationToken);
+
+        await generationStore.IncrementAsync(normalizedTenantId, cancellationToken);
     }
 }
