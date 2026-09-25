@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -24,14 +24,14 @@
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa.Tenants"/>
-        <PackageReference Include="Elsa.Workflows.Core"/>
+        <ProjectReference Include="../../../modules/Elsa.Tenants/Elsa.Tenants.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj"/>
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\common\Elsa.Features\Elsa.Features.csproj"/>
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Tenants\Elsa.Tenants.csproj"/>
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
+        <ProjectReference Include="../../../common/Elsa.Features/Elsa.Features.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Tenants/Elsa.Tenants.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj"/>
     </ItemGroup>
 
 </Project>

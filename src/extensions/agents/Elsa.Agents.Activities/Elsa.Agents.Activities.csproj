@@ -6,16 +6,16 @@
     </PropertyGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa" />
+        <ProjectReference Include="../../../modules/Elsa/Elsa.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa\Elsa.csproj" />
+        <ProjectReference Include="../../../modules/Elsa/Elsa.csproj" />
     </ItemGroup>
     
     <ItemGroup>
-      <ProjectReference Include="..\Elsa.Agents.Core\Elsa.Agents.Core.csproj" />
-      <ProjectReference Include="..\Elsa.Agents.Persistence\Elsa.Agents.Persistence.csproj" />
+      <ProjectReference Include="../Elsa.Agents.Core/Elsa.Agents.Core.csproj" />
+      <ProjectReference Include="../Elsa.Agents.Persistence/Elsa.Agents.Persistence.csproj" />
     </ItemGroup>
     
 </Project>

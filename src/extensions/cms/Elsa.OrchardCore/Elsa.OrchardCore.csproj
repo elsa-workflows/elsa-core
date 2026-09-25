@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -8,13 +8,13 @@
     </PropertyGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Http\Elsa.Http.csproj" />
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Http.Webhooks\Elsa.Http.Webhooks.csproj" />
+        <ProjectReference Include="../../../modules/Elsa.Http/Elsa.Http.csproj" />
+        <ProjectReference Include="../../../modules/Elsa.Http.Webhooks/Elsa.Http.Webhooks.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa.Http" />
-        <PackageReference Include="Elsa.Http.Webhooks" />
+        <ProjectReference Include="../../../modules/Elsa.Http/Elsa.Http.csproj" />
+        <ProjectReference Include="../../../modules/Elsa.Http.Webhooks/Elsa.Http.Webhooks.csproj" />
     </ItemGroup>
     
 </Project>

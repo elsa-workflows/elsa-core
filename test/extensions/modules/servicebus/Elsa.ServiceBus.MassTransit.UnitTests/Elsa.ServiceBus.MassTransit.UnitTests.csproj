@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\..\src\modules\servicebus\Elsa.ServiceBus.MassTransit\Elsa.ServiceBus.MassTransit.csproj" />
+        <ProjectReference Include="../../../../../src/extensions/servicebus/Elsa.ServiceBus.MassTransit/Elsa.ServiceBus.MassTransit.csproj" />
     </ItemGroup>
 
 </Project>

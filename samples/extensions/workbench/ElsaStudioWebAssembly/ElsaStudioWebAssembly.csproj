@@ -5,10 +5,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Elsa.Studio" />
-        <PackageReference Include="Elsa.Studio.Core" />
-        <PackageReference Include="Elsa.Studio.Core.BlazorWasm" />
-        <PackageReference Include="Elsa.Studio.Login.BlazorWasm" />
+        <ProjectReference Include="../../../../src/studio/bundles/Elsa.Studio/Elsa.Studio.csproj" />
+        <ProjectReference Include="../../../../src/studio/framework/Elsa.Studio.Core/Elsa.Studio.Core.csproj" />
+        <ProjectReference Include="../../../../src/studio/framework/Elsa.Studio.Core.BlazorWasm/Elsa.Studio.Core.BlazorWasm.csproj" />
+        <ProjectReference Include="../../../../src/studio/modules/Elsa.Studio.Login.BlazorWasm/Elsa.Studio.Login.BlazorWasm.csproj" />
     </ItemGroup>
     
     <ItemGroup>
@@ -19,7 +19,7 @@
     </ItemGroup>
     
     <ItemGroup>
-      <ProjectReference Include="..\..\modules\agents\Elsa.Studio.Agents\Elsa.Studio.Agents.csproj" />
+      <ProjectReference Include="../../../../src/extensions/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj" />
     </ItemGroup>
 
 </Project>

@@ -20,7 +20,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Studio.Workflows\Elsa.Studio.Workflows.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Workflows/Elsa.Studio.Workflows.csproj" />
     </ItemGroup>
 
     <ItemGroup>

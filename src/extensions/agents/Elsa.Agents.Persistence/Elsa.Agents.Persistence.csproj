@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>Provides Agents persistence services</Description>
@@ -6,7 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Elsa.Agents.Core\Elsa.Agents.Core.csproj" />
+      <ProjectReference Include="../Elsa.Agents.Core/Elsa.Agents.Core.csproj" />
     </ItemGroup>
 
 </Project>

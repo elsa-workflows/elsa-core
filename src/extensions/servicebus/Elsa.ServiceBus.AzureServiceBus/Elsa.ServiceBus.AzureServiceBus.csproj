@@ -15,11 +15,11 @@
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa.Workflows.Runtime" />
+        <ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-      <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+      <ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
 </Project>

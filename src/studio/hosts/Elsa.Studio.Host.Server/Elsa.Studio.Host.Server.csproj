@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
@@ -11,32 +11,32 @@
     </ItemGroup>
 
 	<ItemGroup>
-        <ProjectReference Include="..\..\bundles\Elsa.Studio\Elsa.Studio.csproj" />
-        <ProjectReference Include="..\..\framework\Elsa.Studio.Core.BlazorServer\Elsa.Studio.Core.BlazorServer.csproj" />
-        <ProjectReference Include="..\..\framework\Elsa.Studio.Translations\Elsa.Studio.Translations.csproj" />
+        <ProjectReference Include="../../bundles/Elsa.Studio/Elsa.Studio.csproj" />
+        <ProjectReference Include="../../framework/Elsa.Studio.Core.BlazorServer/Elsa.Studio.Core.BlazorServer.csproj" />
+        <ProjectReference Include="../../framework/Elsa.Studio.Translations/Elsa.Studio.Translations.csproj" />
         
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Authentication.OpenIdConnect.BlazorServer\Elsa.Studio.Authentication.OpenIdConnect.BlazorServer.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Authentication.ElsaIdentity.BlazorServer\Elsa.Studio.Authentication.ElsaIdentity.BlazorServer.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Authentication.ElsaIdentity.UI\Elsa.Studio.Authentication.ElsaIdentity.UI.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Authentication.UI\Elsa.Studio.Authentication.UI.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Authentication.Themes\Elsa.Studio.Authentication.Themes.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Login.BlazorServer\Elsa.Studio.Login.BlazorServer.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.ExternalAuthentication\Elsa.Studio.ExternalAuthentication.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.ExternalAuthentication.BlazorServer\Elsa.Studio.ExternalAuthentication.BlazorServer.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Settings\Elsa.Studio.Settings.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Security\Elsa.Studio.Security.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Authentication.OpenIdConnect.BlazorServer/Elsa.Studio.Authentication.OpenIdConnect.BlazorServer.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Authentication.ElsaIdentity.BlazorServer/Elsa.Studio.Authentication.ElsaIdentity.BlazorServer.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Authentication.ElsaIdentity.UI/Elsa.Studio.Authentication.ElsaIdentity.UI.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Authentication.UI/Elsa.Studio.Authentication.UI.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Authentication.Themes/Elsa.Studio.Authentication.Themes.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Login.BlazorServer/Elsa.Studio.Login.BlazorServer.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.ExternalAuthentication/Elsa.Studio.ExternalAuthentication.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.ExternalAuthentication.BlazorServer/Elsa.Studio.ExternalAuthentication.BlazorServer.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Settings/Elsa.Studio.Settings.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Security/Elsa.Studio.Security.csproj" />
 
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Alterations\Elsa.Studio.Alterations.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Dashboard\Elsa.Studio.Dashboard.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard\Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard\Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Diagnostics.StructuredLogs.Dashboard\Elsa.Studio.Diagnostics.StructuredLogs.Dashboard.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Labels\Elsa.Studio.Labels.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Localization.BlazorServer\Elsa.Studio.Localization.BlazorServer.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Secrets\Elsa.Studio.Secrets.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.UserTasks\Elsa.Studio.UserTasks.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Workflows.Dashboard\Elsa.Studio.Workflows.Dashboard.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Workflows\Elsa.Studio.Workflows.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Alterations/Elsa.Studio.Alterations.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Dashboard/Elsa.Studio.Dashboard.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard/Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard/Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Diagnostics.StructuredLogs.Dashboard/Elsa.Studio.Diagnostics.StructuredLogs.Dashboard.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Labels/Elsa.Studio.Labels.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Localization.BlazorServer/Elsa.Studio.Localization.BlazorServer.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Secrets/Elsa.Studio.Secrets.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.UserTasks/Elsa.Studio.UserTasks.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Workflows.Dashboard/Elsa.Studio.Workflows.Dashboard.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Workflows/Elsa.Studio.Workflows.csproj" />
     </ItemGroup>
 
 </Project>

@@ -17,15 +17,15 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Scheduling.Quartz\Elsa.Scheduling.Quartz.csproj" />
+        <ProjectReference Include="../Elsa.Scheduling.Quartz/Elsa.Scheduling.Quartz.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Persistence.EFCore.Common\Elsa.Persistence.EFCore.Common.csproj" />
+        <ProjectReference Include="../../../modules/Elsa.Persistence.EFCore.Common/Elsa.Persistence.EFCore.Common.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa.Persistence.EFCore.Common" />
+        <ProjectReference Include="../../../modules/Elsa.Persistence.EFCore.Common/Elsa.Persistence.EFCore.Common.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -8,15 +8,15 @@
     </PropertyGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa.Api.Common"/>
-        <PackageReference Include="Elsa.Expressions.JavaScript"/>
-        <PackageReference Include="Elsa.Workflows.Runtime"/>
+        <ProjectReference Include="../../../common/Elsa.Api.Common/Elsa.Api.Common.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Expressions.JavaScript/Elsa.Expressions.JavaScript.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj"/>
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\common\Elsa.Api.Common\Elsa.Api.Common.csproj"/>
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Expressions.JavaScript\Elsa.Expressions.JavaScript.csproj"/>
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
+        <ProjectReference Include="../../../common/Elsa.Api.Common/Elsa.Api.Common.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Expressions.JavaScript/Elsa.Expressions.JavaScript.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj"/>
     </ItemGroup>
 
 </Project>

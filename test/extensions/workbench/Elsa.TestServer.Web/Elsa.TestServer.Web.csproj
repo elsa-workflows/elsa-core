@@ -7,12 +7,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Elsa" />
-        <PackageReference Include="Elsa.Features" />
-        <PackageReference Include="Elsa.Http" />
-        <PackageReference Include="Elsa.Identity" />
-		<PackageReference Include="Elsa.Expressions.JavaScript" />
-        <PackageReference Include="Elsa.Workflows.Api" />
+        <ProjectReference Include="../../../../src/modules/Elsa/Elsa.csproj" />
+        <ProjectReference Include="../../../../src/common/Elsa.Features/Elsa.Features.csproj" />
+        <ProjectReference Include="../../../../src/modules/Elsa.Http/Elsa.Http.csproj" />
+        <ProjectReference Include="../../../../src/modules/Elsa.Identity/Elsa.Identity.csproj" />
+		<ProjectReference Include="../../../../src/modules/Elsa.Expressions.JavaScript/Elsa.Expressions.JavaScript.csproj" />
+        <ProjectReference Include="../../../../src/modules/Elsa.Workflows.Api/Elsa.Workflows.Api.csproj" />
         <PackageReference Include="JetBrains.Annotations" />
     </ItemGroup>
 

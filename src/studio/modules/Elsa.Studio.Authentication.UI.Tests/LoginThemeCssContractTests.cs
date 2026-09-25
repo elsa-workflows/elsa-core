@@ -151,8 +151,24 @@ public sealed class LoginThemeCssContractTests
         ReadRepositoryFile(
             "src", "modules", "Elsa.Studio.Authentication.Themes", "wwwroot", "css", "login-themes.css");
 
-    private static string ReadRepositoryFile(params string[] pathSegments) =>
-        File.ReadAllText(Path.Combine([FindRepositoryRoot(), .. pathSegments]));
+    private static string ReadRepositoryFile(params string[] pathSegments)
+    {
+        if (pathSegments.Length < 2 || pathSegments[0] != "src")
+            throw new ArgumentException("Expected a Studio source path beginning with src.", nameof(pathSegments));
+
+        for (var current = new DirectoryInfo(AppContext.BaseDirectory); current is not null; current = current.Parent)
+        {
+            var standalonePath = Path.Combine([current.FullName, .. pathSegments]);
+            if (File.Exists(standalonePath))
+                return File.ReadAllText(standalonePath);
+
+            var consolidatedPath = Path.Combine([current.FullName, "src", "studio", .. pathSegments[1..]]);
+            if (File.Exists(consolidatedPath))
+                return File.ReadAllText(consolidatedPath);
+        }
+
+        throw new FileNotFoundException($"Could not locate Studio source file '{Path.Combine(pathSegments)}'.");
+    }
 
     private static string GetRuleText(string css, string selector)
     {
@@ -163,14 +179,4 @@ public sealed class LoginThemeCssContractTests
         return css[start..end];
     }
 
-    private static string FindRepositoryRoot()
-    {
-        for (var current = new DirectoryInfo(AppContext.BaseDirectory); current is not null; current = current.Parent)
-        {
-            if (Directory.Exists(Path.Combine(current.FullName, "src", "modules", "Elsa.Studio.Authentication.UI")))
-                return current.FullName;
-        }
-
-        throw new DirectoryNotFoundException("Could not locate the Elsa Studio repository root.");
-    }
 }

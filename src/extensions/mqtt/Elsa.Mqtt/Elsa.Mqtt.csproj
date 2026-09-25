@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<Description>
@@ -15,15 +15,15 @@
 	</ItemGroup>
 
 	<ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-		<PackageReference Include="Elsa.Common" />
-		<PackageReference Include="Elsa.Workflows.Management" />
-		<PackageReference Include="Elsa.Workflows.Runtime" />
+		<ProjectReference Include="../../../modules/Elsa.Common/Elsa.Common.csproj" />
+		<ProjectReference Include="../../../modules/Elsa.Workflows.Management/Elsa.Workflows.Management.csproj" />
+		<ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
 	</ItemGroup>
 
 	<ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-		<ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Common\Elsa.Common.csproj" />
-		<ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
-		<ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+		<ProjectReference Include="../../../modules/Elsa.Common/Elsa.Common.csproj" />
+		<ProjectReference Include="../../../modules/Elsa.Workflows.Management/Elsa.Workflows.Management.csproj" />
+		<ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

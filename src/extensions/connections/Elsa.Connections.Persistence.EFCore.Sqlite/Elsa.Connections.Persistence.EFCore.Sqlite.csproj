@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<Description>Provides an EF Core migrations for SQLite for the Connection Persistence module.</Description>
@@ -12,15 +12,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Elsa.Connections.Persistence.EFCore\Elsa.Connections.Persistence.EFCore.csproj" />
+		<ProjectReference Include="../Elsa.Connections.Persistence.EFCore/Elsa.Connections.Persistence.EFCore.csproj" />
 	</ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj" />
+        <ProjectReference Include="../../../modules/Elsa.Persistence.EFCore.Sqlite/Elsa.Persistence.EFCore.Sqlite.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa.Persistence.EFCore.Sqlite" />
+        <ProjectReference Include="../../../modules/Elsa.Persistence.EFCore.Sqlite/Elsa.Persistence.EFCore.Sqlite.csproj" />
     </ItemGroup>
 
 </Project>

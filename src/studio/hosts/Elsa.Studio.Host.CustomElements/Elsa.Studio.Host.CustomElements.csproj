@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
     <PropertyGroup>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
@@ -22,13 +22,13 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\framework\Elsa.Studio.Core.BlazorWasm\Elsa.Studio.Core.BlazorWasm.csproj" />
-        <ProjectReference Include="..\..\framework\Elsa.Studio.Shell\Elsa.Studio.Shell.csproj"/>
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Localization.BlazorWasm\Elsa.Studio.Localization.BlazorWasm.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Login\Elsa.Studio.Login.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Secrets\Elsa.Studio.Secrets.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.UserTasks\Elsa.Studio.UserTasks.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Studio.Workflows\Elsa.Studio.Workflows.csproj" />
+        <ProjectReference Include="../../framework/Elsa.Studio.Core.BlazorWasm/Elsa.Studio.Core.BlazorWasm.csproj" />
+        <ProjectReference Include="../../framework/Elsa.Studio.Shell/Elsa.Studio.Shell.csproj"/>
+        <ProjectReference Include="../../modules/Elsa.Studio.Localization.BlazorWasm/Elsa.Studio.Localization.BlazorWasm.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Login/Elsa.Studio.Login.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Secrets/Elsa.Studio.Secrets.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.UserTasks/Elsa.Studio.UserTasks.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Workflows/Elsa.Studio.Workflows.csproj" />
     </ItemGroup>
 
 </Project>

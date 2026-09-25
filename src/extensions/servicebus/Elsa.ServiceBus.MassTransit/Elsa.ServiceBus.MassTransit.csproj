@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -13,14 +13,14 @@
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
         <PackageReference Include="CShells.Abstractions" />
-        <PackageReference Include="Elsa.Hosting.Management" />
-        <PackageReference Include="Elsa.Workflows.Runtime" />
+        <ProjectReference Include="../../../modules/Elsa.Hosting.Management/Elsa.Hosting.Management.csproj" />
+        <ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-      <ProjectReference Include="..\..\..\..\..\cshells\src\CShells.Abstractions\CShells.Abstractions.csproj" />
-      <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Hosting.Management\Elsa.Hosting.Management.csproj" />
-      <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+      <PackageReference Include="CShells.Abstractions" />
+      <ProjectReference Include="../../../modules/Elsa.Hosting.Management/Elsa.Hosting.Management.csproj" />
+      <ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
 </Project>

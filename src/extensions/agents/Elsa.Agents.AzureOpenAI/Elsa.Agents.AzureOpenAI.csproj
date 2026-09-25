@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>Provides Azure OpenAI integration with Elsa Agents</Description>
@@ -10,15 +10,15 @@
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Common\Elsa.Common.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Common/Elsa.Common.csproj"/>
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa.Common"/>
+        <ProjectReference Include="../../../modules/Elsa.Common/Elsa.Common.csproj"/>
     </ItemGroup>
     
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Agents\Elsa.Agents.csproj"/>
+        <ProjectReference Include="../Elsa.Agents/Elsa.Agents.csproj"/>
     </ItemGroup>
 
 </Project>

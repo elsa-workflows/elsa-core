@@ -8,11 +8,11 @@
     </PropertyGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa.Workflows.Core" />
+        <ProjectReference Include="../../../modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-      <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+      <ProjectReference Include="../../../modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj" />
     </ItemGroup>
 
 </Project>

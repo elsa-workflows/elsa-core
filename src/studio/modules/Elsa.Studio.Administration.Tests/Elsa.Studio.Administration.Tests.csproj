@@ -24,10 +24,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\framework\Elsa.Studio.Core\Elsa.Studio.Core.csproj" />
-        <ProjectReference Include="..\Elsa.Studio.Labels\Elsa.Studio.Labels.csproj" />
-        <ProjectReference Include="..\Elsa.Studio.Secrets\Elsa.Studio.Secrets.csproj" />
-        <ProjectReference Include="..\Elsa.Studio.Security\Elsa.Studio.Security.csproj" />
+        <ProjectReference Include="../../framework/Elsa.Studio.Core/Elsa.Studio.Core.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Labels/Elsa.Studio.Labels.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Secrets/Elsa.Studio.Secrets.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Security/Elsa.Studio.Security.csproj" />
     </ItemGroup>
 
 </Project>

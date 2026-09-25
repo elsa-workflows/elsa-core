@@ -10,7 +10,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Studio.Authentication.UI\Elsa.Studio.Authentication.UI.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Authentication.UI/Elsa.Studio.Authentication.UI.csproj" />
     </ItemGroup>
 
 </Project>

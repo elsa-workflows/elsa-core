@@ -1,6 +1,49 @@
 <Project>
+    <PropertyGroup>
+        <Authors>Elsa Workflows Community</Authors>
+        <Copyright>2025</Copyright>
 
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+        <PackageProjectUrl>https://github.com/elsa-workflows/elsa-extensions</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/elsa-workflows/elsa-extensions</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageIcon>icon.png</PackageIcon>
+
+        <!-- For NuGet browsers that currently don't support <PackageIcon> yet -->
+        <PackageIconUrl>https://v3.elsaworkflows.io/nuget-icon.png</PackageIconUrl>
+
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <AnalysisModeDocumentation>Default</AnalysisModeDocumentation>
+        <AnalysisLevelDocumentation>latest</AnalysisLevelDocumentation>
+
+		<NuGetAudit>enable</NuGetAudit>
+		<NuGetAuditMode>all</NuGetAuditMode>
+
+        <!-- https://github.com/dotnet/sourcelink -->
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+	</PropertyGroup>
+	<PropertyGroup>
+		<NoWarn>$(NoWarn);CS0162;CS1591</NoWarn>
+		<!-- IL trimming warnings -->
+		<NoWarn>$(NoWarn);IL2026;IL2046;IL2057;IL2067;IL2070;IL2072;IL2075;IL2087;IL2091</NoWarn>
+	</PropertyGroup>
+
+    <PropertyGroup Label="PackageVersions">
+        <ElsaVersion>3.8.0-preview.5557</ElsaVersion>
+        <ElsaStudioVersion>3.8.0</ElsaStudioVersion>
+    </PropertyGroup>
+
+
+
+
 
   <PropertyGroup Label="TargetFrameworks">
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
@@ -22,4 +65,4 @@
     <Compile Include="$(MSBuildThisFileDirectory)PackageManifestHints.cs" Link="PackageManifestHints.cs" />
   </ItemGroup>
 
-</Project>
+<PropertyGroup><UseProjectReferences>true</UseProjectReferences><IsPackable>false</IsPackable></PropertyGroup></Project>

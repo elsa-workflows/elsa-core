@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Studio.Diagnostics.ConsoleLogs\Elsa.Studio.Diagnostics.ConsoleLogs.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Diagnostics.ConsoleLogs/Elsa.Studio.Diagnostics.ConsoleLogs.csproj" />
     </ItemGroup>
 
 </Project>

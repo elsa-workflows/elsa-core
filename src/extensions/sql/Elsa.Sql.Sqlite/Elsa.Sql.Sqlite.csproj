@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -12,7 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Sql\Elsa.Sql.csproj"/>
+        <ProjectReference Include="../Elsa.Sql/Elsa.Sql.csproj"/>
     </ItemGroup>
 
 </Project>

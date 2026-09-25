@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
 	    <Description>
@@ -6,17 +6,17 @@
 	    </Description>
 	    <PackageTags>elsa extension module github</PackageTags>
     </PropertyGroup>
-    
+
     <ItemGroup>
         <PackageReference Include="Octokit" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa\Elsa.csproj" />        
+        <ProjectReference Include="../../../modules/Elsa/Elsa.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa" />
+        <ProjectReference Include="../../../modules/Elsa/Elsa.csproj" />
     </ItemGroup>
 
 </Project>

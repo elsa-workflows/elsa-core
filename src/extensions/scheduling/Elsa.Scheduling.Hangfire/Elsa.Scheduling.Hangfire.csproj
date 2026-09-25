@@ -14,13 +14,13 @@
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa.Features"/>
-        <PackageReference Include="Elsa.Scheduling"/>
+        <ProjectReference Include="../../../common/Elsa.Features/Elsa.Features.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Scheduling/Elsa.Scheduling.csproj"/>
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\common\Elsa.Features\Elsa.Features.csproj"/>
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj"/>
+        <ProjectReference Include="../../../common/Elsa.Features/Elsa.Features.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Scheduling/Elsa.Scheduling.csproj"/>
     </ItemGroup>
 
 </Project>

@@ -6,7 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Elsa.Studio.Login\Elsa.Studio.Login.csproj" />
+      <ProjectReference Include="../Elsa.Studio.Login/Elsa.Studio.Login.csproj" />
     </ItemGroup>
 
 </Project>

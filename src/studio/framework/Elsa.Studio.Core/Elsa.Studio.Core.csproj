@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>Core Elsa Studio services.</Description>
@@ -26,11 +26,11 @@
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\elsa-core\src\clients\Elsa.Api.Client\Elsa.Api.Client.csproj" />
+        <ProjectReference Include="../../../clients/Elsa.Api.Client/Elsa.Api.Client.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa.Api.Client"/>
+        <ProjectReference Include="../../../clients/Elsa.Api.Client/Elsa.Api.Client.csproj"/>
     </ItemGroup>
 
 </Project>

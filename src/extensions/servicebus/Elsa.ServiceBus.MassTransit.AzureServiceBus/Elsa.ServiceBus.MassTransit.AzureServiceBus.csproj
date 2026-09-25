@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -15,7 +15,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Elsa.ServiceBus.MassTransit\Elsa.ServiceBus.MassTransit.csproj" />
+		<ProjectReference Include="../Elsa.ServiceBus.MassTransit/Elsa.ServiceBus.MassTransit.csproj" />
 	</ItemGroup>
 
 	<ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
@@ -23,6 +23,6 @@
 	</ItemGroup>
 
 	<ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-		<ProjectReference Include="..\..\..\..\..\cshells\src\CShells.Abstractions\CShells.Abstractions.csproj" />
+		<PackageReference Include="CShells.Abstractions" />
 	</ItemGroup>
 </Project>

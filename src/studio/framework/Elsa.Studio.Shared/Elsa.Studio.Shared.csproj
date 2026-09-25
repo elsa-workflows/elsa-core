@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
         <Description>Elsa Studio shared services and components.</Description>
@@ -16,8 +16,8 @@
     </ItemGroup>
     
     <ItemGroup>
-      <ProjectReference Include="..\Elsa.Studio.Core\Elsa.Studio.Core.csproj" />
-      <ProjectReference Include="..\Elsa.Studio.DomInterop\Elsa.Studio.DomInterop.csproj" />
+      <ProjectReference Include="../Elsa.Studio.Core/Elsa.Studio.Core.csproj" />
+      <ProjectReference Include="../Elsa.Studio.DomInterop/Elsa.Studio.DomInterop.csproj" />
     </ItemGroup>
     
 </Project>

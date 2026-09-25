@@ -8,8 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\servicebus\Elsa.ServiceBus.MassTransit\Elsa.ServiceBus.MassTransit.csproj" />
-        <ProjectReference Include="..\Elsa.Caching.Distributed\Elsa.Caching.Distributed.csproj" />
+        <ProjectReference Include="../../servicebus/Elsa.ServiceBus.MassTransit/Elsa.ServiceBus.MassTransit.csproj" />
+        <ProjectReference Include="../Elsa.Caching.Distributed/Elsa.Caching.Distributed.csproj" />
     </ItemGroup>
 
 </Project>

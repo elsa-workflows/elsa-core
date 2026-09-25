@@ -22,15 +22,15 @@
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Common\Elsa.Common.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Common/Elsa.Common.csproj"/>
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa.Common"/>
+        <ProjectReference Include="../../../modules/Elsa.Common/Elsa.Common.csproj"/>
     </ItemGroup>
     
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Agents.Models\Elsa.Agents.Models.csproj"/>
+        <ProjectReference Include="../Elsa.Agents.Models/Elsa.Agents.Models.csproj"/>
     </ItemGroup>
 
 </Project>

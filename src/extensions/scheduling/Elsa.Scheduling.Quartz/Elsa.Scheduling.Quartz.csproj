@@ -13,7 +13,7 @@
     </ItemGroup>
 
     <ItemGroup Label="CShells" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\..\cshells\src\CShells.Abstractions\CShells.Abstractions.csproj" />
+        <PackageReference Include="CShells.Abstractions" />
     </ItemGroup>
 
     <ItemGroup Label="CShells" Condition="'$(UseProjectReferences)' != 'true'">
@@ -21,13 +21,13 @@
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa.Resilience" />
-        <PackageReference Include="Elsa.Scheduling"/>
+        <ProjectReference Include="../../../modules/Elsa.Resilience/Elsa.Resilience.csproj" />
+        <ProjectReference Include="../../../modules/Elsa.Scheduling/Elsa.Scheduling.csproj"/>
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Resilience\Elsa.Resilience.csproj"/>
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Resilience/Elsa.Resilience.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Scheduling/Elsa.Scheduling.csproj"/>
     </ItemGroup>
 
 </Project>

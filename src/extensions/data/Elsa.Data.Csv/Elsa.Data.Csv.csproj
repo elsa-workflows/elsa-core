@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -13,11 +13,11 @@
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa.Workflows.Management" />
+        <ProjectReference Include="../../../modules/Elsa.Workflows.Management/Elsa.Workflows.Management.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-      <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
+      <ProjectReference Include="../../../modules/Elsa.Workflows.Management/Elsa.Workflows.Management.csproj" />
     </ItemGroup>
 
 </Project>

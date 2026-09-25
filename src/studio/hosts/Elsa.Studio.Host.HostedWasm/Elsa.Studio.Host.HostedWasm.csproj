@@ -5,7 +5,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Elsa.Studio.Host.Wasm\Elsa.Studio.Host.Wasm.csproj" />
+      <ProjectReference Include="../Elsa.Studio.Host.Wasm/Elsa.Studio.Host.Wasm.csproj" />
     </ItemGroup>
 
 </Project>

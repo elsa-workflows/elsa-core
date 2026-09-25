@@ -10,7 +10,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Elsa.Studio.Localization\Elsa.Studio.Localization.csproj" />
+		<ProjectReference Include="../Elsa.Studio.Localization/Elsa.Studio.Localization.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

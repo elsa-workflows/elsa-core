@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Studio.AI\Elsa.Studio.AI.csproj" />
+        <ProjectReference Include="../Elsa.Studio.AI/Elsa.Studio.AI.csproj" />
     </ItemGroup>
 
 </Project>

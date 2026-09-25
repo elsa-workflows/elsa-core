@@ -23,8 +23,24 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { compile } = require('json-schema-to-typescript');
 
-const REPO_ROOT = path.resolve(__dirname, '..', '..', '..', '..', '..');
-const PACKAGES_PROPS_PATH = path.join(REPO_ROOT, 'Directory.Packages.props');
+const PACKAGES_PROPS_CANDIDATES = [
+    path.resolve(__dirname, '..', '..', '..', '..', 'Directory.Packages.props'),
+    path.resolve(__dirname, '..', '..', '..', '..', '..', 'Directory.Packages.props'),
+];
+
+function resolvePackagesPropsPath() {
+    const versionProperty = /<BpmnModelVersion>[^<]+<\/BpmnModelVersion>/;
+    const matches = PACKAGES_PROPS_CANDIDATES.filter(candidate =>
+        fs.existsSync(candidate) && versionProperty.test(fs.readFileSync(candidate, 'utf8')));
+
+    if (matches.length !== 1) {
+        throw new Error(`Expected one Studio Directory.Packages.props with BpmnModelVersion; found ${matches.length}. Checked: ${PACKAGES_PROPS_CANDIDATES.join(', ')}`);
+    }
+
+    return matches[0];
+}
+
+const PACKAGES_PROPS_PATH = resolvePackagesPropsPath();
 const OUTPUT_PATH = path.join(__dirname, '..', 'src', 'bpmn', 'types.generated.ts');
 const PACKAGE_ID = 'Bpmn.Model';
 const VERSION_PROPERTY_NAME = 'BpmnModelVersion';

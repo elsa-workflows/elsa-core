@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Studio.PlatformIntegration\Elsa.Studio.PlatformIntegration.csproj" />
+        <ProjectReference Include="../Elsa.Studio.PlatformIntegration/Elsa.Studio.PlatformIntegration.csproj" />
     </ItemGroup>
 
 </Project>

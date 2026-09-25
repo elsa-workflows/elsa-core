@@ -4,8 +4,7 @@
 
 <MudDialog>
     <DialogContent>
-        <EditForm EditContext="_editContext" OnValidSubmit="OnValidSubmit">
-            <FluentValidationValidator @ref="_fluentValidationValidator" Validator="_validator" DisableAssemblyScanning="true"/>
+        <EditForm EditContext="_editContext" OnSubmit="OnSubmitClicked">
             <MudStack>
                 <MudTextField Label="@Localizer["Name"]" @bind-Value="_agentInputModel.Name" For="@(() => _agentInputModel.Name)" HelperText="@Localizer["The name of the new agent."]" Variant="Variant.Outlined" />
                 <MudTextField Label="@Localizer["Function Name"]" @bind-Value="_agentInputModel.FunctionName" For="@(() => _agentInputModel.FunctionName)" HelperText="@Localizer["The function name for the activity (verb form, e.g., 'Write'). If left empty, defaults to the agent name."]" Variant="Variant.Outlined" />
@@ -24,6 +23,6 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="OnCancelClicked">@Localizer["Cancel"]</MudButton>
-        <MudButton Color="Color.Primary" OnClick="OnSubmitClicked">@Localizer["Ok"]</MudButton>
+        <MudButton Color="Color.Primary" OnClick="OnSubmitClicked" Disabled="_submitting">@Localizer["Ok"]</MudButton>
     </DialogActions>
 </MudDialog>

@@ -30,9 +30,10 @@ using Elsa.Persistence.MongoDb.Modules.Runtime;
 using Elsa.Persistence.MongoDb.Modules.Tenants;
 using Elsa.Retention.Extensions;
 using Elsa.Retention.Models;
-using Elsa.Secrets.Extensions;
-using Elsa.Secrets.Management.Tasks;
-using Elsa.Secrets.Persistence;
+using Elsa.Secrets.Persistence.EFCore.Extensions;
+using Elsa.Secrets.Persistence.EFCore.PostgreSql.Extensions;
+using Elsa.Secrets.Persistence.EFCore.Sqlite.Extensions;
+using Elsa.Secrets.Persistence.EFCore.SqlServer.Extensions;
 using Elsa.Server.Web;
 using Elsa.Server.Web.Extensions;
 using Elsa.Server.Web.Filters;
@@ -91,9 +92,7 @@ const bool useSignalR = false; // Disabled until Elsa Studio sends authenticated
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.Distributed;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
-const bool useMultitenancy = false;
 const bool useTenantsFromConfiguration = true;
-const bool useSecrets = false;
 const bool disableVariableWrappers = false;
 
 ObjectConverter.StrictMode = true;
@@ -101,6 +100,8 @@ ObjectConverter.StrictMode = true;
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
+var useSecrets = configuration.GetValue("Features:Secrets:Enabled", false);
+var useMultitenancy = configuration.GetValue("Features:Multitenancy:Enabled", false);
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
@@ -619,32 +620,27 @@ services
         if (useSecrets)
         {
             elsa
-                .UseSecrets()
-                .UseSecretsManagement(management =>
+                .UseSecrets(secrets =>
                 {
-                    management.ConfigureOptions(options => configuration.GetSection("Secrets:Management").Bind(options));
-                    if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
-                        management.UseEntityFrameworkCore(ef =>
+                    secrets.ConfigureOptions = options => configuration.GetSection("Secrets").Bind(options);
+                    secrets.UseEntityFrameworkCore(ef =>
+                    {
+                        ef.UseContextPooling = useDbContextPooling;
+                        if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                         {
-                            ef.UseContextPooling = useDbContextPooling;
                             ef.UseSqlServer(sqlServerConnectionString);
-                        });
-                    else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
-                        management.UseEntityFrameworkCore(ef =>
+                        }
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                         {
-                            ef.UseContextPooling = useDbContextPooling;
                             ef.UsePostgreSql(postgresConnectionString);
-                        });
-                    else
-                        management.UseEntityFrameworkCore(ef =>
+                        }
+                        else
                         {
-                            ef.UseContextPooling = useDbContextPooling;
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
-                        });
+                        }
+                    });
                 })
-                .UseSecretsApi()
-                .UseSecretsScripting()
-                ;
+                .UseSecretsJavaScript();
         }
 
         elsa.UseRetention(r =>
@@ -737,7 +733,6 @@ services.Configure<RecurringTaskOptions>(options =>
 {
     options.Schedule.ConfigureTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(300));
     options.Schedule.ConfigureTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(300));
-    options.Schedule.ConfigureTask<UpdateExpiredSecretsRecurringTask>(TimeSpan.FromHours(4));
     options.Schedule.ConfigureTask<RestartInterruptedWorkflowsTask>(TimeSpan.FromSeconds(15));
 });
 
@@ -795,6 +790,71 @@ if (app.Environment.IsDevelopment())
 if (useSignalR)
 {
     app.UseWorkflowsSignalRHubs();
+}
+
+if (configuration.GetValue("Features:Secrets:RouteProbe", false))
+{
+    app.MapGet("/__fixture/secrets/routes", (IEnumerable<Microsoft.AspNetCore.Routing.EndpointDataSource> endpointSources) =>
+    {
+        var configuredRoutePrefix = string.IsNullOrWhiteSpace(routePrefix)
+            ? string.Empty
+            : "/" + routePrefix.Trim('/');
+        var routes = endpointSources
+            .SelectMany(source => source.Endpoints)
+            .OfType<Microsoft.AspNetCore.Routing.RouteEndpoint>()
+            .Select(endpoint => new { endpoint, path = endpoint.RoutePattern.RawText })
+            .Where(item => item.path is not null)
+            .Select(item => new
+            {
+                item.endpoint,
+                path = configuredRoutePrefix.Length > 0
+                    && item.path!.StartsWith(configuredRoutePrefix + "/", StringComparison.OrdinalIgnoreCase)
+                    ? item.path[configuredRoutePrefix.Length..]
+                    : item.path!
+            })
+            .Where(item => item.path == "/secrets"
+                || item.path.StartsWith("/secrets/", StringComparison.Ordinal)
+                || item.path.StartsWith("/actions/secrets/", StringComparison.Ordinal)
+                || item.path.StartsWith("/bulk-actions/secrets/", StringComparison.Ordinal)
+                || item.path.StartsWith("/queries/secrets/", StringComparison.Ordinal))
+            .Select(item =>
+            {
+                var definition = item.endpoint.Metadata.FirstOrDefault(metadata =>
+                    metadata.GetType().FullName == "FastEndpoints.EndpointDefinition");
+                var endpointType = definition?.GetType()
+                    .GetProperty("EndpointType", System.Reflection.BindingFlags.Instance
+                        | System.Reflection.BindingFlags.Public
+                        | System.Reflection.BindingFlags.NonPublic)
+                    ?.GetValue(definition) as Type;
+
+                return new
+                {
+                    path = item.path,
+                    methods = item.endpoint.Metadata.GetMetadata<Microsoft.AspNetCore.Routing.HttpMethodMetadata>()?.HttpMethods
+                        .OrderBy(method => method, StringComparer.Ordinal)
+                        .ToArray() ?? Array.Empty<string>(),
+                    endpointType = endpointType?.FullName,
+                    endpointAssembly = endpointType?.Assembly.GetName().Name,
+                    displayName = item.endpoint.DisplayName,
+                    handlerType = item.endpoint.RequestDelegate?.Method.DeclaringType?.FullName,
+                    metadataTypes = item.endpoint.Metadata
+                        .Select(metadata => metadata.GetType().FullName ?? metadata.GetType().Name)
+                        .OrderBy(type => type, StringComparer.Ordinal)
+                        .ToArray()
+                };
+            })
+            .OrderBy(route => route.path, StringComparer.Ordinal)
+            .ThenBy(route => string.Join(",", route.methods), StringComparer.Ordinal)
+            .ToArray();
+
+        var secretAssemblies = AppDomain.CurrentDomain.GetAssemblies()
+            .Select(assembly => assembly.GetName().Name)
+            .Where(name => name?.Contains("Secrets", StringComparison.OrdinalIgnoreCase) == true)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        return Results.Json(new { routes, secretAssemblies });
+    });
 }
 
 // Run.

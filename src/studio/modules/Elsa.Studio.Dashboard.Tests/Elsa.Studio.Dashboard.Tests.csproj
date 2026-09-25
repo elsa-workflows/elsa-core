@@ -14,11 +14,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Studio.Dashboard\Elsa.Studio.Dashboard.csproj" />
-        <ProjectReference Include="..\Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard\Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard.csproj" />
-        <ProjectReference Include="..\Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard\Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard.csproj" />
-        <ProjectReference Include="..\Elsa.Studio.Diagnostics.StructuredLogs.Dashboard\Elsa.Studio.Diagnostics.StructuredLogs.Dashboard.csproj" />
-        <ProjectReference Include="..\Elsa.Studio.Workflows.Dashboard\Elsa.Studio.Workflows.Dashboard.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Dashboard/Elsa.Studio.Dashboard.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard/Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard/Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Diagnostics.StructuredLogs.Dashboard/Elsa.Studio.Diagnostics.StructuredLogs.Dashboard.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Workflows.Dashboard/Elsa.Studio.Workflows.Dashboard.csproj" />
     </ItemGroup>
 
 </Project>

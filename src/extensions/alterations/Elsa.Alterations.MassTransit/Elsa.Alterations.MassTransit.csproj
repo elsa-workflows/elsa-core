@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -8,15 +8,15 @@
     </PropertyGroup>
     
     <ItemGroup>
-      <ProjectReference Include="..\..\servicebus\Elsa.ServiceBus.MassTransit\Elsa.ServiceBus.MassTransit.csproj" />
+      <ProjectReference Include="../../servicebus/Elsa.ServiceBus.MassTransit/Elsa.ServiceBus.MassTransit.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Alterations\Elsa.Alterations.csproj" />
+        <ProjectReference Include="../../../modules/Elsa.Alterations/Elsa.Alterations.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa.Alterations" />
+        <ProjectReference Include="../../../modules/Elsa.Alterations/Elsa.Alterations.csproj" />
     </ItemGroup>
 
 </Project>

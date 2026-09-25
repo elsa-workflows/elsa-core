@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -8,11 +8,11 @@
     </PropertyGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa.Caching"/>
+        <ProjectReference Include="../../../modules/Elsa.Caching/Elsa.Caching.csproj"/>
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Caching\Elsa.Caching.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Caching/Elsa.Caching.csproj"/>
     </ItemGroup>
 
 </Project>

@@ -6,15 +6,11 @@
     </PropertyGroup>
 
     <ItemGroup Label="Elsa" Condition="$(UseProjectReferences) == true">
-        <ProjectReference Include="..\..\..\..\..\elsa-studio\src\modules\Elsa.Studio.Workflows\Elsa.Studio.Workflows.csproj"/>
+        <ProjectReference Include="../../../studio/modules/Elsa.Studio.Workflows/Elsa.Studio.Workflows.csproj"/>
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="$(UseProjectReferences) != true">
-        <PackageReference Include="Elsa.Studio.Workflows"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Blazored.FluentValidation"/>
+        <ProjectReference Include="../../../studio/modules/Elsa.Studio.Workflows/Elsa.Studio.Workflows.csproj"/>
     </ItemGroup>
 
 </Project>

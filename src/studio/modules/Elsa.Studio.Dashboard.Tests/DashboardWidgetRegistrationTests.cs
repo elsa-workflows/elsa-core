@@ -52,8 +52,7 @@ public class DashboardWidgetRegistrationTests
     [Fact]
     public void DashboardProject_DoesNotReferenceDiagnosticsModules()
     {
-        var projectFile = FindRepositoryRoot().Combine("src/modules/Elsa.Studio.Dashboard/Elsa.Studio.Dashboard.csproj");
-        var project = File.ReadAllText(projectFile);
+        var project = ReadRepositoryFile("src", "modules", "Elsa.Studio.Dashboard", "Elsa.Studio.Dashboard.csproj");
 
         Assert.DoesNotContain("Elsa.Studio.Diagnostics", project);
         Assert.DoesNotContain("Elsa.Studio.Workflows", project);
@@ -62,7 +61,6 @@ public class DashboardWidgetRegistrationTests
     [Fact]
     public void OwnerProjects_DoNotReferenceDashboardModule()
     {
-        var root = FindRepositoryRoot();
         var ownerProjects = new[]
         {
             "src/modules/Elsa.Studio.Diagnostics.ConsoleLogs/Elsa.Studio.Diagnostics.ConsoleLogs.csproj",
@@ -72,7 +70,7 @@ public class DashboardWidgetRegistrationTests
 
         foreach (var ownerProject in ownerProjects)
         {
-            var project = File.ReadAllText(root.Combine(ownerProject));
+            var project = ReadRepositoryFile(ownerProject.Split('/'));
             Assert.DoesNotContain("Elsa.Studio.Dashboard", project);
         }
     }
@@ -154,22 +152,22 @@ public class DashboardWidgetRegistrationTests
         Assert.Equal(expectedName, attribute.Name);
     }
 
-    private static DirectoryInfo FindRepositoryRoot()
+    private static string ReadRepositoryFile(params string[] pathSegments)
     {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory != null)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "Elsa.Studio.sln")))
-                return directory;
+        if (pathSegments.Length < 2 || pathSegments[0] != "src")
+            throw new ArgumentException("Expected a Studio source path beginning with src.", nameof(pathSegments));
 
-            directory = directory.Parent;
+        for (var current = new DirectoryInfo(AppContext.BaseDirectory); current is not null; current = current.Parent)
+        {
+            var standalonePath = Path.Combine([current.FullName, .. pathSegments]);
+            if (File.Exists(standalonePath))
+                return File.ReadAllText(standalonePath);
+
+            var consolidatedPath = Path.Combine([current.FullName, "src", "studio", .. pathSegments[1..]]);
+            if (File.Exists(consolidatedPath))
+                return File.ReadAllText(consolidatedPath);
         }
 
-        throw new InvalidOperationException("Could not locate repository root.");
+        throw new FileNotFoundException($"Could not locate Studio source file '{Path.Combine(pathSegments)}'.");
     }
-}
-
-internal static class DirectoryInfoExtensions
-{
-    public static string Combine(this DirectoryInfo directory, string path) => Path.Combine(directory.FullName, path);
 }

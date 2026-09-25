@@ -10,7 +10,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\framework\Elsa.Studio.Core\Elsa.Studio.Core.csproj" />
+        <ProjectReference Include="../../framework/Elsa.Studio.Core/Elsa.Studio.Core.csproj" />
     </ItemGroup>
 
 </Project>

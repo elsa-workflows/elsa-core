@@ -1,4 +1,3 @@
-using Blazored.FluentValidation;
 using Elsa.Agents;
 using Elsa.Studio.Agents.Client;
 using Elsa.Studio.Agents.UI.Validators;
@@ -12,11 +11,12 @@ using MudBlazor;
 namespace Elsa.Studio.Agents.UI.Components;
 
 /// A dialog that allows the user to create a new agent.
-public partial class CreateAgentDialog
+public partial class CreateAgentDialog : IDisposable
 {
     private readonly AgentInputModel _agentInputModel = new();
     private EditContext _editContext = null!;
-    private FluentValidationValidator _fluentValidationValidator = null!;
+    private AgentSubmitValidator _submitValidator = null!;
+    private bool _submitting;
     private AgentInputModelValidator _validator = null!;
     
     /// The default name of the agent to create.
@@ -41,6 +41,7 @@ public partial class CreateAgentDialog
         var agentsApi = await ApiClientProvider.GetApiAsync<IAgentsApi>();
         var skillsApi = await ApiClientProvider.GetApiAsync<ISkillsApi>();
         _validator = new(agentsApi);
+        _submitValidator = new(_validator, _agentInputModel, _editContext);
         var skillsResponseList = await skillsApi.ListAsync();
         AvailableSkills = skillsResponseList.Items;
         SelectedSkills = _agentInputModel.Skills.ToList().AsReadOnly();
@@ -48,17 +49,34 @@ public partial class CreateAgentDialog
 
     private Task OnCancelClicked()
     {
+        _submitValidator?.Dispose();
         MudDialog.Cancel();
         return Task.CompletedTask;
     }
 
     private async Task OnSubmitClicked()
     {
-        if(!await _fluentValidationValidator.ValidateAsync())
+        if (_submitting || _submitValidator == null)
+        {
             return;
+        }
 
-        await OnValidSubmit();
+        _submitting = true;
+        try
+        {
+            if (await _submitValidator.ValidateAndPublishAsync())
+            {
+                await OnValidSubmit();
+            }
+        }
+        finally
+        {
+            _submitting = false;
+        }
     }
+
+    /// <inheritdoc />
+    public void Dispose() => _submitValidator?.Dispose();
 
     private Task OnValidSubmit()
     {

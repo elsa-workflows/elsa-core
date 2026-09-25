@@ -11,8 +11,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Studio.Dashboard\Elsa.Studio.Dashboard.csproj" />
-        <ProjectReference Include="..\Elsa.Studio.Workflows\Elsa.Studio.Workflows.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Dashboard/Elsa.Studio.Dashboard.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Workflows/Elsa.Studio.Workflows.csproj" />
     </ItemGroup>
 
 </Project>

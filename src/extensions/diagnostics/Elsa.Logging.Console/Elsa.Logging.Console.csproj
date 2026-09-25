@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -8,8 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Elsa.Logging.Core\Elsa.Logging.Core.csproj" />
-      <ProjectReference Include="..\Elsa.Logging\Elsa.Logging.csproj" />
+      <ProjectReference Include="../Elsa.Logging.Core/Elsa.Logging.Core.csproj" />
+      <ProjectReference Include="../Elsa.Logging/Elsa.Logging.csproj" />
     </ItemGroup>
 
 </Project>

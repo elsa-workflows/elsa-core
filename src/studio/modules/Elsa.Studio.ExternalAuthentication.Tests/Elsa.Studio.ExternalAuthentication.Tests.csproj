@@ -25,11 +25,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Studio.ExternalAuthentication\Elsa.Studio.ExternalAuthentication.csproj" />
-        <ProjectReference Include="..\Elsa.Studio.Authentication.UI\Elsa.Studio.Authentication.UI.csproj" />
-        <ProjectReference Include="..\Elsa.Studio.Authentication.OpenIdConnect.BlazorServer\Elsa.Studio.Authentication.OpenIdConnect.BlazorServer.csproj" />
-        <ProjectReference Include="..\Elsa.Studio.ExternalAuthentication.BlazorServer\Elsa.Studio.ExternalAuthentication.BlazorServer.csproj" />
-        <ProjectReference Include="..\Elsa.Studio.ExternalAuthentication.BlazorWasm\Elsa.Studio.ExternalAuthentication.BlazorWasm.csproj" />
+        <ProjectReference Include="../Elsa.Studio.ExternalAuthentication/Elsa.Studio.ExternalAuthentication.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Authentication.UI/Elsa.Studio.Authentication.UI.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Authentication.OpenIdConnect.BlazorServer/Elsa.Studio.Authentication.OpenIdConnect.BlazorServer.csproj" />
+        <ProjectReference Include="../Elsa.Studio.ExternalAuthentication.BlazorServer/Elsa.Studio.ExternalAuthentication.BlazorServer.csproj" />
+        <ProjectReference Include="../Elsa.Studio.ExternalAuthentication.BlazorWasm/Elsa.Studio.ExternalAuthentication.BlazorWasm.csproj" />
     </ItemGroup>
 
 </Project>

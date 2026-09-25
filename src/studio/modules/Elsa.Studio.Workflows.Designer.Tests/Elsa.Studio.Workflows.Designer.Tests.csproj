@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Studio.Workflows.Designer\Elsa.Studio.Workflows.Designer.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Workflows.Designer/Elsa.Studio.Workflows.Designer.csproj" />
     </ItemGroup>
 
     <ItemGroup>

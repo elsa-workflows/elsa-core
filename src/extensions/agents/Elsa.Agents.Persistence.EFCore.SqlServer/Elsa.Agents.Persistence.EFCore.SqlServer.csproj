@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>Provides an EF Core migrations for SQL Server for the Agents Persistence module.</Description>
@@ -11,15 +11,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Elsa.Agents.Persistence.EFCore\Elsa.Agents.Persistence.EFCore.csproj" />
+		<ProjectReference Include="../Elsa.Agents.Persistence.EFCore/Elsa.Agents.Persistence.EFCore.csproj" />
 	</ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Persistence.EFCore.SqlServer\Elsa.Persistence.EFCore.SqlServer.csproj" />
+        <ProjectReference Include="../../../modules/Elsa.Persistence.EFCore.SqlServer/Elsa.Persistence.EFCore.SqlServer.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa.Persistence.EFCore.SqlServer" />
+        <ProjectReference Include="../../../modules/Elsa.Persistence.EFCore.SqlServer/Elsa.Persistence.EFCore.SqlServer.csproj" />
     </ItemGroup>
 
 </Project>

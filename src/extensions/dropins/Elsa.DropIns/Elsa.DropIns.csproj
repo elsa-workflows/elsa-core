@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -18,7 +18,7 @@
 	</ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.DropIns.Core\Elsa.DropIns.Core.csproj" />
+        <ProjectReference Include="../Elsa.DropIns.Core/Elsa.DropIns.Core.csproj" />
     </ItemGroup>
 
 </Project>

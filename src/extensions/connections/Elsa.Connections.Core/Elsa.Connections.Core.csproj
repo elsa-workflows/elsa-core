@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<Description>Provides an connection framework to use connection abtraction in activities</Description>
@@ -7,15 +7,15 @@
 	</PropertyGroup>
 
 	<ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+        <ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
 	</ItemGroup>
 
 	<ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-		<PackageReference Include="Elsa.Workflows.Runtime" />
+		<ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
 	</ItemGroup>
 	
 	<ItemGroup>
-		<ProjectReference Include="..\Elsa.Connections.Models\Elsa.Connections.Models.csproj" />
-		<ProjectReference Include="..\Elsa.Connections.Persistence\Elsa.Connections.Persistence.csproj" />
+		<ProjectReference Include="../Elsa.Connections.Models/Elsa.Connections.Models.csproj" />
+		<ProjectReference Include="../Elsa.Connections.Persistence/Elsa.Connections.Persistence.csproj" />
 	</ItemGroup>
 </Project>

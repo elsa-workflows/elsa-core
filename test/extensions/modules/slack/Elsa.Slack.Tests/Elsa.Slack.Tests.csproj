@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\modules\communication\Elsa.Slack\Elsa.Slack.csproj" />
+    <ProjectReference Include="../../../../../src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj" />
   </ItemGroup>
 </Project>

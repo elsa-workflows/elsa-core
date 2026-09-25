@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Studio.UserTasks\Elsa.Studio.UserTasks.csproj" />
+        <ProjectReference Include="../Elsa.Studio.UserTasks/Elsa.Studio.UserTasks.csproj" />
     </ItemGroup>
 
 </Project>

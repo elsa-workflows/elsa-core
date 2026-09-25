@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>Provides an EF Core migrations for MySQL for the Agents Persistence module.</Description>
@@ -18,15 +18,15 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Agents.Persistence.EFCore\Elsa.Agents.Persistence.EFCore.csproj" />
+        <ProjectReference Include="../Elsa.Agents.Persistence.EFCore/Elsa.Agents.Persistence.EFCore.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Persistence.EFCore.MySql\Elsa.Persistence.EFCore.MySql.csproj" />
+        <ProjectReference Include="../../../modules/Elsa.Persistence.EFCore.MySql/Elsa.Persistence.EFCore.MySql.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa.Persistence.EFCore.MySql" />
+        <ProjectReference Include="../../../modules/Elsa.Persistence.EFCore.MySql/Elsa.Persistence.EFCore.MySql.csproj" />
     </ItemGroup>
 
 </Project>
