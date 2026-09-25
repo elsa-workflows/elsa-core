@@ -64,8 +64,10 @@ class MappedSlackPackageProofTests(unittest.TestCase):
                 return values[arguments]
 
             with patch.object(proof, "git_value", side_effect=fake_git_value):
-                with self.assertRaisesRegex(RuntimeError, "must match the reviewed proof head"):
-                    proof.require_imported_history_checkout(root, proof.SOURCE_COMMITS)
+                with self.assertRaisesRegex(RuntimeError, "must match the requested proof head"):
+                    proof.require_imported_history_checkout(root, proof.SOURCE_COMMITS, "a" * 40)
+                with self.assertRaisesRegex(RuntimeError, "exact 40-character Git head"):
+                    proof.require_imported_history_checkout(root, proof.SOURCE_COMMITS, "f" * 7)
 
     def test_imported_source_link_requires_the_exact_head_url_and_checksum_test(self):
         with tempfile.TemporaryDirectory() as directory:

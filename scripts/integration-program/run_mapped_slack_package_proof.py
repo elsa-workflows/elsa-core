@@ -25,6 +25,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 import run_slack_package_proof as shared
+import verify_import_source_tip_refresh as source_tip_refresh
 from package_impact import InventoryGraph
 from release_unit_manifest import (
     MANIFEST_PATH,
@@ -56,7 +57,7 @@ SLACK_NET_VERSION = REQUIRED_PROOF_DEPENDENCIES["SlackNet"]
 TFMS = tuple(RELEASE_UNIT["target_frameworks"])
 REPOSITORY_URL = "https://github.com/elsa-workflows/elsa-extensions"
 IMPORTED_REPOSITORY_URL = "https://github.com/elsa-workflows/elsa-core"
-REVIEWED_IMPORTED_HEAD = "7abe24b76295c6f64fbb6c878962bf0367ebd8fe"
+SOURCE_TIP_REFRESH_RECEIPT = Path("doc/integration-program/consolidation/source-tip-refresh-2026-09-25.json")
 CURRENT_TIP_EVIDENCE = REPOSITORY_ROOT / "doc/integration-program/consolidation/current-tip-e96-evidence"
 CURRENT_TIP_IMPORT_SHA256 = "06cd198a338d5c6d49fa6b0183bbda6b602252f39f622f18084e60342880bb75"
 CURRENT_TIP_PREPARATION_SHA256 = "219fcafe45959bb8f9295d8b9137f8ae0807489f0370b5112204f228fc7bd7bc"
@@ -160,7 +161,9 @@ def load_current_tip_receipts() -> tuple[dict, dict, str]:
     return imported, prepared, patch_hash
 
 
-def require_imported_history_checkout(root: Path, source_commits: dict[str, str]) -> tuple[dict, dict, str, str]:
+def require_imported_history_checkout(root: Path, source_commits: dict[str, str], expected_head: str) -> tuple[dict, dict, str, str]:
+    if len(expected_head) != 40 or any(character not in "0123456789abcdef" for character in expected_head):
+        raise RuntimeError("The imported profile requires an exact 40-character Git head")
     if git_value(root, "rev-parse", "--show-toplevel") != str(root):
         raise RuntimeError("Pass the physical imported Git root")
     if git_value(root, "remote", "get-url", "origin") not in (
@@ -171,8 +174,10 @@ def require_imported_history_checkout(root: Path, source_commits: dict[str, str]
     if git_value(root, "status", "--porcelain", "--untracked-files=all"):
         raise RuntimeError("The imported checkout has unrelated tracked or untracked changes")
     head = git_value(root, "rev-parse", "HEAD")
-    if head != REVIEWED_IMPORTED_HEAD:
-        raise RuntimeError(f"The imported checkout must match the reviewed proof head {REVIEWED_IMPORTED_HEAD}: {head}")
+    if head != expected_head:
+        raise RuntimeError(f"The imported checkout must match the requested proof head {expected_head}: {head}")
+    receipt = json.loads((root / SOURCE_TIP_REFRESH_RECEIPT).read_text(encoding="utf-8"))
+    source_tip_refresh.verify(receipt, root)
     imported, prepared, patch_hash = load_current_tip_receipts()
     if imported.get("sourceCommits") != source_commits or not imported.get("exactBlobAndModeMapping") or not imported.get("originalHistoriesReachable"):
         raise RuntimeError("The archived current-tip import receipt does not prove exact source relocation")
@@ -959,6 +964,7 @@ def main() -> int:
                         help="Use the manifest pins, a prepared rehearsal, or the reviewed history-bearing import")
     parser.add_argument("--sourcelink-tool", type=Path,
                         help="Required for the imported profile; pinned SourceLink 3.1.1 tool")
+    parser.add_argument("--expected-import-head", help="Exact reviewed 40-character imported Git head; required for the imported profile")
     parser.add_argument("--dotnet", type=Path, default=Path(DOTNET) if DOTNET else None)
     args = parser.parse_args()
 
@@ -977,7 +983,7 @@ def main() -> int:
     require_pinned_source(extensions, extensions_sha, "Extensions")
     require_pinned_source(studio, studio_sha, "Studio")
     if args.source_profile == "imported":
-        imported, prepared, patch_hash, imported_head = require_imported_history_checkout(rehearsal, source_commits)
+        imported, prepared, patch_hash, imported_head = require_imported_history_checkout(rehearsal, source_commits, args.expected_import_head or "")
         if args.sourcelink_tool is None:
             raise RuntimeError("The imported profile requires --sourcelink-tool")
         source_link_assembly, source_link_version, source_link_payload_sha256 = shared.require_sourcelink_tool(args.sourcelink_tool)
@@ -1081,7 +1087,7 @@ def main() -> int:
     require_pinned_source(extensions, extensions_sha, "Extensions")
     require_pinned_source(studio, studio_sha, "Studio")
     if imported_head:
-        imported_after, prepared_after, patch_hash_after, head_after = require_imported_history_checkout(rehearsal, source_commits)
+        imported_after, prepared_after, patch_hash_after, head_after = require_imported_history_checkout(rehearsal, source_commits, imported_head)
         if head_after != imported_head:
             raise RuntimeError("The imported checkout HEAD changed during the package proof")
     else:
