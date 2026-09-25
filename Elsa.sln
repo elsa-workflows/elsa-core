@@ -861,6 +861,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Ldap.UnitTests", "test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Mqtt.UnitTests", "test\extensions\modules\mqtt\Elsa.Mqtt.UnitTests\Elsa.Mqtt.UnitTests.csproj", "{701C9CF1-577D-57C1-9C97-5BB955E5EC26}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Dapper.UnitTests", "test\extensions\modules\persistence\Elsa.Dapper.UnitTests\Elsa.Dapper.UnitTests.csproj", "{55D19E09-4468-43C7-8CE4-9C000C321D47}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.MongoDb.UnitTests", "test\extensions\modules\persistence\Elsa.MongoDb.UnitTests\Elsa.MongoDb.UnitTests.csproj", "{FF84CD92-DA70-5D7F-BD1F-3E9BBEC22CDE}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.Dapper.UnitTests", "test\extensions\modules\persistence\Elsa.Persistence.Dapper.UnitTests\Elsa.Persistence.Dapper.UnitTests.csproj", "{90C6FC77-1B4E-5457-9019-A860AA0BA5CB}"
@@ -2775,6 +2777,18 @@ Global
 		{701C9CF1-577D-57C1-9C97-5BB955E5EC26}.Release|x64.Build.0 = Release|Any CPU
 		{701C9CF1-577D-57C1-9C97-5BB955E5EC26}.Release|x86.ActiveCfg = Release|Any CPU
 		{701C9CF1-577D-57C1-9C97-5BB955E5EC26}.Release|x86.Build.0 = Release|Any CPU
+		{55D19E09-4468-43C7-8CE4-9C000C321D47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55D19E09-4468-43C7-8CE4-9C000C321D47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55D19E09-4468-43C7-8CE4-9C000C321D47}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{55D19E09-4468-43C7-8CE4-9C000C321D47}.Debug|x64.Build.0 = Debug|Any CPU
+		{55D19E09-4468-43C7-8CE4-9C000C321D47}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{55D19E09-4468-43C7-8CE4-9C000C321D47}.Debug|x86.Build.0 = Debug|Any CPU
+		{55D19E09-4468-43C7-8CE4-9C000C321D47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55D19E09-4468-43C7-8CE4-9C000C321D47}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55D19E09-4468-43C7-8CE4-9C000C321D47}.Release|x64.ActiveCfg = Release|Any CPU
+		{55D19E09-4468-43C7-8CE4-9C000C321D47}.Release|x64.Build.0 = Release|Any CPU
+		{55D19E09-4468-43C7-8CE4-9C000C321D47}.Release|x86.ActiveCfg = Release|Any CPU
+		{55D19E09-4468-43C7-8CE4-9C000C321D47}.Release|x86.Build.0 = Release|Any CPU
 		{FF84CD92-DA70-5D7F-BD1F-3E9BBEC22CDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FF84CD92-DA70-5D7F-BD1F-3E9BBEC22CDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FF84CD92-DA70-5D7F-BD1F-3E9BBEC22CDE}.Debug|x64.ActiveCfg = Debug|Any CPU
