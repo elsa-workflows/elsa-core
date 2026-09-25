@@ -170,6 +170,37 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
         await store.UpdateAsync(record, [x => x.UpdatedAt], cancellationToken);
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    /// <paramref name="allowFinishedCancelled"/> is unused: drain no longer promotes Finished/Cancelled (#8419).
+    /// The parameter remains so the 3.8.4 signature stays binary-compatible.
+    /// </remarks>
+    public async ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false)
+    {
+        var record = new WorkflowInstanceRecord
+        {
+            Id = workflowInstanceId,
+            Status = WorkflowStatus.Running.ToString(),
+            SubStatus = WorkflowSubStatus.Interrupted.ToString(),
+            IsExecuting = false
+        };
+
+        var updated = await store.UpdateAsync(
+            record,
+            [x => x.Status, x => x.SubStatus, x => x.IsExecuting],
+            q =>
+            {
+                q.Is(nameof(WorkflowInstanceRecord.Id), workflowInstanceId);
+                // Refuse every Finished row (#8419). Distinct param names avoid colliding
+                // with SET Status = Running.
+                q.Parameters.Add("@FinishedStatus", WorkflowStatus.Finished.ToString());
+                q.Sql.AppendLine("and not Status = @FinishedStatus");
+            },
+            cancellationToken);
+
+        return updated > 0;
+    }
+
     private void ApplyFilter(ParameterizedQuery query, WorkflowInstanceFilter filter)
     {
         query

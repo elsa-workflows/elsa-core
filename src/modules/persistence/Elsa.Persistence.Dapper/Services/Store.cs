@@ -445,6 +445,20 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     }
 
     /// <summary>
+    /// Updates the specified fields on records matching the filter.
+    /// </summary>
+    /// <returns>The number of records updated.</returns>
+    public async Task<int> UpdateAsync(T record, Expression<Func<T, object>>[] props, Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
+    {
+        using var connection = dbConnectionProvider.GetConnection();
+        var fields = props.Select(x => x.GetPropertyName()).ToArray();
+        var query = dbConnectionProvider.CreateQuery().Update(TableName, record, fields);
+        ApplyTenantFilter(query);
+        filter(query);
+        return await query.ExecuteAsync(connection);
+    }
+
+    /// <summary>
     /// Deletes all records matching the specified query.
     /// </summary>
     /// <param name="filter">The conditions to apply to the query.</param>

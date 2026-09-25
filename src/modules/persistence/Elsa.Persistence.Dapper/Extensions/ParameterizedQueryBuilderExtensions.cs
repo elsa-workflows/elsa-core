@@ -468,6 +468,27 @@ public static class ParameterizedQueryBuilderExtensions
         return query;
     }
 
+    /// <summary>
+    /// Begins an UPDATE query with a <c>WHERE 1=1</c> clause so additional filters can be appended.
+    /// </summary>
+    public static ParameterizedQuery Update(this ParameterizedQuery query, string table, object record, string[] fields, Func<string, string>? getParameterName = null)
+    {
+        getParameterName ??= x => x;
+        query.Sql.AppendLine(query.Dialect.Update(table, fields, getParameterName));
+
+        var recordType = record.GetType();
+        foreach (var field in fields)
+        {
+            var prop = recordType.GetProperty(field)!;
+            var propType = prop.PropertyType;
+            var value = prop.GetValue(record);
+            var dbType = value == null ? GetDbType(propType) : null;
+            query.Parameters.Add($"@{getParameterName(field)}", value, dbType);
+        }
+
+        return query;
+    }
+
     private static DbType? GetDbType(Type type)
     {
         if (type == typeof(byte[])) return DbType.Binary;

@@ -124,4 +124,17 @@ public class ElasticStore<T> where T : class
 
         return response.Deleted ?? 0;
     }
+
+    /// <summary>
+    /// Updates documents matching the specified query. Returns the number of documents updated.
+    /// </summary>
+    public async Task<long> UpdateByQueryAsync(Action<UpdateByQueryRequestDescriptor<T>> query, CancellationToken cancellationToken)
+    {
+        var response = await _elasticClient.UpdateByQueryAsync(Indices.All, query, cancellationToken);
+
+        if (!response.IsSuccess())
+            throw new Exception(response.DebugInformation);
+
+        return response.Updated ?? 0;
+    }
 }

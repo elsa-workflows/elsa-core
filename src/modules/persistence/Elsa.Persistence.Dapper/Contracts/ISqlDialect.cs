@@ -124,6 +124,15 @@ public interface ISqlDialect
     string Update(string table, string primaryKeyField, string[] fields, Func<string, string>? getParamName = null);
 
     /// <summary>
+    /// Builds an UPDATE query with a <c>WHERE 1=1</c> clause so additional filters can be appended.
+    /// </summary>
+    /// <param name="table">The table.</param>
+    /// <param name="fields">The fields to update.</param>
+    /// <param name="getParamName">An optional function to get the parameter name.</param>
+    /// <returns>The query.</returns>
+    string Update(string table, string[] fields, Func<string, string>? getParamName = null);
+
+    /// <summary>
     /// Builds an UPSERT query.
     /// </summary>
     /// <param name="table">The table.</param>
