@@ -13,6 +13,7 @@ from refresh_canonical_dependency_graph import (
     _validate_test_profile_pins,
     _assets_for_project,
     _framework_graph,
+    _include_restored_project_references,
     _node_key,
     _parse_test_run_evidence,
     _validated_framework_summary,
@@ -226,6 +227,55 @@ class CanonicalDependencyGraphTests(unittest.TestCase):
             selected = graph.affected_tests([("elsa-core", _node_key(core_path, "net9.0"))])
             self.assertEqual({("elsa-core", _node_key(test_path, "net10.0"))}, selected)
             self.assertEqual((test_path, "net10.0"), node_map[_node_key(test_path, "net10.0")])
+
+    def test_restored_off_solution_project_is_in_dependency_graph_but_not_test_selection(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve()
+            test_path = "test/Consumer.Tests/Consumer.Tests.csproj"
+            helper_path = "src/Helper/Helper.csproj"
+            test_file = root / test_path
+            helper_file = root / helper_path
+            test_file.parent.mkdir(parents=True)
+            helper_file.parent.mkdir(parents=True)
+            test_file.touch()
+            helper_file.touch()
+            test_assets = {
+                "project": {"restore": {"frameworks": {
+                    "net10.0": {"projectReferences": {str(helper_file): {"projectPath": str(helper_file)}}},
+                }}},
+                "targets": {"net10.0": {"Helper/1.0.0": {
+                    "type": "project", "framework": ".NETCoreApp,Version=v10.0",
+                }}},
+                "libraries": {"Helper/1.0.0": {
+                    "type": "project", "msbuildProject": "../../src/Helper/Helper.csproj",
+                }},
+            }
+            helper_assets = {
+                "project": {"restore": {
+                    "projectPath": str(helper_file),
+                    "frameworks": {"net10.0": {"projectReferences": {}}},
+                }},
+                "targets": {"net10.0": {}},
+                "libraries": {},
+            }
+            for project_file, document in (
+                (test_file, test_assets),
+                (helper_file, helper_assets),
+            ):
+                assets_path = project_file.parent / "obj/project.assets.json"
+                assets_path.parent.mkdir(parents=True)
+                assets_path.write_text(json.dumps(document), encoding="utf-8")
+
+            names = {test_path: "Consumer.Tests"}
+            documents = {test_path: test_assets}
+            _include_restored_project_references(root, names, documents)
+            graph, _, _ = _framework_graph(root, names, documents, {test_path})
+
+            self.assertIn(helper_path, names)
+            self.assertEqual(
+                {("elsa-core", _node_key(test_path, "net10.0"))},
+                graph.affected_tests([("elsa-core", _node_key(helper_path, "net10.0"))]),
+            )
 
     def test_missing_restore_assets_fail_closed(self):
         with tempfile.TemporaryDirectory() as temp:

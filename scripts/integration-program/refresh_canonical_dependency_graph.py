@@ -142,6 +142,7 @@ def parse_solution(solution_path: Path) -> list[tuple[str, str]]:
 def graph_from_edges(
     project_name_by_path: dict[str, str],
     edges_by_path: dict[str, list[str]],
+    test_project_paths: set[str] | None = None,
 ) -> InventoryGraph:
     """Use the shared impact-closure implementation over one restored TFM graph."""
     known_paths = set(project_name_by_path)
@@ -150,9 +151,11 @@ def graph_from_edges(
         raise ValueError(f"Restored project references target projects absent from Elsa.sln: {unknown}")
     rows = []
     for path, name in project_name_by_path.items():
+        project_path = path.rsplit("@@", 1)[0] if "@@" in path else path
+        is_test_project = project_path in test_project_paths if test_project_paths is not None else name.endswith("Tests")
         rows.append({
             "path": path,
-            "is_test_project": name.endswith("Tests"),
+            "is_test_project": is_test_project,
             "project_references": [{"target_project": reference} for reference in edges_by_path.get(path, [])],
             "package_references": [],
         })
@@ -275,6 +278,7 @@ def _framework_graph(
     root: Path,
     project_name_by_path: dict[str, str],
     asset_documents: dict[str, dict[str, Any]],
+    test_project_paths: set[str] | None = None,
 ) -> tuple[InventoryGraph, dict[str, tuple[str, str]], dict[tuple[str, str], list[tuple[str, str]]]]:
     """Create a graph whose edges retain the target framework selected by restore."""
     node_to_project_framework: dict[str, tuple[str, str]] = {}
@@ -345,7 +349,39 @@ def _framework_graph(
                 edges[_node_key(project_path, source_framework)].append(target_node)
                 edge_rows[(project_path, source_framework)].append((target_path, target_framework))
 
-    return graph_from_edges(graph_names, edges), node_to_project_framework, edge_rows
+    return graph_from_edges(graph_names, edges, test_project_paths), node_to_project_framework, edge_rows
+
+
+def _include_restored_project_references(
+    root: Path,
+    project_name_by_path: dict[str, str],
+    asset_documents: dict[str, dict[str, Any]],
+) -> None:
+    """Load transitive restored ProjectReferences even when they are outside Elsa.sln."""
+    pending = list(project_name_by_path)
+    while pending:
+        source_path = pending.pop()
+        document = asset_documents[source_path]
+        restore_frameworks = document.get("project", {}).get("restore", {}).get("frameworks", {})
+        if not isinstance(restore_frameworks, dict) or not restore_frameworks:
+            raise ValueError(f"Restore graph has no target frameworks: {source_path}")
+        for source_framework, restored in restore_frameworks.items():
+            references = restored.get("projectReferences", {})
+            if not isinstance(references, dict):
+                raise ValueError(f"Restore ProjectReferences are not an object for {source_path} ({source_framework})")
+            for reference_path, reference in references.items():
+                if not isinstance(reference, dict):
+                    raise ValueError(f"Invalid project reference in restore graph for {source_path} ({source_framework})")
+                target_path_value = reference.get("projectPath", reference_path)
+                if not isinstance(target_path_value, str) or not target_path_value:
+                    raise ValueError(f"Restore graph has an empty ProjectReference for {source_path} ({source_framework})")
+                target_path = _relative_path(root, target_path_value)
+                if target_path in asset_documents:
+                    continue
+                _, target_assets = _assets_for_project(root, target_path)
+                project_name_by_path[target_path] = Path(target_path).stem
+                asset_documents[target_path] = target_assets
+                pending.append(target_path)
 
 
 def _parse_test_run_evidence(evidence: dict[str, Any], root: Path, projects: list[tuple[str, str]]) -> dict[str, Any]:
@@ -811,6 +847,7 @@ def refresh_receipt(
     projects = parse_solution(solution_path)
     project_name_by_path = {path: name for name, path in projects}
     project_paths = set(project_name_by_path)
+    solution_test_project_paths = {path for name, path in projects if name.endswith("Tests")}
     if any(not (root / path).is_file() for path in project_paths):
         raise ValueError("Elsa.sln contains a missing project file")
     run_evidence = _parse_test_run_evidence(evidence, root, projects) if evidence is not None else None
@@ -822,6 +859,14 @@ def refresh_receipt(
         asset_paths[path] = assets_path
         asset_documents[path] = document
         input_hashes.append({"project": path, "projectSha256": sha256(root / path), "assets": _relative_path(root, assets_path), "assetsSha256": sha256(assets_path)})
+
+    _include_restored_project_references(root, project_name_by_path, asset_documents)
+    graph_project_paths = set(project_name_by_path)
+    for path in sorted(graph_project_paths - project_paths):
+        assets_path = root / path
+        project_assets = assets_path.parent / "obj/project.assets.json"
+        asset_paths[path] = project_assets
+        input_hashes.append({"project": path, "projectSha256": sha256(assets_path), "assets": _relative_path(root, project_assets), "assetsSha256": sha256(project_assets)})
 
     frameworks = sorted({
         framework
@@ -837,7 +882,7 @@ def refresh_receipt(
         *[path.relative_to(root).as_posix() for path in (root / "build").glob("*.cs")],
         *([".nuke/parameters.json"] if (root / ".nuke/parameters.json").is_file() else []),
     })
-    build_config_paths = ancestor_build_configs(root, project_paths | {build_csproj})
+    build_config_paths = ancestor_build_configs(root, graph_project_paths | {build_csproj})
     external_nuget_config_count = sum(
         1
         for document in asset_documents.values()
@@ -845,7 +890,9 @@ def refresh_receipt(
         if not (Path(config_path).resolve() == root or root in Path(config_path).resolve().parents)
     )
     name_by_path = project_name_by_path
-    graph, node_to_project_framework, edge_rows = _framework_graph(root, name_by_path, asset_documents)
+    graph, node_to_project_framework, edge_rows = _framework_graph(
+        root, name_by_path, asset_documents, solution_test_project_paths,
+    )
     core_scenario = {}
     core_root_path = CHANGED_PROJECT[1]
     for framework in frameworks:
@@ -858,7 +905,14 @@ def refresh_receipt(
             node_to_project_framework[node]
             for repository, node in graph.affected_tests([changed_key])
         )
-        restored_count = sum(framework in document["project"]["restore"]["frameworks"] for document in asset_documents.values())
+        restored_count = sum(
+            framework in asset_documents[path]["project"]["restore"]["frameworks"]
+            for path in project_paths
+        )
+        referenced_project_count = sum(
+            framework in asset_documents[path]["project"]["restore"]["frameworks"]
+            for path in graph_project_paths - project_paths
+        )
         source_edge_rows = [
             (source_framework, target_framework)
             for (source_path, source_framework), targets in edge_rows.items()
@@ -882,6 +936,7 @@ def refresh_receipt(
                 result_rows.append(_classify_test_observation(path, target_framework, run_evidence, dependencies))
         core_scenario[framework] = {
             "restoredProjectCount": restored_count,
+            "restoredReferencedProjectCount": referenced_project_count,
             "directProjectReferenceEdgeCount": sum(len(targets) for (source_path, source_framework), targets in edge_rows.items() if source_framework == framework),
             "directProjectReferenceTargetFrameworkMatrix": edge_matrix,
             "affectedProjectCount": len(affected_nodes),
@@ -992,7 +1047,7 @@ def refresh_receipt(
             tool_paths["mapped-solution-build.json"] = overlay_build_receipt_path
     source_file_hashes = {
         path: sha256(root / path)
-        for path in sorted({"Elsa.sln", *BUILD_PROPS, *build_config_paths, *build_tool_paths, *sorted(project_paths)})
+        for path in sorted({"Elsa.sln", *BUILD_PROPS, *build_config_paths, *build_tool_paths, *sorted(graph_project_paths)})
     }
     source_file_hashes.update({
         _relative_path(root, asset_paths[path]): sha256(asset_paths[path])
@@ -1015,6 +1070,10 @@ def refresh_receipt(
         "frameworkSummaryCount": run_evidence["frameworkSummaryCount"] if run_evidence is not None else None,
         "retainedTrxSummary": run_evidence["retainedTrxSummary"] if run_evidence is not None else None,
     }
+    workbench_patch_hash = next(
+        row["sha256"] for row in pins["supplementalPatches"]
+        if row["name"] in ("Workbench canonical Secrets sample", "workbench-canonical-secrets.patch")
+    )
     return {
         "schemaVersion": 1,
         "sourceProfile": source_profile,
@@ -1038,6 +1097,7 @@ def refresh_receipt(
             "preparedSourcePathKind": "separate disposable source checkout passed with --rehearsal; this checkout supplies Elsa.sln, project files, restored assets, build inputs, and retained receipts",
             "canonicalSolution": "Elsa.sln",
             "canonicalSolutionProjectCount": len(project_paths),
+            "restoredReferenceProjectCount": len(graph_project_paths - project_paths),
             "sourceFileSha256": source_file_hashes,
             "ancestorBuildConfigPaths": build_config_paths,
             "canonicalNukeBuildInputs": build_tool_paths,
@@ -1097,7 +1157,7 @@ def refresh_receipt(
         "postSupplementalWorkbenchEvaluation": {
             "project": workbench_path,
             "projectSha256": workbench_hash_before,
-            "supplementalPatchSha256": next(row["sha256"] for row in pins["supplementalPatches"] if row["name"] == "Workbench canonical Secrets sample"),
+            "supplementalPatchSha256": workbench_patch_hash,
             "frameworkEvaluations": workbench_evaluations,
             "limitation": "Only the post-patch Workbench effective properties were reevaluated; the 2,586-project matrix predates supplemental patches. This does not prove package-mode restore or publication behavior.",
         },
