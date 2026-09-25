@@ -1,4 +1,5 @@
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.Logging;
 
@@ -9,13 +10,15 @@ public class StoreBookmarkQueue(
     IBookmarkQueueSignaler bookmarkQueueSignaler, 
     ISystemClock systemClock, 
     IIdentityGenerator identityGenerator,
-    ILogger<StoreBookmarkQueue> logger) : IBookmarkQueue
+    ILogger<StoreBookmarkQueue> logger,
+    ITenantAccessor? tenantAccessor = null) : IBookmarkQueue
 {
     public async Task EnqueueAsync(NewBookmarkQueueItem item, CancellationToken cancellationToken = default)
     {
         var entity = new BookmarkQueueItem
         {
             Id = identityGenerator.GenerateId(),
+            TenantId = tenantAccessor?.TenantId,
             WorkflowInstanceId = item.WorkflowInstanceId,
             BookmarkId = item.BookmarkId,
             CorrelationId = item.CorrelationId,
