@@ -1,0 +1,24 @@
+# Root Docker builds copy source from this repository context. Keep local
+# credentials and generated outputs out of the context sent to the builder.
+**/.git
+**/.env
+**/.env.*
+**/appsettings.Local.json
+**/secrets.dev.yaml
+**/values.dev.yaml
+**/*.pfx
+**/*.publishsettings
+**/*.db
+**/*.db-wal
+**/*.db-shm
+**/.vs
+**/.idea
+**/.vscode
+**/bin
+**/obj
+**/node_modules
+**/TestResults
+**/test-results
+**/artifacts
+**/*.nupkg
+**/*.snupkg

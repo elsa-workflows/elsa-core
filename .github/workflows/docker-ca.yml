@@ -1,11 +1,13 @@
 name: Docker certificate smoke tests
 
 on:
+  workflow_dispatch:
   pull_request:
     branches:
       - main
     paths:
       - 'docker/**'
+      - '.dockerignore'
       - 'scripts/test-ca-trust.sh'
       - 'test/TlsSmoke/**'
       - '.github/workflows/docker-ca.yml'
@@ -14,6 +16,7 @@ on:
       - main
     paths:
       - 'docker/**'
+      - '.dockerignore'
       - 'scripts/test-ca-trust.sh'
       - 'test/TlsSmoke/**'
       - '.github/workflows/docker-ca.yml'
