@@ -83,7 +83,7 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
                 IsExecuting = true,
             }));
         InstanceStore.TryMarkInterruptedAsync("instance-2", Arg.Any<CancellationToken>(), false)
-            .Returns(_ => throw new InvalidOperationException("db unavailable"));
+            .Returns(_ => ValueTask.FromException<bool>(new InvalidOperationException("db unavailable")));
 
         var sut = BuildSut();
         var outcome = await sut.DrainAsync(DrainTrigger.OperatorForce);
