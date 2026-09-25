@@ -274,3 +274,29 @@ bootstrap diagnostic; management authorization was not exercised. Both hosts
 were stopped and the private fixture was removed. This is still a mapped-source
 host check, not the imported-source Studio browser repeat or consumer upgrade
 proof required before closing #8326.
+
+### Current draft-import Workbench route ownership (2026-09-25)
+
+The [sanitized route receipt](imported-source-route-probe-2026-09-25.json)
+records a fresh run on clean, history-bearing draft import #8409 at
+`76299b5d2e9ee5ea8e4a82d7f53a51cd8b3c8ba5`. The fixture preflight verified
+the original three-parent import `d5409c2`, the committed Workbench source and
+the reviewed fixture patches. It built the imported `net10.0` Workbench host
+(`Elsa.Server.Web.dll` SHA-256
+`762ac9fe30aec1b95daab497b75ffd00bf273dd3ed7502373775ba5374f7e633`)
+and started it on loopback with synthetic two-tenant configuration in
+Production mode. Secrets and the guarded route probe were enabled only by the
+private launch overrides.
+
+The live response passed `validate_route_probe_payload`: all ten canonical
+method/template pairs were owned by `Elsa.Secrets`, and no legacy route or
+`Elsa.Secrets.Api`, `Elsa.Secrets.Management` or `Elsa.Secrets.Scripting`
+assembly was loaded. The receipt retains only those route and assembly facts,
+not raw endpoint metadata, private configuration, process logs or credentials.
+The host was stopped, the loopback port was closed and the private fixture was
+removed. No package was published and no production host changed.
+
+This proves the enabled Secrets route ownership of that draft Workbench host.
+It does not prove authorization or tenant isolation for every operation,
+legacy consumer migration and per-version IDs, or the final merged import
+head. Those remain #8301/#8275/#8286 gates.
