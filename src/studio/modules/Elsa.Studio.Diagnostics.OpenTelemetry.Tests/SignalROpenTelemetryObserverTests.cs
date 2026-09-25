@@ -32,10 +32,12 @@ public class SignalROpenTelemetryObserverTests
 
         await foreach (var _ in observer.ObserveAsync(new OpenTelemetryTraceFilter { TraceId = "trace-1" }))
         {
+            // Consume the first observation before starting the replacement.
         }
 
         await foreach (var _ in observer.ObserveAsync(new OpenTelemetryTraceFilter { TraceId = "trace-2" }))
         {
+            // Consume the replacement observation before checking its filter.
         }
 
         Assert.Equal("trace-2", observer.CurrentFilter?.TraceId);
