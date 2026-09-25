@@ -1548,9 +1548,18 @@
       "mode": "100644",
       "category": "repository_ignore_rules",
       "owning_workstream": "Central repository/build maintainers",
-      "proposed_disposition": "Keep these exclusions scoped to the Studio Docker build context or translate them to the consolidated Docker context; do not apply them to a broader root context without checking the image inputs.",
-      "evidence_or_gate": "The pinned rules exclude bin/obj, node_modules, Docker files, LICENSE, and README. Core has no root .dockerignore; verify Docker build context and ensure broad root exclusions do not remove required legal/docs inputs.",
-      "status": "pending_path_scope_review"
+      "proposed_disposition": "Use the consolidated root .dockerignore for repository-root Docker builds. Do not copy these standalone Studio exclusions into the broader root context because they exclude root README.md, LICENSE, and Dockerfile inputs.",
+      "evidence_or_gate": "At Studio tip 099402226daba80e473a306bbd1243b8994465b8, this path still matches the pinned blob. Current imported Docker builds use repository-root context; the consolidated root .dockerignore from #8461 scopes generated and sensitive files while preserving README.md, LICENSE, and Dockerfiles. No current build uses the old standalone Studio context.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-readme-and-dockerignore-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8461",
+        "merge_commit": "eab0bbf825ff42f4e7ba344dfdf0ae2fd9f094c0",
+        "active_path": ".dockerignore",
+        "active_blob": "9fd202e8fac99839317ea15a5b6a9fe600081ab6",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -2923,9 +2932,18 @@
       "mode": "100644",
       "category": "product_readme",
       "owning_workstream": "Studio product documentation",
-      "proposed_disposition": "Preserve Studio-specific user/developer material at a named Studio documentation path and update links for the consolidated tree; keep the root README focused on repository navigation.",
-      "evidence_or_gate": "This remains the Studio repository landing page in the pinned source; no consolidated documentation move is recorded.",
-      "status": "pending_document_refresh"
+      "proposed_disposition": "Use the consolidated Studio developer guide at doc/studio/README.md instead of the standalone repository landing page. Keep the exact upstream README in the inert .source provenance tree.",
+      "evidence_or_gate": "At Studio tip 099402226daba80e473a306bbd1243b8994465b8, this path still matches the pinned blob. The active guide uses the canonical Elsa.sln, Node 22 ClientLib build script, and current src/studio paths; Core README links to it. The standalone clone, solution, and project paths no longer describe the imported layout.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-readme-and-dockerignore-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8459",
+        "merge_commit": "c01f9c53f07a3db6ec48b15ea97e784272363df9",
+        "active_path": "doc/studio/README.md",
+        "active_blob": "1bcbeee61947bc6b56b79a5d8a9b97d9a83252e7",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
