@@ -84,8 +84,24 @@ public class DeadlineBreachEndToEndTests
             CancellationToken.None)).ToList();
 
         Assert.NotEmpty(interruptedInstances);
+        Assert.Equal(WorkflowStatus.Running, interruptedInstances[0].Status);
         Assert.False(interruptedInstances[0].IsExecuting,
             "An Interrupted instance must have IsExecuting=false so the existing timeout-based crash recovery does not also pick it up.");
+
+        var restarter = new RecordingRestarter();
+        var scanner = ActivatorUtilities.CreateInstance<Elsa.Workflows.Runtime.Services.InterruptedRecoveryScanner>(scope.ServiceProvider, restarter);
+        var requeued = await scanner.ScanAndRequeueAsync(CancellationToken.None);
+        Assert.Equal(1, requeued);
+        Assert.Equal(new[] { interruptedInstances[0].Id }, restarter.RestartedIds);
+
+        var finishedInterrupted = (await instanceStore.FindManyAsync(
+            new WorkflowInstanceFilter
+            {
+                WorkflowSubStatus = WorkflowSubStatus.Interrupted,
+                WorkflowStatus = WorkflowStatus.Finished,
+            },
+            CancellationToken.None)).ToList();
+        Assert.Empty(finishedInterrupted);
 
         // A WorkflowInterrupted forensic log entry was written for the force-cancelled execution cycle.
         var logStore = scope.ServiceProvider.GetRequiredService<IWorkflowExecutionLogStore>();
@@ -111,6 +127,17 @@ public class DeadlineBreachEndToEndTests
 
         Assert.Equal(DrainResult.CompletedWithinDeadline, outcome.OverallResult);
         Assert.Equal(0, outcome.ExecutionCyclesForceCancelledCount);
+    }
+
+    private sealed class RecordingRestarter : IWorkflowRestarter
+    {
+        public List<string> RestartedIds { get; } = new();
+
+        public Task RestartWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
+        {
+            RestartedIds.Add(workflowInstanceId);
+            return Task.CompletedTask;
+        }
     }
 }
 

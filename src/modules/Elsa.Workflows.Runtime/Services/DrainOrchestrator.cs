@@ -570,9 +570,20 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
         try
         {
-            instance.SubStatus = WorkflowSubStatus.Interrupted;
-            instance.IsExecuting = false;
-            await instanceStore.SaveAsync(instance, cancellationToken);
+            // Conditional write: do not SaveAsync the Find snapshot. Default TryMark refuses
+            // every Finished row (#8052). Drain alone may set allowFinishedCancelled when
+            // this id is in the force-cancelled set and the runner committed Cancelled.
+            var allowFinishedCancelled = instance.Status == WorkflowStatus.Finished
+                && instance.SubStatus == WorkflowSubStatus.Cancelled
+                && drainInducedInstanceIds.Contains(instance.Id);
+            var marked = await instanceStore.TryMarkInterruptedAsync(instance.Id, cancellationToken, allowFinishedCancelled);
+            if (!marked)
+            {
+                _logger.LogInformation(
+                    "Skipping Interrupted persist for instance {InstanceId}: a concurrent persist already left it in a terminal status.",
+                    instance.Id);
+                return;
+            }
         }
         catch (Exception ex) when (!ex.IsFatal())
         {
