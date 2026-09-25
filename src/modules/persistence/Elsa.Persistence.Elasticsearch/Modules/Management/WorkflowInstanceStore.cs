@@ -4,6 +4,7 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Persistence.Elasticsearch.Common;
 using Elsa.Extensions;
+using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -147,6 +148,35 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     public Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// <paramref name="allowFinishedCancelled"/> is unused: drain no longer promotes Finished/Cancelled (#8419).
+    /// The parameter remains so the 3.8.4 signature stays binary-compatible.
+    /// </remarks>
+    public async ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false)
+    {
+        // Conditional write: do not SaveAsync a Find snapshot. Id is a document field
+        // (not mapped as _id), so Update-by-id is unavailable. Refuse every Finished
+        // row (#8419). allowFinishedCancelled is ignored.
+        var updated = await _store.UpdateByQueryAsync(d =>
+        {
+            d.Refresh(true);
+            d.Query(q => q.Bool(b => b
+                .Must(m => m.Match(mt => mt.Field(f => f.Id).Query(workflowInstanceId)))
+                .MustNot(mn => mn.Match(mt => mt
+                    .Field(f => f.Status)
+                    .Query(WorkflowStatus.Finished.ToString()!)))));
+
+            d.Script(s => s
+                .Source("ctx._source.status = params.status; ctx._source.subStatus = params.subStatus; ctx._source.isExecuting = params.isExecuting;")
+                .AddParam("status", WorkflowStatus.Running.ToString())
+                .AddParam("subStatus", WorkflowSubStatus.Interrupted.ToString())
+                .AddParam("isExecuting", false));
+        }, cancellationToken);
+
+        return updated > 0;
     }
 
     private static SearchRequestDescriptor<WorkflowInstance> Sort<TProp>(SearchRequestDescriptor<WorkflowInstance> descriptor, WorkflowInstanceOrder<TProp> order)

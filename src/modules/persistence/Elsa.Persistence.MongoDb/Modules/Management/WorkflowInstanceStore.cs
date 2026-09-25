@@ -3,6 +3,7 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Persistence.MongoDb.Common;
 using Elsa.Persistence.MongoDb.Helpers;
+using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -135,6 +136,27 @@ public class MongoWorkflowInstanceStore(MongoDbStore<WorkflowInstance> mongoDbSt
         
         if (!updated) 
             logger.LogDebug("Failed to update the 'UpdatedAt' timestamp for workflow instance with ID '{WorkflowInstanceId}'. This means this workflow does not yet exist in the DB.", workflowInstanceId);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// <paramref name="allowFinishedCancelled"/> is unused: drain no longer promotes Finished/Cancelled (#8419).
+    /// The parameter remains so the 3.8.4 signature stays binary-compatible.
+    /// </remarks>
+    public async ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false)
+    {
+        var collection = mongoDbStore.GetCollection();
+        // Refuse every Finished row (#8419). allowFinishedCancelled is ignored.
+        var idFilter = Builders<WorkflowInstance>.Filter.Eq(x => x.Id, workflowInstanceId);
+        var notFinished = Builders<WorkflowInstance>.Filter.Ne(x => x.Status, WorkflowStatus.Finished);
+        var filter = Builders<WorkflowInstance>.Filter.And(idFilter, notFinished);
+        var update = Builders<WorkflowInstance>.Update
+            .Set(x => x.Status, WorkflowStatus.Running)
+            .Set(x => x.SubStatus, WorkflowSubStatus.Interrupted)
+            .Set(x => x.IsExecuting, false);
+
+        var result = await collection.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+        return result.MatchedCount > 0;
     }
 
     /// <inheritdoc />
