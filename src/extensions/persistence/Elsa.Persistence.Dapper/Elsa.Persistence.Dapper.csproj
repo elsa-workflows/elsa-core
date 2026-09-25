@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Persistence.Dapper.Migrations\Elsa.Persistence.Dapper.Migrations.csproj"/>
+        <ProjectReference Include="../Elsa.Persistence.Dapper.Migrations/Elsa.Persistence.Dapper.Migrations.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -29,15 +29,15 @@
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Elsa.Identity"/>
-        <PackageReference Include="Elsa.Tenants"/>
-        <PackageReference Include="Elsa.Workflows.Runtime"/>
+        <ProjectReference Include="../../../modules/Elsa.Identity/Elsa.Identity.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Tenants/Elsa.Tenants.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj"/>
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Identity\Elsa.Identity.csproj"/>
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Tenants\Elsa.Tenants.csproj"/>
-        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Identity/Elsa.Identity.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Tenants/Elsa.Tenants.csproj"/>
+        <ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj"/>
     </ItemGroup>
 
 </Project>
