@@ -1,1 +1,14 @@
-<Project><PropertyGroup><UseProjectReferences>true</UseProjectReferences><IsPackable>false</IsPackable><GeneratePackageOnBuild>false</GeneratePackageOnBuild></PropertyGroup></Project>
+<Project>
+  <PropertyGroup>
+    <UseProjectReferences>true</UseProjectReferences>
+    <IsPackable>false</IsPackable>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <!-- SDK-generated top-level sources do not exist when SourceLink discovers untracked files. -->
+  <Target Name="EmbedStudioGeneratedSources" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <EmbeddedFiles Include="$(IntermediateOutputPath)*.cs" />
+    </ItemGroup>
+  </Target>
+</Project>
