@@ -200,7 +200,7 @@
       "mode": "100644",
       "category": "scoped_build_properties",
       "owning_workstream": "Feature #8214 build integration; package owners",
-      "proposed_disposition": "Retain this behavior in the product-scoped Directory.Build.props, with package metadata kept product-specific; do not apply one product’s warning suppressions or target defaults globally.Preserve Extension package metadata (repository URL, MIT expression, 2025 copyright), documented-build settings, audit configuration, trim settings, and product-specific version properties in src/extensions scope.",
+      "proposed_disposition": "Retain this behavior in the product-scoped Directory.Build.props, with package metadata kept product-specific; do not apply one product\u2019s warning suppressions or target defaults globally.Preserve Extension package metadata (repository URL, MIT expression, 2025 copyright), documented-build settings, audit configuration, trim settings, and product-specific version properties in src/extensions scope.",
       "evidence_or_gate": "The disposable source-integration patch creates src/extensions and src/studio scoped props. It is a build candidate, not an applied history-bearing import or packed-package proof.",
       "status": "candidate_scoped_in_disposable_patch"
     },
@@ -1091,8 +1091,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".agents/skills/speckit-analyze/SKILL.md",
+        "active_blob": "d8028026a07d2c618ae30ce5acf0e4caa495ff37",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1104,8 +1113,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".agents/skills/speckit-checklist/SKILL.md",
+        "active_blob": "c5896332dd23225b7fa17e2c10252d6a51ffea22",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1117,8 +1135,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".agents/skills/speckit-clarify/SKILL.md",
+        "active_blob": "70a8a074dc15826d4479fe131042af8df3c0a6bb",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1130,8 +1157,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".agents/skills/speckit-constitution/SKILL.md",
+        "active_blob": "3c56c2ec67d5445ae68a5553325ff6a9ab950549",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1143,8 +1179,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".agents/skills/speckit-git-commit/SKILL.md",
+        "active_blob": "6d1f29a271289da58624180bfcfa06e9a4c617f8",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1156,8 +1201,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".agents/skills/speckit-git-feature/SKILL.md",
+        "active_blob": "79b3ec9da373d3c0daece395f76f712f349e586b",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -1169,8 +1223,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".agents/skills/speckit-git-initialize/SKILL.md",
+        "active_blob": "2e31d97ce5d266d1a5785afa5503cd78c1f3521c",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1182,8 +1245,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".agents/skills/speckit-git-remote/SKILL.md",
+        "active_blob": "50bfc3d88f1182a64a1dd7ce6ef16c47df78a461",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1195,8 +1267,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".agents/skills/speckit-git-validate/SKILL.md",
+        "active_blob": "7655e3a09936f9a296fe73ca53e1ee545b73b066",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1208,8 +1289,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".agents/skills/speckit-implement/SKILL.md",
+        "active_blob": "0f3989a33de3de8bdd55639b305a1b3d8a6c060c",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1221,8 +1311,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".agents/skills/speckit-plan/SKILL.md",
+        "active_blob": "c4be8492399aedbc58c48f365349c1cdff7985cb",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -1234,8 +1333,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".agents/skills/speckit-specify/SKILL.md",
+        "active_blob": "693cd101efb1ebef7f128cab4182a1fda19fc075",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1247,8 +1355,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".agents/skills/speckit-tasks/SKILL.md",
+        "active_blob": "d6d520a8b55296eb820ff0c132e652821e594805",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1260,8 +1377,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".agents/skills/speckit-taskstoissues/SKILL.md",
+        "active_blob": "7d303b19e72acce5528620cfae66c1d87a2518f5",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1577,8 +1703,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions.yml",
+        "active_blob": "efbbda974437e49bd3903e28f8d2663bad9f7413",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1590,8 +1725,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions/.registry",
+        "active_blob": "82866c312197dc97ca3c5199193b16f74801a382",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -1603,8 +1747,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions/git/README.md",
+        "active_blob": "31ba75c30f23e1af082a405c24260b75305582fe",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1616,8 +1769,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions/git/commands/speckit.git.commit.md",
+        "active_blob": "e606f911df9d85bd6adcb94ec282f4a70940d996",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1629,8 +1791,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions/git/commands/speckit.git.feature.md",
+        "active_blob": "5bed9e5e57be5694dab3f5de8eee9c0081136f7f",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -1642,8 +1813,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions/git/commands/speckit.git.initialize.md",
+        "active_blob": "4451ee6b77cb73331d0696ca55742497c7f7db38",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1655,8 +1835,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions/git/commands/speckit.git.remote.md",
+        "active_blob": "712a3e8b8c7853a3360814e6465f58575ac9a28c",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1668,8 +1857,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions/git/commands/speckit.git.validate.md",
+        "active_blob": "dd84618cb81bc0b1e1d8f7b034855965a4f7228d",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1681,8 +1879,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions/git/config-template.yml",
+        "active_blob": "8c414babe65d0045d7afc817582cd142c3e925bc",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1694,8 +1901,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions/git/extension.yml",
+        "active_blob": "13c1977ea173a6b6dcf0aa4cea649a6ae75508d5",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1707,8 +1923,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions/git/git-config.yml",
+        "active_blob": "8c414babe65d0045d7afc817582cd142c3e925bc",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1720,8 +1945,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions/git/scripts/bash/auto-commit.sh",
+        "active_blob": "f0b423187b6ec5f46a03faddb08f183c84ec6413",
+        "active_mode": "100755",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1733,8 +1967,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions/git/scripts/bash/create-new-feature.sh",
+        "active_blob": "f7aa31610e35e4a721514970c575cf8a13e8ba3e",
+        "active_mode": "100755",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1746,8 +1989,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions/git/scripts/bash/git-common.sh",
+        "active_blob": "b78356d1c6914121921325d0f69031193604a817",
+        "active_mode": "100755",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1759,8 +2011,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions/git/scripts/bash/initialize-repo.sh",
+        "active_blob": "296e363b94d0732f52ab65f84f7412daa9cf8c12",
+        "active_mode": "100755",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1772,8 +2033,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions/git/scripts/powershell/auto-commit.ps1",
+        "active_blob": "4a8b0e00cdf05d3658aeaadd3d8b9f73da8fa5cb",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1785,8 +2055,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions/git/scripts/powershell/create-new-feature.ps1",
+        "active_blob": "b579f051608e02cabc45f9bc4b00e3314de2f8bf",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1798,8 +2077,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions/git/scripts/powershell/git-common.ps1",
+        "active_blob": "82210000b696db8649607d16f3e18990280c01ad",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1811,8 +2099,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/extensions/git/scripts/powershell/initialize-repo.ps1",
+        "active_blob": "324240a3e745357ffb40f1834d31aebf5c5bf182",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1824,8 +2121,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/init-options.json",
+        "active_blob": "03a742befdd273e43504e66d5b5b17a6663a995a",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1837,8 +2143,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/integration.json",
+        "active_blob": "f8eb97695467fb231dfe80b8702691ca7d63326d",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1850,8 +2165,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/integrations/codex.manifest.json",
+        "active_blob": "82a983992974d7c7378133fb1ddd336f6cf50bcf",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -1863,8 +2187,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/integrations/speckit.manifest.json",
+        "active_blob": "bab022d5632f207f4ee3fa6761f3829b1baed3d2",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -1876,8 +2209,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/memory/constitution.md",
+        "active_blob": "64c39c61263d777ccd168ca9befb1afbaede152a",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -1889,8 +2231,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/scripts/bash/check-prerequisites.sh",
+        "active_blob": "88a555946070c3d6de2479a53b9345b404c6d737",
+        "active_mode": "100755",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1902,8 +2253,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/scripts/bash/common.sh",
+        "active_blob": "03141e4462d35a40aa020226119c104a90008603",
+        "active_mode": "100755",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1915,8 +2275,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/scripts/bash/create-new-feature.sh",
+        "active_blob": "c3537704f6e432d3bbdedec4d55c529055a6df13",
+        "active_mode": "100755",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1928,8 +2297,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/scripts/bash/setup-plan.sh",
+        "active_blob": "f2d2f6e6fcb5d426053b80ce34be7416384852cd",
+        "active_mode": "100755",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1941,8 +2319,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/scripts/bash/setup-tasks.sh",
+        "active_blob": "3f6a40b12d18efa3b0a35461dbbe9e84f50cc93c",
+        "active_mode": "100755",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1954,8 +2341,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/templates/checklist-template.md",
+        "active_blob": "c4aa1666eaa973bf249d1683fcab49b4717898e0",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1967,8 +2363,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/templates/constitution-template.md",
+        "active_blob": "a4670ff46919b276a4c9663b4ca51830108fcfc0",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1980,8 +2385,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/templates/plan-template.md",
+        "active_blob": "8d5e68d2c359363b659daf21e6f2be436efedadf",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1993,8 +2407,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/templates/spec-template.md",
+        "active_blob": "4581e40529d044f49f5c68e4d542f2bb0467a619",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -2006,8 +2429,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/templates/tasks-template.md",
+        "active_blob": "c9f73c00db34c9658133a50a8a910164b507cdc6",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -2019,8 +2451,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/workflows/speckit/workflow.yml",
+        "active_blob": "bf18451029e514ba10811af9adf3a502c39050a9",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -2032,8 +2473,17 @@
       "category": "studio_agent_specification_tooling",
       "owning_workstream": "Studio DevEx; Feature #8214 retained-asset ledger",
       "proposed_disposition": "Move supported Studio workflows, commands, scripts, and templates into the consolidated tooling layout with relocated paths and one clear owner; explicitly retire superseded or duplicate tooling.",
-      "evidence_or_gate": "All 50 pinned Studio .agents/.specify assets remain inert in the legacy mapping; no clean-root workflow replay is recorded.",
-      "status": "pending_devex_inventory"
+      "evidence_or_gate": "Reviewed Studio tooling disposition in PR #8432, merged 4ffd19a22b34b7c7e8f1c49754c15e4b76f657db; the active Core-root Git blob and mode are pinned below. Recheck the final history-import tip before removing inert source copies.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-spec-asset-representation.json",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
+        "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
+        "active_path": ".specify/workflows/workflow-registry.json",
+        "active_blob": "e45d7ff3304bdf05a716bf0439bc0ac20bb37228",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -2079,7 +2529,7 @@
       "mode": "100644",
       "category": "scoped_build_properties",
       "owning_workstream": "Feature #8214 build integration; package owners",
-      "proposed_disposition": "Retain this behavior in the product-scoped Directory.Build.props, with package metadata kept product-specific; do not apply one product’s warning suppressions or target defaults globally.Preserve Studio package metadata (repository URL, MIT expression, 2023 copyright), net8/net9/net10 TFMs, icon asset inclusion, and the current project-scoped trim-warning allowlist in src/studio scope.",
+      "proposed_disposition": "Retain this behavior in the product-scoped Directory.Build.props, with package metadata kept product-specific; do not apply one product\u2019s warning suppressions or target defaults globally.Preserve Studio package metadata (repository URL, MIT expression, 2023 copyright), net8/net9/net10 TFMs, icon asset inclusion, and the current project-scoped trim-warning allowlist in src/studio scope.",
       "evidence_or_gate": "The disposable source-integration patch creates src/extensions and src/studio scoped props. It is a build candidate, not an applied history-bearing import or packed-package proof.",
       "status": "candidate_scoped_in_disposable_patch"
     },
@@ -2145,7 +2595,7 @@
       "category": "nuget_source_mapping",
       "owning_workstream": "Build/package maintainers",
       "proposed_disposition": "Reconcile the NuGet.org, Elsa Feedz, and WebhooksCore Feedz sources with the active root config; correct the source-mapping key and prove each needed package restores before retaining that feed.",
-      "evidence_or_gate": "Pinned Studio config declares webhooks-core.feedz.io but maps to webhooks-coreo.feedz.io (extra “o”). Mapped source has WebhooksCore package reference in samples/extensions/workbench/Elsa.ServerAndStudio.Web and code usage in src/extensions/cms/Elsa.OrchardCore; check whether this feed supplies the package, correct the mapping key if retained, and verify clean restore.",
+      "evidence_or_gate": "Pinned Studio config declares webhooks-core.feedz.io but maps to webhooks-coreo.feedz.io (extra \u201co\u201d). Mapped source has WebhooksCore package reference in samples/extensions/workbench/Elsa.ServerAndStudio.Web and code usage in src/extensions/cms/Elsa.OrchardCore; check whether this feed supplies the package, correct the mapping key if retained, and verify clean restore.",
       "status": "pending_feed_key_and_restore_review"
     },
     {
