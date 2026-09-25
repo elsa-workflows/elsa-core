@@ -312,7 +312,7 @@ def validate_publisher_handoff(
     proposed = _validate_publisher(proposed_publisher, "proposed_publisher")
     if proposed == current:
         raise ValueError("Proposed publisher must differ from the current publisher")
-    if unit["id"] == "elsa-slack" and proposed == {
+    if unit["package_id"].casefold() == "elsa.slack" and proposed == {
         "repository": "elsa-core", "workflow_path": ".github/workflows/packages.yml"
     }:
         raise ValueError("The current Core packages.yml packs the whole solution; use a scoped Slack workflow")

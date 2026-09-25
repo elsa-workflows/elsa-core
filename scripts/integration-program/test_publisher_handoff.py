@@ -52,6 +52,11 @@ class PublisherHandoffTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "packs the whole solution"):
             validate_publisher_handoff(self.unit, broad, self.receipt())
 
+        renamed = copy.deepcopy(self.unit)
+        renamed["id"] = "renamed-slack-unit"
+        with self.assertRaisesRegex(ValueError, "packs the whole solution"):
+            validate_publisher_handoff(renamed, broad, self.receipt())
+
     def test_simulated_reviewed_handoff_validates_without_changing_current_owner(self):
         result = validate_publisher_handoff(self.unit, self.proposed, self.receipt())
 
