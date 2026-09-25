@@ -209,6 +209,27 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
     }
 
     [Fact]
+    public async Task FindManyAsync_MarksLegacyScanCompletedIndependentlyForEmptyAndNamedDefaultTenants()
+    {
+        var backing = new MemoryStore<SerializedKeyValuePair>();
+        var emptyTenantKv = new MemoryKeyValueStore(backing, new TestTenantAccessor(""));
+        var namedDefaultKv = new MemoryKeyValueStore(backing, new TestTenantAccessor("default"));
+        var payloadSerializer = new TestPayloadSerializer();
+        var emptyStore = new KeyValueWorkflowDispatchOutboxStore(emptyTenantKv, payloadSerializer, new TestTenantAccessor(""));
+        var namedDefaultStore = new KeyValueWorkflowDispatchOutboxStore(namedDefaultKv, payloadSerializer, new TestTenantAccessor("default"));
+
+        await emptyStore.FindManyAsync();
+        await namedDefaultStore.FindManyAsync();
+
+        Assert.Equal("Elsa:WorkflowDispatchOutbox:State:LegacyScanCompleted:", emptyStore.GetLegacyScanCompletedKey());
+        Assert.Equal("Elsa:WorkflowDispatchOutbox:State:LegacyScanCompleted:default", namedDefaultStore.GetLegacyScanCompletedKey());
+        Assert.NotNull(await emptyTenantKv.FindAsync(new KeyValueFilter { Key = emptyStore.GetLegacyScanCompletedKey() }, CancellationToken.None));
+        Assert.NotNull(await namedDefaultKv.FindAsync(new KeyValueFilter { Key = namedDefaultStore.GetLegacyScanCompletedKey() }, CancellationToken.None));
+        Assert.Null(await emptyTenantKv.FindAsync(new KeyValueFilter { Key = namedDefaultStore.GetLegacyScanCompletedKey() }, CancellationToken.None));
+        Assert.Null(await namedDefaultKv.FindAsync(new KeyValueFilter { Key = emptyStore.GetLegacyScanCompletedKey() }, CancellationToken.None));
+    }
+
+    [Fact]
     public async Task FindManyAsync_CleansUpCorruptIndexedItem_AllowingLaterItemsToProgress()
     {
         var keyValueStore = new MemoryKeyValueStore(new MemoryStore<SerializedKeyValuePair>());
@@ -441,7 +462,7 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
         SerializedValue = item.Id
     };
 
-    private const string DefaultLegacyScanCompletedKey = "Elsa:WorkflowDispatchOutbox:State:LegacyScanCompleted:default";
+    private const string DefaultLegacyScanCompletedKey = "Elsa:WorkflowDispatchOutbox:State:LegacyScanCompleted:";
 
     private static SerializedKeyValuePair CreateLegacyScanCompletedRecord() => new()
     {

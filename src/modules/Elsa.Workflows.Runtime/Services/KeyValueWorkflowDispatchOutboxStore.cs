@@ -21,7 +21,6 @@ public class KeyValueWorkflowDispatchOutboxStore(
     private const string RecoveryKeyPrefix = "Elsa:WorkflowDispatchOutbox:Recovery:";
     private const string StateKeyPrefix = "Elsa:WorkflowDispatchOutbox:State:";
     private const string LegacyScanCompletedKeyPrefix = $"{StateKeyPrefix}LegacyScanCompleted:";
-    private const string DefaultTenantLegacyScanCompletedSegment = "default";
 
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken = default)
@@ -318,15 +317,16 @@ public class KeyValueWorkflowDispatchOutboxStore(
     private static string GetRecoveryKey(string id) => $"{RecoveryKeyPrefix}{id}";
 
     /// <summary>
-    /// Per-tenant marker. The previous shared key is not read: a missing marker only
-    /// causes one extra legacy scan, and treating the old shared flag as completed would
-    /// skip scans for tenants that never finished their own.
+    /// Per-tenant marker. The default tenant <c>""</c> yields a trailing colon, which is
+    /// still distinct from the old shared key and from a real tenant named <c>default</c>.
+    /// The previous shared key is not read: a missing marker only causes one extra legacy
+    /// scan, and treating the old shared flag as completed would skip scans for tenants
+    /// that never finished their own.
     /// </summary>
     internal string GetLegacyScanCompletedKey()
     {
         var tenantId = tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
-        var segment = tenantId == Tenant.DefaultTenantId ? DefaultTenantLegacyScanCompletedSegment : tenantId;
-        return $"{LegacyScanCompletedKeyPrefix}{segment}";
+        return $"{LegacyScanCompletedKeyPrefix}{tenantId}";
     }
 
     private static int? GetLegacyScanTake(int maxCount)

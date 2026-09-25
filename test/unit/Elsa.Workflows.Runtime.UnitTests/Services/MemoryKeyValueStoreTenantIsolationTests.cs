@@ -221,6 +221,21 @@ public class MemoryKeyValueStoreTenantIsolationTests
         Assert.Equal("tenant-a", found.TenantId);
     }
 
+    [Fact(DisplayName = "SaveAsync by the default tenant keeps a null TenantId")]
+    public async Task SaveAsync_WhenDefaultTenantUpdatesNullTenantId_KeepsNull()
+    {
+        var backing = new MemoryStore<SerializedKeyValuePair>();
+        backing.Save(Pair("kv-null", "null"), x => x.Id);
+        var store = new MemoryKeyValueStore(backing, new TestTenantAccessor(Tenant.DefaultTenantId));
+
+        await store.SaveAsync(Pair("kv-null", "updated"), CancellationToken.None);
+        var found = await store.FindAsync(new KeyValueFilter { Key = "kv-null" }, CancellationToken.None);
+
+        Assert.NotNull(found);
+        Assert.Equal("updated", found.SerializedValue);
+        Assert.Null(found.TenantId);
+    }
+
     [Fact(DisplayName = "DeleteAsync removes a * key that is visible to the ambient tenant")]
     public async Task DeleteAsync_WhenAgnosticKey_NamedTenantRemovesIt()
     {

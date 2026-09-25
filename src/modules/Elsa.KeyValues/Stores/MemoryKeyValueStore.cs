@@ -85,7 +85,7 @@ public class MemoryKeyValueStore : IKeyValueStore
             return;
 
         if (!TenantVisibility.CanReplaceOwnedRow(existing.TenantId, incoming.TenantId, CurrentTenantId))
-            throw new InvalidOperationException($"A key-value pair with key '{incoming.Id}' already exists and is not visible to the current tenant.");
+            throw new InvalidOperationException($"A key-value pair with key '{incoming.Id}' already exists and is owned by another tenant or is tenant-agnostic.");
 
         // An accepted update may change the payload, but it must not rehome the row.
         incoming.TenantId = existing.TenantId;
