@@ -18,7 +18,15 @@ from validate_legacy_asset_dispositions import DEFAULT_LEDGER, DEFAULT_RECEIPT, 
 ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE = ROOT / "doc/integration-program/consolidation/current-tip-e96-evidence"
 STUDIO_SPEC_REPRESENTATION = ROOT / "doc/integration-program/consolidation/studio-spec-asset-representation.json"
+STUDIO_GUIDANCE = "src/studio/AGENTS.md"
 EXPECTED_RECEIPT_SHA256 = "06cd198a338d5c6d49fa6b0183bbda6b602252f39f622f18084e60342880bb75"
+
+
+def file_git_identity(path: Path) -> tuple[str, str]:
+    content = path.read_bytes()
+    blob = hashlib.sha1(f"blob {len(content)}\0".encode() + content).hexdigest()
+    mode = "100755" if path.stat().st_mode & stat.S_IXUSR else "100644"
+    return blob, mode
 
 
 def load_pinned_receipt() -> dict[str, Any]:
@@ -74,9 +82,7 @@ def verify_mapped_files(import_root: Path, receipt: dict[str, Any]) -> list[str]
         if not path.is_file() or path.is_symlink():
             errors.append(f"missing or non-regular retained asset: {destination}")
             continue
-        content = path.read_bytes()
-        blob = hashlib.sha1(f"blob {len(content)}\0".encode() + content).hexdigest()
-        mode = "100755" if path.stat().st_mode & stat.S_IXUSR else "100644"
+        blob, mode = file_git_identity(path)
         if blob != row["blob"] or mode != row["mode"]:
             errors.append(f"retained asset differs from import receipt: {destination}")
     return errors
@@ -107,9 +113,7 @@ def compare_studio_spec_representation(
         if not path.is_file() or path.is_symlink():
             errors.append(f"Active Core tooling file is missing or not regular: {source_path}")
             continue
-        content = path.read_bytes()
-        blob = hashlib.sha1(f"blob {len(content)}\0".encode() + content).hexdigest()
-        mode = "100755" if path.stat().st_mode & stat.S_IXUSR else "100644"
+        blob, mode = file_git_identity(path)
         active[source_path] = (blob, mode)
         (represented if blob == current["blob"] and mode == current["mode"] else different).append(source_path)
 
@@ -119,7 +123,7 @@ def compare_studio_spec_representation(
     if not isinstance(differences, dict) or set(differences) != set(different):
         errors.append("Studio tooling source-difference paths differ from the source comparison")
     else:
-        allowed = {"represented_by_active_core", "pending_policy"}
+        allowed = {"represented_by_active_core", "represented_by_scoped_studio", "pending_policy"}
         for source_path, record in differences.items():
             if not isinstance(record, dict):
                 errors.append(f"Studio tooling reviewed difference changed: {source_path}")
@@ -129,7 +133,22 @@ def compare_studio_spec_representation(
                     or (record.get("activeBlob"), record.get("activeMode")) != active[source_path]):
                 errors.append(f"Studio tooling reviewed difference changed: {source_path}")
                 continue
-            (reviewed if status == "represented_by_active_core" else policy_pending).append(source_path)
+            if status == "represented_by_scoped_studio":
+                scoped_path = core_root / STUDIO_GUIDANCE
+                root_guidance = core_root / "AGENTS.md"
+                if (record.get("scopedPath") != STUDIO_GUIDANCE or not scoped_path.is_file()
+                        or scoped_path.is_symlink() or
+                        (record.get("scopedBlob"), record.get("scopedMode")) != file_git_identity(scoped_path)):
+                    errors.append(f"Studio scoped guidance changed: {source_path}")
+                    continue
+                if (not root_guidance.is_file() or root_guidance.is_symlink() or
+                        STUDIO_GUIDANCE.encode() not in root_guidance.read_bytes()):
+                    errors.append(f"Root guidance no longer links to Studio policy: {source_path}")
+                    continue
+            elif any(key in record for key in ("scopedPath", "scopedBlob", "scopedMode")):
+                errors.append(f"Unexpected Studio scoped guidance mapping: {source_path}")
+                continue
+            (policy_pending if status == "pending_policy" else reviewed).append(source_path)
         if (decision.get("reviewedDifferentCount") != len(reviewed)
                 or decision.get("pendingPolicyCount") != len(policy_pending)):
             errors.append("Studio tooling reviewed/pending difference counts changed")

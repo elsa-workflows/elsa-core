@@ -6,10 +6,10 @@
     "studio": "20ceaeeed7e671f0c9662003e82063026f2216de"
   },
   "category": "studio_agent_specification_tooling",
-  "decision": "Identical Studio tooling uses the active Core-root file; six reviewed differences also use Core-root behavior; two policy differences remain pending. All .source copies stay inert provenance.",
+  "decision": "Identical Studio tooling uses the active Core-root file; six reviewed differences use Core-root behavior; two policy differences are represented by scoped Studio guidance. All .source copies stay inert provenance. Recheck on final import head.",
   "representedCount": 42,
-  "reviewedDifferentCount": 6,
-  "pendingPolicyCount": 2,
+  "reviewedDifferentCount": 8,
+  "pendingPolicyCount": 0,
   "sourceDifferences": {
     ".agents/skills/speckit-git-feature/SKILL.md": {
       "status": "represented_by_active_core",
@@ -18,10 +18,13 @@
       "reason": "Use active Core /speckit-specify spelling; the installed speckit-specify skill advertises that command."
     },
     ".agents/skills/speckit-plan/SKILL.md": {
-      "status": "pending_policy",
+      "status": "represented_by_scoped_studio",
       "activeBlob": "c4be8492399aedbc58c48f365349c1cdff7985cb",
       "activeMode": "100644",
-      "reason": "Review Studio's feature-neutral AGENTS.md rule against Core's plan-marker update rule."
+      "scopedPath": "src/studio/AGENTS.md",
+      "scopedBlob": "1c06d45180db59423f3ea98c428a485912b690b0",
+      "scopedMode": "100644",
+      "reason": "Keep Core's root plan-marker update rule; src/studio/AGENTS.md instructs Studio-only plans to remain feature-scoped without rewriting the root pointer."
     },
     ".specify/extensions/.registry": {
       "status": "represented_by_active_core",
@@ -48,10 +51,13 @@
       "reason": "Keep Core manifest: integration, version and file hashes match after JSON parsing; installation timestamp and map order differ."
     },
     ".specify/memory/constitution.md": {
-      "status": "pending_policy",
+      "status": "represented_by_scoped_studio",
       "activeBlob": "64c39c61263d777ccd168ca9befb1afbaede152a",
       "activeMode": "100644",
-      "reason": "Preserve substantive Studio module, backend-awareness and UX guidance in a reviewed Studio-scoped location before retiring this source copy."
+      "scopedPath": "src/studio/AGENTS.md",
+      "scopedBlob": "1c06d45180db59423f3ea98c428a485912b690b0",
+      "scopedMode": "100644",
+      "reason": "src/studio/AGENTS.md carries Studio module boundaries, backend capability checks, Blazor hosts, async/disposal, UI and verification rules without replacing the Core constitution."
     },
     ".specify/workflows/workflow-registry.json": {
       "status": "represented_by_active_core",

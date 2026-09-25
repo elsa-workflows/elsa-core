@@ -78,11 +78,12 @@ class CurrentTipLegacyAssetsTests(unittest.TestCase):
         self.assertEqual([], errors)
         self.assertEqual(50, summary["total"])
         self.assertEqual(42, summary["representedByIdenticalCoreRoot"])
-        self.assertEqual(6, len(summary["reviewedDifferentPaths"]))
-        self.assertEqual({
+        self.assertEqual(8, len(summary["reviewedDifferentPaths"]))
+        self.assertTrue({
             ".agents/skills/speckit-plan/SKILL.md",
             ".specify/memory/constitution.md",
-        }, set(summary["pendingPolicyPaths"]))
+        }.issubset(summary["reviewedDifferentPaths"]))
+        self.assertEqual([], summary["pendingPolicyPaths"])
 
     def test_studio_tooling_representation_rejects_unreviewed_blob_or_decision_drift(self) -> None:
         decision = copy.deepcopy(self.studio_decision)
@@ -109,6 +110,15 @@ class CurrentTipLegacyAssetsTests(unittest.TestCase):
         errors, _ = compare_studio_spec_representation(self.ledger, self.receipt, decision)
         self.assertTrue(any("reviewed difference changed" in error for error in errors))
 
+    def test_studio_scoped_policy_requires_the_reviewed_guidance_blob_and_path(self) -> None:
+        for change in ({"scopedBlob": "0" * 40}, {"scopedMode": "100755"},
+                       {"scopedPath": "doc/studio/README.md"}):
+            with self.subTest(change=change):
+                decision = copy.deepcopy(self.studio_decision)
+                decision["sourceDifferences"][".specify/memory/constitution.md"].update(change)
+                errors, _ = compare_studio_spec_representation(self.ledger, self.receipt, decision)
+                self.assertTrue(any("scoped guidance changed" in error for error in errors))
+
     def test_studio_tooling_executable_mode_is_part_of_representation(self) -> None:
         paths = [row["original_path"] for row in self.ledger["assets"]
                  if row["category"] == "studio_agent_specification_tooling"]
@@ -118,6 +128,10 @@ class CurrentTipLegacyAssetsTests(unittest.TestCase):
                 target = root / relative
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(ROOT / relative, target)
+            guidance = root / "src/studio/AGENTS.md"
+            guidance.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / "src/studio/AGENTS.md", guidance)
+            shutil.copy2(ROOT / "AGENTS.md", root / "AGENTS.md")
             errors, _ = compare_studio_spec_representation(self.ledger, self.receipt,
                                                              self.studio_decision, root)
             self.assertEqual([], errors)
@@ -126,6 +140,11 @@ class CurrentTipLegacyAssetsTests(unittest.TestCase):
             errors, _ = compare_studio_spec_representation(self.ledger, self.receipt,
                                                              self.studio_decision, root)
             self.assertTrue(any("source-difference" in error for error in errors))
+            script.chmod(0o755)
+            (root / "AGENTS.md").write_text("# No Studio pointer\n", encoding="utf-8")
+            errors, _ = compare_studio_spec_representation(self.ledger, self.receipt,
+                                                             self.studio_decision, root)
+            self.assertTrue(any("Root guidance no longer links" in error for error in errors))
 
 
 if __name__ == "__main__":
