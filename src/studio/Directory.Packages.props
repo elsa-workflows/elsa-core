@@ -28,6 +28,7 @@
     <PackageVersion Include="MudBlazor" Version="9.0.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.ResxSourceGenerator" Version="5.0.0-1.25277.114" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageVersion Include="GitHubActionsTestLogger" Version="3.0.4" PrivateAssets="All" />
     <PackageVersion Include="Microsoft.Playwright" Version="1.61.0" />
     <PackageVersion Include="MudBlazor.Translations" Version="2.7.0" />
     <PackageVersion Include="Radzen.Blazor" Version="9.0.5" />

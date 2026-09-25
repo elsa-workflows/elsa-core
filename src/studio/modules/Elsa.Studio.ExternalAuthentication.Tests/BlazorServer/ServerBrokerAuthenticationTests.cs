@@ -182,15 +182,16 @@ public sealed class ServerBrokerAuthenticationTests
     }
 
     [Theory]
-    [InlineData("state", true)]
-    [InlineData(null, true)]
-    [InlineData("wrong-state", false)]
-    public async Task ProviderError_WithTrustedTransaction_ReturnsToTheTrustedChooserPath(string? callbackState, bool isTrustedCallback)
+    [InlineData("state", true, "broker-123", "broker-123")]
+    [InlineData(null, true, "broker-123", "broker-123")]
+    [InlineData("wrong-state", false, "broker-123", "broker-123")]
+    [InlineData("state", true, "bad%0D%0Aforged", "invalid")]
+    public async Task ProviderError_WithTrustedTransaction_ReturnsToTheTrustedChooserPath(string? callbackState, bool isTrustedCallback, string correlationId, string expectedCorrelationId)
     {
         var context = new DefaultHttpContext();
         context.Request.Scheme = "https";
         context.Request.Host = new HostString("studio.example.test");
-        context.Request.QueryString = new QueryString("?correlation_id=broker-123");
+        context.Request.QueryString = new QueryString($"?correlation_id={correlationId}");
         var accessor = new HttpContextAccessor { HttpContext = context };
         var options = new ExternalAuthenticationClientOptions { ClientId = "studio-server", ClientSecret = "secret" };
         var anonymous = new FakeAnonymousBackendApiClientProvider();
@@ -214,7 +215,8 @@ public sealed class ServerBrokerAuthenticationTests
         Assert.Contains("error=external_sign_in_failed", redirect.Url);
         var log = Assert.Single(logger.Entries, entry => entry.EventId.Name == "CallbackBrokerFailure");
         Assert.Equal(LogLevel.Warning, log.Level);
-        Assert.Contains("broker-123", log.Message, StringComparison.Ordinal);
+        Assert.Contains(expectedCorrelationId, log.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("forged", log.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("access_denied", log.Message, StringComparison.Ordinal);
     }
 

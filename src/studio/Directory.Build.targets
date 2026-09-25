@@ -5,6 +5,10 @@
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
+  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+    <PackageReference Include="GitHubActionsTestLogger" />
+  </ItemGroup>
+
   <!-- SDK-generated top-level sources do not exist when SourceLink discovers untracked files. -->
   <Target Name="EmbedStudioGeneratedSources" BeforeTargets="CoreCompile">
     <ItemGroup>

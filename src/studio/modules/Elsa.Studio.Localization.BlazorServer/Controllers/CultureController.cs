@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Localization;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Studio.Localization.BlazorServer.Controllers;
@@ -22,7 +23,8 @@ public class CultureController : Controller
             HttpContext.Response.Cookies.Append(
                 CookieRequestCultureProvider.DefaultCookieName,
                 CookieRequestCultureProvider.MakeCookieValue(
-                    new RequestCulture(culture, culture)));
+                    new RequestCulture(culture, culture)),
+                new CookieOptions { Secure = true, HttpOnly = true, SameSite = SameSiteMode.Lax });
         }
 
         return LocalRedirect(redirectUri);

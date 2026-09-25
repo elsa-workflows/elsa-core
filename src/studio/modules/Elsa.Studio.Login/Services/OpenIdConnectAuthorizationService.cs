@@ -1,19 +1,22 @@
-﻿using Elsa.Studio.Login.Contracts;
+﻿using System.Net;
+using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using Elsa.Studio.Login.Contracts;
 using Elsa.Studio.Login.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
-using System.Text;
+using Microsoft.JSInterop;
 
 namespace Elsa.Studio.Login.Services;
 
 /// <inheritdoc/>
-public class OpenIdConnectAuthorizationService(IJwtAccessor jwtAccessor, IOptions<OpenIdConnectConfiguration> configuration, NavigationManager navigationManager, HttpClient httpClient, IOpenIdConnectPkceStateService pkceStateService, ILogger<OpenIdConnectAuthorizationService> logger) : IAuthorizationService
+public class OpenIdConnectAuthorizationService(IJwtAccessor jwtAccessor, IOptions<OpenIdConnectConfiguration> configuration, NavigationManager navigationManager, HttpClient httpClient, IOpenIdConnectPkceStateService pkceStateService, IJSRuntime jsRuntime, ILogger<OpenIdConnectAuthorizationService> logger) : IAuthorizationService
 {
+    private const string PendingAuthorizationKey = "elsa.studio.login.oidc.pendingAuthorization";
     private const int MaxLoggedErrorLength = 1024;
     private static readonly string[] CorrelationIdHeaderNames = ["traceparent", "request-id", "x-request-id", "x-correlation-id", "x-ms-request-id", "x-ms-correlation-id"];
 
@@ -28,10 +31,10 @@ public class OpenIdConnectAuthorizationService(IJwtAccessor jwtAccessor, IOption
             var generated = await pkceStateService.GeneratePkceCodeChallenge();
             url += $"&code_challenge={generated.CodeChallenge}&code_challenge_method={generated.Method}";
         }
-        if (navigationManager.ToBaseRelativePath(navigationManager.Uri) is { } returnUrl and not "/")
-        {
-            url += "&state=" + WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(returnUrl));
-        }
+        var state = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
+        var returnPath = new Uri(navigationManager.Uri).PathAndQuery;
+        await jsRuntime.InvokeVoidAsync("sessionStorage.setItem", PendingAuthorizationKey, JsonSerializer.Serialize(new PendingAuthorization(state, returnPath, DateTimeOffset.UtcNow)));
+        url += "&state=" + WebUtility.UrlEncode(state);
 
         navigationManager.NavigateTo(url, true);
     }
@@ -39,6 +42,16 @@ public class OpenIdConnectAuthorizationService(IJwtAccessor jwtAccessor, IOption
     /// <inheritdoc/>
     public async Task ReceiveAuthorizationCode(string code, string? state, CancellationToken cancellationToken)
     {
+        // Consume before exchange so callbacks cannot replay a transaction, even when the provider rejects its code.
+        var pendingJson = await jsRuntime.InvokeAsync<string?>("sessionStorage.getItem", cancellationToken, PendingAuthorizationKey);
+        await jsRuntime.InvokeVoidAsync("sessionStorage.removeItem", cancellationToken, PendingAuthorizationKey);
+        var pending = string.IsNullOrWhiteSpace(pendingJson) ? null : JsonSerializer.Deserialize<PendingAuthorization>(pendingJson);
+        if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(state) || pending is null ||
+            string.IsNullOrWhiteSpace(pending.State) || string.IsNullOrWhiteSpace(pending.ReturnPath) ||
+            pending.CreatedAt > DateTimeOffset.UtcNow || DateTimeOffset.UtcNow - pending.CreatedAt > TimeSpan.FromMinutes(10) ||
+            !StateMatches(state, pending.State))
+            throw new InvalidOperationException("The OpenID Connect sign-in transaction is missing, expired, or invalid.");
+
         var config = configuration.Value;
         var redirectUri = new Uri(navigationManager.Uri).GetLeftPart(UriPartial.Authority) + "/signin-oidc";
 
@@ -78,13 +91,18 @@ public class OpenIdConnectAuthorizationService(IJwtAccessor jwtAccessor, IOption
         await jwtAccessor.WriteTokenAsync(TokenNames.AccessToken, tokens.AccessToken ?? "");
         await jwtAccessor.WriteTokenAsync(TokenNames.IdToken, tokens.IdToken ?? "");
 
-        string returnUrl = "/";
-        if (!String.IsNullOrWhiteSpace(state))
-        {
-            returnUrl = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(state));
-        }
-        navigationManager.NavigateTo(returnUrl, true);
+        var returnPath = pending.ReturnPath;
+        navigationManager.NavigateTo(returnPath.StartsWith('/') && !returnPath.StartsWith("//", StringComparison.Ordinal) && !returnPath.Contains('\\') ? returnPath : "/", true);
     }
+
+    private static bool StateMatches(string supplied, string expected)
+    {
+        var suppliedBytes = Encoding.UTF8.GetBytes(supplied);
+        var expectedBytes = Encoding.UTF8.GetBytes(expected);
+        return suppliedBytes.Length == expectedBytes.Length && CryptographicOperations.FixedTimeEquals(suppliedBytes, expectedBytes);
+    }
+
+    private sealed record PendingAuthorization(string State, string ReturnPath, DateTimeOffset CreatedAt);
 
     private async Task ThrowTokenExchangeExceptionAsync(HttpResponseMessage response, OpenIdConnectConfiguration config, CancellationToken cancellationToken)
     {

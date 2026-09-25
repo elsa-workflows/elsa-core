@@ -25,9 +25,9 @@ public sealed class ReceiveAuthorizationCode : StudioComponentBase
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (AuthorizationCode != null)
-        {
-            await AuthorizationService.ReceiveAuthorizationCode(AuthorizationCode, State, default);
-        }
+        if (!firstRender)
+            return;
+
+        await AuthorizationService.ReceiveAuthorizationCode(AuthorizationCode ?? string.Empty, State, default);
     }
 }
