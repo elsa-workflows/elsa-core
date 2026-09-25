@@ -64,6 +64,86 @@ storage isolation was not proven. It also did not record a switch back to
 tenant A after using B or inspect the saved `{name,typeName}` reference shape.
 Those checks remain open for the imported-source browser repeat.
 
+### Current-tip two-tenant browser follow-up (2026-09-25)
+
+The [sanitized browser receipt](current-tip-browser-2026-09-25.json) records a
+fresh disposable mapped run at Core `c4b3ce150160e3c9062b57f7b158fd6b968e1631`,
+Extensions `ba8b71d91c15ffe5be4b2c539cf9f712e74af775`, and Studio
+`20ceaeeed7e671f0c9662003e82063026f2216de`. Its no-remote mapped commit
+was `9b7d423cf82593555c9c2f280705f8009437bf79`. Five reviewed overlays
+were applied only to that disposable source; their tracked paths and the Core
+commit that fixes their exact contents are in the receipt. The prepared
+Workbench and two server-side Studio hosts used separate loopback processes,
+separate Chrome profiles, two configured tenant host aliases,
+and one fresh shared SQLite database. Both ClientLib asset families built, the
+hosts compiled for `net10.0`, Workbench health returned 200, and the guarded
+route probe found ten Core-owned Secrets routes without legacy routes or
+assemblies.
+
+The following generated assets remained in the same mapped worktree used by
+the Studio host. Their last modification times were `2026-09-25 01:46–01:47 UTC`,
+before the browser exercise. SHA-256 values were measured after the run; the
+raw private asset-build log remains local. For this exact disposable commit,
+the retained private `import-receipt.json` hashes to
+`6f349cb5c76a9ad0ebd086892acc39224ae681d115f7ef314c311fef0b535a4a`
+and `consolidated-build-receipt.json` hashes to
+`a0d4d60a14b16eddc1001e8c443c5ef3d270c2d57bbf44ce3736e9ad24d6992e`
+(SHA-256). The [earlier public same-pin preparation receipt](../../consolidation/current-tip-c4b3-evidence/consolidated-build-receipt.json.gz)
+is a separate synthetic commit; it does not replace these run-specific hashes.
+The browser fixture's host DLL digest was not retained, so the asset table
+does not close that provenance gap.
+
+| Generated asset under `src/studio/` | SHA-256 |
+| --- | --- |
+| `framework/Elsa.Studio.DomInterop/wwwroot/dom.entry.js` | `2f73757bcf89a8ce980c9b62cbe03d173e852f52d73d4f423dfe38b146146efa` |
+| `framework/Elsa.Studio.DomInterop/wwwroot/clipboard.entry.js` | `cd9f895109f2d6e662a68056c0e4bce85b960c6e417416a245932dfc14b9082c` |
+| `framework/Elsa.Studio.DomInterop/wwwroot/files.entry.js` | `fd2a7ffa35aa7ce5269daebe6c16e2f2533d26ecac757ac5e461fa0aa908db91` |
+| `modules/Elsa.Studio.Workflows.Designer/wwwroot/designer.entry.js` | `2c3731492966b6061dfb3b4da606fa31552c07389775df706ea1c3e581ac59f3` |
+| `modules/Elsa.Studio.Workflows.Designer/wwwroot/react-designer.entry.js` | `1e1688338ee657e96187974df01562c6a9056a4a0c373fb811a973c828b7fe88` |
+| `modules/Elsa.Studio.Workflows.Designer/wwwroot/designer.css` | `5291afcec6ba61e9e02138c89991eb84f39dcfdf249f85d0fed8f614e578f25b` |
+
+After waiting for each Blazor connection before filling the login form, both
+tenant administrators and the roleless tenant-A user signed in through Studio.
+Tenant A and B each created `smoke-shared-key` with distinct synthetic metadata
+and values. The lists and workflow expression pickers showed only the tenant's
+own record; tenant B's direct read of A's separate `smoke-a-only` returned 404.
+Switching back to A still showed A's metadata. A's separate secret also passed
+UI detail, edit, rotation to version 2, positive resolution test, revocation,
+and deletion. The roleless user's list, detail and create attempt returned 403
+without disclosing metadata or creating a row. Studio still displayed its
+Create control to that user, so permission-aware presentation remains a
+separate UI issue; the server denied the mutation.
+
+Each tenant saved an unpublished Write Line draft selecting its own same-name
+secret. Read-only inspection found `Secret` expressions containing exactly
+`{name: "smoke-shared-key", typeName: "text"}` and no synthetic plaintext in
+either workflow definition. There were zero workflow instances and execution
+log records. Exact-marker scans found none of the four synthetic values in the
+database, WAL, SHM, Workbench log, or either Studio log. Observed browser
+screens likewise did not display a value. These checks do not prove that every
+possible response or future value is redacted. Raw HTTP response bodies were
+not captured or scanned in this browser run; that preflight check remains
+unverified.
+
+The repeatable private fixture setup and guarded cleanup procedure remain in
+[Workbench Secrets runtime preflight](../../../../scripts/integration-program/workbench-secrets-runtime-preflight.md).
+All three processes were stopped before the owned fixture was removed. This
+run confirms the earlier same-name, switch-back and saved-reference gaps in a
+mapped rehearsal. It does not close #8326: the same relevant browser smoke
+must run after the history-preserving import. No workflow was published or
+executed, and no provider account, package feed, or production system was used.
+
+A separate [cross-host token check](cross-host-token-2026-09-25.json) used a
+fresh Workbench-only fixture at the same source pins. The tenant-A JWT could
+not read a tenant-B secret, even when sent to B's host alias. A tenant-B JWT
+could read its own secret when sent to A's host alias. The current Secrets
+access path therefore showed tenant-scoped data, while the tested host alias
+did not act as a token or environment binding. This does not establish a
+production policy defect; it is an explicit design and verification gap for
+credential environment binding. The second host and fixture were stopped and
+removed. The browser receipt's separate Studio origins must not be read as
+proof that tokens are restricted to those origins.
+
 ## Default-host route probe
 
 The optional `workbench-secrets-route-probe.patch` is a fixture-only overlay. It
