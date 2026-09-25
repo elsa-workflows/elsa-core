@@ -508,7 +508,12 @@ def _classify_test_observation(
     counters = run_evidence["trxByPathFramework"].get((path, framework))
     if counters is not None and counters.get("executed") == 0:
         explanation = run_evidence["selectedWithoutPass"].get(path, "")
-        if counters.get("total") == 1 and "explicitly skipped" in explanation:
+        current_skip = (
+            f"Selected; retained TRX records {counters.get('total')} case(s) with zero executed tests; "
+            "NUKE summary was Skipped!."
+        )
+        if (counters.get("total") == 1 and counters.get("passed") == 0 and counters.get("failed") == 0
+                and (explanation == current_skip or "explicitly skipped" in explanation)):
             return {"path": path, "framework": framework, "status": "selected-but-skipped", "passed": 0, "skipped": counters["total"], "source": "retained-trx-and-run-evidence", "explanation": explanation}
 
     if "Microsoft.NET.Test.Sdk" not in framework_dependencies:
@@ -1183,7 +1188,7 @@ def refresh_receipt(
             "The dependency edges come from source-mode Restore assets. Package-mode restore graph behavior was not tested.",
             "Only Elsa.Slack is declared as a release unit; other release ownership remains unspecified.",
             "The historical 51-project inventory closure is a planned baseline, not an executed set. The canonical NUKE run selected 95 project paths and used per-framework outcomes in this receipt.",
-            "Canonical test evidence is for the 95a658/33fa0bfd/9afd3e36 profile plus four supplemental patches, not current Core main or a history-bearing import.",
+            f"Canonical test evidence is for the {pins['core'][:7]}/{pins['extensions'][:7]}/{pins['studio'][:7]} profile plus {len(pins['supplementalPatches'])} supplemental patches, not current Core main or a history-bearing import.",
             "No Pack, Push, Publish, deployment, or package-migration action ran.",
         ],
     }

@@ -8,6 +8,7 @@ from pathlib import Path
 from refresh_canonical_dependency_graph import (
     CURRENT_TIP_PATCH_PATHS,
     CURRENT_TIP_SOURCE_COMMITS,
+    _classify_test_observation,
     _validate_overlay_build_receipt,
     _validate_overlay_receipt,
     _validate_test_profile_pins,
@@ -23,6 +24,28 @@ from refresh_canonical_dependency_graph import (
 
 
 class CanonicalDependencyGraphTests(unittest.TestCase):
+    def test_current_tip_explicit_skip_requires_matching_zero_execution_trx(self):
+        path = "test/extensions/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj"
+        counters = {"total": 1, "executed": 0, "passed": 0, "failed": 0}
+        explanation = "Selected; retained TRX records 1 case(s) with zero executed tests; NUKE summary was Skipped!."
+        evidence = {
+            "runByPathFramework": {},
+            "trxByPathFramework": {(path, "net10.0"): counters},
+            "selectedWithoutPass": {path: explanation},
+        }
+        observed = _classify_test_observation(path, "net10.0", evidence, ["Microsoft.NET.Test.Sdk"])
+        self.assertEqual("selected-but-skipped", observed["status"])
+        self.assertEqual(1, observed["skipped"])
+
+        evidence["selectedWithoutPass"][path] = explanation.replace("Skipped!", "not emitted")
+        with self.assertRaisesRegex(ValueError, "no matching passing summary or explicit skip"):
+            _classify_test_observation(path, "net10.0", evidence, ["Microsoft.NET.Test.Sdk"])
+
+        evidence["selectedWithoutPass"][path] = explanation
+        counters["passed"] = 1
+        with self.assertRaisesRegex(ValueError, "no matching passing summary or explicit skip"):
+            _classify_test_observation(path, "net10.0", evidence, ["Microsoft.NET.Test.Sdk"])
+
     @staticmethod
     def _summary_fixture(runs):
         totals = {field: sum(run[field] for run in runs) for field in ("passed", "failed", "skipped", "total")}
