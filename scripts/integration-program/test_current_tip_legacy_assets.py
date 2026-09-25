@@ -60,6 +60,10 @@ class CurrentTipLegacyAssetsTests(unittest.TestCase):
             path.parent.mkdir(parents=True)
             path.write_bytes(content)
             self.assertEqual([], verify_mapped_files(root, receipt))
+            path.chmod(0o755)
+            self.assertTrue(verify_mapped_files(root, receipt))
+            receipt["mapping"][0]["mode"] = "100755"
+            self.assertEqual([], verify_mapped_files(root, receipt))
             path.write_bytes(b"changed\n")
             self.assertTrue(verify_mapped_files(root, receipt))
             path.unlink()
