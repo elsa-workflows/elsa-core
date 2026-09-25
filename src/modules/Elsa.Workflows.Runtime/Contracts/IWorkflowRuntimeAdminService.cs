@@ -22,10 +22,10 @@ public interface IWorkflowRuntimeAdminService
     ValueTask<QuiescenceState> ResumeAsync(string? requestedBy, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Operator-escalation drain with zero deadline. Cancels every active execution cycle, persists their instances as
-    /// <see cref="WorkflowSubStatus.Interrupted"/>, writes a <c>WorkflowInterrupted</c> log entry per affected
-    /// instance, and returns the structured outcome. Throws <see cref="InvalidOperationException"/> when a
-    /// non-force drain is already in progress in the same generation.
+    /// Operator-escalation drain with zero deadline. Cancels every active execution cycle, persists still-Running
+    /// instances as <see cref="WorkflowSubStatus.Interrupted"/> (Finished/Cancelled rows stay as they are), writes a
+    /// <c>WorkflowInterrupted</c> log entry per affected instance, and returns the structured outcome. Throws
+    /// <see cref="InvalidOperationException"/> when a non-force drain is already in progress in the same generation.
     /// </summary>
     ValueTask<DrainOutcome> ForceDrainAsync(string? reason, string? requestedBy, CancellationToken cancellationToken);
 

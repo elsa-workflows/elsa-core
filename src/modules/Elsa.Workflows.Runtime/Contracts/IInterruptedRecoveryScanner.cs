@@ -11,6 +11,7 @@ namespace Elsa.Workflows.Runtime;
 /// and <see cref="WorkflowStatus.Running"/> (Interrupted instances have <c>IsExecuting = false</c>). The two
 /// filters never overlap, so an instance is recovered by exactly one mechanism — see FR-022 and research R4.
 /// Terminal <c>Finished+Interrupted</c> rows from a drain/runner race are excluded so they are not requeued.
+/// Drain-induced <c>Finished/Cancelled</c> rows are also left alone (#8419) and are not in this filter.
 /// </remarks>
 public interface IInterruptedRecoveryScanner
 {

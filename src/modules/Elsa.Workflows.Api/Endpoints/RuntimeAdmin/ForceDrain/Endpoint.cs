@@ -9,7 +9,8 @@ namespace Elsa.Workflows.Api.Endpoints.RuntimeAdmin.ForceDrain;
 
 /// <summary>
 /// <c>POST /admin/workflow-runtime/force-drain</c> — operator-escalation drain with zero deadline. Cancels every
-/// active execution cycle, persists their instances as <see cref="WorkflowSubStatus.Interrupted"/>, and writes a
+/// active execution cycle, persists still-Running instances as <see cref="WorkflowSubStatus.Interrupted"/>
+/// (Finished/Cancelled rows stay as they are), and writes a
 /// <c>WorkflowInterrupted</c> log entry per affected instance. The host process is NOT exited; the runtime is left
 /// in <see cref="QuiescenceReason.Drain"/> until the next runtime generation.
 /// </summary>

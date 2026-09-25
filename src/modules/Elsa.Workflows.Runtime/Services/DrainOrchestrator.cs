@@ -24,8 +24,9 @@ namespace Elsa.Workflows.Runtime.Services;
 ///    <see cref="IForceStoppable"/>, are escalated.
 /// 3. Wait for <see cref="IExecutionCycleRegistry.ActiveCount"/> to reach zero, polling on a short interval.
 /// 4. On deadline breach (or on operator force, where deadline is zero), iterate live cycles, cancel each,
-///    persist the corresponding instance in <see cref="WorkflowSubStatus.Interrupted"/>, and write a
-///    <c>WorkflowInterrupted</c> entry in the per-instance execution log.
+///    persist still-Running instances as <see cref="WorkflowSubStatus.Interrupted"/>, leave
+///    Finished/Cancelled rows as they are, and write a <c>WorkflowInterrupted</c> entry in the
+///    per-instance execution log.
 /// 5. Return a <see cref="DrainOutcome"/>.
 /// </para>
 /// <para>
@@ -323,8 +324,9 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         // under a semaphore so a large live-cycle set cannot self-contend into
         // 250ms timeouts. Timeout/error: exclude that id (prefer preserving
         // user-cancel / #8052). A successful null Find is not drain-induced yet —
-        // no persisted user-cancel exists, but we only promote if Phase A actually
-        // cancels that live handle (DeadlineBreachPersistsInterrupted).
+        // no persisted user-cancel exists, but we only write the forensic log if
+        // Phase A actually cancels that live handle. Drain never promotes a
+        // Finished/Cancelled row to Running/Interrupted (#8419).
         var drainInducedInstanceIds = new HashSet<string>(StringComparer.Ordinal);
         var drainInducedCandidateIds = new ConcurrentDictionary<Guid, string>();
         var activeSnapshotHandleIds = new ConcurrentDictionary<Guid, byte>();
@@ -370,7 +372,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             }
             catch (Exception ex) when (!ex.IsFatal())
             {
-                _logger.LogWarning(ex, "Pre-cancel snapshot for instance {InstanceId} timed out or failed; excluding from drain-induced promote.", handle.WorkflowInstanceId);
+                _logger.LogWarning(ex, "Pre-cancel snapshot for instance {InstanceId} timed out or failed; excluding from drain-induced forensic persist.", handle.WorkflowInstanceId);
             }
 
             return null;
@@ -570,19 +572,23 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
         try
         {
-            // Conditional write: do not SaveAsync the Find snapshot. Default TryMark refuses
-            // every Finished row (#8052). Drain alone may set allowFinishedCancelled when
-            // this id is in the force-cancelled set and the runner committed Cancelled.
-            var allowFinishedCancelled = instance.Status == WorkflowStatus.Finished
-                && instance.SubStatus == WorkflowSubStatus.Cancelled
-                && drainInducedInstanceIds.Contains(instance.Id);
-            var marked = await instanceStore.TryMarkInterruptedAsync(instance.Id, cancellationToken, allowFinishedCancelled);
-            if (!marked)
+            // Conditional write: do not SaveAsync the Find snapshot. Never promote a
+            // Finished/Cancelled row (#8419) — that left a Running/Interrupted row whose
+            // serialized WorkflowState still said Finished with no scheduled work, and the
+            // recovery scanner then requeued a workflow that can never resume.
+            // allowFinishedCancelled remains on the store signature for 3.8.4 compatibility;
+            // drain no longer passes true. Drain-induced Finished/Cancelled rows skip the
+            // mark and still receive the WorkflowInterrupted forensic log below.
+            if (instance.Status != WorkflowStatus.Finished)
             {
-                _logger.LogInformation(
-                    "Skipping Interrupted persist for instance {InstanceId}: a concurrent persist already left it in a terminal status.",
-                    instance.Id);
-                return;
+                var marked = await instanceStore.TryMarkInterruptedAsync(instance.Id, cancellationToken);
+                if (!marked)
+                {
+                    _logger.LogInformation(
+                        "Skipping Interrupted persist for instance {InstanceId}: a concurrent persist already left it in a terminal status.",
+                        instance.Id);
+                    return;
+                }
             }
         }
         catch (Exception ex) when (!ex.IsFatal())
@@ -618,10 +624,10 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
     }
 
     /// <summary>
-    /// Skip persist when the row is already a real terminal outcome: natural completion,
-    /// fault, already Cancelled, or unknown pre-state (snapshot timeout/error). Ids that
-    /// snapshot showed were not Cancelled, or that had no row and that we ourselves
-    /// force-cancelled, may be promoted.
+    /// Skip persist and forensic log when the row is already a real terminal outcome:
+    /// natural completion, fault, user-Cancelled, or unknown pre-state (snapshot
+    /// timeout/error). Drain-induced Finished/Cancelled rows still get the
+    /// <c>WorkflowInterrupted</c> log but are not promoted to Running/Interrupted (#8419).
     /// </summary>
     private static bool ShouldSkipInterruptedPersist(WorkflowInstance instance, HashSet<string> drainInducedInstanceIds)
     {

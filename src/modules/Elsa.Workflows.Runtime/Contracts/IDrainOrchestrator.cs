@@ -2,7 +2,8 @@ namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Owns the drain protocol end-to-end: parallel pause of every <see cref="IIngressSource"/>, wait for active execution cycles to
-/// reach zero within the drain deadline, force-cancel + mark <see cref="WorkflowSubStatus.Interrupted"/> on breach,
+/// reach zero within the drain deadline, force-cancel still-Running instances to
+/// <see cref="WorkflowSubStatus.Interrupted"/> on breach (Finished/Cancelled rows stay as they are),
 /// emit the forensic <c>WorkflowInterrupted</c> event per affected instance, return a <see cref="DrainOutcome"/>.
 /// See <c>contracts/drain-orchestrator.md</c> for the full protocol.
 /// </summary>
