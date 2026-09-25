@@ -7,6 +7,7 @@ import argparse
 import gzip
 import hashlib
 import json
+import re
 import stat
 import sys
 from pathlib import Path
@@ -19,6 +20,9 @@ ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE = ROOT / "doc/integration-program/consolidation/current-tip-e96-evidence"
 STUDIO_SPEC_REPRESENTATION = ROOT / "doc/integration-program/consolidation/studio-spec-asset-representation.json"
 STUDIO_GUIDANCE = "src/studio/AGENTS.md"
+ROOT_STUDIO_INSTRUCTION = re.compile(
+    r"\[`src/studio/AGENTS\.md`\]\(src/studio/AGENTS\.md\);\s*read it for Studio modules"
+)
 EXPECTED_RECEIPT_SHA256 = "06cd198a338d5c6d49fa6b0183bbda6b602252f39f622f18084e60342880bb75"
 
 
@@ -142,7 +146,7 @@ def compare_studio_spec_representation(
                     errors.append(f"Studio scoped guidance changed: {source_path}")
                     continue
                 if (not root_guidance.is_file() or root_guidance.is_symlink() or
-                        STUDIO_GUIDANCE.encode() not in root_guidance.read_bytes()):
+                        not ROOT_STUDIO_INSTRUCTION.search(root_guidance.read_text(encoding="utf-8"))):
                     errors.append(f"Root guidance no longer links to Studio policy: {source_path}")
                     continue
             elif any(key in record for key in ("scopedPath", "scopedBlob", "scopedMode")):

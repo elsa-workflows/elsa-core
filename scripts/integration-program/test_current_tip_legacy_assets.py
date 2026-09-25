@@ -145,6 +145,13 @@ class CurrentTipLegacyAssetsTests(unittest.TestCase):
             errors, _ = compare_studio_spec_representation(self.ledger, self.receipt,
                                                              self.studio_decision, root)
             self.assertTrue(any("Root guidance no longer links" in error for error in errors))
+            (root / "AGENTS.md").write_text(
+                "Do not use [`src/studio/AGENTS.md`](src/studio/AGENTS.md) for Studio modules.\n",
+                encoding="utf-8",
+            )
+            errors, _ = compare_studio_spec_representation(self.ledger, self.receipt,
+                                                             self.studio_decision, root)
+            self.assertTrue(any("Root guidance no longer links" in error for error in errors))
 
 
 if __name__ == "__main__":
