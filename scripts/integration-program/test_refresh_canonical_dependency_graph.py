@@ -1,4 +1,5 @@
 import copy
+import gzip
 import hashlib
 import json
 import subprocess
@@ -8,7 +9,9 @@ from pathlib import Path
 
 from refresh_canonical_dependency_graph import (
     CURRENT_TIP_PATCH_PATHS,
+    CURRENT_TIP_PROFILES,
     CURRENT_TIP_SOURCE_COMMITS,
+    E96_SOURCE_COMMITS,
     _classify_test_observation,
     _validate_overlay_build_receipt,
     _validate_overlay_receipt,
@@ -26,6 +29,19 @@ from refresh_canonical_dependency_graph import (
 
 
 class CanonicalDependencyGraphTests(unittest.TestCase):
+    def test_reviewed_source_profiles_pin_committed_receipt_bytes(self):
+        repository = Path(__file__).resolve().parents[2]
+        for name, profile in CURRENT_TIP_PROFILES.items():
+            with self.subTest(profile=name):
+                directory = repository / "doc/integration-program/consolidation" / profile["evidenceDirectory"]
+                for receipt, digest_key in (
+                    ("import-receipt.json.gz", "importReceiptSha256"),
+                    ("consolidated-build-receipt.json.gz", "preparationReceiptSha256"),
+                ):
+                    raw = gzip.decompress((directory / receipt).read_bytes())
+                    self.assertEqual(profile[digest_key], hashlib.sha256(raw).hexdigest())
+                    self.assertEqual(profile["sourceCommits"], json.loads(raw)["sourceCommits"])
+
     def test_current_tip_explicit_skip_requires_matching_zero_execution_trx(self):
         path = "test/extensions/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj"
         counters = {"total": 1, "executed": 0, "passed": 0, "failed": 0}
@@ -326,6 +342,13 @@ class CanonicalDependencyGraphTests(unittest.TestCase):
                 "publicationAuthorized": False,
             }), encoding="utf-8")
             self.assertEqual(rows, _validate_overlay_receipt(receipt_path))
+            e96_receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+            e96_receipt["sourcePins"] = E96_SOURCE_COMMITS
+            e96_path = Path(temp) / "e96-overlays.json"
+            e96_path.write_text(json.dumps(e96_receipt), encoding="utf-8")
+            self.assertEqual(rows, _validate_overlay_receipt(e96_path, E96_SOURCE_COMMITS))
+            with self.assertRaisesRegex(ValueError, "does not pin the selected source profile"):
+                _validate_overlay_receipt(e96_path)
 
             for incomplete in (rows[:-1], rows[::-1]):
                 receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
@@ -338,7 +361,7 @@ class CanonicalDependencyGraphTests(unittest.TestCase):
             receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
             receipt["sourcePins"]["core"] = "0" * 40
             receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "does not pin the accepted c4b3ce"):
+            with self.assertRaisesRegex(ValueError, "does not pin the selected source profile"):
                 _validate_overlay_receipt(receipt_path)
 
     def test_current_tip_source_verifier_rejects_non_overlay_imported_edit(self):

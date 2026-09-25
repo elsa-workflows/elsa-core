@@ -1,0 +1,34 @@
+{
+  "sourcePins": {
+    "core": "e96fd36f4f9a838c6289fd48cf07669ea3229a5e",
+    "extensions": "ba8b71d91c15ffe5be4b2c539cf9f712e74af775",
+    "studio": "20ceaeeed7e671f0c9662003e82063026f2216de"
+  },
+  "reviewedOverlayReceipt": [
+    {
+      "name": "workbench-canonical-secrets.patch",
+      "sha256": "eb792ede2d40eaae72f8b6174ba920c8e1ee02e71e2506c4905737245d1c313c"
+    },
+    {
+      "name": "studio-secrets-menu.patch",
+      "sha256": "4338530b8e05aadf9479f78fd11f3c0627fcb6b54614dcba75569fcb80bea3d4"
+    },
+    {
+      "name": "studio-bpmn-generator-layout.patch",
+      "sha256": "5885fb95cd2e1ec5524f0092fdc0c0ad3ad080d1ea5cd6bec96acc25bd90522b"
+    },
+    {
+      "name": "workbench-two-tenant-multitenancy.patch",
+      "sha256": "23e4780296966fa3b80d2f3e7f3aebdd76c1c5a47bad98044ae39cb1bbae7adf"
+    },
+    {
+      "name": "workbench-secrets-route-probe.patch",
+      "sha256": "956992c32399efb9e8a0e122a54100ba54b2037843bb2b62d6e60df84778a0f7"
+    },
+    {
+      "name": "studio-test-layout-current-tip.patch",
+      "sha256": "f606667900677d0c4d659315903fec87c7d5a0a93cb4e1b26946c8714154f23a"
+    }
+  ],
+  "publicationAuthorized": false
+}

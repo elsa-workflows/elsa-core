@@ -168,7 +168,9 @@ def _trx_rows(results_dir: Path, run_started: datetime, run_finished: datetime) 
             finished_at = datetime.fromisoformat(times.attrib["finish"]).replace(tzinfo=None)
         except ValueError as error:
             raise ValueError(f"Retained TRX has invalid run timestamps: {path.name}") from error
-        if not run_started <= started_at <= finished_at <= run_finished:
+        # NUKE prints the successful finish only to whole seconds. A TRX that
+        # finishes later within that displayed second is still part of the run.
+        if not run_started <= started_at <= finished_at < run_finished + timedelta(seconds=1):
             raise ValueError(f"Retained TRX falls outside recorded NUKE run: {path.name}")
         code_bases = sorted({node.attrib["codeBase"] for node in document.iter(f"{NAMESPACE}TestMethod") if node.attrib.get("codeBase")})
         if not code_bases:
