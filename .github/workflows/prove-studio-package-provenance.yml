@@ -7,7 +7,7 @@ on:
       - 'src/studio/Directory.Build.props'
       - 'src/studio/Directory.Build.targets'
       - 'src/studio/Directory.Packages.props'
-      - 'src/studio/clients/Elsa.Api.Client/**'
+      - 'src/clients/Elsa.Api.Client/**'
       - 'src/studio/framework/Elsa.Studio.Core/**'
       - 'scripts/integration-program/verify_studio_package_provenance.py'
       - 'Directory.Build.props'

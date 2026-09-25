@@ -31,6 +31,16 @@ def metadata_value(metadata: ElementTree.Element, name: str) -> str | None:
     return None if element is None else element.text
 
 
+def verify_source_link_documents(output: str, commit: str) -> None:
+    try:
+        documents = json.loads(output)["documents"]
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValueError("Studio PDB has no readable SourceLink document map") from error
+    expected_url = f"https://raw.githubusercontent.com/elsa-workflows/elsa-core/{commit}/*"
+    if not isinstance(documents, dict) or not documents or any(url != expected_url for url in documents.values()):
+        raise ValueError("Studio PDB SourceLink documents do not resolve to the requested Core commit")
+
+
 def verify(package_dir: Path, version: str, commit: str, sourcelink_tool: Path | None) -> dict[str, object]:
     if not version.startswith("0.0.0-proof.") or not version.replace(".", "").replace("-", "").isalnum():
         raise ValueError("Studio provenance proof requires a 0.0.0-proof version")
@@ -86,6 +96,11 @@ def verify(package_dir: Path, version: str, commit: str, sourcelink_tool: Path |
                 for framework, member in pdbs.items():
                     pdb = Path(directory) / f"{PACKAGE_ID}.{framework}.pdb"
                     pdb.write_bytes(archive.read(member))
+                    mapping = subprocess.run(["dotnet", str(assembly), "print-json", str(pdb)],
+                                             capture_output=True, text=True, check=False)
+                    if mapping.returncode:
+                        raise ValueError(f"Studio {framework} SourceLink map could not be read: {mapping.stderr.strip()}")
+                    verify_source_link_documents(mapping.stdout, commit)
                     result = subprocess.run(["dotnet", str(assembly), "test", str(pdb)],
                                             capture_output=True, text=True, check=False)
                     if result.returncode or "sourcelink test passed" not in result.stdout:
