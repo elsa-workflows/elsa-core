@@ -13,8 +13,10 @@ public static class ApiExceptionExtensions
     /// </summary>
     public static async Task<ErrorResponse> GetErrorResponseAsync(this ApiException e, CancellationToken cancellationToken = default)
     {
-        var httpContent = new StringContent(e.Content!);
-        return (await e.RefitSettings.ContentSerializer.FromHttpContentAsync<ErrorResponse>(httpContent, cancellationToken))!;
+        cancellationToken.ThrowIfCancellationRequested();
+        var response = await e.GetContentAsAsync<ErrorResponse>();
+        cancellationToken.ThrowIfCancellationRequested();
+        return response ?? throw new InvalidOperationException("The Telnyx error response was empty.");
     }
 
     /// <summary>

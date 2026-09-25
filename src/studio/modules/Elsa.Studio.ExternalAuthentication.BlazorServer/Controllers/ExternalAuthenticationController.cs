@@ -72,9 +72,8 @@ public sealed class ExternalAuthenticationController(
         {
             logger.LogWarning(
                 CallbackTransactionUnavailable,
-                "External authentication callback rejected because the one-time transaction was missing, expired, or invalid. TraceIdentifier: {TraceIdentifier}; BrokerCorrelationId: {BrokerCorrelationId}",
-                HttpContext.TraceIdentifier,
-                BrokerCorrelationId());
+                "External authentication callback rejected because the one-time transaction was missing, expired, or invalid. TraceIdentifier: {TraceIdentifier}",
+                HttpContext.TraceIdentifier);
             return Redirect(ChooserUrl("/"));
         }
 
@@ -82,9 +81,8 @@ public sealed class ExternalAuthenticationController(
         {
             logger.LogWarning(
                 CallbackPurposeRejected,
-                "External authentication callback rejected because the transaction purpose was invalid. TraceIdentifier: {TraceIdentifier}; BrokerCorrelationId: {BrokerCorrelationId}",
-                HttpContext.TraceIdentifier,
-                BrokerCorrelationId());
+                "External authentication callback rejected because the transaction purpose was invalid. TraceIdentifier: {TraceIdentifier}",
+                HttpContext.TraceIdentifier);
             return Redirect(ChooserUrl("/"));
         }
 
@@ -102,10 +100,9 @@ public sealed class ExternalAuthenticationController(
 
             logger.LogWarning(
                 CallbackBrokerFailure,
-                "External authentication broker reported a sign-in failure. FailureCode: {FailureCode}; TraceIdentifier: {TraceIdentifier}; BrokerCorrelationId: {BrokerCorrelationId}",
+                "External authentication broker reported a sign-in failure. FailureCode: {FailureCode}; TraceIdentifier: {TraceIdentifier}",
                 failureCode,
-                HttpContext.TraceIdentifier,
-                BrokerCorrelationId());
+                HttpContext.TraceIdentifier);
             return Redirect(ChooserUrl(transaction.ReturnPath, failureCode));
         }
 
@@ -119,9 +116,8 @@ public sealed class ExternalAuthenticationController(
         {
             logger.LogWarning(
                 CallbackCodeMissing,
-                "External authentication callback rejected because the completion code was missing. TraceIdentifier: {TraceIdentifier}; BrokerCorrelationId: {BrokerCorrelationId}",
-                HttpContext.TraceIdentifier,
-                BrokerCorrelationId());
+                "External authentication callback rejected because the completion code was missing. TraceIdentifier: {TraceIdentifier}",
+                HttpContext.TraceIdentifier);
             return Redirect(ChooserUrl(transaction.ReturnPath, failureCode));
         }
 
@@ -141,9 +137,8 @@ public sealed class ExternalAuthenticationController(
             logger.LogError(
                 CallbackCompletionFailed,
                 exception,
-                "External authentication callback failed while completing the broker exchange or creating the Studio session. TraceIdentifier: {TraceIdentifier}; BrokerCorrelationId: {BrokerCorrelationId}",
-                HttpContext.TraceIdentifier,
-                BrokerCorrelationId());
+                "External authentication callback failed while completing the broker exchange or creating the Studio session. TraceIdentifier: {TraceIdentifier}",
+                HttpContext.TraceIdentifier);
             return Redirect(ChooserUrl(transaction.ReturnPath, failureCode));
         }
     }
@@ -293,20 +288,8 @@ public sealed class ExternalAuthenticationController(
 
     private void LogCallbackStateRejected() => logger.LogWarning(
         CallbackStateRejected,
-        "External authentication callback rejected because the state was missing or did not match. TraceIdentifier: {TraceIdentifier}; BrokerCorrelationId: {BrokerCorrelationId}",
-        HttpContext.TraceIdentifier,
-        BrokerCorrelationId());
-
-    private string BrokerCorrelationId()
-    {
-        var value = Request.Query["correlation_id"].ToString();
-        if (value.Length is 0 or > 128)
-            return "not-provided";
-
-        return value.All(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '_')
-            ? value
-            : "invalid";
-    }
+        "External authentication callback rejected because the state was missing or did not match. TraceIdentifier: {TraceIdentifier}",
+        HttpContext.TraceIdentifier);
 
     private static bool StateMatches(string supplied, string expected)
     {

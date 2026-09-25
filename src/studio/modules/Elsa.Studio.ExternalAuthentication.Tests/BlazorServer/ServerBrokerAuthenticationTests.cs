@@ -182,11 +182,11 @@ public sealed class ServerBrokerAuthenticationTests
     }
 
     [Theory]
-    [InlineData("state", true, "broker-123", "broker-123")]
-    [InlineData(null, true, "broker-123", "broker-123")]
-    [InlineData("wrong-state", false, "broker-123", "broker-123")]
-    [InlineData("state", true, "bad%0D%0Aforged", "invalid")]
-    public async Task ProviderError_WithTrustedTransaction_ReturnsToTheTrustedChooserPath(string? callbackState, bool isTrustedCallback, string correlationId, string expectedCorrelationId)
+    [InlineData("state", true, "broker-123")]
+    [InlineData(null, true, "broker-123")]
+    [InlineData("wrong-state", false, "broker-123")]
+    [InlineData("state", true, "bad%0D%0Aforged")]
+    public async Task ProviderError_WithTrustedTransaction_ReturnsToTheTrustedChooserPath(string? callbackState, bool isTrustedCallback, string correlationId)
     {
         var context = new DefaultHttpContext();
         context.Request.Scheme = "https";
@@ -215,7 +215,7 @@ public sealed class ServerBrokerAuthenticationTests
         Assert.Contains("error=external_sign_in_failed", redirect.Url);
         var log = Assert.Single(logger.Entries, entry => entry.EventId.Name == "CallbackBrokerFailure");
         Assert.Equal(LogLevel.Warning, log.Level);
-        Assert.Contains(expectedCorrelationId, log.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("broker-123", log.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("forged", log.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("access_denied", log.Message, StringComparison.Ordinal);
     }
@@ -246,7 +246,7 @@ public sealed class ServerBrokerAuthenticationTests
         var log = Assert.Single(logger.Entries, entry => entry.EventId.Name == "CallbackCompletionFailed");
         Assert.Equal(LogLevel.Error, log.Level);
         Assert.IsType<HttpRequestException>(log.Exception);
-        Assert.Contains("broker-123", log.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("broker-123", log.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("sensitive-completion-code", log.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("sensitive-state", log.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("sensitive-verifier", log.Message, StringComparison.Ordinal);
