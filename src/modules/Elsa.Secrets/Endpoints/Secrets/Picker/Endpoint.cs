@@ -3,6 +3,7 @@ using Elsa.Abstractions;
 using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Permissions;
 using Elsa.Secrets.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Secrets.Endpoints.Secrets.Picker;
 
@@ -30,7 +31,10 @@ internal class Endpoint(ISecretManager manager, ISecretStoreRegistry storeRegist
         var models = items
             .Select(x => x.ToModel())
             .ToList();
-        var canCreate = storeRegistry.List().Any(x => !x.Descriptor.IsReadOnly);
+        var permissionEvaluator = HttpContext.RequestServices.GetService<IPermissionEvaluator>() ?? PermissionEvaluator.Shared;
+        var hasWritePermission = !EndpointSecurityOptions.SecurityIsEnabled ||
+                                 permissionEvaluator.HasPermission(HttpContext.User, SecretsResourcePermissions.Secrets, CoreVerbs.Write);
+        var canCreate = hasWritePermission && storeRegistry.List().Any(x => !x.Descriptor.IsReadOnly);
 
         return new SecretPickerResponse { Items = models, CanCreateInline = canCreate };
     }

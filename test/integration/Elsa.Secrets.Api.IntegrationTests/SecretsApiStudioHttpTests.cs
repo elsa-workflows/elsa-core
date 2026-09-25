@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Elsa;
@@ -286,6 +287,28 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
 
         using var missingAfterDelete = await reader.GetAsync($"/secrets/{name}");
         Assert.Equal(HttpStatusCode.NotFound, missingAfterDelete.StatusCode);
+    }
+
+    [Fact]
+    public async Task PickerInlineCreateCapabilityRequiresWritePermission()
+    {
+        var request = new SecretPickerRequest();
+
+        using var roleless = CreateClient("unrelated:view", "tenant-a", out _);
+        using var rolelessResponse = await roleless.PostAsJsonAsync("/secrets/picker", request);
+        Assert.Equal(HttpStatusCode.Forbidden, rolelessResponse.StatusCode);
+
+        using var viewOnly = CreateClient("secrets:view", "tenant-a", out _);
+        var viewOnlyResponse = await RestService.For<ISecretsApi>(viewOnly).PickAsync(request);
+        Assert.False(viewOnlyResponse.CanCreateInline);
+
+        using var writeOnly = CreateClient("secrets:write", "tenant-a", out _);
+        using var writeOnlyResponse = await writeOnly.PostAsJsonAsync("/secrets/picker", request);
+        Assert.Equal(HttpStatusCode.Forbidden, writeOnlyResponse.StatusCode);
+
+        using var writer = CreateClient("secrets:view,secrets:write", "tenant-a", out _);
+        var writerResponse = await RestService.For<ISecretsApi>(writer).PickAsync(request);
+        Assert.True(writerResponse.CanCreateInline);
     }
 
     [Fact]
