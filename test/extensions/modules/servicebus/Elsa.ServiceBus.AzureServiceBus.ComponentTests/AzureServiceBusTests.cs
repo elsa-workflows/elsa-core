@@ -31,7 +31,7 @@ public class AzureServiceBusTests : AppComponentTest
             _signalManager.Trigger(WorkflowCompletedSignal, e);
     }
 
-    [Fact(Skip = "TODO")]
+    [Fact]
     public async Task WorkflowReceivesMessage_WhenSendingMessageToTopic()
     {
         await using var client = Scope.ServiceProvider.GetRequiredService<ServiceBusClient>();
