@@ -8,6 +8,11 @@ The [E96 current-tip refresh](current-tip-e96-legacy-assets.md) compares the sam
 
 The current inventory contains **163 assets**: 80 from Extensions and 83 from Studio. The 47 Extensions `src/modules/secrets/**` files are the five colliding package projects. The remaining asset families are Extensions build/NUKE inputs (13), GitHub automation (6), root docs/configuration (14), and Studio agent skills (14), GitHub assets (19), Spec Kit workflows (36), and root docs/configuration (14). The JSON ledger is the authoritative path-by-path classification.
 
+The [Studio static-source ignore policy](studio-ignore-policy.md) narrows the
+active root `wwwroot/` rule for authored Studio files while keeping verified
+generated outputs ignored. The retained ignore-file ledger rows remain pending
+until their complete path-specific disposition is reviewed and recorded.
+
 Inspection resolved several routine choices without treating them as completed integration:
 
 - The two upstream `CONTRIBUTING.md` files are byte-identical at the recorded pins, so one consolidated guide can replace both after repository instructions are updated. The MIT notices carry different copyright years, 2025 for Extensions and 2023 for Studio; preserve both notices/attributions in the consolidated notice after review.
