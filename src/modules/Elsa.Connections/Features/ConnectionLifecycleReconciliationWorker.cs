@@ -35,6 +35,7 @@ public sealed class ConnectionLifecycleReconciliationWorker(
                 catch (Exception)
                 {
                     // Exceptions can contain provider payloads. Keep logs free of exception text and candidate data.
+                    ConnectionLifecycleReconciliationMetrics.RecordFailedScan();
                     logger.LogWarning("Credential lifecycle reconciliation cycle failed.");
                 }
             }
@@ -61,6 +62,7 @@ public sealed class ConnectionLifecycleReconciliationWorker(
 
         if (string.IsNullOrWhiteSpace(target.TenantId) || string.IsNullOrWhiteSpace(target.EnvironmentId))
         {
+            ConnectionLifecycleReconciliationMetrics.RecordFailedScan();
             logger.LogWarning("Credential lifecycle scope provider returned an invalid scope.");
             return;
         }
@@ -82,6 +84,7 @@ public sealed class ConnectionLifecycleReconciliationWorker(
 
             if (page.Items.Count == 0)
             {
+                ConnectionLifecycleReconciliationMetrics.RecordCompletedPage();
                 RememberScope(scopeKey, page.NextCursor, 0, null, TimeSpan.Zero);
                 return;
             }
@@ -116,12 +119,14 @@ public sealed class ConnectionLifecycleReconciliationWorker(
 
             if (failures > 0)
             {
+                ConnectionLifecycleReconciliationMetrics.RecordFailedPage();
                 logger.LogWarning("Credential lifecycle reconciliation page had {FailureCount} failed or out-of-scope candidates.", failures);
                 RememberFailure(scopeKey, cursor);
                 return;
             }
 
             // Commit the next cursor only after every candidate in the page succeeds.
+            ConnectionLifecycleReconciliationMetrics.RecordCompletedPage();
             RememberScope(scopeKey, page.NextCursor, 0, null, TimeSpan.Zero);
             return;
         }
@@ -131,6 +136,7 @@ public sealed class ConnectionLifecycleReconciliationWorker(
         }
         catch (Exception)
         {
+            ConnectionLifecycleReconciliationMetrics.RecordFailedScan();
             logger.LogWarning("Credential lifecycle reconciliation scope failed.");
             RememberFailure(scopeKey, cursor);
         }
@@ -151,8 +157,10 @@ public sealed class ConnectionLifecycleReconciliationWorker(
             case ConnectionDueCandidateKind.RecoveryRequired:
                 var reconciliation = await lifecycle.ReconcileAsync(candidate.TenantId, candidate.EnvironmentId,
                     candidate.ConnectionId, cancellationToken);
-                // RecoveryRequired with no promotable generation needs operator attention. It is handled
-                // for this scan, not a successful recovery, so later pages are not held behind it.
+                // Report both an existing RecoveryRequired state and transitions that may enter it.
+                // Only the established recovery_required result is handled for this scan.
+                if (reconciliation.SafeErrorCode is "recovery_required" or "refresh_outcome_unknown" or "generation_publish_conflict")
+                    ConnectionLifecycleReconciliationMetrics.RecordRecoveryRequired();
                 return reconciliation.Succeeded || reconciliation.SafeErrorCode == "recovery_required";
             case ConnectionDueCandidateKind.GenerationCleanup:
                 return (await lifecycle.CleanupGenerationAsync(candidate.TenantId, candidate.EnvironmentId,
@@ -160,8 +168,11 @@ public sealed class ConnectionLifecycleReconciliationWorker(
             case ConnectionDueCandidateKind.Offboarding:
                 var offboarding = await lifecycle.ReconcileOffboardingAsync(candidate.TenantId, candidate.EnvironmentId,
                     candidate.ConnectionId, cancellationToken);
-                // An unknown, non-replayable provider outcome needs operator attention. Do not
-                // let that durable state hold every later due candidate behind this page.
+                // Report UnknownOutcome even when the service accepts the reconciliation with no error code.
+                // A non-replayable unknown is handled for this scan so later candidates are not held behind it.
+                if (offboarding.SafeErrorCode == "offboarding_outcome_unknown" ||
+                    offboarding.Status == ConnectionOffboardingOperationStatus.UnknownOutcome)
+                    ConnectionLifecycleReconciliationMetrics.RecordUnknownOffboarding();
                 return offboarding.Accepted || offboarding.SafeErrorCode == "offboarding_outcome_unknown";
             default:
                 throw new InvalidOperationException("Unsupported credential lifecycle candidate kind.");

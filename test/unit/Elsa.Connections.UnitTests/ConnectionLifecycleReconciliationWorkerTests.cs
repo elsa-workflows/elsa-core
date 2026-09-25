@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Collections.Concurrent;
+using System.Diagnostics.Metrics;
 using System.Reflection;
 using Elsa.Common.Multitenancy;
 using Elsa.Connections.Contracts;
@@ -13,6 +15,130 @@ namespace Elsa.Connections.UnitTests;
 
 public sealed class ConnectionLifecycleReconciliationWorkerTests
 {
+    [Fact]
+    public async Task MetricsReportCompletedAndFailedPagesAndOperatorAttentionWithoutScopedTags()
+    {
+        var scope = new ConnectionLifecycleScope("tenant-secret-marker", "environment-secret-marker");
+        var dueStore = Substitute.For<IConnectionDueCandidateStore>();
+        var recovery = Substitute.For<IConnectionLifecycleRecoveryService>();
+        var candidates = new[]
+        {
+            new ConnectionDueCandidate(scope.TenantId, scope.EnvironmentId, "recovery-existing-secret-marker",
+                ConnectionDueCandidateKind.RecoveryRequired, "recovery", DateTimeOffset.MinValue),
+            new ConnectionDueCandidate(scope.TenantId, scope.EnvironmentId, "recovery-expired-secret-marker",
+                ConnectionDueCandidateKind.ExpiredConnectionOperation, "expired", DateTimeOffset.MinValue),
+            new ConnectionDueCandidate(scope.TenantId, scope.EnvironmentId, "recovery-conflict-secret-marker",
+                ConnectionDueCandidateKind.RecoveryRequired, "conflict", DateTimeOffset.MinValue),
+            new ConnectionDueCandidate(scope.TenantId, scope.EnvironmentId, "offboarding-existing-secret-marker",
+                ConnectionDueCandidateKind.Offboarding, "offboarding", DateTimeOffset.MinValue),
+            new ConnectionDueCandidate(scope.TenantId, scope.EnvironmentId, "offboarding-transition-secret-marker",
+                ConnectionDueCandidateKind.Offboarding, "offboarding-transition", DateTimeOffset.MinValue),
+            new ConnectionDueCandidate("other-tenant", scope.EnvironmentId, "connection-secret-marker",
+                ConnectionDueCandidateKind.OAuthRefresh, "refresh", DateTimeOffset.MinValue)
+        };
+        var queries = 0;
+        dueStore.FindDueCandidatesAsync(scope.TenantId, scope.EnvironmentId, Arg.Any<DateTimeOffset>(), 6,
+                Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult(Interlocked.Increment(ref queries) == 1
+                ? new ConnectionDueCandidatePage(candidates, null)
+                : new ConnectionDueCandidatePage([], null)));
+        recovery.ReconcileAsync(scope.TenantId, scope.EnvironmentId, Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult(new ConnectionLifecycleResult(false,
+                call.ArgAt<string>(2) switch
+                {
+                    "recovery-expired-secret-marker" => "refresh_outcome_unknown",
+                    "recovery-conflict-secret-marker" => "generation_publish_conflict",
+                    _ => "recovery_required"
+                }, 1)));
+        recovery.ReconcileOffboardingAsync(scope.TenantId, scope.EnvironmentId, Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult(call.ArgAt<string>(2) == "offboarding-transition-secret-marker"
+                ? new ConnectionOffboardingOperationResult(true, null, "offboarding-transition",
+                    ConnectionOffboardingOperationStatus.UnknownOutcome, 1)
+                : new ConnectionOffboardingOperationResult(false, "offboarding_outcome_unknown",
+                    "offboarding", ConnectionOffboardingOperationStatus.UnknownOutcome, 1)));
+
+        var measurements = new ConcurrentQueue<(string Name, long Value, int TagCount)>();
+        var completedPage = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var failedScan = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var listener = new MeterListener
+        {
+            InstrumentPublished = (instrument, target) =>
+            {
+                if (instrument.Meter.Name == "Elsa.Connections")
+                    target.EnableMeasurementEvents(instrument);
+            }
+        };
+        listener.SetMeasurementEventCallback<long>((instrument, value, tags, _) =>
+        {
+            measurements.Enqueue((instrument.Name, value, tags.Length));
+            if (instrument.Name == "elsa.connections.reconciliation.pages.completed")
+                completedPage.TrySetResult();
+            if (instrument.Name == "elsa.connections.reconciliation.scans.failed")
+                failedScan.TrySetResult();
+        });
+        listener.Start();
+
+        var services = new ServiceCollection();
+        services.AddSingleton<ITenantAccessor, DefaultTenantAccessor>();
+        services.AddSingleton(dueStore);
+        services.AddSingleton<IConnectionLifecycleRecoveryService>(recovery);
+        services.AddSingleton<IConnectionLifecycleScopeProvider>(new SingleScopeProvider(scope));
+        await using var provider = services.BuildServiceProvider();
+        using var worker = new ConnectionLifecycleReconciliationWorker(provider.GetRequiredService<IServiceScopeFactory>(),
+            Options.Create(new ConnectionLifecycleReconciliationOptions
+            {
+                BatchSize = 6,
+                Interval = TimeSpan.FromMilliseconds(5),
+                RetryBackoff = TimeSpan.FromMilliseconds(20),
+                MaxRetryBackoff = TimeSpan.FromMilliseconds(20)
+            }), TimeProvider.System, NullLogger<ConnectionLifecycleReconciliationWorker>.Instance);
+
+        await worker.StartAsync(CancellationToken.None);
+        try
+        {
+            await completedPage.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        }
+        finally
+        {
+            await worker.StopAsync(CancellationToken.None);
+        }
+
+        var invalidServices = new ServiceCollection();
+        invalidServices.AddSingleton<IConnectionLifecycleScopeProvider>(new SingleScopeProvider(
+            new ConnectionLifecycleScope("", "environment-secret-marker")));
+        await using var invalidProvider = invalidServices.BuildServiceProvider();
+        using var invalidWorker = new ConnectionLifecycleReconciliationWorker(
+            invalidProvider.GetRequiredService<IServiceScopeFactory>(),
+            Options.Create(new ConnectionLifecycleReconciliationOptions { Interval = TimeSpan.FromSeconds(30) }),
+            TimeProvider.System, NullLogger<ConnectionLifecycleReconciliationWorker>.Instance);
+        await invalidWorker.StartAsync(CancellationToken.None);
+        try
+        {
+            await failedScan.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        }
+        finally
+        {
+            await invalidWorker.StopAsync(CancellationToken.None);
+        }
+
+        foreach (var name in new[]
+                 {
+                     "elsa.connections.reconciliation.pages.failed",
+                     "elsa.connections.reconciliation.pages.completed",
+                     "elsa.connections.reconciliation.scans.failed"
+                 })
+            Assert.Contains(measurements, measurement => measurement.Name == name && measurement.Value == 1);
+        Assert.Equal(3, measurements.Count(measurement =>
+            measurement.Name == "elsa.connections.reconciliation.attention.recovery_required" && measurement.Value == 1));
+        Assert.Equal(2, measurements.Count(measurement =>
+            measurement.Name == "elsa.connections.reconciliation.attention.offboarding_outcome_unknown" && measurement.Value == 1));
+        Assert.All(measurements, measurement =>
+        {
+            Assert.Equal(0, measurement.TagCount);
+            Assert.DoesNotContain("secret-marker", measurement.Name, StringComparison.Ordinal);
+        });
+    }
+
     [Fact]
     public async Task RoutesEveryCandidateKindWithConfiguredConcurrencyBound()
     {
