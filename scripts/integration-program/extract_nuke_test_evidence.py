@@ -13,6 +13,7 @@ from collections import Counter
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+import prepare_consolidated_build as preparation
 from refresh_canonical_dependency_graph import parse_solution
 
 
@@ -66,6 +67,7 @@ def _pin_profile(root: Path, prep_path: Path, import_path: Path, patch_path: Pat
         raise ValueError(f"Cannot verify prepared source checkout HEAD: {error}") from error
     if current_commit != rehearsal_commit:
         raise ValueError("Prepared source checkout HEAD differs from preparation receipt")
+    preparation.verify_import_lineage(root, imported)
 
     profile: dict[str, Any] = {
         "core": commits["core"],

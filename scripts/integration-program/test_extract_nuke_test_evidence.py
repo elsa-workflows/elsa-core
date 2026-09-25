@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from extract_nuke_test_evidence import extract
 
@@ -80,9 +81,10 @@ class ExtractNukeTestEvidenceTests(unittest.TestCase):
 </TestRun>'''
         (self.root / "testresults/Alpha.Tests.trx").write_text(xml)
 
-    def _extract(self) -> dict:
-        return extract(self.log_path, self.root, self.prep_path, self.import_path, self.patch_path,
-                       None, "./build.sh --target Test")
+    def _extract(self, profile_template: Path | None = None) -> dict:
+        with patch("extract_nuke_test_evidence.preparation.verify_import_lineage"):
+            return extract(self.log_path, self.root, self.prep_path, self.import_path, self.patch_path,
+                           profile_template, "./build.sh --target Test")
 
     def test_extracts_selection_passed_summary_and_retained_trx(self) -> None:
         evidence = self._extract()
@@ -127,13 +129,17 @@ class ExtractNukeTestEvidenceTests(unittest.TestCase):
             "sourcePins": json.loads(self.prep_path.read_text())["sourceCommits"],
             "reviewedOverlayReceipt": [{"name": overlay.name, "sha256": self._hash(overlay)}],
         }))
-        evidence = extract(self.log_path, self.root, self.prep_path, self.import_path,
-                           self.patch_path, receipt, "./build.sh --target Test")
+        evidence = self._extract(receipt)
         self.assertEqual(self._hash(receipt), evidence["profile"]["overlayReceiptSha256"])
         overlay.write_text("changed overlay\n")
         with self.assertRaisesRegex(ValueError, "Overlay patch bytes differ"):
-            extract(self.log_path, self.root, self.prep_path, self.import_path,
-                    self.patch_path, receipt, "./build.sh --target Test")
+            self._extract(receipt)
+
+    def test_rejects_failed_source_lineage(self) -> None:
+        with patch("extract_nuke_test_evidence.preparation.verify_import_lineage", side_effect=ValueError("Rehearsal parent set changed")):
+            with self.assertRaisesRegex(ValueError, "Rehearsal parent set changed"):
+                extract(self.log_path, self.root, self.prep_path, self.import_path,
+                        self.patch_path, None, "./build.sh --target Test")
 
 
 if __name__ == "__main__":
