@@ -115,6 +115,17 @@ class ExtractNukeTestEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "outside recorded NUKE run"):
             self._extract()
 
+    def test_accepts_trx_finishing_within_displayed_nuke_success_second(self) -> None:
+        trx = self.root / "testresults/Alpha.Tests.trx"
+        trx.write_text(trx.read_text().replace("12:00:06+02:00", "12:00:10.2500000+02:00"))
+        self.assertEqual(1, self._extract()["observedTestResults"]["retainedTrx"]["files"])
+
+    def test_rejects_trx_finishing_in_next_second(self) -> None:
+        trx = self.root / "testresults/Alpha.Tests.trx"
+        trx.write_text(trx.read_text().replace("12:00:06+02:00", "12:00:11+02:00"))
+        with self.assertRaisesRegex(ValueError, "outside recorded NUKE run"):
+            self._extract()
+
     def test_rejects_import_receipt_that_does_not_pin_preparation(self) -> None:
         imported = json.loads(self.import_path.read_text())
         imported["sourceCommits"]["core"] = "d" * 40

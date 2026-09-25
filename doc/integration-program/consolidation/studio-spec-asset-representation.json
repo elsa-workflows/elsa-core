@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 2,
+  "sourcePins": {
+    "core": "e96fd36f4f9a838c6289fd48cf07669ea3229a5e",
+    "extensions": "ba8b71d91c15ffe5be4b2c539cf9f712e74af775",
+    "studio": "20ceaeeed7e671f0c9662003e82063026f2216de"
+  },
+  "category": "studio_agent_specification_tooling",
+  "decision": "Identical Studio tooling uses the active Core-root file; six reviewed differences also use Core-root behavior; two policy differences remain pending. All .source copies stay inert provenance.",
+  "representedCount": 42,
+  "reviewedDifferentCount": 6,
+  "pendingPolicyCount": 2,
+  "sourceDifferences": {
+    ".agents/skills/speckit-git-feature/SKILL.md": {
+      "status": "represented_by_active_core",
+      "activeBlob": "79b3ec9da373d3c0daece395f76f712f349e586b",
+      "activeMode": "100644",
+      "reason": "Use active Core /speckit-specify spelling; the installed speckit-specify skill advertises that command."
+    },
+    ".agents/skills/speckit-plan/SKILL.md": {
+      "status": "pending_policy",
+      "activeBlob": "c4be8492399aedbc58c48f365349c1cdff7985cb",
+      "activeMode": "100644",
+      "reason": "Review Studio's feature-neutral AGENTS.md rule against Core's plan-marker update rule."
+    },
+    ".specify/extensions/.registry": {
+      "status": "represented_by_active_core",
+      "activeBlob": "82866c312197dc97ca3c5199193b16f74801a382",
+      "activeMode": "100644",
+      "reason": "Keep Core registry: same Git extension and commands, plus Claude registration; timestamp is installation metadata."
+    },
+    ".specify/extensions/git/commands/speckit.git.feature.md": {
+      "status": "represented_by_active_core",
+      "activeBlob": "5bed9e5e57be5694dab3f5de8eee9c0081136f7f",
+      "activeMode": "100644",
+      "reason": "Keep the unexpanded command template token; the installed skill uses the concrete command spelling."
+    },
+    ".specify/integrations/codex.manifest.json": {
+      "status": "represented_by_active_core",
+      "activeBlob": "82a983992974d7c7378133fb1ddd336f6cf50bcf",
+      "activeMode": "100644",
+      "reason": "Keep Core manifest: integration, version and file hashes match after JSON parsing; installation timestamp differs."
+    },
+    ".specify/integrations/speckit.manifest.json": {
+      "status": "represented_by_active_core",
+      "activeBlob": "bab022d5632f207f4ee3fa6761f3829b1baed3d2",
+      "activeMode": "100644",
+      "reason": "Keep Core manifest: integration, version and file hashes match after JSON parsing; installation timestamp and map order differ."
+    },
+    ".specify/memory/constitution.md": {
+      "status": "pending_policy",
+      "activeBlob": "64c39c61263d777ccd168ca9befb1afbaede152a",
+      "activeMode": "100644",
+      "reason": "Preserve substantive Studio module, backend-awareness and UX guidance in a reviewed Studio-scoped location before retiring this source copy."
+    },
+    ".specify/workflows/workflow-registry.json": {
+      "status": "represented_by_active_core",
+      "activeBlob": "e45d7ff3304bdf05a716bf0439bc0ac20bb37228",
+      "activeMode": "100644",
+      "reason": "Keep Core registry: workflow behavior metadata matches; installation/update timestamps differ."
+    }
+  }
+}

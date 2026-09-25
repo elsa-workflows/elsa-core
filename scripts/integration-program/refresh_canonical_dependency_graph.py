@@ -70,6 +70,25 @@ CURRENT_TIP_SOURCE_COMMITS = {
     "extensions": "ba8b71d91c15ffe5be4b2c539cf9f712e74af775",
     "studio": "20ceaeeed7e671f0c9662003e82063026f2216de",
 }
+E96_SOURCE_COMMITS = {
+    "core": "e96fd36f4f9a838c6289fd48cf07669ea3229a5e",
+    "extensions": "ba8b71d91c15ffe5be4b2c539cf9f712e74af775",
+    "studio": "20ceaeeed7e671f0c9662003e82063026f2216de",
+}
+CURRENT_TIP_PROFILES = {
+    "current-tip-c4b3": {
+        "sourceCommits": CURRENT_TIP_SOURCE_COMMITS,
+        "evidenceDirectory": "current-tip-c4b3-evidence",
+        "importReceiptSha256": CURRENT_TIP_IMPORT_RECEIPT_SHA256,
+        "preparationReceiptSha256": CURRENT_TIP_PREPARATION_RECEIPT_SHA256,
+    },
+    "current-tip-e96": {
+        "sourceCommits": E96_SOURCE_COMMITS,
+        "evidenceDirectory": "current-tip-e96-evidence",
+        "importReceiptSha256": "06cd198a338d5c6d49fa6b0183bbda6b602252f39f622f18084e60342880bb75",
+        "preparationReceiptSha256": "219fcafe45959bb8f9295d8b9137f8ae0807489f0370b5112204f228fc7bd7bc",
+    },
+}
 
 
 def sha256(path: Path) -> str:
@@ -585,10 +604,10 @@ def evaluate_msbuild_properties(project_file: Path, framework: str, timeout_seco
     }
 
 
-def _validate_overlay_receipt(path: Path) -> list[dict[str, str]]:
+def _validate_overlay_receipt(path: Path, source_commits: dict[str, str] = CURRENT_TIP_SOURCE_COMMITS) -> list[dict[str, str]]:
     receipt = read_json(path)
-    if receipt.get("sourcePins") != CURRENT_TIP_SOURCE_COMMITS:
-        raise ValueError("Reviewed overlay receipt does not pin the accepted c4b3ce source profile")
+    if receipt.get("sourcePins") != source_commits:
+        raise ValueError("Reviewed overlay receipt does not pin the selected source profile")
     if receipt.get("publicationAuthorized") is not False:
         raise ValueError("Reviewed overlay receipt must keep package publication unauthorized")
     rows = receipt.get("reviewedOverlayReceipt")
@@ -614,10 +633,11 @@ def _validate_overlay_receipt(path: Path) -> list[dict[str, str]]:
     return normalized
 
 
-def _validate_overlay_build_receipt(path: Path, overlay_patches: list[dict[str, str]], rehearsal_commit: str) -> dict[str, Any]:
+def _validate_overlay_build_receipt(path: Path, overlay_patches: list[dict[str, str]], rehearsal_commit: str,
+                                    source_commits: dict[str, str] = CURRENT_TIP_SOURCE_COMMITS) -> dict[str, Any]:
     receipt = read_json(path)
-    if receipt.get("sourcePins") != CURRENT_TIP_SOURCE_COMMITS:
-        raise ValueError("Overlay build receipt does not pin the accepted c4b3ce source profile")
+    if receipt.get("sourcePins") != source_commits:
+        raise ValueError("Overlay build receipt does not pin the selected source profile")
     if receipt.get("syntheticRehearsalCommit") != rehearsal_commit:
         raise ValueError("Overlay build receipt rehearsal commit differs from prepared source")
     if receipt.get("canonicalImportBuilt") is not False or receipt.get("fullCombinedTestSuiteVerified") is not False:
@@ -740,8 +760,10 @@ def _validate_current_tip_profile(
     evidence: dict[str, Any] | None,
     overlay_receipt_path: Path,
     overlay_build_receipt_path: Path | None,
+    source_profile: str = "current-tip-c4b3",
 ) -> dict[str, Any]:
-    """Pin the current c4b3 preparation/import and optional full NUKE evidence."""
+    """Pin a reviewed source preparation/import and optional full NUKE evidence."""
+    profile = CURRENT_TIP_PROFILES[source_profile]
     prep_receipt_path = root / "consolidated-build-receipt.json"
     import_receipt_path = root / "import-receipt.json"
     prep_receipt = read_json(prep_receipt_path)
@@ -749,8 +771,8 @@ def _validate_current_tip_profile(
     source_integration_patch = REPOSITORY_ROOT / "scripts/integration-program/consolidated-build/source-integration.patch"
     source_commits = prep_receipt.get("sourceCommits")
     rehearsal_commit = prep_receipt.get("rehearsalCommit")
-    if source_commits != CURRENT_TIP_SOURCE_COMMITS:
-        raise ValueError("Prepared source does not match the accepted c4b3ce source profile")
+    if source_commits != profile["sourceCommits"]:
+        raise ValueError("Prepared source does not match the selected source profile")
     if prep_receipt.get("canonicalSolution") != "Elsa.sln" or import_receipt.get("canonicalSolution", "Elsa.sln") != "Elsa.sln":
         raise ValueError("Current source receipts do not identify canonical Elsa.sln")
     if import_receipt.get("sourceCommits") != source_commits or import_receipt.get("rehearsalCommit") != rehearsal_commit:
@@ -762,18 +784,18 @@ def _validate_current_tip_profile(
     if sha256(source_integration_patch) != prep_receipt.get("patchSha256"):
         raise ValueError("Current preparation receipt does not match the reviewed source-integration patch")
 
-    accepted_dir = REPOSITORY_ROOT / "doc/integration-program/consolidation/current-tip-c4b3-evidence"
+    accepted_dir = REPOSITORY_ROOT / "doc/integration-program/consolidation" / profile["evidenceDirectory"]
     # Compare the exact uncompressed public receipts, not merely their summary fields.
     accepted_import_bytes = gzip.decompress((accepted_dir / "import-receipt.json.gz").read_bytes())
     accepted_prep_bytes = gzip.decompress((accepted_dir / "consolidated-build-receipt.json.gz").read_bytes())
-    if hashlib.sha256(accepted_import_bytes).hexdigest() != CURRENT_TIP_IMPORT_RECEIPT_SHA256:
+    if hashlib.sha256(accepted_import_bytes).hexdigest() != profile["importReceiptSha256"]:
         raise ValueError("Committed current import receipt no longer matches its accepted digest")
-    if hashlib.sha256(accepted_prep_bytes).hexdigest() != CURRENT_TIP_PREPARATION_RECEIPT_SHA256:
+    if hashlib.sha256(accepted_prep_bytes).hexdigest() != profile["preparationReceiptSha256"]:
         raise ValueError("Committed current preparation receipt no longer matches its accepted digest")
     accepted_import = json.loads(accepted_import_bytes)
     accepted_prep = json.loads(accepted_prep_bytes)
     if accepted_prep.get("sourceCommits") != source_commits or accepted_import.get("sourceCommits") != source_commits:
-        raise ValueError("Committed current-tip receipts do not retain the accepted c4b3 source pins")
+        raise ValueError("Committed current-tip receipts do not retain the selected source pins")
     if accepted_prep.get("patchSha256") != prep_receipt.get("patchSha256"):
         raise ValueError("Prepared source uses a different reviewed source-integration patch")
     accepted_prep.pop("rehearsalCommit", None)
@@ -783,15 +805,15 @@ def _validate_current_tip_profile(
     comparable_prep.pop("rehearsalCommit", None)
     comparable_import.pop("rehearsalCommit", None)
     if comparable_prep != accepted_prep or comparable_import != accepted_import:
-        raise ValueError("Current preparation/import receipts differ from accepted c4b3 evidence beyond the rehearsal commit")
+        raise ValueError("Current preparation/import receipts differ from accepted evidence beyond the rehearsal commit")
 
     preparation.verify_import_lineage(root, import_receipt)
-    patches = _validate_overlay_receipt(overlay_receipt_path)
+    patches = _validate_overlay_receipt(overlay_receipt_path, source_commits)
     overlay_paths = _verify_overlays_applied(root, patches, prep_receipt["files"])
     _verify_prepared_source_files(root, prep_receipt["files"], overlay_paths)
     build_receipt = None
     if overlay_build_receipt_path is not None:
-        build_receipt = _validate_overlay_build_receipt(overlay_build_receipt_path, patches, rehearsal_commit)
+        build_receipt = _validate_overlay_build_receipt(overlay_build_receipt_path, patches, rehearsal_commit, source_commits)
     evidence_hash = None
     if evidence is not None:
         expected_receipts = {
@@ -875,14 +897,14 @@ def refresh_receipt(
                 raise ValueError(f"Unrecognized supplemental patch in canonical evidence: {patch.get('name')}")
             if sha256(root / patch_path) != patch.get("sha256"):
                 raise ValueError(f"Supplemental patch hash differs for {patch['name']}")
-    elif source_profile == "current-tip-c4b3":
+    elif source_profile in CURRENT_TIP_PROFILES:
         if overlay_receipt_path is None:
             raise ValueError("Current-tip profile requires the accepted overlay receipt")
         overlay_receipt_path = overlay_receipt_path.resolve()
         if overlay_build_receipt_path is not None:
             overlay_build_receipt_path = overlay_build_receipt_path.resolve()
         current_profile_receipts = _validate_current_tip_profile(
-            root, evidence, overlay_receipt_path, overlay_build_receipt_path,
+            root, evidence, overlay_receipt_path, overlay_build_receipt_path, source_profile,
         )
         pins = {
             **current_profile_receipts["sourceCommits"],
@@ -1107,7 +1129,7 @@ def refresh_receipt(
     accepted_preparation_receipt_hash = (
         accepted_preparation.get("preparationReceiptSha256")
         if source_profile == "historical-95a"
-        else CURRENT_TIP_PREPARATION_RECEIPT_SHA256
+        else CURRENT_TIP_PROFILES[source_profile]["preparationReceiptSha256"]
     )
     accepted_source_patch_hash = (
         accepted_preparation.get("sourceIntegrationPatchSha256")
@@ -1130,7 +1152,7 @@ def refresh_receipt(
         "scope": (
             "Prepared canonical Elsa.sln project-impact graph and exact 95a run reconciliation; no source writes or package actions."
             if source_profile == "historical-95a"
-            else "Prepared c4b3ce canonical Elsa.sln dependency closure with reviewed overlays verified against source; current-profile test outcomes are included only when matching NUKE evidence is supplied. No source writes or package actions."
+            else f"Prepared {source_profile} canonical Elsa.sln dependency closure with reviewed overlays verified against source; current-profile test outcomes are included only when matching NUKE evidence is supplied. No source writes or package actions."
         ),
         "toolCheckout": {
             "repository": "elsa-workflows/elsa-core",
@@ -1223,7 +1245,7 @@ def refresh_receipt(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source-profile", choices=("historical-95a", "current-tip-c4b3"), default="historical-95a",
+    parser.add_argument("--source-profile", choices=("historical-95a", *CURRENT_TIP_PROFILES), default="historical-95a",
                         help="Accepted source profile; current-tip mode never falls back to historical test results")
     parser.add_argument("--rehearsal", type=Path, required=True, help="Prepared canonical source checkout; it is read-only")
     parser.add_argument("--evidence", type=Path, help="Matching NUKE Test receipt; omitted for graph-only current-tip closure")

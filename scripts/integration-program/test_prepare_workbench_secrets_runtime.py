@@ -7,6 +7,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import shutil
 import stat
 import subprocess
 import tempfile
@@ -206,6 +207,40 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
 
     def apply_route_probe_patch(self):
         subprocess.run(['git', 'apply', str(self.route_patch)], cwd=self.rehearsal, check=True)
+
+    def initialize_imported_source(self, apply_route_probe=True):
+        """Materialize a clean three-parent import with the reviewed fixture files."""
+        self.apply_two_tenant_patches()
+        if apply_route_probe:
+            self.apply_route_probe_patch()
+        artifacts = ((self.workbench_patch, FIXTURE.PATCH_RELATIVE), *(
+            (patch, FIXTURE.PATCH_RELATIVE.parent / patch.name)
+            for patch in (self.menu_patch, self.layout_patch, self.tenant_patch, self.route_patch)))
+        for patch, relative in artifacts:
+            target = self.rehearsal / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(patch, target)
+
+        def git(*args, input_text=None):
+            return subprocess.run(['git', '-C', str(self.rehearsal),
+                                   '-c', 'user.name=Fixture',
+                                   '-c', 'user.email=fixture@example.invalid',
+                                   '-c', 'commit.gpgsign=false', *args], input=input_text,
+                                  check=True, capture_output=True, text=True).stdout.strip()
+
+        git('add', '.')
+        git('commit', '-m', 'Integrated source')
+        core = git('rev-parse', 'HEAD')
+        tree = git('rev-parse', 'HEAD^{tree}')
+        extensions = git('commit-tree', tree, '-p', core, input_text='Extensions source\n')
+        studio = git('commit-tree', tree, '-p', core, input_text='Studio source\n')
+        import_commit = git('commit-tree', tree, '-p', core, '-p', extensions, '-p', studio,
+                            input_text='History import\n')
+        git('reset', '--hard', import_commit)
+        git('commit', '--allow-empty', '-m', 'Post-import integration')
+        imported_sha = git('rev-parse', 'HEAD')
+        self.pins = (core, extensions, studio)
+        return import_commit, imported_sha
 
     def fake_build(self, source, log_parent):
         host_dll = source / 'bin' / 'Debug' / 'net10.0' / 'Elsa.Server.Web.dll'
@@ -510,6 +545,77 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'requires the reviewed Workbench multitenancy patch'):
                 self.prepare(two_tenant=True,
                              optional_fixture_patches=(self.menu_patch, self.layout_patch, self.tenant_patch))
+        build_host.assert_not_called()
+
+    def test_imported_fixture_pins_committed_history_and_keeps_rehearsal_receipts_separate(self):
+        import_commit, imported_sha = self.initialize_imported_source()
+        fixture_root = self.prepare(two_tenant=True, route_probe=True,
+                                    import_commit=import_commit, imported_sha=imported_sha,
+                                    optional_fixture_patches=(self.menu_patch, self.layout_patch,
+                                                              self.tenant_patch, self.route_patch))
+        try:
+            plan = json.loads((fixture_root / 'launch-plan.json').read_text())
+            self.assertEqual('history-import', plan['sourceMode'])
+            self.assertEqual(imported_sha, plan['sourceRevision'])
+            self.assertEqual(import_commit, plan['sourceProvenance']['importCommit'])
+            self.assertEqual(list(self.pins), plan['sourceProvenance']['importParents'])
+            self.assertTrue(plan['sourceProvenance']['compiledWorkbenchSourcesCommitted'])
+            self.assertIsNone(plan['rehearsalCommit'])
+            self.assertIsNone(plan['sourceIntegrationPatchSha256'])
+            self.assertIsNone(plan['sourcePatchChain'])
+            self.assertTrue(plan['twoTenantMode'])
+            self.assertTrue(plan['routeProbe']['enabled'])
+            self.assertIn('exact committed history-import', plan['patchTransition'])
+        finally:
+            FIXTURE.cleanup_fixture(fixture_root, host_stopped=True)
+
+    def test_imported_fixture_rejects_wrong_parent_head_and_dirty_source_before_build(self):
+        import_commit, imported_sha = self.initialize_imported_source()
+        pins = dict(zip(('core', 'extensions', 'studio'), self.pins))
+        with self.assertRaisesRegex(ValueError, 'History import commit does not have'):
+            FIXTURE.validate_imported_source_root(
+                self.rehearsal, {**pins, 'core': 'a' * 40}, import_commit, imported_sha)
+
+        with self.assertRaisesRegex(ValueError, 'HEAD differs'):
+            FIXTURE.validate_imported_source_root(self.rehearsal, pins, import_commit, 'f' * 40)
+
+        (self.source / 'Program.cs').write_text((self.source / 'Program.cs').read_text() + '// dirty\n')
+        with self.assertRaisesRegex(ValueError, 'tracked or unignored untracked changes'):
+            FIXTURE.validate_imported_source_root(self.rehearsal, pins, import_commit, imported_sha)
+
+    def test_imported_fixture_rejects_unapplied_probe_patch_before_build(self):
+        import_commit, imported_sha = self.initialize_imported_source(apply_route_probe=False)
+        with mock.patch.object(self, 'fake_build', side_effect=AssertionError('host build ran')) as build_host:
+            with self.assertRaisesRegex(ValueError, 'does not contain reviewed fixture patch changes: workbench-secrets-route-probe.patch'):
+                self.prepare(route_probe=True, import_commit=import_commit, imported_sha=imported_sha,
+                             optional_fixture_patches=(self.menu_patch, self.layout_patch,
+                                                       self.tenant_patch, self.route_patch))
+        build_host.assert_not_called()
+
+    def test_imported_fixture_allows_unapplied_probe_when_disabled(self):
+        import_commit, imported_sha = self.initialize_imported_source(apply_route_probe=False)
+        fixture_root = self.prepare(two_tenant=True, route_probe=False,
+                                    import_commit=import_commit, imported_sha=imported_sha,
+                                    optional_fixture_patches=(self.menu_patch, self.layout_patch,
+                                                              self.tenant_patch, self.route_patch))
+        try:
+            plan = json.loads((fixture_root / 'launch-plan.json').read_text())
+            self.assertFalse(plan['routeProbe']['enabled'])
+            self.assertTrue(plan['twoTenantMode'])
+        finally:
+            FIXTURE.cleanup_fixture(fixture_root, host_stopped=True)
+
+    def test_imported_fixture_rejects_ignored_compile_source_before_build(self):
+        import_commit, imported_sha = self.initialize_imported_source()
+        (self.rehearsal / '.git/info/exclude').write_text('Injected.cs\n')
+        (self.source / 'Injected.cs').write_text('public sealed class Injected {}\n')
+        self.assertEqual('', subprocess.run(['git', 'status', '--porcelain'], cwd=self.rehearsal,
+                                            check=True, capture_output=True, text=True).stdout)
+        with mock.patch.object(self, 'fake_build', side_effect=AssertionError('host build ran')) as build_host:
+            with self.assertRaisesRegex(ValueError, 'compile source is not the committed blob:'):
+                self.prepare(import_commit=import_commit, imported_sha=imported_sha,
+                             optional_fixture_patches=(self.menu_patch, self.layout_patch,
+                                                       self.tenant_patch, self.route_patch))
         build_host.assert_not_called()
 
     def test_supplemental_patch_overlay_is_reversed_before_workbench_patch(self):
