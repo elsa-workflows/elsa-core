@@ -16,22 +16,20 @@ the mapped Studio `.source` copies remain inert history.
 | `.specify/workflows/workflow-registry.json` | Keep Core's registry. The workflow name, version, description and source are equal; only installation/update timestamps differ. |
 
 These are decisions about active tool installation, not byte equivalence. The
-first comparison's eight-file difference list should remain an accurate byte
-and Git-mode report even though six differences have now been reviewed. The
-remaining two need policy reconciliation before the history import is ready:
+first comparison's eight-file difference list remains an accurate byte and
+Git-mode report. The two policy differences were subsequently reconciled by
+the reviewed [Studio-scoped policy](studio-scoped-policy.md):
 
-- `.agents/skills/speckit-plan/SKILL.md`: Studio keeps `AGENTS.md` feature-neutral;
-  Core updates the root Spec Kit plan marker. Keep Core's current behavior
-  until a reviewed Studio-scoped instruction can be applied without changing
-  repository-wide planning behavior.
-- `.specify/memory/constitution.md`: Studio's modularity, backend-capability,
-  UX, async/disposal and verification rules are substantive. Preserve them in
-  active Studio-scoped guidance under `src/studio/` in the import; do not
-  replace Core's root constitution or treat the inert `.source` copy as
-  operative guidance.
+- `.agents/skills/speckit-plan/SKILL.md`: Core keeps its root Spec Kit plan
+  marker behavior; `src/studio/AGENTS.md` keeps Studio-only plans within their
+  feature scope without rewriting the root pointer.
+- `.specify/memory/constitution.md`: Studio's modularity,
+  backend-capability, UX, async/disposal and verification rules are represented
+  in active `src/studio/AGENTS.md`; Core's root constitution remains unchanged.
 
 The comparison used the exact `20ceaee` Studio Git blobs and the Core files
 in the prepared import at `fb68c8e`, then confirmed the six active Core-root
-files at Core `6c9c0532`. Recheck these decisions if the upstream source tip
+files at Core `6c9c0532`. The current scoped guidance is pinned separately by
+the machine-readable decision. Recheck these decisions if the upstream source tip
 or active Core files change before the import merges. This review does not
 approve repository retirement, Secrets collision activation, or publication.

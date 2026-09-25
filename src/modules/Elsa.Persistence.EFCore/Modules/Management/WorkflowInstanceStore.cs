@@ -194,6 +194,29 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// <paramref name="allowFinishedCancelled"/> is unused: drain no longer promotes Finished/Cancelled (#8419).
+    /// The parameter remains so the 3.8.4 signature stays binary-compatible.
+    /// </remarks>
+    public async ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false)
+    {
+        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+        // SetTenantIdFilter's global query filter applies to ExecuteUpdateAsync unless
+        // IgnoreQueryFilters is used. This store does not ignore it, so a tenant-B
+        // caller cannot mark a tenant-A row.
+        var updated = await dbContext.WorkflowInstances
+            .Where(x => x.Id == workflowInstanceId && x.Status != WorkflowStatus.Finished)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(x => x.Status, WorkflowStatus.Running)
+                    .SetProperty(x => x.SubStatus, WorkflowSubStatus.Interrupted)
+                    .SetProperty(x => x.IsExecuting, false),
+                cancellationToken);
+
+        return updated > 0;
+    }
+
+    /// <inheritdoc />
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
     public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {

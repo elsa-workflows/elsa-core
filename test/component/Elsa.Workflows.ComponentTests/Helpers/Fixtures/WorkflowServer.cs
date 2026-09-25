@@ -177,7 +177,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 .AddWorkflowsProvider<TestWorkflowProvider>()
                 .AddNotificationHandlersFrom<WorkflowEventHandlers>()
                 .Decorate<IChangeTokenSignaler, EventPublishingChangeTokenSignaler>()
-                .AddSingleton<TestBookmarkQueueWorker>()
+                .AddScoped<TestBookmarkQueueWorker>()
                 ;
         });
     }

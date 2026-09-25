@@ -2,6 +2,7 @@
 import importlib.util
 import json
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 import unittest
@@ -28,6 +29,19 @@ class SecretsApiStudioContractTests(unittest.TestCase):
         self.assertIn('legacyApi', self.fixture['sourcePaths'])
         self.assertIn('studioApi', self.fixture['sourcePaths'])
         self.assertEqual({'studioApi', 'studioModels'}, set(self.fixture['studioTestSourceSnapshots']))
+
+    def test_workflow_checkouts_match_contract_source_pins(self):
+        workflow = (SCRIPT.parents[2] / '.github/workflows/secrets-api-studio-contract.yml').read_text()
+        for repository, pin in (
+            ('elsa-core', self.fixture['sourcePins']['core']),
+            ('elsa-extensions', self.fixture['sourcePins']['extensions']),
+            ('elsa-studio', self.fixture['sourcePins']['studio']),
+        ):
+            with self.subTest(repository=repository):
+                match = re.search(
+                    rf'repository: elsa-workflows/{repository}\s+ref: ([0-9a-f]{{40}})', workflow)
+                self.assertIsNotNone(match)
+                self.assertEqual(pin, match.group(1))
 
     def test_studio_route_set_is_exactly_core_route_set(self):
         core_keys = sorted((row['verb'], CONTRACT.normalize_route(row['path'])) for row in self.fixture['coreRoutes'])

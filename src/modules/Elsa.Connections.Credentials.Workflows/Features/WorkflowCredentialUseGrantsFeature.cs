@@ -17,6 +17,7 @@ public sealed class WorkflowCredentialUseGrantsFeature(IModule module) : Feature
     {
         Services.TryAddScoped<IConnectionCredentialUseGrantStore, UnavailableConnectionCredentialUseGrantStore>();
         Services.TryAddScoped<IConnectionCredentialGrantManagementAuthorizer, DenyAllConnectionCredentialGrantManagementAuthorizer>();
+        Services.TryAddScoped<IConnectionCredentialShareAuthorizer, DenyAllConnectionCredentialShareAuthorizer>();
         Services.AddScoped<IWorkflowCredentialGrantManager, WorkflowCredentialGrantManager>();
         var defaultUsePolicy = Services.FirstOrDefault(descriptor =>
             descriptor.ServiceType == typeof(IConnectionCredentialBindingUseAuthorizer) &&

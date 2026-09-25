@@ -16,6 +16,7 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
 {
     private readonly MemoryStore<WorkflowInstance> _store;
     private readonly ITenantAccessor? _tenantAccessor;
+    private readonly object _sync = new();
 
     /// <summary>
     /// Constructor.
@@ -126,31 +127,41 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        ApplyCurrentTenant(instance);
-        _store.Save(instance, x => x.Id);
+        lock (_sync)
+        {
+            ApplyCurrentTenant(instance);
+            _store.Save(instance, x => x.Id);
+        }
         return ValueTask.CompletedTask;
     }
 
     public ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        ApplyCurrentTenant(instance);
-        _store.Add(instance, GetId);
+        lock (_sync)
+        {
+            ApplyCurrentTenant(instance);
+            _store.Add(instance, GetId);
+        }
         return ValueTask.CompletedTask;
     }
 
     public ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        _store.Update(instance, GetId);
+        lock (_sync)
+            _store.Update(instance, GetId);
         return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
     public ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
-        var instanceList = instances.ToList();
-        foreach (var instance in instanceList)
-            ApplyCurrentTenant(instance);
-        _store.SaveMany(instanceList, GetId);
+        lock (_sync)
+        {
+            var instanceList = instances.ToList();
+            foreach (var instance in instanceList)
+                ApplyCurrentTenant(instance);
+            _store.SaveMany(instanceList, GetId);
+        }
         return ValueTask.CompletedTask;
     }
 
@@ -176,15 +187,40 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
         workflowInstance.UpdatedAt = value;
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    /// <paramref name="allowFinishedCancelled"/> is unused: drain no longer promotes Finished/Cancelled (#8419).
+    /// The parameter remains so the 3.8.4 signature stays binary-compatible.
+    /// </remarks>
+    public ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false)
+    {
+        // Same lock as Save/Update so a runner's terminal persist cannot land between the
+        // tenant/status check and the Interrupted mutations. Every condition is evaluated
+        // once inside this lock — then mutate, with nothing after.
+        lock (_sync)
+        {
+            var instance = _store.Find(x => x.Id == workflowInstanceId && TenantVisibility.IsVisible(x.TenantId, CurrentTenantId));
+            if (instance is null || instance.Status == WorkflowStatus.Finished)
+                return ValueTask.FromResult(false);
+
+            instance.Status = WorkflowStatus.Running;
+            instance.SubStatus = WorkflowSubStatus.Interrupted;
+            instance.IsExecuting = false;
+            return ValueTask.FromResult(true);
+        }
+    }
+
     private static string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;
+
+    private string CurrentTenantId => _tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Management.Filters.WorkflowInstanceFilter.Apply(IQueryable<WorkflowInstance>)")]
     private IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> query, WorkflowInstanceFilter filter) =>
-        filter.Apply(query.WhereVisibleToTenant(_tenantAccessor?.TenantId ?? Tenant.DefaultTenantId));
+        filter.Apply(query.WhereVisibleToTenant(CurrentTenantId));
 
     private void ApplyCurrentTenant(WorkflowInstance instance)
     {
         if (instance.TenantId != Tenant.AgnosticTenantId)
-            instance.TenantId ??= _tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
+            instance.TenantId ??= CurrentTenantId;
     }
 }

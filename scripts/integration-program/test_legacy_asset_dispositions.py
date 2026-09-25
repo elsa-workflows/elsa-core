@@ -5,13 +5,17 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import subprocess
+import tempfile
 import unittest
+from pathlib import Path
 
 from validate_legacy_asset_dispositions import (
     DEFAULT_LEDGER,
     DEFAULT_RECEIPT,
     EXPECTED_RECEIPT_FIXTURE_SHA256,
     EXPECTED_SOURCE_RECEIPT_SHA256,
+    _active_git_blob_and_mode,
     validate_ledger,
 )
 
@@ -24,8 +28,23 @@ class LegacyAssetDispositionTests(unittest.TestCase):
 
     def test_committed_ledger_has_complete_asset_rows_and_pins(self) -> None:
         self.assertEqual([], validate_ledger(self.ledger))
+        self.assertEqual(2, self.ledger["schema_version"])
         self.assertEqual(163, len(self.ledger["assets"]))
         self.assertEqual({"extensions": 80, "studio": 83, "total": 163}, self.ledger["asset_counts"])
+        self.assertEqual(82, sum(row["status"] == "represented_in_core" for row in self.ledger["assets"]))
+        self.assertEqual(2, sum(row["status"] == "retired_from_active_tree" for row in self.ledger["assets"]))
+        license_rows = [row for row in self.ledger["assets"] if row["category"] == "license_notice"]
+        self.assertEqual(2, len(license_rows))
+        self.assertTrue(all(row["status"] == "represented_in_core" and row["completion"]["active_path"] == "LICENSE"
+                            and row["completion"]["representation"] == "expanded" for row in license_rows))
+        studio_tooling = [row for row in self.ledger["assets"]
+                          if row["category"] == "studio_agent_specification_tooling"]
+        self.assertEqual(50, len(studio_tooling))
+        self.assertTrue(all(row["status"] == "represented_in_core" for row in studio_tooling))
+        self.assertEqual({"identical": 42, "expanded": 8}, {
+            representation: sum(row["completion"]["representation"] == representation for row in studio_tooling)
+            for representation in ("identical", "expanded")
+        })
 
     def test_frozen_real_receipt_projection_matches_and_is_hash_pinned(self) -> None:
         fixture_hash = hashlib.sha256(DEFAULT_RECEIPT.read_bytes()).hexdigest()
@@ -58,6 +77,54 @@ class LegacyAssetDispositionTests(unittest.TestCase):
                 changed = copy.deepcopy(self.ledger)
                 changed["assets"][0]["status"] = status
                 self.assertTrue(any("unsupported non-pending status" in error for error in validate_ledger(changed)))
+        for status in ("represented_in_core", "retired_from_active_tree"):
+            with self.subTest(status=status):
+                changed = copy.deepcopy(self.ledger)
+                changed["assets"][0]["status"] = status
+                self.assertTrue(any("lacks structured evidence" in error for error in validate_ledger(changed)))
+
+    def test_completion_evidence_rejects_missing_review_or_changed_active_file(self) -> None:
+        represented = next(index for index, row in enumerate(self.ledger["assets"])
+                           if row["original_path"] == ".interface-design/system.md")
+        for field, value, message in (
+            ("decision_path", "doc/missing.md", "invalid decision path"),
+            ("decision_path", "doc/integration-program/consolidation/missing.md", "decision file is missing"),
+            ("pr_url", "https://example.com/pull/8427", "invalid PR evidence"),
+            ("merge_commit", "not-a-commit", "invalid merge commit"),
+            ("active_path", "README.md", "active blob or mode changed"),
+            ("active_blob", "0" * 40, "active blob or mode changed"),
+            ("representation", "unknown", "representation is invalid"),
+        ):
+            with self.subTest(field=field):
+                changed = copy.deepcopy(self.ledger)
+                changed["assets"][represented]["completion"][field] = value
+                errors = validate_ledger(changed)
+                self.assertTrue(any(message in error for error in errors), errors)
+        changed = copy.deepcopy(self.ledger)
+        changed["assets"][represented]["completion"]["active_blob"] = "0" * 40
+        changed["assets"][represented]["completion"]["representation"] = "identical"
+        self.assertTrue(any("not identical" in error for error in validate_ledger(changed)))
+
+    def test_active_git_blob_accepts_clean_crlf_checkout_but_rejects_changes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            subprocess.run(["git", "config", "core.autocrlf", "true"], cwd=root, check=True)
+            active = root / "asset.md"
+            active.write_bytes(b"recorded\n")
+            subprocess.run(["git", "add", "asset.md"], cwd=root, check=True)
+            blob = subprocess.check_output(["git", "rev-parse", ":asset.md"], cwd=root, text=True).strip()
+
+            active.write_bytes(b"recorded\r\n")
+            self.assertEqual((blob, "100644"), _active_git_blob_and_mode(root, "asset.md"))
+
+            active.write_bytes(b"changed\r\n")
+            self.assertIsNone(_active_git_blob_and_mode(root, "asset.md"))
+
+    def test_pending_assets_cannot_claim_completion_evidence(self) -> None:
+        changed = copy.deepcopy(self.ledger)
+        changed["assets"][0]["completion"] = {"pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8428"}
+        self.assertTrue(any("pending asset has completion evidence" in error for error in validate_ledger(changed)))
 
     def test_ledger_paths_must_be_normalized_relative_git_paths(self) -> None:
         for field, value in (
