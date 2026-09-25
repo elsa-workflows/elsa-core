@@ -92,6 +92,12 @@ EF Core persistence decorates `IDbContextFactory<TDbContext>` with `TenantAwareD
 - `ApplyTenantId`
 - `SetTenantIdFilter`
 
+Default Memory stores must apply the same admission rule through `TenantVisibility` (ambient match, `*`, null-on-default-tenant) and stamp the ambient tenant on save when unset.
+
+`SerializedKeyValuePair` is keyed by `Id` (= `Key`) alone. `TenantId` is a filter/index, not part of the primary key, so two tenants cannot persist the same key under EF (PK collision). That is intentional for cluster-wide keys (heartbeat, quiescence): callers that need tenant-scoped names must encode the tenant into the key. A composite `(TenantId, Key)` identity is out of scope.
+
+Memory stamps the ambient tenant on save, filters Find/FindMany with `TenantVisibility`, and deletes through `IsVisible` (a tenant can delete its own rows and `*` rows, but not another named tenant's row). Save also mirrors the EF PK collision with `CanReplaceOwnedRow`: a named tenant cannot take over another tenant's key or a `*` key (`InvalidOperationException`); an accepted update keeps the existing `TenantId`. The ownership check is skipped when no `ITenantAccessor` is registered.
+
 Tenant conventions are documented in ADRs:
 
 - [ADR 0008: Empty String As Default Tenant ID](../adr/0008-empty-string-as-default-tenant-id.md)
