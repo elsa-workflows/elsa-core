@@ -9,6 +9,8 @@
 **/*.pfx
 **/*.publishsettings
 **/*.db
+**/*.db-wal
+**/*.db-shm
 **/.vs
 **/.idea
 **/.vscode
