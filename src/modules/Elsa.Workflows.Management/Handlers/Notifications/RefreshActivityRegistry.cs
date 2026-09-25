@@ -23,8 +23,7 @@ public class RefreshActivityRegistry(
     INotificationHandler<WorkflowDefinitionsDeleted>,
     INotificationHandler<WorkflowDefinitionVersionDeleted>,
     INotificationHandler<WorkflowDefinitionVersionsDeleted>,
-    INotificationHandler<WorkflowDefinitionVersionsUpdated>,
-    INotificationHandler<WorkflowDefinitionDraftSaved>
+    INotificationHandler<WorkflowDefinitionVersionsUpdated>
 {
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken)
@@ -94,13 +93,6 @@ public class RefreshActivityRegistry(
 
         foreach (var tenantId in definitions.Select(x => x.TenantId).Distinct())
             await generationStore.IncrementAsync(tenantId, cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public async Task HandleAsync(WorkflowDefinitionDraftSaved notification, CancellationToken cancellationToken)
-    {
-        await UpdateDefinition(notification.WorkflowDefinition.Id, notification.WorkflowDefinition.Options.UsableAsActivity);
-        await generationStore.IncrementAsync(notification.WorkflowDefinition.TenantId, cancellationToken);
     }
 
     private Task UpdateDefinition(string id, bool? usableAsActivity)

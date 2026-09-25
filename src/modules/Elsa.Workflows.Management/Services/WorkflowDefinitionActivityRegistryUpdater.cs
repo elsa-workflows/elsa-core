@@ -56,16 +56,17 @@ public class WorkflowDefinitionActivityRegistryUpdater(
         if (cacheManager is null || tenantAccessor is null)
             throw new InvalidOperationException("Registry reconciliation requires cache and tenant services.");
 
+        // Do not hold the process-wide registry mutation lock across cache or store I/O.
+        // A cache warmed on this node before a remote write would otherwise hide the new store state.
+        await cacheManager.TriggerTokenAsync(CachingWorkflowDefinitionStore.GetTenantReconciliationTokenKey(tenantAccessor.TenantId), cancellationToken);
+
+        // Read the authoritative set before mutating the live registry. A failed or cancelled
+        // store read must leave the currently usable descriptors in place.
+        var descriptors = (await provider.GetDescriptorsAsync(cancellationToken)).ToList();
+
         await RegistryLock.WaitAsync(cancellationToken);
         try
         {
-            // A cache warmed on this node before a remote write would otherwise hide the new store state.
-            await cacheManager.TriggerTokenAsync(CachingWorkflowDefinitionStore.GetTenantReconciliationTokenKey(tenantAccessor.TenantId), cancellationToken);
-
-            // Read the authoritative set before mutating the live registry. A failed or cancelled
-            // store read must leave the currently usable descriptors in place.
-            var descriptors = (await provider.GetDescriptorsAsync(cancellationToken)).ToList();
-
             // ListByProvider is tenant-aware: it exposes only the current tenant plus agnostic descriptors.
             // Removing that visible set first also handles an empty provider result, which the generic
             // ActivityRegistry.RefreshDescriptorsAsync currently does not clear.

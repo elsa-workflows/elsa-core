@@ -86,6 +86,43 @@ public class WorkflowDefinitionActivityRegistryUpdaterTests
         Assert.NotNull(registry.Find("Existing"));
     }
 
+    [Fact]
+    public async Task ReconcileRegistryAsync_SlowTenantReadDoesNotBlockAnotherTenant()
+    {
+        var readStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseRead = new TaskCompletionSource<IEnumerable<WorkflowDefinition>>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var slowStore = Substitute.For<IWorkflowDefinitionStore>();
+        slowStore.FindManyAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                readStarted.TrySetResult();
+                return releaseRead.Task;
+            });
+        var tenantA = new TestTenantAccessor("tenant-a");
+        var tenantB = new TestTenantAccessor("tenant-b");
+        var updaterA = CreateUpdater(slowStore, tenantA);
+        var updaterB = CreateUpdater(new MemoryWorkflowDefinitionStore(new MemoryStore<WorkflowDefinition>(), tenantB), tenantB);
+
+        var slowReconciliation = updaterA.ReconcileRegistryAsync();
+        await readStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        try
+        {
+            await updaterB.ReconcileRegistryAsync().WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            releaseRead.TrySetResult([]);
+            await slowReconciliation;
+        }
+    }
+
+    private static WorkflowDefinitionActivityRegistryUpdater CreateUpdater(IWorkflowDefinitionStore store, TestTenantAccessor tenantAccessor)
+    {
+        var provider = new WorkflowDefinitionActivityProvider(store, new WorkflowDefinitionActivityDescriptorFactory(), tenantAccessor);
+        var registry = new ActivityRegistry(Substitute.For<IActivityDescriber>(), [], tenantAccessor, NullLogger<ActivityRegistry>.Instance);
+        return new WorkflowDefinitionActivityRegistryUpdater(provider, registry, Substitute.For<ICacheManager>(), tenantAccessor);
+    }
+
     private static WorkflowDefinition CreateDefinition(string id, string name, string tenantId) => new()
     {
         Id = id,

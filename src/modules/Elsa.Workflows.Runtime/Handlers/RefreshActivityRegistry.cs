@@ -22,7 +22,13 @@ public class RefreshActivityRegistry(
         foreach (var reloadedWorkflowDefinition in notification.ReloadedWorkflowDefinitions)
             await UpdateDefinition(reloadedWorkflowDefinition.DefinitionVersionId, reloadedWorkflowDefinition.UsableAsActivity);
 
-        await generationStore.IncrementAsync(tenantAccessor.TenantId, cancellationToken);
+        // Reload notifications do not carry tenant identity. The reloaded set can contain
+        // agnostic definitions, so notify every tenant through the shared generation.
+        var tenantId = tenantAccessor.TenantId.NormalizeTenantId();
+        if (tenantId != Tenant.AgnosticTenantId)
+            await generationStore.IncrementAsync(Tenant.AgnosticTenantId, cancellationToken);
+
+        await generationStore.IncrementAsync(tenantId, cancellationToken);
     }
 
     private Task UpdateDefinition(string definitionVersionId, bool? usableAsActivity)
