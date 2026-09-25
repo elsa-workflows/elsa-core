@@ -6,6 +6,14 @@ on:
       - '.github/workflows/current-import-impact.yml'
       - 'scripts/integration-program/current_import_impact.py'
       - 'scripts/integration-program/test_current_import_impact.py'
+      # Keep changes to the selector's imported graph and manifest helpers in CI.
+      - 'scripts/integration-program/refresh_canonical_dependency_graph.py'
+      - 'scripts/integration-program/package_impact.py'
+      - 'scripts/integration-program/release_unit_manifest.py'
+      - 'scripts/integration-program/package_closure.py'
+      - 'scripts/integration-program/prepare_consolidated_build.py'
+      - 'scripts/integration-program/source_bindings.py'
+      - 'scripts/integration-program/rehearse-import.py'
       - 'doc/integration-program/release-units.json'
       # These inputs can change the restored project/TFM graph without changing
       # the package source paths below.

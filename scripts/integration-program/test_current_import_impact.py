@@ -66,6 +66,23 @@ def unit():
 
 
 class CurrentImportedImpactTests(unittest.TestCase):
+    def test_workflow_triggers_for_selector_graph_dependencies(self):
+        workflow = Path(__file__).resolve().parents[2] / ".github/workflows/current-import-impact.yml"
+        text = workflow.read_text(encoding="utf-8")
+        dependencies = (
+            "scripts/integration-program/current_import_impact.py",
+            "scripts/integration-program/refresh_canonical_dependency_graph.py",
+            "scripts/integration-program/package_impact.py",
+            "scripts/integration-program/release_unit_manifest.py",
+            "scripts/integration-program/package_closure.py",
+            "scripts/integration-program/prepare_consolidated_build.py",
+            "scripts/integration-program/source_bindings.py",
+            "scripts/integration-program/rehearse-import.py",
+        )
+        for dependency in dependencies:
+            with self.subTest(dependency=dependency):
+                self.assertIn(f"      - '{dependency}'", text)
+
     def test_rejects_unmapped_elsa_package_type_dependencies(self):
         with self.assertRaisesRegex(ValueError, "unmapped Elsa package dependency Elsa.Workflows.Core"):
             reject_unmapped_elsa_packages({
