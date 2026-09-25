@@ -591,7 +591,16 @@
       "owning_workstream": "Package/build maintainers",
       "proposed_disposition": "Use the canonical root icon from scoped package metadata after verifying the packed NuGet icon for both product families; retire duplicate inert files after package inspection.",
       "evidence_or_gate": "The pinned Extensions and Studio icons are byte-identical to Core root icon.png (SHA-256 82fd76d734d59efc6132af0b0b999146254fa5a296ea5d64f85597bb1cda524e); package output is not verified by this ledger.",
-      "status": "candidate_shared_asset_pending_pack_check"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/shared-package-icon-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8444",
+        "merge_commit": "530d9489e49a45c66e6922d6fcf597dade0aa5cd",
+        "active_path": "icon.png",
+        "active_blob": "47e1cadea43af0b7d1a5c489e0d46cf72ecf87eb",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "extensions",
@@ -2893,7 +2902,16 @@
       "owning_workstream": "Package/build maintainers",
       "proposed_disposition": "Use the canonical root icon from scoped package metadata after verifying the packed NuGet icon for both product families; retire duplicate inert files after package inspection.",
       "evidence_or_gate": "The pinned Extensions and Studio icons are byte-identical to Core root icon.png (SHA-256 82fd76d734d59efc6132af0b0b999146254fa5a296ea5d64f85597bb1cda524e); package output is not verified by this ledger.",
-      "status": "candidate_shared_asset_pending_pack_check"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/shared-package-icon-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8444",
+        "merge_commit": "530d9489e49a45c66e6922d6fcf597dade0aa5cd",
+        "active_path": "icon.png",
+        "active_blob": "47e1cadea43af0b7d1a5c489e0d46cf72ecf87eb",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     }
   ]
 }
