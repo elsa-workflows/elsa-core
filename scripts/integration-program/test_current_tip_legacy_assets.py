@@ -149,6 +149,7 @@ class CurrentTipLegacyAssetsTests(unittest.TestCase):
                 "For Studio modules, consult [scoped instructions](src/studio/AGENTS.md).\n",
                 "[Studio policy](src/studio/AGENTS.md); consult it for Studio modules.\n",
                 "Read [these instructions](src/studio/AGENTS.md) for Studio modules.\n",
+                "Read [the scoped guidance](src/studio/AGENTS.md) for Studio modules, but do not modify it.\n",
             ):
                 with self.subTest(directive=directive):
                     (root / "AGENTS.md").write_text(directive, encoding="utf-8")

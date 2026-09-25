@@ -21,9 +21,10 @@ EVIDENCE = ROOT / "doc/integration-program/consolidation/current-tip-e96-evidenc
 STUDIO_SPEC_REPRESENTATION = ROOT / "doc/integration-program/consolidation/studio-spec-asset-representation.json"
 STUDIO_GUIDANCE = "src/studio/AGENTS.md"
 ROOT_STUDIO_LINK = re.compile(r"\[[^\]]+\]\(src/studio/AGENTS\.md\)")
-ROOT_STUDIO_DIRECTIVE = re.compile(r"\b(?:read|consult|follow|use)\b", re.IGNORECASE)
-ROOT_STUDIO_NEGATION = re.compile(r"\b(?:do\s+not|don't|never|avoid|ignore|no\s+need\s+to|not\s+required\s+to)\b",
-                                  re.IGNORECASE)
+ROOT_STUDIO_DIRECTIVE_BEFORE = re.compile(r"\b(?:read|consult|follow|use)\s+(?:the\s+)?$", re.IGNORECASE)
+ROOT_STUDIO_DIRECTIVE_AFTER = re.compile(r"^\s*[,;:]?\s*(?:read|consult|follow|use)\s+it\b", re.IGNORECASE)
+ROOT_STUDIO_NEGATION_BEFORE = re.compile(r"\b(?:do\s+not|don't|never|no\s+need\s+to|not\s+required\s+to|not)\s+$",
+                                         re.IGNORECASE)
 EXPECTED_RECEIPT_SHA256 = "06cd198a338d5c6d49fa6b0183bbda6b602252f39f622f18084e60342880bb75"
 
 
@@ -36,9 +37,17 @@ def file_git_identity(path: Path) -> tuple[str, str]:
 
 def has_root_studio_instruction(content: str) -> bool:
     """Require an affirmative same-line instruction to the scoped Studio policy."""
-    return any(ROOT_STUDIO_LINK.search(line) and re.search(r"\bStudio modules\b", line, re.IGNORECASE)
-               and ROOT_STUDIO_DIRECTIVE.search(line) and not ROOT_STUDIO_NEGATION.search(line)
-               for line in content.splitlines())
+    for line in content.splitlines():
+        if not re.search(r"\bStudio modules\b", line, re.IGNORECASE):
+            continue
+        for link in ROOT_STUDIO_LINK.finditer(line):
+            before, after = line[:link.start()], line[link.end():]
+            directive = ROOT_STUDIO_DIRECTIVE_BEFORE.search(before)
+            if directive and not ROOT_STUDIO_NEGATION_BEFORE.search(before[:directive.start()]):
+                return True
+            if ROOT_STUDIO_DIRECTIVE_AFTER.search(after):
+                return True
+    return False
 
 
 def load_pinned_receipt() -> dict[str, Any]:
