@@ -1,0 +1,71 @@
+<MudStack Spacing="2">
+    <MudText Typo="Typo.subtitle2" HtmlTag="h2">Permissions</MudText>
+    <MudText Typo="Typo.caption">
+        Add exact Elsa permission names, for example <code>read:workflow-definitions</code>. Use <code>*</code> only for unrestricted access.
+    </MudText>
+
+    <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
+        <MudTextField @bind-Value="_permission"
+                      Label="Permission name"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Immediate="true"
+                      Disabled="@Disabled"
+                      OnKeyDown="OnKeyDown"
+                      Class="flex-grow-1" />
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Disabled="@(Disabled || string.IsNullOrWhiteSpace(_permission))"
+                   OnClick="AddAsync">
+            Add
+        </MudButton>
+    </MudStack>
+
+    @if (Permissions.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">This role currently grants no permissions.</MudAlert>
+    }
+    else
+    {
+        <MudChipSet T="string" AllClosable="@(!Disabled)" OnClose="RemoveAsync" aria-label="Assigned permissions">
+            @foreach (var permission in Permissions.OrderBy(x => x, StringComparer.Ordinal))
+            {
+                <MudChip T="string" Value="@permission" Variant="Variant.Outlined" Size="Size.Small">@permission</MudChip>
+            }
+        </MudChipSet>
+    }
+</MudStack>
+
+@code {
+    private string? _permission;
+
+    [Parameter, EditorRequired] public HashSet<string> Permissions { get; set; } = new(StringComparer.Ordinal);
+    [Parameter] public EventCallback PermissionsChanged { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private async Task OnKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+            await AddAsync();
+    }
+
+    private async Task AddAsync()
+    {
+        var value = _permission?.Trim();
+        if (Disabled || string.IsNullOrWhiteSpace(value))
+            return;
+
+        if (Permissions.Add(value))
+            await PermissionsChanged.InvokeAsync();
+        _permission = string.Empty;
+    }
+
+    private async Task RemoveAsync(MudChip<string> chip)
+    {
+        if (Disabled || chip.Value == null || !Permissions.Remove(chip.Value))
+            return;
+
+        await PermissionsChanged.InvokeAsync();
+    }
+}

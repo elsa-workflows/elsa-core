@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Adds a dashboard page to the studio.</Description>
+        <PackageTags>elsa studio module</PackageTags>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\framework\Elsa.Studio.Shared\Elsa.Studio.Shared.csproj" />
+    </ItemGroup>
+
+</Project>

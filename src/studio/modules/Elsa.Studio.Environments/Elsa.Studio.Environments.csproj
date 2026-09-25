@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Adds support for connecting to different Elsa Workflows environments.</Description>
+        <PackageTags>elsa studio module</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Refit"/>
+        <PackageReference Include="Refit.HttpClientFactory"/>
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\..\framework\Elsa.Studio.Core\Elsa.Studio.Core.csproj" />
+      <ProjectReference Include="..\..\framework\Elsa.Studio.Shared\Elsa.Studio.Shared.csproj" />
+    </ItemGroup>
+
+</Project>

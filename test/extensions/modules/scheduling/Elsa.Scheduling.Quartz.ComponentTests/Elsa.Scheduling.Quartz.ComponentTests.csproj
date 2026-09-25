@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <PackageReference Include="Elsa.Testing.Shared.Component" />
+        <PackageReference Include="Elsa.Workflows.Core" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\..\src\modules\scheduling\Elsa.Scheduling.Quartz\Elsa.Scheduling.Quartz.csproj" />
+        <ProjectReference Include="..\..\..\workbench\Elsa.TestServer.Web\Elsa.TestServer.Web.csproj" />
+    </ItemGroup>
+
+</Project>

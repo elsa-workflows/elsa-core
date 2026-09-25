@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Adds workflow dashboard widgets to Elsa Studio.</Description>
+        <PackageTags>elsa studio module workflows dashboard</PackageTags>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Studio.Dashboard\Elsa.Studio.Dashboard.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Workflows\Elsa.Studio.Workflows.csproj" />
+    </ItemGroup>
+
+</Project>

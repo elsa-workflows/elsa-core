@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Adds the identity-neutral user task workspace to Elsa Studio.</Description>
+        <PackageTags>elsa studio user-tasks workflows human-tasks</PackageTags>
+        <NoWarn>$(NoWarn);CS1591;CS8669</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+        <PackageReference Include="Microsoft.AspNetCore.WebUtilities" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\framework\Elsa.Studio.Shared\Elsa.Studio.Shared.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Authentication.Abstractions\Elsa.Studio.Authentication.Abstractions.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Workflows\Elsa.Studio.Workflows.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides Elasticsearch implementation for workflow state persistence.
+        </Description>
+        <PackageTags>elsa extension module elasticsearch</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+		<PackageReference Include="Elastic.Clients.Elasticsearch" />
+		<PackageReference Include="Elsa.Features" />
+		<PackageReference Include="Elsa.Workflows.Runtime" />
+    </ItemGroup>
+
+</Project>

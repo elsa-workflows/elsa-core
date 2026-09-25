@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Optional modern, presentation-only login themes for Elsa Studio.</Description>
+        <PackageTags>elsa studio authentication login themes</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Studio.Authentication.UI\Elsa.Studio.Authentication.UI.csproj" />
+    </ItemGroup>
+
+</Project>

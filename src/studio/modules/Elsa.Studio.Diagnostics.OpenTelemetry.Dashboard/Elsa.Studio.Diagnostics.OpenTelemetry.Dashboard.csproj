@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Adds OpenTelemetry diagnostics dashboard widgets to Elsa Studio.</Description>
+        <PackageTags>elsa studio module diagnostics opentelemetry dashboard</PackageTags>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Studio.Dashboard\Elsa.Studio.Dashboard.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Diagnostics.OpenTelemetry\Elsa.Studio.Diagnostics.OpenTelemetry.csproj" />
+    </ItemGroup>
+
+</Project>

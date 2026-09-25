@@ -1,0 +1,245 @@
+/*
+ * This package styles only its composition and the public login-panel token
+ * surface. Shared panel descendants remain private to Authentication.UI.
+ */
+.modern-login-theme {
+    --elsa-login-panel-width: 100%;
+    --elsa-login-panel-max-width: none;
+    --elsa-login-panel-padding: 0;
+    --elsa-login-panel-gap: 1rem;
+    --elsa-login-panel-radius: 0;
+    --elsa-login-panel-background: transparent;
+    --elsa-login-panel-color: #f8fafc;
+    --elsa-login-panel-border: 0;
+    --elsa-login-panel-shadow: none;
+    --elsa-login-accent: #1976d2;
+    --elsa-login-accent-contrast: #fff;
+    --elsa-login-muted-color: #b4c0d6;
+    --elsa-login-focus-color: #7cb3ff;
+    --elsa-login-method-surface: rgb(6 19 45 / 0.46);
+    --elsa-login-method-border: rgb(173 197 241 / 0.28);
+    --elsa-login-method-hover-surface: rgb(124 179 255 / 0.12);
+    --elsa-login-method-preferred-surface: color-mix(in srgb, var(--elsa-login-accent) 28%, transparent);
+    --elsa-login-method-preferred-border: var(--elsa-login-focus-color);
+    --elsa-login-method-preferred-color: #f8fafc;
+    --elsa-login-method-icon-surface: rgb(124 179 255 / 0.12);
+    --elsa-login-method-icon-color: var(--elsa-login-focus-color);
+    --elsa-login-method-shadow: 0 0.75rem 1.75rem rgb(0 4 18 / 0.16);
+    --elsa-control-surface: rgb(2 12 30 / 0.5);
+    --elsa-control-surface-hover: rgb(124 179 255 / 0.09);
+    --elsa-control-surface-disabled: rgb(2 12 30 / 0.28);
+    --elsa-control-border: rgb(173 197 241 / 0.34);
+    --elsa-control-border-hover: rgb(173 197 241 / 0.58);
+    --elsa-control-focus: var(--elsa-login-focus-color);
+    background: #06132d;
+    box-sizing: border-box;
+    color: #f8fafc;
+    display: grid;
+    isolation: isolate;
+    min-block-size: 100dvh;
+    overflow: clip;
+    padding: clamp(1rem, 4vw, 4rem);
+    position: relative;
+}
+
+.modern-login-theme__artwork {
+    background: linear-gradient(135deg, #06132d, #102759);
+    inset: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: 0;
+}
+
+.modern-login-theme__artwork::after {
+    background: linear-gradient(90deg, transparent 45%, rgb(2 8 23 / 0.22) 72%, rgb(2 8 23 / 0.42));
+    content: "";
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+}
+
+.modern-login-theme__artwork picture,
+.modern-login-theme__artwork img {
+    block-size: 100%;
+    display: block;
+    inline-size: 100%;
+}
+
+.modern-login-theme__artwork img {
+    object-fit: cover;
+}
+
+.modern-login-theme__content {
+    align-items: center;
+    display: flex;
+    inline-size: min(100%, 88rem);
+    justify-self: center;
+    justify-content: flex-end;
+    position: relative;
+    z-index: 1;
+}
+
+.modern-login-theme__surface {
+    backdrop-filter: blur(1rem);
+    background: linear-gradient(145deg, rgb(25 43 81 / 0.9), rgb(9 25 56 / 0.95));
+    border: 1px solid rgb(173 197 241 / 0.38);
+    border-radius: 1.5rem;
+    box-sizing: border-box;
+    box-shadow: 0 1.75rem 5rem rgb(0 4 18 / 0.45);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    inline-size: min(100%, 29rem);
+    max-block-size: calc(100dvh - 2rem);
+    overflow: auto;
+    padding: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.modern-login-theme__brand {
+    align-items: center;
+    display: flex;
+    gap: 0.9rem;
+}
+
+.modern-login-theme__logo {
+    block-size: 3rem;
+    flex: 0 0 auto;
+    inline-size: 3rem;
+    object-fit: contain;
+}
+
+.modern-login-theme__brand h1 {
+    color: inherit;
+    font-size: clamp(1.65rem, 3vw, 2.25rem);
+    font-weight: 500;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+    margin: 0 0 0.2rem;
+}
+
+.modern-login-theme__brand h1:focus {
+    outline: none;
+}
+
+.modern-login-theme__tagline,
+.modern-login-theme__version {
+    margin: 0;
+}
+
+.modern-login-theme__tagline {
+    color: var(--elsa-login-muted-color);
+    font-size: 0.95rem;
+}
+
+.modern-login-theme__panel {
+    min-inline-size: 0;
+}
+
+.modern-login-theme__footer {
+    align-items: center;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    min-inline-size: 0;
+}
+
+.modern-login-theme__version {
+    font-size: 0.75rem;
+    opacity: 0.72;
+    white-space: nowrap;
+}
+
+.modern-login-theme[data-theme="workflow-constellation"] {
+    --elsa-login-accent: #315ebd;
+    --elsa-login-focus-color: #73a9ff;
+}
+
+.modern-login-theme[data-theme="workflow-aurora"] {
+    --elsa-login-accent: #0868bd;
+    --elsa-login-focus-color: #57c7ff;
+}
+
+.modern-login-theme[data-theme="execution-timeline"] {
+    --elsa-login-accent: #1976d2;
+    --elsa-login-focus-color: #79b2ff;
+    --elsa-login-muted-color: #adb8c8;
+    --elsa-login-method-surface: rgb(13 19 27 / 0.52);
+    --elsa-login-method-border: rgb(143 158 178 / 0.3);
+    --elsa-login-method-hover-surface: rgb(121 178 255 / 0.11);
+    --elsa-login-method-icon-surface: rgb(121 178 255 / 0.12);
+    background: #10161e;
+}
+
+.modern-login-theme[data-theme="execution-timeline"] .modern-login-theme__artwork::after {
+    background: radial-gradient(ellipse at center, rgb(9 14 20 / 0.12), rgb(9 14 20 / 0.04) 32%, transparent 55%);
+}
+
+.modern-login-theme[data-theme="execution-timeline"] .modern-login-theme__content {
+    justify-content: center;
+}
+
+.modern-login-theme[data-theme="execution-timeline"] .modern-login-theme__surface {
+    background: linear-gradient(145deg, rgb(29 36 46 / 0.94), rgb(16 22 30 / 0.96));
+    border-color: rgb(143 158 178 / 0.42);
+}
+
+.modern-login-theme[data-theme="human-automation"] {
+    --elsa-login-panel-color: #222a35;
+    --elsa-login-accent: #1976d2;
+    --elsa-login-muted-color: #667085;
+    --elsa-login-focus-color: #1769c4;
+    --elsa-login-method-surface: rgb(255 255 255 / 0.76);
+    --elsa-login-method-border: rgb(117 94 72 / 0.2);
+    --elsa-login-method-hover-surface: rgb(25 118 210 / 0.06);
+    --elsa-login-method-preferred-surface: rgb(25 118 210 / 0.09);
+    --elsa-login-method-preferred-border: #1769c4;
+    --elsa-login-method-preferred-color: #243b53;
+    --elsa-login-method-icon-surface: rgb(25 118 210 / 0.09);
+    --elsa-login-method-icon-color: #1769c4;
+    --elsa-login-method-shadow: 0 0.5rem 1.25rem rgb(91 68 45 / 0.1);
+    --elsa-control-surface: rgb(37 43 51 / 0.035);
+    --elsa-control-surface-hover: rgb(25 118 210 / 0.055);
+    --elsa-control-surface-disabled: rgb(37 43 51 / 0.055);
+    --elsa-control-border: rgb(102 112 133 / 0.32);
+    --elsa-control-border-hover: rgb(72 82 96 / 0.52);
+    background: #f6efe8;
+    color: #222a35;
+}
+
+.modern-login-theme[data-theme="human-automation"] .modern-login-theme__artwork::after {
+    background: linear-gradient(90deg, transparent 48%, rgb(255 252 249 / 0.06) 66%, rgb(255 252 249 / 0.3));
+}
+
+.modern-login-theme[data-theme="human-automation"] .modern-login-theme__surface {
+    backdrop-filter: blur(1.25rem);
+    background: rgb(255 255 255 / 0.92);
+    border-color: rgb(255 255 255 / 0.92);
+    box-shadow: 0 1.75rem 5rem rgb(91 68 45 / 0.18);
+}
+
+@media (max-width: 720px) {
+    .modern-login-theme {
+        min-block-size: 100svh;
+        padding: 1rem;
+    }
+
+    .modern-login-theme__artwork img {
+        object-position: 36% center;
+    }
+
+    .modern-login-theme__artwork::after {
+        background: rgb(2 8 23 / 0.5);
+    }
+
+    .modern-login-theme[data-theme="human-automation"] .modern-login-theme__artwork::after {
+        background: rgb(255 250 245 / 0.52);
+    }
+
+    .modern-login-theme__content {
+        justify-content: center;
+    }
+
+    .modern-login-theme__surface {
+        max-block-size: calc(100svh - 2rem);
+    }
+}

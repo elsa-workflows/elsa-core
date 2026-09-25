@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Adds diagnostics structured log dashboard widgets to Elsa Studio.</Description>
+        <PackageTags>elsa studio module diagnostics structured-logs dashboard</PackageTags>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Studio.Dashboard\Elsa.Studio.Dashboard.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Diagnostics.StructuredLogs\Elsa.Studio.Diagnostics.StructuredLogs.csproj" />
+    </ItemGroup>
+
+</Project>

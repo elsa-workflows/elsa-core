@@ -1,0 +1,65 @@
+version: 2
+
+registries:
+  elsa-feedz-preview:
+    type: nuget-feed
+    url: https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json
+    token: ${{secrets.FEEDZ_API_KEY}}
+
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/"
+    target-branch: "main"
+    registries:
+      - elsa-feedz-preview
+    schedule:
+      interval: "daily"
+      time: "06:00"
+      timezone: "Europe/Amsterdam"
+    allow:
+      - dependency-name: "Elsa"
+      - dependency-name: "Elsa.Alterations"
+      - dependency-name: "Elsa.Api.Common"
+      - dependency-name: "Elsa.Caching"
+      - dependency-name: "Elsa.Common"
+      - dependency-name: "Elsa.Expressions"
+      - dependency-name: "Elsa.Expressions.CSharp"
+      - dependency-name: "Elsa.Expressions.JavaScript"
+      - dependency-name: "Elsa.Expressions.JavaScript.Libraries"
+      - dependency-name: "Elsa.Expressions.Liquid"
+      - dependency-name: "Elsa.Expressions.Python"
+      - dependency-name: "Elsa.Features"
+      - dependency-name: "Elsa.Hosting.Management"
+      - dependency-name: "Elsa.Http"
+      - dependency-name: "Elsa.Identity"
+      - dependency-name: "Elsa.Labels"
+      - dependency-name: "Elsa.PackageManifest.Generator"
+      - dependency-name: "Elsa.Persistence.EFCore"
+      - dependency-name: "Elsa.Persistence.EFCore.Common"
+      - dependency-name: "Elsa.Persistence.EFCore.MySql"
+      - dependency-name: "Elsa.Persistence.EFCore.Oracle"
+      - dependency-name: "Elsa.Persistence.EFCore.PostgreSql"
+      - dependency-name: "Elsa.Persistence.EFCore.Sqlite"
+      - dependency-name: "Elsa.Persistence.EFCore.SqlServer"
+      - dependency-name: "Elsa.Resilience"
+      - dependency-name: "Elsa.Resilience.Core"
+      - dependency-name: "Elsa.Scheduling"
+      - dependency-name: "Elsa.Tenants"
+      - dependency-name: "Elsa.Tenants.AspNetCore"
+      - dependency-name: "Elsa.Testing.Shared"
+      - dependency-name: "Elsa.Testing.Shared.Component"
+      - dependency-name: "Elsa.Testing.Shared.Integration"
+      - dependency-name: "Elsa.WorkflowProviders.BlobStorage"
+      - dependency-name: "Elsa.Workflows.Api"
+      - dependency-name: "Elsa.Workflows.Core"
+      - dependency-name: "Elsa.Workflows.Management"
+      - dependency-name: "Elsa.Workflows.Runtime"
+      - dependency-name: "Elsa.Workflows.Runtime.Distributed"
+    open-pull-requests-limit: 1
+    groups:
+      elsa-core-preview:
+        patterns:
+          - "Elsa*"
+    commit-message:
+      prefix: "deps"
+      include: "scope"

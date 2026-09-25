@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Adds diagnostics structured log viewing to Elsa Studio.</Description>
+        <PackageTags>elsa studio module diagnostics structured-logs signalr observability operations</PackageTags>
+        <NoWarn>$(NoWarn);1591;CS8669</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+        <PackageReference Include="Microsoft.AspNetCore.WebUtilities" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\framework\Elsa.Studio.Shared\Elsa.Studio.Shared.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Authentication.Abstractions\Elsa.Studio.Authentication.Abstractions.csproj" />
+    </ItemGroup>
+
+</Project>

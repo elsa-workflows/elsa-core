@@ -1,0 +1,62 @@
+<style>
+    .hover-row:hover .icon-on-hover {
+        visibility: visible;
+    }
+
+    .icon-on-hover {
+        visibility: hidden;
+    }
+</style>
+
+<div>
+    <MudText Typo="Typo.overline" GutterBottom="true" Align="Align.Left">@Title</MudText>
+    @if (Data.Any())
+    {
+        <MudSimpleTable Outlined="true" Striped="false" Dense="true" Elevation="0" Bordered="false">
+            <tbody>
+                @{
+                    var data = HideEmptyValues
+                    ? Data.Where(x => !string.IsNullOrWhiteSpace(x.Text) || x.Value != null || x.LabelComponent != null || x.ValueComponentType != null || x.ValueTemplate != null).ToList()
+                    : Data;
+                }
+                @if (data.Any())
+                {
+                    @foreach (var item in data)
+                    {
+                        <tr Class="hover-row">
+                            <td style="width: 200px;" title="@item.LabelToolTip">
+                                @if (item.LabelComponent != null)
+                                {
+                                    @item.LabelComponent
+                                }
+                                else
+                                {
+                                    @(!string.IsNullOrWhiteSpace(item.Label) ? item.Label : "-")
+                                }
+                            </td>
+                            <td>
+                                @RenderValue(item)
+                            </td>
+                            <td style="width: 50px;">
+                                <MudTooltip Text="@Localizer["Copy"]" Delay="500">
+                                    <MudIconButton Icon="@Icons.Material.Outlined.ContentCopy" Size="Size.Small" OnClick="@(x => OnCopyClicked(item!))" Disabled="@(string.IsNullOrWhiteSpace(GetFormattedValue(item)))" />
+                                </MudTooltip>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    if (ShowNoDataAlert)
+                    {
+                        <MudAlert Severity="Severity.Normal" Dense="true" Variant="Variant.Text">@NoDataMessage</MudAlert>
+                    }
+                }
+            </tbody>
+        </MudSimpleTable>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Normal" Dense="true" Variant="Variant.Text">@(NoDataMessage)</MudAlert>
+    }
+</div>

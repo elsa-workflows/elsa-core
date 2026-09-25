@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides integration with the Quartz.NET library and provide am implementation of Elsa's IJobScheduler using Quartz.NET.
+        </Description>
+        <PackageTags>elsa extension module scheduling quartz</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="DistributedLock.Core"/>
+        <PackageReference Include="Quartz.Extensions.Hosting"/>
+    </ItemGroup>
+
+    <ItemGroup Label="CShells" Condition="'$(UseProjectReferences)' == 'true'">
+        <ProjectReference Include="..\..\..\..\..\cshells\src\CShells.Abstractions\CShells.Abstractions.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Label="CShells" Condition="'$(UseProjectReferences)' != 'true'">
+        <PackageReference Include="CShells.Abstractions" />
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+        <PackageReference Include="Elsa.Resilience" />
+        <PackageReference Include="Elsa.Scheduling"/>
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Resilience\Elsa.Resilience.csproj"/>
+        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj"/>
+    </ItemGroup>
+
+</Project>

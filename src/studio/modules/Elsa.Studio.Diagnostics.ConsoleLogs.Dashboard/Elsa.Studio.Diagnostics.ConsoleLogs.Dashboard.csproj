@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Adds diagnostics console log dashboard widgets to Elsa Studio.</Description>
+        <PackageTags>elsa studio module diagnostics console-logs dashboard</PackageTags>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Studio.Dashboard\Elsa.Studio.Dashboard.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Diagnostics.ConsoleLogs\Elsa.Studio.Diagnostics.ConsoleLogs.csproj" />
+    </ItemGroup>
+
+</Project>

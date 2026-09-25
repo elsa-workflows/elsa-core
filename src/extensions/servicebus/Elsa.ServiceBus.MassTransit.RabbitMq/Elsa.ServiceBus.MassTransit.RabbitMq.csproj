@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides integration of RabbitMQ with MassTransit's integration of Elsa.
+        </Description>
+        <PackageTags>elsa extension module service-bus masstransit rabbitmq</PackageTags>
+    </PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="MassTransit.RabbitMQ" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Elsa.ServiceBus.MassTransit\Elsa.ServiceBus.MassTransit.csproj" />
+	</ItemGroup>
+
+	<ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+		<PackageReference Include="CShells.Abstractions" />
+	</ItemGroup>
+
+	<ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+		<ProjectReference Include="..\..\..\..\..\cshells\src\CShells.Abstractions\CShells.Abstractions.csproj" />
+	</ItemGroup>
+
+</Project>

@@ -1,0 +1,1075 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" id="root">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="14 days" xml:space="preserve">
+    <value>14 gün</value>
+  </data>
+  <data name="180 days" xml:space="preserve">
+    <value>180 gün</value>
+  </data>
+  <data name="30 days" xml:space="preserve">
+    <value>30 gün</value>
+  </data>
+  <data name="7 days" xml:space="preserve">
+    <value>7 gün</value>
+  </data>
+  <data name="90 days" xml:space="preserve">
+    <value>90 gün</value>
+  </data>
+  <data name="A brief description of the agent." xml:space="preserve">
+    <value>Agentin qısa təsviri.</value>
+  </data>
+  <data name="A brief description of the secret." xml:space="preserve">
+    <value>Şifrənin qısa təsviri.</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>Əlavə et</value>
+  </data>
+  <data name="Add variable" xml:space="preserve">
+    <value>Dəyişən əlavə et</value>
+  </data>
+  <data name="Agent" xml:space="preserve">
+    <value>Agent</value>
+  </data>
+  <data name="Agents" xml:space="preserve">
+    <value>Agentlər</value>
+  </data>
+  <data name="Aggregation" xml:space="preserve">
+    <value>Aqreqasiya</value>
+  </data>
+  <data name="API Key" xml:space="preserve">
+    <value>API Açarı</value>
+  </data>
+  <data name="API Keys" xml:space="preserve">
+    <value>API Açarları</value>
+  </data>
+  <data name="Apply" xml:space="preserve">
+    <value>Tətbiq et</value>
+  </data>
+  <data name="Bulk actions" xml:space="preserve">
+    <value>Toplu əməliyyatlar</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>İmtina</value>
+  </data>
+  <data name="Category" xml:space="preserve">
+    <value>Kateqoriya</value>
+  </data>
+  <data name="Check this option if the variable holds an array of the selected type." xml:space="preserve">
+    <value>Əgər dəyişən seçilmiş tipli bir massiv saxlayırsa, bu tipi işarətləyin.</value>
+  </data>
+  <data name="Clear" xml:space="preserve">
+    <value>Təmizlə</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Bağla</value>
+  </data>
+  <data name="Common" xml:space="preserve">
+    <value>Ümumi</value>
+  </data>
+  <data name="Complete" xml:space="preserve">
+    <value>Tamamla</value>
+  </data>
+  <data name="Completed" xml:space="preserve">
+    <value>Tamamlanmış</value>
+  </data>
+  <data name="Composition" xml:space="preserve">
+    <value>Kompozisiya</value>
+  </data>
+  <data name="Connection Strings" xml:space="preserve">
+    <value>Bağlantı Sətirləri</value>
+  </data>
+  <data name="Console" xml:space="preserve">
+    <value>Konsol</value>
+  </data>
+  <data name="Container" xml:space="preserve">
+    <value>Konteyner</value>
+  </data>
+  <data name="Create Agent" xml:space="preserve">
+    <value>Yeni Aqent Yarat</value>
+  </data>
+  <data name="Create API Key" xml:space="preserve">
+    <value>Yeni API açarı əlavə et</value>
+  </data>
+  <data name="Create Secret" xml:space="preserve">
+    <value>Yeni Şifrə Yarat</value>
+  </data>
+  <data name="Created" xml:space="preserve">
+    <value>Yaradıldı</value>
+  </data>
+  <data name="Cron" xml:space="preserve">
+    <value>Cron</value>
+  </data>
+  <data name="Dashboard" xml:space="preserve">
+    <value>İdarəetmə paneli</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>Tarix</value>
+  </data>
+  <data name="Date Filters" xml:space="preserve">
+    <value>Tarix Filterləri</value>
+  </data>
+  <data name="Decision" xml:space="preserve">
+    <value>Qərar</value>
+  </data>
+  <data name="Delay" xml:space="preserve">
+    <value>Gecikmə</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Sil</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Açıqlama</value>
+  </data>
+  <data name="Details" xml:space="preserve">
+    <value>Detallar</value>
+  </data>
+  <data name="Display name" xml:space="preserve">
+    <value>Göstərilən ad</value>
+  </data>
+  <data name="Display text" xml:space="preserve">
+    <value>Göstərilən mətn</value>
+  </data>
+  <data name="Download File" xml:space="preserve">
+    <value>Faylı Yüklə</value>
+  </data>
+  <data name="Duration" xml:space="preserve">
+    <value>Müddət</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>Redaktə et</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="End" xml:space="preserve">
+    <value>Son</value>
+  </data>
+  <data name="Event" xml:space="preserve">
+    <value>Hadisə</value>
+  </data>
+  <data name="Events" xml:space="preserve">
+    <value>Hadisələr</value>
+  </data>
+  <data name="Excel Parser" xml:space="preserve">
+    <value>Excel Parseri</value>
+  </data>
+  <data name="Execution Settings" xml:space="preserve">
+    <value>İcra Parametrləri</value>
+  </data>
+  <data name="Expires" xml:space="preserve">
+    <value>Bitəcək</value>
+  </data>
+  <data name="Expires In" xml:space="preserve">
+    <value>Bitəcək</value>
+  </data>
+  <data name="Export" xml:space="preserve">
+    <value>Eksport</value>
+  </data>
+  <data name="Fault" xml:space="preserve">
+    <value>Xəta</value>
+  </data>
+  <data name="Finish" xml:space="preserve">
+    <value>Bitir</value>
+  </data>
+  <data name="Finished" xml:space="preserve">
+    <value>Bitdi</value>
+  </data>
+  <data name="FinishedAt" xml:space="preserve">
+    <value>Bitmə Tarixi</value>
+  </data>
+  <data name="Function" xml:space="preserve">
+    <value>Funskiya</value>
+  </data>
+  <data name="Function Name" xml:space="preserve">
+    <value>Funksiya adı</value>
+  </data>
+  <data name="General" xml:space="preserve">
+    <value>Ümumi</value>
+  </data>
+  <data name="Has Incidents" xml:space="preserve">
+    <value>İnsident mövcuddur</value>
+  </data>
+  <data name="HTTP" xml:space="preserve">
+    <value>HTTP</value>
+  </data>
+  <data name="ID" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="The ID of the activity." xml:space="preserve">
+    <value>Fəaliyyətin ID-si.</value>
+  </data>
+  <data name="Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Incident Strategy" xml:space="preserve">
+    <value>İnsident Strategiyasl</value>
+  </data>
+  <data name="IncidentCount" xml:space="preserve">
+    <value>İnsident Sayı</value>
+  </data>
+  <data name="Incidents" xml:space="preserve">
+    <value>İnsidentlər</value>
+  </data>
+  <data name="Info" xml:space="preserve">
+    <value>İnformasiya</value>
+  </data>
+  <data name="Information" xml:space="preserve">
+    <value>İnformasiya</value>
+  </data>
+  <data name="Instances" xml:space="preserve">
+    <value>Nüsxələr</value>
+  </data>
+  <data name="Latest version" xml:space="preserve">
+    <value>Sonuncu versiya</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>Yüklənir</value>
+  </data>
+  <data name="Looping" xml:space="preserve">
+    <value>Dövr</value>
+  </data>
+  <data name="Manage all the things" xml:space="preserve">
+    <value>Bütün işləri idarə edin</value>
+  </data>
+  <data name="Max Tokens" xml:space="preserve">
+    <value>Tokenlərin maksimal sayı</value>
+  </data>
+  <data name="Metadata" xml:space="preserve">
+    <value>Metadata</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Ad</value>
+  </data>
+  <data name="Never" xml:space="preserve">
+    <value>Heç vaxt</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>Yox</value>
+  </data>
+  <data name="No agents found" xml:space="preserve">
+    <value>Agentlər tapılmadı</value>
+  </data>
+  <data name="No API keys found" xml:space="preserve">
+    <value>API açarları tapılmadı</value>
+  </data>
+  <data name="No secrets found" xml:space="preserve">
+    <value>Şifrələr tapılmadı</value>
+  </data>
+  <data name="No services found" xml:space="preserve">
+    <value>Servislər tapılmadı</value>
+  </data>
+  <data name="No variables" xml:space="preserve">
+    <value>Dəyişənlər tapılmadı</value>
+  </data>
+  <data name="Ok" xml:space="preserve">
+    <value>Tamam</value>
+  </data>
+  <data name="Open File" xml:space="preserve">
+    <value>Faylı Aç</value>
+  </data>
+  <data name="Outcomes" xml:space="preserve">
+    <value>Nəticələr</value>
+  </data>
+  <data name="Prompt Template" xml:space="preserve">
+    <value>Prompt Şablonu</value>
+  </data>
+  <data name="Properties" xml:space="preserve">
+    <value>Xüsusiyyətlər</value>
+  </data>
+  <data name="Publish" xml:space="preserve">
+    <value>Dərc Et</value>
+  </data>
+  <data name="Published" xml:space="preserve">
+    <value>Dərc Olundu</value>
+  </data>
+  <data name="Published version" xml:space="preserve">
+    <value>Dərc olunmuş versiya</value>
+  </data>
+  <data name="Read Data from Configuration / Runtime" xml:space="preserve">
+    <value>Konfiqurasiya / İcra Mühitindən Məlumatları Oxuyun</value>
+  </data>
+  <data name="Read Data from Database" xml:space="preserve">
+    <value>Verilənlər Bazasından Məlumatları Oxu</value>
+  </data>
+  <data name="Rollback to this version" xml:space="preserve">
+    <value>Bu versiyaya geri qaytar</value>
+  </data>
+  <data name="Rows Per Page" xml:space="preserve">
+    <value>Səhifə üzrə sətir sayı</value>
+  </data>
+  <data name="Run" xml:space="preserve">
+    <value>İşə sal</value>
+  </data>
+  <data name="Run Asynchronously" xml:space="preserve">
+    <value>Asinxron işə sal</value>
+  </data>
+  <data name="Run JavaScript" xml:space="preserve">
+    <value>JavaScript İşə sal</value>
+  </data>
+  <data name="Run Python" xml:space="preserve">
+    <value>Python İşə Sal</value>
+  </data>
+  <data name="Run Task" xml:space="preserve">
+    <value>Tapşırığı işə sal</value>
+  </data>
+  <data name="Run workflow" xml:space="preserve">
+    <value>Proses Zəncirini Başlat</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Yadda saxla</value>
+  </data>
+  <data name="Save File" xml:space="preserve">
+    <value>Faylı Yadda saxla</value>
+  </data>
+  <data name="Scheduling" xml:space="preserve">
+    <value>Planlaşdırma</value>
+  </data>
+  <data name="Scope" xml:space="preserve">
+    <value>Əhatə dairəsi</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>Axtar...</value>
+  </data>
+  <data name="Search on name, id, definition id, definition version id, correlation id" xml:space="preserve">
+    <value>Parametrlər üzrə axtarış (name, ID, correlation ID, definition id, definition version id)</value>
+  </data>
+  <data name="Secret" xml:space="preserve">
+    <value>Şifrə</value>
+  </data>
+  <data name="Secrets" xml:space="preserve">
+    <value>Şifrələr</value>
+  </data>
+  <data name="Send Email" xml:space="preserve">
+    <value>Email göndər</value>
+  </data>
+  <data name="Set Name" xml:space="preserve">
+    <value>Ad Təyin et</value>
+  </data>
+  <data name="Set Variable" xml:space="preserve">
+    <value>Dəyişkəni mənimsət</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Sazlamalar</value>
+  </data>
+  <data name="Show accumulated time" xml:space="preserve">
+    <value>Ümumi icra vaxtını göstər</value>
+  </data>
+  <data name="Show events scoped to current container" xml:space="preserve">
+    <value>Cari konteynerə aid hadisələri göstər</value>
+  </data>
+  <data name="Show incidents" xml:space="preserve">
+    <value>İnsidentləri göstər</value>
+  </data>
+  <data name="Showing incidents" xml:space="preserve">
+    <value>İnsidentləri göstərmək</value>
+  </data>
+  <data name="Start" xml:space="preserve">
+    <value>Başla</value>
+  </data>
+  <data name="Start at" xml:space="preserve">
+    <value>Başlama Vaxtı</value>
+  </data>
+  <data name="Started" xml:space="preserve">
+    <value>Başladı</value>
+  </data>
+  <data name="State" xml:space="preserve">
+    <value>Vəziyyət</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Storage" xml:space="preserve">
+    <value>Anbar</value>
+  </data>
+  <data name="Sub status" xml:space="preserve">
+    <value>Alt status</value>
+  </data>
+  <data name="SubStatus" xml:space="preserve">
+    <value>Alt status</value>
+  </data>
+  <data name="Task" xml:space="preserve">
+    <value>Tapşırıq</value>
+  </data>
+  <data name="Temperature" xml:space="preserve">
+    <value>Tempratura</value>
+  </data>
+  <data name="The .NET type of the input variable." xml:space="preserve">
+    <value>Giriş dəyişəninin .NET tipi</value>
+  </data>
+  <data name="The .NET type of the output variable." xml:space="preserve">
+    <value>Çıxış dəyişəninin .NET tipi.</value>
+  </data>
+  <data name="The description of the output variable." xml:space="preserve">
+    <value>Çıxış dəyişəninin təsviri.</value>
+  </data>
+  <data name="The lifetime of this secret" xml:space="preserve">
+    <value>Şifrənin ömrü</value>
+  </data>
+  <data name="The name of the agent." xml:space="preserve">
+    <value>Agentin adı.</value>
+  </data>
+  <data name="The name of the function that the agent will execute." xml:space="preserve">
+    <value>Agentin icra edəcəyi funksiyanın adı.</value>
+  </data>
+  <data name="The name of the new agent." xml:space="preserve">
+    <value>Yeni agentin adı.</value>
+  </data>
+  <data name="The name of the new secret." xml:space="preserve">
+    <value>Yeni şifrənin adı.</value>
+  </data>
+  <data name="The name of the new workflow." xml:space="preserve">
+    <value>Yeni proses zəncirinin adı.</value>
+  </data>
+  <data name="The name of the variable." xml:space="preserve">
+    <value>Dəyişənin adı.</value>
+  </data>
+  <data name="The penalty for repeating" xml:space="preserve">
+    <value>Eyni tokenin təkrarlanmasına tətbiq edilən cəza. Yüksək cəza dərəcəsi təkrarçılığın qarşısını alır və daha zəngin mətn yaradılmasına şərait yaradır.</value>
+  </data>
+  <data name="The secret value." xml:space="preserve">
+    <value>Gizli dəyər.</value>
+  </data>
+  <data name="A brief description of this input." xml:space="preserve">
+    <value>Giriş parametrinin qısa izahı.</value>
+  </data>
+  <data name="A brief description of this output." xml:space="preserve">
+    <value>Çıxış parametrinin qısa izahı.</value>
+  </data>
+  <data name="A default value." xml:space="preserve">
+    <value>İlkin təyin edilmiş dəyər.</value>
+  </data>
+  <data name="A description about the role and purpose of this agent." xml:space="preserve">
+    <value>Bu agentin rolu və məqsədi haqqında təsvir.</value>
+  </data>
+  <data name="A description about the role and purpose of this input variable." xml:space="preserve">
+    <value>Bu giriş dəyişəninin rolu və məqsədi haqqında təsvir.</value>
+  </data>
+  <data name="A description about the secret." xml:space="preserve">
+    <value>Şifrə haqqında təsvir.</value>
+  </data>
+  <data name="A description of this activity to be displayed in the designer." xml:space="preserve">
+    <value>Bu fəaliyyətin dizayn interfeysində əks olunacaq təsviri.</value>
+  </data>
+  <data name="A technical name for the function" xml:space="preserve">
+    <value>Agentin yerinə yetirdiyi funksiyanın texniki adı. Məsələn: WriteCode</value>
+  </data>
+  <data name="Activation strategy" xml:space="preserve">
+    <value>Aktivasiya strateqiyası</value>
+  </data>
+  <data name="Activities" xml:space="preserve">
+    <value>Fəaliyyətlər</value>
+  </data>
+  <data name="Activity" xml:space="preserve">
+    <value>Fəaliyyət</value>
+  </data>
+  <data name="Add input" xml:space="preserve">
+    <value>Giriş parametrini əlavə et</value>
+  </data>
+  <data name="Add output" xml:space="preserve">
+    <value>Çıxış parametrini əlavə et</value>
+  </data>
+  <data name="Allow this workflow to be used as an activity." xml:space="preserve">
+    <value>Bu iş axınının bir fəaliyyət kimi istifadəsinə icazə ver.</value>
+  </data>
+  <data name="Auto-update consuming workflows" xml:space="preserve">
+    <value>Asılı olan iş axınlarını avtomatik yenilə</value>
+  </data>
+  <data name="Auto-save" xml:space="preserve">
+    <value>Avtomatik yadda xala</value>
+  </data>
+  <data name="Click to open a new workflow tab" xml:space="preserve">
+    <value>Yeni iş axını tabını açmaq üçün klikləyin</value>
+  </data>
+  <data name="Close workflow" xml:space="preserve">
+    <value>İş axını bağla</value>
+  </data>
+  <data name="CreatedAt" xml:space="preserve">
+    <value>Yaranma Tarixi</value>
+  </data>
+  <data name="Create workflow" xml:space="preserve">
+    <value>Yeni iş axını yarat</value>
+  </data>
+  <data name="Default configuration" xml:space="preserve">
+    <value>Susmaya görə konfiqurasiya</value>
+  </data>
+  <data name="Default value" xml:space="preserve">
+    <value>Susmaya görə dəyər</value>
+  </data>
+  <data name="Pending" xml:space="preserve">
+    <value>Gözləmədə</value>
+  </data>
+  <data name="A brief description of the workflow." xml:space="preserve">
+    <value>İş axınının qısa təsviri.</value>
+  </data>
+  <data name="A custom category by which to group this input." xml:space="preserve">
+    <value>Bu giriş dəyişənini qruplaşdıran kastom kateqoriya.</value>
+  </data>
+  <data name="A custom category by which to group this output." xml:space="preserve">
+    <value>Bu çıxış dəyişənini qruplaşdıran kastom kateqoriya.</value>
+  </data>
+  <data name="Bulk Dispatch Workflows" xml:space="preserve">
+    <value>İş axınlarını kütləvi çağırılması</value>
+  </data>
+  <data name="Correlate" xml:space="preserve">
+    <value>Əlaqələndir</value>
+  </data>
+  <data name="Acknowledge Datasource Event" xml:space="preserve">
+    <value>Məlumat mənbəyinin hadisələrini təsdiq et</value>
+  </data>
+  <data name="Branching" xml:space="preserve">
+    <value>Budaqlanma</value>
+  </data>
+  <data name="Break" xml:space="preserve">
+    <value>Siklı sonlandır</value>
+  </data>
+  <data name="Correlation ID" xml:space="preserve">
+    <value>Korrelyasiya ID-si</value>
+  </data>
+  <data name="Create Service" xml:space="preserve">
+    <value>Yeni Servis Yarat</value>
+  </data>
+  <data name="Definition ID" xml:space="preserve">
+    <value>Tərif identifikatoru</value>
+  </data>
+  <data name="Definition version" xml:space="preserve">
+    <value>Tərif versiyası</value>
+  </data>
+  <data name="Definition version ID" xml:space="preserve">
+    <value>Tərifin versiya identifikatoru</value>
+  </data>
+  <data name="Definitions" xml:space="preserve">
+    <value>Təriflər</value>
+  </data>
+  <data name="Dispatch Workflow" xml:space="preserve">
+    <value>İş axınını işə sal</value>
+  </data>
+  <data name="Enter a list of possible outcomes for this workflow." xml:space="preserve">
+    <value>Bu iş axını üçün mümkün nəticələrin siyahısını daxil edin.</value>
+  </data>
+  <data name="Executions" xml:space="preserve">
+    <value>İcralar</value>
+  </data>
+  <data name="Export the current workflow as a JSON file" xml:space="preserve">
+    <value>Cari iş axınını JSON faylı kimi ixrac et.</value>
+  </data>
+  <data name="Export this version as a JSON file." xml:space="preserve">
+    <value>Cari versiyanı JSON faylı kimi ixrac et.</value>
+  </data>
+  <data name="Flow" xml:space="preserve">
+    <value>Axın</value>
+  </data>
+  <data name="For" xml:space="preserve">
+    <value>"For" siklı</value>
+  </data>
+  <data name="Frequency Penalty" xml:space="preserve">
+    <value>Təkrarların məhdudlaşdırılması</value>
+  </data>
+  <data name="HTTP Endpoint" xml:space="preserve">
+    <value>HTTP giriş nöqtəsi</value>
+  </data>
+  <data name="HTTP File Response" xml:space="preserve">
+    <value>HTTP fayl cavabı</value>
+  </data>
+  <data name="HTTP Request" xml:space="preserve">
+    <value>HTTP sorğusu</value>
+  </data>
+  <data name="HTTP Request (flow)" xml:space="preserve">
+    <value>HTTP sorğusu (axın)</value>
+  </data>
+  <data name="HTTP Response" xml:space="preserve">
+    <value>HTTP cavabı</value>
+  </data>
+  <data name="If" xml:space="preserve">
+    <value>"If" şərti</value>
+  </data>
+  <data name="Import a JSON file containing workflow data to override the current workflow's contents." xml:space="preserve">
+    <value>Mövcud iş axınının üzərinə yazmaq üçün iş axını datasını saxlayan JSON faylını import et.</value>
+  </data>
+  <data name="Input" xml:space="preserve">
+    <value>Giriş parametri</value>
+  </data>
+  <data name="Input Properties" xml:space="preserve">
+    <value>Giriş parametrləri</value>
+  </data>
+  <data name="Input/output" xml:space="preserve">
+    <value>Giriş/çıxış</value>
+  </data>
+  <data name="Inputs" xml:space="preserve">
+    <value>Giriş parametrləri</value>
+  </data>
+  <data name="int" xml:space="preserve">
+    <value>int</value>
+  </data>
+  <data name="Join" xml:space="preserve">
+    <value>Birləşdir</value>
+  </data>
+  <data name="Journal" xml:space="preserve">
+    <value>Jurnal</value>
+  </data>
+  <data name="Log Persistence Strategy" xml:space="preserve">
+    <value>Jurnal saxlanılması strategiyası</value>
+  </data>
+  <data name="The name of the activity. Named activities can be referenced by other activities." xml:space="preserve">
+    <value>Fəaliyyətin adı. Adlandırılmış fəaliyyətlərə digər fəaliyyətlər tərəfindən istinad edilə bilər.</value>
+  </data>
+  <data name="No inputs" xml:space="preserve">
+    <value>Giriş parametrləri yoxdur</value>
+  </data>
+  <data name="No outcomes associated with this execution." xml:space="preserve">
+    <value>Bu icra ilə bağlı heç bir nəticə yoxdur.</value>
+  </data>
+  <data name="No output associated with this execution." xml:space="preserve">
+    <value>Bu icra ilə bağlı heç bir çıxış parametri yoxdur.</value>
+  </data>
+  <data name="No outputs" xml:space="preserve">
+    <value>Çıxış parametrləri yoxdur</value>
+  </data>
+  <data name="No state associated with this execution." xml:space="preserve">
+    <value>Bu icra ilə bağlı heç bir vəziyyət məlumatı yoxdur.</value>
+  </data>
+  <data name="No workflow definitions found" xml:space="preserve">
+    <value>Heç bir iş axını tərifi tapılmadı</value>
+  </data>
+  <data name="No workflow instances found" xml:space="preserve">
+    <value>Heç bir iş axını nümunəsi tapılmadı</value>
+  </data>
+  <data name="object" xml:space="preserve">
+    <value>obyekt</value>
+  </data>
+  <data name="Output" xml:space="preserve">
+    <value>Çıxış parametri</value>
+  </data>
+  <data name="Output Properties" xml:space="preserve">
+    <value>Çıxış parametrləri</value>
+  </data>
+  <data name="Outputs" xml:space="preserve">
+    <value>Çıxış parametrləri</value>
+  </data>
+  <data name="Parser" xml:space="preserve">
+    <value>Parser</value>
+  </data>
+  <data name="Log Persistence" xml:space="preserve">
+    <value>Jurnal qeydlərinin qalıcılığı</value>
+  </data>
+  <data name="Plugins" xml:space="preserve">
+    <value>Modullar</value>
+  </data>
+  <data name="Presence Penalty" xml:space="preserve">
+    <value>Mövcudluq cəriməsi</value>
+  </data>
+  <data name="Primitives" xml:space="preserve">
+    <value>Primitivlər</value>
+  </data>
+  <data name="Publish Event" xml:space="preserve">
+    <value>Hadisəni yayımla</value>
+  </data>
+  <data name="Publish the current workflow" xml:space="preserve">
+    <value>Cari iş axınını yayımla</value>
+  </data>
+  <data name="Scripting" xml:space="preserve">
+    <value>Skriptləşdirmə</value>
+  </data>
+  <data name="Search on name, description, id, definition id" xml:space="preserve">
+    <value>Ad, təsvir, ID və tərif ID-si üzrə axtarış</value>
+  </data>
+  <data name="Services" xml:space="preserve">
+    <value>Xidmətlər</value>
+  </data>
+  <data name="Set Output" xml:space="preserve">
+    <value>Çıxış dəyərini təyin et</value>
+  </data>
+  <data name="Set Workflow Context Parameter" xml:space="preserve">
+    <value>İş axını kontekst parametrini təyin et</value>
+  </data>
+  <data name="Show relative time" xml:space="preserve">
+    <value>Nisbi vaxtı göstər</value>
+  </data>
+  <data name="Showing all events" xml:space="preserve">
+    <value>Bütün hadisələri göstər</value>
+  </data>
+  <data name="Start of workflow" xml:space="preserve">
+    <value>İş axınının başlanğıcı</value>
+  </data>
+  <data name="string" xml:space="preserve">
+    <value>string</value>
+  </data>
+  <data name="Sub-Workflow" xml:space="preserve">
+    <value>Alt iş axını</value>
+  </data>
+  <data name="Sub-Workflow Inputs" xml:space="preserve">
+    <value>Alt prosesin giriş parametrləri</value>
+  </data>
+  <data name="Sub-Workflow Outputs" xml:space="preserve">
+    <value>Alt prosesin çıxış parametrləri</value>
+  </data>
+  <data name="The maximum number" xml:space="preserve">
+    <value>Generasiya ediləcək maksimum token sayı. Maksimum üçün boş buraxın.</value>
+  </data>
+  <data name="The penalty for repeating any one token" xml:space="preserve">
+    <value>Eyni tokenin təkrar istifadəsi üçün limit. Yüksək cərimə təkrarı azaldır, mətni daha müxtəlif edir.</value>
+  </data>
+  <data name="The plugins that the agent can use." xml:space="preserve">
+    <value>Agentin istifadə edə biləcəyi modullar.</value>
+  </data>
+  <data name="The scope of the secret helps the UI to filter available options from dropdown lists." xml:space="preserve">
+    <value>Məxfi məlumatın əhatə dairəsi istifadəçi interfeysindəki aşağı açılan siyahılarda mövcud seçimlərin filtrlənməsinə kömək edir.</value>
+  </data>
+  <data name="The services that the agent requires." xml:space="preserve">
+    <value>Agentin ehtiyac duyduğu xidmətlər.</value>
+  </data>
+  <data name="The settings of the service in JSON format." xml:space="preserve">
+    <value>JSON formatında olan servis tənzimləmələri.</value>
+  </data>
+  <data name="The system prompt template that the agent will use." xml:space="preserve">
+    <value>Agentin istifadə edə biləcəyi sistem sorğusu şablonu.</value>
+  </data>
+  <data name="The technical name of the API key." xml:space="preserve">
+    <value>API açarının texniki adı.</value>
+  </data>
+  <data name="The technical name of the input variable" xml:space="preserve">
+    <value>Giriş dəyişəninin texniki adı. Sorğu şablonunda bu dəyişənə müraciət edərkən həmin addan istifadə edin.</value>
+  </data>
+  <data name="The technical name of the input." xml:space="preserve">
+    <value>Giriş parametrinin texniki adı.</value>
+  </data>
+  <data name="The technical name of the service." xml:space="preserve">
+    <value>Xidmətin texniki adı.</value>
+  </data>
+  <data name="The temperature of the model" xml:space="preserve">
+    <value>Modelin temperaturu. Yüksək dəyərlər modelin daha çox "risk" alması deməkdir. Təlim datasına çox yaxın nəticələr üçün 0.1, daha yaradıcı məzmun üçün isə 0.9 istifadə edin.</value>
+  </data>
+  <data name="The type of the service." xml:space="preserve">
+    <value>Xidmətin tipi.</value>
+  </data>
+  <data name="The user-friendly name of this input." xml:space="preserve">
+    <value>Giriş parametrinin istifadəçi dostu adı.</value>
+  </data>
+  <data name="The user-friendly name of this output." xml:space="preserve">
+    <value>Çıxış parametrinin istifadəçi dostu adı.</value>
+  </data>
+  <data name="The value of the API key." xml:space="preserve">
+    <value>API açarının dəyəri.</value>
+  </data>
+  <data name="There are currently no inputs defined." xml:space="preserve">
+    <value>Hal-hazırda təyin edilmiş giriş parametrləri yoxdur.</value>
+  </data>
+  <data name="There are currently no outputs defined." xml:space="preserve">
+    <value>Hal-hazırda təyin edilmiş çıxış parametrləri yoxdur.</value>
+  </data>
+  <data name="There are currently no variables defined." xml:space="preserve">
+    <value>Hal-hazırda təyin edilmiş dəyişənlər yoxdur.</value>
+  </data>
+  <data name="This activity does not have any common properties." xml:space="preserve">
+    <value>Bu fəaliyyət üçün ümumi parametrlər yoxdur.</value>
+  </data>
+  <data name="This activity does not have any input properties." xml:space="preserve">
+    <value>Bu fəaliyyətin heç bir giriş parametrləri yoxdur.</value>
+  </data>
+  <data name="This activity does not have any output properties." xml:space="preserve">
+    <value>Bu fəaliyyətin heç bir çıxış parametrləri yoxdur.</value>
+  </data>
+  <data name="This input is an array" xml:space="preserve">
+    <value>Bu giriş bir massivdir</value>
+  </data>
+  <data name="This output is an array" xml:space="preserve">
+    <value>Bu çıxış bir massivdir</value>
+  </data>
+  <data name="This variable is an array" xml:space="preserve">
+    <value>Bu dəyişən bir massivdir</value>
+  </data>
+  <data name="Time" xml:space="preserve">
+    <value>Saat</value>
+  </data>
+  <data name="Timer" xml:space="preserve">
+    <value>Taymer</value>
+  </data>
+  <data name="Top Probability determines" xml:space="preserve">
+    <value>Top Probability (Top-P) mətn hasilatı zamanı token seçimi üçün kumulyativ ehtimal həddini müəyyən edir. Aşağı dəyərlər müxtəlifliyin azalmasına, modelin yalnız ən yüksək ehtimallı tokenləri seçməsinə səbəb olur. Yüksək dəyərlər isə modelə daha geniş diapazonda tokenləri nəzərə almağa imkan verərək daha müxtəlif nəticələr yaradır.</value>
+  </data>
+  <data name="TopP" xml:space="preserve">
+    <value>Top-P</value>
+  </data>
+  <data name="Trigger workflow" xml:space="preserve">
+    <value>İş axınını tətiklə</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>Tip</value>
+  </data>
+  <data name="UI Hint" xml:space="preserve">
+    <value>İnterfeys ipucu</value>
+  </data>
+  <data name="Unable to make changes as the workflow or application is currently in read-only mode" xml:space="preserve">
+    <value>İş axını və ya tətbiq hazırda "yalnız oxuma" (read-only) rejimində olduğu üçün dəyişiklik etmək mümkün deyil.</value>
+  </data>
+  <data name="Unpublish" xml:space="preserve">
+    <value>Yayımı ləğv et</value>
+  </data>
+  <data name="Unpublish the current workflow" xml:space="preserve">
+    <value>Hazırkı iş axınını yayımdan qaldır.</value>
+  </data>
+  <data name="Updated" xml:space="preserve">
+    <value>Yeniləndi</value>
+  </data>
+  <data name="UpdatedAt" xml:space="preserve">
+    <value>Yenilənmə tarixi</value>
+  </data>
+  <data name="Usable as activity" xml:space="preserve">
+    <value>Fəaliyyət kimi istifadə edilə bilər</value>
+  </data>
+  <data name="Use JSON Response" xml:space="preserve">
+    <value>Nəticəni JSON formatında qaytar</value>
+  </data>
+  <data name="Use this version" xml:space="preserve">
+    <value>Bu versiyanı istifadə et</value>
+  </data>
+  <data name="Used" xml:space="preserve">
+    <value>İstifadə edildi</value>
+  </data>
+  <data name="Used to define the initial instructions" xml:space="preserve">
+    <value>Agentin ilkin təlimatlarını və ya kontekstini müəyyən etmək üçün istifadə olunur. Bu şablon agentin davranışını istiqamətləndirir və ona yerinə yetirməli olduğu tapşırıqları və ya rolu anlamağa kömək edir.</value>
+  </data>
+  <data name="Value" xml:space="preserve">
+    <value>Dəyər</value>
+  </data>
+  <data name="Variables" xml:space="preserve">
+    <value>Dəyişənlər</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>Versiya</value>
+  </data>
+  <data name="Version history" xml:space="preserve">
+    <value>Versiya tarixcəsi</value>
+  </data>
+  <data name="View" xml:space="preserve">
+    <value>Göstər</value>
+  </data>
+  <data name="Webhooks" xml:space="preserve">
+    <value>Veb-huklar</value>
+  </data>
+  <data name="When checked, the workflow will be executed asynchronously." xml:space="preserve">
+    <value>İşarələndiyi halda, iş axını asinxron qaydada icra olunacaq.</value>
+  </data>
+  <data name="When you publish" xml:space="preserve">
+    <value>Yeni versiyanı dərc etdiyiniz zaman, bu iş axınından istifadə edən bütün digər proseslər avtomatik olaraq yeni versiyaya yönləndiriləcək.</value>
+  </data>
+  <data name="Whether to show the description in the designer." xml:space="preserve">
+    <value>Təsvirin dizaynerdə göstərilib-göstərilməməsi.</value>
+  </data>
+  <data name="Workflow Context" xml:space="preserve">
+    <value>Prosesin konteksti</value>
+  </data>
+  <data name="Workflow Context Settings" xml:space="preserve">
+    <value>Prosesin kontekst tənzimləmələri</value>
+  </data>
+  <data name="Workflow Contexts" xml:space="preserve">
+    <value>Proses kontekstləri</value>
+  </data>
+  <data name="Workflow definitions Editor" xml:space="preserve">
+    <value>Proses tərifləri redaktoru</value>
+  </data>
+  <data name="Workflow instances" xml:space="preserve">
+    <value>Proses nüsxələri</value>
+  </data>
+  <data name="The name of the workflow." xml:space="preserve">
+    <value>Prosesin adı.</value>
+  </data>
+  <data name="Workflows" xml:space="preserve">
+    <value>Proseslər</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>Bəli</value>
+  </data>
+  <data name="You are running in read-only mode. Workflow operations are disabled" xml:space="preserve">
+    <value>Sistem yalnız oxuma (read-only) rejimində işləyir. Proses əməliyyatları deaktiv edilib</value>
+  </data>
+  <data name="You can find documentation and examples here" xml:space="preserve">
+    <value>Sənədləri və nümunələri buradan tapa bilərsiniz</value>
+  </data>
+  <data name="Incident handling strategy" xml:space="preserve">
+    <value>İnsidentlərin emalı strategiyası</value>
+  </data>
+  <data name="A checkbox" xml:space="preserve">
+    <value>Seçim qutusu</value>
+  </data>
+  <data name="A code editor" xml:space="preserve">
+    <value>Kod editoru</value>
+  </data>
+  <data name="A dropdown list" xml:space="preserve">
+    <value>Seçim siyahısı</value>
+  </data>
+  <data name="A JSON editor" xml:space="preserve">
+    <value>JSON editoru</value>
+  </data>
+  <data name="A list of checkboxes" xml:space="preserve">
+    <value>Seçim qutuları siyahısı</value>
+  </data>
+  <data name="A list of radio buttons" xml:space="preserve">
+    <value>Radio düymələr siyahısı</value>
+  </data>
+  <data name="A single line of text input" xml:space="preserve">
+    <value>Təksətirli mətn daxiletmə sahəsi</value>
+  </data>
+  <data name="A variable picker" xml:space="preserve">
+    <value>Dəyişən seçicisi</value>
+  </data>
+  <data name="A variable with this name already exists in the current scope." xml:space="preserve">
+    <value>Bu adda dəyişən cari əhatə dairəsində artıq mövcuddur.</value>
+  </data>
+  <data name="A workflow definition picker" xml:space="preserve">
+    <value>Proses tərifləri seçicisi</value>
+  </data>
+  <data name="A workflow output definition picker" xml:space="preserve">
+    <value>Proses çıxış tərifləri seçicisi</value>
+  </data>
+  <data name="A workflow with this name already exists." xml:space="preserve">
+    <value>Bu adda bir proses artıq mövcuddur.</value>
+  </data>
+  <data name="An input with this name already exists." xml:space="preserve">
+    <value>Bu adda giriş parametri artıq mövcuddur.</value>
+  </data>
+  <data name="An outcome picker" xml:space="preserve">
+    <value>Nəticə seçicisi</value>
+  </data>
+  <data name="Are you sure you want to cancel all running workflow instances of this workflow definition?" xml:space="preserve">
+    <value>Bu proses tərifi üzrə işləyən bütün instansiyaların dayandırılmasını təsdiqləyirsinizmi?</value>
+  </data>
+  <data name="Are you sure you want to cancel the selected workflow instances?" xml:space="preserve">
+    <value>Seçilmiş proses instansiyalarını ləğv etmək istədiyinizə əminsiniz?</value>
+  </data>
+  <data name="Are you sure you want to cancel this workflow instance?" xml:space="preserve">
+    <value>Bu proses instansiyasını dayandırmağı təsdiqləyirsinizmi?</value>
+  </data>
+  <data name="Are you sure you want to delete the selected input?" xml:space="preserve">
+    <value>Seçilmiş giriş parametrini silmək istədiyinizə əminsiniz?</value>
+  </data>
+  <data name="Are you sure you want to delete the selected output?" xml:space="preserve">
+    <value>Seçilmiş çıxış parametrini silmək istədiyinizə əminsiniz?</value>
+  </data>
+  <data name="Are you sure you want to delete the selected variable?" xml:space="preserve">
+    <value>Seçilmiş parametri silmək istədiyinizə əminsiniz?</value>
+  </data>
+  <data name="Are you sure you want to delete the selected versions?" xml:space="preserve">
+    <value>Seçilmiş versiyaları silmək istədiyinizə əminsiniz?</value>
+  </data>
+  <data name="Are you sure you want to delete the selected workflow instances?" xml:space="preserve">
+    <value>Seçilmiş proses nüsxələrini silinməsini təsdiqləyirsinizmi?</value>
+  </data>
+  <data name="Are you sure you want to delete the selected workflows?" xml:space="preserve">
+    <value>Seçilmiş prosesləri silmək istədiyinizə əminsiniz?</value>
+  </data>
+  <data name="Are you sure you want to delete this version?" xml:space="preserve">
+    <value>Bu versiyanı silmək istədiyinizə əminsiniz?</value>
+  </data>
+  <data name="Are you sure you want to delete this workflow instance?" xml:space="preserve">
+    <value>Bu proses nüsxəsini silmək istədiyinizə əminsiniz?</value>
+  </data>
+  <data name="Are you sure you want to delete this workflow?" xml:space="preserve">
+    <value>Bu prosesi silmək istədiyinizə əminsiniz?</value>
+  </data>
+  <data name="Are you sure you want to publish the selected workflows?" xml:space="preserve">
+    <value>Seçilmiş prosesləri yayımlamaq istədiyinizə əminsiniz?</value>
+  </data>
+  <data name="Are you sure you want to unpublish the selected workflows?" xml:space="preserve">
+    <value>Seçilmiş proses təriflərinin yayımdan çıxarılmasını təsdiqləyirsinizmi?</value>
+  </data>
+  <data name="Cancel running workflow instances?" xml:space="preserve">
+    <value>İcra olunan proses nüsxələrini ləğv etmək istəyirsiz?</value>
+  </data>
+  <data name="Cancel selected workflow instances?" xml:space="preserve">
+    <value>Seçdiyiniz proses nüsxələrini ləğv etmək istəyirsiniz?</value>
+  </data>
+  <data name="Cancel workflow instance?" xml:space="preserve">
+    <value>Bu proses nüsxəsini ləğv etmək istəyirsiniz?</value>
+  </data>
+  <data name="Checkbox" xml:space="preserve">
+    <value>Seçim qutusu</value>
+  </data>
+  <data name="Checklist" xml:space="preserve">
+    <value>Tapşırıq siyahısı</value>
+  </data>
+  <data name="Code editor" xml:space="preserve">
+    <value>Kod editoru</value>
+  </data>
+  <data name="{0} consuming workflow(s) updated" xml:space="preserve">
+    <value>{0} asılı proses(lər) yeniləndi</value>
+  </data>
+  <data name="Create input" xml:space="preserve">
+    <value>Giriş parametri yarat</value>
+  </data>
+  <data name="Create output" xml:space="preserve">
+    <value>Çıxış parametri yarat</value>
+  </data>
+  <data name="Create variable" xml:space="preserve">
+    <value>Dəyişən yarat</value>
+  </data>
+  <data name="Default" xml:space="preserve">
+    <value>Susmaya görə</value>
+  </data>
+  <data name="Default Strategy" xml:space="preserve">
+    <value>Susmaya görə strateqiya</value>
+  </data>
+  <data name="Delete selected input?" xml:space="preserve">
+    <value>Seçilmiş giriş parametrini silmək?</value>
+  </data>
+  <data name="Delete selected output?" xml:space="preserve">
+    <value>Seçilmiş çıxış parametrini silmək?</value>
+  </data>
+</root>

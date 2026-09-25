@@ -1,0 +1,10 @@
+@inherits StudioComponentBase
+
+<MudForm>
+    <MudStack>
+        @foreach (var inputModel in InputDisplayModels)
+        {
+            @inputModel.Editor
+        }
+    </MudStack>
+</MudForm>

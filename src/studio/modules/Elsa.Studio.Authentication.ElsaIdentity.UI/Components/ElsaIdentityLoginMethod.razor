@@ -1,0 +1,55 @@
+@using Variant = MudBlazor.Variant
+@implements Elsa.Studio.Authentication.Abstractions.Contracts.ILoginMethodComponent
+@inject Contracts.IJwtAccessor JwtAccessor
+@inject Contracts.ICredentialsValidator CredentialsValidator
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+
+<MudPaper Outlined="true" Class="pa-4">
+    <MudText Typo="Typo.h6">Elsa account</MudText>
+    <MudForm @ref="_form">
+        <MudTextField @bind-Value="_username"
+                      Label="User name"
+                      autocomplete="username"
+                      Required="true"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense" />
+        <MudTextField @bind-Value="_password"
+                      Label="Password"
+                      InputType="InputType.Password"
+                      autocomplete="current-password"
+                      Required="true"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="SignInAsync">Sign in</MudButton>
+    </MudForm>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired]
+    public Elsa.Studio.Authentication.Abstractions.Models.LoginMethodComponentContext Context { get; set; } = null!;
+
+    private MudForm _form = default!;
+    private string _username = string.Empty;
+    private string _password = string.Empty;
+
+    private async Task SignInAsync()
+    {
+        await _form.Validate();
+        if (!_form.IsValid)
+            return;
+
+        var result = await CredentialsValidator.ValidateCredentialsAsync(_username, _password);
+        if (!result.IsValid)
+        {
+            await Context.ReportFailureAsync("Invalid credentials. Try again.");
+            return;
+        }
+
+        await JwtAccessor.WriteTokenAsync(Elsa.Studio.Authentication.ElsaIdentity.TokenNames.AccessToken, result.AccessToken!);
+        await JwtAccessor.WriteTokenAsync(Elsa.Studio.Authentication.ElsaIdentity.TokenNames.RefreshToken, result.RefreshToken!);
+        if (AuthenticationStateProvider is Elsa.Studio.Authentication.ElsaIdentity.Services.AccessTokenAuthenticationStateProvider stateProvider)
+            stateProvider.NotifyAuthenticationStateChanged();
+        Navigation.NavigateTo(Context.ReturnPath, forceLoad: true);
+    }
+}

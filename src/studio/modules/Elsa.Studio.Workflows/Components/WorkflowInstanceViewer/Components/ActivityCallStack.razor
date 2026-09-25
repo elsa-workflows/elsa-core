@@ -1,0 +1,100 @@
+@using Variant = MudBlazor.Variant
+@using Size = MudBlazor.Size
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<MudPaper Class="mx-2 mt-2 mb-0" Elevation="0" Outlined="true">
+    <MudToolBar Dense="true">
+        <MudText Typo="Typo.subtitle2">
+            @Localizer["Call stack"]@((Entries.Count > 0) ? $" ({Entries.Count})" : "")
+        </MudText>
+        <MudSpacer />
+        @if (IsLoading)
+        {
+            <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+        }
+    </MudToolBar>
+</MudPaper>
+<div class="px-4" style="overflow-y: auto; height: calc(100vh - var(--mud-appbar-height) - 160px);">
+    @if (string.IsNullOrWhiteSpace(ActivityExecutionRecordId))
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Text" Class="mt-2">@Localizer["Select an activity execution to view its call stack."]</MudAlert>
+    }
+    else if (HasError)
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Text" Class="mt-2">@Localizer["Unable to load call stack."]</MudAlert>
+    }
+    else if (Entries.Count == 0)
+    {
+        @if (IsLoading)
+        {
+            <MudProgressLinear Indeterminate="true" Class="mt-2" />
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Normal" Variant="Variant.Text" Class="mt-2">@Localizer["No call stack entries found for the selected activity."]</MudAlert>
+        }
+    }
+    else
+    {
+        <MudTimeline TimelineAlign="TimelineAlign.Start">
+            <Virtualize Items="@IndexedEntries" Context="item" OverscanCount="20" ItemSize="@(72f)">
+                @{
+                    var index = item.Index;
+                    var entry = item.Entry;
+                    var record = entry.Record;
+                    var displaySettings = entry.ActivityDisplaySettings;
+                    var activityIcon = displaySettings?.Icon;
+                    var activityColor = displaySettings?.Color;
+                    
+                    // UX Logic: prioritize the custom display text the user entered for the activity, to correlate to what the designer shows on the node.
+                    // Fall back to the activity name (e.g., "WriteLine1"), then to the activity type for uniqueness.
+                    var designerActivityName = GetActivityName?.Invoke(record.ActivityId);
+                    var customDisplayName = GetCustomActivityName?.Invoke(record.ActivityId);
+                    var typeName = entry.ActivityDescriptor?.DisplayName ?? record.ActivityType;
+                    
+                    // Hierarchy: Custom Display Text > Activity Name > Activity Type
+                    var displayName = ActivityLabelResolver.Resolve(customDisplayName, designerActivityName, typeName);
+                    
+                    var isSelected = SelectedEntry != null && record.Id == SelectedEntry.Record.Id;
+                    var durationText = entry.Duration.HasValue ? entry.Duration.Value.ToString("hh\\:mm\\:ss\\.fff") : "-";
+                }
+                @* 
+                   We use a manual div structure here instead of MudTimelineItem to achieve:
+                   1. 100% row-wide clickability (including the gaps and the line).
+                   2. Reliable re-opening of the drawer even for already-selected items.
+                   3. Precise control over alignment and vertical line display.
+                *@
+                <div class="mud-timeline-item mud-timeline-item-start cursor-pointer pa-1" 
+                     style="@(isSelected ? "background-color: var(--mud-palette-primary-hover); border-radius: 4px;" : "")" 
+                     @onclick="() => OnCallStackEntrySelected(index)">
+                    
+                    <div class="mud-timeline-item-content">
+                        <MudText Typo="Typo.body2" Style="font-weight: 500;">@displayName</MudText>
+                        <MudText Typo="Typo.subtitle2" Class="mud-text-secondary">@typeName - @record.Status</MudText>
+                    </div>
+
+                    <div class="mud-timeline-item-divider">
+                        <div class="mud-timeline-item-dot mud-timeline-dot-size-small mud-elevation-1">
+                            <div class="mud-timeline-item-dot-inner mud-timeline-dot-fill" style="@($"background-color: {activityColor}; color: #ffffff")">
+                                <MudIcon Icon="@activityIcon" Size="Size.Small"></MudIcon>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mud-timeline-item-opposite">
+                        <div class="d-flex justify-end gap-4">
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                                <Timestamp Value="record.StartedAt" />
+                            </MudText>
+                        </div>
+                        <div class="d-flex justify-end gap-4">
+                            <MudIcon Icon="@Icons.Material.Outlined.Timer" Size="Size.Small" Class="mud-text-secondary"></MudIcon>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary" Style="white-space: nowrap;">@durationText</MudText>
+                        </div>
+                    </div>
+                </div>
+            </Virtualize>
+        </MudTimeline>
+    }
+</div>

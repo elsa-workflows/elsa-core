@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net10.0</TargetFrameworks>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AngleSharp" />
+        <PackageReference Include="bunit" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="Microsoft.Playwright" />
+        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\..\testing\BunitTestDefaults.cs" Link="BunitTestDefaults.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Studio.ExternalAuthentication\Elsa.Studio.ExternalAuthentication.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Authentication.UI\Elsa.Studio.Authentication.UI.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Authentication.OpenIdConnect.BlazorServer\Elsa.Studio.Authentication.OpenIdConnect.BlazorServer.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.ExternalAuthentication.BlazorServer\Elsa.Studio.ExternalAuthentication.BlazorServer.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.ExternalAuthentication.BlazorWasm\Elsa.Studio.ExternalAuthentication.BlazorWasm.csproj" />
+    </ItemGroup>
+
+</Project>

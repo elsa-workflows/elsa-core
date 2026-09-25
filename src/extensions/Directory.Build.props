@@ -1,0 +1,25 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup Label="TargetFrameworks">
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup Label="Files">
+    <None Include="..\..\..\..\icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ConfigureAwait.Fody" PrivateAssets="All" />
+    <PackageReference Include="Fody" PrivateAssets="All" />
+    <PackageReference Include="JetBrains.Annotations" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)/ShellFeatures')">
+    <PackageReference Include="Elsa.Platform.PackageManifest.Generator" PrivateAssets="all" />
+    <Compile Include="$(MSBuildThisFileDirectory)PackageManifestHints.cs" Link="PackageManifestHints.cs" />
+  </ItemGroup>
+
+</Project>

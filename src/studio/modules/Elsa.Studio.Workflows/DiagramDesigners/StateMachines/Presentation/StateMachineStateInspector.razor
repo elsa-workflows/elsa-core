@@ -1,0 +1,217 @@
+@using System.Text.Json.Nodes
+@using Elsa.Api.Client.Extensions
+@using Elsa.Studio.Workflows.Designer
+@using Elsa.Studio.Workflows.Designer.Models
+@using Elsa.Studio.Localization
+@namespace Elsa.Studio.Workflows.DiagramDesigners.StateMachines.Presentation
+@inject ILocalizer Localizer
+
+<section class="state-machine-inspector" aria-labelledby="@HeadingId">
+    <header class="state-machine-inspector__header">
+        <div>
+            <p class="state-machine-inspector__eyebrow">@Localizer["Inspector"]</p>
+            <h3 id="@HeadingId">@Localizer["State"]</h3>
+        </div>
+    </header>
+
+    @if (State == null)
+    {
+        <p class="state-machine-inspector__empty" role="status">@Localizer["Select a state in the diagram or outline to inspect it."]</p>
+    }
+    else
+    {
+        <div class="state-machine-inspector__identity">
+            <label for="@NameId">@Localizer["Name"]</label>
+            <input id="@NameId"
+                   class="state-machine-inspector__control state-machine-inspector__control--name"
+                   value="@State.Name"
+                   disabled="@IsReadOnly"
+                   @onchange="ChangeNameAsync" />
+            <div class="state-machine-inspector__badges" aria-label="@Localizer["State status"]">
+                @if (IsInitial)
+                {
+                    <span class="state-machine-inspector__badge state-machine-inspector__badge--primary">@Localizer["Initial"]</span>
+                }
+                @if (IsCurrent)
+                {
+                    <span class="state-machine-inspector__badge state-machine-inspector__badge--success">@Localizer["Current"]</span>
+                }
+                @if (State.IsTerminal)
+                {
+                    <span class="state-machine-inspector__badge">@Localizer["Terminal"]</span>
+                }
+                <span class="state-machine-inspector__badge">@Localizer["State"]</span>
+            </div>
+        </div>
+
+        <div class="state-machine-inspector__lifecycle" aria-label="@Localizer["State lifecycle"]">
+            <section class="state-machine-inspector__stage" data-state-stage="entry" aria-labelledby="@EntryStageId">
+                <div class="state-machine-inspector__stage-marker" aria-hidden="true">@Localizer["ON ENTRY"]</div>
+                <div class="state-machine-inspector__stage-content">
+                    <div class="state-machine-inspector__stage-heading">
+                        <div>
+                            <p class="state-machine-inspector__stage-kicker">@Localizer["ON ENTRY"]</p>
+                            <h4 id="@EntryStageId">@Localizer["Entry action"]</h4>
+                        </div>
+                        <span class="state-machine-inspector__stage-note">@Localizer["Runs when this state becomes active"]</span>
+                    </div>
+                    <StateMachineActivitySlot SlotName="entry"
+                                              TestIdPrefix="state-machine-state"
+                                              Value="@State.Entry"
+                                              EmptyTitle="@Localizer["No entry activity configured"]"
+                                              EmptyDescription="@Localizer["Nothing runs when this state becomes active."]"
+                                              AddLabel="@Localizer["Add activity"]"
+                                              IsReadOnly="@IsReadOnly"
+                                              IsSelected="@IsActivitySelected(State.Entry)"
+                                              SupportsDesigner="@EntrySupportsDesigner"
+                                              AddRequested="RequestActivityAddAsync"
+                                              SelectRequested="RequestActivitySelectAsync"
+                                              OpenRequested="RequestActivityOpenAsync"
+                                              JsonRequested="RequestActivityJsonAsync"
+                                              ReplaceRequested="RequestActivityReplaceAsync"
+                                              ClearRequested="RequestActivityClearAsync"
+                                              DropRequested="RequestActivityDropAsync" />
+                </div>
+            </section>
+
+            <div class="state-machine-inspector__connector" aria-hidden="true">↓</div>
+
+            <section class="state-machine-inspector__stage state-machine-inspector__stage--active" data-state-stage="active" aria-labelledby="@ActiveStageId">
+                <div class="state-machine-inspector__stage-marker" aria-hidden="true">@Localizer["ACTIVE"]</div>
+                <div class="state-machine-inspector__stage-content">
+                    <div class="state-machine-inspector__stage-heading">
+                        <div>
+                            <p class="state-machine-inspector__stage-kicker">@Localizer["ACTIVE"]</p>
+                            <h4 id="@ActiveStageId">@Localizer["Transitions"]</h4>
+                        </div>
+                        <span class="state-machine-inspector__stage-note">@Localizer["Evaluated while {0} is active", StateMachinePresentationFormatter.DisplayValue(State.Name)]</span>
+                    </div>
+                    <div class="state-machine-inspector__transition-summary">
+                        <strong>@OutgoingTransitionLabel</strong>
+                        @if (OutgoingTransitionCount > 0)
+                        {
+                            <button type="button"
+                                    class="state-machine-inspector__button"
+                                    data-testid="state-machine-state-view-transitions"
+                                    @onclick="() => ViewTransitionsRequested.InvokeAsync()">
+                                @Localizer["View transitions"]
+                            </button>
+                        }
+                    </div>
+                </div>
+            </section>
+
+            <div class="state-machine-inspector__connector" aria-hidden="true">↓</div>
+
+            <section class="state-machine-inspector__stage" data-state-stage="exit" aria-labelledby="@ExitStageId">
+                <div class="state-machine-inspector__stage-marker" aria-hidden="true">@Localizer["ON EXIT"]</div>
+                <div class="state-machine-inspector__stage-content">
+                    <div class="state-machine-inspector__stage-heading">
+                        <div>
+                            <p class="state-machine-inspector__stage-kicker">@Localizer["ON EXIT"]</p>
+                            <h4 id="@ExitStageId">@Localizer["Exit action"]</h4>
+                        </div>
+                        <span class="state-machine-inspector__stage-note">@Localizer["Runs before an accepted transition leaves this state"]</span>
+                    </div>
+                    <StateMachineActivitySlot SlotName="exit"
+                                              TestIdPrefix="state-machine-state"
+                                              Value="@State.Exit"
+                                              EmptyTitle="@Localizer["No exit activity configured"]"
+                                              EmptyDescription="@Localizer["Nothing runs before this state is left."]"
+                                              AddLabel="@Localizer["Add activity"]"
+                                              IsReadOnly="@IsReadOnly"
+                                              IsSelected="@IsActivitySelected(State.Exit)"
+                                              SupportsDesigner="@ExitSupportsDesigner"
+                                              AddRequested="RequestActivityAddAsync"
+                                              SelectRequested="RequestActivitySelectAsync"
+                                              OpenRequested="RequestActivityOpenAsync"
+                                              JsonRequested="RequestActivityJsonAsync"
+                                              ReplaceRequested="RequestActivityReplaceAsync"
+                                              ClearRequested="RequestActivityClearAsync"
+                                              DropRequested="RequestActivityDropAsync" />
+                </div>
+            </section>
+        </div>
+
+        <details class="state-machine-inspector__details">
+            <summary>
+                <span>@Localizer["State details"]</span>
+                <span class="state-machine-inspector__details-summary">@Localizer["{0} incoming · {1} outgoing", IncomingTransitionCount, OutgoingTransitionCount]</span>
+            </summary>
+            <dl>
+                <div><dt>@Localizer["Incoming transitions"]</dt><dd>@IncomingTransitionCount</dd></div>
+                <div><dt>@Localizer["Outgoing transitions"]</dt><dd>@OutgoingTransitionCount</dd></div>
+                <div><dt>@Localizer["Entry activity"]</dt><dd>@(State.Entry == null ? Localizer["Not configured"] : Localizer["Configured"])</dd></div>
+                <div><dt>@Localizer["Exit activity"]</dt><dd>@(State.Exit == null ? Localizer["Not configured"] : Localizer["Configured"])</dd></div>
+            </dl>
+        </details>
+
+        @if (ValidationIssues.Count > 0)
+        {
+            <div class="state-machine-inspector__issues" role="alert" aria-label="@Localizer["State validation issues"]">
+                <strong>@Localizer["Validation"]</strong>
+                @foreach (var issue in ValidationIssues)
+                {
+                    <p><strong>@issue.Severity:</strong> @Localizer[issue.Message]</p>
+                }
+            </div>
+        }
+
+        @if (!IsReadOnly)
+        {
+            <div class="state-machine-inspector__danger-zone">
+                <button class="state-machine-inspector__button state-machine-inspector__button--danger"
+                        type="button"
+                        data-testid="state-machine-state-delete"
+                        @onclick="() => DeleteRequested.InvokeAsync()">
+                    @Localizer["Delete state"]
+                </button>
+            </div>
+        }
+    }
+</section>
+
+@code {
+    private readonly string _id = $"state-machine-state-inspector-{Guid.NewGuid():N}";
+
+    [Parameter] public StateMachineStateNode? State { get; set; }
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public bool IsInitial { get; set; }
+    [Parameter] public bool IsCurrent { get; set; }
+    [Parameter] public string? SelectedActivityId { get; set; }
+    [Parameter] public bool EntrySupportsDesigner { get; set; }
+    [Parameter] public bool ExitSupportsDesigner { get; set; }
+    [Parameter] public int IncomingTransitionCount { get; set; }
+    [Parameter] public int OutgoingTransitionCount { get; set; }
+    [Parameter] public IReadOnlyCollection<StateMachineValidationIssue> ValidationIssues { get; set; } = [];
+    [Parameter] public EventCallback<string> NameChanged { get; set; }
+    [Parameter] public EventCallback<string> ActivityAddRequested { get; set; }
+    [Parameter] public EventCallback<string> ActivitySelectRequested { get; set; }
+    [Parameter] public EventCallback<string> ActivityOpenRequested { get; set; }
+    [Parameter] public EventCallback<string> ActivityJsonRequested { get; set; }
+    [Parameter] public EventCallback<string> ActivityReplaceRequested { get; set; }
+    [Parameter] public EventCallback<string> ActivityClearRequested { get; set; }
+    [Parameter] public EventCallback<string> ActivityDropRequested { get; set; }
+    [Parameter] public EventCallback ViewTransitionsRequested { get; set; }
+    [Parameter] public EventCallback DeleteRequested { get; set; }
+
+    private string HeadingId => $"{_id}-heading";
+    private string NameId => $"{_id}-name";
+    private string EntryStageId => $"{_id}-entry-stage";
+    private string ActiveStageId => $"{_id}-active-stage";
+    private string ExitStageId => $"{_id}-exit-stage";
+    private string OutgoingTransitionLabel => OutgoingTransitionCount == 1
+        ? Localizer["1 outgoing transition"]
+        : Localizer["{0} outgoing transitions", OutgoingTransitionCount];
+
+    private Task ChangeNameAsync(ChangeEventArgs args) => NameChanged.InvokeAsync(args.Value?.ToString() ?? "");
+    private Task RequestActivityAddAsync(string slotName) => ActivityAddRequested.InvokeAsync(slotName);
+    private Task RequestActivitySelectAsync(string slotName) => ActivitySelectRequested.InvokeAsync(slotName);
+    private Task RequestActivityOpenAsync(string slotName) => ActivityOpenRequested.InvokeAsync(slotName);
+    private Task RequestActivityJsonAsync(string slotName) => ActivityJsonRequested.InvokeAsync(slotName);
+    private Task RequestActivityReplaceAsync(string slotName) => ActivityReplaceRequested.InvokeAsync(slotName);
+    private Task RequestActivityClearAsync(string slotName) => ActivityClearRequested.InvokeAsync(slotName);
+    private Task RequestActivityDropAsync(string slotName) => ActivityDropRequested.InvokeAsync(slotName);
+    private bool IsActivitySelected(JsonNode? activity) => activity is JsonObject obj &&
+        (string.Equals(obj.GetId(), SelectedActivityId, StringComparison.Ordinal) || string.Equals(obj.GetNodeId(), SelectedActivityId, StringComparison.Ordinal));
+}

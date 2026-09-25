@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides Dapper implementations of various persistence abstractions from various modules.
+        </Description>
+        <PackageTags>elsa extension module persistence dapper</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Persistence.Dapper.Migrations\Elsa.Persistence.Dapper.Migrations.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Azure.Identity"/>
+        <PackageReference Include="Dapper"/>
+        <PackageReference Include="FluentMigrator"/>
+        <PackageReference Include="FluentMigrator.Runner.Core"/>
+        <PackageReference Include="Microsoft.Data.Sqlite.Core"/>
+        <PackageReference Include="Microsoft.Data.SqlClient"/>
+        <PackageReference Include="Microsoft.Identity.Client"/>
+        <PackageReference Include="Npgsql"/>
+        <PackageReference Include="System.Formats.Asn1"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Elsa.Persistence.Dapper.UnitTests" />
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+        <PackageReference Include="Elsa.Identity"/>
+        <PackageReference Include="Elsa.Tenants"/>
+        <PackageReference Include="Elsa.Workflows.Runtime"/>
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Identity\Elsa.Identity.csproj"/>
+        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Tenants\Elsa.Tenants.csproj"/>
+        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
+    </ItemGroup>
+
+</Project>

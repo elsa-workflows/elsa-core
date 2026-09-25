@@ -1,0 +1,139 @@
+.dashboard-operational-health {
+    margin-bottom: 8px;
+    border-radius: 8px;
+    background: var(--mud-palette-surface);
+}
+
+.dashboard-operational-health-content {
+    padding: 24px;
+}
+
+.dashboard-operational-health-heading {
+    margin-bottom: 16px;
+}
+
+.dashboard-operational-health-metrics {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.dashboard-operational-health-metric {
+    min-width: 0;
+    padding: 4px 16px;
+    border-inline-start: 1px solid var(--mud-palette-lines-default);
+}
+
+.dashboard-operational-health-metric:first-child {
+    padding-inline-start: 0;
+    border-inline-start: 0;
+}
+
+.dashboard-operational-health-metric:last-child {
+    padding-inline-end: 0;
+}
+
+.dashboard-operational-health-link {
+    display: block;
+    height: 100%;
+    color: inherit;
+}
+
+.dashboard-operational-health-link:focus-visible {
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: 4px;
+    border-radius: 4px;
+}
+
+.dashboard-operational-health-value {
+    line-height: 1.1;
+    margin-top: 8px;
+}
+
+.dashboard-operational-health-caption {
+    color: var(--mud-palette-text-secondary);
+}
+
+@media (max-width: 1279px) {
+    .dashboard-operational-health-metrics {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .dashboard-operational-health-metric {
+        padding: 16px;
+        border-top: 1px solid var(--mud-palette-lines-default);
+    }
+
+    .dashboard-operational-health-metric:nth-child(-n + 3) {
+        padding-top: 0;
+        border-top: 0;
+    }
+
+    .dashboard-operational-health-metric:nth-child(3n + 1) {
+        padding-inline-start: 0;
+        border-inline-start: 0;
+    }
+
+    .dashboard-operational-health-metric:nth-child(3n) {
+        padding-inline-end: 0;
+    }
+}
+
+@media (max-width: 959px) {
+    .dashboard-operational-health-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-operational-health-metric:nth-child(3n + 1) {
+        padding-inline-start: 16px;
+        border-inline-start: 1px solid var(--mud-palette-lines-default);
+    }
+
+    .dashboard-operational-health-metric:nth-child(3n) {
+        padding-inline-end: 16px;
+    }
+
+    .dashboard-operational-health-metric:nth-child(-n + 3) {
+        padding-top: 16px;
+        border-top: 1px solid var(--mud-palette-lines-default);
+    }
+
+    .dashboard-operational-health-metric:nth-child(-n + 2) {
+        padding-top: 0;
+        border-top: 0;
+    }
+
+    .dashboard-operational-health-metric:nth-child(2n + 1) {
+        padding-inline-start: 0;
+        border-inline-start: 0;
+    }
+
+    .dashboard-operational-health-metric:nth-child(2n) {
+        padding-inline-end: 0;
+    }
+}
+
+@media (max-width: 599px) {
+    .dashboard-operational-health-content {
+        padding: 16px;
+    }
+
+    .dashboard-operational-health-metrics {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .dashboard-operational-health-metric,
+    .dashboard-operational-health-metric:nth-child(3n + 1) {
+        padding: 16px 0;
+        border-inline-start: 0;
+    }
+
+    .dashboard-operational-health-metric:nth-child(-n + 2) {
+        padding-top: 16px;
+        border-top: 1px solid var(--mud-palette-lines-default);
+    }
+
+    .dashboard-operational-health-metric:first-child {
+        padding-top: 0;
+        border-top: 0;
+    }
+}

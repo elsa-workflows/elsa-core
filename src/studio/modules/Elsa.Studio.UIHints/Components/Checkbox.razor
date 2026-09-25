@@ -1,0 +1,50 @@
+@using Elsa.Studio.Models
+@using Elsa.Api.Client.Resources.Scripting.Models
+@inject ILocalizer Localizer
+
+@{
+    var inputDescriptor = EditorContext.InputDescriptor;
+    var displayName = inputDescriptor.DisplayName ?? inputDescriptor.Name;
+    var description = inputDescriptor.Description ?? string.Empty;
+    var inputValue = EditorContext.GetLiteralValueOrDefault();
+    var isChecked = !string.IsNullOrWhiteSpace(inputValue) && bool.TryParse(inputValue, out var b) && b;
+}
+
+<ExpressionInput EditorContext="@EditorContext">
+    <ChildContent>
+        <MudField Variant="Variant.Text" Margin="Margin.None" UnderLine="@true" HelperText="@Localizer[description]" Disabled="EditorContext.IsReadOnly">
+            <MudCheckBox
+                T="bool?"
+                Label="@Localizer[displayName]"
+                Value="@isChecked"
+                Dense="true"
+                ValueChanged="OnCheckChanged"
+                Disabled="EditorContext.IsReadOnly"/>
+        </MudField>
+    </ChildContent>
+</ExpressionInput>
+
+@code {
+
+    /// <summary>
+    /// The editor context.
+    /// </summary>
+    [Parameter]
+    public DisplayInputEditorContext EditorContext { get; set; } = null!;
+
+    private async Task OnCheckChanged(bool? isChecked)
+    {
+        if (EditorContext.InputDescriptor.IsWrapped)
+        {
+            var newValue = isChecked == true ? "True" : "False";
+            var expression = Expression.CreateLiteral(newValue);
+
+            await EditorContext.UpdateExpressionAsync(expression);
+        }
+        else
+        {
+            await EditorContext.UpdateValueAsync(isChecked);
+        }
+    }
+
+}

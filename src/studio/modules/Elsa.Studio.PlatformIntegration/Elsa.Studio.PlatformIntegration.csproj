@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Adds Elsa Platform workflow artifact submission to Elsa Studio.</Description>
+        <PackageTags>elsa studio module platform workflow-artifacts deployment</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\framework\Elsa.Studio.Core\Elsa.Studio.Core.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Workflows\Elsa.Studio.Workflows.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Workflows.Core\Elsa.Studio.Workflows.Core.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,73 @@
+@using Elsa.Studio.ExternalAuthentication.Services
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                <MudText Typo="Typo.subtitle1">Session metadata</MudText>
+                <MudChip
+                    T="string"
+                    Size="Size.Small"
+                    Color="@ExternalAuthenticationSessionPresentation.StatusColor(Session.Status)"
+                    Icon="@ExternalAuthenticationSessionPresentation.StatusIcon(Session.Status)">
+                    @ExternalAuthenticationSessionPresentation.StatusLabel(Session.Status)
+                </MudChip>
+            </MudStack>
+
+            <MudSimpleTable Dense="true" Outlined="true" Elevation="0">
+                <tbody>
+                    <tr>
+                        <th scope="row">Session ID</th>
+                        <td>@Session.Id</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">User ID</th>
+                        <td>@Session.UserId</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Tenant ID</th>
+                        <td>@Session.TenantId</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Connection ID</th>
+                        <td>@Session.ConnectionId</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Started</th>
+                        <td>@FormatTimestamp(Session.StartedAt)</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Last refreshed</th>
+                        <td>@FormatTimestamp(Session.LastRefreshedAt)</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Expires</th>
+                        <td>@FormatTimestamp(Session.ExpiresAt)</td>
+                    </tr>
+                    @if (Session.RevokedAt is { } revokedAt)
+                    {
+                        <tr>
+                            <th scope="row">Revoked</th>
+                            <td>@FormatTimestamp(revokedAt)</td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+
+            <MudAlert Severity="Severity.Info" Dense="true">
+                This view contains safe session metadata only. Authentication tokens and external identity data are never displayed.
+            </MudAlert>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter, EditorRequired] public ExternalAuthenticationSessionSummary Session { get; set; } = default!;
+
+    private static string FormatTimestamp(DateTimeOffset value) => value.ToLocalTime().ToString("g");
+    private void Close() => MudDialog.Close();
+}

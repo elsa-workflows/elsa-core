@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides Redis-backed storage for Proto.Actor Pub/Sub subscribers.
+        </Description>
+        <PackageTags>elsa extension module protoactor actors pubsub redis</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Google.Protobuf" />
+        <PackageReference Include="StackExchange.Redis" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Actors.ProtoActor\Elsa.Actors.ProtoActor.csproj" />
+    </ItemGroup>
+
+</Project>

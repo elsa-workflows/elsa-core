@@ -1,0 +1,52 @@
+<MudStack Spacing="2">
+    <MudText Typo="Typo.h6">Preview result</MudText>
+    <MudAlert Severity="Severity.Info" Dense="true">
+        This one-time preview did not create or link a user, issue an Elsa credential, or open a normal session.
+    </MudAlert>
+    <MudText><strong>Issuer:</strong> @Result.Issuer</MudText>
+    <MudText><strong>Identity:</strong> @Result.MaskedSubject</MudText>
+    <MudText><strong>Proposed action:</strong> @Result.ProposedAction</MudText>
+
+    <MudText Typo="Typo.subtitle1">Projected permissions and provenance</MudText>
+    @if (Result.PermissionProjection.Count == 0)
+    {
+        <MudText Typo="Typo.body2">No Elsa permissions would be granted by the external mapping.</MudText>
+    }
+    else
+    {
+        <MudTable Items="Result.PermissionProjection" Dense="true">
+            <HeaderContent>
+                <MudTh>Permission</MudTh>
+                <MudTh>Source</MudTh>
+                <MudTh>Reference</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Permission">@context.Permission</MudTd>
+                <MudTd DataLabel="Source">@context.SourceType</MudTd>
+                <MudTd DataLabel="Reference">@context.SourceReference</MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+
+    @foreach (var permission in Result.PermissionProjection.Select(x => x.Permission).Distinct(StringComparer.Ordinal))
+    {
+        @if (!KnownPermissions.Contains(permission))
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true">
+                '@permission' is not advertised by an installed module. The string is preserved and only an endpoint requiring that exact permission will recognize it.
+            </MudAlert>
+        }
+    }
+    @foreach (var warning in Result.Warnings)
+    {
+        <MudAlert Severity="Severity.Warning" Dense="true">@warning</MudAlert>
+    }
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public PreviewSignInResult Result { get; set; } = default!;
+    [Parameter] public ICollection<PermissionDescriptor> PermissionDescriptors { get; set; } = [];
+
+    private IReadOnlySet<string> KnownPermissions =>
+        PermissionDescriptors.Select(x => x.Name).ToHashSet(StringComparer.Ordinal);
+}

@@ -1,0 +1,88 @@
+@inject IUserAdministrationAccessService AccessService
+@implements IAsyncDisposable
+
+@if (_access == null)
+{
+    <MudStack AlignItems="AlignItems.Center" Class="pa-8" Role="status">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" aria-label="Checking user administration access" />
+        <MudText Typo="Typo.body2">Checking access…</MudText>
+    </MudStack>
+}
+else if (_access.State == UserAdministrationAccessState.Forbidden)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined">
+        <MudText Typo="Typo.subtitle1">User administration access is required</MudText>
+        <MudText Typo="Typo.body2">Your current sign-in does not include permission to view users. Ask an administrator for <code>identity/users:view</code>, then sign in again.</MudText>
+    </MudAlert>
+}
+else if (_access.State == UserAdministrationAccessState.Unavailable)
+{
+    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">
+        <MudText Typo="Typo.subtitle1">User administration is unavailable</MudText>
+        <MudText Typo="Typo.body2">Studio could not verify the Identity feature and your effective permissions. Check the Core connection and try again.</MudText>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="@_accessLoading" OnClick="ReloadAsync" Class="mt-3">Try again</MudButton>
+    </MudAlert>
+}
+else
+{
+    @ChildContent(_access)
+}
+
+@code {
+    [Parameter, EditorRequired] public RenderFragment<UserAdministrationAccess> ChildContent { get; set; } = default!;
+
+    private readonly CancellationTokenSource _lifetime = new();
+    private UserAdministrationAccess? _access;
+    private bool _accessLoading;
+    private bool _disposed;
+
+    protected override Task OnInitializedAsync() => LoadAccessAsync(_lifetime.Token);
+
+    private async Task ReloadAsync()
+    {
+        if (_disposed || _accessLoading)
+            return;
+
+        AccessService.Invalidate();
+        await LoadAccessAsync(_lifetime.Token);
+    }
+
+    private async Task LoadAccessAsync(CancellationToken cancellationToken)
+    {
+        if (_disposed || _accessLoading)
+            return;
+
+        _accessLoading = true;
+        _access = null;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            _access = await AccessService.GetAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            _access = UserAdministrationAccess.Unavailable;
+        }
+        finally
+        {
+            _accessLoading = false;
+            if (!cancellationToken.IsCancellationRequested)
+                await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+        await _lifetime.CancelAsync();
+        _lifetime.Dispose();
+    }
+}

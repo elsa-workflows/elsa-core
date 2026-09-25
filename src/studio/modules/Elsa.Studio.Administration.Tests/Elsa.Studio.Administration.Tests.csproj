@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net10.0</TargetFrameworks>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AngleSharp" />
+        <PackageReference Include="bunit" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\..\testing\BunitTestDefaults.cs" Link="BunitTestDefaults.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\framework\Elsa.Studio.Core\Elsa.Studio.Core.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Labels\Elsa.Studio.Labels.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Secrets\Elsa.Studio.Secrets.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Security\Elsa.Studio.Security.csproj" />
+    </ItemGroup>
+
+</Project>

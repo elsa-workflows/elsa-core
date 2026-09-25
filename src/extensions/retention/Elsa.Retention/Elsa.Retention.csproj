@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides retention options for workflows.
+        </Description>
+        <PackageTags>elsa extension module retention archive</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+		<PackageReference Include="Elsa.Workflows.Runtime" />
+	</ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+      <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+    </ItemGroup>
+	
+</Project>

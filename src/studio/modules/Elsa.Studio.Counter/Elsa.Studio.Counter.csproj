@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Adds the classical Counter screen from the default Blazor template to the studio.</Description>
+        <PackageTags>elsa studio module</PackageTags>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\..\framework\Elsa.Studio.Shared\Elsa.Studio.Shared.csproj" />
+    </ItemGroup>
+
+</Project>

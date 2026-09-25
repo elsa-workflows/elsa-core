@@ -1,0 +1,42 @@
+@using Elsa.Studio.Diagnostics.OpenTelemetry.Services
+
+@if (Items.Count == 0)
+{
+    <MudAlert Severity="Severity.Normal" Variant="Variant.Text">No spans available for this trace.</MudAlert>
+}
+else
+{
+    <div class="elsa-otel-waterfall" role="list" aria-label="Trace spans">
+        @foreach (var item in Items)
+        {
+            <button type="button" class="@ItemClass(item)" style="@ItemLayoutStyle(item)" @onclick="() => SelectSpan(item.Span)" role="listitem">
+                <span class="elsa-otel-waterfall__name">@item.Span.Name</span>
+                <span class="elsa-otel-waterfall__duration">@FormatDuration(item.Span.EndTime - item.Span.StartTime)</span>
+            </button>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public IReadOnlyCollection<TelemetrySpan> Spans { get; set; } = [];
+    [Parameter] public TelemetrySpan? SelectedSpan { get; set; }
+    [Parameter] public EventCallback<TelemetrySpan> SelectedSpanChanged { get; set; }
+
+    private IReadOnlyCollection<TraceWaterfallItem> Items => TraceWaterfallLayout.Create(Spans);
+
+    private async Task SelectSpan(TelemetrySpan span)
+    {
+        if (SelectedSpanChanged.HasDelegate)
+            await SelectedSpanChanged.InvokeAsync(span);
+    }
+
+    private string ItemClass(TraceWaterfallItem item) =>
+        $"elsa-otel-waterfall__item{(item.Span.Status == SpanStatus.Error ? " elsa-otel-waterfall__item--error" : string.Empty)}{(item.Span.SpanId == SelectedSpan?.SpanId ? " elsa-otel-waterfall__item--selected" : string.Empty)}";
+
+    private static string ItemLayoutStyle(TraceWaterfallItem item) =>
+        $"--otel-offset:{item.OffsetPercent:0.###}%;--otel-depth:{item.Depth};--otel-width:{item.WidthPercent:0.###}%";
+
+    private static string FormatDuration(TimeSpan duration) => duration.TotalMilliseconds >= 1000
+        ? $"{duration.TotalSeconds:n2}s"
+        : $"{duration.TotalMilliseconds:n0}ms";
+}

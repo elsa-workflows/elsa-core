@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Provides various port providers for activities such as `FlowSwitch` and `SendHttpRequest`.</Description>
+        <PackageTags>elsa studio module</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Update="*.resx">
+            <Public>true</Public>
+            <AsConstants>true</AsConstants>
+        </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.ResxSourceGenerator">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\framework\Elsa.Studio.Core\Elsa.Studio.Core.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Elsa Studio application shell.</Description>
+        <PackageTags>elsa studio framework</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.Studio.Core\Elsa.Studio.Core.csproj" />
+      <ProjectReference Include="..\Elsa.Studio.Shared\Elsa.Studio.Shared.csproj" />
+    </ItemGroup>
+    
+</Project>

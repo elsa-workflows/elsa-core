@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides integration with Telnyx.
+        </Description>
+        <PackageTags>elsa extension module telephony telnyx</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Elsa" />
+        <PackageReference Include="Humanizer.Core" />
+        <PackageReference Include="Refit" />
+        <PackageReference Include="Refit.HttpClientFactory" />
+    </ItemGroup>
+
+</Project>

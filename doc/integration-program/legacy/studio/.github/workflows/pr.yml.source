@@ -1,0 +1,61 @@
+name: PR
+
+on:
+  pull_request:
+    branches:
+      - 'main'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: |
+            8.x
+            9.x
+            10.x
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Restore Bpmn.Model
+        # Only Bpmn.Model's own schema/bpmn-payload.schema.json is needed here (see
+        # ClientLib/scripts/generate-bpmn-types.js), but restoring the one project that downloads it
+        # is cheap and keeps this from depending on solution-wide restore order.
+        run: dotnet restore src/modules/Elsa.Studio.Workflows.Designer/Elsa.Studio.Workflows.Designer.csproj
+      - name: Install workflow designer client dependencies
+        working-directory: ./src/modules/Elsa.Studio.Workflows.Designer/ClientLib
+        run: npm install --force
+      - name: Verify generated BPMN types are up to date
+        # This must run before "Build workflow designer client assets": that step's `npm run build`
+        # regenerates src/bpmn/types.generated.ts as a side effect (via `npm run generate:bpmn-types`)
+        # and overwrites it on disk, so running the check afterwards would diff the regenerated file
+        # against itself and could never fail.
+        working-directory: ./src/modules/Elsa.Studio.Workflows.Designer/ClientLib
+        run: |
+          npm run check:generated
+          npm test
+      - name: Build workflow designer client assets
+        working-directory: ./src/modules/Elsa.Studio.Workflows.Designer/ClientLib
+        run: npm run build
+      - name: Build DOM interop client assets
+        working-directory: ./src/framework/Elsa.Studio.DomInterop/ClientLib
+        run: |
+          npm install --force
+          npm run build
+      - name: Build
+        run: dotnet build Elsa.Studio.sln --configuration Release
+      - name: Test
+        run: dotnet test Elsa.Studio.sln --configuration Release --no-build

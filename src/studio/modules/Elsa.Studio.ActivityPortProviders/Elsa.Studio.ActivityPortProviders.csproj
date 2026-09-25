@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Provides various port providers for activities such as `FlowSwitch` and `SendHttpRequest`.</Description>
+        <PackageTags>elsa studio module</PackageTags>
+    </PropertyGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\..\framework\Elsa.Studio.Core\Elsa.Studio.Core.csproj" />
+      <ProjectReference Include="..\Elsa.Studio.Workflows.Core\Elsa.Studio.Workflows.Core.csproj" />
+    </ItemGroup>
+    
+</Project>

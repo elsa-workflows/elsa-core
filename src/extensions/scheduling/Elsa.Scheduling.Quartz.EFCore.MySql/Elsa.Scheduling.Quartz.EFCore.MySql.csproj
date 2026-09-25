@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides EF Core migrations for Quartz.NET.
+        </Description>
+        <PackageTags>elsa extension module scheduling quartz ef core migrations</PackageTags>
+        <!-- Pomelo.EntityFrameworkCore.MySql doesn't support EF Core 10; no Pomelo 10.x exists yet -->
+        <NoWarn>$(NoWarn);NU1608</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AppAny.Quartz.EntityFrameworkCore.Migrations.MySql" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+        <PackageReference Include="Quartz.Serialization.Json" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0'">
+        <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Scheduling.Quartz\Elsa.Scheduling.Quartz.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Persistence.EFCore.Common\Elsa.Persistence.EFCore.Common.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+        <PackageReference Include="Elsa.Persistence.EFCore.Common" />
+    </ItemGroup>
+
+</Project>

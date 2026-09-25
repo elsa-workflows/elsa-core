@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+	<PropertyGroup>
+		<Description>Adds support for localization to Elsa Studio Blazor Server Apps.</Description>
+		<PackageTags>elsa studio module</PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<ProjectReference Include="..\Elsa.Studio.Localization\Elsa.Studio.Localization.csproj" />
+	</ItemGroup>
+</Project>

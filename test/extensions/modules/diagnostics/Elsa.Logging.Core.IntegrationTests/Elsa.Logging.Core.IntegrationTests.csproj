@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\..\src\modules\diagnostics\Elsa.Logging.Core\Elsa.Logging.Core.csproj" />
+      <ProjectReference Include="..\..\..\..\src\modules\diagnostics\Elsa.Logging\Elsa.Logging.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Elsa.Workflows.Core" />
+        <PackageReference Include="Elsa.Testing.Shared" />
+        <PackageReference Include="Elsa.Testing.Shared.Integration" />
+    </ItemGroup>
+    
+</Project>

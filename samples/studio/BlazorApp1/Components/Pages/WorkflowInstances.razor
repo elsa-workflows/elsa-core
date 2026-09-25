@@ -1,0 +1,15 @@
+﻿@page "/workflow-instances"
+
+@rendermode InteractiveServer
+<WorkflowInstanceListWrapper ViewWorkflowInstance="@OnViewWorkflowInstance"/>
+
+@code {
+
+    [Inject] NavigationManager NavigationManager { get; set; } = default!;
+
+    private void OnViewWorkflowInstance(string instanceId)
+    {
+        NavigationManager.NavigateTo($"workflow-instances/{instanceId}");
+    }
+
+}

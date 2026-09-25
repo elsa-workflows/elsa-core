@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides OpenAPI functionality for HTTP triggers in Elsa workflows.
+        </Description>
+        <PackageTags>elsa extension module, http, openapi</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+        <PackageReference Include="Microsoft.Extensions.Http" />
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+        <PackageReference Include="Elsa.Workflows.Runtime" />
+        <PackageReference Include="Elsa.Workflows.Management" />
+        <PackageReference Include="Elsa.Http" />
+        <PackageReference Include="Elsa.Common" />
+        <PackageReference Include="Elsa.Scheduling" />
+        <PackageReference Include="Elsa.Api.Common" />
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
+        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Http\Elsa.Http.csproj" />
+        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Common\Elsa.Common.csproj" />
+        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
+        <ProjectReference Include="..\..\..\..\..\elsa-core\src\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="README.md" />
+    </ItemGroup>
+
+</Project>

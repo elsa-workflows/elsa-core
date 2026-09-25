@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Description>Provides an Entity Framework Core provider for the persistence layer of the Connection module</Description>
+		<PackageTags>elsa extension connection persistence efcore entity framework core</PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Elsa.Connections.Persistence\Elsa.Connections.Persistence.csproj" />
+	</ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Persistence.EFCore.Common\Elsa.Persistence.EFCore.Common.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+        <PackageReference Include="Elsa.Persistence.EFCore.Common" />
+    </ItemGroup>
+
+</Project>

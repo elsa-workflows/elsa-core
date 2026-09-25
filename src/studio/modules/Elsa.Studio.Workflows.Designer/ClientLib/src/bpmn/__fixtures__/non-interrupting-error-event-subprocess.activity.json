@@ -1,0 +1,132 @@
+{
+  "process": {
+    "processId": "non-interrupting-error-event-subprocess",
+    "name": "Non-Interrupting Error Event Subprocess",
+    "isExecutable": true,
+    "isTransaction": false,
+    "elements": [
+      {
+        "elementId": "Start_1",
+        "elementType": "startEvent",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "Settle",
+        "elementType": "intermediateCatchEvent",
+        "bindingRef": "node-Settle",
+        "eventDefinitions": [
+          {
+            "type": "timer",
+            "properties": {
+              "interval": "PT5M"
+            }
+          }
+        ],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "End_1",
+        "elementType": "endEvent",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      }
+    ],
+    "sequenceFlows": [
+      {
+        "flowId": "Flow_1",
+        "sourceRef": "Start_1",
+        "targetRef": "Settle",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_2",
+        "sourceRef": "Settle",
+        "targetRef": "End_1",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      }
+    ],
+    "lanes": [],
+    "variables": [],
+    "extensions": {
+      "documentation": [],
+      "extensionElements": [],
+      "foreignAttributes": [],
+      "foreignChildren": []
+    }
+  },
+  "workBindings": {
+    "node-Settle": "non-interrupting-error-event-subprocess:node-Settle"
+  },
+  "activities": [
+    {
+      "timeSpan": {
+        "typeName": "TimeSpan",
+        "expression": {
+          "type": "Literal",
+          "value": "00:05:00"
+        }
+      },
+      "id": "non-interrupting-error-event-subprocess:node-Settle",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.Delay",
+      "version": 1,
+      "customProperties": {
+        "source": "BpmnWorkBinder.cs:119"
+      },
+      "metadata": {}
+    }
+  ],
+  "variables": [],
+  "id": "non-interrupting-error-event-subprocess",
+  "type": "Elsa.BpmnProcess",
+  "version": 1,
+  "customProperties": {
+    "source": "BpmnWorkBinder.cs:80",
+    "canStartWorkflow": true
+  },
+  "metadata": {}
+}

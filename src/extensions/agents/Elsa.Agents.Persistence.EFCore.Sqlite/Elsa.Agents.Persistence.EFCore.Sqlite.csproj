@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Provides an EF Core migrations for SQLite for the Agents Persistence module.</Description>
+        <PackageTags>elsa extension module agents semantic kernel llm ai persistence efcore entity framework core sqlite</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Data.Sqlite" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+    </ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Elsa.Agents.Persistence.EFCore\Elsa.Agents.Persistence.EFCore.csproj" />
+	</ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+        <PackageReference Include="Elsa.Persistence.EFCore.Sqlite" />
+    </ItemGroup>
+
+</Project>

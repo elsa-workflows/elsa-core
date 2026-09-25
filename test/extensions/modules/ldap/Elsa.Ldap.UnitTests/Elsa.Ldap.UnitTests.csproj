@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<ItemGroup>
+		<PackageReference Include="Elsa.Testing.Shared" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\..\src\modules\ldap\Elsa.Ldap\Elsa.Ldap.csproj" />
+	</ItemGroup>
+
+</Project>

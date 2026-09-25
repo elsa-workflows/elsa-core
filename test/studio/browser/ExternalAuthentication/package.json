@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "test": "playwright test --config playwright.config.ts"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/test": "^1.54.2"
+  }
+}

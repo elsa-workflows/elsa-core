@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Elsa Studio ElsaIdentity module for Blazor Server apps.</Description>
+        <PackageTags>elsa studio authentication elsa identity blazor server</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Studio.Authentication.ElsaIdentity\Elsa.Studio.Authentication.ElsaIdentity.csproj" />
+    </ItemGroup>
+
+</Project>
+

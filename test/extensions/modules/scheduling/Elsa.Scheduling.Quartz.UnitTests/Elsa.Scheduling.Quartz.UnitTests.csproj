@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\..\src\modules\scheduling\Elsa.Scheduling.Quartz\Elsa.Scheduling.Quartz.csproj" />
+      <ProjectReference Include="..\..\..\..\src\modules\scheduling\Elsa.Scheduling.Quartz.EFCore.MySql\Elsa.Scheduling.Quartz.EFCore.MySql.csproj" />
+      <ProjectReference Include="..\..\..\..\src\modules\scheduling\Elsa.Scheduling.Quartz.EFCore.PostgreSql\Elsa.Scheduling.Quartz.EFCore.PostgreSql.csproj" />
+      <ProjectReference Include="..\..\..\..\src\modules\scheduling\Elsa.Scheduling.Quartz.EFCore.SqlServer\Elsa.Scheduling.Quartz.EFCore.SqlServer.csproj" />
+      <ProjectReference Include="..\..\..\..\src\modules\scheduling\Elsa.Scheduling.Quartz.EFCore.Sqlite\Elsa.Scheduling.Quartz.EFCore.Sqlite.csproj" />
+    </ItemGroup>
+
+</Project>

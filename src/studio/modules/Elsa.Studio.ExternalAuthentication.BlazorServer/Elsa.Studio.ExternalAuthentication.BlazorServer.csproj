@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Provides brokered external authentication for Elsa Studio Blazor Server hosts.</Description>
+        <PackageTags>elsa studio external authentication blazor server</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Studio.ExternalAuthentication\Elsa.Studio.ExternalAuthentication.csproj" />
+        <ProjectReference Include="..\..\framework\Elsa.Studio.Core\Elsa.Studio.Core.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Authentication.Abstractions\Elsa.Studio.Authentication.Abstractions.csproj" />
+    </ItemGroup>
+
+</Project>

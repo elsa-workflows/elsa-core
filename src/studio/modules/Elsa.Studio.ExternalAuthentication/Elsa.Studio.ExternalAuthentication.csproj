@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Adds brokered external authentication UI and management to Elsa Studio.</Description>
+        <PackageTags>elsa studio module external authentication identity provider</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\framework\Elsa.Studio.Core\Elsa.Studio.Core.csproj" />
+        <ProjectReference Include="..\..\framework\Elsa.Studio.Shared\Elsa.Studio.Shared.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Authentication.Abstractions\Elsa.Studio.Authentication.Abstractions.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Authentication.UI\Elsa.Studio.Authentication.UI.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Security\Elsa.Studio.Security.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Settings\Elsa.Studio.Settings.csproj" />
+    </ItemGroup>
+
+</Project>

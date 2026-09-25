@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>
+      Provides activities to interact with sql databases.
+    </Description>
+    <PackageTags>elsa extension module extension activities sql</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+    <PackageReference Include="Elsa.Features" />
+    <PackageReference Include="Elsa.Workflows.Runtime" />
+  </ItemGroup>
+
+  <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+    <ProjectReference Include="..\..\..\..\..\elsa-core\src\common\Elsa.Features\Elsa.Features.csproj" />
+    <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,7 @@
+syntax = "proto3";
+option csharp_namespace = "Elsa.Caching.Distributed.ProtoActor.ProtoBuf";
+package Elsa.Caching.Distributed.ProtoActor.ProtoBuf;
+
+message ProtoTriggerChangeTokenSignal {
+  string Key = 1;
+}

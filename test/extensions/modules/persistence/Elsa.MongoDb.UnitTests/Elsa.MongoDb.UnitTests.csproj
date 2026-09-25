@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+    </PropertyGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="Testcontainers.MongoDb" />
+	  <ProjectReference Include="..\..\..\..\src\modules\persistence\Elsa.Persistence.MongoDb\Elsa.Persistence.MongoDb.csproj" />
+	</ItemGroup>
+	
+</Project>

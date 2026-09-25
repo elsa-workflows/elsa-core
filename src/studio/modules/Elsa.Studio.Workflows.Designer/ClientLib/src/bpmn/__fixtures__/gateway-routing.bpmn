@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1"
+                  xmlns:vw="https://bpmn.valenceworks.io/schema/bpmn"
+                  id="Definitions_gateway-routing"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:message id="Message_Approval" name="ApprovalReceived" />
+  <bpmn:process id="gateway-routing" name="Gateway Routing" isExecutable="true">
+    <bpmn:startEvent id="Start_1" name="Started">
+      <bpmn:outgoing>Flow_Start_Fork</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:parallelGateway id="Fork" name="Fork">
+      <bpmn:incoming>Flow_Start_Fork</bpmn:incoming>
+      <bpmn:outgoing>Flow_Fork_Exclusive</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Fork_Inclusive</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <bpmn:exclusiveGateway id="Decide" name="Approved?" default="Flow_Decide_Reject">
+      <bpmn:incoming>Flow_Fork_Exclusive</bpmn:incoming>
+      <bpmn:outgoing>Flow_Decide_Approve</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Decide_Reject</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:serviceTask id="Approve" name="Approve">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Approved"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Decide_Approve</bpmn:incoming>
+      <bpmn:outgoing>Flow_Approve_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Reject" name="Reject">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Rejected"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Decide_Reject</bpmn:incoming>
+      <bpmn:outgoing>Flow_Reject_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:inclusiveGateway id="InclusiveSplit" name="Notify who?" default="Flow_Inclusive_Race">
+      <bpmn:incoming>Flow_Fork_Inclusive</bpmn:incoming>
+      <bpmn:outgoing>Flow_Inclusive_Race</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+
+    <bpmn:eventBasedGateway id="Race" name="Race">
+      <bpmn:incoming>Flow_Inclusive_Race</bpmn:incoming>
+      <bpmn:outgoing>Flow_Race_Timeout</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Race_Approval</bpmn:outgoing>
+    </bpmn:eventBasedGateway>
+
+    <bpmn:intermediateCatchEvent id="Timeout" name="After 10 minutes">
+      <bpmn:incoming>Flow_Race_Timeout</bpmn:incoming>
+      <bpmn:outgoing>Flow_Timeout_Join</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="Timer_1">
+        <bpmn:timeDuration>PT10M</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+
+    <bpmn:intermediateCatchEvent id="ApprovalMessage" name="Approval received">
+      <bpmn:incoming>Flow_Race_Approval</bpmn:incoming>
+      <bpmn:outgoing>Flow_Approval_Join</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageDef_1" messageRef="Message_Approval" />
+    </bpmn:intermediateCatchEvent>
+
+    <bpmn:parallelGateway id="Join" name="Join">
+      <bpmn:incoming>Flow_Approve_Join</bpmn:incoming>
+      <bpmn:incoming>Flow_Reject_Join</bpmn:incoming>
+      <bpmn:incoming>Flow_Timeout_Join</bpmn:incoming>
+      <bpmn:incoming>Flow_Approval_Join</bpmn:incoming>
+      <bpmn:outgoing>Flow_Join_End</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <bpmn:endEvent id="End_1" name="Done">
+      <bpmn:incoming>Flow_Join_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_Start_Fork" sourceRef="Start_1" targetRef="Fork" />
+    <bpmn:sequenceFlow id="Flow_Fork_Exclusive" sourceRef="Fork" targetRef="Decide" />
+    <bpmn:sequenceFlow id="Flow_Fork_Inclusive" sourceRef="Fork" targetRef="InclusiveSplit" />
+    <bpmn:sequenceFlow id="Flow_Decide_Approve" name="yes" sourceRef="Decide" targetRef="Approve" vw:conditionOutcome="Approved" />
+    <bpmn:sequenceFlow id="Flow_Decide_Reject" name="otherwise" sourceRef="Decide" targetRef="Reject" />
+    <bpmn:sequenceFlow id="Flow_Inclusive_Race" sourceRef="InclusiveSplit" targetRef="Race" />
+    <bpmn:sequenceFlow id="Flow_Race_Timeout" sourceRef="Race" targetRef="Timeout" />
+    <bpmn:sequenceFlow id="Flow_Race_Approval" sourceRef="Race" targetRef="ApprovalMessage" />
+    <bpmn:sequenceFlow id="Flow_Approve_Join" sourceRef="Approve" targetRef="Join" />
+    <bpmn:sequenceFlow id="Flow_Reject_Join" sourceRef="Reject" targetRef="Join" />
+    <bpmn:sequenceFlow id="Flow_Timeout_Join" sourceRef="Timeout" targetRef="Join" />
+    <bpmn:sequenceFlow id="Flow_Approval_Join" sourceRef="ApprovalMessage" targetRef="Join" />
+    <bpmn:sequenceFlow id="Flow_Join_End" sourceRef="Join" targetRef="End_1" />
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="gateway-routing">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="140" y="222" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="136" y="265" width="44" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Fork_di" bpmnElement="Fork" isMarkerVisible="true">
+        <dc:Bounds x="235" y="215" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Decide_di" bpmnElement="Decide" isMarkerVisible="true">
+        <dc:Bounds x="345" y="105" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="338" y="75" width="64" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Approve_di" bpmnElement="Approve">
+        <dc:Bounds x="460" y="40" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Reject_di" bpmnElement="Reject">
+        <dc:Bounds x="460" y="150" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="InclusiveSplit_di" bpmnElement="InclusiveSplit">
+        <dc:Bounds x="345" y="325" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Race_di" bpmnElement="Race">
+        <dc:Bounds x="460" y="325" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Timeout_di" bpmnElement="Timeout">
+        <dc:Bounds x="580" y="282" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ApprovalMessage_di" bpmnElement="ApprovalMessage">
+        <dc:Bounds x="580" y="382" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Join_di" bpmnElement="Join" isMarkerVisible="true">
+        <dc:Bounds x="700" y="215" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="810" y="222" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Start_Fork_di" bpmnElement="Flow_Start_Fork">
+        <di:waypoint x="176" y="240" />
+        <di:waypoint x="235" y="240" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Fork_Exclusive_di" bpmnElement="Flow_Fork_Exclusive">
+        <di:waypoint x="260" y="215" />
+        <di:waypoint x="260" y="130" />
+        <di:waypoint x="345" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Fork_Inclusive_di" bpmnElement="Flow_Fork_Inclusive">
+        <di:waypoint x="260" y="265" />
+        <di:waypoint x="260" y="350" />
+        <di:waypoint x="345" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Decide_Approve_di" bpmnElement="Flow_Decide_Approve">
+        <di:waypoint x="370" y="105" />
+        <di:waypoint x="370" y="80" />
+        <di:waypoint x="460" y="80" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="392" y="62" width="20" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Decide_Reject_di" bpmnElement="Flow_Decide_Reject">
+        <di:waypoint x="370" y="155" />
+        <di:waypoint x="370" y="190" />
+        <di:waypoint x="460" y="190" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="380" y="172" width="52" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Inclusive_Race_di" bpmnElement="Flow_Inclusive_Race">
+        <di:waypoint x="395" y="350" />
+        <di:waypoint x="460" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Race_Timeout_di" bpmnElement="Flow_Race_Timeout">
+        <di:waypoint x="485" y="325" />
+        <di:waypoint x="485" y="300" />
+        <di:waypoint x="580" y="300" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Race_Approval_di" bpmnElement="Flow_Race_Approval">
+        <di:waypoint x="485" y="375" />
+        <di:waypoint x="485" y="400" />
+        <di:waypoint x="580" y="400" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Approve_Join_di" bpmnElement="Flow_Approve_Join">
+        <di:waypoint x="560" y="80" />
+        <di:waypoint x="725" y="80" />
+        <di:waypoint x="725" y="215" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Reject_Join_di" bpmnElement="Flow_Reject_Join">
+        <di:waypoint x="560" y="190" />
+        <di:waypoint x="700" y="190" />
+        <di:waypoint x="725" y="215" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Timeout_Join_di" bpmnElement="Flow_Timeout_Join">
+        <di:waypoint x="616" y="300" />
+        <di:waypoint x="725" y="300" />
+        <di:waypoint x="725" y="265" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Approval_Join_di" bpmnElement="Flow_Approval_Join">
+        <di:waypoint x="616" y="400" />
+        <di:waypoint x="760" y="400" />
+        <di:waypoint x="760" y="265" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Join_End_di" bpmnElement="Flow_Join_End">
+        <di:waypoint x="750" y="240" />
+        <di:waypoint x="810" y="240" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

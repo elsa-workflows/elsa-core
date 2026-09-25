@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    
+    <PropertyGroup>
+        <Description>Elsa Studio Login module for Blazor Web Assembly apps.</Description>
+        <PackageTags>elsa studio module login blazor wasm</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.Studio.Login\Elsa.Studio.Login.csproj" />
+    </ItemGroup>
+
+</Project>

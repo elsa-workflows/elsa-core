@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Core Elsa Studio services.</Description>
+        <PackageTags>elsa studio core</PackageTags>
+        <RootNamespace>Elsa.Studio</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.Authorization"/>
+        <PackageReference Include="Microsoft.AspNetCore.Components.CustomElements"/>
+        <PackageReference Include="Microsoft.AspNetCore.Components.Web"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions"/>
+        <PackageReference Include="Microsoft.JSInterop"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Blazilla"/>
+        <PackageReference Include="Blazored.LocalStorage"/>
+        <PackageReference Include="CodeBeam.MudBlazor.Extensions"/>
+        <PackageReference Include="FluentValidation"/>
+        <PackageReference Include="MudBlazor"/>
+        <PackageReference Include="Radzen.Blazor"/>
+        <PackageReference Include="ShortGuid"/>
+        <PackageReference Include="ThrottleDebounce"/>
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+        <ProjectReference Include="..\..\..\..\elsa-core\src\clients\Elsa.Api.Client\Elsa.Api.Client.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+        <PackageReference Include="Elsa.Api.Client"/>
+    </ItemGroup>
+
+</Project>

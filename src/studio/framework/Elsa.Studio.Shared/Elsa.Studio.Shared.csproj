@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Elsa Studio shared services and components.</Description>
+        <PackageTags>elsa studio framework</PackageTags>
+        <RootNamespace>Elsa.Studio</RootNamespace>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Blazored.LocalStorage" />
+        <PackageReference Include="BlazorMonaco" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.Studio.Core\Elsa.Studio.Core.csproj" />
+      <ProjectReference Include="..\Elsa.Studio.DomInterop\Elsa.Studio.DomInterop.csproj" />
+    </ItemGroup>
+    
+</Project>

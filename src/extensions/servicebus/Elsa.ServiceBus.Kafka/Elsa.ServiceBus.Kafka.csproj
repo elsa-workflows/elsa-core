@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides Apache Kafka integration and activities.
+        </Description>
+        <PackageTags>elsa extension module kafka service-bus</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+		<PackageReference Include="Azure.Messaging.ServiceBus" />
+		<PackageReference Include="Azure.ResourceManager.ServiceBus" />
+		<PackageReference Include="Confluent.Kafka" />
+		<PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    </ItemGroup>
+
+    <!-- System.Linq.Async only for .NET 8 and 9 - .NET 10 has native async LINQ support -->
+    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0'">
+        <PackageReference Include="System.Linq.Async" />
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+        <PackageReference Include="Elsa.Workflows.Runtime" />
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+    </ItemGroup>
+
+</Project>

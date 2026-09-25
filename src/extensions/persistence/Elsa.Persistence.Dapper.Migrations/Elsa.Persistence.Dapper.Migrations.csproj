@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides Dapper migrations for Dapper perisstence providers from various modules.
+        </Description>
+        <PackageTags>elsa extension persistence dapper migrations</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="FluentMigrator" />
+    </ItemGroup>
+
+</Project>

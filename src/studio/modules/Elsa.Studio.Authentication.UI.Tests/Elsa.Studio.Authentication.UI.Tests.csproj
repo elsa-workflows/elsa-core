@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net10.0</TargetFrameworks>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Studio.Authentication.UI\Elsa.Studio.Authentication.UI.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Authentication.Themes\Elsa.Studio.Authentication.Themes.csproj" />
+        <ProjectReference Include="..\..\framework\Elsa.Studio.Core.BlazorServer\Elsa.Studio.Core.BlazorServer.csproj" />
+    </ItemGroup>
+
+</Project>

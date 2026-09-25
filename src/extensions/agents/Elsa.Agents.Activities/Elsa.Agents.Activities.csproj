@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    
+    <PropertyGroup>
+        <Description>Provides Agent activities</Description>
+        <PackageTags>elsa extension module agents semantic kernel llm ai</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+        <PackageReference Include="Elsa" />
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+        <ProjectReference Include="..\..\..\..\..\elsa-core\src\modules\Elsa\Elsa.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.Agents.Core\Elsa.Agents.Core.csproj" />
+      <ProjectReference Include="..\Elsa.Agents.Persistence\Elsa.Agents.Persistence.csproj" />
+    </ItemGroup>
+    
+</Project>

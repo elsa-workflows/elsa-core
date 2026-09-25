@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Elsa Studio workflows core services.</Description>
+        <PackageTags>elsa studio core</PackageTags>
+        <RootNamespace>Elsa.Studio.Workflows</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\..\framework\Elsa.Studio.Core\Elsa.Studio.Core.csproj" />
+      <ProjectReference Include="..\..\framework\Elsa.Studio.Shared\Elsa.Studio.Shared.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Compile Remove="Domain\Handlers\Debugging.cs" />
+    </ItemGroup>
+
+</Project>

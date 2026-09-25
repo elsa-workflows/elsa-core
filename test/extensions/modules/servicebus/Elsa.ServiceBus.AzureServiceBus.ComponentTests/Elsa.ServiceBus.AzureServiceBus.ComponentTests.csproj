@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <!-- Pomelo.EntityFrameworkCore.MySql 9.0.0 doesn't support EF Core 10; no Pomelo 10.x exists yet -->
+        <NoWarn>$(NoWarn);NU1608</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Azure.Messaging.ServiceBus" />
+        <PackageReference Include="JetBrains.Annotations" />
+		<PackageReference Include="Elsa.Http" />
+        <PackageReference Include="Elsa.Persistence.EFCore.Common" />
+        <PackageReference Include="Elsa.Persistence.EFCore.MySql" />
+        <PackageReference Include="Elsa.Persistence.EFCore.Oracle" />
+        <PackageReference Include="Elsa.Persistence.EFCore.PostgreSql" />
+        <PackageReference Include="Elsa.Persistence.EFCore.Sqlite" />
+        <PackageReference Include="Elsa.Persistence.EFCore.SqlServer" />
+        <PackageReference Include="Elsa.Persistence.EFCore" />
+		<PackageReference Include="Elsa.Testing.Shared.Component" />
+		<PackageReference Include="Elsa.Workflows.Core" />
+        <PackageReference Include="Elsa.WorkflowProviders.BlobStorage" />
+        <PackageReference Include="Testcontainers.PostgreSql" />
+        <PackageReference Include="Testcontainers.RabbitMq" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\..\src\modules\caching\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj" />
+        <ProjectReference Include="..\..\..\..\src\modules\runtimes\Elsa.Workflows.Runtime.ProtoActor\Elsa.Workflows.Runtime.ProtoActor.csproj" />
+        <ProjectReference Include="..\..\..\..\src\modules\servicebus\Elsa.ServiceBus.AzureServiceBus\Elsa.ServiceBus.AzureServiceBus.csproj" />
+        <ProjectReference Include="..\..\..\..\src\modules\servicebus\Elsa.ServiceBus.MassTransit.AzureServiceBus\Elsa.ServiceBus.MassTransit.AzureServiceBus.csproj" />
+        <ProjectReference Include="..\..\..\..\src\modules\servicebus\Elsa.ServiceBus.MassTransit.RabbitMq\Elsa.ServiceBus.MassTransit.RabbitMq.csproj" />
+        <ProjectReference Include="..\..\..\..\src\modules\servicebus\Elsa.ServiceBus.MassTransit\Elsa.ServiceBus.MassTransit.csproj" />
+        <ProjectReference Include="..\..\..\workbench\Elsa.TestServer.Web\Elsa.TestServer.Web.csproj" />
+    </ItemGroup>
+
+</Project>

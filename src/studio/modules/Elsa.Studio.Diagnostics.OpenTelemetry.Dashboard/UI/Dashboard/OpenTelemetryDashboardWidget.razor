@@ -1,0 +1,89 @@
+@using Elsa.Studio.Diagnostics.OpenTelemetry.Contracts
+@using Elsa.Studio.Diagnostics.OpenTelemetry.Models
+@inject IOpenTelemetryService TelemetryService
+
+@if (Context.Snapshot != null)
+{
+    <MudPaper Outlined="true" Elevation="0" Class="dashboard-panel dashboard-section" Style="@DashboardStyles.Panel">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="dashboard-section-header" Style="@DashboardStyles.SectionHeader">
+            <MudText Typo="Typo.subtitle1">OpenTelemetry</MudText>
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@HealthColor">@HealthLabel</MudChip>
+        </MudStack>
+
+        <div class="dashboard-diagnostics-block" style="@DashboardStyles.DiagnosticsBlock">
+            @if (_loading)
+            {
+                <MudText Typo="Typo.body2" Style="color:var(--mud-palette-text-secondary);">Loading telemetry health…</MudText>
+            }
+            else if (_error != null)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Error">Telemetry health is unavailable.</MudText>
+            }
+            else if (_storage != null)
+            {
+                <DashboardDiagnosticsValue Label="Resources" Value="@DashboardMetricFormatter.Count(_storage.ResourceCount)" />
+                <DashboardDiagnosticsValue Label="Traces" Value="@DashboardMetricFormatter.Count(_storage.TraceCount)" />
+                <DashboardDiagnosticsValue Label="Metric points" Value="@DashboardMetricFormatter.Count(_storage.MetricPointCount)" />
+                <DashboardDiagnosticsValue Label="Log records" Value="@DashboardMetricFormatter.Count(_storage.LogRecordCount)" />
+                <DashboardDiagnosticsValue Label="Dropped signals" Value="@DashboardMetricFormatter.Count(DroppedSignalCount)" Color="@DroppedSignalColor" />
+            }
+
+            <MudButton Href="diagnostics/opentelemetry" Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Outlined.OpenInNew">Open telemetry</MudButton>
+        </div>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public DashboardWidgetContext Context { get; set; } = null!;
+    [Parameter] public DashboardWidgetDescriptor Descriptor { get; set; } = null!;
+
+    private OpenTelemetryStorageDiagnostics? _storage;
+    private DateTimeOffset? _loadedFor;
+    private bool _loading;
+    private Exception? _error;
+
+    private long DroppedSignalCount => _storage == null
+        ? 0
+        : _storage.DroppedTraceCount + _storage.DroppedSpanCount + _storage.DroppedMetricPointCount + _storage.DroppedLogRecordCount;
+
+    private Color DroppedSignalColor => DroppedSignalCount > 0 ? Color.Warning : Color.Default;
+    private Color HealthColor => _loading
+        ? Color.Info
+        : _error != null || _storage == null
+            ? Color.Error
+            : DroppedSignalCount > 0
+                ? Color.Warning
+                : Color.Success;
+
+    private string HealthLabel => _loading
+        ? "Loading"
+        : _error != null || _storage == null
+            ? "Unavailable"
+            : DroppedSignalCount > 0
+                ? "Attention"
+                : "Available";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Context.Snapshot == null || Context.LastRefreshedAt == null || Context.LastRefreshedAt == _loadedFor)
+            return;
+
+        _loadedFor = Context.LastRefreshedAt;
+        _loading = true;
+        _error = null;
+
+        try
+        {
+            _storage = await TelemetryService.GetStorageDiagnosticsAsync();
+        }
+        catch (Exception e)
+        {
+            _storage = null;
+            _error = e;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

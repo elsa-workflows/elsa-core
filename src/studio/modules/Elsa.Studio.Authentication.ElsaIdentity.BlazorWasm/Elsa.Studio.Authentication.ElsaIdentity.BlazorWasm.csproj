@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Elsa Studio ElsaIdentity module for Blazor WebAssembly apps.</Description>
+        <PackageTags>elsa studio authentication elsa identity blazor wasm</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Studio.Authentication.ElsaIdentity\Elsa.Studio.Authentication.ElsaIdentity.csproj" />
+    </ItemGroup>
+
+</Project>
+

@@ -1,0 +1,70 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <IsPackable>false</IsPackable>
+        <!-- Pomelo.EntityFrameworkCore.MySql 9.0.0 doesn't support EF Core 10; no Pomelo 10.x exists yet -->
+        <NoWarn>$(NoWarn);NU1608</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="DistributedLock.FileSystem" />
+        <PackageReference Include="Elsa" />
+		<PackageReference Include="Elsa.Expressions" />
+		<PackageReference Include="Elsa.Expressions.JavaScript" />
+		<PackageReference Include="Elsa.Expressions.JavaScript.Libraries" />
+		<PackageReference Include="Elsa.Expressions.CSharp" />
+		<PackageReference Include="Elsa.Expressions.Liquid" />
+		<PackageReference Include="Elsa.Expressions.Python" />
+        <PackageReference Include="Elsa.Http" />
+        <PackageReference Include="Elsa.Http.Webhooks" />
+        <PackageReference Include="Elsa.Persistence.EFCore.Common" />
+        <PackageReference Include="Elsa.Persistence.EFCore.MySql" />
+        <PackageReference Include="Elsa.Persistence.EFCore.Oracle" />
+        <PackageReference Include="Elsa.Persistence.EFCore.PostgreSql" />
+        <PackageReference Include="Elsa.Persistence.EFCore.Sqlite" />
+        <PackageReference Include="Elsa.Persistence.EFCore.SqlServer" />
+        <PackageReference Include="Elsa.Persistence.EFCore" />
+        <PackageReference Include="Elsa.Identity" />
+        <PackageReference Include="Elsa.Scheduling" />
+		<PackageReference Include="Elsa.Workflows.Api" />
+		<PackageReference Include="Elsa.Workflows.Runtime" />
+		<PackageReference Include="Elsa.Workflows.Runtime.Distributed" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
+		<PackageReference Include="Proto.Persistence.Sqlite" />
+        <PackageReference Include="WebhooksCore" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<ProjectReference Include="..\..\modules\agents\Elsa.Agents.Persistence.EFCore.MySql\Elsa.Agents.Persistence.EFCore.MySql.csproj" />
+		<ProjectReference Include="..\..\modules\agents\Elsa.Agents.Persistence.EFCore.PostgreSql\Elsa.Agents.Persistence.EFCore.PostgreSql.csproj" />
+		<ProjectReference Include="..\..\modules\agents\Elsa.Agents.Persistence.EFCore.Sqlite\Elsa.Agents.Persistence.EFCore.Sqlite.csproj" />
+		<ProjectReference Include="..\..\modules\agents\Elsa.Agents.Persistence.EFCore.SqlServer\Elsa.Agents.Persistence.EFCore.SqlServer.csproj" />
+		<ProjectReference Include="..\..\modules\agents\Elsa.Agents.Persistence.EFCore\Elsa.Agents.Persistence.EFCore.csproj" />
+		<ProjectReference Include="..\..\modules\caching\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj" />
+		<ProjectReference Include="..\..\modules\caching\Elsa.Caching.Distributed.ProtoActor\Elsa.Caching.Distributed.ProtoActor.csproj" />
+		<ProjectReference Include="..\..\modules\caching\Elsa.Caching.Distributed\Elsa.Caching.Distributed.csproj" />
+		<ProjectReference Include="..\..\modules\connections\Elsa.Connections.Api\Elsa.Connections.Api.csproj" />
+		<ProjectReference Include="..\..\modules\connections\Elsa.Connections.Core\Elsa.Connections.Core.csproj" />
+		<ProjectReference Include="..\..\modules\connections\Elsa.Connections.Models\Elsa.Connections.Models.csproj" />
+		<ProjectReference Include="..\..\modules\connections\Elsa.Connections.Persistence.EFCore.Sqlite\Elsa.Connections.Persistence.EFCore.Sqlite.csproj" />
+		<ProjectReference Include="..\..\modules\connections\Elsa.Connections.Persistence.EFCore\Elsa.Connections.Persistence.EFCore.csproj" />
+		<ProjectReference Include="..\..\modules\connections\Elsa.Connections.Persistence\Elsa.Connections.Persistence.csproj" />
+		<ProjectReference Include="..\..\modules\email\Elsa.Email\Elsa.Email.csproj" />
+		<ProjectReference Include="..\..\modules\ldap\Elsa.Ldap\Elsa.Ldap.csproj" />
+		<ProjectReference Include="..\..\modules\mqtt\Elsa.Mqtt\Elsa.Mqtt.csproj" />
+		<ProjectReference Include="..\..\modules\runtimes\Elsa.Workflows.Runtime.ProtoActor\Elsa.Workflows.Runtime.ProtoActor.csproj" />
+		<ProjectReference Include="..\..\modules\secrets\Elsa.Secrets.Persistence.EFCore.PostgreSql\Elsa.Secrets.Persistence.EFCore.PostgreSql.csproj" />
+		<ProjectReference Include="..\..\modules\secrets\Elsa.Secrets.Persistence.EFCore.Sqlite\Elsa.Secrets.Persistence.EFCore.Sqlite.csproj" />
+		<ProjectReference Include="..\..\modules\secrets\Elsa.Secrets.Persistence.EFCore.SqlServer\Elsa.Secrets.Persistence.EFCore.SqlServer.csproj" />
+		<ProjectReference Include="..\..\modules\secrets\Elsa.Secrets.Persistence.EFCore\Elsa.Secrets.Persistence.EFCore.csproj" />
+		<ProjectReference Include="..\..\modules\servicebus\Elsa.ServiceBus.AzureServiceBus\Elsa.ServiceBus.AzureServiceBus.csproj" />
+		<ProjectReference Include="..\..\modules\servicebus\Elsa.ServiceBus.MassTransit.AzureServiceBus\Elsa.ServiceBus.MassTransit.AzureServiceBus.csproj" />
+		<ProjectReference Include="..\..\modules\servicebus\Elsa.ServiceBus.MassTransit.RabbitMq\Elsa.ServiceBus.MassTransit.RabbitMq.csproj" />
+		<ProjectReference Include="..\..\modules\servicebus\Elsa.ServiceBus.MassTransit\Elsa.ServiceBus.MassTransit.csproj" />
+		<ProjectReference Include="..\..\modules\storage\Elsa.Storage.AzureStorage\Elsa.Storage.AzureStorage.csproj" />
+		<ProjectReference Include="..\ElsaStudioWebAssembly\ElsaStudioWebAssembly.csproj"/>
+	</ItemGroup>
+
+</Project>

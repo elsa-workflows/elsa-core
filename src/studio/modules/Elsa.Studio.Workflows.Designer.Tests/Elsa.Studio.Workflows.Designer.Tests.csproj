@@ -1,0 +1,89 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Studio.Workflows.Designer\Elsa.Studio.Workflows.Designer.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\css\designer.v2.css"
+              Link="DesignerAssets\designer.v2.css"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\css\designer.v1.css"
+              Link="DesignerAssets\designer.v1.css"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\Components\ActivityWrappers\V2\ActivityWrapper.razor"
+              Link="DesignerAssets\ActivityWrapper.razor"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\Components\ActivityWrappers\V1\ActivityWrapper.razor"
+              Link="DesignerAssets\ActivityWrapperV1.razor"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\internal\init.ts"
+              Link="DesignerAssets\init.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\api\create-graph.ts"
+              Link="DesignerAssets\create-graph.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\api\apply-graph-theme.ts"
+              Link="DesignerAssets\apply-graph-theme.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\api\grid-options.ts"
+              Link="DesignerAssets\grid-options.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\api\designer-mode.ts"
+              Link="DesignerAssets\designer-mode.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\api\graph-bindings.ts"
+              Link="DesignerAssets\graph-bindings.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\api\load-graph.ts"
+              Link="DesignerAssets\load-graph.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\api\dispose-graph.ts"
+              Link="DesignerAssets\dispose-graph.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\api\read-graph.ts"
+              Link="DesignerAssets\read-graph.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\api\sequence-mode.ts"
+              Link="DesignerAssets\sequence-mode.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\internal\state-machine-shapes.ts"
+              Link="DesignerAssets\state-machine-shapes.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\internal\state-machine-accessibility.ts"
+              Link="DesignerAssets\state-machine-accessibility.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\Components\StateMachineCanvas.razor.css"
+              Link="DesignerAssets\StateMachineCanvas.razor.css"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\internal\designer-ports.ts"
+              Link="DesignerAssets\designer-ports.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\api\calculate-activity-size.ts"
+              Link="DesignerAssets\calculate-activity-size.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\api\update-activity-size.ts"
+              Link="DesignerAssets\update-activity-size.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\internal\canvas-ready.ts"
+              Link="DesignerAssets\canvas-ready.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\bpmn\graph-registry.ts"
+              Link="DesignerAssets\bpmn-graph-registry.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+</Project>

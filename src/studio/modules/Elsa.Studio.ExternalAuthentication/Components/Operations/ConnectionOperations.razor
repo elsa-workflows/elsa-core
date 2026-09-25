@@ -1,0 +1,224 @@
+@inject Elsa.Studio.Contracts.IBackendApiClientProvider ApiClientProvider
+@inject Elsa.Studio.ExternalAuthentication.Services.IExternalAuthenticationPermissionService Permissions
+@inject ISnackbar Snackbar
+@using Elsa.Studio.ExternalAuthentication.Services
+
+<MudStack Spacing="2">
+    <MudText Typo="Typo.h6">Provider connectivity</MudText>
+    <MudText Typo="Typo.caption">Tests provider reachability for the current revision. A successful test does not verify complete connection configuration or client authentication. Results are redacted.</MudText>
+
+    @if (Observation is { } observation)
+    {
+        <MudAlert Severity="@ConnectionObservationPresentation.StatusSeverity(observation.Status)" Dense="true">
+            <strong>Connectivity test: @observation.Status</strong> — @observation.Summary
+            @if (observation.IsStale)
+            {
+                <br /><span>This observation is stale because the connection has materially changed since it was tested.</span>
+            }
+        </MudAlert>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info" Dense="true">This connection has not been tested.</MudAlert>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_operationError))
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" aria-live="assertive">@_operationError</MudAlert>
+    }
+
+    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+        @if (Adapter.Capabilities.SupportsTest)
+        {
+            <MudButton Variant="Variant.Outlined" Disabled="@(!_canTest || IsReadOnly || _testing)" OnClick="TestAsync">
+                @(_testing ? "Testing…" : "Test connection")
+            </MudButton>
+        }
+        @if (Adapter.Capabilities.SupportsPreview)
+        {
+            <MudButton Variant="Variant.Outlined" Disabled="@(!CanPreview || _startingPreview)" OnClick="StartPreviewAsync">
+                @(_startingPreview ? "Preparing preview…" : "Preview sign-in")
+            </MudButton>
+        }
+    </MudStack>
+
+    @if (_preview is { } preview)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true">
+            Preview state expires @preview.ExpiresAt.ToLocalTime().ToString("g"). Complete the provider sign-in in a separate tab, return here, then retrieve the one-time redacted result.
+        </MudAlert>
+        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="@_previewNavigationUrl" Target="_blank" rel="noopener noreferrer">Open preview sign-in</MudButton>
+            <MudButton Variant="Variant.Outlined" Disabled="@_retrievingPreview" OnClick="RetrievePreviewAsync">
+                @(_retrievingPreview ? "Retrieving…" : "Get one-time preview result")
+            </MudButton>
+        </MudStack>
+    }
+
+    @if (_previewResult is not null)
+    {
+        <MudAlert Severity="Severity.Success" Dense="true">
+            Preview completed for @_previewResult.Issuer (@_previewResult.MaskedSubject).
+            Elsa would apply the policy decision “@_previewResult.PolicyDecision”.
+            This preview did not create or link a user, credential, or session.
+            @foreach (var warning in _previewResult.Warnings)
+            {
+                <div>@warning</div>
+            }
+        </MudAlert>
+    }
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public ConnectionSummary Connection { get; set; } = default!;
+    [Parameter, EditorRequired] public AdapterDescriptor Adapter { get; set; } = default!;
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public bool StartPreviewOnLoad { get; set; }
+    [Parameter] public EventCallback<ConnectionObservation> ObservationRecorded { get; set; }
+
+    private bool _canTest;
+    private bool _canPreview;
+    private bool _testing;
+    private bool _startingPreview;
+    private bool _retrievingPreview;
+    private PreviewInitiation? _preview;
+    private string? _previewNavigationUrl;
+    private string? _previewHandle;
+    private PreviewResultDocument? _previewResult;
+    private string? _operationError;
+    private bool _previewStartRequested;
+
+    private ConnectionObservation? Observation => _testing ? null : Connection.LatestObservation;
+    private bool CanPreview => _canPreview && !IsReadOnly && Adapter.Capabilities.SupportsPreview;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _canTest = await Permissions.HasAsync(ExternalAuthenticationPermissions.Test);
+        _canPreview = await Permissions.HasAsync(ExternalAuthenticationPermissions.Preview);
+        if (StartPreviewOnLoad && !_previewStartRequested && CanPreview)
+        {
+            _previewStartRequested = true;
+            await StartPreviewAsync();
+        }
+    }
+
+    private async Task TestAsync()
+    {
+        _testing = true;
+        _operationError = null;
+        try
+        {
+            var observation = await ConnectionOperationActions.TestConnectionAsync(ApiClientProvider, Connection);
+            Connection.LatestObservation = observation;
+            await ObservationRecorded.InvokeAsync(observation);
+            Snackbar.Add(ConnectionOperationActions.TestCompletedMessage, Severity.Success);
+        }
+        catch (Exception exception)
+        {
+            _operationError = ConnectionOperationActions.PresentError(
+                exception,
+                ConnectionOperationActions.TestFailedMessage);
+            Snackbar.Add(_operationError, Severity.Error);
+        }
+        finally
+        {
+            _testing = false;
+        }
+    }
+
+    private async Task StartPreviewAsync()
+    {
+        if (!CanPreview)
+            return;
+
+        _startingPreview = true;
+        _previewResult = null;
+        _operationError = null;
+        try
+        {
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationOperationsApi>();
+            _preview = await api.InitiatePreviewAsync(Connection.Id, ConnectionConcurrency.ToIfMatch(Connection.Revision));
+            if (!TryGetTrustedPreviewNavigation(ApiClientProvider.Url, _preview.NavigationUrl, out _previewNavigationUrl, out _previewHandle))
+            {
+                _preview = null;
+                _previewNavigationUrl = null;
+                _operationError = "The server returned an invalid preview navigation URL. Confirm that the backend base URL and preview callback path use the same origin.";
+                Snackbar.Add(_operationError, Severity.Error);
+            }
+        }
+        catch (Exception exception)
+        {
+            _operationError = ConnectionOperationActions.PresentError(
+                exception,
+                "Preview could not be prepared. Validate the connection and confirm the provider preview callback URI, then try again.");
+            Snackbar.Add(_operationError, Severity.Error);
+        }
+        finally
+        {
+            _startingPreview = false;
+        }
+    }
+
+    private async Task RetrievePreviewAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_previewHandle))
+            return;
+
+        _retrievingPreview = true;
+        _operationError = null;
+        try
+        {
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationOperationsApi>();
+            _previewResult = await api.GetPreviewResultAsync(_previewHandle);
+            _preview = null;
+            _previewNavigationUrl = null;
+            _previewHandle = null;
+            Snackbar.Add("One-time preview result retrieved. It did not create a user, credential, link, or session.", Severity.Success);
+        }
+        catch (Exception exception)
+        {
+            _operationError = ConnectionOperationActions.PresentError(
+                exception,
+                "The one-time preview result is unavailable or has expired. Start a new preview and complete provider sign-in before retrieving it.");
+            Snackbar.Add(_operationError, Severity.Error);
+        }
+        finally
+        {
+            _retrievingPreview = false;
+        }
+    }
+
+    public static bool TryGetTrustedPreviewNavigation(Uri backend, string navigationUrl, out string? trustedNavigationUrl, out string? previewHandle)
+    {
+        trustedNavigationUrl = null;
+        previewHandle = null;
+        if (string.IsNullOrWhiteSpace(navigationUrl) || !Uri.TryCreate(navigationUrl, UriKind.RelativeOrAbsolute, out var navigationUri))
+            return false;
+
+        if (!navigationUri.IsAbsoluteUri)
+        {
+            if (!navigationUrl.StartsWith("/", StringComparison.Ordinal) || navigationUrl.StartsWith("//", StringComparison.Ordinal))
+                return false;
+            navigationUri = new Uri(new Uri(backend.GetLeftPart(UriPartial.Authority)), navigationUri);
+        }
+
+        if (!SameOrigin(navigationUri, backend))
+            return false;
+
+        var segments = navigationUri.AbsolutePath
+            .Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var previewsIndex = Array.FindIndex(segments, segment => string.Equals(segment, "previews", StringComparison.Ordinal));
+        if (previewsIndex < 0 || previewsIndex + 2 >= segments.Length || !string.Equals(segments[previewsIndex + 2], "authorize", StringComparison.Ordinal) || string.IsNullOrWhiteSpace(segments[previewsIndex + 1]))
+            return false;
+
+        trustedNavigationUrl = navigationUri.AbsoluteUri;
+        previewHandle = segments[previewsIndex + 1];
+        return true;
+    }
+
+    private static bool SameOrigin(Uri left, Uri right) =>
+        string.Equals(left.Scheme, right.Scheme, StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(left.Host, right.Host, StringComparison.OrdinalIgnoreCase) &&
+        left.Port == right.Port;
+
+}

@@ -1,0 +1,24 @@
+version: 2
+
+registries:
+  elsa-feedz-preview:
+    type: nuget-feed
+    url: https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json
+    token: ${{secrets.FEEDZ_API_KEY}}
+
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/"
+    target-branch: "main"
+    registries:
+      - elsa-feedz-preview
+    schedule:
+      interval: "daily"
+      time: "06:00"
+      timezone: "Europe/Amsterdam"
+    allow:
+      - dependency-name: "Elsa.Api.Client"
+    open-pull-requests-limit: 1
+    commit-message:
+      prefix: "deps"
+      include: "scope"

@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\..\src\modules\caching\Elsa.Caching.Distributed.ProtoActor\Elsa.Caching.Distributed.ProtoActor.csproj" />
+    </ItemGroup>
+
+</Project>

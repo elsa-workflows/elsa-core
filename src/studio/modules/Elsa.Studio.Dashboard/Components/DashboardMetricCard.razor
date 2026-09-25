@@ -1,0 +1,36 @@
+@if (!string.IsNullOrWhiteSpace(Href))
+{
+    <MudLink Href="@Href" Underline="Underline.None" Class="dashboard-card-link" Style="@DashboardStyles.CardLink" aria-label="@AriaLabel">
+        @CardContent
+    </MudLink>
+}
+else
+{
+    @CardContent
+}
+
+@code {
+    [Parameter] public string Label { get; set; } = null!;
+    [Parameter] public string Value { get; set; } = "0";
+    [Parameter] public string? Caption { get; set; }
+    [Parameter] public string Icon { get; set; } = Icons.Material.Outlined.Insights;
+    [Parameter] public Color Color { get; set; } = Color.Default;
+    [Parameter] public string? Href { get; set; }
+
+    private string AriaLabel => string.IsNullOrWhiteSpace(Caption)
+        ? $"{Label}: {Value}"
+        : $"{Label}: {Value}. {Caption}";
+
+    private RenderFragment CardContent => @<MudPaper Outlined="true" Elevation="0" Class="@CardClass" Style="@DashboardStyles.MetricCard">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Spacing="2">
+            <MudText Typo="Typo.overline">@Label</MudText>
+            <MudIcon Icon="@Icon" Size="Size.Small" Color="@Color" />
+        </MudStack>
+        <MudText Typo="Typo.h5" Class="dashboard-metric-value" Color="@Color" Style="@DashboardStyles.MetricValue">@Value</MudText>
+        <MudText Typo="Typo.caption" Class="dashboard-muted">@Caption</MudText>
+    </MudPaper>;
+
+    private string CardClass => !string.IsNullOrWhiteSpace(Href)
+        ? "dashboard-panel dashboard-metric-card dashboard-metric-card-clickable"
+        : "dashboard-panel dashboard-metric-card";
+}

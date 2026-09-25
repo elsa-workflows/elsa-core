@@ -1,0 +1,60 @@
+@using BlazorMonaco.Editor
+@using MudBlazor
+
+<style>
+    .editor-host {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .code-view-monaco-editor {
+        height: 100% !important;
+        width: 100% !important;
+    }
+</style>
+
+<div class="code-tab-content">
+    @if (!IsReadOnly)
+    {
+        <MudPaper Class="ma-2" Elevation="0" Outlined="true">
+            <MudToolBar Dense="true">
+                <MudSpacer />
+                <MudTooltip Text="@Localizer["Auto apply changes to editor."]" Delay="500">
+                    <MudSwitch T="bool"
+                               Value="@AutoApply"
+                               Color="Color.Primary"
+                               Label="@Localizer["Auto-apply"]"
+                               LabelPlacement="Placement.Start"
+                               ValueChanged="@OnAutoApplyChanged" />
+                </MudTooltip>
+                <MudTooltip Text="@Localizer["Apply changes to editor."]" Delay="500">
+                    <MudIconButton Icon="@Icons.Material.Outlined.Check"
+                                   Color="Color.Success"
+                                   label="@Localizer["Apply"]"
+                                   OnClick="OnApplyClicked" />
+                </MudTooltip>
+            </MudToolBar>
+            @if (!string.IsNullOrWhiteSpace(_applyErrorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">
+                    <MudStack Row="true" AlignItems="MudBlazor.AlignItems.Center">
+                        @_applyErrorMessage
+                        <MudTooltip Text="@Localizer["Reload from editor"]" Delay="500">
+                            <MudIconButton Icon="@Icons.Material.Outlined.Refresh"
+                                           Size="Size.Small"
+                                           OnClick="ReloadMonacoClick" />
+                        </MudTooltip>
+                    </MudStack>
+                </MudAlert>
+            }
+        </MudPaper>
+    }
+    <div class="editor-host">
+        <StandaloneCodeEditor @ref="_monacoEditor"
+                              Id="@_monacoEditorId"
+                              ConstructionOptions="ConfigureMonacoEditor"
+                              OnDidChangeModelContent="OnMonacoContentChangedAsync"
+                              CssClass="code-view-monaco-editor" />
+    </div>
+</div>

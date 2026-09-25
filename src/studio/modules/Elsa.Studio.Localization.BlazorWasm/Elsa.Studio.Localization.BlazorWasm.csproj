@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+	<PropertyGroup>
+		<Description>Adds support for localization to Elsa Studio Blazor Wasm Apps.</Description>
+		<PackageTags>elsa studio module</PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<SupportedPlatform Include="browser" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Elsa.Studio.Localization\Elsa.Studio.Localization.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+	</ItemGroup>
+</Project>

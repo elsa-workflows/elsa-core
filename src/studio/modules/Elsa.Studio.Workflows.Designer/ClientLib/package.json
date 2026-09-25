@@ -1,0 +1,45 @@
+{
+  "name": "elsa-designer-dependencies",
+  "description": "Bundle dependencies for the designer.",
+  "repository": "https://github.com/elsa-workflows/elsa-dashboard",
+  "license": "MIT",
+  "version": "1.0.0",
+  "dependencies": {
+    "@antv/layout": "^0.3.25",
+    "@antv/x6": "^2.18.1",
+    "@antv/x6-plugin-clipboard": "^2.1.6",
+    "@antv/x6-plugin-export": "2.1.6",
+    "@antv/x6-plugin-history": "^2.2.4",
+    "@antv/x6-plugin-keyboard": "^2.2.3",
+    "@antv/x6-plugin-scroller": "^2.0.10",
+    "@antv/x6-plugin-selection": "^2.2.2",
+    "@antv/x6-plugin-snapline": "^2.1.7",
+    "@antv/x6-plugin-transform": "^2.1.8",
+    "@dagrejs/dagre": "^1.1.4",
+    "@xyflow/react": "^12.3.5",
+    "lodash.camelcase": "^4.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "copy-webpack-plugin": "^13.0.1",
+    "css-loader": "^7.1.2",
+    "jsdom": "30.0.1",
+    "json-schema-to-typescript": "16.0.0",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.8.3",
+    "vitest": "3.2.7",
+    "webpack": "^5.99.9",
+    "webpack-cli": "^6.0.1"
+  },
+  "scripts": {
+    "generate:bpmn-types": "node scripts/generate-bpmn-types.js",
+    "check:generated": "node scripts/generate-bpmn-types.js --check",
+    "build": "npm run generate:bpmn-types && webpack",
+    "test": "vitest run --typecheck"
+  }
+}
