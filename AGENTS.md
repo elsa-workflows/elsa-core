@@ -51,6 +51,8 @@ Prefer targeted `dotnet test <project>` commands while iterating, then run a bro
 - `src/common/`: shared infrastructure and testing support.
 - `src/extensions/`: extension packages.
 - `src/modules/`: Elsa modules and feature packages.
+- `src/studio/`: Studio-specific guidance for the consolidated source lives in
+  [`src/studio/AGENTS.md`](src/studio/AGENTS.md); read it for Studio modules and plans.
 - `test/unit/`: unit tests.
 - `test/integration/`: integration tests.
 - `test/component/`: component tests.
