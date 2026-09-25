@@ -10,12 +10,14 @@ standalone rules that still protect generated or local Studio paths:
 | Standalone output | Consolidated output |
 | --- | --- |
 | CustomElements `wasm/` | `src/studio/hosts/Elsa.Studio.Host.CustomElements/wasm/` |
-| React sample `public/` | `samples/studio/react/workflow-definition-editor-sample/workflow-definition-editor-app/public/` |
+| React sample's copied WASM `_content/`, `_framework/` and `appsettings.json` | Those three paths under `samples/studio/react/workflow-definition-editor-sample/workflow-definition-editor-app/public/` |
 | Designer and DomInterop ClientLib lockfiles | Corresponding `src/studio` ClientLib paths |
 | Browser `test-results/` | `test/studio/browser/**/test-results/` |
 | Wrappers `.npmrc` | `src/studio/wrappers/.npmrc` |
 
-The React sample's `postinstall` copies WASM assets into `public/`. The
+The React sample's `postinstall` copies only those three WASM assets into
+`public/`. A new hand-authored file such as `public/index.html` stays visible
+to Git. The
 [ClientLib build script](../../../scripts/integration-program/build_studio_clientlibs.sh)
 copies reviewed lockfiles into the two source directories before running
 `npm ci`; those copies are build inputs for the local proof, not changes to
@@ -30,7 +32,8 @@ Studio, package, publish, release, and documentation patterns are not copied
 into Core without evidence that they are generated at the relocated paths.
 The retained Studio `.dockerignore` has a separate container-context gate.
 
-`git check-ignore --no-index` verifies the six relocated ignore cases and
-controls for hand-authored Studio static assets, a checked-in React lockfile,
+`git check-ignore --no-index` verifies the relocated ignore cases and
+controls for hand-authored Studio static assets and React `public/index.html`,
+a checked-in React lockfile,
 and an unrelated Core source path. The changes do not alter a Docker build,
 package, workflow, or feed publication.

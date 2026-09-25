@@ -59,7 +59,9 @@ src/studio/**/appsettings.Local.json
 
 # Generated Studio tooling output relocated from its standalone repository.
 src/studio/hosts/Elsa.Studio.Host.CustomElements/wasm/
-samples/studio/react/workflow-definition-editor-sample/workflow-definition-editor-app/public/
+samples/studio/react/workflow-definition-editor-sample/workflow-definition-editor-app/public/_content/
+samples/studio/react/workflow-definition-editor-sample/workflow-definition-editor-app/public/_framework/
+samples/studio/react/workflow-definition-editor-sample/workflow-definition-editor-app/public/appsettings.json
 src/studio/modules/Elsa.Studio.Workflows.Designer/ClientLib/package-lock.json
 src/studio/framework/Elsa.Studio.DomInterop/ClientLib/package-lock.json
 test/studio/browser/**/test-results/
