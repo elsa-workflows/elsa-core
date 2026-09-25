@@ -60,6 +60,7 @@ CURRENT_TIP_PATCH_PATHS = {
     "studio-bpmn-generator-layout.patch": "scripts/integration-program/consolidated-build/studio-bpmn-generator-layout.patch",
     "workbench-two-tenant-multitenancy.patch": "scripts/integration-program/consolidated-build/workbench-two-tenant-multitenancy.patch",
     "workbench-secrets-route-probe.patch": "scripts/integration-program/consolidated-build/workbench-secrets-route-probe.patch",
+    "studio-test-layout-current-tip.patch": "scripts/integration-program/consolidated-build/studio-test-layout-current-tip.patch",
 }
 CURRENT_TIP_IMPORT_RECEIPT_SHA256 = "dee44fd3d8027765e2cc8107a3b6e9970797cc0ec74cd484c21d7985f931cea8"
 CURRENT_TIP_PREPARATION_RECEIPT_SHA256 = "80396b7354bf42761e31853d683887c5336898db5aca9696a6c5613576d4bd26"
