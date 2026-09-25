@@ -39,7 +39,11 @@ public sealed class InterruptedRecoveryScanner : IInterruptedRecoveryScanner
     /// <inheritdoc />
     public async ValueTask<int> ScanAndRequeueAsync(CancellationToken cancellationToken)
     {
-        var filter = new WorkflowInstanceFilter { WorkflowSubStatus = WorkflowSubStatus.Interrupted };
+        var filter = new WorkflowInstanceFilter
+        {
+            WorkflowSubStatus = WorkflowSubStatus.Interrupted,
+            WorkflowStatus = WorkflowStatus.Running,
+        };
         var batchSize = _runtimeOptions.Value.RestartInterruptedWorkflowsBatchSize;
         var instances = _instanceStore.EnumerateSummariesAsync(filter, batchSize, cancellationToken);
         var requeued = 0;

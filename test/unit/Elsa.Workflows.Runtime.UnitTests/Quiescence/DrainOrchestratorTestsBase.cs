@@ -34,6 +34,8 @@ public abstract class DrainOrchestratorTestsBase
         Registry.Snapshot().Returns(Array.Empty<IngressSourceSnapshot>());
         ExecutionCycleRegistry.ActiveCount.Returns(0);
         ExecutionCycleRegistry.ListActiveCycles().Returns(Array.Empty<ExecutionCycleHandle>());
+        InstanceStore.TryMarkInterruptedAsync(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<bool>())
+            .Returns(new ValueTask<bool>(true));
     }
 
     protected void AdvanceTime(TimeSpan span) => _now += span;

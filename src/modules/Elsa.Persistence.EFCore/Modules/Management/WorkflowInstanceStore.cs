@@ -194,6 +194,22 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
+    public async ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false)
+    {
+        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+        var updated = await dbContext.WorkflowInstances
+            .Where(x => x.Id == workflowInstanceId && (x.Status != WorkflowStatus.Finished || (allowFinishedCancelled && x.SubStatus == WorkflowSubStatus.Cancelled)))
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(x => x.Status, WorkflowStatus.Running)
+                    .SetProperty(x => x.SubStatus, WorkflowSubStatus.Interrupted)
+                    .SetProperty(x => x.IsExecuting, false),
+                cancellationToken);
+
+        return updated > 0;
+    }
+
+    /// <inheritdoc />
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
     public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {

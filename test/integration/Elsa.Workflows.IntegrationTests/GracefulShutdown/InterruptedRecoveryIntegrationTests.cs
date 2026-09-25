@@ -73,8 +73,8 @@ public class InterruptedRecoveryIntegrationTests
         var instanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
 
         // The two recovery paths use disjoint filters:
-        //   - RestartInterruptedWorkflowsTask (recurring): IsExecuting=true AND UpdatedAt < threshold
-        //   - RecoverInterruptedWorkflowsStartupTask (this scan): SubStatus = Interrupted (which has IsExecuting=false)
+        //   - RestartInterruptedWorkflowsTask (recurring): IsExecuting=true AND UpdatedAt < threshold AND Status=Running
+        //   - RecoverInterruptedWorkflowsStartupTask (this scan): SubStatus = Interrupted AND Status = Running (IsExecuting=false)
         await SeedInstancesAsync(instanceStore, 2, WorkflowSubStatus.Interrupted, isExecuting: false, idPrefix: "graceful-");
         await SeedInstancesAsync(instanceStore, 2, WorkflowSubStatus.Executing, isExecuting: true, idPrefix: "ungraceful-");
 
@@ -89,7 +89,39 @@ public class InterruptedRecoveryIntegrationTests
         Assert.Equal(2, stillExecuting.Count());
     }
 
-    private static async Task SeedInstancesAsync(IWorkflowInstanceStore store, int count, WorkflowSubStatus subStatus, bool isExecuting, string idPrefix = "instance-")
+    [Fact(DisplayName = "Scan does NOT requeue Finished+Interrupted instances (issue #8052)")]
+    public async Task DoesNotRequeueFinishedInterruptedInstances()
+    {
+        var fakeRestarter = new RecordingRestarter();
+        using var scope = _services.CreateScope();
+        var instanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+
+        await SeedInstancesAsync(instanceStore, 2, WorkflowSubStatus.Interrupted, isExecuting: false, idPrefix: "running-", status: WorkflowStatus.Running);
+        await SeedInstancesAsync(instanceStore, 3, WorkflowSubStatus.Interrupted, isExecuting: false, idPrefix: "finished-", status: WorkflowStatus.Finished);
+
+        var scanner = ActivatorUtilities.CreateInstance<Elsa.Workflows.Runtime.Services.InterruptedRecoveryScanner>(scope.ServiceProvider, fakeRestarter);
+        var requeued = await scanner.ScanAndRequeueAsync(CancellationToken.None);
+
+        Assert.Equal(2, requeued);
+        Assert.All(fakeRestarter.RestartedIds, id => Assert.StartsWith("running-", id));
+
+        var stillFinishedInterrupted = await instanceStore.FindManyAsync(
+            new WorkflowInstanceFilter
+            {
+                WorkflowSubStatus = WorkflowSubStatus.Interrupted,
+                WorkflowStatus = WorkflowStatus.Finished,
+            },
+            CancellationToken.None);
+        Assert.Equal(3, stillFinishedInterrupted.Count());
+    }
+
+    private static async Task SeedInstancesAsync(
+        IWorkflowInstanceStore store,
+        int count,
+        WorkflowSubStatus subStatus,
+        bool isExecuting,
+        string idPrefix = "instance-",
+        WorkflowStatus status = WorkflowStatus.Running)
     {
         for (var i = 0; i < count; i++)
         {
@@ -99,7 +131,7 @@ public class InterruptedRecoveryIntegrationTests
                 DefinitionId = "def-1",
                 DefinitionVersionId = "ver-1",
                 Version = 1,
-                Status = WorkflowStatus.Running,
+                Status = status,
                 SubStatus = subStatus,
                 IsExecuting = isExecuting,
                 CreatedAt = DateTimeOffset.UtcNow,
@@ -109,7 +141,7 @@ public class InterruptedRecoveryIntegrationTests
                     Id = $"{idPrefix}{i}",
                     DefinitionId = "def-1",
                     DefinitionVersionId = "ver-1",
-                    Status = WorkflowStatus.Running,
+                    Status = status,
                     SubStatus = subStatus,
                 },
             }, CancellationToken.None);
