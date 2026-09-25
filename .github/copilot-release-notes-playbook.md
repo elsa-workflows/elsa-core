@@ -1,7 +1,7 @@
-# Copilot Playbook: Elsa Core Release Notes (GitHub Release + PR/commit links)
+# Copilot Playbook: Elsa Release-Unit Notes (GitHub Release + PR/commit links)
 
 ## Goal
-Generate consistent GitHub Release notes for `elsa-workflows/elsa-core` between two tags/refs, including:
+Draft developer-facing notes for one named Elsa release unit between two reviewed refs. The source may live in `elsa-core` or, before an approved publisher cutover, in the still-active Extensions or Studio repository. Source co-location does not make unrelated packages part of the same release. Include:
 - a short **Highlights** section up top
 - standard grouped sections (Breaking/Features/Improvements/Fixes/Tests/CI)
 - **GitHub-style** PR/commit references at the end of bullets: `(#1234)` or `(abcd123)`
@@ -9,13 +9,24 @@ Generate consistent GitHub Release notes for `elsa-workflows/elsa-core` between 
 - optional **Known issues** section when applicable
 
 ## Inputs to provide (required)
-- Repository: `elsa-workflows/elsa-core`
-- From tag/ref: `<FROM>`
-- To tag/ref: `<TO>`
+- Release unit and package ID(s), with the allocated version or proposed version clearly labeled
+- Repository and publisher that own this release at the reviewed source revision
+- From tag/ref: `<FROM>` for the previous release of this unit
+- To tag/ref: `<TO>` for this unit's proposed release
 
 Also provide ONE of:
 - `git log --oneline <FROM>..<TO>` output (preferred), OR
-- compare URL: `https://github.com/elsa-workflows/elsa-core/compare/<FROM>...<TO>`
+- compare URL for the actual source repository and refs
+
+If the range crosses the history import, identify the old repository/tag and the
+corresponding imported ancestor explicitly. Do not infer the previous release
+from the nearest repository-wide semver tag. Filter changes to the release unit's
+projects, plus shared dependency/API changes that actually affect it. Cite the
+[release-unit manifest](../doc/integration-program/release-units.json) when it
+contains this unit; otherwise verify the package boundary and current owner
+from its reviewed release evidence. Verify the live source and feed before
+calling a version published. Drafting notes does not authorize a GitHub Release,
+feed publication, or an external announcement.
 
 Optionally provide:
 - whether merges are squash (often include `(#NNNN)` in subject) vs merge commits
@@ -91,16 +102,17 @@ If none are provided, omit the section entirely.
    - Append PR/commit suffix at end
 5. Generate **Highlights** by selecting the top 3–6 bullets across all sections (no duplicates).
 6. Add **Full changelog (short)**:
-   - include every commit line from the provided input range, in the same order
-   - each line should include PR number if present; otherwise SHA
+   - include the release unit's relevant changes from the provided range in the same order
+   - identify material shared-dependency changes separately; do not present unrelated connector commits as shipped in this unit
+   - each line should include a PR number if present; otherwise SHA
 
 ## Consistency checks before finalizing
 - Compare range line present: `Compare: <FROM>...<TO>`
 - Highlights present (3–6 bullets)
 - Every bullet has suffix `(#NNNN)` or `(sha)` where available
 - No PR numbers are guessed
-- Full changelog includes all commits provided
+- Full changelog includes all relevant release-unit changes from the range and states the path/package filter used
 - Optional sections (Developer-facing / Tests / CI / Known issues) are omitted if empty
 
 ## Example prompt for a new session
-“Generate GitHub Release notes for `elsa-workflows/elsa-core` from `<FROM>` to `<TO>`. Use the template with **Highlights** and **Known issues** (only if I provide them). Prefer PR titles when available, otherwise use commit subjects. Use GitHub-style `(#NNNN)` references and include a short Full changelog. Here is `git log --oneline <FROM>..<TO>`: …”
+“Draft notes for release unit `<UNIT>` and package `<PACKAGE-ID>` at version `<VERSION>`, owned by `<REPOSITORY>`, from `<FROM>` to `<TO>`. Include affected shared dependencies, use the template with evidence-backed Highlights and Known issues, and cite PRs or commits. Here is the unit-scoped change list: …”
