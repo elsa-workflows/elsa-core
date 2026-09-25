@@ -166,8 +166,8 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
             await InstanceStore.Received().TryMarkInterruptedAsync(handle.WorkflowInstanceId, Arg.Any<CancellationToken>(), false);
     }
 
-    [Fact(DisplayName = "A null pre-cancel snapshot still promotes a later drain-induced Finished/Cancelled row")]
-    public async Task NullSnapshotPromotesLaterCancelledInstance()
+    [Fact(DisplayName = "A null pre-cancel snapshot writes WorkflowInterrupted for a later drain-induced Finished/Cancelled row without promoting it")]
+    public async Task NullSnapshotDoesNotPromoteLaterCancelledInstance()
     {
         var handle = new ExecutionCycleHandle(Guid.NewGuid(), "instance-missing", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
         ExecutionCycleRegistry.ActiveCount.Returns(1);
@@ -188,7 +188,12 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
 
         Assert.Equal(DrainResult.Forced, outcome.OverallResult);
         Assert.Equal(1, outcome.ExecutionCyclesForceCancelledCount);
-        await InstanceStore.Received().TryMarkInterruptedAsync("instance-missing", Arg.Any<CancellationToken>(), true);
+        await InstanceStore.DidNotReceive().TryMarkInterruptedAsync("instance-missing", Arg.Any<CancellationToken>(), Arg.Any<bool>());
+        await LogStore.Received(1).AddAsync(
+            Arg.Is<Entities.WorkflowExecutionLogRecord>(r =>
+                r.WorkflowInstanceId == "instance-missing"
+                && r.EventName == WorkflowInterruptedPayload.WorkflowInterruptedEventName),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact(DisplayName = "A confirmed Cancelled pre-cancel snapshot does not promote a later Finished/Cancelled row")]
@@ -537,7 +542,7 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
                 lock (seen)
                 {
                     // Phase C: runner committed Finished/Cancelled after force-cancel.
-                    // Only ids that snapshot successfully join drainInduced and may promote.
+                    // Only ids that snapshot successfully join drainInduced and get the forensic log.
                     if (!seen.Add(id))
                         return new ValueTask<WorkflowInstance?>(CancelledInstance(id));
                 }
@@ -564,9 +569,22 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         Assert.False(hang.Task.IsCompleted);
 
         foreach (var id in stalledIds)
+        {
             await InstanceStore.DidNotReceive().TryMarkInterruptedAsync(id, Arg.Any<CancellationToken>(), Arg.Any<bool>());
+            await LogStore.DidNotReceive().AddAsync(
+                Arg.Is<Entities.WorkflowExecutionLogRecord>(r => r.WorkflowInstanceId == id),
+                Arg.Any<CancellationToken>());
+        }
+
         foreach (var id in promotedIds)
-            await InstanceStore.Received().TryMarkInterruptedAsync(id, Arg.Any<CancellationToken>(), true);
+        {
+            await InstanceStore.DidNotReceive().TryMarkInterruptedAsync(id, Arg.Any<CancellationToken>(), Arg.Any<bool>());
+            await LogStore.Received().AddAsync(
+                Arg.Is<Entities.WorkflowExecutionLogRecord>(r =>
+                    r.WorkflowInstanceId == id
+                    && r.EventName == WorkflowInterruptedPayload.WorkflowInterruptedEventName),
+                Arg.Any<CancellationToken>());
+        }
     }
 
     private static WorkflowInstance RunningInstance(string id) => new()

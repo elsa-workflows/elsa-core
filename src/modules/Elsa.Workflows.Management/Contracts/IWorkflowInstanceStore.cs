@@ -187,16 +187,15 @@ public interface IWorkflowInstanceStore
     /// <param name="workflowInstanceId">The workflow instance to mark.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <param name="allowFinishedCancelled">
-    /// Drain-only. When <c>true</c>, also accepts <see cref="WorkflowStatus.Finished"/> /
-    /// <see cref="WorkflowSubStatus.Cancelled"/> and promotes it to
-    /// <see cref="WorkflowStatus.Running"/> + <see cref="WorkflowSubStatus.Interrupted"/>.
-    /// Default callers must leave this <c>false</c> so every <see cref="WorkflowStatus.Finished"/>
-    /// row is refused. Still refuses <see cref="WorkflowSubStatus.Finished"/> and
-    /// <see cref="WorkflowSubStatus.Faulted"/>.
+    /// Unused by Elsa Core as of #8419. Kept so the 3.8.4 signature remains binary-compatible with
+    /// extension-package implementations. Drain no longer passes <c>true</c>: a
+    /// <see cref="WorkflowStatus.Finished"/> / <see cref="WorkflowSubStatus.Cancelled"/> row is never
+    /// promoted to <see cref="WorkflowStatus.Running"/> + <see cref="WorkflowSubStatus.Interrupted"/>.
+    /// Implementations should refuse every <see cref="WorkflowStatus.Finished"/> row regardless of this flag.
     /// </param>
     /// <returns>
-    /// <c>true</c> when the interrupt markers were applied; <c>false</c> when the instance is missing or already
-    /// <see cref="WorkflowStatus.Finished"/> (unless <paramref name="allowFinishedCancelled"/> applies).
+    /// <c>true</c> when the interrupt markers were applied; <c>false</c> when the instance is missing,
+    /// not visible to the current tenant, or already <see cref="WorkflowStatus.Finished"/>.
     /// Implementations must not overwrite a concurrent naturally completed commit.
     /// </returns>
     ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false);

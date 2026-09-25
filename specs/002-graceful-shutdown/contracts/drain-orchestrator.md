@@ -33,8 +33,8 @@ public enum DrainTrigger
 3. **Wait for execution cycles** — poll `IExecutionCycleRegistry.ActiveCount` on a short interval (10 ms) until it reaches zero OR the drain deadline elapses.
 4. **On deadline breach** — iterate live `ExecutionCycleHandle`s; for each:
    - Cancel `CycleCts`.
-   - Await persistence of the workflow instance in `Interrupted` sub-status.
-   - Emit `WorkflowInterrupted` log entry with typed payload.
+   - If the persisted row is still `Running`, mark it `Interrupted`. Do **not** promote a drain-induced `Finished`/`Cancelled` row to `Running`/`Interrupted` (#8419): leave status and sub-status as they are. Rewriting the serialized `WorkflowState` to Running would also be wrong — with no scheduled work the runner would then mark it Finished, a false completion.
+   - Emit `WorkflowInterrupted` log entry with typed payload (including for drain-induced `Finished`/`Cancelled` rows).
    - If persistence itself fails, still mark the execution cycle as interrupted in memory and record `Reason = "PersistenceFailure"` in the payload (the instance will likely be recovered later by the timeout-based `RestartInterruptedWorkflowsTask`).
 5. **Exit** — return `DrainOutcome`. The caller (typically `DrainOrchestratorHostedService`) logs the outcome and returns from `StopAsync`. The host then continues with its own shutdown.
 
