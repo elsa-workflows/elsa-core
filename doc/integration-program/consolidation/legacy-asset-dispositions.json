@@ -50,7 +50,16 @@
       "owning_workstream": "Central developer tooling",
       "proposed_disposition": "Merge stable product rules into the root .editorconfig or scoped editorconfig; avoid replacing the existing Core defaults without a conflict review.",
       "evidence_or_gate": "The pinned Extensions editor settings are separate from the Core root editor config; no unified-editor validation is recorded.",
-      "status": "pending_tooling_configuration_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/root-editor-and-pr-template-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8451",
+        "merge_commit": "2616c7beb9c946c98c9f96b691128029f7799746",
+        "active_path": ".editorconfig",
+        "active_blob": "ae542588fe3d66b843a5416a3ba6bc0ba2c848c8",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -154,7 +163,16 @@
       "owning_workstream": "Feature #8214 build integration; central release engineering",
       "proposed_disposition": "Regenerate the target schema from the final consolidated NUKE target set if the root build still uses it; otherwise retire this generated schema with the legacy Extensions build entrypoint.",
       "evidence_or_gate": "This is a generated NUKE parameter schema; the adjacent pinned parameters.json selects Elsa.Extensions.sln. Root CI currently runs Compile/Test through NUKE on Elsa.sln, so regenerate only after the root target and solution contract is settled.",
-      "status": "pending_canonical_solution_and_target_set"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/nuke-build-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8450",
+        "merge_commit": "79eda7adab438bfea2abc3f20f09878221e624ca",
+        "active_path": ".nuke/build.schema.json",
+        "active_blob": "8391009603dad514cbbac678cd26dec287d5b378",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "extensions",
@@ -167,7 +185,16 @@
       "owning_workstream": "Feature #8214 build integration; central release engineering",
       "proposed_disposition": "Retain the intent of the Extensions solution selection in a product-focused root solution/filter if maintainers still need it; update the stale Elsa.Extensions.sln parameter or retire it after the canonical solution set is proven.",
       "evidence_or_gate": "The pinned .nuke parameters explicitly select Elsa.Extensions.sln. Current root CI and NUKE select Elsa.sln; the combined disposable build uses Consolidated.sln.",
-      "status": "pending_canonical_solution_and_target_set"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/nuke-build-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8450",
+        "merge_commit": "79eda7adab438bfea2abc3f20f09878221e624ca",
+        "active_path": ".nuke/parameters.json",
+        "active_blob": "8535901f9e421af9db8c52d6b52f175a0d974d72",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -254,7 +281,16 @@
       "owning_workstream": "Central developer tooling",
       "proposed_disposition": "Carry portable, team-wide rules into .editorconfig; retain product solution-specific JetBrains settings only if current tooling consumes them, otherwise retire after comparison.",
       "evidence_or_gate": "The files are solution/build-specific JetBrains settings and do not execute as part of the build; no current-root parity check is recorded.",
-      "status": "pending_tooling_configuration_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/legacy-devex-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8449",
+        "merge_commit": "ffb9662efbc269f626a44f670003c7a6b01290e4",
+        "active_path": "Elsa.sln.DotSettings",
+        "active_blob": "787657b24ddec2e6f45909f54805bb7bb81b93e1",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -302,7 +338,13 @@
       "owning_workstream": "Extensions contributor experience",
       "proposed_disposition": "Keep as a product-scoped extension-authoring template under documentation or the active generator location; update sample tree paths, then retire the inert duplicate only after template usage is checked.",
       "evidence_or_gate": "The pinned template instructs authors to copy itself into a group-folder extension structure; source path is inert after mapping.",
-      "status": "pending_template_path_and_usage_check"
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/legacy-devex-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8449",
+        "merge_commit": "ffb9662efbc269f626a44f670003c7a6b01290e4",
+        "reason": "Obsolete template describes the former separate repository and placeholder packages; no active Core path or consumer uses it."
+      }
     },
     {
       "original_repository": "extensions",
@@ -347,7 +389,16 @@
       "owning_workstream": "Feature #8214 build integration; release engineering",
       "proposed_disposition": "Use the existing root build wrappers after central targets cover the imported solution and package modes; retire duplicate wrappers only after local and CI command parity is demonstrated.",
       "evidence_or_gate": "These wrappers bootstrap the legacy Extensions NUKE project. The proposed import must use the root build entrypoint without changing package publication behavior.",
-      "status": "pending_canonical_build_integration"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/identical-nuke-entrypoint-assets.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8452",
+        "merge_commit": "cf3af23fdf0436be1c48c156a3bc1ec73a35f6ae",
+        "active_path": "build.cmd",
+        "active_blob": "b08cc590f4c39e05283116619a75b76a6010c539",
+        "active_mode": "100755",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "extensions",
@@ -360,7 +411,16 @@
       "owning_workstream": "Feature #8214 build integration; release engineering",
       "proposed_disposition": "Use the existing root build wrappers after central targets cover the imported solution and package modes; retire duplicate wrappers only after local and CI command parity is demonstrated.",
       "evidence_or_gate": "These wrappers bootstrap the legacy Extensions NUKE project. The proposed import must use the root build entrypoint without changing package publication behavior.",
-      "status": "pending_canonical_build_integration"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/identical-nuke-entrypoint-assets.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8452",
+        "merge_commit": "cf3af23fdf0436be1c48c156a3bc1ec73a35f6ae",
+        "active_path": "build.ps1",
+        "active_blob": "4634dc03e9f83f93e8ade1957547e0320fba0332",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "extensions",
@@ -373,7 +433,16 @@
       "owning_workstream": "Feature #8214 build integration; release engineering",
       "proposed_disposition": "Use the existing root build wrappers after central targets cover the imported solution and package modes; retire duplicate wrappers only after local and CI command parity is demonstrated.",
       "evidence_or_gate": "These wrappers bootstrap the legacy Extensions NUKE project. The proposed import must use the root build entrypoint without changing package publication behavior.",
-      "status": "pending_canonical_build_integration"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/identical-nuke-entrypoint-assets.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8452",
+        "merge_commit": "cf3af23fdf0436be1c48c156a3bc1ec73a35f6ae",
+        "active_path": "build.sh",
+        "active_blob": "fdff0c623663cbbe1226165447a1a7e1d06d042e",
+        "active_mode": "100755",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "extensions",
@@ -386,7 +455,16 @@
       "owning_workstream": "Feature #8214 build integration; release engineering",
       "proposed_disposition": "Carry stable build-project formatting settings into the shared editor configuration if still needed; otherwise retire with the old build project.",
       "evidence_or_gate": "The setting applies to the legacy Nuke build project only; compare against the active root .editorconfig before retaining.",
-      "status": "pending_tooling_configuration_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/identical-nuke-entrypoint-assets.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8452",
+        "merge_commit": "cf3af23fdf0436be1c48c156a3bc1ec73a35f6ae",
+        "active_path": "build/.editorconfig",
+        "active_blob": "31e43dcd8e5b5114d731ab0172aceeb7d7c2edb9",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "extensions",
@@ -425,7 +503,16 @@
       "owning_workstream": "Feature #8214 build integration; release engineering",
       "proposed_disposition": "Keep UseArtifactsOutput=false scoped to the Nuke build project only if the central build requires that layout; do not make it a repository-wide setting. Otherwise retire it with the duplicate build project.",
       "evidence_or_gate": "The pinned build-only props sets UseArtifactsOutput=false. Confirm output paths for root NUKE before keeping this behavior.",
-      "status": "pending_canonical_build_integration"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/nuke-tool-project-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8454",
+        "merge_commit": "2357127428fa1faf22f476f9f40037a54c2f7d68",
+        "active_path": "build/Directory.Build.props",
+        "active_blob": "61fd9f44b85b914b0d3d8996c055de86b67b3026",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "extensions",
@@ -438,7 +525,16 @@
       "owning_workstream": "Feature #8214 build integration; release engineering",
       "proposed_disposition": "Preserve the deliberate parent-target import boundary only if the old Nuke project remains separate; otherwise retire this file after the central build project proves it does not inherit unintended repository targets.",
       "evidence_or_gate": "The pinned file prevents unrelated parent Directory.Build.targets from importing into the Nuke tool project. The consolidated root build has a different root and target layout.",
-      "status": "pending_canonical_build_integration"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/nuke-tool-project-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8454",
+        "merge_commit": "2357127428fa1faf22f476f9f40037a54c2f7d68",
+        "active_path": "build/Directory.Build.targets",
+        "active_blob": "253260956d504935e80ddc02a0695a148d9f2a1e",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "extensions",
@@ -451,7 +547,16 @@
       "owning_workstream": "Feature #8214 build integration; release engineering",
       "proposed_disposition": "Reconcile the Nuke tool target/runtime and explicit NuGet security overrides with the central build project; do not copy the source package pins wholesale. Retire the duplicate tool project after restore and target parity pass.",
       "evidence_or_gate": "The pinned build project targets net10.0, references Nuke.Components 10.1.0, and overrides NuGet.Packaging/System.Security.Cryptography.Xml versions. Verify the equivalent central build graph and current advisory status.",
-      "status": "pending_canonical_build_integration"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/nuke-tool-project-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8454",
+        "merge_commit": "2357127428fa1faf22f476f9f40037a54c2f7d68",
+        "active_path": "build/_build.csproj",
+        "active_blob": "e35f2122925738488ac39a1a75e2ca6f21d8a416",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -464,7 +569,16 @@
       "owning_workstream": "Feature #8214 build integration; release engineering",
       "proposed_disposition": "Carry stable build-project formatting settings into the shared editor configuration if still needed; otherwise retire with the old build project.",
       "evidence_or_gate": "The setting applies to the legacy Nuke build project only; compare against the active root .editorconfig before retaining.",
-      "status": "pending_tooling_configuration_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/identical-nuke-entrypoint-assets.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8452",
+        "merge_commit": "cf3af23fdf0436be1c48c156a3bc1ec73a35f6ae",
+        "active_path": "build/_build.csproj.DotSettings",
+        "active_blob": "c815d363e82b2e04ddc6c04638996d6b5f8ffb90",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "extensions",
@@ -1444,7 +1558,16 @@
       "owning_workstream": "Studio DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
       "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/identical-studio-agent-assets.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8453",
+        "merge_commit": "84ee5d9e0776609a879c8e4938a174b5d4d89a00",
+        "active_path": ".github/agents/release-notes.agent.md",
+        "active_blob": "9c91f9e69c6c224629fa6a893d34bcde6d57a36a",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1457,7 +1580,16 @@
       "owning_workstream": "Studio DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
       "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/identical-studio-agent-assets.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8453",
+        "merge_commit": "84ee5d9e0776609a879c8e4938a174b5d4d89a00",
+        "active_path": ".github/agents/speckit.git.commit.agent.md",
+        "active_blob": "c7de63ee014d61b2e3a74b92edffdc3343142889",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1470,7 +1602,16 @@
       "owning_workstream": "Studio DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
       "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/identical-studio-agent-assets.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8453",
+        "merge_commit": "84ee5d9e0776609a879c8e4938a174b5d4d89a00",
+        "active_path": ".github/agents/speckit.git.feature.agent.md",
+        "active_blob": "080b52c9a65451699438775e87305e9448a2eaae",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1483,7 +1624,16 @@
       "owning_workstream": "Studio DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
       "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/identical-studio-agent-assets.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8453",
+        "merge_commit": "84ee5d9e0776609a879c8e4938a174b5d4d89a00",
+        "active_path": ".github/agents/speckit.git.initialize.agent.md",
+        "active_blob": "f7522c105a88c6445babc7fe55497cb70e99b8e4",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1496,7 +1646,16 @@
       "owning_workstream": "Studio DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
       "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/identical-studio-agent-assets.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8453",
+        "merge_commit": "84ee5d9e0776609a879c8e4938a174b5d4d89a00",
+        "active_path": ".github/agents/speckit.git.remote.agent.md",
+        "active_blob": "b8f0fb8b8e9ef20f4e91c001d2aba1a0e9aeffec",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1509,7 +1668,16 @@
       "owning_workstream": "Studio DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
       "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/identical-studio-agent-assets.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8453",
+        "merge_commit": "84ee5d9e0776609a879c8e4938a174b5d4d89a00",
+        "active_path": ".github/agents/speckit.git.validate.agent.md",
+        "active_blob": "dfd751f2af0cb09ae74a5dd52c13b6141f55e5da",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1561,7 +1729,16 @@
       "owning_workstream": "Studio DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
       "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/identical-studio-agent-assets.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8453",
+        "merge_commit": "84ee5d9e0776609a879c8e4938a174b5d4d89a00",
+        "active_path": ".github/prompts/speckit.git.commit.prompt.md",
+        "active_blob": "d87e3dfb942e4e56323c584499634e4048e70035",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1574,7 +1751,16 @@
       "owning_workstream": "Studio DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
       "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/identical-studio-agent-assets.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8453",
+        "merge_commit": "84ee5d9e0776609a879c8e4938a174b5d4d89a00",
+        "active_path": ".github/prompts/speckit.git.feature.prompt.md",
+        "active_blob": "91ae09b1619897c0dcafd7caad40eda29cd5d4c8",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1587,7 +1773,16 @@
       "owning_workstream": "Studio DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
       "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/identical-studio-agent-assets.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8453",
+        "merge_commit": "84ee5d9e0776609a879c8e4938a174b5d4d89a00",
+        "active_path": ".github/prompts/speckit.git.initialize.prompt.md",
+        "active_blob": "02c279cd5ada9636469f26c7a95f3d5c9b99cb0d",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1600,7 +1795,16 @@
       "owning_workstream": "Studio DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
       "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/identical-studio-agent-assets.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8453",
+        "merge_commit": "84ee5d9e0776609a879c8e4938a174b5d4d89a00",
+        "active_path": ".github/prompts/speckit.git.remote.prompt.md",
+        "active_blob": "a521d9de3d40f3c373e8dd40ae81c8aa49bc59ff",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1613,7 +1817,16 @@
       "owning_workstream": "Studio DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
       "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/identical-studio-agent-assets.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8453",
+        "merge_commit": "84ee5d9e0776609a879c8e4938a174b5d4d89a00",
+        "active_path": ".github/prompts/speckit.git.validate.prompt.md",
+        "active_blob": "18ac70feba448a25fbfa373bc3b19d84fdf939c0",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1626,7 +1839,16 @@
       "owning_workstream": "Central contributor experience",
       "proposed_disposition": "Merge any product-specific review prompts into the single root PR template; retire this duplicate after template coverage is reviewed.",
       "evidence_or_gate": "The source template is currently inert; the consolidated repository has one root pull-request entrypoint.",
-      "status": "pending_root_configuration_merge"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/root-editor-and-pr-template-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8451",
+        "merge_commit": "2616c7beb9c946c98c9f96b691128029f7799746",
+        "active_path": ".github/pull_request_template.md",
+        "active_blob": "e52b47382d92aed7b56faf67c7f8417c75b43d3b",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -2579,7 +2801,16 @@
       "owning_workstream": "Central developer tooling",
       "proposed_disposition": "Carry portable, team-wide rules into .editorconfig; retain product solution-specific JetBrains settings only if current tooling consumes them, otherwise retire after comparison.",
       "evidence_or_gate": "The files are solution/build-specific JetBrains settings and do not execute as part of the build; no current-root parity check is recorded.",
-      "status": "pending_tooling_configuration_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/legacy-devex-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8449",
+        "merge_commit": "ffb9662efbc269f626a44f670003c7a6b01290e4",
+        "active_path": "Elsa.sln.DotSettings",
+        "active_blob": "787657b24ddec2e6f45909f54805bb7bb81b93e1",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
