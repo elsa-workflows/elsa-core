@@ -72,6 +72,9 @@ partial class Build : NukeBuild, ITest, IPack
         // 1  Displays severe warning messages
         .SetWarningLevel(IsServerBuild ? 0 : 1);
 
+    public Configure<DotNetPackSettings> PackSettings => settings =>
+        string.IsNullOrWhiteSpace(Version) ? settings : settings.SetVersion(Version);
+
     public IEnumerable<Project> TestProjects =>
         ((IHazSolution)this).Solution.AllProjects.Where(x => x.Name.EndsWith("Tests"));
 
