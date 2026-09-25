@@ -1,7 +1,8 @@
 # Studio contributor guidance
 
-These instructions apply to Studio source under `src/studio/`. Follow the
-repository-root `AGENTS.md` for shared build, review, testing, package and ADR
+These instructions apply to Studio modules, hosts, frameworks, and tests under
+`src/studio/`. Follow the repository-root `AGENTS.md` for shared build, review,
+testing, package and ADR
 rules. This guidance carries the Studio-specific rules from the pinned
 [Studio constitution](https://github.com/elsa-workflows/elsa-studio/blob/20ceaeeed7e671f0c9662003e82063026f2216de/.specify/memory/constitution.md)
 into the consolidated source layout.
