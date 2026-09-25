@@ -823,6 +823,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.PlatformIntegra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Secrets", "src\studio\modules\Elsa.Studio.Secrets\Elsa.Studio.Secrets.csproj", "{B1F79687-D6C4-5D0D-ADBA-9E412A82D379}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Secrets.Tests", "src\studio\modules\Elsa.Studio.Secrets.Tests\Elsa.Studio.Secrets.Tests.csproj", "{A9B84F0F-1515-464D-B573-AEF52FF12E3F}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Security.Tests", "src\studio\modules\Elsa.Studio.Security.Tests\Elsa.Studio.Security.Tests.csproj", "{D139293A-010B-549D-B35E-584A8B52CCD3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Security", "src\studio\modules\Elsa.Studio.Security\Elsa.Studio.Security.csproj", "{08A59061-F4F5-52CD-94E6-45FC62AE0555}"
@@ -2549,6 +2551,18 @@ Global
 		{B1F79687-D6C4-5D0D-ADBA-9E412A82D379}.Release|x64.Build.0 = Release|Any CPU
 		{B1F79687-D6C4-5D0D-ADBA-9E412A82D379}.Release|x86.ActiveCfg = Release|Any CPU
 		{B1F79687-D6C4-5D0D-ADBA-9E412A82D379}.Release|x86.Build.0 = Release|Any CPU
+		{A9B84F0F-1515-464D-B573-AEF52FF12E3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A9B84F0F-1515-464D-B573-AEF52FF12E3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A9B84F0F-1515-464D-B573-AEF52FF12E3F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A9B84F0F-1515-464D-B573-AEF52FF12E3F}.Debug|x64.Build.0 = Debug|Any CPU
+		{A9B84F0F-1515-464D-B573-AEF52FF12E3F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A9B84F0F-1515-464D-B573-AEF52FF12E3F}.Debug|x86.Build.0 = Debug|Any CPU
+		{A9B84F0F-1515-464D-B573-AEF52FF12E3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A9B84F0F-1515-464D-B573-AEF52FF12E3F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A9B84F0F-1515-464D-B573-AEF52FF12E3F}.Release|x64.ActiveCfg = Release|Any CPU
+		{A9B84F0F-1515-464D-B573-AEF52FF12E3F}.Release|x64.Build.0 = Release|Any CPU
+		{A9B84F0F-1515-464D-B573-AEF52FF12E3F}.Release|x86.ActiveCfg = Release|Any CPU
+		{A9B84F0F-1515-464D-B573-AEF52FF12E3F}.Release|x86.Build.0 = Release|Any CPU
 		{D139293A-010B-549D-B35E-584A8B52CCD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D139293A-010B-549D-B35E-584A8B52CCD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D139293A-010B-549D-B35E-584A8B52CCD3}.Debug|x64.ActiveCfg = Debug|Any CPU
