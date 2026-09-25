@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Entities;
@@ -10,7 +11,7 @@ namespace Elsa.Workflows.Runtime.Stores;
 
 /// <inheritdoc />
 [UsedImplicitly]
-public class MemoryBookmarkQueueStore(MemoryStore<BookmarkQueueItem> store) : IBookmarkQueueStore
+public class MemoryBookmarkQueueStore(MemoryStore<BookmarkQueueItem> store, ITenantAccessor? tenantAccessor = null) : IBookmarkQueueStore
 {
     /// <inheritdoc />
     public Task SaveAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default)
@@ -34,7 +35,7 @@ public class MemoryBookmarkQueueStore(MemoryStore<BookmarkQueueItem> store) : IB
 
     public Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
-        var entities = store.Query(query => query.OrderBy(orderBy)).Paginate(pageArgs);
+        var entities = store.Query(query => query.WhereVisibleToTenant(CurrentTenantId).OrderBy(orderBy)).Paginate(pageArgs);
         return Task.FromResult(entities);
     }
 
@@ -56,6 +57,13 @@ public class MemoryBookmarkQueueStore(MemoryStore<BookmarkQueueItem> store) : IB
         var ids = (await FindManyAsync(filter, cancellationToken)).Select(x => x.Id);
         return store.DeleteMany(ids);
     }
-    
-    private static IQueryable<BookmarkQueueItem> Filter(IQueryable<BookmarkQueueItem> query, BookmarkQueueFilter filter) => filter.Apply(query);
+
+    /// <remarks>
+    /// Ambient tenant is applied here rather than in <see cref="BookmarkQueueFilter.Apply"/>.
+    /// EF owns that via <c>SetTenantIdFilter</c> / <c>IgnoreQueryFilters</c>; Memory must compensate.
+    /// </remarks>
+    private IQueryable<BookmarkQueueItem> Filter(IQueryable<BookmarkQueueItem> query, BookmarkQueueFilter filter) =>
+        filter.Apply(query.WhereVisibleToTenant(CurrentTenantId, filter.TenantAgnostic));
+
+    private string CurrentTenantId => tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
 }
