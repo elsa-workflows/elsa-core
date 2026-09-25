@@ -6,6 +6,7 @@ temp_dir="$(mktemp -d "${TMPDIR:-/tmp}/elsa-secrets-package-consumer.XXXXXX")"
 trap 'rm -rf "$temp_dir"' EXIT
 
 frameworks=(net8.0 net9.0 net10.0)
+PYTHONDONTWRITEBYTECODE=1 python3 "$script_dir/test_verify_expected_break.py"
 projects=(
   "$script_dir/legacy-baseline/LegacyBaseline.csproj"
   "$script_dir/core-consumer/CoreConsumer.csproj"
@@ -31,21 +32,7 @@ for framework in "${frameworks[@]}"; do
     printf 'FAIL: legacy API unexpectedly compiled against Core 3.8.4 on %s\n' "$framework" >&2
     exit 1
   fi
-  if ! python3 - "$log_file" <<'PY'
-import re
-import sys
-from pathlib import Path
-
-diagnostics = [
-    line for line in Path(sys.argv[1]).read_text().splitlines()
-    if re.search(r'\berror\s+[A-Z]+\d+:', line)
-]
-if not diagnostics or any(
-    not re.search(r'\berror CS0246:.*SecretsDbContext', line)
-    for line in diagnostics
-):
-    raise SystemExit(1)
-PY
+  if ! PYTHONDONTWRITEBYTECODE=1 python3 "$script_dir/verify_expected_break.py" "$log_file"
   then
     cat "$log_file"
     printf 'FAIL: Core 3.8.4 failed for a reason other than the absent legacy SecretsDbContext API on %s\n' "$framework" >&2
