@@ -312,6 +312,10 @@ def validate_publisher_handoff(
     proposed = _validate_publisher(proposed_publisher, "proposed_publisher")
     if proposed == current:
         raise ValueError("Proposed publisher must differ from the current publisher")
+    if unit["id"] == "elsa-slack" and proposed == {
+        "repository": "elsa-core", "workflow_path": ".github/workflows/packages.yml"
+    }:
+        raise ValueError("The current Core packages.yml packs the whole solution; use a scoped Slack workflow")
     if not unit["publisher"]["cutover_requires_review"]:
         raise ValueError("Publisher cutover must require review")
 
@@ -319,13 +323,13 @@ def validate_publisher_handoff(
         receipt,
         {
             "schema_version", "mode", "package_id", "source_commits", "release_version",
-            "from_publisher", "to_publisher", "review", "old_publisher_disabled",
-            "new_publisher_enabled", "publication_performed",
+            "from_publisher", "to_publisher", "review", "old_package_excluded",
+            "new_package_enabled", "publication_performed",
         },
         "handoff_receipt",
     )
-    if type(receipt["schema_version"]) is not int or receipt["schema_version"] != 1:
-        raise ValueError("handoff_receipt.schema_version must be 1")
+    if type(receipt["schema_version"]) is not int or receipt["schema_version"] != 2:
+        raise ValueError("handoff_receipt.schema_version must be 2")
     if receipt["mode"] != "simulation":
         raise ValueError("handoff_receipt.mode must be simulation for this nonpublishing preflight")
     if receipt["package_id"] != unit["package_id"]:
@@ -365,18 +369,18 @@ def validate_publisher_handoff(
     _validate_https_evidence(review["reference"], "handoff_receipt.review.reference")
     _validate_git_sha(review["commit_sha"], "handoff_receipt.review.commit_sha")
 
-    disabled = _validate_workflow_evidence(
-        receipt["old_publisher_disabled"], "disabled", "handoff_receipt.old_publisher_disabled"
+    excluded = _validate_package_workflow_evidence(
+        receipt["old_package_excluded"], "excluded", unit["package_id"], "handoff_receipt.old_package_excluded"
     )
-    enabled = _validate_workflow_evidence(
-        receipt["new_publisher_enabled"], "enabled", "handoff_receipt.new_publisher_enabled"
+    enabled = _validate_package_workflow_evidence(
+        receipt["new_package_enabled"], "enabled", unit["package_id"], "handoff_receipt.new_package_enabled"
     )
-    if {key: disabled[key] for key in ("repository", "workflow_path")} != source_publisher:
+    if {key: excluded[key] for key in ("repository", "workflow_path")} != source_publisher:
         raise ValueError("Old publisher evidence must identify the current publisher workflow")
     if {key: enabled[key] for key in ("repository", "workflow_path")} != target_publisher:
         raise ValueError("New publisher evidence must identify the proposed publisher workflow")
-    if disabled["observed_at"] >= enabled["observed_at"]:
-        raise ValueError("The old publisher must be disabled before the new publisher is enabled")
+    if excluded["observed_at"] >= enabled["observed_at"]:
+        raise ValueError("The old package must be excluded before the new publisher is enabled")
 
     return {
         "package_id": unit["package_id"],
@@ -402,14 +406,23 @@ def _validate_https_evidence(value: Any, path: str) -> str:
     return value
 
 
-def _validate_workflow_evidence(value: Any, expected_state: str, path: str) -> dict[str, Any]:
+def _validate_package_workflow_evidence(
+    value: Any, expected_state: str, package_id: str, path: str
+) -> dict[str, Any]:
     evidence = _require_keys(
         value,
-        {"state", "repository", "workflow_path", "commit_sha", "workflow_sha256", "evidence_url", "observed_at"},
+        {
+            "state", "package_id", "scope", "unrelated_publishing_unchanged",
+            "repository", "workflow_path", "commit_sha", "workflow_sha256", "evidence_url", "observed_at",
+        },
         path,
     )
     if evidence["state"] != expected_state:
         raise ValueError(f"{path}.state must be {expected_state!r}")
+    if evidence["package_id"] != package_id or evidence["scope"] != "package-only":
+        raise ValueError(f"{path} must scope the transition to package {package_id}")
+    if evidence["unrelated_publishing_unchanged"] is not True:
+        raise ValueError(f"{path} must preserve unrelated package publishing")
     publisher = _validate_publisher(
         {"repository": evidence["repository"], "workflow_path": evidence["workflow_path"]}, path
     )

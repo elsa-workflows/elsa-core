@@ -24,7 +24,7 @@ class PublisherHandoffTests(unittest.TestCase):
         self.current = get_current_publisher(self.unit)
         self.proposed = {
             "repository": "elsa-core",
-            "workflow_path": ".github/workflows/packages.yml",
+            "workflow_path": ".github/workflows/release-elsa-slack.yml",
         }
 
     def test_current_manifest_is_a_nonpublishing_extensions_only_preflight(self):
@@ -46,6 +46,11 @@ class PublisherHandoffTests(unittest.TestCase):
     def test_proposed_publisher_without_receipt_fails_closed(self):
         with self.assertRaisesRegex(ValueError, "both required"):
             validate_publisher_handoff(self.unit, self.proposed)
+
+    def test_existing_core_broad_publisher_cannot_take_slack(self):
+        broad = {"repository": "elsa-core", "workflow_path": ".github/workflows/packages.yml"}
+        with self.assertRaisesRegex(ValueError, "packs the whole solution"):
+            validate_publisher_handoff(self.unit, broad, self.receipt())
 
     def test_simulated_reviewed_handoff_validates_without_changing_current_owner(self):
         result = validate_publisher_handoff(self.unit, self.proposed, self.receipt())
@@ -102,18 +107,18 @@ class PublisherHandoffTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must be approved"):
             validate_publisher_handoff(self.unit, self.proposed, receipt)
 
-    def test_receipt_without_old_publisher_disablement_is_rejected(self):
+    def test_receipt_without_old_package_exclusion_is_rejected(self):
         receipt = self.receipt()
-        receipt["old_publisher_disabled"]["state"] = "enabled"
+        receipt["old_package_excluded"]["state"] = "enabled"
 
-        with self.assertRaisesRegex(ValueError, "state must be 'disabled'"):
+        with self.assertRaisesRegex(ValueError, "state must be 'excluded'"):
             validate_publisher_handoff(self.unit, self.proposed, receipt)
 
     def test_receipt_that_enables_new_publisher_first_is_rejected(self):
         receipt = self.receipt()
-        receipt["old_publisher_disabled"]["observed_at"] = "2026-09-25T12:00:00Z"
+        receipt["old_package_excluded"]["observed_at"] = "2026-09-25T12:00:00Z"
 
-        with self.assertRaisesRegex(ValueError, "disabled before the new publisher"):
+        with self.assertRaisesRegex(ValueError, "excluded before the new publisher"):
             validate_publisher_handoff(self.unit, self.proposed, receipt)
 
     def test_receipt_for_a_different_current_publisher_is_rejected(self):
@@ -123,11 +128,37 @@ class PublisherHandoffTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "differs from the current publisher"):
             validate_publisher_handoff(self.unit, self.proposed, receipt)
 
-    def test_disablement_evidence_must_name_the_old_publisher_workflow(self):
+    def test_exclusion_evidence_must_name_the_old_publisher_workflow(self):
         receipt = self.receipt()
-        receipt["old_publisher_disabled"]["workflow_path"] = ".github/workflows/other.yml"
+        receipt["old_package_excluded"]["workflow_path"] = ".github/workflows/other.yml"
 
         with self.assertRaisesRegex(ValueError, "identify the current publisher workflow"):
+            validate_publisher_handoff(self.unit, self.proposed, receipt)
+
+    def test_exclusion_must_name_the_exact_package_and_preserve_other_publication(self):
+        for change in (
+            {"package_id": "Elsa.Mqtt"},
+            {"scope": "whole-workflow"},
+            {"unrelated_publishing_unchanged": False},
+        ):
+            with self.subTest(change=change):
+                receipt = self.receipt()
+                receipt["old_package_excluded"].update(change)
+                with self.assertRaises(ValueError):
+                    validate_publisher_handoff(self.unit, self.proposed, receipt)
+
+    def test_new_publisher_must_enable_only_the_selected_package(self):
+        receipt = self.receipt()
+        receipt["new_package_enabled"]["package_id"] = "Elsa.Mqtt"
+        with self.assertRaisesRegex(ValueError, "scope the transition to package Elsa.Slack"):
+            validate_publisher_handoff(self.unit, self.proposed, receipt)
+
+    def test_old_whole_workflow_receipt_is_rejected(self):
+        receipt = self.receipt()
+        receipt["schema_version"] = 1
+        receipt["old_publisher_disabled"] = receipt.pop("old_package_excluded")
+        receipt["new_publisher_enabled"] = receipt.pop("new_package_enabled")
+        with self.assertRaises(ValueError):
             validate_publisher_handoff(self.unit, self.proposed, receipt)
 
     def test_receipt_must_remain_nonpublishing(self):
@@ -151,7 +182,7 @@ class PublisherHandoffTests(unittest.TestCase):
 
     def receipt(self):
         return {
-            "schema_version": 1,
+            "schema_version": 2,
             "mode": "simulation",
             "package_id": self.unit["package_id"],
             "source_commits": dict(self.unit["mapped"]["source_commits"]),
@@ -163,8 +194,11 @@ class PublisherHandoffTests(unittest.TestCase):
                 "reference": "https://github.com/elsa-workflows/elsa-core/pull/9000",
                 "commit_sha": "a" * 40,
             },
-            "old_publisher_disabled": {
-                "state": "disabled",
+            "old_package_excluded": {
+                "state": "excluded",
+                "package_id": "Elsa.Slack",
+                "scope": "package-only",
+                "unrelated_publishing_unchanged": True,
                 "repository": self.current["repository"],
                 "workflow_path": self.current["workflow_path"],
                 "commit_sha": "b" * 40,
@@ -172,13 +206,16 @@ class PublisherHandoffTests(unittest.TestCase):
                 "evidence_url": "https://github.com/elsa-workflows/elsa-extensions/blob/main/.github/workflows/packages.yml",
                 "observed_at": "2026-09-25T10:00:00Z",
             },
-            "new_publisher_enabled": {
+            "new_package_enabled": {
                 "state": "enabled",
+                "package_id": "Elsa.Slack",
+                "scope": "package-only",
+                "unrelated_publishing_unchanged": True,
                 "repository": self.proposed["repository"],
                 "workflow_path": self.proposed["workflow_path"],
                 "commit_sha": "d" * 40,
                 "workflow_sha256": "e" * 64,
-                "evidence_url": "https://github.com/elsa-workflows/elsa-core/blob/main/.github/workflows/packages.yml",
+                "evidence_url": "https://github.com/elsa-workflows/elsa-core/blob/main/.github/workflows/release-elsa-slack.yml",
                 "observed_at": "2026-09-25T11:00:00Z",
             },
             "publication_performed": False,
