@@ -125,7 +125,7 @@ public class MongoWorkflowInstanceStoreTests
 
     private static bool FilterHasId(BsonDocument document, string id)
     {
-        if (document.TryGetValue("Id", out var idValue) && idValue.IsString && idValue.AsString == id)
+        if (TryGetId(document, out var idValue) && idValue == id)
             return true;
 
         if (document.TryGetValue("$and", out var andValue) && andValue.IsBsonArray)
@@ -137,6 +137,21 @@ public class MongoWorkflowInstanceStoreTests
             }
         }
 
+        return false;
+    }
+
+    private static bool TryGetId(BsonDocument document, out string? id)
+    {
+        foreach (var name in new[] { "_id", "Id" })
+        {
+            if (document.TryGetValue(name, out var value) && value.IsString)
+            {
+                id = value.AsString;
+                return true;
+            }
+        }
+
+        id = null;
         return false;
     }
 
@@ -154,7 +169,7 @@ public class MongoWorkflowInstanceStoreTests
     private static BsonDocument RenderDocument(FilterDefinition<WorkflowInstance> filter)
     {
         var serializer = BsonSerializer.LookupSerializer<WorkflowInstance>();
-        return filter.Render(new RenderArgs<WorkflowInstance>(serializer, BsonSerializer.SerializerRegistry)).ToBsonDocument();
+        return filter.Render(new RenderArgs<WorkflowInstance>(serializer, BsonSerializer.SerializerRegistry));
     }
 
     private static string Render(UpdateDefinition<WorkflowInstance> update)
