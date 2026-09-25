@@ -9,10 +9,12 @@ implementation or package exists.
 
 Open the canonical [`Elsa.sln`](../../Elsa.sln) for backend and Studio changes
 in one checkout. Imported Extensions projects currently use project references
-and are nonpackable by default. Package eligibility and versioning are decided
-per [release unit](../integration-program/release-units.json), with an isolated
-artifact and clean-consumer proof before a feed release. A connector release
-must not republish unrelated packages. The
+and are nonpackable by default. The program's intended independent package
+boundary is recorded in the [release-unit manifest](../integration-program/release-units.json),
+which currently defines only `Elsa.Slack`. Its isolated artifact and
+clean-consumer proof have not cut over the publisher. The separate Extensions
+publisher still packages solution outputs; connector-only release without
+republishing unrelated packages remains a delivery gate. The
 [Slack release-unit handoff](../integration-program/publisher-handoff.md)
 documents the current artifact-only proof and its separate publisher approval.
 
@@ -20,5 +22,6 @@ The former Extensions [repository README](../integration-program/legacy/extensio
 is retained as import provenance. Its planned-provider status table, separate
 repository paths, and example installation commands are historical claims;
 use each active module's documentation and released package metadata for
-current availability. The [3.6 and 3.7 notes](changelogs/3.7.0.md) remain
+current availability. The [3.6 notes](changelogs/3.6.0.md) and
+[3.7 notes](changelogs/3.7.0.md) remain
 release history rather than a live connector catalog.
