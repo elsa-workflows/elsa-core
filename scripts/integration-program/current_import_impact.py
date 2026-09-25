@@ -69,10 +69,18 @@ def select_scenarios(
     slack = selected_tests(graph, asset_documents, slack_project)
     shared = selected_tests(graph, asset_documents, CORE_PROJECT)
     mapped_tests = unit["mapped"]["test_projects"]
-    source_tests = {
-        row["project_path"]: row["target_frameworks"]
-        for row in unit["source"]["test_projects"]
-    }
+    source_test_rows = unit["source"]["test_projects"]
+    source_paths = [row["project_path"] for row in source_test_rows]
+    mapped_source_paths = [row["source_project_path"] for row in mapped_tests]
+    mapped_paths = [row["project_path"] for row in mapped_tests]
+    if (
+        len(source_paths) != len(set(source_paths))
+        or len(mapped_source_paths) != len(set(mapped_source_paths))
+        or len(mapped_paths) != len(set(mapped_paths))
+        or set(source_paths) != set(mapped_source_paths)
+    ):
+        raise ValueError("Mapped Slack tests must map each source test exactly once")
+    source_tests = {row["project_path"]: row["target_frameworks"] for row in source_test_rows}
     expected_slack = set()
     for row in mapped_tests:
         source_path = row["source_project_path"]

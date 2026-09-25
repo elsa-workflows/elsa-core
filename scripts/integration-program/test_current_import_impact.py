@@ -84,6 +84,27 @@ class CurrentImportedImpactTests(unittest.TestCase):
         self.assertFalse(result["testExecutionPerformed"])
         self.assertFalse(result["publicationPerformed"])
 
+    def test_mapped_slack_tests_must_map_each_source_test_once(self):
+        for mutate in (
+            lambda configured: configured["source"]["test_projects"].append({
+                "project_path": "test/modules/slack/Extra.Tests/Extra.Tests.csproj",
+                "target_frameworks": ["net10.0"],
+            }),
+            lambda configured: configured["mapped"]["test_projects"].append(
+                configured["mapped"]["test_projects"][0].copy()
+            ),
+        ):
+            with self.subTest(mutate=mutate):
+                configured = unit()
+                mutate(configured)
+                graph = FakeGraph({
+                    ("elsa-core", f"{SLACK_TEST}@@net10.0"),
+                    ("elsa-core", f"{CORE_TEST}@@net10.0"),
+                })
+
+                with self.assertRaisesRegex(ValueError, "map each source test exactly once"):
+                    select_scenarios(graph, assets(), configured)
+
     def test_slack_test_framework_must_match_mapped_source_manifest(self):
         graph = FakeGraph(
             {("elsa-core", f"{CORE_TEST}@@net10.0")},
