@@ -16,6 +16,7 @@ on:
       - 'Directory.Build.*'
       - 'Directory.Packages.props'
       - 'doc/integration-program/release-units.json'
+      - 'scripts/integration-program/prove_slack_artifact_consumer.py'
   workflow_dispatch:
 
 permissions:
@@ -139,6 +140,17 @@ jobs:
                       raise SystemExit(f"Missing {framework} symbols")
           print(f"Verified artifact-only Elsa.Slack {version} at {directory}")
           PY
+      - name: Restore and run a clean package consumer
+        env:
+          PACKAGE_VERSION: 0.0.0-proof.${{ github.run_id }}.${{ github.run_attempt }}
+          ELSA_VERSION: ${{ steps.dependency.outputs.elsa_version }}
+          SLACKNET_VERSION: ${{ steps.dependency.outputs.slacknet_version }}
+        run: |
+          python3 scripts/integration-program/prove_slack_artifact_consumer.py \
+            --artifacts "$RUNNER_TEMP/slack-artifacts" \
+            --version "$PACKAGE_VERSION" \
+            --elsa-version "$ELSA_VERSION" \
+            --slacknet-version "$SLACKNET_VERSION"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: elsa-slack-local-artifacts-${{ github.run_id }}-${{ github.run_attempt }}
