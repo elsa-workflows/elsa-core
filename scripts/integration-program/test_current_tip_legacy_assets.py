@@ -79,8 +79,10 @@ class CurrentTipLegacyAssetsTests(unittest.TestCase):
         self.assertEqual(50, summary["total"])
         self.assertEqual(42, summary["representedByIdenticalCoreRoot"])
         self.assertEqual(6, len(summary["reviewedDifferentPaths"]))
-        self.assertEqual(2, len(summary["pendingPolicyPaths"]))
-        self.assertIn(".specify/memory/constitution.md", summary["pendingPolicyPaths"])
+        self.assertEqual({
+            ".agents/skills/speckit-plan/SKILL.md",
+            ".specify/memory/constitution.md",
+        }, set(summary["pendingPolicyPaths"]))
 
     def test_studio_tooling_representation_rejects_unreviewed_blob_or_decision_drift(self) -> None:
         decision = copy.deepcopy(self.studio_decision)
