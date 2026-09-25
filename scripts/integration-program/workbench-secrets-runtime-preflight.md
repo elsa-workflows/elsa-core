@@ -28,8 +28,9 @@ isolated checkout of the selected import PR head. Do not generate rehearsal
 receipts or apply the mapped-source patches to that checkout. The preparer
 requires the exact checkout SHA, the original three-parent import commit, and
 the three original source commits; it verifies the parent order and ancestry,
-committed Workbench and Studio files, reviewed fixture patch artifacts, and a
-clean tracked/untracked tree before building. The resulting plan says
+committed Workbench and Studio files, reviewed fixture patch artifacts and
+their applied changes, and no tracked or unignored untracked changes before
+building. Git's status check does not inventory ignored inputs. The resulting plan says
 `sourceMode: history-import`, records the exact source revision and import
 parents, and leaves rehearsal receipt fields empty. The subsequent Workbench
 build still writes ignored `bin`/`obj` outputs in this isolated checkout, so

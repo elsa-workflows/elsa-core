@@ -586,7 +586,7 @@ def validate_imported_source_root(imported_root, expected_pins, import_commit, i
     require(git_text(root, 'rev-parse', 'HEAD') == imported_sha,
             'Imported source HEAD differs from the requested revision')
     require(not git_text(root, 'status', '--porcelain=v1', '--untracked-files=all'),
-            'Imported source has tracked or untracked changes')
+            'Imported source has tracked or unignored untracked changes')
 
     parents = git_text(root, 'rev-list', '--parents', '-n', '1', import_commit).split()
     require(parents == [import_commit, expected_pins['core'], expected_pins['extensions'], expected_pins['studio']],
@@ -620,13 +620,18 @@ def validate_imported_source_root(imported_root, expected_pins, import_commit, i
         require(imported_patch.is_file() and not imported_patch.is_symlink()
                 and file_sha256(imported_patch) == file_sha256(patch),
                 f'Imported checkout lacks the reviewed fixture patch artifact: {patch.name}')
+        if patch != PATCH:
+            applied = subprocess.run(['git', '-C', str(root), 'apply', '--reverse', '--check', str(imported_patch)],
+                                     check=False, capture_output=True)
+            require(applied.returncode == 0,
+                    f'Imported checkout does not contain reviewed fixture patch changes: {patch.name}')
 
     provenance = {
         'mode': 'history-import',
         'sourceRevision': imported_sha,
         'importCommit': import_commit,
         'importParents': parents[1:],
-        'cleanTrackedAndUntrackedSource': True,
+        'trackedAndUnignoredUntrackedSourceClean': True,
         'committedProgramSha256': file_sha256(source / 'Program.cs'),
         'committedProjectSha256': file_sha256(source / 'Elsa.Server.Web.csproj'),
         'fixturePatchSha256': {relative.as_posix(): file_sha256(patch)

@@ -208,10 +208,11 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
     def apply_route_probe_patch(self):
         subprocess.run(['git', 'apply', str(self.route_patch)], cwd=self.rehearsal, check=True)
 
-    def initialize_imported_source(self):
+    def initialize_imported_source(self, apply_route_probe=True):
         """Materialize a clean three-parent import with the reviewed fixture files."""
         self.apply_two_tenant_patches()
-        self.apply_route_probe_patch()
+        if apply_route_probe:
+            self.apply_route_probe_patch()
         artifacts = ((self.workbench_patch, FIXTURE.PATCH_RELATIVE), *(
             (patch, FIXTURE.PATCH_RELATIVE.parent / patch.name)
             for patch in (self.menu_patch, self.layout_patch, self.tenant_patch, self.route_patch)))
@@ -578,8 +579,17 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
             FIXTURE.validate_imported_source_root(self.rehearsal, pins, import_commit, 'f' * 40)
 
         (self.source / 'Program.cs').write_text((self.source / 'Program.cs').read_text() + '// dirty\n')
-        with self.assertRaisesRegex(ValueError, 'tracked or untracked changes'):
+        with self.assertRaisesRegex(ValueError, 'tracked or unignored untracked changes'):
             FIXTURE.validate_imported_source_root(self.rehearsal, pins, import_commit, imported_sha)
+
+    def test_imported_fixture_rejects_unapplied_probe_patch_before_build(self):
+        import_commit, imported_sha = self.initialize_imported_source(apply_route_probe=False)
+        with mock.patch.object(FIXTURE, 'build_host', wraps=self.fake_build) as build_host:
+            with self.assertRaisesRegex(ValueError, 'does not contain reviewed fixture patch changes: workbench-secrets-route-probe.patch'):
+                self.prepare(route_probe=True, import_commit=import_commit, imported_sha=imported_sha,
+                             optional_fixture_patches=(self.menu_patch, self.layout_patch,
+                                                       self.tenant_patch, self.route_patch))
+        build_host.assert_not_called()
 
     def test_supplemental_patch_overlay_is_reversed_before_workbench_patch(self):
         program = self.source / 'Program.cs'

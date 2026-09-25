@@ -150,8 +150,10 @@ The [sanitized imported-source receipt](imported-source-browser-2026-09-25.json)
 pins Core `e96fd36`, Extensions `ba8b71d`, Studio `20ceaee`, their
 three-parent history import `d5409c2`, and the exact draft import revision
 `fb68c8e`. The new `--imported-root` fixture path checked that ancestry, a
-clean committed source tree, and reviewed patch artifacts before a fresh
-Workbench and Studio build. This was the committed history-bearing tree in
+tracked and unignored untracked files, committed source blobs, and applied
+reviewed fixture patches before Workbench and Studio builds. Ignored build
+outputs were not inventoried by that source cleanliness check. This was the
+committed history-bearing tree in
 [draft PR #8409](https://github.com/elsa-workflows/elsa-core/pull/8409),
 not a patched no-remote rehearsal. The Workbench build completed with zero
 errors and recorded its host DLL and six Secrets assembly hashes. Node 22
@@ -166,9 +168,11 @@ synthetic values. Their lists, details and workflow pickers showed only their
 own metadata; B received 404 for A's separate secret. After B wrote the same
 name, A still saw A's metadata. A updated metadata, rotated to version 2,
 passed an active resolution test, and revoked/deleted its separate secret;
-the revoked test failed as expected. The roleless user received 403 for list,
-detail, picker and create, with no new row. Its direct page still rendered a
-Create control, so permission-aware presentation remains a separate issue.
+the revoked test failed as expected. Retained raw responses show 403 for the
+roleless user's list, detail and picker. Studio rejected its create attempt
+and no new row appeared, but the raw create response was not retained. Its
+direct page still rendered a Create control, so permission-aware presentation
+remains a separate issue.
 Each tenant saved an unpublished Write Line draft with the exact
 `{name: "smoke-shared-key", typeName: "text"}` Secret reference. There were
 zero workflow instances and execution log rows.
