@@ -1,10 +1,12 @@
 # Relocated Extensions developer-local ignore rules
 
-Program #8194; Story #8286. Extensions' retained standalone `.gitignore` at
-`33fa0bfd28c7585240e3d4f665058c067b17e287` remains at
-`doc/integration-program/legacy/extensions/.gitignore.source`. The active
-Core root already ignores bin/obj, test results, NuGet package folders,
-node_modules, Fody's generated schema, local databases and common IDE files.
+Program #8194; Story #8286. The [Extensions standalone `.gitignore`](https://github.com/elsa-workflows/elsa-extensions/blob/33fa0bfd28c7585240e3d4f665058c067b17e287/.gitignore)
+is pinned at `33fa0bfd28c7585240e3d4f665058c067b17e287`. Its inert source copy
+is present only in draft import #8409 at
+`doc/integration-program/legacy/extensions/.gitignore.source`; it is not in
+Core main yet. The active Core root already ignores bin/obj, test results,
+NuGet package folders, node_modules, Fody's generated schema, local databases
+and common IDE files.
 Copying the entire Visual Studio template would hide unrelated Core and Studio
 files, including intentionally authored samples.
 
