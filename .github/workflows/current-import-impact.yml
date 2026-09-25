@@ -67,3 +67,53 @@ jobs:
           path: ${{ runner.temp }}/current-import-impact.json
           if-no-files-found: warn
           retention-days: 14
+
+  run-affected-tests:
+    if: github.event_name == 'workflow_dispatch'
+    needs: select-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+      - name: Test affected-test runner policy
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s scripts/integration-program -p 'test_run_current_import_affected_tests.py'
+          PYTHONDONTWRITEBYTECODE=1 python -O -m unittest discover -s scripts/integration-program -p 'test_run_current_import_affected_tests.py'
+      - name: Restore and select affected tests on this runner
+        env:
+          EXPECTED_HEAD: ${{ github.sha }}
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 python scripts/integration-program/current_import_impact.py \
+            --expected-head "$EXPECTED_HEAD" \
+            --output "$RUNNER_TEMP/current-import-impact.json"
+      - name: Execute selected tests without package publication
+        env:
+          EXPECTED_HEAD: ${{ github.sha }}
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 python scripts/integration-program/run_current_import_affected_tests.py \
+            --selection "$RUNNER_TEMP/current-import-impact.json" \
+            --output-dir "$RUNNER_TEMP/current-import-test-execution" \
+            --expected-head "$EXPECTED_HEAD"
+      - name: Upload sanitized execution receipts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: current-import-affected-tests
+          path: |
+            ${{ runner.temp }}/current-import-impact.json
+            ${{ runner.temp }}/current-import-test-execution/receipt.json
+          if-no-files-found: warn
+          retention-days: 14
