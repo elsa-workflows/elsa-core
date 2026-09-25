@@ -84,6 +84,7 @@ internal class Post(
         var outcomes = model.Outcomes ?? new List<string>();
 
         draft!.StringData = stringData;
+        draft.OriginalSource = null; // The posted model replaces any file-imported snapshot.
         draft.MaterializerName = JsonWorkflowMaterializer.MaterializerName;
         draft.Name = model.Name?.Trim();
         draft.ToolVersion = model.ToolVersion;
