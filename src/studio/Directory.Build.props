@@ -4,8 +4,8 @@
     <LangVersion>latest</LangVersion>
     <Authors>Elsa Workflows Community</Authors>
     <Copyright>2023</Copyright>
-    <PackageProjectUrl>https://github.com/elsa-workflows/elsa-studio</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/elsa-workflows/elsa-studio</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
