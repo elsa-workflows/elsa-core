@@ -7,6 +7,7 @@ using Elsa.Features.Attributes;
 using Elsa.Secrets.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Connections.Features;
 
@@ -20,6 +21,13 @@ public sealed class ConnectionsFeature(IModule module) : FeatureBase(module)
         Services.TryAddSingleton<ITenantAccessor, DefaultTenantAccessor>();
         Services.TryAddSingleton(TimeProvider.System);
         Services.TryAddScoped<IConnectionUseAuthorizer, DenyAllConnectionUseAuthorizer>();
+        Services.AddOptions<ConnectionInspectionOptions>();
+        // Persistence is optional. An inspector without a lifecycle store stays fail-closed.
+        Services.TryAddScoped<IConnectionMetadataInspector>(sp => new DefaultConnectionMetadataInspector(
+            sp.GetService<IConnectionLifecycleStore>(),
+            sp.GetRequiredService<IConnectionUseAuthorizer>(),
+            sp.GetRequiredService<ITenantAccessor>(),
+            sp.GetRequiredService<IOptions<ConnectionInspectionOptions>>()));
         Services.TryAddScoped<DefaultConnectionLifecycleService>();
         Services.TryAddScoped<IConnectionLifecycleService>(sp => sp.GetRequiredService<DefaultConnectionLifecycleService>());
         Services.TryAddScoped<IStaticApiKeyLifecycleService>(sp => sp.GetRequiredService<DefaultConnectionLifecycleService>());
