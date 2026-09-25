@@ -37,3 +37,4 @@
 * [2026-09-24. Version GitHub activities that use provider IDs](2026-09-24-version-github-activities-with-provider-ids.md)
 * [2026-09-25. Authorize connection metadata inspection separately](2026-09-25-connection-metadata-inspection-boundary.md)
 * [2026-09-25. Reconcile workflow-as-activity registries with durable generations](2026-09-25-reconcile-workflow-activity-registry-with-durable-generations.md)
+* [2026-09-25. Separate workflow connection sharing from grant management and use](2026-09-25-separate-workflow-connection-sharing-authorization.md)

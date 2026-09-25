@@ -6,7 +6,7 @@ namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 /// Registers an <see cref="ExecutionCycleHandle"/> in <see cref="IExecutionCycleRegistry"/> for the duration of a
 /// single workflow execution cycle — the slice of execution between the pipeline entry and the next persistence
 /// boundary. The drain orchestrator counts these handles and, on deadline breach, force-cancels each one and marks
-/// the underlying instance <see cref="WorkflowSubStatus.Interrupted"/>.
+/// still-Running instances <see cref="WorkflowSubStatus.Interrupted"/> (Finished/Cancelled rows stay as they are).
 /// </summary>
 /// <remarks>
 /// <para>

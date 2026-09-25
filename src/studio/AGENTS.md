@@ -34,6 +34,8 @@ into the consolidated source layout.
 
 ## UI and lifecycle
 
+- Consult the [Studio design baseline](../../doc/studio/README.md) when shaping
+  Studio UI; verify the relevant current module behavior and tests as well.
 - Follow existing Studio component and layout patterns. Favor scannable
   tables, toolbars, tabs, drawers, and dialogs for operational views; keep
   filters and pagination in URLs when this improves navigation.

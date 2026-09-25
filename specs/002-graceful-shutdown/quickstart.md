@@ -41,7 +41,7 @@ There are currently no separate informational log entries for “pause requested
 
 These messages are emitted at `Information`/`Warning` level from the `Elsa.Workflows.Runtime` categories, so make sure your logging filters are not excluding them.
 
-If any workflow was force-cancelled, it will have `SubStatus = Interrupted` in the database and a `WorkflowInterrupted` entry in its execution log. On next host start, `RecoverInterruptedWorkflowsStartupTask` will requeue it immediately — no waiting for the timeout-based crash recovery.
+If a still-Running workflow was force-cancelled, it will have `SubStatus = Interrupted` in the database and a `WorkflowInterrupted` entry in its execution log. On next host start, `RecoverInterruptedWorkflowsStartupTask` will requeue it immediately — no waiting for the timeout-based crash recovery. A drain-induced `Finished`/`Cancelled` row is left as it is (not promoted to `Running`/`Interrupted`) and still receives the `WorkflowInterrupted` forensic log; the recovery scanner does not pick it up.
 
 ---
 
@@ -148,7 +148,7 @@ That is the entire integration. The runtime handles:
 |-------|--------------|
 | US1 (host stop) | Run a workflow with a 10 s activity; send SIGTERM mid-execution cycle; observe the process waiting up to the deadline and the instance reaching a clean persisted state. |
 | US2 (admin pause/resume) | Hit `pause`, schedule a stimulus (external event); observe the execution log shows the stimulus was buffered but not dispatched. Hit `resume`; observe dispatch. |
-| US3 (interrupted recovery) | Set `DrainDeadline = 1s`; run a 10 s activity; SIGTERM; confirm `SubStatus = Interrupted` + `WorkflowInterrupted` log entry; restart host; observe immediate requeue without waiting for `RestartInterruptedWorkflowsTask`'s cadence. |
+| US3 (interrupted recovery) | Set `DrainDeadline = 1s`; run a 10 s cancellable activity; SIGTERM; confirm the row stays `Finished`/`Cancelled` with a `WorkflowInterrupted` log entry and is not requeued. A still-Running instance that drain marked `Interrupted` is requeued on the next host start without waiting for `RestartInterruptedWorkflowsTask`'s cadence. |
 
 ---
 

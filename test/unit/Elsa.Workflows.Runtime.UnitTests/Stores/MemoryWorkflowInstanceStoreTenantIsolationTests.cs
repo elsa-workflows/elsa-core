@@ -35,6 +35,34 @@ public class MemoryWorkflowInstanceStoreTenantIsolationTests
     }
 
     [Fact]
+    public async Task TryMarkInterruptedAsyncAppliesTheSameTenantVisibilityAsFind()
+    {
+        var backingStore = new MemoryStore<WorkflowInstance>();
+        var tenantA = new MemoryWorkflowInstanceStore(backingStore, new TestTenantAccessor("tenant-a"));
+        var tenantB = new MemoryWorkflowInstanceStore(backingStore, new TestTenantAccessor("tenant-b"));
+        await tenantA.SaveAsync(RunningInstance("instance-a", correlationId: "conversation-1", tenantId: null));
+
+        var markedByB = await tenantB.TryMarkInterruptedAsync("instance-a");
+
+        Assert.False(markedByB);
+        Assert.Null(await tenantB.FindAsync(new WorkflowInstanceFilter { Id = "instance-a" }));
+
+        var stillOwnedByA = await tenantA.FindAsync(new WorkflowInstanceFilter { Id = "instance-a" });
+        Assert.NotNull(stillOwnedByA);
+        Assert.Equal(WorkflowStatus.Running, stillOwnedByA.Status);
+        Assert.NotEqual(WorkflowSubStatus.Interrupted, stillOwnedByA.SubStatus);
+
+        var markedByA = await tenantA.TryMarkInterruptedAsync("instance-a");
+
+        Assert.True(markedByA);
+        var interrupted = await tenantA.FindAsync(new WorkflowInstanceFilter { Id = "instance-a" });
+        Assert.NotNull(interrupted);
+        Assert.Equal(WorkflowStatus.Running, interrupted.Status);
+        Assert.Equal(WorkflowSubStatus.Interrupted, interrupted.SubStatus);
+        Assert.False(interrupted.IsExecuting);
+    }
+
+    [Fact]
     public async Task AgnosticRowsRemainVisibleWithoutChangingTheirTenant()
     {
         var backingStore = new MemoryStore<WorkflowInstance>();

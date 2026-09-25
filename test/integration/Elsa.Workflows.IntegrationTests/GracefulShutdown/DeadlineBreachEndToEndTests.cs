@@ -14,8 +14,9 @@ namespace Elsa.Workflows.IntegrationTests.GracefulShutdown;
 /// <summary>
 /// End-to-end test for the drain orchestrator's deadline-breach path against a real workflow execution. A workflow
 /// containing a slow activity is started on a background task; the orchestrator is invoked mid-flight with a
-/// sub-activity-duration deadline; the test asserts the workflow lands in <see cref="WorkflowSubStatus.Interrupted"/>
-/// and a <c>WorkflowInterrupted</c> forensic log entry is written.
+/// sub-activity-duration deadline; the test asserts the drain-cancelled workflow stays
+/// <see cref="WorkflowStatus.Finished"/> / <see cref="WorkflowSubStatus.Cancelled"/> and a
+/// <c>WorkflowInterrupted</c> forensic log entry is written.
 ///
 /// This is the integration-level companion to the unit tests in <c>DrainOrchestratorWaitTests</c> — it exercises the
 /// production DI graph, the real <see cref="Pipelines.WorkflowExecution.IWorkflowExecutionPipeline"/>, and the
@@ -44,8 +45,8 @@ public class DeadlineBreachEndToEndTests
         _orchestrator = _services.GetRequiredService<IDrainOrchestrator>();
     }
 
-    [Fact(DisplayName = "Drain deadline breach against a running workflow persists the instance as Interrupted with a WorkflowInterrupted log entry")]
-    public async Task DeadlineBreachPersistsInterrupted()
+    [Fact(DisplayName = "Drain deadline breach leaves a Finished/Cancelled instance as-is with a WorkflowInterrupted log entry and does not requeue it")]
+    public async Task DeadlineBreachLeavesFinishedCancelledAndDoesNotRequeue()
     {
         await _services.PopulateRegistriesAsync();
 
@@ -74,18 +75,28 @@ public class DeadlineBreachEndToEndTests
         Assert.Equal(1, outcome.ExecutionCyclesForceCancelledCount);
         Assert.Single(outcome.ForceCancelledInstanceIds);
 
-        // The workflow instance ends up persisted as Interrupted. The ExecutionCycleAwareCommitStateHandler decorator
-        // disposes the execution cycle handle AFTER the runner's commit, so the orchestrator's await-disposed sequencing
-        // correctly lands the Interrupted write last (no runner-clobber).
+        // The runner committed Finished/Cancelled after the force-cancel. Drain must leave that
+        // row as-is (#8419): promoting it to Running/Interrupted would requeue a workflow whose
+        // serialized state has no scheduled work.
         using var scope = _services.CreateScope();
         var instanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+        var cancelledId = Assert.Single(outcome.ForceCancelledInstanceIds);
+        var cancelled = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = cancelledId });
+
+        Assert.NotNull(cancelled);
+        Assert.Equal(WorkflowStatus.Finished, cancelled.Status);
+        Assert.Equal(WorkflowSubStatus.Cancelled, cancelled.SubStatus);
+
+        var restarter = new RecordingRestarter();
+        var scanner = ActivatorUtilities.CreateInstance<Elsa.Workflows.Runtime.Services.InterruptedRecoveryScanner>(scope.ServiceProvider, restarter);
+        var requeued = await scanner.ScanAndRequeueAsync(CancellationToken.None);
+        Assert.Equal(0, requeued);
+        Assert.Empty(restarter.RestartedIds);
+
         var interruptedInstances = (await instanceStore.FindManyAsync(
             new WorkflowInstanceFilter { WorkflowSubStatus = WorkflowSubStatus.Interrupted },
             CancellationToken.None)).ToList();
-
-        Assert.NotEmpty(interruptedInstances);
-        Assert.False(interruptedInstances[0].IsExecuting,
-            "An Interrupted instance must have IsExecuting=false so the existing timeout-based crash recovery does not also pick it up.");
+        Assert.Empty(interruptedInstances);
 
         // A WorkflowInterrupted forensic log entry was written for the force-cancelled execution cycle.
         var logStore = scope.ServiceProvider.GetRequiredService<IWorkflowExecutionLogStore>();
@@ -111,6 +122,17 @@ public class DeadlineBreachEndToEndTests
 
         Assert.Equal(DrainResult.CompletedWithinDeadline, outcome.OverallResult);
         Assert.Equal(0, outcome.ExecutionCyclesForceCancelledCount);
+    }
+
+    private sealed class RecordingRestarter : IWorkflowRestarter
+    {
+        public List<string> RestartedIds { get; } = new();
+
+        public Task RestartWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
+        {
+            RestartedIds.Add(workflowInstanceId);
+            return Task.CompletedTask;
+        }
     }
 }
 

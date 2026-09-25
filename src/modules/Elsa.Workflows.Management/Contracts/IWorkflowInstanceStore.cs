@@ -178,4 +178,25 @@ public interface IWorkflowInstanceStore
     /// <param name="value">The new timestamp value to set.</param>
     /// <param name="cancellationToken">The cancellation token to observe during the operation.</param>
     Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sets <see cref="WorkflowInstance.SubStatus"/> to <see cref="WorkflowSubStatus.Interrupted"/> and
+    /// <see cref="WorkflowInstance.IsExecuting"/> to <c>false</c> only if the stored instance is still
+    /// <see cref="WorkflowStatus.Running"/>.
+    /// </summary>
+    /// <param name="workflowInstanceId">The workflow instance to mark.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="allowFinishedCancelled">
+    /// Unused by Elsa Core as of #8419. Kept so the 3.8.4 signature remains binary-compatible with
+    /// extension-package implementations. Drain no longer passes <c>true</c>: a
+    /// <see cref="WorkflowStatus.Finished"/> / <see cref="WorkflowSubStatus.Cancelled"/> row is never
+    /// promoted to <see cref="WorkflowStatus.Running"/> + <see cref="WorkflowSubStatus.Interrupted"/>.
+    /// Implementations should refuse every <see cref="WorkflowStatus.Finished"/> row regardless of this flag.
+    /// </param>
+    /// <returns>
+    /// <c>true</c> when the interrupt markers were applied; <c>false</c> when the instance is missing,
+    /// not visible to the current tenant, or already <see cref="WorkflowStatus.Finished"/>.
+    /// Implementations must not overwrite a concurrent naturally completed commit.
+    /// </returns>
+    ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false);
 }

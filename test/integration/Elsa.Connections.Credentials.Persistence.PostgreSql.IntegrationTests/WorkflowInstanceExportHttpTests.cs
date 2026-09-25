@@ -239,6 +239,7 @@ public sealed class WorkflowInstanceExportHttpTests
             builder.Services.AddSingleton<IConnectionUseAuthorizer, AllowConnectionUseAuthorizer>();
             builder.Services.AddSingleton<IConnectionCredentialBindingManagementAuthorizer, AllowBindingManagement>();
             builder.Services.AddSingleton<IConnectionCredentialGrantManagementAuthorizer, AllowGrantManagement>();
+            builder.Services.AddSingleton<IConnectionCredentialShareAuthorizer, AllowWorkflowShare>();
             builder.Services.AddSingleton<IConnectionCredentialProvider, UnusedCredentialProvider>();
             builder.Services.AddFastEndpoints(options =>
             {
@@ -312,6 +313,14 @@ public sealed class WorkflowInstanceExportHttpTests
     {
         public Task<bool> AuthorizeAsync(ClaimsPrincipal principal, ConnectionCredentialGrantManagementRequest request, CancellationToken cancellationToken = default) =>
             Task.FromResult(principal.Identity?.IsAuthenticated == true && request.TenantId == TenantId && request.EnvironmentId == EnvironmentId);
+    }
+
+    private sealed class AllowWorkflowShare : IConnectionCredentialShareAuthorizer
+    {
+        public Task<bool> AuthorizeAsync(ClaimsPrincipal principal, ConnectionCredentialShareRequest request,
+            CancellationToken cancellationToken = default) => Task.FromResult(
+            principal.Identity?.IsAuthenticated == true && request.TenantId == TenantId &&
+            request.EnvironmentId == EnvironmentId && request.BindingRevision > 0);
     }
 
     private sealed class UnusedCredentialProvider : IConnectionCredentialProvider
