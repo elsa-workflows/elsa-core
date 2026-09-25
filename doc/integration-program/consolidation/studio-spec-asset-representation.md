@@ -14,13 +14,15 @@ as inert provenance and must not be installed as a second Spec Kit command,
 skill, template, or workflow. This is an explicit disposition for those 42
 assets; it does not discard Studio source history.
 
-Eight files differ and remain pending individual decisions:
+Eight files differ. Six installation/command differences have reviewed
+[dispositions](studio-spec-metadata-dispositions.md); two policy differences
+remain pending:
 
 | Difference | Review needed |
 | --- | --- |
-| `speckit-git-feature` skill and `speckit.git.feature.md` command | Reconcile the Studio command spelling with the active Core command. |
+| `speckit-git-feature` skill and `speckit.git.feature.md` command | Use Core's installed command spelling and retain the template placeholder. |
 | `speckit-plan` skill | Studio kept `AGENTS.md` feature-neutral; the Core variant updates its plan marker. Review that policy before choosing a single instruction. |
-| `.specify/extensions/.registry`, `codex.manifest.json`, `speckit.manifest.json`, `workflow-registry.json` | Check registrations, generated metadata, and ordering without overwriting the active Core installation. |
+| `.specify/extensions/.registry`, `codex.manifest.json`, `speckit.manifest.json`, `workflow-registry.json` | Use the active Core installation; the reviewed differences are one extra registration, timestamps and JSON map order. |
 | `.specify/memory/constitution.md` | Preserve Studio-specific module, backend-awareness, and UX rules in a reviewed Studio-scoped location before retiring the historical copy. |
 
 Run `python3 scripts/integration-program/audit_current_tip_legacy_assets.py` and

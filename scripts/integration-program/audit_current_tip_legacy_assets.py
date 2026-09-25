@@ -89,13 +89,14 @@ def compare_studio_spec_representation(
     errors: list[str] = []
     rows = [row for row in ledger["assets"] if row["category"] == "studio_agent_specification_tooling"]
     mapped = {(row["repository"], row["source"]): row for row in receipt["mapping"]}
-    if decision.get("schemaVersion") != 1 or decision.get("category") != "studio_agent_specification_tooling":
+    if decision.get("schemaVersion") != 2 or decision.get("category") != "studio_agent_specification_tooling":
         errors.append("Studio tooling decision schema or category changed")
     if decision.get("sourcePins") != receipt.get("sourceCommits"):
         errors.append("Studio tooling decision source pins differ from the E96 receipt")
 
     represented: list[str] = []
     different: list[str] = []
+    active: dict[str, tuple[str, str]] = {}
     for row in rows:
         source_path = row["original_path"]
         current = mapped.get(("studio", source_path))
@@ -109,17 +110,33 @@ def compare_studio_spec_representation(
         content = path.read_bytes()
         blob = hashlib.sha1(f"blob {len(content)}\0".encode() + content).hexdigest()
         mode = "100755" if path.stat().st_mode & stat.S_IXUSR else "100644"
+        active[source_path] = (blob, mode)
         (represented if blob == current["blob"] and mode == current["mode"] else different).append(source_path)
 
-    pending = decision.get("pendingDifferences")
-    if not isinstance(pending, dict) or set(pending) != set(different) or not all(
-        isinstance(reason, str) and reason.strip() for reason in pending.values()
-    ):
-        errors.append("Studio tooling pending-difference paths or reasons differ from the source comparison")
+    differences = decision.get("sourceDifferences")
+    reviewed: list[str] = []
+    policy_pending: list[str] = []
+    if not isinstance(differences, dict) or set(differences) != set(different):
+        errors.append("Studio tooling source-difference paths differ from the source comparison")
+    else:
+        allowed = {"represented_by_active_core", "pending_policy"}
+        for source_path, record in differences.items():
+            if not isinstance(record, dict):
+                errors.append(f"Studio tooling reviewed difference changed: {source_path}")
+                continue
+            status, reason = record.get("status"), record.get("reason")
+            if (status not in allowed or not isinstance(reason, str) or not reason.strip()
+                    or (record.get("activeBlob"), record.get("activeMode")) != active[source_path]):
+                errors.append(f"Studio tooling reviewed difference changed: {source_path}")
+                continue
+            (reviewed if status == "represented_by_active_core" else policy_pending).append(source_path)
+        if (decision.get("reviewedDifferentCount") != len(reviewed)
+                or decision.get("pendingPolicyCount") != len(policy_pending)):
+            errors.append("Studio tooling reviewed/pending difference counts changed")
     if decision.get("representedCount") != len(represented) or len(rows) != len(represented) + len(different):
         errors.append("Studio tooling represented count does not match the source comparison")
     return errors, {"total": len(rows), "representedByIdenticalCoreRoot": len(represented),
-                    "pendingDifferentPaths": sorted(different)}
+                    "reviewedDifferentPaths": sorted(reviewed), "pendingPolicyPaths": sorted(policy_pending)}
 
 
 def main() -> int:
