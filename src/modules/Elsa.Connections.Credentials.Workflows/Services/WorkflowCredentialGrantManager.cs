@@ -12,6 +12,7 @@ public sealed class WorkflowCredentialGrantManager(
     IConnectionCredentialBindingStore bindingStore,
     IConnectionCredentialUseGrantStore grantStore,
     IConnectionCredentialGrantManagementAuthorizer authorizer,
+    IConnectionCredentialShareAuthorizer shareAuthorizer,
     IOptions<WorkflowCredentialBindingOptions> options,
     ITenantAccessor tenantAccessor,
     TimeProvider timeProvider) : IWorkflowCredentialGrantManager
@@ -34,7 +35,10 @@ public sealed class WorkflowCredentialGrantManager(
 
         var request = new ConnectionCredentialGrantManagementRequest(tenantId, environmentId, workflowInstanceId,
             logicalBindingId, binding.ConnectionId, binding.Revision, ConnectionCredentialGrantAction.Issue);
-        if (!await authorizer.AuthorizeAsync(principal, request, cancellationToken))
+        if (!await authorizer.AuthorizeAsync(principal, request, cancellationToken) ||
+            !await shareAuthorizer.AuthorizeAsync(principal, new ConnectionCredentialShareRequest(
+                tenantId, environmentId, workflowInstanceId, logicalBindingId, binding.ConnectionId,
+                binding.Revision), cancellationToken))
         {
             return Unavailable();
         }

@@ -394,6 +394,61 @@ public sealed class WorkflowCredentialBindingTests
     }
 
     [Fact]
+    public async Task SharingRequiresItsOwnHostDecisionAndCanBeWithdrawnAfterThatDecisionIsRemoved()
+    {
+        await using var worker = await Worker.CreateAsync(EnvironmentId, allow: true, useGrants: true,
+            allowGrants: true, allowShares: false);
+        await worker.SeedConnectionAsync("connection-a", TenantId, EnvironmentId);
+        using var tenant = worker.TenantAccessor.PushContext(TenantContext());
+        using var scope = worker.Services.CreateScope();
+        var bindingManager = scope.ServiceProvider.GetRequiredService<IWorkflowCredentialBindingManager>();
+        Assert.True((await bindingManager.CreateAsync(Principal(), LogicalBindingId, "connection-a")).Succeeded);
+
+        var manager = scope.ServiceProvider.GetRequiredService<IWorkflowCredentialGrantManager>();
+        var resolver = scope.ServiceProvider.GetRequiredService<IWorkflowCredentialResolver>();
+        using var context = await CreateActivityContextAsync("shared-workflow");
+        Assert.False((await manager.IssueAsync(Principal(), "shared-workflow", LogicalBindingId, 1)).Succeeded);
+        Assert.Null(await scope.ServiceProvider.GetRequiredService<IConnectionCredentialUseGrantStore>()
+            .FindAsync(TenantId, EnvironmentId, "shared-workflow", LogicalBindingId));
+        Assert.Equal(new ConnectionCredentialShareRequest(TenantId, EnvironmentId, "shared-workflow",
+            LogicalBindingId, "connection-a", 1), worker.ShareAuthorizer.LastRequest);
+        await Assert.ThrowsAsync<ConnectionUnavailableException>(() =>
+            resolver.ResolveAsync(context.WorkflowExecutionContext, LogicalBindingId));
+
+        worker.ShareAuthorizer.Allow = true;
+        Assert.True((await manager.IssueAsync(Principal(), "shared-workflow", LogicalBindingId, 1)).Succeeded);
+        Assert.Equal("access-connection-a", (await resolver.ResolveAsync(
+            context.WorkflowExecutionContext, LogicalBindingId)).AccessToken);
+
+        worker.ShareAuthorizer.Allow = false;
+        Assert.True((await manager.WithdrawAsync(Principal(), "shared-workflow", LogicalBindingId, 1)).Succeeded);
+        await Assert.ThrowsAsync<ConnectionUnavailableException>(() =>
+            resolver.ResolveAsync(context.WorkflowExecutionContext, LogicalBindingId));
+        Assert.Equal(1, worker.CredentialService.CallCount);
+    }
+
+    [Fact]
+    public async Task GrantManagementPermissionCannotIssueWithoutAHostSharePolicy()
+    {
+        await using var worker = await Worker.CreateAsync(EnvironmentId, allow: true, useGrants: true,
+            allowGrants: true, registerShareAuthorizer: false);
+        await worker.SeedConnectionAsync("connection-a", TenantId, EnvironmentId);
+        using var tenant = worker.TenantAccessor.PushContext(TenantContext());
+        using var scope = worker.Services.CreateScope();
+        Assert.True((await scope.ServiceProvider.GetRequiredService<IWorkflowCredentialBindingManager>()
+            .CreateAsync(Principal(), LogicalBindingId, "connection-a")).Succeeded);
+        var result = await scope.ServiceProvider.GetRequiredService<IWorkflowCredentialGrantManager>()
+            .IssueAsync(Principal(), "workflow-no-share-policy", LogicalBindingId, 1);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(ConnectionCredentialGrantAction.Issue, worker.GrantAuthorizer.LastRequest?.Action);
+        Assert.Null(worker.ShareAuthorizer.LastRequest);
+        Assert.Null(await scope.ServiceProvider.GetRequiredService<IConnectionCredentialUseGrantStore>()
+            .FindAsync(TenantId, EnvironmentId, "workflow-no-share-policy", LogicalBindingId));
+        Assert.Equal(0, worker.CredentialService.CallCount);
+    }
+
+    [Fact]
     public async Task GrantFeatureWithoutHostPolicyOrPersistenceFailsClosed()
     {
         var services = new ServiceCollection();
@@ -409,6 +464,9 @@ public sealed class WorkflowCredentialBindingTests
         Assert.False(await authorizer.AuthorizeAsync(Principal(), new ConnectionCredentialGrantManagementRequest(
             TenantId, EnvironmentId, "workflow-1", LogicalBindingId, "connection-a", 1,
             ConnectionCredentialGrantAction.Issue)));
+        var shareAuthorizer = scope.ServiceProvider.GetRequiredService<IConnectionCredentialShareAuthorizer>();
+        Assert.False(await shareAuthorizer.AuthorizeAsync(Principal(), new ConnectionCredentialShareRequest(
+            TenantId, EnvironmentId, "workflow-1", LogicalBindingId, "connection-a", 1)));
         Assert.IsType<AllowGrantControlledConnectionCredentialBindingUseAuthorizer>(
             scope.ServiceProvider.GetRequiredService<IConnectionCredentialBindingUseAuthorizer>());
         Assert.IsType<StoredConnectionCredentialBindingUseAuthorizer>(
@@ -984,13 +1042,14 @@ public sealed class WorkflowCredentialBindingTests
 
     private static Tenant TenantContext() => new() { Id = TenantId, Name = TenantId };
 
-    private sealed class Worker(ServiceProvider services, string databasePath, DefaultTenantAccessor tenantAccessor, TestBindingAuthorizers authorizers, TestGrantAuthorizer grantAuthorizer, TestCredentialService credentialService, RecordingLoggerProvider logs) : IAsyncDisposable
+    private sealed class Worker(ServiceProvider services, string databasePath, DefaultTenantAccessor tenantAccessor, TestBindingAuthorizers authorizers, TestGrantAuthorizer grantAuthorizer, TestShareAuthorizer shareAuthorizer, TestCredentialService credentialService, RecordingLoggerProvider logs) : IAsyncDisposable
     {
         public ServiceProvider Services { get; } = services;
         public string DatabasePath { get; } = databasePath;
         public DefaultTenantAccessor TenantAccessor { get; } = tenantAccessor;
         public TestBindingAuthorizers Authorizers { get; } = authorizers;
         public TestGrantAuthorizer GrantAuthorizer { get; } = grantAuthorizer;
+        public TestShareAuthorizer ShareAuthorizer { get; } = shareAuthorizer;
         public TestCredentialService CredentialService { get; } = credentialService;
         public RecordingLoggerProvider Logs { get; } = logs;
         private bool DeleteDatabaseOnDispose { get; init; } = true;
@@ -1005,11 +1064,14 @@ public sealed class WorkflowCredentialBindingTests
             bool includeHostUsePolicy = false,
             bool registerHostUsePolicyBeforeModule = false,
             bool useRuntime = false,
-            bool useApiKeyLifecycle = false)
+            bool useApiKeyLifecycle = false,
+            bool allowShares = true,
+            bool registerShareAuthorizer = true)
         {
             var path = Path.Join(Path.GetTempPath(), $"elsa-workflow-credential-binding-{Guid.NewGuid():N}.db");
             return CreateForDatabaseAsync(path, environmentId, allow, deleteDatabaseOnDispose, saveChangesInterceptor,
-                useGrants, allowGrants, includeHostUsePolicy, registerHostUsePolicyBeforeModule, useRuntime, useApiKeyLifecycle);
+                useGrants, allowGrants, includeHostUsePolicy, registerHostUsePolicyBeforeModule, useRuntime, useApiKeyLifecycle,
+                allowShares, registerShareAuthorizer);
         }
 
         public static async Task<Worker> CreateForDatabaseAsync(
@@ -1023,12 +1085,15 @@ public sealed class WorkflowCredentialBindingTests
             bool includeHostUsePolicy = false,
             bool registerHostUsePolicyBeforeModule = false,
             bool useRuntime = false,
-            bool useApiKeyLifecycle = false)
+            bool useApiKeyLifecycle = false,
+            bool allowShares = true,
+            bool registerShareAuthorizer = true)
         {
             var connectionString = $"Data Source={path};Cache=Shared;Pooling=False;";
             var tenantAccessor = new DefaultTenantAccessor();
             var authorizers = new TestBindingAuthorizers(allow);
             var grantAuthorizer = new TestGrantAuthorizer(allowGrants);
+            var shareAuthorizer = new TestShareAuthorizer(allowShares);
             var credentialService = new TestCredentialService();
             var logs = new RecordingLoggerProvider();
             var services = new ServiceCollection();
@@ -1090,6 +1155,10 @@ public sealed class WorkflowCredentialBindingTests
             if (useGrants)
             {
                 services.AddSingleton<IConnectionCredentialGrantManagementAuthorizer>(grantAuthorizer);
+                if (registerShareAuthorizer)
+                {
+                    services.AddSingleton<IConnectionCredentialShareAuthorizer>(shareAuthorizer);
+                }
             }
             if (!useApiKeyLifecycle)
             {
@@ -1121,7 +1190,8 @@ public sealed class WorkflowCredentialBindingTests
                 await serviceProvider.GetRequiredService<IRegistriesPopulator>().PopulateAsync();
             }
 
-            return new Worker(serviceProvider, path, tenantAccessor, authorizers, grantAuthorizer, credentialService, logs)
+            return new Worker(serviceProvider, path, tenantAccessor, authorizers, grantAuthorizer, shareAuthorizer,
+                credentialService, logs)
             {
                 DeleteDatabaseOnDispose = deleteDatabaseOnDispose
             };
@@ -1235,6 +1305,20 @@ public sealed class WorkflowCredentialBindingTests
         public ConnectionCredentialGrantManagementRequest? LastRequest { get; private set; }
 
         public Task<bool> AuthorizeAsync(ClaimsPrincipal principal, ConnectionCredentialGrantManagementRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            LastRequest = request;
+            return Task.FromResult(Allow && principal.Identity?.IsAuthenticated == true &&
+                request.TenantId == TenantId && request.EnvironmentId == EnvironmentId);
+        }
+    }
+
+    private sealed class TestShareAuthorizer(bool allow) : IConnectionCredentialShareAuthorizer
+    {
+        public bool Allow { get; set; } = allow;
+        public ConnectionCredentialShareRequest? LastRequest { get; private set; }
+
+        public Task<bool> AuthorizeAsync(ClaimsPrincipal principal, ConnectionCredentialShareRequest request,
             CancellationToken cancellationToken = default)
         {
             LastRequest = request;
