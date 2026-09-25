@@ -150,7 +150,16 @@
       "owning_workstream": "Central repository/build maintainers",
       "proposed_disposition": "Merge unique Extensions ignore patterns into the consolidated root rules; Core already ignores common bin/obj, packages, and node_modules outputs, so avoid duplicate rules. Update any root-relative patterns for the relocated tree.",
       "evidence_or_gate": "The pinned Extensions file is a broad Visual Studio/.NET ignore set plus its own generated artifacts. Core already covers bin/obj, packages, and node_modules; compare remaining rules against the consolidated paths before retirement.",
-      "status": "pending_path_scope_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/extensions-generated-ignore-policy.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8463",
+        "merge_commit": "24349a9580dc15be04ed96bb440e42b362f8006e",
+        "active_path": ".gitignore",
+        "active_blob": "699fc197820db14c96b04731b11f0cce85529eaf",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -357,7 +366,16 @@
       "owning_workstream": "Extensions product documentation",
       "proposed_disposition": "Preserve the product overview in a named Extensions documentation page, but refresh the status table, repository paths, and release links before presenting it as current. Do not import stale roadmap claims into the root landing page.",
       "evidence_or_gate": "Pinned Extensions README contains a planned-extension status/catalog and links into the old repository paths; source copy remains inert.",
-      "status": "pending_document_refresh"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/legacy-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8459",
+        "merge_commit": "c01f9c53f07a3db6ec48b15ea97e784272363df9",
+        "active_path": "doc/extensions/README.md",
+        "active_blob": "b1300ddb931539e697d65db0d56c514e453996bb",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -1909,7 +1927,16 @@
       "owning_workstream": "Central repository/build maintainers",
       "proposed_disposition": "Merge Studio-specific generated-output exclusions into the consolidated ignore rules, keeping paths anchored to the relocated Studio subtree where needed. Reuse Core's existing common bin/obj, packages, and node_modules rules.",
       "evidence_or_gate": "The pinned Studio rules include .specify/feature.json, the CustomElements WASM output, and a React sample generated public directory. Core already covers common bin/obj, packages, and node_modules outputs; verify the product-specific paths after relocation.",
-      "status": "pending_path_scope_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-generated-ignore-policy.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8460",
+        "merge_commit": "b12a6c1b7a00ae49c2556dc85375218a111b7655",
+        "active_path": ".gitignore",
+        "active_blob": "699fc197820db14c96b04731b11f0cce85529eaf",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -2736,7 +2763,16 @@
       "owning_workstream": "Central agent-instructions maintainers",
       "proposed_disposition": "Merge only still-useful Studio repository structure/context into root AGENTS.md and feature documentation; keep one authoritative repository instruction file.",
       "evidence_or_gate": "The pinned Studio instructions require feature-neutral repository guidance and feature-specific plans under specs; root instructions already govern the consolidated repository.",
-      "status": "pending_root_instruction_merge"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-scoped-policy.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8417",
+        "merge_commit": "a3f00315dff2f54c3ceb8368afe482a3024c30c8",
+        "active_path": "src/studio/AGENTS.md",
+        "active_blob": "1c06d45180db59423f3ea98c428a485912b690b0",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
