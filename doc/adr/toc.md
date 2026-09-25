@@ -35,4 +35,5 @@
 * [2026-09-23. Store connector credential material in Secrets; govern its lifecycle separately](2026-09-23-integration-credential-lifecycle.md)
 * [2026-09-23. Preserve original upstream histories during repository consolidation](2026-09-23-preserve-upstream-history-during-consolidation.md)
 * [2026-09-24. Version GitHub activities that use provider IDs](2026-09-24-version-github-activities-with-provider-ids.md)
+* [2026-09-25. Authorize connection metadata inspection separately](2026-09-25-connection-metadata-inspection-boundary.md)
 * [2026-09-25. Reconcile workflow-as-activity registries with durable generations](2026-09-25-reconcile-workflow-activity-registry-with-durable-generations.md)
