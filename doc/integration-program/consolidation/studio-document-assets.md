@@ -19,8 +19,10 @@ git hash-object doc/studio/design/system.md
 git hash-object doc/studio/releases/3.6.0-rc1.md
 ```
 
-Both outputs must match the pinned blobs above. The import receipt retains the
-Studio Git history and inert legacy copies, so this relocation does not erase
-source provenance. This decision says nothing about the remaining 161 ledger
-rows, current release content, package publisher ownership, or repository
-retirement.
+Both outputs must match the pinned blobs above. The materialized **draft import**
+retains Studio Git history and inert `.source` copies; neither that history nor
+those copies is in the current Core tree through this documentation PR. The
+history-bearing import remains a separate, gated change. The exact copied
+blobs and source pin preserve this relocation's provenance. This decision says
+nothing about the remaining 161 ledger rows, current release content, package
+publisher ownership, or repository retirement.
