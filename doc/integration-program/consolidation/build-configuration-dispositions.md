@@ -24,9 +24,60 @@ source development together. A package consumer can still explicitly evaluate
 the false mode. The existing build-preparation notes show both evaluated
 reference modes and document Slack's `PackageReference` on `Elsa` at
 `ElsaVersion` `3.8.0-preview.5557`, but they explicitly do not establish a
-package-mode restore, compile, pack, or consumer-compatibility result. Keep the
-asset pending until #8260 records that evidence; do not treat the source-build
-default as package or publisher policy.
+package-mode restore, compile, pack, or consumer-compatibility result. At that
+snapshot the asset stayed pending; the newer bounded proof follows. Do not
+treat the source-build default as package or publisher policy.
+
+## Bounded Slack package-mode result
+
+On 2026-09-25, the reviewed draft source at
+`55673b1dd32fd7c8dd1c92f53321023376cfa778` was evaluated without changing
+the build inputs inherited from its parent
+`11956a58dc7d88f9b08b958242fecf25c2db7a0e`. For
+`src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj`, default MSBuild
+evaluation reported `UseProjectReferences=true`, one reference to the mapped
+Core `Elsa.csproj`, and no `Elsa` package reference. With explicit
+`-p:UseProjectReferences=false -p:ElsaVersion=3.8.4`, it reported no project
+references and one `Elsa` package reference. This is the deliberate
+source-debug versus released-Core-package switch; the old Extensions default
+`false` would defeat source co-development if copied into the root.
+
+A clean, isolated `NUGET_PACKAGES` cache then restored that package mode with
+the **active root** `NuGet.Config`, `--force-evaluate` and `--no-cache`.
+NuGet `.nupkg.metadata` recorded `Elsa` 3.8.4 and `SlackNet` 0.17.7 from
+NuGet.org; the assets graph contained both packages for net8.0, net9.0 and
+net10.0. A Release `--no-restore` build passed for all three frameworks with
+zero errors and three existing NU1902 warnings for
+`Microsoft.Build.Tasks.Git` 8.0.0. No pack or publication ran in this
+root-config check. Separately, draft-import child
+[#8436](https://github.com/elsa-workflows/elsa-core/pull/8436) passed an
+artifact-only pack and clean net8/9/10 consumer on exact head
+`9e19c4d49f1c2ede6f11c442732e151597c3efa0` using a NuGet.org-only
+configuration; its package and symbol provenance are recorded in
+[#8260](https://github.com/elsa-workflows/elsa-core/issues/8260).
+
+Reproduce the root-config restore/build on the pinned source with a new empty
+cache directory (replace `/path/to/empty-cache` with its absolute path):
+
+```sh
+dotnet msbuild src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj \
+  -getProperty:UseProjectReferences -getItem:PackageReference \
+  -getItem:ProjectReference -p:UseProjectReferences=false -p:ElsaVersion=3.8.4
+NUGET_PACKAGES=/path/to/empty-cache dotnet restore \
+  src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj \
+  --configfile NuGet.Config --force-evaluate --no-cache \
+  -p:UseProjectReferences=false -p:ElsaVersion=3.8.4
+NUGET_PACKAGES=/path/to/empty-cache dotnet build \
+  src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj \
+  --configuration Release --no-restore \
+  -p:UseProjectReferences=false -p:ElsaVersion=3.8.4
+```
+
+This closes the bounded Slack evidence gap for retiring the old Extensions
+`Directory.Build.targets` default. The ledger row remains pending until a
+reviewed completion record pins this decision, the active root/scoped target
+blobs and the accepted PR merge. Other Extensions package-mode graphs and the
+final import are not proved by this one connector.
 
 The Extensions NuGet config maps `Elsa` and all `Elsa.*` IDs to Elsa preview
 Feedz. Core's active mapping is narrower: the wildcard routes to NuGet.org and
@@ -35,13 +86,14 @@ only `Elsa.Platform.PackageManifest.Generator` and
 pattern would change package-source selection for every matching ID and could
 change which feed is trusted to supply package-mode dependencies. No clean
 package-consumer restore under the active root config or feed-ownership review
-was found in the checked build-preparation evidence. Therefore keep the Core
-mapping active and do not add the broad Extensions pattern yet. #8260 should
-record the exact package IDs needed by the package-mode proof, the source that
-supplies each, and the trust/ownership decision before this ledger row is
-completed.
+was found in the earlier build-preparation evidence. The Slack result above now
+proves root-config restore for **that** release unit, not every imported
+Extensions package or a live publisher feed. Therefore keep the Core mapping
+active and do not add the broad Extensions pattern yet. Broader package-mode
+checks and source trust/ownership review are required before this NuGet config
+ledger row is completed.
 
-Both ledger rows remain pending. The proposed dispositions describe the
-active-layout direction, not completed package compatibility. A future
-reviewed ledger update must carry the evidence and completion fields required
-by the validator. The source `.source` copies remain until then.
+Both ledger rows remain pending in this source snapshot. The old target row is
+ready for a reviewed retirement record using the bounded Slack proof; the old
+NuGet mapping is not. A future ledger update must carry the evidence and
+completion fields required by the validator. The source `.source` copies remain.
