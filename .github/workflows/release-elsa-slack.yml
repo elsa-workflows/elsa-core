@@ -1,0 +1,83 @@
+name: Elsa.Slack release-unit artifact rehearsal
+
+# This workflow creates local CI artifacts only. Feed publication requires a
+# separate, explicitly approved cutover change.
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/release-elsa-slack.yml'
+      - 'src/extensions/communication/Elsa.Slack/**'
+      - 'src/extensions/Directory.Build.*'
+      - 'src/extensions/Directory.Packages.props'
+      - 'src/Directory.Build.*'
+      - 'Directory.Build.*'
+      - 'Directory.Packages.props'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: elsa-slack-artifact-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  pack-slack-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+      - name: Pack only Elsa.Slack with a proof version
+        env:
+          PACKAGE_VERSION: 0.0.0-proof.${{ github.run_id }}.${{ github.run_attempt }}
+          EXPECTED_SOURCE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA"
+          mkdir -p "$RUNNER_TEMP/slack-artifacts"
+          dotnet pack src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj \
+            --configuration Release \
+            --output "$RUNNER_TEMP/slack-artifacts" \
+            -p:IsPackable=true \
+            -p:PackageVersion="$PACKAGE_VERSION" \
+            -p:ContinuousIntegrationBuild=true
+          python3 - "$RUNNER_TEMP/slack-artifacts" "$PACKAGE_VERSION" <<'PY'
+          from pathlib import Path
+          import sys
+          import xml.etree.ElementTree as ET
+          from zipfile import ZipFile
+
+          directory, version = Path(sys.argv[1]), sys.argv[2]
+          expected = f"Elsa.Slack.{version}"
+          actual = sorted(path.name for path in directory.iterdir() if path.is_file())
+          if actual != [f"{expected}.nupkg", f"{expected}.snupkg"]:
+              raise SystemExit(f"Expected only Elsa.Slack artifacts, got {actual}")
+          with ZipFile(directory / f"{expected}.nupkg") as package:
+              names = [name for name in package.namelist() if name.endswith(".nuspec")]
+              if len(names) != 1:
+                  raise SystemExit(f"Expected one nuspec, got {names}")
+              root = ET.fromstring(package.read(names[0]))
+              namespace = {"n": "http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd"}
+              package_id = root.findtext("n:metadata/n:id", namespaces=namespace)
+              package_version = root.findtext("n:metadata/n:version", namespaces=namespace)
+              if (package_id, package_version) != ("Elsa.Slack", version):
+                  raise SystemExit(f"Unexpected nuspec identity: {package_id} {package_version}")
+          print(f"Verified artifact-only Elsa.Slack {version} at {directory}")
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: elsa-slack-local-artifacts-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/slack-artifacts/*
+          if-no-files-found: error
+          retention-days: 7
