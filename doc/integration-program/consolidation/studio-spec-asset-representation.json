@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "sourcePins": {
+    "core": "e96fd36f4f9a838c6289fd48cf07669ea3229a5e",
+    "extensions": "ba8b71d91c15ffe5be4b2c539cf9f712e74af775",
+    "studio": "20ceaeeed7e671f0c9662003e82063026f2216de"
+  },
+  "category": "studio_agent_specification_tooling",
+  "decision": "Studio assets with identical Git blob and mode are represented by the active Core-root file; the retained .source copy preserves history and stays inert.",
+  "representedCount": 42,
+  "pendingDifferences": {
+    ".agents/skills/speckit-git-feature/SKILL.md": "Review the Studio/Core command spelling before retiring the Studio variant.",
+    ".agents/skills/speckit-plan/SKILL.md": "Review Studio's feature-neutral AGENTS.md rule against Core's plan-marker update rule.",
+    ".specify/extensions/.registry": "Review integration registrations and installation metadata; do not overwrite the active Core registry.",
+    ".specify/extensions/git/commands/speckit.git.feature.md": "Review the generated command placeholder against the active Core command.",
+    ".specify/integrations/codex.manifest.json": "Review installation metadata; do not overwrite the active Core manifest.",
+    ".specify/integrations/speckit.manifest.json": "Review manifest entry ordering and installation metadata; do not overwrite the active Core manifest.",
+    ".specify/memory/constitution.md": "Preserve substantive Studio module, backend-awareness and UX guidance in a reviewed Studio-scoped location before retiring this source copy.",
+    ".specify/workflows/workflow-registry.json": "Review installation timestamps; do not overwrite the active Core registry."
+  }
+}
