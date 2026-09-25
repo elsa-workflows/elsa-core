@@ -81,8 +81,8 @@ public class WorkflowDefinition : VersionedEntity
 
     /// <summary>
     /// The original source representation of the workflow (JSON, ElsaScript, YAML, etc.).
-    /// When present, materializers should prefer this over StringData for full round-trip fidelity.
-    /// This field enables symmetric materialization without requiring serialization round-trips.
+    /// Source-only materializers (e.g. ElsaScript) read this field.
+    /// For JSON, this is used only when <see cref="StringData"/> is absent, so Studio/API edits stored in <see cref="StringData"/> are not ignored.
     /// </summary>
     public string? OriginalSource { get; set; }
 

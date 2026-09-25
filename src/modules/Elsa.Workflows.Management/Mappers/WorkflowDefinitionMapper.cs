@@ -32,15 +32,18 @@ public class WorkflowDefinitionMapper
     /// <returns>The mapped <see cref="Workflow"/>.</returns>
     public Workflow Map(WorkflowDefinition source)
     {
-        // NEW WAY: If OriginalSource is present, deserialize the full WorkflowDefinitionModel
-        // This enables symmetric round-trip without re-serialization
-        if (!string.IsNullOrEmpty(source.OriginalSource))
+        // OriginalSource is the authoritative payload only when StringData is absent
+        // (ElsaScript, YAML, and other source-only materializers introduced with #7076).
+        // File-imported JSON stores both: the blob snapshot in OriginalSource and the
+        // serialized root in StringData. Studio/API edits update StringData (and entity
+        // fields) but used to leave OriginalSource stale, so preferring OriginalSource
+        // silently ignored those edits at export and execution. See #8305.
+        if (string.IsNullOrEmpty(source.StringData) && !string.IsNullOrEmpty(source.OriginalSource))
         {
             var model = _activitySerializer.Deserialize<WorkflowDefinitionModel>(source.OriginalSource);
             return MapFromModelWithIdentity(model, source);
         }
 
-        // OLD WAY: Deserialize from StringData (backwards compatibility)
         var root = _activitySerializer.Deserialize(source.StringData!);
 
         return new(
