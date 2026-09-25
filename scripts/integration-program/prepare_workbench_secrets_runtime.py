@@ -571,6 +571,70 @@ def validate_source_root(rehearsal_root, expected_pins):
     return root, source, program, import_receipt, build_receipt, source_inventory, patch_chain
 
 
+def validate_imported_source_root(imported_root, expected_pins, import_commit, imported_sha):
+    """Pin a clean, history-bearing checkout without treating it as a rehearsal."""
+    for name, commit in (('import', import_commit), ('imported', imported_sha)):
+        require(isinstance(commit, str) and len(commit) == 40
+                and all(character in '0123456789abcdef' for character in commit),
+                f'{name} commit must be a full lowercase SHA')
+    root = Path(imported_root).expanduser()
+    require(not root.is_symlink(), 'Imported source root cannot be a symlink')
+    root = root.resolve(strict=True)
+    require(root.is_dir(), 'Imported source root must be a directory')
+    require(Path(git_text(root, 'rev-parse', '--show-toplevel')).resolve() == root,
+            'Pass the physical imported Git root')
+    require(git_text(root, 'rev-parse', 'HEAD') == imported_sha,
+            'Imported source HEAD differs from the requested revision')
+    require(not git_text(root, 'status', '--porcelain=v1', '--untracked-files=all'),
+            'Imported source has tracked or untracked changes')
+
+    parents = git_text(root, 'rev-list', '--parents', '-n', '1', import_commit).split()
+    require(parents == [import_commit, expected_pins['core'], expected_pins['extensions'], expected_pins['studio']],
+            'History import commit does not have the pinned Core, Extensions and Studio parents')
+    ancestor = subprocess.run(['git', '-C', str(root), 'merge-base', '--is-ancestor', import_commit, imported_sha],
+                              check=False, capture_output=True)
+    require(ancestor.returncode == 0, 'History import commit is not an ancestor of the selected source')
+
+    source = (root / SOURCE_PROJECT).resolve(strict=True)
+    require(is_within(source, root), 'Workbench project root is outside the imported checkout')
+    required_files = (
+        SOURCE_PROJECT / 'Program.cs', SOURCE_PROJECT / 'Elsa.Server.Web.csproj',
+        SOURCE_PROJECT / 'appsettings.json',
+        Path('src/studio/modules/Elsa.Studio.Secrets/Menu/SecretsMenu.cs'),
+    )
+    for relative in required_files:
+        path = root / relative
+        require(path.is_file() and not path.is_symlink(), f'Missing regular imported source file: {relative}')
+        require(git_blob_bytes(root, f'HEAD:{relative.as_posix()}') == path.read_bytes(),
+                f'Imported source differs from the committed blob: {relative}')
+
+    program = (source / 'Program.cs').read_text()
+    for marker in REQUIRED_PROGRAM_MARKERS:
+        require(marker in program, f'Imported Workbench is missing reviewed Secrets marker: {marker}')
+    for marker in FORBIDDEN_PROGRAM_MARKERS:
+        require(marker not in program, f'Imported Workbench contains obsolete Secrets registration: {marker}')
+    patch_artifacts = ((PATCH, PATCH_RELATIVE), *(
+        (patch, PATCH_RELATIVE.parent / patch.name) for patch in OPTIONAL_FIXTURE_PATCHES))
+    for patch, relative in patch_artifacts:
+        imported_patch = root / relative
+        require(imported_patch.is_file() and not imported_patch.is_symlink()
+                and file_sha256(imported_patch) == file_sha256(patch),
+                f'Imported checkout lacks the reviewed fixture patch artifact: {patch.name}')
+
+    provenance = {
+        'mode': 'history-import',
+        'sourceRevision': imported_sha,
+        'importCommit': import_commit,
+        'importParents': parents[1:],
+        'cleanTrackedAndUntrackedSource': True,
+        'committedProgramSha256': file_sha256(source / 'Program.cs'),
+        'committedProjectSha256': file_sha256(source / 'Elsa.Server.Web.csproj'),
+        'fixturePatchSha256': {relative.as_posix(): file_sha256(patch)
+                               for patch, relative in patch_artifacts},
+    }
+    return root, source, program, provenance, inventory_workbench_sources(source)
+
+
 def build_host(source, log_parent):
     project = source / 'Elsa.Server.Web.csproj'
     restore_command = [
@@ -670,15 +734,30 @@ def write_private(path, content):
 
 
 def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_parent=None,
-                    two_tenant=False, route_probe=False):
+                    two_tenant=False, route_probe=False, import_commit=None, imported_sha=None):
     pins = {'core': core_sha, 'extensions': extensions_sha, 'studio': studio_sha}
     for name, commit in pins.items():
         require(len(commit) == 40 and all(character in '0123456789abcdef' for character in commit),
                 f'{name} source pin must be a full lowercase commit SHA')
 
-    root, source, _, import_receipt, build_receipt, source_inventory, patch_chain = validate_source_root(rehearsal_root, pins)
+    imported = import_commit is not None or imported_sha is not None
+    if imported:
+        require(import_commit is not None and imported_sha is not None,
+                'Imported source requires both import commit and exact source revision')
+        root, source, _, provenance, source_inventory = validate_imported_source_root(
+            rehearsal_root, pins, import_commit, imported_sha)
+        import_receipt = build_receipt = patch_chain = None
+        optional_paths = {patch.name for patch in OPTIONAL_FIXTURE_PATCHES}
+    else:
+        root, source, _, import_receipt, build_receipt, source_inventory, patch_chain = validate_source_root(rehearsal_root, pins)
+        optional_paths = {Path(item['path']).name for item in patch_chain['optionalFixturePatches']}
+        provenance = {
+            'mode': 'mapped-rehearsal',
+            'sourceRevision': import_receipt['rehearsalCommit'],
+            'rehearsalCommit': import_receipt['rehearsalCommit'],
+            'sourceIntegrationPatchSha256': build_receipt['patchSha256'],
+        }
     program = (source / 'Program.cs').read_text()
-    optional_paths = {Path(item['path']).name for item in patch_chain['optionalFixturePatches']}
     tenant_patch_name = 'workbench-two-tenant-multitenancy.patch'
     menu_patch_name = 'studio-secrets-menu.patch'
     studio_layout_patch_name = 'studio-bpmn-generator-layout.patch'
@@ -839,20 +918,26 @@ def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_p
     write_private(fixture_root / 'host-build.log', build['log'].encode('utf-8'))
 
     patch_sha = file_sha256(PATCH)
+    if imported:
+        patch_transition = 'use the exact committed history-import source revision'
+    elif not patch_chain['previousToCurrentTransitionVerified']:
+        patch_transition = 'replay the reviewed current Workbench patch in this isolated source clone'
+    else:
+        patch_transition = 'reverse the verified previous Workbench patch, then apply the current opt-in patch in this isolated source clone'
     plan = {
         'fixtureRoot': str(fixture_root),
         'contentRoot': str(content_root),
         'processWorkingDirectory': str(fixture_root),
         'sourceProjectRoot': str(source),
         'sourcePins': pins,
-        'rehearsalCommit': import_receipt['rehearsalCommit'],
-        'sourceIntegrationPatchSha256': build_receipt['patchSha256'],
+        'sourceMode': provenance['mode'],
+        'sourceRevision': provenance['sourceRevision'],
+        'sourceProvenance': provenance,
+        'rehearsalCommit': None if imported else import_receipt['rehearsalCommit'],
+        'sourceIntegrationPatchSha256': None if imported else build_receipt['patchSha256'],
         'workbenchPatchSha256': patch_sha,
-        'previousWorkbenchPatchSha256': patch_chain['previousWorkbenchPatchSha256'],
-        'patchTransition': (
-            'replay the reviewed current Workbench patch in this isolated source clone'
-            if not patch_chain['previousToCurrentTransitionVerified'] else
-            'reverse the verified previous Workbench patch, then apply the current opt-in patch in this isolated source clone'),
+        'previousWorkbenchPatchSha256': None if imported else patch_chain['previousWorkbenchPatchSha256'],
+        'patchTransition': patch_transition,
         'sourcePatchChain': patch_chain,
         'mappedProgramSha256': file_sha256(source / 'Program.cs'),
         'mappedProjectSha256': file_sha256(source / 'Elsa.Server.Web.csproj'),
@@ -923,7 +1008,9 @@ def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_p
     print(json.dumps({
         'fixtureRoot': str(fixture_root),
         'sourcePins': pins,
-        'rehearsalCommit': import_receipt['rehearsalCommit'],
+        'sourceMode': provenance['mode'],
+        'sourceRevision': provenance['sourceRevision'],
+        'rehearsalCommit': None if imported else import_receipt['rehearsalCommit'],
         'workbenchPatchSha256': patch_sha,
         'hostDllSha256': build['hostDllSha256'],
         'loopbackUrl': database_url,
@@ -960,7 +1047,11 @@ def cleanup_fixture(path, host_stopped):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--rehearsal-root', type=Path)
+    source = parser.add_mutually_exclusive_group()
+    source.add_argument('--rehearsal-root', type=Path)
+    source.add_argument('--imported-root', type=Path)
+    parser.add_argument('--import-commit', help='Exact three-parent history import commit')
+    parser.add_argument('--imported-sha', help='Exact clean history-import checkout revision')
     parser.add_argument('--core-sha')
     parser.add_argument('--extensions-sha')
     parser.add_argument('--studio-sha')
@@ -974,16 +1065,20 @@ def main():
     args = parser.parse_args()
 
     if args.cleanup:
-        require(args.rehearsal_root is None and not args.core_sha and not args.extensions_sha and not args.studio_sha,
+        require(args.rehearsal_root is None and args.imported_root is None and not args.import_commit
+                and not args.imported_sha and not args.core_sha and not args.extensions_sha and not args.studio_sha,
                 'Fixture cleanup cannot be combined with preparation arguments')
         cleanup_fixture(args.cleanup, args.host_stopped)
         return
 
-    require(args.rehearsal_root is not None, 'Pass --rehearsal-root for fixture preparation')
+    require(args.rehearsal_root is not None or args.imported_root is not None,
+            'Pass --rehearsal-root or --imported-root for fixture preparation')
+    require(args.imported_root is not None or (not args.import_commit and not args.imported_sha),
+            'Import commit arguments require --imported-root')
     require(args.core_sha and args.extensions_sha and args.studio_sha, 'Pass all three pinned source SHAs')
     require(not args.host_stopped, '--host-stopped is valid only with --cleanup')
-    prepare_fixture(args.rehearsal_root, args.core_sha, args.extensions_sha, args.studio_sha,
-                    args.temp_parent, args.two_tenant, args.route_probe)
+    prepare_fixture(args.rehearsal_root or args.imported_root, args.core_sha, args.extensions_sha, args.studio_sha,
+                    args.temp_parent, args.two_tenant, args.route_probe, args.import_commit, args.imported_sha)
 
 
 if __name__ == '__main__':

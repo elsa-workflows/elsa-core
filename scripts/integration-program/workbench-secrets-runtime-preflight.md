@@ -23,6 +23,36 @@ TMPDIR=/private/tmp python3 scripts/integration-program/prepare_workbench_secret
   --temp-parent /private/tmp
 ```
 
+For the **committed history-import repeat** in #8326, use a separate clean,
+isolated checkout of the selected import PR head. Do not generate rehearsal
+receipts or apply the mapped-source patches to that checkout. The preparer
+requires the exact checkout SHA, the original three-parent import commit, and
+the three original source commits; it verifies the parent order and ancestry,
+committed Workbench and Studio files, reviewed fixture patch artifacts, and a
+clean tracked/untracked tree before building. The resulting plan says
+`sourceMode: history-import`, records the exact source revision and import
+parents, and leaves rehearsal receipt fields empty. The subsequent Workbench
+build still writes ignored `bin`/`obj` outputs in this isolated checkout, so
+do not point this mode at a shared working tree.
+
+```sh
+TMPDIR=/private/tmp python3 scripts/integration-program/prepare_workbench_secrets_runtime.py \
+  --imported-root /path/to/isolated/import-checkout \
+  --import-commit <three-parent-import-commit> \
+  --imported-sha <exact-reviewed-checkout-head> \
+  --core-sha <40-character-core-sha> \
+  --extensions-sha <40-character-extensions-sha> \
+  --studio-sha <40-character-studio-sha> \
+  --temp-parent /private/tmp --two-tenant --route-probe
+```
+
+Build both Studio ClientLibs and launch the Workbench and Studio processes
+using the same private loopback, database, browser-profile and cleanup steps
+below. Record raw HTTP response-body checks in the private evidence, then
+retain only sanitized status, route, hash and UI observations in the public
+receipt. A successful preparation is not a browser result; #8326 stays open
+until the actual imported-source host and browser exercise passes.
+
 Before any launch, review the generated source receipt, `launch-plan.json`, `host-build.log`, and `launch-command.txt`; confirm the Workbench DLL hash and all configured data, lock, and drop-in paths are under the expected private roots. After the process exits, remove only the marked fixture:
 
 ```sh
