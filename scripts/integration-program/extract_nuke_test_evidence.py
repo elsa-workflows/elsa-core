@@ -329,7 +329,8 @@ def extract(log_path: Path, root: Path, prep_path: Path, import_path: Path, patc
         raise ValueError(f"NUKE compile emitted {compile_errors} error line(s)")
     forbidden_targets = {name: False for name in ("pack", "push", "publish")}
     if any(re.match(r"^║\s*(?:Pack|Push|Publish)\s*$", line, re.IGNORECASE) or
-           re.search(r"\b(?:Pack|Push|Publish)\s+(?:Succeeded|Failed)\b", line)
+           re.search(r"\b(?:Pack|Push|Publish)\s+(?:Succeeded|Failed)\b", line) or
+           re.search(r"\[INF\] > .*\bdotnet\s+(?:pack|nuget\s+push)\b", line, re.IGNORECASE)
            for line in log_lines):
         raise ValueError("NUKE log shows a package or publication target ran")
     total_duration = sum(_duration_seconds(value) for value in target_durations.values())
