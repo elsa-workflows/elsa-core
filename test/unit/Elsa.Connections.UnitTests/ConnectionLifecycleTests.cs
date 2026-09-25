@@ -23,6 +23,7 @@ using Elsa.Tenants.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 
 namespace Elsa.Connections.UnitTests;
@@ -59,6 +60,7 @@ public sealed class ConnectionLifecycleTests
         services.AddLogging();
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
         services.Configure<TenantsOptions>(options => options.IsEnabled = false);
+        services.Configure<ConnectionInspectionOptions>(options => options.EnvironmentId = EnvironmentId);
         var module = services.CreateModule();
         var connectionString = $"Data Source={database.Path};Cache=Shared;";
         var secretsFeature = module.Configure<SecretsFeature>();
@@ -71,6 +73,98 @@ public sealed class ConnectionLifecycleTests
 
         Assert.IsType<DefaultTenantAccessor>(provider.GetRequiredService<ITenantAccessor>());
         Assert.NotNull(provider.GetRequiredService<IConnectionLifecycleService>());
+        using var tenant = ((DefaultTenantAccessor)provider.GetRequiredService<ITenantAccessor>()).PushContext(TenantContext());
+        Assert.Null(await provider.GetRequiredService<IConnectionMetadataInspector>().InspectAsync(Principal(), "connection"));
+    }
+
+    [Fact]
+    public async Task MetadataInspectorWithoutOptionalPersistenceFailsClosed()
+    {
+        var tenantAccessor = new DefaultTenantAccessor();
+        var services = new ServiceCollection();
+        services.AddSingleton<ITenantAccessor>(tenantAccessor);
+        services.AddSingleton<IConnectionUseAuthorizer, AllowUseAuthorizer>();
+        services.Configure<ConnectionInspectionOptions>(options => options.EnvironmentId = EnvironmentId);
+        var module = services.CreateModule();
+        module.Configure<ConnectionsFeature>();
+        module.Apply();
+        await using var provider = services.BuildServiceProvider();
+
+        using var tenant = tenantAccessor.PushContext(TenantContext());
+        using var scope = provider.CreateScope();
+        var inspector = scope.ServiceProvider.GetRequiredService<IConnectionMetadataInspector>();
+        Assert.Null(await inspector.InspectAsync(Principal(canManage: false, canUse: false, canInspect: true), "connection"));
+    }
+
+    [Fact]
+    public async Task MetadataInspectionRequiresItsOwnHostPermissionAndReturnsOnlySafeFields()
+    {
+        await using var database = new TestDatabase();
+        await using var worker = await Worker.CreateAsync(database.Path, MakeKey(32), new SyntheticCredentialProvider(block: false));
+        using var tenant = worker.TenantAccessor.PushContext(TenantContext());
+        using var scope = worker.Services.CreateScope();
+        var store = scope.ServiceProvider.GetRequiredService<IConnectionLifecycleStore>();
+        await store.CreateAsync(new IntegrationConnection
+        {
+            Id = "inspect-target",
+            TenantId = TenantId,
+            EnvironmentId = EnvironmentId,
+            ProviderId = "synthetic-oauth",
+            ProviderAccountId = "account-test",
+            Status = ConnectionStatus.Active,
+            Revision = 3,
+            CurrentSecretName = "synthetic-secret-marker",
+            CurrentGenerationId = "synthetic-generation-marker"
+        });
+        await store.CreateAsync(new IntegrationConnection
+        {
+            Id = "other-environment",
+            TenantId = TenantId,
+            EnvironmentId = "staging",
+            ProviderId = "synthetic-oauth",
+            ProviderAccountId = "account-staging"
+        });
+
+        var inspector = scope.ServiceProvider.GetRequiredService<IConnectionMetadataInspector>();
+        Assert.Null(await inspector.InspectAsync(Principal(canManage: true, canUse: false), "inspect-target"));
+        var metadata = await inspector.InspectAsync(Principal(canManage: false, canUse: false, canInspect: true), "inspect-target");
+        Assert.NotNull(metadata);
+        Assert.Equal("inspect-target", metadata.ConnectionId);
+        Assert.Equal("synthetic-oauth", metadata.ProviderId);
+        Assert.Equal("account-test", metadata.ProviderAccountId);
+        Assert.Equal(ConnectionStatus.Active, metadata.Status);
+        Assert.Equal(3, metadata.Revision);
+        var inspectionRequest = ((AllowUseAuthorizer)scope.ServiceProvider.GetRequiredService<IConnectionUseAuthorizer>()).LastInspectionRequest;
+        Assert.NotNull(inspectionRequest);
+        Assert.Equal(ConnectionUseKind.Human, inspectionRequest.Kind);
+        Assert.Equal(TenantId, inspectionRequest.TenantId);
+        Assert.Equal(EnvironmentId, inspectionRequest.EnvironmentId);
+        Assert.Equal("inspect-target", inspectionRequest.ConnectionId);
+        Assert.Equal("inspect:metadata", inspectionRequest.Purpose);
+        var response = JsonSerializer.Serialize(metadata);
+        Assert.DoesNotContain("synthetic-secret-marker", response);
+        Assert.DoesNotContain("synthetic-generation-marker", response);
+        Assert.Null(await inspector.InspectAsync(Principal(canManage: false, canUse: false, canInspect: true), "other-environment"));
+        Assert.Null(await inspector.InspectAsync(new ClaimsPrincipal(), "inspect-target"));
+        Assert.Null(await inspector.InspectAsync(Principal(canManage: false, canUse: false, canInspect: true), new string('x', 201)));
+
+        using (worker.TenantAccessor.PushContext(new Tenant { Id = "tenant-b", Name = "tenant-b" }))
+        {
+            Assert.Null(await inspector.InspectAsync(Principal(canManage: false, canUse: false, canInspect: true), "inspect-target"));
+        }
+        using (worker.TenantAccessor.PushContext(new Tenant { Id = Tenant.DefaultTenantId, Name = "default" }))
+        {
+            Assert.Null(await inspector.InspectAsync(Principal(canManage: false, canUse: false, canInspect: true), "inspect-target"));
+        }
+        using (worker.TenantAccessor.PushContext(new Tenant { Id = Tenant.AgnosticTenantId, Name = "agnostic" }))
+        {
+            Assert.Null(await inspector.InspectAsync(Principal(canManage: false, canUse: false, canInspect: true), "inspect-target"));
+        }
+        var blankEnvironmentInspector = new DefaultConnectionMetadataInspector(store,
+            scope.ServiceProvider.GetRequiredService<IConnectionUseAuthorizer>(), worker.TenantAccessor,
+            Options.Create(new ConnectionInspectionOptions()));
+        Assert.Null(await blankEnvironmentInspector.InspectAsync(
+            Principal(canManage: false, canUse: false, canInspect: true), "inspect-target"));
     }
 
     [Fact]
@@ -1452,7 +1546,7 @@ public sealed class ConnectionLifecycleTests
         return result.ConnectionId;
     }
 
-    private static ClaimsPrincipal Principal(bool canManage = true, bool canUse = true)
+    private static ClaimsPrincipal Principal(bool canManage = true, bool canUse = true, bool canInspect = false)
     {
         var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, "test-user") };
         if (canUse)
@@ -1462,6 +1556,10 @@ public sealed class ConnectionLifecycleTests
         if (canManage)
         {
             claims.Add(new Claim("permission", "connections.manage"));
+        }
+        if (canInspect)
+        {
+            claims.Add(new Claim("permission", "connections.inspect"));
         }
         return new ClaimsPrincipal(new ClaimsIdentity(claims, "synthetic"));
     }
@@ -1624,12 +1722,17 @@ public sealed class ConnectionLifecycleTests
     private sealed class AllowUseAuthorizer : IConnectionUseAuthorizer
     {
         public ConnectionUseRequest? LastBackgroundRequest { get; private set; }
+        public ConnectionUseRequest? LastInspectionRequest { get; private set; }
 
         public Task<bool> AuthorizeAsync(ConnectionUseRequest request, CancellationToken cancellationToken = default)
         {
             if (request.Kind == ConnectionUseKind.BackgroundSystem)
             {
                 LastBackgroundRequest = request;
+            }
+            if (request.Kind == ConnectionUseKind.Human && request.Purpose == "inspect:metadata")
+            {
+                LastInspectionRequest = request;
             }
 
             var identity = request.Principal.Identity;
@@ -1638,9 +1741,12 @@ public sealed class ConnectionLifecycleTests
             var allowed = request.Kind switch
             {
                 ConnectionUseKind.Human => identity?.IsAuthenticated == true && identity.AuthenticationType == "synthetic" && inScope &&
-                                           (request.Purpose == "use"
-                                               ? request.Principal.HasClaim("permission", "connections.use")
-                                               : request.Principal.HasClaim("permission", "connections.manage")),
+                                           (request.Purpose switch
+                                           {
+                                               "use" => request.Principal.HasClaim("permission", "connections.use"),
+                                               "inspect:metadata" => request.Principal.HasClaim("permission", "connections.inspect"),
+                                               _ => request.Principal.HasClaim("permission", "connections.manage")
+                                           }),
                 ConnectionUseKind.BackgroundSystem => identity?.IsAuthenticated == true && identity.AuthenticationType == "Elsa.Connections.Server" &&
                                                       request.Principal.HasClaim("elsa:identity-kind", "system") && inScope &&
                                                       request.Purpose is "use" or "manage:reconcile" or "manage:refresh" or "manage:cleanup",
@@ -1673,6 +1779,7 @@ public sealed class ConnectionLifecycleTests
             services.AddLogging();
             services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
             services.AddSingleton<ITenantAccessor>(tenantAccessor);
+            services.Configure<ConnectionInspectionOptions>(options => options.EnvironmentId = EnvironmentId);
             services.Configure<TenantsOptions>(options => options.IsEnabled = true);
             services.AddSingleton<IConnectionUseAuthorizer, AllowUseAuthorizer>();
             if (registerCredentialProvider)
