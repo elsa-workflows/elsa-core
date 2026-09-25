@@ -637,7 +637,13 @@ def validate_imported_source_root(imported_root, expected_pins, import_commit, i
         'fixturePatchSha256': {relative.as_posix(): file_sha256(patch)
                                for patch, relative in patch_artifacts},
     }
-    return root, source, program, provenance, inventory_workbench_sources(source)
+    source_inventory = inventory_workbench_sources(source)
+    for item in source_inventory['sourceFiles']:
+        relative = (SOURCE_PROJECT / item['path']).as_posix()
+        require(git_blob_bytes(root, f'HEAD:{relative}') == (root / relative).read_bytes(),
+                f'Imported Workbench compile source is not the committed blob: {relative}')
+    provenance['compiledWorkbenchSourcesCommitted'] = True
+    return root, source, program, provenance, source_inventory
 
 
 def build_host(source, log_parent):

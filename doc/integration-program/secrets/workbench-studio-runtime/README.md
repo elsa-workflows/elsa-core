@@ -151,8 +151,10 @@ pins Core `e96fd36`, Extensions `ba8b71d`, Studio `20ceaee`, their
 three-parent history import `d5409c2`, and the exact draft import revision
 `fb68c8e`. The new `--imported-root` fixture path checked that ancestry, a
 tracked and unignored untracked files, committed source blobs, and applied
-reviewed fixture patches before Workbench and Studio builds. Ignored build
-outputs were not inventoried by that source cleanliness check. This was the
+reviewed fixture patches before Workbench and Studio builds. A follow-up
+guard check on the same `fb68c8e` checkout matched all 12 evaluated Workbench
+compile-source files to committed Git blobs. Ignored build outputs were not
+inventoried by the source cleanliness check. This was the
 committed history-bearing tree in
 [draft PR #8409](https://github.com/elsa-workflows/elsa-core/pull/8409),
 not a patched no-remote rehearsal. The Workbench build completed with zero
