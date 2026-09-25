@@ -17,6 +17,8 @@ namespace Elsa.KeyValues.Stores;
 /// <see cref="SerializedKeyValuePair"/> is keyed by <c>Id</c> (= <c>Key</c>) alone; <c>TenantId</c>
 /// is a filter, not part of the primary key. Callers that need tenant-scoped names must encode
 /// the tenant into the key. A composite <c>(TenantId, Key)</c> identity is out of scope.
+/// Save uses <see cref="TenantVisibility.CanReplaceOwnedRow"/> so a named tenant cannot take over
+/// another tenant's key or a <c>*</c> key (EF: PK collision). Delete stays visibility-filtered.
 /// </remarks>
 public class MemoryKeyValueStore : IKeyValueStore
 {
@@ -38,6 +40,7 @@ public class MemoryKeyValueStore : IKeyValueStore
         lock (_store.Sync)
         {
             ApplyCurrentTenant(keyValuePair);
+            EnsureKeyAvailable(keyValuePair);
             _store.Save(keyValuePair, kv => kv.Id);
         }
 
@@ -70,6 +73,23 @@ public class MemoryKeyValueStore : IKeyValueStore
     private bool IsVisible(Entity entity) => TenantVisibility.IsVisible(entity.TenantId, CurrentTenantId);
 
     private string CurrentTenantId => _tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
+
+    private void EnsureKeyAvailable(SerializedKeyValuePair incoming)
+    {
+        if (_tenantAccessor is null)
+            return;
+
+        var existing = _store.Find(x => x.Id == incoming.Id);
+
+        if (existing is null)
+            return;
+
+        if (!TenantVisibility.CanReplaceOwnedRow(existing.TenantId, incoming.TenantId, CurrentTenantId))
+            throw new InvalidOperationException($"A key-value pair with key '{incoming.Id}' already exists and is not visible to the current tenant.");
+
+        // An accepted update may change the payload, but it must not rehome the row.
+        incoming.TenantId = existing.TenantId;
+    }
 
     private void ApplyCurrentTenant(Entity entity)
     {

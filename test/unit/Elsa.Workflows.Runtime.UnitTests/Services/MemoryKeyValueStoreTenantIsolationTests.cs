@@ -166,6 +166,74 @@ public class MemoryKeyValueStoreTenantIsolationTests
         Assert.Equal("kv-a", found[0].Key);
     }
 
+    [Fact(DisplayName = "SaveAsync throws when another tenant already owns the key and leaves that value intact")]
+    public async Task SaveAsync_WhenOtherTenantOwnsKey_ThrowsAndLeavesOriginal()
+    {
+        var backing = new MemoryStore<SerializedKeyValuePair>();
+        var tenantA = new MemoryKeyValueStore(backing, new TestTenantAccessor("tenant-a"));
+        var tenantB = new MemoryKeyValueStore(backing, new TestTenantAccessor("tenant-b"));
+        await tenantA.SaveAsync(Pair("shared", "a", "tenant-a"), CancellationToken.None);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            tenantB.SaveAsync(Pair("shared", "b", "tenant-b"), CancellationToken.None));
+
+        Assert.Contains("shared", ex.Message);
+        var remaining = await tenantA.FindAsync(new KeyValueFilter { Key = "shared" }, CancellationToken.None);
+        Assert.NotNull(remaining);
+        Assert.Equal("a", remaining.SerializedValue);
+        Assert.Equal("tenant-a", remaining.TenantId);
+    }
+
+    [Fact(DisplayName = "SaveAsync lets only an agnostic writer replace a * key")]
+    public async Task SaveAsync_WhenAgnosticKey_NamedTenantThrowsAndAgnosticWriterReplaces()
+    {
+        var backing = new MemoryStore<SerializedKeyValuePair>();
+        var named = new MemoryKeyValueStore(backing, new TestTenantAccessor("tenant-a"));
+        var agnostic = new MemoryKeyValueStore(backing, new TestTenantAccessor(Tenant.AgnosticTenantId));
+        await agnostic.SaveAsync(Pair("kv-star", "star", Tenant.AgnosticTenantId), CancellationToken.None);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            named.SaveAsync(Pair("kv-star", "stolen"), CancellationToken.None));
+
+        var stillStar = await named.FindAsync(new KeyValueFilter { Key = "kv-star" }, CancellationToken.None);
+        Assert.NotNull(stillStar);
+        Assert.Equal("star", stillStar.SerializedValue);
+        Assert.Equal(Tenant.AgnosticTenantId, stillStar.TenantId);
+
+        await agnostic.SaveAsync(Pair("kv-star", "star-2", Tenant.AgnosticTenantId), CancellationToken.None);
+        var replaced = await named.FindAsync(new KeyValueFilter { Key = "kv-star" }, CancellationToken.None);
+        Assert.NotNull(replaced);
+        Assert.Equal("star-2", replaced.SerializedValue);
+        Assert.Equal(Tenant.AgnosticTenantId, replaced.TenantId);
+    }
+
+    [Fact(DisplayName = "SaveAsync same-tenant update keeps the existing TenantId")]
+    public async Task SaveAsync_WhenSameTenant_KeepsExistingTenantId()
+    {
+        var store = CreateStore("tenant-a");
+        await store.SaveAsync(Pair("kv-a", "a", "tenant-a"), CancellationToken.None);
+
+        await store.SaveAsync(Pair("kv-a", "a2"), CancellationToken.None);
+        var found = await store.FindAsync(new KeyValueFilter { Key = "kv-a" }, CancellationToken.None);
+
+        Assert.NotNull(found);
+        Assert.Equal("a2", found.SerializedValue);
+        Assert.Equal("tenant-a", found.TenantId);
+    }
+
+    [Fact(DisplayName = "DeleteAsync removes a * key that is visible to the ambient tenant")]
+    public async Task DeleteAsync_WhenAgnosticKey_NamedTenantRemovesIt()
+    {
+        var backing = new MemoryStore<SerializedKeyValuePair>();
+        var tenantB = new MemoryKeyValueStore(backing, new TestTenantAccessor("tenant-b"));
+        backing.Save(Pair("kv-star", "star", Tenant.AgnosticTenantId), x => x.Id);
+
+        await tenantB.DeleteAsync("kv-star", CancellationToken.None);
+        var remaining = await tenantB.FindAsync(new KeyValueFilter { Key = "kv-star" }, CancellationToken.None);
+
+        Assert.Null(remaining);
+    }
+
     private static MemoryKeyValueStore CreateStore(string tenantId) =>
         new(new MemoryStore<SerializedKeyValuePair>(), new TestTenantAccessor(tenantId));
 

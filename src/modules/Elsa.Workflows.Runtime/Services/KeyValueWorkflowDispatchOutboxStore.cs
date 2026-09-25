@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.KeyValues.Contracts;
 using Elsa.KeyValues.Entities;
 using Elsa.KeyValues.Models;
@@ -8,7 +9,10 @@ namespace Elsa.Workflows.Runtime;
 /// <summary>
 /// Stores workflow dispatch outbox items in the existing key-value store.
 /// </summary>
-public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, IPayloadSerializer payloadSerializer) : IWorkflowDispatchOutboxStore
+public class KeyValueWorkflowDispatchOutboxStore(
+    IKeyValueStore keyValueStore,
+    IPayloadSerializer payloadSerializer,
+    ITenantAccessor? tenantAccessor = null) : IWorkflowDispatchOutboxStore
 {
     private const string LegacyKeyPrefix = "Elsa:WorkflowDispatchOutbox:";
     private const string ItemKeyPrefix = "Elsa:WorkflowDispatchOutbox:Items:";
@@ -16,7 +20,8 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
     private const string IndexByIdKeyPrefix = "Elsa:WorkflowDispatchOutbox:IndexById:";
     private const string RecoveryKeyPrefix = "Elsa:WorkflowDispatchOutbox:Recovery:";
     private const string StateKeyPrefix = "Elsa:WorkflowDispatchOutbox:State:";
-    private const string LegacyScanCompletedKey = $"{StateKeyPrefix}LegacyScanCompleted";
+    private const string LegacyScanCompletedKeyPrefix = $"{StateKeyPrefix}LegacyScanCompleted:";
+    private const string DefaultTenantLegacyScanCompletedSegment = "default";
 
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken = default)
@@ -207,7 +212,7 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
 
     private async Task<IEnumerable<WorkflowDispatchOutboxItem>> FindLegacyItemsAsync(int maxCount, CancellationToken cancellationToken)
     {
-        var legacyScanCompleted = await keyValueStore.FindAsync(new KeyValueFilter { Key = LegacyScanCompletedKey }, cancellationToken);
+        var legacyScanCompleted = await keyValueStore.FindAsync(new KeyValueFilter { Key = GetLegacyScanCompletedKey() }, cancellationToken);
 
         if (legacyScanCompleted != null)
             return [];
@@ -249,7 +254,7 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
         {
             await keyValueStore.SaveAsync(new SerializedKeyValuePair
             {
-                Key = LegacyScanCompletedKey,
+                Key = GetLegacyScanCompletedKey(),
                 SerializedValue = "true"
             }, cancellationToken);
         }
@@ -311,6 +316,18 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
     private static string GetIndexByIdKey(string id) => $"{IndexByIdKeyPrefix}{id}";
 
     private static string GetRecoveryKey(string id) => $"{RecoveryKeyPrefix}{id}";
+
+    /// <summary>
+    /// Per-tenant marker. The previous shared key is not read: a missing marker only
+    /// causes one extra legacy scan, and treating the old shared flag as completed would
+    /// skip scans for tenants that never finished their own.
+    /// </summary>
+    internal string GetLegacyScanCompletedKey()
+    {
+        var tenantId = tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
+        var segment = tenantId == Tenant.DefaultTenantId ? DefaultTenantLegacyScanCompletedSegment : tenantId;
+        return $"{LegacyScanCompletedKeyPrefix}{segment}";
+    }
 
     private static int? GetLegacyScanTake(int maxCount)
     {
