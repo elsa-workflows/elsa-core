@@ -18,6 +18,26 @@ Package mode evaluates exactly one `PackageReference` to Elsa and no project ref
 
 ## Retained local result
 
+### History-bearing draft import, 2026-09-25
+
+The `imported` runner profile completed against a fresh GitHub checkout of [draft import PR #8409](https://github.com/elsa-workflows/elsa-core/pull/8409) at `7abe24b76295c6f64fbb6c878962bf0367ebd8fe`. The runner checked that the imported head preserves Core `e96fd36f4f9a838c6289fd48cf07669ea3229a5e`, Extensions `ba8b71d91c15ffe5be4b2c539cf9f712e74af775`, and Studio `20ceaeeed7e671f0c9662003e82063026f2216de` ancestry. Its E96 import and preparation receipts matched their reviewed SHA-256 values. All 41 mapped Slack C# files matched the pinned Extensions checkout byte for byte before and after the proof.
+
+Only `Elsa.Slack` `3.8.5-proof` was packed into an isolated local feed. The `.nupkg` SHA-256 is `311c98e26e6821cc9947f618772aa1cd6f70a2a70895b5d01bc3e329f73f682b`; its `.snupkg` is `f55b03e00acdf7849ee0b51ae6acf9855a771a77680193dd36cc4192087bbd94`. Its nuspec names repository `elsa-core` at that exact imported commit, Elsa `3.8.4` and SlackNet `0.17.7` on net8.0, net9.0 and net10.0. Package mode evaluated one Elsa package reference and no project references; source-debug mode evaluated one mapped Core project reference and no Elsa package reference. The pinned SourceLink 3.1.1 tool checked each packaged PDB's `elsa-core/7abe24b...` URL and source checksum on all three frameworks; all 41 C# files were also byte-verified from each symbol PDB against the original Extensions source.
+
+Three isolated package-only consumers restored from this exact local archive and started on net8.0, net9.0 and net10.0. The offline fake-client `CreateChannel` smoke passed. The declared upstream Slack test still has one `Not implemented yet` skip and zero executed assertions; the fake-client smoke is separate narrow behavior evidence. The runner's inventory selector maps 51 affected projects but its selector receipt is a plan, not proof that those tests executed. The separate [E96 canonical test evidence](current-tip-e96-evidence/README.md) covers the older synthetic rehearsal; the exact history-import head's full test run is tracked on PR #8409. The local proof version is not a release allocation, no feed received a package, and one-publisher/cutover approval remains open.
+
+The full local receipt is `/private/tmp/elsa-8260-imported-package-proof-result-7abe/evidence.json` (SHA-256 `8bbc744b8ce2a9d1937c5f47a8741c989fc8b88a39dec51dcb34bd516aab4c20`). To rerun, use a fresh full-history import checkout with GitHub `origin` at the exact head, clean full-history upstream checkouts at the three commits above, and a new absent output directory:
+
+```sh
+python3 scripts/integration-program/run_mapped_slack_package_proof.py \
+  --rehearsal /path/to/imported-elsa-core --core-source /path/to/core-at-e96 \
+  --extensions-source /path/to/extensions-at-ba8b --studio-source /path/to/studio-at-20cea \
+  --source-profile imported --sourcelink-tool /path/to/pinned/sourcelink \
+  --output-dir /path/to/new-local-proof-output
+```
+
+The `--sourcelink-tool` must be the installed, payload-verified 3.1.1 CLI described in [Slack package proof](../slack-package-proof.md). Rollback is removing the disposable import and output checkouts; the upstream sources, public feeds and release versions were unchanged.
+
 ### Current imported-source profile, 2026-09-25
 
 The runner also completed against the later reviewed import profile: Core `c4b3ce150160e3c9062b57f7b158fd6b968e1631`, Extensions `ba8b71d91c15ffe5be4b2c539cf9f712e74af775`, and Studio `20ceaeeed7e671f0c9662003e82063026f2216de`. The disposable import commit was `668a10dda46000c90a87bc7d35758420179b6c0c`; its preparer receipt records the same source pins and patch SHA-256 `b091576a7f8d51c8b469645eea4b868556ebfadb084d7afbc4287ea36155433d`. The runner's `--source-profile prepared` option accepts only source maps already reviewed by `prepare_consolidated_build.py` and checks both receipts and all three clean source checkouts before and after the proof. The default `manifest` profile retains the original pins above for existing automation.

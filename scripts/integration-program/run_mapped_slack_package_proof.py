@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """Pack mapped Slack locally and prove clean package-only consumption.
 
-The proof uses a disposable source-history rehearsal. It never publishes a
-package, and its proof version is not a release version. Restore uses NuGet.org
-for source packing and NuGet.org plus the isolated local feed for consumers.
+The proof uses a disposable source-history rehearsal or a separate checkout of
+the history-bearing import. It never publishes a package, and its proof version
+is not a release version. Restore uses NuGet.org for source packing and
+NuGet.org plus the isolated local feed for consumers.
 """
 
 from __future__ import annotations
 
 import argparse
 import base64
+import gzip
 import hashlib
 import html
 import importlib.util
@@ -53,6 +55,10 @@ ELSA_VERSION = REQUIRED_PROOF_DEPENDENCIES["Elsa"]
 SLACK_NET_VERSION = REQUIRED_PROOF_DEPENDENCIES["SlackNet"]
 TFMS = tuple(RELEASE_UNIT["target_frameworks"])
 REPOSITORY_URL = "https://github.com/elsa-workflows/elsa-extensions"
+IMPORTED_REPOSITORY_URL = "https://github.com/elsa-workflows/elsa-core"
+CURRENT_TIP_EVIDENCE = REPOSITORY_ROOT / "doc/integration-program/consolidation/current-tip-e96-evidence"
+CURRENT_TIP_IMPORT_SHA256 = "06cd198a338d5c6d49fa6b0183bbda6b602252f39f622f18084e60342880bb75"
+CURRENT_TIP_PREPARATION_SHA256 = "219fcafe45959bb8f9295d8b9137f8ae0807489f0370b5112204f228fc7bd7bc"
 SLACK_RELATIVE = Path(RELEASE_UNIT["mapped"]["project_path"]).parent
 EXTENSIONS_SLACK_RELATIVE = Path(RELEASE_UNIT["source"]["project_path"]).parent
 ICON_SHA256 = "82fd76d734d59efc6132af0b0b999146254fa5a296ea5d64f85597bb1cda524e"
@@ -115,6 +121,9 @@ def load_canonical_preparer():
 def source_commits_for_profile(profile: str, rehearsal: Path) -> dict[str, str]:
     if profile == "manifest":
         return SOURCE_COMMITS.copy()
+    if profile == "imported":
+        imported, _, _ = load_current_tip_receipts()
+        return imported["sourceCommits"]
     if profile != "prepared":
         raise ValueError(f"Unknown mapped source profile: {profile}")
 
@@ -130,6 +139,46 @@ def source_commits_for_profile(profile: str, rehearsal: Path) -> dict[str, str]:
     if source_commits not in preparer.supported_source_profiles():
         raise RuntimeError(f"The prepared source commits are not a reviewed profile: {source_commits}")
     return source_commits
+
+
+def load_current_tip_receipts() -> tuple[dict, dict, str]:
+    def read_pinned(name: str, expected_sha256: str) -> dict:
+        raw = gzip.decompress((CURRENT_TIP_EVIDENCE / name).read_bytes())
+        if sha256_bytes(raw) != expected_sha256:
+            raise RuntimeError(f"Current-tip evidence archive differs from its reviewed SHA-256: {name}")
+        return json.loads(raw)
+
+    imported = read_pinned("import-receipt.json.gz", CURRENT_TIP_IMPORT_SHA256)
+    prepared = read_pinned("consolidated-build-receipt.json.gz", CURRENT_TIP_PREPARATION_SHA256)
+    profile = json.loads((CURRENT_TIP_EVIDENCE / "reviewed-overlays-six.json").read_text(encoding="utf-8"))
+    if imported.get("sourceCommits") != profile.get("sourcePins") or prepared.get("sourceCommits") != profile.get("sourcePins"):
+        raise RuntimeError("Current-tip receipts and reviewed source profile disagree")
+    patch_hash = sha256_file(REPOSITORY_ROOT / PATCH_RELATIVE)
+    if prepared.get("patchSha256") != patch_hash:
+        raise RuntimeError("Current-tip preparation receipt does not match the reviewed integration patch")
+    return imported, prepared, patch_hash
+
+
+def require_imported_history_checkout(root: Path, source_commits: dict[str, str]) -> tuple[dict, dict, str, str]:
+    if git_value(root, "rev-parse", "--show-toplevel") != str(root):
+        raise RuntimeError("Pass the physical imported Git root")
+    if git_value(root, "remote", "get-url", "origin") not in (
+        f"{IMPORTED_REPOSITORY_URL}.git",
+        "git@github.com:elsa-workflows/elsa-core.git",
+    ):
+        raise RuntimeError("The imported checkout needs an elsa-core GitHub origin for final SourceLink verification")
+    if git_value(root, "status", "--porcelain", "--untracked-files=all"):
+        raise RuntimeError("The imported checkout has unrelated tracked or untracked changes")
+    head = git_value(root, "rev-parse", "HEAD")
+    imported, prepared, patch_hash = load_current_tip_receipts()
+    if imported.get("sourceCommits") != source_commits or not imported.get("exactBlobAndModeMapping") or not imported.get("originalHistoriesReachable"):
+        raise RuntimeError("The archived current-tip import receipt does not prove exact source relocation")
+    for source in source_commits.values():
+        if subprocess.run(["git", "merge-base", "--is-ancestor", source, head], cwd=root, check=False).returncode:
+            raise RuntimeError(f"The imported checkout does not preserve source commit {source}")
+    if not (root / SLACK_RELATIVE / "Elsa.Slack.csproj").is_file():
+        raise RuntimeError("The imported checkout omits the mapped Slack project")
+    return imported, prepared, patch_hash, head
 
 
 def require_prepared_rehearsal(root: Path, source_commits: dict[str, str] | None = None) -> tuple[dict, dict, str]:
@@ -257,7 +306,13 @@ def run(command: list[str], *, cwd: Path, env: dict[str, str], log: Path, timeou
         raise RuntimeError(f"Command failed ({result.returncode}); see {log}")
 
 
-def inspect_artifact(package: Path, symbols: Path, icon_path: Path, extensions_sha: str = EXTENSIONS_SHA) -> dict:
+def inspect_artifact(
+    package: Path,
+    symbols: Path,
+    icon_path: Path,
+    expected_commit: str = EXTENSIONS_SHA,
+    expected_repository_url: str = REPOSITORY_URL,
+) -> dict:
     with zipfile.ZipFile(package) as archive:
         nuspec_files = [name for name in archive.namelist() if name.lower().endswith(".nuspec")]
         if len(nuspec_files) != 1:
@@ -292,7 +347,7 @@ def inspect_artifact(package: Path, symbols: Path, icon_path: Path, extensions_s
     expected_dependencies = sorted((("Elsa", ELSA_VERSION), ("SlackNet", SLACK_NET_VERSION)))
     if package_id != PACKAGE_ID or package_version != PACKAGE_VERSION:
         raise RuntimeError(f"Unexpected package identity {package_id} {package_version}")
-    if repository_url != REPOSITORY_URL or repository_commit != extensions_sha:
+    if repository_url != expected_repository_url or repository_commit != expected_commit:
         raise RuntimeError(f"Unexpected package source provenance: {repository_url} {repository_commit}")
     if package_icon != "icon.png" or package_icon_sha != ICON_SHA256 or sha256_file(icon_path) != ICON_SHA256:
         raise RuntimeError("Packaged icon differs from the pinned canonical Extensions root icon")
@@ -872,6 +927,24 @@ def verify_embedded_sources(output: Path, symbols: Path, extensions: Path, env: 
     return results
 
 
+def verify_imported_source_link(output: Path, head: str, source_link_assembly: Path, dotnet: Path, env: dict[str, str]) -> list[dict]:
+    expected_url = f"https://raw.githubusercontent.com/elsa-workflows/elsa-core/{head}/*"
+    results = []
+    for framework in TFMS:
+        pdb = output / "pdb" / f"Elsa.Slack.{framework}.pdb"
+        json_log = output / "logs" / f"imported-sourcelink-{framework}-json.log"
+        run([str(dotnet), str(source_link_assembly), "print-json", str(pdb)], cwd=output, env=env, log=json_log)
+        mapping = json.loads("\n".join(json_log.read_text(encoding="utf-8").splitlines()[1:])).get("documents")
+        if not isinstance(mapping, dict) or set(mapping.values()) != {expected_url}:
+            raise RuntimeError(f"Unexpected imported SourceLink mapping for {framework}: {mapping}")
+        test_log = output / "logs" / f"imported-sourcelink-{framework}-test.log"
+        run([str(dotnet), str(source_link_assembly), "test", str(pdb)], cwd=output, env=env, log=test_log)
+        if "sourcelink test passed" not in test_log.read_text(encoding="utf-8"):
+            raise RuntimeError(f"Imported SourceLink URL/content test has no pass marker for {framework}")
+        results.append({"framework": framework, "repositoryUrl": expected_url, "urlAndChecksumTest": "passed"})
+    return results
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--rehearsal", type=Path, required=True)
@@ -879,8 +952,10 @@ def main() -> int:
     parser.add_argument("--extensions-source", type=Path, required=True)
     parser.add_argument("--studio-source", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--source-profile", choices=("manifest", "prepared"), default="manifest",
-                        help="Use the manifest pins or a preparer-reviewed source profile in the import receipt")
+    parser.add_argument("--source-profile", choices=("manifest", "prepared", "imported"), default="manifest",
+                        help="Use the manifest pins, a prepared rehearsal, or the reviewed history-bearing import")
+    parser.add_argument("--sourcelink-tool", type=Path,
+                        help="Required for the imported profile; pinned SourceLink 3.1.1 tool")
     parser.add_argument("--dotnet", type=Path, default=Path(DOTNET) if DOTNET else None)
     args = parser.parse_args()
 
@@ -898,7 +973,17 @@ def main() -> int:
     require_pinned_source(core, core_sha, "Core")
     require_pinned_source(extensions, extensions_sha, "Extensions")
     require_pinned_source(studio, studio_sha, "Studio")
-    imported, prepared, patch_hash = require_prepared_rehearsal(rehearsal, source_commits)
+    if args.source_profile == "imported":
+        imported, prepared, patch_hash, imported_head = require_imported_history_checkout(rehearsal, source_commits)
+        if args.sourcelink_tool is None:
+            raise RuntimeError("The imported profile requires --sourcelink-tool")
+        source_link_assembly, source_link_version, source_link_payload_sha256 = shared.require_sourcelink_tool(args.sourcelink_tool)
+    else:
+        imported, prepared, patch_hash = require_prepared_rehearsal(rehearsal, source_commits)
+        imported_head = None
+        source_link_assembly = None
+        source_link_version = None
+        source_link_payload_sha256 = None
 
     output_argument = args.output_dir.expanduser().absolute()
     reject_symlink_ancestors(output_argument)
@@ -926,13 +1011,15 @@ def main() -> int:
     env["NUGET_HTTP_CACHE_PATH"] = str(output / "nuget-http-cache")
     env["NUGET_PACKAGES"] = str(cache_root / "pack")
     project = rehearsal / SLACK_RELATIVE / "Elsa.Slack.csproj"
+    repository_url = IMPORTED_REPOSITORY_URL if imported_head else REPOSITORY_URL
+    repository_commit = imported_head or extensions_sha
     package_properties = [
         "-p:IsPackable=true",
         "-p:UseProjectReferences=false",
         f"-p:ElsaVersion={ELSA_VERSION}",
         f"-p:PackageVersion={PACKAGE_VERSION}",
-        f"-p:RepositoryCommit={extensions_sha}",
-        f"-p:RepositoryUrl={REPOSITORY_URL}",
+        f"-p:RepositoryCommit={repository_commit}",
+        f"-p:RepositoryUrl={repository_url}",
     ]
     package_evaluation = output / "logs/package-mode-evaluation.log"
     run(
@@ -976,20 +1063,26 @@ def main() -> int:
         raise RuntimeError(f"Local feed contains unrelated or missing packages: {[path.name for path in nupkgs]}")
     if [path.name for path in snupkgs] != [f"{PACKAGE_ID}.{PACKAGE_VERSION}.snupkg"]:
         raise RuntimeError(f"Local feed contains unrelated or missing symbol packages: {[path.name for path in snupkgs]}")
-    artifact = inspect_artifact(nupkgs[0], snupkgs[0], extensions / "icon.png", extensions_sha)
+    artifact = inspect_artifact(nupkgs[0], snupkgs[0], extensions / "icon.png", repository_commit, repository_url)
 
     upstream_test = verify_upstream_test_baseline(output, rehearsal, env, cache_root, pack_config, dotnet, imported)
     current_selection = selector_evidence(output, rehearsal, imported)
     consumers = verify_consumers(output, packages, env, cache_root / "consumers", dotnet)
     offline_activity = verify_offline_activity(output, packages, env, cache_root, dotnet)
     embedded_sources = verify_embedded_sources(output, snupkgs[0], extensions, env, pack_config, dotnet)
+    source_link = verify_imported_source_link(output, imported_head, source_link_assembly, dotnet, env) if imported_head and source_link_assembly else []
 
     # Recheck the source and preparation receipt after all builds. Ignored bin/obj
     # outputs are allowed only inside the disposable rehearsal.
     require_pinned_source(core, core_sha, "Core")
     require_pinned_source(extensions, extensions_sha, "Extensions")
     require_pinned_source(studio, studio_sha, "Studio")
-    imported_after, prepared_after, patch_hash_after = require_prepared_rehearsal(rehearsal, source_commits)
+    if imported_head:
+        imported_after, prepared_after, patch_hash_after, head_after = require_imported_history_checkout(rehearsal, source_commits)
+        if head_after != imported_head:
+            raise RuntimeError("The imported checkout HEAD changed during the package proof")
+    else:
+        imported_after, prepared_after, patch_hash_after = require_prepared_rehearsal(rehearsal, source_commits)
     if imported_after != imported or prepared_after != prepared or patch_hash_after != patch_hash:
         raise RuntimeError("Pinned source or prepared input receipt changed during package proof")
 
@@ -1007,6 +1100,7 @@ def main() -> int:
             "repository": REPOSITORY_URL,
             "extensions_commit": extensions_sha,
             "rehearsal_commit": imported["rehearsalCommit"],
+            "imported_head": imported_head,
             "source_integration_patch_sha256": patch_hash,
             "mapped_slack_project_sha256": sha256_file(project),
             "mapped_source_file_count": len(source_files),
@@ -1037,8 +1131,12 @@ def main() -> int:
         "restore_sources": {
             "pack": ["https://api.nuget.org/v3/index.json"],
             "consumers": ["https://api.nuget.org/v3/index.json", str(packages)],
-            "source_link_urls": [],
-            "source_link_note": "The synthetic history rehearsal has no remote, so source linking is not fabricated. All 41 C# sources embedded in each target-framework PDB were byte-verified against the pinned Extensions project. Final Core-repository SourceLink URLs remain a post-import remote-history gate.",
+            "source_link_urls": source_link,
+            "source_link_note": (
+                f"Pinned SourceLink {source_link_version} payload {source_link_payload_sha256} verified the GitHub URL and content checksum for all target frameworks."
+                if imported_head else
+                "The synthetic history rehearsal has no remote, so source linking is not fabricated. All 41 C# sources embedded in each target-framework PDB were byte-verified against the pinned Extensions project. Final Core-repository SourceLink URLs remain a post-import remote-history gate."
+            ),
         },
         "consumers": consumers,
         "package_consumption_provenance": {
@@ -1064,7 +1162,12 @@ def main() -> int:
             "studio_clean": True,
             "rehearsal_commit": git_value(rehearsal, "rev-parse", "HEAD"),
             "preparation_receipt_verified": True,
-            "ignored_build_outputs": "confined to the disposable rehearsal; source worktrees and tracked preparation inputs rechecked after execution",
+            "history_import_verified": imported_head is not None,
+            "ignored_build_outputs": (
+                "confined to the disposable imported checkout; pinned upstream worktrees and imported Git state rechecked after execution"
+                if imported_head else
+                "confined to the disposable rehearsal; source worktrees and tracked preparation inputs rechecked after execution"
+            ),
         },
     }
     evidence_path = output / "evidence.json"
