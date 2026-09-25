@@ -1,0 +1,65 @@
+{
+  "sourceCommits": {
+    "core": "c4b3ce150160e3c9062b57f7b158fd6b968e1631",
+    "extensions": "ba8b71d91c15ffe5be4b2c539cf9f712e74af775",
+    "studio": "20ceaeeed7e671f0c9662003e82063026f2216de"
+  },
+  "rawRehearsalCommit": "c1f40eddf7fba9d1db16c8fdaee3d2aa612da8f7",
+  "preparationReceiptSha256": "560f25ca3be81a0d7b6c00001c0d43b424f40eb57a920ded5b6f7b05c33d3ea7",
+  "importReceiptSha256": "bc179bb79a425ba39a5286ab26076ed85b3756972b7047fb876b186111755d6a",
+  "overlayReceiptSha256": "444518e40d84a3ac399f04f68161234625c5bef6464aed9bf8724c4f0af1f85f",
+  "nukeCommand": "env -u NUKE_ENTERPRISE_TOKEN ./build.sh --host Terminal --target Test",
+  "logSha256": "21bcb4a3aee4d81948503ac0ecfe06791df084ed5837be5750dd0dc17f22be49",
+  "nukeExitCode": 255,
+  "restore": "succeeded",
+  "compile": "succeeded",
+  "test": "failed",
+  "summary": {
+    "failed": 21,
+    "passed": 6115,
+    "skipped": 147
+  },
+  "retainedTrxFiles": 94,
+  "failedProjects": [
+    {
+      "trx": "Elsa.Studio.Authentication.UI.Tests.trx",
+      "failed": 6,
+      "tests": [
+        "Elsa.Studio.Authentication.UI.Tests.LoginThemeCssContractTests.ClassicThemeFamily_ProvidesNamedRefinedSplitUnifiedAndBrandCanvasPresentations",
+        "Elsa.Studio.Authentication.UI.Tests.LoginThemeCssContractTests.LoginMethodTokens_ArePublicAndSupportedByBuiltInThemeFamilies",
+        "Elsa.Studio.Authentication.UI.Tests.LoginThemeCssContractTests.LoginThemes_OverrideTheSharedControlPalette",
+        "Elsa.Studio.Authentication.UI.Tests.LoginThemeCssContractTests.LightModernTheme_OverridesTheCompleteLoginMethodPalette",
+        "Elsa.Studio.Authentication.UI.Tests.LoginThemeCssContractTests.ClassicUnifiedTheme_UsesUnifiedIdentityGatewayComposition",
+        "Elsa.Studio.Authentication.UI.Tests.LoginThemeCssContractTests.BuiltInCredentialLoginMethods_UseOutlinedDenseMudBlazorFields"
+      ]
+    },
+    {
+      "trx": "Elsa.Studio.Core.Tests.trx",
+      "failed": 13,
+      "tests": [
+        "Elsa.Studio.Core.Tests.HostThemeConfigurationTests.Hosts_bind_the_presentation_theme_section(hostPath: [\"Elsa.Studio.Host.Server\", \"Program.cs\"])",
+        "Elsa.Studio.Core.Tests.StudioShellCssContractTests.NavigationGroupLabelsUseComfortableLogicalInset",
+        "Elsa.Studio.Core.Tests.HostThemeConfigurationTests.Hosts_bind_the_presentation_theme_section(hostPath: [\"Elsa.Studio.Host.Wasm\", \"Program.cs\"])",
+        "Elsa.Studio.Core.Tests.StudioShellCssContractTests.UtilitiesUseSoftThemeAwareInteractionStates",
+        "Elsa.Studio.Core.Tests.StudioShellCssContractTests.AccountMenusInheritShellUtilityColor(componentPath: [\"Elsa.Studio.Environments\", \"Components\", \"EnvironmentPicker.razor\"])",
+        "Elsa.Studio.Core.Tests.SecondaryButtonCssContractTests.NeutralOutlinedButtonsUseSoftThemeAwareInteractionStates",
+        "Elsa.Studio.Core.Tests.StudioShellCssContractTests.AccountMenusInheritShellUtilityColor(componentPath: [\"Elsa.Studio.ExternalAuthentication.BlazorServer\", \"Components\", \"BrokerLoginState.razor\"])",
+        "Elsa.Studio.Core.Tests.StudioShellCssContractTests.AccountMenusInheritShellUtilityColor(componentPath: [\"Elsa.Studio.Login\", \"Components\", \"LoginState.razor\"])",
+        "Elsa.Studio.Core.Tests.StudioShellCssContractTests.ServerHostedShellStylesheetsUseContentHashVersioning(hostPath: [\"Elsa.Studio.Host.Server\", \"Pages\", \"_Host.cshtml\"])",
+        "Elsa.Studio.Core.Tests.HostAuthenticationConfigurationTests.ServerHostShipsWithRunnableAuthenticationDefaults",
+        "Elsa.Studio.Core.Tests.StudioFormControlCssContractTests.ShellDefinesThemeAwareControlTokensAndAllMudInputVariants",
+        "Elsa.Studio.Core.Tests.StudioShellCssContractTests.ServerHostedShellStylesheetsUseContentHashVersioning(hostPath: [\"Elsa.Studio.Host.HostedWasm\", \"Pages\", \"_Host.cshtml\"])",
+        "Elsa.Studio.Core.Tests.StudioShellCssContractTests.AccountMenusInheritShellUtilityColor(componentPath: [\"Elsa.Studio.ExternalAuthentication.BlazorWasm\", \"Components\", \"BrokerLoginState.razor\"])"
+      ]
+    },
+    {
+      "trx": "Elsa.Studio.Dashboard.Tests.trx",
+      "failed": 2,
+      "tests": [
+        "Elsa.Studio.Dashboard.Tests.DashboardWidgetRegistrationTests.OwnerProjects_DoNotReferenceDashboardModule",
+        "Elsa.Studio.Dashboard.Tests.DashboardWidgetRegistrationTests.DashboardProject_DoesNotReferenceDiagnosticsModules"
+      ]
+    }
+  ],
+  "publicationAuthorized": false
+}

@@ -1,11 +1,22 @@
 import copy
+import hashlib
+import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
 from refresh_canonical_dependency_graph import (
+    CURRENT_TIP_PATCH_PATHS,
+    CURRENT_TIP_SOURCE_COMMITS,
+    _classify_test_observation,
+    _validate_overlay_build_receipt,
+    _validate_overlay_receipt,
+    _validate_test_profile_pins,
+    _verify_prepared_source_files,
     _assets_for_project,
     _framework_graph,
+    _include_restored_project_references,
     _node_key,
     _parse_test_run_evidence,
     _validated_framework_summary,
@@ -15,6 +26,28 @@ from refresh_canonical_dependency_graph import (
 
 
 class CanonicalDependencyGraphTests(unittest.TestCase):
+    def test_current_tip_explicit_skip_requires_matching_zero_execution_trx(self):
+        path = "test/extensions/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj"
+        counters = {"total": 1, "executed": 0, "passed": 0, "failed": 0}
+        explanation = "Selected; retained TRX records 1 case(s) with zero executed tests; NUKE summary was Skipped!."
+        evidence = {
+            "runByPathFramework": {},
+            "trxByPathFramework": {(path, "net10.0"): counters},
+            "selectedWithoutPass": {path: explanation},
+        }
+        observed = _classify_test_observation(path, "net10.0", evidence, ["Microsoft.NET.Test.Sdk"])
+        self.assertEqual("selected-but-skipped", observed["status"])
+        self.assertEqual(1, observed["skipped"])
+
+        evidence["selectedWithoutPass"][path] = explanation.replace("Skipped!", "not emitted")
+        with self.assertRaisesRegex(ValueError, "no matching passing summary or explicit skip"):
+            _classify_test_observation(path, "net10.0", evidence, ["Microsoft.NET.Test.Sdk"])
+
+        evidence["selectedWithoutPass"][path] = explanation
+        counters["passed"] = 1
+        with self.assertRaisesRegex(ValueError, "no matching passing summary or explicit skip"):
+            _classify_test_observation(path, "net10.0", evidence, ["Microsoft.NET.Test.Sdk"])
+
     @staticmethod
     def _summary_fixture(runs):
         totals = {field: sum(run[field] for run in runs) for field in ("passed", "failed", "skipped", "total")}
@@ -220,6 +253,55 @@ class CanonicalDependencyGraphTests(unittest.TestCase):
             self.assertEqual({("elsa-core", _node_key(test_path, "net10.0"))}, selected)
             self.assertEqual((test_path, "net10.0"), node_map[_node_key(test_path, "net10.0")])
 
+    def test_restored_off_solution_project_is_in_dependency_graph_but_not_test_selection(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve()
+            test_path = "test/Consumer.Tests/Consumer.Tests.csproj"
+            helper_path = "src/Helper/Helper.csproj"
+            test_file = root / test_path
+            helper_file = root / helper_path
+            test_file.parent.mkdir(parents=True)
+            helper_file.parent.mkdir(parents=True)
+            test_file.touch()
+            helper_file.touch()
+            test_assets = {
+                "project": {"restore": {"frameworks": {
+                    "net10.0": {"projectReferences": {str(helper_file): {"projectPath": str(helper_file)}}},
+                }}},
+                "targets": {"net10.0": {"Helper/1.0.0": {
+                    "type": "project", "framework": ".NETCoreApp,Version=v10.0",
+                }}},
+                "libraries": {"Helper/1.0.0": {
+                    "type": "project", "msbuildProject": "../../src/Helper/Helper.csproj",
+                }},
+            }
+            helper_assets = {
+                "project": {"restore": {
+                    "projectPath": str(helper_file),
+                    "frameworks": {"net10.0": {"projectReferences": {}}},
+                }},
+                "targets": {"net10.0": {}},
+                "libraries": {},
+            }
+            for project_file, document in (
+                (test_file, test_assets),
+                (helper_file, helper_assets),
+            ):
+                assets_path = project_file.parent / "obj/project.assets.json"
+                assets_path.parent.mkdir(parents=True)
+                assets_path.write_text(json.dumps(document), encoding="utf-8")
+
+            names = {test_path: "Consumer.Tests"}
+            documents = {test_path: test_assets}
+            _include_restored_project_references(root, names, documents)
+            graph, _, _ = _framework_graph(root, names, documents, {test_path})
+
+            self.assertIn(helper_path, names)
+            self.assertEqual(
+                {("elsa-core", _node_key(test_path, "net10.0"))},
+                graph.affected_tests([("elsa-core", _node_key(helper_path, "net10.0"))]),
+            )
+
     def test_missing_restore_assets_fail_closed(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -228,6 +310,104 @@ class CanonicalDependencyGraphTests(unittest.TestCase):
             project.touch()
             with self.assertRaisesRegex(ValueError, "missing project.assets.json"):
                 _assets_for_project(root, "src/Core/Core.csproj")
+
+    def test_current_tip_overlay_receipt_pins_reviewed_source_and_patch_bytes(self):
+        rows = [
+            {"name": name, "sha256": hashlib.sha256(
+                (Path(__file__).resolve().parents[2] / patch_path).read_bytes()
+            ).hexdigest()}
+            for name, patch_path in CURRENT_TIP_PATCH_PATHS.items()
+        ]
+        with tempfile.TemporaryDirectory() as temp:
+            receipt_path = Path(temp) / "overlays.json"
+            receipt_path.write_text(json.dumps({
+                "sourcePins": CURRENT_TIP_SOURCE_COMMITS,
+                "reviewedOverlayReceipt": rows,
+                "publicationAuthorized": False,
+            }), encoding="utf-8")
+            self.assertEqual(rows, _validate_overlay_receipt(receipt_path))
+
+            for incomplete in (rows[:-1], rows[::-1]):
+                receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+                receipt["reviewedOverlayReceipt"] = incomplete
+                invalid_path = Path(temp) / "incomplete.json"
+                invalid_path.write_text(json.dumps(receipt), encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "complete current-tip patch set in order"):
+                    _validate_overlay_receipt(invalid_path)
+
+            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+            receipt["sourcePins"]["core"] = "0" * 40
+            receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "does not pin the accepted c4b3ce"):
+                _validate_overlay_receipt(receipt_path)
+
+    def test_current_tip_source_verifier_rejects_non_overlay_imported_edit(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            unchanged = root / "src/Unchanged.csproj"
+            prepared = root / "src/Prepared.csproj"
+            unchanged.parent.mkdir()
+            unchanged.write_text("<Project />\n", encoding="utf-8")
+            prepared.write_text("<Project />\n", encoding="utf-8")
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            subprocess.run(["git", "-C", str(root), "add", "."], check=True)
+            subprocess.run(["git", "-C", str(root), "-c", "user.name=Source Test",
+                            "-c", "user.email=source-test@example.invalid", "commit", "-qm", "source"], check=True)
+            prepared.write_text("<Project Sdk=\"Microsoft.NET.Sdk\" />\n", encoding="utf-8")
+            files = [{"path": "src/Prepared.csproj", "sha256": hashlib.sha256(prepared.read_bytes()).hexdigest()}]
+            _verify_prepared_source_files(root, files, set())
+
+            unchanged.write_text("<Project TargetFramework=\"net9.0\" />\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "outside reviewed preparation"):
+                _verify_prepared_source_files(root, files, set())
+            unchanged.write_text("<Project />\n", encoding="utf-8")
+            prepared.write_text("<Project TargetFramework=\"net9.0\" />\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "differs from its accepted receipt"):
+                _verify_prepared_source_files(root, files, set())
+
+    def test_current_tip_overlay_build_receipt_must_prove_same_overlay_set(self):
+        overlays = [{"name": "patch.patch", "sha256": "a" * 64}]
+        receipt = {
+            "sourcePins": CURRENT_TIP_SOURCE_COMMITS,
+            "syntheticRehearsalCommit": "b" * 40,
+            "canonicalImportBuilt": False,
+            "fullCombinedTestSuiteVerified": False,
+            "builds": {"overlaid": {"exitCode": 0, "errorCount": 0, "appliedOverlays": overlays}},
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            receipt_path = Path(temp) / "mapped-solution-build.json"
+            receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+            self.assertEqual(receipt, _validate_overlay_build_receipt(receipt_path, overlays, "b" * 40))
+            receipt["builds"]["overlaid"]["errorCount"] = 1
+            receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "does not record a passing overlaid build"):
+                _validate_overlay_build_receipt(receipt_path, overlays, "b" * 40)
+
+    def test_current_tip_test_evidence_must_pin_receipts_and_overlay_hashes(self):
+        source_receipts = {
+            "preparationReceiptSha256": "a" * 64,
+            "importReceiptSha256": "b" * 64,
+            "sourceIntegrationPatchSha256": "c" * 64,
+        }
+        overlays = [{"name": "workbench-canonical-secrets.patch", "sha256": "d" * 64}]
+        evidence = {"profile": {
+            **CURRENT_TIP_SOURCE_COMMITS,
+            "rawRehearsalCommit": "e" * 40,
+            "canonicalSolution": "Elsa.sln",
+            "sourceReceipts": source_receipts,
+            "supplementalPatches": overlays,
+            "overlayReceiptSha256": "f" * 64,
+        }}
+        self.assertEqual(source_receipts, _validate_test_profile_pins(
+            evidence, CURRENT_TIP_SOURCE_COMMITS, "e" * 40, source_receipts, overlays, "f" * 64,
+        ))
+        evidence["profile"]["supplementalPatches"] = []
+        with self.assertRaisesRegex(ValueError, "differ from the reviewed overlay receipt"):
+            _validate_test_profile_pins(evidence, CURRENT_TIP_SOURCE_COMMITS, "e" * 40, source_receipts, overlays, "f" * 64)
+        evidence["profile"]["supplementalPatches"] = overlays
+        evidence["profile"]["overlayReceiptSha256"] = "0" * 64
+        with self.assertRaisesRegex(ValueError, "does not hash the reviewed overlay receipt"):
+            _validate_test_profile_pins(evidence, CURRENT_TIP_SOURCE_COMMITS, "e" * 40, source_receipts, overlays, "f" * 64)
 
     def test_solution_allows_same_non_test_display_name_but_rejects_duplicate_test_name(self):
         with tempfile.TemporaryDirectory() as temp:
