@@ -266,8 +266,17 @@
       "category": "license_notice",
       "owning_workstream": "Repository maintainers and legal review",
       "proposed_disposition": "Preserve both product copyright notices and MIT terms in the consolidated license/notice arrangement; retire duplicate license files only after legal review confirms coverage.",
-      "evidence_or_gate": "The Extensions pin says Copyright 2025 Elsa Workflows; the Studio pin says Copyright 2023 Elsa Workflows. Their notice years differ even though the license terms match.",
-      "status": "pending_notice_review"
+      "evidence_or_gate": "The reviewed PR #8446 merged the preserved 2021/2023/2025 Elsa Workflows MIT notices into active Core LICENSE. The original .source copy stays inert; packaged-license review is still required before release or source-copy retirement.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/legacy-license-notices.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8446",
+        "merge_commit": "6ae33440214c5926a5bda75d55ec2815a492b9ef",
+        "active_path": "LICENSE",
+        "active_blob": "5cdb617ff68d02cea4eb632303ee7fdff0c0dd68",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -2582,8 +2591,17 @@
       "category": "license_notice",
       "owning_workstream": "Repository maintainers and legal review",
       "proposed_disposition": "Preserve both product copyright notices and MIT terms in the consolidated license/notice arrangement; retire duplicate license files only after legal review confirms coverage.",
-      "evidence_or_gate": "The Extensions pin says Copyright 2025 Elsa Workflows; the Studio pin says Copyright 2023 Elsa Workflows. Their notice years differ even though the license terms match.",
-      "status": "pending_notice_review"
+      "evidence_or_gate": "The reviewed PR #8446 merged the preserved 2021/2023/2025 Elsa Workflows MIT notices into active Core LICENSE. The original .source copy stays inert; packaged-license review is still required before release or source-copy retirement.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/legacy-license-notices.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8446",
+        "merge_commit": "6ae33440214c5926a5bda75d55ec2815a492b9ef",
+        "active_path": "LICENSE",
+        "active_blob": "5cdb617ff68d02cea4eb632303ee7fdff0c0dd68",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
