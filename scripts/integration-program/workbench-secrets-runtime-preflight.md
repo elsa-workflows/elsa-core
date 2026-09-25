@@ -29,7 +29,7 @@ receipts or apply the mapped-source patches to that checkout. The preparer
 requires the exact checkout SHA, the original three-parent import commit, and
 the three original source commits; it verifies the parent order and ancestry,
 committed Workbench and Studio files, reviewed fixture patch artifacts and
-their applied changes, and no tracked or unignored untracked changes before
+the applied changes for requested fixture options, and no tracked or unignored untracked changes before
 building. Every evaluated Workbench compile-source file is also matched to its
 committed Git blob, including files Git would otherwise ignore. Git's status
 check does not inventory other ignored inputs. The resulting plan says

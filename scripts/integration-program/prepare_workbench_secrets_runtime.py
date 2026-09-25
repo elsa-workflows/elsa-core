@@ -620,11 +620,6 @@ def validate_imported_source_root(imported_root, expected_pins, import_commit, i
         require(imported_patch.is_file() and not imported_patch.is_symlink()
                 and file_sha256(imported_patch) == file_sha256(patch),
                 f'Imported checkout lacks the reviewed fixture patch artifact: {patch.name}')
-        if patch != PATCH:
-            applied = subprocess.run(['git', '-C', str(root), 'apply', '--reverse', '--check', str(imported_patch)],
-                                     check=False, capture_output=True)
-            require(applied.returncode == 0,
-                    f'Imported checkout does not contain reviewed fixture patch changes: {patch.name}')
 
     provenance = {
         'mode': 'history-import',
@@ -784,6 +779,18 @@ def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_p
                 'Two-tenant mode requires the Studio mapped-layout patch in the isolated source')
         require(TWO_TENANT_MULTITENANCY_MARKER in program,
                 'Two-tenant mode requires configuration-gated Workbench multitenancy')
+    if imported:
+        required_patches = {ROUTE_PROBE_PATCH_NAME} if route_probe else set()
+        if two_tenant:
+            required_patches.update((tenant_patch_name, menu_patch_name, studio_layout_patch_name))
+        for patch in OPTIONAL_FIXTURE_PATCHES:
+            if patch.name not in required_patches:
+                continue
+            imported_patch = root / PATCH_RELATIVE.parent / patch.name
+            applied = subprocess.run(['git', '-C', str(root), 'apply', '--reverse', '--check', str(imported_patch)],
+                                     check=False, capture_output=True)
+            require(applied.returncode == 0,
+                    f'Imported checkout does not contain reviewed fixture patch changes: {patch.name}')
 
     parent = validate_temp_parent(temp_parent or tempfile.gettempdir(), source)
     build = build_host(source, parent)

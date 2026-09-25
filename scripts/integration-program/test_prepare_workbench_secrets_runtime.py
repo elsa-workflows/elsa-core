@@ -592,6 +592,19 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
                                                        self.tenant_patch, self.route_patch))
         build_host.assert_not_called()
 
+    def test_imported_fixture_allows_unapplied_probe_when_disabled(self):
+        import_commit, imported_sha = self.initialize_imported_source(apply_route_probe=False)
+        fixture_root = self.prepare(two_tenant=True, route_probe=False,
+                                    import_commit=import_commit, imported_sha=imported_sha,
+                                    optional_fixture_patches=(self.menu_patch, self.layout_patch,
+                                                              self.tenant_patch, self.route_patch))
+        try:
+            plan = json.loads((fixture_root / 'launch-plan.json').read_text())
+            self.assertFalse(plan['routeProbe']['enabled'])
+            self.assertTrue(plan['twoTenantMode'])
+        finally:
+            FIXTURE.cleanup_fixture(fixture_root, host_stopped=True)
+
     def test_imported_fixture_rejects_ignored_compile_source_before_build(self):
         import_commit, imported_sha = self.initialize_imported_source()
         (self.rehearsal / '.git/info/exclude').write_text('Injected.cs\n')
