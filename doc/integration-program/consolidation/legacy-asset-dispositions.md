@@ -2,7 +2,7 @@
 
 Program #8194, Feature #8214, Story #8286, Task #8287. This proposal records what must happen to the original build, workflow, policy, documentation, and colliding package files that the history rehearsal retains under `doc/integration-program/legacy/**/*.source`.
 
-The [machine-readable ledger](legacy-asset-dispositions.json) has one entry per retained file. It carries the source repository/path, mapped path, exact source commit, Git blob and mode, category, owning workstream, proposed disposition, evidence or gate, and current status. Its pins are the rehearsal inputs—Core `076f022cc174d497af26fc8e26414970e61a79b1`, Extensions `33fa0bfd28c7585240e3d4f665058c067b17e287`, and Studio `9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822`—not a claim that these are current upstream tips. Eighty-six rows now have structured completion evidence for an active Core representation or explicit retirement; the other 77 remain pending their own gates. The 50 completed Studio specification-tooling rows cite the reviewed #8432 decision and its merge commit, with each active Core-root Git blob and mode pinned. A candidate represented in the disposable build patch is still not integrated into the history-bearing source tree.
+The [machine-readable ledger](legacy-asset-dispositions.json) has one entry per retained file. It carries the source repository/path, mapped path, exact source commit, Git blob and mode, category, owning workstream, proposed disposition, evidence or gate, and current status. Its pins are the rehearsal inputs—Core `076f022cc174d497af26fc8e26414970e61a79b1`, Extensions `33fa0bfd28c7585240e3d4f665058c067b17e287`, and Studio `9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822`—not a claim that these are current upstream tips. Ninety rows now have structured completion evidence for an active Core representation or explicit retirement; the other 73 remain pending their own gates. The 50 completed Studio specification-tooling rows cite the reviewed #8432 decision and its merge commit, with each active Core-root Git blob and mode pinned. A candidate represented in the disposable build patch is still not integrated into the history-bearing source tree.
 
 The [E96 current-tip refresh](current-tip-e96-legacy-assets.md) compares the same 163 assets with the newer history-import receipt and verifies the materialized draft import without changing this frozen ledger. Subsequent reviewed decisions are recorded separately for [Studio Spec Kit assets](studio-spec-asset-representation.md), [Studio-scoped guidance](studio-scoped-policy.md), the [Studio design baseline and historical release note](studio-document-assets.md), [legacy solution settings and README template](legacy-devex-asset-dispositions.md), [Extensions NUKE assets](nuke-build-asset-dispositions.md), [root editor policy and PR template](root-editor-and-pr-template-dispositions.md), [identical Studio agent/prompt assets](identical-studio-agent-assets.md), the [consolidated NUKE tool project](nuke-tool-project-disposition.md), and [identical NUKE wrappers/tool editor assets](identical-nuke-entrypoint-assets.md). These supplements update those assets' disposition without rewriting the original source evidence.
 
@@ -14,8 +14,15 @@ It settles only those two icon rows, not package publishing or cutover.
 
 The [Studio static-source ignore policy](studio-ignore-policy.md) narrows the
 active root `wwwroot/` rule for authored Studio files while keeping verified
-generated outputs ignored. The retained ignore-file ledger rows remain pending
-until their complete path-specific disposition is reviewed and recorded.
+generated outputs ignored. The retained Extensions and Studio ignore-file
+rows now point to their reviewed, path-specific active representation; their `.source` copies remain
+as provenance in the draft history import.
+
+The retained Extensions README is represented by the reviewed
+[active Extensions overview](../../extensions/README.md) from #8459. That page
+updates repository paths and separates historical provider plans from the
+current integration catalog and package-release gate. Its original `.source`
+copy remains immutable import provenance.
 
 Inspection resolved several routine choices without treating them as completed integration:
 
