@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "title": "Retained legacy assets from the pinned history rehearsal",
   "decision_state": "proposal_pending_feature_8214_review",
   "recorded_source_commits": {
@@ -180,7 +180,16 @@
       "owning_workstream": "Central repository maintainers",
       "proposed_disposition": "Use one canonical root contributing guide; the two pinned upstream copies are byte-identical. Update repository/branch instructions for the consolidated layout before retiring the duplicate copies.",
       "evidence_or_gate": "Direct byte comparison of the pinned Extensions and Studio CONTRIBUTING.md files is identical (2,448 bytes each).",
-      "status": "pending_root_document_update"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/shared-root-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8428",
+        "merge_commit": "28d120734176ae9c4432830f5c171c7ae453cd52",
+        "active_path": "CONTRIBUTING.md",
+        "active_blob": "68ab718a55ed06ec7b38a140c7c4e973e4762df4",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -310,7 +319,13 @@
       "owning_workstream": "Extensions maintainers",
       "proposed_disposition": "Retire as an empty placeholder after recording the zero-byte inspection and confirming no tooling or links rely on the path.",
       "evidence_or_gate": "The pinned file is zero bytes. Search of the consolidated checkout found no active reference; only the inventory and import receipt list its historical path. No migration guidance exists to port.",
-      "status": "ready_for_explicit_retirement"
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/shared-root-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8428",
+        "merge_commit": "28d120734176ae9c4432830f5c171c7ae453cd52",
+        "reason": "Zero-byte placeholder with no tracked source references or migration content."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1272,7 +1287,16 @@
       "owning_workstream": "Studio release documentation",
       "proposed_disposition": "Keep as dated release history under the Studio documentation area; never treat this RC note as current release guidance.",
       "evidence_or_gate": "The path names an explicit 3.6.0 release candidate note; mapping makes it inert under legacy/.source.",
-      "status": "pending_document_archive"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-document-assets.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8427",
+        "merge_commit": "5f4b2be5cce6395812a72119b9061f87516694ed",
+        "active_path": "doc/studio/releases/3.6.0-rc1.md",
+        "active_blob": "4b3251bdcbe0fd58aad3ff2b2e1f06fa79f28107",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -1532,7 +1556,16 @@
       "owning_workstream": "Studio design-system maintainers",
       "proposed_disposition": "Preserve as the Studio design baseline under doc/studio/design, maintaining its approved status/date and linking it from the consolidated design guidance.",
       "evidence_or_gate": "Pinned document is marked an approved baseline, last updated 2026-09-01, and defines Studio-specific visual and operational patterns.",
-      "status": "pending_document_relocation"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-document-assets.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8427",
+        "merge_commit": "5f4b2be5cce6395812a72119b9061f87516694ed",
+        "active_path": "doc/studio/design/system.md",
+        "active_blob": "3a5059c6d654e2ab51a46884638effa3625f1b4c",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",
@@ -2026,7 +2059,16 @@
       "owning_workstream": "Central repository maintainers",
       "proposed_disposition": "Use one canonical root contributing guide; the two pinned upstream copies are byte-identical. Update repository/branch instructions for the consolidated layout before retiring the duplicate copies.",
       "evidence_or_gate": "Direct byte comparison of the pinned Extensions and Studio CONTRIBUTING.md files is identical (2,448 bytes each).",
-      "status": "pending_root_document_update"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/shared-root-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8428",
+        "merge_commit": "28d120734176ae9c4432830f5c171c7ae453cd52",
+        "active_path": "CONTRIBUTING.md",
+        "active_blob": "68ab718a55ed06ec7b38a140c7c4e973e4762df4",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -2117,7 +2159,16 @@
       "owning_workstream": "Studio maintainers",
       "proposed_disposition": "Preserve as a dated engineering note or refresh into current Studio documentation after validating every referenced path and claim; do not present it as current implementation guidance without that review.",
       "evidence_or_gate": "The pinned note describes optimizations using Studio source paths that move during consolidation; no link/path refresh is recorded.",
-      "status": "pending_document_path_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-performance-note-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8433",
+        "merge_commit": "28ac4dc30a88c5fbbeb2871ea19ef71de856afc7",
+        "active_path": "doc/studio/history/performance-optimizations-develop-3.6.md",
+        "active_blob": "c6e96edb95815e591c0f3c092c5a2c8442220a58",
+        "active_mode": "100644",
+        "representation": "identical"
+      }
     },
     {
       "original_repository": "studio",

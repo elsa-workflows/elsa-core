@@ -26,6 +26,7 @@ EXPECTED_ASSET_TOTAL = sum(EXPECTED_ASSET_COUNTS.values())
 EXPECTED_SOURCE_RECEIPT_SHA256 = "5716731dfff80733dfd1e9ca1aaa814c237ceec672e9fa60ab8c9af080611a75"
 EXPECTED_RECEIPT_FIXTURE_SHA256 = "5465904a66768403844a3ef8ed9e69f49ee7294f116ac7faf3ed657b0c408026"
 SUPPORTED_GIT_MODES = {"100644", "100755"}
+COMPLETED_STATUSES = {"represented_in_core", "retired_from_active_tree"}
 ALLOWED_PENDING_STATUSES = {
     "candidate_rewritten_in_disposable_build",
     "candidate_scoped_in_disposable_patch",
@@ -89,6 +90,12 @@ def _is_normalized_relative_path(value: Any) -> bool:
     return not path.is_absolute() and path.as_posix() == value and all(part not in {"", ".", ".."} for part in path.parts)
 
 
+def _is_regular_repo_file(root: Path, relative_path: str) -> bool:
+    path = root / relative_path
+    return (path.is_file() and not path.is_symlink()
+            and path.resolve().is_relative_to(root.resolve()))
+
+
 def _receipt_provenance_error(receipt: dict[str, Any]) -> str | None:
     provenance = receipt.get("provenance")
     if provenance is None:
@@ -101,10 +108,68 @@ def _receipt_provenance_error(receipt: dict[str, Any]) -> str | None:
     return None
 
 
-def validate_ledger(ledger: dict[str, Any], receipt: dict[str, Any] | None = None) -> list[str]:
+def _completion_errors(row: dict[str, Any], root: Path) -> list[str]:
+    source = f"{row['original_repository']}/{row['original_path']}"
+    completion = row.get("completion")
+    if not isinstance(completion, dict):
+        return [f"completed asset lacks structured evidence: {source}"]
+
+    common = {"decision_path", "pr_url", "merge_commit"}
+    represented = {"active_path", "active_blob", "active_mode", "representation"}
+    retired = {"reason"}
+    expected = common | (represented if row["status"] == "represented_in_core" else retired)
+    if set(completion) != expected:
+        return [f"completed asset has unexpected evidence fields: {source}"]
+
     errors: list[str] = []
-    if ledger.get("schema_version") != 1:
-        errors.append("ledger schema_version must be 1")
+    decision = completion["decision_path"]
+    if (not _is_normalized_relative_path(decision)
+            or not decision.startswith("doc/integration-program/consolidation/")):
+        errors.append(f"completed asset has invalid decision path: {source}")
+    else:
+        if not _is_regular_repo_file(root, decision):
+            errors.append(f"completed asset decision file is missing: {source}")
+    if not isinstance(completion["pr_url"], str) or not re.fullmatch(
+            r"https://github\.com/elsa-workflows/elsa-core/pull/[1-9][0-9]*", completion["pr_url"]):
+        errors.append(f"completed asset has invalid PR evidence: {source}")
+    if not isinstance(completion["merge_commit"], str) or not re.fullmatch(
+            r"[0-9a-f]{40}", completion["merge_commit"]):
+        errors.append(f"completed asset has invalid merge commit: {source}")
+
+    if row["status"] == "represented_in_core":
+        active_path = completion["active_path"]
+        if (not _is_normalized_relative_path(active_path)
+                or active_path.startswith("doc/integration-program/legacy/")):
+            errors.append(f"completed asset has invalid active path: {source}")
+        else:
+            active = root / active_path
+            if not _is_regular_repo_file(root, active_path):
+                errors.append(f"completed asset active file is missing: {source}")
+            else:
+                content = active.read_bytes()
+                blob = hashlib.sha1(f"blob {len(content)}\0".encode() + content).hexdigest()
+                mode = "100755" if active.stat().st_mode & 0o100 else "100644"
+                if (completion["active_blob"], completion["active_mode"]) != (blob, mode):
+                    errors.append(f"completed asset active blob or mode changed: {source}")
+        if (not isinstance(completion["representation"], str)
+                or completion["representation"] not in {"identical", "expanded"}):
+            errors.append(f"completed asset representation is invalid: {source}")
+        if completion["representation"] == "identical" and completion["active_blob"] != row["blob"]:
+            errors.append(f"completed asset is not identical to its pinned source: {source}")
+    else:
+        if not isinstance(completion["reason"], str) or not completion["reason"].strip():
+            errors.append(f"retired asset lacks a reason: {source}")
+        original = root / row["original_path"]
+        if original.exists() or original.is_symlink():
+            errors.append(f"retired asset remains active at its original path: {source}")
+    return errors
+
+
+def validate_ledger(ledger: dict[str, Any], receipt: dict[str, Any] | None = None,
+                    root: Path = ROOT) -> list[str]:
+    errors: list[str] = []
+    if ledger.get("schema_version") != 2:
+        errors.append("ledger schema_version must be 2")
     if ledger.get("recorded_source_commits") != EXPECTED_PINS:
         errors.append("ledger source pins do not match the recorded Core/Extensions/Studio rehearsal")
     expected_counts = {**EXPECTED_ASSET_COUNTS, "total": EXPECTED_ASSET_TOTAL}
@@ -153,7 +218,12 @@ def validate_ledger(ledger: dict[str, Any], receipt: dict[str, Any] | None = Non
             errors.append(f"invalid Git blob id for {repository}/{source_path}")
         if row["mode"] not in SUPPORTED_GIT_MODES:
             errors.append(f"unsupported Git mode for {repository}/{source_path}: {row['mode']}")
-        if row["status"] not in ALLOWED_PENDING_STATUSES:
+        if row["status"] in COMPLETED_STATUSES:
+            errors.extend(_completion_errors(row, root))
+        elif row["status"] in ALLOWED_PENDING_STATUSES:
+            if "completion" in row:
+                errors.append(f"pending asset has completion evidence: {repository}/{source_path}")
+        else:
             errors.append(f"unsupported non-pending status for {repository}/{source_path}: {row['status']}")
 
     if dict(counts) != EXPECTED_ASSET_COUNTS:
@@ -246,6 +316,7 @@ def main(argv: list[str] | None = None) -> int:
         "assets": len(assets),
         "byRepository": EXPECTED_ASSET_COUNTS,
         "byCategory": dict(sorted(counts.items())),
+        "byDisposition": dict(sorted(Counter(row["status"] for row in assets).items())),
         "receiptCompared": True,
         "sourceReceiptSha256": receipt.get("provenance", {}).get("sourceReceiptSha256") if isinstance(receipt.get("provenance"), dict) else None,
     }
