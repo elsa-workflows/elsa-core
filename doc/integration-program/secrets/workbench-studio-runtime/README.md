@@ -144,6 +144,61 @@ credential environment binding. The second host and fixture were stopped and
 removed. The browser receipt's separate Studio origins must not be read as
 proof that tokens are restricted to those origins.
 
+### History-import draft browser repeat (2026-09-25)
+
+The [sanitized imported-source receipt](imported-source-browser-2026-09-25.json)
+pins Core `e96fd36`, Extensions `ba8b71d`, Studio `20ceaee`, their
+three-parent history import `d5409c2`, and the exact draft import revision
+`fb68c8e`. The new `--imported-root` fixture path checked that ancestry, a
+tracked and unignored untracked files, committed source blobs, and applied
+reviewed fixture patches before Workbench and Studio builds. A follow-up
+guard check on the same `fb68c8e` checkout matched all 12 evaluated Workbench
+compile-source files to committed Git blobs. Ignored build outputs were not
+inventoried by the source cleanliness check. This was the
+committed history-bearing tree in
+[draft PR #8409](https://github.com/elsa-workflows/elsa-core/pull/8409),
+not a patched no-remote rehearsal. The Workbench build completed with zero
+errors and recorded its host DLL and six Secrets assembly hashes. Node 22
+built the Designer and DomInterop bundles; the server-side Studio host built
+with zero errors. The live probe found exactly ten Core-owned Secrets routes
+and no loaded legacy Secrets API/Management/Scripting assembly.
+
+One private Workbench and three private Studio processes exercised tenant A,
+tenant B, and a roleless tenant-A user against a fresh shared SQLite database.
+Tenant A and B each created `smoke-shared-key` with distinct metadata and
+synthetic values. Their lists, details and workflow pickers showed only their
+own metadata; B received 404 for A's separate secret. After B wrote the same
+name, A still saw A's metadata. A updated metadata, rotated to version 2,
+passed an active resolution test, and revoked/deleted its separate secret;
+the revoked test failed as expected. Retained raw responses show 403 for the
+roleless user's list, detail and picker. Studio rejected its create attempt
+and no new row appeared, but the raw create response was not retained. Its
+direct page still rendered a Create control, so permission-aware presentation
+remains a separate issue.
+Each tenant saved an unpublished Write Line draft with the exact
+`{name: "smoke-shared-key", typeName: "text"}` Secret reference. There were
+zero workflow instances and execution log rows.
+
+Twelve raw Core API response bodies were retained only inside the disposable
+fixture during the check. The public receipt records each status, byte length
+and SHA-256; none contained the five exact synthetic value markers or a
+ciphertext field. The final database, WAL/SHM and four runtime logs were also
+scanned for those markers. The bounded scan does not establish universal
+redaction. The Workbench's persisted-user bootstrap diagnostic remained even
+though the configuration-backed fixture users signed in. Studio A also logged
+disposed Blazor circuit exceptions during browser navigation; later UI actions
+and both draft saves succeeded. These diagnostics are recorded, not treated as
+passing checks.
+
+The browser used one Chrome automation profile with three distinct cookie
+hostnames, so separate browser-profile isolation was not tested. All four
+host processes stopped, their ports closed, and the ownership-guarded helper
+removed the private fixture. The [preflight](../../../../scripts/integration-program/workbench-secrets-runtime-preflight.md)
+now documents the imported-checkout invocation and cleanup. This validates
+the exact draft import head only. #8326 remains open for a final-head rerun
+if #8409 changes before merge; it does not authorize a Secrets migration,
+package publication or cutover.
+
 ## Default-host route probe
 
 The optional `workbench-secrets-route-probe.patch` is a fixture-only overlay. It
