@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Options;
+using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Stimuli;
 using Elsa.Common.Serialization;
@@ -24,6 +25,9 @@ internal static class WorkflowRuntimeTypeAliasRegistrar
         options.AddTypeAlias<EventStimulus>();
         options.AddTypeAlias<ExecuteWorkflowStimulus>();
         options.AddTypeAlias<RunTaskStimulus>();
+        options.AddTypeAliasWithLegacyName<SingletonStrategy>(nameof(SingletonStrategy));
+        options.AddTypeAliasWithLegacyName<CorrelatedSingletonStrategy>(nameof(CorrelatedSingletonStrategy));
+        options.AddTypeAliasWithLegacyName<CorrelationStrategy>(nameof(CorrelationStrategy));
 
         foreach (var workflowType in workflowTypes.Where(IsConcreteWorkflowType).Distinct())
             options.RegisterTypeAlias(workflowType, workflowType.GetSimpleAssemblyQualifiedName());
