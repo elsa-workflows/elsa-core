@@ -56,6 +56,7 @@ SLACK_NET_VERSION = REQUIRED_PROOF_DEPENDENCIES["SlackNet"]
 TFMS = tuple(RELEASE_UNIT["target_frameworks"])
 REPOSITORY_URL = "https://github.com/elsa-workflows/elsa-extensions"
 IMPORTED_REPOSITORY_URL = "https://github.com/elsa-workflows/elsa-core"
+REVIEWED_IMPORTED_HEAD = "7abe24b76295c6f64fbb6c878962bf0367ebd8fe"
 CURRENT_TIP_EVIDENCE = REPOSITORY_ROOT / "doc/integration-program/consolidation/current-tip-e96-evidence"
 CURRENT_TIP_IMPORT_SHA256 = "06cd198a338d5c6d49fa6b0183bbda6b602252f39f622f18084e60342880bb75"
 CURRENT_TIP_PREPARATION_SHA256 = "219fcafe45959bb8f9295d8b9137f8ae0807489f0370b5112204f228fc7bd7bc"
@@ -170,6 +171,8 @@ def require_imported_history_checkout(root: Path, source_commits: dict[str, str]
     if git_value(root, "status", "--porcelain", "--untracked-files=all"):
         raise RuntimeError("The imported checkout has unrelated tracked or untracked changes")
     head = git_value(root, "rev-parse", "HEAD")
+    if head != REVIEWED_IMPORTED_HEAD:
+        raise RuntimeError(f"The imported checkout must match the reviewed proof head {REVIEWED_IMPORTED_HEAD}: {head}")
     imported, prepared, patch_hash = load_current_tip_receipts()
     if imported.get("sourceCommits") != source_commits or not imported.get("exactBlobAndModeMapping") or not imported.get("originalHistoriesReachable"):
         raise RuntimeError("The archived current-tip import receipt does not prove exact source relocation")

@@ -50,6 +50,23 @@ class MappedSlackPackageProofTests(unittest.TestCase):
         self.assertTrue(imported["originalHistoriesReachable"])
         self.assertTrue(imported["exactBlobAndModeMapping"])
 
+    def test_imported_profile_rejects_clean_unreviewed_descendant_before_packing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+
+            def fake_git_value(_root, *arguments):
+                values = {
+                    ("rev-parse", "--show-toplevel"): str(root),
+                    ("remote", "get-url", "origin"): f"{proof.IMPORTED_REPOSITORY_URL}.git",
+                    ("status", "--porcelain", "--untracked-files=all"): "",
+                    ("rev-parse", "HEAD"): "f" * 40,
+                }
+                return values[arguments]
+
+            with patch.object(proof, "git_value", side_effect=fake_git_value):
+                with self.assertRaisesRegex(RuntimeError, "must match the reviewed proof head"):
+                    proof.require_imported_history_checkout(root, proof.SOURCE_COMMITS)
+
     def test_imported_source_link_requires_the_exact_head_url_and_checksum_test(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory)
