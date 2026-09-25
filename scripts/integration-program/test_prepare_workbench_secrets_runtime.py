@@ -584,7 +584,7 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
 
     def test_imported_fixture_rejects_unapplied_probe_patch_before_build(self):
         import_commit, imported_sha = self.initialize_imported_source(apply_route_probe=False)
-        with mock.patch.object(FIXTURE, 'build_host', wraps=self.fake_build) as build_host:
+        with mock.patch.object(self, 'fake_build', side_effect=AssertionError('host build ran')) as build_host:
             with self.assertRaisesRegex(ValueError, 'does not contain reviewed fixture patch changes: workbench-secrets-route-probe.patch'):
                 self.prepare(route_probe=True, import_commit=import_commit, imported_sha=imported_sha,
                              optional_fixture_patches=(self.menu_patch, self.layout_patch,
