@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 import subprocess
@@ -48,11 +49,50 @@ def reject_unmapped_elsa_packages(asset_documents: dict[str, dict[str, Any]]) ->
                 )
 
 
-def restored_test_projects(asset_documents: dict[str, dict[str, Any]]) -> set[str]:
-    tests = {
-        path for path, document in asset_documents.items()
-        if any(key.startswith("Microsoft.NET.Test.Sdk/") for key in document.get("libraries", {}))
+def _is_test_project(root: Path, project_path: str, framework: str) -> bool:
+    result = subprocess.run(
+        [
+            "dotnet", "msbuild", str(root / project_path),
+            f"-p:TargetFramework={framework}", "-getProperty:IsTestProject",
+        ],
+        cwd=root, text=True, capture_output=True, check=False, timeout=120,
+    )
+    if result.returncode:
+        raise ValueError(
+            f"Cannot evaluate IsTestProject for {project_path} ({framework}): "
+            f"{result.stdout[-1000:]} {result.stderr[-1000:]}"
+        )
+    value = result.stdout.strip().casefold()
+    if value not in {"true", "false"}:
+        raise ValueError(f"MSBuild returned an invalid IsTestProject value for {project_path} ({framework}): {value!r}")
+    return value == "true"
+
+
+def restored_test_projects(root: Path, asset_documents: dict[str, dict[str, Any]]) -> set[str]:
+    candidates = {}
+    for path, document in asset_documents.items():
+        if not any(key.startswith("Microsoft.NET.Test.Sdk/") for key in document.get("libraries", {})):
+            continue
+        frameworks = document.get("project", {}).get("restore", {}).get("frameworks", {})
+        if not isinstance(frameworks, dict) or not frameworks:
+            raise ValueError(f"Restored test candidate has no target frameworks: {path}")
+        candidates[path] = tuple(frameworks)
+
+    queries = [(path, framework) for path, frameworks in candidates.items() for framework in frameworks]
+    with ThreadPoolExecutor(max_workers=min(8, len(queries) or 1)) as executor:
+        outcomes = list(executor.map(lambda pair: _is_test_project(root, *pair), queries))
+
+    frameworks_by_project = {path: [] for path in candidates}
+    for (path, framework), outcome in zip(queries, outcomes):
+        frameworks_by_project[path].append((framework, outcome))
+    inconsistent = {
+        path: rows for path, rows in frameworks_by_project.items()
+        if len({outcome for _, outcome in rows}) > 1
     }
+    if inconsistent:
+        raise ValueError(f"IsTestProject differs across restored frameworks: {inconsistent}")
+
+    tests = {path for path, rows in frameworks_by_project.items() if rows and all(outcome for _, outcome in rows)}
     if not tests or any(not path.endswith(".csproj") for path in tests):
         raise ValueError("Restored graph has no valid test projects")
     return tests
@@ -155,7 +195,7 @@ def receipt(root: Path, manifest_path: Path, expected_head: str | None) -> dict[
     assets = {path: graph_reader._assets_for_project(root, path)[1] for path in project_names}
     graph_reader._include_restored_project_references(root, project_names, assets)
     reject_unmapped_elsa_packages(assets)
-    tests = restored_test_projects(assets)
+    tests = restored_test_projects(root, assets)
     graph, _, _ = graph_reader._framework_graph(root, project_names, assets, tests)
     unit = get_unit(load_manifest(manifest_path), DEFAULT_UNIT_ID)
     scenarios = select_scenarios(graph, assets, unit)
@@ -191,6 +231,7 @@ def receipt(root: Path, manifest_path: Path, expected_head: str | None) -> dict[
         "limitations": [
             "Project-reference impact is evaluated from this checkout's restored assets; runtime service effects are not inferred.",
             "Package-type Elsa dependencies other than the known package-manifest generator are rejected because package-to-source project edges are not inferred.",
+            "Restored Test SDK projects are selected only when MSBuild evaluates IsTestProject=true for every restored framework.",
             "This receipt selects tests but does not execute them or publish packages.",
             "The release-unit manifest selects one Slack package; it is not a Core release package plan.",
         ],

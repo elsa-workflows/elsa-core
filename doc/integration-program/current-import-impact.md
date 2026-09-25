@@ -1,7 +1,7 @@
 # Current imported-source test impact
 
 Program #8194; release-unit proof #8260. The inventory-pinned selector in
-[`package_closure.py`](../../scripts/integration-program/package_closure.py) describes the earlier two-repository snapshot. It cannot certify which tests depend on the current history-import commit. This selector restores the actual imported `Elsa.sln` and reads every solution project's evaluated `project.assets.json`, including transitive project references outside the solution. Test identity comes from the restored `Microsoft.NET.Test.Sdk` dependency, so relocated Studio tests are included when they are actually affected.
+[`package_closure.py`](../../scripts/integration-program/package_closure.py) describes the earlier two-repository snapshot. It cannot certify which tests depend on the current history-import commit. This selector restores the actual imported `Elsa.sln` and reads every solution project's evaluated `project.assets.json`, including transitive project references outside the solution. Restored `Microsoft.NET.Test.Sdk` projects are candidates, and the selector includes them only when MSBuild evaluates `IsTestProject=true` for every restored framework. This excludes worker helpers that inherit test packages but are not runnable test projects, while relocated Studio tests remain eligible when affected.
 
 Run on a clean, exact checkout:
 

@@ -1,4 +1,6 @@
+from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from current_import_impact import (
     CORE_PROJECT,
@@ -31,8 +33,14 @@ def assets():
     return {
         CORE_PROJECT: {"project": {"restore": {"frameworks": {"net8.0": {}, "net9.0": {}, "net10.0": {}}}}},
         SLACK_PROJECT: {"project": {"restore": {"frameworks": {"net8.0": {}, "net9.0": {}, "net10.0": {}}}}},
-        SLACK_TEST: {"libraries": {"Microsoft.NET.Test.Sdk/18.0.1": {}}},
-        CORE_TEST: {"libraries": {"Microsoft.NET.Test.Sdk/18.0.1": {}}},
+        SLACK_TEST: {
+            "project": {"restore": {"frameworks": {"net10.0": {}}}},
+            "libraries": {"Microsoft.NET.Test.Sdk/18.0.1": {}},
+        },
+        CORE_TEST: {
+            "project": {"restore": {"frameworks": {"net10.0": {}}}},
+            "libraries": {"Microsoft.NET.Test.Sdk/18.0.1": {}},
+        },
     }
 
 
@@ -77,17 +85,46 @@ class CurrentImportedImpactTests(unittest.TestCase):
             },
         })
 
-    def test_uses_restored_test_sdk_identity_including_relocated_studio_paths(self):
+    def test_evaluates_test_projects_and_includes_relocated_studio_paths(self):
         documents = assets()
         documents["src/studio/Elsa.Studio.Core.Tests.csproj"] = {
             "libraries": {"Microsoft.NET.Test.Sdk/18.0.1": {}}
         }
         documents["test/performance/Benchmarks.csproj"] = {"libraries": {}}
 
-        self.assertEqual(
-            restored_test_projects(documents),
-            {SLACK_TEST, CORE_TEST, "src/studio/Elsa.Studio.Core.Tests.csproj"},
-        )
+        documents["src/studio/Elsa.Studio.Core.Tests.csproj"]["project"] = {
+            "restore": {"frameworks": {"net10.0": {}}},
+        }
+        with patch("current_import_impact._is_test_project", return_value=True):
+            self.assertEqual(
+                restored_test_projects(Path("."), documents),
+                {SLACK_TEST, CORE_TEST, "src/studio/Elsa.Studio.Core.Tests.csproj"},
+            )
+
+    def test_excludes_test_sdk_worker_when_msbuild_says_not_test_project(self):
+        documents = assets()
+        worker = "test/workers/Elsa.Connections.Credentials.WorkerProcess/Elsa.Connections.Credentials.WorkerProcess.csproj"
+        documents[worker] = {
+            "project": {"restore": {"frameworks": {"net10.0": {}}}},
+            "libraries": {"Microsoft.NET.Test.Sdk/18.0.1": {}},
+        }
+
+        def is_test_project(root, project_path, framework):
+            return project_path != worker
+
+        with patch("current_import_impact._is_test_project", side_effect=is_test_project):
+            self.assertEqual(restored_test_projects(Path("."), documents), {SLACK_TEST, CORE_TEST})
+
+    def test_rejects_inconsistent_test_project_framework_flags(self):
+        documents = {
+            SLACK_TEST: {
+                "project": {"restore": {"frameworks": {"net9.0": {}, "net10.0": {}}}},
+                "libraries": {"Microsoft.NET.Test.Sdk/18.0.1": {}},
+            },
+        }
+        with patch("current_import_impact._is_test_project", side_effect=[True, False]):
+            with self.assertRaisesRegex(ValueError, "differs across restored frameworks"):
+                restored_test_projects(Path("."), documents)
 
     def test_slack_only_packs_one_unit_while_shared_core_expands_tests(self):
         graph = FakeGraph({
