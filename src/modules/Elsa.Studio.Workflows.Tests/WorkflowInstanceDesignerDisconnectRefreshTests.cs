@@ -260,34 +260,40 @@ public sealed class WorkflowInstanceDesignerDisconnectRefreshTests : BunitContex
     /// stop from this path instead, the call below would block until the callback released.
     /// </summary>
     [Fact]
-    public void StoppingRefreshTimerFromTickPathDoesNotWaitForInFlightCallback()
+    public async Task StoppingRefreshTimerFromTickPathDoesNotWaitForInFlightCallback()
     {
         var startTimeout = TimeSpan.FromSeconds(5);
         var assertionBound = TimeSpan.FromMilliseconds(500);
         var activityExecutionService = new RecordingActivityExecutionService();
         var cut = RenderDesigner(activityExecutionService);
 
-        using var started = new ManualResetEventSlim(false);
-        using var release = new ManualResetEventSlim(false);
+        var started = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var finished = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var refreshTimer = new Timer(_ =>
         {
-            started.Set();
-
-            // Block for longer than the assertion bound below (but still bounded, so this thread is
-            // not tied up indefinitely if the assertion below fails), keeping the callback genuinely
-            // "in flight" for the whole window the assertion is checking.
-            release.Wait(TimeSpan.FromSeconds(10));
+            started.TrySetResult(true);
+            try
+            {
+                // Keep the callback in flight beyond the assertion window without blocking forever
+                // if the test fails before releasing it.
+                release.Task.Wait(TimeSpan.FromSeconds(10));
+            }
+            finally
+            {
+                finished.TrySetResult(true);
+            }
         }, null, Timeout.Infinite, Timeout.Infinite);
 
         SetRefreshTimer(cut.Instance, refreshTimer);
 
-        // Fire the timer's own callback and wait for it to actually start running, so a genuine
-        // callback is in flight on the timer while the stop call below tries to stop it.
-        refreshTimer.Change(TimeSpan.Zero, Timeout.InfiniteTimeSpan);
-        Assert.True(started.Wait(startTimeout), "The refresh timer callback did not start in time.");
-
         try
         {
+            // Fire the timer's own callback and wait for it to actually start running, so a genuine
+            // callback is in flight on the timer while the stop call below tries to stop it.
+            refreshTimer.Change(TimeSpan.Zero, Timeout.InfiniteTimeSpan);
+            await started.Task.WaitAsync(startTimeout);
+
             var stopMethod = typeof(WorkflowInstanceDesigner).GetMethod("StopRefreshTimer", BindingFlags.Instance | BindingFlags.NonPublic)!;
             var stopwatch = Stopwatch.StartNew();
 
@@ -298,7 +304,11 @@ public sealed class WorkflowInstanceDesignerDisconnectRefreshTests : BunitContex
         }
         finally
         {
-            release.Set();
+            release.TrySetResult(true);
+            if (started.Task.IsCompleted)
+            {
+                await finished.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            }
         }
     }
 
