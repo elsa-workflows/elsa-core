@@ -109,17 +109,35 @@ public class MongoWorkflowInstanceStoreTests
     }
 
     /// <summary>
-    /// Default filter: Id match and Status != Finished. No store-wide Cancelled OR.
+    /// Default filter: exact Id match and Status != Finished. No store-wide Cancelled OR.
     /// </summary>
     private static bool FilterRefusesFinished(FilterDefinition<WorkflowInstance> filter, string id)
     {
-        var rendered = Render(filter);
-        return rendered.Contains(id, StringComparison.Ordinal)
+        var document = RenderDocument(filter);
+        var rendered = document.ToJson();
+        return FilterHasId(document, id)
                && rendered.Contains("Status", StringComparison.Ordinal)
                && rendered.Contains("$ne", StringComparison.Ordinal)
                && rendered.Contains(((int)WorkflowStatus.Finished).ToString(), StringComparison.Ordinal)
                && !rendered.Contains("$or", StringComparison.Ordinal)
                && !rendered.Contains(((int)WorkflowSubStatus.Cancelled).ToString(), StringComparison.Ordinal);
+    }
+
+    private static bool FilterHasId(BsonDocument document, string id)
+    {
+        if (document.TryGetValue("Id", out var idValue) && idValue.IsString && idValue.AsString == id)
+            return true;
+
+        if (document.TryGetValue("$and", out var andValue) && andValue.IsBsonArray)
+        {
+            foreach (var item in andValue.AsBsonArray)
+            {
+                if (item.IsBsonDocument && FilterHasId(item.AsBsonDocument, id))
+                    return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool UpdatePromotesToRunningInterrupted(UpdateDefinition<WorkflowInstance> update)
@@ -133,11 +151,10 @@ public class MongoWorkflowInstanceStoreTests
                && rendered.Contains("IsExecuting", StringComparison.Ordinal);
     }
 
-    private static string Render(FilterDefinition<WorkflowInstance> filter)
+    private static BsonDocument RenderDocument(FilterDefinition<WorkflowInstance> filter)
     {
         var serializer = BsonSerializer.LookupSerializer<WorkflowInstance>();
-        var rendered = filter.Render(new RenderArgs<WorkflowInstance>(serializer, BsonSerializer.SerializerRegistry));
-        return rendered.ToJson();
+        return filter.Render(new RenderArgs<WorkflowInstance>(serializer, BsonSerializer.SerializerRegistry)).ToBsonDocument();
     }
 
     private static string Render(UpdateDefinition<WorkflowInstance> update)

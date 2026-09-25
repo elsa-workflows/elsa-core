@@ -141,6 +141,18 @@ public sealed class DapperWorkflowInstanceStoreTests : IDisposable
         Assert.False(marked);
     }
 
+    [Fact(DisplayName = "TryMarkInterruptedAsync does not mark a Running row that belongs to a different tenant")]
+    public async Task TryMarkInterruptedAsync_DoesNotMarkRunningInstanceOfAnotherTenant()
+    {
+        InsertInterruptible("running-other", WorkflowStatus.Running, WorkflowSubStatus.Executing, isExecuting: true, tenantId: "tenant-b");
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var marked = await _store.TryMarkInterruptedAsync("running-other");
+
+        Assert.False(marked);
+        Assert.Equal(("Running", "Executing", 1), ReadMarkers("running-other"));
+    }
+
     public void Dispose()
     {
         File.Delete(_databasePath);
