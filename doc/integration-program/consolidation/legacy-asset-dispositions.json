@@ -110,7 +110,7 @@
       "category": "developer_setup_workflow",
       "owning_workstream": "Central DevEx",
       "proposed_disposition": "Merge the useful setup behavior into one root developer workflow if it remains supported; otherwise retire the duplicate workflow.",
-      "evidence_or_gate": "This workflow is retained as inert source evidence; no consolidated setup parity has been demonstrated.",
+      "evidence_or_gate": "Core's active Copilot setup provides .NET 10, which can build imported Extensions projects targeting net8.0/net9.0/net10.0. Retained source remains inert; record reviewed active-workflow provenance before marking represented.",
       "status": "pending_devex_review"
     },
     {
@@ -1896,7 +1896,7 @@
       "category": "developer_setup_workflow",
       "owning_workstream": "Central DevEx",
       "proposed_disposition": "Merge the useful setup behavior into one root developer workflow if it remains supported; otherwise retire the duplicate workflow.",
-      "evidence_or_gate": "This workflow is retained as inert source evidence; no consolidated setup parity has been demonstrated.",
+      "evidence_or_gate": "Core's active Copilot setup provides .NET 10. Studio ClientLib work also requires Node 22; a Node setup step is proposed for the active workflow. Keep pending until that workflow runs and its reviewed provenance is recorded.",
       "status": "pending_devex_review"
     },
     {
