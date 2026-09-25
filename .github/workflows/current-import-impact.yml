@@ -88,6 +88,10 @@ jobs:
             8.0.x
             9.0.x
             10.0.x
+      - name: Test affected-test runner policy
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s scripts/integration-program -p 'test_run_current_import_affected_tests.py'
+          PYTHONDONTWRITEBYTECODE=1 python -O -m unittest discover -s scripts/integration-program -p 'test_run_current_import_affected_tests.py'
       - name: Restore and select affected tests on this runner
         env:
           EXPECTED_HEAD: ${{ github.sha }}
