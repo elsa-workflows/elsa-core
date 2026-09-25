@@ -746,7 +746,7 @@ def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_p
                 'Imported source requires both import commit and exact source revision')
         root, source, _, provenance, source_inventory = validate_imported_source_root(
             rehearsal_root, pins, import_commit, imported_sha)
-        import_receipt = build_receipt = patch_chain = None
+        patch_chain = None
         optional_paths = {patch.name for patch in OPTIONAL_FIXTURE_PATCHES}
     else:
         root, source, _, import_receipt, build_receipt, source_inventory, patch_chain = validate_source_root(rehearsal_root, pins)
