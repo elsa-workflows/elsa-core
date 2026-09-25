@@ -145,6 +145,16 @@ class CurrentTipLegacyAssetsTests(unittest.TestCase):
             errors, _ = compare_studio_spec_representation(self.ledger, self.receipt,
                                                              self.studio_decision, root)
             self.assertTrue(any("Root guidance no longer links" in error for error in errors))
+            for directive in (
+                "For Studio modules, consult [scoped instructions](src/studio/AGENTS.md).\n",
+                "[Studio policy](src/studio/AGENTS.md); consult it for Studio modules.\n",
+                "Read [these instructions](src/studio/AGENTS.md) for Studio modules.\n",
+            ):
+                with self.subTest(directive=directive):
+                    (root / "AGENTS.md").write_text(directive, encoding="utf-8")
+                    errors, _ = compare_studio_spec_representation(self.ledger, self.receipt,
+                                                                     self.studio_decision, root)
+                    self.assertEqual([], errors)
             (root / "AGENTS.md").write_text(
                 "Do not use [`src/studio/AGENTS.md`](src/studio/AGENTS.md) for Studio modules.\n",
                 encoding="utf-8",

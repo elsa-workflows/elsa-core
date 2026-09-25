@@ -20,9 +20,10 @@ ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE = ROOT / "doc/integration-program/consolidation/current-tip-e96-evidence"
 STUDIO_SPEC_REPRESENTATION = ROOT / "doc/integration-program/consolidation/studio-spec-asset-representation.json"
 STUDIO_GUIDANCE = "src/studio/AGENTS.md"
-ROOT_STUDIO_INSTRUCTION = re.compile(
-    r"\[`src/studio/AGENTS\.md`\]\(src/studio/AGENTS\.md\);\s*read it for Studio modules"
-)
+ROOT_STUDIO_LINK = re.compile(r"\[[^\]]+\]\(src/studio/AGENTS\.md\)")
+ROOT_STUDIO_DIRECTIVE = re.compile(r"\b(?:read|consult|follow|use)\b", re.IGNORECASE)
+ROOT_STUDIO_NEGATION = re.compile(r"\b(?:do\s+not|don't|never|avoid|ignore|no\s+need\s+to|not\s+required\s+to)\b",
+                                  re.IGNORECASE)
 EXPECTED_RECEIPT_SHA256 = "06cd198a338d5c6d49fa6b0183bbda6b602252f39f622f18084e60342880bb75"
 
 
@@ -31,6 +32,13 @@ def file_git_identity(path: Path) -> tuple[str, str]:
     blob = hashlib.sha1(f"blob {len(content)}\0".encode() + content).hexdigest()
     mode = "100755" if path.stat().st_mode & stat.S_IXUSR else "100644"
     return blob, mode
+
+
+def has_root_studio_instruction(content: str) -> bool:
+    """Require an affirmative same-line instruction to the scoped Studio policy."""
+    return any(ROOT_STUDIO_LINK.search(line) and re.search(r"\bStudio modules\b", line, re.IGNORECASE)
+               and ROOT_STUDIO_DIRECTIVE.search(line) and not ROOT_STUDIO_NEGATION.search(line)
+               for line in content.splitlines())
 
 
 def load_pinned_receipt() -> dict[str, Any]:
@@ -146,7 +154,7 @@ def compare_studio_spec_representation(
                     errors.append(f"Studio scoped guidance changed: {source_path}")
                     continue
                 if (not root_guidance.is_file() or root_guidance.is_symlink() or
-                        not ROOT_STUDIO_INSTRUCTION.search(root_guidance.read_text(encoding="utf-8"))):
+                        not has_root_studio_instruction(root_guidance.read_text(encoding="utf-8"))):
                     errors.append(f"Root guidance no longer links to Studio policy: {source_path}")
                     continue
             elif any(key in record for key in ("scopedPath", "scopedBlob", "scopedMode")):
