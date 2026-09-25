@@ -118,6 +118,36 @@ new file mode 100644
         with self.assertRaises(ValueError):
             build.prepare(self.output)
 
+    def test_import_lineage_rejects_a_rehearsal_without_source_parents(self):
+        receipt_path = self.output / 'import-receipt.json'
+        receipt = json.loads(receipt_path.read_text())
+        build.verify_import_lineage(self.output, receipt)
+        head = receipt['rehearsalCommit']
+        forged = build.rehearsal.git(
+            self.output, '-c', 'user.name=Test', '-c', 'user.email=test@example.invalid',
+            'commit-tree', f'{head}^{{tree}}', data=b'Unrelated rehearsal\n',
+        ).decode().strip()
+        build.rehearsal.git(self.output, 'checkout', '--quiet', '--force', '--detach', forged)
+        receipt['rehearsalCommit'] = forged
+        with self.assertRaisesRegex(ValueError, 'Rehearsal parent set changed'):
+            build.verify_import_lineage(self.output, receipt)
+
+    def test_import_lineage_rejects_a_rehearsal_with_changed_mapped_tree(self):
+        receipt = json.loads((self.output / 'import-receipt.json').read_text())
+        (self.output / 'unexpected.txt').write_text('not imported from a pinned source\n')
+        build.rehearsal.git(self.output, 'add', 'unexpected.txt')
+        tree = build.rehearsal.git(self.output, 'write-tree').decode().strip()
+        parents = receipt['sourceCommits']
+        forged = build.rehearsal.git(
+            self.output, '-c', 'user.name=Test', '-c', 'user.email=test@example.invalid',
+            'commit-tree', tree, '-p', parents['core'], '-p', parents['extensions'], '-p', parents['studio'],
+            data=b'Changed mapped tree\n',
+        ).decode().strip()
+        build.rehearsal.git(self.output, 'checkout', '--quiet', '--force', '--detach', forged)
+        receipt['rehearsalCommit'] = forged
+        with self.assertRaisesRegex(ValueError, 'Rehearsal tree differs'):
+            build.verify_import_lineage(self.output, receipt)
+
     def test_current_core_profile_preserves_actual_pins_and_parent_checks(self):
         actual_core = build.SOURCE_COMMITS['core']
         with patch.dict(build.SOURCE_COMMITS, {'core': 'f' * 40}), \

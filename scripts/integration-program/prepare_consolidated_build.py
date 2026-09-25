@@ -224,14 +224,8 @@ def evaluate_packability(root, project_paths, evaluator=msbuild_properties, max_
     )
 
 
-def verify_workspace(root):
-    require(root.is_dir() and not root.is_symlink(), 'Expected a real disposable repository directory')
-    require(Path(rehearsal.git(root, 'rev-parse', '--show-toplevel').decode().strip()).resolve() == root,
-            'Use the repository root')
-    require(not rehearsal.git(root, 'remote').strip(), 'Disposable rehearsal must have no remotes')
-    receipt_path = root / 'import-receipt.json'
-    require(receipt_path.is_file() and not receipt_path.is_symlink(), 'Missing regular import receipt')
-    receipt = json.loads(receipt_path.read_text())
+def verify_import_lineage(root, receipt):
+    """Check committed ancestry and exact relocated blobs without requiring a clean preparation."""
     source_commits = receipt['sourceCommits']
     require(source_commits in supported_source_profiles(),
             'Unsupported source pins; re-review the patch for new source commits')
@@ -243,11 +237,23 @@ def verify_workspace(root):
     expected, mapping = rehearsal.relocation_plan(source_trees['core'], {k: v for k, v in source_trees.items() if k != 'core'})
     require(receipt['mapping'] == mapping, 'Receipt mapping differs from pinned source trees')
     require(rehearsal.tree(root, head) == expected, 'Rehearsal tree differs from pinned blob/mode mapping')
+    for ref in source_commits.values():
+        rehearsal.git(root, 'merge-base', '--is-ancestor', ref, head)
+    return mapping
+
+
+def verify_workspace(root):
+    require(root.is_dir() and not root.is_symlink(), 'Expected a real disposable repository directory')
+    require(Path(rehearsal.git(root, 'rev-parse', '--show-toplevel').decode().strip()).resolve() == root,
+            'Use the repository root')
+    require(not rehearsal.git(root, 'remote').strip(), 'Disposable rehearsal must have no remotes')
+    receipt_path = root / 'import-receipt.json'
+    require(receipt_path.is_file() and not receipt_path.is_symlink(), 'Missing regular import receipt')
+    receipt = json.loads(receipt_path.read_text())
+    mapping = verify_import_lineage(root, receipt)
     require(not rehearsal.git(root, 'diff', '--name-only', 'HEAD').strip(), 'Workspace/index contains changes; use a fresh rehearsal')
     untracked = set(rehearsal.git(root, 'ls-files', '--others', '-z').decode().split('\0')) - {''}
     require(untracked == {'import-receipt.json'}, 'Unexpected untracked or ignored files; use a fresh rehearsal')
-    for ref in source_commits.values():
-        rehearsal.git(root, 'merge-base', '--is-ancestor', ref, head)
     return receipt, mapping
 
 
