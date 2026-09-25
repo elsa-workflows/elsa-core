@@ -67,6 +67,21 @@ src/studio/framework/Elsa.Studio.DomInterop/ClientLib/package-lock.json
 test/studio/browser/**/test-results/
 src/studio/wrappers/.npmrc
 
+# Developer-local Extensions outputs and publishing credentials after relocation.
+# Keep these scoped to the imported tree; Core/Studio authors may check in
+# similarly named fixtures intentionally.
+src/extensions/**/*.rsuser
+src/extensions/**/*.userprefs
+src/extensions/**/*.DotSettings.user
+src/extensions/**/*.pubxml
+src/extensions/**/*.azurePubxml
+src/extensions/**/*.publishsettings
+src/extensions/**/*.pfx
+src/extensions/**/*.binlog
+src/extensions/**/PublishScripts/
+src/extensions/**/__pycache__/
+src/extensions/**/*.pyc
+
 # npm
 node_modules/
 .babelrc
