@@ -30,7 +30,8 @@ public class WorkflowReferenceUpdaterOriginalSourceTests
         var jsonGraph = CreateConsumerGraph(jsonConsumer, target, "json-consumer-workflow");
         var logger = new CollectingLogger();
         var publisher = Substitute.For<IWorkflowDefinitionPublisher>();
-        var updater = CreateUpdater(target, [elsaScriptConsumer, jsonConsumer], [elsaScriptGraph, jsonGraph], publisher, logger);
+        var activityRegistry = Substitute.For<IActivityRegistry>();
+        var updater = CreateUpdater(target, [elsaScriptConsumer, jsonConsumer], [elsaScriptGraph, jsonGraph], publisher, logger, activityRegistry, out _);
 
         var result = await updater.UpdateWorkflowReferencesAsync(target);
 
@@ -52,6 +53,7 @@ public class WorkflowReferenceUpdaterOriginalSourceTests
         await materializer.MaterializeAsync(elsaScriptConsumer, CancellationToken.None);
         await compiler.Received(1).CompileAsync(ElsaScriptSource, Arg.Any<CancellationToken>());
 
+        await publisher.DidNotReceive().GetDraftAsync(elsaScriptConsumer.DefinitionId, Arg.Any<VersionOptions>(), Arg.Any<CancellationToken>());
         await publisher.DidNotReceive().SaveDraftAsync(elsaScriptConsumer, Arg.Any<CancellationToken>());
         await publisher.DidNotReceive().PublishAsync(elsaScriptConsumer, Arg.Any<CancellationToken>());
         await publisher.Received(1).SaveDraftAsync(jsonConsumer, Arg.Any<CancellationToken>());
@@ -62,18 +64,63 @@ public class WorkflowReferenceUpdaterOriginalSourceTests
             && message.Contains("must be updated manually", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task UpdateWorkflowReferencesAsync_WhenPublishedElsaScriptConsumerIsOutdated_DoesNotCreateOrRegisterDraft()
+    {
+        var target = CreateTargetDefinition();
+        var elsaScriptConsumer = CreateElsaScriptConsumer(isPublished: true);
+        var consumerGraph = CreateConsumerGraph(elsaScriptConsumer, target, "elsa-consumer-workflow");
+        var logger = new CollectingLogger();
+        var publisher = Substitute.For<IWorkflowDefinitionPublisher>();
+        var activityRegistry = Substitute.For<IActivityRegistry>();
+        var updater = CreateUpdater(target, [elsaScriptConsumer], [consumerGraph], publisher, logger, activityRegistry, out var store);
+
+        var result = await updater.UpdateWorkflowReferencesAsync(target);
+
+        Assert.Empty(result.UpdatedWorkflows);
+        Assert.Equal(ElsaScriptSource, elsaScriptConsumer.OriginalSource);
+        Assert.True(elsaScriptConsumer.IsPublished);
+        Assert.Equal(1, elsaScriptConsumer.Version);
+
+        var stored = await store.FindAsync(new WorkflowDefinitionFilter
+        {
+            DefinitionId = elsaScriptConsumer.DefinitionId,
+            VersionOptions = VersionOptions.Latest
+        }, CancellationToken.None);
+        Assert.Same(elsaScriptConsumer, stored);
+        Assert.True(stored!.IsPublished);
+        Assert.Equal(1, stored.Version);
+
+        await publisher.DidNotReceive().GetDraftAsync(Arg.Any<string>(), Arg.Any<VersionOptions>(), Arg.Any<CancellationToken>());
+        await publisher.DidNotReceive().SaveDraftAsync(Arg.Any<WorkflowDefinition>(), Arg.Any<CancellationToken>());
+        await publisher.DidNotReceive().PublishAsync(Arg.Any<WorkflowDefinition>(), Arg.Any<CancellationToken>());
+        activityRegistry.DidNotReceive().Add(Arg.Any<Type>(), Arg.Any<ActivityDescriptor>());
+        Assert.Contains(logger.Messages, message =>
+            message.Contains(elsaScriptConsumer.DefinitionId, StringComparison.Ordinal)
+            && message.Contains(target.DefinitionId, StringComparison.Ordinal));
+
+        var compiler = Substitute.For<IElsaScriptCompiler>();
+        compiler.CompileAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(new Workflow());
+        await new ElsaScriptWorkflowMaterializer(compiler).MaterializeAsync(elsaScriptConsumer, CancellationToken.None);
+        await compiler.Received(1).CompileAsync(ElsaScriptSource, Arg.Any<CancellationToken>());
+    }
+
     private static WorkflowReferenceUpdater CreateUpdater(
         WorkflowDefinition target,
         IReadOnlyCollection<WorkflowDefinition> consumers,
         IReadOnlyCollection<WorkflowGraph> consumerGraphs,
         IWorkflowDefinitionPublisher publisher,
-        ILogger<WorkflowReferenceUpdater> logger)
+        ILogger<WorkflowReferenceUpdater> logger,
+        IActivityRegistry? activityRegistry,
+        out IWorkflowDefinitionStore store)
     {
         var workflowDefinitionService = Substitute.For<IWorkflowDefinitionService>();
-        var store = Substitute.For<IWorkflowDefinitionStore>();
+        store = Substitute.For<IWorkflowDefinitionStore>();
         var graphBuilder = Substitute.For<IWorkflowReferenceGraphBuilder>();
         var serializer = Substitute.For<IApiSerializer>();
         var consumersById = consumers.ToDictionary(c => c.DefinitionId);
+        activityRegistry ??= Substitute.For<IActivityRegistry>();
 
         graphBuilder.BuildGraphAsync(target.DefinitionId, Arg.Any<CancellationToken>())
             .Returns(new WorkflowReferenceGraph(
@@ -113,7 +160,7 @@ public class WorkflowReferenceUpdaterOriginalSourceTests
             store,
             graphBuilder,
             new WorkflowDefinitionActivityDescriptorFactory(),
-            Substitute.For<IActivityRegistry>(),
+            activityRegistry,
             serializer,
             logger);
     }
@@ -137,7 +184,7 @@ public class WorkflowReferenceUpdaterOriginalSourceTests
         };
     }
 
-    private static WorkflowDefinition CreateElsaScriptConsumer()
+    private static WorkflowDefinition CreateElsaScriptConsumer(bool isPublished = false)
     {
         return new()
         {
@@ -145,7 +192,7 @@ public class WorkflowReferenceUpdaterOriginalSourceTests
             DefinitionId = "consumer-elsascript",
             Name = "ElsaScript Consumer",
             Version = 1,
-            IsPublished = false,
+            IsPublished = isPublished,
             IsLatest = true,
             MaterializerName = "ElsaScript",
             OriginalSource = ElsaScriptSource,
