@@ -10,10 +10,13 @@ remain under `doc/integration-program/legacy/studio/` for provenance.
 | `README.md` | `d1b23bc8d67e931e311c43d06a9a0b10b7cde101`, `100644` | [Studio source and local development guide](../../studio/README.md), blob `1bcbeee61947bc6b56b79a5d8a9b97d9a83252e7`, `100644`; introduced in draft-import child PR [#8459](https://github.com/elsa-workflows/elsa-core/pull/8459), merge commit `c01f9c53f07a3db6ec48b15ea97e784272363df9`. |
 | `.dockerignore` | `38bece4e1ed9968d70beb5815ba4dcead8b592d5`, `100644` | Root [`.dockerignore`](../../../.dockerignore), blob `9fd202e8fac99839317ea15a5b6a9fe600081ab6`, `100644`; introduced by [#8461](https://github.com/elsa-workflows/elsa-core/pull/8461), merge commit `eab0bbf825ff42f4e7ba344dfdf0ae2fd9f094c0`. |
 
-Both source paths still have the recorded blobs at Studio main
-`099402226daba80e473a306bbd1243b8994465b8`; that source-tip refresh changed
-only the React sample import and OpenTelemetry test comments. The inert source
-copies match those exact blob identities in the current draft import.
+The initial source-tip verification was at Studio main
+`099402226daba80e473a306bbd1243b8994465b8`. Current Studio main has advanced to
+`5b34ec327caffd132e18bfd88bfc9e862dc35c43`; both commits contain the same
+recorded README and `.dockerignore` blobs shown above. The earlier refresh at
+`0994022` changed only the React sample import and OpenTelemetry test comments.
+The inert source copies match those exact blob identities in the current draft
+import.
 
 The standalone Studio README directs contributors to clone `elsa-studio`, open
 `Elsa.Studio.sln`, and build projects under the old `src/framework` layout. The
@@ -38,6 +41,7 @@ Reproduce the pinned and active identities with:
 
 ```sh
 git ls-tree 099402226daba80e473a306bbd1243b8994465b8 README.md .dockerignore
+git ls-tree 5b34ec327caffd132e18bfd88bfc9e862dc35c43 README.md .dockerignore
 git ls-tree HEAD doc/studio/README.md .dockerignore \
   doc/integration-program/legacy/studio/README.md.source \
   doc/integration-program/legacy/studio/.dockerignore.source
