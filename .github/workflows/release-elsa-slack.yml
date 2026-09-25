@@ -9,9 +9,13 @@ on:
       - 'src/extensions/communication/Elsa.Slack/**'
       - 'src/extensions/Directory.Build.*'
       - 'src/extensions/Directory.Packages.props'
+      - 'src/modules/**'
+      - 'src/common/**'
+      - 'src/Fody.props'
       - 'src/Directory.Build.*'
       - 'Directory.Build.*'
       - 'Directory.Packages.props'
+      - 'doc/integration-program/release-units.json'
   workflow_dispatch:
 
 permissions:
@@ -38,31 +42,70 @@ jobs:
             8.0.x
             9.0.x
             10.0.x
+      - name: Read the reviewed Elsa package baseline
+        id: dependency
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+
+          manifest = json.load(open('doc/integration-program/release-units.json', encoding='utf-8'))
+          units = [unit for unit in manifest['release_units'] if unit['package_id'] == 'Elsa.Slack']
+          if len(units) != 1:
+              raise SystemExit(f'Expected one Elsa.Slack release unit, got {len(units)}')
+          dependencies = {item['package_id']: item['version']
+                          for item in units[0]['tested_artifact_dependencies']}
+          if set(dependencies) != {'Elsa', 'SlackNet'}:
+              raise SystemExit(f'Unexpected tested dependencies: {dependencies}')
+          print(f"elsa_version={dependencies['Elsa']}")
+          print(f"slacknet_version={dependencies['SlackNet']}")
+          PY
       - name: Pack only Elsa.Slack with a proof version
         env:
           PACKAGE_VERSION: 0.0.0-proof.${{ github.run_id }}.${{ github.run_attempt }}
+          ELSA_VERSION: ${{ steps.dependency.outputs.elsa_version }}
+          SLACKNET_VERSION: ${{ steps.dependency.outputs.slacknet_version }}
           EXPECTED_SOURCE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA"
           mkdir -p "$RUNNER_TEMP/slack-artifacts"
+          cat > "$RUNNER_TEMP/Slack-NuGet.Config" <<'EOF'
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+            </packageSources>
+          </configuration>
+          EOF
+          dotnet restore src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj \
+            --configfile "$RUNNER_TEMP/Slack-NuGet.Config" \
+            -p:UseProjectReferences=false \
+            -p:ElsaVersion="$ELSA_VERSION"
           dotnet pack src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj \
             --configuration Release \
+            --no-restore \
             --output "$RUNNER_TEMP/slack-artifacts" \
             -p:IsPackable=true \
+            -p:UseProjectReferences=false \
+            -p:ElsaVersion="$ELSA_VERSION" \
             -p:PackageVersion="$PACKAGE_VERSION" \
+            -p:PackageProjectUrl=https://github.com/elsa-workflows/elsa-core \
+            -p:RepositoryUrl=https://github.com/elsa-workflows/elsa-core \
             -p:ContinuousIntegrationBuild=true
-          python3 - "$RUNNER_TEMP/slack-artifacts" "$PACKAGE_VERSION" <<'PY'
+          python3 - "$RUNNER_TEMP/slack-artifacts" "$PACKAGE_VERSION" "$ELSA_VERSION" "$SLACKNET_VERSION" "$EXPECTED_SOURCE_SHA" <<'PY'
           from pathlib import Path
           import sys
           import xml.etree.ElementTree as ET
           from zipfile import ZipFile
 
-          directory, version = Path(sys.argv[1]), sys.argv[2]
+          directory, version, elsa_version, slacknet_version, source_sha = (
+              Path(sys.argv[1]), sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+          )
           expected = f"Elsa.Slack.{version}"
           actual = sorted(path.name for path in directory.iterdir() if path.is_file())
           if actual != [f"{expected}.nupkg", f"{expected}.snupkg"]:
               raise SystemExit(f"Expected only Elsa.Slack artifacts, got {actual}")
+          frameworks = ("net8.0", "net9.0", "net10.0")
           with ZipFile(directory / f"{expected}.nupkg") as package:
               names = [name for name in package.namelist() if name.endswith(".nuspec")]
               if len(names) != 1:
@@ -73,6 +116,27 @@ jobs:
               package_version = root.findtext("n:metadata/n:version", namespaces=namespace)
               if (package_id, package_version) != ("Elsa.Slack", version):
                   raise SystemExit(f"Unexpected nuspec identity: {package_id} {package_version}")
+              project_url = root.findtext("n:metadata/n:projectUrl", namespaces=namespace)
+              repository = root.find("n:metadata/n:repository", namespaces=namespace)
+              url = "https://github.com/elsa-workflows/elsa-core"
+              if (project_url != url or repository is None or repository.get("url") != url
+                      or repository.get("commit") != source_sha):
+                  raise SystemExit(f"Unexpected source URLs: {project_url}, {repository}")
+              for framework in frameworks:
+                  if f"lib/{framework}/Elsa.Slack.dll" not in package.namelist():
+                      raise SystemExit(f"Missing {framework} assembly")
+              groups = root.findall("n:metadata/n:dependencies/n:group", namespace)
+              if {group.get("targetFramework") for group in groups} != set(frameworks):
+                  raise SystemExit(f"Unexpected dependency frameworks: {groups}")
+              for group in groups:
+                  dependencies = {item.get("id"): item.get("version")
+                                  for item in group.findall("n:dependency", namespace)}
+                  if dependencies != {"Elsa": elsa_version, "SlackNet": slacknet_version}:
+                      raise SystemExit(f"Unexpected package dependencies: {dependencies}")
+          with ZipFile(directory / f"{expected}.snupkg") as symbols:
+              for framework in frameworks:
+                  if f"lib/{framework}/Elsa.Slack.pdb" not in symbols.namelist():
+                      raise SystemExit(f"Missing {framework} symbols")
           print(f"Verified artifact-only Elsa.Slack {version} at {directory}")
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
