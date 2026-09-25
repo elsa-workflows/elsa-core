@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 import sys
 from collections import Counter
 from pathlib import Path, PurePosixPath
@@ -96,6 +97,32 @@ def _is_regular_repo_file(root: Path, relative_path: str) -> bool:
             and path.resolve().is_relative_to(root.resolve()))
 
 
+def _active_git_blob_and_mode(root: Path, relative_path: str) -> tuple[str, str] | None:
+    """Read index identity and verify the working file through Git clean filters."""
+    indexed = subprocess.run(
+        ["git", "ls-files", "--stage", "--", relative_path], cwd=root,
+        capture_output=True, text=True, check=False,
+    )
+    if indexed.returncode != 0 or len(indexed.stdout.splitlines()) != 1:
+        return None
+    try:
+        metadata, indexed_path = indexed.stdout.rstrip("\n").split("\t", 1)
+        mode, blob, stage = metadata.split()
+    except ValueError:
+        return None
+    if indexed_path != relative_path or stage != "0" or mode not in SUPPORTED_GIT_MODES:
+        return None
+    working = subprocess.run(
+        ["git", "hash-object", f"--path={relative_path}", "--", relative_path],
+        cwd=root, capture_output=True, text=True, check=False,
+    )
+    if working.returncode != 0 or working.stdout.strip() != blob:
+        return None
+    if subprocess.run(["git", "diff", "--quiet", "--", relative_path], cwd=root, check=False).returncode != 0:
+        return None
+    return blob, mode
+
+
 def _receipt_provenance_error(receipt: dict[str, Any]) -> str | None:
     provenance = receipt.get("provenance")
     if provenance is None:
@@ -142,14 +169,11 @@ def _completion_errors(row: dict[str, Any], root: Path) -> list[str]:
                 or active_path.startswith("doc/integration-program/legacy/")):
             errors.append(f"completed asset has invalid active path: {source}")
         else:
-            active = root / active_path
             if not _is_regular_repo_file(root, active_path):
                 errors.append(f"completed asset active file is missing: {source}")
             else:
-                content = active.read_bytes()
-                blob = hashlib.sha1(f"blob {len(content)}\0".encode() + content).hexdigest()
-                mode = "100755" if active.stat().st_mode & 0o100 else "100644"
-                if (completion["active_blob"], completion["active_mode"]) != (blob, mode):
+                identity = _active_git_blob_and_mode(root, active_path)
+                if (completion["active_blob"], completion["active_mode"]) != identity:
                     errors.append(f"completed asset active blob or mode changed: {source}")
         if (not isinstance(completion["representation"], str)
                 or completion["representation"] not in {"identical", "expanded"}):

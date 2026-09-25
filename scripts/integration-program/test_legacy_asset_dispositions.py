@@ -5,13 +5,17 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import subprocess
+import tempfile
 import unittest
+from pathlib import Path
 
 from validate_legacy_asset_dispositions import (
     DEFAULT_LEDGER,
     DEFAULT_RECEIPT,
     EXPECTED_RECEIPT_FIXTURE_SHA256,
     EXPECTED_SOURCE_RECEIPT_SHA256,
+    _active_git_blob_and_mode,
     validate_ledger,
 )
 
@@ -88,6 +92,22 @@ class LegacyAssetDispositionTests(unittest.TestCase):
         changed["assets"][represented]["completion"]["active_blob"] = "0" * 40
         changed["assets"][represented]["completion"]["representation"] = "identical"
         self.assertTrue(any("not identical" in error for error in validate_ledger(changed)))
+
+    def test_active_git_blob_accepts_clean_crlf_checkout_but_rejects_changes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            subprocess.run(["git", "config", "core.autocrlf", "true"], cwd=root, check=True)
+            active = root / "asset.md"
+            active.write_bytes(b"recorded\n")
+            subprocess.run(["git", "add", "asset.md"], cwd=root, check=True)
+            blob = subprocess.check_output(["git", "rev-parse", ":asset.md"], cwd=root, text=True).strip()
+
+            active.write_bytes(b"recorded\r\n")
+            self.assertEqual((blob, "100644"), _active_git_blob_and_mode(root, "asset.md"))
+
+            active.write_bytes(b"changed\r\n")
+            self.assertIsNone(_active_git_blob_and_mode(root, "asset.md"))
 
     def test_pending_assets_cannot_claim_completion_evidence(self) -> None:
         changed = copy.deepcopy(self.ledger)
