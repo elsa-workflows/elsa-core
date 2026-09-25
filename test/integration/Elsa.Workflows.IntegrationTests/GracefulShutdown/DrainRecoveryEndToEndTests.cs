@@ -17,8 +17,9 @@ namespace Elsa.Workflows.IntegrationTests.GracefulShutdown;
 
 /// <summary>
 /// End-to-end drain recovery using the production <see cref="IWorkflowRestarter"/> (not a recording fake).
-/// Asserts the actual post-recovery outcome: a genuinely interrupted Running instance resumes or completes,
-/// and a drain-cancelled Finished/Cancelled instance is not requeued.
+/// A recoverable instance runs a first step, then blocks on a gated activity (still Running). Drain marks
+/// that live row Interrupted. After the real restarter resumes it, the remaining work completes and the
+/// first step is not re-run. A separate drain-cancelled instance stays Finished/Cancelled across scans.
 /// </summary>
 public class DrainRecoveryEndToEndTests
 {
@@ -26,12 +27,14 @@ public class DrainRecoveryEndToEndTests
     private readonly IWorkflowRunner _workflowRunner;
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly IDrainOrchestrator _orchestrator;
+    private readonly CapturingTextWriter _capturingTextWriter = new();
 
     public DrainRecoveryEndToEndTests(ITestOutputHelper testOutputHelper)
     {
         _services = new TestApplicationBuilder(testOutputHelper)
+            .WithCapturingTextWriter(_capturingTextWriter)
             .AddActivitiesFrom<DrainRecoveryEndToEndTests>()
-            .AddWorkflow<RecoverableWriteLineWorkflow>()
+            .AddWorkflow<RecoverableResumeWorkflow>()
             .ConfigureElsa(elsa => elsa
                 .UseWorkflowRuntime(runtime => runtime.ConfigureGracefulShutdown(o =>
                 {
@@ -44,22 +47,33 @@ public class DrainRecoveryEndToEndTests
         _orchestrator = _services.GetRequiredService<IDrainOrchestrator>();
     }
 
-    [Fact(DisplayName = "Real restarter resumes a Running/Interrupted instance and does not resume a drain-cancelled Finished/Cancelled instance")]
+    [Fact(DisplayName = "Real restarter resumes a drain-marked Running/Interrupted instance without re-running completed work, and does not resume a drain-cancelled instance")]
     public async Task RealRestarterResumesInterruptedRunningAndLeavesDrainCancelledAlone()
     {
         await _services.PopulateRegistriesAsync();
+        ResumeGate.Current = new ResumeGate();
 
         var recoverableClient = await _workflowRuntime.CreateClientAsync();
         var created = await recoverableClient.CreateInstanceAsync(new CreateWorkflowInstanceRequest
         {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(nameof(RecoverableWriteLineWorkflow), VersionOptions.Published)
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(nameof(RecoverableResumeWorkflow), VersionOptions.Published)
         });
         Assert.False(created.CannotStart);
 
+        var recoverableRun = Task.Run(() => recoverableClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty));
+        await ResumeGate.Current.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
         using var arrangeScope = _services.CreateScope();
         var instanceStore = arrangeScope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
-        var marked = await instanceStore.TryMarkInterruptedAsync(recoverableClient.WorkflowInstanceId);
-        Assert.True(marked, "A never-started Running instance must be markable as Interrupted.");
+        await WaitUntilAsync(async () =>
+        {
+            var current = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = recoverableClient.WorkflowInstanceId });
+            return current is { Status: WorkflowStatus.Running }
+                   && current.WorkflowState.ActivityExecutionContexts.Any(context => context.IsExecuting)
+                   && _capturingTextWriter.Lines.Contains("first");
+        }, TimeSpan.FromSeconds(5));
+
+        Assert.Equal(["first"], _capturingTextWriter.Lines.ToList());
 
         var activityState = new ObservableActivityState();
         var drainWorkflow = new TestWorkflow(builder => builder.Root = new ObservableActivity
@@ -76,8 +90,16 @@ public class DrainRecoveryEndToEndTests
         catch (Exception ex) when (!ex.IsFatal()) { /* runner may complete normally or surface OCE */ }
 
         Assert.Equal(DrainResult.DeadlineExceeded, outcome.OverallResult);
-        Assert.Equal(1, outcome.ExecutionCyclesForceCancelledCount);
-        var cancelledId = Assert.Single(outcome.ForceCancelledInstanceIds);
+        Assert.Equal(2, outcome.ExecutionCyclesForceCancelledCount);
+        Assert.Contains(recoverableClient.WorkflowInstanceId, outcome.ForceCancelledInstanceIds);
+        var cancelledId = Assert.Single(outcome.ForceCancelledInstanceIds, id => id != recoverableClient.WorkflowInstanceId);
+
+        var interrupted = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = recoverableClient.WorkflowInstanceId });
+        Assert.NotNull(interrupted);
+        Assert.Equal(WorkflowStatus.Running, interrupted.Status);
+        Assert.Equal(WorkflowSubStatus.Interrupted, interrupted.SubStatus);
+        Assert.False(interrupted.IsExecuting);
+        Assert.Equal(["first"], _capturingTextWriter.Lines.ToList());
 
         var cancelled = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = cancelledId });
         Assert.NotNull(cancelled);
@@ -92,7 +114,6 @@ public class DrainRecoveryEndToEndTests
             using var recoverScope = _services.CreateScope();
             var scanner = recoverScope.ServiceProvider.GetRequiredService<IInterruptedRecoveryScanner>();
             var requeued = await scanner.ScanAndRequeueAsync(CancellationToken.None);
-
             Assert.Equal(1, requeued);
 
             await WaitUntilAsync(async () =>
@@ -105,6 +126,11 @@ public class DrainRecoveryEndToEndTests
             Assert.NotNull(recovered);
             Assert.Equal(WorkflowStatus.Finished, recovered.Status);
             Assert.Equal(WorkflowSubStatus.Finished, recovered.SubStatus);
+            Assert.Equal(1, _capturingTextWriter.Lines.Count(line => line == "first"));
+            Assert.Contains("second", _capturingTextWriter.Lines);
+
+            var secondScan = await scanner.ScanAndRequeueAsync(CancellationToken.None);
+            Assert.Equal(0, secondScan);
 
             var stillCancelled = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = cancelledId });
             Assert.NotNull(stillCancelled);
@@ -113,6 +139,9 @@ public class DrainRecoveryEndToEndTests
         }
         finally
         {
+            ResumeGate.Current.Continue.TrySetResult();
+            try { await recoverableRun.WaitAsync(TimeSpan.FromSeconds(5)); }
+            catch (Exception ex) when (!ex.IsFatal()) { /* original cycle may surface OCE after drain */ }
             await commandProcessor.StopAsync(CancellationToken.None);
         }
     }
@@ -131,11 +160,55 @@ public class DrainRecoveryEndToEndTests
     }
 }
 
-/// <summary>Published definition that can complete when the real restarter dispatches it.</summary>
-public class RecoverableWriteLineWorkflow : WorkflowBase
+/// <summary>Gate shared by <see cref="GatedWaitActivity"/> so the test can persist mid-execution and then release remaining work.</summary>
+public sealed class ResumeGate
+{
+    public static ResumeGate Current { get; set; } = new();
+
+    public int ExecutionCount;
+    public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public TaskCompletionSource Continue { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+}
+
+/// <summary>
+/// Blocks without observing cancellation so drain can mark the still-Running row Interrupted.
+/// The first execution persists through <see cref="IWorkflowInstanceManager"/> (not
+/// <see cref="WorkflowExecutionContext.CommitAsync"/>, which would dispose the live cycle handle)
+/// and then stays blocked until the test releases <see cref="ResumeGate.Continue"/>, so it cannot
+/// overwrite the recovered Finished row. The restarter's re-entry completes immediately and runs
+/// the remaining work.
+/// </summary>
+public class GatedWaitActivity : CodeActivity
+{
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
+    {
+        var execution = Interlocked.Increment(ref ResumeGate.Current.ExecutionCount);
+        if (execution == 1)
+        {
+            var manager = context.GetRequiredService<IWorkflowInstanceManager>();
+            await manager.SaveAsync(context.WorkflowExecutionContext);
+            ResumeGate.Current.Started.TrySetResult();
+            await ResumeGate.Current.Continue.Task;
+            return;
+        }
+
+        ResumeGate.Current.Started.TrySetResult();
+    }
+}
+
+/// <summary>First step records progress, then a gated wait, then remaining work.</summary>
+public class RecoverableResumeWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder)
     {
-        builder.Root = new WriteLine("recovered");
+        builder.Root = new Sequence
+        {
+            Activities =
+            {
+                new WriteLine("first"),
+                new GatedWaitActivity(),
+                new WriteLine("second")
+            }
+        };
     }
 }
