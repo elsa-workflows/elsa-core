@@ -2,15 +2,23 @@
 
 Program #8194, Feature #8214, Story #8286, Task #8287. This proposal records what must happen to the original build, workflow, policy, documentation, and colliding package files that the history rehearsal retains under `doc/integration-program/legacy/**/*.source`.
 
-The [machine-readable ledger](legacy-asset-dispositions.json) has one entry per retained file. It carries the source repository/path, mapped path, exact source commit, Git blob and mode, category, owning workstream, proposed disposition, evidence or gate, and current status. Its pins are the rehearsal inputs—Core `076f022cc174d497af26fc8e26414970e61a79b1`, Extensions `33fa0bfd28c7585240e3d4f665058c067b17e287`, and Studio `9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822`—not a claim that these are current upstream tips. Ninety-four rows now have structured completion evidence for an active Core representation or explicit retirement; the other 69 remain pending their own gates. The 50 completed Studio specification-tooling rows cite the reviewed #8432 decision and its merge commit, with each active Core-root Git blob and mode pinned. A candidate represented in the disposable build patch is still not integrated into the history-bearing source tree.
+The [machine-readable ledger](legacy-asset-dispositions.json) has one entry per retained file. It carries the source repository/path, mapped path, exact source commit, Git blob and mode, category, owning workstream, proposed disposition, evidence or gate, and current status. Its pins are the rehearsal inputs—Core `076f022cc174d497af26fc8e26414970e61a79b1`, Extensions `33fa0bfd28c7585240e3d4f665058c067b17e287`, and Studio `9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822`—not a claim that these are current upstream tips. Ninety-nine rows now have structured completion evidence for an active Core representation or explicit retirement; the other 64 remain pending their own gates. The 50 completed Studio specification-tooling rows cite the reviewed #8432 decision and its merge commit, with each active Core-root Git blob and mode pinned. A candidate represented in the disposable build patch is still not integrated into the history-bearing source tree.
 
 The [E96 current-tip refresh](current-tip-e96-legacy-assets.md) compares the same 163 assets with the newer history-import receipt and verifies the materialized draft import without changing this frozen ledger. Subsequent reviewed decisions are recorded separately for [Studio Spec Kit assets](studio-spec-asset-representation.md), [Studio-scoped guidance](studio-scoped-policy.md), the [Studio design baseline and historical release note](studio-document-assets.md), [legacy solution settings and README template](legacy-devex-asset-dispositions.md), [Extensions NUKE assets](nuke-build-asset-dispositions.md), [root editor policy and PR template](root-editor-and-pr-template-dispositions.md), [identical Studio agent/prompt assets](identical-studio-agent-assets.md), the [consolidated NUKE tool project](nuke-tool-project-disposition.md), and [identical NUKE wrappers/tool editor assets](identical-nuke-entrypoint-assets.md), plus the [Studio README and Docker context dispositions](studio-readme-and-dockerignore-dispositions.md). These supplements update those assets' disposition without rewriting the original source evidence.
 
-The two pending Extensions root build settings have a path-specific comparison
+The two Extensions root build settings have a path-specific comparison
 with the active Core policy in
 [build configuration dispositions](build-configuration-dispositions.md).
-Their archived source blobs remain unchanged; package-mode compatibility and
-feed selection are still gated on a clean consumer restore under #8260.
+The old `Directory.Build.targets` default is now represented by the active
+Core root target after the bounded Slack package-mode proof in #8481. The
+archived source blobs remain unchanged; broader package-mode compatibility and
+the old NuGet feed mapping still require review under #8260.
+
+The reviewed [consolidated guidance dispositions](consolidated-guidance-asset-dispositions.md)
+record Studio Copilot instructions and one release-unit-scoped notes workflow
+for both archived repositories, including the changed active Studio agent
+blob after #8480. They are documentation representations, not publisher
+cutover evidence.
 
 The archived Extensions and Studio Copilot setup workflows are represented by
 the reviewed [combined SDK and Node setup](copilot-setup-dispositions.md), with
