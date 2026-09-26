@@ -1,12 +1,5 @@
 using Elsa.Common.Entities;
 using Elsa.Common.Multitenancy;
-using Elsa.Persistence.EFCore;
-using Elsa.Tenants.Options;
-using Elsa.Testing.Shared.Multitenancy;
-using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Testcontainers.PostgreSql;
 
 namespace Elsa.Persistence.EFCore.UnitTests;
 
@@ -26,8 +19,7 @@ public abstract class StoreSaveManyTenantOwnershipTests
                 scenario.Store.SaveManyAsync([Row("shared", "tenant-b", "stolen")], x => x.Id, onSaving: null));
         }
 
-        var remaining = await scenario.FindAsync("shared");
-        AssertUnchanged(remaining, "tenant-a", "original");
+        AssertUnchanged(await scenario.FindAsync("shared"), "tenant-a", "original");
     }
 
     [Fact]
@@ -109,6 +101,126 @@ public abstract class StoreSaveManyTenantOwnershipTests
         AssertUnchanged(await scenario.FindAsync("shared"), "tenant-b", "taken");
     }
 
+    [Fact]
+    public async Task SaveManyAsync_WhenNamedTenantSavesOverNullRow_ThrowsAndLeavesNull()
+    {
+        await using var scenario = await CreateScenarioAsync(Tenant.DefaultTenantId);
+        await scenario.Store.SaveManyAsync([Row("legacy", Tenant.DefaultTenantId, "original")], x => x.Id, onSaving: null);
+        await scenario.ClearTenantIdAsync("legacy");
+
+        using (scenario.UseTenant("tenant-b"))
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                scenario.Store.SaveManyAsync([Row("legacy", "tenant-b", "stolen")], x => x.Id, onSaving: null));
+        }
+
+        var remaining = await scenario.FindAsync("legacy");
+        Assert.NotNull(remaining);
+        Assert.Null(remaining.TenantId);
+        Assert.Equal("original", remaining.Payload);
+    }
+
+    [Fact]
+    public async Task SaveManyAsync_WhenNamedTenantSavesOverEmptyRow_ThrowsAndLeavesEmpty()
+    {
+        await using var scenario = await CreateScenarioAsync(Tenant.DefaultTenantId);
+        await scenario.Store.SaveManyAsync([Row("owned", Tenant.DefaultTenantId, "original")], x => x.Id, onSaving: null);
+
+        using (scenario.UseTenant("tenant-b"))
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                scenario.Store.SaveManyAsync([Row("owned", "tenant-b", "stolen")], x => x.Id, onSaving: null));
+        }
+
+        AssertUnchanged(await scenario.FindAsync("owned"), Tenant.DefaultTenantId, "original");
+    }
+
+    [Fact]
+    public async Task SaveManyAsync_WhenTenantNamedDefaultSavesOverEmpty_Throws()
+    {
+        await using var scenario = await CreateScenarioAsync(Tenant.DefaultTenantId);
+        await scenario.Store.SaveManyAsync([Row("owned", Tenant.DefaultTenantId, "original")], x => x.Id, onSaving: null);
+
+        using (scenario.UseTenant("default"))
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                scenario.Store.SaveManyAsync([Row("owned", "default", "stolen")], x => x.Id, onSaving: null));
+        }
+
+        AssertUnchanged(await scenario.FindAsync("owned"), Tenant.DefaultTenantId, "original");
+    }
+
+    [Fact]
+    public async Task SaveManyAsync_WhenEmptySavesOverTenantNamedDefault_Throws()
+    {
+        await using var scenario = await CreateScenarioAsync("default");
+        await scenario.Store.SaveManyAsync([Row("owned", "default", "original")], x => x.Id, onSaving: null);
+
+        using (scenario.UseTenant(Tenant.DefaultTenantId))
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                scenario.Store.SaveManyAsync([Row("owned", Tenant.DefaultTenantId, "stolen")], x => x.Id, onSaving: null));
+        }
+
+        AssertUnchanged(await scenario.FindAsync("owned"), "default", "original");
+    }
+
+    [Fact]
+    public async Task SaveManyAsync_WhenWriterSavesExplicitForeignTenantId_ThrowsAndLeavesPayload()
+    {
+        await using var scenario = await CreateScenarioAsync("tenant-a");
+        await scenario.Store.SaveManyAsync([Row("shared", "tenant-a", "original")], x => x.Id, onSaving: null);
+
+        using (scenario.UseTenant("tenant-b"))
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                scenario.Store.SaveManyAsync([Row("shared", "tenant-a", "stolen")], x => x.Id, onSaving: null));
+        }
+
+        AssertUnchanged(await scenario.FindAsync("shared"), "tenant-a", "original");
+    }
+
+    [Fact]
+    public async Task SaveManyAsync_WhenLaterChunkHasForeignId_WritesNothing()
+    {
+        await using var scenario = await CreateScenarioAsync("tenant-a");
+        await scenario.Store.SaveManyAsync([Row("owned", "tenant-a", "original")], x => x.Id, onSaving: null);
+
+        var batch = Enumerable.Range(0, 50)
+            .Select(index => Row($"new-{index:000}", "tenant-b", "should-not-land"))
+            .Append(Row("owned", "tenant-b", "stolen"))
+            .ToList();
+
+        using (scenario.UseTenant("tenant-b"))
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                scenario.Store.SaveManyAsync(batch, x => x.Id, onSaving: null));
+        }
+
+        for (var index = 0; index < 50; index++)
+            Assert.Null(await scenario.FindAsync($"new-{index:000}"));
+
+        AssertUnchanged(await scenario.FindAsync("owned"), "tenant-a", "original");
+    }
+
+    [Fact]
+    public async Task SaveManyAsync_WhenDuplicateKeyHasEarlierViolation_ThrowsAndWritesNothing()
+    {
+        await using var scenario = await CreateScenarioAsync("tenant-a");
+        await scenario.Store.SaveManyAsync([Row("shared", Tenant.AgnosticTenantId, "original")], x => x.Id, onSaving: null);
+
+        var batch = new[] { Row("shared", tenantId: null, payload: "stolen") }
+            .Concat(Enumerable.Range(0, 60).Select(index => Row($"filler-{index:000}", "tenant-a", "filler")))
+            .Append(Row("shared", Tenant.AgnosticTenantId, "after"))
+            .ToList();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            scenario.Store.SaveManyAsync(batch, x => x.Id, onSaving: null));
+
+        AssertUnchanged(await scenario.FindAsync("shared"), Tenant.AgnosticTenantId, "original");
+        Assert.Null(await scenario.FindAsync("filler-000"));
+    }
+
     private static void AssertUnchanged(OwnedRow? row, string tenantId, string payload)
     {
         Assert.NotNull(row);
@@ -123,223 +235,4 @@ public abstract class StoreSaveManyTenantOwnershipTests
             TenantId = tenantId,
             Payload = payload
         };
-}
-
-public sealed class SqliteStoreSaveManyTenantOwnershipTests : StoreSaveManyTenantOwnershipTests
-{
-    protected override Task<OwnershipStoreScenario> CreateScenarioAsync(string tenantId, bool tenantsEnabled = true) =>
-        OwnershipStoreScenario.CreateSqliteAsync(tenantId, tenantsEnabled);
-}
-
-[Collection(PostgreSqlStoreSaveManyCollection.Name)]
-public sealed class PostgreSqlStoreSaveManyTenantOwnershipTests : StoreSaveManyTenantOwnershipTests
-{
-    private readonly PostgreSqlStoreSaveManyFixture _fixture;
-
-    public PostgreSqlStoreSaveManyTenantOwnershipTests(PostgreSqlStoreSaveManyFixture fixture)
-    {
-        _fixture = fixture;
-    }
-
-    protected override Task<OwnershipStoreScenario> CreateScenarioAsync(string tenantId, bool tenantsEnabled = true)
-    {
-        Assert.True(_fixture.IsAvailable, _fixture.SkipReason);
-        return OwnershipStoreScenario.CreatePostgreSqlAsync(_fixture.ConnectionString, tenantId, tenantsEnabled);
-    }
-}
-
-[CollectionDefinition(Name)]
-public sealed class PostgreSqlStoreSaveManyCollection : ICollectionFixture<PostgreSqlStoreSaveManyFixture>
-{
-    public const string Name = "StoreSaveMany:PostgreSql";
-}
-
-public sealed class PostgreSqlStoreSaveManyFixture : IAsyncLifetime
-{
-    private PostgreSqlContainer? _container;
-
-    public bool IsAvailable { get; private set; }
-    public string ConnectionString { get; private set; } = "";
-    public string SkipReason { get; private set; } = "PostgreSQL is not available.";
-
-    public async Task InitializeAsync()
-    {
-        var fromEnv = Environment.GetEnvironmentVariable("ELSA_TEST_POSTGRES");
-        if (!string.IsNullOrWhiteSpace(fromEnv))
-        {
-            ConnectionString = fromEnv;
-            IsAvailable = true;
-            return;
-        }
-
-        try
-        {
-            _container = new PostgreSqlBuilder().Build();
-            await _container.StartAsync();
-            ConnectionString = _container.GetConnectionString();
-            IsAvailable = true;
-            return;
-        }
-        catch (Exception containerException)
-        {
-            var local = "Host=127.0.0.1;Port=5432;Username=postgres;Password=postgres;Database=postgres";
-            try
-            {
-                await using var connection = new Npgsql.NpgsqlConnection(local);
-                await connection.OpenAsync();
-                ConnectionString = local;
-                IsAvailable = true;
-                return;
-            }
-            catch (Exception localException)
-            {
-                SkipReason =
-                    $"PostgreSQL is unavailable. Testcontainers: {containerException.Message} Local: {localException.Message}";
-            }
-        }
-    }
-
-    public async Task DisposeAsync()
-    {
-        if (_container is not null)
-            await _container.DisposeAsync();
-    }
-}
-
-public sealed class OwnershipStoreScenario : IAsyncDisposable
-{
-    private readonly Func<ValueTask> _disposeAsync;
-    private readonly IDbContextFactory<OwnershipDbContext> _dbContextFactory;
-
-    private OwnershipStoreScenario(
-        TestTenantAccessor tenantAccessor,
-        Store<OwnershipDbContext, OwnedRow> store,
-        IDbContextFactory<OwnershipDbContext> dbContextFactory,
-        Func<ValueTask> disposeAsync)
-    {
-        TenantAccessor = tenantAccessor;
-        Store = store;
-        _dbContextFactory = dbContextFactory;
-        _disposeAsync = disposeAsync;
-    }
-
-    public TestTenantAccessor TenantAccessor { get; }
-    public Store<OwnershipDbContext, OwnedRow> Store { get; }
-
-    public IDisposable UseTenant(string tenantId) =>
-        TenantAccessor.PushContext(tenantId == Tenant.DefaultTenantId
-            ? Tenant.Default
-            : new Tenant { Id = tenantId, Name = tenantId });
-
-    public async Task<OwnedRow?> FindAsync(string id)
-    {
-        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
-        return await dbContext.Rows.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
-    }
-
-    public async Task ClearTenantIdAsync(string id)
-    {
-        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
-        await dbContext.Rows
-            .Where(x => x.Id == id)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.TenantId, (string?)null));
-    }
-
-    public ValueTask DisposeAsync() => _disposeAsync();
-
-    public static async Task<OwnershipStoreScenario> CreateSqliteAsync(string tenantId, bool tenantsEnabled)
-    {
-        var connection = new SqliteConnection("Data Source=:memory:");
-        await connection.OpenAsync();
-        return await CreateAsync(
-            tenantId,
-            tenantsEnabled,
-            builder => builder.UseSqlite(connection),
-            async () =>
-            {
-                await connection.DisposeAsync();
-            });
-    }
-
-    public static async Task<OwnershipStoreScenario> CreatePostgreSqlAsync(string connectionString, string tenantId, bool tenantsEnabled)
-    {
-        var isolatedConnectionString = await CreateIsolatedDatabaseAsync(connectionString);
-        return await CreateAsync(
-            tenantId,
-            tenantsEnabled,
-            builder => builder.UseNpgsql(isolatedConnectionString),
-            () => ValueTask.CompletedTask);
-    }
-
-    private static async Task<OwnershipStoreScenario> CreateAsync(
-        string tenantId,
-        bool tenantsEnabled,
-        Action<DbContextOptionsBuilder> configure,
-        Func<ValueTask> disposeAsync)
-    {
-        var tenantAccessor = new TestTenantAccessor(tenantId);
-        var services = new ServiceCollection()
-            .AddSingleton<ITenantAccessor>(tenantAccessor)
-            .Configure<TenantsOptions>(options => options.IsEnabled = tenantsEnabled)
-            .AddDbContextFactory<OwnershipDbContext>((_, builder) => configure(builder))
-            .AddSingleton(sp => new Store<OwnershipDbContext, OwnedRow>(
-                sp.GetRequiredService<IDbContextFactory<OwnershipDbContext>>(),
-                sp))
-            .BuildServiceProvider();
-
-        var factory = services.GetRequiredService<IDbContextFactory<OwnershipDbContext>>();
-        await using (var dbContext = await factory.CreateDbContextAsync())
-            await dbContext.Database.EnsureCreatedAsync();
-
-        return new OwnershipStoreScenario(
-            tenantAccessor,
-            services.GetRequiredService<Store<OwnershipDbContext, OwnedRow>>(),
-            factory,
-            async () =>
-            {
-                await services.DisposeAsync();
-                await disposeAsync();
-            });
-    }
-
-    private static async Task<string> CreateIsolatedDatabaseAsync(string connectionString)
-    {
-        var database = $"elsa_savemany_{Guid.NewGuid():N}";
-        var admin = new Npgsql.NpgsqlConnectionStringBuilder(connectionString)
-        {
-            Database = "postgres"
-        };
-
-        await using (var connection = new Npgsql.NpgsqlConnection(admin.ConnectionString))
-        {
-            await connection.OpenAsync();
-            await using var command = connection.CreateCommand();
-            command.CommandText = $"""CREATE DATABASE "{database}" """;
-            await command.ExecuteNonQueryAsync();
-        }
-
-        var target = new Npgsql.NpgsqlConnectionStringBuilder(connectionString)
-        {
-            Database = database
-        };
-        return target.ConnectionString;
-    }
-}
-
-public sealed class OwnershipDbContext(DbContextOptions<OwnershipDbContext> options) : DbContext(options)
-{
-    public DbSet<OwnedRow> Rows => Set<OwnedRow>();
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.HasDefaultSchema("Elsa");
-        modelBuilder.Entity<OwnedRow>().ToTable("OwnedRows", "Elsa");
-        modelBuilder.Entity<OwnedRow>().HasKey(x => x.Id);
-        modelBuilder.Entity<OwnedRow>().Property(x => x.Payload).IsRequired();
-    }
-}
-
-public sealed class OwnedRow : Entity
-{
-    public string Payload { get; set; } = "";
 }
