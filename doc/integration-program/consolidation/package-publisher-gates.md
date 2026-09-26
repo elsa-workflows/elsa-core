@@ -8,6 +8,8 @@ The Packages workflow now builds and tests normally on pushes and release events
 
 Each option defaults to `false`. An authorized operator should set only the option approved for that run; the workflow run records the selected ref and inputs. Package publication and coverage deployment remain separate decisions. Builds and uploaded package artifacts remain available without opting in when their event already uploads them; a manual dispatch uploads package artifacts only when a publisher option is selected.
 
+A manual dispatch with a selected option on the wrong ref fails the publication-selection job before any selected publisher or deployment job can start. Check the selected job's result, not just the build result, before reporting publication or deployment complete.
+
 ## Activation and rollback
 
 After the relevant release or deployment approval, use **Actions → Packages → Run workflow** for an approved branch, or the workflow-dispatch CLI/API for an approved tag, and enable only the matching option. For a NuGet release, dispatch the approved release tag. Review the run ref, inputs, produced package artifacts, and job result before treating the operation as complete.
@@ -24,3 +26,4 @@ python3 scripts/validate_packages_workflow_gates.py
 ```
 
 The validator checks that all three inputs remain explicitly default-off, that their jobs require the matching manual opt-in and eligible ref type, and that normal main pushes cannot publish or deploy while each deliberate opt-in case can.
+The nonpublishing `Validate package publication gates` workflow runs this validator on relevant PRs and main-branch changes.

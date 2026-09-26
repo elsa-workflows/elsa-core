@@ -17,16 +17,20 @@ def require(condition: bool, message: str) -> None:
         raise SystemExit(message)
 
 
-def input_default(name: str) -> str:
+def input_property(name: str, property_name: str) -> str:
     match = re.search(
         rf"^      {re.escape(name)}:\n(?P<body>(?:^        .*\n)*)",
         SOURCE,
         re.MULTILINE,
     )
     require(match is not None, f"workflow_dispatch input {name!r} is missing")
-    default = re.search(r"^        default: (\w+)\s*$", match.group("body"), re.MULTILINE)
-    require(default is not None, f"input {name!r} has no explicit default")
-    return default.group(1).lower()
+    value = re.search(
+        rf"^        {re.escape(property_name)}: (\w+)\s*$",
+        match.group("body"),
+        re.MULTILINE,
+    )
+    require(value is not None, f"input {name!r} has no explicit {property_name}")
+    return value.group(1).lower()
 
 
 def job_condition(name: str) -> str:
@@ -70,7 +74,21 @@ def enabled(job: str, *, event: str, ref: str, inputs: dict[str, bool]) -> bool:
 
 def main() -> None:
     for name in ("publish_preview_feedz", "publish_nuget", "deploy_coverage"):
-        require(input_default(name) == "false", f"{name} must default to false")
+        require(input_property(name, "default") == "false", f"{name} must default to false")
+        require(input_property(name, "type") == "boolean", f"{name} must be Boolean")
+
+    require(
+        job_condition("validate_publication_selection") == "github.event_name == 'workflow_dispatch'",
+        "publication selection validation must run on manual dispatch",
+    )
+    require(
+        SOURCE.count("needs: [build, validate_publication_selection]") == 2,
+        "both package publishers must depend on selection validation",
+    )
+    require(
+        "needs: [coverage_report, validate_publication_selection]" in SOURCE,
+        "coverage deployment must depend on selection validation",
+    )
 
     cases = (
         (
