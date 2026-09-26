@@ -14,6 +14,8 @@ namespace Elsa.Persistence.EFCore.Extensions;
 /// </summary>
 public static class BulkUpsertExtensions
 {
+    internal const int DefaultBatchSize = 50;
+
     /// <summary>
     /// Performs a bulk upsert operation on a list of entities in the specified database context using a key selector.
     /// </summary>
@@ -31,7 +33,7 @@ public static class BulkUpsertExtensions
         where TDbContext : DbContext
         where TEntity : class, new()
     {
-        await BulkUpsertAsync(dbContext, entities, keySelector, 50, cancellationToken);
+        await BulkUpsertAsync(dbContext, entities, keySelector, DefaultBatchSize, cancellationToken);
     }
 
     /// <summary>
@@ -49,7 +51,7 @@ public static class BulkUpsertExtensions
         this TDbContext dbContext,
         IList<TEntity> entities,
         Expression<Func<TEntity, string>> keySelector,
-        int batchSize = 50,
+        int batchSize = DefaultBatchSize,
         CancellationToken cancellationToken = default)
         where TDbContext : DbContext
         where TEntity : class, new()
