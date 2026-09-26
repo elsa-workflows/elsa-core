@@ -121,7 +121,7 @@
       "category": "dependency_update_policy",
       "owning_workstream": "Central dependency maintenance",
       "proposed_disposition": "Merge product-specific package ecosystems and directories into the root Dependabot configuration; avoid duplicate root configurations.",
-      "evidence_or_gate": "The source config is a separate repository policy and has not been validated against the relocated directory layout.",
+      "evidence_or_gate": "The source NuGet policy is represented by the shared root configuration at /src/extensions. The former root policy is excluded from the Core weekly root scan so the Core entry does not scan these product manifests. Review the private Feedz credential and validate the merged configuration before closing this row.",
       "status": "pending_root_configuration_merge"
     },
     {
@@ -1811,7 +1811,7 @@
       "category": "dependency_update_policy",
       "owning_workstream": "Central dependency maintenance",
       "proposed_disposition": "Merge product-specific package ecosystems and directories into the root Dependabot configuration; avoid duplicate root configurations.",
-      "evidence_or_gate": "The source config is a separate repository policy and has not been validated against the relocated directory layout.",
+      "evidence_or_gate": "The source NuGet policy is represented by the shared root configuration at /src/studio. The former root policy is excluded from the Core weekly root scan so the Core entry does not scan these product manifests. Review the private Feedz credential and validate the merged configuration before closing this row.",
       "status": "pending_root_configuration_merge"
     },
     {
