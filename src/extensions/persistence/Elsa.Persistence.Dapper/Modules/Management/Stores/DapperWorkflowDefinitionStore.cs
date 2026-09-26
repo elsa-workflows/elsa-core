@@ -1,20 +1,28 @@
+using System.Data;
+using System.Data.Common;
 using System.Text.Json;
+using Dapper;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
+using Elsa.Extensions;
+using Elsa.Persistence.Dapper.Contracts;
 using Elsa.Persistence.Dapper.Extensions;
 using Elsa.Persistence.Dapper.Models;
 using Elsa.Persistence.Dapper.Modules.Management.Records;
 using Elsa.Persistence.Dapper.Services;
-using Elsa.Extensions;
-using Elsa.Workflows;
-using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Elsa.Workflows;
 using JetBrains.Annotations;
+using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
+using Npgsql;
 
 namespace Elsa.Persistence.Dapper.Modules.Management.Stores;
 
@@ -22,7 +30,7 @@ namespace Elsa.Persistence.Dapper.Modules.Management.Stores;
 /// Provides a Dapper implementation of <see cref="IWorkflowDefinitionStore"/>.
 /// </summary>
 [UsedImplicitly]
-internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> store, IPayloadSerializer payloadSerializer)
+internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> store, IPayloadSerializer payloadSerializer, IDbConnectionProvider connectionProvider, ITenantAccessor? tenantAccessor = null)
     : IWorkflowDefinitionStore
 {
     /// <inheritdoc />
@@ -120,34 +128,112 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
         Func<WorkflowDefinition, WorkflowDefinition> update,
         CancellationToken cancellationToken = default)
     {
-        var record = await store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
-
-        if (record is null)
-            return WorkflowDefinitionUpdateResult.NotFound();
-
-        var current = Map(record);
-
-        if (!current.IsLatest || !matchesExpected(current))
-            return WorkflowDefinitionUpdateResult.Conflict();
-
-        var next = update(current);
-
-        if (next.TenantId != record.TenantId || next.DefinitionId != record.DefinitionId)
-            throw new InvalidOperationException("An atomic workflow update cannot change its tenant or logical definition.");
-
-        var nextRecord = Map(next);
-        // ToolVersion is stored on the record but not on the public entity; keep the loaded column.
-        nextRecord.ToolVersion = record.ToolVersion;
-
-        if (next.Id != record.Id)
+        // Keep the read and both possible writes in the same serializable transaction.
+        // This also protects against existing SaveAsync writers, which do not carry a CAS stamp.
+        using var connection = connectionProvider.GetConnection();
+        if (connection is DbConnection dbConnection)
         {
-            record.IsLatest = false;
-            await store.SaveAsync(record, cancellationToken);
+            await dbConnection.OpenAsync(cancellationToken);
+        }
+        else
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            connection.Open();
         }
 
-        await store.SaveAsync(nextRecord, cancellationToken);
-        return WorkflowDefinitionUpdateResult.Updated(next);
+        var invokingCallback = false;
+        try
+        {
+            using var transaction = connection.BeginTransaction(IsolationLevel.Serializable);
+            var record = await FindInScopeAsync(latestOnly: true);
+            if (record == null)
+            {
+                // A filter can name a version that has since been superseded (for example by Id). As in the
+                // memory, EF Core and MongoDB stores, that lost race is a Conflict; only a missing row is NotFound.
+                return await FindInScopeAsync(latestOnly: false) == null
+                    ? WorkflowDefinitionUpdateResult.NotFound()
+                    : WorkflowDefinitionUpdateResult.Conflict();
+            }
+
+            var current = Map(record);
+            invokingCallback = true;
+            if (!matchesExpected(current))
+            {
+                return WorkflowDefinitionUpdateResult.Conflict();
+            }
+
+            var next = update(current);
+            invokingCallback = false;
+            if (next.TenantId != record.TenantId || next.DefinitionId != record.DefinitionId)
+            {
+                throw new InvalidOperationException("An atomic workflow update cannot change its tenant or logical definition.");
+            }
+
+            var nextRecord = Map(next);
+            // ToolVersion is not part of the public entity. Preserve it on both update and draft creation.
+            nextRecord.ToolVersion = record.ToolVersion;
+            var write = connectionProvider.CreateQuery();
+            if (next.Id == record.Id)
+            {
+                write.Update(store.TableName, nextRecord, store.PrimaryKey);
+            }
+            else
+            {
+                record.IsLatest = false;
+                write.Update(store.TableName, record, store.PrimaryKey, [nameof(WorkflowDefinitionRecord.IsLatest)]);
+            }
+
+            var changed = await connection.ExecuteAsync(new CommandDefinition(
+                write.Sql.ToString(), write.Parameters, transaction, cancellationToken: cancellationToken));
+            if (changed != 1)
+            {
+                return WorkflowDefinitionUpdateResult.Conflict();
+            }
+
+            if (next.Id != record.Id)
+            {
+                var insert = connectionProvider.CreateQuery().Insert(store.TableName, nextRecord);
+                // Explicitly type nullable binary data, just as the existing update path does.
+                insert.Parameters.Add(nameof(WorkflowDefinitionRecord.BinaryData), nextRecord.BinaryData, DbType.Binary);
+                await connection.ExecuteAsync(new CommandDefinition(
+                    insert.Sql.ToString(), insert.Parameters, transaction, cancellationToken: cancellationToken));
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            transaction.Commit();
+            return WorkflowDefinitionUpdateResult.Updated(next);
+
+            Task<WorkflowDefinitionRecord?> FindInScopeAsync(bool latestOnly)
+            {
+                var query = connectionProvider.CreateQuery().From(store.TableName);
+                ApplyFilter(query, filter);
+                if (latestOnly)
+                {
+                    query.Is(nameof(WorkflowDefinitionRecord.IsLatest), true);
+                }
+                if (!filter.TenantAgnostic)
+                {
+                    query.Is(nameof(WorkflowDefinitionRecord.TenantId), (object?)tenantAccessor?.Tenant?.Id ?? DBNull.Value);
+                }
+
+                return connection.QueryFirstOrDefaultAsync<WorkflowDefinitionRecord?>(new CommandDefinition(
+                    query.Sql.ToString(), query.Parameters, transaction, cancellationToken: cancellationToken));
+            }
+        }
+        catch (DbException exception) when (!invokingCallback && IsAbortedContention(exception))
+        {
+            // Only known aborted contention is a conflict. Transport/ambiguous commit failures propagate.
+            return WorkflowDefinitionUpdateResult.Conflict();
+        }
     }
+
+    private static bool IsAbortedContention(DbException exception) => exception switch
+    {
+        SqliteException { SqliteErrorCode: 5 or 6 } => true,
+        SqlException { Number: 1205 } => true,
+        PostgresException { SqlState: "40001" or "40P01" } => true,
+        _ => false
+    };
 
     /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
