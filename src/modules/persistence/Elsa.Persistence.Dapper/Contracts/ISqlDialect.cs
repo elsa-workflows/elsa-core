@@ -130,7 +130,8 @@ public interface ISqlDialect
     /// <param name="fields">The fields to update.</param>
     /// <param name="getParamName">An optional function to get the parameter name.</param>
     /// <returns>The query.</returns>
-    string Update(string table, string[] fields, Func<string, string>? getParamName = null);
+    string Update(string table, string[] fields, Func<string, string>? getParamName = null) =>
+        SqlDialectStatements.Update(table, fields, getParamName);
 
     /// <summary>
     /// Builds an UPSERT query.
@@ -141,4 +142,14 @@ public interface ISqlDialect
     /// <param name="getParamName">An optional function to get the parameter name.</param>
     /// <returns>The query.</returns>
     string Upsert(string table, string primaryKeyField, string[] fields, Func<string, string>? getParamName = null);
+}
+
+internal static class SqlDialectStatements
+{
+    public static string Update(string table, string[] fields, Func<string, string>? getParamName)
+    {
+        getParamName ??= static x => x;
+        var fieldList = string.Join(", ", fields.Select(x => $"{x} = @{getParamName(x)}"));
+        return $"UPDATE {table} SET {fieldList} WHERE 1=1";
+    }
 }
