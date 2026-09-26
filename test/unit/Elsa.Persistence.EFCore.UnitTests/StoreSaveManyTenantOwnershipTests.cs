@@ -221,6 +221,24 @@ public abstract class StoreSaveManyTenantOwnershipTests
         Assert.Null(await scenario.FindAsync("filler-000"));
     }
 
+    [Fact]
+    public async Task SaveManyAsync_WhenDuplicateKeyHasLaterViolation_ThrowsAndWritesNothing()
+    {
+        await using var scenario = await CreateScenarioAsync("tenant-a");
+        await scenario.Store.SaveManyAsync([Row("shared", Tenant.AgnosticTenantId, "original")], x => x.Id, onSaving: null);
+
+        var batch = new[] { Row("shared", Tenant.AgnosticTenantId, "after") }
+            .Concat(Enumerable.Range(0, 60).Select(index => Row($"filler-{index:000}", "tenant-a", "filler")))
+            .Append(Row("shared", tenantId: null, payload: "stolen"))
+            .ToList();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            scenario.Store.SaveManyAsync(batch, x => x.Id, onSaving: null));
+
+        AssertUnchanged(await scenario.FindAsync("shared"), Tenant.AgnosticTenantId, "original");
+        Assert.Null(await scenario.FindAsync("filler-000"));
+    }
+
     private static void AssertUnchanged(OwnedRow? row, string tenantId, string payload)
     {
         Assert.NotNull(row);

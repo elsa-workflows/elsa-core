@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Elsa.Common.Multitenancy;
+using Elsa.Testing.Shared.Multitenancy;
 using Elsa.Workflows;
 using Elsa.Workflows.Api.Endpoints.WorkflowInstances.Import;
 using Elsa.Workflows.Api.Models;
@@ -161,6 +162,28 @@ public sealed class EFCoreSaveManyTenantOwnershipTests
         AssertUnchanged(remaining, "tenant-a", "original");
     }
 
+    [Fact]
+    public async Task Import_StampsActivityAndLogRecordsWithImportingTenant_OnNonStampingStore()
+    {
+        var tenantAccessor = new TestTenantAccessor("tenant-b");
+        IReadOnlyList<ActivityExecutionRecord>? savedActivities = null;
+        IReadOnlyList<WorkflowExecutionLogRecord>? savedLogs = null;
+        var activityStore = Substitute.For<IActivityExecutionStore>();
+        activityStore.SaveManyAsync(Arg.Do<IEnumerable<ActivityExecutionRecord>>(records => savedActivities = records.ToList()), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        var logStore = Substitute.For<IWorkflowExecutionLogStore>();
+        logStore.SaveManyAsync(Arg.Do<IEnumerable<WorkflowExecutionLogRecord>>(records => savedLogs = records.ToList()), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        var serializer = new ConformanceSafeSerializer();
+
+        await ImportAsync(CreateImportEndpoint(tenantAccessor, activityStore, logStore), new ExportedWorkflowState(
+            JsonSerializer.SerializeToElement(new { }),
+            Bookmarks: null,
+            ActivityExecutionRecords: serializer.SerializeToElement(new[] { ActivityExecution("ae-1", "forged") }),
+            WorkflowExecutionLogRecords: serializer.SerializeToElement(new[] { ExecutionLog("el-1", "forged") })));
+
+        Assert.Equal("tenant-b", Assert.Single(savedActivities!).TenantId);
+        Assert.Equal("tenant-b", Assert.Single(savedLogs!).TenantId);
+    }
+
     private static async Task<StoredBookmark?> FindBookmarkAsync(WorkflowStoreScenario scenario, string id) =>
         await scenario.Bookmarks.FindAsync(new BookmarkFilter { BookmarkId = id, TenantAgnostic = true });
 
@@ -214,7 +237,14 @@ public sealed class EFCoreSaveManyTenantOwnershipTests
             EventName = "Started"
         };
 
-    private static Import CreateImportEndpoint(WorkflowStoreScenario scenario)
+    private static Import CreateImportEndpoint(WorkflowStoreScenario scenario) =>
+        CreateImportEndpoint(scenario.TenantAccessor, scenario.ActivityExecutions, scenario.ExecutionLogs, scenario.Bookmarks);
+
+    private static Import CreateImportEndpoint(
+        ITenantAccessor tenantAccessor,
+        IActivityExecutionStore activityExecutions,
+        IWorkflowExecutionLogStore executionLogs,
+        IBookmarkStore? bookmarks = null)
     {
         var stateSerializer = Substitute.For<IWorkflowStateSerializer>();
         stateSerializer.Deserialize(Arg.Any<JsonElement>()).Returns(new WorkflowState
@@ -231,13 +261,13 @@ public sealed class EFCoreSaveManyTenantOwnershipTests
         return new Import(
             instanceManager,
             Substitute.For<IWorkflowInstanceStore>(),
-            scenario.ActivityExecutions,
-            scenario.ExecutionLogs,
-            scenario.Bookmarks,
+            activityExecutions,
+            executionLogs,
+            bookmarks ?? Substitute.For<IBookmarkStore>(),
             stateSerializer,
             new ConformancePayloadSerializer(),
             new ConformanceSafeSerializer(),
-            scenario.TenantAccessor);
+            tenantAccessor);
     }
 
     private static async Task ImportAsync(Import endpoint, ExportedWorkflowState model)
