@@ -12,7 +12,7 @@ The draft already contains Extensions commit `9361c80e2ea56ccf71118fb53d6fd8f3d0
 
 The two active C# files differ from the upstream tip only by a final newline. The imported Dapper test project is already listed in both `Elsa.sln` and `Elsa.Extensions.slnf`. The mapped change keeps the existing public interface and SQL text; it restores compatibility for third-party classes implementing `ISqlDialect` directly without the newer overload.
 
-The history-bearing merge on this branch makes the original `807cd893` commit an ancestor without rewriting it or importing a second active copy of Extensions paths. Confirm with `git merge-base --is-ancestor 807cd893 HEAD` after that merge. This does not rewrite the frozen E96 source receipt, establish package-mode compatibility, or authorize the draft import into `main`. Refresh the final source-tip receipt and repeat affected proofs if either upstream main advances again.
+The history-bearing merge in [Core PR #8499](https://github.com/elsa-workflows/elsa-core/pull/8499) makes the original `807cd893` commit an ancestor without rewriting it or importing a second active copy of Extensions paths. The [fifth source-tip receipt](source-tip-refresh-2026-09-26-r5.json) and its validator pin the reviewed three-file mapping, check that current `Elsa.sln` still selects the mapped Dapper tests, and preserve the earlier 14-file receipt at its historical integration commit. This does not rewrite the frozen E96 source receipt, establish package-mode compatibility, or authorize the draft import into `main`. Refresh the final source-tip receipt and repeat affected proofs if either upstream main advances again.
 
 Verification on the mapped branch before the source-history merge:
 

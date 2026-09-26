@@ -27,6 +27,7 @@ from xml.etree import ElementTree
 import run_slack_package_proof as shared
 import verify_import_source_tip_refresh as source_tip_refresh
 import verify_import_source_tip_refresh_r2 as source_tip_refresh_r2
+import verify_import_source_tip_refresh_r5 as source_tip_refresh_r5
 from package_impact import InventoryGraph
 from release_unit_manifest import (
     MANIFEST_PATH,
@@ -60,6 +61,7 @@ REPOSITORY_URL = "https://github.com/elsa-workflows/elsa-extensions"
 IMPORTED_REPOSITORY_URL = "https://github.com/elsa-workflows/elsa-core"
 SOURCE_TIP_REFRESH_RECEIPT = Path("doc/integration-program/consolidation/source-tip-refresh-2026-09-25.json")
 SOURCE_TIP_REFRESH_R2_RECEIPT = Path("doc/integration-program/consolidation/source-tip-refresh-2026-09-25-r2.json")
+SOURCE_TIP_REFRESH_R5_RECEIPT = Path("doc/integration-program/consolidation/source-tip-refresh-2026-09-26-r5.json")
 CURRENT_TIP_EVIDENCE = REPOSITORY_ROOT / "doc/integration-program/consolidation/current-tip-e96-evidence"
 CURRENT_TIP_IMPORT_SHA256 = "06cd198a338d5c6d49fa6b0183bbda6b602252f39f622f18084e60342880bb75"
 CURRENT_TIP_PREPARATION_SHA256 = "219fcafe45959bb8f9295d8b9137f8ae0807489f0370b5112204f228fc7bd7bc"
@@ -182,6 +184,8 @@ def require_imported_history_checkout(root: Path, source_commits: dict[str, str]
     source_tip_refresh.verify(receipt, root)
     second_receipt = json.loads((root / SOURCE_TIP_REFRESH_R2_RECEIPT).read_text(encoding="utf-8"))
     source_tip_refresh_r2.verify(second_receipt, root)
+    fifth_receipt = json.loads((root / SOURCE_TIP_REFRESH_R5_RECEIPT).read_text(encoding="utf-8"))
+    source_tip_refresh_r5.verify(fifth_receipt, root)
     imported, prepared, patch_hash = load_current_tip_receipts()
     if imported.get("sourceCommits") != source_commits or not imported.get("exactBlobAndModeMapping") or not imported.get("originalHistoriesReachable"):
         raise RuntimeError("The archived current-tip import receipt does not prove exact source relocation")
