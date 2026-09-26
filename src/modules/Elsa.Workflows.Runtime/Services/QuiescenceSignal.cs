@@ -1,4 +1,5 @@
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.KeyValues.Contracts;
 using Elsa.KeyValues.Entities;
 using Elsa.KeyValues.Models;
@@ -25,8 +26,17 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     private readonly ISystemClock _clock;
     private readonly IKeyValueStore? _keyValueStore;
     private readonly IServiceScopeFactory? _serviceScopeFactory;
+    private readonly ITenantAccessor? _tenantAccessor;
     private readonly IExecutionCycleRegistry _cycleRegistry;
     private readonly string _persistenceKey;
+
+    // Host-wide pause flag: TenantVisibility.CanReplaceOwnedRow only accepts a * replacement when
+    // both the incoming TenantId and the ambient writer are *. Push this tenant around every KV call.
+    private static readonly Tenant AgnosticTenant = new()
+    {
+        Id = Tenant.AgnosticTenantId,
+        Name = Tenant.AgnosticTenantId
+    };
 
     private QuiescenceState _state;
 
@@ -41,8 +51,9 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         ISystemClock clock,
         IExecutionCycleRegistry cycleRegistry,
         IServiceScopeFactory serviceScopeFactory,
+        ITenantAccessor? tenantAccessor = null,
         string? shellName = null,
-        string? generationId = null) : this(options, clock, cycleRegistry, keyValueStore: null, serviceScopeFactory, shellName, generationId)
+        string? generationId = null) : this(options, clock, cycleRegistry, keyValueStore: null, serviceScopeFactory, tenantAccessor, shellName, generationId)
     {
     }
 
@@ -51,7 +62,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         ISystemClock clock,
         IExecutionCycleRegistry cycleRegistry,
         string? shellName = null,
-        string? generationId = null) : this(options, clock, cycleRegistry, keyValueStore: null, serviceScopeFactory: null, shellName, generationId)
+        string? generationId = null) : this(options, clock, cycleRegistry, keyValueStore: null, serviceScopeFactory: null, tenantAccessor: null, shellName, generationId)
     {
     }
 
@@ -64,7 +75,8 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         IExecutionCycleRegistry cycleRegistry,
         IKeyValueStore? keyValueStore = null,
         string? shellName = null,
-        string? generationId = null) => new(options, clock, cycleRegistry, keyValueStore, serviceScopeFactory: null, shellName, generationId);
+        string? generationId = null,
+        ITenantAccessor? tenantAccessor = null) => new(options, clock, cycleRegistry, keyValueStore, serviceScopeFactory: null, tenantAccessor, shellName, generationId);
 
     private QuiescenceSignal(
         IOptions<GracefulShutdownOptions> options,
@@ -72,6 +84,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         IExecutionCycleRegistry cycleRegistry,
         IKeyValueStore? keyValueStore,
         IServiceScopeFactory? serviceScopeFactory,
+        ITenantAccessor? tenantAccessor,
         string? shellName,
         string? generationId)
     {
@@ -80,6 +93,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         _cycleRegistry = cycleRegistry;
         _keyValueStore = keyValueStore;
         _serviceScopeFactory = serviceScopeFactory;
+        _tenantAccessor = tenantAccessor;
         _persistenceKey = PersistenceKeyPrefix + (shellName ?? "default");
         _state = QuiescenceState.Initial(generationId ?? Guid.NewGuid().ToString("N"));
     }
@@ -152,9 +166,11 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     public async ValueTask<QuiescenceState> PauseAsync(string? reasonText, string? requestedBy, CancellationToken cancellationToken)
     {
         QuiescenceState next;
+        QuiescenceState previous;
         bool transitioned = false;
         lock (_sync)
         {
+            previous = _state;
             if ((_state.Reason & QuiescenceReason.AdministrativePause) != 0)
             {
                 next = _state;
@@ -174,7 +190,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         }
 
         if (transitioned)
-            await PersistAsync();
+            await PersistOrRevertAsync(previous, next);
 
         return next;
     }
@@ -183,6 +199,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     public async ValueTask<QuiescenceState> ResumeAsync(string? requestedBy, CancellationToken cancellationToken)
     {
         QuiescenceState next;
+        QuiescenceState previous;
         bool transitioned = false;
         lock (_sync)
         {
@@ -190,6 +207,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
             if ((_state.Reason & QuiescenceReason.Drain) != 0) { return _state; }
             if ((_state.Reason & QuiescenceReason.AdministrativePause) == 0) { return _state; }
 
+            previous = _state;
             next = _state with
             {
                 Reason = _state.Reason & ~QuiescenceReason.AdministrativePause,
@@ -202,7 +220,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         }
 
         if (transitioned)
-            await PersistAsync();
+            await PersistOrRevertAsync(previous, next);
 
         return next;
     }
@@ -220,6 +238,24 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     /// fast-path in <see cref="PauseAsync"/>/<see cref="ResumeAsync"/> (transitioned == false) means a later call
     /// would not retry the write. So persistence must complete regardless of caller cancellation.
     /// </remarks>
+    private async ValueTask PersistOrRevertAsync(QuiescenceState previous, QuiescenceState next)
+    {
+        try
+        {
+            await PersistAsync();
+        }
+        catch
+        {
+            lock (_sync)
+            {
+                if (ReferenceEquals(Volatile.Read(ref _state), next))
+                    Volatile.Write(ref _state, previous);
+            }
+
+            throw;
+        }
+    }
+
     private async ValueTask PersistAsync()
     {
         if (_options.Value.PausePersistence != PausePersistencePolicy.AcrossReactivations)
@@ -230,7 +266,17 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         {
             var live = Volatile.Read(ref _state);
             if ((live.Reason & QuiescenceReason.AdministrativePause) != 0)
-                await UseKeyValueStoreAsync(store => store.SaveAsync(new SerializedKeyValuePair { Key = _persistenceKey, SerializedValue = live.PauseReasonText ?? string.Empty }, CancellationToken.None));
+            {
+                // Host-wide key. Pre-3.9 builds stamped the caller's tenant; leftover rows stay invisible
+                // to other tenants and to host startup restore. Memory then throws on the next pause
+                // (CanReplaceOwnedRow); EF Save may overwrite the same PK. No migration.
+                await UseKeyValueStoreAsync(store => store.SaveAsync(new SerializedKeyValuePair
+                {
+                    Key = _persistenceKey,
+                    SerializedValue = live.PauseReasonText ?? string.Empty,
+                    TenantId = Tenant.AgnosticTenantId
+                }, CancellationToken.None));
+            }
             else
                 await UseKeyValueStoreAsync(store => store.DeleteAsync(_persistenceKey, CancellationToken.None));
         }
@@ -243,21 +289,29 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     private async ValueTask<TResult> UseKeyValueStoreAsync<TResult>(Func<IKeyValueStore, Task<TResult>> action, TResult defaultValue)
     {
         if (_keyValueStore is not null)
+        {
+            using var _ = PushAgnosticTenant(_tenantAccessor);
             return await action(_keyValueStore);
+        }
 
         if (_serviceScopeFactory is null)
             return defaultValue;
 
         using var scope = _serviceScopeFactory.CreateScope();
         var store = scope.ServiceProvider.GetService<IKeyValueStore>();
+        if (store is null)
+            return defaultValue;
 
-        return store is null ? defaultValue : await action(store);
+        var accessor = _tenantAccessor ?? scope.ServiceProvider.GetService<ITenantAccessor>();
+        using var __ = PushAgnosticTenant(accessor);
+        return await action(store);
     }
 
     private async ValueTask UseKeyValueStoreAsync(Func<IKeyValueStore, Task> action)
     {
         if (_keyValueStore is not null)
         {
+            using var _ = PushAgnosticTenant(_tenantAccessor);
             await action(_keyValueStore);
             return;
         }
@@ -267,7 +321,14 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
 
         using var scope = _serviceScopeFactory.CreateScope();
         var store = scope.ServiceProvider.GetService<IKeyValueStore>();
-        if (store is not null)
-            await action(store);
+        if (store is null)
+            return;
+
+        var accessor = _tenantAccessor ?? scope.ServiceProvider.GetService<ITenantAccessor>();
+        using var __ = PushAgnosticTenant(accessor);
+        await action(store);
     }
+
+    private static IDisposable? PushAgnosticTenant(ITenantAccessor? accessor) =>
+        accessor?.PushContext(AgnosticTenant);
 }
