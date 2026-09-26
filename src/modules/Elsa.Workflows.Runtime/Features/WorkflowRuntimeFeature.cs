@@ -285,8 +285,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
                 sp.GetRequiredService<IOptions<GracefulShutdownOptions>>(),
                 sp.GetRequiredService<ISystemClock>(),
                 sp.GetRequiredService<IExecutionCycleRegistry>(),
-                sp.GetRequiredService<IServiceScopeFactory>(),
-                tenantAccessor: sp.GetService<Elsa.Common.Multitenancy.ITenantAccessor>()))
+                sp.GetRequiredService<IServiceScopeFactory>()))
             .AddSingleton<IIngressSourceRegistry, Elsa.Workflows.Runtime.Services.IngressSourceRegistry>()
             .AddSingleton<IExecutionCycleRegistry, Elsa.Workflows.Runtime.Services.ExecutionCycleRegistry>()
             // Lazy collection breaks the otherwise-circular DI chain QuiescenceSignal → IExecutionCycleRegistry →
