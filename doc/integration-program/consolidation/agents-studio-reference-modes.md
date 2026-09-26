@@ -61,6 +61,7 @@ dotnet build src/extensions/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj 
 ```
 
 The legacy target stays preserved as an inert `.source` file for exact import
-provenance. Its asset-ledger row remains pending until this source/package-mode
-change is reviewed, merged, and pinned in a completion record. The final
-history import and publisher cutover remain separate gates.
+provenance. After reviewed [PR #8482](https://github.com/elsa-workflows/elsa-core/pull/8482)
+merged as `3ee23cd2ac36f4ad3daa8731c6126175d98ae9b6`, its asset-ledger row
+records retirement from the active tree. The final history import and
+publisher cutover remain separate gates.
