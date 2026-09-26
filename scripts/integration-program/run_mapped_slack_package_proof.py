@@ -17,6 +17,7 @@ import html
 import importlib.util
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -949,11 +950,20 @@ def verify_imported_source_link(output: Path, head: str, source_link_assembly: P
         mapping = json.loads("\n".join(json_log.read_text(encoding="utf-8").splitlines()[1:])).get("documents")
         if not isinstance(mapping, dict) or set(mapping.values()) != {expected_url}:
             raise RuntimeError(f"Unexpected imported SourceLink mapping for {framework}: {mapping}")
+        documents_log = output / "logs" / f"imported-sourcelink-{framework}-documents.log"
+        run([str(dotnet), str(source_link_assembly), "print-documents", str(pdb)], cwd=output, env=env, log=documents_log)
+        documents = [line for line in documents_log.read_text(encoding="utf-8").splitlines()[1:] if line.strip()]
+        if not documents or any(
+            re.fullmatch(r"(?:[0-9a-f]{40} sha1|[0-9a-f]{64} sha256) \S+ .+", line) is None
+            for line in documents
+        ):
+            raise RuntimeError(f"Imported SourceLink PDB has no valid source documents for {framework}")
         test_log = output / "logs" / f"imported-sourcelink-{framework}-test.log"
         run([str(dotnet), str(source_link_assembly), "test", str(pdb)], cwd=output, env=env, log=test_log)
         if "sourcelink test passed" not in test_log.read_text(encoding="utf-8"):
             raise RuntimeError(f"Imported SourceLink URL/content test has no pass marker for {framework}")
-        results.append({"framework": framework, "repositoryUrl": expected_url, "urlAndChecksumTest": "passed"})
+        results.append({"framework": framework, "repositoryUrl": expected_url,
+                        "sourceDocumentCount": len(documents), "urlAndChecksumTest": "passed"})
     return results
 
 
