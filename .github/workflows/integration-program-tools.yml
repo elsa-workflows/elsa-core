@@ -3,6 +3,9 @@ name: Integration program tools
 on:
   pull_request:
     paths:
+      - 'Elsa.sln'
+      - 'Elsa.Extensions.slnf'
+      - 'Elsa.Studio.slnf'
       - 'scripts/integration-program/**'
       - 'doc/integration-program/verify-hierarchy.py'
       - 'doc/integration-program/hierarchy.json'
