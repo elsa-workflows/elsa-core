@@ -6,6 +6,8 @@ The [machine-readable receipt](source-tip-refresh-2026-09-25-r2.json) records al
 
 The imported Dapper project file had already received reviewed consolidated project-reference rewrites. At the history join it contains the **exact** new upstream file. Commit `4f953b2` then reapplies those consolidated references while carrying upstream's new `Elsa.Dapper.UnitTests` friend-assembly entry. Commit `c83aa78` points the new test project at the consolidated source and adds it to canonical `Elsa.sln`, so NUKE can select it. The [verifier](../../../scripts/integration-program/verify_import_source_tip_refresh_r2.py) checks the exact upstream diff, all merge parents and ancestry, source-to-mapped Git blobs/modes, the two bounded project transformations, canonical solution membership, and unchanged active Core publication workflows. Its tests reject altered source blobs, relocation, and unreviewed transformations.
 
+This receipt verifies the mapped files at its reviewed integration commit `c83aa78`. The later [Extensions `807cd893` receipt](source-tip-refresh-2026-09-26-r5.json) checks the current mapped Dapper bytes while preserving this historical snapshot.
+
 Local net10.0 test runs passed 10/10 new Dapper tests and 20/20 MongoDB tests. Restore reported existing package-advisory warnings; those warnings are not release approval. Run the verifier and targeted tests with:
 
 ```sh

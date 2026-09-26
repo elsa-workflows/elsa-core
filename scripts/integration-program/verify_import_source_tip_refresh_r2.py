@@ -122,8 +122,8 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
             raise ValueError(f"New upstream source changed: {source}")
         if row["newSource"] != blob_and_mode(join, mapped, root):
             raise ValueError(f"History join is not an exact source mapping: {mapped}")
-        if row["finalMapped"] != blob_and_mode("HEAD", mapped, root):
-            raise ValueError(f"Refreshed mapped file changed after review: {mapped}")
+        if row["finalMapped"] != blob_and_mode(test_integration, mapped, root):
+            raise ValueError(f"Refreshed mapped file changed at reviewed integration commit: {mapped}")
         if source not in {transformed_source, test_source}:
             if row["oldSource"] != row["oldMapped"] or row["newSource"] != row["finalMapped"]:
                 raise ValueError(f"Unreviewed source transform: {mapped}")
@@ -131,16 +131,16 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
     old_source = git_bytes("show", f'{old["extensions"]}:{transformed_source}', root=root)
     new_source = git_bytes("show", f'{new["extensions"]}:{transformed_source}', root=root)
     old_mapped = git_bytes("show", f"{base}:{transformed_path}", root=root)
-    final_mapped = git_bytes("show", f"HEAD:{transformed_path}", root=root)
+    final_mapped = git_bytes("show", f"{test_integration}:{transformed_path}", root=root)
     if new_source != with_new_test_friend(old_source) or final_mapped != with_new_test_friend(old_mapped):
         raise ValueError("Dapper project transform differs from the reviewed one-line upstream addition")
     upstream_test = git_bytes("show", f'{new["extensions"]}:{test_source}', root=root)
-    active_test = git_bytes("show", f"HEAD:{test_path}", root=root)
+    active_test = git_bytes("show", f"{test_integration}:{test_path}", root=root)
     if upstream_test.count(OLD_TEST_REFERENCE) != 1 or NEW_TEST_REFERENCE in upstream_test:
         raise ValueError("Upstream Dapper test project reference changed")
     if active_test != upstream_test.replace(OLD_TEST_REFERENCE, NEW_TEST_REFERENCE):
         raise ValueError("Dapper test project has an unreviewed source transform")
-    solution = git_bytes("show", "HEAD:Elsa.sln", root=root)
+    solution = git_bytes("show", f"{test_integration}:Elsa.sln", root=root)
     if solution.count(b'"Elsa.Dapper.UnitTests", "test\\extensions\\modules\\persistence\\Elsa.Dapper.UnitTests\\Elsa.Dapper.UnitTests.csproj"') != 1:
         raise ValueError("New Dapper tests are not in canonical Elsa.sln")
 
