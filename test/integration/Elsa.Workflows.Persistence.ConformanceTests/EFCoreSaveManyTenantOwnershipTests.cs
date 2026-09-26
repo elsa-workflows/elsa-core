@@ -236,7 +236,8 @@ public sealed class EFCoreSaveManyTenantOwnershipTests
             scenario.Bookmarks,
             stateSerializer,
             new ConformancePayloadSerializer(),
-            new ConformanceSafeSerializer());
+            new ConformanceSafeSerializer(),
+            scenario.TenantAccessor);
     }
 
     private static async Task ImportAsync(Import endpoint, ExportedWorkflowState model)

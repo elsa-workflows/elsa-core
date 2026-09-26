@@ -237,9 +237,11 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
     /// #8490: an existing row may be replaced only when the stamped incoming TenantId is the
     /// writer's own tenant or "*", and Normalize(existing) == Normalize(incoming).
     /// <c>null</c> and "" both count as the default tenant. Forged-TenantId inserts of new keys
-    /// are not refused here; the import endpoint clears TenantId so the store stamps the writer.
+    /// are not refused here; the import endpoint stamps TenantId with the writer.
     /// The lookup and bulk upsert are separate statements; a concurrent insert of a known key
-    /// between them can still overwrite. Closing that race is option (ii).
+    /// between them can still overwrite (accepted check-then-write; see #8490).
+    /// Iterate returned rows: a key that does not ordinal-match the batch is a collation
+    /// collision and is refused. Ordinal matches are checked against every incoming occurrence.
     /// </summary>
     private async Task EnsureTenantOwnershipAsync(
         TDbContext dbContext,
@@ -253,11 +255,10 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
 
         var getKey = keySelector.Compile();
         var keyName = keySelector.GetProperty()!.Name;
-        var existingByKey = new Dictionary<string, string?>(StringComparer.Ordinal);
+        var incomingByKey = entities.ToLookup(getKey, StringComparer.Ordinal);
 
-        foreach (var keys in entities.Select(getKey).Distinct(StringComparer.Ordinal).Chunk(BulkUpsertExtensions.DefaultBatchSize))
+        foreach (var keyList in incomingByKey.Select(group => group.Key).Chunk(BulkUpsertExtensions.DefaultBatchSize).Select(keys => keys.ToList()))
         {
-            var keyList = keys.ToList();
             var existingRows = await dbContext.Set<TEntity>()
                 .AsNoTracking()
                 .IgnoreQueryFilters()
@@ -268,20 +269,23 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
                 .ToListAsync(cancellationToken);
 
             foreach (var existing in existingRows)
-                existingByKey[existing.Key] = existing.TenantId;
-        }
+            {
+                var incomingMatches = incomingByKey[existing.Key];
+                if (!incomingMatches.Any())
+                    throw CreateOwnershipMismatchException(existing.Key);
 
-        foreach (var entity in entities)
-        {
-            var key = getKey(entity);
-            if (!existingByKey.TryGetValue(key, out var existingTenantId))
-                continue;
-
-            var incomingTenantId = ((Entity)(object)entity).TenantId;
-            if (!MayReplaceExistingRow(existingTenantId, incomingTenantId, writerTenantId))
-                throw new InvalidOperationException($"Cannot replace {typeof(TEntity).Name} '{key}': tenant ownership mismatch. Shared rows need TenantId '*'.");
+                foreach (var entity in incomingMatches)
+                {
+                    var incomingTenantId = ((Entity)(object)entity).TenantId;
+                    if (!MayReplaceExistingRow(existing.TenantId, incomingTenantId, writerTenantId))
+                        throw CreateOwnershipMismatchException(existing.Key);
+                }
+            }
         }
     }
+
+    private static InvalidOperationException CreateOwnershipMismatchException(string key) =>
+        new($"Cannot replace {typeof(TEntity).Name} '{key}': tenant ownership mismatch. Shared rows need TenantId '*'.");
 
     /// <summary>
     /// Incoming must already be the writer's tenant or "*"; existing must match that same
