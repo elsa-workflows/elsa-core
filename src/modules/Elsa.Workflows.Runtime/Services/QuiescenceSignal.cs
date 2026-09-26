@@ -77,7 +77,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
 
     /// <summary>
     /// Creates the signal with a fixed key-value store and tenant accessor. Test helper only —
-    /// not public, so it does not compete with the 3.8 <see cref="Create"/> overload.
+    /// not public, so it does not compete with the 3.8 Create overload.
     /// </summary>
     internal static QuiescenceSignal Create(
         IOptions<GracefulShutdownOptions> options,
