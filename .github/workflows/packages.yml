@@ -310,18 +310,20 @@ jobs:
     if: ${{ github.event_name != 'pull_request' }}
     steps:
       - name: Extract branch name
+        env:
+          REF: ${{ github.ref }}
         run: |
-          BRANCH_NAME=${{ github.ref }} # e.g., refs/heads/main
+          BRANCH_NAME="${REF}" # e.g., refs/heads/main
           BRANCH_NAME=${BRANCH_NAME#refs/heads/} # remove the refs/heads/ prefix
           # Extract the last part after the last slash of the branch name, if any, e.g., feature/issue-123 -> issue-123 and use it as the version prefix.
-          PACKAGE_PREFIX=$(echo $BRANCH_NAME | rev | cut -d/ -f1 | rev | tr '_' '-')
+          PACKAGE_PREFIX=$(echo "${BRANCH_NAME}" | rev | cut -d/ -f1 | rev | tr '_' '-')
 
           # If the branch name is main, use the preview version. Otherwise, use the branch name as the version prefix.
           if [[ "${BRANCH_NAME}" == "main" || "${BRANCH_NAME}" =~ ^develop/ || "${BRANCH_NAME}" =~ ^release/ ]]; then
               PACKAGE_PREFIX="preview"
           fi
 
-          echo "Ref: ${{ github.ref }}"
+          echo "Ref: ${REF}"
           echo "Branch name: ${BRANCH_NAME}"
           echo "Package prefix: ${PACKAGE_PREFIX}"
           echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
@@ -331,19 +333,25 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Verify commit exists in branch
+        env:
+          REF: ${{ github.ref }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* && ("${{ github.event_name }}" == "release" || "${{ github.event_name }}" == "workflow_dispatch") ]]; then
+          if [[ "${REF}" == refs/tags/* && ("${EVENT_NAME}" == "release" || "${EVENT_NAME}" == "workflow_dispatch") ]]; then
             git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
             git branch --remote --contains | grep -E 'origin/(main|release/)'
           else
             git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
-            git branch --remote --contains | grep origin/${BRANCH_NAME}
+            git branch --remote --contains | grep "origin/${BRANCH_NAME}"
           fi
 
       - name: Set VERSION variable
+        env:
+          REF: ${{ github.ref }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* && ("${{ github.event_name }}" == "release" || "${{ github.event_name }}" == "workflow_dispatch") ]]; then
-            TAG_NAME=${{ github.ref }} # e.g., refs/tags/3.0.0
+          if [[ "${REF}" == refs/tags/* && ("${EVENT_NAME}" == "release" || "${EVENT_NAME}" == "workflow_dispatch") ]]; then
+            TAG_NAME="${REF}" # e.g., refs/tags/3.0.0
             TAG_NAME=${TAG_NAME#refs/tags/} # remove the refs/tags/ prefix
             echo "VERSION=${TAG_NAME}" >> $GITHUB_ENV
           else
@@ -355,7 +363,7 @@ jobs:
           dotnet-version: 10.x
 
       - name: Compile+Pack
-        run: ./build.sh Compile+Pack --version ${VERSION} --analyseCode true
+        run: ./build.sh Compile+Pack --version "${VERSION}" --analyseCode true
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
