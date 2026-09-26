@@ -168,23 +168,19 @@ public class QuiescenceSignalPersistenceTests
         Assert.False(gatedStore.Pairs.ContainsKey("elsa.quiescence.host-pause.default"));
     }
 
-    [Fact(DisplayName = "Persistence completes even when caller's CancellationToken is already cancelled")]
-    public async Task PersistenceIgnoresCallerCancellation()
+    [Fact(DisplayName = "A cancelled caller token is honoured before any pause state change")]
+    public async Task CancelledCallerToken_DoesNotPause()
     {
-        // Regression: previously PersistAsync forwarded the caller's CT to both the semaphore wait and the
-        // store I/O. If the HTTP request was cancelled between the in-memory transition (which had already
-        // committed under _sync) and PersistAsync's WaitAsync, the I/O was silently skipped — leaving
-        // AdministrativePause set in memory with no persisted record. The idempotent fast-path on subsequent
-        // PauseAsync calls (transitioned == false) meant no retry; on the next host restart the runtime came
-        // back unpaused, defeating PausePersistencePolicy.AcrossReactivations.
+        // The mutex wait honours the caller token so a hung store cannot block a cancelled caller.
+        // Persist I/O still uses CancellationToken.None after the in-memory transition.
         var sut = QuiescenceSignal.Create(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _cycleRegistry, _kv);
         var cancelled = new CancellationToken(canceled: true);
 
-        var state = await sut.PauseAsync("migration", "op@ex.com", cancelled);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            sut.PauseAsync("migration", "op@ex.com", cancelled).AsTask());
 
-        Assert.True(state.Reason.HasFlag(QuiescenceReason.AdministrativePause));
-        Assert.True(_kv.Pairs.TryGetValue("elsa.quiescence.host-pause.default", out var pair));
-        Assert.Equal("migration", pair.SerializedValue);
+        Assert.False(sut.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.False(_kv.Pairs.ContainsKey("elsa.quiescence.host-pause.default"));
     }
 
     [Fact(DisplayName = "Null key-value store is tolerated under AcrossReactivations")]
