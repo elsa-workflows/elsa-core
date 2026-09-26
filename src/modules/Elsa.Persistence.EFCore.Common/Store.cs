@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Linq.Expressions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
@@ -240,8 +241,9 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
     /// are not refused here; the import endpoint stamps TenantId with the writer.
     /// The lookup and bulk upsert are separate statements; a concurrent insert of a known key
     /// between them can still overwrite (accepted check-then-write; see #8490).
-    /// Iterate returned rows: a key that does not ordinal-match the batch is a collation
-    /// collision and is refused. Ordinal matches are checked against every incoming occurrence.
+    /// Iterate returned rows: every incoming entry the key collation could match to the row is
+    /// checked. An entry whose key only collation-matches (e.g. "ABC" for row "abc") is refused,
+    /// even beside an ordinal match in the same batch; ordinal matches must pass the tenant check.
     /// </summary>
     private async Task EnsureTenantOwnershipAsync(
         TDbContext dbContext,
@@ -256,6 +258,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         var getKey = keySelector.Compile();
         var keyName = keySelector.GetProperty()!.Name;
         var incomingByKey = entities.ToLookup(getKey, StringComparer.Ordinal);
+        var incomingByCollationKey = entities.ToLookup(getKey, CollationInsensitiveKeyComparer);
 
         foreach (var keyList in incomingByKey.Select(group => group.Key).Chunk(BulkUpsertExtensions.DefaultBatchSize).Select(keys => keys.ToList()))
         {
@@ -270,13 +273,13 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
 
             foreach (var existing in existingRows)
             {
-                var incomingMatches = incomingByKey[existing.Key];
+                var incomingMatches = incomingByCollationKey[existing.Key];
                 if (!incomingMatches.Any())
                     throw CreateOwnershipMismatchException(keyList);
 
                 foreach (var (submittedKey, incomingTenantId) in incomingMatches.Select(entity => (getKey(entity), ((Entity)(object)entity).TenantId)))
                 {
-                    if (!MayReplaceExistingRow(existing.TenantId, incomingTenantId, writerTenantId))
+                    if (!string.Equals(submittedKey, existing.Key, StringComparison.Ordinal) || !MayReplaceExistingRow(existing.TenantId, incomingTenantId, writerTenantId))
                         throw CreateOwnershipMismatchException([submittedKey]);
                 }
             }
@@ -303,6 +306,14 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
 
         return existing == incoming;
     }
+
+    /// <summary>
+    /// A superset of the key collations the EF providers use (SQLite NOCASE, SQL Server CI_AS, MySQL
+    /// ai_ci): anything the database may treat as the same key must be checked against the row.
+    /// </summary>
+    private static readonly StringComparer CollationInsensitiveKeyComparer = StringComparer.Create(
+        CultureInfo.InvariantCulture,
+        CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace | CompareOptions.IgnoreKanaType | CompareOptions.IgnoreWidth);
 
     private sealed record ExistingKeyTenant(string Key, string? TenantId);
 
