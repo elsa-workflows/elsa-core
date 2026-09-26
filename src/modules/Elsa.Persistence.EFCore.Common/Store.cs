@@ -288,10 +288,14 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         if (collidingRows.Count == 0)
             return;
 
-        // The database only says which rows were reached; name the likely submitted spelling for the error.
-        var submittedVariants = keysWithoutOwnRow
-            .Where(key => collidingRows.Any(row => string.Equals(key.TrimEnd(), row.Key.TrimEnd(), StringComparison.OrdinalIgnoreCase)))
-            .ToList();
+        // The batch is refused; ask the database which likely spellings reached a row so the error names them.
+        var submittedVariants = new List<string>();
+        foreach (var key in keysWithoutOwnRow.Where(key => collidingRows.Any(row => string.Equals(key.TrimEnd(), row.Key.TrimEnd(), StringComparison.OrdinalIgnoreCase))))
+        {
+            if ((await FindExistingRowsAsync(dbContext, keyName, [key], cancellationToken)).Count > 0)
+                submittedVariants.Add(key);
+        }
+
         throw CreateOwnershipMismatchException(submittedVariants.Count > 0 ? submittedVariants : collidingRows.Select(row => row.Key));
     }
 

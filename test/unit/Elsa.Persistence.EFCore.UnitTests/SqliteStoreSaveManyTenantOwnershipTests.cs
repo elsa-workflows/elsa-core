@@ -46,14 +46,18 @@ public sealed class SqliteStoreSaveManyTenantOwnershipTests : StoreSaveManyTenan
         await using var scenario = await OwnershipStoreScenario.CreateSqliteAsync("tenant-a", tenantsEnabled: true, keyCollation: "RTRIM");
         await scenario.Store.SaveManyAsync([new OwnedRow { Id = "abc", TenantId = "tenant-a", Payload = "original" }], x => x.Id, onSaving: null);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => scenario.Store.SaveManyAsync(
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => scenario.Store.SaveManyAsync(
             [
                 new OwnedRow { Id = "abc", TenantId = "tenant-a", Payload = "original" },
+                new OwnedRow { Id = "ABC", TenantId = "tenant-a", Payload = "distinct under RTRIM" },
                 new OwnedRow { Id = "abc ", TenantId = "tenant-b", Payload = "stolen" }
             ],
             x => x.Id,
             onSaving: null));
 
+        // Only the colliding spelling is named; ABC is a distinct key under RTRIM.
+        Assert.Contains("'abc '", exception.Message);
+        Assert.DoesNotContain("'ABC'", exception.Message);
         await AssertOriginalOwnerAsync(scenario);
     }
 
