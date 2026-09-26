@@ -4,9 +4,11 @@ using Elsa.Common.Models;
 using Elsa.Common.Multitenancy;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Extensions;
+using Elsa.Tenants.Options;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Persistence.EFCore;
@@ -188,7 +190,8 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
             if (entityList.Count == 0)
                 return;
 
-            var tenantId = serviceProvider.GetRequiredService<ITenantAccessor>().TenantId;
+            var tenantId = serviceProvider.GetRequiredService<ITenantAccessor>().TenantId.NormalizeTenantId();
+            var tenancyEnabled = serviceProvider.GetService<IOptions<TenantsOptions>>()?.Value.IsEnabled == true;
 
             await ExecuteWriteWithRetryAsync(async (dbContext, ct) =>
             {
@@ -213,6 +216,9 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
                     }
                 }
 
+                if (tenancyEnabled)
+                    await EnsureTenantOwnershipAsync(dbContext, entityList, keySelector, tenantId, ct);
+
                 await dbContext.BulkUpsertAsync(entityList, keySelector, ct);
             }, cancellationToken);
         }
@@ -226,6 +232,68 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
             Semaphore.Release();
         }
     }
+
+    private async Task EnsureTenantOwnershipAsync(
+        TDbContext dbContext,
+        IList<TEntity> entities,
+        Expression<Func<TEntity, string>> keySelector,
+        string writerTenantId,
+        CancellationToken cancellationToken)
+    {
+        if (!typeof(Entity).IsAssignableFrom(typeof(TEntity)))
+            return;
+
+        var getKey = keySelector.Compile();
+        var keyName = keySelector.GetProperty()!.Name;
+        var incomingByKey = new Dictionary<string, Entity>(StringComparer.Ordinal);
+
+        foreach (var entity in entities)
+            incomingByKey[getKey(entity)] = (Entity)(object)entity;
+
+        const int batchSize = 50;
+
+        var selector = BuildKeyAndTenantSelector(keyName);
+
+        foreach (var keys in incomingByKey.Keys.Chunk(batchSize))
+        {
+            var existingRows = await dbContext.Set<TEntity>()
+                .AsNoTracking()
+                .IgnoreQueryFilters()
+                .Where(keySelector.BuildContainsKeysExpression(keys))
+                .Select(selector)
+                .ToListAsync(cancellationToken);
+
+            foreach (var existing in existingRows)
+            {
+                var incomingTenantId = incomingByKey[existing.Key].TenantId;
+                if (!MayReplaceExistingRow(existing.TenantId, incomingTenantId, writerTenantId))
+                    throw new InvalidOperationException($"Cannot replace row '{existing.Key}' owned by another tenant.");
+            }
+        }
+    }
+
+    private static Expression<Func<TEntity, ExistingKeyTenant>> BuildKeyAndTenantSelector(string keyName)
+    {
+        var parameter = Expression.Parameter(typeof(TEntity), "entity");
+        var keyProperty = Expression.Property(parameter, keyName);
+        var tenantProperty = Expression.Property(parameter, nameof(Entity.TenantId));
+        var ctor = typeof(ExistingKeyTenant).GetConstructor([typeof(string), typeof(string)])!;
+        return Expression.Lambda<Func<TEntity, ExistingKeyTenant>>(Expression.New(ctor, keyProperty, tenantProperty), parameter);
+    }
+
+    private static bool MayReplaceExistingRow(string? existingTenantId, string? incomingTenantId, string writerTenantId)
+    {
+        var existing = existingTenantId.NormalizeTenantId();
+        var incoming = incomingTenantId.NormalizeTenantId();
+        var writer = writerTenantId.NormalizeTenantId();
+
+        if (incoming != writer && incoming != Tenant.AgnosticTenantId)
+            return false;
+
+        return existing == incoming;
+    }
+
+    private sealed record ExistingKeyTenant(string Key, string? TenantId);
 
     private async Task HandleDbExceptionAsync(Exception exception, CancellationToken cancellationToken)
     {

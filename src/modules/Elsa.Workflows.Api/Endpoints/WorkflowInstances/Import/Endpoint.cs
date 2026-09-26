@@ -149,12 +149,16 @@ internal class Import : ElsaEndpointWithoutRequest<Response>
         if (model.ActivityExecutionRecords != null)
         {
             var activityExecutionRecords = _safeSerializer.Deserialize<ICollection<ActivityExecutionRecord>>(model.ActivityExecutionRecords.Value);
+            foreach (var record in activityExecutionRecords)
+                record.TenantId = null;
             await _activityExecutionStore.SaveManyAsync(activityExecutionRecords, cancellationToken);
         }
         
         if (model.WorkflowExecutionLogRecords != null)
         {
             var workflowExecutionLogRecords = _safeSerializer.Deserialize<ICollection<WorkflowExecutionLogRecord>>(model.WorkflowExecutionLogRecords.Value);
+            foreach (var record in workflowExecutionLogRecords)
+                record.TenantId = null;
             await _workflowExecutionLogStore.SaveManyAsync(workflowExecutionLogRecords, cancellationToken);
         }
     }
