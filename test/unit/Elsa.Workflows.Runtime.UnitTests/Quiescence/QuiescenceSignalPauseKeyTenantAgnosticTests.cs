@@ -28,7 +28,9 @@ public class QuiescenceSignalPauseKeyTenantAgnosticTests
         _clock.UtcNow.Returns(DateTimeOffset.Parse("2026-04-24T10:00:00Z"));
         _cycleRegistry = Substitute.For<IExecutionCycleRegistry>();
         _tenantAccessor = new DefaultTenantAccessor();
-        _store = new MemoryKeyValueStore(new MemoryStore<SerializedKeyValuePair>(), _tenantAccessor);
+        // MemoryKeyValueStore on main is not tenant-filtered; the signal still stamps * and
+        // writes under an agnostic scope so EF (and a later isolated memory store) stay aligned.
+        _store = new MemoryKeyValueStore(new MemoryStore<SerializedKeyValuePair>());
     }
 
     [Fact(DisplayName = "Cross-tenant pause/resume keeps live and persisted state aligned")]
