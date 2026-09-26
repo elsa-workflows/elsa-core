@@ -318,8 +318,17 @@
       "category": "product_solution_entrypoint",
       "owning_workstream": "Feature #8214 build integration; Story #8215 developer workflow",
       "proposed_disposition": "Keep product-focused developer entrypoints (updated solution or .slnf) where maintainers need them; make root Elsa.sln the explicit full-CI solution or define an equally explicit solution set, then retire the inert original after membership/path parity passes.",
-      "evidence_or_gate": "The pinned solutions are product build entrypoints. Root PR CI and NUKE read Elsa.sln, while current combined build evidence uses generated Consolidated.sln.",
-      "status": "pending_canonical_solution_and_ci"
+      "evidence_or_gate": "The canonical Elsa.sln includes the imported product projects; the focused filter selects exactly its product projects and builds from the consolidated checkout. The old standalone solution remains an inert source-history record.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/product-solution-filters.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8496",
+        "merge_commit": "c8ce20caf88b8c4ed1ad920e7e98f3aa4781d144",
+        "active_path": "Elsa.Extensions.slnf",
+        "active_blob": "ccbdccee71a5ffceed15e1be5a2b3da86426a3a0",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -2910,8 +2919,17 @@
       "category": "product_solution_entrypoint",
       "owning_workstream": "Feature #8214 build integration; Story #8215 developer workflow",
       "proposed_disposition": "Keep product-focused developer entrypoints (updated solution or .slnf) where maintainers need them; make root Elsa.sln the explicit full-CI solution or define an equally explicit solution set, then retire the inert original after membership/path parity passes.",
-      "evidence_or_gate": "The pinned solutions are product build entrypoints. Root PR CI and NUKE read Elsa.sln, while current combined build evidence uses generated Consolidated.sln.",
-      "status": "pending_canonical_solution_and_ci"
+      "evidence_or_gate": "The canonical Elsa.sln includes the imported product projects; the focused filter selects exactly its product projects and builds from the consolidated checkout. The old standalone solution remains an inert source-history record.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/product-solution-filters.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8496",
+        "merge_commit": "c8ce20caf88b8c4ed1ad920e7e98f3aa4781d144",
+        "active_path": "Elsa.Studio.slnf",
+        "active_blob": "c50ca6e529413be2b29108f2c3f745a8f60b1272",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
