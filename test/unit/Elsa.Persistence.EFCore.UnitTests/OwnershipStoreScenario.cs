@@ -51,7 +51,7 @@ public sealed class OwnershipStoreScenario : IAsyncDisposable
 
     public ValueTask DisposeAsync() => _disposeAsync();
 
-    public static async Task<OwnershipStoreScenario> CreateSqliteAsync(string tenantId, bool tenantsEnabled)
+    public static async Task<OwnershipStoreScenario> CreateSqliteAsync(string tenantId, bool tenantsEnabled, bool nocaseKey = false)
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
@@ -64,7 +64,8 @@ public sealed class OwnershipStoreScenario : IAsyncDisposable
                 async () =>
                 {
                     await connection.DisposeAsync();
-                });
+                },
+                nocaseKey);
         }
         catch
         {
@@ -95,11 +96,13 @@ public sealed class OwnershipStoreScenario : IAsyncDisposable
         string tenantId,
         bool tenantsEnabled,
         Action<DbContextOptionsBuilder> configure,
-        Func<ValueTask> disposeAsync)
+        Func<ValueTask> disposeAsync,
+        bool nocaseKey = false)
     {
         var tenantAccessor = new TestTenantAccessor(tenantId);
         var services = new ServiceCollection()
             .AddSingleton<ITenantAccessor>(tenantAccessor)
+            .AddSingleton(new OwnershipModelSettings(nocaseKey))
             .Configure<TenantsOptions>(options => options.IsEnabled = tenantsEnabled)
             .AddDbContextFactory<OwnershipDbContext>((_, builder) => configure(builder))
             .AddSingleton(sp => new Store<OwnershipDbContext, OwnedRow>(
@@ -168,7 +171,12 @@ public sealed class OwnershipStoreScenario : IAsyncDisposable
     }
 }
 
-public sealed class OwnershipDbContext(DbContextOptions<OwnershipDbContext> options) : DbContext(options)
+public sealed class OwnershipModelSettings(bool nocaseKey)
+{
+    public bool NocaseKey { get; } = nocaseKey;
+}
+
+public sealed class OwnershipDbContext(DbContextOptions<OwnershipDbContext> options, OwnershipModelSettings settings) : DbContext(options)
 {
     public DbSet<OwnedRow> Rows => Set<OwnedRow>();
 
@@ -177,6 +185,8 @@ public sealed class OwnershipDbContext(DbContextOptions<OwnershipDbContext> opti
         modelBuilder.HasDefaultSchema("Elsa");
         modelBuilder.Entity<OwnedRow>().ToTable("OwnedRows", "Elsa");
         modelBuilder.Entity<OwnedRow>().HasKey(x => x.Id);
+        if (settings.NocaseKey)
+            modelBuilder.Entity<OwnedRow>().Property(x => x.Id).UseCollation("NOCASE");
         modelBuilder.Entity<OwnedRow>().Property(x => x.Payload).IsRequired();
     }
 }

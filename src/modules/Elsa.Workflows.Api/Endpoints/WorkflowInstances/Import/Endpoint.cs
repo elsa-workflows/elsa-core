@@ -2,6 +2,7 @@ using Elsa.Authorization;
 using System.IO.Compression;
 using System.Text.Json;
 using Elsa.Abstractions;
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
@@ -25,6 +26,7 @@ internal class Import : ElsaEndpointWithoutRequest<Response>
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly IPayloadSerializer _payloadSerializer;
     private readonly ISafeSerializer _safeSerializer;
+    private readonly ITenantAccessor _tenantAccessor;
 
     /// <inheritdoc />
     public Import(
@@ -35,7 +37,8 @@ internal class Import : ElsaEndpointWithoutRequest<Response>
         IBookmarkStore bookmarkStore,
         IWorkflowStateSerializer workflowStateSerializer,
         IPayloadSerializer payloadSerializer,
-        ISafeSerializer safeSerializer)
+        ISafeSerializer safeSerializer,
+        ITenantAccessor tenantAccessor)
     {
         _workflowInstanceManager = workflowInstanceManager;
         _workflowInstanceStore = workflowInstanceStore;
@@ -45,6 +48,7 @@ internal class Import : ElsaEndpointWithoutRequest<Response>
         _workflowStateSerializer = workflowStateSerializer;
         _payloadSerializer = payloadSerializer;
         _safeSerializer = safeSerializer;
+        _tenantAccessor = tenantAccessor;
     }
 
     /// <inheritdoc />
@@ -150,7 +154,7 @@ internal class Import : ElsaEndpointWithoutRequest<Response>
         {
             var activityExecutionRecords = _safeSerializer.Deserialize<ICollection<ActivityExecutionRecord>>(model.ActivityExecutionRecords.Value);
             foreach (var record in activityExecutionRecords)
-                record.TenantId = null;
+                record.TenantId = _tenantAccessor.TenantId;
             await _activityExecutionStore.SaveManyAsync(activityExecutionRecords, cancellationToken);
         }
         
@@ -158,7 +162,7 @@ internal class Import : ElsaEndpointWithoutRequest<Response>
         {
             var workflowExecutionLogRecords = _safeSerializer.Deserialize<ICollection<WorkflowExecutionLogRecord>>(model.WorkflowExecutionLogRecords.Value);
             foreach (var record in workflowExecutionLogRecords)
-                record.TenantId = null;
+                record.TenantId = _tenantAccessor.TenantId;
             await _workflowExecutionLogStore.SaveManyAsync(workflowExecutionLogRecords, cancellationToken);
         }
     }
