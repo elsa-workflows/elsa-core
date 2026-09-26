@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+    <PropertyGroup>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+		<BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Update="wwwroot\appsettings.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="../../bundles/Elsa.Studio/Elsa.Studio.csproj" />
+      <ProjectReference Include="../../framework/Elsa.Studio.Core.BlazorWasm/Elsa.Studio.Core.BlazorWasm.csproj" />
+      <ProjectReference Include="../../framework/Elsa.Studio.DomInterop/Elsa.Studio.DomInterop.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.Authentication.Abstractions/Elsa.Studio.Authentication.Abstractions.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.ExternalAuthentication/Elsa.Studio.ExternalAuthentication.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.ExternalAuthentication.BlazorWasm/Elsa.Studio.ExternalAuthentication.BlazorWasm.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.Settings/Elsa.Studio.Settings.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.Security/Elsa.Studio.Security.csproj" />
+        
+      <ProjectReference Include="../../modules/Elsa.Studio.Authentication.OpenIdConnect.BlazorWasm/Elsa.Studio.Authentication.OpenIdConnect.BlazorWasm.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.Authentication.ElsaIdentity.BlazorWasm/Elsa.Studio.Authentication.ElsaIdentity.BlazorWasm.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.Authentication.ElsaIdentity.UI/Elsa.Studio.Authentication.ElsaIdentity.UI.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.Authentication.UI/Elsa.Studio.Authentication.UI.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.Authentication.Themes/Elsa.Studio.Authentication.Themes.csproj" />
+
+      <ProjectReference Include="../../modules/Elsa.Studio.Alterations/Elsa.Studio.Alterations.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.Dashboard/Elsa.Studio.Dashboard.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard/Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard/Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.Diagnostics.StructuredLogs.Dashboard/Elsa.Studio.Diagnostics.StructuredLogs.Dashboard.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.Localization.BlazorWasm/Elsa.Studio.Localization.BlazorWasm.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.Login.BlazorWasm/Elsa.Studio.Login.BlazorWasm.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.Login/Elsa.Studio.Login.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.Secrets/Elsa.Studio.Secrets.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.UserTasks/Elsa.Studio.UserTasks.csproj" />
+      <ProjectReference Include="../../modules/Elsa.Studio.Workflows.Dashboard/Elsa.Studio.Workflows.Dashboard.csproj" />
+    </ItemGroup>
+
+</Project>

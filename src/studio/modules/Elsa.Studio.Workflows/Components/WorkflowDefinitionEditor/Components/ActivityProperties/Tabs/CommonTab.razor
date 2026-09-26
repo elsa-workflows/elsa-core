@@ -1,0 +1,94 @@
+@using Elsa.Studio.Workflows.Services
+@using Variant = MudBlazor.Variant
+@using Elsa.Api.Client.Extensions
+@using Elsa.Api.Client.Shared.Enums
+@inherits StudioComponentBase
+@using Microsoft.Extensions.Localization
+@inject ILocalizer Localizer
+
+@if (Activity != null && ActivityDescriptor != null)
+{
+    <MudForm ReadOnly="IsReadOnly">
+        <MudStack>
+            <MudTextField
+                T="string"
+                Label="@Localizer["Name"]"
+                HelperText="@Localizer["The name of the activity. Named activities can be referenced by other activities."]"
+                Value="@Activity.GetName()"
+                Variant="Variant.Outlined"
+                Margin="Margin.Dense"
+                ValueChanged="OnActivityNameChanged"
+                ReadOnly="IsReadOnly"
+                Disabled="IsReadOnly"/>
+
+            <MudTextField
+                T="string"
+                Label="@Localizer["Display text"]"
+                HelperText="@Localizer["The text to display in the designer."]"
+                Value="@Activity.GetDisplayText()"
+                Variant="Variant.Outlined"
+                Margin="Margin.Dense"
+                ValueChanged="OnActivityDisplayTextChanged"
+                ReadOnly="IsReadOnly"
+                Disabled="IsReadOnly"/>
+
+            <MarkdownTextArea
+                Value="@Activity.GetDescription()"
+                ValueChanged="OnActivityDescriptionChanged"
+                Label="@Localizer["Description"]"
+                HelperText="@Localizer["A description of this activity to be displayed in the designer."]"
+                IsReadOnly="IsReadOnly" />
+
+            <MudField
+                Variant="Variant.Text"
+                HelperText="@Localizer["Whether to show the description in the designer."]"
+                Margin="Margin.Dense"
+                Underline="@true"
+                Disabled="IsReadOnly">
+                <MudCheckBox
+                    T="bool?"
+                    Label="@Localizer["Show description"]"
+                    Dense="@true"
+                    Value="@(Activity.GetShowDescription() == true)"
+                    ValueChanged="OnShowDescriptionChanged"/>
+            </MudField>
+                
+            <MudField
+                Variant="Variant.Text"
+                UnderLine="@true"
+                Margin="Margin.Dense"
+                HelperText="@(IsTrigger ? Localizer["When checked, this activity can trigger this workflow."] : @Localizer["When checked, this activity is the start of this workflow."])"
+                Disabled="IsReadOnly">
+                <MudCheckBox
+                    T="bool?"
+                    Label="@(IsTrigger ? @Localizer["Trigger workflow"] : @Localizer["Start of workflow"])"
+                    Dense="@true"
+                    Value="@(Activity.GetCanStartWorkflow() == true)"
+                    ValueChanged="OnCanStartWorkflowChanged"/>
+            </MudField>
+
+            @if (ActivityDescriptor?.TypeName != "Elsa.FlowJoin")
+            {
+                <MudField
+                    Variant="Variant.Text"
+                    UnderLine="false"
+                    Margin="Margin.Dense"
+                    HelperText="Controls how this activity merges inbound connections. Converge will wait for all inbound connections to complete, while Race will allow the first inbound path to continue while cancelling any bookmarks from other inbound paths, and Stream will let all inbound connections pass through as they arrive."
+                    Disabled="IsReadOnly">
+                    <MudSelect
+                        T="MergeMode"
+                        Label="Merge Mode"
+                        Dense="@true"
+                        Value="@Activity.GetMergeMode()"
+                        ValueChanged="OnMergeModeChanged">
+                        <MudSelectItem T="MergeMode" Value="MergeMode.None">None</MudSelectItem>
+                        <MudSelectItem T="MergeMode" Value="MergeMode.Converge">Converge</MudSelectItem>
+                        <MudSelectItem T="MergeMode" Value="MergeMode.Race">Race</MudSelectItem>
+                        <MudSelectItem T="MergeMode" Value="MergeMode.Stream">Stream</MudSelectItem>
+                    </MudSelect>
+                </MudField>
+            }
+
+        </MudStack>
+    </MudForm>
+}

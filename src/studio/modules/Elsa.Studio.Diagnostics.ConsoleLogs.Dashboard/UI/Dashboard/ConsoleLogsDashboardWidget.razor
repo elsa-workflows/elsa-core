@@ -1,0 +1,29 @@
+@if (Context.Snapshot != null)
+{
+    var summary = Context.Snapshot.Overview.Diagnostics.ConsoleLogs;
+
+    <MudPaper Outlined="true" Elevation="0" Class="dashboard-panel dashboard-section" Style="@DashboardStyles.Panel">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="dashboard-section-header" Style="@DashboardStyles.SectionHeader">
+            <MudText Typo="Typo.subtitle1">Console</MudText>
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@DashboardUiMapper.CapabilityColor(summary.Capability)">
+                @DashboardUiMapper.CapabilityLabel(summary.Capability)
+            </MudChip>
+        </MudStack>
+
+        <div class="dashboard-diagnostics-block" style="@DashboardStyles.DiagnosticsBlock">
+            <DashboardDiagnosticsValue Label="Sources" Value="@DashboardMetricFormatter.Count(summary.SourceCount)" />
+            <DashboardDiagnosticsValue Label="Stale" Value="@DashboardMetricFormatter.Count(summary.StaleSourceCount)" Color="@StaleColor(summary.StaleSourceCount)" />
+            <DashboardDiagnosticsValue Label="stderr" Value="@DashboardMetricFormatter.Count(summary.RecentStderrCount)" Color="@ErrorColor(summary.RecentStderrCount)" />
+            <DashboardDiagnosticsValue Label="Dropped lines" Value="@DashboardMetricFormatter.Count(summary.DroppedLineCount)" Color="@ErrorColor(summary.DroppedLineCount)" />
+            <MudButton Href="@DashboardNavigationTargetMapper.Console" Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Outlined.OpenInNew">Open console</MudButton>
+        </div>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public DashboardWidgetContext Context { get; set; } = null!;
+    [Parameter] public DashboardWidgetDescriptor Descriptor { get; set; } = null!;
+
+    private static Color StaleColor(long value) => value > 0 ? Color.Warning : Color.Default;
+    private static Color ErrorColor(long value) => value > 0 ? Color.Error : Color.Default;
+}

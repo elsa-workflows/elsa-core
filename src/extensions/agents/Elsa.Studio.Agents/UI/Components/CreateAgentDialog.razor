@@ -1,0 +1,28 @@
+@using Variant = MudBlazor.Variant
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<MudDialog>
+    <DialogContent>
+        <EditForm EditContext="_editContext" OnSubmit="OnSubmitClicked">
+            <MudStack>
+                <MudTextField Label="@Localizer["Name"]" @bind-Value="_agentInputModel.Name" For="@(() => _agentInputModel.Name)" HelperText="@Localizer["The name of the new agent."]" Variant="Variant.Outlined" />
+                <MudTextField Label="@Localizer["Function Name"]" @bind-Value="_agentInputModel.FunctionName" For="@(() => _agentInputModel.FunctionName)" HelperText="@Localizer["The function name for the activity (verb form, e.g., 'Write'). If left empty, defaults to the agent name."]" Variant="Variant.Outlined" />
+                <MudTextField Label="@Localizer["Description"]" @bind-Value="_agentInputModel.Description" For="@(() => _agentInputModel.Description)" HelperText="@Localizer["A brief description of the agent."]" Lines="3" Variant="Variant.Outlined"/>
+                <MudTextField Label="@Localizer["Prompt Template"]" @bind-Value="_agentInputModel.PromptTemplate" For="@(() => _agentInputModel.PromptTemplate)" HelperText="@Localizer["The system prompt template that the agent will use."]" Variant="Variant.Outlined" Lines="4"/>
+                <MudField Label="@Localizer["Skills"]" HelperText="@Localizer["The skills that the agent can use."]">
+                    <MudList T="string" @bind-SelectedValues="SelectedSkills" SelectionMode="SelectionMode.MultiSelection">
+                        @foreach (var skill in AvailableSkills)
+                        {
+                            <MudListItem Text="@skill.Name" Value="@skill.Name"/>
+                        }
+                    </MudList>
+                </MudField>
+            </MudStack>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked">@Localizer["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" OnClick="OnSubmitClicked" Disabled="_submitting">@Localizer["Ok"]</MudButton>
+    </DialogActions>
+</MudDialog>

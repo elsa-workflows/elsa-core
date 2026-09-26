@@ -1,0 +1,3 @@
+namespace Elsa.ServiceBus.Kafka;
+
+public record CreateProducerContext(ProducerDefinition ProducerDefinition, SchemaRegistryDefinition? SchemaRegistryDefinition);

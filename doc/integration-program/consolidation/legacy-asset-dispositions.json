@@ -36,8 +36,14 @@
       "category": "conditional_project_reference_target",
       "owning_workstream": "Feature #8214 build integration; Story #8215 backend/Studio build proof",
       "proposed_disposition": "Carry the conditional Elsa.Studio.Agents to Elsa.Studio.Workflows project reference in a scoped target only if final project-reference builds require it; retire this target after package-reference and project-reference graphs both pass.",
-      "evidence_or_gate": "The source target injects the Studio Workflows project reference only when UseProjectReferences=true and MSBuildProjectName=Elsa.Studio.Agents. The disposable build rewrites local references but does not close the final source-layout gate.",
-      "status": "candidate_rewritten_in_disposable_build"
+      "evidence_or_gate": "The pinned target only injected a Studio Workflows project reference in source mode. #8482 puts the mapped source reference in the Agents Studio project for true mode and restores the public Elsa.Studio.Workflows package for false mode; both graphs, net8/9/10 builds and targeted tests passed. The legacy target is not an active MSBuild input.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/agents-studio-reference-modes.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8482",
+        "merge_commit": "3ee23cd2ac36f4ad3daa8731c6126175d98ae9b6",
+        "reason": "The imported Agents Studio project carries both reviewed conditional references directly; the old external-path target is absent from the active root tree and retained only as an inert .source provenance copy."
+      }
     },
     {
       "original_repository": "extensions",
@@ -71,8 +77,17 @@
       "category": "repository_agent_and_release_guidance",
       "owning_workstream": "Extensions DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
-      "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "evidence_or_gate": "#8480 reviews one release-unit-scoped active agent/playbook for both legacy repositories, with source refs, path/dependency evidence and unit-specific draft paths; publication remains gated.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/consolidated-guidance-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8480",
+        "merge_commit": "87a0ac7055134e8532cca130fa15313a35fe8c69",
+        "active_path": ".github/agents/release-notes.agent.md",
+        "active_blob": "47dfdcbba1e5afd1e4c043e10937ef22c036aa18",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -84,8 +99,17 @@
       "category": "repository_agent_and_release_guidance",
       "owning_workstream": "Extensions DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
-      "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "evidence_or_gate": "#8480 reviews one release-unit-scoped active agent/playbook for both legacy repositories, with source refs, path/dependency evidence and unit-specific draft paths; publication remains gated.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/consolidated-guidance-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8480",
+        "merge_commit": "87a0ac7055134e8532cca130fa15313a35fe8c69",
+        "active_path": ".github/copilot-release-notes-playbook.md",
+        "active_blob": "5554087d542f5eac1eff12ba6fbf305e994478f5",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -97,7 +121,7 @@
       "category": "dependency_update_policy",
       "owning_workstream": "Central dependency maintenance",
       "proposed_disposition": "Merge product-specific package ecosystems and directories into the root Dependabot configuration; avoid duplicate root configurations.",
-      "evidence_or_gate": "The source config is a separate repository policy and has not been validated against the relocated directory layout.",
+      "evidence_or_gate": "The source NuGet policy is represented by the shared root configuration at /src/extensions. The former root policy is excluded from the Core weekly root scan so the Core entry does not scan these product manifests. Review the private Feedz credential and validate the merged configuration before closing this row.",
       "status": "pending_root_configuration_merge"
     },
     {
@@ -110,8 +134,17 @@
       "category": "developer_setup_workflow",
       "owning_workstream": "Central DevEx",
       "proposed_disposition": "Merge the useful setup behavior into one root developer workflow if it remains supported; otherwise retire the duplicate workflow.",
-      "evidence_or_gate": "This workflow is retained as inert source evidence; no consolidated setup parity has been demonstrated.",
-      "status": "pending_devex_review"
+      "evidence_or_gate": "Core's active Copilot setup provides .NET 10; one representative imported Extensions project built across net8.0/net9.0/net10.0. Exact-head setup run 36191113978 passed; this does not prove every imported project builds.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/copilot-setup-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8475",
+        "merge_commit": "af0f659657e91fd4f48ecf3e8c5e870cb0ea05d4",
+        "active_path": ".github/workflows/copilot-setup-steps.yml",
+        "active_blob": "281318c650bf14f5353f4783a555dea3a5e26edc",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -150,7 +183,16 @@
       "owning_workstream": "Central repository/build maintainers",
       "proposed_disposition": "Merge unique Extensions ignore patterns into the consolidated root rules; Core already ignores common bin/obj, packages, and node_modules outputs, so avoid duplicate rules. Update any root-relative patterns for the relocated tree.",
       "evidence_or_gate": "The pinned Extensions file is a broad Visual Studio/.NET ignore set plus its own generated artifacts. Core already covers bin/obj, packages, and node_modules; compare remaining rules against the consolidated paths before retirement.",
-      "status": "pending_path_scope_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/extensions-generated-ignore-policy.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8463",
+        "merge_commit": "24349a9580dc15be04ed96bb440e42b362f8006e",
+        "active_path": ".gitignore",
+        "active_blob": "699fc197820db14c96b04731b11f0cce85529eaf",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -240,9 +282,18 @@
       "mode": "100644",
       "category": "scoped_build_targets",
       "owning_workstream": "Feature #8214 build integration; package owners",
-      "proposed_disposition": "Preserve UseProjectReferences=false as the package-consumer default; opt into local project references only in the dedicated disposable/source-validation build. Retire the old wrapper after both package and project-reference modes are verified.",
-      "evidence_or_gate": "The pinned target sets UseProjectReferences=false. The build-only patch switches scoped imported sources to project references, so that experiment must not become an unreviewed publishing default.",
-      "status": "pending_package_vs_project_reference_validation"
+      "proposed_disposition": "Retire this Extensions-specific target as the active monorepo default: the shared Core root target selects project references for joint development. Keep package-consumer mode explicit with UseProjectReferences=false and retain this source copy as import provenance until the #8260 package-mode gate passes.",
+      "evidence_or_gate": "The active Core root target keeps UseProjectReferences=true; #8481 proves explicit false mode for Slack with an isolated root-config restore and net8/9/10 build. Other package graphs and publisher cutover remain separate gates.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/build-configuration-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8481",
+        "merge_commit": "ad1c58038ab75b46f9828ead9ea364b410ea9f8f",
+        "active_path": "Directory.Build.targets",
+        "active_blob": "2a61364c98e134dfbbf6ba8c5d6498f0bffcb81b",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -267,8 +318,17 @@
       "category": "product_solution_entrypoint",
       "owning_workstream": "Feature #8214 build integration; Story #8215 developer workflow",
       "proposed_disposition": "Keep product-focused developer entrypoints (updated solution or .slnf) where maintainers need them; make root Elsa.sln the explicit full-CI solution or define an equally explicit solution set, then retire the inert original after membership/path parity passes.",
-      "evidence_or_gate": "The pinned solutions are product build entrypoints. Root PR CI and NUKE read Elsa.sln, while current combined build evidence uses generated Consolidated.sln.",
-      "status": "pending_canonical_solution_and_ci"
+      "evidence_or_gate": "The canonical Elsa.sln includes the imported product projects; the focused filter selects exactly its product projects and builds from the consolidated checkout. The old standalone solution remains an inert source-history record.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/product-solution-filters.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8496",
+        "merge_commit": "c8ce20caf88b8c4ed1ad920e7e98f3aa4781d144",
+        "active_path": "Elsa.Extensions.slnf",
+        "active_blob": "ccbdccee71a5ffceed15e1be5a2b3da86426a3a0",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -323,8 +383,8 @@
       "mode": "100644",
       "category": "nuget_source_mapping",
       "owning_workstream": "Build/package maintainers",
-      "proposed_disposition": "Merge the NuGet.org and Elsa Feedz sources and package-source mapping into the one active root config only after validating current package consumers and trust boundaries.",
-      "evidence_or_gate": "Pinned Extensions config maps Elsa and Elsa.* packages to the Elsa preview Feedz source while retaining NuGet.org for all packages; neither source config is active at its legacy/.source path.",
+      "proposed_disposition": "Do not copy or union the broad Extensions Elsa/Elsa.* Feedz mapping. Keep Core's active root config as the monorepo source policy; add only package-specific mappings shown necessary by a clean package-mode restore and reviewed against feed trust. Retain this source file as import provenance until that #8260 restore/feed gate passes.",
+      "evidence_or_gate": "Pinned source blob e3f020a maps Elsa and every Elsa.* package to Elsa preview Feedz. Active Core NuGet.Config blob 1ec3544 instead maps only Elsa.Platform.PackageManifest.Generator and Elsa.Platform.PackageManifest to that Feedz and routes the wildcard to NuGet.org. The Slack package-mode reference to Elsa at ElsaVersion 3.8.0-preview.5557 is documented, but no clean restore against this active mapping or source/trust decision proves whether broader mappings are required; leave this row pending until #8260 records that evidence.",
       "status": "pending_restore_and_feed_review"
     },
     {
@@ -357,7 +417,16 @@
       "owning_workstream": "Extensions product documentation",
       "proposed_disposition": "Preserve the product overview in a named Extensions documentation page, but refresh the status table, repository paths, and release links before presenting it as current. Do not import stale roadmap claims into the root landing page.",
       "evidence_or_gate": "Pinned Extensions README contains a planned-extension status/catalog and links into the old repository paths; source copy remains inert.",
-      "status": "pending_document_refresh"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/legacy-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8459",
+        "merge_commit": "c01f9c53f07a3db6ec48b15ea97e784272363df9",
+        "active_path": "doc/extensions/README.md",
+        "active_blob": "b1300ddb931539e697d65db0d56c514e453996bb",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -1530,9 +1599,18 @@
       "mode": "100644",
       "category": "repository_ignore_rules",
       "owning_workstream": "Central repository/build maintainers",
-      "proposed_disposition": "Keep these exclusions scoped to the Studio Docker build context or translate them to the consolidated Docker context; do not apply them to a broader root context without checking the image inputs.",
-      "evidence_or_gate": "The pinned rules exclude bin/obj, node_modules, Docker files, LICENSE, and README. Core has no root .dockerignore; verify Docker build context and ensure broad root exclusions do not remove required legal/docs inputs.",
-      "status": "pending_path_scope_review"
+      "proposed_disposition": "Use the consolidated root .dockerignore for repository-root Docker builds. Do not copy these standalone Studio exclusions into the broader root context because they exclude root README.md, LICENSE, and Dockerfile inputs.",
+      "evidence_or_gate": "At Studio tip 099402226daba80e473a306bbd1243b8994465b8, this path still matches the pinned blob. docker-ca.yml and Compose use repository-root context, where the consolidated root .dockerignore from #8461 applies. The checked-in scripts/docker/build-and-run-all-in-one-web-docker.sh uses a scripts/docker context without required Dockerfile inputs; root ignore policy does not apply to that script. No checked-in invocation uses the old standalone Studio context.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-readme-and-dockerignore-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8461",
+        "merge_commit": "eab0bbf825ff42f4e7ba344dfdf0ae2fd9f094c0",
+        "active_path": ".dockerignore",
+        "active_blob": "9fd202e8fac99839317ea15a5b6a9fe600081ab6",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -1566,16 +1644,16 @@
       "category": "repository_agent_and_release_guidance",
       "owning_workstream": "Studio DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
-      "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
+      "evidence_or_gate": "#8480 reviews one release-unit-scoped active agent/playbook for both legacy repositories, with source refs, path/dependency evidence and unit-specific draft paths; publication remains gated.",
       "status": "represented_in_core",
       "completion": {
-        "decision_path": "doc/integration-program/consolidation/identical-studio-agent-assets.md",
-        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8453",
-        "merge_commit": "84ee5d9e0776609a879c8e4938a174b5d4d89a00",
+        "decision_path": "doc/integration-program/consolidation/consolidated-guidance-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8480",
+        "merge_commit": "87a0ac7055134e8532cca130fa15313a35fe8c69",
         "active_path": ".github/agents/release-notes.agent.md",
-        "active_blob": "9c91f9e69c6c224629fa6a893d34bcde6d57a36a",
+        "active_blob": "47dfdcbba1e5afd1e4c043e10937ef22c036aa18",
         "active_mode": "100644",
-        "representation": "identical"
+        "representation": "expanded"
       }
     },
     {
@@ -1698,8 +1776,17 @@
       "category": "repository_agent_and_release_guidance",
       "owning_workstream": "Studio DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
-      "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "evidence_or_gate": "#8479 updates active Copilot guidance for consolidated source, Studio assets and release boundaries; the pinned Studio file remains archived.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/consolidated-guidance-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8479",
+        "merge_commit": "e2711ab0def8be84ef8cf1d7c17f82e153cacc36",
+        "active_path": ".github/copilot-instructions.md",
+        "active_blob": "7bb464d4dfc5f8847780f7c5d9e7c89a12fb686b",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -1711,8 +1798,17 @@
       "category": "repository_agent_and_release_guidance",
       "owning_workstream": "Studio DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
-      "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "evidence_or_gate": "#8480 reviews one release-unit-scoped active agent/playbook for both legacy repositories, with source refs, path/dependency evidence and unit-specific draft paths; publication remains gated.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/consolidated-guidance-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8480",
+        "merge_commit": "87a0ac7055134e8532cca130fa15313a35fe8c69",
+        "active_path": ".github/copilot-release-notes-playbook.md",
+        "active_blob": "5554087d542f5eac1eff12ba6fbf305e994478f5",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -1724,7 +1820,7 @@
       "category": "dependency_update_policy",
       "owning_workstream": "Central dependency maintenance",
       "proposed_disposition": "Merge product-specific package ecosystems and directories into the root Dependabot configuration; avoid duplicate root configurations.",
-      "evidence_or_gate": "The source config is a separate repository policy and has not been validated against the relocated directory layout.",
+      "evidence_or_gate": "The source NuGet policy is represented by the shared root configuration at /src/studio. The former root policy is excluded from the Core weekly root scan so the Core entry does not scan these product manifests. Review the private Feedz credential and validate the merged configuration before closing this row.",
       "status": "pending_root_configuration_merge"
     },
     {
@@ -1869,8 +1965,17 @@
       "category": "developer_setup_workflow",
       "owning_workstream": "Central DevEx",
       "proposed_disposition": "Merge the useful setup behavior into one root developer workflow if it remains supported; otherwise retire the duplicate workflow.",
-      "evidence_or_gate": "This workflow is retained as inert source evidence; no consolidated setup parity has been demonstrated.",
-      "status": "pending_devex_review"
+      "evidence_or_gate": "Core's active Copilot setup provides .NET 10 and Node 22. Both setup steps passed in exact-head run 36191113978; Studio ClientLib run 36189257282 passed separately. This is setup parity, not a full Copilot agent session.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/copilot-setup-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8475",
+        "merge_commit": "af0f659657e91fd4f48ecf3e8c5e870cb0ea05d4",
+        "active_path": ".github/workflows/copilot-setup-steps.yml",
+        "active_blob": "281318c650bf14f5353f4783a555dea3a5e26edc",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -1909,7 +2014,16 @@
       "owning_workstream": "Central repository/build maintainers",
       "proposed_disposition": "Merge Studio-specific generated-output exclusions into the consolidated ignore rules, keeping paths anchored to the relocated Studio subtree where needed. Reuse Core's existing common bin/obj, packages, and node_modules rules.",
       "evidence_or_gate": "The pinned Studio rules include .specify/feature.json, the CustomElements WASM output, and a React sample generated public directory. Core already covers common bin/obj, packages, and node_modules outputs; verify the product-specific paths after relocation.",
-      "status": "pending_path_scope_review"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-generated-ignore-policy.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8460",
+        "merge_commit": "b12a6c1b7a00ae49c2556dc85375218a111b7655",
+        "active_path": ".gitignore",
+        "active_blob": "699fc197820db14c96b04731b11f0cce85529eaf",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -2736,7 +2850,16 @@
       "owning_workstream": "Central agent-instructions maintainers",
       "proposed_disposition": "Merge only still-useful Studio repository structure/context into root AGENTS.md and feature documentation; keep one authoritative repository instruction file.",
       "evidence_or_gate": "The pinned Studio instructions require feature-neutral repository guidance and feature-specific plans under specs; root instructions already govern the consolidated repository.",
-      "status": "pending_root_instruction_merge"
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-scoped-policy.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8417",
+        "merge_commit": "a3f00315dff2f54c3ceb8368afe482a3024c30c8",
+        "active_path": "src/studio/AGENTS.md",
+        "active_blob": "1c06d45180db59423f3ea98c428a485912b690b0",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -2796,8 +2919,17 @@
       "category": "product_solution_entrypoint",
       "owning_workstream": "Feature #8214 build integration; Story #8215 developer workflow",
       "proposed_disposition": "Keep product-focused developer entrypoints (updated solution or .slnf) where maintainers need them; make root Elsa.sln the explicit full-CI solution or define an equally explicit solution set, then retire the inert original after membership/path parity passes.",
-      "evidence_or_gate": "The pinned solutions are product build entrypoints. Root PR CI and NUKE read Elsa.sln, while current combined build evidence uses generated Consolidated.sln.",
-      "status": "pending_canonical_solution_and_ci"
+      "evidence_or_gate": "The canonical Elsa.sln includes the imported product projects; the focused filter selects exactly its product projects and builds from the consolidated checkout. The old standalone solution remains an inert source-history record.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/product-solution-filters.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8496",
+        "merge_commit": "c8ce20caf88b8c4ed1ad920e7e98f3aa4781d144",
+        "active_path": "Elsa.Studio.slnf",
+        "active_blob": "c50ca6e529413be2b29108f2c3f745a8f60b1272",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -2887,9 +3019,18 @@
       "mode": "100644",
       "category": "product_readme",
       "owning_workstream": "Studio product documentation",
-      "proposed_disposition": "Preserve Studio-specific user/developer material at a named Studio documentation path and update links for the consolidated tree; keep the root README focused on repository navigation.",
-      "evidence_or_gate": "This remains the Studio repository landing page in the pinned source; no consolidated documentation move is recorded.",
-      "status": "pending_document_refresh"
+      "proposed_disposition": "Use the consolidated Studio developer guide at doc/studio/README.md instead of the standalone repository landing page. Keep the exact upstream README in the inert .source provenance tree.",
+      "evidence_or_gate": "At Studio tip 099402226daba80e473a306bbd1243b8994465b8, this path still matches the pinned blob. The active guide uses the canonical Elsa.sln, Node 22 ClientLib build script, and current src/studio paths; Core README links to it. The standalone clone, solution, and project paths no longer describe the imported layout.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/studio-readme-and-dockerignore-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8459",
+        "merge_commit": "c01f9c53f07a3db6ec48b15ea97e784272363df9",
+        "active_path": "doc/studio/README.md",
+        "active_blob": "1bcbeee61947bc6b56b79a5d8a9b97d9a83252e7",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",

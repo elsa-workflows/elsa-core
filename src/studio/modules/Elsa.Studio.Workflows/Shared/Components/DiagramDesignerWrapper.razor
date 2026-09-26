@@ -1,0 +1,40 @@
+@using Elsa.Studio.Workflows.UI.Contracts
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<MudPaper Class="ma-2" Elevation="0" Outlined="true">
+    <MudToolBar Dense="true">
+        @{
+            if (_diagramDesigner is IDiagramDesignerToolboxProvider toolboxProvider)
+            {
+                foreach (var toolboxComponent in toolboxProvider.GetToolboxItems(IsReadOnly))
+                {
+                    @toolboxComponent
+                }
+            }
+        }
+        <MudSpacer></MudSpacer>
+        @CustomToolbarItems
+    </MudToolBar>
+    <MudProgressLinear Style="margin-top: -4px;" Color="@(IsProgressing? Color.Primary: Color.Transparent)" Indeterminate="true" />
+</MudPaper>
+<div class="ma-2">
+    <MudBreadcrumbs Items="_breadcrumbItems" Style="padding: 6px;">
+        <ItemTemplate>
+            <MudLink Color="Color.Default" OnClick="@(_ => OnBreadcrumbItemClicked(context))">
+                @if (context.Icon != null)
+                {
+                    <MudIcon Icon="@context.Icon"/>
+                }
+                @context.Text
+            </MudLink>
+
+        </ItemTemplate>
+        <SeparatorTemplate>
+            <div class="d-flex align-content-center">
+                <MudIcon Icon="@Icons.Material.Outlined.NavigateNext"></MudIcon>
+            </div>
+        </SeparatorTemplate>
+    </MudBreadcrumbs>
+</div>
+@DisplayDesigner()

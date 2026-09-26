@@ -2,9 +2,33 @@
 
 Program #8194, Feature #8214, Story #8286, Task #8287. This proposal records what must happen to the original build, workflow, policy, documentation, and colliding package files that the history rehearsal retains under `doc/integration-program/legacy/**/*.source`.
 
-The [machine-readable ledger](legacy-asset-dispositions.json) has one entry per retained file. It carries the source repository/path, mapped path, exact source commit, Git blob and mode, category, owning workstream, proposed disposition, evidence or gate, and current status. Its pins are the rehearsal inputs—Core `076f022cc174d497af26fc8e26414970e61a79b1`, Extensions `33fa0bfd28c7585240e3d4f665058c067b17e287`, and Studio `9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822`—not a claim that these are current upstream tips. Eighty-six rows now have structured completion evidence for an active Core representation or explicit retirement; the other 77 remain pending their own gates. The 50 completed Studio specification-tooling rows cite the reviewed #8432 decision and its merge commit, with each active Core-root Git blob and mode pinned. A candidate represented in the disposable build patch is still not integrated into the history-bearing source tree.
+The [machine-readable ledger](legacy-asset-dispositions.json) has one entry per retained file. It carries the source repository/path, mapped path, exact source commit, Git blob and mode, category, owning workstream, proposed disposition, evidence or gate, and current status. Its pins are the rehearsal inputs—Core `076f022cc174d497af26fc8e26414970e61a79b1`, Extensions `33fa0bfd28c7585240e3d4f665058c067b17e287`, and Studio `9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822`—not a claim that these are current upstream tips. One hundred rows now have structured completion evidence for an active Core representation or explicit retirement; the other 63 remain pending their own gates. The 50 completed Studio specification-tooling rows cite the reviewed #8432 decision and its merge commit, with each active Core-root Git blob and mode pinned. A candidate represented in the disposable build patch is still not integrated into the history-bearing source tree.
 
-The [E96 current-tip refresh](current-tip-e96-legacy-assets.md) compares the same 163 assets with the newer history-import receipt and verifies the materialized draft import without changing this frozen ledger. Subsequent reviewed decisions are recorded separately for [Studio Spec Kit assets](studio-spec-asset-representation.md), [Studio-scoped guidance](studio-scoped-policy.md), the [Studio design baseline and historical release note](studio-document-assets.md), [legacy solution settings and README template](legacy-devex-asset-dispositions.md), [Extensions NUKE assets](nuke-build-asset-dispositions.md), [root editor policy and PR template](root-editor-and-pr-template-dispositions.md), [identical Studio agent/prompt assets](identical-studio-agent-assets.md), the [consolidated NUKE tool project](nuke-tool-project-disposition.md), and [identical NUKE wrappers/tool editor assets](identical-nuke-entrypoint-assets.md). These supplements update those assets' disposition without rewriting the original source evidence.
+The [E96 current-tip refresh](current-tip-e96-legacy-assets.md) compares the same 163 assets with the newer history-import receipt and verifies the materialized draft import without changing this frozen ledger. Subsequent reviewed decisions are recorded separately for [Studio Spec Kit assets](studio-spec-asset-representation.md), [Studio-scoped guidance](studio-scoped-policy.md), the [Studio design baseline and historical release note](studio-document-assets.md), [legacy solution settings and README template](legacy-devex-asset-dispositions.md), [Extensions NUKE assets](nuke-build-asset-dispositions.md), [root editor policy and PR template](root-editor-and-pr-template-dispositions.md), [identical Studio agent/prompt assets](identical-studio-agent-assets.md), the [consolidated NUKE tool project](nuke-tool-project-disposition.md), and [identical NUKE wrappers/tool editor assets](identical-nuke-entrypoint-assets.md), plus the [Studio README and Docker context dispositions](studio-readme-and-dockerignore-dispositions.md). These supplements update those assets' disposition without rewriting the original source evidence.
+
+The two Extensions root build settings have a path-specific comparison
+with the active Core policy in
+[build configuration dispositions](build-configuration-dispositions.md).
+The old `Directory.Build.targets` default is now represented by the active
+Core root target after the bounded Slack package-mode proof in #8481. The
+archived source blobs remain unchanged; broader package-mode compatibility and
+the old NuGet feed mapping still require review under #8260.
+
+The archived [Studio Workflows reference target](agents-studio-reference-modes.md)
+is retired from the active tree after #8482 put both source and package modes
+directly in the imported Agents Studio project. Its `.source` copy remains for
+the exact history receipt.
+
+The reviewed [consolidated guidance dispositions](consolidated-guidance-asset-dispositions.md)
+record Studio Copilot instructions and one release-unit-scoped notes workflow
+for both archived repositories, including the changed active Studio agent
+blob after #8480. They are documentation representations, not publisher
+cutover evidence.
+
+The archived Extensions and Studio Copilot setup workflows are represented by
+the reviewed [combined SDK and Node setup](copilot-setup-dispositions.md), with
+its exact-head setup run and active workflow blob recorded separately from
+full solution or agent-session acceptance.
 
 The current inventory contains **163 assets**: 80 from Extensions and 83 from Studio. The 47 Extensions `src/modules/secrets/**` files are the five colliding package projects. The remaining asset families are Extensions build/NUKE inputs (13), GitHub automation (6), root docs/configuration (14), and Studio agent skills (14), GitHub assets (19), Spec Kit workflows (36), and root docs/configuration (14). The JSON ledger is the authoritative path-by-path classification.
 
@@ -14,8 +38,15 @@ It settles only those two icon rows, not package publishing or cutover.
 
 The [Studio static-source ignore policy](studio-ignore-policy.md) narrows the
 active root `wwwroot/` rule for authored Studio files while keeping verified
-generated outputs ignored. The retained ignore-file ledger rows remain pending
-until their complete path-specific disposition is reviewed and recorded.
+generated outputs ignored. The retained Extensions and Studio ignore-file
+rows now point to their reviewed, path-specific active representation; their `.source` copies remain
+as provenance in the draft history import.
+
+The retained Extensions README is represented by the reviewed
+[active Extensions overview](../../extensions/README.md) from #8459. That page
+updates repository paths and separates historical provider plans from the
+current integration catalog and package-release gate. Its original `.source`
+copy remains immutable import provenance.
 
 Inspection resolved several routine choices without treating them as completed integration:
 
@@ -23,9 +54,10 @@ Inspection resolved several routine choices without treating them as completed i
 - The Extensions and Studio icons are byte-identical to Core's root `icon.png` (SHA-256 `82fd76d734d59efc6132af0b0b999146254fa5a296ea5d64f85597bb1cda524e`). Scoped package metadata can use the shared asset only after the packed packages prove the icon is present.
 - `SHELL_FEATURES_MIGRATION.md` is zero bytes and has no content to port. Record its explicit retirement after confirming no tooling or links depend on the path.
 - Keep Extensions and Studio package-version baselines scoped. The Studio `BpmnModelVersion` also feeds its `PackageDownload` and generated BPMN types. Do not union central package versions without target-framework and package-consumer evidence.
-- The Extensions target sets `UseProjectReferences=false` by default; the disposable build opts into local project references. Preserve that separation so a source build does not silently become the package-consumer or publisher configuration. The `.build/ElsaStudio.ProjectReferences.targets` source conditionally supplies `Elsa.Studio.Workflows` to `Elsa.Studio.Agents`; carry it into an active scoped target only if final evaluated references still require it.
+- The Extensions root target sets `UseProjectReferences=false`, while active Core `Directory.Build.targets` sets it to `true` for the consolidated developer workspace. Retire the Extensions file as a competing monorepo default, but keep package-mode verification explicit with `UseProjectReferences=false`; the #8260 package-consumer gate remains open. The `.build/ElsaStudio.ProjectReferences.targets` source conditionally supplies `Elsa.Studio.Workflows` to `Elsa.Studio.Agents`; carry it into an active scoped target only if final evaluated references still require it.
+- The Extensions root `NuGet.Config` maps `Elsa` and every `Elsa.*` package to Elsa preview Feedz, while active Core maps only its two PackageManifest IDs there and sends wildcard packages to NuGet.org. Do not union these maps until package-mode consumer restore and feed/trust requirements are evidenced; the #8260 gate remains open.
 - The Extensions Nuke tool project is intentionally isolated: it disables artifacts output, blocks parent `Directory.Build.targets` imports, and pins its own Nuke tool packages including explicit security overrides. Reconcile those build-tool settings with the root tool project, rather than applying them repository-wide or copying old pins unreviewed.
-- Core already ignores common `bin/obj`, `packages`, and `node_modules` outputs; merge only the unique Extensions/Studio ignore patterns with paths updated. Keep Studio's Docker exclusions scoped to its actual image context: its source `.dockerignore` also excludes `LICENSE` and `README`, and the Core root has no `.dockerignore`.
+- Use the consolidated root `.dockerignore` for repository-root Docker contexts. Studio's former standalone `.dockerignore` also excludes root `LICENSE`, `README`, and Dockerfile inputs; copying those rules to the broader context would not be path-scoped. The exact root-context evidence and active blob are recorded in the [Studio README and Docker context disposition](studio-readme-and-dockerignore-dispositions.md).
 - Studio's pinned NuGet config declares `webhooks-core.feedz.io`, while its package-source mapping names `webhooks-coreo.feedz.io`. Mapped source contains a `WebhooksCore` workbench package reference and use in `Elsa.OrchardCore`; resolve the feed dependency, correct the key if retained, and test a clean restore before incorporating the mapping. Do not copy the config wholesale.
 - The approved Studio design system is product guidance worth preserving at a named Studio documentation path. The Extensions status README and Studio performance note contain old repository paths or time-sensitive claims; refresh them before presenting them as current. Keep the dated Studio release note as history, not active release guidance.
 

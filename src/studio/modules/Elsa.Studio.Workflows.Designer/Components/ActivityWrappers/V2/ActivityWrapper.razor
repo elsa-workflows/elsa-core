@@ -1,0 +1,100 @@
+@using System.Text.Json
+@using Elsa.Api.Client.Resources.ActivityDescriptors.Enums
+@using Elsa.Api.Client.Extensions
+@using Elsa.Studio.Workflows.Domain.Contexts
+@inherits ActivityWrapperBase
+@inject ILocalizer Localizer
+
+@{
+    var activityClass = CanStartWorkflow ? "elsa-activity pa-2 is-starting-point" : "elsa-activity pa-2";
+    var activityStyle = $"--elsa-activity-accent: {Color};";
+    var metadata = Stats?.Metadata;
+    var hasRetryAttempts = metadata != null && metadata.TryGetValue("HasRetryAttempts", out var hasRetryAttemptsValue) && hasRetryAttemptsValue is JsonElement { ValueKind: JsonValueKind.True };
+    var color = Stats == null ? MudBlazor.Color.Transparent : Stats.Faulted ? MudBlazor.Color.Error : Stats.Blocked ? MudBlazor.Color.Warning : Stats.Uncompleted > Stats.Completed ? MudBlazor.Color.Info : Stats.Completed > 0 ? MudBlazor.Color.Success : MudBlazor.Color.Default;
+    var content = Stats == null ? null : Stats.Faulted || Stats.Blocked ? Stats.Started.ToString() : Stats.Completed.ToString();
+    var icon = Stats == null ? null : content == null ? Stats.Blocked ? Icons.Material.Outlined.HourglassTop : Stats.Uncompleted > 0 ? Icons.Material.Outlined.PlayArrow : null : null;
+    var showBadge = Stats != null;
+    var cssClass = hasRetryAttempts ? "elsa-activity-wrapper-badge has-retries" : "elsa-activity-wrapper-badge";
+    var visiblePorts = Ports.Where(x => x is { Type: PortType.Embedded, IsBrowsable: true }).ToList();
+    var isTrigger = ActivityDescriptor?.Kind == ActivityKind.Trigger;
+    var toggleCanStartText = isTrigger ? "Trigger" : "Starting point";
+}
+
+<MudBadge Color="color" Content="content" Overlap="true" Icon="@icon" Style="width: 100%; height: 100%;"
+          Visible="showBadge" Class="@cssClass">
+    <MudPaper
+        Class="@activityClass"
+        Style="@activityStyle"
+        Outlined="true">
+
+        <MudStack>
+
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                <!-- Icon -->
+                @if (Icon != null)
+                {
+                    <div class="activity-icon">
+                        <MudIcon Icon="@Icon" Size="Size.Small"/>
+                    </div>
+                }
+
+                <!-- Labels + Embedded ports + Description -->
+                <div class="activity-content">
+                    <MudText Typo="Typo.subtitle1" Class="activity-label">@Localizer[Label]</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="activity-type">@Localizer[TypeName]</MudText>
+                </div>
+
+                <!-- Menu -->
+                <div class="activity-menu">
+                    <!-- hidden until we have better integration between X6 node handling and events. -->
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Style="visibility: hidden;">
+                        <ActivatorContent>
+                            <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small"></MudIconButton>
+                        </ActivatorContent>
+                        <ChildContent>
+                            <MudMenuItem Icon="@Icons.Material.Outlined.Check" IconColor="MudBlazor.Color.Primary" Label="@toggleCanStartText"/>
+                            <MudMenuItem Icon="@Icons.Material.Outlined.Delete" Label="Remove"/>
+                        </ChildContent>
+                    </MudMenu>
+                </div>
+            </MudStack>
+
+            @if (visiblePorts.Any() && ActivityDescriptor != null)
+            {
+                <div class="activity-ports">
+                    @foreach (var port in visiblePorts)
+                    {
+                        var portName = port.Name;
+                        var providerContext = new PortProviderContext(ActivityDescriptor, Activity);
+                        var portProvider = ActivityPortService.GetProvider(providerContext);
+                        var childActivity = portProvider.ResolvePort(portName, new(ActivityDescriptor, Activity));
+
+                        @if (childActivity != null)
+                        {
+                            <MudField Label="@port.DisplayName" Variant="Variant.Outlined" Margin="Margin.None" Style="background-color: var(--mud-palette-surface); margin:0;">
+                                <div id="@($"activity-{childActivity.GetId()}")"
+                                     class="embedded-port embedded-port-occupied cursor-pointer"
+                                     data-port-name="@port.Name">
+                                    <EmbeddedActivityWrapper ActivityId="@childActivity.GetId()" Activity="childActivity" IsSelected="@(SelectedPortName == port.Name)"/>
+                                </div>
+                            </MudField>
+                        }
+                        else
+                        {
+                            <MudPaper Elevation="0" Class="embedded-port pa-2 cursor-pointer d-inline-flex align-center" data-port-name="@port.Name" Style="border: 1px dashed var(--mud-palette-lines-default)">
+                                @port.DisplayName
+                            </MudPaper>
+                        }
+                    }
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Description) && ShowDescription)
+            {
+                <div>
+                    <MudText Typo="Typo.caption" Class="activity-description">@Description</MudText>
+                </div>
+            }
+        </MudStack>
+    </MudPaper>
+</MudBadge>

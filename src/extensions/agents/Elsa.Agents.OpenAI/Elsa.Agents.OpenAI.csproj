@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Provides OpenAI integration with Elsa Agents</Description>
+        <PackageTags>elsa extension module agents openai</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI"/>
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+        <ProjectReference Include="../../../modules/Elsa.Common/Elsa.Common.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+        <ProjectReference Include="../../../modules/Elsa.Common/Elsa.Common.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../Elsa.Agents/Elsa.Agents.csproj"/>
+    </ItemGroup>
+</Project>

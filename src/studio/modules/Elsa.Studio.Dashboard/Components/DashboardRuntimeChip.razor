@@ -1,0 +1,15 @@
+<MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@DashboardUiMapper.RuntimeColor(Runtime.Status)" Icon="@Icon">
+    @DashboardUiMapper.RuntimeLabel(Runtime.Status)
+</MudChip>
+
+@code {
+    [Parameter] public DashboardRuntimeStatus Runtime { get; set; } = new();
+
+    private string Icon => Runtime.Status switch
+    {
+        DashboardRuntimeStatusKeys.AcceptingWork => Icons.Material.Outlined.CheckCircle,
+        DashboardRuntimeStatusKeys.Paused => Icons.Material.Outlined.PauseCircle,
+        DashboardRuntimeStatusKeys.Draining => Icons.Material.Outlined.WaterDrop,
+        _ => Icons.Material.Outlined.CloudOff
+    };
+}

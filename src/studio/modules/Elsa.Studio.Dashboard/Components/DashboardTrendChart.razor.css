@@ -1,0 +1,27 @@
+.dashboard-trend-chart-frame {
+    width: 100%;
+    min-width: 0;
+    height: 260px;
+}
+
+.dashboard-trend-chart-frame ::deep .dashboard-trend-chart {
+    width: 100% !important;
+    min-width: 0;
+}
+
+.dashboard-trend-chart-frame ::deep .dashboard-trend-chart svg {
+    width: 100% !important;
+    max-width: 100%;
+}
+
+.dashboard-trend-chart-frame ::deep .mud-chart-legend {
+    width: 100%;
+    justify-content: center;
+    margin-top: 6px;
+}
+
+@media (max-width: 720px) {
+    .dashboard-trend-chart-frame {
+        height: 260px;
+    }
+}

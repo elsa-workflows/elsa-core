@@ -1,0 +1,313 @@
+{
+  "schemaVersion": 2,
+  "issue": 8286,
+  "baseImportHead": "bb022aabb64249307a43f420b803faa7f32a58cc",
+  "mappedDeltaCommit": "9d3e48fe615178119dfab39cff5ca6f767af213f",
+  "historyJoinCommit": "d1d785fad7f160bdd34b7258639f100531336a92",
+  "overlayCommit": "4f953b202331d29b056fbdf48a2aa0bb50bed1e9",
+  "oldUpstreamCommits": {
+    "extensions": "1c134e00f50a7ac36ea61e6c442dc3c5148db049",
+    "studio": "f0eeb3c7428443b09512049fe890635fa4f7b427"
+  },
+  "newUpstreamCommits": {
+    "extensions": "9361c80e2ea56ccf71118fb53d6fd8f3d0fbbbf0",
+    "studio": "f0eeb3c7428443b09512049fe890635fa4f7b427"
+  },
+  "mappedChanges": [
+    {
+      "repository": "extensions",
+      "status": "M",
+      "source": "Elsa.Extensions.sln",
+      "mappedPath": "doc/integration-program/legacy/extensions/Elsa.Extensions.sln.source",
+      "oldSource": {
+        "blob": "c38e1696d9b749db089839b74de411aecad33217",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "c38e1696d9b749db089839b74de411aecad33217",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "56758f86caa3362be3b2dedfcae8477ebedbd3de",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "56758f86caa3362be3b2dedfcae8477ebedbd3de",
+        "mode": "100644"
+      }
+    },
+    {
+      "repository": "extensions",
+      "status": "M",
+      "source": "src/modules/persistence/Elsa.Persistence.Dapper/Abstractions/SqlDialectBase.cs",
+      "mappedPath": "src/extensions/persistence/Elsa.Persistence.Dapper/Abstractions/SqlDialectBase.cs",
+      "oldSource": {
+        "blob": "e06b72ef1cb1880732483e9f074d91df0a34dc62",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "e06b72ef1cb1880732483e9f074d91df0a34dc62",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "0a7378ee6c7eb3744b2d2e50372caf6c617f463b",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "0a7378ee6c7eb3744b2d2e50372caf6c617f463b",
+        "mode": "100644"
+      }
+    },
+    {
+      "repository": "extensions",
+      "status": "M",
+      "source": "src/modules/persistence/Elsa.Persistence.Dapper/Contracts/ISqlDialect.cs",
+      "mappedPath": "src/extensions/persistence/Elsa.Persistence.Dapper/Contracts/ISqlDialect.cs",
+      "oldSource": {
+        "blob": "a2c2b9af3c3d322e2f856d1f2f374451619f5557",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "a2c2b9af3c3d322e2f856d1f2f374451619f5557",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "6912440ef935ae85cdc0d4989000b586b4924753",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "6912440ef935ae85cdc0d4989000b586b4924753",
+        "mode": "100644"
+      }
+    },
+    {
+      "repository": "extensions",
+      "status": "M",
+      "source": "src/modules/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj",
+      "mappedPath": "src/extensions/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj",
+      "oldSource": {
+        "blob": "35cb6d43f2c4ae42f76ee631c3d3b8565e57511b",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "653579dbf8409f973ad6ec4c1b19cd67f43e246a",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "567cb641de0a8b680c1681d5b641369cda5fe9a7",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "a06a99a6ac47a87ddab648c5bd49712f70c36b42",
+        "mode": "100644"
+      }
+    },
+    {
+      "repository": "extensions",
+      "status": "M",
+      "source": "src/modules/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryBuilderExtensions.cs",
+      "mappedPath": "src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryBuilderExtensions.cs",
+      "oldSource": {
+        "blob": "c6ccc98f37e75434365a098b9acfafa5bb9ee950",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "c6ccc98f37e75434365a098b9acfafa5bb9ee950",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "8892ed91405db03b91380d7d60f4d439234ee605",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "8892ed91405db03b91380d7d60f4d439234ee605",
+        "mode": "100644"
+      }
+    },
+    {
+      "repository": "extensions",
+      "status": "M",
+      "source": "src/modules/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowInstanceStore.cs",
+      "mappedPath": "src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowInstanceStore.cs",
+      "oldSource": {
+        "blob": "6709b4f42048b68dd86bb063fa93f160474d6293",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "6709b4f42048b68dd86bb063fa93f160474d6293",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "133b0c63678b73b279aeb84ed8287ae0c07645d0",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "133b0c63678b73b279aeb84ed8287ae0c07645d0",
+        "mode": "100644"
+      }
+    },
+    {
+      "repository": "extensions",
+      "status": "M",
+      "source": "src/modules/persistence/Elsa.Persistence.Dapper/Services/Store.cs",
+      "mappedPath": "src/extensions/persistence/Elsa.Persistence.Dapper/Services/Store.cs",
+      "oldSource": {
+        "blob": "78cceb11392701e1f85a9b2bab88812f36614f97",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "78cceb11392701e1f85a9b2bab88812f36614f97",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "91d1db4793195583c50638da4c21e838e580e23f",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "91d1db4793195583c50638da4c21e838e580e23f",
+        "mode": "100644"
+      }
+    },
+    {
+      "repository": "extensions",
+      "status": "M",
+      "source": "src/modules/persistence/Elsa.Persistence.Elasticsearch/Common/ElasticStore.cs",
+      "mappedPath": "src/extensions/persistence/Elsa.Persistence.Elasticsearch/Common/ElasticStore.cs",
+      "oldSource": {
+        "blob": "1a8069fadd0467f60716e4c552c1a43c7d01f4b8",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "1a8069fadd0467f60716e4c552c1a43c7d01f4b8",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "d1bb15a48c4fd4acfa21c2ac68d7b3e2f34842d4",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "d1bb15a48c4fd4acfa21c2ac68d7b3e2f34842d4",
+        "mode": "100644"
+      }
+    },
+    {
+      "repository": "extensions",
+      "status": "M",
+      "source": "src/modules/persistence/Elsa.Persistence.Elasticsearch/Modules/Management/WorkflowInstanceStore.cs",
+      "mappedPath": "src/extensions/persistence/Elsa.Persistence.Elasticsearch/Modules/Management/WorkflowInstanceStore.cs",
+      "oldSource": {
+        "blob": "261cc286180a908386184df15e13a71a5900ae13",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "261cc286180a908386184df15e13a71a5900ae13",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "5a5ec15004dec4c816d2712fc450d9431f7ccf6f",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "5a5ec15004dec4c816d2712fc450d9431f7ccf6f",
+        "mode": "100644"
+      }
+    },
+    {
+      "repository": "extensions",
+      "status": "M",
+      "source": "src/modules/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowInstanceStore.cs",
+      "mappedPath": "src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowInstanceStore.cs",
+      "oldSource": {
+        "blob": "55e9ede91b781d1e34e16f372d7f241c6c0bdfac",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "55e9ede91b781d1e34e16f372d7f241c6c0bdfac",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "03c1db3baa32f782c6e772b37f0d6da52784abe5",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "03c1db3baa32f782c6e772b37f0d6da52784abe5",
+        "mode": "100644"
+      }
+    },
+    {
+      "repository": "extensions",
+      "status": "A",
+      "source": "test/modules/persistence/Elsa.Dapper.UnitTests/DapperWorkflowInstanceStoreTests.cs",
+      "mappedPath": "test/extensions/modules/persistence/Elsa.Dapper.UnitTests/DapperWorkflowInstanceStoreTests.cs",
+      "oldSource": null,
+      "oldMapped": null,
+      "newSource": {
+        "blob": "77808ab8219e34692a66abd0569379f397490833",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "77808ab8219e34692a66abd0569379f397490833",
+        "mode": "100644"
+      }
+    },
+    {
+      "repository": "extensions",
+      "status": "A",
+      "source": "test/modules/persistence/Elsa.Dapper.UnitTests/Elsa.Dapper.UnitTests.csproj",
+      "mappedPath": "test/extensions/modules/persistence/Elsa.Dapper.UnitTests/Elsa.Dapper.UnitTests.csproj",
+      "oldSource": null,
+      "oldMapped": null,
+      "newSource": {
+        "blob": "c13424f6a29ac65286b6935c681a08ec140aca32",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "2dc9b0f670e473b66b0ba29eab36f44b2ec2aebb",
+        "mode": "100644"
+      }
+    },
+    {
+      "repository": "extensions",
+      "status": "A",
+      "source": "test/modules/persistence/Elsa.Dapper.UnitTests/TryMarkInterruptedQueryTests.cs",
+      "mappedPath": "test/extensions/modules/persistence/Elsa.Dapper.UnitTests/TryMarkInterruptedQueryTests.cs",
+      "oldSource": null,
+      "oldMapped": null,
+      "newSource": {
+        "blob": "b59114bef506bd66a77d0532b70caaba358abb7f",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "b59114bef506bd66a77d0532b70caaba358abb7f",
+        "mode": "100644"
+      }
+    },
+    {
+      "repository": "extensions",
+      "status": "A",
+      "source": "test/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowInstanceStoreTests.cs",
+      "mappedPath": "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowInstanceStoreTests.cs",
+      "oldSource": null,
+      "oldMapped": null,
+      "newSource": {
+        "blob": "9fa85c03ee00a8f23f885270785dc14963472b7b",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "9fa85c03ee00a8f23f885270785dc14963472b7b",
+        "mode": "100644"
+      }
+    }
+  ],
+  "reviewedProjectTransform": {
+    "source": "src/modules/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj",
+    "mappedPath": "src/extensions/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj",
+    "reason": "Retain reviewed consolidated project references while adding new upstream test assembly friend access."
+  },
+  "testIntegrationCommit": "c83aa781c94ce0cb3d6fc4b6b41138263a486975",
+  "reviewedTestProjectTransform": {
+    "source": "test/modules/persistence/Elsa.Dapper.UnitTests/Elsa.Dapper.UnitTests.csproj",
+    "mappedPath": "test/extensions/modules/persistence/Elsa.Dapper.UnitTests/Elsa.Dapper.UnitTests.csproj",
+    "reason": "Point the newly imported Dapper test project at the consolidated Dapper source and include it in canonical Elsa.sln."
+  }
+}

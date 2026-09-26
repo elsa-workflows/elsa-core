@@ -1,0 +1,13 @@
+@page "/workflows/instances/{id}/view"
+@inherits StudioComponentBase
+
+<PageTitle>Workflow instance</PageTitle>
+<WorkflowInstanceViewer InstanceId="@Id"/>
+
+@code
+{
+    /// <summary>
+    /// The ID of the workflow instance to view.
+    /// </summary>
+    [Parameter] public string Id { get; set; } = default!;
+}

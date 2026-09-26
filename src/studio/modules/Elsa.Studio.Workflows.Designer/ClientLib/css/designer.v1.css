@@ -1,0 +1,38 @@
+.elsa-flowchart-diagram-designer-v1 .x6-graph-background {
+    background-color: var(--mud-palette-background);
+}
+
+.elsa-flowchart-diagram-designer-v1 .x6-widget-selection-box {
+    border: 2px dashed var(--mud-palette-secondary);
+}
+
+.elsa-flowchart-diagram-designer-v1 .x6-widget-selection-inner {
+    border: 1px solid var(--mud-palette-secondary);
+}
+
+.elsa-flowchart-diagram-designer-v1 .elsa-snapline .x6-widget-snapline-horizontal,
+.elsa-flowchart-diagram-designer-v1 .elsa-snapline .x6-widget-snapline-vertical {
+    stroke: var(--mud-palette-secondary);
+}
+
+.elsa-flowchart-diagram-designer-v1 .elsa-activity {
+    color: var(--mud-palette-text-primary);
+    background-color: var(--mud-palette-surface);
+    border-color: var(--mud-palette-lines-default);
+    border-left: solid 4px var(--elsa-activity-accent, var(--mud-palette-info));
+    height: 100%;
+}
+
+.elsa-flowchart-diagram-designer-v1 .elsa-activity.is-starting-point {
+    background-color: var(--mud-palette-surface);
+    background-color: color-mix(
+        in srgb,
+        var(--elsa-activity-accent, var(--mud-palette-primary)) 8%,
+        var(--mud-palette-surface)
+    );
+}
+
+.elsa-flowchart-diagram-designer-v1 .elsa-activity-wrapper-badge.has-retries .mud-badge-wrapper .mud-badge {
+    color: var(--mud-palette-warning-text) !important;
+    background-color: var(--mud-palette-warning) !important;
+}

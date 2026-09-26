@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Enables Workflow Context management</Description>
+        <PackageTags>elsa extension studio module</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup Label="Elsa" Condition="$(UseProjectReferences) == true">
+        <ProjectReference Include="../../../studio/modules/Elsa.Studio.Workflows/Elsa.Studio.Workflows.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="$(UseProjectReferences) != true">
+        <ProjectReference Include="../../../studio/modules/Elsa.Studio.Workflows/Elsa.Studio.Workflows.csproj"/>
+    </ItemGroup>
+
+</Project>

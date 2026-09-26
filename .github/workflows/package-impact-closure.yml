@@ -51,6 +51,8 @@ jobs:
           repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+          # The import receipt tests verify ancestors and mapped blobs at pinned commits.
+          fetch-depth: 0
       - name: Record and verify the exact proof-code commit
         env:
           EXPECTED_PROOF_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}

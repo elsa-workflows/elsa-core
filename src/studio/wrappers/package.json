@@ -1,0 +1,12 @@
+{
+  "name": "root",
+  "private": true,
+  "workspaces": [
+    "wrappers/*"
+  ],
+  "dependencies": {
+  },
+  "devDependencies": {
+    "lerna": "^9.0.7"
+  }
+}

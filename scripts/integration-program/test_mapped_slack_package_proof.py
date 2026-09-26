@@ -64,8 +64,10 @@ class MappedSlackPackageProofTests(unittest.TestCase):
                 return values[arguments]
 
             with patch.object(proof, "git_value", side_effect=fake_git_value):
-                with self.assertRaisesRegex(RuntimeError, "must match the reviewed proof head"):
-                    proof.require_imported_history_checkout(root, proof.SOURCE_COMMITS)
+                with self.assertRaisesRegex(RuntimeError, "must match the requested proof head"):
+                    proof.require_imported_history_checkout(root, proof.SOURCE_COMMITS, "a" * 40)
+                with self.assertRaisesRegex(RuntimeError, "exact 40-character Git head"):
+                    proof.require_imported_history_checkout(root, proof.SOURCE_COMMITS, "f" * 7)
 
     def test_imported_source_link_requires_the_exact_head_url_and_checksum_test(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -79,16 +81,28 @@ class MappedSlackPackageProofTests(unittest.TestCase):
                 log.parent.mkdir(parents=True, exist_ok=True)
                 if command[2] == "print-json":
                     log.write_text("command\n" + json.dumps({"documents": {"/clone/*": expected}}))
+                elif command[2] == "print-documents":
+                    log.write_text("command\n" + "a" * 64 + " sha256 csharp /_/src/Slack.cs\n")
                 else:
                     log.write_text("command\nsourcelink test passed\n")
 
             with patch.object(proof, "TFMS", ("net10.0",)), patch.object(proof, "run", side_effect=fake_run):
                 result = proof.verify_imported_source_link(output, head, Path("/sourcelink.dll"), Path("/dotnet"), {})
             self.assertEqual("passed", result[0]["urlAndChecksumTest"])
+            self.assertEqual(1, result[0]["sourceDocumentCount"])
 
             with patch.object(proof, "TFMS", ("net10.0",)), patch.object(proof, "run", side_effect=fake_run):
                 with self.assertRaisesRegex(RuntimeError, "Unexpected imported SourceLink mapping"):
                     proof.verify_imported_source_link(output, "b" * 40, Path("/sourcelink.dll"), Path("/dotnet"), {})
+
+            def fake_empty_documents(command, *, cwd, env, log):
+                fake_run(command, cwd=cwd, env=env, log=log)
+                if command[2] == "print-documents":
+                    log.write_text("command\n")
+
+            with patch.object(proof, "TFMS", ("net10.0",)), patch.object(proof, "run", side_effect=fake_empty_documents):
+                with self.assertRaisesRegex(RuntimeError, "no valid source documents"):
+                    proof.verify_imported_source_link(output, head, Path("/sourcelink.dll"), Path("/dotnet"), {})
 
     def test_impact_selection_receipt_records_the_inventory_graph_pins(self):
         with tempfile.TemporaryDirectory() as temporary_directory:

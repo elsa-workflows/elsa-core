@@ -1,0 +1,59 @@
+{
+  "name": "@elsa-workflows/elsa-studio-wasm-react",
+  "version": "0.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elsa-workflows/elsa-studio.git"
+  },
+  "type": "module",
+  "description": "React wrapper for Elsa Studio, exposing the Blazor WebAssembly workflow designer as React components.",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/elsa-studio-wasm-react.umd.cjs",
+  "module": "./dist/elsa-studio-wasm-react.js",
+  "exports": {
+    ".": {
+      "import": "./dist/elsa-studio-wasm-react.js",
+      "require": "./dist/elsa-studio-wasm-react.umd.cjs"
+    }
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "postinstall": "npm run copy:elsa-studio-wasm",
+    "copy:elsa-studio-wasm": "cp -r ../../node_modules/@elsa-workflows/elsa-studio-wasm/_content public/ && cp -r ../../node_modules/@elsa-workflows/elsa-studio-wasm/_framework public/ && cp -r ../../node_modules/@elsa-workflows/elsa-studio-wasm/appsettings.json public/"
+  },
+  "dependencies": {
+    "@elsa-workflows/elsa-studio-wasm": "^3.4.0-rc1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "uuid": "^14.0.0"
+  },
+  "devDependencies": {
+    "@storybook/addon-essentials": "^8.6.11",
+    "@storybook/addon-interactions": "^8.6.11",
+    "@storybook/addon-links": "^8.6.11",
+    "@storybook/addon-onboarding": "^8.6.11",
+    "@storybook/blocks": "^8.6.11",
+    "@storybook/react": "^8.6.11",
+    "@storybook/react-vite": "^8.6.11",
+    "@storybook/testing-library": "^0.2.2",
+    "@types/react": "^19.0.12",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.23.0",
+    "eslint-plugin-react": "^7.37.4",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "eslint-plugin-storybook": "^0.12.0",
+    "prop-types": "^15.8.1",
+    "storybook": "^8.6.17",
+    "vite": "^6.4.2"
+  }
+}

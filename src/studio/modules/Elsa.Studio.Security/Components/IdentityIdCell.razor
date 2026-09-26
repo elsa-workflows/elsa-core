@@ -1,0 +1,22 @@
+<div class="identity-id-cell" @onclick:stopPropagation="true">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="identity-id-content">
+        <MudTooltip Text="@Value" Delay="500">
+            <span class="identity-id-value">@Value</span>
+        </MudTooltip>
+        <MudTooltip Text="@($"Copy {Label.ToLowerInvariant()} ID")" Delay="500">
+            <MudIconButton Icon="@Icons.Material.Outlined.ContentCopy"
+                           Size="Size.Small"
+                           Class="identity-id-copy"
+                           OnClick="CopyAsync"
+                           aria-label="@($"Copy {Label.ToLowerInvariant()} ID {Value}")" />
+        </MudTooltip>
+    </MudStack>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Value { get; set; } = string.Empty;
+    [Parameter] public string Label { get; set; } = "Identity";
+    [Parameter] public EventCallback OnCopy { get; set; }
+
+    private Task CopyAsync() => OnCopy.InvokeAsync();
+}

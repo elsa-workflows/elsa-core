@@ -1,0 +1,41 @@
+@using Elsa.Api.Client.Resources.Resilience.Models
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<MudStack Row="false">
+    <MudTable
+        T="RetryAttemptRecord"
+        Items="Retries"
+        Dense="true"
+        Bordered="false"
+        Striped="false"
+        Elevation="0"
+        Outlined="true"
+        Hover="true"
+        RowStyle="cursor: pointer;"
+        OnRowClick="@OnRetryAttemptClicked">
+        <HeaderContent>
+            <MudTh>#</MudTh>
+            <MudTh>@Localizer["Delay"]</MudTh>
+            <MudTh>@Localizer["Outcome"]</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            @{
+                var record = context;
+            }
+            <MudTh>@record.AttemptNumber</MudTh>
+            <MudTd>@record.RetryDelay</MudTd>
+            <MudTd>@string.Join(", ", record.Details.Select(x => $"{x.Key}={x.Value}"))</MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager RowsPerPageString="@Localizer["Rows Per Page"]"/>
+        </PagerContent>
+    </MudTable>
+
+    @if (SelectedItem != null)
+    {
+        <DataPanel Title="@Localizer["Retry Details"]" Data="@SelectedRetryAttemptData" HideEmptyValues="false" ShowNoDataAlert="true"
+                    NoDataMessage="@Localizer["No information associated with this retry attempt."]"/>
+        
+    }
+</MudStack>

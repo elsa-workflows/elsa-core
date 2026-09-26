@@ -1,0 +1,41 @@
+@using Elsa.Studio.Security.Models
+
+<div class="role-permission-preview">
+    @if (IsGlobalRole)
+    {
+        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined" Class="role-permission-chip">
+            Global access (*)
+        </MudChip>
+    }
+    else if (Permissions.Count == 0)
+    {
+        <MudText Typo="Typo.caption">No permissions</MudText>
+    }
+    else
+    {
+        @foreach (var permission in Permissions.Take(1))
+        {
+            <MudChip T="string"
+                     Size="Size.Small"
+                     Variant="Variant.Outlined"
+                     Class="role-permission-chip"
+                     title="@permission">
+                @permission
+            </MudChip>
+        }
+
+        @if (Permissions.Count > 1)
+        {
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">+@(Permissions.Count - 1)</MudChip>
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public RoleSummary Role { get; set; } = default!;
+
+    private IReadOnlyList<string> Permissions =>
+        Role.Permissions?.Where(permission => !string.IsNullOrWhiteSpace(permission)).ToList() ?? [];
+
+    private bool IsGlobalRole => Permissions.Any(permission => permission == "*");
+}

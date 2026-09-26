@@ -1,0 +1,210 @@
+@using Elsa.Studio.Localization
+@using Elsa.Studio.Workflows.Designer.Components
+@using Elsa.Studio.Workflows.Designer.Models
+@using Elsa.Studio.Workflows.DiagramDesigners.StateMachines.Presentation
+@inject ILocalizer Localizer
+
+<div class="state-machine-designer">
+    @if (_session != null && _canvasGraph != null)
+    {
+        <header class="state-machine-designer__toolbar">
+            <div class="state-machine-designer__view-switch" role="group" aria-label="@Localizer["Designer view"]">
+                <button type="button" class="@GetViewButtonClass(false)" aria-pressed="@ToAriaPressed(!_showOutline)" @onclick="ShowDiagram">@Localizer["Diagram"]</button>
+                <button type="button" class="@GetViewButtonClass(true)" aria-pressed="@ToAriaPressed(_showOutline)" @onclick="ShowOutline">@Localizer["Outline"]</button>
+            </div>
+
+            <div class="state-machine-designer__summary" aria-label="@Localizer["State machine summary"]">
+                <span><strong>@_session.Graph.States.Count</strong> @Localizer["states"]</span>
+                <span><strong>@_session.Graph.Transitions.Count</strong> @Localizer["transitions"]</span>
+            </div>
+
+            @if (!_showOutline && !IsReadOnly)
+            {
+                <button type="button" class="state-machine-designer__button" @onclick="AutoLayoutAsync">@Localizer["Auto layout"]</button>
+            }
+
+            @if (!IsReadOnly)
+            {
+                <details class="state-machine-designer__create-menu" name="state-machine-create">
+                    <summary>@Localizer["Add state"]</summary>
+                    <div class="state-machine-designer__create-popover">
+                        <label>
+                            <span>@Localizer["State name"]</span>
+                            <input class="state-machine-designer__control" @bind="_newStateName" />
+                        </label>
+                        <button type="button" class="state-machine-designer__button state-machine-designer__button--primary" @onclick="AddStateAsync">@Localizer["Add state"]</button>
+                    </div>
+                </details>
+
+                <details class="state-machine-designer__create-menu" name="state-machine-create">
+                    <summary>@Localizer["Add transition"]</summary>
+                    @if (_session.Graph.States.Count > 0)
+                    {
+                        <div class="state-machine-designer__create-popover">
+                            <label>
+                                <span>@Localizer["Transition name"]</span>
+                                <input class="state-machine-designer__control" @bind="_newTransitionName" />
+                            </label>
+                            <label>
+                                <span>@Localizer["From"]</span>
+                                <select class="state-machine-designer__control" @bind="_newTransitionFromId">
+                                    @foreach (var state in _canvasGraph.States)
+                                    {
+                                        <option value="@state.VisualId">@DisplayValue(state.Name)</option>
+                                    }
+                                </select>
+                            </label>
+                            <label>
+                                <span>@Localizer["To"]</span>
+                                <select class="state-machine-designer__control" @bind="_newTransitionToId">
+                                    @foreach (var state in _canvasGraph.States)
+                                    {
+                                        <option value="@state.VisualId">@DisplayValue(state.Name)</option>
+                                    }
+                                </select>
+                            </label>
+                            <button type="button" class="state-machine-designer__button state-machine-designer__button--primary" @onclick="AddTransitionAsync">@Localizer["Add transition"]</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="state-machine-designer__create-popover state-machine-designer__create-popover--empty">
+                            <span>@Localizer["Add a state before adding a transition."]</span>
+                        </div>
+                    }
+                </details>
+            }
+        </header>
+
+        <section class="state-machine-designer__configuration" aria-label="@Localizer["State machine configuration"]">
+            <label>
+                <span>@Localizer["Initial state"]</span>
+                <select class="state-machine-designer__control" disabled="@IsReadOnly" value="@GetStateVisualIdByName(_session.Graph.InitialState)" @onchange="SetInitialStateAsync">
+                    <option value="">-</option>
+                    @foreach (var state in _canvasGraph.States)
+                    {
+                        <option value="@state.VisualId">@DisplayValue(state.Name)</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>@Localizer["Current state"]</span>
+                <select class="state-machine-designer__control" disabled="@IsReadOnly" value="@GetStateVisualIdByName(_session.Graph.CurrentState)" @onchange="SetCurrentStateAsync">
+                    <option value="">-</option>
+                    @foreach (var state in _canvasGraph.States)
+                    {
+                        <option value="@state.VisualId">@DisplayValue(state.Name)</option>
+                    }
+                </select>
+            </label>
+        </section>
+
+        @if (_session.ValidationIssues.Count > 0)
+        {
+            <section class="state-machine-designer__issues" aria-label="@Localizer["Validation issues"]">
+                @foreach (var issue in _session.ValidationIssues)
+                {
+                    <button type="button" class="@GetIssueClass(issue)" @onclick="() => SelectIssueAsync(issue)">
+                        <strong>@issue.Severity</strong>
+                        <span>@Localizer[issue.Message]</span>
+                    </button>
+                }
+            </section>
+        }
+
+        <div class="state-machine-designer__workspace">
+            <main class="state-machine-designer__surface">
+                @if (_showOutline)
+                {
+                    <StateMachineOutline Graph="@_session.Graph"
+                                         SelectedStateName="@SelectedState?.Name"
+                                         SelectedTransition="@SelectedTransition"
+                                         StateSelected="SelectStateAsync"
+                                         TransitionSelected="SelectTransitionAsync" />
+                }
+                else
+                {
+                    <StateMachineCanvas @ref="_canvas"
+                                        @key="IsReadOnly"
+                                        Graph="@_canvasGraph"
+                                        SelectedVisualId="@(_selectedStateId ?? _selectedTransitionId)"
+                                        IsReadOnly="@IsReadOnly"
+                                        StateSelected="SelectStateByVisualIdAsync"
+                                        TransitionSelected="SelectTransitionByVisualIdAsync"
+                                        CanvasSelected="SelectCanvasAsync"
+                                        GraphChanged="ReconcileCanvasAsync"
+                                        DeleteRequested="HandleDeleteRequestAsync" />
+                }
+            </main>
+
+            <aside class="state-machine-designer__inspector">
+                @if (_pendingDeleteStateId != null)
+                {
+                    <div class="state-machine-designer__confirmation" role="alertdialog" aria-label="@Localizer["Confirm state deletion"]">
+                        <strong>@Localizer["Delete state and connected transitions?"]</strong>
+                        <span>@Localizer["This removes {0} connected transitions.", GetConnectedTransitionCount(_pendingDeleteStateId)]</span>
+                        <div>
+                            <button type="button" class="state-machine-designer__button" @onclick="CancelDeleteState">@Localizer["Cancel"]</button>
+                            <button type="button" class="state-machine-designer__button state-machine-designer__button--danger" @onclick="ConfirmDeleteStateAsync">@Localizer["Delete"]</button>
+                        </div>
+                    </div>
+                }
+
+                @if (SelectedState != null)
+                {
+                    <StateMachineStateInspector State="@SelectedState"
+                                                IsReadOnly="@IsReadOnly"
+                                                IsInitial="@IsSelectedStateInitial()"
+                                                IsCurrent="@IsSelectedStateCurrent()"
+                                                IncomingTransitionCount="@GetSelectedStateIncomingTransitionCount()"
+                                                OutgoingTransitionCount="@GetSelectedStateOutgoingTransitionCount()"
+                                                ValidationIssues="@GetSelectedStateIssues()"
+                                                SelectedActivityId="@_selectedActivityId"
+                                                EntrySupportsDesigner="@HasDiagramDesigner(SelectedState.Entry)"
+                                                ExitSupportsDesigner="@HasDiagramDesigner(SelectedState.Exit)"
+                                                NameChanged="RenameSelectedStateAsync"
+                                                ActivityAddRequested="AddStateActivityAsync"
+                                                ActivitySelectRequested="SelectStateActivityAsync"
+                                                ActivityOpenRequested="OpenStateActivityAsync"
+                                                ActivityJsonRequested="OpenStateActivityJsonAsync"
+                                                ActivityReplaceRequested="ReplaceStateActivityAsync"
+                                                ActivityClearRequested="ClearStateSlotAsync"
+                                                ActivityDropRequested="OnStateSlotDropAsync"
+                                                ViewTransitionsRequested="ViewSelectedStateTransitionsAsync"
+                                                DeleteRequested="RequestDeleteSelectedStateAsync" />
+                }
+                else if (SelectedTransition != null)
+                {
+                    <StateMachineTransitionInspector Transition="@SelectedTransition"
+                                                     States="@_session.Graph.States.ToList()"
+                                                     KnownExpressionProviderTypes="@_knownExpressionProviderTypes"
+                                                     IsReadOnly="@IsReadOnly"
+                                                     ValidationIssues="@GetSelectedTransitionIssues()"
+                                                     SelectedActivityId="@_selectedActivityId"
+                                                     TriggerSupportsDesigner="@HasDiagramDesigner(SelectedTransition.Trigger)"
+                                                     ActionSupportsDesigner="@HasDiagramDesigner(SelectedTransition.Action)"
+                                                     NameChanged="SetTransitionNameAsync"
+                                                     DisplayNameChanged="SetTransitionDisplayNameAsync"
+                                                     FromChanged="SetTransitionFromAsync"
+                                                     ToChanged="SetTransitionToAsync"
+                                                     ActivityAddRequested="AddTransitionActivityAsync"
+                                                     ActivitySelectRequested="SelectTransitionActivityAsync"
+                                                     ActivityOpenRequested="OpenTransitionActivityAsync"
+                                                     ActivityJsonRequested="OpenTransitionActivityJsonAsync"
+                                                     ActivityReplaceRequested="ReplaceTransitionActivityAsync"
+                                                     ActivityClearRequested="ClearTransitionSlotAsync"
+                                                     ActivityDropRequested="OnTransitionSlotDropAsync"
+                                                     ConditionEditRequested="OpenConditionEditorAsync"
+                                                     DeleteRequested="DeleteSelectedTransitionAsync" />
+                }
+                else
+                {
+                    <div class="state-machine-designer__empty-inspector">
+                        <strong>@Localizer["Nothing selected"]</strong>
+                        <span>@Localizer["Select a state or transition to inspect and edit it."]</span>
+                    </div>
+                }
+            </aside>
+        </div>
+    }
+</div>

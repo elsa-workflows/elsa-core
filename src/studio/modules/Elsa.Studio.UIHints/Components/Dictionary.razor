@@ -1,0 +1,78 @@
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+@{
+    var inputDescriptor = EditorContext.InputDescriptor;
+    var displayName = inputDescriptor.DisplayName ?? inputDescriptor.Name;
+    var description = inputDescriptor.Description ?? string.Empty;
+}
+
+<ExpressionInput EditorContext="@EditorContext">
+<MudStack>
+        <MudField
+            Label="@Localizer[displayName]"
+            HelperText="@Localizer[description]"
+            Margin="Margin.None"
+            Underline="true"
+            Variant="Variant.Text">
+            <MudTable
+                @ref="_table"
+                Items="Items"
+                Dense="true"
+                Elevation="0"
+                FixedHeader="true"
+                Striped="true"
+                EditTrigger="TableEditTrigger.EditButton"
+                EditButtonPosition="TableEditButtonPosition.Start"
+                ApplyButtonPosition="TableApplyButtonPosition.Start"
+                Outlined="true"
+                CanCancelEdit="true"
+                RowEditPreview="OnRowEditPreview"
+                RowEditCancel="OnRowEditCancel"
+                RowEditCommit="OnRowEditCommitted"
+                ReadOnly="EditorContext.IsReadOnly">
+                <HeaderContent>
+                    <MudTh Style="width: 25%">@Localizer["Key"]</MudTh>
+                    <MudTh Style="width: 50%;">@Localizer["Value"]</MudTh>
+                    <MudTh Style="width: 15%;">@Localizer["Type"]</MudTh>
+                    <MudTh Style="width: 40px;"></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Key">@context.Key</MudTd>
+                    <MudTd DataLabel="Value">@context.Value</MudTd>
+                    <MudTd DataLabel="ExpressionType">@GetExpressionTypeDisplayName(@context.ExpressionType)</MudTd>
+                    <MudTd>
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => OnDeleteClicked(context))" Disabled="EditorContext.IsReadOnly"></MudIconButton>
+                    </MudTd>
+                </RowTemplate>
+                <RowEditingTemplate>
+                    <MudTd DataLabel="Key">
+                        <MudTextField @bind-Value="@context.Key" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="EditorContext.IsReadOnly" Disabled="EditorContext.IsReadOnly"></MudTextField>
+                    </MudTd>
+                    <MudTd DataLabel="Value">
+                        <MudTextField @bind-Value="@context.Value" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="EditorContext.IsReadOnly" Disabled="EditorContext.IsReadOnly"></MudTextField>
+                    </MudTd>
+                    <MudTd DataLabel="ExpressionType">
+                        <MudSelect @bind-Value="@context.ExpressionType" Variant="Variant.Outlined" ReadOnly="EditorContext.IsReadOnly" Disabled="EditorContext.IsReadOnly">
+                            @foreach (var expressionDescriptor in GetSupportedExpressions())
+                            {
+                                <MudSelectItem Value="@expressionDescriptor.Type">@expressionDescriptor.DisplayName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudTd>
+                </RowEditingTemplate>
+                <NoRecordsContent>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.Add" OnClick="OnAddClicked" Disabled="EditorContext.IsReadOnly">
+                        @Localizer["Add entry"]
+                    </MudButton>
+                </NoRecordsContent>
+            </MudTable>
+        </MudField>
+        @if (Items.Any())
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.Add" Class="align-self-start" Disabled="@(DisableAddButton || EditorContext.IsReadOnly)" OnClick="OnAddClicked">
+                @Localizer["Add entry"]
+            </MudButton>
+        }
+</MudStack>
+</ExpressionInput>

@@ -1,0 +1,222 @@
+@using Elsa.Studio.Localization
+@using Elsa.Studio.Workflows.Designer.Models
+@namespace Elsa.Studio.Workflows.DiagramDesigners.StateMachines.Presentation
+@inject ILocalizer Localizer
+
+<section class="state-machine-transition-inspector" aria-labelledby="@HeadingId">
+    <header class="state-machine-transition-inspector__header">
+        <div>
+            <p class="state-machine-transition-inspector__eyebrow">@Localizer["Inspector"]</p>
+            <h3 id="@HeadingId">@Localizer["Transition"]</h3>
+        </div>
+        @if (Transition != null && !IsReadOnly)
+        {
+            <button class="state-machine-transition-inspector__button state-machine-transition-inspector__button--danger"
+                    type="button"
+                    data-testid="state-machine-transition-delete"
+                    @onclick="() => DeleteRequested.InvokeAsync()">
+                @Localizer["Delete"]
+            </button>
+        }
+    </header>
+
+    @if (Transition == null)
+    {
+        <p class="state-machine-transition-inspector__empty" role="status">@Localizer["Select a transition in the diagram or outline to inspect it."]</p>
+    }
+    else
+    {
+        <div class="state-machine-transition-inspector__story" aria-label="@Localizer["Execution story"]">
+            <section class="state-machine-transition-inspector__stage" data-transition-slot="trigger" aria-labelledby="@TriggerStageId">
+                <div class="state-machine-transition-inspector__stage-marker" aria-hidden="true">@Localizer["WHEN"]</div>
+                <div class="state-machine-transition-inspector__stage-content">
+                    <div class="state-machine-transition-inspector__stage-heading">
+                        <div>
+                            <p class="state-machine-transition-inspector__stage-kicker">@Localizer["WHEN"]</p>
+                            <h4 id="@TriggerStageId">@Localizer["Trigger"]</h4>
+                        </div>
+                        <span class="state-machine-transition-inspector__stage-note">@Localizer["Starts the transition"]</span>
+                    </div>
+                    <StateMachineActivitySlot SlotName="trigger"
+                                              TestIdPrefix="state-machine-transition"
+                                              Value="@Transition.Trigger"
+                                              EmptyTitle="@Localizer["No trigger configured"]"
+                                              EmptyDescription="@Localizer["This transition evaluates immediately after source entry."]"
+                                              AddLabel="@Localizer["Add trigger"]"
+                                              IsReadOnly="@IsReadOnly"
+                                              IsSelected="@IsActivitySelected(Transition.Trigger)"
+                                              SupportsDesigner="@TriggerSupportsDesigner"
+                                              AddRequested="RequestActivityAddAsync"
+                                              SelectRequested="RequestActivitySelectAsync"
+                                              OpenRequested="RequestActivityOpenAsync"
+                                              JsonRequested="RequestActivityJsonAsync"
+                                              ReplaceRequested="RequestActivityReplaceAsync"
+                                              ClearRequested="RequestActivityClearAsync"
+                                              DropRequested="RequestActivityDropAsync" />
+                </div>
+            </section>
+
+            <div class="state-machine-transition-inspector__connector" aria-hidden="true">↓</div>
+
+            <section class="state-machine-transition-inspector__stage" data-transition-slot="condition" aria-labelledby="@ConditionStageId">
+                <div class="state-machine-transition-inspector__stage-marker" aria-hidden="true">@Localizer["ONLY IF"]</div>
+                <div class="state-machine-transition-inspector__stage-content">
+                    <div class="state-machine-transition-inspector__stage-heading">
+                        <div>
+                            <p class="state-machine-transition-inspector__stage-kicker">@Localizer["ONLY IF"]</p>
+                            <h4 id="@ConditionStageId">@Localizer["Condition"]</h4>
+                        </div>
+                        @if (!IsReadOnly)
+                        {
+                            <button class="state-machine-transition-inspector__button"
+                                    type="button"
+                                    data-slot-action="edit"
+                                    data-testid="state-machine-transition-condition-edit"
+                                    @onclick="RequestConditionEditAsync">
+                                @Localizer["Edit"]
+                            </button>
+                        }
+                    </div>
+                    @{
+                        var condition = DescribeCondition(Transition.Condition);
+                    }
+                    <div class="@(condition.State is ConditionState.Never or ConditionState.Malformed
+                                      ? "state-machine-transition-inspector__condition state-machine-transition-inspector__condition--warning"
+                                      : "state-machine-transition-inspector__condition")"
+                         data-condition-state="@condition.State.ToString().ToLowerInvariant()"
+                         data-testid="state-machine-transition-condition-summary">
+                        @if (condition.State == ConditionState.Expression)
+                        {
+                            <dl class="state-machine-transition-inspector__condition-expression">
+                                <div>
+                                    <dt>@Localizer["Language"]</dt>
+                                    <dd data-condition-language>@condition.Title</dd>
+                                </div>
+                                <div>
+                                    <dt>@Localizer["Expression"]</dt>
+                                    <dd data-condition-expression><code>@condition.Detail</code></dd>
+                                </div>
+                            </dl>
+                        }
+                        else
+                        {
+                            <strong>@condition.Title</strong>
+                            <span>@condition.Detail</span>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(condition.Warning))
+                        {
+                            <p class="state-machine-transition-inspector__slot-warning" role="status">@condition.Warning</p>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(condition.RawDefinition))
+                        {
+                            <details class="state-machine-transition-inspector__definition">
+                                <summary>@Localizer["View definition"]</summary>
+                                <pre data-testid="state-machine-transition-condition-definition">@condition.RawDefinition</pre>
+                            </details>
+                        }
+                    </div>
+                </div>
+            </section>
+
+            <div class="state-machine-transition-inspector__connector" aria-hidden="true">↓</div>
+
+            <section class="state-machine-transition-inspector__stage" data-transition-slot="action" aria-labelledby="@ActionStageId">
+                <div class="state-machine-transition-inspector__stage-marker" aria-hidden="true">@Localizer["THEN"]</div>
+                <div class="state-machine-transition-inspector__stage-content">
+                    <div class="state-machine-transition-inspector__stage-heading">
+                        <div>
+                            <p class="state-machine-transition-inspector__stage-kicker">@Localizer["THEN"]</p>
+                            <h4 id="@ActionStageId">@Localizer["Action"]</h4>
+                        </div>
+                        <span class="state-machine-transition-inspector__stage-note">@Localizer["Runs after source exit"]</span>
+                    </div>
+                    <StateMachineActivitySlot SlotName="action"
+                                              TestIdPrefix="state-machine-transition"
+                                              Value="@Transition.Action"
+                                              EmptyTitle="@Localizer["No action configured"]"
+                                              EmptyDescription="@Localizer["No activity runs between source exit and the target state."]"
+                                              AddLabel="@Localizer["Add action"]"
+                                              IsReadOnly="@IsReadOnly"
+                                              IsSelected="@IsActivitySelected(Transition.Action)"
+                                              SupportsDesigner="@ActionSupportsDesigner"
+                                              AddRequested="RequestActivityAddAsync"
+                                              SelectRequested="RequestActivitySelectAsync"
+                                              OpenRequested="RequestActivityOpenAsync"
+                                              JsonRequested="RequestActivityJsonAsync"
+                                              ReplaceRequested="RequestActivityReplaceAsync"
+                                              ClearRequested="RequestActivityClearAsync"
+                                              DropRequested="RequestActivityDropAsync" />
+                </div>
+            </section>
+
+            <div class="state-machine-transition-inspector__connector" aria-hidden="true">↓</div>
+
+            <section class="state-machine-transition-inspector__stage state-machine-transition-inspector__stage--destination" data-transition-slot="to" aria-labelledby="@DestinationStageId">
+                <div class="state-machine-transition-inspector__stage-marker" aria-hidden="true">@Localizer["TO"]</div>
+                <div class="state-machine-transition-inspector__stage-content">
+                    <div class="state-machine-transition-inspector__stage-heading">
+                        <div>
+                            <p class="state-machine-transition-inspector__stage-kicker">@Localizer["TO"]</p>
+                            <h4 id="@DestinationStageId">@StateMachinePresentationFormatter.DisplayValue(Transition.To)</h4>
+                        </div>
+                        <span class="state-machine-transition-inspector__stage-note">@Localizer["Target state"]</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <details class="state-machine-transition-inspector__details">
+            <summary>
+                <span>@Localizer["Transition details"]</span>
+                <span class="state-machine-transition-inspector__details-route">
+                    @StateMachinePresentationFormatter.DisplayValue(Transition.From)
+                    <span aria-hidden="true">→</span>
+                    @StateMachinePresentationFormatter.DisplayValue(Transition.To)
+                </span>
+            </summary>
+            <div class="state-machine-transition-inspector__fields">
+                <div class="state-machine-transition-inspector__field-grid">
+                    <div class="state-machine-transition-inspector__field">
+                        <label for="@NameId">@Localizer["Name"]</label>
+                        <input id="@NameId" class="state-machine-transition-inspector__control" value="@Transition.Name" disabled="@IsReadOnly" @onchange="ChangeNameAsync" />
+                    </div>
+                    <div class="state-machine-transition-inspector__field">
+                        <label for="@DisplayNameId">@Localizer["Display name"]</label>
+                        <input id="@DisplayNameId" class="state-machine-transition-inspector__control" value="@Transition.DisplayName" disabled="@IsReadOnly" @onchange="ChangeDisplayNameAsync" />
+                    </div>
+                    <div class="state-machine-transition-inspector__field">
+                        <label for="@FromId">@Localizer["From"]</label>
+                        <select id="@FromId" class="state-machine-transition-inspector__control" value="@Transition.From" disabled="@IsReadOnly" @onchange="ChangeFromAsync">
+                            @foreach (var state in States)
+                            {
+                                <option value="@state.Name">@StateMachinePresentationFormatter.DisplayValue(state.Name)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="state-machine-transition-inspector__field">
+                        <label for="@ToId">@Localizer["To"]</label>
+                        <select id="@ToId" class="state-machine-transition-inspector__control" value="@Transition.To" disabled="@IsReadOnly" @onchange="ChangeToAsync">
+                            @foreach (var state in States)
+                            {
+                                <option value="@state.Name">@StateMachinePresentationFormatter.DisplayValue(state.Name)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </details>
+
+        @if (ValidationIssues.Count > 0)
+        {
+            <div class="state-machine-transition-inspector__issues" role="alert" aria-label="@Localizer["Transition validation issues"]">
+                <strong>@Localizer["Validation"]</strong>
+                @foreach (var issue in ValidationIssues)
+                {
+                    <p><strong>@issue.Severity:</strong> @Localizer[issue.Message]</p>
+                }
+            </div>
+        }
+    }
+</section>

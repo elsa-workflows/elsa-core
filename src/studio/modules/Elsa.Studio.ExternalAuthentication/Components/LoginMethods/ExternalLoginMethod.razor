@@ -1,0 +1,27 @@
+@implements Elsa.Studio.Authentication.Abstractions.Contracts.ILoginMethodComponent
+@using Elsa.Studio.Authentication.UI.Components
+@inject Elsa.Studio.ExternalAuthentication.Services.IExternalAuthenticationLoginCoordinator LoginCoordinator
+@inject Elsa.Studio.Authentication.Abstractions.Contracts.ILoginMethodIconRegistry Icons
+
+<LoginMethodButton Method="Context.Method"
+                   Icon="@Icon.Svg"
+                   OnClick="SignInAsync" />
+
+@code {
+    [Parameter, EditorRequired]
+    public Elsa.Studio.Authentication.Abstractions.Models.LoginMethodComponentContext Context { get; set; } = default!;
+
+    private Elsa.Studio.Authentication.Abstractions.Models.LoginMethodIcon Icon => Icons.Resolve(Context.Method.IconId);
+
+    private async Task SignInAsync()
+    {
+        try
+        {
+            await LoginCoordinator.BeginExternalAsync(Context.Method, Context.ReturnPath);
+        }
+        catch
+        {
+            await Context.ReportFailureAsync("The selected sign-in method is unavailable. Choose another method or try again.");
+        }
+    }
+}

@@ -1,0 +1,16 @@
+@using Elsa.Studio.Workflows.Services
+@using Variant = MudBlazor.Variant
+@using Microsoft.Extensions.Localization
+@using Elsa.Studio.Components;
+@inject ILocalizer Localizer
+
+<div>
+    <MudText Typo="Typo.overline">@Localizer["Metadata"]</MudText>
+    <EditForm @key="_editContext" EditContext="@_editContext" OnSubmit="OnSubmit">
+        <MudStack>
+            <MudTextField T="string" Label="@Localizer["Name"]" Value="@_model.Name" ValueChanged="OnNameChanged" For="@(() => _model.Name)" HelperText="@Localizer["The name of the workflow."]" OnBlur="ValidateForm" Immediate="true" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsReadOnly" Disabled="IsReadOnly"></MudTextField>
+            <MarkdownTextArea Label="@Localizer["Description"]" Value="@_model.Description" ValueChanged="OnDescriptionChanged" For="@(() => _model.Description)" HelperText="@Localizer["A brief description of the workflow."]" OnBlur="ValidateForm" IsReadOnly="IsReadOnly" />
+        </MudStack>
+    </EditForm>
+</div>
+<MudDivider />

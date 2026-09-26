@@ -1,0 +1,25 @@
+@using Variant = MudBlazor.Variant
+@inherits StudioComponentBase
+@using Elsa.Studio.Workflows.Services
+@inject ILocalizer Localizer
+
+<MudDialog>
+    <DialogContent>
+        @* Blazilla's FluentValidator captures the Validator instance during OnInitialized and ignores later reassignment,
+           so the form must not render until _validator (assigned after an awaited API lookup) is available. *@
+        @if (_validator is not null)
+        {
+            <EditForm EditContext="_editContext" OnValidSubmit="OnValidSubmit">
+                <FluentValidator Validator="_validator"/>
+                <MudStack>
+                    <MudTextField Label="@Localizer["Name"]" @bind-Value="_inputModel.Name" For="@(() => _inputModel.Name)" HelperText="@Localizer["The name of the new label."]" Variant="Variant.Outlined" />
+                    <MudTextField Label="@Localizer["Description"]" @bind-Value="_inputModel.Description" For="@(() => _inputModel.Description)" HelperText="@Localizer["A brief description of the label."]" Lines="3" Variant="Variant.Outlined"/>
+                </MudStack>
+            </EditForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked">@Localizer["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" OnClick="OnSubmitClicked" Disabled="@(_validator is null)">@Localizer["Ok"]</MudButton>
+    </DialogActions>
+</MudDialog>

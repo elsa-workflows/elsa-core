@@ -1,0 +1,18 @@
+@using Elsa.Studio.Contracts
+@inherits BackendComponentBase
+@inject IThemeService ThemeService
+
+<MudThemeProvider IsDarkMode="false" Theme="@ThemeService.CurrentTheme"/>
+<MudPopoverProvider/>
+<MudDialogProvider/>
+<MudSnackbarProvider/>
+@ChildContent
+
+@code
+{
+    /// <summary>
+    /// The component to render.
+    /// </summary>
+    [Parameter]
+    public RenderFragment ChildContent { get; set; } = default!;
+}

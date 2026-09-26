@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+      <ProjectReference Include="../../../../../src/extensions/diagnostics/Elsa.Logging.Core/Elsa.Logging.Core.csproj" />
+    </ItemGroup>
+
+</Project>

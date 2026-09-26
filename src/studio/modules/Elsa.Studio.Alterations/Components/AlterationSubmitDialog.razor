@@ -1,0 +1,304 @@
+@using System.Text.Json
+@using System.Text.Json.Nodes
+@using Elsa.Api.Client.Resources.Alterations.Contracts
+@using Elsa.Api.Client.Resources.Alterations.Models
+@using Elsa.Studio.Contracts
+@inject IBackendApiClientProvider BackendApiClientProvider
+@inject ILocalizer Localizer
+
+<MudDialog Class="elsa-alt-submit-dialog">
+    <DialogContent>
+        <!-- Manual stepper indicator. Avoids relying on MudStepper API surfaces that vary
+             between MudBlazor versions; gives us full control over button states + which
+             step jumps where after Submit. -->
+        <div class="elsa-alt-stepper">
+            @{ var steps = new[] { Localizer["Review"], Localizer["Preview"], Localizer["Submit"] }; }
+            @for (var i = 0; i < steps.Length; i++)
+            {
+                var idx = i;
+                var state = idx < _step ? "done" : idx == _step ? "active" : "pending";
+                <div class="elsa-alt-stepper-step @state">
+                    <div class="num">
+                        @if (idx < _step)
+                        {
+                            <MudIcon Icon="@Icons.Material.Outlined.Check" Size="Size.Small" />
+                        }
+                        else
+                        {
+                            <span>@(idx + 1)</span>
+                        }
+                    </div>
+                    <span class="label">@steps[idx]</span>
+                </div>
+                @if (idx < steps.Length - 1)
+                {
+                    <div class="elsa-alt-stepper-line @(idx < _step ? "done" : "")"></div>
+                }
+            }
+        </div>
+
+        <div class="elsa-alt-step-body">
+            @switch (_step)
+            {
+                case 0:
+                    @RenderReview()
+                    break;
+                case 1:
+                    @RenderPreview()
+                    break;
+                case 2:
+                    @RenderResult()
+                    break;
+            }
+        </div>
+    </DialogContent>
+
+    <DialogActions>
+        @if (_resultPlanId != null)
+        {
+            <MudButton Variant="Variant.Outlined" OnClick="OnClose">@Localizer["Close"]</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Outlined.OpenInNew"
+                       OnClick="OnViewPlan">
+                @Localizer["View plan"]
+            </MudButton>
+        }
+        else
+        {
+            <MudButton OnClick="OnCancel" Disabled="_busy">@Localizer["Cancel"]</MudButton>
+
+            @if (_step > 0 && !_busy && !_submitted)
+            {
+                <MudButton Variant="Variant.Outlined"
+                           StartIcon="@Icons.Material.Outlined.NavigateBefore"
+                           OnClick="@(() => _step--)">
+                    @Localizer["Back"]
+                </MudButton>
+            }
+
+            @if (_step == 0)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                           EndIcon="@Icons.Material.Outlined.NavigateNext"
+                           Disabled="@(StagedItems.Count == 0)"
+                           OnClick="@(() => _step = 1)">
+                    @Localizer["Next"]
+                </MudButton>
+            }
+            else if (_step == 1)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Outlined.Send"
+                           Disabled="_busy"
+                           OnClick="SubmitAsync">
+                    @Localizer["Submit"]
+                </MudButton>
+            }
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = null!;
+
+    [Parameter] public string WorkflowInstanceId { get; set; } = "";
+    [Parameter] public IReadOnlyList<StagedAlteration> StagedItems { get; set; } = Array.Empty<StagedAlteration>();
+
+    /// <summary>Optional: navigation handler to go to the plan details page after success.</summary>
+    [Parameter] public EventCallback<string> ViewPlanRequested { get; set; }
+
+    private int _step;
+    private string _previewJson = "";
+    private bool _busy;
+    // Latched true on the first SubmitAsync call. Prevents a second submit after a transient
+    // failure (e.g. client-side timeout where the server may have already created the plan).
+    // Once set, Back is hidden; the user must Cancel and reopen the dialog to retry.
+    private bool _submitted;
+    private string? _error;
+    private string? _resultPlanId;
+
+    private string RequestPath => $"{(BackendApiClientProvider.Url?.ToString().TrimEnd('/') ?? "")}/alterations/submit";
+
+    protected override void OnInitialized()
+    {
+        _previewJson = BuildPreviewJson();
+    }
+
+    private string BuildPreviewJson()
+    {
+        // Mirror exactly what the Submit call below builds, so the user sees the canonical
+        // wire format. We deliberately don't mask anything — this is the truth.
+        var alterations = new JsonArray();
+        foreach (var i in StagedItems)
+            alterations.Add(i.ToAlterationJson());
+
+        var payload = new JsonObject
+        {
+            ["alterations"] = alterations,
+            ["filter"] = new JsonObject
+            {
+                ["emptyFilterSelectsAll"] = false,
+                ["workflowInstanceIds"] = new JsonArray { JsonValue.Create(WorkflowInstanceId) },
+            },
+        };
+
+        return JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+    }
+
+    private RenderFragment RenderReview() => __builder =>
+    {
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
+            @Localizer["Confirm the changes that will be applied to instance"] <code>@WorkflowInstanceId</code>.
+        </MudText>
+
+        @if (StagedItems.Count == 0)
+        {
+            <MudAlert Severity="Severity.Warning">
+                @Localizer["Nothing to submit."]
+            </MudAlert>
+        }
+        else
+        {
+            <div class="elsa-alt-review-list">
+                @foreach (var item in StagedItems)
+                {
+                    <div class="elsa-alt-review-card" style="@($"--accent: {ResolveAccent(item.Descriptor.Color)};")">
+                        <div class="header">
+                            <MudIcon Icon="@item.Descriptor.Icon" Size="Size.Small"
+                                     Color="@MapColor(item.Descriptor.Color)" />
+                            <strong>@item.Descriptor.DisplayName</strong>
+                        </div>
+                        <div class="meta">@TargetText(item)</div>
+                        @{ var summary = item.SummariseConfig(); }
+                        @if (!string.IsNullOrEmpty(summary))
+                        {
+                            <div class="cfg"><code>@summary</code></div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    };
+
+    private RenderFragment RenderPreview() => __builder =>
+    {
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">
+            @Localizer["This is the exact request the Studio will send."]
+        </MudText>
+        <div class="elsa-alt-preview-line">
+            <span class="method">POST</span>
+            <code class="path">@RequestPath</code>
+        </div>
+        <pre class="elsa-alt-preview-json">@_previewJson</pre>
+    };
+
+    private RenderFragment RenderResult() => __builder =>
+    {
+        @if (_busy)
+        {
+            <div class="elsa-alt-result-busy">
+                <MudProgressCircular Indeterminate="true" />
+                <MudText>@Localizer["Submitting…"]</MudText>
+            </div>
+        }
+        else if (_error != null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-3">
+                <MudText Typo="Typo.subtitle2">@Localizer["Submission failed"]</MudText>
+                <pre style="white-space:pre-wrap; margin:6px 0 0; font-size:0.78rem;">@_error</pre>
+            </MudAlert>
+        }
+        else if (_resultPlanId != null)
+        {
+            <MudAlert Severity="Severity.Success" Class="mb-3">
+                <MudText Typo="Typo.subtitle2">@Localizer["Plan submitted"]</MudText>
+                <MudText Typo="Typo.body2">
+                    @Localizer["Plan id"]: <code>@_resultPlanId</code>
+                </MudText>
+            </MudAlert>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                @Localizer["The server is now executing the plan asynchronously. The plan details page polls for live status."]
+            </MudText>
+        }
+    };
+
+    private async Task SubmitAsync()
+    {
+        _busy = true;
+        _submitted = true;
+        _error = null;
+        _step = 2;
+        StateHasChanged();
+
+        try
+        {
+            var api = await BackendApiClientProvider.GetApiAsync<IAlterationsApi>();
+            var alterations = StagedItems.Select(i => i.ToAlterationJson()).ToList();
+            var plan = new AlterationPlanParams
+            {
+                Alterations = alterations,
+                Filter = new()
+                {
+                    EmptyFilterSelectsAll = false,
+                    WorkflowInstanceIds = new[] { WorkflowInstanceId },
+                },
+            };
+            var response = await api.Submit(plan, CancellationToken.None);
+            _resultPlanId = response?.PlanId;
+        }
+        catch (Refit.ApiException apiEx)
+        {
+            _error = $"HTTP {(int)apiEx.StatusCode} {apiEx.StatusCode}\n{apiEx.Content}";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.ToString();
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnViewPlan()
+    {
+        var planId = _resultPlanId;
+        Dialog.Close(DialogResult.Ok(planId));
+        if (ViewPlanRequested.HasDelegate && planId != null)
+            await ViewPlanRequested.InvokeAsync(planId);
+    }
+
+    private void OnClose() => Dialog.Close(DialogResult.Ok(_resultPlanId));
+    private void OnCancel() => Dialog.Cancel();
+
+    private static string TargetText(StagedAlteration item) => item.Descriptor.Target switch
+    {
+        AlterationTargetKind.Activity when !string.IsNullOrEmpty(item.TargetActivityDisplayName)
+            => $"Activity: {item.TargetActivityDisplayName}",
+        AlterationTargetKind.Activity when !string.IsNullOrEmpty(item.TargetActivityId)
+            => $"Activity: {item.TargetActivityId}",
+        AlterationTargetKind.Variable => "Variable scope",
+        _ => "Whole instance",
+    };
+
+    private static Color MapColor(string? c) => c switch
+    {
+        "error" => Color.Error,
+        "warning" => Color.Warning,
+        "info" => Color.Info,
+        "primary" => Color.Primary,
+        "secondary" => Color.Secondary,
+        _ => Color.Default,
+    };
+
+    private static string ResolveAccent(string? c) => c switch
+    {
+        "error" => "var(--mud-palette-error)",
+        "warning" => "var(--mud-palette-warning)",
+        "info" => "var(--mud-palette-info)",
+        "primary" => "var(--mud-palette-primary)",
+        "secondary" => "var(--mud-palette-secondary)",
+        _ => "var(--mud-palette-primary)",
+    };
+}

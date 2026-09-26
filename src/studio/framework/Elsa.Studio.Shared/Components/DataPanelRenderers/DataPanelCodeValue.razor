@@ -1,0 +1,15 @@
+@if (!string.IsNullOrWhiteSpace(Code))
+{
+    <pre style="background-color: var(--mud-palette-background-grey); padding: 8px; border-radius: 4px; overflow-x: auto; margin: 0;"><code>@Code</code></pre>
+}
+else
+{
+    <span>-</span>
+}
+
+@code {
+    /// <summary>
+    /// The code to display.
+    /// </summary>
+    [Parameter] public string? Code { get; set; }
+}

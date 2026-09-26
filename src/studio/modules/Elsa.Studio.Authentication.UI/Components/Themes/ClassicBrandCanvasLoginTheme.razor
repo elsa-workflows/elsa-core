@@ -1,0 +1,70 @@
+@inherits LoginThemeComponentBase
+
+<main class="classic-login-theme classic-brand-canvas-login-theme"
+      style="@BackgroundStyle"
+      aria-labelledby="elsa-login-heading">
+    <div class="classic-login-theme__utilities classic-brand-canvas-login-theme__utilities">
+        @Context.UtilityLinks
+    </div>
+
+    <section class="classic-brand-canvas-login-theme__brand"
+             aria-labelledby="classic-brand-canvas-title">
+        <div class="classic-brand-canvas-login-theme__brand-content">
+            <div class="classic-brand-canvas-login-theme__brand-lockup">
+                @if (!string.IsNullOrWhiteSpace(BrandLogoUrl))
+                {
+                    <img class="classic-brand-canvas-login-theme__logo"
+                         src="@BrandLogoUrl"
+                         alt="" />
+                }
+
+                <div class="classic-brand-canvas-login-theme__brand-copy">
+                    <div id="classic-brand-canvas-title"
+                         class="classic-brand-canvas-login-theme__brand-name">
+                        @Context.Branding.ApplicationName
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Context.Branding.Tagline))
+                    {
+                        <p>@Context.Branding.Tagline</p>
+                    }
+                </div>
+            </div>
+
+            <p class="classic-brand-canvas-login-theme__statement">
+                @Localizer["One trusted entry point for the workflows your organization designs, runs, and operates."]
+            </p>
+
+            <div class="classic-brand-canvas-login-theme__route" aria-hidden="true">
+                <span class="classic-brand-canvas-login-theme__route-node">@Localizer["You"]</span>
+                <span class="classic-brand-canvas-login-theme__route-line"></span>
+                <span class="classic-brand-canvas-login-theme__route-node">@Localizer["Identity"]</span>
+                <span class="classic-brand-canvas-login-theme__route-line"></span>
+                <span class="classic-brand-canvas-login-theme__route-node">@Localizer["Studio"]</span>
+            </div>
+        </div>
+
+        <footer class="classic-brand-canvas-login-theme__footer">
+            <span>@Localizer["Elsa Workflows"]</span>
+            @if (!string.IsNullOrWhiteSpace(Context.Version))
+            {
+                <span>@Localizer["Version"] @Context.Version</span>
+            }
+        </footer>
+    </section>
+
+    <section class="classic-brand-canvas-login-theme__signin">
+        <article class="classic-brand-canvas-login-theme__card">
+            @Context.LoginPanel
+        </article>
+    </section>
+</main>
+
+@code {
+    private string? BrandLogoUrl =>
+        Context.Branding.LogoUrl ?? Context.Branding.ReverseLogoUrl;
+
+    private string? BackgroundStyle =>
+        string.IsNullOrWhiteSpace(Context.Branding.ClassicBackgroundUrl)
+            ? null
+            : $"background-image: url('{Context.Branding.ClassicBackgroundUrl}')";
+}

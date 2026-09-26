@@ -1,0 +1,42 @@
+@using Elsa.Studio.Login.Contracts
+@using Microsoft.AspNetCore.Components.Authorization
+@inherits StudioComponentBase
+@implements IDisposable
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IEndSessionService EndSessionService
+
+@if (CurrentState?.User.Identity?.IsAuthenticated is true)
+{
+    <MudMenu Label="@CurrentState.User.Identity.Name"
+             Variant="Variant.Text"
+             EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
+             IconColor="Color.Inherit"
+             AnchorOrigin="Origin.BottomRight"
+             TransformOrigin="Origin.BottomRight"
+             Color="Color.Inherit"
+             Dense="true">
+        <MudMenuItem OnClick="@EndSessionService.LogoutAsync">Logout</MudMenuItem>
+    </MudMenu>
+}
+
+@code
+{
+    private AuthenticationState? CurrentState;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CurrentState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        AuthenticationStateProvider.AuthenticationStateChanged += OnCurrentEnvironmentChanged;
+    }
+
+    public void Dispose()
+    {
+        AuthenticationStateProvider.AuthenticationStateChanged -= OnCurrentEnvironmentChanged;
+    }
+
+    private async void OnCurrentEnvironmentChanged(Task<AuthenticationState> state)
+    {
+        CurrentState = await state;
+        StateHasChanged();
+    }
+}

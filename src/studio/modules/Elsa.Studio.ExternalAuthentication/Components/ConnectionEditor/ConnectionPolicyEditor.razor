@@ -1,0 +1,249 @@
+@using System.Text.Json
+@using Elsa.Studio.ExternalAuthentication.Services
+
+<MudStack Spacing="2">
+    <MudText Typo="Typo.h6">User provisioning and linking</MudText>
+    <MudText Typo="Typo.body2">
+        Choose what Elsa should do when an authenticated external identity is not linked to an Elsa user.
+    </MudText>
+    <MudSelect T="string"
+               Value="@SelectedType"
+               ValueChanged="SelectAsync"
+               Label="Unlinked identity policy"
+               Disabled="@ReadOnly"
+               Variant="Variant.Outlined"
+               Margin="Margin.Dense">
+        <MudSelectItem T="string" Value="@("inherit")">Use deployment default</MudSelectItem>
+        @foreach (var descriptor in AvailableDescriptors)
+        {
+            <MudSelectItem T="string" Value="@descriptor.Type">@descriptor.DisplayName</MudSelectItem>
+        }
+    </MudSelect>
+
+    @if (SelectedDescriptor is { } selected)
+    {
+        @if (!string.IsNullOrWhiteSpace(selected.Description))
+        {
+            <MudAlert Severity="Severity.Info" Dense="true">@selected.Description</MudAlert>
+        }
+
+        @foreach (var field in selected.Fields.Where(ShouldRenderPolicyField))
+        {
+            @if (string.Equals(field.Name, "matcher", StringComparison.Ordinal) &&
+                 string.Equals(selected.Type, "match-user", StringComparison.Ordinal))
+            {
+                <MudSelect T="string"
+                           Value="@SelectedMatcherType"
+                           ValueChanged="SelectMatcherAsync"
+                           Label="User matcher"
+                           Required="true"
+                           Disabled="@ReadOnly"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense">
+                    @foreach (var matcher in Matchers)
+                    {
+                        <MudSelectItem T="string" Value="@matcher.Type">@matcher.DisplayName</MudSelectItem>
+                    }
+                </MudSelect>
+                @if (SelectedMatcher is { } matcher)
+                {
+                    @if (!string.IsNullOrWhiteSpace(matcher.Description))
+                    {
+                        <MudText Typo="Typo.body2">@matcher.Description</MudText>
+                    }
+                    @if (matcher.RequiredClaimTypes.Count > 0)
+                    {
+                        <MudAlert Severity="Severity.Info" Dense="true">
+                            Required projected claims: @string.Join(", ", matcher.RequiredClaimTypes.OrderBy(x => x, StringComparer.Ordinal))
+                        </MudAlert>
+                    }
+                    @foreach (var matcherField in matcher.Fields.Where(field => DescriptorEditorState.IsVisible(field, _matcherSettings)))
+                    {
+                        <DescriptorField Field="matcherField" Settings="_matcherSettings" ReadOnly="@ReadOnly" Changed="CommitMatcherAsync" />
+                    }
+                }
+            }
+            else if (string.Equals(field.Name, "noMatchAction", StringComparison.Ordinal) &&
+                     string.Equals(selected.Type, "match-user", StringComparison.Ordinal))
+            {
+                <MudSelect T="string"
+                           Value="@(GetStringSetting("noMatchAction"))"
+                           ValueChanged="SetNoMatchActionAsync"
+                           Label="When no user matches"
+                           Disabled="@ReadOnly"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense">
+                    <MudSelectItem T="string" Value="@("reject")">Reject sign-in</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("create-user")">Create an Elsa user</MudSelectItem>
+                </MudSelect>
+            }
+            else if (string.Equals(field.Name, "defaultRoleIds", StringComparison.Ordinal))
+            {
+                @if (!string.IsNullOrWhiteSpace(RoleOptionsError))
+                {
+                    <MudAlert Severity="Severity.Warning" Dense="true">@RoleOptionsError</MudAlert>
+                }
+                <MudSelect T="string"
+                           Label="@field.DisplayName"
+                           HelperText="Select the Elsa roles assigned when this policy creates a user."
+                           MultiSelection="true"
+                           SelectedValues="@GetSelectedRoleIds()"
+                           SelectedValuesChanged="SetSelectedRoleIdsAsync"
+                           Disabled="@(ReadOnly || !CanSelectRoles || !string.IsNullOrWhiteSpace(RoleOptionsError))"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense">
+                    @foreach (var role in Roles)
+                    {
+                        <MudSelectItem T="string" Value="@role.Id">@role.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            }
+            else
+            {
+                <DescriptorField Field="field" Settings="_settings" ReadOnly="@ReadOnly" Changed="CommitAsync" />
+            }
+        }
+    }
+</MudStack>
+
+@code {
+    [Parameter] public PolicySelection? Value { get; set; }
+    [Parameter] public ICollection<UnlinkedIdentityPolicyDescriptor> Descriptors { get; set; } = [];
+    [Parameter] public ICollection<ExternalUserMatcherDescriptor> Matchers { get; set; } = [];
+    [Parameter] public ICollection<IdentityRoleOption> Roles { get; set; } = [];
+    [Parameter] public bool CanSelectRoles { get; set; }
+    [Parameter] public string? RoleOptionsError { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+    [Parameter] public EventCallback<PolicySelection?> ValueChanged { get; set; }
+
+    private readonly Dictionary<string, JsonElement> _settings = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, JsonElement> _matcherSettings = new(StringComparer.Ordinal);
+    private string SelectedType => Value?.Type ?? "inherit";
+    private IEnumerable<UnlinkedIdentityPolicyDescriptor> AvailableDescriptors =>
+        Descriptors.Where(x => !string.Equals(x.Type, "match-user", StringComparison.Ordinal) || Matchers.Count > 0);
+    private UnlinkedIdentityPolicyDescriptor? SelectedDescriptor =>
+        AvailableDescriptors.FirstOrDefault(x => string.Equals(x.Type, Value?.Type, StringComparison.Ordinal));
+    private string? SelectedMatcherType =>
+        _settings.TryGetValue("matcher", out var matcher) &&
+        matcher.ValueKind == JsonValueKind.Object &&
+        matcher.TryGetProperty("type", out var type) &&
+        type.ValueKind == JsonValueKind.String
+            ? type.GetString()
+            : null;
+    private ExternalUserMatcherDescriptor? SelectedMatcher =>
+        Matchers.FirstOrDefault(x => string.Equals(x.Type, SelectedMatcherType, StringComparison.Ordinal));
+
+    protected override void OnParametersSet()
+    {
+        _settings.Clear();
+        _matcherSettings.Clear();
+        if (Value?.Settings.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var property in Value.Settings.EnumerateObject())
+                _settings[property.Name] = property.Value.Clone();
+        }
+        if (_settings.TryGetValue("matcher", out var matcher) &&
+            matcher.ValueKind == JsonValueKind.Object &&
+            matcher.TryGetProperty("settings", out var settings) &&
+            settings.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var property in settings.EnumerateObject())
+                _matcherSettings[property.Name] = property.Value.Clone();
+        }
+    }
+
+    private async Task SelectAsync(string type)
+    {
+        if (string.Equals(type, "inherit", StringComparison.Ordinal))
+        {
+            await ValueChanged.InvokeAsync(null);
+            return;
+        }
+
+        var descriptor = AvailableDescriptors.First(x => string.Equals(x.Type, type, StringComparison.Ordinal));
+        _settings.Clear();
+        _matcherSettings.Clear();
+        foreach (var field in descriptor.Fields.Where(x => x.DefaultValue is not null))
+            _settings[field.Name] = field.DefaultValue!.Value.Clone();
+        if (string.Equals(descriptor.Type, "match-user", StringComparison.Ordinal))
+            _settings["noMatchAction"] = JsonSerializer.SerializeToElement("reject");
+        await ValueChanged.InvokeAsync(new PolicySelection
+        {
+            Type = descriptor.Type,
+            SettingsVersion = descriptor.SettingsVersion,
+            Settings = JsonSerializer.SerializeToElement(_settings)
+        });
+    }
+
+    private Task CommitAsync()
+    {
+        if (Value is null)
+            return Task.CompletedTask;
+        Value.Settings = JsonSerializer.SerializeToElement(_settings);
+        return ValueChanged.InvokeAsync(Value);
+    }
+
+    private IReadOnlyCollection<string> GetSelectedRoleIds() =>
+        _settings.TryGetValue("defaultRoleIds", out var value) && value.ValueKind == JsonValueKind.Array
+            ? value.EnumerateArray()
+                .Where(x => x.ValueKind == JsonValueKind.String)
+                .Select(x => x.GetString()!)
+                .ToArray()
+            : [];
+
+    private Task SetSelectedRoleIdsAsync(IEnumerable<string> roleIds)
+    {
+        _settings["defaultRoleIds"] = JsonSerializer.SerializeToElement(
+            roleIds.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.Ordinal).ToArray());
+        return CommitAsync();
+    }
+
+    private bool ShouldRenderPolicyField(ConnectionFieldDescriptor field)
+    {
+        if (!DescriptorEditorState.IsVisible(field, _settings))
+            return false;
+        return !string.Equals(field.Name, "defaultRoleIds", StringComparison.Ordinal) ||
+               !string.Equals(SelectedType, "match-user", StringComparison.Ordinal) ||
+               string.Equals(GetStringSetting("noMatchAction"), "create-user", StringComparison.Ordinal);
+    }
+
+    private string? GetStringSetting(string name) =>
+        _settings.TryGetValue(name, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
+
+    private async Task SelectMatcherAsync(string type)
+    {
+        var descriptor = Matchers.First(x => string.Equals(x.Type, type, StringComparison.Ordinal));
+        _matcherSettings.Clear();
+        foreach (var field in descriptor.Fields.Where(x => x.DefaultValue is not null))
+            _matcherSettings[field.Name] = field.DefaultValue!.Value.Clone();
+        WriteMatcher(descriptor);
+        await CommitAsync();
+    }
+
+    private Task CommitMatcherAsync()
+    {
+        var descriptor = SelectedMatcher;
+        if (descriptor is null)
+            return Task.CompletedTask;
+        WriteMatcher(descriptor);
+        return CommitAsync();
+    }
+
+    private void WriteMatcher(ExternalUserMatcherDescriptor descriptor)
+    {
+        _settings["matcher"] = JsonSerializer.SerializeToElement(new
+        {
+            type = descriptor.Type,
+            settingsVersion = descriptor.SettingsVersion,
+            settings = _matcherSettings
+        });
+    }
+
+    private Task SetNoMatchActionAsync(string action)
+    {
+        _settings["noMatchAction"] = JsonSerializer.SerializeToElement(action);
+        return CommitAsync();
+    }
+}

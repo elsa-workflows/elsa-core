@@ -1,0 +1,24 @@
+@using Elsa.Studio.Models
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<ScrollableWell MaxHeight="VisiblePaneHeight">
+    @if (JournalEntry != null!)
+    {
+        var record = JournalEntry.Record;
+        var payload = ParsePayload(record.Payload);
+
+        var eventInfo = new DataPanelModel
+        {
+            new DataPanelItem(Localizer["Name"], record.EventName),
+            new DataPanelItem(Label: Localizer["Timestamp"], Value: record.Timestamp, Format: DataPanelItemFormat.Timestamp, FormatString: "s"),
+            new DataPanelItem(Localizer["Message"], record.Message)
+        };
+
+        Merge(eventInfo, payload);
+        
+        <MudStack>
+            <DataPanel Title="@Localizer["Event"]" Data="eventInfo" HideEmptyValues="true"/>
+        </MudStack>
+    }
+</ScrollableWell>

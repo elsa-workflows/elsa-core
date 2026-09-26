@@ -1,0 +1,163 @@
+@using Elsa.Api.Client.Resources.ActivityDescriptors.Models
+@namespace Elsa.Studio.Workflows.DiagramDesigners.StateMachines.Presentation
+
+<MudDialog Class="state-machine-activity-picker-dialog" DefaultFocus="DefaultFocus.None">
+    <DialogContent>
+        <section class="state-machine-activity-picker"
+                 data-testid="state-machine-activity-picker"
+                 aria-label="@PickerHeading"
+                 aria-keyshortcuts="/"
+                 @onkeydown="HandleGlobalKeyboardAsync">
+            <header class="state-machine-activity-picker__header">
+                <p class="state-machine-activity-picker__eyebrow">@Localizer["Activity library"]</p>
+                <p class="state-machine-activity-picker__context"><strong>@ContextKicker</strong><span aria-hidden="true">·</span>@ContextDescription</p>
+            </header>
+
+            @if (_isLoading)
+            {
+                <div class="state-machine-activity-picker__state" role="status" aria-live="polite" data-picker-state="loading">
+                    <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Small" />
+                    <span>@Localizer["Loading activities…"]</span>
+                </div>
+            }
+            else if (_loadError != null)
+            {
+                <div class="state-machine-activity-picker__state state-machine-activity-picker__state--error" role="alert" data-picker-state="error">
+                    <strong>@Localizer["Activities could not be loaded"]</strong>
+                    <span>@Localizer["Close this dialog and try again."]</span>
+                </div>
+            }
+            else
+            {
+                <div class="state-machine-activity-picker__search-wrap">
+                    <label for="@SearchInputId">@Localizer["Search activities"]</label>
+                    <div class="state-machine-activity-picker__search-control">
+                        <input @ref="_searchInput"
+                               id="@SearchInputId"
+                               type="search"
+                               value="@_searchText"
+                               placeholder="@Localizer["Search activities by name, category, or description"]"
+                               autocomplete="off"
+                               role="combobox"
+                               aria-autocomplete="list"
+                               aria-expanded="true"
+                               aria-controls="@ResultsId"
+                               aria-activedescendant="@SelectedResultId"
+                               @oninput="OnSearchInput"
+                               @onkeydown="HandleKeyboardAsync" />
+                        <kbd aria-label="@Localizer["Keyboard shortcut: slash"]">/</kbd>
+                    </div>
+                </div>
+
+                <div class="state-machine-activity-picker__workspace">
+                    <nav class="state-machine-activity-picker__filters" aria-label="@Localizer["Activity filters"]">
+                        <button type="button" class="@GetSectionClass(SuggestedSection)" aria-pressed="@IsSectionSelected(SuggestedSection)"
+                                disabled="@(SuggestedDescriptors.Count == 0)" @onclick="() => SelectSection(SuggestedSection)">
+                            <span>@Localizer["Suggested"]</span><span>@SuggestedDescriptors.Count</span>
+                        </button>
+                        <button type="button" class="@GetSectionClass(RecentSection)" aria-pressed="@IsSectionSelected(RecentSection)"
+                                disabled="@(RecentDescriptors.Count == 0)" @onclick="() => SelectSection(RecentSection)">
+                            <span>@Localizer["Recent"]</span><span>@RecentDescriptors.Count</span>
+                        </button>
+                        <button type="button" class="@GetSectionClass(AllSection)" aria-pressed="@IsSectionSelected(AllSection)"
+                                @onclick="() => SelectSection(AllSection)">
+                            <span>@Localizer["All activities"]</span><span>@_descriptors.Count</span>
+                        </button>
+                        <div class="state-machine-activity-picker__filter-separator" aria-hidden="true"></div>
+                        @foreach (var group in CategoryGroups)
+                        {
+                            <button type="button" class="@GetSectionClass(group.Key)" aria-pressed="@IsSectionSelected(group.Key)"
+                                    @onclick="() => SelectSection(group.Key)">
+                                <span>@group.Key</span><span>@group.Count()</span>
+                            </button>
+                        }
+                    </nav>
+
+                    <div class="state-machine-activity-picker__results-panel">
+                        <div class="state-machine-activity-picker__results-heading">
+                            <strong>@(string.IsNullOrWhiteSpace(_searchText) ? Localizer["Activities"] : Localizer["Search results"])</strong>
+                            <span>@Localizer["{0} results", VisibleDescriptors.Count]</span>
+                        </div>
+                        @if (VisibleDescriptors.Count == 0)
+                        {
+                            <div class="state-machine-activity-picker__state" role="status" data-picker-state="empty">
+                                <strong>@Localizer["No matching activities"]</strong>
+                                <span>@Localizer["Try another search or category."]</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div id="@ResultsId" class="state-machine-activity-picker__results" role="listbox" aria-label="@Localizer["Available activities"]">
+                                @foreach (var descriptor in VisibleDescriptors)
+                                {
+                                    <div @key="descriptor.TypeName"
+                                         id="@GetResultId(descriptor)"
+                                         class="@(IsSelected(descriptor) ? "state-machine-activity-picker__result state-machine-activity-picker__result--selected" : "state-machine-activity-picker__result")"
+                                         role="option"
+                                         aria-selected="@IsSelected(descriptor)"
+                                         aria-describedby="@DetailsId"
+                                         data-testid="state-machine-activity-option"
+                                         data-activity-type="@descriptor.TypeName"
+                                         data-activity-name="@GetDisplayName(descriptor)"
+                                         @onclick="() => Select(descriptor)"
+                                         @ondblclick="() => SelectAndCommitAsync(descriptor)">
+                                        <span class="state-machine-activity-picker__result-copy">
+                                            <span class="state-machine-activity-picker__result-title">
+                                                <strong>@GetDisplayName(descriptor)</strong>
+                                                @if (ReferenceEquals(descriptor, SequenceDescriptor) && SuggestedDescriptors.Count > 0)
+                                                {
+                                                    <span class="state-machine-activity-picker__recommended">@Localizer["Recommended"]</span>
+                                                }
+                                                else if (IsDesignerBackedRoot(descriptor))
+                                                {
+                                                    <span class="state-machine-activity-picker__recommended">@Localizer["Visual designer"]</span>
+                                                }
+                                            </span>
+                                            <span>@descriptor.TypeName</span>
+                                        </span>
+                                        <span class="state-machine-activity-picker__result-category">@GetCategory(descriptor)</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <aside id="@DetailsId" class="state-machine-activity-picker__details" aria-live="polite">
+                        @if (_selectedDescriptor == null)
+                        {
+                            <strong>@Localizer["Select an activity"]</strong>
+                            <p>@Localizer["Choose a result to review it before adding it."]</p>
+                        }
+                        else
+                        {
+                            <p class="state-machine-activity-picker__details-kicker">@GetCategory(_selectedDescriptor)</p>
+                            <h3>@GetDisplayName(_selectedDescriptor)</h3>
+                            <code>@_selectedDescriptor.TypeName</code>
+                            <p>@(string.IsNullOrWhiteSpace(_selectedDescriptor.Description) ? Localizer["No description is available."] : Localizer[_selectedDescriptor.Description])</p>
+                            @if (ReferenceEquals(_selectedDescriptor, SequenceDescriptor))
+                            {
+                                <div class="state-machine-activity-picker__note" role="note">
+                                    <strong>@Localizer["Runs multiple activities"]</strong>
+                                    <span>@Localizer["After adding Sequence, open it to arrange its child activities."]</span>
+                                </div>
+                            }
+                            else if (IsDesignerBackedRoot(_selectedDescriptor))
+                            {
+                                <div class="state-machine-activity-picker__note" role="note">
+                                    <strong>@Localizer["Includes a visual designer"]</strong>
+                                    <span>@Localizer["After adding it, use Open designer to configure its internal workflow."]</span>
+                                </div>
+                            }
+                        }
+                    </aside>
+                </div>
+            }
+        </section>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@Localizer["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="MudBlazor.Variant.Filled" Disabled="@(_selectedDescriptor == null)" OnClick="CommitAsync" data-testid="state-machine-activity-picker-commit">
+            @CommitLabel
+        </MudButton>
+    </DialogActions>
+</MudDialog>

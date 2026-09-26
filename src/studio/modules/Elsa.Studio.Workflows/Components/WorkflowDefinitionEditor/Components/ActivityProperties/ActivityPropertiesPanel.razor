@@ -1,0 +1,24 @@
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<CascadingValue Value="ExpressionDescriptorProvider">
+    <MudTabs Elevation="0" ApplyEffectsToContainer="true" ActivePanelIndexChanged="@OnActivePanelIndexChanged">
+        @{ var tabAttributes = ActivityTabAttributes; }
+
+        @foreach (var tab in Tabs.Where(x => x.IsVisible(tabAttributes)))
+        {
+            <MudTabPanel Text="@tab.Title" Icon="@tab.Icon" IconColor="@(tab.GetIconColor(tabAttributes) ?? Color.Default)">
+                @if (tab.WrapInScrollableWell)
+                {
+                    <ScrollableWell MaxHeight="VisiblePaneHeight">
+                        @tab.Render(tabAttributes)
+                    </ScrollableWell>
+                }
+                else
+                {
+                    @tab.Render(tabAttributes)
+                }
+            </MudTabPanel>
+        }
+    </MudTabs>
+</CascadingValue>
