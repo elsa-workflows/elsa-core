@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,6 +16,23 @@ from prepare_consolidated_paired_blazor_host import CONTRACT, FIXTURE, REFERENCE
 
 
 class ConsolidatedPairedBlazorHostTests(unittest.TestCase):
+    def test_standalone_preparer_import_keeps_checkout_free_of_bytecode(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            scripts = Path(directory) / "scripts" / "integration-program"
+            scripts.mkdir(parents=True)
+            for name in (
+                "prepare_consolidated_paired_blazor_host.py",
+                "prepare_paired_blazor_host.py",
+                "run_paired_source_probe.py",
+            ):
+                shutil.copy2(ROOT / "scripts/integration-program" / name, scripts / name)
+
+            environment = {key: value for key, value in os.environ.items()
+                           if key not in {"PYTHONDONTWRITEBYTECODE", "PYTHONPYCACHEPREFIX"}}
+            subprocess.run([sys.executable, str(scripts / "prepare_consolidated_paired_blazor_host.py"), "--help"],
+                           cwd=directory, env=environment, capture_output=True, text=True, check=True)
+            self.assertFalse((scripts / "__pycache__").exists())
+
     def test_focused_solution_filter_contains_imported_pair_and_core(self) -> None:
         solution_filter = json.loads((ROOT / "Elsa.WorkflowContexts.Debug.slnf").read_text(encoding="utf-8"))
         self.assertEqual(solution_filter["solution"]["path"], "Elsa.sln")

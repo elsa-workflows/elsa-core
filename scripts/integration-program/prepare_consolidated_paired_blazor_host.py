@@ -7,10 +7,13 @@ import argparse
 import hashlib
 import json
 import subprocess
+import sys
 from pathlib import Path
 from shutil import copy2
 from xml.sax.saxutils import escape
 
+# The source-cleanliness receipt must not be dirtied by importing the fixture helper.
+sys.dont_write_bytecode = True
 from prepare_paired_blazor_host import AMBIENT_CONFIG
 
 
