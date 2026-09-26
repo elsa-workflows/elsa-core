@@ -328,10 +328,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
             return hostPause;
 
         if (hostPause is null)
-        {
-            await SaveAdoptedOrIgnoreDuplicateAsync(legacy, cancellationToken);
-            hostPause = legacy;
-        }
+            hostPause = await SaveAdoptedOrIgnoreDuplicateAsync(legacy, cancellationToken);
 
         await UseKeyValueStoreAsync(store => store.DeleteAsync(_legacyPersistenceKey, cancellationToken), foundUnder);
         return hostPause;
@@ -352,7 +349,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         return (underAmbient, ambient);
     }
 
-    private async Task SaveAdoptedOrIgnoreDuplicateAsync(SerializedKeyValuePair legacy, CancellationToken cancellationToken)
+    private async Task<SerializedKeyValuePair> SaveAdoptedOrIgnoreDuplicateAsync(SerializedKeyValuePair legacy, CancellationToken cancellationToken)
     {
         try
         {
@@ -362,12 +359,15 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
                 SerializedValue = legacy.SerializedValue,
                 TenantId = Tenant.AgnosticTenantId
             }, cancellationToken), AgnosticTenant);
+            return legacy;
         }
         catch
         {
+            // A concurrent host adopted first; use the stored row's reason.
             var existing = await FindAsync(_persistenceKey, AgnosticTenant, cancellationToken);
             if (existing is null)
                 throw;
+            return existing;
         }
     }
 
