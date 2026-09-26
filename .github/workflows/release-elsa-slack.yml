@@ -17,6 +17,9 @@ on:
       - 'Directory.Packages.props'
       - 'doc/integration-program/release-units.json'
       - 'scripts/integration-program/prove_slack_artifact_consumer.py'
+      - 'scripts/integration-program/verify_slack_source_link.py'
+      - 'scripts/integration-program/run_mapped_slack_package_proof.py'
+      - 'scripts/integration-program/run_slack_package_proof.py'
   workflow_dispatch:
 
 permissions:
@@ -152,9 +155,33 @@ jobs:
             --version "$PACKAGE_VERSION" \
             --elsa-version "$ELSA_VERSION" \
             --slacknet-version "$SLACKNET_VERSION"
+      - name: Verify SourceLink against the exact Core commit
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          PACKAGE_VERSION: ${{ steps.dependency.outputs.proof_base_version }}.${{ github.run_id }}.${{ github.run_attempt }}
+          EXPECTED_SOURCE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          dotnet tool install --tool-path "$RUNNER_TEMP/sourcelink" sourcelink \
+            --version 3.1.1 --configfile "$RUNNER_TEMP/Slack-NuGet.Config"
+          python3 scripts/integration-program/verify_slack_source_link.py \
+            --artifacts "$RUNNER_TEMP/slack-artifacts" \
+            --version "$PACKAGE_VERSION" \
+            --commit "$EXPECTED_SOURCE_SHA" \
+            --sourcelink-tool "$RUNNER_TEMP/sourcelink/sourcelink" \
+            --output "$RUNNER_TEMP/slack-source-link-receipt.json"
+      - name: Defer Core SourceLink verification for fork commits
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+        run: echo '::notice::Fork commit is not yet in elsa-core; rerun SourceLink verification from the imported repository before release acceptance.'
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: elsa-slack-local-artifacts-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/slack-artifacts/*
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          name: elsa-slack-source-link-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/slack-source-link-receipt.json
           if-no-files-found: error
           retention-days: 7
