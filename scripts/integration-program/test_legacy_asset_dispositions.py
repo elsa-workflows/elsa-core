@@ -25,6 +25,8 @@ class LegacyAssetDispositionTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.ledger = json.loads(DEFAULT_LEDGER.read_text(encoding="utf-8"))
         cls.receipt = json.loads(DEFAULT_RECEIPT.read_text(encoding="utf-8"))
+        cls.pending_index = next(index for index, row in enumerate(cls.ledger["assets"])
+                                 if "completion" not in row)
 
     def test_committed_ledger_has_complete_asset_rows_and_pins(self) -> None:
         self.assertEqual([], validate_ledger(self.ledger))
@@ -83,12 +85,12 @@ class LegacyAssetDispositionTests(unittest.TestCase):
         for status in ("implemented", "retired", "complete"):
             with self.subTest(status=status):
                 changed = copy.deepcopy(self.ledger)
-                changed["assets"][0]["status"] = status
+                changed["assets"][self.pending_index]["status"] = status
                 self.assertTrue(any("unsupported non-pending status" in error for error in validate_ledger(changed)))
         for status in ("represented_in_core", "retired_from_active_tree"):
             with self.subTest(status=status):
                 changed = copy.deepcopy(self.ledger)
-                changed["assets"][0]["status"] = status
+                changed["assets"][self.pending_index]["status"] = status
                 self.assertTrue(any("lacks structured evidence" in error for error in validate_ledger(changed)))
 
     def test_completion_evidence_rejects_missing_review_or_changed_active_file(self) -> None:
@@ -131,7 +133,7 @@ class LegacyAssetDispositionTests(unittest.TestCase):
 
     def test_pending_assets_cannot_claim_completion_evidence(self) -> None:
         changed = copy.deepcopy(self.ledger)
-        changed["assets"][0]["completion"] = {"pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8428"}
+        changed["assets"][self.pending_index]["completion"] = {"pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8428"}
         self.assertTrue(any("pending asset has completion evidence" in error for error in validate_ledger(changed)))
 
     def test_ledger_paths_must_be_normalized_relative_git_paths(self) -> None:
