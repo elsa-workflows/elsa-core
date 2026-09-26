@@ -9,6 +9,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 from zipfile import ZipFile
@@ -18,6 +19,7 @@ from run_slack_package_proof import require_sourcelink_tool
 
 
 ROOT = Path(__file__).resolve().parents[2]
+PAIR_PROJECT = ROOT / "scripts/integration-program/VerifyPackageSymbolPair/VerifyPackageSymbolPair.csproj"
 
 
 def verify(artifacts: Path, version: str, commit: str, sourcelink_tool: Path) -> dict[str, object]:
@@ -38,7 +40,7 @@ def verify(artifacts: Path, version: str, commit: str, sourcelink_tool: Path) ->
     actual = {path.name for path in artifacts.iterdir() if path.is_file()}
     if actual != {package.name, symbols.name}:
         raise ValueError(f"Expected only the Elsa.Slack package and symbols; got {sorted(actual)}")
-    assembly, tool_version, tool_sha256 = require_sourcelink_tool(sourcelink_tool)
+    source_link_assembly, tool_version, tool_sha256 = require_sourcelink_tool(sourcelink_tool)
     dotnet = shutil.which("dotnet")
     if dotnet is None:
         raise ValueError("dotnet is required for SourceLink verification")
@@ -47,11 +49,36 @@ def verify(artifacts: Path, version: str, commit: str, sourcelink_tool: Path) ->
         output = Path(temporary)
         (output / "pdb").mkdir()
         (output / "logs").mkdir()
-        with ZipFile(symbols) as archive:
+        pair_build = output / "pair-verifier"
+        subprocess.run(
+            [dotnet, "build", str(PAIR_PROJECT), "--configuration", "Release", "--output", str(pair_build),
+             "--nologo", "--verbosity", "quiet"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        pair_verifier = pair_build / "VerifyPackageSymbolPair.dll"
+        with ZipFile(package) as package_archive, ZipFile(symbols) as symbol_archive:
             for framework in TFMS:
                 member = f"lib/{framework}/Elsa.Slack.pdb"
-                (output / "pdb" / f"Elsa.Slack.{framework}.pdb").write_bytes(archive.read(member))
-        results = verify_imported_source_link(output, commit, assembly, Path(dotnet), os.environ.copy())
+                pdb_bytes = symbol_archive.read(member)
+                (output / "pdb" / f"Elsa.Slack.{framework}.pdb").write_bytes(pdb_bytes)
+                pair = output / "pairs" / framework
+                pair.mkdir(parents=True)
+                packaged_assembly = pair / "Elsa.Slack.dll"
+                pdb = pair / "Elsa.Slack.pdb"
+                packaged_assembly.write_bytes(package_archive.read(f"lib/{framework}/Elsa.Slack.dll"))
+                pdb.write_bytes(pdb_bytes)
+                pairing = subprocess.run(
+                    [dotnet, str(pair_verifier), str(packaged_assembly), str(pdb)],
+                    capture_output=True,
+                    text=True,
+                )
+                if pairing.returncode != 0:
+                    raise ValueError(f"Packaged assembly and external symbols do not match for {framework}: {pairing.stderr.strip()}")
+        results = verify_imported_source_link(output, commit, source_link_assembly, Path(dotnet), os.environ.copy())
+        for result in results:
+            result["assemblySymbolPair"] = "passed"
 
     return {
         "packageId": "Elsa.Slack",

@@ -18,6 +18,7 @@ on:
       - 'doc/integration-program/release-units.json'
       - 'scripts/integration-program/prove_slack_artifact_consumer.py'
       - 'scripts/integration-program/verify_slack_source_link.py'
+      - 'scripts/integration-program/VerifyPackageSymbolPair/**'
       - 'scripts/integration-program/run_mapped_slack_package_proof.py'
       - 'scripts/integration-program/run_slack_package_proof.py'
   workflow_dispatch:
