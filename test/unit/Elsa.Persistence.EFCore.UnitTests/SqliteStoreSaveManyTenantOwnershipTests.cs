@@ -27,7 +27,7 @@ public sealed class SqliteStoreSaveManyTenantOwnershipTests : StoreSaveManyTenan
         await scenario.Store.SaveManyAsync([new OwnedRow { Id = "abc", TenantId = "tenant-a", Payload = "original" }], x => x.Id, onSaving: null);
 
         // The exact key passes its own check; the variant targets the same row under NOCASE with a forged tenant.
-        await Assert.ThrowsAsync<InvalidOperationException>(() => scenario.Store.SaveManyAsync(
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => scenario.Store.SaveManyAsync(
             [
                 new OwnedRow { Id = "abc", TenantId = "tenant-a", Payload = "original" },
                 new OwnedRow { Id = "ABC", TenantId = "tenant-b", Payload = "stolen" }
@@ -35,6 +35,7 @@ public sealed class SqliteStoreSaveManyTenantOwnershipTests : StoreSaveManyTenan
             x => x.Id,
             onSaving: null));
 
+        Assert.Contains("'ABC'", exception.Message);
         await AssertOriginalOwnerAsync(scenario);
     }
 

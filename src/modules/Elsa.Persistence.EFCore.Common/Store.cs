@@ -285,8 +285,14 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
             return;
 
         var collidingRows = await FindExistingRowsAsync(dbContext, keyName, keysWithoutOwnRow, cancellationToken);
-        if (collidingRows.Count > 0)
-            throw CreateOwnershipMismatchException(collidingRows.Select(row => row.Key));
+        if (collidingRows.Count == 0)
+            return;
+
+        // The database only says which rows were reached; name the likely submitted spelling for the error.
+        var submittedVariants = keysWithoutOwnRow
+            .Where(key => collidingRows.Any(row => string.Equals(key.TrimEnd(), row.Key.TrimEnd(), StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+        throw CreateOwnershipMismatchException(submittedVariants.Count > 0 ? submittedVariants : collidingRows.Select(row => row.Key));
     }
 
     private static async Task<List<ExistingKeyTenant>> FindExistingRowsAsync(
