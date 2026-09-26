@@ -22,7 +22,6 @@ namespace Elsa.Persistence.EFCore;
 public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextFactory, IServiceProvider serviceProvider) where TDbContext : DbContext where TEntity : class, new()
 {
     private const int WriteMaxRetryCount = 3;
-    private const int BulkWriteBatchSize = 50;
     private static readonly TimeSpan WriteBaseDelay = TimeSpan.FromMilliseconds(50);
 
     // ReSharper disable once StaticMemberInGenericType
@@ -256,7 +255,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         var keyName = keySelector.GetProperty()!.Name;
         var existingByKey = new Dictionary<string, string?>(StringComparer.Ordinal);
 
-        foreach (var keys in entities.Select(getKey).Distinct(StringComparer.Ordinal).Chunk(BulkWriteBatchSize))
+        foreach (var keys in entities.Select(getKey).Distinct(StringComparer.Ordinal).Chunk(BulkUpsertExtensions.DefaultBatchSize))
         {
             var keyList = keys.ToList();
             var existingRows = await dbContext.Set<TEntity>()
@@ -280,7 +279,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
 
             var incomingTenantId = ((Entity)(object)entity).TenantId;
             if (!MayReplaceExistingRow(existingTenantId, incomingTenantId, writerTenantId))
-                throw new InvalidOperationException($"Cannot replace {typeof(TEntity).Name} '{key}': tenant ownership mismatch.");
+                throw new InvalidOperationException($"Cannot replace {typeof(TEntity).Name} '{key}': tenant ownership mismatch. Shared rows need TenantId '*'.");
         }
     }
 
