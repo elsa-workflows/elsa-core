@@ -272,20 +272,22 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
             {
                 var incomingMatches = incomingByKey[existing.Key];
                 if (!incomingMatches.Any())
-                    throw CreateOwnershipMismatchException(existing.Key);
+                    throw CreateOwnershipMismatchException(keyList);
 
-                foreach (var entity in incomingMatches)
+                foreach (var (submittedKey, incomingTenantId) in incomingMatches.Select(entity => (getKey(entity), ((Entity)(object)entity).TenantId)))
                 {
-                    var incomingTenantId = ((Entity)(object)entity).TenantId;
                     if (!MayReplaceExistingRow(existing.TenantId, incomingTenantId, writerTenantId))
-                        throw CreateOwnershipMismatchException(existing.Key);
+                        throw CreateOwnershipMismatchException([submittedKey]);
                 }
             }
         }
     }
 
-    private static InvalidOperationException CreateOwnershipMismatchException(string key) =>
-        new($"Cannot replace {typeof(TEntity).Name} '{key}': tenant ownership mismatch. Shared rows need TenantId '*'.");
+    private static InvalidOperationException CreateOwnershipMismatchException(IEnumerable<string> submittedKeys)
+    {
+        var keys = string.Join("', '", submittedKeys);
+        return new($"Cannot replace {typeof(TEntity).Name} '{keys}': tenant ownership mismatch. Shared rows need TenantId '*'.");
+    }
 
     /// <summary>
     /// Incoming must already be the writer's tenant or "*"; existing must match that same
