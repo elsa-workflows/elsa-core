@@ -289,8 +289,12 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
             return;
 
         // The batch is refused; ask the database which likely spellings reached a row so the error names them.
+        // Capped: this only improves the message and runs while other saves of this entity type wait.
         var submittedVariants = new List<string>();
-        foreach (var key in keysWithoutOwnRow.Where(key => collidingRows.Any(row => string.Equals(key.TrimEnd(), row.Key.TrimEnd(), StringComparison.OrdinalIgnoreCase))))
+        var likelyVariants = keysWithoutOwnRow
+            .Where(key => collidingRows.Any(row => string.Equals(key.TrimEnd(), row.Key.TrimEnd(), StringComparison.OrdinalIgnoreCase)))
+            .Take(MaxNamedCollisionKeys);
+        foreach (var key in likelyVariants)
         {
             if ((await FindExistingRowsAsync(dbContext, keyName, [key], cancellationToken)).Count > 0)
                 submittedVariants.Add(key);
@@ -341,6 +345,8 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
 
         return existing == incoming;
     }
+
+    private const int MaxNamedCollisionKeys = 10;
 
     private sealed record ExistingKeyTenant(string Key, string? TenantId);
 
