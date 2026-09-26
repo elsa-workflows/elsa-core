@@ -11,15 +11,18 @@ using NSubstitute;
 namespace Elsa.Workflows.Runtime.UnitTests.Quiescence;
 
 /// <summary>
-/// The quiescence pause key is host-wide. Memory isolation (#8434) must not tenant-stamp it.
+/// The host-wide pause key must be written as * under an agnostic tenant scope. Main's
+/// MemoryKeyValueStore is not tenant-filtered; the * stamp and tenant push keep EF (and a
+/// later isolated memory store) aligned.
 /// </summary>
 public class QuiescenceSignalPauseKeyTenantAgnosticTests
 {
-    private const string PauseKey = "elsa.quiescence.pause.default";
+    private const string PauseKey = "elsa.quiescence.host-pause.default";
 
     private readonly ISystemClock _clock;
     private readonly IExecutionCycleRegistry _cycleRegistry;
     private readonly DefaultTenantAccessor _tenantAccessor;
+    private readonly MemoryStore<SerializedKeyValuePair> _backing;
     private readonly MemoryKeyValueStore _store;
 
     public QuiescenceSignalPauseKeyTenantAgnosticTests()
@@ -28,9 +31,8 @@ public class QuiescenceSignalPauseKeyTenantAgnosticTests
         _clock.UtcNow.Returns(DateTimeOffset.Parse("2026-04-24T10:00:00Z"));
         _cycleRegistry = Substitute.For<IExecutionCycleRegistry>();
         _tenantAccessor = new DefaultTenantAccessor();
-        // MemoryKeyValueStore on main is not tenant-filtered; the signal still stamps * and
-        // writes under an agnostic scope so EF (and a later isolated memory store) stay aligned.
-        _store = new MemoryKeyValueStore(new MemoryStore<SerializedKeyValuePair>());
+        _backing = new MemoryStore<SerializedKeyValuePair>();
+        _store = new MemoryKeyValueStore(_backing);
     }
 
     [Fact(DisplayName = "Cross-tenant pause/resume keeps live and persisted state aligned")]
@@ -71,6 +73,44 @@ public class QuiescenceSignalPauseKeyTenantAgnosticTests
         await AssertPausedAsync(restored, "maintenance");
     }
 
+    [Fact(DisplayName = "Pause from a named tenant replaces an existing * row")]
+    public async Task PauseFromNamedTenant_ReplacesExistingAgnosticRow()
+    {
+        _backing.Save(new SerializedKeyValuePair
+        {
+            Key = PauseKey,
+            SerializedValue = "prior",
+            TenantId = Tenant.AgnosticTenantId
+        }, x => x.Id);
+        var sut = CreateSignal();
+
+        using (UseTenant("tenant-x"))
+            await sut.PauseAsync("maintenance", "x", CancellationToken.None);
+
+        await AssertPausedAsync(sut, "maintenance");
+    }
+
+    [Fact(DisplayName = "Pause pushes an agnostic tenant context around the persist")]
+    public async Task Pause_PushesAgnosticTenantContext()
+    {
+        var recording = new RecordingTenantAccessor();
+        var store = new MemoryKeyValueStore(new MemoryStore<SerializedKeyValuePair>());
+        var sut = QuiescenceSignal.Create(
+            Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions
+            {
+                PausePersistence = PausePersistencePolicy.AcrossReactivations
+            }),
+            _clock,
+            _cycleRegistry,
+            store,
+            recording);
+
+        using (recording.PushContext(new Tenant { Id = "tenant-x", Name = "tenant-x" }))
+            await sut.PauseAsync("maintenance", "x", CancellationToken.None);
+
+        Assert.Contains(Tenant.AgnosticTenantId, recording.PushedTenantIds);
+    }
+
     private QuiescenceSignal CreateSignal() =>
         QuiescenceSignal.Create(
             Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions
@@ -80,7 +120,7 @@ public class QuiescenceSignalPauseKeyTenantAgnosticTests
             _clock,
             _cycleRegistry,
             _store,
-            tenantAccessor: _tenantAccessor);
+            _tenantAccessor);
 
     private IDisposable UseTenant(string tenantId) =>
         _tenantAccessor.PushContext(new Tenant { Id = tenantId, Name = tenantId });
@@ -121,4 +161,34 @@ public class QuiescenceSignalPauseKeyTenantAgnosticTests
 
     private Task<SerializedKeyValuePair?> FindPauseAsync() =>
         _store.FindAsync(new KeyValueFilter { Key = PauseKey }, CancellationToken.None);
+
+    private sealed class RecordingTenantAccessor : ITenantAccessor
+    {
+        private readonly Stack<(Tenant? Tenant, string TenantId)> _stack = [];
+
+        public List<string?> PushedTenantIds { get; } = [];
+        public string TenantId { get; private set; } = Tenant.DefaultTenantId;
+        public Tenant? Tenant { get; private set; }
+
+        public IDisposable PushContext(Tenant? tenant)
+        {
+            _stack.Push((Tenant, TenantId));
+            Tenant = tenant;
+            TenantId = tenant?.Id ?? Tenant.DefaultTenantId;
+            PushedTenantIds.Add(tenant?.Id);
+            return new Restore(this);
+        }
+
+        private void Pop()
+        {
+            var previous = _stack.Pop();
+            Tenant = previous.Tenant;
+            TenantId = previous.TenantId;
+        }
+
+        private sealed class Restore(RecordingTenantAccessor owner) : IDisposable
+        {
+            public void Dispose() => owner.Pop();
+        }
+    }
 }

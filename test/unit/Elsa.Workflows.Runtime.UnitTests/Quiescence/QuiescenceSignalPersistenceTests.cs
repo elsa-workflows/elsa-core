@@ -1,4 +1,5 @@
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.KeyValues.Contracts;
 using Elsa.KeyValues.Entities;
 using Elsa.KeyValues.Models;
@@ -27,7 +28,7 @@ public class QuiescenceSignalPersistenceTests
     [Fact(DisplayName = "SessionScoped policy ignores persisted state")]
     public async Task SessionScopedIgnoresKey()
     {
-        _kv.Pairs["elsa.quiescence.pause.default"] = new SerializedKeyValuePair { Key = "elsa.quiescence.pause.default", SerializedValue = "prior" };
+        _kv.Pairs["elsa.quiescence.host-pause.default"] = new SerializedKeyValuePair { Key = "elsa.quiescence.host-pause.default", SerializedValue = "prior" };
         var sut = QuiescenceSignal.Create(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.SessionScoped }), _clock, _cycleRegistry, _kv);
 
         await sut.InitializePersistedStateAsync(CancellationToken.None);
@@ -38,13 +39,34 @@ public class QuiescenceSignalPersistenceTests
     [Fact(DisplayName = "AcrossReactivations policy re-applies persisted pause on init")]
     public async Task AcrossReactivationsRestoresPause()
     {
-        _kv.Pairs["elsa.quiescence.pause.default"] = new SerializedKeyValuePair { Key = "elsa.quiescence.pause.default", SerializedValue = "maintenance" };
+        _kv.Pairs["elsa.quiescence.host-pause.default"] = new SerializedKeyValuePair { Key = "elsa.quiescence.host-pause.default", SerializedValue = "maintenance" };
         var sut = QuiescenceSignal.Create(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _cycleRegistry, _kv);
 
         await sut.InitializePersistedStateAsync(CancellationToken.None);
 
         Assert.True(sut.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
         Assert.Equal("maintenance", sut.CurrentState.PauseReasonText);
+    }
+
+    [Fact(DisplayName = "AcrossReactivations adopts a legacy default-tenant pause key")]
+    public async Task AcrossReactivationsAdoptsLegacyPauseKey()
+    {
+        _kv.Pairs["elsa.quiescence.pause.default"] = new SerializedKeyValuePair
+        {
+            Key = "elsa.quiescence.pause.default",
+            SerializedValue = "legacy-maintenance",
+            TenantId = Tenant.DefaultTenantId
+        };
+        var sut = QuiescenceSignal.Create(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _cycleRegistry, _kv);
+
+        await sut.InitializePersistedStateAsync(CancellationToken.None);
+
+        Assert.True(sut.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.Equal("legacy-maintenance", sut.CurrentState.PauseReasonText);
+        Assert.True(_kv.Pairs.TryGetValue("elsa.quiescence.host-pause.default", out var adopted));
+        Assert.Equal("legacy-maintenance", adopted.SerializedValue);
+        Assert.Equal(Tenant.AgnosticTenantId, adopted.TenantId);
+        Assert.False(_kv.Pairs.ContainsKey("elsa.quiescence.pause.default"));
     }
 
     [Fact(DisplayName = "Pause writes the persisted key when policy is AcrossReactivations")]
@@ -54,8 +76,9 @@ public class QuiescenceSignalPersistenceTests
 
         await sut.PauseAsync("migration", "op@ex.com", CancellationToken.None);
 
-        Assert.True(_kv.Pairs.TryGetValue("elsa.quiescence.pause.default", out var pair));
+        Assert.True(_kv.Pairs.TryGetValue("elsa.quiescence.host-pause.default", out var pair));
         Assert.Equal("migration", pair.SerializedValue);
+        Assert.Equal(Tenant.AgnosticTenantId, pair.TenantId);
     }
 
     [Fact(DisplayName = "Resume clears the persisted key when policy is AcrossReactivations")]
@@ -66,14 +89,14 @@ public class QuiescenceSignalPersistenceTests
 
         await sut.ResumeAsync("op@ex.com", CancellationToken.None);
 
-        Assert.False(_kv.Pairs.ContainsKey("elsa.quiescence.pause.default"));
+        Assert.False(_kv.Pairs.ContainsKey("elsa.quiescence.host-pause.default"));
     }
 
     [Fact(DisplayName = "Persistence key is scoped to the supplied shell name (multi-shell isolation)")]
     public async Task PersistenceKeyIncludesShellName()
     {
         // Regression: previously the DI registration did not pass a shellName, so all shells in a CShells
-        // deployment shared "elsa.quiescence.pause.default" — pausing shell A would re-pause shell B on next
+        // deployment shared "elsa.quiescence.host-pause.default" — pausing shell A would re-pause shell B on next
         // activation. The factory in ShellFeatures/WorkflowRuntimeFeature now injects ShellSettings.Id; this
         // test locks in the constructor-level contract that shellName is reflected in the persistence key.
         var sutA = QuiescenceSignal.Create(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _cycleRegistry, _kv, shellName: "shell-a");
@@ -82,11 +105,11 @@ public class QuiescenceSignalPersistenceTests
         await sutA.PauseAsync("migration-a", "op@ex.com", CancellationToken.None);
         await sutB.PauseAsync("migration-b", "op@ex.com", CancellationToken.None);
 
-        Assert.True(_kv.Pairs.TryGetValue("elsa.quiescence.pause.shell-a", out var pairA));
-        Assert.True(_kv.Pairs.TryGetValue("elsa.quiescence.pause.shell-b", out var pairB));
+        Assert.True(_kv.Pairs.TryGetValue("elsa.quiescence.host-pause.shell-a", out var pairA));
+        Assert.True(_kv.Pairs.TryGetValue("elsa.quiescence.host-pause.shell-b", out var pairB));
         Assert.Equal("migration-a", pairA.SerializedValue);
         Assert.Equal("migration-b", pairB.SerializedValue);
-        Assert.False(_kv.Pairs.ContainsKey("elsa.quiescence.pause.default"));
+        Assert.False(_kv.Pairs.ContainsKey("elsa.quiescence.host-pause.default"));
     }
 
     [Fact(DisplayName = "Concurrent Pause/Resume converge: persisted state matches final in-memory state")]
@@ -101,20 +124,17 @@ public class QuiescenceSignalPersistenceTests
         var sut = QuiescenceSignal.Create(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _cycleRegistry, gatedStore);
 
         var pauseTask = sut.PauseAsync("migration", "op@ex.com", CancellationToken.None).AsTask();
-        await gatedStore.SaveStarted.Task; // Pause has won the persistence mutex; its SaveAsync is in flight (blocked).
+        await gatedStore.SaveStarted.Task; // Pause holds the persistence mutex; its SaveAsync is blocked.
 
         var resumeTask = sut.ResumeAsync("op@ex.com", CancellationToken.None).AsTask();
-        // Resume's in-memory transition runs synchronously in the inner lock; it then queues on the persistence
-        // mutex. Spin briefly to give the resume task a chance to reach the WaitAsync before we release Pause.
-        while (sut.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause))
-            await Task.Yield();
+        // Resume waits on the mutex for the whole Pause (transition + persist) to finish, then deletes.
 
-        gatedStore.ReleaseSave(); // Unblocks Pause's SaveAsync; Resume then acquires the mutex and runs DeleteAsync.
+        gatedStore.ReleaseSave();
 
         await Task.WhenAll(pauseTask, resumeTask);
 
         Assert.Equal(QuiescenceReason.None, sut.CurrentState.Reason);
-        Assert.False(gatedStore.Pairs.ContainsKey("elsa.quiescence.pause.default"));
+        Assert.False(gatedStore.Pairs.ContainsKey("elsa.quiescence.host-pause.default"));
     }
 
     [Fact(DisplayName = "Persistence completes even when caller's CancellationToken is already cancelled")]
@@ -132,7 +152,7 @@ public class QuiescenceSignalPersistenceTests
         var state = await sut.PauseAsync("migration", "op@ex.com", cancelled);
 
         Assert.True(state.Reason.HasFlag(QuiescenceReason.AdministrativePause));
-        Assert.True(_kv.Pairs.TryGetValue("elsa.quiescence.pause.default", out var pair));
+        Assert.True(_kv.Pairs.TryGetValue("elsa.quiescence.host-pause.default", out var pair));
         Assert.Equal("migration", pair.SerializedValue);
     }
 
@@ -164,7 +184,7 @@ public class QuiescenceSignalPersistenceTests
 
         await sut.PauseAsync("migration", "op@ex.com", CancellationToken.None);
 
-        Assert.True(_kv.Pairs.TryGetValue("elsa.quiescence.pause.default", out var pair));
+        Assert.True(_kv.Pairs.TryGetValue("elsa.quiescence.host-pause.default", out var pair));
         Assert.Equal("migration", pair.SerializedValue);
     }
 
