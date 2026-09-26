@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from verify_import_source_tip_refresh_r2 import (
+    DAPPER_TEST_SOLUTION_ENTRY,
     RECEIPT as R2_RECEIPT,
     blob_and_mode,
     git,
@@ -111,6 +112,8 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
     for workflow in (".github/workflows/packages.yml", ".github/workflows/update-wiki.yml"):
         if blob_and_mode(base, workflow, root) != blob_and_mode(accepted, workflow, root):
             raise ValueError(f"Source refresh changed active publisher workflow: {workflow}")
+    if git_bytes("show", "HEAD:Elsa.sln", root=root).count(DAPPER_TEST_SOLUTION_ENTRY) != 1:
+        raise ValueError("Current Elsa.sln does not select the mapped Dapper tests exactly once")
 
 
 def main() -> int:

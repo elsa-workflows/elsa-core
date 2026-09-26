@@ -5,8 +5,9 @@ from __future__ import annotations
 import copy
 import json
 import unittest
+from unittest.mock import patch
 
-from verify_import_source_tip_refresh_r5 import RECEIPT, verify
+from verify_import_source_tip_refresh_r5 import RECEIPT, git_bytes, verify
 
 
 class SourceTipRefreshR5Tests(unittest.TestCase):
@@ -39,6 +40,16 @@ class SourceTipRefreshR5Tests(unittest.TestCase):
         receipt["mappedDeltaCommit"] = receipt["baseImportHead"]
         with self.assertRaisesRegex(ValueError, "Reviewed Extensions source-tip commits changed"):
             verify(receipt)
+
+    def test_current_solution_must_select_dapper_tests(self) -> None:
+        def without_current_test(*args: str, **kwargs: object) -> bytes:
+            if args == ("show", "HEAD:Elsa.sln"):
+                return b""
+            return git_bytes(*args, **kwargs)
+
+        with patch("verify_import_source_tip_refresh_r5.git_bytes", side_effect=without_current_test):
+            with self.assertRaisesRegex(ValueError, "Current Elsa.sln does not select"):
+                verify(self.receipt)
 
 
 if __name__ == "__main__":

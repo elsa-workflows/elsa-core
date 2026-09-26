@@ -18,6 +18,9 @@ OLD_TEST_REFERENCE = (
     b'..\\..\\..\\..\\src\\modules\\persistence\\Elsa.Persistence.Dapper\\Elsa.Persistence.Dapper.csproj'
 )
 NEW_TEST_REFERENCE = b'../../../../../src/extensions/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj'
+DAPPER_TEST_SOLUTION_ENTRY = (
+    b'"Elsa.Dapper.UnitTests", "test\\extensions\\modules\\persistence\\Elsa.Dapper.UnitTests\\Elsa.Dapper.UnitTests.csproj"'
+)
 
 
 def git(*args: str, root: Path = ROOT) -> str:
@@ -141,7 +144,7 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
     if active_test != upstream_test.replace(OLD_TEST_REFERENCE, NEW_TEST_REFERENCE):
         raise ValueError("Dapper test project has an unreviewed source transform")
     solution = git_bytes("show", f"{test_integration}:Elsa.sln", root=root)
-    if solution.count(b'"Elsa.Dapper.UnitTests", "test\\extensions\\modules\\persistence\\Elsa.Dapper.UnitTests\\Elsa.Dapper.UnitTests.csproj"') != 1:
+    if solution.count(DAPPER_TEST_SOLUTION_ENTRY) != 1:
         raise ValueError("New Dapper tests are not in canonical Elsa.sln")
 
     mapped_paths = {row["mappedPath"] for row in rows}
