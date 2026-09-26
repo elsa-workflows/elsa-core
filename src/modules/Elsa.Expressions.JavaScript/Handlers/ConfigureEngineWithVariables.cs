@@ -116,6 +116,6 @@ public partial class ConfigureEngineWithVariables(IOptions<JintOptions> options)
         }
     }
 
-    [GeneratedRegex(@"variables\.(\w+)(?:\.\w+)*")]
+    [GeneratedRegex(@"variables\.([\w$]+)(?:\.[\w$]+)*")]
     private static partial Regex ExtractVariableNamesRegex();
 }
