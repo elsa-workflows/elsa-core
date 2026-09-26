@@ -27,7 +27,8 @@ class ConsolidatedPairedBlazorHostTests(unittest.TestCase):
             ):
                 shutil.copy2(ROOT / "scripts/integration-program" / name, scripts / name)
 
-            environment = {key: value for key, value in os.environ.items() if key != "PYTHONDONTWRITEBYTECODE"}
+            environment = {key: value for key, value in os.environ.items()
+                           if key not in {"PYTHONDONTWRITEBYTECODE", "PYTHONPYCACHEPREFIX"}}
             subprocess.run([sys.executable, str(scripts / "prepare_consolidated_paired_blazor_host.py"), "--help"],
                            cwd=directory, env=environment, capture_output=True, text=True, check=True)
             self.assertFalse((scripts / "__pycache__").exists())
