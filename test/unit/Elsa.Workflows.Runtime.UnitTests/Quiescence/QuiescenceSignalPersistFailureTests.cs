@@ -64,11 +64,15 @@ public class QuiescenceSignalPersistFailureTests
     [Fact(DisplayName = "Racing pause and resume that both fail leave live state matching the store")]
     public async Task ConcurrentFailedPauseAndResume_LiveMatchesStore()
     {
-        var store = new ThrowingKeyValueStore { ThrowOnSave = true, ThrowOnDelete = true };
+        var store = new GatedThrowingKeyValueStore { ThrowOnDelete = true };
         var sut = CreateSignal(store);
 
         var pauseTask = sut.PauseAsync("maintenance", "op", CancellationToken.None).AsTask();
+        await store.SaveStarted.Task;
         var resumeTask = sut.ResumeAsync("op", CancellationToken.None).AsTask();
+        for (var i = 0; i < 20 && sut.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause); i++)
+            await Task.Delay(5);
+        store.ReleaseThrow();
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => pauseTask);
         await resumeTask;
@@ -142,6 +146,7 @@ public class QuiescenceSignalPersistFailureTests
         public readonly Dictionary<string, SerializedKeyValuePair> Pairs = new(StringComparer.Ordinal);
         public readonly TaskCompletionSource SaveStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource _throwGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public bool ThrowOnDelete { get; set; }
 
         public void ReleaseThrow() => _throwGate.TrySetResult();
 
@@ -163,6 +168,8 @@ public class QuiescenceSignalPersistFailureTests
 
         public Task DeleteAsync(string key, CancellationToken cancellationToken)
         {
+            if (ThrowOnDelete)
+                throw new InvalidOperationException("boom-delete");
             Pairs.Remove(key);
             return Task.CompletedTask;
         }

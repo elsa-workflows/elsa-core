@@ -76,10 +76,10 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         string? generationId = null) => new(options, clock, cycleRegistry, keyValueStore, serviceScopeFactory: null, tenantAccessor: null, shellName, generationId);
 
     /// <summary>
-    /// Creates the signal with a fixed key-value store and tenant accessor. Intended for tests that
-    /// exercise tenant-scoped persist through the direct-store path.
+    /// Creates the signal with a fixed key-value store and tenant accessor. Test helper only —
+    /// not public, so it does not compete with the 3.8 <see cref="Create"/> overload.
     /// </summary>
-    public static QuiescenceSignal Create(
+    internal static QuiescenceSignal Create(
         IOptions<GracefulShutdownOptions> options,
         ISystemClock clock,
         IExecutionCycleRegistry cycleRegistry,
@@ -136,8 +136,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         if (_options.Value.PausePersistence != PausePersistencePolicy.AcrossReactivations) return;
 
         var pair = await FindAsync(_persistenceKey, AgnosticTenant, cancellationToken);
-        if (pair is null)
-            pair = await AdoptLegacyPauseAsync(cancellationToken);
+        pair = await SweepAndAdoptLegacyPauseAsync(pair, cancellationToken);
         if (pair is null) return;
 
         lock (_sync)
@@ -179,7 +178,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     /// <inheritdoc />
     public async ValueTask<QuiescenceState> PauseAsync(string? reasonText, string? requestedBy, CancellationToken cancellationToken)
     {
-        await _persistenceMutex.WaitAsync(CancellationToken.None);
+        await _persistenceMutex.WaitAsync(cancellationToken);
         try
         {
             QuiescenceState next;
@@ -221,7 +220,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     /// <inheritdoc />
     public async ValueTask<QuiescenceState> ResumeAsync(string? requestedBy, CancellationToken cancellationToken)
     {
-        await _persistenceMutex.WaitAsync(CancellationToken.None);
+        await _persistenceMutex.WaitAsync(cancellationToken);
         try
         {
             QuiescenceState next;
@@ -275,9 +274,9 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         if (_options.Value.PausePersistence != PausePersistencePolicy.AcrossReactivations)
             return;
 
-        // Legacy EF rows used elsa.quiescence.pause.{shell} and may be stamped '' or a named tenant.
+        // Legacy EF rows used elsa.quiescence.pause.{shell} and may be stamped '', NULL, or a named tenant.
         // Memory starts empty on restart, so the leftover-row risk is EF-only. The host-pause key
-        // never shares that PK; adoption at startup copies a default-tenant/NULL legacy row.
+        // never shares that PK; startup adopts a visible leftover and always deletes it.
         await UseKeyValueStoreAsync(async store =>
         {
             var live = Volatile.Read(ref _state);
@@ -314,24 +313,86 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     }
 
     /// <summary>
-    /// One-time upgrade: a 3.8 default-tenant or NULL row on the old key is visible under
-    /// <see cref="Tenant.Default"/>. Copy it to the host-pause <c>*</c> key and delete the old row.
-    /// Named-tenant leftover rows stay on the old key and cannot collide.
+    /// Upgrade sweep: a 3.8 row on the old key is visible under <see cref="Tenant.Default"/>
+    /// (<c>''</c> / NULL) or under the ambient tenant (named-tenant pauses restored at
+    /// tenant activation). Adopt only when the host-pause key is missing. Always delete a
+    /// visible leftover so a later resume cannot be undone by a half-failed adoption.
     /// </summary>
-    private async Task<SerializedKeyValuePair?> AdoptLegacyPauseAsync(CancellationToken cancellationToken)
+    private async Task<SerializedKeyValuePair?> SweepAndAdoptLegacyPauseAsync(
+        SerializedKeyValuePair? hostPause,
+        CancellationToken cancellationToken)
     {
-        var legacy = await FindAsync(_legacyPersistenceKey, Tenant.Default, cancellationToken);
-        if (legacy is null) return null;
+        var ambient = ReadAmbientTenant();
+        var (legacy, foundUnder) = await FindVisibleLegacyAsync(ambient, cancellationToken);
+        if (legacy is null)
+            return hostPause;
 
-        await UseKeyValueStoreAsync(store => store.SaveAsync(new SerializedKeyValuePair
+        if (hostPause is null)
         {
-            Key = _persistenceKey,
-            SerializedValue = legacy.SerializedValue,
-            TenantId = Tenant.AgnosticTenantId
-        }, cancellationToken), AgnosticTenant);
-        await UseKeyValueStoreAsync(store => store.DeleteAsync(_legacyPersistenceKey, cancellationToken), Tenant.Default);
-        return legacy;
+            await SaveAdoptedOrIgnoreDuplicateAsync(legacy, cancellationToken);
+            hostPause = legacy;
+        }
+
+        await UseKeyValueStoreAsync(store => store.DeleteAsync(_legacyPersistenceKey, cancellationToken), foundUnder);
+        return hostPause;
     }
+
+    private async Task<(SerializedKeyValuePair? Pair, Tenant FoundUnder)> FindVisibleLegacyAsync(
+        Tenant ambient,
+        CancellationToken cancellationToken)
+    {
+        var underDefault = await FindAsync(_legacyPersistenceKey, Tenant.Default, cancellationToken);
+        if (underDefault is not null)
+            return (underDefault, Tenant.Default);
+
+        if (IsDefaultTenant(ambient))
+            return (null, Tenant.Default);
+
+        var underAmbient = await FindAsync(_legacyPersistenceKey, ambient, cancellationToken);
+        return (underAmbient, ambient);
+    }
+
+    private async Task SaveAdoptedOrIgnoreDuplicateAsync(SerializedKeyValuePair legacy, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await UseKeyValueStoreAsync(store => store.SaveAsync(new SerializedKeyValuePair
+            {
+                Key = _persistenceKey,
+                SerializedValue = legacy.SerializedValue,
+                TenantId = Tenant.AgnosticTenantId
+            }, cancellationToken), AgnosticTenant);
+        }
+        catch
+        {
+            var existing = await FindAsync(_persistenceKey, AgnosticTenant, cancellationToken);
+            if (existing is null)
+                throw;
+        }
+    }
+
+    private Tenant ReadAmbientTenant()
+    {
+        if (_tenantAccessor is not null)
+            return TenantFromAccessor(_tenantAccessor);
+
+        if (_serviceScopeFactory is null)
+            return Tenant.Default;
+
+        using var scope = _serviceScopeFactory.CreateScope();
+        var accessor = scope.ServiceProvider.GetService<ITenantAccessor>();
+        return accessor is null ? Tenant.Default : TenantFromAccessor(accessor);
+    }
+
+    private static Tenant TenantFromAccessor(ITenantAccessor accessor)
+    {
+        if (accessor.Tenant is { } tenant)
+            return tenant;
+
+        return string.IsNullOrEmpty(accessor.TenantId) ? Tenant.Default : new Tenant { Id = accessor.TenantId, Name = accessor.TenantId };
+    }
+
+    private static bool IsDefaultTenant(Tenant tenant) => string.IsNullOrEmpty(tenant.Id);
 
     private ValueTask<SerializedKeyValuePair?> FindAsync(string key, Tenant tenant, CancellationToken cancellationToken) =>
         UseKeyValueStoreAsync(store => store.FindAsync(new KeyValueFilter { Key = key }, cancellationToken), defaultValue: (SerializedKeyValuePair?)null, tenant);
