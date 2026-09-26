@@ -175,6 +175,39 @@ return `Bearer ${token}`;
 
 Spec: [specs/007-secrets-module/spec.md](../../specs/007-secrets-module/spec.md).
 
+## Connection Credential Lifecycle
+
+Outbound integrations that require OAuth or API-key credentials use `Elsa.Connections` to manage the full credential lifecycle: account linking, token storage, refresh, background reconciliation, and revocation.
+
+Start in [src/modules/Elsa.Connections](../../src/modules/Elsa.Connections).
+
+**Feature graph:**
+
+- `ConnectionsFeature` (depends on `SecretsFeature`): registers `IConnectionLifecycleService`, `IConnectionMetadataInspector`, `IConnectionUseAuthorizer` (default: deny all), and tenant-context helpers.
+- `WorkflowCredentialBindingsFeature` (from `Elsa.Connections.Credentials.Workflows`, depends on `ConnectionsFeature`): adds workflow-scoped credential bindings (`IWorkflowCredentialResolver`, `IWorkflowCredentialBindingManager`). The host configures the target `EnvironmentId`; workflow data cannot supply it.
+- `WorkflowCredentialUseGrantsFeature`: adds durable use-grant issuance and withdrawal (`IWorkflowCredentialGrantManager`).
+- `ConnectionLifecycleReconciliationFeature`: background worker that polls for expired or due credentials and reconciles lifecycle state.
+- `EFCoreConnectionsPersistenceFeature` (from `Elsa.Connections.Credentials.Persistence.EFCore`): replaces in-memory stores with EF Core-backed stores for `IConnectionLifecycleStore`, `IConnectionCredentialBindingStore`, and `IConnectionCredentialUseGrantStore`.
+
+**Authorization rules:**
+
+All authorization defaults to deny. Hosts must register explicit implementations:
+
+- `IConnectionUseAuthorizer`: decide whether a workflow execution may use a named connection at all.
+- `IConnectionCredentialShareAuthorizer`: decide whether a specific workflow instance may be granted use of a specific connection binding revision. Required when issuing use grants.
+- `IConnectionCredentialGrantManagementAuthorizer`: decide whether the calling actor may issue or withdraw use grants.
+- `IConnectionMetadataInspector.InspectAsync`: internally requires the host to grant the `inspect:metadata` action; the default authorizer denies it.
+
+**Metadata inspection:**
+
+`IConnectionMetadataInspector` exposes a safe, non-secret connection summary (ID, provider ID, account ID, status, revision) to authorized host code. It takes tenant from `ITenantAccessor` and environment from host configuration. It does not expose token material, secret names, or generation IDs. No public HTTP route is added by this service.
+
+**ADRs:**
+
+- [2026-09-23: integration-credential-lifecycle](../adr/2026-09-23-integration-credential-lifecycle.md): why Secrets backs credential storage and what the lifecycle operations are.
+- [2026-09-25: connection-metadata-inspection-boundary](../adr/2026-09-25-connection-metadata-inspection-boundary.md): why inspection is a distinct `inspect:metadata` action and what the safe DTO contains.
+- [2026-09-25: separate-workflow-connection-sharing-authorization](../adr/2026-09-25-separate-workflow-connection-sharing-authorization.md): why sharing and grant management are two independent host decisions.
+
 ## Ingress Rate Limiting
 
 Elsa exposes opt-in ASP.NET Core rate limiting hooks for two ingress surfaces:

@@ -101,6 +101,21 @@ Designer and API clients need metadata about available activities, inputs, outpu
 
 Modules add activities by calling `Module.UseWorkflowManagement(management => management.AddActivitiesFrom<TMarker>())` or equivalent helpers.
 
+## Activity Registry Reconciliation
+
+In clustered deployments, each node keeps workflow-as-activity descriptors in its local in-memory registry. Descriptor updates on one node (publish, retract, delete) do not automatically propagate to other nodes.
+
+To keep registries consistent, the management layer maintains a `WorkflowDefinitionRegistryGeneration` table (one row per tenant, one row for the `*` tenant-agnostic scope). After every definition mutation that affects descriptors, the owning handler increments the affected generation. Nodes that poll the shared generation can detect staleness and re-read descriptors from the authoritative store.
+
+Key types:
+
+- [IWorkflowDefinitionRegistryGenerationStore](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowDefinitionRegistryGenerationStore.cs): reads and advances the per-tenant generation counter.
+- [IWorkflowDefinitionActivityRegistryReconciler](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowDefinitionActivityRegistryReconciler.cs): reconciles the current tenant's descriptor set from the definition store.
+- [WorkflowDefinitionActivityRegistryUpdater](../../src/modules/Elsa.Workflows.Management/Services/WorkflowDefinitionActivityRegistryUpdater.cs): implements both `IWorkflowDefinitionActivityRegistryUpdater` and `IWorkflowDefinitionActivityRegistryReconciler`; uses a process-wide semaphore plus a mutation-version check so a stale store read cannot restore a descriptor removed by a concurrent local update.
+- EF Core persistence in [Elsa.Persistence.EFCore/Modules/Management](../../src/modules/Elsa.Persistence.EFCore/Modules/Management).
+
+The default store is in-memory and node-local; the EF Core store is required for cross-pod generation sharing. A reconciliation is a full replace of the tenant's visible descriptor set, so nodes converge regardless of which individual mutations they missed. Draft-save operations do not advance the generation. See [ADR 2026-09-25](../adr/2026-09-25-reconcile-workflow-activity-registry-with-durable-generations.md) for the full decision.
+
 ## Host Method Activities
 
 Host method activities expose methods from registered host classes as activities. Relevant files:
