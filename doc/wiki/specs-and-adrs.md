@@ -45,6 +45,20 @@ Current ADRs:
 
 > **Note on naming:** ADRs 0001–0027 use sequential integer prefixes. New ADRs added after 2026-08-25 use a `YYYY-MM-DD-` date prefix instead (see [2026-08-25-date-prefixed-adr-identifiers](../adr/2026-08-25-date-prefixed-adr-identifiers.md)) to avoid sequential numbering collisions on parallel branches.
 
+## Date-Prefixed ADRs
+
+| ADR | Topic |
+| --- | --- |
+| [2026-08-25](../adr/2026-08-25-date-prefixed-adr-identifiers.md) | Adopt date-prefixed identifiers for new ADRs to avoid sequential-number collisions on parallel branches. |
+| [2026-09-15](../adr/2026-09-15-correlated-workflow-activation.md) | Correlated workflow activation strategies and distributed lock safety. See also [Workflow Runtime](workflow-runtime.md#correlation-ids-and-activation-strategies). |
+| [2026-09-23](../adr/2026-09-23-bounded-connector-release-unit.md) | `Elsa.Slack` as the first bounded independent connector NuGet release unit and compatibility proof. |
+| [2026-09-23](../adr/2026-09-23-integration-credential-lifecycle.md) | Store outbound connector credentials in Secrets and govern the connection lifecycle separately from both `ISecretManager` and `ExternalAuthentication`. |
+| [2026-09-23](../adr/2026-09-23-preserve-upstream-history-during-consolidation.md) | Preserve original upstream commit histories during repository consolidation by using merge parents rather than squashing. |
+| [2026-09-24](../adr/2026-09-24-version-github-activities-with-provider-ids.md) | Keep existing v1 GitHub activities unchanged and add v2 siblings that separate the Elsa activity ID from the provider resource ID. |
+| [2026-09-25](../adr/2026-09-25-connection-metadata-inspection-boundary.md) | Authorize connection metadata inspection as a distinct, host-only `inspect:metadata` operation separate from management and workflow-use grants. |
+| [2026-09-25](../adr/2026-09-25-reconcile-workflow-activity-registry-with-durable-generations.md) | Reconcile workflow-as-activity descriptor registries across pods using a durable per-tenant generation counter polled on a configurable schedule. |
+| [2026-09-25](../adr/2026-09-25-separate-workflow-connection-sharing-authorization.md) | Require both a grant-management policy and a separate sharing policy (`IConnectionCredentialShareAuthorizer`) to issue a workflow credential use grant. |
+
 ## Active And Recent Specs
 
 | Spec | Area | Why it matters |
