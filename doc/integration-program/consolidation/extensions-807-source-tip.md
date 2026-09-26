@@ -14,6 +14,8 @@ The two active C# files differ from the upstream tip only by a final newline. Th
 
 The history-bearing merge in [Core PR #8499](https://github.com/elsa-workflows/elsa-core/pull/8499) makes the original `807cd893` commit an ancestor without rewriting it or importing a second active copy of Extensions paths. The [fifth source-tip receipt](source-tip-refresh-2026-09-26-r5.json) and its validator pin the reviewed three-file mapping, check that current `Elsa.sln` still selects the mapped Dapper tests, and preserve the earlier 14-file receipt at its historical integration commit. This does not rewrite the frozen E96 source receipt, establish package-mode compatibility, or authorize the draft import into `main`. Refresh the final source-tip receipt and repeat affected proofs if either upstream main advances again.
 
+The [sixth source-tip receipt](source-tip-refresh-2026-09-27-r6.json) (#8293) later took over the current bytes of the second receipt's `ParameterizedQueryBuilderExtensions.cs`. This validator's prior-mapping check skips only that path, and its command line runs the sixth check.
+
 Verification on the mapped branch before the source-history merge:
 
 - `dotnet test test/extensions/modules/persistence/Elsa.Dapper.UnitTests/Elsa.Dapper.UnitTests.csproj --framework net10.0 --configuration Release -m:1 --verbosity quiet`: 11 passed, 0 failed/skipped.

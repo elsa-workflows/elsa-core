@@ -28,6 +28,8 @@ upstream parent. It must run again on the final import head, after later Core
 main integration. The earlier E96 receipt remains historical evidence for
 its original pins; it must not be misread as describing these newer files.
 
+The [sixth source-tip receipt](source-tip-refresh-2026-09-27-r6.json) (#8293) now owns the current bytes of the mapped `DapperWorkflowDefinitionStoreCompareAndSwapTests.cs`, whose store constructor gained the atomic update's connection provider and tenant accessor. This receipt still pins that file at its history join and every other mapped path at `HEAD`; the verifier's command line also runs the sixth check.
+
 Disposable rehearsal at `35594a3` passed `git fsck --full --no-reflogs`,
 the verifier, five Dapper compare-and-swap tests and six Mongo
 compare-and-swap tests on net10.0, and a Studio Secrets module build on

@@ -2,6 +2,8 @@
 
 Program #8194, story #8286, task #8293. This is a source patch for the disposable consolidated build, to be incorporated into the history-preserving import. It is not a published package or a completed source import. Apply it after #8291's build preparation, against its exact Core/Extensions/Studio pins.
 
+The draft import incorporated this patch on 2026-09-27; see [Dapper atomic workflow updates in the draft import](dapper-atomic-updates-import.md). The sections below remain the record of the original rehearsal patch.
+
 ## Behavior
 
 `DapperWorkflowDefinitionStore.TryUpdateLatestAsync` loads the latest matching row inside a SERIALIZABLE transaction, checks the caller's expected state and invokes its update callback on that loaded row. It updates the same row or unmarks the former latest row and inserts a new draft in that transaction. Failed insertion rolls back the unmark. The selected row's tenant and logical definition cannot change. `ToolVersion` exists on the public workflow entity, but the existing Dapper entity/record mapping does not populate it. The atomic update preserves the loaded record column instead of clearing it through that mapping.
@@ -60,3 +62,5 @@ The suite defaults to SQLite. For a dedicated synthetic PostgreSQL instance set 
 ## Integration gate
 
 Keep #8293/#8287 open until this patch is incorporated into actual consolidated source, the complete declared-framework solution builds with Mongo's implementation, and provider tests pass in that final layout. The Core caller fix is separate (#8292/#8295). Do not publish the synthetic rehearsal commit: the real import must retain original ancestors and reviewed transformations.
+
+Incorporation status: [dapper-atomic-updates-import.md](dapper-atomic-updates-import.md) records the import head, the reviewed-versus-imported classification, the sixth source-tip receipt and the provider results on the draft import.
