@@ -21,7 +21,7 @@ namespace Elsa.Persistence.EFCore.UnitTests;
 
 /// <summary>
 /// The host-wide pause key must persist as * so EF tenant filters cannot hide it, and a 3.8
-/// default-tenant/NULL row on the old key must be adopted at startup.
+/// default-tenant/NULL or ambient named-tenant row on the old key must be adopted at startup.
 /// </summary>
 public class QuiescenceSignalPauseKeyTenantAgnosticEfTests
 {
@@ -110,6 +110,44 @@ public class QuiescenceSignalPauseKeyTenantAgnosticEfTests
         var leftover = await harness.FindIgnoringFiltersAsync(LegacyPauseKey);
         Assert.NotNull(leftover);
         Assert.Equal("tenant-x", leftover.TenantId);
+
+        var restarted = harness.CreateSignal();
+        await restarted.InitializePersistedStateAsync(CancellationToken.None);
+        Assert.False(restarted.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+    }
+
+    [Fact(DisplayName = "Legacy named-tenant row is adopted when startup runs under that tenant")]
+    public async Task LegacyNamedTenantRow_IsAdopted_WhenInitializedUnderThatTenant()
+    {
+        await using var harness = await EfHarness.CreateAsync(tenancyEnabled: true);
+        await harness.SeedAsync(LegacyPauseKey, "named-maintenance", "tenant-x");
+
+        var sut = harness.CreateSignal();
+        using (harness.UseTenant("tenant-x"))
+            await sut.InitializePersistedStateAsync(CancellationToken.None);
+
+        Assert.True(sut.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.Equal("named-maintenance", sut.CurrentState.PauseReasonText);
+        await AssertPausedAsync(harness, sut, "named-maintenance");
+        Assert.Null(await harness.FindIgnoringFiltersAsync(LegacyPauseKey));
+    }
+
+    [Fact(DisplayName = "A leftover legacy row is deleted even when the host-pause key already exists")]
+    public async Task LeftoverLegacyRow_IsDeleted_WhenHostPauseAlreadyExists()
+    {
+        await using var harness = await EfHarness.CreateAsync(tenancyEnabled: true);
+        await harness.SeedAsync(HostPauseKey, "current", Tenant.AgnosticTenantId);
+        await harness.SeedAsync(LegacyPauseKey, "stale-legacy", Tenant.DefaultTenantId);
+
+        var sut = harness.CreateSignal();
+        await sut.InitializePersistedStateAsync(CancellationToken.None);
+
+        Assert.True(sut.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.Equal("current", sut.CurrentState.PauseReasonText);
+        Assert.Null(await harness.FindIgnoringFiltersAsync(LegacyPauseKey));
+
+        await sut.ResumeAsync("op", CancellationToken.None);
+        await AssertResumedAsync(harness, sut);
 
         var restarted = harness.CreateSignal();
         await restarted.InitializePersistedStateAsync(CancellationToken.None);

@@ -69,6 +69,37 @@ public class QuiescenceSignalPersistenceTests
         Assert.False(_kv.Pairs.ContainsKey("elsa.quiescence.pause.default"));
     }
 
+    [Fact(DisplayName = "A leftover legacy row is deleted even when the host-pause key already exists")]
+    public async Task LeftoverLegacyRow_IsDeleted_WhenHostPauseAlreadyExists()
+    {
+        _kv.Pairs["elsa.quiescence.host-pause.default"] = new SerializedKeyValuePair
+        {
+            Key = "elsa.quiescence.host-pause.default",
+            SerializedValue = "current",
+            TenantId = Tenant.AgnosticTenantId
+        };
+        _kv.Pairs["elsa.quiescence.pause.default"] = new SerializedKeyValuePair
+        {
+            Key = "elsa.quiescence.pause.default",
+            SerializedValue = "stale-legacy",
+            TenantId = Tenant.DefaultTenantId
+        };
+        var sut = QuiescenceSignal.Create(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _cycleRegistry, _kv);
+
+        await sut.InitializePersistedStateAsync(CancellationToken.None);
+        Assert.True(sut.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.False(_kv.Pairs.ContainsKey("elsa.quiescence.pause.default"));
+
+        await sut.ResumeAsync("op", CancellationToken.None);
+
+        var restarted = QuiescenceSignal.Create(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _cycleRegistry, _kv);
+        await restarted.InitializePersistedStateAsync(CancellationToken.None);
+
+        Assert.False(restarted.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.False(_kv.Pairs.ContainsKey("elsa.quiescence.host-pause.default"));
+        Assert.False(_kv.Pairs.ContainsKey("elsa.quiescence.pause.default"));
+    }
+
     [Fact(DisplayName = "Pause writes the persisted key when policy is AcrossReactivations")]
     public async Task PauseWritesKey()
     {
@@ -96,7 +127,7 @@ public class QuiescenceSignalPersistenceTests
     public async Task PersistenceKeyIncludesShellName()
     {
         // Regression: previously the DI registration did not pass a shellName, so all shells in a CShells
-        // deployment shared "elsa.quiescence.host-pause.default" — pausing shell A would re-pause shell B on next
+        // deployment shared "elsa.quiescence.pause.default" — pausing shell A would re-pause shell B on next
         // activation. The factory in ShellFeatures/WorkflowRuntimeFeature now injects ShellSettings.Id; this
         // test locks in the constructor-level contract that shellName is reflected in the persistence key.
         var sutA = QuiescenceSignal.Create(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _cycleRegistry, _kv, shellName: "shell-a");
