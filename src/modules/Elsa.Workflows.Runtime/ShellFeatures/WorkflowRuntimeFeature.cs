@@ -218,6 +218,7 @@ public class WorkflowRuntimeFeature : IShellFeature
                 sp.GetRequiredService<ISystemClock>(),
                 sp.GetRequiredService<IExecutionCycleRegistry>(),
                 sp.GetRequiredService<IServiceScopeFactory>(),
+                tenantAccessor: sp.GetService<Elsa.Common.Multitenancy.ITenantAccessor>(),
                 shellName: sp.GetService<CShells.ShellSettings>()?.Id))
             .AddSingleton<IIngressSourceRegistry, IngressSourceRegistry>()
             .AddSingleton<IExecutionCycleRegistry, ExecutionCycleRegistry>()
