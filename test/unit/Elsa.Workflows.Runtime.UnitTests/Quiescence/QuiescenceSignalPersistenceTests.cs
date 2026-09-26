@@ -100,6 +100,52 @@ public class QuiescenceSignalPersistenceTests
         Assert.False(_kv.Pairs.ContainsKey("elsa.quiescence.pause.default"));
     }
 
+    [Fact(DisplayName = "A duplicate adoption save uses the stored host-pause reason")]
+    public async Task DuplicateAdoptionSave_UsesStoredReason_AndDeletesLegacy()
+    {
+        var store = new DuplicateOnSaveKeyValueStore
+        {
+            HiddenHostPause = new SerializedKeyValuePair
+            {
+                Key = "elsa.quiescence.host-pause.default",
+                SerializedValue = "stored-reason",
+                TenantId = Tenant.AgnosticTenantId
+            }
+        };
+        store.Pairs["elsa.quiescence.pause.default"] = new SerializedKeyValuePair
+        {
+            Key = "elsa.quiescence.pause.default",
+            SerializedValue = "legacy-reason",
+            TenantId = Tenant.DefaultTenantId
+        };
+        var sut = QuiescenceSignal.Create(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _cycleRegistry, store);
+
+        await sut.InitializePersistedStateAsync(CancellationToken.None);
+
+        Assert.True(sut.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.Equal("stored-reason", sut.CurrentState.PauseReasonText);
+        Assert.False(store.Pairs.ContainsKey("elsa.quiescence.pause.default"));
+    }
+
+    [Fact(DisplayName = "A failed adoption save with no host-pause row keeps the legacy row")]
+    public async Task FailedAdoptionSave_WithoutHostPause_ThrowsAndKeepsLegacy()
+    {
+        var store = new DuplicateOnSaveKeyValueStore();
+        store.Pairs["elsa.quiescence.pause.default"] = new SerializedKeyValuePair
+        {
+            Key = "elsa.quiescence.pause.default",
+            SerializedValue = "legacy-reason",
+            TenantId = Tenant.DefaultTenantId
+        };
+        var sut = QuiescenceSignal.Create(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _cycleRegistry, store);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            sut.InitializePersistedStateAsync(CancellationToken.None).AsTask());
+
+        Assert.False(sut.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.True(store.Pairs.ContainsKey("elsa.quiescence.pause.default"));
+    }
+
     [Fact(DisplayName = "Pause writes the persisted key when policy is AcrossReactivations")]
     public async Task PauseWritesKey()
     {
@@ -213,6 +259,45 @@ public class QuiescenceSignalPersistenceTests
 
         Assert.True(_kv.Pairs.TryGetValue("elsa.quiescence.host-pause.default", out var pair));
         Assert.Equal("migration", pair.SerializedValue);
+    }
+
+    /// <summary>
+    /// Save always throws. The host-pause row is hidden until that save is attempted, so
+    /// startup tries to adopt and then hits the duplicate fallback.
+    /// </summary>
+    private sealed class DuplicateOnSaveKeyValueStore : IKeyValueStore
+    {
+        public readonly Dictionary<string, SerializedKeyValuePair> Pairs = new(StringComparer.Ordinal);
+        public SerializedKeyValuePair? HiddenHostPause;
+        private bool _saveAttempted;
+
+        public Task SaveAsync(SerializedKeyValuePair keyValuePair, CancellationToken cancellationToken)
+        {
+            _saveAttempted = true;
+            throw new InvalidOperationException("duplicate");
+        }
+
+        public Task<SerializedKeyValuePair?> FindAsync(KeyValueFilter filter, CancellationToken cancellationToken)
+        {
+            if (filter.Key == "elsa.quiescence.host-pause.default")
+            {
+                if (!_saveAttempted)
+                    return Task.FromResult<SerializedKeyValuePair?>(null);
+                return Task.FromResult(HiddenHostPause);
+            }
+
+            SerializedKeyValuePair? match = filter.Key is not null && Pairs.TryGetValue(filter.Key, out var p) ? p : null;
+            return Task.FromResult(match);
+        }
+
+        public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken)
+            => Task.FromResult<IEnumerable<SerializedKeyValuePair>>(Pairs.Values.ToArray());
+
+        public Task DeleteAsync(string key, CancellationToken cancellationToken)
+        {
+            Pairs.Remove(key);
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class FakeKeyValueStore : IKeyValueStore
