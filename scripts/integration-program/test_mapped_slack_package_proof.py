@@ -115,6 +115,20 @@ class MappedSlackPackageProofTests(unittest.TestCase):
             self.assertEqual("not exercised: all sources embedded", embedded["urlAndChecksumTest"])
             self.assertEqual((0, 1), (embedded["urlFetchedDocumentCount"], embedded["embeddedDocumentCount"]))
 
+            second = "b" * 64 + " sha256 csharp /_/src/Other.cs"
+
+            def mixed(command, *, cwd, env, log):
+                fake_run(command, cwd=cwd, env=env, log=log)
+                if command[2] == "print-documents":
+                    log.write_text(f"command\n{document}\n{second}\n")
+                elif command[2] == "print-urls":
+                    log.write_text(f"command\n{document}\n{url_target}\n{second}\nembedded\n")
+
+            with self.assertRaisesRegex(RuntimeError, "1 of 2 net10.0 documents are embedded"):
+                verify(mixed)
+            partial = verify(mixed, require_url_fetch=False)[0]
+            self.assertEqual("partial: 1 embedded documents not fetched", partial["urlAndChecksumTest"])
+
             with self.assertRaisesRegex(RuntimeError, "outside the exact imported head"):
                 verify(with_url_target(url_target.replace(head, "b" * 40)))
             with self.assertRaisesRegex(RuntimeError, "does not cover every source document"):

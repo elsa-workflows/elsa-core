@@ -944,6 +944,14 @@ def verify_embedded_sources(output: Path, symbols: Path, extensions: Path, env: 
     return results
 
 
+def source_link_test_label(url_count: int, embedded_count: int) -> str:
+    if not embedded_count:
+        return "passed"
+    if not url_count:
+        return "not exercised: all sources embedded"
+    return f"partial: {embedded_count} embedded documents not fetched"
+
+
 def verify_imported_source_link(
     output: Path, head: str, source_link_assembly: Path, dotnet: Path, env: dict[str, str], *, require_url_fetch: bool
 ) -> list[dict]:
@@ -986,7 +994,7 @@ def verify_imported_source_link(
         results.append({"framework": framework, "repositoryUrl": expected_url,
                         "sourceDocumentCount": len(documents), "urlFetchedDocumentCount": url_count,
                         "embeddedDocumentCount": embedded_count,
-                        "urlAndChecksumTest": "passed" if url_count else "not exercised: all sources embedded"})
+                        "urlAndChecksumTest": source_link_test_label(url_count, embedded_count)})
     return results
 
 
