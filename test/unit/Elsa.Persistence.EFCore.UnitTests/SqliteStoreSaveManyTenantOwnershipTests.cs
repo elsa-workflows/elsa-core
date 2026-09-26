@@ -8,7 +8,7 @@ public sealed class SqliteStoreSaveManyTenantOwnershipTests : StoreSaveManyTenan
     [Fact]
     public async Task SaveManyAsync_WhenNocaseKeyDiffersOnlyInCasing_ThrowsAndLeavesOwner()
     {
-        await using var scenario = await OwnershipStoreScenario.CreateSqliteAsync("tenant-a", tenantsEnabled: true, nocaseKey: true);
+        await using var scenario = await OwnershipStoreScenario.CreateSqliteAsync("tenant-a", tenantsEnabled: true, keyCollation: "NOCASE");
         await scenario.Store.SaveManyAsync([new OwnedRow { Id = "abc", TenantId = "tenant-a", Payload = "original" }], x => x.Id, onSaving: null);
 
         using (scenario.UseTenant("tenant-b"))
@@ -23,7 +23,7 @@ public sealed class SqliteStoreSaveManyTenantOwnershipTests : StoreSaveManyTenan
     [Fact]
     public async Task SaveManyAsync_WhenNocaseBatchPairsExactKeyWithForgedVariant_ThrowsAndLeavesOwner()
     {
-        await using var scenario = await OwnershipStoreScenario.CreateSqliteAsync("tenant-a", tenantsEnabled: true, nocaseKey: true);
+        await using var scenario = await OwnershipStoreScenario.CreateSqliteAsync("tenant-a", tenantsEnabled: true, keyCollation: "NOCASE");
         await scenario.Store.SaveManyAsync([new OwnedRow { Id = "abc", TenantId = "tenant-a", Payload = "original" }], x => x.Id, onSaving: null);
 
         // The exact key passes its own check; the variant targets the same row under NOCASE with a forged tenant.
@@ -31,6 +31,24 @@ public sealed class SqliteStoreSaveManyTenantOwnershipTests : StoreSaveManyTenan
             [
                 new OwnedRow { Id = "abc", TenantId = "tenant-a", Payload = "original" },
                 new OwnedRow { Id = "ABC", TenantId = "tenant-b", Payload = "stolen" }
+            ],
+            x => x.Id,
+            onSaving: null));
+
+        await AssertOriginalOwnerAsync(scenario);
+    }
+
+    [Fact]
+    public async Task SaveManyAsync_WhenTrailingSpaceVariantTargetsOwnedRow_ThrowsAndLeavesOwner()
+    {
+        // SQLite RTRIM stands in for SQL Server collations that ignore trailing spaces.
+        await using var scenario = await OwnershipStoreScenario.CreateSqliteAsync("tenant-a", tenantsEnabled: true, keyCollation: "RTRIM");
+        await scenario.Store.SaveManyAsync([new OwnedRow { Id = "abc", TenantId = "tenant-a", Payload = "original" }], x => x.Id, onSaving: null);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => scenario.Store.SaveManyAsync(
+            [
+                new OwnedRow { Id = "abc", TenantId = "tenant-a", Payload = "original" },
+                new OwnedRow { Id = "abc ", TenantId = "tenant-b", Payload = "stolen" }
             ],
             x => x.Id,
             onSaving: null));
