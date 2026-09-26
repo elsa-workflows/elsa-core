@@ -29,6 +29,11 @@ SOURCE_PATHS = {
     "src/modules/persistence/Elsa.Persistence.Dapper/Contracts/ISqlDialect.cs",
     "test/modules/persistence/Elsa.Dapper.UnitTests/SqlDialectDefaultUpdateTests.cs",
 }
+# The sixth receipt (#8293) owns the current bytes of these second-receipt paths. The second receipt still pins
+# them at its reviewed integration commit; its other mapped paths stay pinned to HEAD here.
+R2_PATHS_SUPERSEDED_BY_R6 = frozenset({
+    "src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryBuilderExtensions.cs",
+})
 
 
 def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
@@ -104,7 +109,7 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
         elif active_bytes != upstream_bytes + b"\n":
             raise ValueError(f"Reviewed Dapper source transform changed: {mapped}")
 
-    superseded = {mapped_path(source) for source in SOURCE_PATHS}
+    superseded = {mapped_path(source) for source in SOURCE_PATHS} | R2_PATHS_SUPERSEDED_BY_R6
     prior = json.loads(historical)
     for row in prior["mappedChanges"]:
         if row["mappedPath"] not in superseded and row["finalMapped"] != blob_and_mode("HEAD", row["mappedPath"], root):
@@ -119,10 +124,13 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
 def main() -> int:
     try:
         verify(json.loads(RECEIPT.read_text(encoding="utf-8")))
+        from verify_import_source_tip_refresh_r6 import RECEIPT as CURRENT_RECEIPT, verify as verify_current
+
+        verify_current(json.loads(CURRENT_RECEIPT.read_text(encoding="utf-8")))
     except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError) as error:
         print(f"Invalid fifth source-tip refresh: {error}", file=sys.stderr)
         return 1
-    print("Verified current Extensions history, three mapped Dapper files and prior asset scope")
+    print("Verified current Extensions history, three mapped Dapper files, prior asset scope and current HEAD")
     return 0
 
 
