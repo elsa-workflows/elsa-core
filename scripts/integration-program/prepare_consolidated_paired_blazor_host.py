@@ -36,6 +36,8 @@ def materialize(output: Path) -> dict[str, object]:
     if output.exists():
         raise FileExistsError(f"Refusing to overwrite existing output: {output}")
     for directory in output.parents:
+        if not directory.exists():
+            continue
         for entry in directory.iterdir():
             if entry.name.lower() in AMBIENT_CONFIG:
                 raise ValueError(f"Ambient build configuration is not permitted: {entry}")

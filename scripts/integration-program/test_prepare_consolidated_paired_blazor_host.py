@@ -57,6 +57,12 @@ class ConsolidatedPairedBlazorHostTests(unittest.TestCase):
                 materialize(output)
             self.assertFalse(output.exists())
 
+    def test_accepts_nested_new_output_without_ambient_configuration(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "new-parent" / "new-probe"
+            receipt = materialize(output)
+            self.assertEqual(str(output.resolve() / "UiProbe/UiProbe.csproj"), receipt["hostProject"])
+
     def test_build_launch_errors_keep_a_failure_receipt(self) -> None:
         for error in (subprocess.TimeoutExpired(["dotnet"], 900), FileNotFoundError("dotnet")):
             with self.subTest(error=type(error).__name__), tempfile.TemporaryDirectory() as directory:
