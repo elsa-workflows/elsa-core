@@ -215,6 +215,26 @@ def gated_job_violations(jobs: dict) -> list[str]:
     return violations
 
 
+BUILD_JOB = "build"
+BUILD_SELECTION_GATE = f"github.event_name != 'workflow_dispatch' || needs.{SELECTION_JOB}.result == 'success'"
+
+
+def build_gate_violations(jobs: dict) -> list[str]:
+    """A dispatch the selection check rejects must not build or upload package artifacts."""
+    job = jobs.get(BUILD_JOB)
+    if not isinstance(job, dict):
+        return [f"job {BUILD_JOB!r} is missing"]
+    violations = []
+    if SELECTION_JOB not in needs(job):
+        violations.append(f"{BUILD_JOB} must need {SELECTION_JOB} so a rejected dispatch does not build")
+    expression = if_expression(job.get("if"))
+    if expression is None:
+        violations.append(f"{BUILD_JOB} if: has text outside ${{{{ }}}}, which GitHub treats as an always-true string")
+    elif BUILD_SELECTION_GATE not in split_top_level(unwrap(expression), "&&"):
+        violations.append(f"{BUILD_JOB} if: must require ({BUILD_SELECTION_GATE})")
+    return violations
+
+
 def selection_violations(jobs: dict) -> list[str]:
     job = jobs.get(SELECTION_JOB)
     if not isinstance(job, dict):
@@ -265,6 +285,7 @@ def workflow_violations(workflow: Any) -> list[str]:
         *trigger_violations(workflow),
         *capability_violations(workflow),
         *gated_job_violations(jobs),
+        *build_gate_violations(jobs),
         *selection_violations(jobs),
         *pages_upload_violations(jobs),
     ]

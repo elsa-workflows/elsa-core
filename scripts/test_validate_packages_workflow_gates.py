@@ -1,8 +1,8 @@
 import sys
 import textwrap
 import unittest
+import unittest.mock
 from pathlib import Path
-from unittest import mock
 
 import yaml
 
@@ -54,6 +54,24 @@ OTHER_BYPASSES = (
         "if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')",
         "if: github.ref == 'refs/heads/main'",
         "deploy_coverage accepts refs/heads/release/3.6.1, but no Pages artifact is uploaded for it",
+    ),
+    (
+        "build no longer waits for a successful selection check",
+        " && (github.event_name != 'workflow_dispatch' || needs.validate_publication_selection.result == 'success')",
+        "",
+        "build if: must require (github.event_name != 'workflow_dispatch' || needs.validate_publication_selection.result == 'success')",
+    ),
+    (
+        "build selection gate turned into an alternative",
+        " && (github.event_name != 'workflow_dispatch' || needs.validate_publication_selection.result == 'success')",
+        " || (github.event_name != 'workflow_dispatch' || needs.validate_publication_selection.result == 'success')",
+        "build if: must require",
+    ),
+    (
+        "build drops the selection job from needs",
+        "      - test_component\n      - validate_publication_selection\n",
+        "      - test_component\n",
+        "build must need validate_publication_selection",
     ),
     (
         "selection step continues on error",
@@ -260,7 +278,7 @@ class WorkflowGateTests(unittest.TestCase):
                 self.assert_rejected(self.mutated(old, new), expected)
 
     def test_rejects_selection_script_that_allows_3_10_on_nuget(self):
-        with mock.patch.object(gates, "selection_errors", return_value=[]):
+        with unittest.mock.patch.object(gates, "selection_errors", return_value=[]):
             self.assert_rejected(self.source, "the selection script must reject NuGet.org publication of a 3.10.x tag")
 
 
