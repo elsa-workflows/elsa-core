@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from prepare_consolidated_paired_blazor_host import CONTRACT, FIXTURE, REFERENCES, ROOT, SOURCE_FILES, materialize
+from prepare_consolidated_paired_blazor_host import CONTRACT, FIXTURE, REFERENCES, ROOT, SOURCE_FILES, build_host, materialize
 
 
 class ConsolidatedPairedBlazorHostTests(unittest.TestCase):
@@ -45,6 +47,31 @@ class ConsolidatedPairedBlazorHostTests(unittest.TestCase):
                 materialize(Path(directory))
         with self.assertRaises(ValueError):
             materialize(ROOT / "unsafe-probe")
+
+    def test_refuses_ambient_parent_configuration_before_writing(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            parent = Path(directory)
+            (parent / "Global.Json").write_text('{"sdk":{"version":"0.0.0"}}', encoding="utf-8")
+            output = parent / "new-probe"
+            with self.assertRaisesRegex(ValueError, "Ambient build configuration"):
+                materialize(output)
+            self.assertFalse(output.exists())
+
+    def test_build_launch_errors_keep_a_failure_receipt(self) -> None:
+        for error in (subprocess.TimeoutExpired(["dotnet"], 900), FileNotFoundError("dotnet")):
+            with self.subTest(error=type(error).__name__), tempfile.TemporaryDirectory() as directory:
+                output = Path(directory) / "new-probe"
+                receipt = materialize(output)
+                with patch("prepare_consolidated_paired_blazor_host.subprocess.run", side_effect=error):
+                    with self.assertRaisesRegex(RuntimeError, "Host build did not finish"):
+                        build_host(output, receipt)
+                saved = json.loads((output / "evidence.json").read_text(encoding="utf-8"))
+                self.assertIsNone(saved["buildExitCode"])
+                self.assertEqual(type(error).__name__, saved["buildFailure"])
+                self.assertFalse(saved["published"])
+                self.assertFalse(saved["browserVerified"])
+                self.assertFalse(saved["debuggerVerified"])
+                self.assertTrue((output / "build.log").is_file())
 
 
 if __name__ == "__main__":

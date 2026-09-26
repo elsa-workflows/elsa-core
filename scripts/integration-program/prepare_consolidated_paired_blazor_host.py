@@ -11,6 +11,8 @@ from pathlib import Path
 from shutil import copy2
 from xml.sax.saxutils import escape
 
+from prepare_paired_blazor_host import AMBIENT_CONFIG
+
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "scripts/integration-program/paired-blazor-host"
@@ -33,6 +35,10 @@ def materialize(output: Path) -> dict[str, object]:
         raise ValueError("Output must be outside the source checkout")
     if output.exists():
         raise FileExistsError(f"Refusing to overwrite existing output: {output}")
+    for directory in output.parents:
+        for entry in directory.iterdir():
+            if entry.name.lower() in AMBIENT_CONFIG:
+                raise ValueError(f"Ambient build configuration is not permitted: {entry}")
 
     host = output / "UiProbe"
     contract = output / "ContractProbe"
@@ -69,26 +75,37 @@ def materialize(output: Path) -> dict[str, object]:
     }
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, required=True, help="New disposable directory outside this checkout")
-    args = parser.parse_args()
-    output = args.output
-    receipt = materialize(output)
+def build_host(output: Path, receipt: dict[str, object]) -> int:
     command = [
         "dotnet", "build", receipt["hostProject"], "--configuration", "Debug", "--framework", "net10.0",
         "-p:UseProjectReferences=true", "-p:IsPackable=false", "-p:GeneratePackageOnBuild=false",
         "--verbosity", "quiet",
     ]
-    with (output / "build.log").open("w", encoding="utf-8") as log:
-        result = subprocess.run(command, cwd=output / "UiProbe", stdout=log, stderr=subprocess.STDOUT,
-                                check=False, timeout=900)
     receipt["buildCommand"] = command
-    receipt["buildExitCode"] = result.returncode
+    try:
+        with (output / "build.log").open("w", encoding="utf-8") as log:
+            result = subprocess.run(command, cwd=output / "UiProbe", stdout=log, stderr=subprocess.STDOUT,
+                                    check=False, timeout=900)
+        receipt["buildExitCode"] = result.returncode
+    except (OSError, subprocess.TimeoutExpired) as error:
+        receipt["buildExitCode"] = None
+        receipt["buildFailure"] = type(error).__name__
+        (output / "evidence.json").write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+        raise RuntimeError("Host build did not finish; inspect build.log and evidence.json before removing the disposable output or choosing a new path") from error
     (output / "evidence.json").write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+    return result.returncode
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, required=True, help="New disposable directory outside this checkout")
+    args = parser.parse_args()
+    receipt = materialize(args.output)
+    output = args.output.resolve()
+    result = build_host(output, receipt)
     print(json.dumps(receipt, indent=2))
-    if result.returncode:
-        raise SystemExit(result.returncode)
+    if result:
+        raise SystemExit(result)
 
 
 if __name__ == "__main__":
