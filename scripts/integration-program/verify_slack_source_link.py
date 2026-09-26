@@ -50,13 +50,14 @@ def verify(artifacts: Path, version: str, commit: str, sourcelink_tool: Path) ->
         (output / "pdb").mkdir()
         (output / "logs").mkdir()
         pair_build = output / "pair-verifier"
-        subprocess.run(
+        build = subprocess.run(
             [dotnet, "build", str(PAIR_PROJECT), "--configuration", "Release", "--output", str(pair_build),
              "--nologo", "--verbosity", "quiet"],
-            check=True,
             capture_output=True,
             text=True,
         )
+        if build.returncode:
+            raise ValueError(f"Symbol pair verifier build failed:\n{build.stdout}{build.stderr}")
         pair_verifier = pair_build / "VerifyPackageSymbolPair.dll"
         with ZipFile(package) as package_archive, ZipFile(symbols) as symbol_archive:
             for framework in TFMS:
@@ -76,7 +77,9 @@ def verify(artifacts: Path, version: str, commit: str, sourcelink_tool: Path) ->
                 )
                 if pairing.returncode != 0:
                     raise ValueError(f"Packaged assembly and external symbols do not match for {framework}: {pairing.stderr.strip()}")
-        results = verify_imported_source_link(output, commit, source_link_assembly, Path(dotnet), os.environ.copy())
+        results = verify_imported_source_link(
+            output, commit, source_link_assembly, Path(dotnet), os.environ.copy(), require_url_fetch=True
+        )
         for result in results:
             result["assemblySymbolPair"] = "passed"
 

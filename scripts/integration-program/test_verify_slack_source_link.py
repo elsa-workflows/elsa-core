@@ -62,6 +62,7 @@ class SlackSourceLinkArtifactTests(unittest.TestCase):
             with patch.object(proof, "verify_imported_source_link", return_value=frameworks) as source_check:
                 result = proof.verify(artifacts, VERSION, COMMIT, Path("sourcelink"))
         source_check.assert_called_once()
+        self.assertTrue(source_check.call_args.kwargs["require_url_fetch"])
         return result
 
     def test_matching_package_and_symbols_are_verified_for_each_framework(self) -> None:

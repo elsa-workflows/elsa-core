@@ -944,7 +944,18 @@ def verify_embedded_sources(output: Path, symbols: Path, extensions: Path, env: 
     return results
 
 
-def verify_imported_source_link(output: Path, head: str, source_link_assembly: Path, dotnet: Path, env: dict[str, str]) -> list[dict]:
+def source_link_test_label(url_count: int, embedded_count: int) -> str:
+    if not embedded_count:
+        return "passed"
+    if not url_count:
+        return "not exercised: all sources embedded"
+    return f"partial: {embedded_count} embedded documents not fetched"
+
+
+def verify_imported_source_link(
+    output: Path, head: str, source_link_assembly: Path, dotnet: Path, env: dict[str, str], *, require_url_fetch: bool
+) -> list[dict]:
+    """SourceLink 3.1.1 `test` skips embedded documents yet still reports a pass, so count URL-fetched documents."""
     expected_url = f"https://raw.githubusercontent.com/elsa-workflows/elsa-core/{head}/*"
     results = []
     for framework in TFMS:
@@ -962,12 +973,28 @@ def verify_imported_source_link(output: Path, head: str, source_link_assembly: P
             for line in documents
         ):
             raise RuntimeError(f"Imported SourceLink PDB has no valid source documents for {framework}")
+        urls_log = output / "logs" / f"imported-sourcelink-{framework}-urls.log"
+        run([str(dotnet), str(source_link_assembly), "print-urls", str(pdb)], cwd=output, env=env, log=urls_log)
+        url_lines = [line for line in urls_log.read_text(encoding="utf-8").splitlines()[1:] if line.strip()]
+        if url_lines[0::2] != documents or len(url_lines) != 2 * len(documents):
+            raise RuntimeError(f"SourceLink URL listing does not cover every source document for {framework}")
+        targets = url_lines[1::2]
+        if any(target != "embedded" and not target.startswith(expected_url[:-1]) for target in targets):
+            raise RuntimeError(f"SourceLink document URL is outside the exact imported head for {framework}")
+        embedded_count = targets.count("embedded")
+        url_count = len(targets) - embedded_count
+        if require_url_fetch and embedded_count:
+            raise RuntimeError(
+                f"{embedded_count} of {len(documents)} {framework} documents are embedded; their URLs would not be fetched"
+            )
         test_log = output / "logs" / f"imported-sourcelink-{framework}-test.log"
         run([str(dotnet), str(source_link_assembly), "test", str(pdb)], cwd=output, env=env, log=test_log)
         if "sourcelink test passed" not in test_log.read_text(encoding="utf-8"):
             raise RuntimeError(f"Imported SourceLink URL/content test has no pass marker for {framework}")
         results.append({"framework": framework, "repositoryUrl": expected_url,
-                        "sourceDocumentCount": len(documents), "urlAndChecksumTest": "passed"})
+                        "sourceDocumentCount": len(documents), "urlFetchedDocumentCount": url_count,
+                        "embeddedDocumentCount": embedded_count,
+                        "urlAndChecksumTest": source_link_test_label(url_count, embedded_count)})
     return results
 
 
@@ -1097,7 +1124,10 @@ def main() -> int:
     consumers = verify_consumers(output, packages, env, cache_root / "consumers", dotnet)
     offline_activity = verify_offline_activity(output, packages, env, cache_root, dotnet)
     embedded_sources = verify_embedded_sources(output, snupkgs[0], extensions, env, pack_config, dotnet)
-    source_link = verify_imported_source_link(output, imported_head, source_link_assembly, dotnet, env) if imported_head and source_link_assembly else []
+    # The mapped pack embeds all sources (verified byte-for-byte above), so SourceLink only checks URL mapping here.
+    source_link = verify_imported_source_link(
+        output, imported_head, source_link_assembly, dotnet, env, require_url_fetch=False
+    ) if imported_head and source_link_assembly else []
 
     # Recheck the source and preparation receipt after all builds. Ignored bin/obj
     # outputs are allowed only inside the disposable rehearsal.
