@@ -362,11 +362,22 @@ jobs:
     # starting pushes once its own deadline passes, so the runner never has to
     # cancel a publish half-done. Move the two together.
     timeout-minutes: 30
-    if: ${{ github.event.action == 'published' }}
+    # 3.10.x is feedz-only. A 3.10.x GitHub Release must never publish to nuget.org.
+    if: ${{ github.event.action == 'published' && !startsWith(github.event.release.tag_name, '3.10.') && !startsWith(github.event.release.tag_name, 'v3.10.') }}
     permissions:
       contents: read
       id-token: write # Required: lets this job request the OIDC token that nuget.org exchanges for a temporary API key.
     steps:
+      - name: Refuse 3.10.x public publish
+        run: |
+          TAG='${{ github.event.release.tag_name }}'
+          case "$TAG" in
+            3.10.*|v3.10.*)
+              echo "::error::3.10.x is feedz-only. Refusing to publish '${TAG}' to nuget.org."
+              exit 1
+              ;;
+          esac
+
       - name: Check out the push action
         # Every third-party action in this job runs before a feed API key is handed
         # to the local composite, in the same writable workspace, so each one is
