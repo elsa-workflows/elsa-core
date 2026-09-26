@@ -89,6 +89,27 @@ public class QuiescenceSignalPauseKeyTenantAgnosticTests
         await AssertPausedAsync(sut, "maintenance");
     }
 
+    [Fact(DisplayName = "Pause pushes an agnostic tenant context around the persist")]
+    public async Task Pause_PushesAgnosticTenantContext()
+    {
+        var recording = new RecordingTenantAccessor();
+        var store = new MemoryKeyValueStore(new MemoryStore<SerializedKeyValuePair>(), recording);
+        var sut = QuiescenceSignal.Create(
+            Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions
+            {
+                PausePersistence = PausePersistencePolicy.AcrossReactivations
+            }),
+            _clock,
+            _cycleRegistry,
+            store,
+            recording);
+
+        using (recording.PushContext(new Tenant { Id = "tenant-x", Name = "tenant-x" }))
+            await sut.PauseAsync("maintenance", "x", CancellationToken.None);
+
+        Assert.Contains(Tenant.AgnosticTenantId, recording.PushedTenantIds);
+    }
+
     private QuiescenceSignal CreateSignal() =>
         QuiescenceSignal.Create(
             Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions
@@ -139,4 +160,34 @@ public class QuiescenceSignalPauseKeyTenantAgnosticTests
 
     private Task<SerializedKeyValuePair?> FindPauseAsync() =>
         _store.FindAsync(new KeyValueFilter { Key = PauseKey }, CancellationToken.None);
+
+    private sealed class RecordingTenantAccessor : ITenantAccessor
+    {
+        private readonly Stack<(Tenant? Tenant, string TenantId)> _stack = [];
+
+        public List<string?> PushedTenantIds { get; } = [];
+        public string TenantId { get; private set; } = Tenant.DefaultTenantId;
+        public Tenant? Tenant { get; private set; }
+
+        public IDisposable PushContext(Tenant? tenant)
+        {
+            _stack.Push((Tenant, TenantId));
+            Tenant = tenant;
+            TenantId = tenant?.Id ?? Tenant.DefaultTenantId;
+            PushedTenantIds.Add(tenant?.Id);
+            return new Restore(this);
+        }
+
+        private void Pop()
+        {
+            var previous = _stack.Pop();
+            Tenant = previous.Tenant;
+            TenantId = previous.TenantId;
+        }
+
+        private sealed class Restore(RecordingTenantAccessor owner) : IDisposable
+        {
+            public void Dispose() => owner.Pop();
+        }
+    }
 }

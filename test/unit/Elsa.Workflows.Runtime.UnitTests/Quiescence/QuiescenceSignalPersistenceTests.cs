@@ -78,6 +78,7 @@ public class QuiescenceSignalPersistenceTests
 
         Assert.True(_kv.Pairs.TryGetValue("elsa.quiescence.host-pause.default", out var pair));
         Assert.Equal("migration", pair.SerializedValue);
+        Assert.Equal(Tenant.AgnosticTenantId, pair.TenantId);
     }
 
     [Fact(DisplayName = "Resume clears the persisted key when policy is AcrossReactivations")]
