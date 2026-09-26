@@ -1,0 +1,72 @@
+namespace Elsa.Persistence.EFCore.UnitTests;
+
+public sealed class SqliteStoreSaveManyTenantOwnershipTests : StoreSaveManyTenantOwnershipTests
+{
+    protected override Task<OwnershipStoreScenario> CreateScenarioAsync(string tenantId, bool tenantsEnabled = true) =>
+        OwnershipStoreScenario.CreateSqliteAsync(tenantId, tenantsEnabled);
+
+    [Fact]
+    public async Task SaveManyAsync_WhenNocaseKeyDiffersOnlyInCasing_ThrowsAndLeavesOwner()
+    {
+        await using var scenario = await OwnershipStoreScenario.CreateSqliteAsync("tenant-a", tenantsEnabled: true, keyCollation: "NOCASE");
+        await scenario.Store.SaveManyAsync([new OwnedRow { Id = "abc", TenantId = "tenant-a", Payload = "original" }], x => x.Id, onSaving: null);
+
+        using (scenario.UseTenant("tenant-b"))
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                scenario.Store.SaveManyAsync([new OwnedRow { Id = "ABC", TenantId = "tenant-b", Payload = "stolen" }], x => x.Id, onSaving: null));
+        }
+
+        await AssertOriginalOwnerAsync(scenario);
+    }
+
+    [Fact]
+    public async Task SaveManyAsync_WhenNocaseBatchPairsExactKeyWithForgedVariant_ThrowsAndLeavesOwner()
+    {
+        await using var scenario = await OwnershipStoreScenario.CreateSqliteAsync("tenant-a", tenantsEnabled: true, keyCollation: "NOCASE");
+        await scenario.Store.SaveManyAsync([new OwnedRow { Id = "abc", TenantId = "tenant-a", Payload = "original" }], x => x.Id, onSaving: null);
+
+        // The exact key passes its own check; the variant targets the same row under NOCASE with a forged tenant.
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => scenario.Store.SaveManyAsync(
+            [
+                new OwnedRow { Id = "abc", TenantId = "tenant-a", Payload = "original" },
+                new OwnedRow { Id = "ABC", TenantId = "tenant-b", Payload = "stolen" }
+            ],
+            x => x.Id,
+            onSaving: null));
+
+        Assert.Contains("'ABC'", exception.Message);
+        await AssertOriginalOwnerAsync(scenario);
+    }
+
+    [Fact]
+    public async Task SaveManyAsync_WhenTrailingSpaceVariantTargetsOwnedRow_ThrowsAndLeavesOwner()
+    {
+        // SQLite RTRIM stands in for SQL Server collations that ignore trailing spaces.
+        await using var scenario = await OwnershipStoreScenario.CreateSqliteAsync("tenant-a", tenantsEnabled: true, keyCollation: "RTRIM");
+        await scenario.Store.SaveManyAsync([new OwnedRow { Id = "abc", TenantId = "tenant-a", Payload = "original" }], x => x.Id, onSaving: null);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => scenario.Store.SaveManyAsync(
+            [
+                new OwnedRow { Id = "abc", TenantId = "tenant-a", Payload = "original" },
+                new OwnedRow { Id = "ABC", TenantId = "tenant-a", Payload = "distinct under RTRIM" },
+                new OwnedRow { Id = "abc ", TenantId = "tenant-b", Payload = "stolen" }
+            ],
+            x => x.Id,
+            onSaving: null));
+
+        // Only the colliding spelling is named; ABC is a distinct key under RTRIM.
+        Assert.Contains("'abc '", exception.Message);
+        Assert.DoesNotContain("'ABC'", exception.Message);
+        await AssertOriginalOwnerAsync(scenario);
+    }
+
+    private static async Task AssertOriginalOwnerAsync(OwnershipStoreScenario scenario)
+    {
+        var remaining = await scenario.FindAsync("abc");
+        Assert.NotNull(remaining);
+        Assert.Equal("abc", remaining.Id);
+        Assert.Equal("tenant-a", remaining.TenantId);
+        Assert.Equal("original", remaining.Payload);
+    }
+}

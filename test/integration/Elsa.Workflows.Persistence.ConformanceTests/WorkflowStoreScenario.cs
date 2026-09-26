@@ -37,7 +37,8 @@ public sealed class WorkflowStoreScenario(
     IActivityExecutionStore activityExecutions,
     IWorkflowExecutionLogStore executionLogs,
     Func<Func<Task>, Task> assertUniquenessConflictAsync,
-    Func<ValueTask> disposeAsync) : IAsyncDisposable
+    Func<ValueTask> disposeAsync,
+    IDbContextFactory<RuntimeElsaDbContext>? runtimeDbContextFactory = null) : IAsyncDisposable
 {
     public TestTenantAccessor TenantAccessor { get; } = tenantAccessor;
     public IWorkflowDefinitionStore Definitions { get; } = definitions;
@@ -46,6 +47,7 @@ public sealed class WorkflowStoreScenario(
     public IBookmarkQueueDeadLetterStore DeadLetters { get; } = deadLetters;
     public IActivityExecutionStore ActivityExecutions { get; } = activityExecutions;
     public IWorkflowExecutionLogStore ExecutionLogs { get; } = executionLogs;
+    public IDbContextFactory<RuntimeElsaDbContext>? RuntimeDbContextFactory { get; } = runtimeDbContextFactory;
 
     public IDisposable UseTenant(string tenantId) =>
         TenantAccessor.PushContext(tenantId == Tenant.DefaultTenantId
@@ -53,6 +55,18 @@ public sealed class WorkflowStoreScenario(
             : new Tenant { Id = tenantId, Name = tenantId });
 
     public Task AssertUniquenessConflictAsync(Func<Task> operation) => assertUniquenessConflictAsync(operation);
+
+    public async Task ClearBookmarkTenantIdAsync(string id)
+    {
+        if (RuntimeDbContextFactory is null)
+            throw new InvalidOperationException("Raw tenant updates require an EF runtime store.");
+
+        await using var dbContext = await RuntimeDbContextFactory.CreateDbContextAsync();
+        await dbContext.Bookmarks
+            .IgnoreQueryFilters()
+            .Where(x => x.Id == id)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.TenantId, (string?)null));
+    }
 
     public ValueTask DisposeAsync() => disposeAsync();
 
@@ -71,11 +85,13 @@ public sealed class WorkflowStoreScenario(
             () => ValueTask.CompletedTask));
     }
 
-    public static async Task<WorkflowStoreScenario> CreateSqliteAsync()
+    public static Task<WorkflowStoreScenario> CreateSqliteAsync() => CreateSqliteAsync("tenant-a");
+
+    public static async Task<WorkflowStoreScenario> CreateSqliteAsync(string tenantId, bool tenantsEnabled = true)
     {
         var managementPath = Path.Combine(Path.GetTempPath(), $"elsa-workflow-management-conformance-{Guid.NewGuid():N}.db");
         var runtimePath = Path.Combine(Path.GetTempPath(), $"elsa-workflow-runtime-conformance-{Guid.NewGuid():N}.db");
-        var tenantAccessor = new TestTenantAccessor("tenant-a");
+        var tenantAccessor = new TestTenantAccessor(tenantId);
         ServiceProvider? services = null;
         IServiceScope? scope = null;
 
@@ -88,7 +104,7 @@ public sealed class WorkflowStoreScenario(
                 .AddSingleton<IPayloadSerializer, ConformancePayloadSerializer>()
                 .AddSingleton<ISafeSerializer, ConformanceSafeSerializer>()
                 .AddSingleton<ICompressionCodecResolver>(_ => new CompressionCodecResolver([new None()]))
-                .Configure<TenantsOptions>(options => options.IsEnabled = true)
+                .Configure<TenantsOptions>(options => options.IsEnabled = tenantsEnabled)
                 .AddScoped<IEntitySavingHandler, ApplyTenantId>()
                 .AddScoped<IEntityModelCreatingHandler, SetTenantIdFilter>()
                 .AddSqliteEntityModelCreatingHandlers()
@@ -136,7 +152,8 @@ public sealed class WorkflowStoreScenario(
                     SqliteConnection.ClearAllPools();
                     File.Delete(managementPath);
                     File.Delete(runtimePath);
-                });
+                },
+                scoped.GetRequiredService<IDbContextFactory<RuntimeElsaDbContext>>());
         }
         catch
         {
