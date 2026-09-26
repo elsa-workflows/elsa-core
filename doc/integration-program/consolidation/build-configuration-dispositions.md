@@ -74,9 +74,12 @@ NUGET_PACKAGES=/path/to/empty-cache dotnet build \
 ```
 
 This closes the bounded Slack evidence gap for retiring the old Extensions
-`Directory.Build.targets` default. The ledger row remains pending until a
-reviewed completion record pins this decision, the active root/scoped target
-blobs and the accepted PR merge. Other Extensions package-mode graphs and the
+`Directory.Build.targets` default. The ledger now records its active Core-root
+representation at blob `2a61364c98e134dfbbf6ba8c5d6498f0bffcb81b`,
+backed by reviewed [PR #8481](https://github.com/elsa-workflows/elsa-core/pull/8481)
+and merge `ad1c58038ab75b46f9828ead9ea364b410ea9f8f`. The old default is
+retired as policy; the shared root target remains active, so this is a
+represented asset in the ledger. Other Extensions package-mode graphs and the
 final import are not proved by this one connector.
 
 The Extensions NuGet config maps `Elsa` and all `Elsa.*` IDs to Elsa preview
@@ -93,7 +96,6 @@ active and do not add the broad Extensions pattern yet. Broader package-mode
 checks and source trust/ownership review are required before this NuGet config
 ledger row is completed.
 
-Both ledger rows remain pending in this source snapshot. The old target row is
-ready for a reviewed retirement record using the bounded Slack proof; the old
-NuGet mapping is not. A future ledger update must carry the evidence and
-completion fields required by the validator. The source `.source` copies remain.
+The target row is represented in Core; the old NuGet mapping remains pending.
+It still needs broader package-mode and feed-ownership evidence. The source
+`.source` copies remain.

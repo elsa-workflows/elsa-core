@@ -36,8 +36,14 @@
       "category": "conditional_project_reference_target",
       "owning_workstream": "Feature #8214 build integration; Story #8215 backend/Studio build proof",
       "proposed_disposition": "Carry the conditional Elsa.Studio.Agents to Elsa.Studio.Workflows project reference in a scoped target only if final project-reference builds require it; retire this target after package-reference and project-reference graphs both pass.",
-      "evidence_or_gate": "The source target injects the Studio Workflows project reference only when UseProjectReferences=true and MSBuildProjectName=Elsa.Studio.Agents. The disposable build rewrites local references but does not close the final source-layout gate.",
-      "status": "candidate_rewritten_in_disposable_build"
+      "evidence_or_gate": "The pinned target only injected a Studio Workflows project reference in source mode. #8482 puts the mapped source reference in the Agents Studio project for true mode and restores the public Elsa.Studio.Workflows package for false mode; both graphs, net8/9/10 builds and targeted tests passed. The legacy target is not an active MSBuild input.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/agents-studio-reference-modes.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8482",
+        "merge_commit": "3ee23cd2ac36f4ad3daa8731c6126175d98ae9b6",
+        "reason": "The imported Agents Studio project carries both reviewed conditional references directly; the old external-path target is absent from the active root tree and retained only as an inert .source provenance copy."
+      }
     },
     {
       "original_repository": "extensions",
@@ -71,8 +77,17 @@
       "category": "repository_agent_and_release_guidance",
       "owning_workstream": "Extensions DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
-      "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "evidence_or_gate": "#8480 reviews one release-unit-scoped active agent/playbook for both legacy repositories, with source refs, path/dependency evidence and unit-specific draft paths; publication remains gated.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/consolidated-guidance-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8480",
+        "merge_commit": "87a0ac7055134e8532cca130fa15313a35fe8c69",
+        "active_path": ".github/agents/release-notes.agent.md",
+        "active_blob": "47dfdcbba1e5afd1e4c043e10937ef22c036aa18",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -84,8 +99,17 @@
       "category": "repository_agent_and_release_guidance",
       "owning_workstream": "Extensions DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
-      "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "evidence_or_gate": "#8480 reviews one release-unit-scoped active agent/playbook for both legacy repositories, with source refs, path/dependency evidence and unit-specific draft paths; publication remains gated.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/consolidated-guidance-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8480",
+        "merge_commit": "87a0ac7055134e8532cca130fa15313a35fe8c69",
+        "active_path": ".github/copilot-release-notes-playbook.md",
+        "active_blob": "5554087d542f5eac1eff12ba6fbf305e994478f5",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -259,8 +283,17 @@
       "category": "scoped_build_targets",
       "owning_workstream": "Feature #8214 build integration; package owners",
       "proposed_disposition": "Retire this Extensions-specific target as the active monorepo default: the shared Core root target selects project references for joint development. Keep package-consumer mode explicit with UseProjectReferences=false and retain this source copy as import provenance until the #8260 package-mode gate passes.",
-      "evidence_or_gate": "Pinned source blob 143bfd8 sets UseProjectReferences=false. The active Core Directory.Build.targets blob 2a61364 sets it true in both origin/main and the history-import branch. Build-preparation documents the false override and Slack PackageReference, but its evaluations/build evidence do not prove a clean package-mode restore or compatibility; do not complete the row before #8260 proves the consumer path.",
-      "status": "pending_package_vs_project_reference_validation"
+      "evidence_or_gate": "The active Core root target keeps UseProjectReferences=true; #8481 proves explicit false mode for Slack with an isolated root-config restore and net8/9/10 build. Other package graphs and publisher cutover remain separate gates.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/build-configuration-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8481",
+        "merge_commit": "ad1c58038ab75b46f9828ead9ea364b410ea9f8f",
+        "active_path": "Directory.Build.targets",
+        "active_blob": "2a61364c98e134dfbbf6ba8c5d6498f0bffcb81b",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -1602,16 +1635,16 @@
       "category": "repository_agent_and_release_guidance",
       "owning_workstream": "Studio DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
-      "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
+      "evidence_or_gate": "#8480 reviews one release-unit-scoped active agent/playbook for both legacy repositories, with source refs, path/dependency evidence and unit-specific draft paths; publication remains gated.",
       "status": "represented_in_core",
       "completion": {
-        "decision_path": "doc/integration-program/consolidation/identical-studio-agent-assets.md",
-        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8453",
-        "merge_commit": "84ee5d9e0776609a879c8e4938a174b5d4d89a00",
+        "decision_path": "doc/integration-program/consolidation/consolidated-guidance-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8480",
+        "merge_commit": "87a0ac7055134e8532cca130fa15313a35fe8c69",
         "active_path": ".github/agents/release-notes.agent.md",
-        "active_blob": "9c91f9e69c6c224629fa6a893d34bcde6d57a36a",
+        "active_blob": "47dfdcbba1e5afd1e4c043e10937ef22c036aa18",
         "active_mode": "100644",
-        "representation": "identical"
+        "representation": "expanded"
       }
     },
     {
@@ -1734,8 +1767,17 @@
       "category": "repository_agent_and_release_guidance",
       "owning_workstream": "Studio DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
-      "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "evidence_or_gate": "#8479 updates active Copilot guidance for consolidated source, Studio assets and release boundaries; the pinned Studio file remains archived.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/consolidated-guidance-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8479",
+        "merge_commit": "e2711ab0def8be84ef8cf1d7c17f82e153cacc36",
+        "active_path": ".github/copilot-instructions.md",
+        "active_blob": "7bb464d4dfc5f8847780f7c5d9e7c89a12fb686b",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -1747,8 +1789,17 @@
       "category": "repository_agent_and_release_guidance",
       "owning_workstream": "Studio DevEx and release documentation",
       "proposed_disposition": "Retain only supported Studio-specific agent/release guidance in the consolidated .github layout with paths and ownership updated; archive dated notes and retire superseded prompts.",
-      "evidence_or_gate": "These files are inert under .source. No parity or current-path validation is claimed.",
-      "status": "pending_devex_and_release_review"
+      "evidence_or_gate": "#8480 reviews one release-unit-scoped active agent/playbook for both legacy repositories, with source refs, path/dependency evidence and unit-specific draft paths; publication remains gated.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/consolidated-guidance-asset-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8480",
+        "merge_commit": "87a0ac7055134e8532cca130fa15313a35fe8c69",
+        "active_path": ".github/copilot-release-notes-playbook.md",
+        "active_blob": "5554087d542f5eac1eff12ba6fbf305e994478f5",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
