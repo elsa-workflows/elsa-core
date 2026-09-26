@@ -194,6 +194,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             .AddScoped<IHttpContentFactory, JsonContentFactory>()
             .AddScoped<IHttpContentFactory, XmlContentFactory>()
             .AddScoped<IHttpContentFactory, FormUrlEncodedHttpContentFactory>()
+            .AddScoped<IHttpContentFactory, MultipartFormDataHttpContentFactory>()
 
             // Activity property options providers.
             .AddScoped<IPropertyUIHandler, HttpContentTypeOptionsProvider>()
