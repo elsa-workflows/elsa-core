@@ -76,33 +76,60 @@ class MappedSlackPackageProofTests(unittest.TestCase):
             (output / "pdb/Elsa.Slack.net10.0.pdb").touch()
             head = "a" * 40
             expected = f"https://raw.githubusercontent.com/elsa-workflows/elsa-core/{head}/*"
+            document = "a" * 64 + " sha256 csharp /_/src/Slack.cs"
+            url_target = expected[:-1] + "src/Slack.cs"
 
             def fake_run(command, *, cwd, env, log):
                 log.parent.mkdir(parents=True, exist_ok=True)
                 if command[2] == "print-json":
                     log.write_text("command\n" + json.dumps({"documents": {"/clone/*": expected}}))
                 elif command[2] == "print-documents":
-                    log.write_text("command\n" + "a" * 64 + " sha256 csharp /_/src/Slack.cs\n")
+                    log.write_text(f"command\n{document}\n")
+                elif command[2] == "print-urls":
+                    log.write_text(f"command\n{document}\n{url_target}\n")
                 else:
                     log.write_text("command\nsourcelink test passed\n")
 
-            with patch.object(proof, "TFMS", ("net10.0",)), patch.object(proof, "run", side_effect=fake_run):
-                result = proof.verify_imported_source_link(output, head, Path("/sourcelink.dll"), Path("/dotnet"), {})
-            self.assertEqual("passed", result[0]["urlAndChecksumTest"])
-            self.assertEqual(1, result[0]["sourceDocumentCount"])
+            def verify(side_effect, commit=head, *, require_url_fetch=True):
+                with patch.object(proof, "TFMS", ("net10.0",)), patch.object(proof, "run", side_effect=side_effect):
+                    return proof.verify_imported_source_link(
+                        output, commit, Path("/sourcelink.dll"), Path("/dotnet"), {}, require_url_fetch=require_url_fetch
+                    )
 
-            with patch.object(proof, "TFMS", ("net10.0",)), patch.object(proof, "run", side_effect=fake_run):
-                with self.assertRaisesRegex(RuntimeError, "Unexpected imported SourceLink mapping"):
-                    proof.verify_imported_source_link(output, "b" * 40, Path("/sourcelink.dll"), Path("/dotnet"), {})
+            def with_url_target(target):
+                def fake(command, *, cwd, env, log):
+                    fake_run(command, cwd=cwd, env=env, log=log)
+                    if command[2] == "print-urls":
+                        log.write_text(f"command\n{document}\n{target}\n")
+                return fake
+
+            result = verify(fake_run)
+            self.assertEqual("passed", result[0]["urlAndChecksumTest"])
+            self.assertEqual((1, 1, 0), (result[0]["sourceDocumentCount"], result[0]["urlFetchedDocumentCount"],
+                                         result[0]["embeddedDocumentCount"]))
+
+            # SourceLink's own test reports a pass for embedded documents without fetching their URLs.
+            with self.assertRaisesRegex(RuntimeError, "1 of 1 net10.0 documents are embedded"):
+                verify(with_url_target("embedded"))
+            embedded = verify(with_url_target("embedded"), require_url_fetch=False)[0]
+            self.assertEqual("not exercised: all sources embedded", embedded["urlAndChecksumTest"])
+            self.assertEqual((0, 1), (embedded["urlFetchedDocumentCount"], embedded["embeddedDocumentCount"]))
+
+            with self.assertRaisesRegex(RuntimeError, "outside the exact imported head"):
+                verify(with_url_target(url_target.replace(head, "b" * 40)))
+            with self.assertRaisesRegex(RuntimeError, "does not cover every source document"):
+                verify(with_url_target(""))
+
+            with self.assertRaisesRegex(RuntimeError, "Unexpected imported SourceLink mapping"):
+                verify(fake_run, "b" * 40)
 
             def fake_empty_documents(command, *, cwd, env, log):
                 fake_run(command, cwd=cwd, env=env, log=log)
                 if command[2] == "print-documents":
                     log.write_text("command\n")
 
-            with patch.object(proof, "TFMS", ("net10.0",)), patch.object(proof, "run", side_effect=fake_empty_documents):
-                with self.assertRaisesRegex(RuntimeError, "no valid source documents"):
-                    proof.verify_imported_source_link(output, head, Path("/sourcelink.dll"), Path("/dotnet"), {})
+            with self.assertRaisesRegex(RuntimeError, "no valid source documents"):
+                verify(fake_empty_documents)
 
     def test_impact_selection_receipt_records_the_inventory_graph_pins(self):
         with tempfile.TemporaryDirectory() as temporary_directory:

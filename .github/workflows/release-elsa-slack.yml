@@ -21,6 +21,11 @@ on:
       - 'scripts/integration-program/VerifyPackageSymbolPair/**'
       - 'scripts/integration-program/run_mapped_slack_package_proof.py'
       - 'scripts/integration-program/run_slack_package_proof.py'
+      # Imported or read when the SourceLink gate starts.
+      - 'scripts/integration-program/release_unit_manifest.py'
+      - 'scripts/integration-program/package_impact.py'
+      - 'scripts/integration-program/verify_import_source_tip_refresh*.py'
+      - 'doc/integration-program/inventory/inventory.json'
   workflow_dispatch:
 
 permissions:

@@ -167,10 +167,14 @@ def main() -> int:
     try:
         receipt = json.loads(RECEIPT.read_text(encoding="utf-8"))
         verify(receipt)
+        # This receipt pins its reviewed integration commit; the fifth receipt guards the current mapped bytes.
+        from verify_import_source_tip_refresh_r5 import RECEIPT as CURRENT_RECEIPT, verify as verify_current
+
+        verify_current(json.loads(CURRENT_RECEIPT.read_text(encoding="utf-8")))
     except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError) as error:
         print(f"Invalid second source-tip refresh: {error}", file=sys.stderr)
         return 1
-    print(f"Verified {len(receipt['mappedChanges'])} exact source deltas and the reviewed Dapper project transform")
+    print(f"Verified {len(receipt['mappedChanges'])} exact source deltas, the reviewed Dapper project transform and current HEAD")
     return 0
 
 
