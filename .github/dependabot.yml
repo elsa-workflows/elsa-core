@@ -11,7 +11,7 @@ registries:
     token: ${{secrets.FEEDZ_API_KEY}}
 
 updates:
-  - package-ecosystem: "NuGet" # See documentation for possible values
+  - package-ecosystem: "nuget" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
