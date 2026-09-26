@@ -22,6 +22,7 @@ namespace Elsa.Persistence.EFCore;
 public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextFactory, IServiceProvider serviceProvider) where TDbContext : DbContext where TEntity : class, new()
 {
     private const int WriteMaxRetryCount = 3;
+    private const int BulkWriteBatchSize = 50;
     private static readonly TimeSpan WriteBaseDelay = TimeSpan.FromMilliseconds(50);
 
     // ReSharper disable once StaticMemberInGenericType
@@ -190,7 +191,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
             if (entityList.Count == 0)
                 return;
 
-            var tenantId = serviceProvider.GetRequiredService<ITenantAccessor>().TenantId.NormalizeTenantId();
+            var tenantId = serviceProvider.GetRequiredService<ITenantAccessor>().TenantId;
             var tenancyEnabled = serviceProvider.GetService<IOptions<TenantsOptions>>()?.Value.IsEnabled == true;
 
             await ExecuteWriteWithRetryAsync(async (dbContext, ct) =>
@@ -211,7 +212,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
                             continue;
 
                         // Apply current tenant ID to entities without one
-                        if (entityWithTenant.TenantId == null && tenantId != null)
+                        if (entityWithTenant.TenantId == null)
                             entityWithTenant.TenantId = tenantId;
                     }
                 }
@@ -233,6 +234,14 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         }
     }
 
+    /// <summary>
+    /// #8490: an existing row may be replaced only when the stamped incoming TenantId is the
+    /// writer's own tenant or "*", and Normalize(existing) == Normalize(incoming).
+    /// <c>null</c> and "" both count as the default tenant. Forged-TenantId inserts of new keys
+    /// are not refused here; the import endpoint clears TenantId so the store stamps the writer.
+    /// The lookup and bulk upsert are separate statements; a concurrent insert of a known key
+    /// between them can still overwrite. Closing that race is option (ii).
+    /// </summary>
     private async Task EnsureTenantOwnershipAsync(
         TDbContext dbContext,
         IList<TEntity> entities,
@@ -245,49 +254,46 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
 
         var getKey = keySelector.Compile();
         var keyName = keySelector.GetProperty()!.Name;
-        var incomingByKey = new Dictionary<string, Entity>(StringComparer.Ordinal);
+        var existingByKey = new Dictionary<string, string?>(StringComparer.Ordinal);
 
-        foreach (var entity in entities)
-            incomingByKey[getKey(entity)] = (Entity)(object)entity;
-
-        const int batchSize = 50;
-
-        var selector = BuildKeyAndTenantSelector(keyName);
-
-        foreach (var keys in incomingByKey.Keys.Chunk(batchSize))
+        foreach (var keys in entities.Select(getKey).Distinct(StringComparer.Ordinal).Chunk(BulkWriteBatchSize))
         {
+            var keyList = keys.ToList();
             var existingRows = await dbContext.Set<TEntity>()
                 .AsNoTracking()
                 .IgnoreQueryFilters()
-                .Where(keySelector.BuildContainsKeysExpression(keys))
-                .Select(selector)
+                .Where(entity => keyList.Contains(EF.Property<string>(entity, keyName)))
+                .Select(entity => new ExistingKeyTenant(
+                    EF.Property<string>(entity, keyName),
+                    EF.Property<string?>(entity, nameof(Entity.TenantId))))
                 .ToListAsync(cancellationToken);
 
             foreach (var existing in existingRows)
-            {
-                var incomingTenantId = incomingByKey[existing.Key].TenantId;
-                if (!MayReplaceExistingRow(existing.TenantId, incomingTenantId, writerTenantId))
-                    throw new InvalidOperationException($"Cannot replace row '{existing.Key}' owned by another tenant.");
-            }
+                existingByKey[existing.Key] = existing.TenantId;
+        }
+
+        foreach (var entity in entities)
+        {
+            var key = getKey(entity);
+            if (!existingByKey.TryGetValue(key, out var existingTenantId))
+                continue;
+
+            var incomingTenantId = ((Entity)(object)entity).TenantId;
+            if (!MayReplaceExistingRow(existingTenantId, incomingTenantId, writerTenantId))
+                throw new InvalidOperationException($"Cannot replace {typeof(TEntity).Name} '{key}': tenant ownership mismatch.");
         }
     }
 
-    private static Expression<Func<TEntity, ExistingKeyTenant>> BuildKeyAndTenantSelector(string keyName)
-    {
-        var parameter = Expression.Parameter(typeof(TEntity), "entity");
-        var keyProperty = Expression.Property(parameter, keyName);
-        var tenantProperty = Expression.Property(parameter, nameof(Entity.TenantId));
-        var ctor = typeof(ExistingKeyTenant).GetConstructor([typeof(string), typeof(string)])!;
-        return Expression.Lambda<Func<TEntity, ExistingKeyTenant>>(Expression.New(ctor, keyProperty, tenantProperty), parameter);
-    }
-
+    /// <summary>
+    /// Incoming must already be the writer's tenant or "*"; existing must match that same
+    /// normalized value. A tenant literally named "default" is not the default tenant ("").
+    /// </summary>
     private static bool MayReplaceExistingRow(string? existingTenantId, string? incomingTenantId, string writerTenantId)
     {
         var existing = existingTenantId.NormalizeTenantId();
         var incoming = incomingTenantId.NormalizeTenantId();
-        var writer = writerTenantId.NormalizeTenantId();
 
-        if (incoming != writer && incoming != Tenant.AgnosticTenantId)
+        if (incoming != writerTenantId && incoming != Tenant.AgnosticTenantId)
             return false;
 
         return existing == incoming;

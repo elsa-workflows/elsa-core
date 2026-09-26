@@ -7,7 +7,6 @@
 
     <ItemGroup>
         <PackageReference Include="Oracle.EntityFrameworkCore" />
-        <PackageReference Include="Testcontainers.PostgreSql" />
     </ItemGroup>
 
     <ItemGroup>

@@ -33,24 +33,6 @@ public static class ExpressionExtensions
     }
 
     /// <summary>
-    /// Builds an expression that checks if the specified key property is contained in <paramref name="keys"/>.
-    /// </summary>
-    public static Expression<Func<TEntity, bool>> BuildContainsKeysExpression<TEntity>(this Expression<Func<TEntity, string>> keySelector, IEnumerable<string> keys)
-    {
-        var list = keys as IList<string> ?? keys.ToList();
-        var property = keySelector.GetProperty()!;
-        var param = Expression.Parameter(typeof(TEntity));
-        var body = Expression.Call(
-            typeof(Enumerable),
-            nameof(Enumerable.Contains),
-            [typeof(string)],
-            Expression.Constant(list),
-            Expression.Property(param, property));
-
-        return Expression.Lambda<Func<TEntity, bool>>(body, param);
-    }
-
-    /// <summary>
     /// Builds an expression that checks if the specified property is equal to the specified entity's property.
     /// </summary>
     /// <param name="keySelector">The key selector.</param>
