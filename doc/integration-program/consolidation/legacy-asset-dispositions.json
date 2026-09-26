@@ -36,8 +36,14 @@
       "category": "conditional_project_reference_target",
       "owning_workstream": "Feature #8214 build integration; Story #8215 backend/Studio build proof",
       "proposed_disposition": "Carry the conditional Elsa.Studio.Agents to Elsa.Studio.Workflows project reference in a scoped target only if final project-reference builds require it; retire this target after package-reference and project-reference graphs both pass.",
-      "evidence_or_gate": "The source target injects the Studio Workflows project reference only when UseProjectReferences=true and MSBuildProjectName=Elsa.Studio.Agents. The disposable build rewrites local references but does not close the final source-layout gate.",
-      "status": "candidate_rewritten_in_disposable_build"
+      "evidence_or_gate": "The pinned target only injected a Studio Workflows project reference in source mode. #8482 puts the mapped source reference in the Agents Studio project for true mode and restores the public Elsa.Studio.Workflows package for false mode; both graphs, net8/9/10 builds and targeted tests passed. The legacy target is not an active MSBuild input.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/agents-studio-reference-modes.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8482",
+        "merge_commit": "3ee23cd2ac36f4ad3daa8731c6126175d98ae9b6",
+        "reason": "The imported Agents Studio project carries both reviewed conditional references directly; the old external-path target is absent from the active root tree and retained only as an inert .source provenance copy."
+      }
     },
     {
       "original_repository": "extensions",
