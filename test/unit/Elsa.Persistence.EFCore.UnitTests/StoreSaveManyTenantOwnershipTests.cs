@@ -53,6 +53,30 @@ public abstract class StoreSaveManyTenantOwnershipTests
     }
 
     [Fact]
+    public async Task SaveManyAsync_WhenCaseSensitiveKeyDiffersOnlyInCasing_UpdatesOneAndInsertsTheOther()
+    {
+        await using var scenario = await CreateScenarioAsync("tenant-a");
+        await scenario.Store.SaveManyAsync([Row("abc", "tenant-a", "before")], x => x.Id, onSaving: null);
+
+        await scenario.Store.SaveManyAsync([Row("abc", "tenant-a", "after"), Row("ABC", "tenant-a", "new")], x => x.Id, onSaving: null);
+
+        AssertUnchanged(await scenario.FindAsync("abc"), "tenant-a", "after");
+        AssertUnchanged(await scenario.FindAsync("ABC"), "tenant-a", "new");
+    }
+
+    [Fact]
+    public async Task SaveManyAsync_WhenCaseSensitiveRowsDifferOnlyInCasing_UpdatesBoth()
+    {
+        await using var scenario = await CreateScenarioAsync("tenant-a");
+        await scenario.Store.SaveManyAsync([Row("abc", "tenant-a", "before"), Row("ABC", "tenant-a", "before")], x => x.Id, onSaving: null);
+
+        await scenario.Store.SaveManyAsync([Row("abc", "tenant-a", "after"), Row("ABC", "tenant-a", "after")], x => x.Id, onSaving: null);
+
+        AssertUnchanged(await scenario.FindAsync("abc"), "tenant-a", "after");
+        AssertUnchanged(await scenario.FindAsync("ABC"), "tenant-a", "after");
+    }
+
+    [Fact]
     public async Task SaveManyAsync_WhenPopulatorResavesStarUnderNamedTenant_KeepsStar()
     {
         await using var scenario = await CreateScenarioAsync("tenant-a");

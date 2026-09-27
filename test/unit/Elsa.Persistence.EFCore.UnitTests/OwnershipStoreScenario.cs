@@ -1,3 +1,4 @@
+using System.Globalization;
 using Elsa.Common.Entities;
 using Elsa.Common.Multitenancy;
 using Elsa.Persistence.EFCore;
@@ -51,10 +52,15 @@ public sealed class OwnershipStoreScenario : IAsyncDisposable
 
     public ValueTask DisposeAsync() => _disposeAsync();
 
-    public static async Task<OwnershipStoreScenario> CreateSqliteAsync(string tenantId, bool tenantsEnabled, bool nocaseKey = false)
+    public const string NoAccentCollation = "NOACCENT";
+
+    public static async Task<OwnershipStoreScenario> CreateSqliteAsync(string tenantId, bool tenantsEnabled, string? keyCollation = null)
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
+        // Stands in for accent-insensitive collations such as MySQL ai_ci or SQL Server CI_AI.
+        connection.CreateCollation(NoAccentCollation, (x, y) => string.Compare(
+            x, y, CultureInfo.InvariantCulture, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace));
         try
         {
             return await CreateAsync(
@@ -65,7 +71,7 @@ public sealed class OwnershipStoreScenario : IAsyncDisposable
                 {
                     await connection.DisposeAsync();
                 },
-                nocaseKey);
+                keyCollation);
         }
         catch
         {
@@ -97,7 +103,7 @@ public sealed class OwnershipStoreScenario : IAsyncDisposable
         bool tenantsEnabled,
         Action<DbContextOptionsBuilder> configure,
         Func<ValueTask> disposeAsync,
-        bool nocaseKey = false)
+        string? keyCollation = null)
     {
         var tenantAccessor = new TestTenantAccessor(tenantId);
         var services = new ServiceCollection()
@@ -113,14 +119,14 @@ public sealed class OwnershipStoreScenario : IAsyncDisposable
         await using (var dbContext = await factory.CreateDbContextAsync())
         {
             await dbContext.Database.EnsureCreatedAsync();
-            if (nocaseKey)
+            if (keyCollation != null)
             {
                 var tableName = dbContext.Model.FindEntityType(typeof(OwnedRow))!.GetTableName()!;
                 var recreateSql =
                     $"""
                     DROP TABLE IF EXISTS "{tableName}";
                     CREATE TABLE "{tableName}" (
-                        "Id" TEXT NOT NULL PRIMARY KEY COLLATE NOCASE,
+                        "Id" TEXT NOT NULL PRIMARY KEY COLLATE {keyCollation},
                         "TenantId" TEXT NULL,
                         "Payload" TEXT NOT NULL
                     );

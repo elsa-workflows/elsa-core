@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Linq.Expressions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
@@ -240,8 +241,11 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
     /// are not refused here; the import endpoint stamps TenantId with the writer.
     /// The lookup and bulk upsert are separate statements; a concurrent insert of a known key
     /// between them can still overwrite (accepted check-then-write; see #8490).
-    /// Iterate returned rows: a key that does not ordinal-match the batch is a collation
-    /// collision and is refused. Ordinal matches are checked against every incoming occurrence.
+    /// Only the database knows its key collation (case, accents, trailing spaces), so it decides
+    /// which submitted keys reach which rows: a returned row that no key ordinal-matches is a
+    /// collation collision and is refused, ordinal matches are checked against every incoming
+    /// occurrence, and keys without a row of their own are looked up again, refusing the batch
+    /// if any of them reaches an existing row.
     /// </summary>
     private async Task EnsureTenantOwnershipAsync(
         TDbContext dbContext,
@@ -256,31 +260,80 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         var getKey = keySelector.Compile();
         var keyName = keySelector.GetProperty()!.Name;
         var incomingByKey = entities.ToLookup(getKey, StringComparer.Ordinal);
+        var existingRows = await FindExistingRowsAsync(dbContext, keyName, incomingByKey.Select(group => group.Key), cancellationToken);
 
-        foreach (var keyList in incomingByKey.Select(group => group.Key).Chunk(BulkUpsertExtensions.DefaultBatchSize).Select(keys => keys.ToList()))
+        // A key that reaches no row cannot collide with one either.
+        if (existingRows.Count == 0)
+            return;
+
+        // A row no key ordinal-matches was reached only through a collation variant.
+        var variantOnlyRows = new List<ExistingKeyTenant>();
+        foreach (var existing in existingRows)
         {
-            var existingRows = await dbContext.Set<TEntity>()
+            var incomingMatches = incomingByKey[existing.Key];
+            if (!incomingMatches.Any())
+            {
+                variantOnlyRows.Add(existing);
+                continue;
+            }
+
+            foreach (var (submittedKey, incomingTenantId) in incomingMatches.Select(entity => (getKey(entity), ((Entity)(object)entity).TenantId)))
+            {
+                if (!MayReplaceExistingRow(existing.TenantId, incomingTenantId, writerTenantId))
+                    throw CreateOwnershipMismatchException([submittedKey]);
+            }
+        }
+
+        // "abc" can make row "abc" pass while "ABC" or "abc " in the same batch targets it unchecked.
+        var existingKeys = existingRows.Select(row => row.Key).ToHashSet(StringComparer.Ordinal);
+        var keysWithoutOwnRow = incomingByKey.Select(group => group.Key).Where(key => !existingKeys.Contains(key)).ToList();
+        if (keysWithoutOwnRow.Count == 0)
+            return;
+
+        var collidingRows = variantOnlyRows.Count > 0
+            ? variantOnlyRows
+            : await FindExistingRowsAsync(dbContext, keyName, keysWithoutOwnRow, cancellationToken);
+        if (collidingRows.Count == 0)
+            return;
+
+        // The batch is refused. Name only submitted keys: a stored key may be another tenant's spelling.
+        // Ask the database which likely spellings reached a row; capped, since this only improves the
+        // message and runs while other saves of this entity type wait.
+        var submittedVariants = new List<string>();
+        var likelyVariants = keysWithoutOwnRow
+            .Where(key => collidingRows.Any(row => LikelyCollationVariantComparer.Equals(key.TrimEnd(), row.Key.TrimEnd())))
+            .Take(MaxNamedCollisionKeys);
+        foreach (var key in likelyVariants)
+        {
+            if ((await FindExistingRowsAsync(dbContext, keyName, [key], cancellationToken)).Count > 0)
+                submittedVariants.Add(key);
+        }
+
+        throw submittedVariants.Count > 0
+            ? CreateOwnershipMismatchException(submittedVariants)
+            : new InvalidOperationException($"Cannot save {typeof(TEntity).Name}: a submitted key matches an existing row under the database key collation. Shared rows need TenantId '*'.");
+    }
+
+    private static async Task<List<ExistingKeyTenant>> FindExistingRowsAsync(
+        TDbContext dbContext,
+        string keyName,
+        IEnumerable<string> keys,
+        CancellationToken cancellationToken)
+    {
+        var rows = new List<ExistingKeyTenant>();
+        foreach (var keyList in keys.Chunk(BulkUpsertExtensions.DefaultBatchSize).Select(chunk => chunk.ToList()))
+        {
+            rows.AddRange(await dbContext.Set<TEntity>()
                 .AsNoTracking()
                 .IgnoreQueryFilters()
                 .Where(entity => keyList.Contains(EF.Property<string>(entity, keyName)))
                 .Select(entity => new ExistingKeyTenant(
                     EF.Property<string>(entity, keyName),
                     EF.Property<string?>(entity, nameof(Entity.TenantId))))
-                .ToListAsync(cancellationToken);
-
-            foreach (var existing in existingRows)
-            {
-                var incomingMatches = incomingByKey[existing.Key];
-                if (!incomingMatches.Any())
-                    throw CreateOwnershipMismatchException(keyList);
-
-                foreach (var (submittedKey, incomingTenantId) in incomingMatches.Select(entity => (getKey(entity), ((Entity)(object)entity).TenantId)))
-                {
-                    if (!MayReplaceExistingRow(existing.TenantId, incomingTenantId, writerTenantId))
-                        throw CreateOwnershipMismatchException([submittedKey]);
-                }
-            }
+                .ToListAsync(cancellationToken));
         }
+
+        return rows;
     }
 
     private static InvalidOperationException CreateOwnershipMismatchException(IEnumerable<string> submittedKeys)
@@ -303,6 +356,15 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
 
         return existing == incoming;
     }
+
+    private const int MaxNamedCollisionKeys = 10;
+
+    /// <summary>
+    /// Only picks which submitted keys to confirm with the database for the error message; it never decides a collision.
+    /// </summary>
+    private static readonly StringComparer LikelyCollationVariantComparer = StringComparer.Create(
+        CultureInfo.InvariantCulture,
+        CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace | CompareOptions.IgnoreKanaType | CompareOptions.IgnoreWidth);
 
     private sealed record ExistingKeyTenant(string Key, string? TenantId);
 
