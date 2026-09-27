@@ -62,6 +62,10 @@ PUBLICATION_REFERENCES = {
 EXPRESSION = re.compile(r"\$\{\{(.*?)\}\}", re.DOTALL)
 # Inside ${{ }}: the secrets context as a whole, e.g. toJSON(secrets), which carries every feed key.
 WHOLE_SECRETS = re.compile(r"\bsecrets\b(?!\s*[.\[])", re.IGNORECASE)
+# Inside ${{ }}: secrets accessed by index, e.g. secrets[vars.X] or secrets['FEEDZ_API_KEY']. The literal
+# name patterns above already flag indices that spell out a feed key, but any index - computed or not -
+# can resolve to a publication secret, so indexed access is never allowed outside the gated jobs.
+INDEXED_SECRETS = re.compile(r"\bsecrets\s*\[", re.IGNORECASE)
 # Status functions replace the implicit success() that makes a job wait for its needs to succeed.
 STATUS_FUNCTION = re.compile(r"\b(?:always|failure|cancelled)\s*\(")
 
@@ -181,8 +185,11 @@ def capability_violations(workflow: dict) -> list[str]:
     for scope, node in scopes.items():
         texts = list(strings(node))
         found = [label for label, pattern in PUBLICATION_REFERENCES.items() if any(map(pattern.search, texts))]
-        if any(WHOLE_SECRETS.search(expression) for text in texts for expression in EXPRESSION.findall(text)):
+        expressions = [expression for text in texts for expression in EXPRESSION.findall(text)]
+        if any(WHOLE_SECRETS.search(expression) for expression in expressions):
             found.append("the whole secrets context")
+        if any(INDEXED_SECRETS.search(expression) for expression in expressions):
+            found.append("an indexed secrets access")
         if grants_id_token(node.get("permissions")):
             found.append("id-token: write")
         if "environment" in node:
