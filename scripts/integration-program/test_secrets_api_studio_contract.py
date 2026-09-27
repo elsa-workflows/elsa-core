@@ -133,6 +133,9 @@ class SecretsApiStudioContractTests(unittest.TestCase):
                                        'public string Id { get; set; }\n    public string? Owner { get; set; }')),
             ('snapshot bytes', 'differs from imported',
              lambda root: self.rewrite(root / paths['studioApi'], 'namespace', '\nnamespace')),
+            ('Core list request field Studio cannot send', 'Studio optional list query omissions',
+             lambda root: self.rewrite(root / paths['coreModels'], 'public string? Search { get; set; }',
+                                       'public string? Search { get; set; }\n    public string? OwnerId { get; set; }')),
         )
         for drift, expected_error, mutate in mutations:
             with self.subTest(drift=drift), tempfile.TemporaryDirectory() as directory:

@@ -222,6 +222,12 @@ def verify_route_tables(fixture, core_routes, legacy_routes, studio_routes):
     return conflicts
 
 
+def verify_list_query_projection(fixture, core_models_source, studio_routes):
+    list_query_names = sorted(name[0].upper() + name[1:] for name in next(row for row in studio_routes if row['method'] == 'ListAsync')['query'])
+    list_omissions = sorted(set(property_names(core_models_source, 'ListSecretsRequest')) - set(list_query_names))
+    assert_equal('Studio optional list query omissions', list_omissions, fixture['dtoProjectionDifferences']['ListSecretsRequest'])
+
+
 def verify_studio_dto_projection(fixture, core_dtos, studio_dtos):
     for name in fixture['sharedStudioDtos']:
         omitted = sorted(set(core_dtos[name]) - set(studio_dtos[name]))
@@ -246,6 +252,7 @@ def verify_import_candidate(root, fixture):
         fixture,
         property_map(root, None, paths['coreModels'], fixture['sharedStudioDtos']),
         property_map(root, None, paths['studioModels'], fixture['sharedStudioDtos']))
+    verify_list_query_projection(fixture, read_source(root, None, paths['coreModels']), studio_routes)
     for source_name, snapshot_path in fixture['studioTestSourceSnapshots'].items():
         if (Path(root) / snapshot_path).read_bytes() != (Path(root) / paths[source_name]).read_bytes():
             fail(f'Studio integration-test source snapshot {snapshot_path} differs from imported {paths[source_name]}')
@@ -288,9 +295,7 @@ def verify(core_repo, extensions_repo, studio_repo, fixture):
         fail('Core SecretModel exposes plaintext or encrypted secret value fields')
     if sensitive_fields & {value.casefold() for value in studio_dtos['SecretModel']}:
         fail('Studio SecretModel includes plaintext or encrypted secret value fields')
-    list_query_names = sorted(name[0].upper() + name[1:] for name in next(row for row in studio_routes if row['method'] == 'ListAsync')['query'])
-    list_omissions = sorted(set(property_names(core_models, 'ListSecretsRequest')) - set(list_query_names))
-    assert_equal('Studio optional list query omissions', list_omissions, fixture['dtoProjectionDifferences']['ListSecretsRequest'])
+    verify_list_query_projection(fixture, core_models, studio_routes)
     if not all(name in legacy_models for name in fixture['legacyModelMarkers']):
         fail('The pinned legacy DTO no longer contains all recorded identity/value fields')
     if not all(name in legacy_entity for name in fixture['legacyEntityMarkers']):
