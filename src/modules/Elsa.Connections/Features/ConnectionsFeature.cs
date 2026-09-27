@@ -21,11 +21,13 @@ public sealed class ConnectionsFeature(IModule module) : FeatureBase(module)
         Services.TryAddSingleton<ITenantAccessor, DefaultTenantAccessor>();
         Services.TryAddSingleton(TimeProvider.System);
         Services.TryAddScoped<IConnectionUseAuthorizer, DenyAllConnectionUseAuthorizer>();
+        // Inspection has its own host policy; a use or management authorizer never answers for it.
+        Services.TryAddScoped<IConnectionMetadataInspectionAuthorizer, DenyAllConnectionMetadataInspectionAuthorizer>();
         Services.AddOptions<ConnectionInspectionOptions>();
         // Persistence is optional. An inspector without a lifecycle store stays fail-closed.
         Services.TryAddScoped<IConnectionMetadataInspector>(sp => new DefaultConnectionMetadataInspector(
             sp.GetService<IConnectionLifecycleStore>(),
-            sp.GetRequiredService<IConnectionUseAuthorizer>(),
+            sp.GetRequiredService<IConnectionMetadataInspectionAuthorizer>(),
             sp.GetRequiredService<ITenantAccessor>(),
             sp.GetRequiredService<IOptions<ConnectionInspectionOptions>>()));
         Services.TryAddScoped<DefaultConnectionLifecycleService>();
