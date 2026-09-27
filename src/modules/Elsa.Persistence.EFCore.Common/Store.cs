@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Linq.Expressions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
@@ -300,7 +301,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         // message and runs while other saves of this entity type wait.
         var submittedVariants = new List<string>();
         var likelyVariants = keysWithoutOwnRow
-            .Where(key => collidingRows.Any(row => string.Equals(key.TrimEnd(), row.Key.TrimEnd(), StringComparison.OrdinalIgnoreCase)))
+            .Where(key => collidingRows.Any(row => LikelyCollationVariantComparer.Equals(key.TrimEnd(), row.Key.TrimEnd())))
             .Take(MaxNamedCollisionKeys);
         foreach (var key in likelyVariants)
         {
@@ -357,6 +358,13 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
     }
 
     private const int MaxNamedCollisionKeys = 10;
+
+    /// <summary>
+    /// Only picks which submitted keys to confirm with the database for the error message; it never decides a collision.
+    /// </summary>
+    private static readonly StringComparer LikelyCollationVariantComparer = StringComparer.Create(
+        CultureInfo.InvariantCulture,
+        CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace | CompareOptions.IgnoreKanaType | CompareOptions.IgnoreWidth);
 
     private sealed record ExistingKeyTenant(string Key, string? TenantId);
 
