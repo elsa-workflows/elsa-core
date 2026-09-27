@@ -16,7 +16,9 @@ internal class Endpoint(ISecretManager manager) : ElsaEndpointWithoutRequest<Sec
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
         var secret = await manager.GetAsync(Route<string>("name")!, cancellationToken);
-        if (secret == null)
+        // ISecretManager.GetAsync still returns lifecycle-managed generations for trusted in-process callers;
+        // over HTTP they are hidden, consistent with the list endpoint.
+        if (secret == null || secret.IsLifecycleManaged)
         {
             await Send.NotFoundAsync(cancellationToken);
             return;
