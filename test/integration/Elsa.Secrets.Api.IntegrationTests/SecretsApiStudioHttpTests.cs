@@ -45,6 +45,58 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
         ("POST", "/secrets/{name}/rotate"),
         ("POST", "/secrets/{name}/test")
     ];
+    private const string AllSecretsPermissions = "secrets:view,secrets:write,secrets:delete,secrets:test";
+    private const string DefaultIdentity = "contract-test-user";
+    private const string MatrixSecretName = "authorization-matrix";
+    private const string MatrixCreatedSecretName = "authorization-matrix-created";
+    private const string MatrixSeedDisplayName = "Matrix seed";
+    private const string MatrixUpdatedDisplayName = "Changed by matrix principal";
+    private static readonly IHttpContentSerializer StudioSerializer = new RefitSettings().ContentSerializer;
+    private static readonly string[] ReadOperations = ["list", "descriptors", "get", "picker"];
+    private static readonly string[] WriteOperations = ["update", "rotate", "revoke", "create"];
+    private static readonly string[] AllOperations = [.. ReadOperations, "test", .. WriteOperations, "delete"];
+
+    // Delete is sent separately, last, so the effect of every earlier call is still observable.
+    private static readonly SecretOperation[] MatrixOperations =
+    [
+        new("list", HttpMethod.Get, "/secrets"),
+        new("descriptors", HttpMethod.Get, "/secrets/descriptors"),
+        new("get", HttpMethod.Get, $"/secrets/{MatrixSecretName}"),
+        new("picker", HttpMethod.Post, "/secrets/picker", new SecretPickerRequest()),
+        new("test", HttpMethod.Post, $"/secrets/{MatrixSecretName}/test"),
+        new("update", HttpMethod.Post, $"/secrets/{MatrixSecretName}", new UpdateSecretRequest { DisplayName = MatrixUpdatedDisplayName }),
+        new("rotate", HttpMethod.Post, $"/secrets/{MatrixSecretName}/rotate", new RotateSecretRequest { Value = "matrix-rotated-value" }),
+        new("revoke", HttpMethod.Post, $"/secrets/{MatrixSecretName}/revoke"),
+        new("create", HttpMethod.Post, "/secrets", new CreateSecretRequest { Name = MatrixCreatedSecretName, Value = "matrix-created-value" })
+    ];
+
+    /// <summary>
+    /// Permission claim values and the canonical operations each may perform. The legacy rows are the exact tokens the
+    /// pinned Extensions 154ba15 endpoints declared; none is treated as an alias. Only <c>secrets:write</c> and
+    /// <c>secrets:delete</c> share a spelling with a Core token, so they take the Core meaning.
+    /// </summary>
+    public static TheoryData<string?, string[]> PermissionMatrix => new()
+    {
+        { null, [] },
+        { "unrelated:view", [] },
+        { "secrets:view", ReadOperations },
+        { "secrets:*", AllOperations },
+        { "*", AllOperations },
+        { "read:secrets", [] },
+        { "secrets:read", [] },
+        { "write:secrets", [] },
+        { "secrets:write", WriteOperations },
+        { "secrets:delete", ["delete"] }
+    };
+
+    public static TheoryData<string, string?> CrossTenantPrincipals => new()
+    {
+        { "secrets:view", "tenant-c" },
+        { "secrets:view", null },
+        { "secrets:*", "tenant-c" },
+        { "secrets:*", null }
+    };
+
     private WebApplication? _app;
     private string? _databasePath;
     private bool _previousSecuritySetting;
@@ -138,7 +190,7 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
     [Fact]
     public async Task PinnedStudioRefitClientCompletesSecretOperationsWithoutReturningStoredValue()
     {
-        using var client = CreateClient("secrets:view,secrets:write,secrets:delete,secrets:test", "tenant-a", out var capture);
+        using var client = CreateClient(AllSecretsPermissions, "tenant-a", out var capture);
         var api = RestService.For<ISecretsApi>(client);
         const string name = "studio-http-contract";
         const string originalValue = "initial-secret-never-echo";
@@ -344,10 +396,10 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
     [Fact]
     public async Task HttpTenantResolutionSeparatesSameNameSecretsAcrossTenants()
     {
-        using var tenantAClient = CreateClient("secrets:view,secrets:write,secrets:delete,secrets:test", "tenant-a", out var tenantACapture);
+        using var tenantAClient = CreateClient(AllSecretsPermissions, "tenant-a", out var tenantACapture);
         using var tenantBClient = CreateClient("secrets:view,secrets:write,secrets:test", "tenant-b", out var tenantBCapture);
-        using var tenantCClient = CreateClient("secrets:view,secrets:write,secrets:delete,secrets:test", "tenant-c", out var tenantCCapture);
-        using var defaultTenantClient = CreateClient("secrets:view,secrets:write,secrets:delete,secrets:test", null, out var defaultTenantCapture);
+        using var tenantCClient = CreateClient(AllSecretsPermissions, "tenant-c", out var tenantCCapture);
+        using var defaultTenantClient = CreateClient(AllSecretsPermissions, null, out var defaultTenantCapture);
         var tenantA = RestService.For<ISecretsApi>(tenantAClient);
         var tenantB = RestService.For<ISecretsApi>(tenantBClient);
         var tenantC = RestService.For<ISecretsApi>(tenantCClient);
@@ -423,7 +475,171 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
             "tenant-a-secret", "tenant-b-secret", "tenant-a-rotated");
     }
 
-    private HttpClient CreateClient(string? permissions, string? tenantId, out ResponseCaptureHandler capture)
+    [Theory]
+    [MemberData(nameof(PermissionMatrix))]
+    public async Task EachCanonicalOperationAdmitsOnlyPrincipalsHoldingItsCorePermission(string? permissions, string[] allowedOperations)
+    {
+        using var seeder = CreateClient(AllSecretsPermissions, "tenant-a", out _);
+        var seeded = await RestService.For<ISecretsApi>(seeder).CreateAsync(new CreateSecretRequest
+        {
+            Name = MatrixSecretName,
+            DisplayName = MatrixSeedDisplayName,
+            Value = "matrix-seed-value"
+        });
+
+        using var principal = CreateClient(permissions, "tenant-a", out var capture);
+        var deniedStatus = permissions is null ? HttpStatusCode.Unauthorized : HttpStatusCode.Forbidden;
+        var expected = new List<(string Operation, HttpStatusCode Status)>();
+        var actual = new List<(string Operation, HttpStatusCode Status)>();
+        foreach (var operation in MatrixOperations)
+        {
+            var allowed = allowedOperations.Contains(operation.Name);
+            using var request = new HttpRequestMessage(operation.Method, operation.Path)
+            {
+                Content = operation.Body is null ? null : StudioSerializer.ToHttpContent(operation.Body)
+            };
+            using var response = await principal.SendAsync(request);
+            expected.Add((operation.Name, allowed ? HttpStatusCode.OK : deniedStatus));
+            actual.Add((operation.Name, response.StatusCode));
+            if (allowed && response.IsSuccessStatusCode)
+            {
+                await AssertAdmittedResponseAsync(operation.Name, response.Content, seeded.Id);
+            }
+        }
+
+        Assert.Equal(expected, actual);
+        await AssertMatrixStateAsync(seeder, seeded.Id, allowedOperations);
+
+        var mayDelete = allowedOperations.Contains("delete");
+        using var deleted = await principal.DeleteAsync($"/secrets/{MatrixSecretName}");
+        Assert.Equal(mayDelete ? HttpStatusCode.NoContent : deniedStatus, deleted.StatusCode);
+        using var afterDelete = await seeder.GetAsync($"/secrets/{MatrixSecretName}");
+        Assert.Equal(mayDelete ? HttpStatusCode.NotFound : HttpStatusCode.OK, afterDelete.StatusCode);
+
+        AssertNoSecretMaterial(capture.ResponseBodies, "matrix-seed-value", "matrix-rotated-value", "matrix-created-value");
+    }
+
+    [Theory]
+    [MemberData(nameof(CrossTenantPrincipals))]
+    public async Task PrincipalResolvedToAnotherTenantCannotReadOrChangeTheSecret(string permissions, string? requestTenant)
+    {
+        const string name = "cross-tenant-authorization";
+        using var owningTenant = CreateClient(AllSecretsPermissions, "tenant-b", out _);
+        var owningTenantApi = RestService.For<ISecretsApi>(owningTenant);
+        var secret = await owningTenantApi.CreateAsync(new CreateSecretRequest
+        {
+            Name = name,
+            DisplayName = "Tenant B only",
+            Value = "tenant-b-authorization-value"
+        });
+
+        // The same grant resolved to tenant B sees the secret, so the empty results below are not vacuous.
+        using var sameTenant = CreateClient(permissions, "tenant-b", out _);
+        var sameTenantApi = RestService.For<ISecretsApi>(sameTenant);
+        Assert.Equal(secret.Id, (await sameTenantApi.GetAsync(name)).Id);
+        Assert.Contains((await sameTenantApi.ListAsync()).Items, item => item.Id == secret.Id);
+        Assert.Contains((await sameTenantApi.PickAsync(new SecretPickerRequest())).Items, item => item.Id == secret.Id);
+
+        using var otherTenant = CreateClient(permissions, requestTenant, out var capture);
+        var otherTenantApi = RestService.For<ISecretsApi>(otherTenant);
+        Assert.DoesNotContain((await otherTenantApi.ListAsync()).Items, item => item.Id == secret.Id);
+        Assert.DoesNotContain((await otherTenantApi.PickAsync(new SecretPickerRequest())).Items, item => item.Id == secret.Id);
+        await AssertApiStatusAsync(HttpStatusCode.NotFound, () => otherTenantApi.GetAsync(name));
+
+        // A view-only grant is refused before any lookup; a manage grant reaches the handler and finds nothing in its tenant.
+        var canChange = permissions != "secrets:view";
+        var refused = canChange ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden;
+        await AssertApiStatusAsync(refused, () => otherTenantApi.UpdateAsync(name, new UpdateSecretRequest { DisplayName = "Must not cross tenants" }));
+        await AssertApiStatusAsync(refused, () => otherTenantApi.RotateAsync(name, new RotateSecretRequest { Value = "must-not-cross-tenants" }));
+        await AssertApiStatusAsync(refused, () => otherTenantApi.RevokeAsync(name));
+        await AssertApiStatusAsync(refused, () => otherTenantApi.DeleteAsync(name));
+        if (canChange)
+        {
+            var test = await otherTenantApi.TestAsync(name);
+            Assert.False(test.Succeeded);
+            Assert.Contains("not found", test.Error, StringComparison.OrdinalIgnoreCase);
+        }
+        else
+        {
+            await AssertApiStatusAsync(HttpStatusCode.Forbidden, () => otherTenantApi.TestAsync(name));
+        }
+
+        var after = await owningTenantApi.GetAsync(name);
+        Assert.Equal((secret.Id, "Tenant B only", (int?)1, SecretStatus.Active), (after.Id, after.DisplayName, after.CurrentVersion, after.Status));
+        Assert.True((await owningTenantApi.TestAsync(name)).Succeeded);
+        AssertNoSecretMaterial(capture.ResponseBodies, "tenant-b-authorization-value", "must-not-cross-tenants");
+    }
+
+    [Fact]
+    public async Task AnotherIdentityWithTheSameGrantManagesTheSecretBecauseCoreHasNoOwnerPredicate()
+    {
+        const string name = "shared-operator-secret";
+        using var creator = CreateClient(AllSecretsPermissions, "tenant-a", out var creatorCapture, identity: "secret-creator");
+        var created = await RestService.For<ISecretsApi>(creator).CreateAsync(new CreateSecretRequest { Name = name, Value = "creator-supplied-value" });
+
+        using var colleague = CreateClient(AllSecretsPermissions, "tenant-a", out var colleagueCapture, identity: "second-operator");
+        var api = RestService.For<ISecretsApi>(colleague);
+        Assert.Equal(created.Id, (await api.GetAsync(name)).Id);
+        Assert.Contains((await api.ListAsync()).Items, item => item.Id == created.Id);
+        Assert.Equal("Renamed by a second operator", (await api.UpdateAsync(name, new UpdateSecretRequest { DisplayName = "Renamed by a second operator" })).DisplayName);
+        Assert.Equal(2, (await api.RotateAsync(name, new RotateSecretRequest { Value = "rotated-by-second-operator" })).CurrentVersion);
+        Assert.True((await api.TestAsync(name)).Succeeded);
+        Assert.Equal(SecretStatus.Revoked, (await api.RevokeAsync(name)).Status);
+        await api.DeleteAsync(name);
+
+        // No Core response carries an owner field a legacy client could mistake for an authorization boundary.
+        var bodies = creatorCapture.ResponseBodies.Concat(colleagueCapture.ResponseBodies).ToList();
+        Assert.DoesNotContain(bodies, body => body.Contains("owner", StringComparison.OrdinalIgnoreCase));
+        AssertNoSecretMaterial(bodies, "creator-supplied-value", "rotated-by-second-operator");
+    }
+
+    /// <summary>An admitted call must have returned the seeded secret or its effect, not merely a 200.</summary>
+    private static async Task AssertAdmittedResponseAsync(string operation, HttpContent content, string secretId)
+    {
+        switch (operation)
+        {
+            case "list":
+                Assert.Contains((await ReadAsync<ListSecretsResponse>(content)).Items, item => item.Id == secretId);
+                break;
+            case "descriptors":
+                Assert.Contains((await ReadAsync<SecretDescriptorsResponse>(content)).Types, descriptor => descriptor.Name == SecretTypeNames.Text);
+                break;
+            case "get":
+                Assert.Equal(secretId, (await ReadAsync<SecretModel>(content)).Id);
+                break;
+            case "picker":
+                Assert.Contains((await ReadAsync<SecretPickerResponse>(content)).Items, item => item.Id == secretId);
+                break;
+            case "test":
+                Assert.True((await ReadAsync<SecretTestResponse>(content)).Succeeded);
+                break;
+            case "rotate":
+                Assert.Equal(2, (await ReadAsync<SecretModel>(content)).CurrentVersion);
+                break;
+        }
+    }
+
+    /// <summary>A refused call must not have half-run, and an admitted one must have taken effect.</summary>
+    private static async Task AssertMatrixStateAsync(HttpClient seeder, string secretId, string[] allowedOperations)
+    {
+        var current = await RestService.For<ISecretsApi>(seeder).GetAsync(MatrixSecretName);
+        Assert.Equal(secretId, current.Id);
+        Assert.Equal(allowedOperations.Contains("update") ? MatrixUpdatedDisplayName : MatrixSeedDisplayName, current.DisplayName);
+        Assert.Equal(allowedOperations.Contains("revoke") ? SecretStatus.Revoked : SecretStatus.Active, current.Status);
+        // CurrentVersion is the latest active version, so a revoked secret reports none.
+        int? expectedVersion = allowedOperations.Contains("revoke") ? null : allowedOperations.Contains("rotate") ? 2 : 1;
+        Assert.Equal(expectedVersion, current.CurrentVersion);
+
+        using var created = await seeder.GetAsync($"/secrets/{MatrixCreatedSecretName}");
+        Assert.Equal(allowedOperations.Contains("create") ? HttpStatusCode.OK : HttpStatusCode.NotFound, created.StatusCode);
+    }
+
+    private static async Task<T> ReadAsync<T>(HttpContent content) => (await StudioSerializer.FromHttpContentAsync<T>(content))!;
+
+    private static async Task AssertApiStatusAsync(HttpStatusCode expected, Func<Task> call) =>
+        Assert.Equal(expected, (await Assert.ThrowsAnyAsync<ApiException>(call)).StatusCode);
+
+    private HttpClient CreateClient(string? permissions, string? tenantId, out ResponseCaptureHandler capture, string identity = DefaultIdentity)
     {
         capture = new ResponseCaptureHandler(_app!.GetTestServer().CreateHandler());
         var client = new HttpClient(capture) { BaseAddress = new Uri("http://localhost") };
@@ -435,7 +651,7 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
         {
             client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId);
         }
-        client.DefaultRequestHeaders.Add(TestAuthenticationHandler.IdentityHeader, "contract-test-user");
+        client.DefaultRequestHeaders.Add(TestAuthenticationHandler.IdentityHeader, identity);
         return client;
     }
 
@@ -450,6 +666,8 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
         Assert.DoesNotContain(responseBodies, body => body.Contains("EncryptedValue", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(responseBodies, body => body.Contains("ProtectedValue", StringComparison.OrdinalIgnoreCase));
     }
+
+    private sealed record SecretOperation(string Name, HttpMethod Method, string Path, object? Body = null);
 
     private sealed class ResponseCaptureHandler(HttpMessageHandler innerHandler) : DelegatingHandler(innerHandler)
     {
