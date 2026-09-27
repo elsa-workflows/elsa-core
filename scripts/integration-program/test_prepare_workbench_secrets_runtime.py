@@ -820,19 +820,47 @@ class CommittedWorkbenchHostDefaultsTests(unittest.TestCase):
                 with self.assertRaises(AssertionError):
                     self.assert_disabled_by_default(self.program.replace(original, mutated))
 
+    @staticmethod
+    def _ci_get(mapping, key, default=None):
+        """.NET configuration keys are case-insensitive; look up a dict key the same way."""
+        if not isinstance(mapping, dict):
+            return default
+        lowered = key.lower()
+        for candidate, value in mapping.items():
+            if candidate.lower() == lowered:
+                return value
+        return default
+
+    def _switch_enabled(self, settings, section, key):
+        features = self._ci_get(settings, 'Features', {})
+        section_settings = self._ci_get(features, section, {})
+        return bool(self._ci_get(section_settings, key, False))
+
     def test_committed_settings_and_launch_profiles_do_not_enable_fixture_switches(self):
         settings = sorted(self.WORKBENCH.glob('appsettings*.json'))
         self.assertTrue(settings)
         for path in settings:
-            features = json.loads(path.read_text(encoding='utf-8-sig')).get('Features', {})
+            document = json.loads(path.read_text(encoding='utf-8-sig'))
             for section, key in self.SWITCH_PATHS:
                 with self.subTest(settings=path.name, switch=f'{section}:{key}'):
-                    self.assertFalse(features.get(section, {}).get(key, False))
+                    self.assertFalse(self._switch_enabled(document, section, key))
         launch = json.loads((self.WORKBENCH / 'Properties' / 'launchSettings.json').read_text(encoding='utf-8-sig'))
         for name, profile in launch['profiles'].items():
-            overrides = ' '.join([*profile.get('environmentVariables', {}), profile.get('commandLineArgs', '')])
+            environment_variables = self._ci_get(profile, 'environmentVariables', {})
+            overrides = ' '.join([*environment_variables, self._ci_get(profile, 'commandLineArgs', '') or ''])
             with self.subTest(profile=name):
-                self.assertNotIn('Features', overrides)
+                self.assertNotIn('features', overrides.lower())
+
+    def test_switch_detection_is_case_insensitive_to_a_lowercase_key_mutation(self):
+        # .NET configuration binds keys case-insensitively, so a future lowercase key
+        # (e.g. "features"/"secrets"/"enabled") would still enable the feature even
+        # though a case-sensitive lookup would miss it. Prove the check catches that.
+        document = {'features': {'secrets': {'enabled': True}}}
+        self.assertTrue(self._switch_enabled(document, 'Secrets', 'Enabled'))
+
+        environment_variables = {'features__secrets__enabled': 'true'}
+        overrides = ' '.join([*environment_variables, ''])
+        self.assertIn('features', overrides.lower())
 
 
 if __name__ == '__main__':
