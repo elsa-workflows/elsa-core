@@ -1,3 +1,4 @@
+using System.Globalization;
 using Elsa.Common.Entities;
 using Elsa.Common.Multitenancy;
 using Elsa.Persistence.EFCore;
@@ -51,10 +52,15 @@ public sealed class OwnershipStoreScenario : IAsyncDisposable
 
     public ValueTask DisposeAsync() => _disposeAsync();
 
+    public const string NoAccentCollation = "NOACCENT";
+
     public static async Task<OwnershipStoreScenario> CreateSqliteAsync(string tenantId, bool tenantsEnabled, string? keyCollation = null)
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
+        // Stands in for accent-insensitive collations such as MySQL ai_ci or SQL Server CI_AI.
+        connection.CreateCollation(NoAccentCollation, (x, y) => string.Compare(
+            x, y, CultureInfo.InvariantCulture, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace));
         try
         {
             return await CreateAsync(
