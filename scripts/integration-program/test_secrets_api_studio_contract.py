@@ -109,6 +109,15 @@ class SecretsApiStudioContractTests(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertIn(f"- '{trigger}'", workflow)
 
+    def test_legacy_only_packages_are_exactly_the_imported_legacy_package_graph(self):
+        # The default-host test asserts that none of these is loaded or deployed with the Workbench, so the list must
+        # not lag behind the imported legacy packages.
+        legacy_root = SCRIPT.parents[2] / Path(self.fixture['importCandidateSourcePaths']['legacyApi']).parents[2]
+
+        self.assertEqual(
+            sorted(project.stem for project in legacy_root.glob('*/*.csproj')),
+            self.fixture['legacyOnlyPackages'])
+
     def test_import_candidate_check_fails_closed_on_route_permission_dto_or_snapshot_drift(self):
         paths = self.fixture['importCandidateSourcePaths']
         core_api = paths['coreApi']

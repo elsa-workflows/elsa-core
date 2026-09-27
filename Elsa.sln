@@ -547,6 +547,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Credential
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Api.IntegrationTests", "test\integration\Elsa.Secrets.Api.IntegrationTests\Elsa.Secrets.Api.IntegrationTests.csproj", "{7BB1EDB9-F1AA-4DA1-84D4-BD5155D92D64}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.DefaultHost.IntegrationTests", "test\integration\Elsa.Secrets.DefaultHost.IntegrationTests\Elsa.Secrets.DefaultHost.IntegrationTests.csproj", "{86104678-6D3B-4928-9A8A-308F1AB74B69}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Server.Web", "samples\extensions\workbench\Elsa.Server.Web\Elsa.Server.Web.csproj", "{0BD54993-59D9-5F07-AE25-B6AFB102868D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ServerAndStudio.Web", "samples\extensions\workbench\Elsa.ServerAndStudio.Web\Elsa.ServerAndStudio.Web.csproj", "{4BDC6977-B7E0-5D8E-B311-BF3D88651D0E}"
@@ -5047,6 +5049,18 @@ Global
 		{7BB1EDB9-F1AA-4DA1-84D4-BD5155D92D64}.Release|x64.Build.0 = Release|Any CPU
 		{7BB1EDB9-F1AA-4DA1-84D4-BD5155D92D64}.Release|x86.ActiveCfg = Release|Any CPU
 		{7BB1EDB9-F1AA-4DA1-84D4-BD5155D92D64}.Release|x86.Build.0 = Release|Any CPU
+		{86104678-6D3B-4928-9A8A-308F1AB74B69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86104678-6D3B-4928-9A8A-308F1AB74B69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86104678-6D3B-4928-9A8A-308F1AB74B69}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{86104678-6D3B-4928-9A8A-308F1AB74B69}.Debug|x64.Build.0 = Debug|Any CPU
+		{86104678-6D3B-4928-9A8A-308F1AB74B69}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{86104678-6D3B-4928-9A8A-308F1AB74B69}.Debug|x86.Build.0 = Debug|Any CPU
+		{86104678-6D3B-4928-9A8A-308F1AB74B69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86104678-6D3B-4928-9A8A-308F1AB74B69}.Release|Any CPU.Build.0 = Release|Any CPU
+		{86104678-6D3B-4928-9A8A-308F1AB74B69}.Release|x64.ActiveCfg = Release|Any CPU
+		{86104678-6D3B-4928-9A8A-308F1AB74B69}.Release|x64.Build.0 = Release|Any CPU
+		{86104678-6D3B-4928-9A8A-308F1AB74B69}.Release|x86.ActiveCfg = Release|Any CPU
+		{86104678-6D3B-4928-9A8A-308F1AB74B69}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -5266,6 +5280,7 @@ Global
 		{B9CF1280-DBBD-4C53-91A4-A090694B85AB} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{B7FD3306-DDAF-483E-8D4C-87BC59843FAB} = {1B8D5897-902E-4632-8698-E89CAF3DDF54}
 		{7BB1EDB9-F1AA-4DA1-84D4-BD5155D92D64} = {1B8D5897-902E-4632-8698-E89CAF3DDF54}
+		{86104678-6D3B-4928-9A8A-308F1AB74B69} = {1B8D5897-902E-4632-8698-E89CAF3DDF54}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
