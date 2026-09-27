@@ -45,6 +45,7 @@ REFERENCE_MAP = (
     b'Include="../../../../../src/extensions/devops/Elsa.DevOps.GitHub/Elsa.DevOps.GitHub.csproj"',
 )
 TEST_PROJECT = "test/extensions/modules/devops/Elsa.DevOps.GitHub.UnitTests/Elsa.DevOps.GitHub.UnitTests.csproj"
+REVIEWED_TEST_CLASS = "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests"
 TRX_NAME = "github-activity-id.trx"
 
 
@@ -151,6 +152,8 @@ def run(args: argparse.Namespace) -> int:
         results_dir.mkdir()
         command = [
             str(dotnet), "test", TEST_PROJECT, "--framework", FRAMEWORK,
+            # Only the reviewed class: later tests in the project run in ordinary CI, not in this proof.
+            "--filter", f"FullyQualifiedName~{REVIEWED_TEST_CLASS}",
             "--logger", f"trx;LogFileName={TRX_NAME}", "--results-directory", str(results_dir),
         ]
         with log_path.open("xb") as log_file:

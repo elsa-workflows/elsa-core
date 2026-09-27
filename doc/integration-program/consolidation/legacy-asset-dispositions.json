@@ -318,7 +318,7 @@
       "category": "product_solution_entrypoint",
       "owning_workstream": "Feature #8214 build integration; Story #8215 developer workflow",
       "proposed_disposition": "Keep product-focused developer entrypoints (updated solution or .slnf) where maintainers need them; make root Elsa.sln the explicit full-CI solution or define an equally explicit solution set, then retire the inert original after membership/path parity passes.",
-      "evidence_or_gate": "The canonical Elsa.sln includes the imported product projects; the focused filter selects exactly its product projects and builds from the consolidated checkout. The old standalone solution remains an inert source-history record. The filter was extended in https://github.com/elsa-workflows/elsa-core/pull/8512 to add Elsa.DevOps.GitHub.UnitTests, keeping parity with Elsa.sln under the same #8496 decision.",
+      "evidence_or_gate": "The canonical Elsa.sln includes the imported product projects; the focused filter selects exactly its product projects and builds from the consolidated checkout. The old standalone solution remains an inert source-history record.",
       "status": "represented_in_core",
       "completion": {
         "decision_path": "doc/integration-program/consolidation/product-solution-filters.md",
@@ -327,7 +327,11 @@
         "active_path": "Elsa.Extensions.slnf",
         "active_blob": "7402d461764d09470870edc3c4593cad22fbfeaa",
         "active_mode": "100644",
-        "representation": "expanded"
+        "representation": "expanded",
+        "active_update": {
+          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8512",
+          "reason": "Added Elsa.DevOps.GitHub.UnitTests to keep the filter in parity with Elsa.sln under the #8496 decision; active_blob pins the extended filter."
+        }
       }
     },
     {

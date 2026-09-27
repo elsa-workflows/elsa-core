@@ -115,6 +115,24 @@ class LegacyAssetDispositionTests(unittest.TestCase):
         changed["assets"][represented]["completion"]["representation"] = "identical"
         self.assertTrue(any("not identical" in error for error in validate_ledger(changed)))
 
+    def test_active_update_evidence_must_be_a_distinct_reviewed_pr_with_reason(self) -> None:
+        updated = next(index for index, row in enumerate(self.ledger["assets"])
+                       if row["original_path"] == "Elsa.Extensions.sln")
+        self.assertIn("active_update", self.ledger["assets"][updated]["completion"])
+        self.assertEqual([], validate_ledger(self.ledger))
+        original_pr = self.ledger["assets"][updated]["completion"]["pr_url"]
+        for value in (
+            {"pr_url": "https://example.com/pull/8512", "reason": "x"},
+            {"pr_url": original_pr, "reason": "x"},
+            {"pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8512", "reason": " "},
+            {"pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8512"},
+            "https://github.com/elsa-workflows/elsa-core/pull/8512",
+        ):
+            with self.subTest(value=value):
+                changed = copy.deepcopy(self.ledger)
+                changed["assets"][updated]["completion"]["active_update"] = value
+                self.assertTrue(any("invalid active update evidence" in error for error in validate_ledger(changed)))
+
     def test_active_git_blob_accepts_clean_crlf_checkout_but_rejects_changes(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
