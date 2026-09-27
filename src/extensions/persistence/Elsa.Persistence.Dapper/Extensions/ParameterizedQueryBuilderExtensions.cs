@@ -259,11 +259,27 @@ public static class ParameterizedQueryBuilderExtensions
 
         var sql = query.Sql;
         var options = versionOptions.Value;
-        if (options.IsDraft) sql.AppendLine("and IsPublished = 0");
-        if (options.IsLatest) sql.AppendLine("and IsLatest = 1");
-        if (options.IsPublished) sql.AppendLine("and IsPublished = 1");
-        if (options.IsLatestOrPublished) sql.AppendLine("and (IsLatest = 1 or IsPublished = 1)");
-        if (options.IsLatestAndPublished) sql.AppendLine("and IsLatest = 1 and IsPublished = 1");
+        if (options.IsDraft)
+        {
+            query.Is("IsPublished", false);
+        }
+        if (options.IsLatest)
+        {
+            query.Is("IsLatest", true);
+        }
+        if (options.IsPublished)
+        {
+            query.Is("IsPublished", true);
+        }
+        if (options.IsLatestOrPublished)
+        {
+            sql.AppendLine("and (IsLatest = @VersionFlagTrue or IsPublished = @VersionFlagTrue)");
+            query.Parameters.Add("VersionFlagTrue", true);
+        }
+        if (options.IsLatestAndPublished)
+        {
+            query.Is("IsLatest", true).Is("IsPublished", true);
+        }
         if (options.Version > 0)
         {
             sql.AppendLine(query.Dialect.And("Version"));

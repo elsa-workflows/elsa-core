@@ -12,6 +12,11 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 RECEIPT = ROOT / "doc/integration-program/consolidation/source-tip-refresh-2026-09-25.json"
+# The sixth receipt (#8293) owns the current bytes of these mapped paths. This receipt still pins them at its
+# history join; every other mapped path stays pinned to HEAD here.
+PATHS_SUPERSEDED_BY_R6 = frozenset({
+    "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreCompareAndSwapTests.cs",
+})
 
 
 def git(*args: str, root: Path = ROOT) -> str:
@@ -72,7 +77,7 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
             raise ValueError(f"Old source or mapped import changed: {repository}/{source}")
         if row["new"] != blob_and_mode(new[repository], source, root) or row["new"] != blob_and_mode(join, mapped, root):
             raise ValueError(f"Refreshed source mapping changed: {repository}/{source}")
-        if row["new"] != blob_and_mode("HEAD", mapped, root):
+        if mapped not in PATHS_SUPERSEDED_BY_R6 and row["new"] != blob_and_mode("HEAD", mapped, root):
             raise ValueError(f"Refreshed mapped file changed after history join: {mapped}")
     actual_paths = set(git("diff", "--name-only", base, join, root=root).splitlines())
     if actual_paths != {row["mappedPath"] for row in rows}:
@@ -86,10 +91,13 @@ def main() -> int:
     try:
         receipt = json.loads(RECEIPT.read_text(encoding="utf-8"))
         verify(receipt)
+        from verify_import_source_tip_refresh_r6 import RECEIPT as CURRENT_RECEIPT, verify as verify_current
+
+        verify_current(json.loads(CURRENT_RECEIPT.read_text(encoding="utf-8")))
     except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError) as error:
         print(f"Invalid source-tip refresh: {error}", file=sys.stderr)
         return 1
-    print(f"Verified {len(receipt['mappedChanges'])} exact source deltas and both refreshed histories")
+    print(f"Verified {len(receipt['mappedChanges'])} exact source deltas, both refreshed histories and current HEAD")
     return 0
 
 

@@ -8,6 +8,8 @@ The imported Dapper project file had already received reviewed consolidated proj
 
 This receipt verifies the mapped files at its reviewed integration commit `c83aa78`. The later [Extensions `807cd893` receipt](source-tip-refresh-2026-09-26-r5.json) checks the current mapped Dapper bytes while preserving this historical snapshot. `verify(receipt)` alone therefore no longer guards `HEAD`; the verifier's command-line entry point also runs the fifth receipt's check so the command below still fails on an unreviewed edit to any of these mapped files.
 
+The [sixth source-tip receipt](source-tip-refresh-2026-09-27-r6.json) (#8293) now owns the current bytes of `ParameterizedQueryBuilderExtensions.cs`, which gained the reviewed Boolean version filters. The fifth receipt's prior-mapping check skips only that path, and the command line runs both later checks.
+
 Local net10.0 test runs passed 10/10 new Dapper tests and 20/20 MongoDB tests. Restore reported existing package-advisory warnings; those warnings are not release approval. Run the verifier and targeted tests with:
 
 ```sh
