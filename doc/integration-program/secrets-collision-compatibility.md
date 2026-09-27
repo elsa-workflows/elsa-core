@@ -88,6 +88,13 @@ The executable [API and Studio source contract](../../scripts/integration-progra
 
 This HTTP fixture activates only the canonical Core Secrets feature block, with test-only SQLite configuration. It does not start the full corrected consolidated sample host, activate both endpoint assemblies together, use the production database selected by the Workbench configuration, or verify legacy-ID sidecar behavior. Static source comparison still identifies the five normalized route collisions; a dual-assembly runtime collision test remains unverified.
 
+The [Secrets API and Studio contract acceptance record](secrets/api-studio-contract-acceptance-2026-09-27.md) gives the per-criterion status for #8301 and records the tests added for it:
+
+- a per-principal authorization matrix covering anonymous, no grant, view-only, `secrets:*`, `*` and each pinned legacy token across all ten operations;
+- cross-tenant checks for view-only and manage principals;
+- a check that Core has no owner predicate;
+- a working-tree check that the draft import's Core, legacy and Studio sources still carry the pinned contract.
+
 ### Host aliases and authenticated tenant scope
 
 The [current-tip Workbench cross-host receipt](secrets/workbench-studio-runtime/cross-host-token-2026-09-25.json) sent both synthetic tenant tokens to both configured host aliases with explicit `Host` and `Authorization` headers. A tenant-A token could not read tenant B's secret on B's alias (404), while a tenant-B token could read its own secret on A's alias (200). All four token/alias combinations returned a tenant-scoped list. This proves isolation by the authenticated tenant in that fixture; it does **not** prove that the host alias restricts which tenant may use a token. The test was Workbench-only and did not include a browser, reverse proxy, production identity store or environment binding.
