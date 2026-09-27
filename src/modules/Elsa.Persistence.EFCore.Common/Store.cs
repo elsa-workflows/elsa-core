@@ -265,11 +265,16 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         if (existingRows.Count == 0)
             return;
 
+        // A row no key ordinal-matches was reached only through a collation variant.
+        var variantOnlyRows = new List<ExistingKeyTenant>();
         foreach (var existing in existingRows)
         {
             var incomingMatches = incomingByKey[existing.Key];
             if (!incomingMatches.Any())
-                throw CreateOwnershipMismatchException([existing.Key]);
+            {
+                variantOnlyRows.Add(existing);
+                continue;
+            }
 
             foreach (var (submittedKey, incomingTenantId) in incomingMatches.Select(entity => (getKey(entity), ((Entity)(object)entity).TenantId)))
             {
@@ -284,12 +289,15 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         if (keysWithoutOwnRow.Count == 0)
             return;
 
-        var collidingRows = await FindExistingRowsAsync(dbContext, keyName, keysWithoutOwnRow, cancellationToken);
+        var collidingRows = variantOnlyRows.Count > 0
+            ? variantOnlyRows
+            : await FindExistingRowsAsync(dbContext, keyName, keysWithoutOwnRow, cancellationToken);
         if (collidingRows.Count == 0)
             return;
 
-        // The batch is refused; ask the database which likely spellings reached a row so the error names them.
-        // Capped: this only improves the message and runs while other saves of this entity type wait.
+        // The batch is refused. Name only submitted keys: a stored key may be another tenant's spelling.
+        // Ask the database which likely spellings reached a row; capped, since this only improves the
+        // message and runs while other saves of this entity type wait.
         var submittedVariants = new List<string>();
         var likelyVariants = keysWithoutOwnRow
             .Where(key => collidingRows.Any(row => string.Equals(key.TrimEnd(), row.Key.TrimEnd(), StringComparison.OrdinalIgnoreCase)))
@@ -300,7 +308,9 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
                 submittedVariants.Add(key);
         }
 
-        throw CreateOwnershipMismatchException(submittedVariants.Count > 0 ? submittedVariants : collidingRows.Select(row => row.Key));
+        throw submittedVariants.Count > 0
+            ? CreateOwnershipMismatchException(submittedVariants)
+            : new InvalidOperationException($"Cannot save {typeof(TEntity).Name}: a submitted key matches an existing row under the database key collation. Shared rows need TenantId '*'.");
     }
 
     private static async Task<List<ExistingKeyTenant>> FindExistingRowsAsync(
