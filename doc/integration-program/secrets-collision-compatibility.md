@@ -93,7 +93,8 @@ The [Secrets API and Studio contract acceptance record](secrets/api-studio-contr
 - a per-principal authorization matrix covering anonymous, no grant, view-only, `secrets:*`, `*` and each pinned legacy token across all ten operations;
 - cross-tenant checks for view-only and manage principals;
 - a check that Core has no owner predicate;
-- a working-tree check that the draft import's Core, legacy and Studio sources still carry the pinned contract.
+- a working-tree check that the draft import's Core, legacy and Studio sources still carry the pinned contract;
+- a default-host test that boots the Workbench in-process and checks that each canonical route has one Core endpoint, that no legacy route or assembly is present, and that the default configuration registers no Secrets route.
 
 ### Host aliases and authenticated tenant scope
 
