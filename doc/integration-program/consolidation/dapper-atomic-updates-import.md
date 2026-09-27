@@ -91,6 +91,8 @@ dotnet restore $P -p:TargetFramework=net9.0 && dotnet test $P --no-restore -p:Ta
 
 Never commit real connection strings. A requested provider that is unavailable fails rather than skipping.
 
+[`dapper-provider-tests.yml`](../../../.github/workflows/dapper-provider-tests.yml) runs the PostgreSQL and SQL Server commands on net10.0 for pull requests that touch the Dapper persistence projects, these tests or the extension `Directory.Packages.props` files. It uses loopback service containers from the image digests above.
+
 ## Limits
 
 - The tests use a synthetic table that models the workflow record columns. They do not replay historical Dapper migrations.
