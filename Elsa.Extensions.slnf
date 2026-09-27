@@ -84,6 +84,7 @@
       "test/extensions/modules/actors/Elsa.Actors.ProtoActor.UnitTests/Elsa.Actors.ProtoActor.UnitTests.csproj",
       "test/extensions/modules/agents/Elsa.Studio.Agents.Tests/Elsa.Studio.Agents.Tests.csproj",
       "test/extensions/modules/caching/Elsa.Caching.Distributed.ProtoActor.IntegrationTests/Elsa.Caching.Distributed.ProtoActor.IntegrationTests.csproj",
+      "test/extensions/modules/devops/Elsa.DevOps.GitHub.UnitTests/Elsa.DevOps.GitHub.UnitTests.csproj",
       "test/extensions/modules/diagnostics/Elsa.Logging.Core.IntegrationTests/Elsa.Logging.Core.IntegrationTests.csproj",
       "test/extensions/modules/diagnostics/Elsa.Logging.Core.UnitTests/Elsa.Logging.Core.UnitTests.csproj",
       "test/extensions/modules/ldap/Elsa.Ldap.UnitTests/Elsa.Ldap.UnitTests.csproj",
