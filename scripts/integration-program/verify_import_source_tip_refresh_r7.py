@@ -10,7 +10,6 @@ defer to this one for HEAD.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import subprocess
 import sys
@@ -21,6 +20,7 @@ import verify_import_source_tip_refresh_r3 as r3
 import verify_import_source_tip_refresh_r4 as r4
 import verify_import_source_tip_refresh_r6 as r6
 from verify_import_source_tip_refresh_r2 import blob_and_mode, git
+from verify_import_source_tip_refresh_r6 import sha256
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -38,10 +38,6 @@ SUPERSEDED_RECEIPTS = {
     str(r4.RECEIPT.relative_to(ROOT)): r4,
     str(r6.RECEIPT.relative_to(ROOT)): r6,
 }
-
-
-def sha256(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
 
 
 def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:

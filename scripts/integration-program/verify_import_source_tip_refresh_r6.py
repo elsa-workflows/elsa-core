@@ -180,6 +180,12 @@ def expected_final(path: str, old: bytes | None, final: bytes, patch: bytes, rev
 
 
 def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
+    """Verify this receipt's reviewed commits.
+
+    The live-HEAD publisher-workflow check (.github/workflows/packages.yml and update-wiki.yml) is
+    owned by verify_import_source_tip_refresh_r7.verify; direct callers of this verify() must also
+    run that one.
+    """
     if receipt.get("schemaVersion") != 6 or receipt.get("issue") != 8293 or receipt.get("story") != 8286:
         raise ValueError("Sixth source-tip receipt schema or issue changed")
     if receipt.get("publicationPerformed") is not False:

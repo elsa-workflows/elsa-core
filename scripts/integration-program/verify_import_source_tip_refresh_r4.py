@@ -20,6 +20,12 @@ NEW_STUDIO = "5b34ec327caffd132e18bfd88bfc9e862dc35c43"
 
 
 def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
+    """Verify this receipt's reviewed commits.
+
+    The live-HEAD publisher-workflow check (.github/workflows/packages.yml and update-wiki.yml) is
+    owned by verify_import_source_tip_refresh_r7.verify; direct callers of this verify() must also
+    run that one.
+    """
     if receipt.get("schemaVersion") != 1 or receipt.get("issue") != 8286:
         raise ValueError("Studio timer source-tip receipt schema or issue changed")
     if (receipt.get("oldStudioCommit"), receipt.get("newStudioCommit")) != (OLD_STUDIO, NEW_STUDIO):
