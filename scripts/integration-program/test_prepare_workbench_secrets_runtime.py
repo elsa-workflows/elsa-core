@@ -7,6 +7,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import re
 import shutil
 import stat
 import subprocess
@@ -774,6 +775,64 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
         with mock.patch.object(FIXTURE.subprocess, 'run', side_effect=results):
             with self.assertRaisesRegex(ValueError, 'Host Secrets assembly differs'):
                 FIXTURE.build_host(self.source, self.temp_parent)
+
+
+class CommittedWorkbenchHostDefaultsTests(unittest.TestCase):
+    """The committed Workbench keeps each runtime-fixture switch opt-in and disabled by default (#8326)."""
+
+    WORKBENCH = SCRIPT.parents[2] / FIXTURE.SOURCE_PROJECT
+    ROUTE_PROBE_GUARD = 'if (configuration.GetValue("Features:Secrets:RouteProbe", false))'
+    GUARDED_REGISTRATIONS = (
+        r'if \(useSecrets\)\s*\{\s*elsa\s*\.UseSecrets\(',
+        r'if \(useMultitenancy\)\s*\{\s*elsa\.UseTenants\(',
+        r'if \(useMultitenancy\)\s*app\.UseTenants\(\);',
+        re.escape(ROUTE_PROBE_GUARD) + r'\s*\{\s*app\.MapGet\("' + re.escape(FIXTURE.ROUTE_PROBE_PATH) + '"',
+    )
+    SWITCH_PATHS = (('Secrets', 'Enabled'), ('Secrets', 'RouteProbe'), ('Multitenancy', 'Enabled'))
+
+    def setUp(self):
+        self.program = (self.WORKBENCH / 'Program.cs').read_text()
+
+    def assert_disabled_by_default(self, program):
+        for marker in (*FIXTURE.REQUIRED_PROGRAM_MARKERS, FIXTURE.TWO_TENANT_MULTITENANCY_MARKER, self.ROUTE_PROBE_GUARD):
+            self.assertEqual(1, program.count(marker), marker)
+        for marker in FIXTURE.FORBIDDEN_PROGRAM_MARKERS:
+            self.assertNotIn(marker, program)
+        for pattern in self.GUARDED_REGISTRATIONS:
+            self.assertRegex(program, pattern)
+        self.assertEqual(1, program.count('.UseSecrets('))
+        self.assertEqual(1, program.count(FIXTURE.ROUTE_PROBE_PATH))
+
+    def test_committed_program_keeps_secrets_tenancy_and_route_probe_opt_in(self):
+        self.assert_disabled_by_default(self.program)
+
+    def test_guard_rejects_enabled_defaults_and_unguarded_registrations(self):
+        mutations = (
+            ('"Features:Secrets:Enabled", false', '"Features:Secrets:Enabled", true'),
+            ('"Features:Multitenancy:Enabled", false', '"Features:Multitenancy:Enabled", true'),
+            ('"Features:Secrets:RouteProbe", false', '"Features:Secrets:RouteProbe", true'),
+            ('if (useSecrets)', 'if (true)'),
+            (self.ROUTE_PROBE_GUARD, 'if (true)'),
+        )
+        for original, mutated in mutations:
+            with self.subTest(mutated=mutated):
+                self.assertIn(original, self.program)
+                with self.assertRaises(AssertionError):
+                    self.assert_disabled_by_default(self.program.replace(original, mutated))
+
+    def test_committed_settings_and_launch_profiles_do_not_enable_fixture_switches(self):
+        settings = sorted(self.WORKBENCH.glob('appsettings*.json'))
+        self.assertTrue(settings)
+        for path in settings:
+            features = json.loads(path.read_text(encoding='utf-8-sig')).get('Features', {})
+            for section, key in self.SWITCH_PATHS:
+                with self.subTest(settings=path.name, switch=f'{section}:{key}'):
+                    self.assertFalse(features.get(section, {}).get(key, False))
+        launch = json.loads((self.WORKBENCH / 'Properties' / 'launchSettings.json').read_text(encoding='utf-8-sig'))
+        for name, profile in launch['profiles'].items():
+            overrides = ' '.join([*profile.get('environmentVariables', {}), profile.get('commandLineArgs', '')])
+            with self.subTest(profile=name):
+                self.assertNotIn('Features', overrides)
 
 
 if __name__ == '__main__':

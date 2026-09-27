@@ -199,6 +199,148 @@ the exact draft import head only. #8326 remains open for a final-head rerun
 if #8409 changes before merge; it does not authorize a Secrets migration,
 package publication or cutover.
 
+### Final draft-import head replay (2026-09-27)
+
+The [sanitized final-head receipt](final-head-replay-3bf0c34-2026-09-27.json)
+repeats the smoke on draft import #8409 at
+`3bf0c34973a85fae4e84f7c64086f5c49fd657ee`, 73 commits after the
+[`6b6c6fe` receipt](../../../../scripts/integration-program/history-import-workbench-studio-secrets-smoke-6b6.json).
+Since that receipt, nothing under `samples/extensions/workbench`,
+`src/studio` or the Core Secrets modules changed. The EF Core `Store` that
+`EFCoreSecretRepository` wraps, and its `SaveMany` ownership code, did
+change, which is why the smoke was rerun rather than carried forward. The receipt pins these commits:
+
+- the original three-parent import `d5409c2` (Core `e96fd36`, Extensions
+  `ba8b71d`, Studio `20ceaee`);
+- the later history joins `35594a3` and `d1d785f`;
+- the newest upstream tips reachable from the head: Extensions `807cd893`
+  and Studio `5b34ec3`;
+- the Core-main merge base `d0ea5b0`.
+
+It also pins the SHA-256 and Git blob of each committed fixture patch
+artifact. No uncommitted overlay was applied. The
+committed `workbench-canonical-secrets.patch` no longer reverse-applies,
+because the committed `Program.cs` supersedes it. The preparer checks the
+reviewed Secrets markers in `Program.cs` instead.
+
+The replay used a separate detached checkout, which was removed afterwards,
+and the unchanged preparer:
+
+```sh
+TMPDIR=/private/tmp python3 scripts/integration-program/prepare_workbench_secrets_runtime.py \
+  --imported-root /private/tmp/elsa-8326-replay-3bf0c34 \
+  --import-commit d5409c2cb2338166e1bccaf5df07212e5d7bf159 \
+  --imported-sha 3bf0c34973a85fae4e84f7c64086f5c49fd657ee \
+  --core-sha e96fd36f4f9a838c6289fd48cf07669ea3229a5e \
+  --extensions-sha ba8b71d91c15ffe5be4b2c539cf9f712e74af775 \
+  --studio-sha 20ceaeeed7e671f0c9662003e82063026f2216de \
+  --temp-parent /private/tmp --two-tenant --route-probe
+bash scripts/integration-program/build_studio_clientlibs.sh /private/tmp/elsa-8326-replay-3bf0c34   # Node 22.22.1
+dotnet build src/studio/hosts/Elsa.Studio.Host.Server/Elsa.Studio.Host.Server.csproj -c Debug -f net10.0
+```
+
+The Workbench and Studio `net10.0` builds had zero errors. The ClientLib
+proof passed 253 Designer tests and produced the same six asset digests as
+the earlier receipts. The Studio static-web-assets manifest had 44 content
+roots, all local to the checkout or to NuGet.
+
+Before launch, the receipt inventories the host's startup behaviour:
+
+- EF migrations, Quartz, the in-memory MassTransit bus and the recurring
+  bookmark, restart and retention tasks;
+- the drop-in and lock directories under the fixture root;
+- the outbound sinks: zero webhook sinks, empty SMTP and MQTT on
+  `127.0.0.1:1`.
+
+The 65 tracked Workbench `App_Data` files had identical hashes before and
+after the run, both in the replay checkout and in the branch worktree.
+
+Results against the #8326 acceptance criteria:
+
+- **Opt-in switch and disabled default.** A Workbench launch with no
+  `Features:Secrets:Enabled` override was run against its own fresh
+  database. It exposed zero Secrets routes and created no Secrets table.
+  It returned 404 on `/elsa/api/secrets`, `/secrets/descriptors` and
+  `/secrets/picker` while returning 401 on existing management routes.
+  So the Secrets routes were absent, not hidden by authorization. The new
+  `CommittedWorkbenchHostDefaultsTests` in
+  `test_prepare_workbench_secrets_runtime.py` pin the committed
+  `Program.cs`, appsettings and launch profiles to this default. The tests
+  also show the guard fails when a default is flipped to `true` or when a
+  registration is moved outside its switch.
+- **One canonical handler per route; no legacy graph or cleanup job.** With
+  Secrets enabled, the route probe passed `validate_route_probe_payload`:
+  ten routes, one handler per method and path, and ten distinct
+  `Elsa.Secrets.Endpoints.Secrets.*` types. `Elsa.Secrets.Api`,
+  `.Management` and `.Scripting` were absent from the output directory,
+  from `deps.json` and from the loaded assemblies. `.Management` holds
+  `UpdateExpiredSecretsRecurringTask`, so that job could not be
+  initialized, and it does not appear in the logs.
+- **Browser workflows.** Three headless Chromium profiles, one per
+  principal, signed in through Studio.
+  - Tenant A and tenant B each created `replay-shared` and a tenant-only
+    secret. Each list and each workflow picker showed only that tenant's
+    records. A tenant-only detail page read from the other tenant returned
+    404 in both directions. Tenant A still showed its own metadata after
+    tenant B wrote the same name.
+  - Tenant A completed the lifecycle on its tenant-only secret: metadata
+    update, rotation from version 1 to 2, a successful test, revocation, a
+    failing "not active" test, and deletion followed by a 404 detail page.
+  - Each tenant saved an unpublished Write Line draft through the real
+    picker. The persisted text is exactly
+    `{"type":"Secret","value":{"name":"replay-shared","typeName":"text"}}`.
+    There were zero workflow instances, execution-log records or bookmarks.
+  - The roleless tenant-A user had no Secrets navigation link and no Create
+    control, and got 403 on direct list and detail pages.
+- **Raw API responses.** All 44 retained raw responses matched their recorded
+  expectations:
+  - the roleless user got 403 on all ten routes;
+  - tenant A's update, rotate, revoke and delete attempts against tenant B's
+    secret returned 404 and left it unchanged;
+  - a denied create persisted nothing;
+  - an API lifecycle covered create, rotate, test, revoke, test and delete.
+
+  One harness expectation was corrected. `POST /secrets/{name}/test` for
+  another tenant's secret returns HTTP 200 with `succeeded: false` and
+  "was not found". That body has the same shape as the one for a name that
+  never existed, which is recorded as a control, so the endpoint does not
+  signal that the other tenant's secret exists.
+- **Plaintext scan.** Ten random synthetic values were searched as raw
+  text, as their random suffix and as base64, in UTF-8 and UTF-16LE. The
+  scan covered both SQLite databases, the Workbench and three Studio logs,
+  the 44 raw bodies and the three browser profiles. It found none. As a
+  positive control, the same scanner found every marker in the private
+  marker file and in an encoded control blob. Active secret versions hold
+  only a `protectedValue` envelope, and retired or revoked versions retain
+  none.
+
+Host identity and membership policy tested:
+
+- configuration-backed ElsaIdentity users and roles, with the persisted
+  user store empty;
+- tenant resolution by request host, then route prefix, then the
+  `X-Tenant-ID` header, then claims;
+- `tenant-a` on `127.0.0.1` and `tenant-b` on `tenant-b.localhost`, both
+  on one shared fresh SQLite file;
+- a wildcard-permission administrator role per tenant;
+- a tenant-A user with no roles.
+
+Recorded failures and limits:
+
+- The first tenant-B picker run timed out in the harness after auto-save.
+  The unchanged retry passed.
+- The known `IdentityBootstrapDiagnostic`, file-lock warning, EF warnings
+  and disposed-circuit exceptions in tenant A's Studio log recurred.
+- SQLite removed its WAL and SHM files on clean shutdown, so the database
+  file was scanned after checkpoint and runtime WAL contents were not
+  captured separately.
+- The run used headless Chromium only.
+- No view-only principal was tested, and host-alias token binding (#8301)
+  was not checked.
+- This remains a draft-head result until the import merges. All five
+  processes stopped, the guarded helper removed the fixture, and the replay
+  checkout and npm cache were deleted.
+
 ## Default-host route probe
 
 The optional `workbench-secrets-route-probe.patch` is a fixture-only overlay. It
