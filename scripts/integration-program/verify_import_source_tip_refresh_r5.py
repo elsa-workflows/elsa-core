@@ -125,8 +125,10 @@ def main() -> int:
     try:
         verify(json.loads(RECEIPT.read_text(encoding="utf-8")))
         from verify_import_source_tip_refresh_r6 import RECEIPT as CURRENT_RECEIPT, verify as verify_current
+        from verify_import_source_tip_refresh_r7 import RECEIPT as R7_RECEIPT, verify as verify_r7
 
         verify_current(json.loads(CURRENT_RECEIPT.read_text(encoding="utf-8")))
+        verify_r7(json.loads(R7_RECEIPT.read_text(encoding="utf-8")))
     except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError) as error:
         print(f"Invalid fifth source-tip refresh: {error}", file=sys.stderr)
         return 1

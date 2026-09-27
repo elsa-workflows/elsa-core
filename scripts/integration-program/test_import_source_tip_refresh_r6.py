@@ -29,8 +29,18 @@ CHANGED = {"blob": "0" * 40, "mode": "100644"}
 def changed_at_head(module: str, path: str):
     """Patch a verifier module so HEAD reports different bytes for one path."""
 
-    def blob(commit: str, candidate: str, *root: object):
-        return CHANGED if (commit, candidate) == ("HEAD", path) else blob_and_mode(commit, candidate, *root)
+    return changed_at(module, path, "HEAD")
+
+
+def changed_at(module: str, path: str, commit: str):
+    """Patch a verifier module so a specific commit reports different bytes for one path."""
+
+    def blob(candidate_commit: str, candidate_path: str, *root: object):
+        return (
+            CHANGED
+            if (candidate_commit, candidate_path) == (commit, path)
+            else blob_and_mode(candidate_commit, candidate_path, *root)
+        )
 
     return patch(f"{module}.blob_and_mode", side_effect=blob)
 
@@ -83,8 +93,10 @@ class SourceTipRefreshR6Tests(unittest.TestCase):
         receipt = copy.deepcopy(self.receipt)
         receipt["publicationPerformed"] = True
         self.rejects("must not claim a package publication", receipt)
-        with changed_at_head("verify_import_source_tip_refresh_r6", ".github/workflows/packages.yml"):
-            self.rejects("changed active publisher workflow at HEAD")
+        # This receipt only checks the two publisher paths through its own #8293 delta commit now;
+        # the seventh receipt owns the live HEAD comparison (see test_import_source_tip_refresh_r7.py).
+        with changed_at("verify_import_source_tip_refresh_r6", ".github/workflows/packages.yml", DELTA_COMMIT):
+            self.rejects(f"changed active publisher workflow at {DELTA_COMMIT}")
 
     def test_older_verifier_deferral_must_match_this_receipt(self) -> None:
         with patch.object(r1, "PATHS_SUPERSEDED_BY_R6", r1.PATHS_SUPERSEDED_BY_R6 | {OTHER_R1_PATH}):

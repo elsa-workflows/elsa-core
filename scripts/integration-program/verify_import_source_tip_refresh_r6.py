@@ -240,10 +240,11 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
 
     if receipt["publisherWorkflows"] != {path: blob_and_mode(BASE_IMPORT_HEAD, path, root) for path in PUBLISHERS}:
         raise ValueError("Recorded publisher workflows differ from the reviewed import head")
+    # The seventh receipt owns the live HEAD comparison for these two paths; this only checks them
+    # through the #8293 delta commit that this receipt reviews.
     for path in PUBLISHERS:
-        for commit in (DELTA_COMMIT, "HEAD"):
-            if blob_and_mode(commit, path, root) != receipt["publisherWorkflows"][path]:
-                raise ValueError(f"#8293 delta changed active publisher workflow at {commit}: {path}")
+        if blob_and_mode(DELTA_COMMIT, path, root) != receipt["publisherWorkflows"][path]:
+            raise ValueError(f"#8293 delta changed active publisher workflow at {DELTA_COMMIT}: {path}")
     if git_bytes("show", "HEAD:Elsa.sln", root=root).count(PERSISTENCE_TEST_SOLUTION_ENTRY) != 1:
         raise ValueError("Current Elsa.sln does not select the reviewed Dapper tests exactly once")
     # Each older receipt still verifies its reviewed commits and every path it did not hand over to this receipt.
@@ -254,6 +255,9 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
 def main() -> int:
     try:
         verify(json.loads(RECEIPT.read_text(encoding="utf-8")))
+        from verify_import_source_tip_refresh_r7 import RECEIPT as R7_RECEIPT, verify as verify_r7
+
+        verify_r7(json.loads(R7_RECEIPT.read_text(encoding="utf-8")))
     except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError) as error:
         print(f"Invalid sixth source-tip refresh: {error}", file=sys.stderr)
         return 1
