@@ -190,7 +190,7 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
     [Fact]
     public async Task PinnedStudioRefitClientCompletesSecretOperationsWithoutReturningStoredValue()
     {
-        using var client = CreateClient("secrets:view,secrets:write,secrets:delete,secrets:test", "tenant-a", out var capture);
+        using var client = CreateClient(AllSecretsPermissions, "tenant-a", out var capture);
         var api = RestService.For<ISecretsApi>(client);
         const string name = "studio-http-contract";
         const string originalValue = "initial-secret-never-echo";
@@ -396,10 +396,10 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
     [Fact]
     public async Task HttpTenantResolutionSeparatesSameNameSecretsAcrossTenants()
     {
-        using var tenantAClient = CreateClient("secrets:view,secrets:write,secrets:delete,secrets:test", "tenant-a", out var tenantACapture);
+        using var tenantAClient = CreateClient(AllSecretsPermissions, "tenant-a", out var tenantACapture);
         using var tenantBClient = CreateClient("secrets:view,secrets:write,secrets:test", "tenant-b", out var tenantBCapture);
-        using var tenantCClient = CreateClient("secrets:view,secrets:write,secrets:delete,secrets:test", "tenant-c", out var tenantCCapture);
-        using var defaultTenantClient = CreateClient("secrets:view,secrets:write,secrets:delete,secrets:test", null, out var defaultTenantCapture);
+        using var tenantCClient = CreateClient(AllSecretsPermissions, "tenant-c", out var tenantCCapture);
+        using var defaultTenantClient = CreateClient(AllSecretsPermissions, null, out var defaultTenantCapture);
         var tenantA = RestService.For<ISecretsApi>(tenantAClient);
         var tenantB = RestService.For<ISecretsApi>(tenantBClient);
         var tenantC = RestService.For<ISecretsApi>(tenantCClient);
