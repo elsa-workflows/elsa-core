@@ -411,6 +411,51 @@ public sealed class SecretsApiStudioHttpTests : IAsyncLifetime
             "tenant-a-secret", "tenant-b-secret", "tenant-a-rotated");
     }
 
+    [Fact]
+    public async Task LifecycleManagedGenerationsAreNotFoundThroughNameAddressedEndpoints()
+    {
+        using var client = CreateClient("secrets:view,secrets:write,secrets:delete,secrets:test", null, out var capture);
+        var api = RestService.For<ISecretsApi>(client);
+        const string ordinaryName = "ordinary-beside-managed";
+        const string ownerId = "connection-managed-contract";
+        const string generationId = "generation-managed-contract";
+        const string managedValue = "managed-generation-never-echo";
+        var ordinary = await api.CreateAsync(new CreateSecretRequest { Name = ordinaryName, Value = "ordinary-secret-never-echo" });
+
+        string managedName;
+        await using (var scope = _app!.Services.CreateAsyncScope())
+            managedName = (await scope.ServiceProvider.GetRequiredService<IManagedSecretManager>().CreateGenerationAsync(ownerId, generationId, managedValue)).Name;
+
+        Assert.DoesNotContain((await api.ListAsync()).Items, item => item.Name == managedName);
+        Assert.Equal(ordinary.Id, (await api.GetAsync(ordinaryName)).Id);
+
+        await AssertNotFoundAsync(() => api.GetAsync(managedName));
+        await AssertNotFoundAsync(() => api.UpdateAsync(managedName, new UpdateSecretRequest { DisplayName = "Must not update" }));
+        await AssertNotFoundAsync(() => api.RotateAsync(managedName, new RotateSecretRequest { Value = "must-not-rotate" }));
+        await AssertNotFoundAsync(() => api.RevokeAsync(managedName));
+        await AssertNotFoundAsync(() => api.DeleteAsync(managedName));
+
+        var test = await api.TestAsync(managedName);
+        Assert.False(test.Succeeded);
+        Assert.Contains("not found", test.Error, StringComparison.OrdinalIgnoreCase);
+
+        await using (var scope = _app!.Services.CreateAsyncScope())
+        {
+            var payload = await scope.ServiceProvider.GetRequiredService<IManagedSecretManager>().ResolveGenerationAsync(managedName, ownerId, generationId);
+            Assert.Equal(managedValue, payload.Value);
+        }
+
+        Assert.Equal(ordinary.Id, (await api.GetAsync(ordinaryName)).Id);
+        Assert.DoesNotContain(capture.ResponseBodies, body => body.Contains(ownerId, StringComparison.Ordinal) || body.Contains(generationId, StringComparison.Ordinal));
+        AssertNoSecretMaterial(capture.ResponseBodies, managedValue, "ordinary-secret-never-echo", "must-not-rotate");
+    }
+
+    private static async Task AssertNotFoundAsync(Func<Task> call)
+    {
+        var exception = await Assert.ThrowsAsync<ApiException>(call);
+        Assert.Equal(HttpStatusCode.NotFound, exception.StatusCode);
+    }
+
     private HttpClient CreateClient(string? permissions, string? tenantId, out ResponseCaptureHandler capture)
     {
         capture = new ResponseCaptureHandler(_app!.GetTestServer().CreateHandler());
