@@ -307,6 +307,16 @@ class WorkflowGateTests(unittest.TestCase):
         with unittest.mock.patch.object(gates, "selection_errors", return_value=[]):
             self.assert_rejected(self.source, "the selection script must reject NuGet.org publication of a 3.10.x tag")
 
+    def test_accepts_ungated_job_whose_string_literal_merely_contains_secrets_bracket(self):
+        source = self.mutated(None, """
+            leak:
+              runs-on: ubuntu-latest
+              if: ${{ vars.MODE != 'secrets[disabled]' }}
+              steps:
+                - run: echo ok
+            """)
+        self.assertEqual([], gates.source_violations(source))
+
 
 if __name__ == "__main__":
     unittest.main()
