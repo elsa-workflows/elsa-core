@@ -52,9 +52,6 @@ public partial class Flowchart
             {
                 case MergeMode.Cascade:
                 case MergeMode.Race:
-                    if (mergeMode == MergeMode.Race)
-                        await flowContext.CancelInboundAncestorsAsync(targetActivity);
-
                     // Check for existing blocked token on this specific connection.
                     var existingBlockedToken = tokens.FirstOrDefault(t =>
                         t.ToActivityId == targetActivity.Id &&
@@ -72,6 +69,11 @@ public partial class Flowchart
                         };
                         await flowContext.ScheduleActivityAsync(targetActivity, options);
 
+                        // Cancel the losing branches only after the target is scheduled. Cancelling first leaves the flowchart
+                        // without pending work, so its cancel handler completes it before the join runs (#8464).
+                        if (mergeMode == MergeMode.Race)
+                            await flowContext.CancelInboundAncestorsAsync(targetActivity);
+
                         // Block other inbound connections (adjust per mode if needed).
                         var otherInboundConnections = flowGraph.GetForwardInboundConnections(targetActivity)
                             .Where(x => x.Source.Activity != completedActivity)
@@ -85,6 +87,9 @@ public partial class Flowchart
                     }
                     else
                     {
+                        if (mergeMode == MergeMode.Race)
+                            await flowContext.CancelInboundAncestorsAsync(targetActivity);
+
                         // Consume the block without scheduling.
                         existingBlockedToken.Consume();
                     }
