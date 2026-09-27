@@ -793,6 +793,25 @@ class CommittedWorkbenchHostDefaultsTests(unittest.TestCase):
     def setUp(self):
         self.program = (self.WORKBENCH / 'Program.cs').read_text()
 
+    @staticmethod
+    def _guarded_block_span(program, guard):
+        """Return the (open, close) brace offsets of the `{ ... }` block that
+        immediately follows `guard` in program, by counting braces rather than
+        assuming any particular statement comes first inside the block."""
+        start = program.index(guard)
+        brace_open = program.index('{', start)
+        depth = 0
+        index = brace_open
+        while index < len(program):
+            if program[index] == '{':
+                depth += 1
+            elif program[index] == '}':
+                depth -= 1
+                if depth == 0:
+                    return brace_open, index
+            index += 1
+        raise AssertionError(f'unbalanced braces for guard: {guard!r}')
+
     def assert_disabled_by_default(self, program):
         for marker in (*FIXTURE.REQUIRED_PROGRAM_MARKERS, FIXTURE.TWO_TENANT_MULTITENANCY_MARKER, self.ROUTE_PROBE_GUARD):
             self.assertEqual(1, program.count(marker), marker)
@@ -802,6 +821,18 @@ class CommittedWorkbenchHostDefaultsTests(unittest.TestCase):
             self.assertRegex(program, pattern)
         self.assertEqual(1, program.count('.UseSecrets('))
         self.assertEqual(1, program.count(FIXTURE.ROUTE_PROBE_PATH))
+
+        # Every Secrets registration the committed Program.cs makes (at least
+        # UseSecrets and UseSecretsJavaScript) must live inside the `if (useSecrets)`
+        # switch, not just the first one immediately following the brace.
+        guard_start, guard_end = self._guarded_block_span(program, 'if (useSecrets)')
+        secrets_calls = list(re.finditer(r'\.UseSecrets\w*\(', program))
+        self.assertTrue(secrets_calls, 'expected at least one UseSecrets* registration in Program.cs')
+        for match in secrets_calls:
+            self.assertTrue(
+                guard_start <= match.start() <= guard_end,
+                f'{match.group()!r} at offset {match.start()} is outside the `if (useSecrets)` guard '
+                f'[{guard_start}, {guard_end}]')
 
     def test_committed_program_keeps_secrets_tenancy_and_route_probe_opt_in(self):
         self.assert_disabled_by_default(self.program)
@@ -820,6 +851,23 @@ class CommittedWorkbenchHostDefaultsTests(unittest.TestCase):
                 with self.assertRaises(AssertionError):
                     self.assert_disabled_by_default(self.program.replace(original, mutated))
 
+    def test_guard_rejects_usesecretsjavascript_moved_outside_the_switch(self):
+        # Move `.UseSecretsJavaScript();` out from under `if (useSecrets)` while
+        # keeping `.UseSecrets(secrets => ...)` guarded, to prove the assertion
+        # covers every UseSecrets* registration and not just the first one.
+        moved = self.program.replace(
+            '                })\n'
+            '                .UseSecretsJavaScript();\n'
+            '        }\n',
+            '                });\n'
+            '        }\n'
+            '\n'
+            '        elsa.UseSecretsJavaScript();\n')
+        self.assertNotEqual(self.program, moved)
+        self.assertIn('.UseSecretsJavaScript();', moved)
+        with self.assertRaises(AssertionError):
+            self.assert_disabled_by_default(moved)
+
     @staticmethod
     def _ci_get(mapping, key, default=None):
         """.NET configuration keys are case-insensitive; look up a dict key the same way."""
@@ -831,10 +879,37 @@ class CommittedWorkbenchHostDefaultsTests(unittest.TestCase):
                 return value
         return default
 
+    @staticmethod
+    def _flatten_settings_keys(node, prefix=''):
+        """Flatten a settings document into case-insensitive colon-joined keys,
+        the way the .NET configuration JSON provider does: nested objects are
+        joined with ':', and a key that is already colon-delimited (e.g. a flat
+        "Features:Secrets:Enabled" key) merges into the same namespace instead of
+        producing a separate nested layer."""
+        flat = {}
+        if isinstance(node, dict):
+            for key, value in node.items():
+                child_prefix = f'{prefix}:{key}' if prefix else str(key)
+                flat.update(CommittedWorkbenchHostDefaultsTests._flatten_settings_keys(value, child_prefix))
+        else:
+            flat[prefix.lower()] = node
+        return flat
+
+    @staticmethod
+    def _bool_try_parse(value):
+        """Mimic bool.TryParse semantics: an actual JSON boolean passes through;
+        the strings "true"/"false" (case-insensitive) parse to their value; any
+        other string (including "false" spelled oddly, or unrelated text) does
+        not parse as true."""
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            return value.strip().lower() == 'true'
+        return False
+
     def _switch_enabled(self, settings, section, key):
-        features = self._ci_get(settings, 'Features', {})
-        section_settings = self._ci_get(features, section, {})
-        return bool(self._ci_get(section_settings, key, False))
+        flat = self._flatten_settings_keys(settings)
+        return self._bool_try_parse(flat.get(f'features:{section}:{key}'.lower()))
 
     def test_committed_settings_and_launch_profiles_do_not_enable_fixture_switches(self):
         settings = sorted(self.WORKBENCH.glob('appsettings*.json'))
@@ -861,6 +936,20 @@ class CommittedWorkbenchHostDefaultsTests(unittest.TestCase):
         environment_variables = {'features__secrets__enabled': 'true'}
         overrides = ' '.join([*environment_variables, ''])
         self.assertIn('features', overrides.lower())
+
+    def test_switch_detection_flattens_flat_colon_delimited_keys(self):
+        # .NET configuration also accepts a flat colon-delimited key (as produced
+        # by environment variables using "__" or a flattened settings document);
+        # a check that only walks nested JSON objects misses this entirely.
+        document = {'Features:Secrets:Enabled': True}
+        self.assertTrue(self._switch_enabled(document, 'Secrets', 'Enabled'))
+
+    def test_switch_detection_uses_bool_tryparse_semantics_for_string_values(self):
+        # bool.TryParse only recognizes the strings "true"/"false" (case-insensitive);
+        # a naive `bool(value)` check treats the non-empty string "false" as truthy,
+        # which would silently treat the switch as enabled.
+        self.assertFalse(self._switch_enabled({'Features': {'Secrets': {'Enabled': 'false'}}}, 'Secrets', 'Enabled'))
+        self.assertTrue(self._switch_enabled({'Features': {'Secrets': {'Enabled': 'True'}}}, 'Secrets', 'Enabled'))
 
 
 if __name__ == '__main__':
