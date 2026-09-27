@@ -156,7 +156,7 @@
       "category": "publisher_workflow",
       "owning_workstream": "Program #8194 release governance; package owners",
       "proposed_disposition": "Keep this source publisher inert. Carry package IDs and release-unit conditions into one reviewed publisher only after a separate publisher/cutover decision; do not enable a second push/release publisher.",
-      "evidence_or_gate": "The current root packages.yml builds and publishes on push/release. This historical packages.yml belongs to a separate product publisher and is intentionally mapped to .source.",
+      "evidence_or_gate": "The current root packages.yml still builds on push/release, but publication (Feedz, NuGet, and coverage Pages deploy) is gated behind manual workflow_dispatch opt-in approval (#8497) and no longer runs automatically on push/release. This historical packages.yml belongs to a separate product publisher and is intentionally mapped to .source.",
       "status": "publisher_must_remain_inert"
     },
     {
@@ -1991,7 +1991,7 @@
       "category": "publisher_workflow",
       "owning_workstream": "Program #8194 release governance; package owners",
       "proposed_disposition": "Keep this source publisher inert. Carry package IDs and release-unit conditions into one reviewed publisher only after a separate publisher/cutover decision; do not enable a second push/release publisher.",
-      "evidence_or_gate": "The current root packages.yml builds and publishes on push/release. This historical packages.yml belongs to a separate product publisher and is intentionally mapped to .source.",
+      "evidence_or_gate": "The current root packages.yml still builds on push/release, but publication (Feedz, NuGet, and coverage Pages deploy) is gated behind manual workflow_dispatch opt-in approval (#8497) and no longer runs automatically on push/release. This historical packages.yml belongs to a separate product publisher and is intentionally mapped to .source.",
       "status": "publisher_must_remain_inert"
     },
     {

@@ -30,6 +30,12 @@ jobs:
         with:
           # Symbol-pair tests and the pinned Secrets lockfiles use this SDK.
           dotnet-version: '10.0.300'
+      - name: Install the pinned workflow parser
+        # The r7 source-tip receipt test shells out to scripts/validate_packages_workflow_gates.py, which needs this.
+        # PyYAML 6.0.3, CPython 3.12 manylinux x86_64 wheel.
+        run: |
+          echo 'PyYAML==6.0.3 --hash=sha256:ba1cc08a7ccde2d2ec775841541641e4548226580ab850948cbfda66a1befcdc' > "$RUNNER_TEMP/gate-requirements.txt"
+          python3 -m pip install --only-binary :all: --require-hashes -r "$RUNNER_TEMP/gate-requirements.txt"
       - name: Verify program graph, import safety and history preservation
         run: |
           python doc/integration-program/verify-hierarchy.py

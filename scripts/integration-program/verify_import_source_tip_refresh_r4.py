@@ -20,6 +20,12 @@ NEW_STUDIO = "5b34ec327caffd132e18bfd88bfc9e862dc35c43"
 
 
 def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
+    """Verify this receipt's reviewed commits.
+
+    The live-HEAD publisher-workflow check (.github/workflows/packages.yml and update-wiki.yml) is
+    owned by verify_import_source_tip_refresh_r7.verify; direct callers of this verify() must also
+    run that one.
+    """
     if receipt.get("schemaVersion") != 1 or receipt.get("issue") != 8286:
         raise ValueError("Studio timer source-tip receipt schema or issue changed")
     if (receipt.get("oldStudioCommit"), receipt.get("newStudioCommit")) != (OLD_STUDIO, NEW_STUDIO):
@@ -63,8 +69,10 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
     if row["oldSource"] != row["oldMapped"] or row["newSource"] != row["mappedAtDelta"] or row["newSource"] != row["finalMapped"]:
         raise ValueError("Unreviewed Studio timer source transformation")
 
+    # The seventh receipt owns the live HEAD comparison for these two paths; this only checks them
+    # through this receipt's own reviewed integration commit.
     for path, blob in PUBLISHER_BLOBS.items():
-        for commit in (base, join, "HEAD"):
+        for commit in (base, join):
             if entry(commit, path, root) != {"blob": blob, "mode": "100644"}:
                 raise ValueError(f"Active Core publisher changed at {commit}: {path}")
 
@@ -72,6 +80,9 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
 def main() -> int:
     try:
         verify(json.loads(RECEIPT.read_text(encoding="utf-8")))
+        from verify_import_source_tip_refresh_r7 import RECEIPT as R7_RECEIPT, verify as verify_r7
+
+        verify_r7(json.loads(R7_RECEIPT.read_text(encoding="utf-8")))
     except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError) as error:
         print(f"Invalid Studio timer source-tip refresh: {error}", file=sys.stderr)
         return 1
