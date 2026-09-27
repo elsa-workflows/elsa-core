@@ -187,6 +187,32 @@ OTHER_BYPASSES = (
         "job 'leak' references secrets passed to a reusable workflow",
     ),
     (
+        "indexed secret with a computed (non-literal) index",
+        None,
+        """
+        leak:
+          runs-on: ubuntu-latest
+          steps:
+            - run: ./publish.sh
+              env:
+                KEY: ${{ secrets[vars.PACKAGE_FEED_SECRET] }}
+        """,
+        "job 'leak' references an indexed secrets access",
+    ),
+    (
+        "indexed, upper-case secret name",
+        None,
+        """
+        leak:
+          runs-on: ubuntu-latest
+          steps:
+            - run: ./publish.sh
+              env:
+                KEY: ${{ secrets['FEEDZ_API_KEY'] }}
+        """,
+        "job 'leak' references an indexed secrets access",
+    ),
+    (
         "push composite action in an ungated job",
         None,
         """
