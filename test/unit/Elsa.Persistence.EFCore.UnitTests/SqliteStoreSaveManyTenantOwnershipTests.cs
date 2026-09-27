@@ -93,6 +93,34 @@ public sealed class SqliteStoreSaveManyTenantOwnershipTests : StoreSaveManyTenan
         Assert.Equal("original", remaining.Payload);
     }
 
+    [Fact]
+    public async Task SaveManyAsync_WhenAccentVariantTargetsOtherTenantsRow_NamesSubmittedKeyOnly()
+    {
+        await using var scenario = await OwnershipStoreScenario.CreateSqliteAsync("tenant-a", tenantsEnabled: true, keyCollation: OwnershipStoreScenario.NoAccentCollation);
+        await scenario.Store.SaveManyAsync([new OwnedRow { Id = "café", TenantId = "tenant-a", Payload = "original" }], x => x.Id, onSaving: null);
+
+        using (scenario.UseTenant("tenant-b"))
+        {
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => scenario.Store.SaveManyAsync(
+                [
+                    new OwnedRow { Id = "new-from-b", TenantId = "tenant-b", Payload = "should-not-land" },
+                    new OwnedRow { Id = "cafe", TenantId = "tenant-b", Payload = "stolen" }
+                ],
+                x => x.Id,
+                onSaving: null));
+
+            Assert.Contains("'cafe'", exception.Message);
+            Assert.DoesNotContain("café", exception.Message);
+        }
+
+        Assert.Null(await scenario.FindAsync("new-from-b"));
+        var remaining = await scenario.FindAsync("café");
+        Assert.NotNull(remaining);
+        Assert.Equal("café", remaining.Id);
+        Assert.Equal("tenant-a", remaining.TenantId);
+        Assert.Equal("original", remaining.Payload);
+    }
+
     private static async Task AssertOriginalOwnerAsync(OwnershipStoreScenario scenario)
     {
         var remaining = await scenario.FindAsync("abc");
