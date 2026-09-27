@@ -66,6 +66,15 @@ WHOLE_SECRETS = re.compile(r"\bsecrets\b(?!\s*[.\[])", re.IGNORECASE)
 # name patterns above already flag indices that spell out a feed key, but any index - computed or not -
 # can resolve to a publication secret, so indexed access is never allowed outside the gated jobs.
 INDEXED_SECRETS = re.compile(r"\bsecrets\s*\[", re.IGNORECASE)
+# A GitHub-expression single-quoted string literal, '' being the escaped quote inside one.
+STRING_LITERAL = re.compile(r"'(?:[^']|'')*'")
+
+
+def _blank_string_literals(expression: str) -> str:
+    """Blank out string literals so INDEXED_SECRETS scans code, not quoted text that merely contains
+    the substring "secrets[", e.g. the literal 'secrets[disabled]' in an unrelated if: condition. A
+    real indexed access such as secrets['FEEDZ_API_KEY'] still becomes secrets[''] and still matches."""
+    return STRING_LITERAL.sub("''", expression)
 # Status functions replace the implicit success() that makes a job wait for its needs to succeed.
 STATUS_FUNCTION = re.compile(r"\b(?:always|failure|cancelled)\s*\(")
 
@@ -188,7 +197,7 @@ def capability_violations(workflow: dict) -> list[str]:
         expressions = [expression for text in texts for expression in EXPRESSION.findall(text)]
         if any(WHOLE_SECRETS.search(expression) for expression in expressions):
             found.append("the whole secrets context")
-        if any(INDEXED_SECRETS.search(expression) for expression in expressions):
+        if any(INDEXED_SECRETS.search(_blank_string_literals(expression)) for expression in expressions):
             found.append("an indexed secrets access")
         if grants_id_token(node.get("permissions")):
             found.append("id-token: write")

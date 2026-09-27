@@ -9,7 +9,7 @@ namespace Elsa.Connections.Services;
 /// <summary>Separates metadata inspection from connection management and credential use.</summary>
 public sealed class DefaultConnectionMetadataInspector(
     IConnectionLifecycleStore? store,
-    IConnectionUseAuthorizer authorizer,
+    IConnectionMetadataInspectionAuthorizer authorizer,
     ITenantAccessor tenantAccessor,
     IOptions<ConnectionInspectionOptions> options) : IConnectionMetadataInspector
 {
@@ -25,8 +25,8 @@ public sealed class DefaultConnectionMetadataInspector(
             return null;
         }
 
-        var request = new ConnectionUseRequest(principal, ConnectionUseKind.Human, tenantId, environmentId, connectionId, "inspect:metadata");
-        if (!await authorizer.AuthorizeAsync(request, cancellationToken))
+        var request = new ConnectionMetadataInspectionRequest(tenantId, environmentId, connectionId);
+        if (!await authorizer.AuthorizeAsync(principal, request, cancellationToken))
         {
             return null;
         }

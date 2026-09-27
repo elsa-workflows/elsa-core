@@ -1,6 +1,6 @@
 # Authorize connection metadata inspection separately
 
-- Status: Proposed
+- Status: Proposed; the authorization seam (an `inspect:metadata` purpose on `IConnectionUseAuthorizer`) is superseded by [Decide connection metadata inspection with its own host policy](2026-09-27-dedicated-connection-metadata-inspection-policy.md)
 - Date: 2026-09-25
 - Related: #8194, #8221, #8345, #8406
 
