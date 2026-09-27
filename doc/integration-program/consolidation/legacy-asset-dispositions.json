@@ -325,9 +325,13 @@
         "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8496",
         "merge_commit": "c8ce20caf88b8c4ed1ad920e7e98f3aa4781d144",
         "active_path": "Elsa.Extensions.slnf",
-        "active_blob": "ccbdccee71a5ffceed15e1be5a2b3da86426a3a0",
+        "active_blob": "7402d461764d09470870edc3c4593cad22fbfeaa",
         "active_mode": "100644",
-        "representation": "expanded"
+        "representation": "expanded",
+        "active_update": {
+          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8512",
+          "reason": "Added Elsa.DevOps.GitHub.UnitTests to keep the filter in parity with Elsa.sln under the #8496 decision; active_blob pins the extended filter."
+        }
       }
     },
     {
