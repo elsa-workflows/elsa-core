@@ -2,6 +2,22 @@ name: Packages
 
 on:
   workflow_dispatch:
+    inputs:
+      publish_preview_feedz:
+        description: Publish this run's packages to Feedz - branch previews, or a 3.10.x release tag (requires publisher approval).
+        required: true
+        type: boolean
+        default: false
+      publish_nuget:
+        description: Publish a release-tag package to NuGet.org for this run; 3.10.x tags are Feedz-only (requires publisher approval).
+        required: true
+        type: boolean
+        default: false
+      deploy_coverage:
+        description: Deploy coverage to GitHub Pages for this run (requires deployment approval).
+        required: true
+        type: boolean
+        default: false
   push:
     branches:
       - 'main'
@@ -24,6 +40,27 @@ env:
   nuget_feed_source: 'https://api.nuget.org/v3/index.json'
 
 jobs:
+  validate_publication_selection:
+    name: Validate publication selection
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the selection check
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          sparse-checkout: scripts
+          fetch-depth: 1
+
+      # Strict release tags only; 3.10.x tags are Feedz-only. Tested by
+      # scripts/test_validate_packages_publication_selection.py.
+      - name: Reject incompatible publication refs
+        env:
+          REF: ${{ github.ref }}
+          PUBLISH_PREVIEW_FEEDZ: ${{ inputs.publish_preview_feedz }}
+          PUBLISH_NUGET: ${{ inputs.publish_nuget }}
+          DEPLOY_COVERAGE: ${{ inputs.deploy_coverage }}
+        run: python3 scripts/validate_packages_publication_selection.py
+
   test_unit_integration:
     name: Test unit/integration with coverage
     runs-on: ubuntu-latest
@@ -263,23 +300,28 @@ jobs:
     needs:
       - test_unit_integration
       - test_component
+      - validate_publication_selection
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: ${{ github.event_name != 'pull_request' }}
+    # Push and release events build as before; the selection check only runs on
+    # manual dispatch, and a dispatch it rejects must not build.
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && needs.test_unit_integration.result == 'success' && needs.test_component.result == 'success' && (github.event_name != 'workflow_dispatch' || needs.validate_publication_selection.result == 'success') }}
     steps:
       - name: Extract branch name
+        env:
+          REF: ${{ github.ref }}
         run: |
-          BRANCH_NAME=${{ github.ref }} # e.g., refs/heads/main
+          BRANCH_NAME="${REF}" # e.g., refs/heads/main
           BRANCH_NAME=${BRANCH_NAME#refs/heads/} # remove the refs/heads/ prefix
           # Extract the last part after the last slash of the branch name, if any, e.g., feature/issue-123 -> issue-123 and use it as the version prefix.
-          PACKAGE_PREFIX=$(echo $BRANCH_NAME | rev | cut -d/ -f1 | rev | tr '_' '-')
+          PACKAGE_PREFIX=$(echo "${BRANCH_NAME}" | rev | cut -d/ -f1 | rev | tr '_' '-')
 
           # If the branch name is main, use the preview version. Otherwise, use the branch name as the version prefix.
           if [[ "${BRANCH_NAME}" == "main" || "${BRANCH_NAME}" =~ ^develop/ || "${BRANCH_NAME}" =~ ^release/ ]]; then
               PACKAGE_PREFIX="preview"
           fi
 
-          echo "Ref: ${{ github.ref }}"
+          echo "Ref: ${REF}"
           echo "Branch name: ${BRANCH_NAME}"
           echo "Package prefix: ${PACKAGE_PREFIX}"
           echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
@@ -289,19 +331,25 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Verify commit exists in branch
+        env:
+          REF: ${{ github.ref }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && ("${{ github.event.action }}" == "published" || "${{ github.event.action }}" == "prereleased") ]]; then
+          if [[ "${REF}" == refs/tags/* && ("${EVENT_NAME}" == "release" || "${EVENT_NAME}" == "workflow_dispatch") ]]; then
             git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
             git branch --remote --contains | grep -E 'origin/(main|release/)'
           else
             git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
-            git branch --remote --contains | grep origin/${BRANCH_NAME}
+            git branch --remote --contains | grep "origin/${BRANCH_NAME}"
           fi
 
       - name: Set VERSION variable
+        env:
+          REF: ${{ github.ref }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && ("${{ github.event.action }}" == "published" || "${{ github.event.action }}" == "prereleased") ]]; then
-            TAG_NAME=${{ github.ref }} # e.g., refs/tags/3.0.0
+          if [[ "${REF}" == refs/tags/* && ("${EVENT_NAME}" == "release" || "${EVENT_NAME}" == "workflow_dispatch") ]]; then
+            TAG_NAME="${REF}" # e.g., refs/tags/3.0.0
             TAG_NAME=${TAG_NAME#refs/tags/} # remove the refs/tags/ prefix
             echo "VERSION=${TAG_NAME}" >> $GITHUB_ENV
           else
@@ -313,24 +361,27 @@ jobs:
           dotnet-version: 10.x
 
       - name: Compile+Pack
-        run: ./build.sh Compile+Pack --version ${VERSION} --analyseCode true
+        run: ./build.sh Compile+Pack --version "${VERSION}" --analyseCode true
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: elsa-nuget-packages
           path: packages/*nupkg
-        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+        if: ${{ github.event_name == 'release' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.publish_preview_feedz || inputs.publish_nuget)) }}
 
   publish_preview_feedz:
     name: Publish to feedz.io
-    needs: build
+    needs: [build, validate_publication_selection]
     runs-on: ubuntu-latest
     # 30 minutes against the push action's 20-minute deadline: the action stops
     # starting pushes once its own deadline passes, so the runner never has to
     # cancel a publish half-done. Move the two together.
     timeout-minutes: 30
-    if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+    # Push and release events stay non-publishing. An approved operator must
+    # dispatch this workflow and opt in for this run: from a branch for previews,
+    # or from a 3.10.x release tag, which ships to Feedz only.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_preview_feedz && (startsWith(github.ref, 'refs/heads/') || startsWith(github.ref, 'refs/tags/3.10.')) }}
     steps:
       - name: Check out the push action
         # Every third-party action in this job runs before a feed API key is handed
@@ -356,13 +407,16 @@ jobs:
 
   publish_nuget:
     name: Publish release to nuget.org
-    needs: build
+    needs: [build, validate_publication_selection]
     runs-on: ubuntu-latest
     # 30 minutes against the push action's 20-minute deadline: the action stops
     # starting pushes once its own deadline passes, so the runner never has to
     # cancel a publish half-done. Move the two together.
     timeout-minutes: 30
-    if: ${{ github.event.action == 'published' }}
+    # NuGet publication requires an explicit dispatch on a release tag. 3.10.x is
+    # Feedz-only: the selection check rejects it, and this guard keeps it off
+    # NuGet.org even if that check were bypassed.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref_name, '3.10.') }}
     permissions:
       contents: read
       id-token: write # Required: lets this job request the OIDC token that nuget.org exchanges for a temporary API key.
@@ -401,9 +455,11 @@ jobs:
 
   deploy_coverage:
     name: Deploy coverage to GitHub Pages
-    needs: coverage_report
+    needs: [coverage_report, validate_publication_selection]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop/3.6.1' || github.ref == 'refs/heads/release/3.6.1'
+    # Coverage deployment is also a per-run opt-in; pushes only build the report.
+    # Only refs whose coverage_report run uploads a Pages artifact.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_coverage && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/3.6.1') }}
     permissions:
       pages: write
       id-token: write
