@@ -13,8 +13,8 @@ namespace Elsa.Persistence.Dapper.Dialects;
 /// <c>ActivityExecutionRecords</c> is stored as <c>"ActivityExecutionRecords"</c>.
 /// Unquoted SQL folds to lowercase (<c>activityexecutionrecords</c>) and misses those objects
 /// (42P01). This dialect re-implements <see cref="ISqlDialect"/> so calls through
-/// <see cref="ISqlDialect"/> (the Dapper query builder) are quoted without changing
-/// <see cref="SqlDialectBase"/> or other providers.
+/// <see cref="ISqlDialect"/> (the Dapper query builder) are quoted. Shared query-builder
+    /// inlines go through <see cref="QuoteIdentifier"/>, whose non-PG default is a no-op.
 ///
 /// <para>
 /// Compatibility: a handmade lowercase, unquoted schema (<c>create table activityexecutionrecords</c>)
@@ -25,6 +25,9 @@ namespace Elsa.Persistence.Dapper.Dialects;
 /// </remarks>
 public class PostgreSqlDialect : SqlDialectBase, ISqlDialect
 {
+    /// <inheritdoc />
+    public override string QuoteIdentifier(string name) => Quote(name);
+
     /// <inheritdoc />
     public override string From(string table) => From(table, "*");
 

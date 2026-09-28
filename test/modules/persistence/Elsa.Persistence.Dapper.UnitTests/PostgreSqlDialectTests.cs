@@ -56,6 +56,19 @@ public sealed class PostgreSqlDialectTests
         Assert.Equal("\"Id\"", PostgreSqlDialect.Quote("Id"));
         Assert.Equal("\"Id\"", PostgreSqlDialect.Quote("\"Id\""));
         Assert.Equal("\"foo\"\"bar\"", PostgreSqlDialect.Quote("foo\"bar"));
+        Assert.Equal("\"CreatedAt\"", _dialect.QuoteIdentifier("CreatedAt"));
+    }
+
+    [Fact(DisplayName = "Shared query-builder inlines go through QuoteIdentifier on PostgreSQL")]
+    public void QueryBuilder_QuotesInlinedIdentifiers()
+    {
+        var queries = NonPgQuerySqlSnapshotTests.BuildQueries(_dialect).ToDictionary(x => x.Label, x => x.Sql);
+
+        Assert.Contains("order by \"CreatedAt\" desc", queries["order-desc"], StringComparison.Ordinal);
+        Assert.Contains("and \"IsLatest\" = 1", queries["version-latest"], StringComparison.Ordinal);
+        Assert.Contains("\"Name\" like @SearchTermLike", queries["definition-search"], StringComparison.Ordinal);
+        Assert.Contains("and \"Id\" in (", queries["paged-delete"], StringComparison.Ordinal);
+        Assert.DoesNotContain("order by CreatedAt desc\n", queries["order-desc"], StringComparison.Ordinal);
     }
 
     [Fact(DisplayName = "PG DateTimeOffset handler accepts DateTime, DateTimeOffset, and string")]

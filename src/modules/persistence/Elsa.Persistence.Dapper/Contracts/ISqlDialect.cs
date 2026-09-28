@@ -9,6 +9,16 @@ namespace Elsa.Persistence.Dapper.Contracts;
 public interface ISqlDialect
 {
     /// <summary>
+    /// Quotes a table or column identifier.
+    /// </summary>
+    /// <remarks>
+    /// The default returns <paramref name="name"/> unchanged so SQLite, SQL Server,
+    /// MySQL and Oracle SQL stays byte-identical. PostgreSQL overrides this to
+    /// double-quote identifiers so they match FluentMigrator <c>ForceQuote=true</c>.
+    /// </remarks>
+    string QuoteIdentifier(string name) => name;
+
+    /// <summary>
     /// Returns a SELECT FROM query.
     /// </summary>
     /// <param name="table">The table to query.</param>
