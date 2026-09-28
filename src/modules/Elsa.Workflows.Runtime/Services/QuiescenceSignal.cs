@@ -274,9 +274,10 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         if (_options.Value.PausePersistence != PausePersistencePolicy.AcrossReactivations)
             return;
 
-        // Legacy EF rows used elsa.quiescence.pause.{shell} and may be stamped '', NULL, or a named tenant.
-        // Memory starts empty on restart, so the leftover-row risk is EF-only. The host-pause key
-        // never shares that PK; startup adopts a visible leftover and always deletes it.
+        // Legacy persistent-store rows used elsa.quiescence.pause.{shell} and may be stamped '', NULL,
+        // or a named tenant. Memory starts empty on restart, so the leftover-row risk is on
+        // persistent stores (EF, Dapper, MongoDb). The host-pause key never shares that PK;
+        // startup adopts a visible leftover and always deletes it.
         await UseKeyValueStoreAsync(async store =>
         {
             var live = Volatile.Read(ref _state);
@@ -315,9 +316,20 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     /// <summary>
     /// Upgrade sweep: a 3.8 row on the old key is visible under <see cref="Tenant.Default"/>
     /// (<c>''</c> / NULL) or under the ambient tenant (named-tenant pauses restored at
-    /// tenant activation). Adopt only when the host-pause key is missing. Always delete a
-    /// visible leftover so a later resume cannot be undone by a half-failed adoption.
+    /// tenant activation). Adopt only when the host-pause key is missing and this node is
+    /// the one that actually removed the leftover. Always delete a visible leftover so a
+    /// later resume cannot be undone by a half-failed adoption.
     /// </summary>
+    /// <remarks>
+    /// Residual windows: a crash between the winning delete and the host-key save loses the
+    /// 3.8 pause (milliseconds, first 3.9 start that sees a leftover). A failed host-key save
+    /// plus a simultaneous resume can write the leftover back; the next restart re-pauses
+    /// (fail-safe). A node whose reads both fall inside the delete→save gap sees neither row
+    /// and starts unpaused until its next restart. If an operator resumes while a losing node
+    /// still holds the in-memory paused state from a lost adoption race, that node stays paused
+    /// until it is resumed or restarted. This is intentional (fail-safe) and avoids needing a
+    /// resume tombstone.
+    /// </remarks>
     private async Task<SerializedKeyValuePair?> SweepAndAdoptLegacyPauseAsync(
         SerializedKeyValuePair? hostPause,
         CancellationToken cancellationToken)
@@ -327,11 +339,23 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         if (legacy is null)
             return hostPause;
 
-        if (hostPause is null)
-            hostPause = await SaveAdoptedOrIgnoreDuplicateAsync(legacy, cancellationToken);
+        if (hostPause is not null)
+        {
+            await UseKeyValueStoreAsync(store => store.DeleteAsync(_legacyPersistenceKey, cancellationToken), foundUnder);
+            return hostPause;
+        }
 
-        await UseKeyValueStoreAsync(store => store.DeleteAsync(_legacyPersistenceKey, cancellationToken), foundUnder);
-        return hostPause;
+        // Delete-then-save: only the node whose delete actually removed the leftover may
+        // write the host-pause key. A later resume on the winner can then clear that key
+        // without a sibling's delayed save resurrecting it.
+        var deleted = await UseKeyValueStoreAsync(
+            store => store.TryDeleteAsync(_legacyPersistenceKey, cancellationToken),
+            defaultValue: false,
+            foundUnder);
+        if (!deleted)
+            return await FindAsync(_persistenceKey, AgnosticTenant, cancellationToken) ?? legacy;
+
+        return await SaveAdoptedOrRestoreLegacyAsync(legacy, foundUnder, CancellationToken.None);
     }
 
     private async Task<(SerializedKeyValuePair? Pair, Tenant FoundUnder)> FindVisibleLegacyAsync(
@@ -349,7 +373,10 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         return (underAmbient, ambient);
     }
 
-    private async Task<SerializedKeyValuePair> SaveAdoptedOrIgnoreDuplicateAsync(SerializedKeyValuePair legacy, CancellationToken cancellationToken)
+    private async Task<SerializedKeyValuePair> SaveAdoptedOrRestoreLegacyAsync(
+        SerializedKeyValuePair legacy,
+        Tenant foundUnder,
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -365,9 +392,13 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         {
             // A concurrent host adopted first; use the stored row's reason.
             var existing = await FindAsync(_persistenceKey, AgnosticTenant, cancellationToken);
-            if (existing is null)
-                throw;
-            return existing;
+            if (existing is not null)
+                return existing;
+
+            // We consumed the leftover but failed to persist the host key. Put it back so
+            // another startup can adopt instead of dropping the pause.
+            await UseKeyValueStoreAsync(store => store.SaveAsync(legacy, cancellationToken), foundUnder);
+            throw;
         }
     }
 

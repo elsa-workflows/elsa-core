@@ -70,6 +70,16 @@ public class MemoryKeyValueStore : IKeyValueStore
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
+    public Task<bool> TryDeleteAsync(string key, CancellationToken cancellationToken = default)
+    {
+        lock (_store.Sync)
+        {
+            var deleted = _store.DeleteWhere(x => x.Key == key && IsVisible(x));
+            return Task.FromResult(deleted > 0);
+        }
+    }
+
     private bool IsVisible(Entity entity) => TenantVisibility.IsVisible(entity.TenantId, CurrentTenantId);
 
     private string CurrentTenantId => _tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
