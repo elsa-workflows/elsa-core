@@ -1,4 +1,4 @@
-"""Fail-closed checks for the accepted Extensions MongoDB source tip."""
+"""Fail-closed checks for the accepted Studio host-branding source tip."""
 
 from __future__ import annotations
 
@@ -7,21 +7,22 @@ import json
 import unittest
 from unittest.mock import patch
 
-from verify_import_source_tip_refresh_r8 import RECEIPT, git, git_bytes, verify
+from verify_import_source_tip_refresh_r9 import RECEIPT, git, git_bytes, verify
 
 
-class SourceTipRefreshR8Tests(unittest.TestCase):
+class SourceTipRefreshR9Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.receipt = json.loads(RECEIPT.read_text(encoding="utf-8"))
 
-    def test_reviewed_mongodb_tip_verifies(self) -> None:
+    def test_reviewed_studio_tip_verifies(self) -> None:
         verify(self.receipt)
 
     def test_changed_blob_relocation_or_missing_row_is_rejected(self) -> None:
+        kept = next(index for index, row in enumerate(self.receipt["mappedChanges"]) if row["status"] == "M")
         for mutate, message in (
-            (lambda rows: rows[0].update(finalMapped={"blob": "0" * 40, "mode": "100644"}), "Changed finalMapped"),
-            (lambda rows: rows[0].update(mappedPath="src/extensions/elsewhere.cs"), "Wrong mapped path"),
+            (lambda rows: rows[kept].update(finalMapped={"blob": "0" * 40, "mode": "100644"}), "Changed finalMapped"),
+            (lambda rows: rows[kept].update(mappedPath="src/studio/elsewhere.cs"), "Wrong mapped path"),
             (lambda rows: rows.pop(), "does not match the upstream delta"),
         ):
             with self.subTest(message=message):
@@ -30,10 +31,17 @@ class SourceTipRefreshR8Tests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, message):
                     verify(receipt)
 
+    def test_deleted_upstream_file_must_stay_deleted(self) -> None:
+        receipt = copy.deepcopy(self.receipt)
+        deleted = next(row for row in receipt["mappedChanges"] if row["status"] == "D")
+        deleted["finalMapped"] = {"blob": "0" * 40, "mode": "100644"}
+        with self.assertRaisesRegex(ValueError, "Changed finalMapped"):
+            verify(receipt)
+
     def test_replaced_history_parent_is_rejected(self) -> None:
         receipt = copy.deepcopy(self.receipt)
         receipt["mappedDeltaCommit"] = receipt["baseImportHead"]
-        with self.assertRaisesRegex(ValueError, "Reviewed Extensions source-tip commits changed"):
+        with self.assertRaisesRegex(ValueError, "Reviewed Studio source-tip commits changed"):
             verify(receipt)
 
     def test_publication_claim_is_rejected(self) -> None:
@@ -45,30 +53,10 @@ class SourceTipRefreshR8Tests(unittest.TestCase):
     def test_mapped_bytes_must_match_upstream(self) -> None:
         def edited_mapping(*args: str, **kwargs: object) -> bytes:
             content = git_bytes(*args, **kwargs)
-            return content + b"\n" if args[1].startswith("HEAD:src/extensions/") else content
+            return content + b"\n" if args[1].startswith("HEAD:src/studio/") else content
 
-        with patch("verify_import_source_tip_refresh_r8.git_bytes", side_effect=edited_mapping):
+        with patch("verify_import_source_tip_refresh_r9.git_bytes", side_effect=edited_mapping):
             with self.assertRaisesRegex(ValueError, "differs from upstream"):
-                verify(self.receipt)
-
-    def test_current_solution_must_select_mongodb_tests(self) -> None:
-        def without_current_test(*args: str, **kwargs: object) -> bytes:
-            return b"" if args == ("show", "HEAD:Elsa.sln") else git_bytes(*args, **kwargs)
-
-        with patch("verify_import_source_tip_refresh_r8.git_bytes", side_effect=without_current_test):
-            with self.assertRaisesRegex(ValueError, "Current Elsa.sln does not select"):
-                verify(self.receipt)
-
-    def test_solution_must_build_the_mongodb_tests(self) -> None:
-        def without_build_rows(*args: str, **kwargs: object) -> bytes:
-            content = git_bytes(*args, **kwargs)
-            if args != ("show", "HEAD:Elsa.sln"):
-                return content
-            return b"".join(line for line in content.splitlines(keepends=True)
-                            if not (b"FF84CD92-DA70-5D7F-BD1F-3E9BBEC22CDE" in line and b".Build.0" in line))
-
-        with patch("verify_import_source_tip_refresh_r8.git_bytes", side_effect=without_build_rows):
-            with self.assertRaisesRegex(ValueError, "builds them in no configuration"):
                 verify(self.receipt)
 
     def test_current_publisher_workflow_drift_is_rejected(self) -> None:
@@ -89,8 +77,8 @@ class SourceTipRefreshR8Tests(unittest.TestCase):
         base, delta = self.receipt["baseImportHead"], self.receipt["mappedDeltaCommit"]
         old = self.receipt["mappedChanges"][0]["source"]
         for scope, extra, message in (
-            ("upstream", "M\tsrc/elsewhere/Unreviewed.cs", "reaches beyond the reviewed MongoDB files"),
-            ("mapped", "src/extensions/persistence/Elsa.Persistence.MongoDb/Unreviewed.cs", "changed unreviewed paths"),
+            ("upstream", "M\tsrc/elsewhere/Unreviewed.cs", "reaches beyond the reviewed host-branding files"),
+            ("mapped", "src/studio/framework/Elsa.Studio.Core/Unreviewed.cs", "changed unreviewed paths"),
         ):
             def with_extra(*args: str, **kwargs: object) -> str:
                 output = git(*args, **kwargs)
@@ -101,7 +89,7 @@ class SourceTipRefreshR8Tests(unittest.TestCase):
                 return output
 
             with self.subTest(scope=scope), \
-                    patch("verify_import_source_tip_refresh_r8.git", side_effect=with_extra):
+                    patch("verify_import_source_tip_refresh_r9.git", side_effect=with_extra):
                 with self.assertRaisesRegex(ValueError, message):
                     verify(self.receipt)
 

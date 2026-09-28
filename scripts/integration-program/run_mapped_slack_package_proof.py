@@ -32,6 +32,7 @@ import verify_import_source_tip_refresh_r5 as source_tip_refresh_r5
 import verify_import_source_tip_refresh_r6 as source_tip_refresh_r6
 import verify_import_source_tip_refresh_r7 as source_tip_refresh_r7
 import verify_import_source_tip_refresh_r8 as source_tip_refresh_r8
+import verify_import_source_tip_refresh_r9 as source_tip_refresh_r9
 from package_impact import InventoryGraph
 from release_unit_manifest import (
     MANIFEST_PATH,
@@ -69,6 +70,7 @@ SOURCE_TIP_REFRESH_R5_RECEIPT = Path("doc/integration-program/consolidation/sour
 SOURCE_TIP_REFRESH_R6_RECEIPT = Path("doc/integration-program/consolidation/source-tip-refresh-2026-09-27-r6.json")
 SOURCE_TIP_REFRESH_R7_RECEIPT = Path("doc/integration-program/consolidation/source-tip-refresh-2026-09-27-r7.json")
 SOURCE_TIP_REFRESH_R8_RECEIPT = Path("doc/integration-program/consolidation/source-tip-refresh-2026-09-28-r8.json")
+SOURCE_TIP_REFRESH_R9_RECEIPT = Path("doc/integration-program/consolidation/source-tip-refresh-2026-09-28-r9.json")
 CURRENT_TIP_EVIDENCE = REPOSITORY_ROOT / "doc/integration-program/consolidation/current-tip-e96-evidence"
 CURRENT_TIP_IMPORT_SHA256 = "06cd198a338d5c6d49fa6b0183bbda6b602252f39f622f18084e60342880bb75"
 CURRENT_TIP_PREPARATION_SHA256 = "219fcafe45959bb8f9295d8b9137f8ae0807489f0370b5112204f228fc7bd7bc"
@@ -199,6 +201,8 @@ def require_imported_history_checkout(root: Path, source_commits: dict[str, str]
     source_tip_refresh_r7.verify(seventh_receipt, root)
     eighth_receipt = json.loads((root / SOURCE_TIP_REFRESH_R8_RECEIPT).read_text(encoding="utf-8"))
     source_tip_refresh_r8.verify(eighth_receipt, root)
+    ninth_receipt = json.loads((root / SOURCE_TIP_REFRESH_R9_RECEIPT).read_text(encoding="utf-8"))
+    source_tip_refresh_r9.verify(ninth_receipt, root)
     imported, prepared, patch_hash = load_current_tip_receipts()
     if imported.get("sourceCommits") != source_commits or not imported.get("exactBlobAndModeMapping") or not imported.get("originalHistoriesReachable"):
         raise RuntimeError("The archived current-tip import receipt does not prove exact source relocation")
