@@ -26,7 +26,8 @@ guide does not apply; see [Secrets become tenant-scoped](secrets-tenancy.md) ins
   the secret name (`/secrets/{name}`). There is no ID adapter, no mapping for the legacy `Owner` field, and no
   equivalent of the legacy plaintext `GET /secrets/{id}/input`.
 - **Scripts use `getSecret(name)`.** The legacy `secrets.get<PascalName>Async()` accessors are gone. Core exposes
-  `getSecret("my-secret")`, which returns a promise of the value.
+  `getSecret("my-secret")`, which returns a promise of the value. A workflow expression returns that promise and Elsa
+  awaits it: `return getSecret("my-secret");`. Top-level `await` does not parse in a workflow expression.
 
 ## Before you start
 
@@ -51,25 +52,29 @@ guide does not apply; see [Secrets become tenant-scoped](secrets-tenancy.md) ins
 2. Grant permissions. Core uses `secrets:view` (list, detail, descriptors, picker), `secrets:write` (create,
    update, rotate, revoke), `secrets:delete` and `secrets:test`. Map legacy grants as follows:
 
-   | Legacy token | Core grant to give |
-   | --- | --- |
-   | `read:secrets`, `secrets:read` | `secrets:view` |
-   | `write:secrets` | `secrets:write` |
-   | `secrets:write` | `secrets:write` (see the warning below) |
-   | `secrets:delete` | `secrets:delete` |
-   | none | `secrets:test`, for callers that test secrets |
+   | Legacy token | What it allowed | Closest Core grant |
+   | --- | --- | --- |
+   | `read:secrets` | list | `secrets:view` |
+   | `secrets:read` | detail, and the plaintext value | `secrets:view` (Core never returns the value) |
+   | `write:secrets` | create | `secrets:write`, which is broader (see the warning below) |
+   | `secrets:write` | update, name checks | `secrets:write`, which is broader (see the warning below) |
+   | `secrets:delete` | delete, bulk delete | `secrets:delete` |
+   | none | | `secrets:test`, for callers that test secrets |
 
-   > **Review roles that hold only the legacy `secrets:write`.** In the legacy module that token allowed only
-   > updates; creating a secret needed `write:secrets`. Core gives the same spelling its own meaning: create, update,
-   > rotate and revoke. A role that could only update legacy secrets can create, rotate and revoke them after the
-   > upgrade. Because the spelling is shared, Core honours such a grant immediately, before you have mapped anything.
-   > Narrow those roles if that is not intended.
+   > **Every legacy write grant widens in Core.** Core has one write permission, `secrets:write`, covering create,
+   > update, rotate and revoke. It has no create-only or update-only grant. A role that held only `write:secrets`
+   > (create) or only `secrets:write` (update) gains the rest once it holds Core's `secrets:write`. The legacy
+   > `secrets:write` spelling is the same as Core's, so a role holding it gains that authority as soon as the host
+   > runs Core, before you map anything. Review every role holding either legacy token, and give Core's
+   > `secrets:write` only to roles that may create, update, rotate and revoke.
 
 3. Re-create each secret in Core, in Studio's Secrets screen or with `POST /secrets`, using the name the
    workflows expect and the value from step 3 above. Core stores the secret for the ambient tenant; create shared
    secrets from an authorized platform context (see [tenant scoping](secrets-tenancy.md)).
-4. Update workflows. Replace `secrets.getMySecretAsync()` with `await getSecret("my-secret")`, or pick the secret in
-   a Secret-typed input. Publish and run each changed workflow against the new host.
+4. Update workflows. Replace an expression such as `return secrets.getMySecretAsync();` with
+   `return getSecret("my-secret");`, or pick the secret in a Secret-typed input. Inside an `async` function in a
+   larger script, `await getSecret("my-secret")` works too
+   ([scripting compatibility](../integration-program/secrets-scripting-compatibility.md)). Publish and run each changed workflow against the new host.
 5. Update API clients to the name-based routes. Clients that cannot stop using row IDs or the plaintext route
    stay on the legacy host until they can.
 6. When every workflow and client runs against Core, retire the legacy host. Keep its database and key ring until

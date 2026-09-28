@@ -6,7 +6,7 @@ evidence. Others waited on a publisher and release-unit decision, which the main
 [lockstep release ADR](../../adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md):
 
 - the first consolidated release packs every packable `Elsa.sln` project at one version, 3.10.0;
-- the root `packages.yml` is the sole publisher from 3.10.0;
+- the root `packages.yml` is the sole publisher from 3.10.0. The imported projects stay unpackable until then, through the product-wide `IsPackable=false` in `src/extensions` and `src/studio`. The 3.10.0 cutover lifts it;
 - the Extensions and Studio repositories publish only 3.8/3.9 patches.
 
 Each row closes as `represented_in_core`, with `expanded` representation: the active Core file now covers the
@@ -16,7 +16,7 @@ imported product as well as Core. The pinned `.source` copies stay as provenance
 
 | Pinned asset | Active path | Why it is represented |
 |---|---|---|
-| Extensions `.github/workflows/packages.yml` | `.github/workflows/packages.yml` | The root workflow runs `./build.sh Compile+Pack` over `Elsa.sln`, which contains the imported Extensions projects. It publishes only on an approved `workflow_dispatch` (#8497, [publisher gates](package-publisher-gates.md)). The ADR makes it the one publisher for these package IDs from 3.10.0. The pinned workflow stays inert; nothing re-enables a push- or release-triggered publisher. |
+| Extensions `.github/workflows/packages.yml` | `.github/workflows/packages.yml` | The root workflow runs `./build.sh Compile+Pack` over `Elsa.sln`, which contains the imported Extensions projects. It publishes only on an approved `workflow_dispatch` (#8497, [publisher gates](package-publisher-gates.md)). The ADR makes it the one publisher for these package IDs from 3.10.0. Until the cutover, the product-wide `IsPackable=false` keeps the imported projects out of its packs. The pinned workflow stays inert; nothing re-enables a push- or release-triggered publisher. |
 | Studio `.github/workflows/packages.yml` | `.github/workflows/packages.yml` | The same, for the imported Studio projects. |
 | Extensions `build/Build.CI.GitHubActions.cs` | `build/Build.CI.GitHubActions.cs` | The pinned partial's compile/test job is covered by the root `pr` definition, which invokes `Compile` and `Test` on `Elsa.sln`. Its pack and publish job waited on a publisher decision. The ADR gives that job to the root `packages.yml`, so the legacy packaging job is never activated. |
 
@@ -26,7 +26,7 @@ imported product as well as Core. The pinned `.source` copies stay as provenance
 |---|---|---|
 | Extensions `.github/workflows/pr.yml` | `.github/workflows/pr.yml` | Root NUKE `TestProjects` selects every `*Tests` project in `Elsa.sln`, including the 17 Extensions test projects the pinned workflow built. Root `pr` run [36272102515](https://github.com/elsa-workflows/elsa-core/actions/runs/36272102515) (attempt 2, `1976dd2d`) ran `./build.cmd Compile Test` on `Elsa.sln` and passed all of them. |
 | Studio `.github/workflows/pr.yml` | `.github/workflows/pr.yml` | The same run passed the 16 Studio test projects the pinned workflow built through `Elsa.Studio.sln`. It passed `Elsa.Studio.Workflows.Designer.Tests` on each of its three target frameworks. |
-| Extensions `build/Build.cs` | `build/Build.cs` | Core's NUKE entrypoint builds, tests and packs the imported projects through `Elsa.sln`, so a second entrypoint is not needed. The pinned tagged-version calculation is replaced by the lockstep `--version` the root workflow passes to `Pack`. |
+| Extensions `build/Build.cs` | `build/Build.cs` | Core's NUKE entrypoint builds and tests the imported projects through `Elsa.sln`, and its `Pack` target includes them once the cutover makes them packable. A second entrypoint is not needed. The pinned tagged-version calculation is replaced by the lockstep `--version` the root workflow passes to `Pack`. |
 
 ## Scoped build properties and central package versions
 
@@ -36,6 +36,8 @@ imported product as well as Core. The pinned `.source` copies stay as provenance
 | Studio `Directory.Build.props` | `src/studio/Directory.Build.props` | A product-scoped file that keeps the Studio metadata, the net8.0/net9.0/net10.0 targets, the icon item and the trim-warning allowlist. The Studio Core pack proof ([run 36285398358](https://github.com/elsa-workflows/elsa-core/actions/runs/36285398358)) packs under it and checks the icon bytes. |
 | Extensions `Directory.Packages.props` | `src/extensions/Directory.Packages.props` | Extensions central versions stay scoped: `Elsa.*` pins follow `$(ElsaVersion)`, and nothing is merged with Core's or Studio's versions. |
 | Studio `Directory.Packages.props` | `src/studio/Directory.Packages.props` | Studio central versions stay scoped, including `BpmnModelVersion` for the Bpmn.Model download and the target-framework-conditioned versions. |
+
+Both scoped `Directory.Build.props` files, and the matching `Directory.Build.targets`, end with the import's publication guard (`UseProjectReferences=true`, `IsPackable=false`). Lifting that guard is the 3.10.0 cutover change. Because these rows pin the reviewed blobs, that change must record an `active_update` for them.
 
 Package-mode restores (`UseProjectReferences=false`) for connectors other than Slack remain part of the per-package
 release policy the ADR defers. The lockstep 3.10.0 pack uses project references, so it does not depend on them.
