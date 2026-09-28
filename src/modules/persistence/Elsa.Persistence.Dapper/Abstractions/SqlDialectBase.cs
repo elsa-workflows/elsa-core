@@ -11,6 +11,9 @@ namespace Elsa.Persistence.Dapper.Abstractions;
 public abstract class SqlDialectBase : ISqlDialect
 {
     /// <inheritdoc />
+    public virtual string QuoteIdentifier(string name) => name;
+
+    /// <inheritdoc />
     public virtual string From(string table) => From(table, "*");
 
     /// <inheritdoc />

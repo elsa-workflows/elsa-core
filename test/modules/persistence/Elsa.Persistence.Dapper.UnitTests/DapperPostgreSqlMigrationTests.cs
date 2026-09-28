@@ -7,8 +7,13 @@ using Elsa.Persistence.Dapper.Modules.Runtime.Records;
 using Elsa.Persistence.Dapper.Services;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using Elsa.Common.Entities;
+using Elsa.Common.Models;
+using Elsa.Persistence.Dapper.Models;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
@@ -73,6 +78,7 @@ public sealed class DapperPostgreSqlMigrationTests : IAsyncLifetime
 
         await PersistRecordsThroughDapperStores();
         await RunWriteLineWorkflowToCompletion();
+        await ExerciseListSearchOrderVersionAndPagedDelete();
     }
 
     private async Task PersistRecordsThroughDapperStores()
@@ -154,6 +160,152 @@ public sealed class DapperPostgreSqlMigrationTests : IAsyncLifetime
         Assert.NotEmpty(storedActivities);
         Assert.All(storedActivities, record => Assert.Equal(ActivityStatus.Completed, record.Status));
     }
+
+    private async Task ExerciseListSearchOrderVersionAndPagedDelete()
+    {
+        using var services = CreateElsaHost();
+        using var scope = services.CreateScope();
+        var sp = scope.ServiceProvider;
+        var definitions = sp.GetRequiredService<IWorkflowDefinitionStore>();
+        var instances = sp.GetRequiredService<IWorkflowInstanceStore>();
+
+        var t0 = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        await definitions.SaveAsync(Definition("def-alpha", "def-alpha:1", "Alpha", version: 1, latest: false, published: true, createdAt: t0));
+        await definitions.SaveAsync(Definition("def-alpha", "def-alpha:2", "Alpha", version: 2, latest: true, published: false, createdAt: t0.AddMinutes(1)));
+        await definitions.SaveAsync(Definition("def-bravo", "def-bravo:1", "BravoNeedle", version: 1, latest: true, published: true, createdAt: t0.AddMinutes(2)));
+
+        var listed = (await definitions.FindManyAsync(
+            new WorkflowDefinitionFilter { DefinitionIds = ["def-alpha", "def-bravo"] },
+            new WorkflowDefinitionOrder<string>(x => x.Name, OrderDirection.Descending),
+            CancellationToken.None)).ToList();
+        Assert.Equal(3, listed.Count);
+        Assert.Equal("BravoNeedle", listed[0].Name);
+
+        var searched = (await definitions.FindManyAsync(
+            new WorkflowDefinitionFilter { SearchTerm = "Needle" },
+            CancellationToken.None)).ToList();
+        Assert.Equal(["def-bravo:1"], searched.Select(x => x.Id));
+
+        var latest = (await definitions.FindManyAsync(
+            new WorkflowDefinitionFilter { VersionOptions = VersionOptions.Latest },
+            new WorkflowDefinitionOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending),
+            CancellationToken.None)).ToList();
+        Assert.Equal(["def-alpha:2", "def-bravo:1"], latest.Select(x => x.Id));
+
+        var published = (await definitions.FindManyAsync(
+            new WorkflowDefinitionFilter { VersionOptions = VersionOptions.Published },
+            CancellationToken.None)).ToList();
+        Assert.Equal(2, published.Count);
+        Assert.All(published, definition => Assert.True(definition.IsPublished));
+
+        var specific = await definitions.FindAsync(new WorkflowDefinitionFilter
+        {
+            DefinitionId = "def-alpha",
+            VersionOptions = VersionOptions.SpecificVersion(2)
+        });
+        Assert.NotNull(specific);
+        Assert.Equal("def-alpha:2", specific.Id);
+
+        var page = await instances.FindManyAsync(
+            new WorkflowInstanceFilter { DefinitionId = "def-pg-1" },
+            PageArgs.FromRange(0, 10),
+            new WorkflowInstanceOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Descending));
+        Assert.True(page.TotalCount >= 1);
+
+        var named = (await instances.FindManyAsync(
+            new WorkflowInstanceFilter { SearchTerm = "def-pg-1" },
+            new WorkflowInstanceOrder<string>(x => x.Id, OrderDirection.Ascending))).ToList();
+        Assert.Contains(named, instance => instance.DefinitionId == "def-pg-1");
+
+        var tenantAccessor = new TestTenantAccessor();
+        var connectionProvider = new PostgreSqlDbConnectionProvider(_connectionString);
+        var instanceStore = new Store<WorkflowInstanceRecord>(connectionProvider, tenantAccessor, "WorkflowInstances");
+        await instanceStore.SaveAsync(new WorkflowInstanceRecord
+        {
+            Id = "wf-page-old",
+            DefinitionId = "def-pg-page",
+            DefinitionVersionId = "def-pg-page:1",
+            Version = 1,
+            WorkflowState = "{}",
+            Status = "Finished",
+            SubStatus = "Finished",
+            Name = "Zebra",
+            CreatedAt = t0,
+            UpdatedAt = t0
+        });
+        await instanceStore.SaveAsync(new WorkflowInstanceRecord
+        {
+            Id = "wf-page-new",
+            DefinitionId = "def-pg-page",
+            DefinitionVersionId = "def-pg-page:1",
+            Version = 1,
+            WorkflowState = "{}",
+            Status = "Finished",
+            SubStatus = "Finished",
+            Name = "AlphaInst",
+            CreatedAt = t0.AddHours(1),
+            UpdatedAt = t0.AddHours(1)
+        });
+        await instanceStore.SaveAsync(new WorkflowInstanceRecord
+        {
+            Id = "wf-page-mid",
+            DefinitionId = "def-pg-page",
+            DefinitionVersionId = "def-pg-page:1",
+            Version = 1,
+            WorkflowState = "{}",
+            Status = "Finished",
+            SubStatus = "Finished",
+            Name = "Middle",
+            CreatedAt = t0.AddMinutes(30),
+            UpdatedAt = t0.AddMinutes(30)
+        });
+
+        var ordered = (await instanceStore.FindManyAsync(
+            q => q.Is(nameof(WorkflowInstanceRecord.DefinitionId), "def-pg-page"),
+            nameof(WorkflowInstanceRecord.Name),
+            OrderDirection.Ascending,
+            tenantAgnostic: false)).ToList();
+        Assert.Equal(["wf-page-new", "wf-page-mid", "wf-page-old"], ordered.Select(x => x.Id));
+
+        var searchHits = (await instanceStore.FindManyAsync(
+            q => q.AndWorkflowInstanceSearchTerm("Zebra"),
+            tenantAgnostic: false)).ToList();
+        Assert.Equal(["wf-page-old"], searchHits.Select(x => x.Id));
+
+        var deleted = await instanceStore.DeleteAsync(
+            q => q.Is(nameof(WorkflowInstanceRecord.DefinitionId), "def-pg-page"),
+            PageArgs.FromRange(0, 1),
+            [new OrderField(nameof(WorkflowInstanceRecord.CreatedAt), OrderDirection.Descending)]);
+        Assert.Equal(1, deleted);
+
+        var remaining = (await instanceStore.FindManyAsync(
+            q => q.Is(nameof(WorkflowInstanceRecord.DefinitionId), "def-pg-page"),
+            nameof(WorkflowInstanceRecord.CreatedAt),
+            OrderDirection.Descending,
+            tenantAgnostic: false)).ToList();
+        Assert.Equal(["wf-page-mid", "wf-page-old"], remaining.Select(x => x.Id));
+    }
+
+    private static WorkflowDefinition Definition(
+        string definitionId,
+        string id,
+        string name,
+        int version,
+        bool latest,
+        bool published,
+        DateTimeOffset createdAt) =>
+        new()
+        {
+            Id = id,
+            DefinitionId = definitionId,
+            Name = name,
+            Version = version,
+            IsLatest = latest,
+            IsPublished = published,
+            CreatedAt = createdAt,
+            MaterializerName = "Json",
+            StringData = "{}"
+        };
 
     private ServiceProvider CreateElsaHost()
     {

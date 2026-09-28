@@ -194,7 +194,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
                 // Refuse every Finished row (#8419). Distinct param names avoid colliding
                 // with SET Status = Running.
                 q.Parameters.Add("@FinishedStatus", WorkflowStatus.Finished.ToString());
-                q.Sql.AppendLine("and not Status = @FinishedStatus");
+                q.Sql.AppendLine($"and not {q.Dialect.QuoteIdentifier("Status")} = @FinishedStatus");
             },
             cancellationToken);
 
