@@ -1,28 +1,35 @@
 namespace Elsa.Persistence.Dapper.Migrations;
 
 /// <summary>
-/// Provider matching for Dapper <c>IfDatabase</c> create-table branches.
+/// Provider names passed to FluentMigrator's alias-aware <c>IfDatabase(params string[])</c> overload.
 /// </summary>
 /// <remarks>
-/// <para>
-/// <c>IfDatabase(params string[])</c> is an exact <see cref="StringComparison.OrdinalIgnoreCase"/>
-/// match against the processor's <c>DatabaseType</c> <em>and</em> <c>DatabaseTypeAliases</c>.
-/// It is not a prefix match.
-/// </para>
-/// <para>
-/// <c>IfDatabase(Predicate&lt;string&gt;)</c> receives only <c>DatabaseType</c> (aliases are ignored).
-/// FluentMigrator 7.2 postgres processors all report a <c>DatabaseType</c> that starts with
-/// <c>Postgres</c>: <c>Postgres</c>, <c>PostgreSQL</c>, <c>PostgreSQL10_0</c>, <c>PostgreSQL11_0</c>,
-/// <c>PostgreSQL15_0</c>, <c>Postgres92</c>, <c>PostgreSQL92</c>. A case-insensitive prefix check
-/// therefore matches every 7.2 postgres processor, including <c>AddPostgres()</c>'s
-/// <c>PostgreSQL15_0</c>, without relying on aliases.
-/// </para>
+/// <c>IfDatabase(params string[])</c> does an exact <see cref="StringComparison.OrdinalIgnoreCase"/>
+/// match against the processor's <c>DatabaseType</c> <em>or</em> <c>DatabaseTypeAliases</c>.
+/// It is not a prefix match. The predicate overload sees only <c>DatabaseType</c> and must not
+/// be used here: FluentMigrator 7.2 reports <c>SqlServer2016</c>, <c>MySql8</c>,
+/// <c>OracleManaged</c>, <c>PostgreSQL15_0</c>, etc. as <c>DatabaseType</c>, with
+/// <c>SqlServer</c> / <c>MySql</c> / <c>Oracle</c> / <c>PostgreSQL</c> as aliases.
 /// </remarks>
 internal static class MigrationDatabases
 {
-    public static bool IsDateTimeOffsetProvider(string databaseType) =>
-        databaseType.Equals("SqlServer", StringComparison.OrdinalIgnoreCase)
-        || databaseType.Equals("Oracle", StringComparison.OrdinalIgnoreCase)
-        || databaseType.Equals("MySql", StringComparison.OrdinalIgnoreCase)
-        || databaseType.StartsWith("Postgres", StringComparison.OrdinalIgnoreCase);
+    /// <summary>
+    /// Names matched against DatabaseType or aliases for the DateTimeOffset create-table branch
+    /// (everything except SQLite).
+    /// </summary>
+    /// <remarks>
+    /// <c>Postgres</c> covers the pre-7.2 <c>PostgresProcessor</c>.
+    /// <c>PostgreSQL</c> is an alias on FluentMigrator 7.2 <c>AddPostgres()</c> /
+    /// <c>AddPostgres10_0()</c> / <c>AddPostgres11_0()</c> / <c>AddPostgres15_0()</c>.
+    /// <c>PostgreSQL92</c> is an alias on <c>AddPostgres92()</c> (DatabaseType <c>Postgres92</c>).
+    /// </remarks>
+    public static readonly string[] DateTimeOffsetProviders =
+    [
+        "SqlServer",
+        "Oracle",
+        "MySql",
+        "Postgres",
+        "PostgreSQL",
+        "PostgreSQL92"
+    ];
 }

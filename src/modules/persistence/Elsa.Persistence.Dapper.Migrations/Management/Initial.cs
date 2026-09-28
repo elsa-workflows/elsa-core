@@ -14,7 +14,7 @@ public class Initial : Migration
     {
         if (!Schema.Table("WorkflowDefinitions").Exists())
         {
-            IfDatabase(MigrationDatabases.IsDateTimeOffsetProvider)
+            IfDatabase(MigrationDatabases.DateTimeOffsetProviders)
                 .Create
                 .Table("WorkflowDefinitions")
                 .WithColumn("Id").AsString().PrimaryKey()
@@ -59,7 +59,7 @@ public class Initial : Migration
 
         if (!Schema.Table("WorkflowInstances").Exists())
         {
-            IfDatabase(MigrationDatabases.IsDateTimeOffsetProvider)
+            IfDatabase(MigrationDatabases.DateTimeOffsetProviders)
                 .Create
                 .Table("WorkflowInstances")
                 .WithColumn("Id").AsString().PrimaryKey()

@@ -23,7 +23,7 @@ public class V3_3 : Migration
 
         if (!Schema.Table("BookmarkQueueItems").Exists())
         {
-            IfDatabase(MigrationDatabases.IsDateTimeOffsetProvider)
+            IfDatabase(MigrationDatabases.DateTimeOffsetProviders)
                 .Create
                 .Table("BookmarkQueueItems")
                 .WithColumn("Id").AsString().PrimaryKey()

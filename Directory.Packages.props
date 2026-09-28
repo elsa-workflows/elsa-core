@@ -165,6 +165,8 @@
         <PackageVersion Include="FluentMigrator" Version="7.2.0"/>
         <PackageVersion Include="FluentMigrator.Runner" Version="7.2.0"/>
         <PackageVersion Include="FluentMigrator.Runner.Core" Version="7.2.0"/>
+        <PackageVersion Include="FluentMigrator.Runner.MySql" Version="7.2.0"/>
+        <PackageVersion Include="FluentMigrator.Runner.Oracle" Version="7.2.0"/>
         <PackageVersion Include="FluentMigrator.Runner.Postgres" Version="7.2.0"/>
         <PackageVersion Include="FluentMigrator.Runner.SqlServer" Version="7.2.0"/>
         <PackageVersion Include="FluentMigrator.Runner.SQLite" Version="7.2.0"/>
