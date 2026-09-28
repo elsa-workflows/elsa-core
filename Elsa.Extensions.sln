@@ -336,6 +336,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "runtimes", "runtimes", "{74
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Runtime.ProtoActor.UnitTests", "test\modules\runtimes\Elsa.Workflows.Runtime.ProtoActor.UnitTests\Elsa.Workflows.Runtime.ProtoActor.UnitTests.csproj", "{209765CA-207B-44F0-94E4-0711235E7F99}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "secrets", "secrets", "{A1526B50-A5D1-398B-3070-5440A8E5BDFE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Management.UnitTests", "test\modules\secrets\Elsa.Secrets.Management.UnitTests\Elsa.Secrets.Management.UnitTests.csproj", "{02CB40E6-1DC0-4AC8-B9F1-D268CA26654F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1610,6 +1614,18 @@ Global
 		{C115D266-ED50-4584-B059-B4BB48B54C77}.Release|x64.Build.0 = Release|Any CPU
 		{C115D266-ED50-4584-B059-B4BB48B54C77}.Release|x86.ActiveCfg = Release|Any CPU
 		{C115D266-ED50-4584-B059-B4BB48B54C77}.Release|x86.Build.0 = Release|Any CPU
+		{02CB40E6-1DC0-4AC8-B9F1-D268CA26654F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02CB40E6-1DC0-4AC8-B9F1-D268CA26654F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02CB40E6-1DC0-4AC8-B9F1-D268CA26654F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{02CB40E6-1DC0-4AC8-B9F1-D268CA26654F}.Debug|x64.Build.0 = Debug|Any CPU
+		{02CB40E6-1DC0-4AC8-B9F1-D268CA26654F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{02CB40E6-1DC0-4AC8-B9F1-D268CA26654F}.Debug|x86.Build.0 = Debug|Any CPU
+		{02CB40E6-1DC0-4AC8-B9F1-D268CA26654F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02CB40E6-1DC0-4AC8-B9F1-D268CA26654F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{02CB40E6-1DC0-4AC8-B9F1-D268CA26654F}.Release|x64.ActiveCfg = Release|Any CPU
+		{02CB40E6-1DC0-4AC8-B9F1-D268CA26654F}.Release|x64.Build.0 = Release|Any CPU
+		{02CB40E6-1DC0-4AC8-B9F1-D268CA26654F}.Release|x86.ActiveCfg = Release|Any CPU
+		{02CB40E6-1DC0-4AC8-B9F1-D268CA26654F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1758,6 +1774,8 @@ Global
 		{799D5262-2BB1-C4D2-CB3D-522B0B7186CF} = {3DDE6F89-531C-47F8-9CD7-7A4E6984FA48}
 		{1994376D-9775-4709-88E5-BE44618546AD} = {799D5262-2BB1-C4D2-CB3D-522B0B7186CF}
 		{C115D266-ED50-4584-B059-B4BB48B54C77} = {273F8587-516E-41F3-93B9-D2F8FDC188A4}
+		{A1526B50-A5D1-398B-3070-5440A8E5BDFE} = {3DDE6F89-531C-47F8-9CD7-7A4E6984FA48}
+		{02CB40E6-1DC0-4AC8-B9F1-D268CA26654F} = {A1526B50-A5D1-398B-3070-5440A8E5BDFE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {11A771DA-B728-445E-8A88-AE1C84C3B3A6}
