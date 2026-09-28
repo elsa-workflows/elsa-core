@@ -30,8 +30,8 @@ public class EFCoreKeyValueStore(Store<RuntimeElsaDbContext, SerializedKeyValueP
     }
 
     /// <inheritdoc />
-    public Task DeleteAsync(string key, CancellationToken cancellationToken)
+    public async Task<bool> DeleteAsync(string key, CancellationToken cancellationToken)
     {
-        return store.DeleteWhereAsync(x => x.Id == key, cancellationToken);
+        return await store.DeleteWhereAsync(x => x.Id == key, cancellationToken) > 0;
     }
 }

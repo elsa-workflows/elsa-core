@@ -62,12 +62,13 @@ public class MemoryKeyValueStore : IKeyValueStore
     }
     
     /// <inheritdoc />
-    public Task DeleteAsync(string key, CancellationToken cancellationToken)
+    public Task<bool> DeleteAsync(string key, CancellationToken cancellationToken)
     {
         lock (_store.Sync)
-            _store.DeleteWhere(x => x.Key == key && IsVisible(x));
-
-        return Task.CompletedTask;
+        {
+            var deleted = _store.DeleteWhere(x => x.Key == key && IsVisible(x));
+            return Task.FromResult(deleted > 0);
+        }
     }
 
     private bool IsVisible(Entity entity) => TenantVisibility.IsVisible(entity.TenantId, CurrentTenantId);

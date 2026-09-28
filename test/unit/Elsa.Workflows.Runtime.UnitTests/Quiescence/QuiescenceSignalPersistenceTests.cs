@@ -127,6 +127,62 @@ public class QuiescenceSignalPersistenceTests
         Assert.False(store.Pairs.ContainsKey("elsa.quiescence.pause.default"));
     }
 
+    [Fact(DisplayName = "Two-node adoption: B saves before A resumes; restart is unpaused")]
+    public async Task TwoNodeLegacyAdoption_BSavesBeforeAResumes_RestartIsUnpaused()
+    {
+        // Arrange: A and B share a store. B's writes are gated after both have read the leftover.
+        var shared = SeedLegacyPause();
+        var gatedB = new GatedWritesKeyValueStore(shared);
+        var nodeA = CreateAcrossReactivationsSignal(shared);
+        var nodeB = CreateAcrossReactivationsSignal(gatedB);
+
+        // Act: B reads first and blocks on its first write. A adopts. B then writes. A resumes.
+        var bInit = nodeB.InitializePersistedStateAsync(CancellationToken.None).AsTask();
+        await gatedB.WriteStarted.Task;
+        await nodeA.InitializePersistedStateAsync(CancellationToken.None);
+        Assert.True(nodeA.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+
+        gatedB.ReleaseWrites();
+        await bInit;
+        await nodeA.ResumeAsync("op", CancellationToken.None);
+
+        var restarted = CreateAcrossReactivationsSignal(shared);
+        await restarted.InitializePersistedStateAsync(CancellationToken.None);
+
+        // Assert
+        Assert.False(restarted.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.False(shared.Pairs.ContainsKey("elsa.quiescence.host-pause.default"));
+        Assert.False(shared.Pairs.ContainsKey("elsa.quiescence.pause.default"));
+    }
+
+    [Fact(DisplayName = "Two-node adoption: B saves after A resumes; restart stays unpaused")]
+    public async Task TwoNodeLegacyAdoption_BSavesAfterAResumes_RestartIsUnpaused()
+    {
+        // Arrange: A and B share a store. B's writes are gated after both have read the leftover.
+        var shared = SeedLegacyPause();
+        var gatedB = new GatedWritesKeyValueStore(shared);
+        var nodeA = CreateAcrossReactivationsSignal(shared);
+        var nodeB = CreateAcrossReactivationsSignal(gatedB);
+
+        // Act: B reads first and blocks on its first write. A adopts and resumes. B then writes.
+        var bInit = nodeB.InitializePersistedStateAsync(CancellationToken.None).AsTask();
+        await gatedB.WriteStarted.Task;
+        await nodeA.InitializePersistedStateAsync(CancellationToken.None);
+        Assert.True(nodeA.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+
+        await nodeA.ResumeAsync("op", CancellationToken.None);
+        gatedB.ReleaseWrites();
+        await bInit;
+
+        var restarted = CreateAcrossReactivationsSignal(shared);
+        await restarted.InitializePersistedStateAsync(CancellationToken.None);
+
+        // Assert: a fresh host reading the store must not see a resurrected pause.
+        Assert.False(restarted.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.False(shared.Pairs.ContainsKey("elsa.quiescence.host-pause.default"));
+        Assert.False(shared.Pairs.ContainsKey("elsa.quiescence.pause.default"));
+    }
+
     [Fact(DisplayName = "A failed adoption save with no host-pause row keeps the legacy row")]
     public async Task FailedAdoptionSave_WithoutHostPause_ThrowsAndKeepsLegacy()
     {
@@ -261,6 +317,28 @@ public class QuiescenceSignalPersistenceTests
         Assert.Equal("migration", pair.SerializedValue);
     }
 
+    private QuiescenceSignal CreateAcrossReactivationsSignal(IKeyValueStore store) =>
+        QuiescenceSignal.Create(
+            Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions
+            {
+                PausePersistence = PausePersistencePolicy.AcrossReactivations
+            }),
+            _clock,
+            _cycleRegistry,
+            store);
+
+    private static FakeKeyValueStore SeedLegacyPause()
+    {
+        var store = new FakeKeyValueStore();
+        store.Pairs["elsa.quiescence.pause.default"] = new SerializedKeyValuePair
+        {
+            Key = "elsa.quiescence.pause.default",
+            SerializedValue = "legacy-maintenance",
+            TenantId = Tenant.DefaultTenantId
+        };
+        return store;
+    }
+
     /// <summary>
     /// Save always throws. The host-pause row is hidden until that save is attempted, so
     /// startup tries to adopt and then hits the duplicate fallback.
@@ -273,6 +351,12 @@ public class QuiescenceSignalPersistenceTests
 
         public Task SaveAsync(SerializedKeyValuePair keyValuePair, CancellationToken cancellationToken)
         {
+            if (keyValuePair.Key != "elsa.quiescence.host-pause.default")
+            {
+                Pairs[keyValuePair.Key] = keyValuePair;
+                return Task.CompletedTask;
+            }
+
             _saveAttempted = true;
             throw new InvalidOperationException("duplicate");
         }
@@ -293,10 +377,9 @@ public class QuiescenceSignalPersistenceTests
         public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken)
             => Task.FromResult<IEnumerable<SerializedKeyValuePair>>(Pairs.Values.ToArray());
 
-        public Task DeleteAsync(string key, CancellationToken cancellationToken)
+        public Task<bool> DeleteAsync(string key, CancellationToken cancellationToken)
         {
-            Pairs.Remove(key);
-            return Task.CompletedTask;
+            return Task.FromResult(Pairs.Remove(key));
         }
     }
 
@@ -319,10 +402,9 @@ public class QuiescenceSignalPersistenceTests
         public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken)
             => Task.FromResult<IEnumerable<SerializedKeyValuePair>>(Pairs.Values.ToArray());
 
-        public Task DeleteAsync(string key, CancellationToken cancellationToken)
+        public Task<bool> DeleteAsync(string key, CancellationToken cancellationToken)
         {
-            Pairs.Remove(key);
-            return Task.CompletedTask;
+            return Task.FromResult(Pairs.Remove(key));
         }
     }
 
@@ -351,10 +433,44 @@ public class QuiescenceSignalPersistenceTests
         public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken)
             => Task.FromResult<IEnumerable<SerializedKeyValuePair>>(Pairs.Values.ToArray());
 
-        public Task DeleteAsync(string key, CancellationToken cancellationToken)
+        public Task<bool> DeleteAsync(string key, CancellationToken cancellationToken)
         {
-            Pairs.Remove(key);
-            return Task.CompletedTask;
+            return Task.FromResult(Pairs.Remove(key));
+        }
+    }
+
+    /// <summary>
+    /// Wraps a shared store and gates every write so a sibling can adopt (and optionally
+    /// resume) after this node has already read the leftover and decided to adopt.
+    /// </summary>
+    private sealed class GatedWritesKeyValueStore : IKeyValueStore
+    {
+        private readonly IKeyValueStore _inner;
+        public readonly TaskCompletionSource WriteStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _writeGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public GatedWritesKeyValueStore(IKeyValueStore inner) => _inner = inner;
+
+        public void ReleaseWrites() => _writeGate.TrySetResult();
+
+        public async Task SaveAsync(SerializedKeyValuePair keyValuePair, CancellationToken cancellationToken)
+        {
+            WriteStarted.TrySetResult();
+            await _writeGate.Task;
+            await _inner.SaveAsync(keyValuePair, cancellationToken);
+        }
+
+        public Task<SerializedKeyValuePair?> FindAsync(KeyValueFilter filter, CancellationToken cancellationToken) =>
+            _inner.FindAsync(filter, cancellationToken);
+
+        public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken) =>
+            _inner.FindManyAsync(filter, cancellationToken);
+
+        public async Task<bool> DeleteAsync(string key, CancellationToken cancellationToken)
+        {
+            WriteStarted.TrySetResult();
+            await _writeGate.Task;
+            return await _inner.DeleteAsync(key, cancellationToken);
         }
     }
 }
