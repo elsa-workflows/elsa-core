@@ -87,7 +87,6 @@ class SourceTipRefreshR8Tests(unittest.TestCase):
 
     def test_extra_upstream_or_mapped_diff_path_is_rejected(self) -> None:
         base, delta = self.receipt["baseImportHead"], self.receipt["mappedDeltaCommit"]
-        old = self.receipt["mappedChanges"][0]["source"]
         for scope, extra, message in (
             ("upstream", "M\tsrc/elsewhere/Unreviewed.cs", "reaches beyond the reviewed MongoDB files"),
             ("mapped", "src/extensions/persistence/Elsa.Persistence.MongoDb/Unreviewed.cs", "changed unreviewed paths"),

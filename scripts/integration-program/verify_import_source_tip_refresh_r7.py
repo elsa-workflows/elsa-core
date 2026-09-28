@@ -20,7 +20,6 @@ import verify_import_source_tip_refresh_r3 as r3
 import verify_import_source_tip_refresh_r4 as r4
 import verify_import_source_tip_refresh_r6 as r6
 from verify_import_source_tip_refresh_r2 import blob_and_mode, git
-from verify_import_source_tip_refresh_r6 import sha256
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -70,7 +69,7 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
         raise ValueError("Superseded publisher receipts changed")
     for item in superseded:
         content = (root / item["path"]).read_bytes()
-        if sha256(content) != item["sha256"]:
+        if r6.sha256(content) != item["sha256"]:
             raise ValueError(f"Superseded publisher receipt changed: {item['path']}")
         # Each superseded verifier still checks its own reviewed/integration commit; this receipt owns HEAD.
         SUPERSEDED_RECEIPTS[item["path"]].verify(json.loads(content), root)

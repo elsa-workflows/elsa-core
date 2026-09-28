@@ -1,7 +1,9 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Persistence.MongoDb.Contracts;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Driver;
 
 namespace Elsa.Persistence.MongoDb.Common;
@@ -23,6 +25,8 @@ public abstract class PersistenceFeatureBase : FeatureBase
     /// <typeparam name="TDocument">The document type of the store.</typeparam>
     protected void AddStore<TDocument, TStore>() where TDocument : class where TStore : class
     {
+        // MongoDbStore scopes documents by tenant. Hosts without the multitenancy feature still resolve it, against the default tenant.
+        Services.TryAddSingleton<ITenantAccessor, DefaultTenantAccessor>();
         Services
             .AddScoped<MongoDbStore<TDocument>>()
             .AddScoped<TStore>();
