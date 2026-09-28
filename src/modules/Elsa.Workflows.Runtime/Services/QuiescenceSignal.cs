@@ -325,7 +325,10 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     /// 3.8 pause (milliseconds, first 3.9 start that sees a leftover). A failed host-key save
     /// plus a simultaneous resume can write the leftover back; the next restart re-pauses
     /// (fail-safe). A node whose reads both fall inside the delete→save gap sees neither row
-    /// and starts unpaused until its next restart.
+    /// and starts unpaused until its next restart. If an operator resumes while a losing node
+    /// still holds the in-memory paused state from a lost adoption race, that node stays paused
+    /// until it is resumed or restarted. This is intentional (fail-safe) and avoids needing a
+    /// resume tombstone.
     /// </remarks>
     private async Task<SerializedKeyValuePair?> SweepAndAdoptLegacyPauseAsync(
         SerializedKeyValuePair? hostPause,
