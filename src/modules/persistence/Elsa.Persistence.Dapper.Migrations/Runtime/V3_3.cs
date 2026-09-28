@@ -21,7 +21,7 @@ public class V3_3 : Migration
         Alter.Table("ActivityExecutionRecords").AddColumn("SerializedProperties").AsString(MaxValue).Nullable();
         Alter.Table("KeyValuePairs").AddColumn("TenantId").AsString().Nullable();
 
-        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
+        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres", "PostgreSQL")
             .Create
             .Table("BookmarkQueueItems")
             .WithColumn("Id").AsString().PrimaryKey()

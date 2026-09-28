@@ -12,7 +12,7 @@ public class Initial : Migration
     /// <inheritdoc />
     public override void Up()
     {
-        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
+        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres", "PostgreSQL")
             .Create
             .Table("WorkflowDefinitions")
             .WithColumn("Id").AsString().PrimaryKey()
@@ -55,7 +55,7 @@ public class Initial : Migration
             .WithColumn("IsReadonly").AsBoolean().NotNullable()
             .WithColumn("IsPublished").AsBoolean().NotNullable();
 
-        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
+        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres", "PostgreSQL")
             .Create
             .Table("WorkflowInstances")
             .WithColumn("Id").AsString().PrimaryKey()
