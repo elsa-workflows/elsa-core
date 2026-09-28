@@ -59,6 +59,32 @@ class SourceTipRefreshR8Tests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Current Elsa.sln does not select"):
                 verify(self.receipt)
 
+    def test_solution_must_build_the_mongodb_tests(self) -> None:
+        def without_build_rows(*args: str, **kwargs: object) -> bytes:
+            content = git_bytes(*args, **kwargs)
+            if args != ("show", "HEAD:Elsa.sln"):
+                return content
+            return b"".join(line for line in content.splitlines(keepends=True)
+                            if not (b"FF84CD92-DA70-5D7F-BD1F-3E9BBEC22CDE" in line and b".Build.0" in line))
+
+        with patch("verify_import_source_tip_refresh_r8.git_bytes", side_effect=without_build_rows):
+            with self.assertRaisesRegex(ValueError, "builds them in no configuration"):
+                verify(self.receipt)
+
+    def test_current_publisher_workflow_drift_is_rejected(self) -> None:
+        import verify_import_source_tip_refresh_r7 as r7
+
+        real = r7.blob_and_mode
+
+        def drifted(commit: str, path: str, root: object = r7.ROOT) -> dict[str, str] | None:
+            if commit == "HEAD" and path == ".github/workflows/packages.yml":
+                return {"blob": "0" * 40, "mode": "100644"}
+            return real(commit, path, root)
+
+        with patch("verify_import_source_tip_refresh_r7.blob_and_mode", side_effect=drifted):
+            with self.assertRaisesRegex(ValueError, "changed active publisher workflow at HEAD"):
+                verify(self.receipt)
+
 
 if __name__ == "__main__":
     unittest.main()

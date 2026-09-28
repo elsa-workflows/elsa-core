@@ -4,12 +4,14 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
 from verify_import_source_tip_refresh_r2 import blob_and_mode, git, git_bytes, mapped_path
+import verify_import_source_tip_refresh_r7 as publisher_receipt
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -79,11 +81,19 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
         if git_bytes("show", f"HEAD:{mapped}", root=root) != git_bytes("show", f"{new}:{source}", root=root):
             raise ValueError(f"Mapped MongoDB file differs from upstream: {mapped}")
 
-    for workflow in (".github/workflows/packages.yml", ".github/workflows/update-wiki.yml"):
+    for workflow in publisher_receipt.PUBLISHERS:
         if blob_and_mode(base, workflow, root) != blob_and_mode(accepted, workflow, root):
             raise ValueError(f"Source refresh changed active publisher workflow: {workflow}")
-    if git_bytes("show", "HEAD:Elsa.sln", root=root).count(MONGO_TEST_SOLUTION_ENTRY) != 1:
+    # The seventh receipt owns the reviewed publisher-workflow bytes at HEAD; defer to it rather than pin them twice.
+    publisher_receipt.verify(json.loads((root / publisher_receipt.RECEIPT.relative_to(ROOT)).read_bytes()), root)
+
+    solution = git_bytes("show", "HEAD:Elsa.sln", root=root)
+    entries = re.findall(rb'^Project\([^)]*\) = "[^"]*", "' + re.escape(MONGO_TEST_SOLUTION_ENTRY) + rb'", "(\{[^}]+\})"',
+                         solution, re.MULTILINE)
+    if len(entries) != 1:
         raise ValueError("Current Elsa.sln does not select the mapped MongoDB tests exactly once")
+    if not re.search(rb'^\s*' + re.escape(entries[0]) + rb'\.[^=]+\.Build\.0 = ', solution, re.MULTILINE | re.IGNORECASE):
+        raise ValueError("Current Elsa.sln declares the mapped MongoDB tests but builds them in no configuration")
 
 
 def main() -> int:
