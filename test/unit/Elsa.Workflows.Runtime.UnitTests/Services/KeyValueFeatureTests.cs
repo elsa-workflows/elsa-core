@@ -121,6 +121,6 @@ public class KeyValueFeatureTests
 
         public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken) => Task.FromResult<IEnumerable<SerializedKeyValuePair>>([]);
 
-        public Task<bool> DeleteAsync(string key, CancellationToken cancellationToken) => Task.FromResult(false);
+        public Task DeleteAsync(string key, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

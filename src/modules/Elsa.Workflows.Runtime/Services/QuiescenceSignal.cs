@@ -338,7 +338,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         // write the host-pause key. A later resume on the winner can then clear that key
         // without a sibling's delayed save resurrecting it.
         var deleted = await UseKeyValueStoreAsync(
-            store => store.DeleteAsync(_legacyPersistenceKey, cancellationToken),
+            store => store.TryDeleteAsync(_legacyPersistenceKey, cancellationToken),
             defaultValue: false,
             foundUnder);
         if (!deleted)
