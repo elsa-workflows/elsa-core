@@ -62,7 +62,7 @@ public class PostgreSqlDialect : SqlDialectBase, ISqlDialect
         var fieldParamList = string.Join(", ", fields.Select(x => $"@{getParamName(x)}"));
         var updateList = string.Join(", ", fields.Select(x => $"{Quote(x)} = @{getParamName(x)}"));
         // Include the PK in the insert list: ON CONFLICT cannot insert a NOT NULL PK that was omitted (23502).
-        return $"insert into {Quote(table)} ({Quote(primaryKeyField)}, {fieldList}) values (@{getParamName(primaryKeyField)}, {fieldParamList}) on conflict({Quote(primaryKeyField)}) do update set {updateList}";
+        return $"insert into {Quote(table)} ({Quote(primaryKeyField)}, {fieldList}) values (@{getParamName(primaryKeyField)}, {fieldParamList}) on conflict({Quote(primaryKeyField)}) do update set {updateList};";
     }
 
     string ISqlDialect.Delete(string table) => $"delete from {Quote(table)} where 1=1";

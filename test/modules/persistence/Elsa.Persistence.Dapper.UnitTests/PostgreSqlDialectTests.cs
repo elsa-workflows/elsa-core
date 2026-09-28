@@ -45,6 +45,7 @@ public sealed class PostgreSqlDialectTests
         Assert.Contains("values (@Id, @Status, @AggregateFaultCount)", sql, StringComparison.Ordinal);
         Assert.Contains("on conflict(\"Id\")", sql, StringComparison.Ordinal);
         Assert.Contains("\"Status\" = @Status", sql, StringComparison.Ordinal);
+        Assert.EndsWith(";", sql.Trim());
         Assert.DoesNotContain("insert into ActivityExecutionRecords", sql, StringComparison.Ordinal);
     }
 
