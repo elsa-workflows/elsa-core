@@ -12,7 +12,9 @@ public static class MultitenancyPipeConfigurationExtensions
         // Multitenancy is optional for a standalone bus; without it there is no tenant to carry or restore.
         var tenantAccessor = context.GetService<ITenantAccessor>();
         if (tenantAccessor == null)
+        {
             return;
+        }
 
         bus.ConfigureSend(pipe => pipe.UseTenantSendMiddleware(tenantAccessor));
         bus.ConfigurePublish(pipe => pipe.UseTenantPublishMiddleware(tenantAccessor));
