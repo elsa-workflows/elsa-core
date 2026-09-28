@@ -31,6 +31,8 @@ public sealed class NonPgQuerySqlSnapshotTests
         Assert.Equal("CreatedAt", sqlite.QuoteIdentifier("CreatedAt"));
         Assert.Equal("CreatedAt", sqlServer.QuoteIdentifier("CreatedAt"));
         Assert.Same("CreatedAt", sqlite.QuoteIdentifier("CreatedAt"));
+        Assert.Equal("1", sqlite.BooleanLiteral(true));
+        Assert.Equal("0", sqlServer.BooleanLiteral(false));
     }
 
     private static void AssertSnapshots(ISqlDialect dialect, IReadOnlyDictionary<string, string> expected)

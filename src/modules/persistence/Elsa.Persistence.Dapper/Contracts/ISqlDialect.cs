@@ -19,6 +19,16 @@ public interface ISqlDialect
     string QuoteIdentifier(string name) => name;
 
     /// <summary>
+    /// Returns a SQL boolean literal.
+    /// </summary>
+    /// <remarks>
+    /// The default emits <c>1</c>/<c>0</c> so SQLite, SQL Server, MySQL and Oracle
+    /// SQL stays byte-identical. PostgreSQL overrides this to <c>true</c>/<c>false</c>
+    /// because <c>boolean = integer</c> is 42883.
+    /// </remarks>
+    string BooleanLiteral(bool value) => value ? "1" : "0";
+
+    /// <summary>
     /// Returns a SELECT FROM query.
     /// </summary>
     /// <param name="table">The table to query.</param>

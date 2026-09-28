@@ -29,6 +29,9 @@ public class PostgreSqlDialect : SqlDialectBase, ISqlDialect
     public override string QuoteIdentifier(string name) => Quote(name);
 
     /// <inheritdoc />
+    public override string BooleanLiteral(bool value) => value ? "true" : "false";
+
+    /// <inheritdoc />
     public override string From(string table) => From(table, "*");
 
     /// <inheritdoc />
