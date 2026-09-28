@@ -6,14 +6,12 @@ using Elsa.Studio.Authentication.UI.Options;
 using Elsa.Studio.Authentication.Themes.Extensions;
 using Elsa.Studio.Authentication.OpenIdConnect.BlazorServer.Extensions;
 using Elsa.Studio.Authentication.OpenIdConnect.HttpMessageHandlers;
-using Elsa.Studio.Branding;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Core.BlazorServer.Extensions;
 using Elsa.Studio.AI.Extensions;
 using Elsa.Studio.Alterations.Extensions;
 using Elsa.Studio.Dashboard.Extensions;
 using Elsa.Studio.Extensions;
-using Elsa.Studio.Host.Server;
 using Elsa.Studio.Localization.BlazorServer.Extensions;
 using Elsa.Studio.Localization.Models;
 using Elsa.Studio.Localization.Options;
@@ -43,7 +41,6 @@ using Elsa.Studio.ExternalAuthentication.BlazorServer.Extensions;
 using Elsa.Studio.ExternalAuthentication.BlazorServer.HttpMessageHandlers;
 using Elsa.Studio.ExternalAuthentication.Extensions;
 using Elsa.Studio.Authentication.Abstractions.Models;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 // Build the host.
@@ -143,10 +140,8 @@ var localizationConfig = new LocalizationConfig
     }
 };
 
-builder.Services.AddScoped<IBrandingProvider, StudioBrandingProvider>();
 builder.Services
-    .AddCore(options => configuration.GetSection(StudioThemeOptions.SectionName).Bind(options))
-    .Replace(new(typeof(IBrandingProvider), typeof(StudioBrandingProvider), ServiceLifetime.Scoped));
+    .AddCore(options => configuration.GetSection(StudioThemeOptions.SectionName).Bind(options));
 builder.Services.AddShell(options => configuration.GetSection("Shell").Bind(options));
 if (selectedAuthProvider != StudioAuthenticationProvider.ElsaLogin)
 {
