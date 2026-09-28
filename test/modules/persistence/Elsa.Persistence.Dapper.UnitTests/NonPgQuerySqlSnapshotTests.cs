@@ -185,7 +185,7 @@ public sealed class NonPgQuerySqlSnapshotTests
             "and (Name like @SearchTermLike or Id like @SearchTerm or DefinitionId like @SearchTerm or DefinitionVersionId like @SearchTerm or CorrelationId like @SearchTerm)"),
         ["starts-with"] = Join(
             "select * from WorkflowInstances where 1=1",
-            "and Name like @SearchTermLike"),
+            "and Name like @NameStartsWith"),
         ["count"] = Join("select COUNT(*) from WorkflowDefinitions where 1=1"),
         ["count-distinct"] = Join("select COUNT(distinct DefinitionId) from WorkflowDefinitions where 1=1"),
     };

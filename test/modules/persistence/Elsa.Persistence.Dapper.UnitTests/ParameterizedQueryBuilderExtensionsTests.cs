@@ -109,6 +109,20 @@ public sealed class ParameterizedQueryBuilderExtensionsTests : IDisposable
         Assert.Contains("and (TenantId is null or TenantId = '')", query.Sql.ToString(), StringComparison.Ordinal);
     }
 
+    [Fact(DisplayName = "StartsWith quotes the identifier on PostgreSQL and binds @{field}StartsWith")]
+    public void StartsWith_PostgreSql_QuotesIdentifierAndBindsFieldPrefixedParameter()
+    {
+        var query = new ParameterizedQuery(new PostgreSqlDialect())
+            .From("KeyValues")
+            .StartsWith("Id", true, "app:");
+
+        var sql = query.Sql.ToString();
+
+        Assert.Contains("and \"Id\" like @IdStartsWith", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("@SearchTermLike", sql, StringComparison.Ordinal);
+        Assert.Equal("app:%", query.Parameters.Get<string>("IdStartsWith"));
+    }
+
     [Fact]
     public async Task In_WithTenantAgnosticFilter_ReturnsMatchingRowsAcrossTenants()
     {

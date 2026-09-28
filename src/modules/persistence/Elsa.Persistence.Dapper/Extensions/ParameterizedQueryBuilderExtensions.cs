@@ -160,7 +160,8 @@ public static class ParameterizedQueryBuilderExtensions
     /// </summary>
     public static ParameterizedQuery IsNullOrEmpty(this ParameterizedQuery query, string field)
     {
-        query.Sql.AppendLine($"and ({field} is null or {field} = '')");
+        var ident = query.QuoteIdent(field);
+        query.Sql.AppendLine($"and ({ident} is null or {ident} = '')");
         return query;
     }
 
