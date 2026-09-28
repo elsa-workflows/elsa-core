@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
+        <PackageReference Include="FluentMigrator.Runner.SQLite" />
         <PackageReference Include="Microsoft.Data.Sqlite" />
     </ItemGroup>
 
