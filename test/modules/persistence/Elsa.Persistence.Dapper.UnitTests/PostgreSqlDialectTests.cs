@@ -69,6 +69,7 @@ public sealed class PostgreSqlDialectTests
         Assert.Contains("and \"IsPublished\" = false", queries["version-draft"], StringComparison.Ordinal);
         Assert.Contains("\"Name\" like @SearchTermLike", queries["definition-search"], StringComparison.Ordinal);
         Assert.Contains("and \"Id\" in (", queries["paged-delete"], StringComparison.Ordinal);
+        Assert.Contains("and \"UpdatedAt\" < @UpdatedAt", queries["less-than"], StringComparison.Ordinal);
         Assert.DoesNotContain("= 1", queries["version-latest"], StringComparison.Ordinal);
         Assert.DoesNotContain("order by CreatedAt desc\n", queries["order-desc"], StringComparison.Ordinal);
     }

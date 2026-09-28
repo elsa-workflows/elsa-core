@@ -248,6 +248,11 @@ public sealed class DapperPostgreSqlMigrationTests : IAsyncLifetime
             new WorkflowInstanceOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Descending));
         Assert.True(studioInstances.TotalCount >= 1);
 
+        var beforeLastUpdated = (await instances.FindManyAsync(
+            new WorkflowInstanceFilter { BeforeLastUpdated = DateTimeOffset.UtcNow.AddMinutes(1) },
+            new WorkflowInstanceOrder<DateTimeOffset>(x => x.UpdatedAt, OrderDirection.Ascending))).ToList();
+        Assert.Contains(beforeLastUpdated, instance => instance.Id == "wf-pg-1");
+
         var journal = sp.GetRequiredService<IWorkflowExecutionLogStore>();
         await journal.SaveAsync(new WorkflowExecutionLogRecord
         {

@@ -175,7 +175,7 @@ public static class ParameterizedQueryBuilderExtensions
     {
         if (value == null) return query;
 
-        query.Sql.AppendLine($"and {field} < @{field}");
+        query.Sql.AppendLine($"and {query.QuoteIdent(field)} < @{field}");
         query.Parameters.Add($"@{field}", value);
 
         return query;
