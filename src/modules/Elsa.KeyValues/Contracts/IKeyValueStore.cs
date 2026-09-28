@@ -25,8 +25,25 @@ public interface IKeyValueStore
     Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken);
     
     /// <summary>
-    /// If the key is found it deletes the record from the store.
+    /// If the key is found it deletes the record from the store. 
+    /// </summary>
+    Task DeleteAsync(string key, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Deletes the record if the key exists.
     /// </summary>
     /// <returns><c>true</c> if a row was removed; <c>false</c> if the key was already absent.</returns>
-    Task<bool> DeleteAsync(string key, CancellationToken cancellationToken);
+    /// <remarks>
+    /// The default implementation is not atomic: it finds by key, then calls <see cref="DeleteAsync"/>.
+    /// Stores should override this with an atomic delete that reports affected rows.
+    /// </remarks>
+    async Task<bool> TryDeleteAsync(string key, CancellationToken cancellationToken = default)
+    {
+        var existing = await FindAsync(new KeyValueFilter { Key = key }, cancellationToken);
+        if (existing is null)
+            return false;
+
+        await DeleteAsync(key, cancellationToken);
+        return true;
+    }
 }

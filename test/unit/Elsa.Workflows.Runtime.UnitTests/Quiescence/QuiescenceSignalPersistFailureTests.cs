@@ -132,11 +132,12 @@ public class QuiescenceSignalPersistFailureTests
         public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken) =>
             Task.FromResult<IEnumerable<SerializedKeyValuePair>>(Pairs.Values.ToArray());
 
-        public Task<bool> DeleteAsync(string key, CancellationToken cancellationToken)
+        public Task DeleteAsync(string key, CancellationToken cancellationToken)
         {
             if (ThrowOnDelete)
                 throw new InvalidOperationException("boom-delete");
-            return Task.FromResult(Pairs.Remove(key));
+            Pairs.Remove(key);
+            return Task.CompletedTask;
         }
     }
 
@@ -165,11 +166,12 @@ public class QuiescenceSignalPersistFailureTests
         public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken) =>
             Task.FromResult<IEnumerable<SerializedKeyValuePair>>(Pairs.Values.ToArray());
 
-        public Task<bool> DeleteAsync(string key, CancellationToken cancellationToken)
+        public Task DeleteAsync(string key, CancellationToken cancellationToken)
         {
             if (ThrowOnDelete)
                 throw new InvalidOperationException("boom-delete");
-            return Task.FromResult(Pairs.Remove(key));
+            Pairs.Remove(key);
+            return Task.CompletedTask;
         }
     }
 }

@@ -377,9 +377,10 @@ public class QuiescenceSignalPersistenceTests
         public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken)
             => Task.FromResult<IEnumerable<SerializedKeyValuePair>>(Pairs.Values.ToArray());
 
-        public Task<bool> DeleteAsync(string key, CancellationToken cancellationToken)
+        public Task DeleteAsync(string key, CancellationToken cancellationToken)
         {
-            return Task.FromResult(Pairs.Remove(key));
+            Pairs.Remove(key);
+            return Task.CompletedTask;
         }
     }
 
@@ -402,10 +403,14 @@ public class QuiescenceSignalPersistenceTests
         public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken)
             => Task.FromResult<IEnumerable<SerializedKeyValuePair>>(Pairs.Values.ToArray());
 
-        public Task<bool> DeleteAsync(string key, CancellationToken cancellationToken)
+        public Task DeleteAsync(string key, CancellationToken cancellationToken)
         {
-            return Task.FromResult(Pairs.Remove(key));
+            Pairs.Remove(key);
+            return Task.CompletedTask;
         }
+
+        public Task<bool> TryDeleteAsync(string key, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Pairs.Remove(key));
     }
 
     /// <summary>Fake store whose <see cref="SaveAsync"/> blocks on a gate so a racing Resume can interleave.</summary>
@@ -433,9 +438,10 @@ public class QuiescenceSignalPersistenceTests
         public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken)
             => Task.FromResult<IEnumerable<SerializedKeyValuePair>>(Pairs.Values.ToArray());
 
-        public Task<bool> DeleteAsync(string key, CancellationToken cancellationToken)
+        public Task DeleteAsync(string key, CancellationToken cancellationToken)
         {
-            return Task.FromResult(Pairs.Remove(key));
+            Pairs.Remove(key);
+            return Task.CompletedTask;
         }
     }
 
@@ -466,11 +472,18 @@ public class QuiescenceSignalPersistenceTests
         public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken) =>
             _inner.FindManyAsync(filter, cancellationToken);
 
-        public async Task<bool> DeleteAsync(string key, CancellationToken cancellationToken)
+        public async Task DeleteAsync(string key, CancellationToken cancellationToken)
         {
             WriteStarted.TrySetResult();
             await _writeGate.Task;
-            return await _inner.DeleteAsync(key, cancellationToken);
+            await _inner.DeleteAsync(key, cancellationToken);
+        }
+
+        public async Task<bool> TryDeleteAsync(string key, CancellationToken cancellationToken = default)
+        {
+            WriteStarted.TrySetResult();
+            await _writeGate.Task;
+            return await _inner.TryDeleteAsync(key, cancellationToken);
         }
     }
 }
