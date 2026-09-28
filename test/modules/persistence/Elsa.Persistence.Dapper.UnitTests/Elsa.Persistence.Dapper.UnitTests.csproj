@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
+        <PackageReference Include="Elsa" />
         <PackageReference Include="FluentMigrator.Runner.MySql" />
         <PackageReference Include="FluentMigrator.Runner.Oracle" />
         <PackageReference Include="FluentMigrator.Runner.Postgres" />

@@ -241,9 +241,9 @@ public static class ParameterizedQueryBuilderExtensions
         if (!startsWith || value == null || string.IsNullOrWhiteSpace(value))
             return query;
 
-        var searchTermLike = $"{value}%";
-        query.Sql.AppendLine($"and {query.QuoteIdent(field)} like @SearchTermLike");
-        query.Parameters.Add($"@{field}", searchTermLike);
+        var parameterName = $"@{field}StartsWith";
+        query.Sql.AppendLine($"and {query.QuoteIdent(field)} like {parameterName}");
+        query.Parameters.Add(parameterName, $"{value}%");
 
         return query;
     }

@@ -44,10 +44,12 @@ internal class DapperKeyValueStore(Store<KeyValuePairRecord> store) : IKeyValueS
 
     private void ApplyFilter(ParameterizedQuery query, KeyValueFilter filter)
     {
-        query
-            .Is(nameof(KeyValuePairRecord.Id), filter.Key)
-            .In(nameof(KeyValuePairRecord.Id), filter.Keys)
-            .StartsWith(nameof(KeyValuePairRecord.Id), filter.StartsWith, filter.Key);
+        if (filter.StartsWith)
+            query.StartsWith(nameof(KeyValuePairRecord.Id), true, filter.Key);
+        else
+            query.Is(nameof(KeyValuePairRecord.Id), filter.Key);
+
+        query.In(nameof(KeyValuePairRecord.Id), filter.Keys);
     }
 
     private KeyValuePairRecord Map(SerializedKeyValuePair source)
