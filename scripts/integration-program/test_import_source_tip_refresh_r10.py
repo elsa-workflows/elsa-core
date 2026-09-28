@@ -123,6 +123,22 @@ class SourceTipRefreshR10Tests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "does not carry exactly the upstream line changes"):
                 verify(self.receipt)
 
+    def test_project_file_must_place_the_upstream_line_where_upstream_did(self) -> None:
+        project = next(row for row in self.receipt["mappedChanges"] if row["source"].endswith(".csproj"))
+
+        def moved(*args: str, **kwargs: object) -> bytes:
+            content = git_bytes(*args, **kwargs)
+            if args == ("show", f"HEAD:{project['mappedPath']}"):
+                text = content.decode("utf-8")
+                line = '        <PackageReference Include="FluentMigrator.Runner.SQLite" />\n'
+                text = text.replace(line, "", 1).replace("    </ItemGroup>\n\n</Project>", line + "    </ItemGroup>\n\n</Project>", 1)
+                return text.encode("utf-8")
+            return content
+
+        with patch("verify_import_source_tip_refresh_r10.git_bytes", side_effect=moved):
+            with self.assertRaisesRegex(ValueError, "places the upstream line changes elsewhere"):
+                verify(self.receipt)
+
 
 if __name__ == "__main__":
     unittest.main()

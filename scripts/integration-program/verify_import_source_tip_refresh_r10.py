@@ -39,6 +39,13 @@ def changed_lines(before: str, after: str, path: str, root: Path) -> tuple[list[
     return added, removed
 
 
+def placements(content: bytes, added: list[str]) -> list[tuple[str, str]]:
+    """The lines that follow each added line, which pin where it was inserted."""
+    lines = [line.lstrip("\ufeff").rstrip("\r") for line in content.decode("utf-8-sig").split("\n")]
+    return [(line, lines[index + 1] if index + 1 < len(lines) else "")
+            for index, line in enumerate(lines) if line in added]
+
+
 def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
     if receipt.get("schemaVersion") != 10 or receipt.get("issue") != 8286:
         raise ValueError("Tenth source-tip refresh schema or issue changed")
@@ -99,6 +106,9 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
             mapped_lines = changed_lines(base, "HEAD", mapped, root)
             if not upstream_lines[0] or mapped_lines != upstream_lines:
                 raise ValueError(f"Mapped project file does not carry exactly the upstream line changes: {mapped}")
+            if placements(git_bytes("show", f"{new}:{source}", root=root), upstream_lines[0]) != placements(
+                    git_bytes("show", f"HEAD:{mapped}", root=root), upstream_lines[0]):
+                raise ValueError(f"Mapped project file places the upstream line changes elsewhere: {mapped}")
 
     for workflow in publisher_receipt.PUBLISHERS:
         if blob_and_mode(base, workflow, root) != blob_and_mode(accepted, workflow, root):
@@ -119,7 +129,7 @@ def main() -> int:
     try:
         verify(json.loads(RECEIPT.read_text(encoding="utf-8")))
     except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError) as error:
-        print(f"Invalid eighth source-tip refresh: {error}", file=sys.stderr)
+        print(f"Invalid tenth source-tip refresh: {error}", file=sys.stderr)
         return 1
     print("Verified the Extensions 3cf50295 history join, the mapped Dapper files and current HEAD")
     return 0
