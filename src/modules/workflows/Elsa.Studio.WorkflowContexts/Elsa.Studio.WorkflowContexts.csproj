@@ -13,4 +13,8 @@
         <PackageReference Include="Elsa.Studio.Workflows"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <PackageReference Include="Blazored.FluentValidation"/>
+    </ItemGroup>
+
 </Project>
