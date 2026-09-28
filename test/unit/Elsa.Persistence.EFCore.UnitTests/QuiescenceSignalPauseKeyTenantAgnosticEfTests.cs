@@ -1,5 +1,6 @@
 using Elsa.Common;
 using Elsa.Common.Multitenancy;
+using Elsa.KeyValues.Contracts;
 using Elsa.KeyValues.Entities;
 using Elsa.KeyValues.Models;
 using Elsa.Persistence.EFCore;
@@ -154,6 +155,69 @@ public class QuiescenceSignalPauseKeyTenantAgnosticEfTests
         Assert.False(restarted.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
     }
 
+    [Theory(DisplayName = "Two-node shared SQLite: restart is unpaused whether A resumes before or after B writes")]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TwoNodeLegacyAdoption_RestartIsUnpaused(bool resumeBeforeBWrites)
+    {
+        await using var harness = await EfHarness.CreateAsync(tenancyEnabled: true);
+        await harness.SeedAsync(LegacyPauseKey, "legacy-maintenance", Tenant.DefaultTenantId);
+
+        var gatedB = new GatedWritesKeyValueStore(harness.Store);
+        var nodeA = harness.CreateSignal();
+        var nodeB = harness.CreateSignal(gatedB);
+
+        var bInit = nodeB.InitializePersistedStateAsync(CancellationToken.None).AsTask();
+        await gatedB.WriteStarted.Task;
+        await nodeA.InitializePersistedStateAsync(CancellationToken.None);
+        Assert.True(nodeA.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+
+        if (resumeBeforeBWrites)
+            await nodeA.ResumeAsync("op", CancellationToken.None);
+
+        gatedB.ReleaseWrites();
+        await bInit;
+        Assert.True(nodeB.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+
+        if (!resumeBeforeBWrites)
+            await nodeA.ResumeAsync("op", CancellationToken.None);
+
+        var restarted = harness.CreateSignal();
+        await restarted.InitializePersistedStateAsync(CancellationToken.None);
+
+        Assert.False(restarted.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.Null(await harness.FindIgnoringFiltersAsync(HostPauseKey));
+        Assert.Null(await harness.FindIgnoringFiltersAsync(LegacyPauseKey));
+    }
+
+    [Fact(DisplayName = "Two-node shared SQLite: loser stays paused while the winner's host save is gated")]
+    public async Task TwoNodeLegacyAdoption_LoserIsPausedWhileWinnerHostSaveIsGated()
+    {
+        await using var harness = await EfHarness.CreateAsync(tenancyEnabled: true);
+        await harness.SeedAsync(LegacyPauseKey, "legacy-maintenance", Tenant.DefaultTenantId);
+
+        var gatedB = new GatedWritesKeyValueStore(harness.Store);
+        var gatedA = new GatedHostSaveKeyValueStore(harness.Store);
+        var nodeA = harness.CreateSignal(gatedA);
+        var nodeB = harness.CreateSignal(gatedB);
+
+        var bInit = nodeB.InitializePersistedStateAsync(CancellationToken.None).AsTask();
+        await gatedB.WriteStarted.Task;
+        var aInit = nodeA.InitializePersistedStateAsync(CancellationToken.None).AsTask();
+        await gatedA.SaveStarted.Task;
+
+        gatedB.ReleaseWrites();
+        await bInit;
+
+        Assert.True(nodeB.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.Equal("legacy-maintenance", nodeB.CurrentState.PauseReasonText);
+        Assert.Null(await harness.FindIgnoringFiltersAsync(HostPauseKey));
+
+        gatedA.ReleaseSave();
+        await aInit;
+        Assert.True(nodeA.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+    }
+
     [Fact(DisplayName = "With multitenancy off, a legacy NULL row still restores as paused")]
     public async Task LegacyNullRow_WithTenancyOff_RestoresPaused()
     {
@@ -275,7 +339,7 @@ public class QuiescenceSignalPauseKeyTenantAgnosticEfTests
                 cycleRegistry);
         }
 
-        public QuiescenceSignal CreateSignal() =>
+        public QuiescenceSignal CreateSignal(IKeyValueStore? store = null) =>
             QuiescenceSignal.Create(
                 Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions
                 {
@@ -283,7 +347,7 @@ public class QuiescenceSignalPauseKeyTenantAgnosticEfTests
                 }),
                 _clock,
                 _cycleRegistry,
-                Store,
+                store ?? Store,
                 TenantAccessor);
 
         public IDisposable UseTenant(string tenantId) =>
@@ -320,6 +384,86 @@ public class QuiescenceSignalPauseKeyTenantAgnosticEfTests
             if (File.Exists(_databasePath))
                 File.Delete(_databasePath);
         }
+    }
+
+    /// <summary>
+    /// Wraps the shared EF store and gates every write so a sibling can adopt (and optionally
+    /// resume) after this node has already read the leftover and decided to adopt.
+    /// </summary>
+    private sealed class GatedWritesKeyValueStore : IKeyValueStore
+    {
+        private readonly IKeyValueStore _inner;
+        public readonly TaskCompletionSource WriteStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _writeGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public GatedWritesKeyValueStore(IKeyValueStore inner) => _inner = inner;
+
+        public void ReleaseWrites() => _writeGate.TrySetResult();
+
+        public async Task SaveAsync(SerializedKeyValuePair keyValuePair, CancellationToken cancellationToken)
+        {
+            WriteStarted.TrySetResult();
+            await _writeGate.Task;
+            await _inner.SaveAsync(keyValuePair, cancellationToken);
+        }
+
+        public Task<SerializedKeyValuePair?> FindAsync(KeyValueFilter filter, CancellationToken cancellationToken) =>
+            _inner.FindAsync(filter, cancellationToken);
+
+        public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken) =>
+            _inner.FindManyAsync(filter, cancellationToken);
+
+        public async Task DeleteAsync(string key, CancellationToken cancellationToken)
+        {
+            WriteStarted.TrySetResult();
+            await _writeGate.Task;
+            await _inner.DeleteAsync(key, cancellationToken);
+        }
+
+        public async Task<bool> TryDeleteAsync(string key, CancellationToken cancellationToken = default)
+        {
+            WriteStarted.TrySetResult();
+            await _writeGate.Task;
+            return await _inner.TryDeleteAsync(key, cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// Wraps the shared EF store and gates only the host-pause SaveAsync so a sibling can lose
+    /// the leftover delete while the winner's host key is not yet visible.
+    /// </summary>
+    private sealed class GatedHostSaveKeyValueStore : IKeyValueStore
+    {
+        private readonly IKeyValueStore _inner;
+        public readonly TaskCompletionSource SaveStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _saveGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public GatedHostSaveKeyValueStore(IKeyValueStore inner) => _inner = inner;
+
+        public void ReleaseSave() => _saveGate.TrySetResult();
+
+        public async Task SaveAsync(SerializedKeyValuePair keyValuePair, CancellationToken cancellationToken)
+        {
+            if (keyValuePair.Key == HostPauseKey)
+            {
+                SaveStarted.TrySetResult();
+                await _saveGate.Task;
+            }
+
+            await _inner.SaveAsync(keyValuePair, cancellationToken);
+        }
+
+        public Task<SerializedKeyValuePair?> FindAsync(KeyValueFilter filter, CancellationToken cancellationToken) =>
+            _inner.FindAsync(filter, cancellationToken);
+
+        public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken) =>
+            _inner.FindManyAsync(filter, cancellationToken);
+
+        public Task DeleteAsync(string key, CancellationToken cancellationToken) =>
+            _inner.DeleteAsync(key, cancellationToken);
+
+        public Task<bool> TryDeleteAsync(string key, CancellationToken cancellationToken = default) =>
+            _inner.TryDeleteAsync(key, cancellationToken);
     }
 
     /// <summary>
