@@ -155,7 +155,7 @@ public class QuiescenceSignalPauseKeyTenantAgnosticEfTests
         Assert.False(restarted.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
     }
 
-    [Theory]
+    [Theory(DisplayName = "Two-node shared SQLite: restart is unpaused whether A resumes before or after B writes")]
     [InlineData(false)]
     [InlineData(true)]
     public async Task TwoNodeLegacyAdoption_RestartIsUnpaused(bool resumeBeforeBWrites)

@@ -127,7 +127,7 @@ public class QuiescenceSignalPersistenceTests
         Assert.False(store.Pairs.ContainsKey("elsa.quiescence.pause.default"));
     }
 
-    [Theory]
+    [Theory(DisplayName = "Two-node adoption: restart is unpaused whether A resumes before or after B writes")]
     [InlineData(false)]
     [InlineData(true)]
     public async Task TwoNodeLegacyAdoption_RestartIsUnpaused(bool resumeBeforeBWrites)
