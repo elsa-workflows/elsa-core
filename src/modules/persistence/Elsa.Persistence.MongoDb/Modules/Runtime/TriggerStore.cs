@@ -46,8 +46,8 @@ public class MongoTriggerStore(MongoDbStore<StoredTrigger> mongoDbStore) : ITrig
 
     public async ValueTask<Page<StoredTrigger>> FindManyAsync<TProp>(TriggerFilter filter, PageArgs pageArgs, StoredTriggerOrder<TProp> order, CancellationToken cancellationToken = default)
     {
-        var count = await mongoDbStore.CountAsync(queryable => Filter(queryable, filter), cancellationToken);
-        var results = await mongoDbStore.FindManyAsync(queryable => Paginate(Order(Filter(queryable, filter), order), pageArgs), cancellationToken).ToList();
+        var count = await mongoDbStore.CountAsync(queryable => Filter(queryable, filter), filter.TenantAgnostic, cancellationToken);
+        var results = await mongoDbStore.FindManyAsync(queryable => Paginate(Order(Filter(queryable, filter), order), pageArgs), filter.TenantAgnostic, cancellationToken).ToList();
         return new(results, count);
     }
 
