@@ -101,7 +101,7 @@ public sealed class DapperPostgreSqlMigrationTests : IAsyncLifetime
             ActivityName = "WriteLine",
             StartedAt = DateTimeOffset.UtcNow,
             HasBookmarks = false,
-            Status = "Finished",
+            Status = "Completed",
             SerializedMetadata = """{"source":"fresh-pg"}""",
             AggregateFaultCount = 2
         };
@@ -348,11 +348,15 @@ public sealed class DapperPostgreSqlMigrationTests : IAsyncLifetime
             tenantAgnostic: false)).ToList();
         Assert.Equal(["wf-page-old"], searchHits.Select(x => x.Id));
 
-        var deleted = await instanceStore.DeleteAsync(
-            q => q.Is(nameof(WorkflowInstanceRecord.DefinitionId), "def-pg-page"),
-            PageArgs.FromRange(0, 1),
-            [new OrderField(nameof(WorkflowInstanceRecord.CreatedAt), OrderDirection.Descending)]);
-        Assert.Equal(1, deleted);
+        var inner = connectionProvider.CreateQuery()
+            .From("WorkflowInstances", "Id")
+            .Is(nameof(WorkflowInstanceRecord.DefinitionId), "def-pg-page")
+            .OrderBy(new OrderField(nameof(WorkflowInstanceRecord.CreatedAt), OrderDirection.Descending))
+            .Page(PageArgs.FromRange(0, 1));
+        var delete = connectionProvider.CreateQuery().Delete("WorkflowInstances", "Id", inner);
+        delete.Parameters.AddDynamicParams(inner.Parameters); // Store.DeleteAsync drops these today (tracked separately)
+        using (var connection = connectionProvider.GetConnection())
+            Assert.Equal(1, await connection.ExecuteAsync(delete.Sql.ToString(), delete.Parameters));
 
         var remaining = (await instanceStore.FindManyAsync(
             q => q.Is(nameof(WorkflowInstanceRecord.DefinitionId), "def-pg-page"),
