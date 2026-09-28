@@ -1,5 +1,5 @@
+using FluentMigrator;
 using FluentMigrator.Runner;
-using FluentMigrator.Runner.Processors;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.Dapper.UnitTests;
