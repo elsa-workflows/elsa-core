@@ -222,8 +222,9 @@ public class QuiescenceSignalPersistenceTests
             SerializedValue = "legacy-maintenance"
         };
 
-        Assert.True(await store.TryDeleteAsync("elsa.quiescence.pause.default"));
-        Assert.False(await store.TryDeleteAsync("elsa.quiescence.pause.default"));
+        IKeyValueStore kv = store;
+        Assert.True(await kv.TryDeleteAsync("elsa.quiescence.pause.default"));
+        Assert.False(await kv.TryDeleteAsync("elsa.quiescence.pause.default"));
         Assert.False(store.Pairs.ContainsKey("elsa.quiescence.pause.default"));
     }
 
