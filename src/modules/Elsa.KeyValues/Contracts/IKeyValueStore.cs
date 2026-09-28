@@ -34,8 +34,10 @@ public interface IKeyValueStore
     /// </summary>
     /// <returns><c>true</c> if a row was removed; <c>false</c> if the key was already absent.</returns>
     /// <remarks>
-    /// The default implementation is not atomic: it finds by key, then calls <see cref="DeleteAsync"/>.
-    /// Stores should override this with an atomic delete that reports affected rows.
+    /// The default implementation is not concurrency-safe: two concurrent callers can both get
+    /// <c>true</c> because it finds by key and then calls <see cref="DeleteAsync"/>. Shared stores
+    /// must override this with a single count-checked delete. Decorators must forward
+    /// <see cref="TryDeleteAsync"/>, or they fall back to this non-atomic default.
     /// </remarks>
     async Task<bool> TryDeleteAsync(string key, CancellationToken cancellationToken = default)
     {

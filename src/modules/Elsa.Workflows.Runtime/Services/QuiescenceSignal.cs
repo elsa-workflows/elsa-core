@@ -274,9 +274,10 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         if (_options.Value.PausePersistence != PausePersistencePolicy.AcrossReactivations)
             return;
 
-        // Legacy EF rows used elsa.quiescence.pause.{shell} and may be stamped '', NULL, or a named tenant.
-        // Memory starts empty on restart, so the leftover-row risk is EF-only. The host-pause key
-        // never shares that PK; startup adopts a visible leftover and always deletes it.
+        // Legacy persistent-store rows used elsa.quiescence.pause.{shell} and may be stamped '', NULL,
+        // or a named tenant. Memory starts empty on restart, so the leftover-row risk is on
+        // persistent stores (EF, Dapper, MongoDb). The host-pause key never shares that PK;
+        // startup adopts a visible leftover and always deletes it.
         await UseKeyValueStoreAsync(async store =>
         {
             var live = Volatile.Read(ref _state);
@@ -319,6 +320,13 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     /// the one that actually removed the leftover. Always delete a visible leftover so a
     /// later resume cannot be undone by a half-failed adoption.
     /// </summary>
+    /// <remarks>
+    /// Residual windows: a crash between the winning delete and the host-key save loses the
+    /// 3.8 pause (milliseconds, first 3.9 start that sees a leftover). A failed host-key save
+    /// plus a simultaneous resume can write the leftover back; the next restart re-pauses
+    /// (fail-safe). A node whose reads both fall inside the delete→save gap sees neither row
+    /// and starts unpaused until its next restart.
+    /// </remarks>
     private async Task<SerializedKeyValuePair?> SweepAndAdoptLegacyPauseAsync(
         SerializedKeyValuePair? hostPause,
         CancellationToken cancellationToken)
@@ -342,9 +350,9 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
             defaultValue: false,
             foundUnder);
         if (!deleted)
-            return await FindAsync(_persistenceKey, AgnosticTenant, cancellationToken);
+            return await FindAsync(_persistenceKey, AgnosticTenant, cancellationToken) ?? legacy;
 
-        return await SaveAdoptedOrRestoreLegacyAsync(legacy, foundUnder, cancellationToken);
+        return await SaveAdoptedOrRestoreLegacyAsync(legacy, foundUnder, CancellationToken.None);
     }
 
     private async Task<(SerializedKeyValuePair? Pair, Tenant FoundUnder)> FindVisibleLegacyAsync(
