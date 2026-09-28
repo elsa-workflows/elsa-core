@@ -2,6 +2,10 @@
 
 This is a source and package-metadata audit for the five duplicate package IDs in the consolidation inventory. It identifies a canonical candidate and the compatibility work still required. It does not approve package retirement, publisher cutover, or a credential-data conversion.
 
+## Maintainer decisions (2026-09-28)
+
+The open policy questions in this ledger are decided. Legacy values are re-entered or rotated into Core, never converted. The five legacy packages are deprecated at 3.10.0 and are not packed by the monorepo. The #8360 unsupported-ID policy is the reviewed decision for #8301 criterion 5. The legacy `secrets:write` widening is documented, not changed. Host aliases stay a routing concern. See [the disposition record](consolidation/secrets-legacy-package-disposition.md) and the [upgrade guide](../migrations/secrets-legacy-extensions-upgrade.md). The evidence below is unchanged.
+
 ## Source snapshots
 
 The executable source comparison uses these exact commits:
