@@ -23,7 +23,7 @@ public class Initial : Migration
             .WithColumn("Hash").AsString().Nullable().Indexed()
             .WithColumn("SerializedPayload").AsString(MaxValue).Nullable();
 
-        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
+        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres", "PostgreSQL")
             .Create
             .Table("Bookmarks")
             .WithColumn("Id").AsString().PrimaryKey()
@@ -49,7 +49,7 @@ public class Initial : Migration
             .WithColumn("SerializedMetadata").AsString(MaxValue).Nullable()
             .WithColumn("CreatedAt").AsDateTime2().NotNullable().Indexed();
 
-        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
+        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres", "PostgreSQL")
             .Create
             .Table("WorkflowExecutionLogRecords")
             .WithColumn("Id").AsString().PrimaryKey()
@@ -100,7 +100,7 @@ public class Initial : Migration
             .WithColumn("Sequence").AsInt64().NotNullable().Indexed()
             ;
         
-        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
+        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres", "PostgreSQL")
             .Create
             .Table("ActivityExecutionRecords")
             .WithColumn("Id").AsString().PrimaryKey()
@@ -140,7 +140,7 @@ public class Initial : Migration
             .WithColumn("Status").AsString().NotNullable().Indexed()
             ;
 
-        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
+        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres", "PostgreSQL")
             .Create
             .Table("WorkflowInboxMessages")
             .WithColumn("Id").AsString().PrimaryKey()
