@@ -14,11 +14,13 @@ namespace Elsa.Persistence.MongoDb.Common;
 /// </summary>
 /// <remarks>
 /// For documents that derive from <see cref="Entity"/>, an ambient tenant ID is assigned only when
-/// the document's <see cref="Entity.TenantId"/> is <see langword="null"/>. Explicit tenant IDs,
-/// including <see cref="Tenant.AgnosticTenantId"/>, are preserved. Tenant-scoped reads include
-/// agnostic documents, while tenant-scoped deletes exclude them. Pass <c>tenantAgnostic: true</c>
-/// (or use an explicit <c>*</c> tenant context) when an operation is intended to manage shared
-/// documents.
+/// the document's <see cref="Entity.TenantId"/> is <see langword="null"/> or empty (the default
+/// tenant). Explicit tenant IDs, including <see cref="Tenant.AgnosticTenantId"/>, are preserved.
+/// Upserts match the key together with that stamped TenantId, and only replace a row owned by the
+/// writer or <see cref="Tenant.AgnosticTenantId"/>; a miss against an existing <c>_id</c> surfaces
+/// MongoDB's duplicate-key error. Tenant-scoped reads include agnostic documents, while
+/// tenant-scoped deletes exclude them. Pass <c>tenantAgnostic: true</c> (or use an explicit
+/// <c>*</c> tenant context) when an operation is intended to manage shared documents.
 ///
 /// Existing documents with a <see langword="null"/> tenant ID are not migrated automatically. They
 /// remain in the ambient/default scope; deployments that need them to be shared must migrate those
@@ -73,7 +75,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     public async Task<TDocument> SaveAsync(TDocument document, CancellationToken cancellationToken = default)
     {
         ApplyTenantId(document);
-        return await collection.FindOneAndReplaceAsync(document.BuildIdFilter(), document, new FindOneAndReplaceOptions<TDocument>
+        return await collection.FindOneAndReplaceAsync(CreateTenantOwnedUpsertFilter(document, document.BuildIdFilter()), document, new FindOneAndReplaceOptions<TDocument>
         {
             ReturnDocument = ReturnDocument.After,
             IsUpsert = true
@@ -89,7 +91,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     public async Task<TDocument> SaveAsync<TResult>(TDocument document, Expression<Func<TDocument, TResult>> selector, CancellationToken cancellationToken = default)
     {
         ApplyTenantId(document);
-        return await collection.FindOneAndReplaceAsync(document.BuildExpression(selector), document, new FindOneAndReplaceOptions<TDocument>
+        return await collection.FindOneAndReplaceAsync(CreateTenantOwnedUpsertFilter(document, document.BuildExpression(selector)), document, new FindOneAndReplaceOptions<TDocument>
         {
             ReturnDocument = ReturnDocument.After,
             IsUpsert = true
@@ -109,7 +111,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
 
         foreach (var document in documentsList)
         {
-            var replacement = new ReplaceOneModel<TDocument>(document.BuildIdFilter(), document)
+            var replacement = new ReplaceOneModel<TDocument>(CreateTenantOwnedUpsertFilter(document, document.BuildIdFilter()), document)
             {
                 IsUpsert = true
             };
@@ -136,7 +138,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
 
         foreach (var document in documentsList)
         {
-            var replacement = new ReplaceOneModel<TDocument>(document.BuildFilter(primaryKey), document)
+            var replacement = new ReplaceOneModel<TDocument>(CreateTenantOwnedUpsertFilter(document, document.BuildFilter(primaryKey)), document)
             {
                 IsUpsert = true
             };
@@ -483,23 +485,42 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
 
     private void ApplyTenantId(TDocument document)
     {
-        var tenantId = GetTenantId();
+        if (document is not Entity tenantDocument)
+            return;
 
-        // Preserve explicit tenant IDs, including tenant-agnostic ("*") entities. Only stamp
-        // entities that have not been assigned an owner yet.
-        if (document is Entity { TenantId: null } tenantDocument)
-            tenantDocument.TenantId = tenantId;
+        // RoleManager/UserManager stamp "" for the default tenant. Treat empty like GetTenantId
+        // (EmptyToNull) so a default-tenant re-save matches the stored null owner.
+        tenantDocument.TenantId = tenantDocument.TenantId.EmptyToNull() ?? GetTenantId();
     }
 
     private void ApplyTenantId(IEnumerable<TDocument> documents)
     {
-        var tenantId = GetTenantId();
-
         foreach (var document in documents)
-        {
-            if (document is Entity { TenantId: null } tenantDocument)
-                tenantDocument.TenantId = tenantId;
-        }
+            ApplyTenantId(document);
+    }
+
+    /// <summary>
+    /// Upsert filter: key/Id AND TenantId equals the document's TenantId (after stamping)
+    /// AND that TenantId is the writer's tenant or <see cref="Tenant.AgnosticTenantId"/>.
+    /// The writer is <see langword="null"/> for the default tenant, matching read
+    /// visibility. Equality on TenantId means a write can never change a row's owner, so a
+    /// named tenant cannot match null-owned rows. This is not the strict write scope; a
+    /// named tenant may still replace a <c>*</c> row when the incoming document keeps
+    /// TenantId as <c>*</c> (the populator).
+    /// </summary>
+    private FilterDefinition<TDocument> CreateTenantOwnedUpsertFilter(TDocument document, Expression<Func<TDocument, bool>> keyFilter)
+    {
+        var filter = Builders<TDocument>.Filter.Where(keyFilter);
+
+        if (document is not Entity entity)
+            return filter;
+
+        var documentTenantId = entity.TenantId;
+        var writerTenantId = GetTenantId();
+
+        return filter
+               & Builders<TDocument>.Filter.Where(x => (x as Entity)!.TenantId == documentTenantId)
+               & Builders<TDocument>.Filter.Where(x => (x as Entity)!.TenantId == writerTenantId || (x as Entity)!.TenantId == Tenant.AgnosticTenantId);
     }
 
     /// <summary>
