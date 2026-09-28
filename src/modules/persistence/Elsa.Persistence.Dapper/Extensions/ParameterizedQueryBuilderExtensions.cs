@@ -275,11 +275,11 @@ public static class ParameterizedQueryBuilderExtensions
 
         var sql = query.Sql;
         var options = versionOptions.Value;
-        if (options.IsDraft) sql.AppendLine($"and {query.QuoteIdent("IsPublished")} = 0");
-        if (options.IsLatest) sql.AppendLine($"and {query.QuoteIdent("IsLatest")} = 1");
-        if (options.IsPublished) sql.AppendLine($"and {query.QuoteIdent("IsPublished")} = 1");
-        if (options.IsLatestOrPublished) sql.AppendLine($"and ({query.QuoteIdent("IsLatest")} = 1 or {query.QuoteIdent("IsPublished")} = 1)");
-        if (options.IsLatestAndPublished) sql.AppendLine($"and {query.QuoteIdent("IsLatest")} = 1 and {query.QuoteIdent("IsPublished")} = 1");
+        if (options.IsDraft) sql.AppendLine($"and {query.QuoteIdent("IsPublished")} = {query.BoolLit(false)}");
+        if (options.IsLatest) sql.AppendLine($"and {query.QuoteIdent("IsLatest")} = {query.BoolLit(true)}");
+        if (options.IsPublished) sql.AppendLine($"and {query.QuoteIdent("IsPublished")} = {query.BoolLit(true)}");
+        if (options.IsLatestOrPublished) sql.AppendLine($"and ({query.QuoteIdent("IsLatest")} = {query.BoolLit(true)} or {query.QuoteIdent("IsPublished")} = {query.BoolLit(true)})");
+        if (options.IsLatestAndPublished) sql.AppendLine($"and {query.QuoteIdent("IsLatest")} = {query.BoolLit(true)} and {query.QuoteIdent("IsPublished")} = {query.BoolLit(true)}");
         if (options.Version > 0)
         {
             sql.AppendLine(query.Dialect.And("Version"));
@@ -513,4 +513,7 @@ public static class ParameterizedQueryBuilderExtensions
 
     private static string QuoteIdent(this ParameterizedQuery query, string name) =>
         query.Dialect.QuoteIdentifier(name);
+
+    private static string BoolLit(this ParameterizedQuery query, bool value) =>
+        query.Dialect.BooleanLiteral(value);
 }

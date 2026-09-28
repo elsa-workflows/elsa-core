@@ -3,6 +3,7 @@ using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Persistence.Dapper.Extensions;
 using Elsa.Persistence.Dapper.Modules.Management.Records;
+using Elsa.Persistence.Dapper.Modules.Management.Stores;
 using Elsa.Persistence.Dapper.Modules.Runtime.Records;
 using Elsa.Persistence.Dapper.Services;
 using Elsa.Workflows;
@@ -19,6 +20,7 @@ using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.OrderDefinitions;
 using FluentMigrator.Runner;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -206,6 +208,29 @@ public sealed class DapperPostgreSqlMigrationTests : IAsyncLifetime
         Assert.NotNull(specific);
         Assert.Equal("def-alpha:2", specific.Id);
 
+        var latestOrPublished = (await definitions.FindManyAsync(
+            new WorkflowDefinitionFilter { DefinitionId = "def-alpha", VersionOptions = VersionOptions.LatestOrPublished },
+            CancellationToken.None)).ToList();
+        Assert.Equal(2, latestOrPublished.Count);
+
+        var studioDefinitions = await definitions.FindSummariesAsync(
+            new WorkflowDefinitionFilter { VersionOptions = VersionOptions.Latest },
+            new WorkflowDefinitionOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending),
+            PageArgs.FromRange(0, 10));
+        Assert.Contains(studioDefinitions.Items, summary => summary.DefinitionId == "def-bravo");
+
+        var publisher = sp.GetRequiredService<IWorkflowDefinitionPublisher>();
+        var draft = await publisher.NewAsync(new WriteLine("published from dapper postgres"));
+        draft.Name = "PublishMe";
+        await publisher.SaveDraftAsync(draft);
+        var publishedDefinition = await publisher.PublishAsync(draft.DefinitionId);
+        Assert.True(publishedDefinition.Succeeded);
+
+        var graph = await sp.GetRequiredService<IWorkflowDefinitionService>()
+            .FindWorkflowGraphAsync(draft.DefinitionId, VersionOptions.Published);
+        Assert.NotNull(graph);
+        Assert.Equal(draft.DefinitionId, graph.Workflow.Identity.DefinitionId);
+
         var page = await instances.FindManyAsync(
             new WorkflowInstanceFilter { DefinitionId = "def-pg-1" },
             PageArgs.FromRange(0, 10),
@@ -216,6 +241,50 @@ public sealed class DapperPostgreSqlMigrationTests : IAsyncLifetime
             new WorkflowInstanceFilter { SearchTerm = "def-pg-1" },
             new WorkflowInstanceOrder<string>(x => x.Id, OrderDirection.Ascending))).ToList();
         Assert.Contains(named, instance => instance.DefinitionId == "def-pg-1");
+
+        var studioInstances = await instances.SummarizeManyAsync(
+            new WorkflowInstanceFilter { SearchTerm = "def-pg-1" },
+            PageArgs.FromRange(0, 10),
+            new WorkflowInstanceOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Descending));
+        Assert.True(studioInstances.TotalCount >= 1);
+
+        var journal = sp.GetRequiredService<IWorkflowExecutionLogStore>();
+        await journal.SaveAsync(new WorkflowExecutionLogRecord
+        {
+            Id = "log-pg-1",
+            WorkflowDefinitionId = "def-pg-1",
+            WorkflowDefinitionVersionId = "def-pg-1:1",
+            WorkflowInstanceId = "wf-pg-1",
+            WorkflowVersion = 1,
+            ActivityInstanceId = "act-inst-1",
+            ActivityId = "act-1",
+            ActivityType = "Elsa.WriteLine",
+            ActivityTypeVersion = 1,
+            ActivityNodeId = "node-1",
+            Timestamp = DateTimeOffset.UtcNow,
+            Sequence = 1,
+            EventName = "Executed"
+        });
+        var journalPage = await journal.FindManyAsync(
+            new WorkflowExecutionLogRecordFilter { WorkflowInstanceId = "wf-pg-1" },
+            PageArgs.FromRange(0, 10),
+            new WorkflowExecutionLogRecordOrder<DateTimeOffset>(x => x.Timestamp, OrderDirection.Descending));
+        Assert.Contains(journalPage.Items, record => record.Id == "log-pg-1");
+
+        var activities = sp.GetRequiredService<IActivityExecutionStore>();
+        var orderedActivities = (await activities.FindManyAsync(
+            new ActivityExecutionRecordFilter { WorkflowInstanceId = "wf-pg-1" },
+            new ActivityExecutionRecordOrder<DateTimeOffset>(x => x.StartedAt, OrderDirection.Descending))).ToList();
+        Assert.Contains(orderedActivities, record => record.Id == "rec-pg-1");
+
+        InsertBookmarkQueueRow("bq-1", "wf-pg-1", t0);
+        InsertBookmarkQueueRow("bq-2", "wf-pg-1", t0.AddMinutes(1));
+        var queue = sp.GetRequiredService<IBookmarkQueueStore>();
+        var queuePage = await queue.PageAsync(
+            PageArgs.FromRange(0, 10),
+            new BookmarkQueueFilter { WorkflowInstanceId = "wf-pg-1" },
+            new BookmarkQueueItemOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Descending));
+        Assert.Equal(["bq-2", "bq-1"], queuePage.Items.Select(x => x.Id));
 
         var tenantAccessor = new TestTenantAccessor();
         var connectionProvider = new PostgreSqlDbConnectionProvider(_connectionString);
@@ -284,6 +353,32 @@ public sealed class DapperPostgreSqlMigrationTests : IAsyncLifetime
             OrderDirection.Descending,
             tenantAgnostic: false)).ToList();
         Assert.Equal(["wf-page-mid", "wf-page-old"], remaining.Select(x => x.Id));
+
+        await instanceStore.SaveAsync(new WorkflowInstanceRecord
+        {
+            Id = "wf-interrupt",
+            DefinitionId = "def-pg-page",
+            DefinitionVersionId = "def-pg-page:1",
+            Version = 1,
+            WorkflowState = "{}",
+            Status = "Running",
+            SubStatus = "Executing",
+            CreatedAt = t0,
+            UpdatedAt = t0
+        });
+        var interruptStore = new DapperWorkflowInstanceStore(instanceStore, sp.GetRequiredService<IWorkflowStateSerializer>());
+        Assert.True(await interruptStore.TryMarkInterruptedAsync("wf-interrupt"));
+    }
+
+    private void InsertBookmarkQueueRow(string id, string workflowInstanceId, DateTimeOffset createdAt)
+    {
+        using var connection = new NpgsqlConnection(_connectionString);
+        connection.Execute(
+            """
+            INSERT INTO "BookmarkQueueItems" ("Id", "WorkflowInstanceId", "CreatedAt")
+            VALUES (@id, @workflowInstanceId, @createdAt)
+            """,
+            new { id, workflowInstanceId, createdAt });
     }
 
     private static WorkflowDefinition Definition(

@@ -14,6 +14,9 @@ public abstract class SqlDialectBase : ISqlDialect
     public virtual string QuoteIdentifier(string name) => name;
 
     /// <inheritdoc />
+    public virtual string BooleanLiteral(bool value) => value ? "1" : "0";
+
+    /// <inheritdoc />
     public virtual string From(string table) => From(table, "*");
 
     /// <inheritdoc />

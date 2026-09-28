@@ -65,9 +65,11 @@ public sealed class PostgreSqlDialectTests
         var queries = NonPgQuerySqlSnapshotTests.BuildQueries(_dialect).ToDictionary(x => x.Label, x => x.Sql);
 
         Assert.Contains("order by \"CreatedAt\" desc", queries["order-desc"], StringComparison.Ordinal);
-        Assert.Contains("and \"IsLatest\" = 1", queries["version-latest"], StringComparison.Ordinal);
+        Assert.Contains("and \"IsLatest\" = true", queries["version-latest"], StringComparison.Ordinal);
+        Assert.Contains("and \"IsPublished\" = false", queries["version-draft"], StringComparison.Ordinal);
         Assert.Contains("\"Name\" like @SearchTermLike", queries["definition-search"], StringComparison.Ordinal);
         Assert.Contains("and \"Id\" in (", queries["paged-delete"], StringComparison.Ordinal);
+        Assert.DoesNotContain("= 1", queries["version-latest"], StringComparison.Ordinal);
         Assert.DoesNotContain("order by CreatedAt desc\n", queries["order-desc"], StringComparison.Ordinal);
     }
 
