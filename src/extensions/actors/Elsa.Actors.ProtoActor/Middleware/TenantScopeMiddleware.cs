@@ -45,7 +45,10 @@ public static class TenantScopeMiddleware
         {
             // Multitenancy is optional for a standalone actor host; without it there is no tenant to propagate.
             var tenant = sp.GetService<ITenantAccessor>()?.Tenant;
-            if (tenant != null) envelope.WithHeader(HeaderNames.TenantId, tenant.Id);
+            if (tenant != null)
+            {
+                envelope.WithHeader(HeaderNames.TenantId, tenant.Id);
+            }
             await next(context, target, envelope);
         }
 
