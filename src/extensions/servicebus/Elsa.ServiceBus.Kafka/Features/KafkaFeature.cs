@@ -1,5 +1,7 @@
+using Elsa.Common.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
+using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.ServiceBus.Kafka.Factories;
 using Elsa.ServiceBus.Kafka.Implementations;
@@ -11,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.ServiceBus.Kafka;
 
+[DependsOn(typeof(MultitenancyFeature))]
 public class KafkaFeature(IModule module) : FeatureBase(module)
 {
     private Action<KafkaOptions> _configureOptions = _ => { };

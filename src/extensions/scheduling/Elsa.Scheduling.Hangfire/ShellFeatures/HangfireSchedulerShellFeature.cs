@@ -1,4 +1,5 @@
 using CShells.Features;
+using Elsa.Common.ShellFeatures;
 using Elsa.Scheduling.Hangfire.Handlers;
 using Elsa.Scheduling.Hangfire.Services;
 using Elsa.Scheduling.ShellFeatures;
@@ -16,7 +17,7 @@ namespace Elsa.Scheduling.Hangfire.ShellFeatures;
 [ShellFeature(
     DisplayName = "Hangfire Workflow Scheduler",
     Description = "Uses Hangfire to schedule workflow invocations",
-    DependsOn = [typeof(HangfireShellFeature), typeof(SchedulingFeature)])]
+    DependsOn = [typeof(HangfireShellFeature), typeof(SchedulingFeature), typeof(MultitenancyFeature)])]
 [UsedImplicitly]
 public class HangfireSchedulerShellFeature : IShellFeature
 {

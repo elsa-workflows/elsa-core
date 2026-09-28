@@ -1,4 +1,5 @@
 using CShells.Features;
+using Elsa.Common.ShellFeatures;
 using Elsa.Extensions;
 using Elsa.Resilience.ShellFeatures;
 using Elsa.Scheduling.Quartz.Handlers;
@@ -22,7 +23,8 @@ namespace Elsa.Scheduling.Quartz.ShellFeatures;
     DependsOn = [
     typeof(QuartzFeature), 
     typeof(SchedulingFeature), 
-    typeof(ResilienceFeature)])]
+    typeof(ResilienceFeature),
+    typeof(MultitenancyFeature)])]
 [UsedImplicitly]
 public class QuartzSchedulerFeature : IShellFeature
 {
