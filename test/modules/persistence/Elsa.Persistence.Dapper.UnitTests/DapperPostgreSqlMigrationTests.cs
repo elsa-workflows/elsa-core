@@ -219,6 +219,8 @@ public sealed class DapperPostgreSqlMigrationTests : IAsyncLifetime
             PageArgs.FromRange(0, 10));
         Assert.Contains(studioDefinitions.Items, summary => summary.DefinitionId == "def-bravo");
 
+        await sp.GetRequiredService<IActivityRegistryPopulator>().PopulateRegistryAsync();
+
         var publisher = sp.GetRequiredService<IWorkflowDefinitionPublisher>();
         var draft = await publisher.NewAsync(new WriteLine("published from dapper postgres"));
         draft.Name = "PublishMe";
@@ -407,6 +409,7 @@ public sealed class DapperPostgreSqlMigrationTests : IAsyncLifetime
         var services = new ServiceCollection();
         services.AddLogging();
         var module = services.CreateModule();
+        module.AddActivitiesFrom<WriteLine>();
         module.UseDapper(dapper =>
         {
             dapper.DbConnectionProvider = _ => new PostgreSqlDbConnectionProvider(_connectionString);
