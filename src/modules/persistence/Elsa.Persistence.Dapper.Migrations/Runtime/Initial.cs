@@ -28,7 +28,7 @@ public class Initial : Migration
 
         if (!Schema.Table("Bookmarks").Exists())
         {
-            IfDatabase(MigrationDatabases.IsDateTimeOffsetProvider)
+            IfDatabase(MigrationDatabases.DateTimeOffsetProviders)
                 .Create
                 .Table("Bookmarks")
                 .WithColumn("Id").AsString().PrimaryKey()
@@ -57,7 +57,7 @@ public class Initial : Migration
 
         if (!Schema.Table("WorkflowExecutionLogRecords").Exists())
         {
-            IfDatabase(MigrationDatabases.IsDateTimeOffsetProvider)
+            IfDatabase(MigrationDatabases.DateTimeOffsetProviders)
                 .Create
                 .Table("WorkflowExecutionLogRecords")
                 .WithColumn("Id").AsString().PrimaryKey()
@@ -111,7 +111,7 @@ public class Initial : Migration
 
         if (!Schema.Table("ActivityExecutionRecords").Exists())
         {
-            IfDatabase(MigrationDatabases.IsDateTimeOffsetProvider)
+            IfDatabase(MigrationDatabases.DateTimeOffsetProviders)
                 .Create
                 .Table("ActivityExecutionRecords")
                 .WithColumn("Id").AsString().PrimaryKey()
@@ -154,7 +154,7 @@ public class Initial : Migration
 
         if (!Schema.Table("WorkflowInboxMessages").Exists())
         {
-            IfDatabase(MigrationDatabases.IsDateTimeOffsetProvider)
+            IfDatabase(MigrationDatabases.DateTimeOffsetProviders)
                 .Create
                 .Table("WorkflowInboxMessages")
                 .WithColumn("Id").AsString().PrimaryKey()
