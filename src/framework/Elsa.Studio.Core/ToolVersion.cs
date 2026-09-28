@@ -8,7 +8,7 @@ public static class ToolVersion
     /// <summary>
     /// The version of the tool.
     /// </summary>
-    public static readonly Version Version = new(3, 8, 0, 0);
+    public static readonly Version Version = new(3, 9, 0, 0);
     
     /// <summary>
     /// Gets the display version of the tool.
