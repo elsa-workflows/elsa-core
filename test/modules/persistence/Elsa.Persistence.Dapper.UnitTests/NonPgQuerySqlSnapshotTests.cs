@@ -178,9 +178,11 @@ public sealed class NonPgQuerySqlSnapshotTests
         ["definition-search"] = Join(
             "select * from WorkflowDefinitions where 1=1",
             "and (Name like @SearchTermLike or Description like @SearchTermLike or Id like @SearchTerm or DefinitionId like @SearchTerm)"),
+        // ID → Id: SQLite and default-collation SQL Server are case-insensitive, so
+        // there is no behaviour change. This is the only intentional non-PG SQL change.
         ["instance-search"] = Join(
             "select * from WorkflowInstances where 1=1",
-            "and (Name like @SearchTermLike or ID like @SearchTerm or DefinitionId like @SearchTerm or DefinitionVersionId like @SearchTerm or CorrelationId like @SearchTerm)"),
+            "and (Name like @SearchTermLike or Id like @SearchTerm or DefinitionId like @SearchTerm or DefinitionVersionId like @SearchTerm or CorrelationId like @SearchTerm)"),
         ["starts-with"] = Join(
             "select * from WorkflowInstances where 1=1",
             "and Name like @SearchTermLike"),

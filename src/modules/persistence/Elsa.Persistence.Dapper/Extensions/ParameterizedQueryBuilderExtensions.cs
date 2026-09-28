@@ -283,10 +283,7 @@ public static class ParameterizedQueryBuilderExtensions
         if (string.IsNullOrWhiteSpace(searchTerm)) return query;
 
         var searchTermLike = $"%{searchTerm}%";
-        // Non-PG SQL historically used unquoted ID (case-insensitive). PG quotes
-        // identifiers, so this must match FluentMigrator's "Id" or it is 42703.
-        var idColumn = query.Dialect.QuoteIdentifier("Id") == "Id" ? "ID" : "Id";
-        query.Sql.AppendLine($"and ({query.QuoteIdent("Name")} like @SearchTermLike or {query.QuoteIdent(idColumn)} like @SearchTerm or {query.QuoteIdent("DefinitionId")} like @SearchTerm or {query.QuoteIdent("DefinitionVersionId")} like @SearchTerm or {query.QuoteIdent("CorrelationId")} like @SearchTerm)");
+        query.Sql.AppendLine($"and ({query.QuoteIdent("Name")} like @SearchTermLike or {query.QuoteIdent("Id")} like @SearchTerm or {query.QuoteIdent("DefinitionId")} like @SearchTerm or {query.QuoteIdent("DefinitionVersionId")} like @SearchTerm or {query.QuoteIdent("CorrelationId")} like @SearchTerm)");
         query.Parameters.Add("@SearchTerm", searchTerm);
         query.Parameters.Add("@SearchTermLike", searchTermLike);
         return query;
