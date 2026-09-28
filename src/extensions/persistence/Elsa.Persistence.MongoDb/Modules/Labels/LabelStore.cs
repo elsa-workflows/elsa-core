@@ -4,8 +4,6 @@ using Elsa.Labels.Contracts;
 using Elsa.Labels.Entities;
 using Elsa.Persistence.MongoDb.Common;
 using JetBrains.Annotations;
-using MongoDB.Driver;
-using MongoDB.Driver.Linq;
 
 namespace Elsa.Persistence.MongoDb.Modules.Labels;
 
@@ -44,11 +42,11 @@ public class MongoLabelStore : ILabelStore
     {
         if (pageArgs?.Page is null || pageArgs.PageSize is null)
         {
-            var allDocuments = await _labelMongoDbStore.GetCollection().AsQueryable().ToListAsync(cancellationToken);
+            var allDocuments = (await _labelMongoDbStore.ListAsync(cancellationToken: cancellationToken)).ToList();
             return Page.Of(allDocuments, allDocuments.Count);
         }
 
-        var count = await _labelMongoDbStore.GetCollection().AsQueryable().LongCountAsync(cancellationToken);
+        var count = await _labelMongoDbStore.CountAsync(query => query, cancellationToken);
         var documents = (await _labelMongoDbStore.FindManyAsync(query => Paginate(query, pageArgs), cancellationToken)).ToList();
         return Page.Of(documents, count);
     }
