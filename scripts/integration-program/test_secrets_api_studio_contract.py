@@ -118,6 +118,15 @@ class SecretsApiStudioContractTests(unittest.TestCase):
             sorted(project.stem for project in legacy_root.glob('*/*.csproj')),
             self.fixture['legacyOnlyPackages'])
 
+    def test_legacy_only_packages_are_not_packed_by_the_consolidated_publisher(self):
+        # The legacy graph is deprecated at 3.10.0 and keeps its 3.8/3.9 releases; the root pack must not give it a
+        # consolidated version.
+        legacy_root = SCRIPT.parents[2] / Path(self.fixture['importCandidateSourcePaths']['legacyApi']).parents[2]
+
+        for project in sorted(legacy_root.glob('*/*.csproj')):
+            with self.subTest(project=project.stem):
+                self.assertRegex(project.read_text(encoding='utf-8-sig'), r'<IsPackable>\s*false\s*</IsPackable>')
+
     def test_import_candidate_check_fails_closed_on_route_permission_dto_or_snapshot_drift(self):
         paths = self.fixture['importCandidateSourcePaths']
         core_api = paths['coreApi']

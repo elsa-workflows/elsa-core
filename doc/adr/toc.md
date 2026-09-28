@@ -39,3 +39,4 @@
 * [2026-09-25. Reconcile workflow-as-activity registries with durable generations](2026-09-25-reconcile-workflow-activity-registry-with-durable-generations.md)
 * [2026-09-25. Separate workflow connection sharing from grant management and use](2026-09-25-separate-workflow-connection-sharing-authorization.md)
 * [2026-09-27. Decide connection metadata inspection with its own host policy](2026-09-27-dedicated-connection-metadata-inspection-policy.md)
+* [2026-09-28. Release the consolidated packages in lockstep and cut publishers over at 3.10.0](2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md)
