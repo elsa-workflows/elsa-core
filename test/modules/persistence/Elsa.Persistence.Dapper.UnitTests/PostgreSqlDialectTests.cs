@@ -56,4 +56,16 @@ public sealed class PostgreSqlDialectTests
         Assert.Equal("\"Id\"", PostgreSqlDialect.Quote("\"Id\""));
         Assert.Equal("\"foo\"\"bar\"", PostgreSqlDialect.Quote("foo\"bar"));
     }
+
+    [Fact(DisplayName = "PG DateTimeOffset handler accepts DateTime, DateTimeOffset, and string")]
+    public void DateTimeOffsetHandler_AcceptsNpgsqlAndSqliteShapes()
+    {
+        var handler = new Elsa.Persistence.Dapper.TypeHandlers.PostgreSql.DateTimeOffsetHandler();
+        var utc = new DateTime(2026, 9, 28, 7, 52, 22, DateTimeKind.Utc);
+        var dto = new DateTimeOffset(utc);
+
+        Assert.Equal(dto, handler.Parse(dto));
+        Assert.Equal(dto, handler.Parse(utc));
+        Assert.Equal(dto, handler.Parse("2026-09-28T07:52:22+00:00"));
+    }
 }
