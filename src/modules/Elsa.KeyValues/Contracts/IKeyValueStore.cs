@@ -25,7 +25,8 @@ public interface IKeyValueStore
     Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken);
     
     /// <summary>
-    /// If the key is found it deletes the record from the store. 
+    /// If the key is found it deletes the record from the store.
     /// </summary>
-    Task DeleteAsync(string key, CancellationToken cancellationToken);
+    /// <returns><c>true</c> if a row was removed; <c>false</c> if the key was already absent.</returns>
+    Task<bool> DeleteAsync(string key, CancellationToken cancellationToken);
 }

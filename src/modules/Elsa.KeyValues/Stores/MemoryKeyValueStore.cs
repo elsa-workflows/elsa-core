@@ -42,9 +42,8 @@ public class MemoryKeyValueStore : IKeyValueStore
     }
     
     /// <inheritdoc />
-    public Task DeleteAsync(string key, CancellationToken cancellationToken)
+    public Task<bool> DeleteAsync(string key, CancellationToken cancellationToken)
     {
-        _store.DeleteWhere(x => x.Key == key);
-        return Task.CompletedTask;
+        return Task.FromResult(_store.Delete(key));
     }
 }
