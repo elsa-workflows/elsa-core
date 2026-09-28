@@ -509,7 +509,12 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
                & Builders<TDocument>.Filter.Where(x => (x as Entity)!.TenantId == writerTenantId || (x as Entity)!.TenantId == Tenant.AgnosticTenantId);
     }
 
-    private FilterDefinition<TDocument> ApplyTenantScope(FilterDefinition<TDocument> filter, bool tenantAgnostic)
+    /// <summary>
+    /// ANDs the current tenant onto <paramref name="filter"/>. No-ops when
+    /// <paramref name="tenantAgnostic"/> is true or <typeparamref name="TDocument"/> is not an <see cref="Entity"/>.
+    /// Writes using this filter match only the ambient tenant, not tenant-agnostic ("*") rows.
+    /// </summary>
+    public FilterDefinition<TDocument> ApplyTenantScope(FilterDefinition<TDocument> filter, bool tenantAgnostic = false)
     {
         if (tenantAgnostic || !typeof(Entity).IsAssignableFrom(typeof(TDocument)))
             return filter;

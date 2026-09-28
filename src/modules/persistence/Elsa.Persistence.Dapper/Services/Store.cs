@@ -542,7 +542,11 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
 
         var tenant = tenantAccessor.Tenant;
         var tenantId = tenant?.Id;
-        query.Is(nameof(Record.TenantId), (object?)tenantId ?? DBNull.Value);
+        // Default tenant is '' in Elsa and NULL on some legacy rows (#245 / #260).
+        if (string.IsNullOrEmpty(tenantId))
+            query.IsNullOrEmpty(nameof(Record.TenantId));
+        else
+            query.Is(nameof(Record.TenantId), tenantId);
     }
 
     private void SetTenantId(T record)

@@ -155,6 +155,16 @@ public static class ParameterizedQueryBuilderExtensions
     }
 
     /// <summary>
+    /// Matches a default-tenant stamp: <c>NULL</c> or empty string.
+    /// Legacy rows may use either; <see cref="Elsa.Common.Multitenancy.Tenant.DefaultTenantId"/> is <c>''</c>.
+    /// </summary>
+    public static ParameterizedQuery IsNullOrEmpty(this ParameterizedQuery query, string field)
+    {
+        query.Sql.AppendLine($"and ({field} is null or {field} = '')");
+        return query;
+    }
+
+    /// <summary>
     /// Appends an IS NOT NULL clause to the query.
     /// </summary>
     /// <param name="query">The query.</param>

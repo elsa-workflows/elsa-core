@@ -42,6 +42,15 @@ internal class DapperKeyValueStore(Store<KeyValuePairRecord> store) : IKeyValueS
         return store.DeleteAsync(query => query.Is(nameof(KeyValuePairRecord.Id), key), cancellationToken);
     }
 
+    /// <summary>
+    /// Atomic delete: returns true only when the DELETE affected a row.
+    /// Becomes <c>IKeyValueStore.TryDeleteAsync</c> once ElsaVersion includes elsa-core#8538.
+    /// </summary>
+    public async Task<bool> TryDeleteAsync(string key, CancellationToken cancellationToken = default)
+    {
+        return await store.DeleteAsync(query => query.Is(nameof(KeyValuePairRecord.Id), key), cancellationToken) > 0;
+    }
+
     private void ApplyFilter(ParameterizedQuery query, KeyValueFilter filter)
     {
         if (filter.StartsWith)
