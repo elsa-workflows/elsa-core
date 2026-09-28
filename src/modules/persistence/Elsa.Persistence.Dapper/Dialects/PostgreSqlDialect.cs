@@ -109,7 +109,7 @@ public class PostgreSqlDialect : SqlDialectBase, ISqlDialect
         if (identifier.Length >= 2 && identifier[0] == '"' && identifier[^1] == '"')
             return identifier;
 
-        return $"\"{identifier.Replace("\"", "\"\"")}\"";
+        return string.Concat("\"", identifier.Replace("\"", "\"\""), "\"");
     }
 
     private static string QuoteField(string field) => field == "*" ? "*" : Quote(field);
