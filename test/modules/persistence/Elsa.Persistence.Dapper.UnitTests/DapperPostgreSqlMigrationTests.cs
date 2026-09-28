@@ -12,7 +12,7 @@ namespace Elsa.Persistence.Dapper.UnitTests;
 
 /// <summary>
 /// Runs the Dapper FluentMigrator assembly against a fresh PostgreSQL database.
-/// Covers the FluentMigrator 7.2 IfDatabase("Postgres") vs "PostgreSQL" mismatch from issue #255.
+/// Covers the FluentMigrator 7.2 IfDatabase("Postgres") vs PostgreSQL* mismatch from issue #255.
 /// </summary>
 public sealed class DapperPostgreSqlMigrationTests : IAsyncLifetime
 {

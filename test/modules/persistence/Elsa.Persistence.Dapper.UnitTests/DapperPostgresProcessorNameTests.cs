@@ -1,3 +1,4 @@
+using Elsa.Persistence.Dapper.Migrations;
 using FluentMigrator;
 using FluentMigrator.Runner;
 using Microsoft.Extensions.DependencyInjection;
@@ -5,9 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Persistence.Dapper.UnitTests;
 
 /// <summary>
-/// Documents FluentMigrator 7.2's AddPostgres() processor identifiers.
-/// The Dapper IfDatabase lists must include both "Postgres" and "PostgreSQL"
-/// because 7.2 reports the latter (and "PostgreSQL15_0") but not the former.
+/// Documents FluentMigrator 7.2 processor identifiers and the Dapper IfDatabase match.
 /// </summary>
 public sealed class DapperPostgresProcessorNameTests
 {
@@ -33,8 +32,36 @@ public sealed class DapperPostgresProcessorNameTests
         Assert.DoesNotContain("Postgres", names);
 
         var legacyGuard = new[] { "SqlServer", "Oracle", "MySql", "Postgres" };
-        var fixedGuard = new[] { "SqlServer", "Oracle", "MySql", "Postgres", "PostgreSQL" };
         Assert.False(legacyGuard.Any(names.Contains), "IfDatabase(\"Postgres\") must not match FluentMigrator 7.2 AddPostgres().");
-        Assert.True(fixedGuard.Any(names.Contains), "IfDatabase(..., \"PostgreSQL\") must match FluentMigrator 7.2 AddPostgres().");
+        Assert.True(MigrationDatabases.IsDateTimeOffsetProvider(processor.DatabaseType));
+    }
+
+    [Theory]
+    [InlineData("Postgres")]
+    [InlineData("PostgreSQL")]
+    [InlineData("PostgreSQL10_0")]
+    [InlineData("PostgreSQL11_0")]
+    [InlineData("PostgreSQL15_0")]
+    [InlineData("Postgres92")]
+    [InlineData("PostgreSQL92")]
+    [InlineData("postgres")]
+    [InlineData("postgresql15_0")]
+    [InlineData("SqlServer")]
+    [InlineData("Oracle")]
+    [InlineData("MySql")]
+    public void DateTimeOffsetProvider_MatchesSqlServerOracleMySql_AndEveryFluentMigrator72PostgresName(string databaseType)
+    {
+        Assert.True(MigrationDatabases.IsDateTimeOffsetProvider(databaseType));
+    }
+
+    [Theory]
+    [InlineData("Sqlite")]
+    [InlineData("SQLite")]
+    [InlineData("SqlServer2008")]
+    [InlineData("MySql8")]
+    [InlineData("Oracle12c")]
+    public void DateTimeOffsetProvider_DoesNotChangeOtherProviders(string databaseType)
+    {
+        Assert.False(MigrationDatabases.IsDateTimeOffsetProvider(databaseType));
     }
 }
