@@ -31,12 +31,12 @@ public class MongoBookmarkQueueStore(MongoDbStore<BookmarkQueueItem> mongoDbStor
     /// <inheritdoc />
     public async Task<BookmarkQueueItem?> FindAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
     {
-        return await mongoDbStore.FindAsync(query => Filter(query, filter), cancellationToken);
+        return await mongoDbStore.FindAsync(query => Filter(query, filter), filter.TenantAgnostic, cancellationToken);
     }
 
     public async Task<IEnumerable<BookmarkQueueItem>> FindManyAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
     {
-        return await mongoDbStore.FindManyAsync(query => Filter(query, filter), cancellationToken);
+        return await mongoDbStore.FindManyAsync(query => Filter(query, filter), filter.TenantAgnostic, cancellationToken);
     }
 
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
@@ -48,15 +48,15 @@ public class MongoBookmarkQueueStore(MongoDbStore<BookmarkQueueItem> mongoDbStor
 
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
-        var results = await mongoDbStore.FindManyAsync(query => Paginate(Order(Filter(query, filter), orderBy), pageArgs), cancellationToken);
-        var count = await mongoDbStore.CountAsync(queryable => Filter(queryable, filter), cancellationToken);
+        var results = await mongoDbStore.FindManyAsync(query => Paginate(Order(Filter(query, filter), orderBy), pageArgs), filter.TenantAgnostic, cancellationToken);
+        var count = await mongoDbStore.CountAsync(queryable => Filter(queryable, filter), filter.TenantAgnostic, cancellationToken);
         return Page.Of(results.ToList(), count);
     }
 
     /// <inheritdoc />
     public async Task<long> DeleteAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
     {
-        return await mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, cancellationToken);
+        return await mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, filter.TenantAgnostic, cancellationToken);
     }
 
     private IQueryable<BookmarkQueueItem> Filter(IQueryable<BookmarkQueueItem> queryable, BookmarkQueueFilter filter)
