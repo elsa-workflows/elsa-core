@@ -7,7 +7,7 @@ import json
 import unittest
 from unittest.mock import patch
 
-from verify_import_source_tip_refresh_r8 import RECEIPT, git_bytes, verify
+from verify_import_source_tip_refresh_r8 import RECEIPT, git, git_bytes, verify
 
 
 class SourceTipRefreshR8Tests(unittest.TestCase):
@@ -84,6 +84,26 @@ class SourceTipRefreshR8Tests(unittest.TestCase):
         with patch("verify_import_source_tip_refresh_r7.blob_and_mode", side_effect=drifted):
             with self.assertRaisesRegex(ValueError, "changed active publisher workflow at HEAD"):
                 verify(self.receipt)
+
+    def test_extra_upstream_or_mapped_diff_path_is_rejected(self) -> None:
+        base, delta = self.receipt["baseImportHead"], self.receipt["mappedDeltaCommit"]
+        old = self.receipt["mappedChanges"][0]["source"]
+        for scope, extra, message in (
+            ("upstream", "M\tsrc/elsewhere/Unreviewed.cs", "reaches beyond the reviewed MongoDB files"),
+            ("mapped", "src/extensions/persistence/Elsa.Persistence.MongoDb/Unreviewed.cs", "changed unreviewed paths"),
+        ):
+            def with_extra(*args: str, **kwargs: object) -> str:
+                output = git(*args, **kwargs)
+                if scope == "upstream" and args[:2] == ("diff", "--name-status"):
+                    return output + "\n" + extra
+                if scope == "mapped" and args == ("diff", "--name-only", base, delta):
+                    return output + "\n" + extra
+                return output
+
+            with self.subTest(scope=scope), \
+                    patch("verify_import_source_tip_refresh_r8.git", side_effect=with_extra):
+                with self.assertRaisesRegex(ValueError, message):
+                    verify(self.receipt)
 
 
 if __name__ == "__main__":
