@@ -33,8 +33,11 @@ class LegacyAssetDispositionTests(unittest.TestCase):
         self.assertEqual(2, self.ledger["schema_version"])
         self.assertEqual(163, len(self.ledger["assets"]))
         self.assertEqual({"extensions": 80, "studio": 83, "total": 163}, self.ledger["asset_counts"])
-        self.assertEqual(99, sum(row["status"] == "represented_in_core" for row in self.ledger["assets"]))
-        self.assertEqual(3, sum(row["status"] == "retired_from_active_tree" for row in self.ledger["assets"]))
+        self.assertEqual(111, sum(row["status"] == "represented_in_core" for row in self.ledger["assets"]))
+        self.assertEqual(50, sum(row["status"] == "retired_from_active_tree" for row in self.ledger["assets"]))
+        # Only the Dependabot rows wait, on a post-landing check of the FEEDZ_API_KEY Dependabot secret.
+        self.assertEqual({("extensions", ".github/dependabot.yml"), ("studio", ".github/dependabot.yml")}, {
+            (row["original_repository"], row["original_path"]) for row in self.ledger["assets"] if "completion" not in row})
         license_rows = [row for row in self.ledger["assets"] if row["category"] == "license_notice"]
         self.assertEqual(2, len(license_rows))
         self.assertTrue(all(row["status"] == "represented_in_core" and row["completion"]["active_path"] == "LICENSE"

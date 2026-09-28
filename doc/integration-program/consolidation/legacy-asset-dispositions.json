@@ -156,8 +156,17 @@
       "category": "publisher_workflow",
       "owning_workstream": "Program #8194 release governance; package owners",
       "proposed_disposition": "Keep this source publisher inert. Carry package IDs and release-unit conditions into one reviewed publisher only after a separate publisher/cutover decision; do not enable a second push/release publisher.",
-      "evidence_or_gate": "The current root packages.yml still builds on push/release, but publication (Feedz, NuGet, and coverage Pages deploy) is gated behind manual workflow_dispatch opt-in approval (#8497) and no longer runs automatically on push/release. This historical packages.yml belongs to a separate product publisher and is intentionally mapped to .source.",
-      "status": "publisher_must_remain_inert"
+      "evidence_or_gate": "Decided 2026-09-28 in publisher-ci-and-build-configuration-dispositions.md under the lockstep release ADR (doc/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md): the active .github/workflows/packages.yml covers the imported product.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/publisher-ci-and-build-configuration-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "active_path": ".github/workflows/packages.yml",
+        "active_blob": "388c8ffcc3c6e83ff922005dede744d5b97767b9",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -169,8 +178,17 @@
       "category": "pull_request_ci_workflow",
       "owning_workstream": "Feature #8214 CI integration; Story #8215",
       "proposed_disposition": "Translate non-publishing checks into central PR CI with explicit project/TFM coverage; retire this workflow after the canonical solution and test enumeration are verified.",
-      "evidence_or_gate": "At this head all 17 Extensions test projects the old pr.yml built under test/extensions/** (Elsa.Actors.ProtoActor.UnitTests, Elsa.Studio.Agents.Tests, Elsa.Caching.Distributed.ProtoActor.IntegrationTests, Elsa.Logging.Core.UnitTests, Elsa.Logging.Core.IntegrationTests, Elsa.Ldap.UnitTests, Elsa.Mqtt.UnitTests, Elsa.Dapper.UnitTests, Elsa.MongoDb.UnitTests, Elsa.Persistence.Dapper.UnitTests, Elsa.Workflows.Runtime.ProtoActor.UnitTests, Elsa.Scheduling.Hangfire.UnitTests, Elsa.Scheduling.Quartz.ComponentTests, Elsa.Scheduling.Quartz.UnitTests, Elsa.ServiceBus.AzureServiceBus.ComponentTests, Elsa.ServiceBus.MassTransit.UnitTests, Elsa.Slack.Tests) are present in the canonical Elsa.sln, so root build/Build.cs's TestProjects (Solution.AllProjects.Where(x.Name.EndsWith(\"Tests\")), resolved against Elsa.sln, the sole solution at repo root) already selects them. The root \"pr\" workflow run https://github.com/elsa-workflows/elsa-core/actions/runs/36272102515 (attempt 2, commit 1976dd2d4781bad44f13384881e3f00605ba44f9, an ancestor of this head, conclusion success) ran ./build.cmd Compile Test against Elsa.sln itself, not Consolidated.sln, and passed every one of these projects (0 failed) at their declared net10.0 TFM. This refutes the earlier claim that source-import CI coverage was unproven. No reviewed PR yet records this row's specific retirement with a decision document citing that run, so it stays pending.",
-      "status": "pending_canonical_solution_and_ci"
+      "evidence_or_gate": "Decided 2026-09-28 in publisher-ci-and-build-configuration-dispositions.md under the lockstep release ADR (doc/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md): the active .github/workflows/pr.yml covers the imported product.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/publisher-ci-and-build-configuration-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "active_path": ".github/workflows/pr.yml",
+        "active_blob": "ceae09bb533169698e3bb2bdafaeea4e4ba252ca",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -270,8 +288,17 @@
       "category": "scoped_build_properties",
       "owning_workstream": "Feature #8214 build integration; package owners",
       "proposed_disposition": "Retain this behavior in the product-scoped Directory.Build.props, with package metadata kept product-specific; do not apply one product\u2019s warning suppressions or target defaults globally.Preserve Extension package metadata (repository URL, MIT expression, 2025 copyright), documented-build settings, audit configuration, trim settings, and product-specific version properties in src/extensions scope.",
-      "evidence_or_gate": "src/extensions/Directory.Build.props is committed at this head (working tree clean), not only a disposable patch: it preserves the 2025 copyright, MIT license expression, the pinned ElsaVersion/ElsaStudioVersion properties, NuGetAudit and documentation settings, and the IL-trim NoWarn suppressions the disposition requires, independent of Studio's own scoped file. The .github/workflows/prove-studio-package-provenance.yml (pack-studio-core) and .github/workflows/release-elsa-slack.yml (pack-slack-only) packed-package proofs both ran and passed at this exact head (https://github.com/elsa-workflows/elsa-core/actions/runs/36285398358 and https://github.com/elsa-workflows/elsa-core/actions/runs/36285398409, commit ce1111e4421b0e2af9852d55d9e2ebde937fcab5, conclusion success), packing Elsa.Studio.Core and Elsa.Slack respectively; both verify nuspec identity and SourceLink, and only pack-studio-core verifies the shared icon bytes (pack-slack-only does not check the icon). No reviewed PR yet records this row's specific completion with a decision document, so it stays pending; the broader #8260 package-mode/feed-trust gate referenced elsewhere in this ledger is unaffected.",
-      "status": "candidate_scoped_in_disposable_patch"
+      "evidence_or_gate": "Decided 2026-09-28 in publisher-ci-and-build-configuration-dispositions.md under the lockstep release ADR (doc/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md): the active src/extensions/Directory.Build.props covers the imported product.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/publisher-ci-and-build-configuration-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "active_path": "src/extensions/Directory.Build.props",
+        "active_blob": "22f4a350e200119f6d99dd77bc951e6cb156f8e5",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -305,8 +332,17 @@
       "category": "scoped_central_package_versions",
       "owning_workstream": "Feature #8214 dependency/build integration",
       "proposed_disposition": "Keep product-specific central package baselines in scoped props; reconcile conflicts per evaluated target framework and package identity before any shared baseline is selected. Keep Extension dependency versions scoped; do not union or bulk-upgrade them against Core/Studio versions.",
-      "evidence_or_gate": "src/extensions/Directory.Packages.props is committed at this head (working tree clean) as its own central-version file, keeping Extensions' Elsa.* package versions pinned to $(ElsaVersion) separately from Studio's and Core's own Directory.Packages.props, so no package identity has been unioned or bulk-upgraded. The .github/workflows/prove-studio-package-provenance.yml (pack-studio-core) and .github/workflows/release-elsa-slack.yml (pack-slack-only) packed-package proofs both ran and passed at this exact head (https://github.com/elsa-workflows/elsa-core/actions/runs/36285398358 and https://github.com/elsa-workflows/elsa-core/actions/runs/36285398409, commit ce1111e4421b0e2af9852d55d9e2ebde937fcab5, conclusion success), packing Elsa.Studio.Core and Elsa.Slack respectively; both verify nuspec identity and SourceLink, and only pack-studio-core verifies the shared icon bytes (pack-slack-only does not check the icon). Restore/package-mode compatibility for consumers outside these two proof jobs remains the open #8260 gate; no reviewed PR yet records this row's specific completion, so it stays pending.",
-      "status": "candidate_scoped_in_disposable_patch"
+      "evidence_or_gate": "Decided 2026-09-28 in publisher-ci-and-build-configuration-dispositions.md under the lockstep release ADR (doc/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md): the active src/extensions/Directory.Packages.props covers the imported product.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/publisher-ci-and-build-configuration-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "active_path": "src/extensions/Directory.Packages.props",
+        "active_blob": "80cc818159176ac32e1e2026f57cf038eb5531d3",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -388,8 +424,17 @@
       "category": "nuget_source_mapping",
       "owning_workstream": "Build/package maintainers",
       "proposed_disposition": "Do not copy or union the broad Extensions Elsa/Elsa.* Feedz mapping. Keep Core's active root config as the monorepo source policy; add only package-specific mappings shown necessary by a clean package-mode restore and reviewed against feed trust. Retain this source file as import provenance until that #8260 restore/feed gate passes.",
-      "evidence_or_gate": "Pinned source blob e3f020a maps Elsa and every Elsa.* package to Elsa preview Feedz. Active Core NuGet.Config blob still maps only Elsa.Platform.PackageManifest.Generator and Elsa.Platform.PackageManifest to that Feedz and routes the wildcard to NuGet.org. New evidence narrows, but does not close, the gate: the .github/workflows/release-elsa-slack.yml (pack-slack-only) job ran and passed at this exact head (https://github.com/elsa-workflows/elsa-core/actions/runs/36285398409, commit ce1111e4421b0e2af9852d55d9e2ebde937fcab5), restoring and packing src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj in package mode (-p:UseProjectReferences=false) against ElsaVersion 3.8.4 (doc/integration-program/release-units.json's reviewed tested_artifact_dependencies pin, not the old preview 3.8.0-preview.5557) using a minimal NuGet.Config containing only nuget.org, with no Feedz source at all. That proves this one package-mode consumer needs no broader Feedz mapping, but it is scoped to Elsa.Slack at that pinned version; it does not cover every potential package-mode consumer or trust/versioning generally. The #8260 restore/feed gate this row waits on remains open program-wide, so this row stays pending.",
-      "status": "pending_restore_and_feed_review"
+      "evidence_or_gate": "Decided 2026-09-28 in publisher-ci-and-build-configuration-dispositions.md under the lockstep release ADR (doc/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md): the active NuGet.Config covers the imported product.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/publisher-ci-and-build-configuration-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "active_path": "NuGet.Config",
+        "active_blob": "1ec3544b7f8af520075affc7cf0e32cbc768476a",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -549,8 +594,17 @@
       "category": "nuke_build_entrypoint",
       "owning_workstream": "Feature #8214 build integration; release engineering",
       "proposed_disposition": "Translate non-publishing compile/test/package matrix and version parameters into the central workflow/build once release-unit ownership is defined. Do not activate the legacy packaging job.",
-      "evidence_or_gate": "The claim that the combined build evidence only proves a disposable Consolidated.sln build no longer holds for compile/test: the root \"pr\" workflow run https://github.com/elsa-workflows/elsa-core/actions/runs/36272102515 (attempt 2, commit 1976dd2d4781bad44f13384881e3f00605ba44f9, an ancestor of this head) ran NUKE Compile/Test against the canonical Elsa.sln, which now contains the imported projects (see the pr.yml and Build.cs rows' evidence). The pinned GitHub Actions partial's Pack/publish job and version parameters remain a separate, unresolved concern: no publisher or release-unit ownership decision has been made, and the legacy packaging job must not be activated. This row stays pending on that publisher design, unchanged from before.",
-      "status": "pending_central_ci_and_publisher_design"
+      "evidence_or_gate": "Decided 2026-09-28 in publisher-ci-and-build-configuration-dispositions.md under the lockstep release ADR (doc/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md): the active build/Build.CI.GitHubActions.cs covers the imported product.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/publisher-ci-and-build-configuration-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "active_path": "build/Build.CI.GitHubActions.cs",
+        "active_blob": "f1e59e824ba0a36a59cfb7065d5a1c7fe9f145e7",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -562,8 +616,17 @@
       "category": "nuke_build_entrypoint",
       "owning_workstream": "Feature #8214 build integration; release engineering",
       "proposed_disposition": "Reconcile Clean/Compile/Test/Pack, tagged-version calculation, test selection, and coverage outputs with central NUKE. Retire this duplicate entrypoint only after equivalent product-scoped targets are validated.",
-      "evidence_or_gate": "The claim that the imported projects are absent from root Elsa.sln no longer holds: Elsa.sln now includes the src/extensions/** and src/studio/** projects and their test/extensions/** and src/studio/**/*.Tests counterparts (see the pr.yml rows' evidence), and root build/Build.cs's TestProjects (Solution.AllProjects.Where(x.Name.EndsWith(\"Tests\"))) resolves against Elsa.sln, the sole .sln at repo root, so it already builds and tests them without a separate entrypoint. The historical Extensions build/Build.cs has not itself been retired: build/Build.cs is also Core's own active NUKE entrypoint path, so this row can only close as represented, not retired, and no reviewed PR has yet recorded that decision; it stays pending.",
-      "status": "pending_canonical_build_integration"
+      "evidence_or_gate": "Decided 2026-09-28 in publisher-ci-and-build-configuration-dispositions.md under the lockstep release ADR (doc/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md): the active build/Build.cs covers the imported product.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/publisher-ci-and-build-configuration-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "active_path": "build/Build.cs",
+        "active_blob": "d6a3d7904d5c1e357ad947b6ba68aefd8acc5f3d",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "extensions",
@@ -685,8 +748,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -698,8 +767,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -711,8 +786,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -724,8 +805,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -737,8 +824,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -750,8 +843,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -763,8 +862,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -776,8 +881,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -789,8 +900,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -802,8 +919,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -815,8 +938,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -828,8 +957,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -841,8 +976,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -854,8 +995,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -867,8 +1014,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -880,8 +1033,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -893,8 +1052,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -906,8 +1071,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -919,8 +1090,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -932,8 +1109,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -945,8 +1128,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -958,8 +1147,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -971,8 +1166,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -984,8 +1185,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -997,8 +1204,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1010,8 +1223,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1023,8 +1242,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1036,8 +1261,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1049,8 +1280,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1062,8 +1299,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1075,8 +1318,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1088,8 +1337,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1101,8 +1356,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1114,8 +1375,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1127,8 +1394,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1140,8 +1413,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1153,8 +1432,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1166,8 +1451,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1179,8 +1470,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1192,8 +1489,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1205,8 +1508,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1218,8 +1527,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1231,8 +1546,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1244,8 +1565,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1257,8 +1584,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1270,8 +1603,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "extensions",
@@ -1283,8 +1622,14 @@
       "category": "secrets_collision_source",
       "owning_workstream": "Feature #8214 Secrets compatibility; bridge #8290; API/Studio contract #8301",
       "proposed_disposition": "Keep inert until published API, storage/migration, tenant/owner/ID, route/authorization, and Studio behavior are classified. Port only required capability into the canonical implementation or explicitly retire it; never register both API route sets.",
-      "evidence_or_gate": "Build preparation records the five duplicate package projects as inert. See doc/integration-program/consolidation/build-preparation.md and doc/integration-program/secrets-collision-compatibility.md; required API/storage/UI acceptance remains open.",
-      "status": "pending_compatibility_gate"
+      "evidence_or_gate": "Maintainer decisions of 2026-09-28 (#8275): legacy values are re-entered, never converted, so no capability is ported from this Extensions 3.8.1 copy. The canonical sources are Core src/modules/Elsa.Secrets.Persistence.EFCore* and src/studio/modules/Elsa.Studio.Secrets, whose lineage published 3.8.2 and 3.8.4. Nothing under src/modules/secrets is active.",
+      "status": "retired_from_active_tree",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/secrets-legacy-package-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "reason": "Superseded Extensions 3.8.1 copy of a package ID now published only from its canonical Core or Studio source; no converter ships, so nothing is ported. Retained only as inert .source provenance."
+      }
     },
     {
       "original_repository": "studio",
@@ -1991,8 +2336,17 @@
       "category": "publisher_workflow",
       "owning_workstream": "Program #8194 release governance; package owners",
       "proposed_disposition": "Keep this source publisher inert. Carry package IDs and release-unit conditions into one reviewed publisher only after a separate publisher/cutover decision; do not enable a second push/release publisher.",
-      "evidence_or_gate": "The current root packages.yml still builds on push/release, but publication (Feedz, NuGet, and coverage Pages deploy) is gated behind manual workflow_dispatch opt-in approval (#8497) and no longer runs automatically on push/release. This historical packages.yml belongs to a separate product publisher and is intentionally mapped to .source.",
-      "status": "publisher_must_remain_inert"
+      "evidence_or_gate": "Decided 2026-09-28 in publisher-ci-and-build-configuration-dispositions.md under the lockstep release ADR (doc/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md): the active .github/workflows/packages.yml covers the imported product.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/publisher-ci-and-build-configuration-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "active_path": ".github/workflows/packages.yml",
+        "active_blob": "388c8ffcc3c6e83ff922005dede744d5b97767b9",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -2004,8 +2358,17 @@
       "category": "pull_request_ci_workflow",
       "owning_workstream": "Feature #8214 CI integration; Story #8215",
       "proposed_disposition": "Translate non-publishing checks into central PR CI with explicit project/TFM coverage; retire this workflow after the canonical solution and test enumeration are verified.",
-      "evidence_or_gate": "At this head all 16 Studio test projects the old pr.yml built via Elsa.Studio.sln (Elsa.Studio.Core.Tests, Elsa.Studio.AI.Tests, Elsa.Studio.Administration.Tests, Elsa.Studio.Authentication.UI.Tests, Elsa.Studio.Dashboard.Tests, Elsa.Studio.Diagnostics.ConsoleLogs.Tests, Elsa.Studio.Diagnostics.OpenTelemetry.Tests, Elsa.Studio.Diagnostics.StructuredLogs.Tests, Elsa.Studio.Environments.Tests, Elsa.Studio.ExternalAuthentication.Tests, Elsa.Studio.PlatformIntegration.Tests, Elsa.Studio.Secrets.Tests, Elsa.Studio.Security.Tests, Elsa.Studio.UserTasks.Tests, Elsa.Studio.Workflows.Designer.Tests, Elsa.Studio.Workflows.Tests) are present in the canonical Elsa.sln, so root build/Build.cs's TestProjects (Solution.AllProjects.Where(x.Name.EndsWith(\"Tests\")), resolved against Elsa.sln, the sole solution at repo root) already selects them. The root \"pr\" workflow run https://github.com/elsa-workflows/elsa-core/actions/runs/36272102515 (attempt 2, commit 1976dd2d4781bad44f13384881e3f00605ba44f9, an ancestor of this head, conclusion success) ran ./build.cmd Compile Test against Elsa.sln itself, not Consolidated.sln, and passed every one of these projects (0 failed); Elsa.Studio.Workflows.Designer.Tests, the only multi-targeted one, passed on all three declared TFMs (net8.0, net9.0, net10.0), showing per-project TFM coverage rather than a single default framework. This refutes the earlier claim that source-import CI coverage was unproven. No reviewed PR yet records this row's specific retirement with a decision document citing that run, so it stays pending.",
-      "status": "pending_canonical_solution_and_ci"
+      "evidence_or_gate": "Decided 2026-09-28 in publisher-ci-and-build-configuration-dispositions.md under the lockstep release ADR (doc/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md): the active .github/workflows/pr.yml covers the imported product.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/publisher-ci-and-build-configuration-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "active_path": ".github/workflows/pr.yml",
+        "active_blob": "ceae09bb533169698e3bb2bdafaeea4e4ba252ca",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -2897,8 +3260,17 @@
       "category": "scoped_build_properties",
       "owning_workstream": "Feature #8214 build integration; package owners",
       "proposed_disposition": "Retain this behavior in the product-scoped Directory.Build.props, with package metadata kept product-specific; do not apply one product\u2019s warning suppressions or target defaults globally.Preserve Studio package metadata (repository URL, MIT expression, 2023 copyright), net8/net9/net10 TFMs, icon asset inclusion, and the current project-scoped trim-warning allowlist in src/studio scope.",
-      "evidence_or_gate": "src/studio/Directory.Build.props is committed at this head (working tree clean), not only a disposable patch: it preserves the 2023 copyright, MIT license expression, the net8.0;net9.0;net10.0 TargetFrameworks, the shared icon ItemGroup, and the LegacyTrimWarningProjects allowlist the disposition requires, independent of Extensions' own scoped file. The .github/workflows/prove-studio-package-provenance.yml (pack-studio-core) and .github/workflows/release-elsa-slack.yml (pack-slack-only) packed-package proofs both ran and passed at this exact head (https://github.com/elsa-workflows/elsa-core/actions/runs/36285398358 and https://github.com/elsa-workflows/elsa-core/actions/runs/36285398409, commit ce1111e4421b0e2af9852d55d9e2ebde937fcab5, conclusion success), packing Elsa.Studio.Core and Elsa.Slack respectively; both verify nuspec identity and SourceLink, and only pack-studio-core verifies the shared icon bytes (pack-slack-only does not check the icon). No reviewed PR yet records this row's specific completion with a decision document, so it stays pending; the broader #8260 package-mode/feed-trust gate referenced elsewhere in this ledger is unaffected.",
-      "status": "candidate_scoped_in_disposable_patch"
+      "evidence_or_gate": "Decided 2026-09-28 in publisher-ci-and-build-configuration-dispositions.md under the lockstep release ADR (doc/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md): the active src/studio/Directory.Build.props covers the imported product.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/publisher-ci-and-build-configuration-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "active_path": "src/studio/Directory.Build.props",
+        "active_blob": "7e69b18f079fd9fe76d57ec3f4f0c5bfd158bd78",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -2910,8 +3282,17 @@
       "category": "scoped_central_package_versions",
       "owning_workstream": "Feature #8214 dependency/build integration",
       "proposed_disposition": "Keep product-specific central package baselines in scoped props; reconcile conflicts per evaluated target framework and package identity before any shared baseline is selected. Preserve the Studio BpmnModelVersion property consumed by its PackageDownload and generated BPMN types, and keep TFM-conditioned package versions scoped.",
-      "evidence_or_gate": "src/studio/Directory.Packages.props is committed at this head (working tree clean) as its own central-version file, keeping the BpmnModelVersion property (0.2.0) it feeds to the Bpmn.Model PackageDownload and generated BPMN types, and its other TFM-conditioned package versions, scoped away from Extensions' and Core's own Directory.Packages.props. The .github/workflows/prove-studio-package-provenance.yml (pack-studio-core) and .github/workflows/release-elsa-slack.yml (pack-slack-only) packed-package proofs both ran and passed at this exact head (https://github.com/elsa-workflows/elsa-core/actions/runs/36285398358 and https://github.com/elsa-workflows/elsa-core/actions/runs/36285398409, commit ce1111e4421b0e2af9852d55d9e2ebde937fcab5, conclusion success), packing Elsa.Studio.Core and Elsa.Slack respectively; both verify nuspec identity and SourceLink, and only pack-studio-core verifies the shared icon bytes (pack-slack-only does not check the icon). Restore/package-mode compatibility for consumers outside these two proof jobs remains the open #8260 gate; no reviewed PR yet records this row's specific completion, so it stays pending.",
-      "status": "candidate_scoped_in_disposable_patch"
+      "evidence_or_gate": "Decided 2026-09-28 in publisher-ci-and-build-configuration-dispositions.md under the lockstep release ADR (doc/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md): the active src/studio/Directory.Packages.props covers the imported product.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/publisher-ci-and-build-configuration-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "active_path": "src/studio/Directory.Packages.props",
+        "active_blob": "3d0a5b34e1594b52172f58be60046eb0e77dfca0",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
@@ -2989,8 +3370,17 @@
       "category": "nuget_source_mapping",
       "owning_workstream": "Build/package maintainers",
       "proposed_disposition": "Reconcile the NuGet.org, Elsa Feedz, and WebhooksCore Feedz sources with the active root config; correct the source-mapping key and prove each needed package restores before retaining that feed.",
-      "evidence_or_gate": "Pinned Studio config declares webhooks-core.feedz.io but maps to webhooks-coreo.feedz.io (extra \u201co\u201d). New evidence narrows, but does not close, the gate: a clean restore against the active root NuGet.Config (which has no webhooks-core(o) source at all and maps the wildcard to NuGet official package source), run at this head with an emptied local package cache (dotnet restore --packages <empty-dir> --ignore-failed-sources), resolved WebhooksCore 0.0.1 and WebhooksCore.Shared 0.0.1 from https://api.nuget.org for every current consumer: src/modules/Elsa.Http.Webhooks/Elsa.Http.Webhooks.csproj, src/extensions/cms/Elsa.OrchardCore/Elsa.OrchardCore.csproj (via its Elsa.Http.Webhooks ProjectReference), and samples/extensions/workbench/Elsa.ServerAndStudio.Web/Elsa.ServerAndStudio.Web.csproj (exit code 0, no errors). WebhooksCore is public on NuGet.org at the centrally pinned version, so the private feed and its key typo are moot for these consumers today; retaining or correcting that source is not shown necessary. The row stays pending because the broader NuGet.org/Elsa Feedz reconciliation and the #8260 package-mode restore gate this row also names remain open program-wide.",
-      "status": "pending_feed_key_and_restore_review"
+      "evidence_or_gate": "Decided 2026-09-28 in publisher-ci-and-build-configuration-dispositions.md under the lockstep release ADR (doc/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md): the active NuGet.Config covers the imported product.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/publisher-ci-and-build-configuration-dispositions.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8524",
+        "merge_commit": "06f0835219c4f6e584cca785e5a6150bba3b5e09",
+        "active_path": "NuGet.Config",
+        "active_blob": "1ec3544b7f8af520075affc7cf0e32cbc768476a",
+        "active_mode": "100644",
+        "representation": "expanded"
+      }
     },
     {
       "original_repository": "studio",
