@@ -1,3 +1,4 @@
+using Elsa.Common.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -21,6 +22,7 @@ namespace Elsa.Scheduling.Quartz.Features;
 /// </summary>
 [DependsOn(typeof(SchedulingFeature))]
 [DependsOn(typeof(ResilienceFeature))]
+[DependsOn(typeof(MultitenancyFeature))]
 [UsedImplicitly]
 public class QuartzSchedulerFeature(IModule module) : FeatureBase(module)
 {

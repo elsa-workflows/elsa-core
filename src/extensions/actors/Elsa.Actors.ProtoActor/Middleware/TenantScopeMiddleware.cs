@@ -19,9 +19,9 @@ public static class TenantScopeMiddleware
         async Task Receiver(IReceiverContext context, MessageEnvelope envelope)
         {
             var tenantId = envelope.Header.GetValueOrDefault(HeaderNames.TenantId);
-            if (tenantId != null)
+            var tenantFinder = tenantId != null ? sp.GetService<ITenantFinder>() : null;
+            if (tenantFinder != null)
             {
-                var tenantFinder = sp.GetRequiredService<ITenantFinder>();
                 var tenant = await tenantFinder.FindByIdAsync(tenantId);
                 var tenantScopeFactory = sp.GetRequiredService<ITenantScopeFactory>();
                 await using var tenantScope = tenantScopeFactory.CreateScope(tenant);
@@ -43,8 +43,9 @@ public static class TenantScopeMiddleware
     {
         async Task Sender(ISenderContext context, PID target, MessageEnvelope envelope)
         {
-            var tenantAccessor = sp.GetRequiredService<ITenantAccessor>();
-            if (tenantAccessor.Tenant != null) envelope.WithHeader(HeaderNames.TenantId, tenantAccessor.Tenant.Id);
+            // Multitenancy is optional for a standalone actor host; without it there is no tenant to propagate.
+            var tenant = sp.GetService<ITenantAccessor>()?.Tenant;
+            if (tenant != null) envelope.WithHeader(HeaderNames.TenantId, tenant.Id);
             await next(context, target, envelope);
         }
 

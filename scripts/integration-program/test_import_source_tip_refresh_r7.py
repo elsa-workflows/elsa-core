@@ -10,7 +10,6 @@ import unittest
 from unittest.mock import patch
 
 from verify_import_source_tip_refresh_r7 import (
-    GATE_VALIDATOR,
     MERGE_COMMIT,
     RECEIPT,
     blob_and_mode,

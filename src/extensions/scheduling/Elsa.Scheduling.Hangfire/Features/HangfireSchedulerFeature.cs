@@ -1,3 +1,4 @@
+using Elsa.Common.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -14,6 +15,7 @@ namespace Elsa.Scheduling.Hangfire.Features;
 /// Installs a Hangfire implementation for <see cref="IWorkflowScheduler"/>.
 /// </summary>
 [DependsOn(typeof(SchedulingFeature))]
+[DependsOn(typeof(MultitenancyFeature))]
 public class HangfireSchedulerFeature : FeatureBase
 {
     /// <inheritdoc />
