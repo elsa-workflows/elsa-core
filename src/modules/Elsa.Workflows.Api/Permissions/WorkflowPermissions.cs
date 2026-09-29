@@ -46,7 +46,10 @@ public static class WorkflowPermissions
     public const string DescriptorsOutputConverters = "workflows/descriptors/output-converters";
     /// <summary>Browse available workflow activation strategies.</summary>
     public const string DescriptorsActivationStrategies = "workflows/descriptors/activation-strategies";
-    /// <summary>Inspect which features are installed in this deployment.</summary>
+    /// <summary>
+    /// Formerly guarded the installed-features endpoints, which now require only an authenticated caller. Kept so
+    /// roles that already hold it still resolve rather than being reported as invalid at startup.
+    /// </summary>
     public const string SystemFeatures = "system/features";
 }
 
@@ -75,6 +78,6 @@ public sealed class WorkflowPermissionsDescriptorProvider : IPermissionDescripto
         new(WorkflowPermissions.DescriptorsLogPersistenceStrategies, [CoreVerbs.View], "Log persistence strategy descriptors", "Browse available log persistence strategies.", "Workflows"),
         new(WorkflowPermissions.DescriptorsOutputConverters, [CoreVerbs.View], "Output converter descriptors", "Browse available output converters.", "Workflows"),
         new(WorkflowPermissions.DescriptorsActivationStrategies, [CoreVerbs.View], "Activation strategy descriptors", "Browse available workflow activation strategies.", "Workflows"),
-        new(WorkflowPermissions.SystemFeatures, [CoreVerbs.View], "Installed features", "Inspect which features are installed in this deployment.", "Workflows"),
+        new(WorkflowPermissions.SystemFeatures, [CoreVerbs.View], "Installed features", "No longer required: any authenticated caller may list installed features. Retained so existing roles that hold it stay valid.", "Workflows"),
     ];
 }
