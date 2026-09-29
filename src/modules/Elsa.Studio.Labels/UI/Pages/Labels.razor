@@ -29,14 +29,20 @@
         Class="definitions-table"
         @bind-SelectedItems="_selectedRows">
         <ToolBarContent>
-            <MudMenu EndIcon="@Icons.Material.Filled.KeyboardArrowDown" Label="@Localizer["Bulk actions"]" Color="Color.Default" Variant="Variant.Filled">
-                <MudMenuItem OnClick="@OnBulkDeleteClicked">@Localizer["Delete"]</MudMenuItem>
-            </MudMenu>
+            @if (CanDelete)
+            {
+                <MudMenu EndIcon="@Icons.Material.Filled.KeyboardArrowDown" Label="@Localizer["Bulk actions"]" Color="Color.Default" Variant="Variant.Filled">
+                    <MudMenuItem OnClick="@OnBulkDeleteClicked">@Localizer["Delete"]</MudMenuItem>
+                </MudMenu>
+            }
             <MudSpacer/>
-            
-            <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled" disable-elevation="false">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@OnCreateClicked">@Localizer["Create Label"]</MudButton>
-            </MudButtonGroup>
+
+            @if (CanCreate)
+            {
+                <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled" disable-elevation="false">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@OnCreateClicked">@Localizer["Create Label"]</MudButton>
+                </MudButtonGroup>
+            }
         </ToolBarContent>
         <ColGroup>
             <col/>

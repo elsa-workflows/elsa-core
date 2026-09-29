@@ -4,6 +4,7 @@ using Elsa.Api.Client.Resources.ActivityDescriptors.Enums;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Shared.Models;
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Components;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Extensions;
@@ -12,6 +13,7 @@ using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.Activ
 using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.ActivityProperties.Tabs.Outputs.Components;
 using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.ActivityProperties.Tabs.Tests;
 using Elsa.Studio.Workflows.Domain.Models;
+using Elsa.Studio.Workflows.Extensions;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -74,6 +76,10 @@ public partial class ActivityPropertiesPanel
     private bool IsResilienceEnabled { get; set; }
     private bool IsResilientActivity => ActivityDescriptor?.CustomProperties.TryGetValue("Resilient", out var resilientObj) == true && resilientObj.ConvertTo<bool>();
     private bool DisplayResilienceTab => IsResilienceEnabled && IsResilientActivity;
+
+    [CascadingParameter] private UserPermissions Permissions { get; set; } = UserPermissions.Unknown;
+
+    private bool CanRunTests => Permissions.CanRunActivityTests();
     private ActivityStatus TestResultStatus { get; set; } = ActivityStatus.Canceled;
     private Color TestIconColor => TestResultStatus switch
     {
@@ -134,6 +140,7 @@ public partial class ActivityPropertiesPanel
             Icon = ElsaStudioIcons.Tabler.Flask,
             WrapInScrollableWell = false,
             IconColorProvider = _ => TestIconColor,
+            VisibilityPredicate = _ => CanRunTests,
         },
         new ActivityTab(Localizer["Commit Strategy"], 4, _ => RenderCommitStrategyTab())
         {

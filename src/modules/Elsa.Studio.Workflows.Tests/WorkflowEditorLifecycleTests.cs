@@ -4,12 +4,14 @@ using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Responses;
 using Elsa.Api.Client.Shared.Models;
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Contracts;
 using Elsa.Studio.DomInterop.Models;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Models;
+using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components;
 using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.ActivityProperties;
 using Elsa.Studio.Workflows.Contracts;
@@ -52,6 +54,19 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
 
     Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
     async Task IAsyncLifetime.DisposeAsync() => await base.DisposeAsync();
+
+    [Theory]
+    [InlineData(new[] { "workflows/definitions:view" }, false, false)]
+    [InlineData(new[] { "workflows/definitions:view", "workflows/definitions:publish" }, true, false)]
+    [InlineData(new[] { "workflows/definitions:view", "workflows/definitions:execute" }, false, true)]
+    public void Toolbar_OffersPublishAndRunOnlyWithTheirPermissions(string[] grants, bool canPublish, bool canRun)
+    {
+        var cut = RenderEditor(CreateDefinition("gated"), () => Task.CompletedTask, StubPermissionService.Grants(grants));
+
+        var actions = cut.FindComponents<MudIconButton>().Select(x => x.Instance.Icon).ToList();
+        Assert.Equal(canPublish, actions.Contains(Icons.Material.Filled.CloudUpload));
+        Assert.Equal(canRun, actions.Contains(Icons.Material.Filled.PlayArrow));
+    }
 
     [Fact]
     public async Task SaveSuccessCompletedAfterInvalidationDoesNotReplaceOrInvokeSuccess()
@@ -283,13 +298,16 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
         Assert.Equal(0, failureCount);
     }
 
-    private IRenderedComponent<WorkflowEditor> RenderEditor(WorkflowDefinition definition, Func<Task> workflowDefinitionUpdated)
+    // The shell's page guard cascades the user's permissions; without them every action is offered.
+    private IRenderedComponent<WorkflowEditor> RenderEditor(WorkflowDefinition definition, Func<Task> workflowDefinitionUpdated, UserPermissions? permissions = null)
     {
         ComponentFactories.Add<DiagramDesignerWrapper, TestDiagramDesignerWrapper>();
         ComponentFactories.Add<ActivityPropertiesPanel, TestActivityPropertiesPanel>();
+        Render<MudPopoverProvider>();
         return Render<WorkflowEditor>(parameters => parameters
             .Add(x => x.WorkflowDefinition, definition)
-            .Add(x => x.WorkflowDefinitionUpdated, workflowDefinitionUpdated));
+            .Add(x => x.WorkflowDefinitionUpdated, workflowDefinitionUpdated)
+            .AddCascadingValue(permissions ?? UserPermissions.Unknown));
     }
 
     private static Task InvokeSaveAsync(WorkflowEditor editor, Func<SaveWorkflowDefinitionResponse, Task>? onSuccess, Func<ValidationErrors, Task>? onFailure)
@@ -438,13 +456,12 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
         public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
     }
 
+    // Renders only the editor's toolbar, which carries the permission-gated actions.
     private sealed class TestDiagramDesignerWrapper : DiagramDesignerWrapper
     {
         protected override Task OnInitializedAsync() => Task.CompletedTask;
 
-        protected override void BuildRenderTree(RenderTreeBuilder builder)
-        {
-        }
+        protected override void BuildRenderTree(RenderTreeBuilder builder) => builder.AddContent(0, CustomToolbarItems);
     }
 
     private sealed class TestActivityPropertiesPanel : ActivityPropertiesPanel

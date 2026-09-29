@@ -1,8 +1,9 @@
+@using Elsa.Studio.Authorization
 @using Elsa.Studio.Diagnostics.OpenTelemetry.Contracts
 @using Elsa.Studio.Diagnostics.OpenTelemetry.Models
 @inject IOpenTelemetryService TelemetryService
 
-@if (Context.Snapshot != null)
+@if (Context.Snapshot != null && CanView)
 {
     <MudPaper Outlined="true" Elevation="0" Class="dashboard-panel dashboard-section" Style="@DashboardStyles.Panel">
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="dashboard-section-header" Style="@DashboardStyles.SectionHeader">
@@ -37,6 +38,11 @@
     [Parameter] public DashboardWidgetContext Context { get; set; } = null!;
     [Parameter] public DashboardWidgetDescriptor Descriptor { get; set; } = null!;
 
+    [CascadingParameter] private UserPermissions Permissions { get; set; } = UserPermissions.Unknown;
+
+    // The health figures come from the OpenTelemetry API, so users who cannot view telemetry do not get the widget.
+    private bool CanView => Permissions.Has(OpenTelemetryPermissions.OpenTelemetry, PermissionVerbs.View);
+
     private OpenTelemetryStorageDiagnostics? _storage;
     private DateTimeOffset? _loadedFor;
     private bool _loading;
@@ -65,7 +71,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (Context.Snapshot == null || Context.LastRefreshedAt == null || Context.LastRefreshedAt == _loadedFor)
+        if (!CanView || Context.Snapshot == null || Context.LastRefreshedAt == null || Context.LastRefreshedAt == _loadedFor)
             return;
 
         _loadedFor = Context.LastRefreshedAt;

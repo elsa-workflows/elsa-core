@@ -13,7 +13,10 @@
                     <MudIconButton Icon="@Icons.Material.Filled.FileDownload" OnClick="OnDownloadClicked">@Localizer["Export"]</MudIconButton>
                 </MudTooltip>
                 <MudText Typo="Typo.body1">@($"Version {_workflowDefinition?.Version ?? 0}")</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Success" Variant="Variant.Text" title="@Localizer["Run workflow"]" Class="ml-4" OnClick="@OnRunWorkflowClicked"/>
+                @if (CanRun)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Success" Variant="Variant.Text" title="@Localizer["Run workflow"]" Class="ml-4" OnClick="@OnRunWorkflowClicked"/>
+                }
             </CustomToolbarItems>
         </DiagramDesignerWrapper>
     </RadzenSplitterPane>

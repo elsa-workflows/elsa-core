@@ -1,5 +1,6 @@
 using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
 using Elsa.Studio.Localization;
+using Elsa.Studio.Localization.Time;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Microsoft.Extensions.Localization;
 
@@ -13,6 +14,14 @@ internal sealed class TestLocalizer : ILocalizer
 {
     public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
     public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
+}
+
+/// <summary>
+/// An <see cref="ITimeFormatter"/> that formats timestamps as they are, without time zone conversion.
+/// </summary>
+internal sealed class TestTimeFormatter : ITimeFormatter
+{
+    public string Format(DateTimeOffset? value, string format = "G", string emptyString = "") => value?.ToString(format) ?? emptyString;
 }
 
 /// <summary>

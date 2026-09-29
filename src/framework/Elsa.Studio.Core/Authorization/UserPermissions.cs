@@ -30,6 +30,9 @@ public sealed class UserPermissions
     /// <summary>Whether the user holds a grant satisfying <paramref name="required"/>.</summary>
     public bool Has(Permission required) => !IsKnown || PermissionMatcher.Satisfies(Grants, required);
 
+    /// <summary>Whether the user holds a grant satisfying <c>{resource}:{verb}</c>.</summary>
+    public bool Has(string resource, string verb) => Has(new Permission(resource, verb));
+
     /// <summary>Whether the user holds grants satisfying every one of <paramref name="required"/>.</summary>
     public bool HasAll(IEnumerable<Permission> required) => required.All(Has);
 

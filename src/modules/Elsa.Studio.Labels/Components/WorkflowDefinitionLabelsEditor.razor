@@ -5,14 +5,17 @@
 
 <MudText Typo="Typo.overline">@Localizer["Labels"]</MudText>
 <MudPaper>
-    <MudChipSet T="string" AllClosable OnClose="@( chip => OnCloseAsync(chip))">
+    <MudChipSet T="string" AllClosable="@CanUpdate" OnClose="@( chip => OnCloseAsync(chip))">
         @foreach (var value in Labels)
         {
             <MudChip Value="@value.Id" Text="@value.Name" />
         }
     </MudChipSet>
 
-    <div class="d-flex flex-column align-center">
-        <MudButton StartIcon="@Icons.Material.Filled.Add" OnClick="AddLabelAsync">Add Label</MudButton>
-    </div>
+    @if (CanAdd)
+    {
+        <div class="d-flex flex-column align-center">
+            <MudButton StartIcon="@Icons.Material.Filled.Add" OnClick="AddLabelAsync">Add Label</MudButton>
+        </div>
+    }
 </MudPaper>

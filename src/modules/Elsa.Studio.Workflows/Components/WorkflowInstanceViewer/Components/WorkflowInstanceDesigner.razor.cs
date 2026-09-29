@@ -8,6 +8,7 @@ using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Resources.WorkflowInstances.Enums;
 using Elsa.Api.Client.Resources.WorkflowInstances.Models;
 using Elsa.Api.Client.Shared.Models;
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Constants;
 using Elsa.Studio.DomInterop.Contracts;
@@ -47,6 +48,10 @@ public partial class WorkflowInstanceDesigner : IAsyncDisposable
     private Timer? _elapsedTimer;
     private volatile bool _disposed;
     private bool IsAlterationsEnabled { get; set; }
+
+    [CascadingParameter] private UserPermissions Permissions { get; set; } = UserPermissions.Unknown;
+
+    private bool CanAlter => Permissions.CanAlterInstances();
 
     /// The workflow instance.
     [Parameter] public WorkflowInstance? WorkflowInstance { get; set; }

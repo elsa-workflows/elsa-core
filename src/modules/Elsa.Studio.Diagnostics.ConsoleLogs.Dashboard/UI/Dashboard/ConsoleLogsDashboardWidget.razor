@@ -1,3 +1,6 @@
+@using Elsa.Studio.Authorization
+@using Elsa.Studio.Components
+
 @if (Context.Snapshot != null)
 {
     var summary = Context.Snapshot.Overview.Diagnostics.ConsoleLogs;
@@ -15,7 +18,9 @@
             <DashboardDiagnosticsValue Label="Stale" Value="@DashboardMetricFormatter.Count(summary.StaleSourceCount)" Color="@StaleColor(summary.StaleSourceCount)" />
             <DashboardDiagnosticsValue Label="stderr" Value="@DashboardMetricFormatter.Count(summary.RecentStderrCount)" Color="@ErrorColor(summary.RecentStderrCount)" />
             <DashboardDiagnosticsValue Label="Dropped lines" Value="@DashboardMetricFormatter.Count(summary.DroppedLineCount)" Color="@ErrorColor(summary.DroppedLineCount)" />
-            <MudButton Href="@DashboardNavigationTargetMapper.Console" Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Outlined.OpenInNew">Open console</MudButton>
+            <PermissionView Resource="@ConsoleLogsPermissions.ConsoleLogs" Verb="@PermissionVerbs.View">
+                <MudButton Href="@DashboardNavigationTargetMapper.Console" Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Outlined.OpenInNew">Open console</MudButton>
+            </PermissionView>
         </div>
     </MudPaper>
 }

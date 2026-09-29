@@ -1,0 +1,68 @@
+@using Elsa.Studio.Authorization
+@inherits PermissionTrackingComponentBase
+
+@if (EffectivePermissions is { } permissions)
+{
+    @if (permissions.HasAll(RequiredPermissions))
+    {
+        @ChildContent
+    }
+    else
+    {
+        @Denied
+    }
+}
+
+@code {
+    /// <summary>
+    /// The permissions <see cref="PermissionPageGuard"/> resolved for the current page. Outside a page (for example in a
+    /// dialog, which renders outside the page), there are none and the component resolves the permissions itself.
+    /// </summary>
+    [CascadingParameter] public UserPermissions? PagePermissions { get; set; }
+
+    /// <summary>The resource of the required permission. Requires <see cref="Verb"/>.</summary>
+    [Parameter] public string? Resource { get; set; }
+
+    /// <summary>The verb of the required permission. Requires <see cref="Resource"/>.</summary>
+    [Parameter] public string? Verb { get; set; }
+
+    /// <summary>Further permissions that are all required, for actions whose endpoint requires more than one.</summary>
+    [Parameter] public IEnumerable<Permission>? AllOf { get; set; }
+
+    /// <summary>The content to render when the user holds every required permission.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>The content to render instead when the user lacks a required permission. Renders nothing by default.</summary>
+    [Parameter] public RenderFragment? Denied { get; set; }
+
+    /// <summary>
+    /// Gates <paramref name="childContent"/> on <c>{resource}:{verb}</c>, for render trees built in code (such as widgets).
+    /// </summary>
+    public static RenderFragment Wrap(string resource, string verb, RenderFragment childContent) => builder =>
+    {
+        builder.OpenComponent<PermissionView>(0);
+        builder.AddComponentParameter(1, nameof(Resource), resource);
+        builder.AddComponentParameter(2, nameof(Verb), verb);
+        builder.AddComponentParameter(3, nameof(ChildContent), childContent);
+        builder.CloseComponent();
+    };
+
+    private UserPermissions? EffectivePermissions => PagePermissions ?? TrackedPermissions;
+
+    private IEnumerable<Permission> RequiredPermissions =>
+        Resource != null ? (AllOf ?? []).Prepend(new(Resource, Verb!)) : AllOf ?? [];
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        if (PagePermissions == null)
+            await TrackPermissionsAsync();
+    }
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (Resource is null != Verb is null)
+            throw new InvalidOperationException($"{nameof(PermissionView)} requires both {nameof(Resource)} and {nameof(Verb)}, or neither.");
+    }
+}

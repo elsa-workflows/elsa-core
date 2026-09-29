@@ -1,3 +1,4 @@
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Components;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Labels.Client;
@@ -16,6 +17,10 @@ public partial class Label : StudioComponentBase
     [Inject] private IBackendApiClientProvider ApiClientProvider { get; set; } = default!;
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+
+    [CascadingParameter] private UserPermissions Permissions { get; set; } = UserPermissions.Unknown;
+
+    private bool CanUpdate => Permissions.Has(LabelPermissions.Labels, PermissionVerbs.Update);
 
     private MudForm _form = default!;
     private LabelInputModelValidator _validator = default!;

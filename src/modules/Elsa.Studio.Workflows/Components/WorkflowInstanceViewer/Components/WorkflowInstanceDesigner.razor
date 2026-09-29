@@ -17,7 +17,7 @@
                 WorkflowInstanceId="@WorkflowInstance.Id"
                 PathChanged="PathChanged">
                 <CustomToolbarItems>
-                    @if (WorkflowInstance.Status == WorkflowStatus.Running && IsAlterationsEnabled)
+                    @if (WorkflowInstance.Status == WorkflowStatus.Running && IsAlterationsEnabled && CanAlter)
                     {
                         <MudTooltip Text="@Localizer["Alter this instance"]" Delay="500">
                             <MudIconButton

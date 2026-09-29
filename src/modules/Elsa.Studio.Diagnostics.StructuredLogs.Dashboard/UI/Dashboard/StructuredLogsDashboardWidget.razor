@@ -1,3 +1,6 @@
+@using Elsa.Studio.Authorization
+@using Elsa.Studio.Components
+
 @if (Context.Snapshot != null)
 {
     var summary = Context.Snapshot.Overview.Diagnostics.StructuredLogs;
@@ -15,7 +18,9 @@
             <DashboardDiagnosticsValue Label="Stale" Value="@DashboardMetricFormatter.Count(summary.StaleSourceCount)" Color="@StaleColor(summary.StaleSourceCount)" />
             <DashboardDiagnosticsValue Label="Errors / critical" Value="@DashboardMetricFormatter.Count(summary.RecentErrorOrCriticalCount)" Color="@ErrorColor(summary.RecentErrorOrCriticalCount)" />
             <DashboardDiagnosticsValue Label="Dropped writes" Value="@DashboardMetricFormatter.Count(summary.DroppedWriteCount)" Color="@ErrorColor(summary.DroppedWriteCount)" />
-            <MudButton Href="@DashboardNavigationTargetMapper.StructuredLogs" Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Outlined.OpenInNew">Open logs</MudButton>
+            <PermissionView Resource="@StructuredLogsPermissions.StructuredLogs" Verb="@PermissionVerbs.View">
+                <MudButton Href="@DashboardNavigationTargetMapper.StructuredLogs" Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Outlined.OpenInNew">Open logs</MudButton>
+            </PermissionView>
         </div>
     </MudPaper>
 }

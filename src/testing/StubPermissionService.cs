@@ -1,6 +1,6 @@
 using Elsa.Studio.Authorization;
 
-namespace Elsa.Studio.Core.Tests.Authorization;
+namespace Elsa.Studio.Testing;
 
 /// <summary>Returns fixed permissions and counts how often they were requested.</summary>
 internal sealed class StubPermissionService(UserPermissions permissions) : IPermissionService

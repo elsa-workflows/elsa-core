@@ -7,9 +7,12 @@
 <VerticalWell ExtraPadding="40">
     <MudText Typo="Typo.overline">@Localizer["Version history"]</MudText>
     <MudStack>
-        <MudMenu EndIcon="@Icons.Material.Filled.KeyboardArrowDown" Label="@Localizer["Bulk actions"]" Color="Color.Default" Variant="Variant.Filled" Class="align-self-end" AnchorOrigin="Origin.BottomLeft" Disabled="!HasWorkflowEditPermission">
-            <MudMenuItem OnClick="OnBulkDeleteClicked">@Localizer["Delete"]</MudMenuItem>
-        </MudMenu>
+        @if (CanDeleteVersions)
+        {
+            <MudMenu EndIcon="@Icons.Material.Filled.KeyboardArrowDown" Label="@Localizer["Bulk actions"]" Color="Color.Default" Variant="Variant.Filled" Class="align-self-end" AnchorOrigin="Origin.BottomLeft" Disabled="!HasWorkflowEditPermission">
+                <MudMenuItem OnClick="OnBulkDeleteClicked">@Localizer["Delete"]</MudMenuItem>
+            </MudMenu>
+        }
         <VerticalWell ExtraPadding="160">
             <MudTable @ref="Table"
                       ServerData="LoadVersionsAsync"
@@ -44,8 +47,14 @@
                     <MudTd style="text-align: right;">
                         <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true">
                             <MudMenuItem Icon="@Icons.Material.Outlined.ZoomIn" OnClick="@(() => OnViewClicked(context))">@Localizer["View"]</MudMenuItem>
-                            <MudMenuItem Icon="@Icons.Material.Outlined.Undo" OnClick="@(() => OnRollbackClicked(context))" Disabled="@(!CanRollback(context))">@Localizer["Rollback to this version"]</MudMenuItem>
-                            <MudMenuItem Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => OnDeleteClicked(context))" Disabled="@(!CanDelete(context))">@Localizer["Delete"]</MudMenuItem>
+                            @if (CanRevertVersions)
+                            {
+                                <MudMenuItem Icon="@Icons.Material.Outlined.Undo" OnClick="@(() => OnRollbackClicked(context))" Disabled="@(!CanRollback(context))">@Localizer["Rollback to this version"]</MudMenuItem>
+                            }
+                            @if (CanDeleteVersions)
+                            {
+                                <MudMenuItem Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => OnDeleteClicked(context))" Disabled="@(!CanDelete(context))">@Localizer["Delete"]</MudMenuItem>
+                            }
                         </MudMenu>
                     </MudTd>
                 </RowTemplate>

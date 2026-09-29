@@ -14,6 +14,7 @@
     <MudCard>
         <MudForm Model="@_model"
                  @ref="@_form"
+                 ReadOnly="@(!CanUpdate)"
                  Validation="@((Func<LabelInputModel, bool>)(x => _validator.Validate(x).IsValid))"
                  ValidationDelay="0">
 
@@ -42,8 +43,11 @@
                 </MudTabPanel>
             </MudTabs>
         </MudForm>
-        <MudCardActions>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(async () => await OnSaveClicked())">@Localizer["Save"]</MudButton>
-        </MudCardActions>
+        @if (CanUpdate)
+        {
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(async () => await OnSaveClicked())">@Localizer["Save"]</MudButton>
+            </MudCardActions>
+        }
     </MudCard>
 </MudContainer>

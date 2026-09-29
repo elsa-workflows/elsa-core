@@ -1,29 +1,27 @@
 @using Elsa.Studio.Authorization
-@using Microsoft.AspNetCore.Components.Authorization
-@using Microsoft.Extensions.DependencyInjection
-@implements IDisposable
-@inject IPermissionService PermissionService
-@inject IServiceProvider Services
+@inherits PermissionTrackingComponentBase
 
-@if (_missingPermissions == null)
+@if (TrackedPermissions == null)
 {
-    @* Resolving permissions for a gated page: render nothing rather than letting the page issue API calls. *@
+    @* Resolving permissions: render nothing rather than letting a gated page issue API calls. *@
 }
-else if (_missingPermissions.Count > 0)
+else if (TrackedPermissions.GetMissing(_requiredPermissions) is { Count: > 0 } missingPermissions)
 {
     <PageTitle>Access denied</PageTitle>
-    <AccessDenied MissingPermissions="_missingPermissions" />
+    <AccessDenied MissingPermissions="missingPermissions" />
 }
 else
 {
-    @ChildContent
+    @* The page and its components receive the resolved permissions as a cascading UserPermissions, so they can hide
+       actions the user cannot perform without resolving the permissions again (see PermissionView). *@
+    <CascadingValue Value="TrackedPermissions">
+        @ChildContent
+    </CascadingValue>
 }
 
 @code {
-    private static readonly IReadOnlyCollection<Permission> None = [];
     private Type? _pageType;
-    private IReadOnlyCollection<Permission>? _missingPermissions;
-    private int _evaluation;
+    private IReadOnlyCollection<Permission> _requiredPermissions = [];
 
     /// <summary>The current route, cascaded by the shell's router.</summary>
     [CascadingParameter] public RouteData? RouteData { get; set; }
@@ -31,60 +29,21 @@ else
     /// <summary>The page content to render when the user holds every permission the page declares.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    private AuthenticationStateProvider? _authenticationStateProvider;
+    /// <summary>
+    /// Resolves the permissions once for the lifetime of the layout, rather than per navigation, and again whenever the
+    /// authentication state changes.
+    /// </summary>
+    protected override Task OnInitializedAsync() => TrackPermissionsAsync();
 
     /// <inheritdoc />
-    protected override void OnInitialized()
-    {
-        // Claims can change while a page stays mounted (e.g. a refreshed token carrying new grants).
-        _authenticationStateProvider = Services.GetService<AuthenticationStateProvider>();
-        if (_authenticationStateProvider != null)
-            _authenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
-    }
-
-    /// <inheritdoc />
-    protected override async Task OnParametersSetAsync()
+    protected override void OnParametersSet()
     {
         var pageType = RouteData?.PageType;
 
-        if (pageType == _pageType && _missingPermissions != null)
+        if (pageType == _pageType)
             return;
 
         _pageType = pageType;
-        _missingPermissions = null;
-        await EvaluateAsync(pageType);
+        _requiredPermissions = pageType != null ? RequirePermissionAttribute.GetRequiredPermissions(pageType) : [];
     }
-
-    /// <inheritdoc />
-    public void Dispose()
-    {
-        if (_authenticationStateProvider != null)
-            _authenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
-    }
-
-    private async Task EvaluateAsync(Type? pageType)
-    {
-        var evaluation = ++_evaluation;
-        var required = pageType != null ? RequirePermissionAttribute.GetRequiredPermissions(pageType) : None;
-
-        if (required.Count == 0)
-        {
-            _missingPermissions = None;
-            return;
-        }
-
-        var permissions = await PermissionService.GetPermissionsAsync();
-
-        // Ignore the result if the user navigated, or permissions were re-evaluated, while this one was resolving.
-        if (evaluation == _evaluation)
-            _missingPermissions = permissions.GetMissing(required);
-    }
-
-    // Re-evaluates without clearing the current decision first, so a permitted page is not unmounted while it runs.
-    private async void OnAuthenticationStateChanged(Task<AuthenticationState> state) =>
-        await InvokeAsync(async () =>
-        {
-            await EvaluateAsync(_pageType);
-            StateHasChanged();
-        });
 }

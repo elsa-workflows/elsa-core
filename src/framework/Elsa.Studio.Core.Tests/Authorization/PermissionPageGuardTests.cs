@@ -1,6 +1,7 @@
 using Bunit;
 using Elsa.Studio.Authorization;
 using Elsa.Studio.Components;
+using Elsa.Studio.Testing;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,14 +21,40 @@ public sealed class PermissionPageGuardTests : BunitContext, IAsyncLifetime
     }
 
     [Fact]
-    public void AnUngatedPage_RendersWithoutResolvingPermissions()
+    public void AnUngatedPage_RendersWhateverTheUserHolds()
     {
-        var permissions = new StubPermissionService("secrets:view");
-
-        var cut = RenderGuard<UngatedPage>(permissions);
+        var cut = RenderGuard<UngatedPage>(new StubPermissionService("secrets:view"));
 
         Assert.Contains(PageContent, cut.Markup);
-        Assert.Equal(0, permissions.Calls);
+    }
+
+    [Fact]
+    public void ThePage_ReceivesTheResolvedPermissions()
+    {
+        Services.AddSingleton<IPermissionService>(new StubPermissionService("secrets:view"));
+
+        var cut = Render<PermissionPageGuard>(parameters => parameters
+            .AddCascadingValue(Route<UngatedPage>())
+            .AddChildContent<PermissionsConsumer>());
+
+        var permissions = cut.FindComponent<PermissionsConsumer>().Instance.Permissions;
+        Assert.NotNull(permissions);
+        Assert.True(permissions.Has("secrets", PermissionVerbs.View));
+        Assert.False(permissions.Has("secrets", PermissionVerbs.Delete));
+    }
+
+    [Fact]
+    public void Navigating_ReusesTheResolvedPermissions()
+    {
+        var permissions = new StubPermissionService("workflows/instances:view");
+        Services.AddSingleton<IPermissionService>(permissions);
+        var cut = Render<CascadingValue<RouteData>>(RouteTo<UngatedPage>);
+        Assert.Contains(PageContent, cut.Markup);
+
+        cut.Render(RouteTo<WorkflowInstancesPage>);
+
+        Assert.Contains("workflows/definitions:view", cut.Find("[data-testid='access-denied']").TextContent);
+        Assert.Equal(1, permissions.Calls);
     }
 
     [Fact]
@@ -95,11 +122,23 @@ public sealed class PermissionPageGuardTests : BunitContext, IAsyncLifetime
         Services.AddSingleton(permissionService);
 
         return Render<PermissionPageGuard>(parameters => parameters
-            .AddCascadingValue(new RouteData(typeof(TPage), new Dictionary<string, object?>()))
+            .AddCascadingValue(Route<TPage>())
             .AddChildContent(PageContent));
     }
 
+    // CascadingValue takes a complete parameter set, so every render passes the guard along with the route.
+    private static void RouteTo<TPage>(ComponentParameterCollectionBuilder<CascadingValue<RouteData>> parameters) => parameters
+        .Add(x => x.Value, Route<TPage>())
+        .AddChildContent<PermissionPageGuard>(guard => guard.AddChildContent(PageContent));
+
+    private static RouteData Route<TPage>() => new(typeof(TPage), new Dictionary<string, object?>());
+
     private sealed class UngatedPage : ComponentBase;
+
+    private sealed class PermissionsConsumer : ComponentBase
+    {
+        [CascadingParameter] public UserPermissions? Permissions { get; set; }
+    }
 
     [RequirePermission("workflows/instances", PermissionVerbs.View)]
     [RequirePermission("workflows/definitions", PermissionVerbs.View)]

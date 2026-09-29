@@ -5,6 +5,7 @@ using Elsa.Api.Client.Resources.WorkflowInstances.Enums;
 using Elsa.Api.Client.Resources.WorkflowInstances.Models;
 using Elsa.Api.Client.Resources.WorkflowInstances.Requests;
 using Elsa.Api.Client.Shared.Models;
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Constants;
 using Elsa.Studio.DomInterop.Contracts;
@@ -12,6 +13,7 @@ using Elsa.Studio.Extensions;
 using Elsa.Studio.Workflows.Components.WorkflowInstanceList.Components;
 using Elsa.Studio.Workflows.Components.WorkflowInstanceList.Models;
 using Elsa.Studio.Workflows.Domain.Contracts;
+using Elsa.Studio.Workflows.Extensions;
 using Humanizer;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -77,6 +79,18 @@ public partial class WorkflowInstanceList : IAsyncDisposable
     private bool? HasIncidents { get; set; }
     private bool IsDateRangePopoverOpen { get; set; }
     private bool IsAlterationsEnabled { get; set; }
+
+    [CascadingParameter] private UserPermissions Permissions { get; set; } = UserPermissions.Unknown;
+
+    private bool CanDelete => Permissions.CanDeleteInstances();
+    private bool CanCancel => Permissions.CanCancelInstances();
+
+    // Bulk cancel either cancels the selection (instances:cancel) or submits an alteration plan for every match
+    // (alterations:execute); either permission makes it reachable, and the dialog offers only what the user can do.
+    // Only cancelling the selection needs a selection.
+    private bool CanBulkCancel => CanCancel || Permissions.CanExecuteAlterations();
+    private bool CanImport => Permissions.CanImportInstances();
+    private bool CanAlter => Permissions.CanAlterInstances();
 
     private void Reload() => _table.ReloadServerData();
     private async Task ViewAsync(string instanceId) => await ViewWorkflowInstance.InvokeAsync(instanceId);
@@ -387,7 +401,14 @@ public partial class WorkflowInstanceList : IAsyncDisposable
 
     private async Task OnBulkCancelClicked()
     {
-        var reference = await DialogService.ShowAsync<BulkCancelDialog>(Localizer["Cancel selected workflow instances?"]);
+        // Cancelling every match submits an alteration plan rather than cancelling the selected instances.
+        var parameters = new DialogParameters<BulkCancelDialog>
+        {
+            { x => x.CanCancelSelected, CanCancel },
+            { x => x.CanApplyToAllMatches, Permissions.CanExecuteAlterations() }
+        };
+        var title = CanCancel ? Localizer["Cancel selected workflow instances?"] : Localizer["Cancel all matching workflow instances?"];
+        var reference = await DialogService.ShowAsync<BulkCancelDialog>(title, parameters);
         var dialogResult = await reference.Result;
 
         if (dialogResult == null || dialogResult.Canceled)

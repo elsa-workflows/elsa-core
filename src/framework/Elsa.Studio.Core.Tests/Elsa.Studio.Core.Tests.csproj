@@ -15,6 +15,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Compile Include="..\..\testing\StubPermissionService.cs" Link="Authorization\StubPermissionService.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
 
