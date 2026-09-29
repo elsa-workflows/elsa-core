@@ -3,62 +3,65 @@ using System;
 using Elsa.Persistence.EFCore.Modules.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using Oracle.EntityFrameworkCore.Metadata;
 
 #nullable disable
 
-namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
+namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
 {
     [DbContext(typeof(IdentityElsaDbContext))]
-    partial class IdentityElsaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260929154936_RevokedSessions")]
+    partial class RevokedSessions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
                 .HasAnnotation("ProductVersion", "9.0.17")
-                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+            OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("Elsa.Identity.Entities.Application", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("text");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("ClientId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("HashedApiKey")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("HashedApiKeySalt")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("HashedClientSecret")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("HashedClientSecretSalt")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("Roles")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("NVARCHAR2(2000)")
                         .HasColumnName("Roles");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("text");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.HasKey("Id");
 
@@ -67,11 +70,13 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
 
                     b.HasIndex("TenantId", "ClientId")
                         .IsUnique()
-                        .HasDatabaseName("IX_Application_TenantId_ClientId");
+                        .HasDatabaseName("IX_Application_TenantId_ClientId")
+                        .HasFilter("\"TenantId\" IS NOT NULL");
 
                     b.HasIndex("TenantId", "Name")
                         .IsUnique()
-                        .HasDatabaseName("IX_Application_TenantId_Name");
+                        .HasDatabaseName("IX_Application_TenantId_Name")
+                        .HasFilter("\"TenantId\" IS NOT NULL");
 
                     b.ToTable("Applications", "Elsa");
                 });
@@ -79,16 +84,16 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
             modelBuilder.Entity("Elsa.Identity.Entities.RevokedSession", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("text");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<DateTimeOffset>("RevokedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("text");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.HasKey("Id");
 
@@ -98,19 +103,19 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
             modelBuilder.Entity("Elsa.Identity.Entities.Role", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("text");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("Permissions")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("NVARCHAR2(2000)")
                         .HasColumnName("Permissions");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("text");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.HasKey("Id");
 
@@ -119,7 +124,8 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
 
                     b.HasIndex("TenantId", "Name")
                         .IsUnique()
-                        .HasDatabaseName("IX_Role_TenantId_Name");
+                        .HasDatabaseName("IX_Role_TenantId_Name")
+                        .HasFilter("\"TenantId\" IS NOT NULL");
 
                     b.ToTable("Roles", "Elsa");
                 });
@@ -127,25 +133,25 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
             modelBuilder.Entity("Elsa.Identity.Entities.User", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("text");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("HashedPassword")
-                        .HasColumnType("text");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("HashedPasswordSalt")
-                        .HasColumnType("text");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("Roles")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("NVARCHAR2(2000)")
                         .HasColumnName("Roles");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("text");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.HasKey("Id");
 
@@ -154,7 +160,8 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
 
                     b.HasIndex("TenantId", "Name")
                         .IsUnique()
-                        .HasDatabaseName("IX_User_TenantId_Name");
+                        .HasDatabaseName("IX_User_TenantId_Name")
+                        .HasFilter("\"TenantId\" IS NOT NULL");
 
                     b.ToTable("Users", "Elsa");
                 });

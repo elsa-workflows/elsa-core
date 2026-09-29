@@ -18,19 +18,25 @@ public sealed class DefaultElsaTokenService(ISystemClock systemClock, IOptions<I
     /// <inheritdoc />
     public ValueTask<IssuedAccessToken> IssueAccessTokenAsync(TokenIssuanceContext context, CancellationToken cancellationToken = default)
     {
-        return IssueTokenAsync(context, TokenUse.Access, identityTokenOptions.Value.AccessTokenLifetime, cancellationToken);
+        return IssueTokenAsync(context, TokenUse.Access, identityTokenOptions.Value.AccessTokenLifetime, [], cancellationToken);
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// The refresh token carries the session it belongs to: <see cref="TokenIssuanceContext.SessionId"/> when the
+    /// context continues one, otherwise a new session.
+    /// </remarks>
     public ValueTask<IssuedAccessToken> IssueRefreshTokenAsync(TokenIssuanceContext context, CancellationToken cancellationToken = default)
     {
-        return IssueTokenAsync(context, TokenUse.Refresh, identityTokenOptions.Value.RefreshTokenLifetime, cancellationToken);
+        var sessionClaim = new Claim(CustomClaimTypes.SessionId, context.SessionId ?? Guid.NewGuid().ToString("N"));
+        return IssueTokenAsync(context, TokenUse.Refresh, identityTokenOptions.Value.RefreshTokenLifetime, [sessionClaim], cancellationToken);
     }
 
     private ValueTask<IssuedAccessToken> IssueTokenAsync(
         TokenIssuanceContext context,
         string tokenUse,
         TimeSpan lifetime,
+        IEnumerable<Claim> tokenUseClaims,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -60,6 +66,7 @@ public sealed class DefaultElsaTokenService(ISystemClock systemClock, IOptions<I
         claims.AddRange(context.Roles.Select(x => new Claim(ClaimTypes.Role, x)));
         claims.AddRange(context.Permissions.Select(x => new Claim("permissions", x)));
         claims.Add(new Claim(TokenUse.ClaimType, tokenUse));
+        claims.AddRange(tokenUseClaims);
 
         var descriptor = new SecurityTokenDescriptor
         {

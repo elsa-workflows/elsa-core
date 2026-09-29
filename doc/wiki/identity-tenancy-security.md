@@ -38,6 +38,35 @@ Identity JWTs include a `token_use` claim. API bearer authentication accepts onl
 
 JWT signing keys must be configured with a secure random value before production startup. Missing keys, weak keys shorter than 32 ASCII characters, and known public defaults are rejected by options startup validation. Known public defaults are only tolerated in the explicit `Development` or `Demo` environments for local/demo hosts. Use environment variables or a secrets manager, such as `Identity__Tokens__SigningKey` for code-first hosts or `CShells__Shells__Default__Features__Identity__SigningKey` for shell-based hosts.
 
+### Signing Out
+
+Each sign-in starts a session. Its refresh token carries the session ID in the `elsa:session_id` claim, and every refresh token obtained by refreshing it carries the same ID. `POST /identity/logout` ends a session:
+
+```http
+POST /identity/logout
+Authorization: Bearer <access token>
+Content-Type: application/json
+
+{ "refreshToken": "<refresh token>" }
+```
+
+| Response | When |
+| --- | --- |
+| `204 No Content` | The session is revoked. Also returned when it already was, when the refresh token has expired (its session is still revoked), and when the token was not issued by this deployment, so a client can always sign out. |
+| `400 Bad Request` | `refreshToken` is missing, or is a token of this deployment that is not a refresh token, such as the access token. |
+| `403 Forbidden` | The refresh token belongs to another user. |
+| `401 Unauthorized` | No valid access token. |
+
+After that, `/identity/refresh-token` answers `401` for every refresh token of the session, including those it held before its latest refresh, exactly as it does for an invalid or expired token. The external authentication broker's `refresh_token` grant refuses them as well. Other sessions of the same user are unaffected; there is no "sign out everywhere".
+
+**Access tokens are not revoked.** One already issued stays valid until it expires, which `AccessTokenLifetime` (default 15 minutes) bounds, so clients discard it themselves when signing out. A denylist would put a store lookup on every authenticated request on every node to shorten a window that short; refresh is the only call that consults revocations.
+
+Revocations are kept by `IRevokedSessionStore` until the session's last refresh token would have expired, and pruned when the next session is revoked. The default store is in memory: revocations are lost on restart and not shared between nodes, so a revoked refresh token keeps working on any other node until it expires. Deployments with more than one node, or that must survive a restart, use EF Core persistence (`identity.UseEntityFrameworkCore(...)`, or a provider's Identity persistence shell feature), which stores them in the `RevokedSessions` table added by the `RevokedSessions` migration. A custom persistence provider registers its own `IRevokedSessionStore`.
+
+Refresh tokens issued before sessions existed keep working. The session they start is derived from the token itself, so signing out with one, or with a token refreshed from it, revokes both.
+
+Hosts with a custom `IAccessTokenIssuer` implement the `IssueTokensAsync(User, string? sessionId, ...)` overload to carry the session over. Without it, every refresh starts a new session, and signing out leaves the refresh tokens held before the latest refresh valid until they expire.
+
 ## Default Admin Bootstrap
 
 The default admin bootstrap is documented in [src/modules/Elsa.Identity/README.md](../../src/modules/Elsa.Identity/README.md) and [ADR 0010](../adr/0010-default-admin-user-bootstrap-for-initial-identity-access.md).

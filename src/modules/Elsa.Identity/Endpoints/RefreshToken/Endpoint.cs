@@ -38,7 +38,10 @@ internal class RefreshToken : EndpointWithoutRequest<LoginResponse>
         if (user == null)
             return new LoginResponse(false, null, null);
 
-        var tokens = await _tokenIssuer.IssueTokensAsync(user, cancellationToken);
+        // The refresh-token scheme rejects revoked sessions and puts the session on the principal; the new refresh
+        // token continues it, so revoking the session later also revokes this one.
+        var sessionId = User.FindFirst(CustomClaimTypes.SessionId)?.Value;
+        var tokens = await _tokenIssuer.IssueTokensAsync(user, sessionId, cancellationToken);
 
         return new LoginResponse(true, tokens.AccessToken, tokens.RefreshToken);
     }

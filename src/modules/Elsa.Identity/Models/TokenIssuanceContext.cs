@@ -16,4 +16,11 @@ public sealed record TokenIssuanceContext(
     IReadOnlyCollection<string> Roles,
     IReadOnlyCollection<string> Permissions,
     IReadOnlyCollection<Claim> AdditionalClaims,
-    string? ExternalAuthenticationSessionId = null);
+    string? ExternalAuthenticationSessionId = null)
+{
+    /// <summary>
+    /// The sign-in session a refresh token issued from this context continues. When not set, the refresh token
+    /// starts a new session.
+    /// </summary>
+    public string? SessionId { get; init; }
+}

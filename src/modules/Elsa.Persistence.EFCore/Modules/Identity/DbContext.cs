@@ -28,6 +28,11 @@ public class IdentityElsaDbContext : ElsaDbContextBase
     /// </summary>
     public DbSet<Role> Roles { get; set; } = null!;
 
+    /// <summary>
+    /// The revoked sign-in sessions.
+    /// </summary>
+    public DbSet<RevokedSession> RevokedSessions { get; set; } = null!;
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

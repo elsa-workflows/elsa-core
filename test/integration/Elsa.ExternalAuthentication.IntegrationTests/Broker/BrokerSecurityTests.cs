@@ -56,7 +56,8 @@ public class BrokerSecurityTests
             Audience = "elsa-api"
         });
         var tokens = new DefaultElsaTokenService(new CurrentTestClock(), tokenOptions);
-        var refreshTokens = new DefaultIdentityRefreshTokenService(users, new DefaultAccessTokenIssuer(roles, tokens), tenantAccessor, tokenOptions);
+        var sessionRevoker = new SessionRevoker(new MemoryRevokedSessionStore(new MemoryStore<RevokedSession>()), new CurrentTestClock(), tokenOptions);
+        var refreshTokens = new DefaultIdentityRefreshTokenService(users, new DefaultAccessTokenIssuer(roles, tokens), tenantAccessor, sessionRevoker, tokenOptions);
         var externalTokenIssuer = Substitute.For<IExternalAuthenticationTokenIssuer>();
         externalTokenIssuer.RefreshAsync("studio", Arg.Any<SensitiveString>(), Arg.Any<CancellationToken>())
             .Returns(ValueTask.FromException<ExternalTokenResponse>(new InvalidOperationException("A local refresh token must not use the external-session issuer.")));

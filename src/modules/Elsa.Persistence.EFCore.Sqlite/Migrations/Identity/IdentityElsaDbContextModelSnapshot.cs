@@ -71,6 +71,27 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                     b.ToTable("Applications", "Elsa");
                 });
 
+            modelBuilder.Entity("Elsa.Identity.Entities.RevokedSession", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExpiresAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RevokedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RevokedSessions", "Elsa");
+                });
+
             modelBuilder.Entity("Elsa.Identity.Entities.Role", b =>
                 {
                     b.Property<string>("Id")

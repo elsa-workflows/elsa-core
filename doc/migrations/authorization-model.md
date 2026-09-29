@@ -51,6 +51,14 @@ The default access-token lifetime drops from 1 hour to **15 minutes**. This is t
 
 For a tighter bound, enable the optional permission stamp (`Identity:PermissionStamp:IsEnabled`). It is derived from the user's roles rather than stored, so it needs no schema change and no cross-node cache invalidation. `CacheLifetime`, default 30 seconds, is the effective bound when enabled.
 
+## Signing out revokes the session
+
+`POST /identity/logout` revokes the caller's sign-in session: the refresh token it is given, and every refresh token issued in the same session, are refused by `/identity/refresh-token` with the same `401` as an invalid token. Access tokens are not revoked and stay valid until they expire. See [Signing Out](../wiki/identity-tenancy-security.md#signing-out) for the contract.
+
+Revocations need storage. With EF Core persistence, apply the `RevokedSessions` migration for your provider; it adds the `RevokedSessions` table and changes nothing else. Without persistence, revocations are held in memory, which is only sound for a single node.
+
+Nothing else changes for clients. Refresh tokens now carry an `elsa:session_id` claim, and ones issued before the upgrade keep working until they expire.
+
 ## External authentication grant boundaries
 
 `ExternalAuthentication:PermissionGrants:AllowedPermissions` and `DeniedPermissions` bound which permissions an

@@ -15,6 +15,7 @@ public sealed class DefaultIdentityRefreshTokenService(
     IUserProvider userProvider,
     IAccessTokenIssuer accessTokenIssuer,
     ITenantAccessor tenantAccessor,
+    SessionRevoker sessionRevoker,
     IOptions<IdentityTokenOptions> identityTokenOptions) : IIdentityRefreshTokenService
 {
     /// <inheritdoc />
@@ -35,6 +36,11 @@ public sealed class DefaultIdentityRefreshTokenService(
         if (!string.Equals(tokenUse, TokenUse.Refresh, StringComparison.Ordinal))
             return null;
 
+        var sessionId = SessionRevoker.GetSessionId(identity, refreshToken);
+
+        if (await sessionRevoker.IsRevokedAsync(sessionId, cancellationToken))
+            return null;
+
         var userId = identity.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         var userName = identity.FindFirst(JwtRegisteredClaimNames.Name)?.Value;
 
@@ -49,6 +55,6 @@ public sealed class DefaultIdentityRefreshTokenService(
             : new UserFilter { Id = userId };
         var user = await userProvider.FindAsync(userFilter, cancellationToken);
 
-        return user is null ? null : await accessTokenIssuer.IssueTokensAsync(user, cancellationToken);
+        return user is null ? null : await accessTokenIssuer.IssueTokensAsync(user, sessionId, cancellationToken);
     }
 }

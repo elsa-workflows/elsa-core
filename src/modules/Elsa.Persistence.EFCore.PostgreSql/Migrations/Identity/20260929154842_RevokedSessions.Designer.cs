@@ -3,6 +3,7 @@ using System;
 using Elsa.Persistence.EFCore.Modules.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
 {
     [DbContext(typeof(IdentityElsaDbContext))]
-    partial class IdentityElsaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260929154842_RevokedSessions")]
+    partial class RevokedSessions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

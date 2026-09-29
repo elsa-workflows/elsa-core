@@ -22,6 +22,7 @@ public class EFCoreIdentityPersistenceFeature(IModule module) : PersistenceFeatu
             feature.UserStore = sp => sp.GetRequiredService<EFCoreUserStore>();
             feature.ApplicationStore = sp => sp.GetRequiredService<EFCoreApplicationStore>();
             feature.RoleStore = sp => sp.GetRequiredService<EFCoreRoleStore>();
+            feature.RevokedSessionStore = sp => sp.GetRequiredService<EFCoreRevokedSessionStore>();
         });
     }
 
@@ -32,5 +33,6 @@ public class EFCoreIdentityPersistenceFeature(IModule module) : PersistenceFeatu
         AddEntityStore<User, EFCoreUserStore>();
         AddEntityStore<Application, EFCoreApplicationStore>();
         AddEntityStore<Role, EFCoreRoleStore>();
+        AddEntityStore<RevokedSession, EFCoreRevokedSessionStore>();
     }
 }
