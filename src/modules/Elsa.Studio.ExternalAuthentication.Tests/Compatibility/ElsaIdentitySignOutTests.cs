@@ -24,55 +24,29 @@ namespace Elsa.Studio.ExternalAuthentication.Tests.Compatibility;
 /// The ElsaIdentity (username/password) provider contributes the same app bar user menu as the broker, with a
 /// sign-out entry that ends the local session.
 /// </summary>
-public sealed class ElsaIdentitySignOutTests : BunitContext, IAsyncLifetime
+public sealed class ElsaIdentitySignOutTests : AppBarUserMenuTests<ElsaIdentityUIFeature, ElsaIdentityUserMenu>
 {
     private readonly InMemoryJwtAccessor _tokens = new();
-    private readonly IRenderedComponent<MudPopoverProvider> _popoverProvider;
 
     public ElsaIdentitySignOutTests()
     {
-        JSInterop.Mode = JSRuntimeMode.Loose;
-        Services.AddMudServices();
         Services.AddElsaIdentityCore();
         Services.AddElsaIdentityUI();
-        Services.AddScoped<IAppBarService, DefaultAppBarService>();
         Services.AddSingleton<IJwtAccessor>(_tokens);
-        _popoverProvider = Render<MudPopoverProvider>();
-    }
-
-    Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
-    async Task IAsyncLifetime.DisposeAsync() => await base.DisposeAsync();
-
-    [Fact]
-    public async Task SignedInUser_SeesTheirNameInTheAppBar()
-    {
-        SignIn("alice");
-
-        var menu = await RenderAppBarMenuAsync();
-
-        menu.WaitForAssertion(() => Assert.Contains("alice", menu.Markup, StringComparison.Ordinal));
     }
 
     [Fact]
-    public async Task AnonymousUser_SeesNoUserMenu()
+    public void SignOut_ClearsTheSessionAndReturnsToTheLoginPage()
     {
-        var menu = await RenderAppBarMenuAsync();
-
-        Assert.Empty(menu.FindAll(".mud-menu"));
-    }
-
-    [Fact]
-    public async Task SignOut_ClearsTheSessionAndReturnsToTheLoginPage()
-    {
-        SignIn("alice");
+        SignIn();
         _tokens.Tokens[TokenNames.IdToken] = "stale-id-token";
         var stateChanges = new List<AuthenticationState>();
         Services.GetRequiredService<AuthenticationStateProvider>().AuthenticationStateChanged +=
             async state => stateChanges.Add(await state);
-        var menu = await RenderAppBarMenuAsync();
+        var menu = RenderAppBarMenu();
 
         menu.Find(".mud-menu button").Click();
-        _popoverProvider.WaitForElements(".mud-menu-item")
+        PopoverProvider!.WaitForElements(".mud-menu-item")
             .Single(item => item.TextContent.Trim() == "Sign out")
             .Click();
 
@@ -87,7 +61,7 @@ public sealed class ElsaIdentitySignOutTests : BunitContext, IAsyncLifetime
     [Fact]
     public async Task RefreshCompletingAfterSignOut_DoesNotRestoreTheSession()
     {
-        SignIn("alice");
+        SignIn();
         var refreshResponse = new PausedHandler();
         var refreshTokenService = CreateRefreshTokenService(refreshResponse);
 
@@ -102,7 +76,7 @@ public sealed class ElsaIdentitySignOutTests : BunitContext, IAsyncLifetime
     [Fact]
     public async Task SignOutWhileARefreshStoresItsTokens_StillEndsTheSession()
     {
-        SignIn("alice");
+        SignIn();
         var refreshResponse = new PausedHandler();
         var refreshTokenService = CreateRefreshTokenService(refreshResponse);
         var pausedWrite = _tokens.PauseNextWrite();
@@ -140,16 +114,9 @@ public sealed class ElsaIdentitySignOutTests : BunitContext, IAsyncLifetime
     private ElsaIdentityRefreshTokenService CreateRefreshTokenService(HttpMessageHandler handler) =>
         new(new StaticRemoteBackendAccessor(), _tokens, new StaticHttpClientFactory(handler), Services.GetRequiredService<ElsaIdentitySessionGate>());
 
-    private async Task<IRenderedComponent<ElsaIdentityUserMenu>> RenderAppBarMenuAsync()
+    protected override void SignIn()
     {
-        await Services.GetServices<IFeature>().OfType<ElsaIdentityUIFeature>().Single().InitializeAsync();
-        var element = Assert.Single(Services.GetRequiredService<IAppBarService>().AppBarElements);
-        return Render(element.Component).FindComponent<ElsaIdentityUserMenu>();
-    }
-
-    private void SignIn(string userName)
-    {
-        _tokens.Tokens[TokenNames.AccessToken] = CreateJwt(userName);
+        _tokens.Tokens[TokenNames.AccessToken] = CreateJwt(UserName);
         _tokens.Tokens[TokenNames.RefreshToken] = "refresh-token";
     }
 

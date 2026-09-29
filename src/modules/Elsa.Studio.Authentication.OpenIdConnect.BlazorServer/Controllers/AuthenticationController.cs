@@ -23,8 +23,12 @@ public class AuthenticationController : Controller
     /// <summary>
     /// Signs out from both the local cookie and the OpenID Connect provider.
     /// </summary>
-    [HttpGet("logout")]
-    public IActionResult Logout([FromQuery] string? returnUrl = null)
+    /// <remarks>
+    /// POST-only and antiforgery-protected so another site cannot sign the user out.
+    /// </remarks>
+    [HttpPost("logout")]
+    [ValidateAntiForgeryToken]
+    public IActionResult Logout([FromForm] string? returnUrl = null)
     {
         return SignOut(
             new AuthenticationProperties { RedirectUri = NormalizeReturnUrl(returnUrl) },

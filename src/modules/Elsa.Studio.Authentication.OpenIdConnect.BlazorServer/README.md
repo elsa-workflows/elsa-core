@@ -18,7 +18,8 @@ This module provides the Blazor Server-specific implementation for OpenID Connec
 - `AuthCookieEvents` - Automatic token refresh on every HTTP request
 - `TokenRefreshService` - Shared token refresh logic for session and backend API tokens
 - `ChallengeToLogin` - Component that initiates OIDC authentication challenge
-- `AuthenticationController` - Controller endpoint for manual token refresh (optional)
+- `AuthenticationController` - Sign-in challenge (`GET /authentication/login`) and antiforgery-protected sign-out (`POST /authentication/logout`) endpoints
+- `OpenIdConnectUserMenu` - App bar user menu with a **Sign out** entry, added by `OpenIdConnectBlazorServerFeature`; see [Signing Out](../Elsa.Studio.Authentication.OpenIdConnect/README.md#signing-out)
 
 ## Installation
 
@@ -189,15 +190,17 @@ Elsa.Studio.Authentication.OpenIdConnect/            (Shared core)
 
 Elsa.Studio.Authentication.OpenIdConnect.BlazorServer/ (This module)
 ├── Controllers/
-│   └── AuthenticationController.cs                   (Optional manual refresh endpoint)
+│   └── AuthenticationController.cs                   (Sign-in challenge and sign-out endpoints)
 ├── Services/
 │   ├── ServerTokenProvider.cs                        (Token access via HttpContext)
 │   ├── TokenRefreshService.cs                        (Shared refresh logic)
 │   └── AuthCookieEvents.cs                           (Automatic refresh on request)
 ├── Components/
-│   └── ChallengeToLogin.razor                        (OIDC challenge component)
-└── Models/
-    └── TokenRefreshResult.cs                         (Refresh result DTO)
+│   ├── ChallengeToLogin.razor                        (OIDC challenge component)
+│   └── OpenIdConnectUserMenu.razor                   (App bar user menu with sign-out)
+├── Models/
+│   └── TokenRefreshResult.cs                         (Refresh result DTO)
+└── OpenIdConnectBlazorServerFeature.cs               (Adds the user menu to the app bar)
 ```
 
 ## Features
@@ -301,6 +304,14 @@ app.MapFallbackToPage("/_Host");
 app.Run();
 ```
 
+Render `<persist-component-state />` on the host page, after the root components and before `_framework/blazor.server.js`:
+
+```html
+<component type="typeof(App)" render-mode="ServerPrerendered" />
+<persist-component-state />
+<script src="_framework/blazor.server.js"></script>
+```
+
 ### HTTP Requests to Elsa Backend
 
 All HTTP requests to the Elsa backend API automatically include access tokens via `OidcAuthenticatingApiHttpMessageHandler`. No manual token handling required.
@@ -310,6 +321,15 @@ All HTTP requests to the Elsa backend API automatically include access tokens vi
 SignalR connections (for workflow monitoring) automatically receive tokens via `OidcHttpConnectionOptionsConfigurator`. No additional configuration needed.
 
 ## Troubleshooting
+
+### Backend calls have no access token, or Sign out returns 400
+
+The circuit's `HttpContext` is the `/_blazor` request, which carries the sign-in and antiforgery cookies. `ServerTokenProvider` reads backend access tokens from it. This exists only when the circuit runs over WebSockets, which is Blazor Server's default transport.
+
+If a proxy or network forces the long-polling fallback, the circuit has no `HttpContext`:
+
+- **Backend calls** go out without an access token. Make sure WebSocket connections to `/_blazor` are allowed end to end.
+- **Sign out** keeps working, provided the host page renders `<persist-component-state />`. The app bar's **Sign out** then posts the antiforgery token that the prerender persisted in the page. Without the tag it has no token, and the sign-out is rejected with a 400. Studio's host page has the tag.
 
 ### "SaveTokens must be true" error
 
