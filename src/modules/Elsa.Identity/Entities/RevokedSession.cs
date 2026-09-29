@@ -12,12 +12,13 @@ namespace Elsa.Identity.Entities;
 public class RevokedSession : Entity
 {
     /// <summary>
-    /// When the session was revoked.
+    /// When the session was first revoked.
     /// </summary>
     public DateTimeOffset RevokedAt { get; set; }
 
     /// <summary>
-    /// When the last refresh token of the session expires, after which the revocation can be forgotten.
+    /// When the last refresh token of the session expires, after which the revocation can be forgotten. Revoking the
+    /// session again can extend it, never shorten it.
     /// </summary>
     public DateTimeOffset ExpiresAt { get; set; }
 }

@@ -135,12 +135,13 @@ public class BrokerSecurityTests
             roleProvider: roles,
             identityRefreshTokenService: local.RefreshTokens,
             tenantAccessor: tenantAccessor);
-        var refreshToken = (await local.AccessTokenIssuer.IssueTokensAsync(user, "session-a")).RefreshToken;
+        var session = new SignInSession("session-a", DateTimeOffset.UtcNow);
+        var refreshToken = (await local.AccessTokenIssuer.IssueTokensAsync(user, session)).RefreshToken;
         var request = new BrokerTokenRequest("refresh_token", "studio", null, null, null, refreshToken, "https://studio.example");
 
         Assert.Null((await broker.ExchangeAsync(request)).Error);
 
-        await local.SessionRevoker.RevokeAsync("session-a", DateTimeOffset.UtcNow.Add(local.Options.Value.RefreshTokenLifetime));
+        await local.SessionRevoker.RevokeAsync(session);
 
         var refused = await broker.ExchangeAsync(request);
         Assert.NotNull(refused.Error);
@@ -562,11 +563,10 @@ public class BrokerSecurityTests
         var tokens = new DefaultElsaTokenService(new CurrentTestClock(), options);
         var accessTokenIssuer = new DefaultAccessTokenIssuer(roles, tokens);
         var sessionRevoker = new SessionRevoker(new MemoryRevokedSessionStore(new MemoryStore<RevokedSession>()), new CurrentTestClock(), options);
-        return new(options, tokens, accessTokenIssuer, sessionRevoker, new DefaultIdentityRefreshTokenService(users, accessTokenIssuer, tenantAccessor, sessionRevoker, options));
+        return new(tokens, accessTokenIssuer, sessionRevoker, new DefaultIdentityRefreshTokenService(users, accessTokenIssuer, tenantAccessor, sessionRevoker, options));
     }
 
     private sealed record LocalIdentityServices(
-        IOptions<IdentityTokenOptions> Options,
         DefaultElsaTokenService Tokens,
         DefaultAccessTokenIssuer AccessTokenIssuer,
         SessionRevoker SessionRevoker,

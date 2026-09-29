@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Elsa.Common;
 using Elsa.Identity.Constants;
@@ -18,24 +19,32 @@ public sealed class DefaultElsaTokenService(ISystemClock systemClock, IOptions<I
     /// <inheritdoc />
     public ValueTask<IssuedAccessToken> IssueAccessTokenAsync(TokenIssuanceContext context, CancellationToken cancellationToken = default)
     {
-        return IssueTokenAsync(context, TokenUse.Access, identityTokenOptions.Value.AccessTokenLifetime, [], cancellationToken);
+        return IssueTokenAsync(context, TokenUse.Access, systemClock.UtcNow.Add(identityTokenOptions.Value.AccessTokenLifetime), [], cancellationToken);
     }
 
     /// <inheritdoc />
     /// <remarks>
-    /// The refresh token carries the session it belongs to: <see cref="TokenIssuanceContext.SessionId"/> when the
-    /// context continues one, otherwise a new session.
+    /// The refresh token carries the session it belongs to: <see cref="TokenIssuanceContext.Session"/> when the
+    /// context continues one, otherwise a new session. It also carries the session's latest refresh-token expiry, so a
+    /// revocation made with it outlives the tokens it was refreshed from, whatever lifetime they were issued with.
     /// </remarks>
     public ValueTask<IssuedAccessToken> IssueRefreshTokenAsync(TokenIssuanceContext context, CancellationToken cancellationToken = default)
     {
-        var sessionClaim = new Claim(CustomClaimTypes.SessionId, context.SessionId ?? Guid.NewGuid().ToString("N"));
-        return IssueTokenAsync(context, TokenUse.Refresh, identityTokenOptions.Value.RefreshTokenLifetime, [sessionClaim], cancellationToken);
+        var session = context.Session;
+        var expiresAt = systemClock.UtcNow.Add(identityTokenOptions.Value.RefreshTokenLifetime);
+        var sessionExpiresAt = session?.ExpiresAt > expiresAt ? session.ExpiresAt : expiresAt;
+        Claim[] sessionClaims =
+        [
+            new(CustomClaimTypes.SessionId, session?.Id ?? Guid.NewGuid().ToString("N")),
+            new(CustomClaimTypes.SessionExpiresAt, EpochTime.GetIntDate(sessionExpiresAt.UtcDateTime).ToString(CultureInfo.InvariantCulture), ClaimValueTypes.Integer64)
+        ];
+        return IssueTokenAsync(context, TokenUse.Refresh, expiresAt, sessionClaims, cancellationToken);
     }
 
     private ValueTask<IssuedAccessToken> IssueTokenAsync(
         TokenIssuanceContext context,
         string tokenUse,
-        TimeSpan lifetime,
+        DateTimeOffset expiresAt,
         IEnumerable<Claim> tokenUseClaims,
         CancellationToken cancellationToken)
     {
@@ -62,7 +71,6 @@ public sealed class DefaultElsaTokenService(ISystemClock systemClock, IOptions<I
         if (!string.IsNullOrWhiteSpace(context.ExternalAuthenticationSessionId))
             claims.Add(new Claim(CustomClaimTypes.ExternalAuthenticationSessionId, context.ExternalAuthenticationSessionId));
 
-        var expiresAt = systemClock.UtcNow.Add(lifetime);
         claims.AddRange(context.Roles.Select(x => new Claim(ClaimTypes.Role, x)));
         claims.AddRange(context.Permissions.Select(x => new Claim("permissions", x)));
         claims.Add(new Claim(TokenUse.ClaimType, tokenUse));

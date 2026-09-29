@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -5,9 +6,10 @@ using Elsa.Common;
 using Elsa.Common.Multitenancy;
 using Elsa.Identity.Constants;
 using Elsa.Identity.Contracts;
-using Elsa.Identity.Entities;
+using Elsa.Identity.Models;
 using Elsa.Identity.Options;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Elsa.Identity.Services;
 
@@ -24,18 +26,27 @@ public class SessionRevoker(IRevokedSessionStore store, ISystemClock systemClock
     private static readonly TimeSpan ExpiryMargin = TimeSpan.FromMinutes(5);
 
     /// <summary>
-    /// The ID of the session <paramref name="refreshToken"/> belongs to. A refresh token issued before sessions
-    /// existed carries none, so it gets one derived from the token itself, which refreshing then carries over.
+    /// The session <paramref name="refreshToken"/> belongs to. A refresh token issued before sessions existed carries
+    /// none, so it gets one derived from the token itself, which refreshing then carries over, and that expires with it.
     /// </summary>
     /// <param name="refreshTokenIdentity">The identity validated from <paramref name="refreshToken"/>.</param>
     /// <param name="refreshToken">The serialized refresh token.</param>
-    public static string GetSessionId(ClaimsIdentity refreshTokenIdentity, string refreshToken)
+    public static SignInSession GetSession(ClaimsIdentity refreshTokenIdentity, string refreshToken)
+    {
+        return FindSession(refreshTokenIdentity)
+               ?? new(Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(refreshToken))), GetSessionExpiresAt(refreshTokenIdentity));
+    }
+
+    /// <summary>
+    /// The session named by the specified identity. The refresh-token scheme puts it on the identity it authenticates,
+    /// including the session derived for a refresh token issued before sessions existed. <c>null</c> when there is
+    /// none, as with a custom refresh-token scheme, whose tokens are not Elsa Identity's to revoke.
+    /// </summary>
+    public static SignInSession? FindSession(ClaimsIdentity refreshTokenIdentity)
     {
         var sessionId = refreshTokenIdentity.FindFirst(CustomClaimTypes.SessionId)?.Value;
 
-        return string.IsNullOrWhiteSpace(sessionId)
-            ? Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(refreshToken)))
-            : sessionId;
+        return string.IsNullOrWhiteSpace(sessionId) ? null : new(sessionId, GetSessionExpiresAt(refreshTokenIdentity));
     }
 
     /// <summary>
@@ -47,27 +58,36 @@ public class SessionRevoker(IRevokedSessionStore store, ISystemClock systemClock
     }
 
     /// <summary>
-    /// Revokes the session with the specified ID. Revoking a session twice is harmless.
+    /// Revokes the specified session. Revoking a session again can extend its revocation, never shorten it.
     /// </summary>
-    /// <param name="sessionId">The session ID.</param>
-    /// <param name="refreshTokenExpiresAt">When the refresh token that identified the session expires.</param>
+    /// <param name="session">The session, as read from one of its refresh tokens.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async ValueTask RevokeAsync(string sessionId, DateTimeOffset refreshTokenExpiresAt, CancellationToken cancellationToken = default)
+    public async ValueTask RevokeAsync(SignInSession session, CancellationToken cancellationToken = default)
     {
         var now = systemClock.UtcNow;
 
-        // No refresh token of the session can outlive both the one presented and one issued right now, and
-        // none can be issued after this point. Beyond that, the revocation guards nothing.
+        // The refresh tokens the session went through expire by session.ExpiresAt, whatever lifetime they were issued
+        // with, and a refresh racing this revocation can still issue one a lifetime from now. None can be issued after
+        // this point, so beyond the later of the two the revocation guards nothing. The store keeps an earlier
+        // revocation of the session that expires later still.
         var newestExpiry = now + identityTokenOptions.Value.RefreshTokenLifetime;
-        var expiresAt = (refreshTokenExpiresAt > newestExpiry ? refreshTokenExpiresAt : newestExpiry) + ExpiryMargin;
+        var expiresAt = (session.ExpiresAt > newestExpiry ? session.ExpiresAt : newestExpiry) + ExpiryMargin;
 
         await store.DeleteExpiredAsync(now, cancellationToken);
-        await store.SaveAsync(new()
+        await store.AddOrExtendAsync(new()
         {
-            Id = sessionId,
+            Id = session.Id,
             TenantId = Tenant.AgnosticTenantId,
             RevokedAt = now,
             ExpiresAt = expiresAt
         }, cancellationToken);
+    }
+
+    // A refresh token issued before sessions carried their expiry knows no expiry of its session later than its own.
+    private static DateTimeOffset GetSessionExpiresAt(ClaimsIdentity refreshTokenIdentity)
+    {
+        return new[] { CustomClaimTypes.SessionExpiresAt, JwtRegisteredClaimNames.Exp }
+            .Select(x => long.TryParse(refreshTokenIdentity.FindFirst(x)?.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var seconds) ? DateTimeOffset.FromUnixTimeSeconds(seconds) : DateTimeOffset.MinValue)
+            .Max();
     }
 }

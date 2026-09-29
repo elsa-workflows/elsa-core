@@ -2,8 +2,10 @@ using System.Security.Claims;
 using Elsa.Common.Services;
 using Elsa.Identity.Constants;
 using Elsa.Identity.Entities;
+using Elsa.Identity.Models;
 using Elsa.Identity.Options;
 using Elsa.Identity.Services;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Elsa.Identity.UnitTests.Services;
 
@@ -25,7 +27,7 @@ public class SessionRevokerTests
     {
         Assert.False(await _revoker.IsRevokedAsync("session-a"));
 
-        await _revoker.RevokeAsync("session-a", _clock.UtcNow);
+        await RevokeAsync("session-a", _clock.UtcNow);
 
         Assert.True(await _revoker.IsRevokedAsync("session-a"));
         Assert.False(await _revoker.IsRevokedAsync("session-b"));
@@ -34,8 +36,8 @@ public class SessionRevokerTests
     [Fact]
     public async Task RevokingASessionTwiceIsHarmless()
     {
-        await _revoker.RevokeAsync("session-a", _clock.UtcNow);
-        await _revoker.RevokeAsync("session-a", _clock.UtcNow);
+        await RevokeAsync("session-a", _clock.UtcNow);
+        await RevokeAsync("session-a", _clock.UtcNow);
 
         Assert.True(await _revoker.IsRevokedAsync("session-a"));
         Assert.Single(_store.List());
@@ -44,31 +46,56 @@ public class SessionRevokerTests
     [Fact]
     public async Task RevocationOutlivesARefreshTokenIssuedNow()
     {
-        await _revoker.RevokeAsync("session-a", _clock.UtcNow.AddMinutes(1));
+        await RevokeAsync("session-a", _clock.UtcNow.AddMinutes(1));
 
         Assert.True(Revocation("session-a").ExpiresAt > _clock.UtcNow + RefreshTokenLifetime);
     }
 
     [Fact]
-    public async Task RevocationOutlivesThePresentedRefreshToken()
+    public async Task RevocationOutlivesEveryRefreshTokenTheSessionWentThrough()
     {
-        // A refresh token issued under a longer lifetime than the one configured now.
-        var presentedExpiry = _clock.UtcNow + RefreshTokenLifetime * 3;
+        // One of them was issued with a longer lifetime than the one configured now.
+        var sessionExpiresAt = _clock.UtcNow + RefreshTokenLifetime * 3;
 
-        await _revoker.RevokeAsync("session-a", presentedExpiry);
+        await RevokeAsync("session-a", sessionExpiresAt);
 
-        Assert.True(Revocation("session-a").ExpiresAt > presentedExpiry);
+        Assert.True(Revocation("session-a").ExpiresAt > sessionExpiresAt);
+    }
+
+    [Fact]
+    public async Task RevokingASessionAgainNeverShortensItsRevocation()
+    {
+        await RevokeAsync("session-a", _clock.UtcNow + RefreshTokenLifetime * 3);
+        var expiresAt = Revocation("session-a").ExpiresAt;
+
+        await RevokeAsync("session-a", _clock.UtcNow);
+
+        Assert.Equal(expiresAt, Revocation("session-a").ExpiresAt);
+    }
+
+    [Fact]
+    public async Task RevokingASessionAgainExtendsItsRevocation()
+    {
+        await RevokeAsync("session-a", _clock.UtcNow);
+        var revokedAt = Revocation("session-a").RevokedAt;
+        var sessionExpiresAt = _clock.UtcNow + RefreshTokenLifetime * 3;
+        _clock.UtcNow += TimeSpan.FromMinutes(1);
+
+        await RevokeAsync("session-a", sessionExpiresAt);
+
+        Assert.True(Revocation("session-a").ExpiresAt > sessionExpiresAt);
+        Assert.Equal(revokedAt, Revocation("session-a").RevokedAt);
     }
 
     [Fact]
     public async Task RevokingPrunesExpiredRevocationsOnly()
     {
-        await _revoker.RevokeAsync("expired", _clock.UtcNow);
+        await RevokeAsync("expired", _clock.UtcNow);
         _clock.UtcNow += TimeSpan.FromDays(1);
-        await _revoker.RevokeAsync("live", _clock.UtcNow);
+        await RevokeAsync("live", _clock.UtcNow);
         _clock.UtcNow += RefreshTokenLifetime;
 
-        await _revoker.RevokeAsync("latest", _clock.UtcNow);
+        await RevokeAsync("latest", _clock.UtcNow);
 
         Assert.False(await _revoker.IsRevokedAsync("expired"));
         Assert.True(await _revoker.IsRevokedAsync("live"));
@@ -76,24 +103,45 @@ public class SessionRevokerTests
     }
 
     [Fact]
-    public void SessionIdIsReadFromTheRefreshToken()
+    public void SessionIsReadFromTheRefreshToken()
     {
-        var identity = new ClaimsIdentity([new Claim(CustomClaimTypes.SessionId, "session-a")]);
+        var identity = Identity((CustomClaimTypes.SessionId, "session-a"), (CustomClaimTypes.SessionExpiresAt, "2000000000"), (JwtRegisteredClaimNames.Exp, "1900000000"));
 
-        Assert.Equal("session-a", SessionRevoker.GetSessionId(identity, "token-a"));
+        var expected = new SignInSession("session-a", DateTimeOffset.FromUnixTimeSeconds(2000000000));
+        Assert.Equal(expected, SessionRevoker.GetSession(identity, "token-a"));
+        Assert.Equal(expected, SessionRevoker.FindSession(identity));
     }
 
     [Fact]
-    public void RefreshTokenWithoutSessionGetsOneDerivedFromTheToken()
+    public void SessionExpiresNoEarlierThanTheRefreshTokenItIsReadFrom()
     {
-        var identity = new ClaimsIdentity();
+        var identity = Identity((CustomClaimTypes.SessionId, "session-a"), (CustomClaimTypes.SessionExpiresAt, "1900000000"), (JwtRegisteredClaimNames.Exp, "2000000000"));
 
-        var sessionId = SessionRevoker.GetSessionId(identity, "token-a");
-
-        Assert.Equal(sessionId, SessionRevoker.GetSessionId(identity, "token-a"));
-        Assert.NotEqual(sessionId, SessionRevoker.GetSessionId(identity, "token-b"));
-        Assert.DoesNotContain("token-a", sessionId, StringComparison.Ordinal);
+        Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(2000000000), SessionRevoker.GetSession(identity, "token-a").ExpiresAt);
     }
 
+    [Fact]
+    public void RefreshTokenWithoutSessionGetsOneDerivedFromTheTokenThatExpiresWithIt()
+    {
+        var identity = Identity((JwtRegisteredClaimNames.Exp, "2000000000"));
+
+        var session = SessionRevoker.GetSession(identity, "token-a");
+
+        Assert.Equal(session, SessionRevoker.GetSession(identity, "token-a"));
+        Assert.NotEqual(session.Id, SessionRevoker.GetSession(identity, "token-b").Id);
+        Assert.DoesNotContain("token-a", session.Id, StringComparison.Ordinal);
+        Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(2000000000), session.ExpiresAt);
+    }
+
+    [Fact]
+    public void AnIdentityWithoutSessionNamesNone()
+    {
+        Assert.Null(SessionRevoker.FindSession(Identity((JwtRegisteredClaimNames.Exp, "2000000000"))));
+    }
+
+    private ValueTask RevokeAsync(string sessionId, DateTimeOffset sessionExpiresAt) => _revoker.RevokeAsync(new(sessionId, sessionExpiresAt));
+
     private RevokedSession Revocation(string sessionId) => Assert.Single(_store.List(), x => x.Id == sessionId);
+
+    private static ClaimsIdentity Identity(params (string Type, string Value)[] claims) => new(claims.Select(x => new Claim(x.Type, x.Value)));
 }

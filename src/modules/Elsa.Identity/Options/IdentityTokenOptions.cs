@@ -115,10 +115,10 @@ public class IdentityTokenOptions
             JwtSecurityToken token => token.RawData,
             var token => throw new InvalidOperationException($"Cannot read a refresh token of type {token.GetType().Name}.")
         };
-        var sessionId = SessionRevoker.GetSessionId(identity, refreshToken);
+        var session = SessionRevoker.GetSession(identity, refreshToken);
         var sessionRevoker = context.HttpContext.RequestServices.GetRequiredService<SessionRevoker>();
 
-        if (await sessionRevoker.IsRevokedAsync(sessionId, context.HttpContext.RequestAborted))
+        if (await sessionRevoker.IsRevokedAsync(session.Id, context.HttpContext.RequestAborted))
         {
             context.Fail("The refresh token has been revoked.");
             return;
@@ -126,7 +126,7 @@ public class IdentityTokenOptions
 
         // Refreshing continues the session, including the one derived for a token issued before sessions existed.
         if (!identity.HasClaim(x => x.Type == CustomClaimTypes.SessionId))
-            identity.AddClaim(new(CustomClaimTypes.SessionId, sessionId));
+            identity.AddClaim(new(CustomClaimTypes.SessionId, session.Id));
     }
 
     private static bool ValidateLifetime(DateTime? notBefore, DateTime? expires, SecurityToken securityToken, TokenValidationParameters validationParameters)

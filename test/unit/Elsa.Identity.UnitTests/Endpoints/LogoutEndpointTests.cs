@@ -1,10 +1,10 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using Elsa.Common;
 using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Features.Services;
-using Elsa.Identity.Constants;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Features;
@@ -33,6 +33,7 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
     private readonly MutableSystemClock _clock = new();
     private WebApplication _app = null!;
     private HttpClient _client = null!;
+    private IdentityTokenOptions _tokenOptions = null!;
 
     public async Task InitializeAsync()
     {
@@ -57,6 +58,7 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
             });
 
         _app = builder.Build();
+        _tokenOptions = _app.Services.GetRequiredService<IOptions<IdentityTokenOptions>>().Value;
         var users = _app.Services.GetRequiredService<MemoryStore<User>>();
         users.Save(Alice, x => x.Id);
         users.Save(Bob, x => x.Id);
@@ -171,7 +173,7 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
         await AssertLogoutAsync(HttpStatusCode.Forbidden, alice.AccessToken, otherTenant.RefreshToken);
 
         await using var scope = _app.Services.CreateAsyncScope();
-        Assert.False(await scope.ServiceProvider.GetRequiredService<SessionRevoker>().IsRevokedAsync(GetSessionId(otherTenant.RefreshToken)));
+        Assert.False(await scope.ServiceProvider.GetRequiredService<SessionRevoker>().IsRevokedAsync(GetSession(otherTenant.RefreshToken).Id));
     }
 
     [Fact]
@@ -202,13 +204,60 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
     [Fact]
     public async Task RefreshTokenIssuedBeforeSessionsExistedWorksUntilItsSessionIsRevoked()
     {
-        var legacy = LegacyRefreshToken.Create(_app.Services.GetRequiredService<IOptions<IdentityTokenOptions>>().Value, Alice);
+        var legacy = LegacyRefreshToken.Create(_tokenOptions, Alice);
         var refreshed = await RefreshTokensAsync(legacy);
 
         await AssertLogoutAsync(HttpStatusCode.NoContent, refreshed.AccessToken, legacy);
 
         await AssertRefreshRejectedAsync(legacy);
         await AssertRefreshRejectedAsync(refreshed.RefreshToken);
+    }
+
+    [Fact]
+    public async Task ARevocationOutlivesARefreshTokenIssuedBeforeSessionsExistedWithALongerLifetime()
+    {
+        _tokenOptions.RefreshTokenLifetime = TimeSpan.FromDays(30);
+        var legacy = LegacyRefreshToken.Create(_tokenOptions, Alice);
+        _tokenOptions.RefreshTokenLifetime = TimeSpan.FromHours(2);
+        var refreshed = await RefreshTokensAsync(legacy);
+
+        await AssertLogoutAsync(HttpStatusCode.NoContent, refreshed.AccessToken, refreshed.RefreshToken);
+        await PruneRevocationsAsync(TimeSpan.FromDays(1));
+
+        await AssertRefreshRejectedAsync(legacy);
+    }
+
+    [Fact]
+    public async Task ARevocationOutlivesTheOlderRefreshTokensOfTheSessionAfterTheLifetimeIsLowered()
+    {
+        _tokenOptions.RefreshTokenLifetime = TimeSpan.FromDays(30);
+        var signIn = await LoginAsync(Alice);
+        _tokenOptions.RefreshTokenLifetime = TimeSpan.FromHours(2);
+        var refreshed = await RefreshTokensAsync(signIn.RefreshToken);
+
+        await AssertLogoutAsync(HttpStatusCode.NoContent, refreshed.AccessToken, refreshed.RefreshToken);
+        await AssertRefreshRejectedAsync(signIn.RefreshToken);
+
+        // Long enough for a revocation computed from the current lifetime alone to be pruned.
+        await PruneRevocationsAsync(TimeSpan.FromDays(1));
+
+        await AssertRefreshRejectedAsync(signIn.RefreshToken);
+    }
+
+    [Fact]
+    public async Task SigningOutAgainWithAShorterLivedRefreshTokenDoesNotShortenTheRevocation()
+    {
+        var signIn = await LoginAsync(Alice);
+        _tokenOptions.RefreshTokenLifetime = TimeSpan.FromDays(30);
+        var longLived = await RefreshTokensAsync(signIn.RefreshToken);
+        _tokenOptions.RefreshTokenLifetime = TimeSpan.FromHours(2);
+
+        await AssertLogoutAsync(HttpStatusCode.NoContent, longLived.AccessToken, longLived.RefreshToken);
+        // The sign-in token knows nothing of the longer-lived one refreshed from it.
+        await AssertLogoutAsync(HttpStatusCode.NoContent, longLived.AccessToken, signIn.RefreshToken);
+        await PruneRevocationsAsync(TimeSpan.FromDays(1));
+
+        await AssertRefreshRejectedAsync(longLived.RefreshToken);
     }
 
     private async Task<IssuedTokens> LoginAsync(User user) =>
@@ -239,15 +288,24 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
         return await _client.SendAsync(request);
     }
 
-    private Task<IssuedTokens> ContinueSessionAsync(User user, string refreshToken) => IssueTokensAsync(user, GetSessionId(refreshToken));
-
-    private async Task<IssuedTokens> IssueTokensAsync(User user, string? sessionId = null)
+    // Revocations are pruned when the next session is revoked.
+    private async Task PruneRevocationsAsync(TimeSpan later)
     {
-        await using var scope = _app.Services.CreateAsyncScope();
-        return await scope.ServiceProvider.GetRequiredService<IAccessTokenIssuer>().IssueTokensAsync(user, sessionId);
+        _clock.UtcNow += later;
+        var other = await LoginAsync(Bob);
+        await AssertLogoutAsync(HttpStatusCode.NoContent, other.AccessToken, other.RefreshToken);
     }
 
-    private static string GetSessionId(string refreshToken) => new JsonWebTokenHandler().ReadJsonWebToken(refreshToken).GetClaim(CustomClaimTypes.SessionId).Value;
+    private Task<IssuedTokens> ContinueSessionAsync(User user, string refreshToken) => IssueTokensAsync(user, GetSession(refreshToken));
+
+    private async Task<IssuedTokens> IssueTokensAsync(User user, SignInSession? session = null)
+    {
+        await using var scope = _app.Services.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<IAccessTokenIssuer>().IssueTokensAsync(user, session);
+    }
+
+    private static SignInSession GetSession(string refreshToken) =>
+        SessionRevoker.GetSession(new ClaimsIdentity(new JsonWebTokenHandler().ReadJsonWebToken(refreshToken).Claims), refreshToken);
 
     private static async Task<IssuedTokens> ReadTokensAsync(HttpResponseMessage response)
     {

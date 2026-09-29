@@ -20,4 +20,11 @@ public static class CustomClaimTypes
     /// revoking the session revokes every refresh token issued since sign-in.
     /// </summary>
     public const string SessionId = "elsa:session_id";
+
+    /// <summary>
+    /// When the last refresh token of the session so far expires, in seconds since the Unix epoch like <c>exp</c>.
+    /// Refreshing carries it forward, so revoking the session outlives refresh tokens issued with a longer lifetime
+    /// than the current one.
+    /// </summary>
+    public const string SessionExpiresAt = "elsa:session_exp";
 }

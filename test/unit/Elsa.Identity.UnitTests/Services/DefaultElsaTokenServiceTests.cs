@@ -54,7 +54,7 @@ public class DefaultElsaTokenServiceTests
 
         var first = ReadSessionId(await service.IssueRefreshTokenAsync(context));
         var second = ReadSessionId(await service.IssueRefreshTokenAsync(context));
-        var continued = ReadSessionId(await service.IssueRefreshTokenAsync(context with { SessionId = first }));
+        var continued = ReadSessionId(await service.IssueRefreshTokenAsync(context with { Session = new(first!, DateTimeOffset.UtcNow) }));
 
         Assert.False(string.IsNullOrWhiteSpace(first));
         Assert.NotEqual(first, second);
@@ -64,11 +64,28 @@ public class DefaultElsaTokenServiceTests
     [Fact(DisplayName = "An access token carries no session, because revoking one does not revoke access tokens")]
     public async Task IssueAccessTokenCarriesNoSession()
     {
-        var context = new TokenIssuanceContext(new User { Id = "user-1", Name = "alice" }, [], [], []) { SessionId = "session-1" };
+        var context = new TokenIssuanceContext(new User { Id = "user-1", Name = "alice" }, [], [], []) { Session = new("session-1", DateTimeOffset.UtcNow) };
 
         var token = await CreateService().IssueAccessTokenAsync(context);
 
         Assert.DoesNotContain(new JsonWebTokenHandler().ReadJsonWebToken(token.Token).Claims, x => x.Type == CustomClaimTypes.SessionId);
+    }
+
+    [Fact(DisplayName = "A refresh token carries the latest expiry of its session forward, and its own when that is later")]
+    public async Task IssueRefreshTokenCarriesTheSessionExpiryForward()
+    {
+        var service = CreateService();
+        var context = new TokenIssuanceContext(new User { Id = "user-1", Name = "alice" }, [], [], []);
+        var longLived = new SignInSession("session-1", DateTimeOffset.UtcNow.AddDays(30));
+        var shortLived = longLived with { ExpiresAt = DateTimeOffset.UtcNow.AddDays(-1) };
+
+        var started = await service.IssueRefreshTokenAsync(context);
+        var continuedLongLived = await service.IssueRefreshTokenAsync(context with { Session = longLived });
+        var continuedShortLived = await service.IssueRefreshTokenAsync(context with { Session = shortLived });
+
+        Assert.Equal(started.ExpiresAt.ToUnixTimeSeconds(), ReadSessionExpiresAt(started));
+        Assert.Equal(longLived.ExpiresAt.ToUnixTimeSeconds(), ReadSessionExpiresAt(continuedLongLived));
+        Assert.Equal(continuedShortLived.ExpiresAt.ToUnixTimeSeconds(), ReadSessionExpiresAt(continuedShortLived));
     }
 
     private static DefaultElsaTokenService CreateService() =>
@@ -76,6 +93,9 @@ public class DefaultElsaTokenServiceTests
 
     private static string? ReadSessionId(IssuedAccessToken token) =>
         new JsonWebTokenHandler().ReadJsonWebToken(token.Token).Claims.FirstOrDefault(x => x.Type == CustomClaimTypes.SessionId)?.Value;
+
+    private static long ReadSessionExpiresAt(IssuedAccessToken token) =>
+        long.Parse(new JsonWebTokenHandler().ReadJsonWebToken(token.Token).GetClaim(CustomClaimTypes.SessionExpiresAt).Value);
 
     private sealed class TestSystemClock(DateTimeOffset utcNow) : ISystemClock
     {

@@ -10,9 +10,18 @@ namespace Elsa.Identity.Services;
 public class MemoryRevokedSessionStore(MemoryStore<RevokedSession> store) : IRevokedSessionStore
 {
     /// <inheritdoc />
-    public Task SaveAsync(RevokedSession revokedSession, CancellationToken cancellationToken = default)
+    public Task AddOrExtendAsync(RevokedSession revokedSession, CancellationToken cancellationToken = default)
     {
-        store.Save(revokedSession, x => x.Id);
+        lock (store.Sync)
+        {
+            var existing = store.Find(x => x.Id == revokedSession.Id);
+
+            if (existing is null)
+                store.Add(revokedSession, x => x.Id);
+            else if (existing.ExpiresAt < revokedSession.ExpiresAt)
+                existing.ExpiresAt = revokedSession.ExpiresAt;
+        }
+
         return Task.CompletedTask;
     }
 
@@ -25,7 +34,9 @@ public class MemoryRevokedSessionStore(MemoryStore<RevokedSession> store) : IRev
     /// <inheritdoc />
     public Task DeleteExpiredAsync(DateTimeOffset now, CancellationToken cancellationToken = default)
     {
-        store.DeleteWhere(x => x.ExpiresAt < now);
+        lock (store.Sync)
+            store.DeleteWhere(x => x.ExpiresAt < now);
+
         return Task.CompletedTask;
     }
 }

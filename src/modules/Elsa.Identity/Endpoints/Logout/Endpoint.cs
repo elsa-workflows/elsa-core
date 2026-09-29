@@ -60,9 +60,7 @@ internal class Logout(SessionRevoker sessionRevoker, IOptions<IdentityTokenOptio
             return;
         }
 
-        var sessionId = SessionRevoker.GetSessionId(refreshToken, request.RefreshToken);
-        var expiresAt = new DateTimeOffset(validationResult.SecurityToken.ValidTo, TimeSpan.Zero);
-        await sessionRevoker.RevokeAsync(sessionId, expiresAt, cancellationToken);
+        await sessionRevoker.RevokeAsync(SessionRevoker.GetSession(refreshToken, request.RefreshToken), cancellationToken);
         await Send.NoContentAsync(cancellationToken);
     }
 
