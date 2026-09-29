@@ -11,6 +11,7 @@ using Elsa.Identity.Features;
 using Elsa.Identity.HostedServices;
 using Elsa.Identity.Models;
 using Elsa.Identity.Options;
+using Elsa.Identity.Services;
 using FastEndpoints;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
@@ -160,6 +161,18 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ARefreshTokenOfTheSameUserInAnotherTenantIsNotRevoked()
+    {
+        var alice = await LoginAsync(Alice);
+        var otherTenant = await IssueTokensAsync(new() { Id = Alice.Id, Name = Alice.Name, TenantId = "tenant-b" });
+
+        Assert.Equal(HttpStatusCode.Forbidden, (await LogoutAsync(alice.AccessToken, otherTenant.RefreshToken)).StatusCode);
+
+        await using var scope = _app.Services.CreateAsyncScope();
+        Assert.False(await scope.ServiceProvider.GetRequiredService<SessionRevoker>().IsRevokedAsync(GetSessionId(otherTenant.RefreshToken)));
+    }
+
+    [Fact]
     public async Task LogoutRequiresAnAccessToken()
     {
         var tokens = await LoginAsync(Alice);
@@ -216,12 +229,15 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
         return await _client.SendAsync(request);
     }
 
-    private async Task<IssuedTokens> ContinueSessionAsync(User user, string refreshToken)
+    private Task<IssuedTokens> ContinueSessionAsync(User user, string refreshToken) => IssueTokensAsync(user, GetSessionId(refreshToken));
+
+    private async Task<IssuedTokens> IssueTokensAsync(User user, string? sessionId = null)
     {
-        var sessionId = new JsonWebTokenHandler().ReadJsonWebToken(refreshToken).GetClaim(CustomClaimTypes.SessionId).Value;
         await using var scope = _app.Services.CreateAsyncScope();
         return await scope.ServiceProvider.GetRequiredService<IAccessTokenIssuer>().IssueTokensAsync(user, sessionId);
     }
+
+    private static string GetSessionId(string refreshToken) => new JsonWebTokenHandler().ReadJsonWebToken(refreshToken).GetClaim(CustomClaimTypes.SessionId).Value;
 
     private static async Task<IssuedTokens> ReadTokensAsync(HttpResponseMessage response)
     {

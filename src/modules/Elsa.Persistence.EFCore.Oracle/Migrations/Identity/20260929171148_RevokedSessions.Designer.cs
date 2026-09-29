@@ -12,7 +12,7 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
 {
     [DbContext(typeof(IdentityElsaDbContext))]
-    [Migration("20260929154936_RevokedSessions")]
+    [Migration("20260929171148_RevokedSessions")]
     partial class RevokedSessions
     {
         /// <inheritdoc />
@@ -96,6 +96,9 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
                         .HasColumnType("NVARCHAR2(2000)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("IX_RevokedSession_ExpiresAt");
 
                     b.ToTable("RevokedSessions", "Elsa");
                 });

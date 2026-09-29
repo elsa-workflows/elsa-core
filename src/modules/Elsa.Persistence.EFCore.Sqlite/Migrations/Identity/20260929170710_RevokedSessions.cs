@@ -1,9 +1,8 @@
-using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
+namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
 {
     /// <inheritdoc />
     public partial class RevokedSessions : Migration
@@ -24,15 +23,21 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
                 schema: _schema.Schema,
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    RevokedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    ExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    TenantId = table.Column<string>(type: "text", nullable: true)
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    RevokedAt = table.Column<string>(type: "TEXT", nullable: false),
+                    ExpiresAt = table.Column<string>(type: "TEXT", nullable: false),
+                    TenantId = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_RevokedSessions", x => x.Id);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RevokedSession_ExpiresAt",
+                schema: _schema.Schema,
+                table: "RevokedSessions",
+                column: "ExpiresAt");
         }
 
         /// <inheritdoc />

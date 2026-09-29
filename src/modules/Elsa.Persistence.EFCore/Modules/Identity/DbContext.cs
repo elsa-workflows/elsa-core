@@ -40,6 +40,7 @@ public class IdentityElsaDbContext : ElsaDbContextBase
         modelBuilder.ApplyConfiguration<User>(config);
         modelBuilder.ApplyConfiguration<Application>(config);
         modelBuilder.ApplyConfiguration<Role>(config);
+        modelBuilder.ApplyConfiguration<RevokedSession>(config);
         base.OnModelCreating(modelBuilder);
     }
 }

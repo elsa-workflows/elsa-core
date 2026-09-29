@@ -128,6 +128,41 @@ public class BrokerSecurityTests
     }
 
     [Fact]
+    public async Task LocalRefreshGrantRefusesARevokedSession()
+    {
+        var user = new User { Id = "user-a", Name = "admin" };
+        var users = Substitute.For<IUserProvider>();
+        users.FindAsync(Arg.Any<UserFilter>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult<User?>(user));
+        var roles = Substitute.For<IRoleProvider>();
+        roles.FindManyAsync(Arg.Any<RoleFilter>(), Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult<IEnumerable<Role>>([]));
+        var tokenOptions = Microsoft.Extensions.Options.Options.Create(new IdentityTokenOptions
+        {
+            SigningKey = "local-external-authentication-test-signing-key",
+            Issuer = "https://elsa.test",
+            Audience = "elsa-api"
+        });
+        var accessTokenIssuer = new DefaultAccessTokenIssuer(roles, new DefaultElsaTokenService(new CurrentTestClock(), tokenOptions));
+        var sessionRevoker = new SessionRevoker(new MemoryRevokedSessionStore(new MemoryStore<RevokedSession>()), new CurrentTestClock(), tokenOptions);
+        var tenantAccessor = new DefaultTenantAccessor();
+        var broker = CreateBroker(
+            new RecordingAdapter(),
+            userProvider: users,
+            roleProvider: roles,
+            identityRefreshTokenService: new DefaultIdentityRefreshTokenService(users, accessTokenIssuer, tenantAccessor, sessionRevoker, tokenOptions),
+            tenantAccessor: tenantAccessor);
+        var refreshToken = (await accessTokenIssuer.IssueTokensAsync(user, "session-a")).RefreshToken;
+        var request = new BrokerTokenRequest("refresh_token", "studio", null, null, null, refreshToken, "https://studio.example");
+
+        Assert.Null((await broker.ExchangeAsync(request)).Error);
+
+        await sessionRevoker.RevokeAsync("session-a", DateTimeOffset.UtcNow.Add(tokenOptions.Value.RefreshTokenLifetime));
+
+        var refused = await broker.ExchangeAsync(request);
+        Assert.NotNull(refused.Error);
+        Assert.Null(refused.Token);
+    }
+
+    [Fact]
     public async Task LocalInitiationTreatsNullUserTenantAsTheDefaultTenant()
     {
         var credentials = Substitute.For<IUserCredentialsValidator>();

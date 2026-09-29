@@ -89,6 +89,9 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("IX_RevokedSession_ExpiresAt");
+
                     b.ToTable("RevokedSessions", "Elsa");
                 });
 

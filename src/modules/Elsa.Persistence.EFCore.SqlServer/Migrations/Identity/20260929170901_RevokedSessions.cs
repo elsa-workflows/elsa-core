@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
+namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Identity
 {
     /// <inheritdoc />
     public partial class RevokedSessions : Migration
@@ -24,18 +24,21 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
                 schema: _schema.Schema,
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    RevokedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
-                    ExpiresAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
-                    TenantId = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    RevokedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    ExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    TenantId = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_RevokedSessions", x => x.Id);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RevokedSession_ExpiresAt",
+                schema: _schema.Schema,
+                table: "RevokedSessions",
+                column: "ExpiresAt");
         }
 
         /// <inheritdoc />

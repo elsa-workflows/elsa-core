@@ -63,6 +63,8 @@ After that, `/identity/refresh-token` answers `401` for every refresh token of t
 
 Revocations are kept by `IRevokedSessionStore` until the session's last refresh token would have expired, and pruned when the next session is revoked. The default store is in memory: revocations are lost on restart and not shared between nodes, so a revoked refresh token keeps working on any other node until it expires. Deployments with more than one node, or that must survive a restart, use EF Core persistence (`identity.UseEntityFrameworkCore(...)`, or a provider's Identity persistence shell feature), which stores them in the `RevokedSessions` table added by the `RevokedSessions` migration. A custom persistence provider registers its own `IRevokedSessionStore`.
 
+Apply the `RevokedSessions` migration before upgraded hosts refresh tokens, otherwise refresh fails; automatic startup migration covers it unless disabled (`RunMigrations = false`). Revocations assume `RefreshTokenLifetime` is not raised while older refresh tokens are outstanding: raising it can let a revocation expire before an older, longer-lived token of the same session. See the [authorization model migration guide](../migrations/authorization-model.md#signing-out-revokes-the-session).
+
 Refresh tokens issued before sessions existed keep working. The session they start is derived from the token itself, so signing out with one, or with a token refreshed from it, revokes both.
 
 Hosts with a custom `IAccessTokenIssuer` implement the `IssueTokensAsync(User, string? sessionId, ...)` overload to carry the session over. Without it, every refresh starts a new session, and signing out leaves the refresh tokens held before the latest refresh valid until they expire.
