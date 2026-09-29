@@ -121,8 +121,21 @@
       "category": "dependency_update_policy",
       "owning_workstream": "Central dependency maintenance",
       "proposed_disposition": "Merge product-specific package ecosystems and directories into the root Dependabot configuration; avoid duplicate root configurations.",
-      "evidence_or_gate": "PR #8495 (\"Reconcile imported Dependabot policies\", merge commit dd3903fab232f8cf3255e8b4f0a953e2a081c3c9, an ancestor of this head) added the root .github/dependabot.yml entries for `/src/extensions` and `/src/studio` with the `elsa-feedz-preview` registry and excluded `src/extensions/**` and `src/studio/**` from the existing weekly root scan; that merged configuration is the current active root .github/dependabot.yml. #8495's own review note keeps both rows pending until the private `FEEDZ_API_KEY` credential's availability to the daily /src/extensions Dependabot job is verified; that is an operational GitHub secret that cannot be confirmed from repository content, so this row stays pending on that credential review alone.",
-      "status": "pending_root_configuration_merge"
+      "evidence_or_gate": "PR #8495 merged the product policies into the root .github/dependabot.yml. After #8409 landed, the /src/extensions Dependabot job succeeded with the elsa-feedz-preview registry and FEEDZ_API_KEY (run 36503465765), closing the credential review gate. #8544 added the Feedz registries the Core root entry lacked.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/legacy-dependabot-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8495",
+        "merge_commit": "dd3903fab232f8cf3255e8b4f0a953e2a081c3c9",
+        "active_path": ".github/dependabot.yml",
+        "active_blob": "2e77df9b3b283049c11409ff193a35cda7320238",
+        "active_mode": "100644",
+        "representation": "expanded",
+        "active_update": {
+          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8544",
+          "reason": "Declared the Feedz registries for the Core root entry after the first post-import Dependabot run showed the root scan could not reach them."
+        }
+      }
     },
     {
       "original_repository": "extensions",
@@ -2169,8 +2182,21 @@
       "category": "dependency_update_policy",
       "owning_workstream": "Central dependency maintenance",
       "proposed_disposition": "Merge product-specific package ecosystems and directories into the root Dependabot configuration; avoid duplicate root configurations.",
-      "evidence_or_gate": "PR #8495 (\"Reconcile imported Dependabot policies\", merge commit dd3903fab232f8cf3255e8b4f0a953e2a081c3c9, an ancestor of this head) added the root .github/dependabot.yml entries for `/src/extensions` and `/src/studio` with the `elsa-feedz-preview` registry and excluded `src/extensions/**` and `src/studio/**` from the existing weekly root scan; that merged configuration is the current active root .github/dependabot.yml. #8495's own review note keeps both rows pending until the private `FEEDZ_API_KEY` credential's availability to the daily /src/studio Dependabot job is verified; that is an operational GitHub secret that cannot be confirmed from repository content, so this row stays pending on that credential review alone.",
-      "status": "pending_root_configuration_merge"
+      "evidence_or_gate": "PR #8495 merged the product policies into the root .github/dependabot.yml. After #8409 landed, the /src/studio Dependabot job succeeded with the elsa-feedz-preview registry and FEEDZ_API_KEY (run 36503465892), closing the credential review gate. #8544 added the Feedz registries the Core root entry lacked.",
+      "status": "represented_in_core",
+      "completion": {
+        "decision_path": "doc/integration-program/consolidation/legacy-dependabot-disposition.md",
+        "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8495",
+        "merge_commit": "dd3903fab232f8cf3255e8b4f0a953e2a081c3c9",
+        "active_path": ".github/dependabot.yml",
+        "active_blob": "2e77df9b3b283049c11409ff193a35cda7320238",
+        "active_mode": "100644",
+        "representation": "expanded",
+        "active_update": {
+          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8544",
+          "reason": "Declared the Feedz registries for the Core root entry after the first post-import Dependabot run showed the root scan could not reach them."
+        }
+      }
     },
     {
       "original_repository": "studio",

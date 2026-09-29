@@ -25,19 +25,24 @@ class LegacyAssetDispositionTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.ledger = json.loads(DEFAULT_LEDGER.read_text(encoding="utf-8"))
         cls.receipt = json.loads(DEFAULT_RECEIPT.read_text(encoding="utf-8"))
-        cls.pending_index = next(index for index, row in enumerate(cls.ledger["assets"])
-                                 if "completion" not in row)
+        cls.pending_index = 0
+
+    def _with_pending_row(self) -> dict:
+        # Every committed row is complete, so negative cases start from one row reset to pending.
+        changed = copy.deepcopy(self.ledger)
+        row = changed["assets"][self.pending_index]
+        row.pop("completion", None)
+        row["status"] = "pending_compatibility_gate"
+        return changed
 
     def test_committed_ledger_has_complete_asset_rows_and_pins(self) -> None:
         self.assertEqual([], validate_ledger(self.ledger))
         self.assertEqual(2, self.ledger["schema_version"])
         self.assertEqual(163, len(self.ledger["assets"]))
         self.assertEqual({"extensions": 80, "studio": 83, "total": 163}, self.ledger["asset_counts"])
-        self.assertEqual(111, sum(row["status"] == "represented_in_core" for row in self.ledger["assets"]))
+        self.assertEqual(113, sum(row["status"] == "represented_in_core" for row in self.ledger["assets"]))
         self.assertEqual(50, sum(row["status"] == "retired_from_active_tree" for row in self.ledger["assets"]))
-        # Only the Dependabot rows wait, on a post-landing check of the FEEDZ_API_KEY Dependabot secret.
-        self.assertEqual({("extensions", ".github/dependabot.yml"), ("studio", ".github/dependabot.yml")}, {
-            (row["original_repository"], row["original_path"]) for row in self.ledger["assets"] if "completion" not in row})
+        self.assertTrue(all("completion" in row for row in self.ledger["assets"]))
         license_rows = [row for row in self.ledger["assets"] if row["category"] == "license_notice"]
         self.assertEqual(2, len(license_rows))
         self.assertTrue(all(row["status"] == "represented_in_core" and row["completion"]["active_path"] == "LICENSE"
@@ -87,12 +92,12 @@ class LegacyAssetDispositionTests(unittest.TestCase):
     def test_completion_statuses_are_rejected_without_completion_proof(self) -> None:
         for status in ("implemented", "retired", "complete"):
             with self.subTest(status=status):
-                changed = copy.deepcopy(self.ledger)
+                changed = self._with_pending_row()
                 changed["assets"][self.pending_index]["status"] = status
                 self.assertTrue(any("unsupported non-pending status" in error for error in validate_ledger(changed)))
         for status in ("represented_in_core", "retired_from_active_tree"):
             with self.subTest(status=status):
-                changed = copy.deepcopy(self.ledger)
+                changed = self._with_pending_row()
                 changed["assets"][self.pending_index]["status"] = status
                 self.assertTrue(any("lacks structured evidence" in error for error in validate_ledger(changed)))
 
@@ -153,7 +158,7 @@ class LegacyAssetDispositionTests(unittest.TestCase):
             self.assertIsNone(_active_git_blob_and_mode(root, "asset.md"))
 
     def test_pending_assets_cannot_claim_completion_evidence(self) -> None:
-        changed = copy.deepcopy(self.ledger)
+        changed = self._with_pending_row()
         changed["assets"][self.pending_index]["completion"] = {"pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8428"}
         self.assertTrue(any("pending asset has completion evidence" in error for error in validate_ledger(changed)))
 

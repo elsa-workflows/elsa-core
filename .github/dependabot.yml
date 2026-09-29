@@ -9,10 +9,18 @@ registries:
     type: nuget-feed
     url: https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json
     token: ${{secrets.FEEDZ_API_KEY}}
+  # Public feed; the root NuGet.Config maps the Loom packages to it.
+  valence-loom-feedz:
+    type: nuget-feed
+    url: https://f.feedz.io/valence-works/loom/nuget/index.json
 
 updates:
   - package-ecosystem: "nuget" # See documentation for possible values
     directory: "/" # Location of package manifests
+    # The root NuGet.Config lists both Feedz sources; Dependabot's proxy blocks any source not declared here.
+    registries:
+      - elsa-feedz-preview
+      - valence-loom-feedz
     schedule:
       interval: "weekly"
     exclude-paths:
