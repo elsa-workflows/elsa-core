@@ -1,0 +1,29 @@
+# Keeps Elsa.sln's Foundation / Extensions / Studio grouping and the generated Elsa.*.slnf filters in line with
+# scripts/solution/solution-groups.json, so a new project cannot land unclassified.
+name: Solution groups
+
+on:
+  pull_request:
+    paths:
+      - 'Elsa.sln'
+      - '*.slnf'
+      - '**/*.csproj'
+      - 'scripts/solution/**'
+      - '.github/workflows/solution-groups.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Solution grouping and filters are up to date
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Check the grouping
+        run: |
+          python3 -m unittest discover -s scripts/solution -p 'test_*.py'
+          python3 scripts/solution/solution_groups.py --check

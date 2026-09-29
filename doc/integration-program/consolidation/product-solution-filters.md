@@ -1,20 +1,38 @@
-# Product-focused solution filters
+# Solution grouping and focused filters
 
-`Elsa.sln` remains the full consolidated build and CI solution. The root [Extensions filter](../../../Elsa.Extensions.slnf) selects its 97 currently included source, test, and sample projects, and the [Studio filter](../../../Elsa.Studio.slnf) selects its 72 currently included projects. Both refer to the same root solution; they do not restore the old standalone solutions or create a shared package release unit.
+`Elsa.sln` remains the full consolidated build and CI solution. Its projects are grouped into solution folders by what
+they are, not where they came from:
 
-Open or build a product slice from the consolidated checkout:
+- **Foundation:** the workflow engine and what a minimal server needs. This includes the engine, management, runtime
+  with its distributed implementation, the API, JavaScript and Liquid expressions, identity, tenants, scheduling,
+  resilience, caching, HTTP, EF Core persistence with its providers, and Alterations, which EF Core persistence depends on.
+- **Extensions/\<Domain\>:** the optional modules, whether they came from Core or were imported from Extensions. There are
+  seven domains: Scripting, Persistence, Runtime, AI, Security, Operations and Integrations.
+- **Studio**, **Apps** and **Samples**.
+
+Each group has a `Tests` subfolder. A test sits with the project its name covers, otherwise with the single group it
+references. `Elsa.Testing.*` harnesses sit with the Foundation tests.
+
+The grouping is curated in [`scripts/solution/solution-groups.json`](../../../scripts/solution/solution-groups.json).
+[`solution_groups.py`](../../../scripts/solution/solution_groups.py) generates the folders and these filters from it:
+
+| Filter | Contents |
+| --- | --- |
+| `Elsa.Foundation.slnf` | Foundation and its tests |
+| `Elsa.<Domain>.slnf` | Foundation plus one domain, one filter per domain |
+| `Elsa.Studio.slnf` | Studio, Foundation and `Elsa.Api.Client` |
+| `Elsa.Extensions.slnf` | Every optional domain; Studio is not selected, though references can pull some in (see below) |
+
+Each filter also includes the project-reference closure of what it selects, so it loads and builds on its own. For
+example, the Foundation tests' harnesses pull in the C# expression and blob-storage workflow-provider projects, and the WorkflowContexts extension's Studio module pulls nine Studio projects into `Elsa.Extensions.slnf`. The
+generator also enforces that Foundation source projects reference only Foundation projects.
 
 ```sh
-dotnet build Elsa.Extensions.slnf
-dotnet build Elsa.Studio.slnf
+dotnet build Elsa.Foundation.slnf
+python3 scripts/solution/solution_groups.py          # regenerate after adding or moving a project
+python3 scripts/solution/solution_groups.py --check  # what CI runs
 ```
 
-Build the Studio filter without a forced `-f` because its included `BlazorApp1` sample targets `net8.0` while other projects multi-target. A framework-specific build can instead target an individual project that supports that framework.
-
-The [WorkflowContexts debug filter](../../../Elsa.WorkflowContexts.Debug.slnf) remains the smaller paired backend/Blazor example. Use the root `Elsa.sln` for complete solution validation. The filter membership test compares both product filters to the root solution, catches duplicate/missing paths, and requires every selected project to exist:
-
-```sh
-python3 -m unittest scripts/integration-program/test_product_solution_filters.py
-```
-
-These filters select projects for local development; package release units and publisher ownership are defined separately by the integration program's release manifest and approval gates.
+A new project fails the check until its name or path is added to the manifest. The
+[WorkflowContexts debug filter](../../../Elsa.WorkflowContexts.Debug.slnf) is hand-maintained and unaffected. These
+filters are for local development; package release units and publisher ownership are defined separately.
