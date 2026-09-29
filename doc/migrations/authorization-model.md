@@ -195,6 +195,17 @@ identity to audit. It was also already unable to do the thing it existed for: it
 If neither is configured and no users exist, startup now logs an error naming both options, rather than
 leaving every endpoint to answer 403 without explanation.
 
+## Installed features are readable by any signed-in user
+
+`GET /features/installed` and `GET /features/installed/{fullName}` require an authenticated caller and no
+permission. Clients such as Elsa Studio decide which modules to render from this list, so gating it hid every
+module, including ones the caller holds permissions for, from anyone without the grant. Anonymous callers are
+still rejected.
+
+`system/features:view` therefore no longer gates anything. It stays in the catalog, and in the mapping below,
+so roles that already hold it keep resolving instead of being reported by the startup validator; you can drop
+it from your roles at your convenience.
+
 ## Third-party modules
 
 Modules outside this repository keep compiling. `ConfigurePermissions(params string[])` remains available but obsolete, and a permission that resolves to no registered descriptor registers an implicit one marked unverified, logs a warning, and appears as such in the catalog. The module keeps working and the gap stays visible.
