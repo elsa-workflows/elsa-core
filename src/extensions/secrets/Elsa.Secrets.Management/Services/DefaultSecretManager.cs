@@ -74,7 +74,7 @@ public class DefaultSecretManager(ISecretStore store, IEncryptor encryptor, ISec
     public async Task<long> DeleteManyAsync(SecretFilter filter, CancellationToken cancellationToken = default)
     {
         var secretVersions = await store.FindManyAsync(filter, cancellationToken);
-        var secretIds = secretVersions.Select(x => x.Id).Distinct().ToList();
+        var secretIds = secretVersions.Select(x => x.SecretId).Distinct().ToList();
         var allSecretsAndVersionsFilter = new SecretFilter
         {
             SecretIds = secretIds
