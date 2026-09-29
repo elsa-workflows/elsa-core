@@ -40,7 +40,7 @@ JWT signing keys must be configured with a secure random value before production
 
 ### Signing Out
 
-Each sign-in starts a session. Its refresh token carries the session ID in the `elsa:session_id` claim, and every refresh token obtained by refreshing it carries the same ID. `POST /identity/logout` ends a session:
+Each sign-in starts a session. Its refresh token carries the session ID in the `elsa:session_id` claim, and every refresh token obtained by refreshing it carries the same ID. `POST /identity/logout` ends a session of Elsa Identity (JWT) refresh tokens:
 
 ```http
 POST /identity/logout
@@ -52,10 +52,14 @@ Content-Type: application/json
 
 | Response | When |
 | --- | --- |
-| `204 No Content` | The session is revoked. Also returned when it already was, when the refresh token has expired (its session is still revoked), and when the token was not issued by this deployment, so a client can always sign out. |
+| `204 No Content` | The session is revoked. Also returned when it already was, when the refresh token has expired (its session is still revoked), and when the token is not one Elsa Identity recognises, so a client can always sign out. |
 | `400 Bad Request` | `refreshToken` is missing, or is a token of this deployment that is not a refresh token, such as the access token. |
 | `403 Forbidden` | The refresh token belongs to another user. |
 | `401 Unauthorized` | No valid access token. |
+
+The endpoint requires a valid access token. A client whose access token has expired refreshes first, then calls logout with the new refresh token, which belongs to the same session.
+
+Opaque refresh tokens issued by the External Authentication broker (`<sessionId>.<secret>`) are not Elsa Identity tokens: this endpoint answers `204` for them without revoking anything. They are revoked through the broker's own sign-out and session revocation.
 
 After that, `/identity/refresh-token` answers `401` for every refresh token of the session, including those it held before its latest refresh, exactly as it does for an invalid or expired token. The external authentication broker's `refresh_token` grant refuses them as well. Other sessions of the same user are unaffected; there is no "sign out everywhere".
 
@@ -65,7 +69,7 @@ Revocations are kept by `IRevokedSessionStore` until the session's last refresh 
 
 Apply the `RevokedSessions` migration before upgraded hosts refresh tokens, otherwise refresh fails; automatic startup migration covers it unless disabled (`RunMigrations = false`). Revocations assume `RefreshTokenLifetime` is not raised while older refresh tokens are outstanding: raising it can let a revocation expire before an older, longer-lived token of the same session. See the [authorization model migration guide](../migrations/authorization-model.md#signing-out-revokes-the-session).
 
-Refresh tokens issued before sessions existed keep working. The session they start is derived from the token itself, so signing out with one, or with a token refreshed from it, revokes both.
+Refresh tokens issued before sessions existed keep working. Each one derives its own session ID from its hash, and a token refreshed from it carries that ID. A chain that was already refreshed before the upgrade has no session claim on its older tokens, so signing out with the newest token revokes only the session derived from that token. Older pre-upgrade tokens of the same chain stay valid until they expire, at most `RefreshTokenLifetime` after the upgrade.
 
 Hosts with a custom `IAccessTokenIssuer` implement the `IssueTokensAsync(User, string? sessionId, ...)` overload to carry the session over. Without it, every refresh starts a new session, and signing out leaves the refresh tokens held before the latest refresh valid until they expire.
 

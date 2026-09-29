@@ -36,7 +36,8 @@ internal class Logout(SessionRevoker sessionRevoker, IOptions<IdentityTokenOptio
         validationParameters.LifetimeValidator = null;
         var validationResult = await new JsonWebTokenHandler().ValidateTokenAsync(request.RefreshToken, validationParameters);
 
-        // A token this deployment did not issue can never be exchanged here, so it is already as revoked as it gets.
+        // Not an Elsa Identity refresh token, so there is no session to end here; answer idempotently. Opaque refresh tokens
+        // of the External Authentication broker are revoked through the broker's own sign-out.
         if (!validationResult.IsValid)
         {
             await Send.NoContentAsync(cancellationToken);

@@ -78,24 +78,24 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
     public async Task RevokedRefreshTokenIsRejectedLikeAnInvalidOne()
     {
         var tokens = await LoginAsync(Alice);
-        await ReadTokensAsync(await RefreshAsync(tokens.RefreshToken));
+        await AssertRefreshWorksAsync(tokens.RefreshToken);
 
-        Assert.Equal(HttpStatusCode.NoContent, (await LogoutAsync(tokens.AccessToken, tokens.RefreshToken)).StatusCode);
+        await AssertLogoutAsync(HttpStatusCode.NoContent, tokens.AccessToken, tokens.RefreshToken);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, (await RefreshAsync(tokens.RefreshToken)).StatusCode);
-        Assert.Equal(HttpStatusCode.Unauthorized, (await RefreshAsync("not-a-token")).StatusCode);
+        await AssertRefreshRejectedAsync(tokens.RefreshToken);
+        await AssertRefreshRejectedAsync("not-a-token");
     }
 
     [Fact]
     public async Task RevokingASessionRevokesTheRefreshTokensItHeldBeforeItsLatestRefresh()
     {
         var signIn = await LoginAsync(Alice);
-        var refreshed = await ReadTokensAsync(await RefreshAsync(signIn.RefreshToken));
+        var refreshed = await RefreshTokensAsync(signIn.RefreshToken);
 
         await LogoutAsync(refreshed.AccessToken, refreshed.RefreshToken);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, (await RefreshAsync(signIn.RefreshToken)).StatusCode);
-        Assert.Equal(HttpStatusCode.Unauthorized, (await RefreshAsync(refreshed.RefreshToken)).StatusCode);
+        await AssertRefreshRejectedAsync(signIn.RefreshToken);
+        await AssertRefreshRejectedAsync(refreshed.RefreshToken);
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
 
         await LogoutAsync(ended.AccessToken, ended.RefreshToken);
 
-        await ReadTokensAsync(await RefreshAsync(other.RefreshToken));
+        await AssertRefreshWorksAsync(other.RefreshToken);
     }
 
     [Fact]
@@ -114,9 +114,9 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
     {
         var tokens = await LoginAsync(Alice);
 
-        Assert.Equal(HttpStatusCode.NoContent, (await LogoutAsync(tokens.AccessToken, tokens.RefreshToken)).StatusCode);
-        Assert.Equal(HttpStatusCode.NoContent, (await LogoutAsync(tokens.AccessToken, tokens.RefreshToken)).StatusCode);
-        Assert.Equal(HttpStatusCode.Unauthorized, (await RefreshAsync(tokens.RefreshToken)).StatusCode);
+        await AssertLogoutAsync(HttpStatusCode.NoContent, tokens.AccessToken, tokens.RefreshToken);
+        await AssertLogoutAsync(HttpStatusCode.NoContent, tokens.AccessToken, tokens.RefreshToken);
+        await AssertRefreshRejectedAsync(tokens.RefreshToken);
     }
 
     [Fact]
@@ -125,10 +125,10 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
         var tokens = await LoginAsync(Alice);
         var signedElsewhere = LegacyRefreshToken.Create(new() { SigningKey = "another-signing-key-with-at-least-32-chars" }, Alice);
 
-        Assert.Equal(HttpStatusCode.NoContent, (await LogoutAsync(tokens.AccessToken, "not-a-token")).StatusCode);
-        Assert.Equal(HttpStatusCode.NoContent, (await LogoutAsync(tokens.AccessToken, signedElsewhere)).StatusCode);
+        await AssertLogoutAsync(HttpStatusCode.NoContent, tokens.AccessToken, "not-a-token");
+        await AssertLogoutAsync(HttpStatusCode.NoContent, tokens.AccessToken, signedElsewhere);
 
-        await ReadTokensAsync(await RefreshAsync(tokens.RefreshToken));
+        await AssertRefreshWorksAsync(tokens.RefreshToken);
     }
 
     [Fact]
@@ -136,9 +136,9 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
     {
         var tokens = await LoginAsync(Alice);
 
-        Assert.Equal(HttpStatusCode.BadRequest, (await LogoutAsync(tokens.AccessToken, tokens.AccessToken)).StatusCode);
+        await AssertLogoutAsync(HttpStatusCode.BadRequest, tokens.AccessToken, tokens.AccessToken);
 
-        await ReadTokensAsync(await RefreshAsync(tokens.RefreshToken));
+        await AssertRefreshWorksAsync(tokens.RefreshToken);
     }
 
     [Fact]
@@ -146,7 +146,7 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
     {
         var tokens = await LoginAsync(Alice);
 
-        Assert.Equal(HttpStatusCode.BadRequest, (await LogoutAsync(tokens.AccessToken, "")).StatusCode);
+        await AssertLogoutAsync(HttpStatusCode.BadRequest, tokens.AccessToken, "");
     }
 
     [Fact]
@@ -155,9 +155,9 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
         var alice = await LoginAsync(Alice);
         var bob = await LoginAsync(Bob);
 
-        Assert.Equal(HttpStatusCode.Forbidden, (await LogoutAsync(alice.AccessToken, bob.RefreshToken)).StatusCode);
+        await AssertLogoutAsync(HttpStatusCode.Forbidden, alice.AccessToken, bob.RefreshToken);
 
-        await ReadTokensAsync(await RefreshAsync(bob.RefreshToken));
+        await AssertRefreshWorksAsync(bob.RefreshToken);
     }
 
     [Fact]
@@ -166,7 +166,7 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
         var alice = await LoginAsync(Alice);
         var otherTenant = await IssueTokensAsync(new() { Id = Alice.Id, Name = Alice.Name, TenantId = "tenant-b" });
 
-        Assert.Equal(HttpStatusCode.Forbidden, (await LogoutAsync(alice.AccessToken, otherTenant.RefreshToken)).StatusCode);
+        await AssertLogoutAsync(HttpStatusCode.Forbidden, alice.AccessToken, otherTenant.RefreshToken);
 
         await using var scope = _app.Services.CreateAsyncScope();
         Assert.False(await scope.ServiceProvider.GetRequiredService<SessionRevoker>().IsRevokedAsync(GetSessionId(otherTenant.RefreshToken)));
@@ -178,9 +178,9 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
         var tokens = await LoginAsync(Alice);
 
         Assert.Equal(HttpStatusCode.Unauthorized, (await SendAsync("/identity/logout", null, tokens.RefreshToken)).StatusCode);
-        Assert.Equal(HttpStatusCode.Unauthorized, (await LogoutAsync(tokens.RefreshToken, tokens.RefreshToken)).StatusCode);
+        await AssertLogoutAsync(HttpStatusCode.Unauthorized, tokens.RefreshToken, tokens.RefreshToken);
 
-        await ReadTokensAsync(await RefreshAsync(tokens.RefreshToken));
+        await AssertRefreshWorksAsync(tokens.RefreshToken);
     }
 
     [Fact]
@@ -190,23 +190,23 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
         var expired = await LoginAsync(Alice);
         _clock.UtcNow += TimeSpan.FromHours(3);
         var live = await ContinueSessionAsync(Alice, expired.RefreshToken);
-        await ReadTokensAsync(await RefreshAsync(live.RefreshToken));
+        await AssertRefreshWorksAsync(live.RefreshToken);
 
-        Assert.Equal(HttpStatusCode.NoContent, (await LogoutAsync(live.AccessToken, expired.RefreshToken)).StatusCode);
+        await AssertLogoutAsync(HttpStatusCode.NoContent, live.AccessToken, expired.RefreshToken);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, (await RefreshAsync(live.RefreshToken)).StatusCode);
+        await AssertRefreshRejectedAsync(live.RefreshToken);
     }
 
     [Fact]
     public async Task RefreshTokenIssuedBeforeSessionsExistedWorksUntilItsSessionIsRevoked()
     {
         var legacy = LegacyRefreshToken.Create(_app.Services.GetRequiredService<IOptions<IdentityTokenOptions>>().Value, Alice);
-        var refreshed = await ReadTokensAsync(await RefreshAsync(legacy));
+        var refreshed = await RefreshTokensAsync(legacy);
 
-        Assert.Equal(HttpStatusCode.NoContent, (await LogoutAsync(refreshed.AccessToken, legacy)).StatusCode);
+        await AssertLogoutAsync(HttpStatusCode.NoContent, refreshed.AccessToken, legacy);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, (await RefreshAsync(legacy)).StatusCode);
-        Assert.Equal(HttpStatusCode.Unauthorized, (await RefreshAsync(refreshed.RefreshToken)).StatusCode);
+        await AssertRefreshRejectedAsync(legacy);
+        await AssertRefreshRejectedAsync(refreshed.RefreshToken);
     }
 
     private async Task<IssuedTokens> LoginAsync(User user) =>
@@ -215,6 +215,14 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
     private Task<HttpResponseMessage> RefreshAsync(string refreshToken) => SendAsync("/identity/refresh-token", refreshToken, null);
 
     private Task<HttpResponseMessage> LogoutAsync(string accessToken, string refreshToken) => SendAsync("/identity/logout", accessToken, refreshToken);
+
+    private async Task<IssuedTokens> RefreshTokensAsync(string refreshToken) => await ReadTokensAsync(await RefreshAsync(refreshToken));
+
+    private async Task AssertRefreshWorksAsync(string refreshToken) => await RefreshTokensAsync(refreshToken);
+
+    private async Task AssertRefreshRejectedAsync(string refreshToken) => Assert.Equal(HttpStatusCode.Unauthorized, (await RefreshAsync(refreshToken)).StatusCode);
+
+    private async Task AssertLogoutAsync(HttpStatusCode expected, string accessToken, string refreshToken) => Assert.Equal(expected, (await LogoutAsync(accessToken, refreshToken)).StatusCode);
 
     private async Task<HttpResponseMessage> SendAsync(string path, string? bearerToken, string? refreshTokenToRevoke)
     {

@@ -65,7 +65,7 @@ Revocations need storage. With EF Core persistence, apply the `RevokedSessions` 
 
 The public constructor of `DefaultIdentityRefreshTokenService` now requires a `SessionRevoker`. This affects only code that constructs the service directly (for example, in tests or a hand-built container); hosts that use the registered `IIdentityRefreshTokenService` are unaffected. Resolve `SessionRevoker` from DI and pass it to the constructor.
 
-Nothing else changes for clients. Refresh tokens now carry an `elsa:session_id` claim, and ones issued before the upgrade keep working until they expire.
+Nothing else changes for clients. Refresh tokens now carry an `elsa:session_id` claim, and ones issued before the upgrade keep working until they expire. Signing out with a pre-upgrade token revokes only the session derived from that token; older pre-upgrade tokens of the same refresh chain stay valid until they expire, at most `RefreshTokenLifetime` after the upgrade.
 
 ## External authentication grant boundaries
 
