@@ -5,6 +5,7 @@ using Elsa.Studio.Security.Components;
 using Elsa.Studio.Security.Contracts;
 using Elsa.Studio.Security.Models;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 using MudBlazor;
@@ -66,7 +67,7 @@ public sealed class RoleEditorSurfaceTests : BunitContext, IAsyncLifetime
         {
             Assert.Contains("Edit role — Auditors", cut.Markup);
             Assert.Equal("Edit role — Auditors", cut.Find("h1").TextContent.Trim());
-            Assert.Contains("Direct grant", cut.Markup);
+            Assert.DoesNotContain("Direct grant", cut.Markup);
             Assert.Contains("Covered by workflows/*:view", cut.Markup);
             Assert.Contains("Unverified · verified:false", cut.Markup);
             Assert.Contains("WorkflowDefinitions:Publish", cut.Markup);
@@ -300,6 +301,249 @@ public sealed class RoleEditorSurfaceTests : BunitContext, IAsyncLifetime
 
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("input[aria-label='workflows/definitions/labels:view']")));
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void EditingAnAdvancedGrantReplacesItInPlaceAndPersistsIt(bool pressEnter)
+    {
+        var (cut, roles) = RenderRoleWithAdvancedGrants();
+        StartEditing(cut, "secrets/*:view");
+
+        EditInput(cut, "secrets/*:view").Input("secrets/*:update");
+        if (pressEnter)
+            EditInput(cut, "secrets/*:view").KeyDown(new KeyboardEventArgs { Key = "Enter" });
+        else
+            ClickButton(cut, "Save");
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Empty(cut.FindAll("input[aria-label^='Edit advanced grant']"));
+            Assert.Single(cut.FindAll("button[aria-label='Remove advanced grant secrets/*:update']"));
+            Assert.Empty(cut.FindAll("button[aria-label='Remove advanced grant secrets/*:view']"));
+            Assert.Equal(["secrets/*:update", "workflows/*:view"], RenderedGrants(cut));
+        });
+
+        ClickButton(cut, "Save changes");
+        cut.WaitForAssertion(() => Assert.Equal(1, roles.UpdateCalls));
+        Assert.Equal(["secrets/*:update", "workflows/*:view"], roles.LastUpdate!.Permissions);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CancellingAnAdvancedGrantEditRestoresTheOriginal(bool pressEscape)
+    {
+        var (cut, _) = RenderRoleWithAdvancedGrants();
+        StartEditing(cut, "secrets/*:view");
+
+        EditInput(cut, "secrets/*:view").Input("secrets/*:update");
+        if (pressEscape)
+            EditInput(cut, "secrets/*:view").KeyDown(new KeyboardEventArgs { Key = "Escape" });
+        else
+            ClickButton(cut, "Cancel", within: ".role-grant-edit");
+
+        Assert.Empty(cut.FindAll("input[aria-label^='Edit advanced grant']"));
+        Assert.Equal(["secrets/*:view", "workflows/*:view"], RenderedGrants(cut));
+        StartEditing(cut, "secrets/*:view");
+        Assert.Equal("secrets/*:view", EditInput(cut, "secrets/*:view").GetAttribute("value"));
+    }
+
+    [Theory]
+    [InlineData("not-a-grant", "Enter a valid grant. Wildcards may be *, a trailing resource /*, or the entire verb *.")]
+    [InlineData("workflows/definitions:view", "This is an exact permission. Select it on the Exact permissions tab.")]
+    [InlineData(" workflows/*:view ", "workflows/*:view is already an advanced grant.")]
+    public void InvalidAdvancedGrantEditShowsTheSameErrorAsAddAndKeepsTheOriginal(string draft, string expectedError)
+    {
+        var (cut, _) = RenderRoleWithAdvancedGrants();
+
+        cut.Find("input[placeholder='workflows/*:view or *']").Change(draft);
+        ClickButton(cut, "Add advanced grant");
+        Assert.Contains(expectedError, cut.Markup);
+
+        StartEditing(cut, "secrets/*:view");
+        EditInput(cut, "secrets/*:view").Input(draft);
+        ClickButton(cut, "Save");
+
+        Assert.Contains(expectedError, cut.Find(".role-grant-edit").TextContent);
+        EditInput(cut, "secrets/*:view").KeyDown(new KeyboardEventArgs { Key = "Escape" });
+        Assert.Equal(["secrets/*:view", "workflows/*:view"], RenderedGrants(cut));
+    }
+
+    [Fact]
+    public void SavingAnUnchangedAdvancedGrantLeavesEditModeWithoutChanges()
+    {
+        var (cut, _) = RenderRoleWithAdvancedGrants();
+        StartEditing(cut, "secrets/*:view");
+
+        EditInput(cut, "secrets/*:view").KeyDown(new KeyboardEventArgs { Key = "Enter" });
+
+        Assert.Empty(cut.FindAll("input[aria-label^='Edit advanced grant']"));
+        Assert.DoesNotContain("already an advanced grant", cut.Markup);
+        Assert.Equal(["secrets/*:view", "workflows/*:view"], RenderedGrants(cut));
+    }
+
+    [Fact]
+    public void OnlyOneAdvancedGrantIsEditableAtATime()
+    {
+        var (cut, _) = RenderRoleWithAdvancedGrants();
+        StartEditing(cut, "secrets/*:view");
+
+        StartEditing(cut, "workflows/*:view");
+
+        Assert.Single(cut.FindAll("input[aria-label^='Edit advanced grant']"));
+        Assert.Single(cut.FindAll("input[aria-label='Edit advanced grant workflows/*:view']"));
+    }
+
+    [Fact]
+    public void SwitchingToAnotherAdvancedGrantAppliesTheOpenEdit()
+    {
+        var (cut, _) = RenderRoleWithAdvancedGrants();
+        StartEditing(cut, "secrets/*:view");
+        EditInput(cut, "secrets/*:view").Input("secrets/*:update");
+
+        StartEditing(cut, "workflows/*:view");
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Single(cut.FindAll("input[aria-label='Edit advanced grant workflows/*:view']"));
+            Assert.Contains("secrets/*:update", RenderedGrants(cut));
+        });
+    }
+
+    [Fact]
+    public void SwitchingAwayFromAnInvalidAdvancedGrantEditKeepsItOpen()
+    {
+        var (cut, _) = RenderRoleWithAdvancedGrants();
+        StartEditing(cut, "secrets/*:view");
+        EditInput(cut, "secrets/*:view").Input("not a grant");
+
+        StartEditing(cut, "workflows/*:view");
+
+        cut.WaitForAssertion(() => Assert.Contains("Enter a valid grant.", cut.Markup));
+        Assert.Single(cut.FindAll("input[aria-label^='Edit advanced grant']"));
+        Assert.Single(cut.FindAll("input[aria-label='Edit advanced grant secrets/*:view']"));
+    }
+
+    [Fact]
+    public void EditingTheDraftClearsAnEarlierValidationError()
+    {
+        var (cut, _) = RenderRoleWithAdvancedGrants();
+        StartEditing(cut, "secrets/*:view");
+        EditInput(cut, "secrets/*:view").Input("not a grant");
+        ClickButton(cut, "Save");
+        cut.WaitForAssertion(() => Assert.Contains("Enter a valid grant.", cut.Markup));
+
+        EditInput(cut, "secrets/*:view").Input("secrets/*:update");
+
+        cut.WaitForAssertion(() => Assert.DoesNotContain("Enter a valid grant.", cut.Markup));
+    }
+
+    [Fact]
+    public void ReadOnlyRoleDoesNotOfferAdvancedGrantEditing()
+    {
+        var (cut, _) = RenderRoleWithAdvancedGrants(ReadyAccess with { CanUpdate = false });
+
+        Assert.Equal(["secrets/*:view", "workflows/*:view"], RenderedGrants(cut));
+        Assert.Empty(cut.FindAll("button[aria-label^='Edit advanced grant']"));
+        Assert.Empty(cut.FindAll("button[aria-label^='Remove advanced grant']"));
+    }
+
+    [Fact]
+    public void ExactGrantAlsoCoveredByAWildcardSaysSo()
+    {
+        var roles = new StubRolesApi
+        {
+            Response = new ListRolesResponse
+            {
+                Roles = [new RoleSummary { Id = "auditors", Name = "Auditors", Permissions = ["workflows/*:view", "workflows/definitions:view"] }]
+            }
+        };
+        var permissions = new StubPermissionsApi
+        {
+            Response = new PermissionCatalogResponse
+            {
+                Resources =
+                [
+                    new PermissionResourceDescriptor
+                    {
+                        Resource = "workflows/definitions",
+                        DisplayName = "Definitions",
+                        Category = "Workflows",
+                        SupportedVerbs = ["view"]
+                    }
+                ]
+            }
+        };
+        Register(roles, permissions);
+
+        var cut = Render<RoleEditorSurface>(parameters => parameters
+            .Add(x => x.RoleId, "auditors")
+            .Add(x => x.Access, ReadyAccess));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("Also covered by workflows/*:view", cut.Markup);
+            Assert.DoesNotContain(">Covered by workflows/*:view", cut.Markup);
+        });
+    }
+
+    [Fact]
+    public void SavingTheRoleAppliesAnOpenAdvancedGrantEdit()
+    {
+        var (cut, roles) = RenderRoleWithAdvancedGrants();
+        StartEditing(cut, "secrets/*:view");
+        EditInput(cut, "secrets/*:view").Input("secrets/*:update");
+
+        ClickButton(cut, "Save changes");
+
+        cut.WaitForAssertion(() => Assert.Equal(1, roles.UpdateCalls));
+        Assert.Equal(["secrets/*:update", "workflows/*:view"], roles.LastUpdate!.Permissions);
+    }
+
+    [Fact]
+    public void SavingTheRoleWithAnInvalidOpenAdvancedGrantEditKeepsTheEditOpenAndDoesNotSave()
+    {
+        var (cut, roles) = RenderRoleWithAdvancedGrants();
+        StartEditing(cut, "secrets/*:view");
+        EditInput(cut, "secrets/*:view").Input("not a grant");
+
+        ClickButton(cut, "Save changes");
+
+        cut.WaitForAssertion(() => Assert.Contains("Enter a valid grant.", cut.Markup));
+        Assert.Single(cut.FindAll("input[aria-label='Edit advanced grant secrets/*:view']"));
+        Assert.Equal(0, roles.UpdateCalls);
+    }
+
+    private (IRenderedComponent<RoleEditorSurface> Cut, StubRolesApi Roles) RenderRoleWithAdvancedGrants(RoleAdministrationAccess? access = null)
+    {
+        var roles = new StubRolesApi
+        {
+            Response = new ListRolesResponse
+            {
+                Roles = [new RoleSummary { Id = "auditors", Name = "Auditors", Permissions = ["workflows/*:view", "secrets/*:view"] }]
+            }
+        };
+        Register(roles, new StubPermissionsApi());
+        var cut = Render<RoleEditorSurface>(parameters => parameters
+            .Add(x => x.RoleId, "auditors")
+            .Add(x => x.Access, access ?? ReadyAccess));
+        cut.WaitForAssertion(() => Assert.Contains("Edit role — Auditors", cut.Markup));
+        cut.FindAll("[role='tab']").Single(x => x.TextContent.Contains("Advanced grants", StringComparison.OrdinalIgnoreCase)).Click();
+        return (cut, roles);
+    }
+
+    private static void StartEditing(IRenderedComponent<RoleEditorSurface> cut, string grant) =>
+        cut.Find($"button[aria-label='Edit advanced grant {grant}']").Click();
+
+    private static AngleSharp.Dom.IElement EditInput(IRenderedComponent<RoleEditorSurface> cut, string grant) =>
+        cut.Find($"input[aria-label='Edit advanced grant {grant}']");
+
+    private static void ClickButton(IRenderedComponent<RoleEditorSurface> cut, string text, string within = "") =>
+        cut.FindAll($"{within} button".Trim()).Single(x => x.TextContent.Trim() == text).Click();
+
+    private static IReadOnlyList<string> RenderedGrants(IRenderedComponent<RoleEditorSurface> cut) =>
+        cut.FindAll(".role-reach-title .role-code").Select(x => x.TextContent.Trim()).ToArray();
 
     private void Register(IRolesApi roles, IPermissionsApi permissions)
     {

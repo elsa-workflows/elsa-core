@@ -281,7 +281,7 @@
 
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
             var adapters = await api.GetAdaptersAsync();
             _adapters.Clear();
             foreach (var adapter in adapters)
@@ -354,7 +354,7 @@
         _loading = true;
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
             var response = await api.ListAsync(search, source, archived: includeArchived ? null : false, cursor: cursor, pageSize: _pageSize);
             if (!_requests.IsCurrent(request))
                 return;
@@ -453,7 +453,7 @@
 
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
             await api.ArchiveAsync(connection.Id, ConnectionConcurrency.ToIfMatch(connection.Revision));
             Snackbar.Add("Connection archived.", Severity.Success);
             await ReloadAsync();
@@ -494,7 +494,7 @@
                         cancelText: "Cancel") != true)
                     return;
 
-                var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+                var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
                 await api.EnableAsync(connection.Id, ConnectionConcurrency.ToIfMatch(connection.Revision));
             }
 

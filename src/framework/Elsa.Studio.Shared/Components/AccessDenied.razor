@@ -1,0 +1,16 @@
+@using Elsa.Studio.Authorization
+
+<MudContainer MaxWidth="MaxWidth.False" Class="pt-4">
+    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Icon="@Icons.Material.Outlined.Lock" data-testid="access-denied">
+        <MudText Typo="Typo.subtitle1">You don't have access to this page</MudText>
+        <MudText Typo="Typo.body2">
+            Your current sign-in does not include <code>@string.Join(", ", MissingPermissions)</code>.
+            Ask an administrator to grant access, then sign in again.
+        </MudText>
+    </MudAlert>
+</MudContainer>
+
+@code {
+    /// <summary>The permissions the user is missing.</summary>
+    [Parameter, EditorRequired] public IReadOnlyCollection<Permission> MissingPermissions { get; set; } = [];
+}

@@ -1,3 +1,4 @@
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Models;
@@ -22,7 +23,8 @@ public class DashboardMenu(ILocalizer localizer) : IMenuProvider
                 Href = "",
                 Text = localizer["Dashboard"],
                 GroupName = MenuItemGroups.General.Name,
-                Match = NavLinkMatch.All
+                Match = NavLinkMatch.All,
+                RequiredPermissions = { new(DashboardPermissions.Dashboard, PermissionVerbs.View) }
             }
         };
 

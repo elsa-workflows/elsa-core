@@ -1,3 +1,4 @@
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Models;
@@ -23,7 +24,8 @@ public class ConsoleLogsMenu(IRemoteFeatureProvider remoteFeatureProvider) : IMe
                 Icon = Icons.Material.Filled.Terminal,
                 Href = "diagnostics/console",
                 Text = "Console",
-                GroupName = MenuItemGroups.Diagnostics.Name
+                GroupName = MenuItemGroups.Diagnostics.Name,
+                RequiredPermissions = { new(ConsoleLogsPermissions.ConsoleLogs, PermissionVerbs.View) }
             }
         };
 

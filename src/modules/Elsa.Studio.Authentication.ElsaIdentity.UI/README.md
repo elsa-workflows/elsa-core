@@ -5,7 +5,7 @@ Provides the Elsa Identity login UI for Elsa Studio.
 ## What you get
 - An Elsa Identity login-method catalog and credentials component for the shared `/login` shell
 - A default unauthorized component provider that redirects to `/login?returnUrl=...`
-- A simple app-bar login component (optional)
+- An app-bar user menu with a "Sign out" entry that clears the stored tokens and returns to `/login`
 
 ## Usage
 ### 1) Configure ElsaIdentity (Elsa Identity)

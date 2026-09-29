@@ -1,3 +1,4 @@
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Models;
@@ -22,7 +23,8 @@ public class WeaverMenu(IRemoteFeatureProvider remoteFeatureProvider) : IMenuPro
                 Icon = Icons.Material.Filled.AutoAwesome,
                 Href = "ai/weaver",
                 Text = "Weaver",
-                GroupName = MenuItemGroups.General.Name
+                GroupName = MenuItemGroups.General.Name,
+                RequiredPermissions = { new(AIPermissions.Capabilities, PermissionVerbs.View), new(AIPermissions.Tools, PermissionVerbs.View), new(AIPermissions.Chat, PermissionVerbs.Execute) }
             }
         ];
 

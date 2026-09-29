@@ -18,9 +18,9 @@ public static class ServiceCollectionExtensions
             .AddScoped<ISecurityMenuContributor, ExternalAuthenticationSecurityMenuContributor>()
             .AddScoped<IExternalAuthenticationPermissionService, ExternalAuthenticationPermissionService>()
             .AddSingleton<ICustomConnectionEditorRegistry, CustomConnectionEditorRegistry>()
-            .AddRemoteApi<IExternalAuthenticationConnectionsApi>(backendApiConfig)
+            .AddRemoteApi<IExternalAuthenticationConnectionManagementApi>(backendApiConfig)
             .AddRemoteApi<IIdentityRolesApi>(backendApiConfig)
-            .AddRemoteApi<IExternalIdentityLinksApi>(backendApiConfig)
+            .AddRemoteApi<IExternalIdentityLinkManagementApi>(backendApiConfig)
             .AddRemoteApi<IExternalAuthenticationOperationsApi>(backendApiConfig)
             .AddRemoteApi<ILoginMethodsApi>(backendApiConfig)
             .AddRemoteApi<IExternalAuthenticationBrokerApi>(backendApiConfig);

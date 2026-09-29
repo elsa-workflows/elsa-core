@@ -1,4 +1,5 @@
 @page "/workflows/definitions"
+@attribute [RequirePermission(WorkflowPermissions.Definitions, PermissionVerbs.View)]
 @inherits StudioComponentBase
 @using Elsa.Studio.Workflows.Services
 @inject ILocalizer Localizer

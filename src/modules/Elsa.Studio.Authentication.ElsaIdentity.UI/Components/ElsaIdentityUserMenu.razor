@@ -1,0 +1,6 @@
+@using Elsa.Studio.Components.AppBar
+@inject Contracts.ISignOutService SignOutService
+
+<UserMenu>
+    <MudMenuItem OnClick="@SignOutService.SignOutAsync">Sign out</MudMenuItem>
+</UserMenu>

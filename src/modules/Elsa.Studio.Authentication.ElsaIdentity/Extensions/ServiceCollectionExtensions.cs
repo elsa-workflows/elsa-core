@@ -33,6 +33,8 @@ public static class ServiceCollectionExtensions
 
         services.AddHttpClient(ElsaIdentityRefreshTokenService.AnonymousClientName);
         services.AddScoped<IRefreshTokenService, ElsaIdentityRefreshTokenService>();
+        services.AddScoped<ElsaIdentitySessionGate>();
+        services.AddScoped<ISignOutService, ElsaIdentitySignOutService>();
 
         return services;
     }

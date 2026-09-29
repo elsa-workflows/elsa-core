@@ -149,7 +149,7 @@
 
     private async Task LoadConnectionsAsync()
     {
-        var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+        var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
         _connections.Clear();
         string? cursor = null;
         do
@@ -162,7 +162,7 @@
 
     private async Task FindUsersAsync()
     {
-        var api = await ApiClientProvider.GetApiAsync<IExternalIdentityLinksApi>();
+        var api = await ApiClientProvider.GetApiAsync<IExternalIdentityLinkManagementApi>();
         var response = await api.FindUsersAsync(pageSize: 25);
         _users.Clear();
         _users.AddRange(response.Items);
@@ -186,7 +186,7 @@
     {
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalIdentityLinksApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalIdentityLinkManagementApi>();
             var response = await api.ListAsync(_userIdFilter, _connectionKeyFilter, cursor, 25);
             _links.Clear();
             _links.AddRange(response.Items);
@@ -254,7 +254,7 @@
 
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalIdentityLinksApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalIdentityLinkManagementApi>();
             await api.UnlinkAsync(link.Id);
             Snackbar.Add("External identity unlinked.", Severity.Success);
             await ReloadAsync();

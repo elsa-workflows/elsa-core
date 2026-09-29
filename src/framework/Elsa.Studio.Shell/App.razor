@@ -1,26 +1,29 @@
 @inherits StudioComponentBase
 <Router AppAssembly="@typeof(App).Assembly" AdditionalAssemblies="@AdditionalAssemblies">
     <Found Context="routeData">
-        @if (!AuthorizationIsDisabled)
-        {
-            <CascadingAuthenticationState>
-                <AuthorizeRouteView RouteData="routeData" DefaultLayout="@typeof(MainLayout)">
-                    <Authorizing>
-                        <Well>
-                            <MudText Typo="Typo.body2">Authorizing</MudText>
-                        </Well>
-                    </Authorizing>
-                    <NotAuthorized>
-                        @UnauthorizedComponentProvider.GetUnauthorizedComponent()
-                    </NotAuthorized>
-                </AuthorizeRouteView>
-            </CascadingAuthenticationState>
-        }
-        else
-        {
-            <RouteView RouteData="routeData" DefaultLayout="@typeof(MainLayout)">
-            </RouteView>
-        }
+        @* Cascaded so the layout's PermissionPageGuard can read the page's [RequirePermission] declarations. *@
+        <CascadingValue Value="routeData">
+            @if (!AuthorizationIsDisabled)
+            {
+                <CascadingAuthenticationState>
+                    <AuthorizeRouteView RouteData="routeData" DefaultLayout="@typeof(MainLayout)">
+                        <Authorizing>
+                            <Well>
+                                <MudText Typo="Typo.body2">Authorizing</MudText>
+                            </Well>
+                        </Authorizing>
+                        <NotAuthorized>
+                            @UnauthorizedComponentProvider.GetUnauthorizedComponent()
+                        </NotAuthorized>
+                    </AuthorizeRouteView>
+                </CascadingAuthenticationState>
+            }
+            else
+            {
+                <RouteView RouteData="routeData" DefaultLayout="@typeof(MainLayout)">
+                </RouteView>
+            }
+        </CascadingValue>
         <FocusOnNavigate RouteData="@routeData" Selector="h1"/>
     </Found>
     <NotFound>

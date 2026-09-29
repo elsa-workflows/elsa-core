@@ -3,7 +3,7 @@ using Refit;
 
 namespace Elsa.Studio.ExternalAuthentication.Client;
 
-public interface IExternalIdentityLinksApi
+public interface IExternalIdentityLinkManagementApi
 {
     [Get("/external-authentication/identity-links")]
     Task<ListExternalIdentityLinksResponse> ListAsync(

@@ -1,3 +1,4 @@
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Localization;
@@ -25,7 +26,8 @@ public class LabelsMenu(ILocalizer localizer, IRemoteFeatureProvider remoteFeatu
                 Href = "Labels",
                 Text = localizer["Labels"],
                 GroupName = MenuItemGroups.Administration.Name,
-                Order = 200
+                Order = 200,
+                RequiredPermissions = { new(LabelPermissions.Labels, PermissionVerbs.View) }
             }
         ];
     }

@@ -1,4 +1,6 @@
 @page "/alterations"
+@attribute [RequirePermission(AlterationPermissions.Alterations, PermissionVerbs.View)]
+@attribute [RequirePermission(WorkflowPermissions.Instances, PermissionVerbs.View)]
 @using Elsa.Api.Client.Resources.Alterations.Contracts
 @using Elsa.Api.Client.Resources.Alterations.Enums
 @using Elsa.Api.Client.Resources.Alterations.Models

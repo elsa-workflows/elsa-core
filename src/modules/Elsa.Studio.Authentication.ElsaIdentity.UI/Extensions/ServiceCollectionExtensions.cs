@@ -14,10 +14,11 @@ namespace Elsa.Studio.Authentication.ElsaIdentity.UI.Extensions;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds Elsa Identity login UI (route: <c>/login</c>) and an unauthorized redirect behavior.
+    /// Adds Elsa Identity login UI (route: <c>/login</c>), an unauthorized redirect behavior and the app bar sign-out menu.
     /// </summary>
     public static IServiceCollection AddElsaIdentityUI(this IServiceCollection services)
     {
+        services.AddScoped<IFeature, ElsaIdentityUIFeature>();
         services.AddSingleton(new StudioAuthenticationProviderRegistration(StudioAuthenticationProvider.ElsaIdentity));
         services.AddScoped<ILoginMethodCatalog, ElsaIdentityLoginMethodCatalog>();
         services.AddScoped<ILoginMethodComponentProvider, ElsaIdentityLoginMethodComponentProvider>();

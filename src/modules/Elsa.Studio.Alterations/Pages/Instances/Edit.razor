@@ -1,4 +1,7 @@
 @page "/alterations/instances/{InstanceId}"
+@attribute [RequirePermission(WorkflowPermissions.Instances, PermissionVerbs.View)]
+@attribute [RequirePermission(WorkflowPermissions.Definitions, PermissionVerbs.View)]
+@attribute [RequirePermission(AlterationPermissions.Alterations, PermissionVerbs.Execute)]
 @using System.Text.Json.Nodes
 @using Elsa.Api.Client.Resources.WorkflowDefinitions.Models
 @using Elsa.Api.Client.Resources.WorkflowInstances.Models

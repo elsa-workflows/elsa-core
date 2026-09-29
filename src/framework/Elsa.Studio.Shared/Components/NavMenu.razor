@@ -1,6 +1,10 @@
 ﻿@using Elsa.Studio.Contracts
 @using Elsa.Studio.Models
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.Extensions.DependencyInjection
+@implements IDisposable
 @inject IMenuService MenuService;
+@inject IServiceProvider Services
 
 <MudNavMenu Color="Color.Primary" Margin="Margin.Dense" Class="studio-nav">
     @foreach (var menuItemGroup in _menuItemsGroups.Values)
@@ -24,10 +28,45 @@
     private IDictionary<string, MenuItemGroup> _menuItemsGroups = new Dictionary<string, MenuItemGroup>();
     private IEnumerable<MenuItem> _menuItems = new List<MenuItem>();
 
+    private AuthenticationStateProvider? _authenticationStateProvider;
+    private int _load;
+
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
-        _menuItemsGroups = (await MenuService.GetMenuItemGroupsAsync()).ToDictionary(x => x.Name);
-        _menuItems = await MenuService.GetMenuItemsAsync();
+        // Menu items are filtered by the user's permissions, which can change while the shell stays loaded.
+        _authenticationStateProvider = Services.GetService<AuthenticationStateProvider>();
+        if (_authenticationStateProvider != null)
+            _authenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+
+        await LoadMenuAsync();
     }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (_authenticationStateProvider != null)
+            _authenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+    }
+
+    private async Task LoadMenuAsync()
+    {
+        var load = ++_load;
+        var groups = (await MenuService.GetMenuItemGroupsAsync()).ToDictionary(x => x.Name);
+        var items = await MenuService.GetMenuItemsAsync();
+
+        // A newer load (e.g. from a later authentication change) wins over one that resolves after it.
+        if (load != _load)
+            return;
+
+        _menuItemsGroups = groups;
+        _menuItems = items;
+    }
+
+    private async void OnAuthenticationStateChanged(Task<AuthenticationState> state) =>
+        await InvokeAsync(async () =>
+        {
+            await LoadMenuAsync();
+            StateHasChanged();
+        });
 }

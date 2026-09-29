@@ -567,7 +567,7 @@
         _canReadRoles = await Permissions.HasAsync(ExternalAuthenticationPermissions.RolesRead);
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
             _adapters = await api.GetAdaptersAsync();
             _policyDescriptors = await api.GetPoliciesAsync();
             _matcherDescriptors = await api.GetUserMatchersAsync();
@@ -614,7 +614,7 @@
 
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
             _connection = await api.GetAsync(ConnectionId!);
             _adapter = _adapters.FirstOrDefault(adapter => string.Equals(adapter.Type, _connection.AdapterType, StringComparison.Ordinal));
             ResolveCustomEditor();
@@ -638,7 +638,7 @@
     private bool _existingStudioOverrideArchived;
     private bool CanCreateFullOverride => _canCreate && _connection?.CanCreateOverride == true && string.IsNullOrWhiteSpace(_existingStudioOverrideId);
 
-    private async Task FindExistingStudioOverrideAsync(IExternalAuthenticationConnectionsApi api)
+    private async Task FindExistingStudioOverrideAsync(IExternalAuthenticationConnectionManagementApi api)
     {
         if (_connection is null || !_connection.IsConfigurationOwned || !_connection.CanCreateOverride)
             return;
@@ -683,7 +683,7 @@
         }
     }
 
-    private async Task LoadManagedSecretResolversAsync(IExternalAuthenticationConnectionsApi api)
+    private async Task LoadManagedSecretResolversAsync(IExternalAuthenticationConnectionManagementApi api)
     {
         try
         {
@@ -756,7 +756,7 @@
         _activating = true;
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
             if (requiresSave)
             {
                 await ReportActivationProgressAsync("Saving configuration…");
@@ -875,7 +875,7 @@
     }
 
     private async Task<ConnectionDetail?> PersistConnectionAsync(
-        IExternalAuthenticationConnectionsApi api,
+        IExternalAuthenticationConnectionManagementApi api,
         ConnectionMutation mutation,
         bool creating)
     {
@@ -902,7 +902,7 @@
 
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
             var created = await PersistConnectionAsync(api, mutation, creating: true);
             if (created is null)
                 return;
@@ -936,7 +936,7 @@
 
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
             var updated = await PersistConnectionAsync(api, mutation, creating: false);
             if (updated is null)
                 return;
@@ -985,7 +985,7 @@
 
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
             _connection = await api.ReplaceManagedSecretAsync(
                 CurrentConnectionId,
                 change.Field,
@@ -1026,7 +1026,7 @@
 
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
             await api.RemoveSecretBindingAsync(CurrentConnectionId, field, ConnectionConcurrency.ToIfMatch(_connection.Revision));
             await ReloadConnectionAsync();
             Snackbar.Add("Secret binding removed.", Severity.Success);
@@ -1057,7 +1057,7 @@
         var action = _connection.EnabledIntent ? "disable" : "enable";
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
             if (_connection.EnabledIntent)
             {
                 var decision = await ConnectionDisableConfirmation.ShowAsync(Dialogs, _connection.DisplayName, _canRevokeSessions);
@@ -1127,7 +1127,7 @@
 
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
             await api.ArchiveAsync(CurrentConnectionId, ConnectionConcurrency.ToIfMatch(_connection.Revision));
             await ReloadConnectionAsync();
             Snackbar.Add("Connection archived.", Severity.Success);
@@ -1160,7 +1160,7 @@
 
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
             await api.RestoreAsync(CurrentConnectionId, ConnectionConcurrency.ToIfMatch(_connection.Revision));
             await ReloadConnectionAsync();
             Snackbar.Add("Connection restored as disabled.", Severity.Success);
@@ -1190,7 +1190,7 @@
 
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
             _validation = null;
             _connection.Validity = "unknown";
             _connection.ValidationErrors = [];
@@ -1239,7 +1239,7 @@
     {
         if (_connection is null || string.IsNullOrWhiteSpace(CurrentConnectionId))
             return;
-        var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+        var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
         _connection = await api.GetAsync(CurrentConnectionId);
         _model = ToMutation(_connection);
         _isDirty = false;

@@ -426,14 +426,14 @@ public sealed class ExternalIdentityLinksTests : BunitContext, IAsyncLifetime
 
         public ValueTask<T> GetApiAsync<T>(CancellationToken cancellationToken = default) where T : class
         {
-            object api = typeof(T) == typeof(IExternalIdentityLinksApi) ? links :
-                typeof(T) == typeof(IExternalAuthenticationConnectionsApi) ? connections :
+            object api = typeof(T) == typeof(IExternalIdentityLinkManagementApi) ? links :
+                typeof(T) == typeof(IExternalAuthenticationConnectionManagementApi) ? connections :
                 throw new NotSupportedException(typeof(T).FullName);
             return ValueTask.FromResult((T)api);
         }
     }
 
-    private sealed class LinksApi : IExternalIdentityLinksApi
+    private sealed class LinksApi : IExternalIdentityLinkManagementApi
     {
         public Queue<ListExternalIdentityLinksResponse> ListResults { get; } = new();
         public IReadOnlyCollection<IdentityLinkUser> Users { get; set; } = [];
@@ -502,7 +502,7 @@ public sealed class ExternalIdentityLinksTests : BunitContext, IAsyncLifetime
         public Task UnlinkAsync(string linkId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 
-    private sealed class ConnectionsApi : IExternalAuthenticationConnectionsApi
+    private sealed class ConnectionsApi : IExternalAuthenticationConnectionManagementApi
     {
         public ListConnectionsResponse Result { get; set; } = new();
         public Queue<ListConnectionsResponse> Results { get; } = new();

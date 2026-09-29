@@ -1,3 +1,4 @@
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Models;
@@ -19,7 +20,8 @@ public class SecretsMenu(IRemoteFeatureProvider remoteFeatureProvider) : IMenuPr
                 Href = "security/secrets",
                 Text = "Secrets",
                 GroupName = MenuItemGroups.Administration.Name,
-                Order = 300
+                Order = 300,
+                RequiredPermissions = { new(SecretsPermissions.Secrets, PermissionVerbs.View) }
             }
         ];
     }

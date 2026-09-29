@@ -1,3 +1,4 @@
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Models;
@@ -27,12 +28,14 @@ public class WorkflowsMenu(ILocalizer localizer, IEnumerable<IWorkflowMenuContri
                 new MenuItem()
                 {
                     Text = localizer["Definitions"],
-                    Href = "workflows/definitions"
+                    Href = "workflows/definitions",
+                    RequiredPermissions = { new(WorkflowPermissions.Definitions, PermissionVerbs.View) }
                 },
                 new MenuItem()
                 {
                     Text = localizer["Instances"],
-                    Href = "workflows/instances"
+                    Href = "workflows/instances",
+                    RequiredPermissions = { new(WorkflowPermissions.Instances, PermissionVerbs.View) }
                 },
             }
         };

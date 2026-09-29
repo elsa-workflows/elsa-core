@@ -7,7 +7,7 @@
 
 <MudPaper Outlined="true" Class="pa-4">
     <MudText Typo="Typo.h6">Elsa account</MudText>
-    <MudForm @ref="_form">
+    <MudForm @ref="_form" Disabled="_busy.IsBusy">
         <MudTextField @bind-Value="_username"
                       Label="User name"
                       autocomplete="username"
@@ -21,7 +21,14 @@
                       Required="true"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense" />
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="SignInAsync">Sign in</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   FullWidth="true"
+                   Disabled="_busy.IsBusy"
+                   aria-busy="@(_busy.IsBusy ? "true" : "false")"
+                   OnClick="SignInAsync">
+            <BusyButtonContent Busy="_busy.IsBusy" BusyText="Signing in…">Sign in</BusyButtonContent>
+        </MudButton>
     </MudForm>
 </MudPaper>
 
@@ -32,18 +39,19 @@
     private MudForm _form = default!;
     private string _username = string.Empty;
     private string _password = string.Empty;
+    private readonly BusyState _busy = new();
 
-    private async Task SignInAsync()
+    private Task SignInAsync() => _busy.RunAsync(async () =>
     {
         await _form.Validate();
         if (!_form.IsValid)
-            return;
+            return false;
 
         var result = await CredentialsValidator.ValidateCredentialsAsync(_username, _password);
         if (!result.IsValid)
         {
             await Context.ReportFailureAsync("Invalid credentials. Try again.");
-            return;
+            return false;
         }
 
         await JwtAccessor.WriteTokenAsync(Elsa.Studio.Authentication.ElsaIdentity.TokenNames.AccessToken, result.AccessToken!);
@@ -51,5 +59,6 @@
         if (AuthenticationStateProvider is Elsa.Studio.Authentication.ElsaIdentity.Services.AccessTokenAuthenticationStateProvider stateProvider)
             stateProvider.NotifyAuthenticationStateChanged();
         Navigation.NavigateTo(Context.ReturnPath, forceLoad: true);
-    }
+        return true;
+    });
 }

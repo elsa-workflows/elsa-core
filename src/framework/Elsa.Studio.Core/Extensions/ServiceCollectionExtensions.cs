@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Elsa.Api.Client.Extensions;
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Models;
@@ -60,6 +61,9 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IContentVisualizerProvider, DefaultContentVisualizerProvider>()
             .AddUserMessageService<DefaultUserMessageService>()
             ;
+
+        // Permission-aware rendering. Hosts or modules can replace the source of permission information.
+        services.TryAddScoped<IPermissionService, ClaimsPermissionService>();
 
         services.TryAddScoped<IThemeProvider, DefaultThemeProvider>();
         services.TryAddScoped<IThemeService, DefaultThemeService>();
