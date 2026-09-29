@@ -21,10 +21,10 @@ The grouping is curated in [`scripts/solution/solution-groups.json`](../../../sc
 | `Elsa.Foundation.slnf` | Foundation and its tests |
 | `Elsa.<Domain>.slnf` | Foundation plus one domain, one filter per domain |
 | `Elsa.Studio.slnf` | Studio, Foundation and `Elsa.Api.Client` |
-| `Elsa.Extensions.slnf` | Every optional domain, without Studio |
+| `Elsa.Extensions.slnf` | Every optional domain; Studio is not selected, though references can pull some in (see below) |
 
 Each filter also includes the project-reference closure of what it selects, so it loads and builds on its own. For
-example, the Foundation tests' harnesses pull in the C# expression and blob-storage workflow-provider projects. The
+example, the Foundation tests' harnesses pull in the C# expression and blob-storage workflow-provider projects, and the WorkflowContexts extension's Studio module pulls nine Studio projects into `Elsa.Extensions.slnf`. The
 generator also enforces that Foundation source projects reference only Foundation projects.
 
 ```sh

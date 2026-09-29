@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -27,14 +28,15 @@ class SolutionGroupsTests(unittest.TestCase):
             with self.subTest(filter=path.name):
                 selected = json.loads(path.read_text(encoding="utf-8-sig"))["solution"]["projects"]
                 self.assertEqual(len(selected), len(set(selected)))
-                self.assertTrue(set(selected) <= in_solution)
+                self.assertLessEqual(set(selected), in_solution)
+                self.assertTrue(all((sg.ROOT / path).is_file() for path in selected))
 
     def test_foundation_filter_holds_no_optional_source_project_outside_test_closures(self) -> None:
         groups = sg.classify(self.projects, self.manifest)
         foundation_sources = {project.path for project, group in groups.items()
                               if group == sg.FOUNDATION and not project.is_test}
         selected = set(json.loads((sg.ROOT / "Elsa.Foundation.slnf").read_text(encoding="utf-8"))["solution"]["projects"])
-        self.assertTrue(foundation_sources <= selected)
+        self.assertLessEqual(foundation_sources, selected)
 
     def test_unclassified_project_is_rejected(self) -> None:
         stray = sg.SolutionProject("Elsa.Unlisted", "src/elsewhere/Elsa.Unlisted/Elsa.Unlisted.csproj", "0" * 32)
@@ -53,14 +55,22 @@ class SolutionGroupsTests(unittest.TestCase):
         self.assertEqual("Runtime", groups["Elsa.ServiceBus.MassTransit.UnitTests"])
         self.assertEqual(sg.FOUNDATION, groups["Elsa.Testing.Shared"])
 
-    def test_check_mode_reports_a_stale_filter(self) -> None:
-        path = sg.ROOT / "Elsa.Foundation.slnf"
-        original = path.read_bytes()
-        try:
-            path.write_text('{"solution": {"path": "Elsa.sln", "projects": []}}\n', encoding="utf-8")
-            self.assertEqual(1, sg.main(["--check"]))
-        finally:
-            path.write_bytes(original)
+    def test_stale_and_missing_outputs_are_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            current, drifted, missing = (Path(directory) / name for name in ("current.slnf", "drifted.slnf", "missing.slnf"))
+            current.write_text("same\n", encoding="utf-8")
+            drifted.write_text("old\n", encoding="utf-8")
+            outputs = {current: "same\n", drifted: "new\n", missing: "new\n"}
+            self.assertEqual([drifted, missing], sg.stale(outputs))
+
+    def test_missing_project_file_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "Elsa.sln").write_text(
+                'Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Gone", "src\\Elsa.Gone\\Elsa.Gone.csproj", '
+                '"{00000000-0000-0000-0000-000000000001}"\nEndProject\n', encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "do not exist: src/Elsa.Gone/Elsa.Gone.csproj"):
+                sg.generate(root)
 
 
 if __name__ == "__main__":

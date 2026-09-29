@@ -254,11 +254,20 @@ def generate(root: Path = ROOT) -> dict[Path, str]:
     domains = list(manifest["domains"])
     text = (root / SOLUTION.name).read_text(encoding="utf-8-sig")
     projects, _, _ = read_solution(text)
+    missing = sorted(project.path for project in projects if not (root / project.path).is_file())
+    if missing:
+        raise ValueError("Elsa.sln lists project files that do not exist: " + ", ".join(missing))
     groups = classify(projects, manifest)
     outputs = {root / SOLUTION.name: rewrite_solution(text, groups, domains)}
     for name, selected in filters(groups, projects, domains).items():
         outputs[root / name] = render_filter(selected)
     return outputs
+
+
+def stale(outputs: dict[Path, str]) -> list[Path]:
+    """The generated files whose committed content differs from what the manifest produces."""
+    return [path for path, content in outputs.items()
+            if not path.is_file() or path.read_text(encoding="utf-8-sig") != content]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -270,19 +279,18 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 1
-    stale = [path.name for path, content in outputs.items()
-             if not path.is_file() or path.read_text(encoding="utf-8-sig") != content]
+    out_of_date = stale(outputs)
+    names = ", ".join(path.name for path in out_of_date)
     if args.check:
-        if stale:
-            print("Out of date: " + ", ".join(stale) + ". Run python3 scripts/solution/solution_groups.py.", file=sys.stderr)
+        if out_of_date:
+            print(f"Out of date: {names}. Run python3 scripts/solution/solution_groups.py.", file=sys.stderr)
             return 1
         print(f"Solution grouping and {len(outputs) - 1} filters are up to date.")
         return 0
-    for path, content in outputs.items():
-        if path.name in stale:
-            bom = path == ROOT / SOLUTION.name and path.read_bytes().startswith(b"\xef\xbb\xbf")
-            path.write_bytes((b"\xef\xbb\xbf" if bom else b"") + content.encode("utf-8"))
-    print("Updated: " + (", ".join(stale) if stale else "nothing"))
+    for path in out_of_date:
+        bom = path.name == SOLUTION.name and path.is_file() and path.read_bytes().startswith(b"\xef\xbb\xbf")
+        path.write_bytes((b"\xef\xbb\xbf" if bom else b"") + outputs[path].encode("utf-8"))
+    print("Updated: " + (names or "nothing"))
     return 0
 
 
