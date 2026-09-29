@@ -1,0 +1,148 @@
+{
+  "description": "Curated grouping of Elsa.sln projects. Foundation is the workflow engine and what a minimal server needs; everything else is an optional domain. scripts/solution/solution_groups.py generates the solution folders and solution filters from this file. Foundation source projects may reference only Foundation projects; the generator enforces this, which is why Liquid (used by Elsa.Http) and Alterations (used by Elsa.Persistence.EFCore) are foundational.",
+  "foundation": [
+    "Elsa.Api.Common",
+    "Elsa.Features",
+    "Elsa.Mediator",
+    "Elsa.Testing.Shared",
+    "Elsa.Testing.Shared.Component",
+    "Elsa.Testing.Shared.Integration",
+    "Elsa",
+    "Elsa.Common",
+    "Elsa.Workflows.Core",
+    "Elsa.Workflows.Management",
+    "Elsa.Workflows.Runtime",
+    "Elsa.Workflows.Runtime.Distributed",
+    "Elsa.Workflows.Api",
+    "Elsa.Hosting.Management",
+    "Elsa.Expressions",
+    "Elsa.Expressions.JavaScript",
+    "Elsa.Expressions.JavaScript.Libraries",
+    "Elsa.Expressions.Liquid",
+    "Elsa.Identity",
+    "Elsa.Tenants",
+    "Elsa.Tenants.AspNetCore",
+    "Elsa.KeyValues",
+    "Elsa.Labels",
+    "Elsa.Scheduling",
+    "Elsa.Resilience",
+    "Elsa.Resilience.Core",
+    "Elsa.Caching",
+    "Elsa.Http",
+    "Elsa.SasTokens",
+    "Elsa.Persistence.EFCore.Common",
+    "Elsa.Persistence.EFCore",
+    "Elsa.Persistence.EFCore.MySql",
+    "Elsa.Persistence.EFCore.Oracle",
+    "Elsa.Persistence.EFCore.PostgreSql",
+    "Elsa.Persistence.EFCore.Sqlite",
+    "Elsa.Persistence.EFCore.SqlServer",
+    "Elsa.Alterations",
+    "Elsa.Alterations.Core"
+  ],
+  "domains": {
+    "Scripting": {
+      "names": [
+        "Elsa.Expressions.CSharp",
+        "Elsa.Expressions.Python",
+        "Elsa.Dsl.ElsaScript"
+      ]
+    },
+    "Persistence": {
+      "namePrefixes": [
+        "Elsa.Persistence.VNext"
+      ],
+      "paths": [
+        "src/extensions/persistence/",
+        "src/extensions/data/",
+        "src/extensions/sql/"
+      ]
+    },
+    "Runtime": {
+      "paths": [
+        "src/extensions/actors/",
+        "src/extensions/runtimes/",
+        "src/extensions/servicebus/",
+        "src/extensions/caching/",
+        "src/extensions/mqtt/",
+        "src/extensions/scheduling/"
+      ]
+    },
+    "AI": {
+      "namePrefixes": [
+        "Elsa.AI."
+      ],
+      "paths": [
+        "src/extensions/agents/"
+      ]
+    },
+    "Security": {
+      "namePrefixes": [
+        "Elsa.ExternalAuthentication",
+        "Elsa.Secrets",
+        "Elsa.Connections"
+      ],
+      "paths": [
+        "src/extensions/ldap/",
+        "src/extensions/secrets/",
+        "src/extensions/connections/"
+      ]
+    },
+    "Operations": {
+      "namePrefixes": [
+        "Elsa.Diagnostics.",
+        "Elsa.Dashboard."
+      ],
+      "names": [
+        "Elsa.Workflows.Runtime.Dashboard"
+      ],
+      "paths": [
+        "src/extensions/diagnostics/",
+        "src/extensions/devops/",
+        "src/extensions/retention/",
+        "src/extensions/alterations/"
+      ]
+    },
+    "Integrations": {
+      "namePrefixes": [
+        "Elsa.Bpmn",
+        "Elsa.UserTasks",
+        "Elsa.WorkflowProviders."
+      ],
+      "names": [
+        "Elsa.Http.Webhooks",
+        "Elsa.Platform.Integration",
+        "Elsa.Shells.Api"
+      ],
+      "paths": [
+        "src/extensions/communication/",
+        "src/extensions/email/",
+        "src/extensions/telecom/",
+        "src/extensions/cms/",
+        "src/extensions/io/",
+        "src/extensions/storage/",
+        "src/extensions/http/",
+        "src/extensions/workflows/",
+        "src/extensions/dropins/"
+      ]
+    }
+  },
+  "studio": {
+    "paths": [
+      "src/studio/",
+      "samples/studio/"
+    ]
+  },
+  "apps": {
+    "paths": [
+      "src/apps/",
+      "src/clients/",
+      "build/"
+    ]
+  },
+  "samples": {
+    "paths": [
+      "samples/"
+    ]
+  }
+}
