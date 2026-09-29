@@ -33,7 +33,7 @@
     "@elsa-workflows/elsa-studio-wasm": "^3.4.0-rc1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "uuid": "^14.0.0"
+    "uuid": "^14.0.2"
   },
   "devDependencies": {
     "@storybook/addon-essentials": "^8.6.11",
@@ -54,6 +54,6 @@
     "eslint-plugin-storybook": "^0.12.0",
     "prop-types": "^15.8.1",
     "storybook": "^8.6.17",
-    "vite": "^6.4.2"
+    "vite": "^6.4.3"
   }
 }
