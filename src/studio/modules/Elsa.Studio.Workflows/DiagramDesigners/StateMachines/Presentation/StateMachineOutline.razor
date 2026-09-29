@@ -1,0 +1,174 @@
+@using Elsa.Studio.Workflows.Designer.Models
+@using Elsa.Studio.Localization
+@namespace Elsa.Studio.Workflows.DiagramDesigners.StateMachines.Presentation
+@inject ILocalizer Localizer
+
+<nav class="state-machine-outline" aria-label="@Localizer["State machine outline"]">
+    <section class="state-machine-outline__section" aria-labelledby="@StatesHeadingId">
+        <header class="state-machine-outline__header">
+            <h3 id="@StatesHeadingId">@Localizer["States"]</h3>
+            <span class="state-machine-outline__count" aria-label="@Localizer["{0} states", Graph?.States.Count ?? 0]">@(Graph?.States.Count ?? 0)</span>
+        </header>
+
+        @if (Graph?.States.Count > 0)
+        {
+            <ul class="state-machine-outline__list">
+                @foreach (var state in Graph.States)
+                {
+                    var isSelected = string.Equals(state.Name, SelectedStateName, StringComparison.Ordinal);
+                    <li>
+                        <button type="button"
+                                class="@GetStateClass(state, isSelected)"
+                                data-state-name="@state.Name"
+                                aria-pressed="@ToAriaPressed(isSelected)"
+                                @onclick="() => SelectStateAsync(state)">
+                            <span class="state-machine-outline__item-copy">
+                                <span class="state-machine-outline__item-title">@StateMachinePresentationFormatter.DisplayValue(state.Name)</span>
+                                <span class="state-machine-outline__item-meta">@GetOutgoingTransitionText(state)</span>
+                            </span>
+                            <span class="state-machine-outline__badges" aria-label="@GetStateStatusLabel(state)">
+                                @if (IsInitial(state))
+                                {
+                                    <span class="state-machine-outline__badge">@Localizer["Initial"]</span>
+                                }
+                                @if (IsCurrent(state))
+                                {
+                                    <span class="state-machine-outline__badge state-machine-outline__badge--accent">@Localizer["Current"]</span>
+                                }
+                                @if (state.IsTerminal)
+                                {
+                                    <span class="state-machine-outline__badge">@Localizer["Terminal"]</span>
+                                }
+                            </span>
+                        </button>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="state-machine-outline__empty">@Localizer["No states have been configured."]</p>
+        }
+    </section>
+
+    <section class="state-machine-outline__section" aria-labelledby="@TransitionsHeadingId">
+        <header class="state-machine-outline__header">
+            <h3 id="@TransitionsHeadingId">@Localizer["Transitions"]</h3>
+            <span class="state-machine-outline__count" aria-label="@Localizer["{0} transitions", Graph?.Transitions.Count ?? 0]">@(Graph?.Transitions.Count ?? 0)</span>
+        </header>
+
+        @if (Graph?.Transitions.Count > 0)
+        {
+            <ul class="state-machine-outline__list">
+                @foreach (var transition in Graph.Transitions)
+                {
+                    var isSelected = ReferenceEquals(transition, SelectedTransition);
+                    <li>
+                        <button type="button"
+                                class="@GetTransitionClass(transition, isSelected)"
+                                data-transition-index="@GetTransitionIndex(transition)"
+                                aria-pressed="@ToAriaPressed(isSelected)"
+                                @onclick="() => SelectTransitionAsync(transition)">
+                            <span class="state-machine-outline__item-copy">
+                                <span class="state-machine-outline__route">
+                                    <span>@StateMachinePresentationFormatter.DisplayValue(transition.From)</span>
+                                    <span aria-hidden="true">→</span>
+                                    <span>@StateMachinePresentationFormatter.DisplayValue(transition.To)</span>
+                                </span>
+                                <span class="state-machine-outline__item-meta">@StateMachinePresentationFormatter.TransitionName(transition)</span>
+                            </span>
+                            <span class="state-machine-outline__badges" aria-label="@GetTransitionStatusLabel(transition)">
+                                @if (transition.Trigger != null)
+                                {
+                                    <span class="state-machine-outline__badge">@Localizer["Trigger"]</span>
+                                }
+                                @if (transition.Condition != null)
+                                {
+                                    <span class="state-machine-outline__badge">@Localizer["Condition"]</span>
+                                }
+                                @if (transition.Action != null)
+                                {
+                                    <span class="state-machine-outline__badge">@Localizer["Action"]</span>
+                                }
+                                @if (!HasValidRoute(transition))
+                                {
+                                    <span class="state-machine-outline__badge state-machine-outline__badge--error">@Localizer["Invalid route"]</span>
+                                }
+                            </span>
+                        </button>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="state-machine-outline__empty">@Localizer["No transitions have been configured."]</p>
+        }
+    </section>
+</nav>
+
+@code {
+    private readonly string _id = $"state-machine-outline-{Guid.NewGuid():N}";
+
+    [Parameter] public StateMachineGraph? Graph { get; set; }
+    [Parameter] public string? SelectedStateName { get; set; }
+    [Parameter] public StateMachineTransitionEdge? SelectedTransition { get; set; }
+    [Parameter] public EventCallback<StateMachineStateNode> StateSelected { get; set; }
+    [Parameter] public EventCallback<StateMachineTransitionEdge> TransitionSelected { get; set; }
+
+    private string StatesHeadingId => $"{_id}-states";
+    private string TransitionsHeadingId => $"{_id}-transitions";
+
+    private Task SelectStateAsync(StateMachineStateNode state) => StateSelected.InvokeAsync(state);
+    private Task SelectTransitionAsync(StateMachineTransitionEdge transition) => TransitionSelected.InvokeAsync(transition);
+
+    private bool IsInitial(StateMachineStateNode state) => string.Equals(state.Name, Graph?.InitialState, StringComparison.Ordinal);
+    private bool IsCurrent(StateMachineStateNode state) => string.Equals(state.Name, Graph?.CurrentState, StringComparison.Ordinal);
+
+    private int GetTransitionIndex(StateMachineTransitionEdge transition) => Graph?.Transitions.ToList().IndexOf(transition) ?? -1;
+
+    private string GetOutgoingTransitionText(StateMachineStateNode state)
+    {
+        var count = Graph?.Transitions.Count(transition => string.Equals(transition.From, state.Name, StringComparison.Ordinal)) ?? 0;
+        return Localizer[count == 1 ? "1 outgoing transition" : "{0} outgoing transitions", count];
+    }
+
+    private string GetStateStatusLabel(StateMachineStateNode state)
+    {
+        var statuses = new List<string>();
+        if (IsInitial(state)) statuses.Add(Localizer["Initial"]);
+        if (IsCurrent(state)) statuses.Add(Localizer["Current"]);
+        if (state.IsTerminal) statuses.Add(Localizer["Terminal"]);
+        return statuses.Count == 0 ? Localizer["No state status"] : string.Join(", ", statuses);
+    }
+
+    private string GetTransitionStatusLabel(StateMachineTransitionEdge transition)
+    {
+        var statuses = new List<string>();
+        if (transition.Trigger != null) statuses.Add(Localizer["Trigger"]);
+        if (transition.Condition != null) statuses.Add(Localizer["Condition"]);
+        if (transition.Action != null) statuses.Add(Localizer["Action"]);
+        if (!HasValidRoute(transition)) statuses.Add(Localizer["Invalid route"]);
+        return statuses.Count == 0 ? Localizer["No transition activities"] : string.Join(", ", statuses);
+    }
+
+    private static bool HasValidRoute(StateMachineTransitionEdge transition) =>
+        !string.IsNullOrWhiteSpace(transition.From) && !string.IsNullOrWhiteSpace(transition.To);
+
+    private static string GetStateClass(StateMachineStateNode state, bool isSelected) =>
+        BuildItemClass(isSelected, state.IsTerminal, false);
+
+    private static string GetTransitionClass(StateMachineTransitionEdge transition, bool isSelected) =>
+        BuildItemClass(isSelected, false, !HasValidRoute(transition));
+
+    private static string BuildItemClass(bool isSelected, bool isTerminal, bool isInvalid)
+    {
+        var classes = new List<string> { "state-machine-outline__item" };
+        if (isSelected) classes.Add("state-machine-outline__item--selected");
+        if (isTerminal) classes.Add("state-machine-outline__item--terminal");
+        if (isInvalid) classes.Add("state-machine-outline__item--invalid");
+        return string.Join(" ", classes);
+    }
+
+    private static string ToAriaPressed(bool value) => value ? "true" : "false";
+}

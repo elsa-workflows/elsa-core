@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides CSV processing activities.
+        </Description>
+        <PackageTags>elsa extension module activities data csv</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="CsvHelper" />
+        <PackageReference Include="Microsoft.Extensions.Http" />
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+        <ProjectReference Include="../../../modules/Elsa.Workflows.Management/Elsa.Workflows.Management.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+      <ProjectReference Include="../../../modules/Elsa.Workflows.Management/Elsa.Workflows.Management.csproj" />
+    </ItemGroup>
+
+</Project>

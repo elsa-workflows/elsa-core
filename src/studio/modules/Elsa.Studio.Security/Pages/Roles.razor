@@ -1,0 +1,543 @@
+﻿@page "/security/roles"
+@inherits StudioComponentBase
+@implements IAsyncDisposable
+@using Elsa.Studio.Contracts
+@using Elsa.Studio.Security.Client
+@using Elsa.Studio.Security.Services
+@inject IBackendApiClientProvider ApiClientProvider
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+
+<PageTitle>Roles</PageTitle>
+
+<style>
+    .roles-page {
+        --roles-border: var(--mud-palette-lines-default);
+        --roles-muted: var(--mud-palette-text-secondary);
+        --roles-primary-aa: color-mix(in srgb, var(--mud-palette-primary), var(--mud-palette-text-primary) 32%);
+    }
+
+    .roles-page .roles-primary-action.mud-button-filled {
+        background-color: var(--roles-primary-aa);
+    }
+
+    .roles-page .role-permission-chip.mud-chip-outlined.mud-chip-color-primary {
+        border-color: var(--roles-primary-aa);
+        color: var(--roles-primary-aa);
+    }
+
+    .roles-toolbar {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        justify-content: space-between;
+        margin-top: 24px;
+    }
+
+    .roles-search {
+        max-width: 440px;
+        min-width: 280px;
+        width: 100%;
+    }
+
+    .roles-count {
+        align-items: center;
+        color: var(--roles-muted);
+        display: flex;
+        font-size: 0.875rem;
+        gap: 8px;
+        margin-top: 16px;
+    }
+
+    .roles-count-icon {
+        color: var(--mud-palette-primary);
+    }
+
+    .roles-desktop-list {
+        margin-top: 16px;
+    }
+
+    .roles-table {
+        border: 1px solid var(--roles-border);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .roles-table .mud-table-head {
+        background: var(--mud-palette-background-gray);
+    }
+
+    .roles-table .mud-table-cell {
+        vertical-align: middle;
+    }
+
+    .roles-table .mud-table-head .mud-table-cell {
+        color: color-mix(in srgb, var(--roles-muted), var(--mud-palette-text-primary) 16%);
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .role-name {
+        font-weight: 600;
+    }
+
+    .role-id {
+        color: var(--roles-muted);
+        font-family: var(--mud-typography-default-family);
+        font-size: 0.8125rem;
+        overflow-wrap: anywhere;
+    }
+
+    .role-permission-preview {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .role-permission-chip {
+        max-width: 260px;
+    }
+
+    .role-permission-chip .mud-chip-content {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .roles-actions {
+        text-align: right;
+        white-space: nowrap;
+        width: 1%;
+    }
+
+    .roles-mobile-list {
+        display: none;
+        gap: 12px;
+        margin-top: 16px;
+    }
+
+    .role-card {
+        padding: 16px;
+    }
+
+    .role-card-header {
+        align-items: flex-start;
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+    }
+
+    .role-card-content {
+        min-width: 0;
+    }
+
+    .role-card-link {
+        color: inherit;
+        display: block;
+        min-width: 0;
+        text-decoration: none;
+    }
+
+    .role-card-link:hover .role-name,
+    .role-card-link:focus-visible .role-name {
+        color: var(--mud-palette-primary);
+        text-decoration: underline;
+    }
+
+    .role-card-actions {
+        align-items: center;
+        display: flex;
+        gap: 4px;
+    }
+
+    .roles-state-card {
+        align-items: center;
+        border: 1px solid var(--roles-border);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        justify-content: center;
+        margin-top: 16px;
+        min-height: 220px;
+        padding: 32px 24px;
+        text-align: center;
+    }
+
+    .roles-no-pagination {
+        align-items: center;
+        border-top: 1px solid var(--roles-border);
+        color: var(--roles-muted);
+        display: flex;
+        gap: 8px;
+        padding: 12px 16px;
+    }
+
+    .roles-visually-hidden {
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        height: 1px;
+        overflow: hidden;
+        position: absolute;
+        white-space: nowrap;
+        width: 1px;
+    }
+
+    @@media (max-width: 959.98px) {
+        .roles-desktop-list {
+            display: none;
+        }
+
+        .roles-mobile-list {
+            display: grid;
+        }
+
+        .roles-search {
+            max-width: none;
+        }
+    }
+
+    @@media (min-width: 960px) {
+        .roles-desktop-list {
+            display: block;
+        }
+    }
+</style>
+
+<MudContainer MaxWidth="MaxWidth.False" Class="roles-page">
+    <RoleAdministrationAccessBoundary Context="access">
+        <MudText Typo="Typo.h5" HtmlTag="h1" Class="my-6">Roles</MudText>
+
+        @if (!access.CanCreate && !access.CanUpdate && !access.CanDelete)
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mt-4">
+                You can view roles, but you cannot create, edit, or delete them.
+            </MudAlert>
+        }
+
+        <div class="roles-toolbar">
+            <MudTextField T="string"
+                          Value="@_search"
+                          ValueChanged="OnSearchChanged"
+                          Label="Search roles"
+                          Placeholder="Search by name, ID, or permission"
+                          Variant="Variant.Outlined"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Outlined.Search"
+                          Clearable="true"
+                          Immediate="true"
+                          Class="roles-search"
+                          aria-label="Search roles by name, ID, or permission" />
+
+            @if (access.CanCreate)
+            {
+                <MudButton Variant="Variant.Filled"
+                            Color="Color.Primary"
+                            Class="roles-primary-action"
+                            StartIcon="@Icons.Material.Filled.Add"
+                            OnClick="NavigateToCreate"
+                            Disabled="@_navigationStarted"
+                            aria-label="Create a new role">
+                    New role
+                </MudButton>
+            }
+        </div>
+
+        @if (!_isLoading && _loadError is null)
+        {
+            <div class="roles-count" role="status" aria-live="polite">
+                <MudIcon Icon="@Icons.Material.Outlined.CheckCircle" Size="Size.Small" Class="roles-count-icon" aria-hidden="true" />
+                <span>@ResultSummary</span>
+            </div>
+        }
+
+        @if (_isLoading)
+        {
+            <MudPaper Outlined="true" Class="roles-state-card" Role="status">
+                <MudProgressCircular Indeterminate="true" Color="Color.Primary" aria-label="Loading roles" />
+                <MudText Typo="Typo.body2">Loading roles...</MudText>
+            </MudPaper>
+        }
+        else if (_loadError is not null)
+        {
+            <MudPaper Outlined="true" Class="roles-state-card" Role="alert">
+                <MudIcon Icon="@Icons.Material.Outlined.ErrorOutline" Color="Color.Error" Size="Size.Large" aria-hidden="true" />
+                <MudText Typo="Typo.h6">Roles could not be loaded</MudText>
+                <MudText Typo="Typo.body2">@_loadError.Message</MudText>
+                <MudButton Variant="Variant.Filled"
+                            Color="Color.Primary"
+                            Class="roles-primary-action"
+                            OnClick="ReloadAsync"
+                            Disabled="@_isLoading"
+                            aria-label="Try loading roles again">
+                    Try again
+                </MudButton>
+            </MudPaper>
+        }
+        else if (_roles.Count == 0)
+        {
+            <MudPaper Outlined="true" Class="roles-state-card">
+                <MudIcon Icon="@Icons.Material.Outlined.Inventory2" Color="Color.Secondary" Size="Size.Large" aria-hidden="true" />
+                <MudText Typo="Typo.h6">No roles yet</MudText>
+                <MudText Typo="Typo.body2">Get started by creating your first role.</MudText>
+                @if (access.CanCreate)
+                {
+                    <MudButton Variant="Variant.Filled"
+                                Color="Color.Primary"
+                                Class="roles-primary-action"
+                                OnClick="NavigateToCreate"
+                                Disabled="@_navigationStarted"
+                                aria-label="Create your first role">
+                        Create first role
+                    </MudButton>
+                }
+            </MudPaper>
+        }
+        else if (FilteredRoles.Count == 0)
+        {
+            <MudPaper Outlined="true" Class="roles-state-card">
+                <MudIcon Icon="@Icons.Material.Outlined.SearchOff" Color="Color.Secondary" Size="Size.Large" aria-hidden="true" />
+                <MudText Typo="Typo.h6">No matching roles</MudText>
+                <MudText Typo="Typo.body2">Try a different name, ID, or permission.</MudText>
+            </MudPaper>
+        }
+        else
+        {
+            <div class="roles-desktop-list">
+                <MudTable T="RoleSummary"
+                          Items="@FilteredRoles"
+                          Dense="true"
+                          Hover="true"
+                          Elevation="0"
+                          OnRowClick="OnRoleRowClick"
+                          RowStyle="cursor: pointer;"
+                          Class="roles-table">
+                    <HeaderContent>
+                        <MudTh>Name</MudTh>
+                        <MudTh>ID</MudTh>
+                        <MudTh>Permissions</MudTh>
+                        @if (access.CanUpdate || access.CanDelete)
+                        {
+                            <MudTh Class="roles-actions"><span class="roles-visually-hidden">Actions</span></MudTh>
+                        }
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Name">
+                            <a class="role-row-link"
+                               href="@RoleDetailsUrl(context)"
+                               aria-label="@($"Open {context.Name} role details")"
+                               @onclick:stopPropagation="true">
+                                <MudText Typo="Typo.body2" Class="role-name">@context.Name</MudText>
+                            </a>
+                        </MudTd>
+                        <MudTd DataLabel="ID">
+                            <code class="role-id">@context.Id</code>
+                        </MudTd>
+                        <MudTd DataLabel="Permissions">
+                            <RolePermissionPreview Role="context" />
+                        </MudTd>
+                        @if (access.CanUpdate || access.CanDelete)
+                        {
+                            <MudTd DataLabel="Actions" Class="roles-actions" @onclick:stopPropagation="true">
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                         Size="Size.Small"
+                                         Dense="true"
+                                         AriaLabel="@($"Actions for {context.Name}")">
+                                    @if (access.CanUpdate)
+                                    {
+                                        <MudMenuItem Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => OpenRoleDetails(context))">Edit</MudMenuItem>
+                                    }
+                                    @if (access.CanDelete)
+                                    {
+                                        <MudMenuItem OnClick="@(() => OpenDeleteRoleAsync(context, access))">Delete</MudMenuItem>
+                                    }
+                                </MudMenu>
+                            </MudTd>
+                        }
+                    </RowTemplate>
+                </MudTable>
+                <div class="roles-no-pagination">
+                    <MudIcon Icon="@Icons.Material.Outlined.Info" Size="Size.Small" aria-hidden="true" />
+                    <span>All matching roles are shown. No pagination.</span>
+                </div>
+            </div>
+
+            <div class="roles-mobile-list" aria-label="Roles list">
+                @foreach (var role in FilteredRoles)
+                {
+                    <MudPaper Outlined="true" Class="role-card">
+                        <div class="role-card-header">
+                            <a class="role-card-link role-card-content"
+                               href="@RoleDetailsUrl(role)"
+                               aria-label="@($"Open {role.Name} role details")">
+                                <MudText Typo="Typo.body1" Class="role-name">@role.Name</MudText>
+                                <code class="role-id">@role.Id</code>
+                            </a>
+                            @if (access.CanUpdate || access.CanDelete)
+                            {
+                                <div class="role-card-actions" @onclick:stopPropagation="true">
+                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                             Size="Size.Small"
+                                             Dense="true"
+                                             AriaLabel="@($"Actions for {role.Name}")">
+                                        @if (access.CanUpdate)
+                                        {
+                                            <MudMenuItem Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => OpenRoleDetails(role))">Edit</MudMenuItem>
+                                        }
+                                        @if (access.CanDelete)
+                                        {
+                                            <MudMenuItem OnClick="@(() => OpenDeleteRoleAsync(role, access))">Delete</MudMenuItem>
+                                        }
+                                    </MudMenu>
+                                </div>
+                            }
+                        </div>
+                        <div class="role-permission-preview mt-3">
+                            <MudText Typo="Typo.caption">Permissions</MudText>
+                            <RolePermissionPreview Role="role" />
+                        </div>
+                    </MudPaper>
+                }
+            </div>
+        }
+    </RoleAdministrationAccessBoundary>
+</MudContainer>
+
+@code {
+    private readonly CancellationTokenSource _loadCancellation = new();
+    private IReadOnlyList<RoleSummary> _roles = [];
+    private string _search = string.Empty;
+    private IdentityApiErrorInfo? _loadError;
+    private bool _isLoading = true;
+    private bool _navigationStarted;
+    private bool _deleteDialogOpen;
+    private bool _disposed;
+
+    private IReadOnlyList<RoleSummary> FilteredRoles =>
+        string.IsNullOrWhiteSpace(_search)
+            ? _roles
+            : _roles.Where(HasSearchMatch).ToList();
+
+    private string ResultSummary
+    {
+        get
+        {
+            var count = FilteredRoles.Count;
+            var label = count == 1 ? "role" : "roles";
+            return string.IsNullOrWhiteSpace(_search)
+                ? $"{count} {label} · all loaded"
+                : $"{count} {label} · matching search";
+        }
+    }
+
+    protected override async Task OnInitializedAsync() => await LoadRolesAsync(_loadCancellation.Token);
+
+    private async Task LoadRolesAsync(CancellationToken cancellationToken)
+    {
+        if (_disposed)
+            return;
+
+        _isLoading = true;
+        _loadError = null;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var api = await ApiClientProvider.GetApiAsync<IRolesApi>(cancellationToken);
+            var response = await api.ListAsync(cancellationToken);
+            _roles = response.Roles?.ToList() ?? [];
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception exception) when (!_disposed)
+        {
+            _loadError = IdentityApiErrorMapper.Describe(exception);
+        }
+        finally
+        {
+            if (!_disposed)
+            {
+                _isLoading = false;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (_disposed || _isLoading)
+            return;
+
+        await LoadRolesAsync(_loadCancellation.Token);
+    }
+
+    private Task OnSearchChanged(string? value)
+    {
+        _search = value ?? string.Empty;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private void NavigateToCreate()
+    {
+        if (_navigationStarted || _disposed)
+            return;
+
+        _navigationStarted = true;
+        NavigationManager.NavigateTo("/security/roles/new");
+    }
+
+    private void OnRoleRowClick(TableRowClickEventArgs<RoleSummary> args) => OpenRoleDetails(args.Item);
+
+    private void OpenRoleDetails(RoleSummary? role)
+    {
+        if (_navigationStarted || _disposed || string.IsNullOrWhiteSpace(role?.Id))
+            return;
+
+        _navigationStarted = true;
+        NavigationManager.NavigateTo($"/security/roles/{Uri.EscapeDataString(role.Id)}");
+    }
+
+    private static string RoleDetailsUrl(RoleSummary role) =>
+        $"/security/roles/{Uri.EscapeDataString(role.Id)}";
+
+    private async Task OpenDeleteRoleAsync(RoleSummary role, RoleAdministrationAccess access)
+    {
+        if (_disposed || _deleteDialogOpen || !access.CanDelete)
+            return;
+
+        _deleteDialogOpen = true;
+        try
+        {
+            var result = await DialogService.ShowRoleDeletionAsync(role, access, _roles);
+            if (!_disposed && result?.ShouldRefresh == true)
+                await LoadRolesAsync(_loadCancellation.Token);
+        }
+        finally
+        {
+            _deleteDialogOpen = false;
+        }
+    }
+
+    private bool HasSearchMatch(RoleSummary role)
+    {
+        var search = _search.Trim();
+        return role.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+               role.Id.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+               (role.Permissions?.Any(permission => permission.Contains(search, StringComparison.OrdinalIgnoreCase)) ?? false);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+        await _loadCancellation.CancelAsync();
+        _loadCancellation.Dispose();
+    }
+}

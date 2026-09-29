@@ -1,0 +1,102 @@
+@using Elsa.Studio.Security.Models
+
+<style>
+    .role-reach-header { align-items: center; display: flex; flex-wrap: wrap; gap: .5rem .75rem; justify-content: space-between; }
+    .role-reach-title { align-items: center; display: flex; flex-wrap: wrap; gap: .4rem .65rem; min-width: 0; }
+    .role-reach-summary { align-items: center; display: flex; flex-wrap: wrap; gap: .25rem .75rem; }
+    .role-reach-future { color: var(--mud-palette-text-secondary); margin-top: .35rem; }
+    .role-reach-examples { border-top: 1px solid var(--mud-palette-lines-default); margin-top: .5rem; padding-top: .5rem; }
+    .role-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+</style>
+
+@if (RolePermissionAuthoring.TryParse(Grant, out var pattern))
+{
+    <MudPaper Outlined="true" Elevation="0" Class="pa-3">
+        <div class="role-reach-header">
+            <div class="role-reach-title">
+                <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">@GrantType(pattern)</MudChip>
+                <MudText Typo="Typo.subtitle1" Class="role-code"><strong>@Grant</strong></MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning">Broad access</MudChip>
+                @if (Reach != null)
+                {
+                    <MudText Typo="Typo.caption"><strong>@Reach.Count</strong> resources today</MudText>
+                }
+            </div>
+            @if (!IsReadOnly)
+            {
+                <MudIconButton Icon="@Icons.Material.Outlined.Delete"
+                               Color="Color.Error"
+                               Size="Size.Small"
+                               OnClick="OnRemove"
+                               aria-label="@($"Remove advanced grant {Grant}")" />
+            }
+        </div>
+        <MudText Typo="Typo.caption" Class="role-reach-future"><strong>Future reach:</strong> @GetFutureReach(pattern)</MudText>
+        @if (MaterializedDuplicates > 0)
+        {
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Text" Dense="true" Class="mt-1 pa-0">@MaterializedDuplicates exact grant(s) duplicate this wildcard.</MudAlert>
+        }
+        @if (ReachError != null)
+        {
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="mt-2">@ReachError</MudAlert>
+        }
+        else if (ReachLoading)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mt-2" aria-label="Loading grant reach" />
+        }
+        else if (Reach != null)
+        {
+            <MudButton Variant="Variant.Text"
+                       Size="Size.Small"
+                       StartIcon="@(_showCoverage ? Icons.Material.Outlined.ExpandLess : Icons.Material.Outlined.ExpandMore)"
+                       OnClick="ToggleCoverage"
+                       aria-expanded="@_showCoverage"
+                       aria-label="@($"{(_showCoverage ? "Hide" : "Show")} current coverage for {Grant}")">
+                @(_showCoverage ? "Hide current coverage" : "Show current coverage")
+            </MudButton>
+            <MudCollapse Expanded="@_showCoverage">
+                <MudStack Spacing="1" Class="role-reach-examples">
+                    @foreach (var permission in RolePermissionAuthoring.GetReachedPermissions(pattern, Reach).Take(5))
+                    {
+                        <MudText Typo="Typo.caption" Class="role-code">@permission · Covered, not stored</MudText>
+                    }
+                    <MudText Typo="Typo.caption">Reach is calculated for this wildcard only.</MudText>
+                </MudStack>
+            </MudCollapse>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="OnLoadReach">Load current coverage</MudButton>
+        }
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public string Grant { get; set; } = string.Empty;
+    [Parameter] public PermissionReachResponse? Reach { get; set; }
+    [Parameter] public bool ReachLoading { get; set; }
+    [Parameter] public string? ReachError { get; set; }
+    [Parameter] public int MaterializedDuplicates { get; set; }
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public EventCallback OnRemove { get; set; }
+    [Parameter] public EventCallback OnLoadReach { get; set; }
+    private bool _showCoverage;
+
+    private void ToggleCoverage() => _showCoverage = !_showCoverage;
+
+    private static string GrantType(RolePermissionPattern pattern) => pattern switch
+    {
+        { IsResourceWildcard: true } => "Global wildcard",
+        { IsSubtree: true } => "Resource wildcard",
+        { IsVerbWildcard: true } => "Verb wildcard",
+        _ => "Advanced grant"
+    };
+
+    private static string GetFutureReach(RolePermissionPattern pattern) => pattern switch
+    {
+        { IsResourceWildcard: true } => "Every current and future resource will match.",
+        { IsSubtree: true } => $"New resources under {pattern.Resource[..^2]} will also match.",
+        { IsVerbWildcard: true } => $"Future verbs on {pattern.Resource} will also match.",
+        _ => "No future reach: this is an exact grant."
+    };
+}

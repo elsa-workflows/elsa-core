@@ -1,0 +1,18 @@
+@inject ILocalizer Localizer
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                @Localizer["Choose how activities in this branch should be arranged."]
+            </MudText>
+            <WorkflowRootActivityTemplateSelector Templates="_templates"
+                                                  @bind-SelectedTemplateKey="_selectedTemplateKey"
+                                                  AriaLabel="@Localizer["Branch type"]" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@Localizer["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">@Localizer["Ok"]</MudButton>
+    </DialogActions>
+</MudDialog>

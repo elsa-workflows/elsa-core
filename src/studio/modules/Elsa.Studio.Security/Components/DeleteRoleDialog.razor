@@ -1,0 +1,258 @@
+<style>
+    @@media (max-width: 600px) {
+        .mud-dialog.delete-role-dialog {
+            width: 100vw;
+            max-width: 100vw;
+            height: 100vh;
+            max-height: 100vh;
+            margin: 0;
+        }
+    }
+</style>
+
+<MudDialog Visible="true" Class="delete-role-dialog" ContentClass="delete-role-dialog-content" ActionsClass="delete-role-dialog-actions">
+    <TitleContent>
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Delete role</MudText>
+            <MudText Typo="Typo.subtitle1">@RoleName</MudText>
+        </MudStack>
+    </TitleContent>
+
+    <DialogContent>
+        @if (_state == DeleteRoleDialogViewState.Loading)
+        {
+            <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="pa-8" data-testid="role-deletion-loading">
+                <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+                <MudText Typo="Typo.body2">Checking deletion impact&hellip;</MudText>
+            </MudStack>
+        }
+        else if (_state == DeleteRoleDialogViewState.SafeConfirmation)
+        {
+            <MudStack Spacing="3" data-testid="role-deletion-safe">
+                <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.CheckCircle">
+                    Safe to delete
+                </MudAlert>
+                <MudText Typo="Typo.body2">
+                    @ConfigurationReferenceCount configuration references &middot; @EditableReferenceCount editable policy references
+                </MudText>
+                <MudDivider />
+                <MudText Typo="Typo.body2">
+                    This permanently deletes the role. Existing access tokens are not changed; permission changes take effect after token refresh or reissuance.
+                </MudText>
+            </MudStack>
+        }
+        else if (_state == DeleteRoleDialogViewState.ConfigurationBlocked)
+        {
+            <MudStack Spacing="3" data-testid="role-deletion-blocked">
+                <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Error">
+                    Deletion blocked
+                </MudAlert>
+
+                @foreach (var reference in ConfigurationReferences)
+                {
+                    <MudPaper Outlined="true" Elevation="0" Class="pa-4">
+                        <MudStack Spacing="2">
+                            <MudText Typo="Typo.subtitle1">Configuration reference</MudText>
+                            <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Class="role-deletion-path">
+                                @GetReferencePath(reference)
+                            </MudChip>
+                            <MudText Typo="Typo.body2">
+                                This reference is owned by server configuration and cannot be changed from Studio.
+                            </MudText>
+                            <MudText Typo="Typo.caption">Update this path in server configuration, restart the host, then inspect again.</MudText>
+                        </MudStack>
+                    </MudPaper>
+                }
+
+                @if (EditableReferences.Any())
+                {
+                    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">
+                        Editable policy references also require remediation after the configuration blocker is resolved.
+                    </MudAlert>
+                }
+
+                @if (HasFinalDefaultWarning)
+                {
+                    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Warning">
+                        Final default-role warning: @RoleName is the final default role.
+                    </MudAlert>
+                }
+            </MudStack>
+        }
+        else if (_state is DeleteRoleDialogViewState.Remediation or DeleteRoleDialogViewState.ConfirmationRequired)
+        {
+            <MudStack Spacing="3" data-testid="role-deletion-remediation">
+                @if (_state == DeleteRoleDialogViewState.ConfirmationRequired)
+                {
+                    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Warning">
+                        Explicit confirmation required
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Warning">
+                        Editable references found
+                    </MudAlert>
+                }
+
+                <MudText Typo="Typo.body2">
+                    Studio can remove this role from the policies below. Configuration-owned references would remain blockers.
+                </MudText>
+
+                @foreach (var reference in EditableReferences)
+                {
+                    <MudPaper Outlined="true" Elevation="0" Class="pa-3">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.body1">@GetReferenceName(reference)</MudText>
+                                <MudText Typo="Typo.caption">@reference.Source @GetPolicyBranch(reference)</MudText>
+                            </MudStack>
+                            <MudCheckBox T="bool"
+                                         Value="@IsReferenceSelected(reference)"
+                                         ValueChanged="@((bool selected) => SetReferenceSelection(reference, selected))"
+                                         Disabled="@_isSubmitting"
+                                         Label="@($"Remove {RoleName} from {GetReferenceName(reference)}")" />
+                        </MudStack>
+                    </MudPaper>
+                }
+
+                @if (HasFinalDefaultWarning)
+                {
+                    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">
+                        Final default-role warning: @RoleName is the final default role.
+                    </MudAlert>
+                    <MudSelect T="string"
+                               Label="Replacement default role"
+                               Value="@_replacementDefaultRoleId"
+                               ValueChanged="SetReplacementDefaultRole"
+                               Required="true"
+                               RequiredError="Choose a replacement default role."
+                               Disabled="@_isSubmitting"
+                               Dense="true"
+                               Variant="Variant.Outlined">
+                        @foreach (var replacementRole in ReplacementRoles.Where(x => !string.Equals(x.Id, RoleId, StringComparison.Ordinal)))
+                        {
+                            <MudSelectItem T="string" Value="@replacementRole.Id">@replacementRole.Name (@replacementRole.Id)</MudSelectItem>
+                        }
+                    </MudSelect>
+                    @if (!ReplacementRoles.Any(x => !string.Equals(x.Id, RoleId, StringComparison.Ordinal)))
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Error">No replacement role is available. The final default role cannot be removed from this screen.</MudText>
+                    }
+                    <MudCheckBox T="bool" @bind-Value="_confirmEmptyDefaultRoles" Disabled="@_isSubmitting"
+                                 Label="I confirm the selected replacement will be applied before deletion." />
+                }
+
+                @if (RequiresBestEffortConfirmation)
+                {
+                    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+                        Best-effort remediation may leave some references unchanged. The role will be retained if remediation is incomplete.
+                    </MudAlert>
+                    <MudCheckBox T="bool" @bind-Value="_confirmBestEffort" Disabled="@_isSubmitting"
+                                 Label="I understand this operation is best effort." />
+                }
+
+                @if (EditableReferences.Any())
+                {
+                    <MudCheckBox T="bool" @bind-Value="_confirmEditableReferences" Disabled="@_isSubmitting"
+                                 Label="I understand these policy changes will be applied before role deletion." />
+                }
+
+                <MudPaper Outlined="true" Elevation="0" Class="pa-3">
+                    <MudText Typo="Typo.caption">Impact version</MudText>
+                    <MudText Typo="Typo.body2" Class="role-deletion-version">@DependencyVersion</MudText>
+                </MudPaper>
+            </MudStack>
+        }
+        else if (_state == DeleteRoleDialogViewState.DependencyConflict)
+        {
+            <MudStack Spacing="3" data-testid="role-deletion-conflict">
+                <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Sync">
+                    Impact changed
+                    <MudText Typo="Typo.body2">Dependencies changed since you reviewed them. Your previous confirmation was cleared.</MudText>
+                </MudAlert>
+                <MudPaper Outlined="true" Elevation="0" Class="pa-3">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.body2">Previous version</MudText>
+                        <MudText Typo="Typo.body2">Current version</MudText>
+                    </MudStack>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudChip T="string" Variant="Variant.Outlined">@(_previousDependencyVersion ?? "&mdash;")</MudChip>
+                        <MudIcon Icon="@Icons.Material.Filled.ArrowForward" />
+                        <MudChip T="string" Variant="Variant.Outlined">@DependencyVersion</MudChip>
+                    </MudStack>
+                </MudPaper>
+                <MudText Typo="Typo.body2">Review the refreshed findings before submitting another operation. Studio will not retry automatically.</MudText>
+            </MudStack>
+        }
+        else if (_state == DeleteRoleDialogViewState.Incomplete)
+        {
+            <MudStack Spacing="3" data-testid="role-deletion-incomplete">
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Warning">
+                    Remediation incomplete
+                </MudAlert>
+                <MudText Typo="Typo.subtitle1">Role retained</MudText>
+                <MudText Typo="Typo.body2">@RoleName was not deleted.</MudText>
+                <MudText Typo="Typo.body2"><strong>Changed:</strong> @FormatOwnerIds(_changedOwnerIds)</MudText>
+                <MudText Typo="Typo.body2"><strong>Remaining:</strong> @FormatRemainingOwners()</MudText>
+                <MudText Typo="Typo.caption">Inspect again to review the current dependencies.</MudText>
+            </MudStack>
+        }
+        else if (_state == DeleteRoleDialogViewState.Forbidden)
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" data-testid="role-deletion-forbidden">
+                @ErrorMessage
+            </MudAlert>
+        }
+        else if (_state == DeleteRoleDialogViewState.NotFound)
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" data-testid="role-deletion-not-found">
+                The role no longer exists.
+            </MudAlert>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" data-testid="role-deletion-error">
+                @ErrorMessage
+            </MudAlert>
+        }
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel" Disabled="@_isSubmitting">
+            @CloseLabel
+        </MudButton>
+
+        @if (_state == DeleteRoleDialogViewState.SafeConfirmation)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="ExecuteAsync" Disabled="@_isSubmitting">
+                Delete @RoleName
+            </MudButton>
+        }
+        else if (_state is DeleteRoleDialogViewState.Remediation or DeleteRoleDialogViewState.ConfirmationRequired)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="ExecuteAsync"
+                       Disabled="@(!CanSubmitRemediation || _isSubmitting)">
+                Apply remediation &amp; delete
+            </MudButton>
+        }
+        else if (_state == DeleteRoleDialogViewState.DependencyConflict)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReviewRefreshedImpact" Disabled="@_isSubmitting">
+                Review refreshed impact
+            </MudButton>
+        }
+        else if (_state == DeleteRoleDialogViewState.Incomplete)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="InspectAgain" Disabled="@_isSubmitting">
+                Inspect again
+            </MudButton>
+        }
+        else if (_state == DeleteRoleDialogViewState.Error)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="InspectAgain" Disabled="@_isSubmitting">
+                Try again
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>

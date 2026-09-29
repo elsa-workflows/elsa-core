@@ -1,0 +1,123 @@
+@using Elsa.Studio.ExternalAuthentication.Services
+
+<MudStack Spacing="3" Class="connection-editor__provider-fields">
+    <div>
+        <MudText Typo="Typo.h6" HtmlTag="h2">@Adapter.DisplayName settings</MudText>
+        @if (!string.IsNullOrWhiteSpace(Adapter.Description))
+        {
+            <MudText Typo="Typo.caption">@Adapter.Description</MudText>
+        }
+    </div>
+
+    <MudGrid Spacing="4">
+        @foreach (var descriptor in VisibleProviderFields)
+        {
+            <MudItem xs="12" md="@GetColumnSpan(descriptor)">
+                <MudStack Spacing="1">
+                    <DescriptorField Field="descriptor" Settings="Model.AdapterSettings" ReadOnly="@ReadOnly" Changed="@OnAdapterSettingsChangedAsync" />
+                    @if (DescriptorEditorState.IsUnsafeSettingActive(descriptor, Model.AdapterSettings))
+                    {
+                        <MudAlert Severity="Severity.Warning" Dense="true">This provider trust setting can weaken authentication safety. It requires explicit confirmation and the provider-trust permission.</MudAlert>
+                    }
+                </MudStack>
+            </MudItem>
+        }
+    </MudGrid>
+
+    @if (HasActiveUnsafeSettings)
+    {
+        <MudCheckBox T="bool"
+                     Value="@Model.ConfirmUnsafeSettings"
+                     ValueChanged="SetUnsafeSettingsConfirmationAsync"
+                     Disabled="@(ReadOnly || !CanConfigureUnsafeSettings)"
+                     Label="I understand and explicitly confirm unsafe provider trust settings" />
+        @if (!CanConfigureUnsafeSettings)
+        {
+            <MudText Typo="Typo.caption" Color="Color.Warning">You do not have permission to configure unsafe provider trust settings.</MudText>
+        }
+    }
+
+    @if (VisibleSecretFields.Count > 0)
+    {
+        <MudDivider />
+        <div class="connection-editor__secrets">
+            <MudStack Spacing="2">
+                <div>
+                    <MudText Typo="Typo.h6" HtmlTag="h2">Secret bindings</MudText>
+                    <MudText Typo="Typo.caption">Secret values are write-only and never displayed or returned to Elsa Studio. Deployment-managed external references remain read-only.</MudText>
+                </div>
+                @if (!ReadOnly && !CanManageSecrets)
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true">Save the connection draft before configuring secrets.</MudAlert>
+                }
+                else
+                {
+                    <MudGrid Spacing="4">
+                        @foreach (var descriptor in VisibleSecretFields)
+                        {
+                            <MudItem xs="12" md="6">
+                                <SecretBindingField Field="descriptor"
+                                                    Binding="@(Connection.SecretBindings.GetValueOrDefault(descriptor.Name))"
+                                                    ReadOnly="@ReadOnly"
+                                                    CanManage="@CanManageSecrets"
+                                                    CanRemove="@(!Connection.EnabledIntent || !descriptor.IsRequired)"
+                                                    ManagedSecretResolvers="ManagedSecretResolvers"
+                                                    ManagedSecretResolverError="@ManagedSecretResolverError"
+                                                    OnManagedReplace="@((secret) => ManagedSecretChanged.InvokeAsync((descriptor.Name, secret)))"
+                                                    OnRemove="@(() => SecretBindingRemoved.InvokeAsync(descriptor.Name))" />
+                            </MudItem>
+                        }
+                    </MudGrid>
+                }
+            </MudStack>
+        </div>
+    }
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public ConnectionDetail Connection { get; set; } = default!;
+    [Parameter, EditorRequired] public AdapterDescriptor Adapter { get; set; } = default!;
+    [Parameter, EditorRequired] public ConnectionMutation Model { get; set; } = default!;
+    [Parameter] public bool ReadOnly { get; set; }
+    [Parameter] public bool CanConfigureUnsafeSettings { get; set; }
+    [Parameter] public bool CanManageSecrets { get; set; } = true;
+    [Parameter] public ICollection<ManagedSecretResolverDescriptor> ManagedSecretResolvers { get; set; } = [];
+    [Parameter] public string? ManagedSecretResolverError { get; set; }
+    [Parameter] public EventCallback<(string Field, ManagedSecretMutation Secret)> ManagedSecretChanged { get; set; }
+    [Parameter] public EventCallback<string> SecretBindingRemoved { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private IReadOnlyList<ConnectionFieldDescriptor> VisibleProviderFields => Adapter.Fields
+        .Where(descriptor => !descriptor.IsSecretBinding && DescriptorEditorState.IsVisible(descriptor, Model.AdapterSettings))
+        .ToArray();
+    private IReadOnlyList<ConnectionFieldDescriptor> VisibleSecretFields => Adapter.Fields
+        .Where(descriptor => descriptor.IsSecretBinding && DescriptorEditorState.IsVisible(descriptor, Model.AdapterSettings))
+        .ToArray();
+    private bool HasActiveUnsafeSettings => Adapter.Fields.Any(descriptor => DescriptorEditorState.IsUnsafeSettingActive(descriptor, Model.AdapterSettings));
+
+    private async Task OnAdapterSettingsChangedAsync()
+    {
+        if (!HasActiveUnsafeSettings)
+            Model.ConfirmUnsafeSettings = false;
+        await Changed.InvokeAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SetUnsafeSettingsConfirmationAsync(bool value)
+    {
+        Model.ConfirmUnsafeSettings = value;
+        await Changed.InvokeAsync();
+    }
+
+    private static int GetColumnSpan(ConnectionFieldDescriptor field) =>
+        IsWideField(field) ? 12 : 6;
+
+    private static bool IsWideField(ConnectionFieldDescriptor field) =>
+        field.Name.Contains("url", StringComparison.OrdinalIgnoreCase) ||
+        field.Name.Contains("uri", StringComparison.OrdinalIgnoreCase) ||
+        field.Name.Contains("endpoint", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(field.ValueType, "uri", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(field.ValueType, "string-array", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(field.UiHint, "textarea", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(field.UiHint, "multiline", StringComparison.OrdinalIgnoreCase);
+}

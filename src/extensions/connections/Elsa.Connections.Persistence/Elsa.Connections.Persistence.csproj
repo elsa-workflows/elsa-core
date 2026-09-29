@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Description>Provides Connections persistence services</Description>
+		<PackageTags>elsa extension module connections persistence </PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+		<ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
+	</ItemGroup>
+
+	<ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+		<ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<ProjectReference Include="../Elsa.Connections.Models/Elsa.Connections.Models.csproj" />
+	</ItemGroup>
+
+</Project>

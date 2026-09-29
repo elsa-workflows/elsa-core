@@ -1,0 +1,30 @@
+@using Variant = MudBlazor.Variant
+@using Elsa.Studio.Workflows.Services
+@inject ILocalizer Localizer
+
+@if (WorkflowDefinition != null!)
+{
+    <MudText Typo="Typo.overline">@Localizer["Outcomes"]</MudText>
+    <MudChipField
+        @ref="_chipField"
+        T="string"
+        Label="@Localizer["Outcomes"]"
+        Lines="1"
+        WrapChips="true"
+        Margin="Margin.Dense"
+        Values="Outcomes"
+        Variant="Variant.Outlined"
+        HelperText="@Localizer["Enter a list of possible outcomes for this workflow."]"
+        Immediate="true"
+        AutoSize="true"
+        force-shrink="true"
+        ChipColor="Color.Primary"
+        ChipSize="Size.Medium"
+        ChipVariant="Variant.Filled"
+        Placeholder="Add outcomes"
+        InputMode="InputMode.text"
+        InputType="InputType.Text"
+        OnKeyDown="@OnKeyDown"
+        ValuesChanged="@OnValuesChanges"
+        ReadOnly="IsReadonly" Disabled="IsReadonly"/>
+}

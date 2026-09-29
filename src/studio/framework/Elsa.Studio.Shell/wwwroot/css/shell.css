@@ -1,0 +1,365 @@
+.loading-splash {
+    background-color: #111820;
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    color: white;
+    font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.full-height {
+    height: 100%
+}
+
+:root {
+    --elsa-control-surface: color-mix(in srgb, var(--mud-palette-background-gray) 58%, var(--mud-palette-surface));
+    --elsa-control-surface-hover: color-mix(in srgb, var(--mud-palette-primary) 3%, var(--elsa-control-surface));
+    --elsa-control-surface-disabled: color-mix(in srgb, var(--mud-palette-action-disabled-background) 35%, var(--mud-palette-surface));
+    --elsa-control-border: var(--mud-palette-lines-inputs);
+    --elsa-control-border-hover: color-mix(in srgb, var(--mud-palette-text-primary) 42%, var(--mud-palette-lines-inputs));
+    --elsa-control-focus: var(--mud-palette-primary);
+    --elsa-control-error: var(--mud-palette-error);
+    --elsa-control-radius: var(--mud-default-borderradius);
+    --elsa-secondary-button-surface: color-mix(in srgb, var(--mud-palette-primary) 4%, var(--mud-palette-surface));
+    --elsa-secondary-button-surface-hover: color-mix(in srgb, var(--mud-palette-primary) 9%, var(--mud-palette-surface));
+    --elsa-secondary-button-border: color-mix(in srgb, var(--mud-palette-primary) 22%, var(--mud-palette-divider));
+    --elsa-secondary-button-border-hover: color-mix(in srgb, var(--mud-palette-primary) 42%, var(--mud-palette-divider));
+}
+
+.elsa-studio-shell {
+    --elsa-space-1: 0.25rem;
+    --elsa-space-2: 0.5rem;
+    --elsa-space-3: 0.75rem;
+    --elsa-space-4: 1rem;
+    --elsa-space-6: 1.5rem;
+    --elsa-space-8: 2rem;
+    --elsa-canvas: var(--mud-palette-background);
+    --elsa-surface: var(--mud-palette-surface);
+    --elsa-surface-inset: var(--mud-palette-drawer-background);
+    --elsa-border: var(--mud-palette-divider);
+    --elsa-text: var(--mud-palette-text-primary);
+    --elsa-text-muted: var(--mud-palette-text-secondary);
+    --elsa-accent: var(--mud-palette-primary);
+    --elsa-radius-sm: var(--mud-default-borderradius);
+    --elsa-radius-md: calc(var(--mud-default-borderradius) + 2px);
+    background: var(--elsa-canvas);
+    color: var(--elsa-text);
+}
+
+/*****************************************************
+* Elsa form controls
+******************************************************/
+.mud-input.mud-input-text,
+.mud-input.mud-input-filled,
+.mud-input.mud-input-outlined:not(.activity-ports .mud-input) {
+    background: var(--elsa-control-surface);
+    border-radius: var(--elsa-control-radius);
+    transition:
+        background-color 140ms ease,
+        border-color 140ms ease,
+        box-shadow 140ms ease;
+}
+
+.mud-input.mud-input-text,
+.mud-input.mud-input-filled {
+    border: 1px solid var(--elsa-control-border);
+    padding-inline: var(--elsa-space-3, 0.75rem);
+}
+
+.mud-input.mud-input-underline::before,
+.mud-input.mud-input-underline::after {
+    border-block-end: 0 !important;
+}
+
+.mud-input-control > .mud-input-control-input-container >
+.mud-input-label-inputcontrol:not(.mud-input-label-outlined):not(.mud-input-label-filled) {
+    inset-inline-start: var(--elsa-space-3, 0.75rem);
+    max-inline-size: calc(100% - 1.5rem);
+}
+
+.mud-input.mud-input-outlined:not(.activity-ports .mud-input) > .mud-input-outlined-border {
+    border-color: var(--elsa-control-border);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .mud-input.mud-input-text:not(.mud-disabled):not(.mud-readonly):not(:focus-within):hover,
+    .mud-input.mud-input-filled:not(.mud-disabled):not(.mud-readonly):not(:focus-within):hover,
+    .mud-input.mud-input-outlined:not(.activity-ports .mud-input):not(.mud-disabled):not(.mud-readonly):not(:focus-within):hover {
+        background: var(--elsa-control-surface-hover);
+    }
+
+    .mud-input.mud-input-text:not(.mud-disabled):not(.mud-readonly):not(:focus-within):hover,
+    .mud-input.mud-input-filled:not(.mud-disabled):not(.mud-readonly):not(:focus-within):hover {
+        border-color: var(--elsa-control-border-hover);
+    }
+
+    .mud-input.mud-input-outlined:not(.activity-ports .mud-input):not(.mud-disabled):not(.mud-readonly):not(:focus-within):hover >
+    .mud-input-outlined-border {
+        border-color: var(--elsa-control-border-hover);
+    }
+}
+
+.mud-input.mud-input-text:focus-within,
+.mud-input.mud-input-filled:focus-within,
+.mud-input.mud-input-outlined:not(.activity-ports .mud-input):focus-within {
+    background: var(--elsa-control-surface);
+    border-color: var(--elsa-control-focus);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--elsa-control-focus) 18%, transparent);
+}
+
+.mud-input.mud-input-outlined:not(.activity-ports .mud-input):focus-within > .mud-input-outlined-border {
+    border-color: var(--elsa-control-focus);
+}
+
+.mud-input.mud-input-text.mud-input-error,
+.mud-input.mud-input-filled.mud-input-error {
+    border-color: var(--elsa-control-error);
+}
+
+.mud-input.mud-input-text.mud-input-error:focus-within,
+.mud-input.mud-input-filled.mud-input-error:focus-within,
+.mud-input.mud-input-outlined.mud-input-error:not(.activity-ports .mud-input):focus-within {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--elsa-control-error) 18%, transparent);
+}
+
+.mud-input.mud-disabled,
+.mud-input.mud-readonly {
+    background: var(--elsa-control-surface-disabled);
+}
+
+.mud-input.mud-disabled {
+    border-color: var(--mud-palette-action-disabled);
+}
+
+.mud-input.mud-disabled > .mud-input-outlined-border {
+    border-color: var(--mud-palette-action-disabled);
+}
+
+/*****************************************************
+* Elsa secondary actions
+******************************************************/
+.mud-button-root.mud-button-outlined.mud-button-outlined-default {
+    background: var(--elsa-secondary-button-surface);
+    border-color: var(--elsa-secondary-button-border);
+    box-shadow: none;
+    color: var(--mud-palette-text-primary);
+    letter-spacing: 0.01em;
+    text-transform: none;
+    transition:
+        background-color 140ms ease,
+        border-color 140ms ease,
+        color 140ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .mud-button-root.mud-button-outlined.mud-button-outlined-default:not(.mud-disabled):not([disabled]):hover {
+        background: var(--elsa-secondary-button-surface-hover);
+        border-color: var(--elsa-secondary-button-border-hover);
+        color: var(--mud-palette-primary);
+    }
+}
+
+.mud-button-root.mud-button-outlined.mud-button-outlined-default:not(.mud-disabled):not([disabled]):focus-visible {
+    background: var(--elsa-secondary-button-surface-hover);
+    border-color: var(--elsa-secondary-button-border-hover);
+    color: var(--mud-palette-primary);
+    outline: 2px solid color-mix(in srgb, var(--mud-palette-primary) 58%, transparent);
+    outline-offset: 2px;
+}
+
+.mud-button-root.mud-button-outlined.mud-button-outlined-default:not(.mud-disabled):not([disabled]):active {
+    background: color-mix(in srgb, var(--mud-palette-primary) 13%, var(--mud-palette-surface));
+    border-color: var(--mud-palette-primary);
+}
+
+.mud-button-root.mud-button-outlined.mud-button-outlined-default:is(.mud-disabled, [disabled]) {
+    background: var(--mud-palette-action-disabled-background);
+    border-color: transparent;
+}
+
+.studio-appbar {
+    background: var(--elsa-surface);
+    border-bottom: 1px solid var(--elsa-border);
+}
+
+.studio-appbar__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--elsa-space-1);
+    color: var(--elsa-text-muted);
+}
+
+.studio-appbar__actions :is(.mud-icon-button, .mud-button-root) {
+    color: var(--elsa-text-muted);
+    border: 1px solid transparent;
+    border-radius: var(--elsa-radius-sm);
+    transition:
+        background-color 120ms ease,
+        border-color 120ms ease,
+        color 120ms ease;
+}
+
+.studio-appbar__actions .mud-button-outlined {
+    background: color-mix(in srgb, var(--elsa-surface-inset) 32%, transparent);
+    border-color: color-mix(in srgb, var(--elsa-border) 42%, transparent);
+}
+
+.studio-appbar__actions :is(.mud-icon-button, .mud-button-root):not(.mud-disabled):not([disabled]):hover {
+    color: var(--elsa-text);
+    background: color-mix(in srgb, var(--elsa-accent) 5%, var(--elsa-surface));
+    border-color: color-mix(in srgb, var(--elsa-accent) 14%, transparent);
+}
+
+.studio-appbar__actions :is(.mud-icon-button, .mud-button-root):focus-visible {
+    color: var(--elsa-text);
+    outline: 2px solid color-mix(in srgb, var(--elsa-accent) 58%, transparent);
+    outline-offset: 2px;
+}
+
+.studio-appbar__menu {
+    border: 1px solid transparent;
+    border-radius: var(--elsa-radius-sm);
+}
+
+.studio-appbar__menu:hover {
+    background: color-mix(in srgb, var(--elsa-accent) 8%, transparent);
+    border-color: color-mix(in srgb, var(--elsa-accent) 16%, transparent);
+}
+
+.studio-drawer {
+    background: var(--elsa-surface-inset);
+    border-right: 1px solid var(--elsa-border);
+}
+
+.studio-drawer__header {
+    min-height: var(--mud-appbar-height);
+    padding: var(--elsa-space-3) var(--elsa-space-4);
+    border-bottom: 1px solid var(--elsa-border);
+}
+
+.studio-drawer__navigation {
+    padding: var(--elsa-space-4) var(--elsa-space-3) var(--elsa-space-6);
+}
+
+.studio-main-content {
+    min-height: 100vh;
+    background: var(--elsa-canvas);
+}
+
+.studio-nav {
+    padding: 0;
+}
+
+.studio-nav__group-label {
+    display: block;
+    padding-block: var(--elsa-space-6) var(--elsa-space-2);
+    padding-inline: var(--elsa-space-4) var(--elsa-space-3);
+    color: var(--elsa-text-muted);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.studio-nav .mud-nav-link,
+.studio-nav .mud-nav-group > .mud-nav-link {
+    position: relative;
+    min-height: 2.5rem;
+    margin-block: 2px;
+    border: 1px solid transparent;
+    border-radius: var(--elsa-radius-sm);
+    color: var(--elsa-text-muted);
+}
+
+.studio-nav .mud-nav-link:hover {
+    background: color-mix(in srgb, var(--elsa-accent) 6%, transparent);
+    color: var(--elsa-text);
+}
+
+.studio-nav .mud-nav-link.active {
+    background: color-mix(in srgb, var(--elsa-accent) 10%, var(--elsa-surface-inset));
+    border-color: color-mix(in srgb, var(--elsa-accent) 22%, transparent);
+    color: var(--elsa-accent);
+    font-weight: 600;
+}
+
+.studio-nav .mud-nav-link.active::before {
+    content: "";
+    position: absolute;
+    inset-block: 0.5rem;
+    inset-inline-start: -1px;
+    width: 3px;
+    border-radius: 999px;
+    background: var(--elsa-accent);
+}
+
+.studio-nav .mud-nav-link .mud-nav-link-icon {
+    color: currentColor;
+}
+
+/*****************************************************
+* CSS hacks for the MudBlazor and MudBlazorExtensions components
+******************************************************/
+.mud-select.timespan-operator {
+    min-width: 150px;
+}
+
+.mud-select-extended {
+    min-width: 100px;
+}
+
+.mud-select-has-incidents {
+    max-width: 160px;
+    justify-content: end;
+}
+
+/*****************************************************
+* Expression Editor
+******************************************************/
+.studio-expression-input-menu-item .mud-list-item-icon {
+    min-width: 33px;
+}
+
+.studio-expression-input-monaco-editor {
+    height: 120px;
+}
+
+.studio-monaco-editor-large {
+    height: 320px;
+}
+
+/*****************************************************
+* Monaco Editor
+******************************************************/
+.monaco-editor {
+    border-radius: 0.25rem;
+}
+
+.monaco-editor .overflow-guard {
+    border-radius: 0.25rem;
+}
+
+.monaco-editor .suggest-widget div.tree {
+    white-space: unset;
+    padding-bottom: 0;
+}
+
+/*****************************************************
+* Badge overlap for small icons
+******************************************************/
+.elsa-toolbar-icon .mud-badge.mud-badge-bottom.right.mud-badge-overlap
+{
+    inset: calc(100% - 20px) auto auto calc(100% - 20px)
+}
+
+/*****************************************************
+* Set Radzen primary color to match the MudBlazor theme
+******************************************************/
+:root {
+    --rz-primary-lighter: #E3F2FD !important;
+    --rz-primary-light: #90CAF9 !important;
+    --rz-primary: #2196F3 !important;
+    --rz-primary-dark: #1976D2 !important;
+    --rz-primary-darker: #0D47A1 !important;
+    --rz-switch-checked-circle-background-color: #2196F3 !important;
+}

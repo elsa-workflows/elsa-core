@@ -1,0 +1,126 @@
+<MudGrid Spacing="4" Class="connection-editor__general-fields">
+    <MudItem xs="12" md="6">
+        <MudTextField T="string"
+                      Value="@Model.DisplayName"
+                      ValueChanged="SetDisplayNameAsync"
+                      Label="Display name"
+                      HelperText="A friendly name for this connection."
+                      Required="true"
+                      ReadOnly="@ReadOnly"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudTextField T="string"
+                      Value="@Model.Key"
+                      ValueChanged="SetKeyAsync"
+                      Label="Connection key"
+                      Required="true"
+                      ReadOnly="@(ReadOnly || !string.IsNullOrWhiteSpace(Connection.Id))"
+                      HelperText="Stable identifier used in sign-in URLs and configuration. Suggested from the display name and cannot be changed after creation."
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense" />
+    </MudItem>
+    @if (!string.IsNullOrWhiteSpace(Connection.CallbackUri))
+    {
+        <MudItem xs="12">
+            <MudTextField Value="@Connection.CallbackUri"
+                          Label="Provider callback URI"
+                          ReadOnly="true"
+                          HelperText="Derived by Elsa from deployment configuration. Register this exact URI with the identity provider."
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense" />
+        </MudItem>
+    }
+    @if (!string.IsNullOrWhiteSpace(Connection.PreviewCallbackUri))
+    {
+        <MudItem xs="12">
+            <MudTextField Value="@Connection.PreviewCallbackUri"
+                          Label="Provider preview callback URI"
+                          ReadOnly="true"
+                          HelperText="Register this exact URI with the identity provider to enable administrator previews."
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense" />
+        </MudItem>
+    }
+    <MudItem xs="12" md="6">
+        <MudNumericField T="int"
+                         Value="@Model.Order"
+                         ValueChanged="SetOrderAsync"
+                         Label="Display order"
+                         HelperText="Controls the order in which this provider appears."
+                         ReadOnly="@ReadOnly"
+                         Variant="Variant.Outlined"
+                         Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudSelect T="string"
+                   Value="@Model.UpstreamLogoutMode"
+                   ValueChanged="SetUpstreamLogoutModeAsync"
+                   Label="Upstream sign-out"
+                   HelperText="Controls whether Elsa also signs the user out at the provider."
+                   Disabled="@ReadOnly"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense">
+            <MudSelectItem T="string" Value="@("disabled")">Disabled</MudSelectItem>
+            <MudSelectItem T="string" Value="@("userChoice")">Let the user choose</MudSelectItem>
+            <MudSelectItem T="string" Value="@("always")">Always sign out upstream</MudSelectItem>
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12">
+        <MudCheckBox T="bool"
+                     Value="@Model.IsPreferred"
+                     ValueChanged="SetPreferredAsync"
+                     Label="Mark as the preferred sign-in method"
+                     Disabled="@ReadOnly" />
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter, EditorRequired] public ConnectionDetail Connection { get; set; } = default!;
+    [Parameter, EditorRequired] public ConnectionMutation Model { get; set; } = default!;
+    [Parameter] public bool ReadOnly { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private string? _suggestedKey;
+    private bool _keyWasEdited;
+
+    private async Task SetDisplayNameAsync(string value)
+    {
+        Model.DisplayName = value;
+        if (!_keyWasEdited && (string.IsNullOrWhiteSpace(Model.Key) || string.Equals(Model.Key, _suggestedKey, StringComparison.Ordinal)))
+        {
+            _suggestedKey = SuggestConnectionKey(value);
+            Model.Key = _suggestedKey;
+        }
+        await Changed.InvokeAsync();
+    }
+
+    private async Task SetKeyAsync(string value)
+    {
+        Model.Key = value;
+        _keyWasEdited = true;
+        await Changed.InvokeAsync();
+    }
+
+    private async Task SetOrderAsync(int value)
+    {
+        Model.Order = value;
+        await Changed.InvokeAsync();
+    }
+
+    private async Task SetPreferredAsync(bool value)
+    {
+        Model.IsPreferred = value;
+        await Changed.InvokeAsync();
+    }
+
+    private async Task SetUpstreamLogoutModeAsync(string value)
+    {
+        Model.UpstreamLogoutMode = value;
+        await Changed.InvokeAsync();
+    }
+
+    private static string SuggestConnectionKey(string displayName) =>
+        System.Text.RegularExpressions.Regex.Replace(displayName.Trim().ToLowerInvariant(), "[^a-z0-9]+", "-").Trim('-');
+}

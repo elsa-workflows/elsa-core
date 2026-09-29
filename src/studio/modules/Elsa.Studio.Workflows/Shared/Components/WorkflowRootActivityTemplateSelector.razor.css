@@ -1,0 +1,24 @@
+.workflow-root-template-option,
+.workflow-root-template-option ::deep * {
+    cursor: pointer !important;
+}
+
+.workflow-root-template-option ::deep .workflow-root-template {
+    padding: 20px 24px;
+    transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.workflow-root-template-option:hover ::deep .workflow-root-template {
+    border-color: var(--mud-palette-primary);
+    background-color: var(--mud-palette-action-default-hover);
+}
+
+.workflow-root-template-option ::deep .workflow-root-template:focus-visible {
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: 2px;
+}
+
+.workflow-root-template-option ::deep .workflow-root-template-selected {
+    border-color: var(--mud-palette-primary);
+    background-color: var(--mud-palette-primary-hover);
+}

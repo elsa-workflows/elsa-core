@@ -1,0 +1,295 @@
+@page "/diagnostics/structured-logs"
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<PageTitle>@Localizer["Structured Logs"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.False" Class="structured-logs-page">
+    <PageHeading Text="@Localizer["Structured Logs"]" />
+
+    @if (IsTerminalFailure)
+    {
+        <MudAlert Severity="@StateSeverity" Dense="true" Class="mt-3">@Localizer[StateMessage]</MudAlert>
+    }
+    else
+    {
+    <MudPaper Elevation="0" Outlined="true" Class="structured-logs-toolbar">
+        <div class="structured-logs-toolbar-row">
+            <div class="structured-logs-summary">
+                <span class="structured-logs-status @StatusCssClass">
+                    <span class="structured-logs-status-dot"></span>
+                    @StatusText
+                </span>
+
+                <span class="structured-logs-count">@Rows.Count @Localizer["rows"]</span>
+
+                @if (ViewState.LocalDroppedRows > 0)
+                {
+                    <span class="structured-logs-dropped">@ViewState.LocalDroppedRows @Localizer["discarded locally"]</span>
+                }
+
+                @if (BackendDroppedCount > 0)
+                {
+                    <span class="structured-logs-dropped">@BackendDroppedCount @Localizer["dropped upstream"]</span>
+                }
+
+                @if (HasStorageDiagnosticsProvider && StorageDroppedWriteCount > 0)
+                {
+                    <span class="structured-logs-dropped">@StorageDroppedWriteCount @Localizer["storage writes dropped"]</span>
+                }
+            </div>
+
+            <div class="structured-logs-actions">
+                <MudTooltip Text="@PauseTooltip" Delay="500">
+                    <MudIconButton Icon="@PauseIcon" Size="Size.Small" OnClick="TogglePausedAsync" />
+                </MudTooltip>
+
+                <MudTooltip Text="@Localizer["Clear"]" Delay="500">
+                    <MudIconButton Icon="@Icons.Material.Outlined.DeleteSweep" Size="Size.Small" OnClick="ClearAsync" />
+                </MudTooltip>
+
+                <MudTooltip Text="@Localizer["Reconnect"]" Delay="500">
+                    <MudIconButton Icon="@Icons.Material.Outlined.Refresh" Size="Size.Small" OnClick="ReconnectAsync" />
+                </MudTooltip>
+
+                <MudTooltip Text="@Localizer["Copy selected"]" Delay="500">
+                    <MudIconButton Icon="@Icons.Material.Outlined.ContentCopy" Size="Size.Small" Disabled="@(!HasSelection)" OnClick="CopySelectedAsync" />
+                </MudTooltip>
+
+                <MudTooltip Text="@Localizer["Copy visible"]" Delay="500">
+                    <MudIconButton Icon="@Icons.Material.Outlined.CopyAll" Size="Size.Small" Disabled="@(Rows.Count == 0)" OnClick="CopyVisibleAsync" />
+                </MudTooltip>
+
+                <span class="structured-logs-action-divider"></span>
+
+                <MudTooltip Text="@Localizer["Auto scroll"]" Delay="500">
+                    <MudSwitch T="bool"
+                               Value="@ViewState.AutoScroll"
+                               Color="Color.Primary"
+                               Label="@Localizer["Auto"]"
+                               LabelPlacement="Placement.Start"
+                               ValueChanged="SetAutoScrollAsync" />
+                </MudTooltip>
+
+                <MudTooltip Text="@Localizer["Wrap messages"]" Delay="500">
+                    <MudSwitch T="bool"
+                               Value="@ViewState.WrapMessages"
+                               Color="Color.Primary"
+                               Label="@Localizer["Wrap"]"
+                               LabelPlacement="Placement.Start"
+                               ValueChanged="SetWrapMessagesAsync" />
+                </MudTooltip>
+
+                <MudTooltip Text="@Localizer["Compact rows"]" Delay="500">
+                    <MudSwitch T="bool"
+                               Value="@ViewState.Compact"
+                               Color="Color.Primary"
+                               Label="@Localizer["Compact"]"
+                               LabelPlacement="Placement.Start"
+                               ValueChanged="SetCompactAsync" />
+                </MudTooltip>
+            </div>
+        </div>
+    </MudPaper>
+
+    <MudPaper Elevation="0" Outlined="true" Class="structured-logs-filters">
+        <div class="structured-logs-filter-grid">
+            <MudSelect T="string?"
+                       Label="@Localizer["Source"]"
+                       Value="@ViewState.Filter.SourceId"
+                       ValueChanged="SetSourceAsync"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Dense="true">
+                <MudSelectItem T="string?" Value="@(null)">@Localizer["All sources"]</MudSelectItem>
+                @foreach (var source in Sources)
+                {
+                    <MudSelectItem T="string?" Value="@source.Id">@SourceDisplayName(source)</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="@(StructuredLogLevel?)"
+                       Label="@Localizer["Minimum level"]"
+                       Value="@ViewState.Filter.MinimumLevel"
+                       ValueChanged="SetMinimumLevelAsync"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Dense="true">
+                <MudSelectItem T="@(StructuredLogLevel?)" Value="@(null)">@Localizer["All levels"]</MudSelectItem>
+                @foreach (var level in LogLevels)
+                {
+                    <MudSelectItem T="@(StructuredLogLevel?)" Value="@level">@level</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudTextField T="string" Label="@Localizer["Text"]" Value="@ViewState.Filter.Text" ValueChanged="SetTextFilterAsync" Immediate="true" DebounceInterval="300" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudTextField T="string" Label="@Localizer["Category"]" Value="@ViewState.Filter.CategoryPrefix" ValueChanged="SetCategoryPrefixAsync" Immediate="true" DebounceInterval="300" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudTextField T="string" Label="@Localizer["Trace ID"]" Value="@ViewState.Filter.TraceId" ValueChanged="SetTraceIdAsync" Immediate="true" DebounceInterval="300" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudTextField T="string" Label="@Localizer["Span ID"]" Value="@ViewState.Filter.SpanId" ValueChanged="SetSpanIdAsync" Immediate="true" DebounceInterval="300" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudTextField T="string" Label="@Localizer["Correlation ID"]" Value="@ViewState.Filter.CorrelationId" ValueChanged="SetCorrelationIdAsync" Immediate="true" DebounceInterval="300" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudTextField T="string" Label="@Localizer["Workflow instance"]" Value="@ViewState.Filter.WorkflowInstanceId" ValueChanged="SetWorkflowInstanceIdAsync" Immediate="true" DebounceInterval="300" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudTextField T="string" Label="@Localizer["Workflow definition"]" Value="@ViewState.Filter.WorkflowDefinitionId" ValueChanged="SetWorkflowDefinitionIdAsync" Immediate="true" DebounceInterval="300" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudTextField T="string" Label="@Localizer["Tenant"]" Value="@ViewState.Filter.TenantId" ValueChanged="SetTenantIdAsync" Immediate="true" DebounceInterval="300" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudTextField T="string" Label="@Localizer["From"]" Value="@FromFilterText" ValueChanged="SetFromAsync" Immediate="true" DebounceInterval="300" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="2026-05-10 09:00Z" />
+            <MudTextField T="string" Label="@Localizer["To"]" Value="@ToFilterText" ValueChanged="SetToAsync" Immediate="true" DebounceInterval="300" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="2026-05-10 10:00Z" />
+        </div>
+    </MudPaper>
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3">@ErrorMessage</MudAlert>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(StateMessage))
+    {
+        <MudAlert Severity="@StateSeverity" Dense="true" Class="mt-3">@Localizer[StateMessage]</MudAlert>
+    }
+
+    @if (IsLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mt-3" />
+    }
+
+    <div class="@MainCssClass">
+        <section class="@LogSurfaceCssClass" id="@LogSurfaceId">
+            @if (Rows.Count == 0 && !IsLoading)
+            {
+                <div class="structured-logs-empty">@Localizer[EmptyText]</div>
+            }
+            else
+            {
+                @foreach (var logEvent in Rows)
+                {
+                    <article class="@RowCssClass(logEvent)">
+                        <MudTooltip Text="@Localizer["Open details"]" Delay="500">
+                            <MudIconButton Icon="@Icons.Material.Filled.Article"
+                                           Size="Size.Small"
+                                           Class="structured-log-details-button"
+                                           OnClick="() => SelectDetailsAsync(logEvent)" />
+                        </MudTooltip>
+                        <input type="checkbox"
+                               class="structured-log-select"
+                               aria-label="@RowSelectionLabel(logEvent)"
+                               checked="@IsSelected(logEvent)"
+                               @onchange="e => SetSelectedAsync(logEvent, e.Value as bool? == true)" />
+                        <time class="structured-log-time" title="@logEvent.Timestamp.ToString("O")">@FormatTimestamp(logEvent.Timestamp)</time>
+                        <span class="@LevelCssClass(logEvent.Level)" title="@logEvent.Level.ToString()">@LevelLabel(logEvent.Level)</span>
+                        <span class="structured-log-source" title="@logEvent.SourceId">@Shorten(SourceDisplayName(logEvent.SourceId), 32)</span>
+                        <span class="structured-log-category" title="@logEvent.Category">@Shorten(logEvent.Category, 72)</span>
+                        @if (HasCorrelationHint(logEvent))
+                        {
+                            <button type="button"
+                                    class="structured-log-correlation structured-log-filter-chip"
+                                    title="@CorrelationFilterTooltip(logEvent)"
+                                    aria-label="@CorrelationFilterTooltip(logEvent)"
+                                    @onclick="() => ApplyCorrelationFilterAsync(logEvent)">
+                                @CorrelationHint(logEvent)
+                            </button>
+                        }
+                        else
+                        {
+                            <span class="structured-log-correlation"></span>
+                        }
+                        <span class="structured-log-message">@logEvent.Message</span>
+
+                        @if (logEvent.Exception != null)
+                        {
+                            <pre class="structured-log-exception">@logEvent.Exception.Type: @logEvent.Exception.Message
+@logEvent.Exception.StackTrace</pre>
+                        }
+                    </article>
+                }
+            }
+        </section>
+
+        @if (SelectedLogEvent != null)
+        {
+            <aside class="structured-log-details" aria-label="@Localizer["Structured log details"]">
+                <header class="structured-log-details-header">
+                    <div>
+                        <h2>@Localizer["Details"]</h2>
+                        <span>@SelectedLogEvent.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss.fff") @SelectedLogEvent.Level</span>
+                    </div>
+                    <div class="structured-log-details-actions">
+                        <MudTooltip Text="@Localizer["Copy details"]" Delay="500">
+                            <MudIconButton Icon="@Icons.Material.Outlined.ContentCopy" Size="Size.Small" OnClick="CopyDetailsAsync" />
+                        </MudTooltip>
+                        <MudTooltip Text="@Localizer["Close"]" Delay="500">
+                            <MudIconButton Icon="@Icons.Material.Outlined.Close" Size="Size.Small" OnClick="CloseDetailsAsync" />
+                        </MudTooltip>
+                    </div>
+                </header>
+
+                <section class="structured-log-detail-section">
+                    <h3>@Localizer["Message"]</h3>
+                    <p class="structured-log-detail-message">@SelectedLogEvent.Message</p>
+                    @if (!string.IsNullOrWhiteSpace(SelectedLogEvent.MessageTemplate))
+                    {
+                        <pre class="structured-log-code">@SelectedLogEvent.MessageTemplate</pre>
+                    }
+                </section>
+
+                <section class="structured-log-detail-section">
+                    <h3>@Localizer["Metadata"]</h3>
+                    <dl class="structured-log-detail-list">
+                        @DetailRow("Event ID", SelectedLogEvent.EventId?.ToString())
+                        @DetailRow("Event name", SelectedLogEvent.EventName)
+                        @DetailRow("Category", SelectedLogEvent.Category)
+                        @DetailRow("Source", SourceDisplayName(SelectedLogEvent.SourceId))
+                        @DetailRow("Tenant", SelectedLogEvent.TenantId)
+                        @DetailRow("Workflow definition", SelectedLogEvent.WorkflowDefinitionId)
+                        @DetailRow("Workflow instance", SelectedLogEvent.WorkflowInstanceId)
+                        @DetailRow("Correlation ID", SelectedLogEvent.CorrelationId, SetCorrelationIdAsync)
+                        @DetailRow("Trace ID", SelectedLogEvent.TraceId, SetTraceIdAsync, OpenTelemetryHref(SelectedLogEvent, false), "OpenTelemetry")
+                        @DetailRow("Span ID", SelectedLogEvent.SpanId, SetSpanIdAsync, OpenTelemetryHref(SelectedLogEvent, true), "OpenTelemetry")
+                    </dl>
+                </section>
+
+                @if (SelectedLogEvent.Properties.Count > 0)
+                {
+                    <section class="structured-log-detail-section">
+                        <h3>@Localizer["Properties"]</h3>
+                        <dl class="structured-log-detail-list">
+                            @foreach (var property in SelectedLogEvent.Properties.OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase))
+                            {
+                                @DetailRow(property.Key, FormatValue(property.Value))
+                            }
+                        </dl>
+                    </section>
+                }
+
+                @if (SelectedLogEvent.Scopes.Count > 0)
+                {
+                    <section class="structured-log-detail-section">
+                        <h3>@Localizer["Scopes"]</h3>
+                        <dl class="structured-log-detail-list">
+                            @foreach (var scope in SelectedLogEvent.Scopes.OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase))
+                            {
+                                @DetailRow(scope.Key, scope.Value)
+                            }
+                        </dl>
+                    </section>
+                }
+
+                @if (SelectedLogEvent.Exception != null)
+                {
+                    <section class="structured-log-detail-section">
+                        <h3>@Localizer["Exception"]</h3>
+                        @DetailRow("Type", SelectedLogEvent.Exception.Type)
+                        @DetailRow("Message", SelectedLogEvent.Exception.Message)
+                        @if (!string.IsNullOrWhiteSpace(SelectedLogEvent.Exception.StackTrace))
+                        {
+                            <pre class="structured-log-code">@SelectedLogEvent.Exception.StackTrace</pre>
+                        }
+                    </section>
+                }
+
+                <section class="structured-log-detail-section">
+                    <h3>@Localizer["Raw JSON"]</h3>
+                    <pre class="structured-log-code">@SelectedRawJson</pre>
+                </section>
+            </aside>
+        }
+    </div>
+    }
+</MudContainer>

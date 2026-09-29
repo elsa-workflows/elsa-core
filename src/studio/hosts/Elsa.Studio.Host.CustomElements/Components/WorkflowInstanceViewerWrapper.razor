@@ -1,0 +1,20 @@
+@inherits BackendComponentBase
+
+<ThemedComponentWrapper>
+    <WorkflowInstanceViewer InstanceId="@InstanceId" EditWorkflowDefinition="EditWorkflowDefinition"/>
+</ThemedComponentWrapper>
+
+@code
+{
+    /// <summary>
+    /// The ID of the workflow definition to edit.
+    /// </summary>
+    [Parameter]
+    public string InstanceId { get; set; } = default!;
+
+    /// <summary>
+    /// An event that is invoked when a workflow definition is edited.
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> EditWorkflowDefinition { get; set; }
+}

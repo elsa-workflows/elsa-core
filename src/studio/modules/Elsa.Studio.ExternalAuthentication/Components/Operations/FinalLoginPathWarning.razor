@@ -1,0 +1,15 @@
+<MudAlert Severity="Severity.Warning" Dense="true">
+    <strong>Recovery protection:</strong> Disabling this connection may leave this scope without a normal sign-in method. Elsa blocks the change unless another sign-in or deployment-owned break-glass path is available.
+    @if (CanOverride)
+    {
+        <br /><span>You can confirm a recovery override in the disable dialog.</span>
+    }
+    else
+    {
+        <br /><span>You cannot override this protection.</span>
+    }
+</MudAlert>
+
+@code {
+    [Parameter] public bool CanOverride { get; set; }
+}

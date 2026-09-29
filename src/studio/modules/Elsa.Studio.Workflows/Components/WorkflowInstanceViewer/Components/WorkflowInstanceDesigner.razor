@@ -1,0 +1,67 @@
+@using Orientation = Radzen.Orientation
+@using Elsa.Api.Client.Resources.WorkflowInstances.Enums
+@inject ILocalizer Localizer
+@inherits StudioComponentBase
+
+<RadzenSplitter Orientation="Orientation.Vertical" Style="height: calc(100vh - var(--mud-appbar-height));" Resize="@OnResize">
+    <RadzenSplitterPane Size="50%">
+        @if (WorkflowDefinition != null && WorkflowInstance != null!)
+        {
+            <DiagramDesignerWrapper
+                @ref="_designer"
+                WorkflowDefinitionVersionId="@WorkflowDefinition.Id"
+                WorkflowDefinition="@WorkflowDefinition"
+                Activity="RootActivity"
+                ActivitySelected="OnActivitySelected"
+                IsReadOnly="true"
+                WorkflowInstanceId="@WorkflowInstance.Id"
+                PathChanged="PathChanged">
+                <CustomToolbarItems>
+                    @if (WorkflowInstance.Status == WorkflowStatus.Running && IsAlterationsEnabled)
+                    {
+                        <MudTooltip Text="@Localizer["Alter this instance"]" Delay="500">
+                            <MudIconButton
+                                Icon="@Icons.Material.Outlined.Tune"
+                                Href="@($"alterations/instances/{WorkflowInstance.Id}")">
+                            </MudIconButton>
+                        </MudTooltip>
+                    }
+                    <MudTooltip Text="@Localizer["Edit Workflow Definition"]" Delay="500">
+                        <MudIconButton
+                            Icon="@Icons.Material.Outlined.EditNote"
+                            OnClick="@(() => OnEditClicked())">
+                        </MudIconButton>
+                    </MudTooltip>
+                    <ElapsedTime StartTime="WorkflowInstance.CreatedAt" EndTime="@(WorkflowInstance.Status == WorkflowStatus.Running ? DateTimeOffset.UtcNow : WorkflowInstance.FinishedAt ?? DateTimeOffset.UtcNow)"/>
+                </CustomToolbarItems>
+            </DiagramDesignerWrapper>
+        }
+    </RadzenSplitterPane>
+    <RadzenSplitterPane Size="30%" @ref="ActivityPropertiesPane">
+        @if (SelectedWorkflowExecutionLogRecord != null || SelectedActivity != null)
+        {
+            <MudTabs Elevation="0" ApplyEffectsToContainer="true" @ref="PropertyTabs">
+                @if (SelectedWorkflowExecutionLogRecord != null)
+                {
+                    <MudTabPanel Text="@Localizer["Event"]" @ref="EventsTabPanel">
+                        <JournalEntryDetailsTab VisiblePaneHeight="@_propertiesPaneHeight" JournalEntry="SelectedWorkflowExecutionLogRecord"/>
+                    </MudTabPanel>
+                }
+
+                @if (SelectedActivity != null)
+                {
+                    <MudTabPanel Text="@Localizer["Activity"]">
+                        <ActivityDetailsTab @ref="_activityDetailsTab" Activity="@SelectedActivity" LastActivityExecution="LastActivityExecution" VisiblePaneHeight="@_propertiesPaneHeight"/>
+                    </MudTabPanel>
+
+                    <MudTabPanel Text="@Localizer["Executions"]" BadgeData="@SelectedActivityExecutions.Count">
+                        <ActivityExecutionsTab @ref="_activityExecutionsTab" Activity="@SelectedActivity" ActivityExecutionSummaries="SelectedActivityExecutions" VisiblePaneHeight="@_propertiesPaneHeight" ExecutionSelected="OnActivityExecutionSelected"/>
+                    </MudTabPanel>
+                }
+
+                <Zone Name="@ZoneNames.WorkflowInstanceViewerBottomTabs" Attributes="BottomPanelTabAttributes" />
+
+            </MudTabs>
+        }
+    </RadzenSplitterPane>
+</RadzenSplitter>

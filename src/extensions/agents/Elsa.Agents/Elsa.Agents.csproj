@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Provides an agentic framework using Semantic Kernel and Microsoft Agent Framework</Description>
+        <PackageTags>elsa extension module agents semantic kernel llm ai maf</PackageTags>
+        <RootNamespace>Elsa.Agents</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+        <ProjectReference Include="../../../modules/Elsa.Common/Elsa.Common.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+        <ProjectReference Include="../../../modules/Elsa.Common/Elsa.Common.csproj"/>
+    </ItemGroup>
+    
+    <ItemGroup>
+        <ProjectReference Include="../Elsa.Agents.Core/Elsa.Agents.Core.csproj"/>
+        <ProjectReference Include="../Elsa.Agents.Activities/Elsa.Agents.Activities.csproj" />
+    </ItemGroup>
+
+</Project>

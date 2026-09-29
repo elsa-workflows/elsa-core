@@ -1,0 +1,1576 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" id="root">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="180 days" xml:space="preserve">
+    <value>180 днів</value>
+  </data>
+  <data name="30 days" xml:space="preserve">
+    <value>30 днів</value>
+  </data>
+  <data name="A brief description of the secret." xml:space="preserve">
+    <value>Короткий опис секрету.</value>
+  </data>
+  <data name="A brief description of the workflow." xml:space="preserve">
+    <value>Короткий опис робочого процесу.</value>
+  </data>
+  <data name="A brief description of this input." xml:space="preserve">
+    <value>Короткий опис цього вводу.</value>
+  </data>
+  <data name="A default value." xml:space="preserve">
+    <value>Значення за замовчуванням.</value>
+  </data>
+  <data name="14 days" xml:space="preserve">
+    <value>14 днів</value>
+  </data>
+  <data name="A brief description of the agent." xml:space="preserve">
+    <value>Короткий опис агента.</value>
+  </data>
+  <data name="A description about the role and purpose of this agent." xml:space="preserve">
+    <value>Опис про роль та призначення даного агента.</value>
+  </data>
+  <data name="7 days" xml:space="preserve">
+    <value>7 днів</value>
+  </data>
+  <data name="A brief description of this output." xml:space="preserve">
+    <value>Короткий опис цього виходу.</value>
+  </data>
+  <data name="90 days" xml:space="preserve">
+    <value>90 днів</value>
+  </data>
+  <data name="A custom category by which to group this output." xml:space="preserve">
+    <value>Спеціальна категорія, за якою групувати цей вихід.</value>
+  </data>
+  <data name="A description about the secret." xml:space="preserve">
+    <value>Опис про секрет.</value>
+  </data>
+  <data name="A description of this activity to be displayed in the designer." xml:space="preserve">
+    <value>Опис цієї діяльності буде відображено в дизайнері.</value>
+  </data>
+  <data name="A technical name for the function" xml:space="preserve">
+    <value>Технічна назва функції, яку виконує цей агент. Наприклад: WriteCode</value>
+  </data>
+  <data name="Acknowledge Datasource Event" xml:space="preserve">
+    <value>Підтвердити подію джерела даних</value>
+  </data>
+  <data name="Activation strategy" xml:space="preserve">
+    <value>Стратегія активації</value>
+  </data>
+  <data name="Activities" xml:space="preserve">
+    <value>Активність</value>
+  </data>
+  <data name="Activity" xml:space="preserve">
+    <value>Діяльність</value>
+  </data>
+  <data name="Activity Instance ID" xml:space="preserve">
+    <value>Ідентифікатор діяльності</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>Додати</value>
+  </data>
+  <data name="Add input" xml:space="preserve">
+    <value>Додайте вхідні дані</value>
+  </data>
+  <data name="Add output" xml:space="preserve">
+    <value>Додати вихід</value>
+  </data>
+  <data name="Add variable" xml:space="preserve">
+    <value>Додайте змінну</value>
+  </data>
+  <data name="Agent" xml:space="preserve">
+    <value>Агент</value>
+  </data>
+  <data name="Agents" xml:space="preserve">
+    <value>Агенти</value>
+  </data>
+  <data name="Aggregation" xml:space="preserve">
+    <value>Агрегація</value>
+  </data>
+  <data name="Allow this workflow to be used as an activity." xml:space="preserve">
+    <value>Дозволити використовувати цей робочий процес як дію.</value>
+  </data>
+  <data name="API Key" xml:space="preserve">
+    <value>Ключ API</value>
+  </data>
+  <data name="API Keys" xml:space="preserve">
+    <value>Ключі API</value>
+  </data>
+  <data name="Apply" xml:space="preserve">
+    <value>Застосувати</value>
+  </data>
+  <data name="Auto-update consuming workflows" xml:space="preserve">
+    <value>Автоматичне оновлення споживаючих робочих процесів</value>
+  </data>
+  <data name="Auto-save" xml:space="preserve">
+    <value>Автозбереження</value>
+  </data>
+  <data name="Branching" xml:space="preserve">
+    <value>Розгалуження</value>
+  </data>
+  <data name="Break" xml:space="preserve">
+    <value>Перерва</value>
+  </data>
+  <data name="Bulk actions" xml:space="preserve">
+    <value>Масові дії</value>
+  </data>
+  <data name="Bulk Dispatch Workflows" xml:space="preserve">
+    <value>Робочі процеси масової розсилки</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Скасувати</value>
+  </data>
+  <data name="Category" xml:space="preserve">
+    <value>Категорія</value>
+  </data>
+  <data name="Check this option if the variable holds an array of the selected type." xml:space="preserve">
+    <value>Перевірте цей параметр, якщо змінна має масив вибраного типу.</value>
+  </data>
+  <data name="Clear" xml:space="preserve">
+    <value>Очистити</value>
+  </data>
+  <data name="Click to open a new workflow tab" xml:space="preserve">
+    <value>Натисніть, щоб відкрити нову вкладку робочого процесу</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Закрити</value>
+  </data>
+  <data name="Close workflow" xml:space="preserve">
+    <value>Закритий робочий процес</value>
+  </data>
+  <data name="Common" xml:space="preserve">
+    <value>Загальні</value>
+  </data>
+  <data name="Complete" xml:space="preserve">
+    <value>Повний</value>
+  </data>
+  <data name="Completed" xml:space="preserve">
+    <value>Виконаний</value>
+  </data>
+  <data name="Composition" xml:space="preserve">
+    <value>Композиція</value>
+  </data>
+  <data name="Connection Strings" xml:space="preserve">
+    <value>Рядки підключення</value>
+  </data>
+  <data name="Console" xml:space="preserve">
+    <value>Консоль</value>
+  </data>
+  <data name="Container" xml:space="preserve">
+    <value>Контейнер</value>
+  </data>
+  <data name="Correlate" xml:space="preserve">
+    <value>Співвіднести</value>
+  </data>
+  <data name="Correlation ID" xml:space="preserve">
+    <value>ID кореляції</value>
+  </data>
+  <data name="Create Agent" xml:space="preserve">
+    <value>Створити агента</value>
+  </data>
+  <data name="Create API Key" xml:space="preserve">
+    <value>Створити ключ API</value>
+  </data>
+  <data name="Create Secret" xml:space="preserve">
+    <value>Створити секрет</value>
+  </data>
+  <data name="Created" xml:space="preserve">
+    <value>Створено</value>
+  </data>
+  <data name="Create Service" xml:space="preserve">
+    <value>Створити послугу</value>
+  </data>
+  <data name="CreatedAt" xml:space="preserve">
+    <value>Створено до</value>
+  </data>
+  <data name="Create workflow" xml:space="preserve">
+    <value>Створити робочий процес</value>
+  </data>
+  <data name="Cron" xml:space="preserve">
+    <value>Cron</value>
+  </data>
+  <data name="Dashboard" xml:space="preserve">
+    <value>Приладова панель</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>Дата</value>
+  </data>
+  <data name="Date Filters" xml:space="preserve">
+    <value>Фільтри дат</value>
+  </data>
+  <data name="Decision" xml:space="preserve">
+    <value>Рішення</value>
+  </data>
+  <data name="Default configuration" xml:space="preserve">
+    <value>Конфігурація за замовчуванням</value>
+  </data>
+  <data name="Default value" xml:space="preserve">
+    <value>Значення за замовчуванням</value>
+  </data>
+  <data name="Definition ID" xml:space="preserve">
+    <value>ID визначення</value>
+  </data>
+  <data name="Definition version" xml:space="preserve">
+    <value>Версія визначення</value>
+  </data>
+  <data name="Definition version ID" xml:space="preserve">
+    <value>Ідентифікатор версії визначення</value>
+  </data>
+  <data name="Definitions" xml:space="preserve">
+    <value>Визначення</value>
+  </data>
+  <data name="Delay" xml:space="preserve">
+    <value>Затримка</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Видалити</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Опис</value>
+  </data>
+  <data name="Details" xml:space="preserve">
+    <value>Подробиці</value>
+  </data>
+  <data name="Dispatch Workflow" xml:space="preserve">
+    <value>Диспетчерський робочий процес</value>
+  </data>
+  <data name="Display name" xml:space="preserve">
+    <value>Відображуване ім'я</value>
+  </data>
+  <data name="Display text" xml:space="preserve">
+    <value>Відображення тексту</value>
+  </data>
+  <data name="Download File" xml:space="preserve">
+    <value>Завантажити файл</value>
+  </data>
+  <data name="Duration" xml:space="preserve">
+    <value>Тривалість</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>Редагувати</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>Електронна пошта</value>
+  </data>
+  <data name="End" xml:space="preserve">
+    <value>Кінець</value>
+  </data>
+  <data name="Enter a list of possible outcomes for this workflow." xml:space="preserve">
+    <value>Введіть список можливих результатів для цього робочого процесу.</value>
+  </data>
+  <data name="Event" xml:space="preserve">
+    <value>Подія</value>
+  </data>
+  <data name="Events" xml:space="preserve">
+    <value>Події</value>
+  </data>
+  <data name="Excel Parser" xml:space="preserve">
+    <value>Парсер Excel</value>
+  </data>
+  <data name="Execution Settings" xml:space="preserve">
+    <value>Параметри виконання</value>
+  </data>
+  <data name="Executions" xml:space="preserve">
+    <value>Страти</value>
+  </data>
+  <data name="Expires In" xml:space="preserve">
+    <value>Термін дії закінчується</value>
+  </data>
+  <data name="Export" xml:space="preserve">
+    <value>Експорт</value>
+  </data>
+  <data name="Export the current workflow as a JSON file" xml:space="preserve">
+    <value>Експортуйте поточний робочий процес як файл JSON.</value>
+  </data>
+  <data name="Export this version as a JSON file." xml:space="preserve">
+    <value>Експортуйте цю версію як файл JSON.</value>
+  </data>
+  <data name="Fault" xml:space="preserve">
+    <value>Несправність</value>
+  </data>
+  <data name="Finish" xml:space="preserve">
+    <value>Закінчити</value>
+  </data>
+  <data name="Finished" xml:space="preserve">
+    <value>Готово</value>
+  </data>
+  <data name="FinishedAt" xml:space="preserve">
+    <value>Закінчено о</value>
+  </data>
+  <data name="Flow" xml:space="preserve">
+    <value>Потік</value>
+  </data>
+  <data name="For" xml:space="preserve">
+    <value>Для</value>
+  </data>
+  <data name="Frequency Penalty" xml:space="preserve">
+    <value>Штраф за частоту</value>
+  </data>
+  <data name="Fork (flow)" xml:space="preserve">
+    <value>Вилка (потік)</value>
+  </data>
+  <data name="Function" xml:space="preserve">
+    <value>Функція</value>
+  </data>
+  <data name="Function Name" xml:space="preserve">
+    <value>Назва функції</value>
+  </data>
+  <data name="General" xml:space="preserve">
+    <value>Загальний</value>
+  </data>
+  <data name="Has Incidents" xml:space="preserve">
+    <value>Має інциденти</value>
+  </data>
+  <data name="HTTP" xml:space="preserve">
+    <value>HTTP</value>
+  </data>
+  <data name="HTTP Endpoint" xml:space="preserve">
+    <value>Кінцева точка HTTP</value>
+  </data>
+  <data name="HTTP File Response" xml:space="preserve">
+    <value>Відповідь файлу HTTP</value>
+  </data>
+  <data name="HTTP Request" xml:space="preserve">
+    <value>HTTP-запит</value>
+  </data>
+  <data name="HTTP Request (flow)" xml:space="preserve">
+    <value>HTTP-запит (потік)</value>
+  </data>
+  <data name="HTTP Response" xml:space="preserve">
+    <value>Відповідь HTTP</value>
+  </data>
+  <data name="ID" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="The ID of the activity." xml:space="preserve">
+    <value>Ідентифікатор діяльності.</value>
+  </data>
+  <data name="If" xml:space="preserve">
+    <value>Якщо</value>
+  </data>
+  <data name="Import" xml:space="preserve">
+    <value>Імпорт</value>
+  </data>
+  <data name="Import a JSON file containing workflow data to override the current workflow's contents." xml:space="preserve">
+    <value>Імпортуйте файл JSON, що містить дані робочого циклу, щоб замінити вміст поточного робочого циклу.</value>
+  </data>
+  <data name="Incident Strategy" xml:space="preserve">
+    <value>Стратегія інциденту</value>
+  </data>
+  <data name="IncidentCount" xml:space="preserve">
+    <value>IncidentCount</value>
+  </data>
+  <data name="Incidents" xml:space="preserve">
+    <value>Інциденти</value>
+  </data>
+  <data name="Info" xml:space="preserve">
+    <value>Інфо</value>
+  </data>
+  <data name="Information" xml:space="preserve">
+    <value>Інформація</value>
+  </data>
+  <data name="Input" xml:space="preserve">
+    <value>Введення</value>
+  </data>
+  <data name="Input Properties" xml:space="preserve">
+    <value>Властивості введення</value>
+  </data>
+  <data name="Input/output" xml:space="preserve">
+    <value>Введення/виведення</value>
+  </data>
+  <data name="Inputs" xml:space="preserve">
+    <value>Вхідні дані</value>
+  </data>
+  <data name="Instances" xml:space="preserve">
+    <value>Примірники</value>
+  </data>
+  <data name="int" xml:space="preserve">
+    <value>внутр</value>
+  </data>
+  <data name="Is" xml:space="preserve">
+    <value>Є</value>
+  </data>
+  <data name="Is After" xml:space="preserve">
+    <value>Є після</value>
+  </data>
+  <data name="Is Before" xml:space="preserve">
+    <value>Раніше</value>
+  </data>
+  <data name="Is Not" xml:space="preserve">
+    <value>Не є</value>
+  </data>
+  <data name="Is on or After" xml:space="preserve">
+    <value>Чи є на або після</value>
+  </data>
+  <data name="Is on or Before" xml:space="preserve">
+    <value>Чи до</value>
+  </data>
+  <data name="Join" xml:space="preserve">
+    <value>Приєднуйтесь</value>
+  </data>
+  <data name="Journal" xml:space="preserve">
+    <value>Журнал</value>
+  </data>
+  <data name="Latest version" xml:space="preserve">
+    <value>Остання версія</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>Завантаження</value>
+  </data>
+  <data name="Log Persistence Strategy" xml:space="preserve">
+    <value>Стратегія збереження журналу</value>
+  </data>
+  <data name="Looping" xml:space="preserve">
+    <value>Зациклення</value>
+  </data>
+  <data name="Manage all the things" xml:space="preserve">
+    <value>Керуйте всіма справами</value>
+  </data>
+  <data name="Max Tokens" xml:space="preserve">
+    <value>Макс жетонів</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Ім'я</value>
+  </data>
+  <data name="Never" xml:space="preserve">
+    <value>Ніколи</value>
+  </data>
+  <data name="No inputs" xml:space="preserve">
+    <value>Немає входів</value>
+  </data>
+  <data name="No outcomes associated with this execution." xml:space="preserve">
+    <value>Немає результатів, пов’язаних із цією стратою.</value>
+  </data>
+  <data name="No outputs" xml:space="preserve">
+    <value>Немає виходів</value>
+  </data>
+  <data name="No secrets found" xml:space="preserve">
+    <value>Секретів не знайдено</value>
+  </data>
+  <data name="No services found" xml:space="preserve">
+    <value>Послуг не знайдено</value>
+  </data>
+  <data name="No variables" xml:space="preserve">
+    <value>Жодних змінних</value>
+  </data>
+  <data name="No workflow instances found" xml:space="preserve">
+    <value>Не знайдено екземплярів робочого процесу</value>
+  </data>
+  <data name="object" xml:space="preserve">
+    <value>об'єкт</value>
+  </data>
+  <data name="Ok" xml:space="preserve">
+    <value>Гаразд</value>
+  </data>
+  <data name="Open File" xml:space="preserve">
+    <value>Відкрити файл</value>
+  </data>
+  <data name="OpenAIChatCompletion" xml:space="preserve">
+    <value>OpenAIChatCompletion</value>
+  </data>
+  <data name="OpenAITextToImage" xml:space="preserve">
+    <value>OpenAITextToImage</value>
+  </data>
+  <data name="Outcomes" xml:space="preserve">
+    <value>Результати</value>
+  </data>
+  <data name="Output" xml:space="preserve">
+    <value>Вихід</value>
+  </data>
+  <data name="Output Properties" xml:space="preserve">
+    <value>Вихідні властивості</value>
+  </data>
+  <data name="Outputs" xml:space="preserve">
+    <value>Виходи</value>
+  </data>
+  <data name="Parser" xml:space="preserve">
+    <value>Парсер</value>
+  </data>
+  <data name="Log Persistence" xml:space="preserve">
+    <value>Постійність журналу</value>
+  </data>
+  <data name="Plugins" xml:space="preserve">
+    <value>Плагіни</value>
+  </data>
+  <data name="Presence Penalty" xml:space="preserve">
+    <value>Штраф за присутність</value>
+  </data>
+  <data name="Primitives" xml:space="preserve">
+    <value>Примітиви</value>
+  </data>
+  <data name="Prompt Template" xml:space="preserve">
+    <value>Шаблон запиту</value>
+  </data>
+  <data name="Properties" xml:space="preserve">
+    <value>Властивості</value>
+  </data>
+  <data name="Publish" xml:space="preserve">
+    <value>Опублікувати</value>
+  </data>
+  <data name="Publish Event" xml:space="preserve">
+    <value>Опублікувати подію</value>
+  </data>
+  <data name="Published" xml:space="preserve">
+    <value>Опубліковано</value>
+  </data>
+  <data name="Published version" xml:space="preserve">
+    <value>Опублікована версія</value>
+  </data>
+  <data name="Rows Per Page" xml:space="preserve">
+    <value>Рядків на сторінці</value>
+  </data>
+  <data name="Run" xml:space="preserve">
+    <value>Запуск</value>
+  </data>
+  <data name="Run Asynchronously" xml:space="preserve">
+    <value>Запуск асинхронно</value>
+  </data>
+  <data name="Run JavaScript" xml:space="preserve">
+    <value>Запустіть JavaScript</value>
+  </data>
+  <data name="Run Python" xml:space="preserve">
+    <value>Запустіть Python</value>
+  </data>
+  <data name="Run Task" xml:space="preserve">
+    <value>Виконати завдання</value>
+  </data>
+  <data name="Run workflow" xml:space="preserve">
+    <value>Запустіть робочий процес</value>
+  </data>
+  <data name="Scheduling" xml:space="preserve">
+    <value>Планування</value>
+  </data>
+  <data name="Scope" xml:space="preserve">
+    <value>Область застосування</value>
+  </data>
+  <data name="Scripting" xml:space="preserve">
+    <value>Сценарії</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>Пошук...</value>
+  </data>
+  <data name="Search on name, description, id, definition id" xml:space="preserve">
+    <value>Пошук за назвою, описом, ідентифікатором, ідентифікатором визначення</value>
+  </data>
+  <data name="Secret" xml:space="preserve">
+    <value>Секрет</value>
+  </data>
+  <data name="Secrets" xml:space="preserve">
+    <value>Секрети</value>
+  </data>
+  <data name="Send Email" xml:space="preserve">
+    <value>Надіслати електронний лист</value>
+  </data>
+  <data name="Services" xml:space="preserve">
+    <value>Послуги</value>
+  </data>
+  <data name="Set Name" xml:space="preserve">
+    <value>Встановити назву</value>
+  </data>
+  <data name="Set Output" xml:space="preserve">
+    <value>Встановити вихід</value>
+  </data>
+  <data name="Set Variable" xml:space="preserve">
+    <value>Встановити змінну</value>
+  </data>
+  <data name="Set Workflow Context Parameter" xml:space="preserve">
+    <value>Встановити параметр контексту робочого процесу</value>
+  </data>
+  <data name="Show accumulated time" xml:space="preserve">
+    <value>Показати накопичений час</value>
+  </data>
+  <data name="Show incidents" xml:space="preserve">
+    <value>Показати події</value>
+  </data>
+  <data name="Show relative time" xml:space="preserve">
+    <value>Показати відносний час</value>
+  </data>
+  <data name="Showing all events" xml:space="preserve">
+    <value>Показ усіх подій</value>
+  </data>
+  <data name="Showing incidents" xml:space="preserve">
+    <value>Показ інцидентів</value>
+  </data>
+  <data name="Started" xml:space="preserve">
+    <value>Розпочато</value>
+  </data>
+  <data name="State" xml:space="preserve">
+    <value>Держава</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Статус</value>
+  </data>
+  <data name="Sub status" xml:space="preserve">
+    <value>Під статусом</value>
+  </data>
+  <data name="Sub-Workflow Inputs" xml:space="preserve">
+    <value>Вхідні дані підпроцесу</value>
+  </data>
+  <data name="Sub-Workflow Outputs" xml:space="preserve">
+    <value>Підробочі результати</value>
+  </data>
+  <data name="Switch (flow)" xml:space="preserve">
+    <value>Перемикач (потік)</value>
+  </data>
+  <data name="Task" xml:space="preserve">
+    <value>Завдання</value>
+  </data>
+  <data name="The .NET type of the input variable." xml:space="preserve">
+    <value>Тип .NET вхідної змінної.</value>
+  </data>
+  <data name="The .NET type of the output variable." xml:space="preserve">
+    <value>Тип .NET вихідної змінної.</value>
+  </data>
+  <data name="The maximum number" xml:space="preserve">
+    <value>Максимальна кількість токенів для генерації. Залиште порожнім для максимуму.</value>
+  </data>
+  <data name="The name of the agent." xml:space="preserve">
+    <value>Ім'я агента.</value>
+  </data>
+  <data name="The name of the new secret." xml:space="preserve">
+    <value>Назва нового секрету.</value>
+  </data>
+  <data name="The name of the new workflow." xml:space="preserve">
+    <value>Назва нового робочого циклу.</value>
+  </data>
+  <data name="The name of the variable." xml:space="preserve">
+    <value>Ім'я змінної.</value>
+  </data>
+  <data name="The plugins that the agent can use." xml:space="preserve">
+    <value>Плагіни, які може використовувати агент.</value>
+  </data>
+  <data name="The scope of the secret helps the UI to filter available options from dropdown lists." xml:space="preserve">
+    <value>Обсяг секрету допомагає інтерфейсу користувача фільтрувати доступні параметри зі спадних списків.</value>
+  </data>
+  <data name="The secret value." xml:space="preserve">
+    <value>Секретна цінність.</value>
+  </data>
+  <data name="The services that the agent requires." xml:space="preserve">
+    <value>Послуги, які вимагає агент.</value>
+  </data>
+  <data name="The settings of the service in JSON format." xml:space="preserve">
+    <value>Налаштування сервісу в форматі JSON.</value>
+  </data>
+  <data name="The system prompt template that the agent will use." xml:space="preserve">
+    <value>Шаблон системної підказки, який використовуватиме агент.</value>
+  </data>
+  <data name="The technical name of the API key." xml:space="preserve">
+    <value>Технічна назва ключа API.</value>
+  </data>
+  <data name="The technical name of the input variable" xml:space="preserve">
+    <value>Технічна назва вхідної змінної. Посилаючись на цю змінну в шаблоні підказки, використовуйте це ім’я.</value>
+  </data>
+  <data name="The technical name of the service." xml:space="preserve">
+    <value>Технічна назва послуги.</value>
+  </data>
+  <data name="The type of the service." xml:space="preserve">
+    <value>Тип послуги.</value>
+  </data>
+  <data name="The user-friendly name of this input." xml:space="preserve">
+    <value>Зручна назва цього введення.</value>
+  </data>
+  <data name="The user-friendly name of this output." xml:space="preserve">
+    <value>Зручна назва цього результату.</value>
+  </data>
+  <data name="The value of the API key." xml:space="preserve">
+    <value>Значення ключа API.</value>
+  </data>
+  <data name="There are currently no inputs defined." xml:space="preserve">
+    <value>Наразі не визначено жодного входу.</value>
+  </data>
+  <data name="There are currently no outputs defined." xml:space="preserve">
+    <value>Наразі не визначено вихідних даних.</value>
+  </data>
+  <data name="There are currently no variables defined." xml:space="preserve">
+    <value>Наразі не визначено жодної змінної.</value>
+  </data>
+  <data name="This activity does not have any input properties." xml:space="preserve">
+    <value>Ця діяльність не має вхідних властивостей.</value>
+  </data>
+  <data name="This input is an array" xml:space="preserve">
+    <value>Цей вхід є масивом</value>
+  </data>
+  <data name="This variable is an array" xml:space="preserve">
+    <value>Ця змінна є масивом</value>
+  </data>
+  <data name="Time" xml:space="preserve">
+    <value>Час</value>
+  </data>
+  <data name="Timer" xml:space="preserve">
+    <value>Таймер</value>
+  </data>
+  <data name="TopP" xml:space="preserve">
+    <value>Топ П</value>
+  </data>
+  <data name="Trigger workflow" xml:space="preserve">
+    <value>Робочий процес тригера</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>Тип</value>
+  </data>
+  <data name="UI Hint" xml:space="preserve">
+    <value>Підказка інтерфейсу користувача</value>
+  </data>
+  <data name="Unable to make changes as the workflow or application is currently in read-only mode" xml:space="preserve">
+    <value>Неможливо внести зміни, оскільки робочий процес або програма зараз у режимі лише для читання</value>
+  </data>
+  <data name="Unpublish" xml:space="preserve">
+    <value>Скасувати публікацію</value>
+  </data>
+  <data name="Unpublish the current workflow" xml:space="preserve">
+    <value>Скасувати публікацію поточного робочого процесу.</value>
+  </data>
+  <data name="Updated" xml:space="preserve">
+    <value>Оновлено</value>
+  </data>
+  <data name="UpdatedAt" xml:space="preserve">
+    <value>Оновлено в</value>
+  </data>
+  <data name="Usable as activity" xml:space="preserve">
+    <value>Можна використовувати як діяльність</value>
+  </data>
+  <data name="Value" xml:space="preserve">
+    <value>Значення</value>
+  </data>
+  <data name="Variables" xml:space="preserve">
+    <value>Змінні</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>Версія</value>
+  </data>
+  <data name="Version history" xml:space="preserve">
+    <value>Історія версій</value>
+  </data>
+  <data name="View" xml:space="preserve">
+    <value>Переглянути</value>
+  </data>
+  <data name="Webhooks" xml:space="preserve">
+    <value>Вебхуки</value>
+  </data>
+  <data name="When you publish" xml:space="preserve">
+    <value>Коли ви публікуєте нову версію, усі споживчі робочі цикли буде оновлено, щоб вказувати на нову версію цього робочого циклу.</value>
+  </data>
+  <data name="Workflow Context" xml:space="preserve">
+    <value>Контекст робочого процесу</value>
+  </data>
+  <data name="Workflow Context Settings" xml:space="preserve">
+    <value>Параметри контексту робочого процесу</value>
+  </data>
+  <data name="Workflow Contexts" xml:space="preserve">
+    <value>Контексти робочого процесу</value>
+  </data>
+  <data name="Workflow instances" xml:space="preserve">
+    <value>Екземпляри робочого процесу</value>
+  </data>
+  <data name="Workflows" xml:space="preserve">
+    <value>Робочі процеси</value>
+  </data>
+  <data name="Write Line" xml:space="preserve">
+    <value>Написати рядок</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>Так</value>
+  </data>
+  <data name="You can find documentation and examples here" xml:space="preserve">
+    <value>Ви можете знайти документацію та приклади тут</value>
+  </data>
+  <data name="Incident handling strategy" xml:space="preserve">
+    <value>Стратегія поводження з інцидентами</value>
+  </data>
+  <data name="Start" xml:space="preserve">
+    <value>Старт</value>
+  </data>
+  <data name="Temperature" xml:space="preserve">
+    <value>Температура</value>
+  </data>
+  <data name="The description of the output variable." xml:space="preserve">
+    <value>Опис вихідної змінної.</value>
+  </data>
+  <data name="The lifetime of this secret" xml:space="preserve">
+    <value>Тривалість життя цієї таємниці</value>
+  </data>
+  <data name="This activity does not have any output properties." xml:space="preserve">
+    <value>Ця діяльність не має вихідних властивостей.</value>
+  </data>
+  <data name="The technical name of the input." xml:space="preserve">
+    <value>Технічна назва входу.</value>
+  </data>
+  <data name="This activity does not have any common properties." xml:space="preserve">
+    <value>Ця діяльність не має спільних властивостей.</value>
+  </data>
+  <data name="This output is an array" xml:space="preserve">
+    <value>Цей вихід є масивом</value>
+  </data>
+  <data name="Top Probability determines" xml:space="preserve">
+    <value>Верхня ймовірність визначає кумулятивний поріг імовірності для вибору маркера під час генерації тексту. Менші значення призведуть до меншої різноманітності, що змусить модель вибирати лише найімовірніші маркери. Вищі значення дозволять отримати більш різноманітні результати, оскільки модель розглядатиме ширший діапазон токенів.</value>
+  </data>
+  <data name="Use JSON Response" xml:space="preserve">
+    <value>Використовуйте відповідь JSON</value>
+  </data>
+  <data name="Use this version" xml:space="preserve">
+    <value>Використовуйте цю версію</value>
+  </data>
+  <data name="When checked, the workflow will be executed asynchronously." xml:space="preserve">
+    <value>Якщо позначено, робочий процес виконуватиметься асинхронно.</value>
+  </data>
+  <data name="Workflow definitions Editor" xml:space="preserve">
+    <value>Редактор визначень робочого процесу</value>
+  </data>
+  <data name="You are running in read-only mode. Workflow operations are disabled" xml:space="preserve">
+    <value>Ви працюєте в режимі лише для читання. Операції робочого циклу вимкнено</value>
+  </data>
+  <data name="Start of workflow" xml:space="preserve">
+    <value>Початок робочого процесу</value>
+  </data>
+  <data name="A custom activity category to assign this workflow-as-an-activity to." xml:space="preserve">
+    <value>Спеціальна категорія діяльності, до якої можна призначити цей робочий процес як дію.</value>
+  </data>
+  <data name="Start at" xml:space="preserve">
+    <value>Початок о</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>Ні</value>
+  </data>
+  <data name="The temperature of the model" xml:space="preserve">
+    <value>Температура моделі. Вищі значення означають, що модель більше ризикуватиме. Спробуйте 0,1 для результатів, які дуже близькі до того, на якому навчалася модель. Спробуйте 0,9 для дуже творчих результатів.</value>
+  </data>
+  <data name="Used to define the initial instructions" xml:space="preserve">
+    <value>Використовується для визначення початкових інструкцій або контексту, які агент семантичного ядра використовуватиме для створення відповідей. Цей шаблон спрямовує поведінку агента та допомагає йому зрозуміти роль, яку він має відігравати, або завдання, які він має виконувати.</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Налаштування</value>
+  </data>
+  <data name="Metadata" xml:space="preserve">
+    <value>Метадані</value>
+  </data>
+  <data name="Show events scoped to current container" xml:space="preserve">
+    <value>Показати події, пов’язані з поточним контейнером</value>
+  </data>
+  <data name="Storage" xml:space="preserve">
+    <value>Зберігання</value>
+  </data>
+  <data name="Whether to show the description in the designer." xml:space="preserve">
+    <value>Чи показувати опис у конструкторі.</value>
+  </data>
+  <data name="The name of the activity. Named activities can be referenced by other activities." xml:space="preserve">
+    <value>Назва діяльності. На названі дії можуть посилатися інші дії.</value>
+  </data>
+  <data name="No agents found" xml:space="preserve">
+    <value>Агентів не знайдено</value>
+  </data>
+  <data name="The name of the new agent." xml:space="preserve">
+    <value>Ім'я нового агента.</value>
+  </data>
+  <data name="Used" xml:space="preserve">
+    <value>б/в</value>
+  </data>
+  <data name="A description about the role and purpose of this input variable." xml:space="preserve">
+    <value>Опис ролі та призначення цієї вхідної змінної.</value>
+  </data>
+  <data name="No API keys found" xml:space="preserve">
+    <value>Ключі API не знайдено</value>
+  </data>
+  <data name="Read Data from Database" xml:space="preserve">
+    <value>Читання даних із бази даних</value>
+  </data>
+  <data name="Search on name, id, definition id, definition version id, correlation id" xml:space="preserve">
+    <value>Пошук за назвою, ідентифікатором, ідентифікатором визначення, ідентифікатором версії визначення, ідентифікатором кореляції</value>
+  </data>
+  <data name="A custom category by which to group this input." xml:space="preserve">
+    <value>Спеціальна категорія, за якою групувати цей вхід.</value>
+  </data>
+  <data name="No output associated with this execution." xml:space="preserve">
+    <value>Немає вихідних даних, пов’язаних із цим виконанням.</value>
+  </data>
+  <data name="No state associated with this execution." xml:space="preserve">
+    <value>Жодного стану, пов’язаного з цією стратою.</value>
+  </data>
+  <data name="string" xml:space="preserve">
+    <value>рядок</value>
+  </data>
+  <data name="Sub-Workflow" xml:space="preserve">
+    <value>Підробочий процес</value>
+  </data>
+  <data name="The name of the function that the agent will execute." xml:space="preserve">
+    <value>Назва функції, яку виконуватиме агент.</value>
+  </data>
+  <data name="The penalty for repeating" xml:space="preserve">
+    <value>Штраф за повторення будь-якої однієї фішки. Вищий штраф за присутність зменшить ймовірність повторення маркера, сприяючи створенню більш різноманітного тексту.</value>
+  </data>
+  <data name="The penalty for repeating any one token" xml:space="preserve">
+    <value>Штраф за повторення будь-якої однієї фішки. Вищий штраф частоти зменшить ймовірність повторення маркера, сприяючи генерації більш різноманітного тексту.</value>
+  </data>
+  <data name="Is array" xml:space="preserve">
+    <value>Є масив</value>
+  </data>
+  <data name="No workflow definitions found" xml:space="preserve">
+    <value>Визначення робочого процесу не знайдено</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Зберегти</value>
+  </data>
+  <data name="SubStatus" xml:space="preserve">
+    <value>Підстатус</value>
+  </data>
+  <data name="The name of the workflow." xml:space="preserve">
+    <value>Назва робочого циклу.</value>
+  </data>
+  <data name="Switch" xml:space="preserve">
+    <value>Перемикач</value>
+  </data>
+  <data name="Expires" xml:space="preserve">
+    <value>Термін дії закінчується</value>
+  </data>
+  <data name="Publish the current workflow" xml:space="preserve">
+    <value>Опублікувати поточний робочий процес</value>
+  </data>
+  <data name="Read Data from Configuration / Runtime" xml:space="preserve">
+    <value>Читання даних із конфігурації / середовища виконання</value>
+  </data>
+  <data name="Rollback to this version" xml:space="preserve">
+    <value>Відкат до цієї версії</value>
+  </data>
+  <data name="Save File" xml:space="preserve">
+    <value>Зберегти файл</value>
+  </data>
+  <data name="A variable picker" xml:space="preserve">
+    <value>А Вибір змінних</value>
+  </data>
+  <data name="An outcome picker" xml:space="preserve">
+    <value>А Вибір результатів</value>
+  </data>
+  <data name="Are you sure you want to delete the selected output?" xml:space="preserve">
+    <value>Ви впевнені, що бажаєте видалити вибраний вихід?</value>
+  </data>
+  <data name="Are you sure you want to delete this workflow?" xml:space="preserve">
+    <value>Ви впевнені, що бажаєте видалити цей робочий процес?</value>
+  </data>
+  <data name="Checklist" xml:space="preserve">
+    <value>Контрольний список</value>
+  </data>
+  <data name="Code editor" xml:space="preserve">
+    <value>Редактор коду</value>
+  </data>
+  <data name="{0} consuming workflow(s) updated" xml:space="preserve">
+    <value>Оновлено споживаючих робочих процесів: {0}</value>
+  </data>
+  <data name="Create variable" xml:space="preserve">
+    <value>Створіть змінну</value>
+  </data>
+  <data name="Default" xml:space="preserve">
+    <value>За замовчуванням</value>
+  </data>
+  <data name="Delete selected versions" xml:space="preserve">
+    <value>Видалити вибрані версії</value>
+  </data>
+  <data name="Delete workflow instance?" xml:space="preserve">
+    <value>Видалити екземпляр робочого процесу?</value>
+  </data>
+  <data name="Delete workflow?" xml:space="preserve">
+    <value>Видалити робочий процес?</value>
+  </data>
+  <data name="Edit output" xml:space="preserve">
+    <value>Редагувати вихід</value>
+  </data>
+  <data name="Edit Workflow Definition" xml:space="preserve">
+    <value>Редагувати визначення робочого процесу</value>
+  </data>
+  <data name="JSON editor" xml:space="preserve">
+    <value>Редактор JSON</value>
+  </data>
+  <data name="None" xml:space="preserve">
+    <value>Жодного</value>
+  </data>
+  <data name="One workflow is already published" xml:space="preserve">
+    <value>Один робочий процес уже опубліковано</value>
+  </data>
+  <data name="Output picker" xml:space="preserve">
+    <value>Вибір вихідних даних</value>
+  </data>
+  <data name="Please enter a name for the input." xml:space="preserve">
+    <value>Будь ласка, введіть назву для введення.</value>
+  </data>
+  <data name="When checked, this activity can trigger this workflow." xml:space="preserve">
+    <value>Якщо позначено, ця дія може ініціювати цей робочий процес.</value>
+  </data>
+  <data name="Workflow definition picker" xml:space="preserve">
+    <value>Вибір визначення робочого процесу</value>
+  </data>
+  <data name="{0} workflows are not found" xml:space="preserve">
+    <value>{0} робочих процесів не знайдено</value>
+  </data>
+  <data name="{0} {1} imported successfully." xml:space="preserve">
+    <value>{0} {1} успішно імпортовано.</value>
+  </data>
+  <data name="One workflow is published" xml:space="preserve">
+    <value>Опубліковано один робочий процес</value>
+  </data>
+  <data name="A list of radio buttons" xml:space="preserve">
+    <value>Список радіокнопок</value>
+  </data>
+  <data name="Multiple lines of text input" xml:space="preserve">
+    <value>Багаторядкове введення тексту</value>
+  </data>
+  <data name="Are you sure you want to delete the selected workflow instances?" xml:space="preserve">
+    <value>Ви впевнені, що бажаєте видалити вибрані екземпляри робочого процесу?</value>
+  </data>
+  <data name="The workflow cannot be started" xml:space="preserve">
+    <value>Неможливо запустити робочий процес</value>
+  </data>
+  <data name="A dropdown list" xml:space="preserve">
+    <value>Випадаючий список</value>
+  </data>
+  <data name="Successfully imported {0} workflow definitions." xml:space="preserve">
+    <value>Успішно імпортовано {0} визначень робочого процесу.</value>
+  </data>
+  <data name="{0} workflows are already published" xml:space="preserve">
+    <value>{0} робочих процесів уже опубліковано</value>
+  </data>
+  <data name="{0} workflows are published" xml:space="preserve">
+    <value>Опубліковано {0} робочих процесів</value>
+  </data>
+  <data name="A variable with this name already exists in the current scope." xml:space="preserve">
+    <value>Змінна з такою назвою вже існує в поточній області.</value>
+  </data>
+  <data name="{0} workflows are unpublished" xml:space="preserve">
+    <value>{0} робочих процесів скасовано</value>
+  </data>
+  <data name="A workflow output definition picker" xml:space="preserve">
+    <value>Засіб вибору визначення вихідних даних робочого процесу</value>
+  </data>
+  <data name="Are you sure you want to publish the selected workflows?" xml:space="preserve">
+    <value>Ви впевнені, що бажаєте опублікувати вибрані робочі процеси?</value>
+  </data>
+  <data name="imported successfully." xml:space="preserve">
+    <value>успішно імпортовано.</value>
+  </data>
+  <data name="An input with this name already exists." xml:space="preserve">
+    <value>Вхід із такою назвою вже існує.</value>
+  </data>
+  <data name="Delete selected workflow instances?" xml:space="preserve">
+    <value>Видалити вибрані екземпляри робочого процесу?</value>
+  </data>
+  <data name="A JSON editor" xml:space="preserve">
+    <value>А Редактор JSON</value>
+  </data>
+  <data name="Are you sure you want to cancel this workflow instance?" xml:space="preserve">
+    <value>Ви впевнені, що бажаєте скасувати цей екземпляр робочого процесу?</value>
+  </data>
+  <data name="Are you sure you want to delete the selected versions?" xml:space="preserve">
+    <value>Ви впевнені, що бажаєте видалити вибрані версії?</value>
+  </data>
+  <data name="Are you sure you want to delete the selected variable?" xml:space="preserve">
+    <value>Ви впевнені, що бажаєте видалити вибрану змінну?</value>
+  </data>
+  <data name="No workflows were imported." xml:space="preserve">
+    <value>Робочі процеси не імпортовано.</value>
+  </data>
+  <data name="One workflow is not found" xml:space="preserve">
+    <value>Один робочий процес не знайдено</value>
+  </data>
+  <data name="One workflow is unpublished" xml:space="preserve">
+    <value>Один робочий процес не опублікований</value>
+  </data>
+  <data name="Please enter a name for the output." xml:space="preserve">
+    <value>Будь ласка, введіть назву для результату.</value>
+  </data>
+  <data name="Please enter a name for the workflow." xml:space="preserve">
+    <value>Введіть назву робочого циклу.</value>
+  </data>
+  <data name="Are you sure you want to delete this version?" xml:space="preserve">
+    <value>Ви впевнені, що хочете видалити цю версію?</value>
+  </data>
+  <data name="Are you sure you want to delete this workflow instance?" xml:space="preserve">
+    <value>Ви впевнені, що бажаєте видалити цей екземпляр робочого процесу?</value>
+  </data>
+  <data name="Edit variable" xml:space="preserve">
+    <value>Редагувати змінну</value>
+  </data>
+  <data name="Readonly" xml:space="preserve">
+    <value>Тільки для читання</value>
+  </data>
+  <data name="One workflow is already unpublished" xml:space="preserve">
+    <value>Один робочий процес уже не опубліковано</value>
+  </data>
+  <data name="Workflow published" xml:space="preserve">
+    <value>Робочий процес опубліковано</value>
+  </data>
+  <data name="Successfully imported 1 workflow definition." xml:space="preserve">
+    <value>Успішно імпортовано 1 визначення робочого процесу.</value>
+  </data>
+  <data name="Workflow saved" xml:space="preserve">
+    <value>Робочий процес збережено</value>
+  </data>
+  <data name="Workflow published with Not Found activities" xml:space="preserve">
+    <value>Робочий цикл опубліковано з діями Not Found</value>
+  </data>
+  <data name="Timestamp" xml:space="preserve">
+    <value>Мітка часу</value>
+  </data>
+  <data name="workflows are already published" xml:space="preserve">
+    <value>робочі процеси вже опубліковано</value>
+  </data>
+  <data name="workflows are already unpublished" xml:space="preserve">
+    <value>робочі процеси вже неопубліковані</value>
+  </data>
+  <data name="Successfully imported {0} instances" xml:space="preserve">
+    <value>Успішно імпортовано {0} примірників</value>
+  </data>
+  <data name="Cancel running workflow instances?" xml:space="preserve">
+    <value>Скасувати запущені екземпляри робочого процесу?</value>
+  </data>
+  <data name="Create input" xml:space="preserve">
+    <value>Створити вхід</value>
+  </data>
+  <data name="Create output" xml:space="preserve">
+    <value>Створити вихід</value>
+  </data>
+  <data name="Delete version" xml:space="preserve">
+    <value>Видалити версію</value>
+  </data>
+  <data name="When checked, this activity is the start of this workflow." xml:space="preserve">
+    <value>Якщо позначено, ця дія є початком робочого процесу.</value>
+  </data>
+  <data name="Enter the expression that will be used to determine the log persistence strategy for this property." xml:space="preserve">
+    <value>Введіть вираз, який використовуватиметься для визначення стратегії збереження журналу для цієї властивості.</value>
+  </data>
+  <data name="Multi line" xml:space="preserve">
+    <value>Багаторядковий</value>
+  </data>
+  <data name="Outcome picker" xml:space="preserve">
+    <value>Вибір результатів</value>
+  </data>
+  <data name="A list of checkboxes" xml:space="preserve">
+    <value>Список прапорців</value>
+  </data>
+  <data name="A single line of text input" xml:space="preserve">
+    <value>Введення тексту в один рядок</value>
+  </data>
+  <data name="A workflow definition picker" xml:space="preserve">
+    <value>Засіб вибору визначення робочого процесу</value>
+  </data>
+  <data name="The ID of the variable." xml:space="preserve">
+    <value>Ідентифікатор змінної.</value>
+  </data>
+  <data name="A workflow with this name already exists." xml:space="preserve">
+    <value>Робочий цикл із такою назвою вже існує.</value>
+  </data>
+  <data name="An input for multiple words, like a tagging input" xml:space="preserve">
+    <value>Вхід для кількох слів, наприклад введення тегів</value>
+  </data>
+  <data name="Are you sure you want to cancel all running workflow instances of this workflow definition?" xml:space="preserve">
+    <value>Ви впевнені, що бажаєте скасувати всі запущені екземпляри цього робочого циклу?</value>
+  </data>
+  <data name="Cancel selected workflow instances?" xml:space="preserve">
+    <value>Скасувати вибрані екземпляри робочого процесу?</value>
+  </data>
+  <data name="Delete selected output?" xml:space="preserve">
+    <value>Видалити вибраний вихід?</value>
+  </data>
+  <data name="Failed to import {0} workflow definitions. Errors: {1}" xml:space="preserve">
+    <value>Не вдалося імпортувати {0} визначень робочого процесу. Помилки: {1}</value>
+  </data>
+  <data name="Not executed" xml:space="preserve">
+    <value>Не виконано</value>
+  </data>
+  <data name="Publish selected workflows?" xml:space="preserve">
+    <value>Опублікувати вибрані робочі процеси?</value>
+  </data>
+  <data name="Are you sure you want to cancel the selected workflow instances?" xml:space="preserve">
+    <value>Ви впевнені, що бажаєте скасувати вибрані екземпляри робочого процесу?</value>
+  </data>
+  <data name="Are you sure you want to delete the selected workflows?" xml:space="preserve">
+    <value>Ви впевнені, що бажаєте видалити вибрані робочі процеси?</value>
+  </data>
+  <data name="Are you sure you want to delete the selected input?" xml:space="preserve">
+    <value>Ви впевнені, що бажаєте видалити вибраний вхід?</value>
+  </data>
+  <data name="The text to display in the designer." xml:space="preserve">
+    <value>Текст для відображення в дизайнері.</value>
+  </data>
+  <data name="A checkbox" xml:space="preserve">
+    <value>А Прапорець</value>
+  </data>
+  <data name="Are you sure you want to unpublish the selected workflows?" xml:space="preserve">
+    <value>Ви впевнені, що бажаєте скасувати публікацію вибраних робочих процесів?</value>
+  </data>
+  <data name="Cancel workflow instance?" xml:space="preserve">
+    <value>Скасувати екземпляр робочого процесу?</value>
+  </data>
+  <data name="Checkbox" xml:space="preserve">
+    <value>Прапорець</value>
+  </data>
+  <data name="Multi text" xml:space="preserve">
+    <value>Мультитекст</value>
+  </data>
+  <data name="Default Strategy" xml:space="preserve">
+    <value>Стратегія за замовчуванням</value>
+  </data>
+  <data name="Delete selected input?" xml:space="preserve">
+    <value>Видалити вибраний вхід?</value>
+  </data>
+  <data name="Delete selected variable?" xml:space="preserve">
+    <value>Видалити вибрану змінну?</value>
+  </data>
+  <data name="Dropdown" xml:space="preserve">
+    <value>Спадний список</value>
+  </data>
+  <data name="Delete selected workflows?" xml:space="preserve">
+    <value>Видалити вибрані робочі процеси?</value>
+  </data>
+  <data name="Radio list" xml:space="preserve">
+    <value>Список радіо</value>
+  </data>
+  <data name="Inherit" xml:space="preserve">
+    <value>Успадкувати</value>
+  </data>
+  <data name="Show description" xml:space="preserve">
+    <value>Показати опис</value>
+  </data>
+  <data name="Message" xml:space="preserve">
+    <value>Повідомлення</value>
+  </data>
+  <data name="One workflow consuming a published workflow has been updated" xml:space="preserve">
+    <value>Оновлено один робочий цикл, який використовує опублікований робочий цикл</value>
+  </data>
+  <data name="New workflow" xml:space="preserve">
+    <value>Новий робочий процес</value>
+  </data>
+  <data name="No workflows found to import." xml:space="preserve">
+    <value>Не знайдено робочих процесів для імпорту.</value>
+  </data>
+  <data name="Not usable as activity." xml:space="preserve">
+    <value>Не можна використовувати як діяльність.</value>
+  </data>
+  <data name="Please enter a name for the variable." xml:space="preserve">
+    <value>Будь ласка, введіть назву для змінної.</value>
+  </data>
+  <data name="Single line" xml:space="preserve">
+    <value>Одна лінія</value>
+  </data>
+  <data name="Successfully imported" xml:space="preserve">
+    <value>Успішно імпортовано</value>
+  </data>
+  <data name="Successfully imported one instance" xml:space="preserve">
+    <value>Успішно імпортовано один екземпляр</value>
+  </data>
+  <data name="Successfully started workflow" xml:space="preserve">
+    <value>Робочий процес успішно розпочато</value>
+  </data>
+  <data name="Variable picker" xml:space="preserve">
+    <value>Вибір змінних</value>
+  </data>
+  <data name="The commit strategy to use that controls when the workflow state should be committed." xml:space="preserve">
+    <value>Стратегія фіксації для використання контролює, коли стан робочого циклу має бути фіксовано.</value>
+  </data>
+  <data name="The read-only workflows will not be affected." xml:space="preserve">
+    <value>Це не вплине на робочі процеси лише для читання.</value>
+  </data>
+  <data name="Unpublish selected workflows?" xml:space="preserve">
+    <value>Скасувати публікацію вибраних робочих процесів?</value>
+  </data>
+  <data name="workflows are published" xml:space="preserve">
+    <value>публікуються робочі процеси</value>
+  </data>
+  <data name="Upload JSON and/or ZIP files containing workflow data to import." xml:space="preserve">
+    <value>Завантажте JSON та/або ZIP-файли з даними робочого процесу для імпорту.</value>
+  </data>
+  <data name="workflow definitions." xml:space="preserve">
+    <value>визначення робочого процесу.</value>
+  </data>
+  <data name="Workflow retracted" xml:space="preserve">
+    <value>Робочий процес відкликано</value>
+  </data>
+  <data name="Workflow was already published" xml:space="preserve">
+    <value>Робочий процес уже опубліковано</value>
+  </data>
+  <data name="Workflow unpublished" xml:space="preserve">
+    <value>Робочий процес не опубліковано</value>
+  </data>
+  <data name="Delete version {0}" xml:space="preserve">
+    <value>Видалити версію {0}</value>
+  </data>
+  <data name="workflows are not found" xml:space="preserve">
+    <value>робочі процеси не знайдено</value>
+  </data>
+  <data name="workflows are unpublished" xml:space="preserve">
+    <value>робочі процеси неопубліковані</value>
+  </data>
+  <data name="workflows consuming published workflows have been updated" xml:space="preserve">
+    <value>робочі процеси, які використовують опубліковані робочі процеси, оновлено</value>
+  </data>
+  <data name="{0} workflows are already unpublished" xml:space="preserve">
+    <value>{0} робочих процесів уже скасовано</value>
+  </data>
+  <data name="{0} workflows consuming published workflows have been updated" xml:space="preserve">
+    <value>Оновлено {0} робочих процесів, які використовують опубліковані робочі процеси</value>
+  </data>
+  <data name="Failed to import {0} {1}." xml:space="preserve">
+    <value>Не вдалося імпортувати {0} {1}.</value>
+  </data>
+  <data name="A code editor" xml:space="preserve">
+    <value>А Редактор коду</value>
+  </data>
+  <data name="The definition ID of the workflows to dispatch." xml:space="preserve">
+    <value>Ідентифікатор визначення робочих процесів, які потрібно відправити.</value>
+  </data>
+  <data name="A list of expected status codes to handle." xml:space="preserve">
+    <value>Список очікуваних кодів стану для обробки.</value>
+  </data>
+  <data name="The path to associate with the workflow." xml:space="preserve">
+    <value>Шлях для зв’язування з робочим процесом.</value>
+  </data>
+  <data name="The switch mode determines whether the first match should be scheduled, or all matches." xml:space="preserve">
+    <value>Режим перемикання визначає, чи слід запланувати перший матч чи всі матчі.</value>
+  </data>
+  <data name="Controls whether the end step is upper/lowerbound inclusive or exclusive. True (inclusive) by default." xml:space="preserve">
+    <value>Контролює, чи буде кінцевий крок включно чи виключно з верхньої/нижньої межі. Істина (включно) за замовчуванням.</value>
+  </data>
+  <data name="The items to iterate through." xml:space="preserve">
+    <value>Елементи для повторення.</value>
+  </data>
+  <data name="The start step." xml:space="preserve">
+    <value>Початковий крок.</value>
+  </data>
+  <data name="Zoom to fit the screen" xml:space="preserve">
+    <value>Масштаб під розмір екрана</value>
+  </data>
+  <data name="Mode" xml:space="preserve">
+    <value>Режим</value>
+  </data>
+  <data name="Result" xml:space="preserve">
+    <value>Результат</value>
+  </data>
+  <data name="Auto layout" xml:space="preserve">
+    <value>Автоматичний макет</value>
+  </data>
+  <data name="Correlation ID Function" xml:space="preserve">
+    <value>Ідентифікаційна функція кореляції</value>
+  </data>
+  <data name="The data source to use for dispatching the workflows." xml:space="preserve">
+    <value>Джерело даних для диспетчеризації робочих процесів.</value>
+  </data>
+  <data name="Always allow the creation of a new workflow instance." xml:space="preserve">
+    <value>Завжди дозволяйте створення нового екземпляра робочого процесу.</value>
+  </data>
+  <data name="Center" xml:space="preserve">
+    <value>Центр</value>
+  </data>
+  <data name="A function to compute the correlation ID to associate a dispatched workflow with." xml:space="preserve">
+    <value>Функція для обчислення ідентифікатора кореляції, з яким пов’язується надісланий робочий процес.</value>
+  </data>
+  <data name="Default Item Input Key" xml:space="preserve">
+    <value>Клавіша введення елемента за замовчуванням</value>
+  </data>
+  <data name="Method" xml:space="preserve">
+    <value>Метод</value>
+  </data>
+  <data name="The content type to use when sending the request." xml:space="preserve">
+    <value>Тип вмісту для використання під час надсилання запиту.</value>
+  </data>
+  <data name="Request Content." xml:space="preserve">
+    <value>Запит вмісту.</value>
+  </data>
+  <data name="Zoom to fit" xml:space="preserve">
+    <value>Збільшити до розміру</value>
+  </data>
+  <data name="The set of values to iterate." xml:space="preserve">
+    <value>Набір значень для повторення.</value>
+  </data>
+  <data name="The HTTP method to use when sending the request." xml:space="preserve">
+    <value>Метод HTTP для надсилання запиту.</value>
+  </data>
+  <data name="The Authorization header value to send with the request. For example: Bearer {some-access-token}" xml:space="preserve">
+    <value>Значення заголовка авторизації для надсилання із запитом. Наприклад: носій {some-access-token}</value>
+  </data>
+  <data name="The outcome or set of outcomes to complete this activity with." xml:space="preserve">
+    <value>Результат або набір результатів для завершення цієї діяльності.</value>
+  </data>
+  <data name="The URL to download the file from." xml:space="preserve">
+    <value>URL-адреса для завантаження файлу.</value>
+  </data>
+  <data name="Label" xml:space="preserve">
+    <value>Мітка</value>
+  </data>
+  <data name="Current Value" xml:space="preserve">
+    <value>Поточне значення</value>
+  </data>
+  <data name="The step size. To count down, enter a negative number." xml:space="preserve">
+    <value>Розмір кроку. Для зворотного відліку введіть від’ємне число.</value>
+  </data>
+  <data name="The content to send with the request. Can be a string, an object, a byte array or a stream." xml:space="preserve">
+    <value>Вміст, який потрібно надіслати разом із запитом. Може бути рядком, об’єктом, масивом байтів або потоком.</value>
+  </data>
+  <data name="Time Duration" xml:space="preserve">
+    <value>Час Тривалість</value>
+  </data>
+  <data name="Assign the current value to the specified variable." xml:space="preserve">
+    <value>Присвоїти поточне значення вказаній змінній.</value>
+  </data>
+  <data name="The default key to use for the input name when sending the current item to the dispatched workflow. Will not be used if the Items field contain a list of dictionaries" xml:space="preserve">
+    <value>Ключ за замовчуванням, який використовується як ім’я введення під час надсилання поточного елемента до робочого циклу відправлення. Не використовуватиметься, якщо поле Items містить список словників</value>
+  </data>
+  <data name="The HTTP methods to accept." xml:space="preserve">
+    <value>Методи HTTP, які потрібно прийняти.</value>
+  </data>
+  <data name="The join mode determines whether this activity should continue as soon as one inbound path comes in (Wait Any), or once all inbound paths have executed (Wait All)." xml:space="preserve">
+    <value>Режим об’єднання визначає, чи має продовжуватися ця діяльність, щойно надходить один вхідний шлях (Wait Any), чи після виконання всіх вхідних шляхів (Wait All).</value>
+  </data>
+  <data name="A list of expected outcomes to handle." xml:space="preserve">
+    <value>Список очікуваних результатів для обробки.</value>
+  </data>
+  <data name="A value that allows to add the Authorization header without validation." xml:space="preserve">
+    <value>Значення, яке дозволяє додати заголовок авторизації без перевірки.</value>
+  </data>
+  <data name="Always allow the creation" xml:space="preserve">
+    <value>Завжди дозволяти створення</value>
+  </data>
+  <data name="Branches" xml:space="preserve">
+    <value>Відділення</value>
+  </data>
+  <data name="Break out of a loop." xml:space="preserve">
+    <value>Вирватися з петлі.</value>
+  </data>
+  <data name="Cancelled" xml:space="preserve">
+    <value>Скасовано</value>
+  </data>
+  <data name="Condition" xml:space="preserve">
+    <value>Хвороба</value>
+  </data>
+  <data name="Content Type" xml:space="preserve">
+    <value>Тип вмісту</value>
+  </data>
+  <data name="Disable Authorization Header Validation" xml:space="preserve">
+    <value>Вимкнути перевірку заголовка авторизації</value>
+  </data>
+  <data name="Executes javaScript code" xml:space="preserve">
+    <value>Виконує код javascript</value>
+  </data>
+  <data name="Executing" xml:space="preserve">
+    <value>Виконання</value>
+  </data>
+  <data name="Expected Status Codes" xml:space="preserve">
+    <value>Очікувані коди стану</value>
+  </data>
+  <data name="Running" xml:space="preserve">
+    <value>Запущено</value>
+  </data>
+  <data name="Supported Methods" xml:space="preserve">
+    <value>Підтримувані методи</value>
+  </data>
+  <data name="Trigger execution at a specific time in the future." xml:space="preserve">
+    <value>Запустити виконання в певний час у майбутньому.</value>
+  </data>
+  <data name="URL" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="Validation Result" xml:space="preserve">
+    <value>Результат перевірки</value>
+  </data>
+  <data name="Workflow Definition" xml:space="preserve">
+    <value>Визначення робочого процесу</value>
+  </data>
+  <data name="Add case" xml:space="preserve">
+    <value>Додати регістр</value>
+  </data>
+  <data name="Data" xml:space="preserve">
+    <value>Дані</value>
+  </data>
+  <data name="String7" xml:space="preserve">
+    <value>Результат</value>
+  </data>
+  <data name="Code" xml:space="preserve">
+    <value>Код</value>
+  </data>
+  <data name="Interval" xml:space="preserve">
+    <value>Інтервал</value>
+  </data>
+  <data name="Outer Bound Inclusive" xml:space="preserve">
+    <value>Зовнішня межа включно</value>
+  </data>
+  <data name="Payload" xml:space="preserve">
+    <value>Корисне навантаження</value>
+  </data>
+  <data name="Step" xml:space="preserve">
+    <value>Крок</value>
+  </data>
+  <data name="The end step." xml:space="preserve">
+    <value>Кінцевий крок.</value>
+  </data>
+  <data name="Variable" xml:space="preserve">
+    <value>Змінна</value>
+  </data>
+  <data name="Load" xml:space="preserve">
+    <value>Навантаження</value>
+  </data>
+  <data name="Configuration" xml:space="preserve">
+    <value>Конфігурація</value>
+  </data>
+  <data name="Provider Type" xml:space="preserve">
+    <value>Тип постачальника</value>
+  </data>
+  <data name="Exclude" xml:space="preserve">
+    <value>Виключити</value>
+  </data>
+  <data name="Include" xml:space="preserve">
+    <value>Включати</value>
+  </data>
+  <data name="Pending" xml:space="preserve">
+    <value>Очікує</value>
+  </data>
+</root>

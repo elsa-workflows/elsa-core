@@ -1,0 +1,120 @@
+{
+  "info": {
+    "name": "Elsa External Authentication - Local Admin Login",
+    "description": "Signs in with an Elsa local admin account through the External Authentication broker and exchanges the authorization code for Elsa tokens.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://localhost:7294/elsa/api" },
+    { "key": "client_id", "value": "elsa-studio-server" },
+    { "key": "redirect_uri", "value": "https://localhost:7113/authentication/external/callback" },
+    { "key": "admin_username", "value": "admin" },
+    { "key": "admin_password", "value": "password" },
+    { "key": "broker_client_secret", "value": "" },
+    { "key": "code_verifier", "value": "" },
+    { "key": "code_challenge", "value": "" },
+    { "key": "state", "value": "" },
+    { "key": "returned_state", "value": "" },
+    { "key": "authorization_code", "value": "" },
+    { "key": "access_token", "value": "" },
+    { "key": "refresh_token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Authorize local admin",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "function base64Url(value) {",
+              "    return CryptoJS.enc.Base64.stringify(value).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');",
+              "}",
+              "const verifier = base64Url(CryptoJS.lib.WordArray.random(32));",
+              "const challenge = base64Url(CryptoJS.SHA256(verifier));",
+              "pm.collectionVariables.set('code_verifier', verifier);",
+              "pm.collectionVariables.set('code_challenge', challenge);",
+              "pm.collectionVariables.set('state', base64Url(CryptoJS.lib.WordArray.random(16)));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Broker returned a redirect URI', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "    pm.expect(pm.response.json().redirectUri).to.be.a('string');",
+              "});",
+              "const redirectUri = pm.response.json().redirectUri;",
+              "const parsed = new URL(redirectUri);",
+              "pm.collectionVariables.set('authorization_code', parsed.searchParams.get('code'));",
+              "pm.collectionVariables.set('returned_state', parsed.searchParams.get('state'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clientId\": \"{{client_id}}\",\n  \"redirectUri\": \"{{redirect_uri}}\",\n  \"responseType\": \"code\",\n  \"codeChallenge\": \"{{code_challenge}}\",\n  \"codeChallengeMethod\": \"S256\",\n  \"returnPath\": \"/\",\n  \"username\": \"{{admin_username}}\",\n  \"password\": \"{{admin_password}}\",\n  \"state\": \"{{state}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{base_url}}/external-authentication/local/authorize"
+      }
+    },
+    {
+      "name": "2. Exchange authorization code for tokens",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Token exchange succeeded', function () {",
+              "    pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "const token = pm.response.json();",
+              "pm.collectionVariables.set('access_token', token.accessToken);",
+              "pm.collectionVariables.set('refresh_token', token.refreshToken);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "basic",
+          "basic": [
+            { "key": "username", "value": "{{client_id}}", "type": "string" },
+            { "key": "password", "value": "{{broker_client_secret}}", "type": "string" }
+          ]
+        },
+        "header": [
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "grant_type", "value": "authorization_code", "type": "text" },
+            { "key": "client_id", "value": "{{client_id}}", "type": "text" },
+            { "key": "redirect_uri", "value": "{{redirect_uri}}", "type": "text" },
+            { "key": "code", "value": "{{authorization_code}}", "type": "text" },
+            { "key": "code_verifier", "value": "{{code_verifier}}", "type": "text" }
+          ]
+        },
+        "url": "{{base_url}}/external-authentication/token"
+      }
+    }
+  ]
+}

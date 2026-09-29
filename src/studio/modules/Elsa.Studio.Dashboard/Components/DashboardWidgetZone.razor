@@ -1,0 +1,42 @@
+@using Elsa.Studio.Dashboard.Widgets
+@using WidgetContext = Elsa.Studio.Dashboard.Widgets.DashboardWidgetContext
+@using WidgetDescriptor = Elsa.Studio.Dashboard.Widgets.DashboardWidgetDescriptor
+
+@if (string.IsNullOrWhiteSpace(Class) && string.IsNullOrWhiteSpace(ItemClass))
+{
+    @foreach (var widget in Widgets)
+    {
+        <DynamicComponent Type="@widget.ComponentType" Parameters="@CreateParameters(widget)" />
+    }
+}
+else
+{
+    <div class="@Class">
+        @foreach (var widget in Widgets)
+        {
+            @if (string.IsNullOrWhiteSpace(ItemClass))
+            {
+                <DynamicComponent Type="@widget.ComponentType" Parameters="@CreateParameters(widget)" />
+            }
+            else
+            {
+                <div class="@ItemClass">
+                    <DynamicComponent Type="@widget.ComponentType" Parameters="@CreateParameters(widget)" />
+                </div>
+            }
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public IReadOnlyCollection<WidgetDescriptor> Widgets { get; set; } = [];
+    [Parameter] public WidgetContext Context { get; set; } = null!;
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? ItemClass { get; set; }
+
+    private Dictionary<string, object?> CreateParameters(WidgetDescriptor widget) => new()
+    {
+        [nameof(Context)] = Context,
+        ["Descriptor"] = widget
+    };
+}

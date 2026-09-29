@@ -1,0 +1,7 @@
+@using Elsa.Studio.Extensions
+
+<VerticalWell ExtraPadding="40">
+    <MudStack>
+        <Zone Name="@ZoneNames.WorkflowDefinitionProperties" Attributes="@(new { WorkflowDefinition, WorkflowDefinitionUpdated }.ToDictionary())"/>
+    </MudStack>
+</VerticalWell>

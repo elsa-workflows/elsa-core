@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net10.0</TargetFrameworks>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AngleSharp" />
+        <PackageReference Include="bunit" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\..\testing\BunitTestDefaults.cs" Link="BunitTestDefaults.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../Elsa.Studio.Workflows/Elsa.Studio.Workflows.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\hosts\Elsa.Studio.Host.Server\Pages\_Host.cshtml"
+              Link="HostAssets\ServerHost.cshtml"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\..\hosts\Elsa.Studio.Host.Wasm\wwwroot\index.html"
+              Link="HostAssets\WasmHost.html"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\..\hosts\Elsa.Studio.Host.HostedWasm\Pages\_Host.cshtml"
+              Link="HostAssets\HostedWasmHost.cshtml"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows\DiagramDesigners\StateMachines\StateMachineDesignerWrapper.razor"
+              Link="DesignerAssets\StateMachineDesignerWrapper.razor"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\Components\StateMachineCanvas.razor.cs"
+              Link="DesignerAssets\StateMachineCanvas.razor.cs"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\api\graph-bindings.ts"
+              Link="DesignerAssets\graph-bindings.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\api\select-cell.ts"
+              Link="DesignerAssets\select-cell.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\designer\api\create-graph.ts"
+              Link="DesignerAssets\create-graph.ts"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\Elsa.Studio.Workflows.Designer\ClientLib\src\bpmn\__fixtures__\camunda-order-process.activity.json"
+              Link="DesignerAssets\camunda-order-process.activity.json"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="Fixtures\*.json" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+</Project>

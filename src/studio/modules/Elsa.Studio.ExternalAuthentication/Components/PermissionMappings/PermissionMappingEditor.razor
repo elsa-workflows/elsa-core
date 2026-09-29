@@ -1,0 +1,166 @@
+@using Elsa.Studio.ExternalAuthentication.Services
+
+<MudForm @ref="_form">
+<MudStack Spacing="2">
+    <MudText Typo="Typo.h6">Permission grants</MudText>
+    <MudText Typo="Typo.caption">
+        Elsa remains authoritative. External claims grant nothing unless an ordered source explicitly maps or bounds them.
+    </MudText>
+
+    @if (!CanDelegate && !ReadOnly)
+    {
+        <MudAlert Severity="Severity.Warning" Dense="true">You do not have permission to change permission grant sources.</MudAlert>
+    }
+
+    @foreach (var source in Sources.OrderBy(x => x.Order).ToArray())
+    {
+        var descriptor = FindDescriptor(source.Type);
+        <MudPaper Class="pa-3" Outlined="true" @key="source">
+            <MudStack Spacing="2">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <MudSelect T="string" Value="source.Type" ValueChanged="@(value => ChangeTypeAsync(source, value))" Label="Grant source" Disabled="@IsReadOnly">
+                        @foreach (var option in Descriptors)
+                        {
+                            <MudSelectItem T="string" Value="@option.Type">@option.DisplayName</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudNumericField T="int" @bind-Value="source.Order" Label="Order" ReadOnly="@IsReadOnly" />
+                    <MudIconButton Icon="@Icons.Material.Outlined.Delete" Color="Color.Error" Disabled="@IsReadOnly" OnClick="@(() => RemoveAsync(source))" aria-label="Remove grant source" />
+                </MudStack>
+
+                @if (descriptor is null)
+                {
+                    <MudAlert Severity="Severity.Warning" Dense="true">This grant-source extension is not installed. Its settings are preserved, but it cannot be evaluated or edited safely.</MudAlert>
+                }
+                else
+                {
+                    <MudText Typo="Typo.caption">@descriptor.Description</MudText>
+                    @if (descriptor.Fields.Count > 0)
+                    {
+                        @foreach (var field in descriptor.Fields.Where(field => DescriptorEditorState.IsVisible(field, source.Settings)))
+                        {
+                            <Elsa.Studio.ExternalAuthentication.Components.ConnectionEditor.DescriptorField Field="field" Settings="source.Settings" ReadOnly="@IsReadOnly" Changed="@NotifyChangedAsync" />
+                        }
+                    }
+                    else
+                    {
+                        <MudTextField T="string"
+                                      Value="@GetSettingsText(source)"
+                                      ValueChanged="@(value => ChangeSettingsAsync(source, value))"
+                                      Label="Grant source settings"
+                                      HelperText="JSON settings are extension-owned. Built-in mappings use claimType plus mappings or allowedPermissions."
+                                      Lines="6"
+                                      ReadOnly="@IsReadOnly"
+                                      Immediate="true" />
+                        @if (_settingsErrors.TryGetValue(source, out var error))
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Error">@error</MudText>
+                        }
+                    }
+                }
+            </MudStack>
+        </MudPaper>
+    }
+
+    @if (!IsReadOnly)
+    {
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.Add" Disabled="@(Descriptors.Count == 0)" OnClick="AddAsync">Add grant source</MudButton>
+    }
+
+    @foreach (var warning in DescriptorWarnings)
+    {
+        <MudAlert Severity="Severity.Warning" Dense="true">@warning</MudAlert>
+    }
+    @foreach (var error in DelegationErrors)
+    {
+        <MudAlert Severity="Severity.Error" Dense="true">@error</MudAlert>
+    }
+</MudStack>
+</MudForm>
+
+@code {
+    private MudForm _form = default!;
+    [Parameter, EditorRequired] public ICollection<PermissionGrantSourceSelection> Sources { get; set; } = [];
+    [Parameter] public ICollection<PermissionGrantSourceDescriptor> Descriptors { get; set; } = [];
+    [Parameter] public ICollection<PermissionDescriptor> PermissionDescriptors { get; set; } = [];
+    [Parameter] public IReadOnlySet<string> ActorPermissions { get; set; } = new HashSet<string>(StringComparer.Ordinal);
+    [Parameter] public bool CanDelegate { get; set; }
+    [Parameter] public bool CanDelegateUnrestricted { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private readonly Dictionary<PermissionGrantSourceSelection, string> _settingsText = new();
+    private readonly Dictionary<PermissionGrantSourceSelection, string> _settingsErrors = new();
+    private bool IsReadOnly => ReadOnly || !CanDelegate;
+    private IReadOnlyCollection<string> DescriptorWarnings => PermissionMappingState.GetDescriptorWarnings(Sources, PermissionDescriptors);
+    private IReadOnlyCollection<string> DelegationErrors => PermissionMappingState.ValidateDelegation(Sources, ActorPermissions, CanDelegateUnrestricted);
+
+    public IReadOnlyCollection<string> Validate() =>
+        _settingsErrors.Values
+            .Concat(DelegationErrors)
+            .ToArray();
+
+    public async Task<IReadOnlyCollection<string>> ValidateAsync()
+    {
+        await _form.Validate();
+        var errors = Validate().ToList();
+        if (!_form.IsValid)
+            errors.Add("Permission grant source settings contain validation errors.");
+        return errors.Distinct(StringComparer.Ordinal).ToArray();
+    }
+
+    private PermissionGrantSourceDescriptor? FindDescriptor(string type) =>
+        Descriptors.FirstOrDefault(x => string.Equals(x.Type, type, StringComparison.Ordinal));
+
+    private string GetSettingsText(PermissionGrantSourceSelection source)
+    {
+        if (_settingsText.TryGetValue(source, out var value))
+            return value;
+        value = PermissionMappingState.SerializeSettings(source);
+        _settingsText[source] = value;
+        return value;
+    }
+
+    private async Task ChangeTypeAsync(PermissionGrantSourceSelection source, string type)
+    {
+        var descriptor = FindDescriptor(type);
+        if (descriptor is null)
+            return;
+        var replacement = PermissionMappingState.Create(descriptor, source.Order);
+        source.Type = replacement.Type;
+        source.SettingsVersion = replacement.SettingsVersion;
+        source.Settings = replacement.Settings;
+        _settingsText.Remove(source);
+        _settingsErrors.Remove(source);
+        await NotifyChangedAsync();
+    }
+
+    private async Task ChangeSettingsAsync(PermissionGrantSourceSelection source, string value)
+    {
+        _settingsText[source] = value;
+        if (PermissionMappingState.TrySetSettings(source, value, out var error))
+            _settingsErrors.Remove(source);
+        else
+            _settingsErrors[source] = error!;
+        await NotifyChangedAsync();
+    }
+
+    private async Task AddAsync()
+    {
+        var descriptor = Descriptors.FirstOrDefault();
+        if (descriptor is null)
+            return;
+        Sources.Add(PermissionMappingState.Create(descriptor, Sources.Count == 0 ? 0 : Sources.Max(x => x.Order) + 1));
+        await NotifyChangedAsync();
+    }
+
+    private async Task RemoveAsync(PermissionGrantSourceSelection source)
+    {
+        Sources.Remove(source);
+        _settingsText.Remove(source);
+        _settingsErrors.Remove(source);
+        await NotifyChangedAsync();
+    }
+
+    private Task NotifyChangedAsync() => Changed.InvokeAsync();
+}

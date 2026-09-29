@@ -1,0 +1,52 @@
+@using Elsa.Studio.Workflows.Domain.Models
+@inject ILocalizer Localizer
+
+<MudStack Spacing="2" role="radiogroup" aria-label="@AriaLabel">
+    @foreach (var template in Templates)
+    {
+        <div class="workflow-root-template-option">
+            <MudPaper Outlined="true"
+                      Elevation="0"
+                      Class="@GetTemplateClass(template)"
+                      role="radio"
+                      aria-checked="@(IsSelected(template) ? "true" : "false")"
+                      tabindex="@(string.IsNullOrEmpty(SelectedTemplateKey) || IsSelected(template) ? 0 : -1)"
+                      @onclick="@(() => SelectAsync(template.Key))"
+                      @onkeydown="@((KeyboardEventArgs args) => OnKeyDownAsync(args, template.Key))">
+                <MudStack Row="true" AlignItems="MudBlazor.AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@template.Icon" Style="@($"color: {template.Color};")" />
+                    <MudStack Spacing="0" Class="flex-grow-1">
+                        <MudText Typo="Typo.subtitle2">@Localizer[template.DisplayName]</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@Localizer[template.Description]</MudText>
+                    </MudStack>
+                    @if (IsSelected(template))
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Primary" />
+                    }
+                </MudStack>
+            </MudPaper>
+        </div>
+    }
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyCollection<WorkflowRootActivityTemplate> Templates { get; set; } = [];
+    [Parameter] public string? SelectedTemplateKey { get; set; }
+    [Parameter] public EventCallback<string?> SelectedTemplateKeyChanged { get; set; }
+    [Parameter] public string? AriaLabel { get; set; }
+
+    private Task SelectAsync(string key) => SelectedTemplateKeyChanged.InvokeAsync(key);
+
+    private Task OnKeyDownAsync(KeyboardEventArgs args, string key) =>
+        args.Key is "Enter" or " " || args.Code == "Space"
+            ? SelectAsync(key)
+            : Task.CompletedTask;
+
+    private bool IsSelected(WorkflowRootActivityTemplate template) =>
+        string.Equals(template.Key, SelectedTemplateKey, StringComparison.OrdinalIgnoreCase);
+
+    private string GetTemplateClass(WorkflowRootActivityTemplate template) =>
+        IsSelected(template)
+            ? "workflow-root-template workflow-root-template-selected"
+            : "workflow-root-template";
+}

@@ -1,0 +1,29 @@
+@using Variant = MudBlazor.Variant
+@using Elsa.Studio.Workflows.Designer.Models
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<MudDialog>
+    <DialogContent>
+        <EditForm @key="_editContext" EditContext="_editContext" OnValidSubmit="OnValidSubmit">
+            <FluentValidator Validator="_validator"/>
+            <MudStack>
+                <MudRadioGroup T="ExportGraphFormat" @bind-Value="_model.Format" aria-label="@Localizer["Format"]">
+                    <MudRadio T="ExportGraphFormat" Value="ExportGraphFormat.Png" Dense="true">@Localizer["PNG"]</MudRadio>
+                    <MudRadio T="ExportGraphFormat" Value="ExportGraphFormat.Jpeg" Dense="true">@Localizer["JPEG"]</MudRadio>
+                    <MudRadio T="ExportGraphFormat" Value="ExportGraphFormat.Svg" Dense="true">@Localizer["SVG"]</MudRadio>
+                </MudRadioGroup>
+                <MudTextField Label="@Localizer["File name"]" @bind-Value="_model.FileName" For="@(() => _model.FileName)" HelperText="@Localizer["The name of the exported file. The extension is added automatically."]" Variant="Variant.Outlined" Margin="Margin.Dense"/>
+                @* SVG is vector output with no raster canvas to pad, so the field is offered only for the image formats. *@
+                @if (_model.Format != ExportGraphFormat.Svg)
+                {
+                    <MudNumericField T="int" Label="@Localizer["Padding"]" @bind-Value="_model.Padding" For="@(() => _model.Padding)" HelperText="@Localizer["The padding in pixels to leave around the exported flowchart."]" Variant="Variant.Outlined" Margin="Margin.Dense"/>
+                }
+            </MudStack>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked">@Localizer["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" OnClick="OnSubmitClicked">@Localizer["Ok"]</MudButton>
+    </DialogActions>
+</MudDialog>

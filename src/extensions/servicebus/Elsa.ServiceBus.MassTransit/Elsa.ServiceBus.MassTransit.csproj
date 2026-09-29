@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides integration with MassTransit and comes with a MassTransit implementation of Elsa's IServiceBus abstraction.
+        </Description>
+        <PackageTags>elsa extension module service-bus masstransit</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+		<PackageReference Include="MassTransit" />
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+        <PackageReference Include="CShells.Abstractions" />
+        <ProjectReference Include="../../../modules/Elsa.Hosting.Management/Elsa.Hosting.Management.csproj" />
+        <ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+      <PackageReference Include="CShells.Abstractions" />
+      <ProjectReference Include="../../../modules/Elsa.Hosting.Management/Elsa.Hosting.Management.csproj" />
+      <ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
+    </ItemGroup>
+
+</Project>

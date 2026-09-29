@@ -1,0 +1,509 @@
+@page "/security/external-authentication/connections"
+@using Elsa.Studio.ExternalAuthentication.Components.Pagination
+@using Elsa.Studio.ExternalAuthentication.Services
+@inject Contracts.IBackendApiClientProvider ApiClientProvider
+@inject IExternalAuthenticationPermissionService Permissions
+@inject NavigationManager Navigation
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<PageTitle>Identity provider connections</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.False">
+    <MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Spacing="2">
+        <PageHeading Text="Identity provider connections" />
+        @if (_canCreate)
+        {
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="CreateAsync">Create connection</MudButton>
+        }
+    </MudStack>
+
+    <MudPaper Elevation="0" Outlined="true" Class="connection-list">
+        <MudGrid Spacing="2" Class="pa-4 align-center connection-list__toolbar">
+            <MudItem xs="12" sm="6" md="5">
+                <MudTextField T="string" Value="_search" ValueChanged="SetSearchAsync" Label="Search connections" Immediate="true" DebounceInterval="300" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.Search" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudSelect T="string" Value="_source" ValueChanged="SetSourceAsync" Label="Source" Clearable="true">
+                    <MudSelectItem T="string" Value="@("database")">Database</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("configuration")">Configuration</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudCheckBox T="bool" Value="_includeArchived" ValueChanged="SetIncludeArchivedAsync" Label="Include archived" />
+            </MudItem>
+        </MudGrid>
+
+        @if (_loading)
+        {
+            <MudProgressLinear Indeterminate="true" aria-label="Loading identity provider connections" />
+        }
+        else if (!_canRead)
+        {
+            <MudAlert Severity="Severity.Warning">You do not have permission to view identity provider connections.</MudAlert>
+        }
+        else
+        {
+            <MudTable
+                T="ConnectionSummary"
+                Items="_items"
+                Dense="true"
+                Hover="true"
+                Elevation="0"
+                Breakpoint="Breakpoint.Md"
+                RowStyle="cursor: pointer;"
+                OnRowClick="OnRowClick"
+                Class="connection-list__table">
+                <HeaderContent>
+                    <MudTh>Connection</MudTh>
+                    <MudTh>Ownership</MudTh>
+                    <MudTh>Availability</MudTh>
+                    <MudTh>Latest test</MudTh>
+                    <MudTh aria-label="Actions"></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Connection">
+                        <span @onclick:stopPropagation="true">
+                            <MudLink
+                                Href="@ConnectionUrl(context)"
+                                Color="Color.Inherit"
+                                Underline="Underline.Hover"
+                                Class="font-weight-medium"
+                                aria-label="@($"Manage {context.DisplayName}")">
+                                @context.DisplayName
+                            </MudLink>
+                        </span>
+                        <MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Spacing="1">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@context.Key · @context.AdapterType</MudText>
+                            @if (context.IsPreferred)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" Color="Color.Primary" />
+                                <MudText Typo="Typo.caption" Color="Color.Primary">Preferred</MudText>
+                            }
+                        </MudStack>
+                    </MudTd>
+                    <MudTd DataLabel="Ownership">
+                        <MudStack Spacing="1" AlignItems="AlignItems.Start">
+                            <MudChip
+                                T="string"
+                                Size="Size.Small"
+                                Variant="Variant.Outlined"
+                                Color="@(context.IsConfigurationOwned ? Color.Info : Color.Default)">
+                                @ConnectionListPresentation.OwnershipLabel(context)
+                            </MudChip>
+                            @if (ConnectionListPresentation.GetShadowingConnection(context) is { } shadowingConnection)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    Shadowed by
+                                    <span @onclick:stopPropagation="true">
+                                        <MudLink
+                                            Href="@ConnectionUrl(shadowingConnection.Id)"
+                                            Underline="Underline.Hover"
+                                            aria-label="@($"Manage shadowing connection {shadowingConnection.DisplayName}")">
+                                            @shadowingConnection.DisplayName
+                                        </MudLink>
+                                    </span>
+                                </MudText>
+                            }
+                            else if (ConnectionListPresentation.GetShadowedConnections(context) is { Count: > 0 } shadowedConnections)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @($"{ConnectionListPresentation.ShadowedConnectionsRelationship(context)} ")
+                                    @for (var index = 0; index < shadowedConnections.Count; index++)
+                                    {
+                                        if (index > 0)
+                                        {
+                                            <span>, </span>
+                                        }
+                                        var shadowedConnection = shadowedConnections[index];
+                                        <span @onclick:stopPropagation="true">
+                                            <MudLink
+                                                Href="@ConnectionUrl(shadowedConnection.Id)"
+                                                Underline="Underline.Hover"
+                                                aria-label="@($"Manage shadowed connection {shadowedConnection.DisplayName}")">
+                                                @shadowedConnection.DisplayName
+                                            </MudLink>
+                                        </span>
+                                    }
+                                </MudText>
+                            }
+                            else if (ConnectionListPresentation.OwnershipRelationship(context) is { } relationship)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@relationship</MudText>
+                            }
+                        </MudStack>
+                    </MudTd>
+                    <MudTd DataLabel="Availability">
+                        <MudStack Spacing="0">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                <MudIcon
+                                    Icon="@ConnectionListPresentation.AvailabilityIcon(context)"
+                                    Color="@ConnectionListPresentation.AvailabilityColor(context)"
+                                    Size="Size.Small" />
+                                <MudText Typo="Typo.body2" Class="font-weight-medium">
+                                    @ConnectionListPresentation.AvailabilityLabel(context)
+                                </MudText>
+                            </MudStack>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                @ConnectionListPresentation.AvailabilityDetailLabel(context)
+                            </MudText>
+                        </MudStack>
+                    </MudTd>
+                    <MudTd DataLabel="Latest test">
+                        @if (context.LatestObservation is { } observation)
+                        {
+                            <MudStack Spacing="1" AlignItems="AlignItems.Start">
+                                <MudChip
+                                    T="string"
+                                    Size="Size.Small"
+                                    Color="@ConnectionObservationPresentation.StatusColor(observation)"
+                                    Icon="@ConnectionObservationPresentation.StatusIcon(observation)">
+                                    @ConnectionObservationPresentation.StatusLabel(observation)
+                                </MudChip>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@observation.Summary</MudText>
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                <MudIcon Icon="@Icons.Material.Outlined.HelpOutline" Size="Size.Small" Color="Color.Default" />
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Not tested</MudText>
+                            </MudStack>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <div @onclick:stopPropagation="true">
+                            <MudMenu
+                                Icon="@Icons.Material.Filled.MoreVert"
+                                Size="Size.Small"
+                                Dense="true"
+                                AriaLabel="@($"Actions for {context.DisplayName}")">
+                                <MudMenuItem
+                                    Icon="@(context.IsConfigurationOwned ? Icons.Material.Outlined.Pageview : Icons.Material.Outlined.Edit)"
+                                    OnClick="@(() => OpenAsync(context))">
+                                    @(context.IsConfigurationOwned ? "View" : "Manage")
+                                </MudMenuItem>
+                                @if (HasDiagnosticsActions(context) || HasLifecycleActions(context))
+                                {
+                                    <MudDivider />
+                                }
+                                @if (CanTestConnection(context))
+                                {
+                                    <MudMenuItem
+                                        Icon="@Icons.Material.Outlined.CheckCircle"
+                                        OnClick="@(() => TestConnectionAsync(context))">
+                                        Test connection
+                                    </MudMenuItem>
+                                }
+                                @if (CanPreviewSignIn(context))
+                                {
+                                    <MudMenuItem
+                                        Icon="@Icons.Material.Outlined.Login"
+                                        OnClick="@(() => PreviewSignInAsync(context))">
+                                        Preview sign-in
+                                    </MudMenuItem>
+                                }
+                                @if (HasDiagnosticsActions(context) && HasLifecycleActions(context))
+                                {
+                                    <MudDivider />
+                                }
+                                @if (ConnectionActionAvailability.CanEnableOrDisable(context, _canUpdate))
+                                {
+                                    <MudMenuItem
+                                        Icon="@(context.EnabledIntent ? Icons.Material.Outlined.ToggleOff : Icons.Material.Outlined.ToggleOn)"
+                                        OnClick="@(() => ToggleEnabledAsync(context))">
+                                        @(context.EnabledIntent ? "Disable" : "Enable")
+                                    </MudMenuItem>
+                                }
+                                @if (CanArchiveConnection(context))
+                                {
+                                    <MudMenuItem
+                                        Icon="@Icons.Material.Outlined.Archive"
+                                        OnClick="@(() => ArchiveAsync(context))">
+                                        Archive
+                                    </MudMenuItem>
+                                }
+                            </MudMenu>
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent><MudText>No connections match the current filters.</MudText></NoRecordsContent>
+            </MudTable>
+            <CursorTablePager
+                PageNumber="_paging.PageNumber"
+                PageSize="_pageSize"
+                HasPrevious="_paging.HasPrevious"
+                HasNext="_paging.HasNext"
+                Loading="_loading"
+                PageSizeChanged="SetPageSizeAsync"
+                FirstPage="ReloadAsync"
+                PreviousPage="PreviousPageAsync"
+                NextPage="NextPageAsync" />
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private readonly List<ConnectionSummary> _items = [];
+    private readonly Dictionary<string, AdapterDescriptor> _adapters = new(StringComparer.OrdinalIgnoreCase);
+    private string? _search;
+    private string? _source;
+    private int _pageSize = 10;
+    private readonly ConnectionListPagingState _paging = new();
+    private readonly ConnectionListRequestState _requests = new();
+    private bool _includeArchived;
+    private bool _loading = true;
+    private bool _canRead;
+    private bool _canCreate;
+    private bool _canUpdate;
+    private bool _canArchive;
+    private bool _canTest;
+    private bool _canPreview;
+    private bool _canRevokeSessions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _canRead = await Permissions.HasAsync(ExternalAuthenticationPermissions.Read);
+        _canCreate = await Permissions.HasAsync(ExternalAuthenticationPermissions.Create);
+        _canUpdate = await Permissions.HasAsync(ExternalAuthenticationPermissions.Update);
+        _canArchive = await Permissions.HasAsync(ExternalAuthenticationPermissions.Archive);
+        _canTest = await Permissions.HasAsync(ExternalAuthenticationPermissions.Test);
+        _canPreview = await Permissions.HasAsync(ExternalAuthenticationPermissions.Preview);
+        _canRevokeSessions = await Permissions.HasAsync(ExternalAuthenticationPermissions.SessionsRevoke);
+        await LoadAdaptersAsync();
+        await ReloadAsync();
+    }
+
+    private async Task LoadAdaptersAsync()
+    {
+        if (!_canRead || (!_canTest && !_canPreview))
+            return;
+
+        try
+        {
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var adapters = await api.GetAdaptersAsync();
+            _adapters.Clear();
+            foreach (var adapter in adapters)
+                _adapters[adapter.Type] = adapter;
+        }
+        catch (Exception exception)
+        {
+            Snackbar.Add(exception.Message, Severity.Error);
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        _paging.Replace(null);
+        await LoadAsync();
+    }
+
+    private async Task SetSearchAsync(string? search)
+    {
+        _search = search;
+        await ReloadAsync();
+    }
+
+    private async Task SetSourceAsync(string? source)
+    {
+        _source = source;
+        await ReloadAsync();
+    }
+
+    private async Task SetIncludeArchivedAsync(bool includeArchived)
+    {
+        _includeArchived = includeArchived;
+        await ReloadAsync();
+    }
+
+    private async Task SetPageSizeAsync(int pageSize)
+    {
+        if (_pageSize == pageSize)
+            return;
+
+        _pageSize = pageSize;
+        await ReloadAsync();
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (_paging.TryAdvance(out var cursor))
+            await LoadAsync(cursor);
+    }
+
+    private async Task PreviousPageAsync()
+    {
+        if (_paging.TryGoBack(out var cursor))
+            await LoadAsync(cursor);
+    }
+
+    private async Task LoadAsync(string? cursor = null)
+    {
+        var request = _requests.Begin();
+        if (!_canRead)
+        {
+            if (_requests.IsCurrent(request))
+                _loading = false;
+            return;
+        }
+
+        var search = _search;
+        var source = _source;
+        var includeArchived = _includeArchived;
+        _loading = true;
+        try
+        {
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var response = await api.ListAsync(search, source, archived: includeArchived ? null : false, cursor: cursor, pageSize: _pageSize);
+            if (!_requests.IsCurrent(request))
+                return;
+
+            _items.Clear();
+            _items.AddRange(response.Items);
+            _paging.SetNext(response.NextCursor);
+        }
+        catch (Exception exception)
+        {
+            if (_requests.IsCurrent(request))
+                Snackbar.Add(exception.Message, Severity.Error);
+        }
+        finally
+        {
+            if (_requests.IsCurrent(request))
+                _loading = false;
+        }
+    }
+
+    private void CreateAsync() => Navigation.NavigateTo("security/external-authentication/connections/new");
+    private static string ConnectionUrl(ConnectionSummary connection) => ConnectionUrl(connection.Id);
+    private static string ConnectionUrl(string connectionId) => $"security/external-authentication/connections/{Uri.EscapeDataString(connectionId)}";
+    private void OpenAsync(ConnectionSummary connection) => Navigation.NavigateTo(ConnectionUrl(connection));
+    private void OnRowClick(TableRowClickEventArgs<ConnectionSummary> args)
+    {
+        if (args.Item is not null)
+            OpenAsync(args.Item);
+    }
+
+    private bool CanTestConnection(ConnectionSummary connection) =>
+        _canTest &&
+        _adapters.TryGetValue(connection.AdapterType, out var adapter) &&
+        adapter.Capabilities.SupportsTest;
+    private bool CanPreviewSignIn(ConnectionSummary connection) =>
+        _canPreview &&
+        _adapters.TryGetValue(connection.AdapterType, out var adapter) &&
+        adapter.Capabilities.SupportsPreview;
+    private bool CanArchiveConnection(ConnectionSummary connection) =>
+        !connection.Archived &&
+        ConnectionActionAvailability.CanArchiveOrRestore(connection, _canArchive);
+    private bool HasDiagnosticsActions(ConnectionSummary connection) =>
+        CanTestConnection(connection) || CanPreviewSignIn(connection);
+    private bool HasLifecycleActions(ConnectionSummary connection) =>
+        ConnectionActionAvailability.CanEnableOrDisable(connection, _canUpdate) || CanArchiveConnection(connection);
+
+    private async Task TestConnectionAsync(ConnectionSummary connection)
+    {
+        if (!CanTestConnection(connection))
+            return;
+
+        try
+        {
+            connection.LatestObservation = await ConnectionOperationActions.TestConnectionAsync(ApiClientProvider, connection);
+            Snackbar.Add(ConnectionOperationActions.TestCompletedMessage, Severity.Success);
+        }
+        catch (Exception exception)
+        {
+            Snackbar.Add(
+                ConnectionOperationActions.PresentError(exception, ConnectionOperationActions.TestFailedMessage),
+                Severity.Error);
+        }
+    }
+
+    private async Task PreviewSignInAsync(ConnectionSummary connection)
+    {
+        if (!CanPreviewSignIn(connection) || !_adapters.TryGetValue(connection.AdapterType, out var adapter))
+            return;
+
+        var parameters = new DialogParameters<PreviewSignInDialog>
+        {
+            { component => component.Connection, connection },
+            { component => component.Adapter, adapter }
+        };
+        var options = new DialogOptions
+        {
+            CloseButton = true,
+            CloseOnEscapeKey = true,
+            FullWidth = true,
+            MaxWidth = MaxWidth.Medium
+        };
+        await Dialogs.ShowAsync<PreviewSignInDialog>("Preview sign-in", parameters, options);
+    }
+
+    private async Task ArchiveAsync(ConnectionSummary connection)
+    {
+        if (!CanArchiveConnection(connection))
+            return;
+
+        if (await Dialogs.ShowMessageBoxAsync(
+                "Archive connection?",
+                "Archiving removes this connection from login discovery but preserves its identity links. You can restore it later as disabled.",
+                yesText: "Archive",
+                cancelText: "Cancel") != true)
+            return;
+
+        try
+        {
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            await api.ArchiveAsync(connection.Id, ConnectionConcurrency.ToIfMatch(connection.Revision));
+            Snackbar.Add("Connection archived.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception exception)
+        {
+            Snackbar.Add(exception.Message, Severity.Error);
+        }
+    }
+
+    private async Task ToggleEnabledAsync(ConnectionSummary connection)
+    {
+        if (!ConnectionActionAvailability.CanEnableOrDisable(connection, _canUpdate))
+            return;
+
+        var completedAction = connection.EnabledIntent ? "disabled" : "enabled";
+        try
+        {
+            if (connection.EnabledIntent)
+            {
+                var decision = await ConnectionDisableConfirmation.ShowAsync(Dialogs, connection.DisplayName, _canRevokeSessions);
+                if (decision is null)
+                    return;
+
+                var operations = await ApiClientProvider.GetApiAsync<IExternalAuthenticationOperationsApi>();
+                await operations.DisableWithRecoveryOverrideAsync(
+                    connection.Id,
+                    ConnectionConcurrency.ToIfMatch(connection.Revision),
+                    false,
+                    decision == ConnectionDisableDecision.RevokeActiveSessions);
+            }
+            else
+            {
+                if (await Dialogs.ShowMessageBoxAsync(
+                        "Enable connection?",
+                        $"Enable {connection.DisplayName}.",
+                        yesText: "Enable",
+                        cancelText: "Cancel") != true)
+                    return;
+
+                var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+                await api.EnableAsync(connection.Id, ConnectionConcurrency.ToIfMatch(connection.Revision));
+            }
+
+            Snackbar.Add($"Connection {completedAction}.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception exception)
+        {
+            Snackbar.Add(exception.Message, Severity.Error);
+        }
+    }
+}

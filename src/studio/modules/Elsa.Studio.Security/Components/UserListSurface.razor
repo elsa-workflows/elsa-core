@@ -1,0 +1,183 @@
+@inherits StudioComponentBase
+@implements IAsyncDisposable
+
+<style>
+    .users-surface .users-toolbar { align-items: center; display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; }
+    .users-surface .users-search { max-width: 440px; min-width: 280px; width: 100%; }
+    .users-surface .users-summary { align-items: center; color: var(--mud-palette-text-secondary); display: flex; flex-wrap: wrap; font-size: 0.875rem; gap: 8px; }
+    .users-surface .users-summary-icon { color: var(--mud-palette-primary); }
+    .users-surface .users-table { border: 1px solid var(--mud-palette-lines-default); border-radius: 8px; overflow: hidden; }
+    .users-surface .users-table .mud-table-head { background: var(--mud-palette-background-gray); }
+    .users-surface .users-table .mud-table-cell { vertical-align: middle; }
+    .users-surface .users-state-card { align-items: center; display: flex; flex-direction: column; gap: 12px; padding: 40px 24px; text-align: center; }
+    .users-surface .user-row-link { color: inherit; text-decoration: none; }
+    .users-surface .user-row-link:hover, .users-surface .user-row-link:focus-visible { text-decoration: underline; }
+    .users-surface .users-actions { text-align: right; white-space: nowrap; }
+    .users-surface .users-visually-hidden { border: 0; clip: rect(0 0 0 0); height: 1px; margin: -1px; overflow: hidden; padding: 0; position: absolute; width: 1px; }
+</style>
+
+<MudStack Spacing="3" Class="users-surface">
+    <div>
+        <MudText Typo="Typo.h5" HtmlTag="h1">Users</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Accounts that can sign in to Elsa within the current tenant scope. Role chips describe what a user holds; they do not imply you can assign those roles.</MudText>
+    </div>
+
+    @if (!Access.CanCreate && !Access.CanUpdate && !Access.CanDelete)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+            You can view users, but you cannot create, edit, or delete them.
+        </MudAlert>
+    }
+
+    <div class="users-toolbar">
+        <MudTextField T="string"
+                      Value="@_search"
+                      ValueChanged="OnSearchChanged"
+                      Label="Search users"
+                      Placeholder="Search users"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Outlined.Search"
+                      Clearable="true"
+                      Immediate="true"
+                      Class="users-search"
+                      aria-label="Search users by name, ID, role, or tenant" />
+
+        @if (Access.CanCreate)
+        {
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.PersonAdd"
+                       Href="security/users/new"
+                       aria-label="Create a new user">
+                Create user
+            </MudButton>
+        }
+    </div>
+
+    @if (_actionError != null)
+    {
+        <MudAlert Severity="@(_actionError.IsConflict ? Severity.Warning : Severity.Error)"
+                  Variant="Variant.Outlined"
+                  ShowCloseIcon="true"
+                  CloseIconClicked="@(() => _actionError = null)">
+            @_actionError.Message
+        </MudAlert>
+    }
+
+    @if (_loading)
+    {
+        <MudPaper Outlined="true" Class="users-state-card" Role="status">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" aria-label="Loading users" />
+            <MudText Typo="Typo.body2">Loading users...</MudText>
+        </MudPaper>
+    }
+    else if (_loadError != null)
+    {
+        <MudPaper Outlined="true" Class="users-state-card" Role="alert">
+            <MudIcon Icon="@Icons.Material.Outlined.ErrorOutline" Color="Color.Error" Size="Size.Large" aria-hidden="true" />
+            <MudText Typo="Typo.h6">Users could not be loaded</MudText>
+            <MudText Typo="Typo.body2">@_loadError.Message</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReloadAsync" aria-label="Try loading users again">Try again</MudButton>
+        </MudPaper>
+    }
+    else
+    {
+        <div class="users-summary" role="status" aria-live="polite">
+            <MudIcon Icon="@Icons.Material.Outlined.CheckCircle" Size="Size.Small" Class="users-summary-icon" aria-hidden="true" />
+            <span>@ResultSummary</span>
+            <span aria-hidden="true">·</span>
+            <span>@ScopeSummary</span>
+        </div>
+
+        @if (_users.Count == 0)
+        {
+            <MudPaper Outlined="true" Class="users-state-card">
+                <MudIcon Icon="@Icons.Material.Outlined.People" Color="Color.Secondary" Size="Size.Large" aria-hidden="true" />
+                <MudText Typo="Typo.h6">No users yet</MudText>
+                <MudText Typo="Typo.body2">@(Access.CanCreate ? "Create a user to grant access to Elsa." : "No accounts exist in this tenant scope.")</MudText>
+                @if (Access.CanCreate)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="security/users/new" aria-label="Create your first user">Create first user</MudButton>
+                }
+            </MudPaper>
+        }
+        else if (FilteredUsers.Count == 0)
+        {
+            <MudPaper Outlined="true" Class="users-state-card">
+                <MudIcon Icon="@Icons.Material.Outlined.SearchOff" Color="Color.Secondary" Size="Size.Large" aria-hidden="true" />
+                <MudText Typo="Typo.h6">No matching users</MudText>
+                <MudText Typo="Typo.body2">Try a different name, ID, role, or tenant.</MudText>
+            </MudPaper>
+        }
+        else
+        {
+            <MudTable T="UserSummary"
+                      Items="@FilteredUsers"
+                      Dense="true"
+                      Hover="true"
+                      Elevation="0"
+                      Breakpoint="Breakpoint.Md"
+                      RowStyle="cursor: pointer;"
+                      OnRowClick="OpenUser"
+                      Class="users-table">
+                <HeaderContent>
+                    <MudTh>Name</MudTh>
+                    <MudTh>User ID</MudTh>
+                    <MudTh>Roles</MudTh>
+                    <MudTh>Scope</MudTh>
+                    <MudTh Class="users-actions"><span class="users-visually-hidden">Actions</span></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Name">
+                        <a class="user-row-link font-weight-medium"
+                           href="@UserUrl(context.Id)"
+                           aria-label="@($"Open user {context.Name}")"
+                           @onclick:stopPropagation="true">@context.Name</a>
+                    </MudTd>
+                    <MudTd DataLabel="User ID">
+                        <IdentityIdCell Value="@context.Id" Label="User" OnCopy="@(() => CopyUserIdAsync(context.Id))" />
+                    </MudTd>
+                    <MudTd DataLabel="Roles">
+                        @if (context.Roles.Count == 0)
+                        {
+                            <MudText Typo="Typo.caption">No roles</MudText>
+                        }
+                        else
+                        {
+                            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1">
+                                @foreach (var role in Preview(context.Roles))
+                                {
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@role</MudChip>
+                                }
+                                @if (context.Roles.Count > PreviewLimit)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">+@(context.Roles.Count - PreviewLimit) more</MudChip>
+                                }
+                            </MudStack>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="Scope">@Scope(context.TenantId)</MudTd>
+                    <MudTd DataLabel="Actions" Class="users-actions">
+                        <div @onclick:stopPropagation="true">
+                            <MudIconButton Icon="@(Access.CanUpdate ? Icons.Material.Outlined.Edit : Icons.Material.Outlined.Visibility)"
+                                           Size="Size.Small"
+                                           Href="@UserUrl(context.Id)"
+                                           aria-label="@(Access.CanUpdate ? $"Edit user {context.Name}" : $"View user {context.Name}")" />
+                            @if (Access.CanDelete)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Outlined.Delete"
+                                               Size="Size.Small"
+                                               Color="Color.Error"
+                                               Disabled="@IsDeleting(context.Id)"
+                                               OnClick="@(() => DeleteAsync(context))"
+                                               aria-label="@($"Delete user {context.Name}")" />
+                            }
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    }
+</MudStack>

@@ -1,0 +1,124 @@
+@using Elsa.Api.Client.Resources.WorkflowDefinitions.Models
+@using Elsa.Api.Client.Shared.Models
+@using Elsa.Studio.Contracts
+@using Elsa.Studio.Localization
+@using Elsa.Studio.PlatformIntegration.Contracts
+@using Elsa.Studio.Workflows.Domain.Contracts
+@using Microsoft.AspNetCore.Components
+@using Microsoft.Extensions.Options
+@using MudBlazor
+@inject ILocalizer Localizer
+@inject IUserMessageService UserMessageService
+@inject IWorkflowDefinitionService WorkflowDefinitionService
+@inject IPlatformWorkflowSubmissionService SubmissionService
+@inject IOptions<PlatformSubmitOptions> Options
+
+@if (Options.Value.Enabled)
+{
+    @if (RenderAsMenuItem)
+    {
+        <MudMenuItem Icon="@Icons.Material.Outlined.CloudUpload" Disabled="@IsDisabled" OnClick="@SubmitAsync">@Localizer["Submit to Platform"]</MudMenuItem>
+    }
+    else
+    {
+        <MudTooltip Text="@Localizer["Submit to Platform"]" Delay="500">
+            <MudIconButton Icon="@Icons.Material.Outlined.CloudUpload" Color="Color.Primary" Disabled="@IsDisabled" OnClick="@SubmitAsync" />
+        </MudTooltip>
+    }
+}
+
+@code {
+    /// <summary>
+    /// Provides the current workflow definition snapshot.
+    /// </summary>
+    [Parameter] public Func<Task<WorkflowDefinition?>>? GetWorkflowDefinition { get; set; }
+
+    /// <summary>
+    /// Provides workflow definition IDs to submit.
+    /// </summary>
+    [Parameter] public IReadOnlyCollection<string> DefinitionIds { get; set; } = [];
+
+    /// <summary>
+    /// Whether this action should render as a menu item.
+    /// </summary>
+    [Parameter] public bool RenderAsMenuItem { get; set; }
+
+    /// <summary>
+    /// Whether this action is disabled.
+    /// </summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    private bool _isSubmitting;
+    private bool IsDisabled => Disabled || _isSubmitting || !Options.Value.IsConfigured;
+
+    private async Task SubmitAsync()
+    {
+        if (IsDisabled)
+            return;
+
+        _isSubmitting = true;
+
+        try
+        {
+            var workflowDefinitions = await GetWorkflowDefinitionsAsync();
+            if (workflowDefinitions.Count == 0)
+            {
+                UserMessageService.ShowSnackbarTextMessage(Localizer["No workflow definitions selected"], Severity.Info);
+                return;
+            }
+
+            var results = new List<PlatformSubmitResult>();
+            foreach (var workflowDefinition in workflowDefinitions)
+                results.Add(await SubmissionService.SubmitAsync(workflowDefinition));
+
+            ShowResult(results);
+        }
+        catch (Exception ex)
+        {
+            UserMessageService.ShowSnackbarTextMessage(Localizer["Workflow submission to Platform failed: {0}", ex.Message], Severity.Error);
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task<IReadOnlyList<WorkflowDefinition>> GetWorkflowDefinitionsAsync()
+    {
+        if (GetWorkflowDefinition is not null)
+        {
+            var workflowDefinition = await GetWorkflowDefinition();
+            return workflowDefinition is null ? [] : [workflowDefinition];
+        }
+
+        var workflowDefinitions = new List<WorkflowDefinition>();
+        foreach (var definitionId in DefinitionIds.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.Ordinal))
+        {
+            var workflowDefinition = await WorkflowDefinitionService.FindByDefinitionIdAsync(definitionId, VersionOptions.Latest);
+            if (workflowDefinition is not null)
+                workflowDefinitions.Add(workflowDefinition);
+        }
+
+        return workflowDefinitions;
+    }
+
+    private void ShowResult(IReadOnlyCollection<PlatformSubmitResult> results)
+    {
+        var succeeded = results.Count(x => x.Succeeded);
+        var failed = results.Count - succeeded;
+
+        if (failed == 0)
+        {
+            var message = succeeded == 1
+                ? Localizer["Workflow submitted to Platform"]
+                : Localizer["{0} workflows submitted to Platform", succeeded];
+            UserMessageService.ShowSnackbarTextMessage(message, Severity.Success, options => { options.SnackbarVariant = Variant.Filled; });
+            return;
+        }
+
+        var warning = succeeded == 0
+            ? Localizer["Workflow submission to Platform failed"]
+            : Localizer["{0} workflow submissions failed", failed];
+        UserMessageService.ShowSnackbarTextMessage(warning, Severity.Warning, options => { options.SnackbarVariant = Variant.Filled; });
+    }
+}

@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <ProjectReference Include="../../../../../src/extensions/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj" />
+    </ItemGroup>
+</Project>

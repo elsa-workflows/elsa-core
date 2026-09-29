@@ -1,0 +1,101 @@
+@page "/alterations/instances/{InstanceId}"
+@using System.Text.Json.Nodes
+@using Elsa.Api.Client.Resources.WorkflowDefinitions.Models
+@using Elsa.Api.Client.Resources.WorkflowInstances.Models
+@using Elsa.Studio.Workflows.Domain.Contracts
+@using Elsa.Studio.Workflows.Extensions
+@inject IWorkflowInstanceService WorkflowInstanceService
+@inject IWorkflowDefinitionService WorkflowDefinitionService
+@inject ILocalizer Localizer
+
+<HeadContent>
+    <link rel="stylesheet" href="_content/Elsa.Studio.Alterations/elsa-alterations.css" />
+</HeadContent>
+
+<PageTitle>@Localizer["Alter instance"]</PageTitle>
+
+@if (_loading)
+{
+    <div style="display:flex; align-items:center; justify-content:center; height:60vh;">
+        <MudProgressCircular Indeterminate="true" />
+    </div>
+}
+else if (_instance == null)
+{
+    <MudContainer Class="pa-4">
+        <MudAlert Severity="Severity.Warning">@Localizer["Instance not found."]</MudAlert>
+        <MudButton Class="mt-2" Href="alterations/instances">@Localizer["Back to instances"]</MudButton>
+    </MudContainer>
+}
+else if (_definition == null)
+{
+    <MudContainer Class="pa-4">
+        <MudAlert Severity="Severity.Warning">@Localizer["Workflow definition for this instance is unavailable."]</MudAlert>
+        <MudButton Class="mt-2" Href="alterations/instances">@Localizer["Back to instances"]</MudButton>
+    </MudContainer>
+}
+else
+{
+    <div style="height: calc(100vh - var(--mud-appbar-height));">
+        <AlterationDesignerHost WorkflowInstance="@_instance"
+                                WorkflowDefinition="@_definition"
+                                FlowchartActivity="@_flowchart" />
+    </div>
+}
+
+@code {
+    [Parameter] public string InstanceId { get; set; } = "";
+
+    private WorkflowInstance? _instance;
+    private WorkflowDefinition? _definition;
+    private JsonObject? _flowchart;
+    private bool _loading = true;
+    private string? _loadedInstanceId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedInstanceId != InstanceId)
+            await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _loadedInstanceId = InstanceId;
+        _instance = null;
+        _definition = null;
+        _flowchart = null;
+
+        try
+        {
+            _instance = await WorkflowInstanceService.GetAsync(InstanceId);
+            if (_instance != null)
+            {
+                _definition = await WorkflowDefinitionService.FindByIdAsync(_instance.DefinitionVersionId);
+                // The diagram designer is keyed on activity type — only "Elsa.Flowchart" is supported.
+                // Workflow roots are sometimes wrapped in "Elsa.Workflow"; GetFlowchart() unwraps that
+                // and FindActivitiesContainer() falls back to the first object holding an "activities"
+                // array for any other shape. Without this, the Flowchart designer can't claim the
+                // activity and the Fallback designer renders the "no designer registered" warning.
+                _flowchart = _definition?.Root?.GetFlowchart()
+                             ?? _definition?.Root?.FindActivitiesContainer()
+                             ?? _definition?.Root;
+            }
+        }
+        catch
+        {
+            _instance = null;
+            _definition = null;
+            _flowchart = null;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

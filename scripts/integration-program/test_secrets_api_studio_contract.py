@@ -3,6 +3,7 @@ import importlib.util
 import json
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -95,6 +96,81 @@ class SecretsApiStudioContractTests(unittest.TestCase):
                 'commit', '--quiet', '-m', 'fixture'
             ], check=True)
             return CONTRACT.parse_api_routes(repo, 'HEAD', 'src', 'legacy')
+
+    def test_import_candidate_tree_carries_the_pinned_route_permission_and_client_contract(self):
+        conflicts = CONTRACT.verify_import_candidate(SCRIPT.parents[2], self.fixture)
+
+        self.assertEqual(self.fixture['routeConflicts'], conflicts)
+
+    def test_workflow_runs_when_an_import_candidate_source_changes(self):
+        workflow = (SCRIPT.parents[2] / '.github/workflows/secrets-api-studio-contract.yml').read_text()
+        for path in self.fixture['importCandidateSourcePaths'].values():
+            trigger = path if path.endswith('.cs') else f'{path}/**'
+            with self.subTest(path=path):
+                self.assertIn(f"- '{trigger}'", workflow)
+
+    def test_legacy_only_packages_are_exactly_the_imported_legacy_package_graph(self):
+        # The default-host test asserts that none of these is loaded or deployed with the Workbench, so the list must
+        # not lag behind the imported legacy packages.
+        legacy_root = SCRIPT.parents[2] / Path(self.fixture['importCandidateSourcePaths']['legacyApi']).parents[2]
+
+        self.assertEqual(
+            sorted(project.stem for project in legacy_root.glob('*/*.csproj')),
+            self.fixture['legacyOnlyPackages'])
+
+    def test_legacy_only_packages_are_not_packed_by_the_consolidated_publisher(self):
+        # The legacy graph is deprecated at 3.10.0 and keeps its 3.8/3.9 releases; the root pack must not give it a
+        # consolidated version.
+        legacy_root = SCRIPT.parents[2] / Path(self.fixture['importCandidateSourcePaths']['legacyApi']).parents[2]
+
+        for project in sorted(legacy_root.glob('*/*.csproj')):
+            with self.subTest(project=project.stem):
+                self.assertRegex(project.read_text(encoding='utf-8-sig'), r'<IsPackable>\s*false\s*</IsPackable>')
+
+    def test_import_candidate_check_fails_closed_on_route_permission_dto_or_snapshot_drift(self):
+        paths = self.fixture['importCandidateSourcePaths']
+        core_api = paths['coreApi']
+        mutations = (
+            ('changed permission', 'Core endpoint routes',
+             lambda root: self.rewrite(root / core_api / 'Get/Endpoint.cs', 'CoreVerbs.View', 'CoreVerbs.Write')),
+            ('duplicate route', 'Core endpoint routes',
+             lambda root: shutil.copytree(root / core_api / 'Get', root / core_api / 'GetShadow')),
+            ('missing route', 'Core endpoint routes', lambda root: (root / core_api / 'Get/Endpoint.cs').unlink()),
+            ('missing legacy package', 'Legacy endpoint routes', lambda root: shutil.rmtree(root / paths['legacyApi'])),
+            ('Studio DTO field', 'SecretModel Studio-only fields',
+             lambda root: self.rewrite(root / paths['studioModels'], 'public string Id { get; set; }',
+                                       'public string Id { get; set; }\n    public string? Owner { get; set; }')),
+            ('snapshot bytes', 'differs from imported',
+             lambda root: self.rewrite(root / paths['studioApi'], 'namespace', '\nnamespace')),
+            ('Core list request field Studio cannot send', 'Studio optional list query omissions',
+             lambda root: self.rewrite(root / paths['coreModels'], 'public string? Search { get; set; }',
+                                       'public string? Search { get; set; }\n    public string? OwnerId { get; set; }')),
+        )
+        for drift, expected_error, mutate in mutations:
+            with self.subTest(drift=drift), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self.copy_import_candidate(root)
+                CONTRACT.verify_import_candidate(root, self.fixture)
+                mutate(root)
+                with self.assertRaisesRegex(ValueError, expected_error):
+                    CONTRACT.verify_import_candidate(root, self.fixture)
+
+    def copy_import_candidate(self, root):
+        source_root = SCRIPT.parents[2]
+        for path in [*self.fixture['importCandidateSourcePaths'].values(), *self.fixture['studioTestSourceSnapshots'].values()]:
+            source, target = source_root / path, root / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if source.is_dir():
+                shutil.copytree(source, target)
+            else:
+                shutil.copy2(source, target)
+
+    @staticmethod
+    def rewrite(path, old, new):
+        source = path.read_text(encoding='utf-8')
+        if old not in source:
+            raise AssertionError(f'{old!r} not found in {path}')
+        path.write_text(source.replace(old, new, 1), encoding='utf-8')
 
     def test_fixture_records_only_the_five_shared_templates(self):
         self.assertEqual([

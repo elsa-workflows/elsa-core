@@ -1,0 +1,206 @@
+@inherits StudioComponentBase
+@implements IAsyncDisposable
+
+<style>
+    .user-editor .user-editor-header { align-items: flex-start; display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; }
+    .user-editor .user-editor-actions { align-items: center; display: flex; flex-wrap: wrap; gap: .5rem; }
+    .user-editor .user-editor-meta { align-items: center; color: var(--mud-palette-text-secondary); display: flex; flex-wrap: wrap; gap: .25rem 1rem; margin-top: .25rem; }
+    .user-editor .user-editor-id { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+    .user-editor .user-section-title { margin-bottom: .25rem; }
+    .user-editor .user-section-hint { color: var(--mud-palette-text-secondary); }
+    .user-editor .user-danger-zone { border-color: var(--mud-palette-error); }
+    .user-editor .user-danger-zone-row { align-items: center; display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; }
+
+    @@media (max-width: 959.98px) {
+        .user-editor .user-editor-actions { width: 100%; }
+        .user-editor .user-editor-actions .mud-button-root { flex: 1 1 auto; }
+    }
+</style>
+
+<div class="user-editor">
+@if (_loading)
+{
+    <MudStack AlignItems="AlignItems.Center" Class="pa-8" Role="status">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" aria-label="Loading user" />
+        <MudText Typo="Typo.body2">Loading user…</MudText>
+    </MudStack>
+}
+else if (_loadError != null)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined">
+        <MudText Typo="Typo.subtitle1">Could not load user</MudText>
+        <MudText Typo="Typo.body2">@_loadError</MudText>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-3" Href="security/users">Back to users</MudButton>
+    </MudAlert>
+}
+else if (!CanOpen)
+{
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+        You can view users, but your current sign-in cannot create a user. Ask an administrator for <code>identity/users:create</code>.
+    </MudAlert>
+}
+else
+{
+    <MudStack Spacing="3">
+        <div class="user-editor-header">
+            <div>
+                <MudBreadcrumbs Items="@Breadcrumbs" Class="pa-0" />
+                <MudText Typo="Typo.h4" HtmlTag="h1">@Title</MudText>
+                @if (IsNew)
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Create an Elsa account and assign its roles.</MudText>
+                }
+                else
+                {
+                    <div class="user-editor-meta">
+                        <MudText Typo="Typo.body2" Class="user-editor-id">ID <code>@Id</code></MudText>
+                        <MudIconButton Icon="@Icons.Material.Outlined.ContentCopy"
+                                       Size="Size.Small"
+                                       OnClick="CopyUserIdAsync"
+                                       aria-label="@($"Copy user ID {Id}")" />
+                        <MudText Typo="Typo.body2">Scope: @ScopeLabel</MudText>
+                    </div>
+                }
+            </div>
+            <div class="user-editor-actions">
+                <MudButton Variant="Variant.Outlined" Href="security/users" Disabled="@(_saving || _deleting)">Cancel</MudButton>
+                @if (!IsReadOnly)
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Save"
+                               OnClick="SaveAsync"
+                               Disabled="@(!CanSave)">
+                        @(_saving ? "Saving…" : SaveLabel)
+                    </MudButton>
+                }
+            </div>
+        </div>
+
+        @if (IsReadOnly)
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">You can view this user, but your current sign-in cannot edit it.</MudAlert>
+        }
+
+        @if (_saveError != null)
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" role="alert">@_saveError</MudAlert>
+        }
+
+        <MudPaper Outlined="true" Elevation="0" Class="pa-4 pa-sm-6">
+            <MudForm @ref="_form">
+                <MudStack Spacing="4">
+                    <div>
+                        <MudText Typo="Typo.h6" HtmlTag="h2" Class="user-section-title">Account</MudText>
+                        <MudText Typo="Typo.caption" Class="user-section-hint">
+                            @(IsNew ? "The username is the stable identity used to sign in to Elsa. It cannot be changed later." : "The username cannot be changed after the account is created.")
+                        </MudText>
+                    </div>
+
+                    <MudTextField @bind-Value="_name"
+                                  Label="Username"
+                                  Required="true"
+                                  RequiredError="Enter a username."
+                                  ReadOnly="@(!IsNew)"
+                                  Disabled="@(IsReadOnly || _saving)"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  aria-label="Username" />
+
+                    <MudDivider />
+
+                    <div>
+                        <MudText Typo="Typo.h6" HtmlTag="h2" Class="user-section-title">Roles</MudText>
+                        <MudText Typo="Typo.caption" Class="user-section-hint">Roles group the permissions this user receives. Core only accepts roles whose permissions your own sign-in already holds.</MudText>
+                    </div>
+
+                    @if (_canViewRoles)
+                    {
+                        <MudSelect T="string"
+                                   Label="Assigned roles"
+                                   MultiSelection="true"
+                                   SelectedValues="_selectedRoles"
+                                   SelectedValuesChanged="OnSelectedRolesChanged"
+                                   Disabled="@(IsReadOnly || _saving)"
+                                   Variant="Variant.Outlined"
+                                   Margin="Margin.Dense"
+                                   aria-label="Assigned roles">
+                            @foreach (var role in _roleOptions)
+                            {
+                                <MudSelectItem T="string" Value="@role.Id">@role.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+                            Role assignment is unavailable because your sign-in cannot view roles. Ask an administrator for <code>identity/roles:view</code>. Existing assignments are kept as they are.
+                        </MudAlert>
+                        @if (_selectedRoles.Count > 0)
+                        {
+                            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" aria-label="Current roles">
+                                @foreach (var role in _selectedRoles.OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
+                                {
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@role</MudChip>
+                                }
+                            </MudStack>
+                        }
+                    }
+
+                    <MudDivider />
+
+                    <div>
+                        <MudText Typo="Typo.h6" HtmlTag="h2" Class="user-section-title">@PasswordHeading</MudText>
+                        <MudText Typo="Typo.caption" Class="user-section-hint">@CredentialGuidance</MudText>
+                    </div>
+
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" sm="6">
+                            <MudTextField @bind-Value="_password"
+                                          Label="@PasswordLabel"
+                                          InputType="InputType.Password"
+                                          Disabled="@(IsReadOnly || _saving)"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudTextField @bind-Value="_passwordConfirmation"
+                                          Label="Confirm password"
+                                          InputType="InputType.Password"
+                                          Validation="@((string? value) => ValidatePasswordConfirmation(value))"
+                                          Disabled="@(IsReadOnly || _saving)"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense" />
+                        </MudItem>
+                    </MudGrid>
+                </MudStack>
+            </MudForm>
+        </MudPaper>
+
+        @if (CanDelete)
+        {
+            <MudPaper Outlined="true" Elevation="0" Class="pa-4 user-danger-zone">
+                <MudStack Spacing="2">
+                    <div class="user-danger-zone-row">
+                        <div>
+                            <MudText Typo="Typo.h6" HtmlTag="h2" Class="user-section-title">Delete user</MudText>
+                            <MudText Typo="Typo.caption" Class="user-section-hint">Permanently removes this account. Core refuses the deletion while an installed module still references the user.</MudText>
+                        </div>
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Error"
+                                   StartIcon="@Icons.Material.Outlined.Delete"
+                                   Disabled="@(_deleting || _saving)"
+                                   OnClick="DeleteAsync">
+                            Delete user
+                        </MudButton>
+                    </div>
+                    @if (_deleteError != null)
+                    {
+                        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" role="alert">@_deleteError</MudAlert>
+                    }
+                </MudStack>
+            </MudPaper>
+        }
+    </MudStack>
+}
+</div>

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Description>Provides an connection framework to use connection abtraction in activities</Description>
+		<PackageTags>elsa extension module connection abstratction</PackageTags>
+		<RootNamespace>Elsa.Connections</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+        <ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
+	</ItemGroup>
+
+	<ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+		<ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<ProjectReference Include="../Elsa.Connections.Models/Elsa.Connections.Models.csproj" />
+		<ProjectReference Include="../Elsa.Connections.Persistence/Elsa.Connections.Persistence.csproj" />
+	</ItemGroup>
+</Project>

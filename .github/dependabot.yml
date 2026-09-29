@@ -4,8 +4,47 @@
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
 version: 2
+registries:
+  elsa-feedz-preview:
+    type: nuget-feed
+    url: https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json
+    token: ${{secrets.FEEDZ_API_KEY}}
+
 updates:
-  - package-ecosystem: "NuGet" # See documentation for possible values
+  - package-ecosystem: "nuget" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    exclude-paths:
+      - "src/extensions/**"
+      - "src/studio/**"
+  - package-ecosystem: "nuget"
+    directory: "/src/extensions"
+    target-branch: "main"
+    registries:
+      - elsa-feedz-preview
+    schedule:
+      interval: "daily"
+      time: "06:00"
+      timezone: "Europe/Amsterdam"
+    open-pull-requests-limit: 1
+    groups:
+      elsa-core-preview:
+        patterns:
+          - "Elsa*"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+  - package-ecosystem: "nuget"
+    directory: "/src/studio"
+    target-branch: "main"
+    registries:
+      - elsa-feedz-preview
+    schedule:
+      interval: "daily"
+      time: "06:00"
+      timezone: "Europe/Amsterdam"
+    open-pull-requests-limit: 1
+    commit-message:
+      prefix: "deps"
+      include: "scope"

@@ -1,0 +1,65 @@
+@using Elsa.Api.Client.Resources.Scripting.Extensions;
+@using Elsa.Api.Client.Resources.Scripting.Models;
+@using Elsa.Studio.Enums
+@using Elsa.Studio.Localization
+@inject ILocalizer Localizer
+
+<MudStack Row="true">
+    <div class="flex-1" style="min-width:0;">
+        @if (ShowMonacoEditor)
+        {
+            <FieldExtension UIHintComponent=@ComponentType EditorContext="@EditorContext">
+                <ChildContent>
+                    <MudField Variant="Variant.Outlined" Label="@DisplayName" HelperText="@Description" Margin="Margin.Dense" Disabled="EditorContext.IsReadOnly">
+                        <StandaloneCodeEditor @ref="_monacoEditor"
+                                              Id="@_monacoEditorId"
+                                              ConstructionOptions="ConfigureMonacoEditor"
+                                              OnDidInit="OnMonacoInitializedAsync"
+                                              OnDidChangeModelContent="OnMonacoContentChangedAsync"
+                                              CssClass="studio-expression-input-monaco-editor" />
+                    </MudField>
+                </ChildContent>
+            </FieldExtension>
+        }
+        else
+        {
+            <FieldExtension UIHintComponent=@ComponentType EditorContext="@EditorContext" ChildContent="@ChildContent" />
+        }
+    </div>
+    @if (EditorContext.InputDescriptor.IsWrapped)
+    {
+        RenderFragment DisplayContent(ExpressionDescriptor item) => @<div>
+            @{
+                var isChecked = item.Type == _selectedExpressionType;
+                var iconColor = isChecked ? Color.Secondary : Color.Transparent;
+
+                <MudMenuItem Class="studio-expression-input-menu-item" OnClick="@(() => OnSyntaxSelectedAsync(item.Type))" Icon="@Icons.Material.Filled.Check" IconColor="iconColor">@item.DisplayName</MudMenuItem>
+            }
+        </div>;
+        <div class="flex-none pt-1">
+            <MudStack>
+                <MudMenu Label="@ButtonLabel" Icon="@ButtonIcon" Variant="@ButtonVariant" Color="@ButtonColor" EndIcon="@ButtonEndIcon" IconColor="@ButtonEndColor" Dense="true" Disabled="EditorContext.IsReadOnly">
+                    @DisplayContent(BrowsableExpressionDescriptors.First())
+                    <MudDivider />
+                    @foreach (var item in BrowsableExpressionDescriptors.Where(i => !string.IsNullOrEmpty(i.GetMonacoLanguage())))
+                    {
+                        @DisplayContent(item);
+                    }
+                    <MudDivider />
+                    @foreach (var item in BrowsableExpressionDescriptors.Skip(1).Where(i => string.IsNullOrEmpty(i.GetMonacoLanguage())))
+                    {
+                        @DisplayContent(item);
+                    }
+                </MudMenu>
+                @if (MonacoSyntaxExist)
+                {
+                    <div style="display:inline-flex;">
+                        <MudIconButton Icon="@Icons.Material.Outlined.EditNote"
+                                       OnClick="ShowScriptEditor"
+                                       title="@Localizer["Edit"]" />
+                    </div>
+                }
+            </MudStack>
+        </div>
+    }
+</MudStack>

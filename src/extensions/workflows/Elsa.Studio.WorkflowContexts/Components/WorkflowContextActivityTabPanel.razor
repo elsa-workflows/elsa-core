@@ -1,0 +1,31 @@
+﻿@inherits StudioComponentBase
+@using Elsa.Studio.Workflows.Services
+@inject ILocalizer Localizer
+
+<MudForm ReadOnly="IsReadOnly">
+    <MudStack Spacing="5">
+        <MudText Typo="Typo.overline">@Localizer["Workflow Context Settings"]</MudText>
+        @if (_items.Count > 0)
+        {
+            <MudSimpleTable>                    
+                <tbody>
+                    @foreach (var item in _items)
+                    {
+                        <tr>
+                            <td>
+                                <MudText>@Localizer[@item.Text]</MudText>
+                            </td>
+                            <td>
+                                <MudCheckBox T=bool? Value=@(IsChecked(@item.Value, "Load")) Label="@Localizer["Load"]" ValueChanged="@(IsChecked => OnValueChanged(@item.Value, "Load", IsChecked))"></MudCheckBox>
+                            </td>
+                            <td>
+                                <MudCheckBox T=bool? Value=@(IsChecked(@item.Value, "Save")) Label="@Localizer["Save"]" ValueChanged="@(IsChecked => OnValueChanged(@item.Value, "Save", IsChecked))"></MudCheckBox>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+
+            </MudSimpleTable>
+        }
+    </MudStack>
+</MudForm>

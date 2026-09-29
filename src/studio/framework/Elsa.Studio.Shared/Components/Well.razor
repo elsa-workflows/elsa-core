@@ -1,0 +1,11 @@
+<div class="pa-4">
+    @ChildContent
+</div>
+
+@code
+{
+    /// <summary>
+    /// The content to be rendered inside the <see cref="Well"/> component.
+    /// </summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

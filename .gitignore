@@ -57,6 +57,16 @@ src/studio/modules/Elsa.Studio.Alterations/wwwroot/
 # Per-developer Studio host overrides can contain local credentials.
 src/studio/**/appsettings.Local.json
 
+# Generated Studio tooling output relocated from its standalone repository.
+src/studio/hosts/Elsa.Studio.Host.CustomElements/wasm/
+samples/studio/react/workflow-definition-editor-sample/workflow-definition-editor-app/public/_content/
+samples/studio/react/workflow-definition-editor-sample/workflow-definition-editor-app/public/_framework/
+samples/studio/react/workflow-definition-editor-sample/workflow-definition-editor-app/public/appsettings.json
+src/studio/modules/Elsa.Studio.Workflows.Designer/ClientLib/package-lock.json
+src/studio/framework/Elsa.Studio.DomInterop/ClientLib/package-lock.json
+test/studio/browser/**/test-results/
+src/studio/wrappers/.npmrc
+
 # Developer-local Extensions outputs and publishing credentials after relocation.
 # Keep these scoped to the imported tree; Core/Studio authors may check in
 # similarly named fixtures intentionally.

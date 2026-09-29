@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../../../../src/studio/bundles/Elsa.Studio/Elsa.Studio.csproj" />
+        <ProjectReference Include="../../../../src/studio/framework/Elsa.Studio.Core/Elsa.Studio.Core.csproj" />
+        <ProjectReference Include="../../../../src/studio/framework/Elsa.Studio.Core.BlazorWasm/Elsa.Studio.Core.BlazorWasm.csproj" />
+        <ProjectReference Include="../../../../src/studio/modules/Elsa.Studio.Login.BlazorWasm/Elsa.Studio.Login.BlazorWasm.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.Extensions.Http" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="../../../../src/extensions/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj" />
+    </ItemGroup>
+
+</Project>

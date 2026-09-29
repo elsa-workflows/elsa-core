@@ -1,0 +1,15 @@
+@page "/login"
+@attribute [AllowAnonymous]
+@layout Elsa.Studio.Layouts.BasicLayout
+
+<PageTitle>@Localizer["Sign in"]</PageTitle>
+
+<LoginThemeHost ReturnPath="@(ReturnPath ?? ReturnUrl)" />
+
+@code {
+    [SupplyParameterFromQuery(Name = "returnPath")]
+    public string? ReturnPath { get; set; }
+
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+}

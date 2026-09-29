@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "issue": 8286,
+  "baseImportHead": "fb68c8e3724339ea77a26d816383669587e0b41b",
+  "deltaCommit": "7e248a2fff34946127b2a629abcf7148367f6a3c",
+  "historyJoinCommit": "35594a3648b5b0b8db19a2605a8ee53fb6e4b4ab",
+  "oldUpstreamCommits": {
+    "extensions": "ba8b71d91c15ffe5be4b2c539cf9f712e74af775",
+    "studio": "20ceaeeed7e671f0c9662003e82063026f2216de"
+  },
+  "newUpstreamCommits": {
+    "extensions": "1c134e00f50a7ac36ea61e6c442dc3c5148db049",
+    "studio": "f0eeb3c7428443b09512049fe890635fa4f7b427"
+  },
+  "mappedChanges": [
+    {
+      "repository": "extensions",
+      "status": "M",
+      "source": ".github/workflows/pr.yml",
+      "mappedPath": "doc/integration-program/legacy/extensions/.github/workflows/pr.yml.source",
+      "old": {
+        "blob": "743b29cd2cbe47815f61ccfa2ee55ba0405870aa",
+        "mode": "100644"
+      },
+      "new": {
+        "blob": "ce378bb87e76671696098c1cc81eb4a4394161df",
+        "mode": "100644"
+      }
+    },
+    {
+      "repository": "extensions",
+      "status": "M",
+      "source": "build/Build.CI.GitHubActions.cs",
+      "mappedPath": "doc/integration-program/legacy/extensions/build/Build.CI.GitHubActions.cs.source",
+      "old": {
+        "blob": "7030d4717383af1594af56903033ff1bc27610c1",
+        "mode": "100644"
+      },
+      "new": {
+        "blob": "e88af9df5c6005a0a014f14b2575cefdded26bb1",
+        "mode": "100644"
+      }
+    },
+    {
+      "repository": "extensions",
+      "status": "A",
+      "source": "test/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs",
+      "mappedPath": "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs",
+      "old": null,
+      "new": {
+        "blob": "00e89116a67445f8dac4ddea14c3edd757f3a92e",
+        "mode": "100644"
+      }
+    },
+    {
+      "repository": "extensions",
+      "status": "A",
+      "source": "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreCompareAndSwapTests.cs",
+      "mappedPath": "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreCompareAndSwapTests.cs",
+      "old": null,
+      "new": {
+        "blob": "fb560e0ec6d5d8999cfc2f64a91df44dba2e453c",
+        "mode": "100644"
+      }
+    },
+    {
+      "repository": "studio",
+      "status": "M",
+      "source": ".github/workflows/pr.yml",
+      "mappedPath": "doc/integration-program/legacy/studio/.github/workflows/pr.yml.source",
+      "old": {
+        "blob": "a7059fc7be5cde4f83c2b6b30faa4f9088fdfd4a",
+        "mode": "100644"
+      },
+      "new": {
+        "blob": "9661694232b819dfad9af03ba0769b73c55136c8",
+        "mode": "100644"
+      }
+    },
+    {
+      "repository": "studio",
+      "status": "M",
+      "source": "src/modules/Elsa.Studio.Secrets/Pages/Secrets.razor",
+      "mappedPath": "src/studio/modules/Elsa.Studio.Secrets/Pages/Secrets.razor",
+      "old": {
+        "blob": "8291c19a6671580c79e26d53dc2e50e26af9650a",
+        "mode": "100644"
+      },
+      "new": {
+        "blob": "177c79abeea6685c829d505c0e129dff7548067b",
+        "mode": "100644"
+      }
+    }
+  ]
+}

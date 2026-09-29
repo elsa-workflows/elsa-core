@@ -1,0 +1,129 @@
+﻿@using Elsa.Studio.Enums
+
+<style>
+    /* Override Monaco editor height inside this ContentVisualizer dialog to fill MudPaper (655px).
+       The global .studio-monaco-editor-large sets 320px; we need the full panel height here. */
+    .content-visualizer-dialog .monaco-editor-container.studio-monaco-editor-large {
+        height: 655px !important;
+    }
+
+    /* Allow Monaco overlay widgets (read-only tooltip, IntelliSense) to escape
+       clipping containers, but scope this behavior to the ContentVisualizer dialog only.
+       The .overflowingContentWidgets div is a direct child of .monaco-editor, which has
+       overflow:hidden. We must also override any ancestor containers that clip. */
+    .content-visualizer-dialog .monaco-editor {
+        overflow: visible !important;
+    }
+    .content-visualizer-dialog .mud-dialog-content,
+    .content-visualizer-dialog .mud-focus-trap-child-container,
+    .content-visualizer-dialog .mud-tabs,
+    .content-visualizer-dialog .mud-tabs-panels,
+    .content-visualizer-dialog .mud-tab-panel,
+    .content-visualizer-dialog .mud-paper,
+    .content-visualizer-dialog .monaco-editor-container {
+        overflow: visible !important;
+    }
+</style>
+
+<MudDialog Class="content-visualizer-dialog">
+    <TitleContent>
+        <MudToolBar Dense="true" Gutters="false">
+            <MudText Typo="Typo.h5">@DataPanelItem.Label</MudText>
+            <MudTooltip Text="@Localizer["Copy Pretty"]">
+                <MudIconButton Icon="@Icons.Material.Outlined.ContentCopy" Size="Size.Medium" OnClick="OnCopyClicked" />
+            </MudTooltip>
+            <MudSpacer />
+            <MudTooltip>
+                <TooltipContent>
+                    @(IsReadOnly? Localizer["Read Only"] : Localizer["Temporary Edit"])
+                </TooltipContent>
+                <ChildContent>
+                    <MudToggleIconButton @bind-Toggled="IsReadOnly"
+                                         Icon="@Icons.Material.Outlined.LockOpen"
+                                         Color="@Color.Success"
+                                         ToggledIcon="@Icons.Material.Outlined.Lock"
+                                         ToggledColor="@Color.Default" />
+                </ChildContent>
+            </MudTooltip>
+            <MudSelect T="string"
+                       @bind-Value="SelectedItem"
+                       Label="Visualizer"
+                       Dense="true"
+                       FitContent="true"
+                       Class="ml-2 mr-2"
+                       Margin="Margin.Dense"
+                       Variant="Variant.Outlined">
+                @foreach (var formatter in _availableVisualizers)
+                {
+                    <MudSelectItem Value="@formatter.Name">@formatter.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTooltip Text="@Localizer["Close"]">
+                <MudIconButton Icon="@Icons.Material.Outlined.Close" Size="Size.Medium" OnClick="OnClosedClicked" />
+            </MudTooltip>
+        </MudToolBar>
+    </TitleContent>
+    <DialogContent>
+        <MudStack>
+            <MudTabs Position="MudBlazor.Position.Left"
+                     @bind-ActivePanelIndex="_tabIndex"
+                     MinimumTabWidth="120px"
+                     Rounded="true"
+                     Border="true"
+                     Outlined="true"
+                     KeepPanelsAlive="true"
+                     ApplyEffectsToContainer="true"
+                     TabPanelsClass="pa-4">
+                <MudPaper Height="655px" Width="100%" Elevation="0">
+                    <MudTabPanel Text="@Localizer["Pretty"]" Visible="@(_pretty is not null)">
+                        <StandaloneCodeEditor @ref="_monacoEditor"
+                                              Id="@_monacoEditorId"
+                                              ConstructionOptions="ConfigureMonacoEditor"
+                                              CssClass="studio-expression-input-monaco-editor studio-monaco-editor-large" />
+                    </MudTabPanel>
+                    <MudTabPanel Text="@Localizer["Tabular"]" Visible="@(_table is not null)">
+                        <MudSimpleTable Style="@($"height:655px; width:1080px;")"
+                                        FixedHeader="true"
+                                        Outlined="true"
+                                        Striped="false"
+                                        Dense="true"
+                                        Elevation="0"
+                                        Bordered="false">
+                            @if (_table?.Headers != null)
+                            {
+                                <thead>
+                                    <tr>
+                                        @foreach (var header in _table.Headers)
+                                        {
+                                            <th>@header</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var row in _table.Rows)
+                                    {
+                                        <tr>
+                                            @foreach (var x in row)
+                                            {
+                                                <td>@x</td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            }
+
+                        </MudSimpleTable>
+                    </MudTabPanel>
+                    <MudTabPanel Text="@Localizer["Raw"]">
+                        <MudTextField Value="@DataPanelItem.Text"
+                                      Label="@DataPanelItem.Label"
+                                      Lines="32"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      ReadOnly="@IsReadOnly" />
+                    </MudTabPanel>
+                </MudPaper>
+            </MudTabs>
+        </MudStack>
+    </DialogContent>
+</MudDialog>

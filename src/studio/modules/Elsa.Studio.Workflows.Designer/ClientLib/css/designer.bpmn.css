@@ -1,0 +1,66 @@
+/*
+ * The BPMN canvas palette.
+ *
+ * Scoped to the class `createBpmnGraph` puts on its container, so the adapter is themed whatever
+ * wrapper hosts it rather than depending on the host having chosen one of the flowchart designer's
+ * version classes. Every value is a MudBlazor palette variable, so light and dark follow the app.
+ */
+.elsa-bpmn-diagram-designer {
+    --elsa-bpmn-canvas: var(--mud-palette-surface);
+    --elsa-bpmn-grid: var(--mud-palette-lines-default);
+    --elsa-bpmn-stroke: var(--mud-palette-text-primary);
+    --elsa-bpmn-surface: var(--mud-palette-surface);
+    --elsa-bpmn-text: var(--mud-palette-text-primary);
+    --elsa-bpmn-muted: var(--mud-palette-text-secondary);
+    --elsa-bpmn-edge: var(--mud-palette-text-primary);
+    --elsa-bpmn-selection: var(--mud-palette-primary);
+
+    /* Pools and lanes are scenery: a hairline and a tinted header band, nothing that competes with
+       the elements they hold. */
+    --elsa-bpmn-container-surface: transparent;
+    --elsa-bpmn-container-stroke: var(--mud-palette-lines-default);
+    --elsa-bpmn-header-surface: color-mix(in srgb, var(--mud-palette-text-primary) 5%, transparent);
+
+    /* An element whose work is not bound, or whose binding does not resolve. W8 refuses to publish
+       a workflow in that state, so it is called out rather than left to look ordinary. */
+    --elsa-bpmn-unbound: var(--mud-palette-warning);
+
+    /* Instance state. The first four mirror the flowchart's badge colours; `canceled` is the one
+       the flowchart has no equivalent for, and is deliberately not the fault colour. */
+    --elsa-bpmn-badge-faulted: var(--mud-palette-error);
+    --elsa-bpmn-badge-faulted-text: var(--mud-palette-error-text);
+    --elsa-bpmn-badge-canceled: var(--mud-palette-text-disabled);
+    --elsa-bpmn-badge-canceled-text: var(--mud-palette-surface);
+    --elsa-bpmn-badge-blocked: var(--mud-palette-warning);
+    --elsa-bpmn-badge-blocked-text: var(--mud-palette-warning-text);
+    --elsa-bpmn-badge-active: var(--mud-palette-info);
+    --elsa-bpmn-badge-active-text: var(--mud-palette-info-text);
+    --elsa-bpmn-badge-completed: var(--mud-palette-success);
+    --elsa-bpmn-badge-completed-text: var(--mud-palette-success-text);
+    --elsa-bpmn-badge-idle: var(--mud-palette-lines-default);
+    --elsa-bpmn-badge-idle-text: var(--mud-palette-text-secondary);
+}
+
+.elsa-bpmn-diagram-designer .x6-graph-background {
+    background-color: var(--elsa-bpmn-canvas);
+}
+
+.elsa-bpmn-diagram-designer .elsa-bpmn-selection .x6-widget-selection-box {
+    border: solid 2px var(--elsa-bpmn-selection);
+    border-radius: 4px;
+    box-shadow: none;
+}
+
+.elsa-bpmn-diagram-designer .elsa-bpmn-selection .x6-widget-selection-inner {
+    border: none;
+    box-shadow: none;
+}
+
+/* Read-only: the pointer says "this can be inspected", never "this can be dragged". */
+.elsa-bpmn-diagram-designer .x6-node {
+    cursor: pointer;
+}
+
+.elsa-bpmn-diagram-designer .x6-edge {
+    cursor: default;
+}

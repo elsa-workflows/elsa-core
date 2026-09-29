@@ -1,0 +1,49 @@
+@using MudBlazor
+@using Elsa.Studio.Environments.Contracts
+@using Elsa.Studio.Environments.Models
+@inherits StudioComponentBase
+@implements IDisposable
+@inject IEnvironmentService EnvironmentService;
+
+<MudMenu
+    Label="@(EnvironmentService.CurrentEnvironment?.Name)"
+    Variant="Variant.Text"
+    EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
+    IconColor="Color.Inherit"
+    AnchorOrigin="Origin.BottomRight"
+    TransformOrigin="Origin.BottomRight"
+    Color="Color.Inherit"
+    Dense="true">
+    @foreach (var environment in EnvironmentService.Environments)
+    {
+        <MudMenuItem OnClick="@(() => ChangeEnvironment(environment))">@environment.Name</MudMenuItem>
+    }
+</MudMenu>
+
+@code
+{
+    private void ChangeEnvironment(ServerEnvironment environment)
+    {
+        EnvironmentService.SetCurrentEnvironment(environment.Name);
+        StateHasChanged();
+    }
+
+    protected override void OnInitialized()
+    {
+        EnvironmentService.EnvironmentsChanged += OnEnvironmentsChanged;
+        EnvironmentService.CurrentEnvironmentChanged += OnCurrentEnvironmentChanged;
+    }
+
+    public void Dispose()
+    {
+        EnvironmentService.EnvironmentsChanged -= OnEnvironmentsChanged;
+        EnvironmentService.CurrentEnvironmentChanged -= OnCurrentEnvironmentChanged;
+    }
+
+    private void OnEnvironmentsChanged()
+    {
+        StateHasChanged();
+    }
+    
+    private void OnCurrentEnvironmentChanged() => StateHasChanged();
+}

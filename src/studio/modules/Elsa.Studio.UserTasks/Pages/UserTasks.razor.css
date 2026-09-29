@@ -1,0 +1,16 @@
+.user-tasks-table .mud-table-toolbar { gap: .75rem; }
+.user-task-filter-row { align-items: end; display: flex; flex-wrap: wrap; gap: .75rem; }
+
+/* Overdue is also marked with an icon and screen-reader text, so colour is never the only signal. */
+.user-task-overdue { color: var(--mud-palette-error); font-weight: 600; }
+
+.user-task-visually-hidden {
+    border: 0;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}

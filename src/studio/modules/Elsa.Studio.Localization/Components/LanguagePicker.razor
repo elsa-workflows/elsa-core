@@ -1,0 +1,32 @@
+﻿@inject IOptions<LocalizationOptions> LocalizationOptions
+@inject ICultureService CultureService
+
+<MudMenu Label="@LocalizationOptions.Value.CulturePickerFormatter(CultureInfo.CurrentUICulture)"
+         Variant="Variant.Outlined"
+         Color="Color.Inherit"
+         AnchorOrigin="Origin.BottomRight"
+         TransformOrigin="Origin.BottomRight"
+         Dense="true"
+         StartIcon="@Icons.Material.Filled.Language"
+         EndIcon="@Icons.Material.Filled.KeyboardArrowDown">
+    @foreach (var culture in _cultures)
+    {
+        <MudMenuItem
+            OnClick="@(_ => ChangeCulture(culture))">@LocalizationOptions.Value.CulturePickerFormatter(culture)</MudMenuItem>
+    }
+</MudMenu>
+
+@code {
+    private List<CultureInfo> _cultures = [];
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        _cultures = LocalizationOptions.Value?.SupportedCultures.Select(s => new CultureInfo(s)).ToList() ?? [];
+    }
+
+    private async void ChangeCulture(CultureInfo culture)
+    {
+        await CultureService.ChangeCultureAsync(culture);
+    }
+}

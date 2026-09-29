@@ -1,0 +1,26 @@
+{
+  "name": "@elsa-workflows/elsa-studio-wasm",
+  "version": "3.0.0-preview.1",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elsa-workflows/elsa-studio.git"
+  },
+  "description": "Provides Elsa Studio Blazor components wrapped as custom elements.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "elsa workflows",
+    "blazor"
+  ],
+  "author": "Sipke Schoorstra",
+  "license": "MIT",
+  "files": [
+    "_framework/*",
+    "_content/*",
+    "index.html",
+    "appsettings.json",
+    "Elsa.Studio.Host.CustomElements.styles.css"
+  ]
+
+}

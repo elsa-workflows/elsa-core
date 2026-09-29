@@ -1,0 +1,55 @@
+@inherits StudioComponentBase
+@using Orientation = Radzen.Orientation
+@inject ILocalizer Localizer
+
+<MudDrawerContainer Class="mud-height-full" Style="display: flex; flex-direction: row; position: relative; overflow: hidden;">
+    <div style="flex: 1; overflow: hidden;">
+        <RadzenSplitter Orientation="Orientation.Horizontal" Style="height: calc(100vh - var(--mud-appbar-height));">
+            <RadzenSplitterPane Size="20%" Min="100px">
+                <MudTabs Elevation="0" ApplyEffectsToContainer="true" KeepPanelsAlive="true" @bind-ActivePanelIndex="_leftPanelTabIndex">
+                    <MudTabPanel Text="@Localizer["Journal"]">
+                        <Journal @ref="Journal" JournalEntrySelected="OnWorkflowExecutionLogRecordSelected" GetCustomActivityName="GetCustomActivityName" GetActivityName="GetActivityName"/>
+                    </MudTabPanel>
+                    <MudTabPanel Text="@Localizer["Activity Call Stack"]">
+                        <ActivityCallStack
+                            WorkflowInstanceId="@_workflowInstance?.Id"
+                            ActivityExecutionRecordId="@_selectedActivityExecutionRecordId"
+                            SelectedActivityNodeId="@_selectedActivityNodeId"
+                            IsActive="@(_leftPanelTabIndex == 1)"
+                            CallStackEntrySelected="OnCallStackEntrySelected"
+                            GetCustomActivityName="GetCustomActivityName"
+                            GetActivityName="GetActivityName" />
+                    </MudTabPanel>
+                    <Zone Name="@ZoneNames.WorkflowInstanceViewerLeftPanelTabs" Attributes="LeftPanelTabAttributes" />
+                </MudTabs>
+            </RadzenSplitterPane>
+            <RadzenSplitterPane Size="80%">
+                <WorkflowInstanceWorkspace
+                    @ref="_workspace"
+                    WorkflowInstance="@_workflowInstance"
+                    WorkflowDefinition="@_workflowDefinition"
+                    PathChanged="OnDesignerPathChanged"
+                    ActivitySelected="OnActivitySelected"
+                    ActivityExecutionSelected="OnActivityExecutionSelected"
+                    EditWorkflowDefinition="EditWorkflowDefinition"/>
+            </RadzenSplitterPane>
+        </RadzenSplitter>
+    </div>
+
+    <MudDrawer @bind-Open="_isExecutionDetailsDrawerOpen"
+               Anchor="Anchor.Right"
+               Width="600px"
+               Height="100%"
+               Elevation="2"
+               Variant="@DrawerVariant.Persistent">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">@Localizer["Execution Details"]</MudText>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="@(() => _isExecutionDetailsDrawerOpen = false)" />
+        </MudDrawerHeader>
+        <MudDivider />
+        <div style="padding: 16px; overflow-y: auto; height: calc(100vh - var(--mud-appbar-height) - 64px);">
+            <ActivityExecutionDetails ActivityExecution="@_selectedExecutionForDrawer" />
+        </div>
+    </MudDrawer>
+</MudDrawerContainer>

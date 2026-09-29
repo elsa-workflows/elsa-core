@@ -1,0 +1,56 @@
+@using Elsa.Studio.Labels.Comparers
+@using Variant = MudBlazor.Variant
+@inherits StudioComponentBase
+@using Elsa.Studio.Workflows.Services
+@using LabelModel = Elsa.Studio.Labels.Models.Label
+@inject ILocalizer Localizer
+
+<MudDialog>
+    <DialogContent>
+        <MudTable T="LabelModel"
+                  @bind-SelectedItems="_selectedLabels"
+                  ServerData="@ServerReload"
+                  Dense="true"
+                  Hover="true"
+                  Elevation="0"
+                  RowStyle="cursor: pointer;"
+                  MultiSelection="true"
+                  SelectOnRowClick="false"
+                  Class="definitions-table">
+            <ColGroup>
+                <col />
+                <col />
+                <col />
+            </ColGroup>
+            <HeaderContent>
+                <MudTh>
+                    <MudTableSortLabel SortLabel="Name" T="LabelModel">@Localizer["Name"]</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortLabel="Scope" T="LabelModel">@Localizer["Description"]</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortLabel="Scope" T="LabelModel">@Localizer["Color"]</MudTableSortLabel>
+                </MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">@context.Name</MudTd>
+                <MudTd DataLabel="Description">@context.Description</MudTd>
+                <MudTd DataLabel="Color">@context.Color</MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText>@Localizer["No Labels found"]</MudText>
+            </NoRecordsContent>
+            <LoadingContent>
+                <MudText>@Localizer["Loading"]...</MudText>
+            </LoadingContent>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+        </MudTable>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked">@Localizer["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" OnClick="OnSubmitClickedAsync">@Localizer["Ok"]</MudButton>
+    </DialogActions>
+</MudDialog>

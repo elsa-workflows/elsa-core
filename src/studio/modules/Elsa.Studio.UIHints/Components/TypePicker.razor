@@ -1,0 +1,37 @@
+@using Elsa.Api.Client.Resources.VariableTypes.Models
+@inject ILocalizer Localizer
+@inherits StudioComponentBase
+
+@{
+    var inputDescriptor = EditorContext.InputDescriptor;
+    var displayName = inputDescriptor.DisplayName ?? inputDescriptor.Name;
+    var description = inputDescriptor.Description ?? string.Empty;
+    var selectedValue = GetSelectedValue();
+    var searchBox = _variableTypes.Count > 10;
+}
+
+<FieldExtension UIHintComponent="@InputUIHints.TypePicker" EditorContext="@EditorContext">
+    <ChildContent>
+        <MudSelectExtended T="VariableTypeDescriptor"
+                           Label="@Localizer[displayName]"
+                           Variant="Variant.Outlined"
+                           HelperText="@Localizer[description]"
+                           Margin="Margin.Dense"
+                           Value="@selectedValue"
+                           SearchBox="@searchBox"
+                           ToStringFunc="@(item => item?.DisplayName ?? "")"
+                           ValueChanged="OnValueChanged"
+                           ReadOnly="EditorContext.IsReadOnly"
+                           Disabled="EditorContext.IsReadOnly">
+            @foreach (var grouping in _groupedVariableTypes)
+            {
+                <MudSelectItemGroupExtended T="string" Text="@grouping.Key">
+                    @foreach (var variableType in grouping)
+                    {
+                        <MudSelectItemExtended T="VariableTypeDescriptor" Value="@variableType">@variableType.DisplayName</MudSelectItemExtended>
+                    }
+                </MudSelectItemGroupExtended>
+            }
+        </MudSelectExtended>
+    </ChildContent>
+</FieldExtension>

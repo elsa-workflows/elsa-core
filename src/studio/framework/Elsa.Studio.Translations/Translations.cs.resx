@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" id="root">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Looping" xml:space="preserve">
+    <value>Procházení</value>
+  </data>
+  <data name="14 days" xml:space="preserve">
+    <value>14 dní</value>
+  </data>
+  <data name="180 days" xml:space="preserve">
+    <value>180 dní</value>
+  </data>
+  <data name="30 days" xml:space="preserve">
+    <value>30 dní</value>
+  </data>
+  <data name="7 days" xml:space="preserve">
+    <value>7 dní</value>
+  </data>
+  <data name="90 days" xml:space="preserve">
+    <value>90 dní</value>
+  </data>
+  <data name="A brief description of the agent." xml:space="preserve">
+    <value>Krátký popisek agenta.</value>
+  </data>
+  <data name="A brief description of the secret." xml:space="preserve">
+    <value>Krátký popisek tajemství.</value>
+  </data>
+  <data name="A brief description of the workflow." xml:space="preserve">
+    <value>Krátký popisek průběhu.</value>
+  </data>
+  <data name="A brief description of this input." xml:space="preserve">
+    <value>Krátký popisek vstupu.</value>
+  </data>
+  <data name="A brief description of this output." xml:space="preserve">
+    <value>Krátký popisek výstupu.</value>
+  </data>
+  <data name="Activities" xml:space="preserve">
+    <value>Aktivity</value>
+  </data>
+  <data name="Activity" xml:space="preserve">
+    <value>Aktivita</value>
+  </data>
+  <data name="Activity Instance ID" xml:space="preserve">
+    <value>Id instance aktivity</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>Přidat</value>
+  </data>
+  <data name="Add input" xml:space="preserve">
+    <value>Přidat vstup</value>
+  </data>
+  <data name="Add output" xml:space="preserve">
+    <value>Přidat výstup</value>
+  </data>
+  <data name="A custom activity category to assign this workflow-as-an-activity to." xml:space="preserve">
+    <value>Vlastní kategorie aktivit, do které bude tento workflow jako aktivita zařazen.</value>
+  </data>
+  <data name="A custom category by which to group this input." xml:space="preserve">
+    <value>Vlastní kategorie, podle které bude tento vstup seskupen.</value>
+  </data>
+  <data name="A default value." xml:space="preserve">
+    <value>Defualtní hodnota.</value>
+  </data>
+  <data name="Agent" xml:space="preserve">
+    <value>Agent</value>
+  </data>
+  <data name="Agents" xml:space="preserve">
+    <value>Agenti</value>
+  </data>
+  <data name="Aggregation" xml:space="preserve">
+    <value>Agregace</value>
+  </data>
+  <data name="A JSON editor" xml:space="preserve">
+    <value>JSON Editor</value>
+  </data>
+  <data name="A list of radio buttons" xml:space="preserve">
+    <value>Seznam přepínacích tlačítek</value>
+  </data>
+  <data name="Branches" xml:space="preserve">
+    <value>Větve</value>
+  </data>
+</root>

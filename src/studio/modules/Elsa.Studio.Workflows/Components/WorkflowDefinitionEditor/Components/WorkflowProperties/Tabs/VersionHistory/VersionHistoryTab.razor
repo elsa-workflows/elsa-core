@@ -1,0 +1,58 @@
+@using Elsa.Api.Client.Resources.WorkflowDefinitions.Models
+@using Variant = MudBlazor.Variant
+@using Elsa.Studio.Workflows.Services
+@inject ILocalizer Localizer
+@inherits StudioComponentBase
+
+<VerticalWell ExtraPadding="40">
+    <MudText Typo="Typo.overline">@Localizer["Version history"]</MudText>
+    <MudStack>
+        <MudMenu EndIcon="@Icons.Material.Filled.KeyboardArrowDown" Label="@Localizer["Bulk actions"]" Color="Color.Default" Variant="Variant.Filled" Class="align-self-end" AnchorOrigin="Origin.BottomLeft" Disabled="!HasWorkflowEditPermission">
+            <MudMenuItem OnClick="OnBulkDeleteClicked">@Localizer["Delete"]</MudMenuItem>
+        </MudMenu>
+        <VerticalWell ExtraPadding="160">
+            <MudTable @ref="Table"
+                      ServerData="LoadVersionsAsync"
+                      T="WorkflowDefinitionSummary"
+                      OnRowClick="@OnRowClick"
+                      @bind-SelectedItems="SelectedDefinitions"
+                      RowStyle="cursor: pointer;"
+                      MultiSelection="true"
+                      SelectOnRowClick="false"
+                      Hover="true"
+                      Dense="true"
+                      Bordered="false"
+                      Striped="false"
+                      Elevation="0"
+                      Outlined="true"
+                      FixedHeader="true">
+                <HeaderContent>
+                    <MudTh>@Localizer["Published"]</MudTh>
+                    <MudTh>@Localizer["Version"]</MudTh>
+                    <MudTh>@Localizer["Created"]</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        @if (context.IsPublished)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Success" />
+                        }
+                    </MudTd>
+                    <MudTd>@context.Version</MudTd>
+                    <MudTd>@context.CreatedAt.ToString("g")</MudTd>
+                    <MudTd style="text-align: right;">
+                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true">
+                            <MudMenuItem Icon="@Icons.Material.Outlined.ZoomIn" OnClick="@(() => OnViewClicked(context))">@Localizer["View"]</MudMenuItem>
+                            <MudMenuItem Icon="@Icons.Material.Outlined.Undo" OnClick="@(() => OnRollbackClicked(context))" Disabled="@(!CanRollback(context))">@Localizer["Rollback to this version"]</MudMenuItem>
+                            <MudMenuItem Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => OnDeleteClicked(context))" Disabled="@(!CanDelete(context))">@Localizer["Delete"]</MudMenuItem>
+                        </MudMenu>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager />
+                </PagerContent>
+            </MudTable>
+        </VerticalWell>
+    </MudStack>
+</VerticalWell>

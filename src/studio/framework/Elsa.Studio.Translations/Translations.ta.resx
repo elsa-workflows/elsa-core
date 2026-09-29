@@ -1,0 +1,1576 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" id="root">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="14 days" xml:space="preserve">
+    <value>14 நாட்கள்</value>
+  </data>
+  <data name="180 days" xml:space="preserve">
+    <value>180 நாட்கள்</value>
+  </data>
+  <data name="30 days" xml:space="preserve">
+    <value>30 நாட்கள்</value>
+  </data>
+  <data name="7 days" xml:space="preserve">
+    <value>7 நாட்கள்</value>
+  </data>
+  <data name="90 days" xml:space="preserve">
+    <value>90 நாட்கள்</value>
+  </data>
+  <data name="A brief description of the agent." xml:space="preserve">
+    <value>முகவர் பற்றிய சுருக்கமான விளக்கம்.</value>
+  </data>
+  <data name="A brief description of the secret." xml:space="preserve">
+    <value>இரகசியத்தின் சுருக்கமான விளக்கம்.</value>
+  </data>
+  <data name="A brief description of the workflow." xml:space="preserve">
+    <value>பணிப்பாய்வு பற்றிய சுருக்கமான விளக்கம்.</value>
+  </data>
+  <data name="A brief description of this input." xml:space="preserve">
+    <value>இந்த உள்ளீட்டின் சுருக்கமான விளக்கம்.</value>
+  </data>
+  <data name="A brief description of this output." xml:space="preserve">
+    <value>இந்த வெளியீட்டின் சுருக்கமான விளக்கம்.</value>
+  </data>
+  <data name="A custom activity category to assign this workflow-as-an-activity to." xml:space="preserve">
+    <value>இந்த பணிப்பாய்வு-ஒரு-செயல்பாடாக ஒதுக்க தனிப்பயன் செயல்பாட்டு வகை.</value>
+  </data>
+  <data name="A custom category by which to group this input." xml:space="preserve">
+    <value>இந்த உள்ளீட்டைக் குழுவாக்குவதற்கான தனிப்பயன் வகை.</value>
+  </data>
+  <data name="A custom category by which to group this output." xml:space="preserve">
+    <value>இந்த வெளியீட்டைக் குழுவாக்குவதற்கான தனிப்பயன் வகை.</value>
+  </data>
+  <data name="A default value." xml:space="preserve">
+    <value>ஒரு இயல்புநிலை மதிப்பு.</value>
+  </data>
+  <data name="A description about the role and purpose of this agent." xml:space="preserve">
+    <value>இந்த ஏசென்ட்டின் பங்கு மற்றும் நோக்கம் பற்றிய விளக்கம்.</value>
+  </data>
+  <data name="A description about the role and purpose of this input variable." xml:space="preserve">
+    <value>இந்த உள்ளீட்டு மாறியின் பங்கு மற்றும் நோக்கம் பற்றிய விளக்கம்.</value>
+  </data>
+  <data name="A description about the secret." xml:space="preserve">
+    <value>மறைபொருள் பற்றிய விளக்கம்.</value>
+  </data>
+  <data name="A description of this activity to be displayed in the designer." xml:space="preserve">
+    <value>இந்தச் செயல்பாட்டின் விளக்கம் வடிவமைப்பாளரிடம் காட்டப்படும்.</value>
+  </data>
+  <data name="A technical name for the function" xml:space="preserve">
+    <value>இந்த முகவர் செய்யும் செயல்பாட்டிற்கான தொழில்நுட்ப பெயர். உதாரணமாக: WriteCode</value>
+  </data>
+  <data name="Acknowledge Datasource Event" xml:space="preserve">
+    <value>தரவு மூல நிகழ்வை அங்கீகரிக்கவும்</value>
+  </data>
+  <data name="Activation strategy" xml:space="preserve">
+    <value>செயல்படுத்தும் உத்தி</value>
+  </data>
+  <data name="Activities" xml:space="preserve">
+    <value>செயல்பாடுகள்</value>
+  </data>
+  <data name="Activity" xml:space="preserve">
+    <value>செய்கைப்பாடு</value>
+  </data>
+  <data name="Activity Instance ID" xml:space="preserve">
+    <value>செயல்பாட்டு நிகழ்வு அடையாளம்</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>கூட்டு</value>
+  </data>
+  <data name="Add input" xml:space="preserve">
+    <value>உள்ளீட்டைச் சேர்க்கவும்</value>
+  </data>
+  <data name="Add output" xml:space="preserve">
+    <value>வெளியீட்டைச் சேர்க்கவும்</value>
+  </data>
+  <data name="Add variable" xml:space="preserve">
+    <value>மாறியைச் சேர்க்கவும்</value>
+  </data>
+  <data name="Agent" xml:space="preserve">
+    <value>முகவர்</value>
+  </data>
+  <data name="Agents" xml:space="preserve">
+    <value>முகவர்கள்</value>
+  </data>
+  <data name="Aggregation" xml:space="preserve">
+    <value>திரள்வு</value>
+  </data>
+  <data name="Allow this workflow to be used as an activity." xml:space="preserve">
+    <value>இந்த பணிப்பாய்வு ஒரு செயலாக பயன்படுத்த அனுமதிக்கவும்.</value>
+  </data>
+  <data name="API Key" xml:space="preserve">
+    <value>பநிஇ விசை</value>
+  </data>
+  <data name="API Keys" xml:space="preserve">
+    <value>பநிஇ விசைகள்</value>
+  </data>
+  <data name="Apply" xml:space="preserve">
+    <value>இடு</value>
+  </data>
+  <data name="Auto-update consuming workflows" xml:space="preserve">
+    <value>நுகர்வு பணிப்பாய்வுகளைத் தானாகப் புதுப்பிக்கவும்</value>
+  </data>
+  <data name="Auto-save" xml:space="preserve">
+    <value>தானாகச் சேமிக்கவும்</value>
+  </data>
+  <data name="Branching" xml:space="preserve">
+    <value>கிளைகள்</value>
+  </data>
+  <data name="Break" xml:space="preserve">
+    <value>இடைவேளை</value>
+  </data>
+  <data name="Bulk actions" xml:space="preserve">
+    <value>மொத்த செயல்கள்</value>
+  </data>
+  <data name="Bulk Dispatch Workflows" xml:space="preserve">
+    <value>மொத்தமாக அனுப்பும் பணிப்பாய்வுகள்</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>ரத்துசெய்</value>
+  </data>
+  <data name="Category" xml:space="preserve">
+    <value>வகை</value>
+  </data>
+  <data name="Check this option if the variable holds an array of the selected type." xml:space="preserve">
+    <value>தேர்ந்தெடுக்கப்பட்ட வகையின் வரிசையை மாறி வைத்திருந்தால், இந்த விருப்பத்தை சரிபார்க்கவும்.</value>
+  </data>
+  <data name="Clear" xml:space="preserve">
+    <value>தெளிவு</value>
+  </data>
+  <data name="Click to open a new workflow tab" xml:space="preserve">
+    <value>புதிய பணிப்பாய்வு தாவலைத் திறக்க சொடுக்கு செய்யவும்</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>மூடு</value>
+  </data>
+  <data name="Close workflow" xml:space="preserve">
+    <value>பணிப்பாய்வுகளை மூடு</value>
+  </data>
+  <data name="Common" xml:space="preserve">
+    <value>பொதுவானது</value>
+  </data>
+  <data name="Complete" xml:space="preserve">
+    <value>நிறைவு</value>
+  </data>
+  <data name="Completed" xml:space="preserve">
+    <value>முடிந்தது</value>
+  </data>
+  <data name="Composition" xml:space="preserve">
+    <value>கலவை</value>
+  </data>
+  <data name="Connection Strings" xml:space="preserve">
+    <value>இணைப்பு சரங்கள்</value>
+  </data>
+  <data name="Console" xml:space="preserve">
+    <value>பணியகம்</value>
+  </data>
+  <data name="Container" xml:space="preserve">
+    <value>சரக்குப் பெட்டகம்</value>
+  </data>
+  <data name="Correlate" xml:space="preserve">
+    <value>தொடர்புபடுத்து</value>
+  </data>
+  <data name="Correlation ID" xml:space="preserve">
+    <value>தொடர்பு அடையாளம்</value>
+  </data>
+  <data name="Create Agent" xml:space="preserve">
+    <value>முகவரை உருவாக்கவும்</value>
+  </data>
+  <data name="Create API Key" xml:space="preserve">
+    <value>பநிஇ விசையை உருவாக்கவும்</value>
+  </data>
+  <data name="Create Secret" xml:space="preserve">
+    <value>ரகசியத்தை உருவாக்கவும்</value>
+  </data>
+  <data name="Create Service" xml:space="preserve">
+    <value>சேவையை உருவாக்கவும்</value>
+  </data>
+  <data name="Created" xml:space="preserve">
+    <value>உருவாக்கப்பட்டது</value>
+  </data>
+  <data name="CreatedAt" xml:space="preserve">
+    <value>உருவாக்கப்பட்டது</value>
+  </data>
+  <data name="Create workflow" xml:space="preserve">
+    <value>பணிப்பாய்வு உருவாக்கவும்</value>
+  </data>
+  <data name="Cron" xml:space="preserve">
+    <value>கிரான்</value>
+  </data>
+  <data name="Dashboard" xml:space="preserve">
+    <value>முகப்புப்பெட்டி</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>திகதி</value>
+  </data>
+  <data name="Date Filters" xml:space="preserve">
+    <value>தேதி வடிகட்டிகள்</value>
+  </data>
+  <data name="Decision" xml:space="preserve">
+    <value>முடிவு</value>
+  </data>
+  <data name="Default configuration" xml:space="preserve">
+    <value>இயல்புநிலை கட்டமைப்பு</value>
+  </data>
+  <data name="Default value" xml:space="preserve">
+    <value>இயல்புநிலை மதிப்பு</value>
+  </data>
+  <data name="Definition ID" xml:space="preserve">
+    <value>வரையறை அடையாளம்</value>
+  </data>
+  <data name="Definition version" xml:space="preserve">
+    <value>வரையறை பதிப்பு</value>
+  </data>
+  <data name="Definition version ID" xml:space="preserve">
+    <value>வரையறை பதிப்பு அடையாளம்</value>
+  </data>
+  <data name="Definitions" xml:space="preserve">
+    <value>வரையறைகள்</value>
+  </data>
+  <data name="Delay" xml:space="preserve">
+    <value>சுணக்கம்</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>நீக்கு</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>விவரம்</value>
+  </data>
+  <data name="Details" xml:space="preserve">
+    <value>விவரங்கள்</value>
+  </data>
+  <data name="Dispatch Workflow" xml:space="preserve">
+    <value>அனுப்புதல் பணிப்பாய்வு</value>
+  </data>
+  <data name="Display name" xml:space="preserve">
+    <value>காட்சி பெயர்</value>
+  </data>
+  <data name="Display text" xml:space="preserve">
+    <value>உரையைக் காட்டு</value>
+  </data>
+  <data name="Download File" xml:space="preserve">
+    <value>கோப்பைப் பதிவிறக்கவும்</value>
+  </data>
+  <data name="Duration" xml:space="preserve">
+    <value>கால அளவு</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>தொகு</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>மின்னஞ்சல்</value>
+  </data>
+  <data name="End" xml:space="preserve">
+    <value>முடிவு</value>
+  </data>
+  <data name="Enter a list of possible outcomes for this workflow." xml:space="preserve">
+    <value>இந்த பணிப்பாய்வுக்கான சாத்தியமான விளைவுகளின் பட்டியலை உள்ளிடவும்.</value>
+  </data>
+  <data name="Event" xml:space="preserve">
+    <value>நிகழ்வு</value>
+  </data>
+  <data name="Events" xml:space="preserve">
+    <value>நிகழ்வுகள்</value>
+  </data>
+  <data name="Excel Parser" xml:space="preserve">
+    <value>எக்செல் பாகுபடுத்தி</value>
+  </data>
+  <data name="Execution Settings" xml:space="preserve">
+    <value>செயல்படுத்தல் அமைப்புகள்</value>
+  </data>
+  <data name="Executions" xml:space="preserve">
+    <value>மரணதண்டனைகள்</value>
+  </data>
+  <data name="Expires" xml:space="preserve">
+    <value>காலாவதியாகிறது</value>
+  </data>
+  <data name="Expires In" xml:space="preserve">
+    <value>இல் காலாவதியாகிறது</value>
+  </data>
+  <data name="Export" xml:space="preserve">
+    <value>ஏற்றுமதி</value>
+  </data>
+  <data name="Export the current workflow as a JSON file" xml:space="preserve">
+    <value>தற்போதைய பணிப்பாய்வுகளை சாதொபொகு கோப்பாக ஏற்றுமதி செய்யவும்.</value>
+  </data>
+  <data name="Export this version as a JSON file." xml:space="preserve">
+    <value>இந்தப் பதிப்பை சாதொபொகு கோப்பாக ஏற்றுமதி செய்யவும்.</value>
+  </data>
+  <data name="Fault" xml:space="preserve">
+    <value>தவறு</value>
+  </data>
+  <data name="Finish" xml:space="preserve">
+    <value>முடிக்கவும்</value>
+  </data>
+  <data name="Finished" xml:space="preserve">
+    <value>முடிந்தது</value>
+  </data>
+  <data name="FinishedAt" xml:space="preserve">
+    <value>மணிக்கு முடிந்தது</value>
+  </data>
+  <data name="Flow" xml:space="preserve">
+    <value>பாய்வு</value>
+  </data>
+  <data name="For" xml:space="preserve">
+    <value>க்கு</value>
+  </data>
+  <data name="Fork (flow)" xml:space="preserve">
+    <value>முட்கரண்டி (ஓட்டம்)</value>
+  </data>
+  <data name="Frequency Penalty" xml:space="preserve">
+    <value>அதிர்வெண் தண்டம்</value>
+  </data>
+  <data name="Function" xml:space="preserve">
+    <value>சார்பு</value>
+  </data>
+  <data name="Function Name" xml:space="preserve">
+    <value>செயல்பாட்டு பெயர்</value>
+  </data>
+  <data name="General" xml:space="preserve">
+    <value>பொது</value>
+  </data>
+  <data name="Has Incidents" xml:space="preserve">
+    <value>சம்பவங்கள் உள்ளன</value>
+  </data>
+  <data name="HTTP" xml:space="preserve">
+    <value>HTTP</value>
+  </data>
+  <data name="HTTP Endpoint" xml:space="preserve">
+    <value>HTTP இறுதிப்புள்ளி</value>
+  </data>
+  <data name="HTTP File Response" xml:space="preserve">
+    <value>HTTP கோப்பு பதில்</value>
+  </data>
+  <data name="HTTP Request" xml:space="preserve">
+    <value>HTTP கோரிக்கை</value>
+  </data>
+  <data name="HTTP Request (flow)" xml:space="preserve">
+    <value>HTTP கோரிக்கை (ஓட்டம்)</value>
+  </data>
+  <data name="HTTP Response" xml:space="preserve">
+    <value>HTTP பதில்</value>
+  </data>
+  <data name="ID" xml:space="preserve">
+    <value>ஐடி</value>
+  </data>
+  <data name="The ID of the activity." xml:space="preserve">
+    <value>செயல்பாட்டின் அடையாளம்.</value>
+  </data>
+  <data name="If" xml:space="preserve">
+    <value>என்றால்</value>
+  </data>
+  <data name="Import" xml:space="preserve">
+    <value>இறக்குமதி</value>
+  </data>
+  <data name="Import a JSON file containing workflow data to override the current workflow's contents." xml:space="preserve">
+    <value>தற்போதைய பணிப்பாய்வு உள்ளடக்கங்களை மேலெழுத, பணிப்பாய்வு தரவைக் கொண்ட சாதொபொகு கோப்பை இறக்குமதி செய்யவும்.</value>
+  </data>
+  <data name="Incident Strategy" xml:space="preserve">
+    <value>சம்பவ உத்தி</value>
+  </data>
+  <data name="IncidentCount" xml:space="preserve">
+    <value>சம்பவ எண்ணிக்கை</value>
+  </data>
+  <data name="Incidents" xml:space="preserve">
+    <value>சம்பவங்கள்</value>
+  </data>
+  <data name="Info" xml:space="preserve">
+    <value>தகவல்</value>
+  </data>
+  <data name="Information" xml:space="preserve">
+    <value>தகவல்</value>
+  </data>
+  <data name="Input" xml:space="preserve">
+    <value>உள்ளீடு</value>
+  </data>
+  <data name="Input Properties" xml:space="preserve">
+    <value>உள்ளீட்டு பண்புகள்</value>
+  </data>
+  <data name="Input/output" xml:space="preserve">
+    <value>உள்ளீடு/வெளியீடு</value>
+  </data>
+  <data name="Inputs" xml:space="preserve">
+    <value>உள்ளீடுகள்</value>
+  </data>
+  <data name="Instances" xml:space="preserve">
+    <value>நிகழ்வுகள்</value>
+  </data>
+  <data name="int" xml:space="preserve">
+    <value>முழு எண்ணாக</value>
+  </data>
+  <data name="Is" xml:space="preserve">
+    <value>உள்ளது</value>
+  </data>
+  <data name="Is After" xml:space="preserve">
+    <value>பிறகு உள்ளது</value>
+  </data>
+  <data name="Is array" xml:space="preserve">
+    <value>வரிசை</value>
+  </data>
+  <data name="Is Before" xml:space="preserve">
+    <value>முன்பு உள்ளது</value>
+  </data>
+  <data name="Is Not" xml:space="preserve">
+    <value>இல்லை</value>
+  </data>
+  <data name="Is on or After" xml:space="preserve">
+    <value>ஆன் அல்லது பின்</value>
+  </data>
+  <data name="Is on or Before" xml:space="preserve">
+    <value>அன்று அல்லது அதற்கு முன் உள்ளது</value>
+  </data>
+  <data name="Join" xml:space="preserve">
+    <value>சேருங்கள்</value>
+  </data>
+  <data name="Journal" xml:space="preserve">
+    <value>இதழ்</value>
+  </data>
+  <data name="Latest version" xml:space="preserve">
+    <value>அண்மைக் கால பதிப்பு</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>ஏற்றுகிறது</value>
+  </data>
+  <data name="Log Persistence Strategy" xml:space="preserve">
+    <value>பதிவு நிலைத்தன்மை உத்தி</value>
+  </data>
+  <data name="Looping" xml:space="preserve">
+    <value>லூப்பிங்</value>
+  </data>
+  <data name="Manage all the things" xml:space="preserve">
+    <value>எல்லா விசயங்களையும் நிர்வகிக்கவும்</value>
+  </data>
+  <data name="Max Tokens" xml:space="preserve">
+    <value>அதிகபட்ச டோக்கன்கள்</value>
+  </data>
+  <data name="Metadata" xml:space="preserve">
+    <value>மேனிலை தரவு</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>பெயர்</value>
+  </data>
+  <data name="The name of the activity. Named activities can be referenced by other activities." xml:space="preserve">
+    <value>செயல்பாட்டின் பெயர். Named activities can be referenced by மற்றொன்று activities.</value>
+  </data>
+  <data name="Never" xml:space="preserve">
+    <value>ஒருபோதும்</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>இல்லை</value>
+  </data>
+  <data name="No agents found" xml:space="preserve">
+    <value>முகவர்கள் இல்லை</value>
+  </data>
+  <data name="No API keys found" xml:space="preserve">
+    <value>பநிஇ விசைகள் எதுவும் இல்லை</value>
+  </data>
+  <data name="No inputs" xml:space="preserve">
+    <value>உள்ளீடுகள் இல்லை</value>
+  </data>
+  <data name="No outcomes associated with this execution." xml:space="preserve">
+    <value>இந்தச் செயல்படுத்துதலுடன் தொடர்புடைய முடிவுகள் எதுவும் இல்லை.</value>
+  </data>
+  <data name="No output associated with this execution." xml:space="preserve">
+    <value>இந்தச் செயலாக்கத்துடன் தொடர்புடைய வெளியீடு எதுவும் இல்லை.</value>
+  </data>
+  <data name="No outputs" xml:space="preserve">
+    <value>வெளியீடுகள் இல்லை</value>
+  </data>
+  <data name="No secrets found" xml:space="preserve">
+    <value>ரகசியங்கள் எதுவும் கிடைக்கவில்லை</value>
+  </data>
+  <data name="No services found" xml:space="preserve">
+    <value>சேவைகள் எதுவும் இல்லை</value>
+  </data>
+  <data name="No state associated with this execution." xml:space="preserve">
+    <value>இந்த மரணதண்டனையுடன் தொடர்புடைய எந்த மாநிலமும் இல்லை.</value>
+  </data>
+  <data name="No variables" xml:space="preserve">
+    <value>மாறிகள் இல்லை</value>
+  </data>
+  <data name="No workflow definitions found" xml:space="preserve">
+    <value>பணிப்பாய்வு வரையறைகள் இல்லை</value>
+  </data>
+  <data name="No workflow instances found" xml:space="preserve">
+    <value>இல்லை workflow instances found</value>
+  </data>
+  <data name="object" xml:space="preserve">
+    <value>பொருள்</value>
+  </data>
+  <data name="Ok" xml:space="preserve">
+    <value>சரி</value>
+  </data>
+  <data name="Open File" xml:space="preserve">
+    <value>கோப்பை திற</value>
+  </data>
+  <data name="OpenAIChatCompletion" xml:space="preserve">
+    <value>OpenAIchat நிறைவு</value>
+  </data>
+  <data name="OpenAITextToImage" xml:space="preserve">
+    <value>OpenAITextToImage</value>
+  </data>
+  <data name="Outcomes" xml:space="preserve">
+    <value>முடிவுகள்</value>
+  </data>
+  <data name="Output" xml:space="preserve">
+    <value>வெளியீடு</value>
+  </data>
+  <data name="Output Properties" xml:space="preserve">
+    <value>வெளியீடு பண்புகள்</value>
+  </data>
+  <data name="Outputs" xml:space="preserve">
+    <value>வெளியீடுகள்</value>
+  </data>
+  <data name="Parser" xml:space="preserve">
+    <value>பாகுபடுத்தி</value>
+  </data>
+  <data name="Log Persistence" xml:space="preserve">
+    <value>பதிவு நிலைத்தன்மை</value>
+  </data>
+  <data name="Plugins" xml:space="preserve">
+    <value>செருகுநிரல்கள்</value>
+  </data>
+  <data name="Presence Penalty" xml:space="preserve">
+    <value>முன்னிலையில் தண்டனை</value>
+  </data>
+  <data name="Primitives" xml:space="preserve">
+    <value>ஆதிகாலங்கள்</value>
+  </data>
+  <data name="Prompt Template" xml:space="preserve">
+    <value>உடனடி டெம்ப்ளேட்</value>
+  </data>
+  <data name="Properties" xml:space="preserve">
+    <value>பண்புகள்</value>
+  </data>
+  <data name="Publish" xml:space="preserve">
+    <value>வெளியிடு</value>
+  </data>
+  <data name="Publish Event" xml:space="preserve">
+    <value>நிகழ்வை வெளியிடவும்</value>
+  </data>
+  <data name="Published" xml:space="preserve">
+    <value>வெளியிடப்பட்டது</value>
+  </data>
+  <data name="Published version" xml:space="preserve">
+    <value>வெளியிடப்பட்ட பதிப்பு</value>
+  </data>
+  <data name="Publish the current workflow" xml:space="preserve">
+    <value>தற்போதைய பணிப்பாய்வுகளை வெளியிடவும்</value>
+  </data>
+  <data name="Read Data from Configuration / Runtime" xml:space="preserve">
+    <value>உள்ளமைவு / இயக்க நேரத்திலிருந்து தரவைப் படிக்கவும்</value>
+  </data>
+  <data name="Read Data from Database" xml:space="preserve">
+    <value>தரவுத்தளத்திலிருந்து தரவைப் படிக்கவும்</value>
+  </data>
+  <data name="Rollback to this version" xml:space="preserve">
+    <value>இந்த பதிப்பிற்கு திரும்பவும்</value>
+  </data>
+  <data name="Rows Per Page" xml:space="preserve">
+    <value>ஒரு பக்கத்திற்கு வரிசைகள்</value>
+  </data>
+  <data name="Run" xml:space="preserve">
+    <value>ஓடு</value>
+  </data>
+  <data name="Run Asynchronously" xml:space="preserve">
+    <value>ஒத்திசைவற்ற முறையில் இயக்கவும்</value>
+  </data>
+  <data name="Run JavaScript" xml:space="preserve">
+    <value>சாவாச்கிரிப்டை இயக்கவும்</value>
+  </data>
+  <data name="Run Python" xml:space="preserve">
+    <value>பைத்தானை இயக்கவும்</value>
+  </data>
+  <data name="Run Task" xml:space="preserve">
+    <value>பணியை இயக்கவும்</value>
+  </data>
+  <data name="Run workflow" xml:space="preserve">
+    <value>பணிப்பாய்வுகளை இயக்கவும்</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>சேமி</value>
+  </data>
+  <data name="Save File" xml:space="preserve">
+    <value>கோப்பை சேமி</value>
+  </data>
+  <data name="Scheduling" xml:space="preserve">
+    <value>திட்டமிடல்</value>
+  </data>
+  <data name="Scope" xml:space="preserve">
+    <value>நோக்கம்</value>
+  </data>
+  <data name="Scripting" xml:space="preserve">
+    <value>ச்கிரிப்டிங்</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>தேடு...</value>
+  </data>
+  <data name="Search on name, id, definition id, definition version id, correlation id" xml:space="preserve">
+    <value>பெயர், அடையாளம், வரையறை அடையாளம், வரையறை பதிப்பு அடையாளம், தொடர்பு அடையாளம் ஆகியவற்றில் தேடவும்</value>
+  </data>
+  <data name="Search on name, description, id, definition id" xml:space="preserve">
+    <value>பெயர், விளக்கம், அடையாளம், வரையறை ஐடியில் தேடவும்</value>
+  </data>
+  <data name="Secret" xml:space="preserve">
+    <value>கமுக்கம்</value>
+  </data>
+  <data name="Secrets" xml:space="preserve">
+    <value>இரகசியங்கள்</value>
+  </data>
+  <data name="Send Email" xml:space="preserve">
+    <value>மின்னஞ்சல் அனுப்பவும்</value>
+  </data>
+  <data name="Services" xml:space="preserve">
+    <value>சேவைகள்</value>
+  </data>
+  <data name="Set Name" xml:space="preserve">
+    <value>பெயரை அமைக்கவும்</value>
+  </data>
+  <data name="Set Output" xml:space="preserve">
+    <value>வெளியீட்டை அமைக்கவும்</value>
+  </data>
+  <data name="Set Variable" xml:space="preserve">
+    <value>மாறியை அமைக்கவும்</value>
+  </data>
+  <data name="Set Workflow Context Parameter" xml:space="preserve">
+    <value>பணிப்பாய்வு சூழல் அளவுருவை அமைக்கவும்</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>அமைப்புகள்</value>
+  </data>
+  <data name="Show accumulated time" xml:space="preserve">
+    <value>திரட்டப்பட்ட நேரத்தைக் காட்டு</value>
+  </data>
+  <data name="Show events scoped to current container" xml:space="preserve">
+    <value>தற்போதைய கொள்கலனுக்கு நோக்கப்பட்ட நிகழ்வுகளைக் காட்டு</value>
+  </data>
+  <data name="Show incidents" xml:space="preserve">
+    <value>சம்பவங்களைக் காட்டு</value>
+  </data>
+  <data name="Show relative time" xml:space="preserve">
+    <value>ஒப்பீட்டு நேரத்தைக் காட்டு</value>
+  </data>
+  <data name="Showing all events" xml:space="preserve">
+    <value>அனைத்து நிகழ்வுகளையும் காட்டுகிறது</value>
+  </data>
+  <data name="Showing incidents" xml:space="preserve">
+    <value>சம்பவங்களைக் காட்டுகிறது</value>
+  </data>
+  <data name="Start" xml:space="preserve">
+    <value>தொடங்கு</value>
+  </data>
+  <data name="Start at" xml:space="preserve">
+    <value>தொடங்கவும்</value>
+  </data>
+  <data name="Start of workflow" xml:space="preserve">
+    <value>பணிப்பாய்வு துவக்கம்</value>
+  </data>
+  <data name="Started" xml:space="preserve">
+    <value>தொடங்கப்பட்டது</value>
+  </data>
+  <data name="State" xml:space="preserve">
+    <value>மாநிலம்</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>நிலை</value>
+  </data>
+  <data name="Storage" xml:space="preserve">
+    <value>சேமிப்பு</value>
+  </data>
+  <data name="string" xml:space="preserve">
+    <value>சரம்</value>
+  </data>
+  <data name="Sub status" xml:space="preserve">
+    <value>துணை நிலை</value>
+  </data>
+  <data name="Sub-Workflow" xml:space="preserve">
+    <value>துணைப் பணிப்பாய்வு</value>
+  </data>
+  <data name="Sub-Workflow Inputs" xml:space="preserve">
+    <value>துணைப் பணிப்பாய்வு உள்ளீடுகள்</value>
+  </data>
+  <data name="Sub-Workflow Outputs" xml:space="preserve">
+    <value>துணைப் பணிப்பாய்வு வெளியீடுகள்</value>
+  </data>
+  <data name="SubStatus" xml:space="preserve">
+    <value>துணை நிலை</value>
+  </data>
+  <data name="Switch" xml:space="preserve">
+    <value>ஆளி, நிலைமாறி</value>
+  </data>
+  <data name="Switch (flow)" xml:space="preserve">
+    <value>மாறு (ஓட்டம்)</value>
+  </data>
+  <data name="Task" xml:space="preserve">
+    <value>பணி</value>
+  </data>
+  <data name="Temperature" xml:space="preserve">
+    <value>வெப்பநிலை</value>
+  </data>
+  <data name="The .NET type of the input variable." xml:space="preserve">
+    <value>உள்ளீட்டு மாறியின் .NET வகை.</value>
+  </data>
+  <data name="The .NET type of the output variable." xml:space="preserve">
+    <value>வெளியீடு மாறியின் .NET வகை.</value>
+  </data>
+  <data name="The description of the output variable." xml:space="preserve">
+    <value>வெளியீடு மாறியின் விளக்கம்.</value>
+  </data>
+  <data name="The lifetime of this secret" xml:space="preserve">
+    <value>இந்த ரகசியத்தின் வாழ்நாள்</value>
+  </data>
+  <data name="The maximum number" xml:space="preserve">
+    <value>உருவாக்க வேண்டிய அதிகபட்ச டோக்கன்கள். அதிகபட்சமாக காலியாக விடவும்.</value>
+  </data>
+  <data name="The name of the agent." xml:space="preserve">
+    <value>முகவரின் பெயர்.</value>
+  </data>
+  <data name="The name of the function that the agent will execute." xml:space="preserve">
+    <value>முகவர் செயல்படுத்தும் செயல்பாட்டின் பெயர்.</value>
+  </data>
+  <data name="The name of the new agent." xml:space="preserve">
+    <value>புதிய முகவரின் பெயர்.</value>
+  </data>
+  <data name="The name of the new secret." xml:space="preserve">
+    <value>புதிய ரகசியத்தின் பெயர்.</value>
+  </data>
+  <data name="The name of the new workflow." xml:space="preserve">
+    <value>புதிய பணிப்பாய்வுகளின் பெயர்.</value>
+  </data>
+  <data name="The name of the variable." xml:space="preserve">
+    <value>மாறியின் பெயர்.</value>
+  </data>
+  <data name="The penalty for repeating" xml:space="preserve">
+    <value>எந்த ஒரு டோக்கனையும் திரும்பத் திரும்பச் சொல்வதற்கு தண்டம். அதிக இருப்பு தண்டம், கிள்ளாக்கு திரும்பத் திரும்ப வருவதற்கான வாய்ப்பைக் குறைக்கும், மேலும் மாறுபட்ட உரை உருவாக்கத்தை ஊக்குவிக்கும்.</value>
+  </data>
+  <data name="The penalty for repeating any one token" xml:space="preserve">
+    <value>எந்த ஒரு டோக்கனையும் திரும்பத் திரும்பச் சொல்வதற்கு தண்டம். அதிக அதிர்வெண் தண்டம் கிள்ளாக்கு மீண்டும் வருவதற்கான வாய்ப்பைக் குறைக்கும், மேலும் மாறுபட்ட உரை உருவாக்கத்தை ஊக்குவிக்கும்.</value>
+  </data>
+  <data name="The plugins that the agent can use." xml:space="preserve">
+    <value>முகவர் பயன்படுத்தக்கூடிய செருகுநிரல்கள்.</value>
+  </data>
+  <data name="The scope of the secret helps the UI to filter available options from dropdown lists." xml:space="preserve">
+    <value>கீழ்தோன்றும் பட்டியல்களிலிருந்து கிடைக்கக்கூடிய விருப்பங்களை வடிகட்ட, ரகசியத்தின் நோக்கம் UIக்கு உதவுகிறது.</value>
+  </data>
+  <data name="The secret value." xml:space="preserve">
+    <value>இரகசிய மதிப்பு.</value>
+  </data>
+  <data name="The services that the agent requires." xml:space="preserve">
+    <value>முகவருக்குத் தேவைப்படும் சேவைகள்.</value>
+  </data>
+  <data name="The settings of the service in JSON format." xml:space="preserve">
+    <value>சாதொபொகு வடிவத்தில் சேவையின் அமைப்புகள்.</value>
+  </data>
+  <data name="The system prompt template that the agent will use." xml:space="preserve">
+    <value>முகவர் பயன்படுத்தும் சிச்டம் ப்ராம்ட் டெம்ப்ளேட்.</value>
+  </data>
+  <data name="The technical name of the API key." xml:space="preserve">
+    <value>பநிஇ விசையின் தொழில்நுட்ப பெயர்.</value>
+  </data>
+  <data name="The technical name of the input variable" xml:space="preserve">
+    <value>உள்ளீட்டு மாறியின் தொழில்நுட்ப பெயர். இந்த மாறியை ப்ராம்ட் டெம்ப்ளேட்டில் குறிப்பிடும்போது, இந்தப் பெயரைப் பயன்படுத்தவும்.</value>
+  </data>
+  <data name="The technical name of the input." xml:space="preserve">
+    <value>உள்ளீட்டின் தொழில்நுட்ப பெயர்.</value>
+  </data>
+  <data name="The technical name of the service." xml:space="preserve">
+    <value>சேவையின் தொழில்நுட்ப பெயர்.</value>
+  </data>
+  <data name="The temperature of the model" xml:space="preserve">
+    <value>மாதிரியின் வெப்பநிலை. அதிக மதிப்புகள் என்றால் மாதிரி அதிக ஆபத்துக்களை எடுக்கும். மாதிரி பயிற்சியளிக்கப்பட்டதற்கு மிக நெருக்கமான முடிவுகளுக்கு 0.1ஐ முயற்சிக்கவும். மிகவும் ஆக்கப்பூர்வமான முடிவுகளுக்கு 0.9ஐ முயற்சிக்கவும்.</value>
+  </data>
+  <data name="The type of the service." xml:space="preserve">
+    <value>சேவையின் வகை.</value>
+  </data>
+  <data name="The user-friendly name of this input." xml:space="preserve">
+    <value>இந்த உள்ளீட்டின் பயனர் நட்பு பெயர்.</value>
+  </data>
+  <data name="The user-friendly name of this output." xml:space="preserve">
+    <value>இந்த வெளியீட்டின் பயனர் நட்பு பெயர்.</value>
+  </data>
+  <data name="The value of the API key." xml:space="preserve">
+    <value>பநிஇ விசையின் மதிப்பு.</value>
+  </data>
+  <data name="There are currently no inputs defined." xml:space="preserve">
+    <value>தற்போது உள்ளீடுகள் எதுவும் வரையறுக்கப்படவில்லை.</value>
+  </data>
+  <data name="There are currently no outputs defined." xml:space="preserve">
+    <value>தற்போது எந்த வெளியீடுகளும் வரையறுக்கப்படவில்லை.</value>
+  </data>
+  <data name="There are currently no variables defined." xml:space="preserve">
+    <value>தற்போது எந்த மாறிகளும் வரையறுக்கப்படவில்லை.</value>
+  </data>
+  <data name="This activity does not have any common properties." xml:space="preserve">
+    <value>இந்தச் செயல்பாட்டில் பொதுவான பண்புகள் எதுவும் இல்லை.</value>
+  </data>
+  <data name="This activity does not have any input properties." xml:space="preserve">
+    <value>இந்த செயல்பாட்டில் உள்ளீட்டு பண்புகள் எதுவும் இல்லை.</value>
+  </data>
+  <data name="This activity does not have any output properties." xml:space="preserve">
+    <value>இந்தச் செயல்பாடு எந்த வெளியீட்டு பண்புகளையும் கொண்டிருக்கவில்லை.</value>
+  </data>
+  <data name="This input is an array" xml:space="preserve">
+    <value>இந்த உள்ளீடு ஒரு வரிசை</value>
+  </data>
+  <data name="This output is an array" xml:space="preserve">
+    <value>இந்த வெளியீடு ஒரு வரிசை</value>
+  </data>
+  <data name="This variable is an array" xml:space="preserve">
+    <value>இந்த மாறி ஒரு வரிசை</value>
+  </data>
+  <data name="Time" xml:space="preserve">
+    <value>நேரம்</value>
+  </data>
+  <data name="Timer" xml:space="preserve">
+    <value>நேரங்குறிகருவி</value>
+  </data>
+  <data name="Top Probability determines" xml:space="preserve">
+    <value>உரை உருவாக்கத்தின் போது கிள்ளாக்கு தேர்வுக்கான ஒட்டுமொத்த நிகழ்தகவு வரம்பை மேல் நிகழ்தகவு தீர்மானிக்கிறது. குறைந்த மதிப்புகள் குறைவான பன்முகத்தன்மையை ஏற்படுத்தும், இது மிகவும் சாத்தியமான டோக்கன்களிலிருந்து மட்டுமே மாதிரியைத் தேர்ந்தெடுக்கும். மாதிரி பரந்த அளவிலான டோக்கன்களைக் கருத்தில் கொள்வதால், அதிக மதிப்புகள் பலதரப்பட்ட வெளியீடுகளை அனுமதிக்கும்.</value>
+  </data>
+  <data name="TopP" xml:space="preserve">
+    <value>டாப்பி</value>
+  </data>
+  <data name="Trigger workflow" xml:space="preserve">
+    <value>பணிப்பாய்வு தூண்டுதல்</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>வகை</value>
+  </data>
+  <data name="UI Hint" xml:space="preserve">
+    <value>UI குறிப்பு</value>
+  </data>
+  <data name="Unable to make changes as the workflow or application is currently in read-only mode" xml:space="preserve">
+    <value>பணிப்பாய்வு அல்லது பயன்பாடு தற்போது படிக்க மட்டும் பயன்முறையில் இருப்பதால் மாற்றங்களைச் செய்ய முடியவில்லை</value>
+  </data>
+  <data name="Unpublish" xml:space="preserve">
+    <value>வெளியிட வேண்டாம்</value>
+  </data>
+  <data name="Unpublish the current workflow" xml:space="preserve">
+    <value>தற்போதைய பணிப்பாய்வுகளை வெளியிட வேண்டாம்.</value>
+  </data>
+  <data name="Updated" xml:space="preserve">
+    <value>புதுப்பிக்கப்பட்டது</value>
+  </data>
+  <data name="UpdatedAt" xml:space="preserve">
+    <value>புதுப்பிக்கப்பட்டது</value>
+  </data>
+  <data name="Usable as activity" xml:space="preserve">
+    <value>செயல்பாடாகப் பயன்படுத்தலாம்</value>
+  </data>
+  <data name="Use JSON Response" xml:space="preserve">
+    <value>சாதொபொகு பதிலைப் பயன்படுத்தவும்</value>
+  </data>
+  <data name="Use this version" xml:space="preserve">
+    <value>இந்த பதிப்பைப் பயன்படுத்தவும்</value>
+  </data>
+  <data name="Used" xml:space="preserve">
+    <value>பயன்படுத்தப்பட்டது</value>
+  </data>
+  <data name="Used to define the initial instructions" xml:space="preserve">
+    <value>பதில்களை உருவாக்க சொற்பொருள் கர்னல் முகவர் பயன்படுத்தும் ஆரம்ப வழிமுறைகள் அல்லது சூழலை வரையறுக்கப் பயன்படுகிறது. இந்த டெம்ப்ளேட் முகவரின் நடத்தைக்கு வழிகாட்டுகிறது மற்றும் அது ஆற்ற வேண்டிய பங்கு அல்லது அது செய்ய வேண்டிய பணிகளைப் புரிந்துகொள்ள உதவுகிறது.</value>
+  </data>
+  <data name="Value" xml:space="preserve">
+    <value>மதிப்பு</value>
+  </data>
+  <data name="Variables" xml:space="preserve">
+    <value>மாறிகள்</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>பதிப்பு</value>
+  </data>
+  <data name="Version history" xml:space="preserve">
+    <value>பதிப்பு வரலாறு</value>
+  </data>
+  <data name="View" xml:space="preserve">
+    <value>பார்வை</value>
+  </data>
+  <data name="Webhooks" xml:space="preserve">
+    <value>வெப்ஊக்ச்</value>
+  </data>
+  <data name="When checked, the workflow will be executed asynchronously." xml:space="preserve">
+    <value>சரிபார்க்கும் போது, பணிப்பாய்வு ஒத்திசைவற்ற முறையில் செயல்படுத்தப்படும்.</value>
+  </data>
+  <data name="When you publish" xml:space="preserve">
+    <value>நீங்கள் ஒரு புதிய பதிப்பை வெளியிடும் போது, இந்த பணிப்பாய்வுகளின் புதிய பதிப்பை சுட்டிக்காட்டும் வகையில் அனைத்து நுகர்வு பணிப்பாய்வுகளும் புதுப்பிக்கப்படும்.</value>
+  </data>
+  <data name="Whether to show the description in the designer." xml:space="preserve">
+    <value>வடிவமைப்பாளரில் விளக்கத்தைக் காட்ட வேண்டுமா.</value>
+  </data>
+  <data name="Workflow Context" xml:space="preserve">
+    <value>பணிப்பாய்வு சூழல்</value>
+  </data>
+  <data name="Workflow Context Settings" xml:space="preserve">
+    <value>பணிப்பாய்வு சூழல் அமைப்புகள்</value>
+  </data>
+  <data name="Workflow Contexts" xml:space="preserve">
+    <value>பணிப்பாய்வு சூழல்கள்</value>
+  </data>
+  <data name="Workflow definitions Editor" xml:space="preserve">
+    <value>பணிப்பாய்வு வரையறைகள் எடிட்டர்</value>
+  </data>
+  <data name="Workflow instances" xml:space="preserve">
+    <value>பணிப்பாய்வு நிகழ்வுகள்</value>
+  </data>
+  <data name="The name of the workflow." xml:space="preserve">
+    <value>பணிப்பாய்வு பெயர்.</value>
+  </data>
+  <data name="Workflows" xml:space="preserve">
+    <value>பணிப்பாய்வுகள்</value>
+  </data>
+  <data name="Write Line" xml:space="preserve">
+    <value>வரியை எழுதுங்கள்</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>ஆம்</value>
+  </data>
+  <data name="You are running in read-only mode. Workflow operations are disabled" xml:space="preserve">
+    <value>நீங்கள் படிக்க மட்டும் பயன்முறையில் இயங்குகிறீர்கள். பணிப்பாய்வு செயல்பாடுகள் முடக்கப்பட்டுள்ளன</value>
+  </data>
+  <data name="You can find documentation and examples here" xml:space="preserve">
+    <value>ஆவணங்கள் மற்றும் எடுத்துக்காட்டுகளை இங்கே காணலாம்</value>
+  </data>
+  <data name="Incident handling strategy" xml:space="preserve">
+    <value>சம்பவத்தை கையாளும் உத்தி</value>
+  </data>
+  <data name="A checkbox" xml:space="preserve">
+    <value>ஒரு தேர்வுப்பெட்டி</value>
+  </data>
+  <data name="A code editor" xml:space="preserve">
+    <value>ஒரு குறியீடு திருத்தி</value>
+  </data>
+  <data name="A dropdown list" xml:space="preserve">
+    <value>ஒரு கீழ்தோன்றும் பட்டியல்</value>
+  </data>
+  <data name="A JSON editor" xml:space="preserve">
+    <value>ஒரு சாதொபொகு ஆசிரியர்</value>
+  </data>
+  <data name="A list of checkboxes" xml:space="preserve">
+    <value>தேர்வுப்பெட்டிகளின் பட்டியல்</value>
+  </data>
+  <data name="A list of radio buttons" xml:space="preserve">
+    <value>ரேடியோ பொத்தான்களின் பட்டியல்</value>
+  </data>
+  <data name="A single line of text input" xml:space="preserve">
+    <value>உரை உள்ளீட்டின் ஒற்றை வரி</value>
+  </data>
+  <data name="A variable picker" xml:space="preserve">
+    <value>ஒரு மாறி பிக்கர்</value>
+  </data>
+  <data name="A variable with this name already exists in the current scope." xml:space="preserve">
+    <value>இந்த பெயரில் ஒரு மாறி ஏற்கனவே தற்போதைய நோக்கத்தில் உள்ளது.</value>
+  </data>
+  <data name="A workflow definition picker" xml:space="preserve">
+    <value>ஒரு பணிப்பாய்வு வரையறை தேர்வி</value>
+  </data>
+  <data name="A workflow output definition picker" xml:space="preserve">
+    <value>ஒரு பணிப்பாய்வு வெளியீட்டு வரையறை தேர்வி</value>
+  </data>
+  <data name="A workflow with this name already exists." xml:space="preserve">
+    <value>இந்தப் பெயரில் ஒரு பணிப்பாய்வு ஏற்கனவே உள்ளது.</value>
+  </data>
+  <data name="An input for multiple words, like a tagging input" xml:space="preserve">
+    <value>குறியிடல் உள்ளீடு போன்ற பல சொற்களுக்கான உள்ளீடு</value>
+  </data>
+  <data name="An input with this name already exists." xml:space="preserve">
+    <value>இந்தப் பெயரில் உள்ளீடு ஏற்கனவே உள்ளது.</value>
+  </data>
+  <data name="An outcome picker" xml:space="preserve">
+    <value>ஒரு முடிவு எடுப்பவர்</value>
+  </data>
+  <data name="Are you sure you want to cancel all running workflow instances of this workflow definition?" xml:space="preserve">
+    <value>இந்த பணிப்பாய்வு வரையறையின் அனைத்து இயங்கும் பணிப்பாய்வு நிகழ்வுகளையும் நிச்சயமாக ரத்துசெய்ய விரும்புகிறீர்களா?</value>
+  </data>
+  <data name="Are you sure you want to cancel the selected workflow instances?" xml:space="preserve">
+    <value>தேர்ந்தெடுக்கப்பட்ட பணிப்பாய்வு நிகழ்வுகளை நிச்சயமாக ரத்துசெய்ய விரும்புகிறீர்களா?</value>
+  </data>
+  <data name="Are you sure you want to cancel this workflow instance?" xml:space="preserve">
+    <value>இந்த பணிப்பாய்வு நிகழ்வை நிச்சயமாக ரத்துசெய்ய விரும்புகிறீர்களா?</value>
+  </data>
+  <data name="Are you sure you want to delete the selected input?" xml:space="preserve">
+    <value>தேர்ந்தெடுத்த உள்ளீட்டை நிச்சயமாக நீக்க விரும்புகிறீர்களா?</value>
+  </data>
+  <data name="Are you sure you want to delete the selected output?" xml:space="preserve">
+    <value>தேர்ந்தெடுக்கப்பட்ட வெளியீட்டை நிச்சயமாக நீக்க விரும்புகிறீர்களா?</value>
+  </data>
+  <data name="Are you sure you want to delete the selected variable?" xml:space="preserve">
+    <value>தேர்ந்தெடுக்கப்பட்ட மாறியை நிச்சயமாக நீக்க விரும்புகிறீர்களா?</value>
+  </data>
+  <data name="Are you sure you want to delete the selected versions?" xml:space="preserve">
+    <value>தேர்ந்தெடுக்கப்பட்ட பதிப்புகளை நிச்சயமாக நீக்க விரும்புகிறீர்களா?</value>
+  </data>
+  <data name="Are you sure you want to delete the selected workflow instances?" xml:space="preserve">
+    <value>தேர்ந்தெடுக்கப்பட்ட பணிப்பாய்வு நிகழ்வுகளை நிச்சயமாக நீக்க விரும்புகிறீர்களா?</value>
+  </data>
+  <data name="Are you sure you want to delete the selected workflows?" xml:space="preserve">
+    <value>தேர்ந்தெடுக்கப்பட்ட பணிப்பாய்வுகளை நிச்சயமாக நீக்க விரும்புகிறீர்களா?</value>
+  </data>
+  <data name="Are you sure you want to delete this version?" xml:space="preserve">
+    <value>இந்தப் பதிப்பை நிச்சயமாக நீக்க விரும்புகிறீர்களா?</value>
+  </data>
+  <data name="Are you sure you want to delete this workflow instance?" xml:space="preserve">
+    <value>இந்த பணிப்பாய்வு நிகழ்வை நிச்சயமாக நீக்க விரும்புகிறீர்களா?</value>
+  </data>
+  <data name="Are you sure you want to delete this workflow?" xml:space="preserve">
+    <value>இந்த பணிப்பாய்வுகளை நிச்சயமாக நீக்க விரும்புகிறீர்களா?</value>
+  </data>
+  <data name="Are you sure you want to publish the selected workflows?" xml:space="preserve">
+    <value>தேர்ந்தெடுக்கப்பட்ட பணிப்பாய்வுகளை நிச்சயமாக வெளியிட விரும்புகிறீர்களா?</value>
+  </data>
+  <data name="Are you sure you want to unpublish the selected workflows?" xml:space="preserve">
+    <value>தேர்ந்தெடுக்கப்பட்ட பணிப்பாய்வுகளை நிச்சயமாக வெளியிட விரும்புகிறீர்களா?</value>
+  </data>
+  <data name="Cancel running workflow instances?" xml:space="preserve">
+    <value>இயங்கும் பணிப்பாய்வு நிகழ்வுகளை ரத்துசெய்யவா?</value>
+  </data>
+  <data name="Cancel selected workflow instances?" xml:space="preserve">
+    <value>தேர்ந்தெடுக்கப்பட்ட பணிப்பாய்வு நிகழ்வுகளை ரத்துசெய்யவா?</value>
+  </data>
+  <data name="Cancel workflow instance?" xml:space="preserve">
+    <value>பணிப்பாய்வு நிகழ்வை ரத்துசெய்யவா?</value>
+  </data>
+  <data name="Checkbox" xml:space="preserve">
+    <value>தேர்வுப்பெட்டி</value>
+  </data>
+  <data name="Checklist" xml:space="preserve">
+    <value>சரிபார்ப்பு பட்டியல்</value>
+  </data>
+  <data name="Code editor" xml:space="preserve">
+    <value>குறியீடு திருத்தி</value>
+  </data>
+  <data name="{0} consuming workflow(s) updated" xml:space="preserve">
+    <value>{0} நுகர்வு பணிப்பாய்வு(கள்) புதுப்பிக்கப்பட்டது</value>
+  </data>
+  <data name="Create input" xml:space="preserve">
+    <value>உள்ளீட்டை உருவாக்கவும்</value>
+  </data>
+  <data name="Create output" xml:space="preserve">
+    <value>வெளியீட்டை உருவாக்கவும்</value>
+  </data>
+  <data name="Create variable" xml:space="preserve">
+    <value>மாறியை உருவாக்கவும்</value>
+  </data>
+  <data name="Default" xml:space="preserve">
+    <value>இயல்புநிலை</value>
+  </data>
+  <data name="Default Strategy" xml:space="preserve">
+    <value>இயல்புநிலை உத்தி</value>
+  </data>
+  <data name="Delete selected input?" xml:space="preserve">
+    <value>தேர்ந்தெடுக்கப்பட்ட உள்ளீட்டை நீக்கவா?</value>
+  </data>
+  <data name="Delete selected output?" xml:space="preserve">
+    <value>தேர்ந்தெடுத்த வெளியீட்டை நீக்கவா?</value>
+  </data>
+  <data name="Delete selected variable?" xml:space="preserve">
+    <value>தேர்ந்தெடுத்த மாறியை நீக்கவா?</value>
+  </data>
+  <data name="Delete selected versions" xml:space="preserve">
+    <value>தேர்ந்தெடுக்கப்பட்ட பதிப்புகளை நீக்கு</value>
+  </data>
+  <data name="Delete selected workflow instances?" xml:space="preserve">
+    <value>தேர்ந்தெடுக்கப்பட்ட பணிப்பாய்வு நிகழ்வுகளை நீக்கவா?</value>
+  </data>
+  <data name="Delete selected workflows?" xml:space="preserve">
+    <value>தேர்ந்தெடுக்கப்பட்ட பணிப்பாய்வுகளை நீக்கவா?</value>
+  </data>
+  <data name="Delete version" xml:space="preserve">
+    <value>பதிப்பை நீக்கு</value>
+  </data>
+  <data name="Delete workflow instance?" xml:space="preserve">
+    <value>பணிப்பாய்வு நிகழ்வை நீக்கவா?</value>
+  </data>
+  <data name="Delete workflow?" xml:space="preserve">
+    <value>பணிப்பாய்வுகளை நீக்கவா?</value>
+  </data>
+  <data name="Dropdown" xml:space="preserve">
+    <value>கீழிறக்கம்</value>
+  </data>
+  <data name="Edit output" xml:space="preserve">
+    <value>வெளியீட்டைத் திருத்தவும்</value>
+  </data>
+  <data name="Edit variable" xml:space="preserve">
+    <value>திருத்து மாறி</value>
+  </data>
+  <data name="Edit Workflow Definition" xml:space="preserve">
+    <value>பணிப்பாய்வு வரையறையைத் திருத்தவும்</value>
+  </data>
+  <data name="Enter the expression that will be used to determine the log persistence strategy for this property." xml:space="preserve">
+    <value>இந்த உடைமைக்கான பதிவு நிலைத்தன்மை உத்தியைத் தீர்மானிக்கப் பயன்படுத்தப்படும் வெளிப்பாட்டை உள்ளிடவும்.</value>
+  </data>
+  <data name="Failed to import {0} workflow definitions. Errors: {1}" xml:space="preserve">
+    <value>{0} பணிப்பாய்வு வரையறைகளை இறக்குமதி செய்ய முடியவில்லை. பிழைகள்: {1}</value>
+  </data>
+  <data name="imported successfully." xml:space="preserve">
+    <value>வெற்றிகரமாக இறக்குமதி செய்யப்பட்டது.</value>
+  </data>
+  <data name="Inherit" xml:space="preserve">
+    <value>மரபுரிமை</value>
+  </data>
+  <data name="JSON editor" xml:space="preserve">
+    <value>சாதொபொகு ஆசிரியர்</value>
+  </data>
+  <data name="Message" xml:space="preserve">
+    <value>செய்தி</value>
+  </data>
+  <data name="Multi line" xml:space="preserve">
+    <value>பல வரி</value>
+  </data>
+  <data name="Multi text" xml:space="preserve">
+    <value>பல உரை</value>
+  </data>
+  <data name="Multiple lines of text input" xml:space="preserve">
+    <value>உரை உள்ளீட்டின் பல வரிகள்</value>
+  </data>
+  <data name="New workflow" xml:space="preserve">
+    <value>புதிய பணிப்பாய்வு</value>
+  </data>
+  <data name="No workflows found to import." xml:space="preserve">
+    <value>இறக்குமதி செய்ய பணிப்பாய்வு எதுவும் இல்லை.</value>
+  </data>
+  <data name="No workflows were imported." xml:space="preserve">
+    <value>எந்த பணிப்பாய்வுகளும் இறக்குமதி செய்யப்படவில்லை.</value>
+  </data>
+  <data name="None" xml:space="preserve">
+    <value>எதுவுமில்லை</value>
+  </data>
+  <data name="Not executed" xml:space="preserve">
+    <value>செயல்படுத்தப்படவில்லை</value>
+  </data>
+  <data name="Not usable as activity." xml:space="preserve">
+    <value>செயல்பாடாக பயன்படுத்த முடியாது.</value>
+  </data>
+  <data name="One workflow consuming a published workflow has been updated" xml:space="preserve">
+    <value>வெளியிடப்பட்ட பணிப்பாய்வுகளைப் பயன்படுத்தும் ஒரு பணிப்பாய்வு புதுப்பிக்கப்பட்டது</value>
+  </data>
+  <data name="One workflow is already published" xml:space="preserve">
+    <value>ஒரு பணிப்பாய்வு ஏற்கனவே வெளியிடப்பட்டுள்ளது</value>
+  </data>
+  <data name="One workflow is already unpublished" xml:space="preserve">
+    <value>ஒரு பணிப்பாய்வு ஏற்கனவே வெளியிடப்படவில்லை</value>
+  </data>
+  <data name="One workflow is not found" xml:space="preserve">
+    <value>ஒரு பணிப்பாய்வு கிடைக்கவில்லை</value>
+  </data>
+  <data name="One workflow is published" xml:space="preserve">
+    <value>ஒரு பணிப்பாய்வு வெளியிடப்பட்டது</value>
+  </data>
+  <data name="One workflow is unpublished" xml:space="preserve">
+    <value>ஒரு பணிப்பாய்வு வெளியிடப்படவில்லை</value>
+  </data>
+  <data name="Outcome picker" xml:space="preserve">
+    <value>முடிவைத் தேர்ந்தெடுப்பது</value>
+  </data>
+  <data name="Output picker" xml:space="preserve">
+    <value>அவுட்புட் பிக்கர்</value>
+  </data>
+  <data name="Please enter a name for the input." xml:space="preserve">
+    <value>உள்ளீட்டிற்கு ஒரு பெயரை உள்ளிடவும்.</value>
+  </data>
+  <data name="Please enter a name for the output." xml:space="preserve">
+    <value>வெளியீட்டிற்கு ஒரு பெயரை உள்ளிடவும்.</value>
+  </data>
+  <data name="Please enter a name for the variable." xml:space="preserve">
+    <value>மாறிக்கு ஒரு பெயரை உள்ளிடவும்.</value>
+  </data>
+  <data name="Please enter a name for the workflow." xml:space="preserve">
+    <value>பணிப்பாய்வுக்கான பெயரை உள்ளிடவும்.</value>
+  </data>
+  <data name="Publish selected workflows?" xml:space="preserve">
+    <value>தேர்ந்தெடுக்கப்பட்ட பணிப்பாய்வுகளை வெளியிடவா?</value>
+  </data>
+  <data name="Radio list" xml:space="preserve">
+    <value>வானொலி பட்டியல்</value>
+  </data>
+  <data name="Readonly" xml:space="preserve">
+    <value>படிக்கமட்டும்</value>
+  </data>
+  <data name="Show description" xml:space="preserve">
+    <value>விளக்கத்தைக் காட்டு</value>
+  </data>
+  <data name="Single line" xml:space="preserve">
+    <value>ஒற்றை இருப்புப்பாதை</value>
+  </data>
+  <data name="Successfully imported" xml:space="preserve">
+    <value>வெற்றிகரமாக இறக்குமதி செய்யப்பட்டது</value>
+  </data>
+  <data name="Successfully imported 1 workflow definition." xml:space="preserve">
+    <value>1 பணிப்பாய்வு வரையறை வெற்றிகரமாக இறக்குமதி செய்யப்பட்டது.</value>
+  </data>
+  <data name="Successfully imported one instance" xml:space="preserve">
+    <value>ஒரு நிகழ்வு வெற்றிகரமாக இறக்குமதி செய்யப்பட்டது</value>
+  </data>
+  <data name="Successfully started workflow" xml:space="preserve">
+    <value>பணிப்பாய்வு வெற்றிகரமாக தொடங்கியது</value>
+  </data>
+  <data name="The commit strategy to use that controls when the workflow state should be committed." xml:space="preserve">
+    <value>பணிப்பாய்வு நிலை எப்போது உறுதி செய்யப்பட வேண்டும் என்பதைக் கட்டுப்படுத்தும் கமிட் உத்தி.</value>
+  </data>
+  <data name="The ID of the variable." xml:space="preserve">
+    <value>மாறியின் அடையாளம்.</value>
+  </data>
+  <data name="The read-only workflows will not be affected." xml:space="preserve">
+    <value>படிக்க மட்டுமேயான பணிப்பாய்வுகள் பாதிக்கப்படாது.</value>
+  </data>
+  <data name="The text to display in the designer." xml:space="preserve">
+    <value>வடிவமைப்பாளரில் காட்ட வேண்டிய உரை.</value>
+  </data>
+  <data name="The workflow cannot be started" xml:space="preserve">
+    <value>பணிப்பாய்வு தொடங்க முடியாது</value>
+  </data>
+  <data name="Timestamp" xml:space="preserve">
+    <value>நேர முத்திரை</value>
+  </data>
+  <data name="Unpublish selected workflows?" xml:space="preserve">
+    <value>தேர்ந்தெடுக்கப்பட்ட பணிப்பாய்வுகளை வெளியிடுவதை நிறுத்தவா?</value>
+  </data>
+  <data name="Upload JSON and/or ZIP files containing workflow data to import." xml:space="preserve">
+    <value>இறக்குமதி செய்ய பணிப்பாய்வுத் தரவைக் கொண்ட சாதொபொகு மற்றும்/அல்லது ZIP கோப்புகளைப் பதிவேற்றவும்.</value>
+  </data>
+  <data name="Variable picker" xml:space="preserve">
+    <value>மாறி பிக்கர்</value>
+  </data>
+  <data name="When checked, this activity can trigger this workflow." xml:space="preserve">
+    <value>சரிபார்க்கும்போது, இந்தச் செயல்பாடு இந்தப் பணிப்பாய்வுகளைத் தூண்டலாம்.</value>
+  </data>
+  <data name="When checked, this activity is the start of this workflow." xml:space="preserve">
+    <value>சரிபார்க்கப்பட்டபோது, இந்தச் செயல்பாடு இந்தப் பணிப்பாய்வுக்கான தொடக்கமாகும்.</value>
+  </data>
+  <data name="Workflow definition picker" xml:space="preserve">
+    <value>பணிப்பாய்வு வரையறை தேர்வி</value>
+  </data>
+  <data name="workflow definitions." xml:space="preserve">
+    <value>பணிப்பாய்வு வரையறைகள்.</value>
+  </data>
+  <data name="Workflow published" xml:space="preserve">
+    <value>பணிப்பாய்வு வெளியிடப்பட்டது</value>
+  </data>
+  <data name="Workflow published with Not Found activities" xml:space="preserve">
+    <value>காணப்படாத செயல்பாடுகளுடன் வெளியிடப்பட்ட பணிப்பாய்வு</value>
+  </data>
+  <data name="Workflow retracted" xml:space="preserve">
+    <value>பணிப்பாய்வு திரும்பப் பெறப்பட்டது</value>
+  </data>
+  <data name="Workflow saved" xml:space="preserve">
+    <value>பணிப்பாய்வு சேமிக்கப்பட்டது</value>
+  </data>
+  <data name="Workflow unpublished" xml:space="preserve">
+    <value>பணிப்பாய்வு வெளியிடப்படவில்லை</value>
+  </data>
+  <data name="Workflow was already published" xml:space="preserve">
+    <value>பணிப்பாய்வு ஏற்கனவே வெளியிடப்பட்டது</value>
+  </data>
+  <data name="workflows are already published" xml:space="preserve">
+    <value>பணிப்பாய்வு ஏற்கனவே வெளியிடப்பட்டுள்ளது</value>
+  </data>
+  <data name="workflows are already unpublished" xml:space="preserve">
+    <value>பணிப்பாய்வுகள் ஏற்கனவே வெளியிடப்படவில்லை</value>
+  </data>
+  <data name="workflows are not found" xml:space="preserve">
+    <value>பணிப்பாய்வுகள் காணப்படவில்லை</value>
+  </data>
+  <data name="workflows are published" xml:space="preserve">
+    <value>பணிப்பாய்வு வெளியிடப்படுகிறது</value>
+  </data>
+  <data name="workflows are unpublished" xml:space="preserve">
+    <value>பணிப்பாய்வுகள் வெளியிடப்படவில்லை</value>
+  </data>
+  <data name="workflows consuming published workflows have been updated" xml:space="preserve">
+    <value>வெளியிடப்பட்ட பணிப்பாய்வுகளை உட்கொள்ளும் பணிப்பாய்வுகள் புதுப்பிக்கப்பட்டுள்ளன</value>
+  </data>
+  <data name="Delete version {0}" xml:space="preserve">
+    <value>{0} பதிப்பை நீக்கு</value>
+  </data>
+  <data name="Successfully imported {0} instances" xml:space="preserve">
+    <value>{0} நிகழ்வுகள் வெற்றிகரமாக இறக்குமதி செய்யப்பட்டன</value>
+  </data>
+  <data name="Successfully imported {0} workflow definitions." xml:space="preserve">
+    <value>{0} பணிப்பாய்வு வரையறைகள் வெற்றிகரமாக இறக்குமதி செய்யப்பட்டன.</value>
+  </data>
+  <data name="{0} workflows are already published" xml:space="preserve">
+    <value>{0} பணிப்பாய்வுகள் ஏற்கனவே வெளியிடப்பட்டுள்ளன</value>
+  </data>
+  <data name="{0} workflows are already unpublished" xml:space="preserve">
+    <value>{0} பணிப்பாய்வுகள் ஏற்கனவே வெளியிடப்படவில்லை</value>
+  </data>
+  <data name="{0} workflows are not found" xml:space="preserve">
+    <value>{0} பணிப்பாய்வுகள் காணப்படவில்லை</value>
+  </data>
+  <data name="{0} workflows are published" xml:space="preserve">
+    <value>{0} பணிப்பாய்வுகள் வெளியிடப்பட்டன</value>
+  </data>
+  <data name="{0} workflows are unpublished" xml:space="preserve">
+    <value>{0} பணிப்பாய்வுகள் வெளியிடப்படவில்லை</value>
+  </data>
+  <data name="{0} workflows consuming published workflows have been updated" xml:space="preserve">
+    <value>{0} வெளியிடப்பட்ட பணிப்பாய்வுகளை உட்கொள்ளும் பணிப்பாய்வுகள் புதுப்பிக்கப்பட்டுள்ளன</value>
+  </data>
+  <data name="{0} {1} imported successfully." xml:space="preserve">
+    <value>{0} {1} வெற்றிகரமாக இறக்குமதி செய்யப்பட்டது.</value>
+  </data>
+  <data name="Failed to import {0} {1}." xml:space="preserve">
+    <value>{0} {1} ஐ இறக்குமதி செய்ய முடியவில்லை.</value>
+  </data>
+  <data name="Auto layout" xml:space="preserve">
+    <value>தானியங்கு தளவமைப்பு</value>
+  </data>
+  <data name="Center" xml:space="preserve">
+    <value>நடுவண்</value>
+  </data>
+  <data name="Zoom to fit the screen" xml:space="preserve">
+    <value>திரைக்கு ஏற்றவாறு பெரிதாக்கவும்</value>
+  </data>
+  <data name="A function to compute the correlation ID to associate a dispatched workflow with." xml:space="preserve">
+    <value>அனுப்பப்பட்ட பணிப்பாய்வுகளை இணைக்க, தொடர்பு ஐடியைக் கணக்கிடுவதற்கான ஒரு செயல்பாடு.</value>
+  </data>
+  <data name="A list of expected outcomes to handle." xml:space="preserve">
+    <value>கையாள வேண்டிய எதிர்பார்க்கப்படும் விளைவுகளின் பட்டியல்.</value>
+  </data>
+  <data name="A list of expected status codes to handle." xml:space="preserve">
+    <value>கையாள எதிர்பார்க்கப்படும் நிலைக் குறியீடுகளின் பட்டியல்.</value>
+  </data>
+  <data name="A value that allows to add the Authorization header without validation." xml:space="preserve">
+    <value>சரிபார்ப்பு இல்லாமல் அங்கீகாரத் தலைப்பைச் சேர்க்க அனுமதிக்கும் மதிப்பு.</value>
+  </data>
+  <data name="Always allow the creation" xml:space="preserve">
+    <value>உருவாக்கத்தை எப்போதும் அனுமதிக்கவும்</value>
+  </data>
+  <data name="Branches" xml:space="preserve">
+    <value>கிளைகள்</value>
+  </data>
+  <data name="Break out of a loop." xml:space="preserve">
+    <value>ஒரு வளையத்தை உடைக்கவும்.</value>
+  </data>
+  <data name="Cancelled" xml:space="preserve">
+    <value>ரத்து செய்யப்பட்டது</value>
+  </data>
+  <data name="Condition" xml:space="preserve">
+    <value>நிபந்தனை</value>
+  </data>
+  <data name="Content Type" xml:space="preserve">
+    <value>உள்ளடக்க வகை</value>
+  </data>
+  <data name="Correlation ID Function" xml:space="preserve">
+    <value>தொடர்பு அடையாளம் செயல்பாடு</value>
+  </data>
+  <data name="Default Item Input Key" xml:space="preserve">
+    <value>இயல்புநிலை உருப்படி உள்ளீட்டு விசை</value>
+  </data>
+  <data name="Disable Authorization Header Validation" xml:space="preserve">
+    <value>அங்கீகார தலைப்பு சரிபார்ப்பை முடக்கு</value>
+  </data>
+  <data name="Executes javaScript code" xml:space="preserve">
+    <value>சாவாச்கிரிப்ட் குறியீட்டை இயக்குகிறது</value>
+  </data>
+  <data name="Executing" xml:space="preserve">
+    <value>செயல்படுத்துகிறது</value>
+  </data>
+  <data name="Expected Status Codes" xml:space="preserve">
+    <value>எதிர்பார்க்கப்படும் நிலைக் குறியீடுகள்</value>
+  </data>
+  <data name="Method" xml:space="preserve">
+    <value>முறை</value>
+  </data>
+  <data name="Mode" xml:space="preserve">
+    <value>பயன்முறை</value>
+  </data>
+  <data name="Request Content." xml:space="preserve">
+    <value>உள்ளடக்கத்தைக் கோருங்கள்.</value>
+  </data>
+  <data name="Result" xml:space="preserve">
+    <value>முடிவு</value>
+  </data>
+  <data name="Running" xml:space="preserve">
+    <value>ஓடுகிறது</value>
+  </data>
+  <data name="Supported Methods" xml:space="preserve">
+    <value>ஆதரிக்கப்படும் முறைகள்</value>
+  </data>
+  <data name="The Authorization header value to send with the request. For example: Bearer {some-access-token}" xml:space="preserve">
+    <value>கோரிக்கையுடன் அனுப்புவதற்கான அங்கீகார தலைப்பு மதிப்பு. எடுத்துக்காட்டாக: தாங்குபவர் {சில அணுகல்-டோக்கன்}</value>
+  </data>
+  <data name="The content to send with the request. Can be a string, an object, a byte array or a stream." xml:space="preserve">
+    <value>கோரிக்கையுடன் அனுப்ப வேண்டிய உள்ளடக்கம். ஒரு சரம், ஒரு பொருள், ஒரு பைட் வரிசை அல்லது ஒரு ச்ட்ரீம்.</value>
+  </data>
+  <data name="The content type to use when sending the request." xml:space="preserve">
+    <value>கோரிக்கையை அனுப்பும்போது பயன்படுத்த வேண்டிய உள்ளடக்க வகை.</value>
+  </data>
+  <data name="The data source to use for dispatching the workflows." xml:space="preserve">
+    <value>பணிப்பாய்வுகளை அனுப்புவதற்குப் பயன்படுத்த வேண்டிய தரவு சான்று.</value>
+  </data>
+  <data name="The default key to use for the input name when sending the current item to the dispatched workflow. Will not be used if the Items field contain a list of dictionaries" xml:space="preserve">
+    <value>தற்போதைய உருப்படியை அனுப்பிய பணிப்பாய்வுக்கு அனுப்பும்போது உள்ளீட்டு பெயருக்குப் பயன்படுத்த வேண்டிய இயல்புநிலை விசை. உருப்படிகள் புலத்தில் அகராதிகளின் பட்டியல் இருந்தால் பயன்படுத்தப்படாது</value>
+  </data>
+  <data name="The definition ID of the workflows to dispatch." xml:space="preserve">
+    <value>அனுப்புவதற்கான பணிப்பாய்வுகளின் வரையறை அடையாளம்.</value>
+  </data>
+  <data name="The HTTP method to use when sending the request." xml:space="preserve">
+    <value>கோரிக்கையை அனுப்பும் போது பயன்படுத்த வேண்டிய HTTP முறை.</value>
+  </data>
+  <data name="The HTTP methods to accept." xml:space="preserve">
+    <value>ஏற்க வேண்டிய HTTP முறைகள்.</value>
+  </data>
+  <data name="The join mode determines whether this activity should continue as soon as one inbound path comes in (Wait Any), or once all inbound paths have executed (Wait All)." xml:space="preserve">
+    <value>ஒரு உள்வரும் பாதை வந்தவுடன் (எதையும் காத்திருங்கள்) அல்லது அனைத்து உள்வரும் பாதைகளும் இயக்கப்பட்டவுடன் (அனைத்தும் காத்திருங்கள்) இந்தச் செயல்பாடு தொடர வேண்டுமா என்பதை சேரும் பயன்முறை தீர்மானிக்கிறது.</value>
+  </data>
+  <data name="The outcome or set of outcomes to complete this activity with." xml:space="preserve">
+    <value>இந்தச் செயல்பாட்டை முடிப்பதற்கான முடிவு அல்லது விளைவுகளின் தொகுப்பு.</value>
+  </data>
+  <data name="The path to associate with the workflow." xml:space="preserve">
+    <value>பணிப்பாய்வுகளுடன் தொடர்புபடுத்துவதற்கான பாதை.</value>
+  </data>
+  <data name="The switch mode determines whether the first match should be scheduled, or all matches." xml:space="preserve">
+    <value>சுவிட்ச் பயன்முறையானது முதல் போட்டி திட்டமிடப்பட வேண்டுமா அல்லது அனைத்து போட்டிகளையும் தீர்மானிக்கிறது.</value>
+  </data>
+  <data name="The URL to download the file from." xml:space="preserve">
+    <value>கோப்பைப் பதிவிறக்குவதற்கான URL.</value>
+  </data>
+  <data name="Time Duration" xml:space="preserve">
+    <value>கால அளவு</value>
+  </data>
+  <data name="Trigger execution at a specific time in the future." xml:space="preserve">
+    <value>எதிர்காலத்தில் ஒரு குறிப்பிட்ட நேரத்தில் செயல்படுத்தலைத் தூண்டும்.</value>
+  </data>
+  <data name="URL" xml:space="preserve">
+    <value>முகவரி</value>
+  </data>
+  <data name="Validation Result" xml:space="preserve">
+    <value>சரிபார்ப்பு முடிவு</value>
+  </data>
+  <data name="Workflow Definition" xml:space="preserve">
+    <value>பணிப்பாய்வு வரையறை</value>
+  </data>
+  <data name="Add case" xml:space="preserve">
+    <value>வழக்கைச் சேர்க்கவும்</value>
+  </data>
+  <data name="Data" xml:space="preserve">
+    <value>தகவல்கள்</value>
+  </data>
+  <data name="Label" xml:space="preserve">
+    <value>சிட்டை</value>
+  </data>
+  <data name="String7" xml:space="preserve">
+    <value>முடிவு</value>
+  </data>
+  <data name="Zoom to fit" xml:space="preserve">
+    <value>பொருத்தமாக பெரிதாக்கவும்</value>
+  </data>
+  <data name="Always allow the creation of a new workflow instance." xml:space="preserve">
+    <value>எப்போதும் ஒரு புதிய பணிப்பாய்வு நிகழ்வை உருவாக்க அனுமதிக்கவும்.</value>
+  </data>
+  <data name="Assign the current value to the specified variable." xml:space="preserve">
+    <value>தற்போதைய மதிப்பை குறிப்பிட்ட மாறிக்கு ஒதுக்கவும்.</value>
+  </data>
+  <data name="Code" xml:space="preserve">
+    <value>குறியீடு</value>
+  </data>
+  <data name="Controls whether the end step is upper/lowerbound inclusive or exclusive. True (inclusive) by default." xml:space="preserve">
+    <value>இறுதிப் படி மேல்/கீழே உள்ளடங்கியதா அல்லது பிரத்தியேகமானதா என்பதைக் கட்டுப்படுத்துகிறது. முன்னிருப்பாக உண்மை (உள்ளடங்கியது).</value>
+  </data>
+  <data name="Current Value" xml:space="preserve">
+    <value>தற்போதைய மதிப்பு</value>
+  </data>
+  <data name="Interval" xml:space="preserve">
+    <value>இடைவேளை</value>
+  </data>
+  <data name="Outer Bound Inclusive" xml:space="preserve">
+    <value>வெளிப்புற எல்லை உள்ளடக்கியது</value>
+  </data>
+  <data name="Payload" xml:space="preserve">
+    <value>தாங்குசுமை</value>
+  </data>
+  <data name="Step" xml:space="preserve">
+    <value>படி</value>
+  </data>
+  <data name="The end step." xml:space="preserve">
+    <value>இறுதிப் படி.</value>
+  </data>
+  <data name="The items to iterate through." xml:space="preserve">
+    <value>மறுநிகழ்வு செய்ய வேண்டிய பொருட்கள்.</value>
+  </data>
+  <data name="The set of values to iterate." xml:space="preserve">
+    <value>மீண்டும் சொல்ல வேண்டிய மதிப்புகளின் தொகுப்பு.</value>
+  </data>
+  <data name="The start step." xml:space="preserve">
+    <value>தொடக்கப் படி.</value>
+  </data>
+  <data name="The step size. To count down, enter a negative number." xml:space="preserve">
+    <value>படி அளவு. எண்ணுவதற்கு, எதிர்மறை எண்ணை உள்ளிடவும்.</value>
+  </data>
+  <data name="Variable" xml:space="preserve">
+    <value>மாறி</value>
+  </data>
+  <data name="Provider Type" xml:space="preserve">
+    <value>வழங்குநர் வகை</value>
+  </data>
+  <data name="Configuration" xml:space="preserve">
+    <value>உள்ளமைவு</value>
+  </data>
+  <data name="Exclude" xml:space="preserve">
+    <value>விலக்கு</value>
+  </data>
+  <data name="Include" xml:space="preserve">
+    <value>அடங்கும்</value>
+  </data>
+  <data name="Load" xml:space="preserve">
+    <value>ஏற்றவும்</value>
+  </data>
+  <data name="Pending" xml:space="preserve">
+    <value>நிலுவையில் உள்ளது</value>
+  </data>
+</root>

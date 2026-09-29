@@ -1,0 +1,22 @@
+.identity-link-list__toolbar {
+    border-bottom: 1px solid var(--mud-palette-lines-default, #d7dde5);
+}
+
+.identity-link-list__footer {
+    border-top: 1px solid var(--mud-palette-lines-default, #d7dde5);
+}
+
+.identity-link-list ::deep .mud-table-head .mud-table-cell {
+    color: var(--mud-palette-text-secondary, #5f6b7a);
+    font-weight: 600;
+}
+
+.identity-link-list ::deep .mud-table-body .mud-table-cell {
+    padding-bottom: 0.75rem;
+    padding-top: 0.75rem;
+    vertical-align: middle;
+}
+
+.identity-link-list ::deep .identity-link-list__external-identity {
+    overflow-wrap: anywhere;
+}

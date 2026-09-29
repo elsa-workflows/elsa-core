@@ -1,0 +1,21 @@
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+@{
+    var inputDescriptor = EditorContext.InputDescriptor;
+    var displayName = inputDescriptor.DisplayName ?? inputDescriptor.Name;
+    var description = inputDescriptor.Description ?? string.Empty;
+}
+
+<ExpressionInput EditorContext="@EditorContext">
+    <ChildContent>
+        <MudField Label="@Localizer[displayName]" Variant="Variant.Outlined" HelperText="@Localizer[description]" Margin="Margin.Dense" Disabled="EditorContext.IsReadOnly">
+            <MudRadioGroup @bind-Value="SelectedValue">
+                @foreach (var item in _radioListItems)
+                {
+                    <MudRadio Class="mr-2" T="string" Value="@item.Value" Dense="true" Disabled="EditorContext.IsReadOnly" Size="Size.Small">@item?.Text</MudRadio>
+                }
+            </MudRadioGroup>
+        </MudField>
+    </ChildContent>
+</ExpressionInput>

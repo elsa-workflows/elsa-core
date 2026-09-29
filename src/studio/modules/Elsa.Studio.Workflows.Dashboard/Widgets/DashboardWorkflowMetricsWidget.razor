@@ -1,0 +1,65 @@
+@using Elsa.Studio.Dashboard.Widgets
+
+@if (Context.Snapshot != null)
+{
+    var metrics = Context.Snapshot.Overview.WorkflowInstances;
+    var healthMetrics = new[]
+    {
+        new OperationalHealthMetric("Running", DashboardMetricFormatter.Count(metrics.Running), "Current active instances", Icons.Material.Outlined.PlayCircle, Color.Info, DashboardNavigationTargetMapper.ForMetric("running")),
+        new OperationalHealthMetric("Completed", DashboardMetricFormatter.Count(metrics.Completed), RangeCaption, Icons.Material.Outlined.CheckCircle, Color.Success),
+        new OperationalHealthMetric("Faulted", DashboardMetricFormatter.Count(metrics.Faulted), RangeCaption, Icons.Material.Outlined.ErrorOutline, metrics.Faulted > 0 ? Color.Error : Color.Default, DashboardNavigationTargetMapper.ForMetric("faulted")),
+        new OperationalHealthMetric("Suspended", DashboardMetricFormatter.Count(metrics.Suspended), "Current suspended instances", Icons.Material.Outlined.PauseCircle, metrics.Suspended > 0 ? Color.Warning : Color.Default, DashboardNavigationTargetMapper.ForMetric("suspended")),
+        new OperationalHealthMetric("Avg duration", DashboardMetricFormatter.Duration(metrics.AverageDuration), RangeCaption, Icons.Material.Outlined.Timer, Color.Default),
+        new OperationalHealthMetric("Needs attention", DashboardMetricFormatter.Count(Context.Snapshot.NeedsAttention.Findings.Count), "Prioritized findings", Icons.Material.Outlined.ReportProblem, Context.Snapshot.NeedsAttention.Findings.Count > 0 ? Color.Warning : Color.Success)
+    };
+
+    <MudPaper Outlined="true" Elevation="0" Class="dashboard-operational-health">
+        <div class="dashboard-operational-health-content">
+            <MudText Typo="Typo.subtitle1" Class="dashboard-operational-health-heading">Operational health</MudText>
+
+            <div class="dashboard-operational-health-metrics">
+                @foreach (var metric in healthMetrics)
+                {
+                    <div class="dashboard-operational-health-metric">
+                        @if (!string.IsNullOrWhiteSpace(metric.Href))
+                        {
+                            <MudLink Href="@metric.Href" Underline="Underline.None" Class="dashboard-operational-health-link" aria-label="@metric.AriaLabel">
+                                @MetricContent(metric)
+                            </MudLink>
+                        }
+                        else
+                        {
+                            @MetricContent(metric)
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public DashboardWidgetContext Context { get; set; } = null!;
+    [Parameter] public DashboardWidgetDescriptor Descriptor { get; set; } = null!;
+
+    private string RangeCaption => Context.SelectedRange switch
+    {
+        DashboardRangeKeys.OneHour => "Last hour",
+        DashboardRangeKeys.SevenDays => "Last 7 days",
+        _ => "Last 24 hours"
+    };
+
+    private RenderFragment<OperationalHealthMetric> MetricContent => metric => @<text>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Spacing="2">
+            <MudText Typo="Typo.overline">@metric.Label</MudText>
+            <MudIcon Icon="@metric.Icon" Size="Size.Small" Color="@metric.Color" />
+        </MudStack>
+        <MudText Typo="Typo.h5" Color="@metric.Color" Class="dashboard-operational-health-value">@metric.Value</MudText>
+        <MudText Typo="Typo.caption" Class="dashboard-operational-health-caption">@metric.Caption</MudText>
+    </text>;
+
+    private sealed record OperationalHealthMetric(string Label, string Value, string Caption, string Icon, Color Color, string? Href = null)
+    {
+        public string AriaLabel => $"{Label}: {Value}. {Caption}";
+    }
+}

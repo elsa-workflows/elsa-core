@@ -1,0 +1,19 @@
+<MudDialog>
+    <DialogContent>
+        <ConnectionOperations
+            Connection="Connection"
+            Adapter="Adapter"
+            StartPreviewOnLoad="true" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter, EditorRequired] public ConnectionSummary Connection { get; set; } = default!;
+    [Parameter, EditorRequired] public AdapterDescriptor Adapter { get; set; } = default!;
+
+    private void Close() => MudDialog.Close();
+}

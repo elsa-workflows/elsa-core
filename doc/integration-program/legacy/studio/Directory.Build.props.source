@@ -1,0 +1,35 @@
+<Project>
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <Authors>Elsa Workflows Community</Authors>
+    <Copyright>2023</Copyright>
+    <PackageProjectUrl>https://github.com/elsa-workflows/elsa-studio</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/elsa-workflows/elsa-studio</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageIcon>icon.png</PackageIcon>
+
+    <!-- For NuGet browsers that currently don't support <PackageIcon> yet -->
+    <PackageIconUrl>https://v3.elsaworkflows.io/nuget-icon.png</PackageIconUrl>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AnalysisModeDocumentation>Default</AnalysisModeDocumentation>
+    <AnalysisLevelDocumentation>latest</AnalysisLevelDocumentation>
+    <NoWarn>$(NoWarn);CS0108;CS0414;CS0612;CS0618;CS1570;CS1572;CS1573;CS1574;CS1587;CS1591;CS8669;CS9113;MUD0002;IL2026;IL2072;IL2075;IL2067;IL2091;IL2095;IL2110;IL2111</NoWarn>
+    <LegacyTrimWarningProjects>;Elsa.Studio.Shell;Elsa.Studio.Host.CustomElements;Elsa.Studio.Host.HostedWasm;Elsa.Studio.Host.Server;Elsa.Studio.Host.Wasm;Elsa.Studio.ActivityPortProviders;Elsa.Studio.Alterations;Elsa.Studio.Authentication.ElsaIdentity;Elsa.Studio.Dashboard;Elsa.Studio.Diagnostics.ConsoleLogs.Tests;Elsa.Studio.Environments;Elsa.Studio.Localization.BlazorServer;Elsa.Studio.Login.BlazorWasm;Elsa.Studio.Login;Elsa.Studio.UIHints;Elsa.Studio.Workflows.Core;Elsa.Studio.Workflows.Designer.Tests;Elsa.Studio.Workflows.Designer;Elsa.Studio.Workflows;</LegacyTrimWarningProjects>
+    <NoWarn Condition="$(LegacyTrimWarningProjects.Contains(';$(MSBuildProjectName);'))">$(NoWarn);IL2026;IL2067;IL2072;IL2075;IL2091;IL2095;IL2110;IL2111</NoWarn>
+
+    <!-- https://github.com/dotnet/sourcelink -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+  </PropertyGroup>
+
+  <ItemGroup Label="Files">
+    <None Include="$(MSBuildThisFileDirectory)icon.png" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+  
+</Project>

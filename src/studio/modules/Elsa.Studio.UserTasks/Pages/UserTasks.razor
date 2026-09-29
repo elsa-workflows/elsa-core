@@ -1,0 +1,462 @@
+@page "/workflows/user-tasks"
+@attribute [Authorize]
+@implements IAsyncDisposable
+@inject IBackendApiClientProvider ApiClientProvider
+@inject IUserTaskRealtimeClient RealtimeClient
+@inject IUserTaskPollingService PollingService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+<PageTitle>User Tasks</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.False" Class="py-4">
+    <PageHeading Text="User Tasks"/>
+
+    @if (_capabilities == null && _loadError == null)
+    {
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" aria-label="Loading tasks"/>
+    }
+    else if (_loadError != null)
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Outlined">
+            @_loadError.Message
+            <MudButton Variant="Variant.Text" OnClick="ReloadAsync" Class="ml-2">Retry</MudButton>
+        </MudAlert>
+    }
+    else if (_capabilities is not { Enabled: true, CanList: true, CanRead: true })
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">Tasks are unavailable.</MudAlert>
+    }
+    else
+    {
+        <MudTabs ActivePanelIndex="TabIndex" ActivePanelIndexChanged="OnTabChanged" Elevation="0" Rounded="true" Class="mb-4">
+            <MudTabPanel Text="Assigned to me"/>
+            <MudTabPanel Text="Available"/>
+            <MudTabPanel Text="History"/>
+            @if (_capabilities.CanReadAll)
+            {
+                <MudTabPanel Text="All"/>
+                <MudTabPanel Text="Needs Attention"/>
+            }
+        </MudTabs>
+
+        <MudPaper Class="pa-4 mb-4" Elevation="0" Outlined="true">
+            <div class="user-task-filter-row">
+                <MudTextField T="string" Label="Search" Value="@_query.Search" ValueChanged="OnSearchChanged" Immediate="true" DebounceInterval="400" Clearable="true"/>
+                <MudSelect T="string" Label="Status" MultiSelection="true" SelectedValues="@_query.Status" SelectedValuesChanged="OnStatusChanged" Clearable="true">
+                    @foreach (var status in UserTaskUrlState.SelectableStatuses)
+                    {
+                        <MudSelectItem T="string" Value="@status">@status</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudNumericField T="int?" Label="Priority from" Min="0" Max="100" Value="@_query.PriorityFrom" ValueChanged="OnPriorityFromChanged"/>
+                <MudNumericField T="int?" Label="Priority to" Min="0" Max="100" Value="@_query.PriorityTo" ValueChanged="OnPriorityToChanged"/>
+                <MudSelect T="string" Label="Due" Value="@_query.Due" ValueChanged="OnDueChanged" Clearable="true">
+                    <MudSelectItem Value="@("overdue")">Overdue</MudSelectItem>
+                    <MudSelectItem Value="@("today")">Today</MudSelectItem>
+                    <MudSelectItem Value="@("thisWeek")">This week</MudSelectItem>
+                    <MudSelectItem Value="@("noDueDate")">No due date</MudSelectItem>
+                </MudSelect>
+                <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Outlined.FilterAltOff" OnClick="ResetFiltersAsync">Reset filters</MudButton>
+            </div>
+        </MudPaper>
+
+        @if (_loading)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Loading tasks"/>
+        }
+
+        <MudTable T="UserTaskSummary" Items="@_items" Dense="true" Hover="true" Elevation="0" Class="user-tasks-table" OnRowClick="OnRowClick" RowStyle="cursor:pointer">
+            <HeaderContent>
+                <MudTh>Task</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Priority</MudTh>
+                <MudTh>Assignee</MudTh>
+                <MudTh>Due</MudTh>
+                <MudTh>Workflow</MudTh>
+                <MudTh>Updated</MudTh>
+                <MudTh><span class="user-task-visually-hidden">Actions</span></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Task">
+                    <MudText Typo="Typo.body2">@context.Title</MudText>
+                    <MudText Typo="Typo.caption">@context.TaskType</MudText>
+                </MudTd>
+                <MudTd DataLabel="Status"><MudChip T="string" Size="Size.Small">@context.Status</MudChip></MudTd>
+                <MudTd DataLabel="Priority">@context.Priority</MudTd>
+                <MudTd DataLabel="Assignee">@(context.Assignee?.Label ?? context.CandidateSummary ?? "Unassigned")</MudTd>
+                <MudTd DataLabel="Due">
+                    @if (context.DueAt is { } dueAt)
+                    {
+                        @* Overdue is conveyed by an icon and text, not by colour alone. *@
+                        <span class="@(context.IsOverdue ? "user-task-overdue" : null)">
+                            @if (context.IsOverdue)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="mr-1" aria-hidden="true"/>
+                                <span class="user-task-visually-hidden">Overdue. </span>
+                            }
+                            @dueAt.ToLocalTime().ToString("g")
+                        </span>
+                    }
+                    else
+                    {
+                        <span>No due date</span>
+                    }
+                </MudTd>
+                <MudTd DataLabel="Workflow">@WorkflowText(context)</MudTd>
+                <MudTd DataLabel="Updated">@context.UpdatedAt.ToLocalTime().ToString("g")</MudTd>
+                <MudTd>
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true" AriaLabel="@($"Actions for {context.Title}")">
+                        <MudMenuItem OnClick="@(() => OpenAsync(context))" AriaLabel="@($"Open {context.Title}")">Open</MudMenuItem>
+                        @if (Can(context, UserTaskActions.Claim))
+                        {
+                            <MudMenuItem Disabled="@IsBusy(context.Id)" OnClick="@(() => ClaimAsync(context))" AriaLabel="@($"Claim {context.Title}")">Claim</MudMenuItem>
+                        }
+                        @if (Can(context, UserTaskActions.Release))
+                        {
+                            <MudMenuItem Disabled="@IsBusy(context.Id)" OnClick="@(() => ReleaseAsync(context))" AriaLabel="@($"Release {context.Title}")">Release</MudMenuItem>
+                        }
+                        @if (Can(context, UserTaskActions.Complete))
+                        {
+                            <MudMenuItem OnClick="@(() => OpenAsync(context))" AriaLabel="@($"Respond to {context.Title}")">Respond</MudMenuItem>
+                        }
+                    </MudMenu>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Class="pa-4">@(_query.HasFilters ? "No tasks match these filters" : "No tasks")</MudText>
+            </NoRecordsContent>
+        </MudTable>
+
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mt-4">
+            <MudText Typo="Typo.caption">@PageSummary()</MudText>
+            <MudStack Row="true" Spacing="1">
+                <MudButton Variant="Variant.Outlined" Disabled="@(_cursorHistory.Count == 0)" OnClick="PreviousPageAsync">Previous</MudButton>
+                <MudButton Variant="Variant.Outlined" Disabled="@string.IsNullOrWhiteSpace(_nextCursor)" OnClick="NextPageAsync">Next</MudButton>
+            </MudStack>
+        </MudStack>
+    }
+</MudContainer>
+
+@code {
+    private readonly List<string> _cursorHistory = [];
+    private readonly List<UserTaskSummary> _items = [];
+    private readonly HashSet<string> _busyTaskIds = [];
+    private readonly CancellationTokenSource _lifetime = new();
+    private CancellationTokenSource? _reloadDebounce;
+    private CancellationTokenSource? _pollingLifetime;
+    private UserTaskFeatureCapabilities? _capabilities;
+    private UserTaskErrorInfo? _loadError;
+    private UserTaskListQuery _query = new();
+    private string? _nextCursor;
+    private string? _appliedUri;
+    private int? _totalCount;
+    private bool _loading;
+
+    private int TabIndex => _query.Scope switch
+    {
+        UserTaskScopes.Available => 1,
+        UserTaskScopes.History => 2,
+        UserTaskScopes.All when _capabilities?.CanReadAll == true => 3,
+        UserTaskScopes.NeedsAttention when _capabilities?.CanReadAll == true => 4,
+        _ => 0
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+        _query = UserTaskUrlState.Parse(NavigationManager.Uri);
+        await LoadCapabilitiesAndTasksAsync(_lifetime.Token);
+    }
+
+    private async Task LoadCapabilitiesAndTasksAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var api = await ApiClientProvider.GetApiAsync<IUserTasksApi>(cancellationToken);
+            _capabilities = await api.GetCapabilitiesAsync(cancellationToken);
+            _loadError = null;
+
+            // A deep link into a scope this actor cannot use falls back to the default tab rather than
+            // showing an authorization error the API has not actually returned yet.
+            if (!_capabilities.CanReadAll && _query.Scope is UserTaskScopes.All or UserTaskScopes.NeedsAttention)
+                await SetQueryAsync(_query with { Scope = UserTaskScopes.Assigned, Cursor = null }, replace: true);
+            else if (_capabilities is { Enabled: true, CanList: true, CanRead: true })
+                await LoadAsync(cancellationToken);
+
+            if (_capabilities.Realtime)
+            {
+                RealtimeClient.Invalidated += OnInvalidatedAsync;
+                RealtimeClient.ConnectionChanged += OnConnectionChangedAsync;
+                await RealtimeClient.StartAsync(cancellationToken);
+            }
+
+            if (!RealtimeClient.IsConnected)
+                StartPolling();
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            // Capabilities are the gate for everything on this page, so a failure here fails closed.
+            _loadError = UserTaskErrorMapper.Describe(exception);
+        }
+    }
+
+    private async Task LoadAsync(CancellationToken cancellationToken = default)
+    {
+        if (_capabilities is not { CanList: true, CanRead: true })
+            return;
+
+        _loading = true;
+        try
+        {
+            var api = await ApiClientProvider.GetApiAsync<IUserTasksApi>(cancellationToken);
+            var response = await api.ListAsync(
+                scope: _query.Scope,
+                status: _query.Status,
+                priorityFrom: _query.PriorityFrom,
+                priorityTo: _query.PriorityTo,
+                due: _query.Due,
+                from: _query.From,
+                to: _query.To,
+                search: _query.Search,
+                workflowDefinitionId: _query.WorkflowDefinitionId,
+                workflowInstanceId: _query.WorkflowInstanceId,
+                cursor: _query.Cursor,
+                limit: _query.PageSize,
+                sort: _query.Sort,
+                direction: _query.Direction,
+                includeTotalCount: true,
+                cancellationToken: cancellationToken);
+            _items.Clear();
+            _items.AddRange(response.Items);
+            _nextCursor = response.NextCursor;
+            _totalCount = response.TotalCount;
+            _loadError = null;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            // Filters are preserved so the user can retry without rebuilding the query.
+            _loadError = UserTaskErrorMapper.Describe(exception);
+        }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private Task ReloadAsync()
+    {
+        _loadError = null;
+        return _capabilities == null ? LoadCapabilitiesAndTasksAsync(_lifetime.Token) : LoadAsync(_lifetime.Token);
+    }
+
+    private async Task OnTabChanged(int index)
+    {
+        var scope = index switch
+        {
+            1 => UserTaskScopes.Available,
+            2 => UserTaskScopes.History,
+            3 when _capabilities?.CanReadAll == true => UserTaskScopes.All,
+            4 when _capabilities?.CanReadAll == true => UserTaskScopes.NeedsAttention,
+            _ => UserTaskScopes.Assigned
+        };
+        await SetQueryAsync(_query with { Scope = scope, Cursor = null }, resetPaging: true);
+    }
+
+    private Task OnSearchChanged(string? value) => SetFilterAsync(_query with { Search = value });
+    private Task OnStatusChanged(IEnumerable<string>? values) => SetFilterAsync(_query with { Status = values?.ToArray() ?? [] });
+    private Task OnPriorityFromChanged(int? value) => SetFilterAsync(_query with { PriorityFrom = value });
+    private Task OnPriorityToChanged(int? value) => SetFilterAsync(_query with { PriorityTo = value });
+    private Task OnDueChanged(string? value) => SetFilterAsync(_query with { Due = value });
+
+    private Task SetFilterAsync(UserTaskListQuery query) => SetQueryAsync(UserTaskUrlState.ResetPage(query), resetPaging: true);
+
+    private Task ResetFiltersAsync() => SetQueryAsync(UserTaskUrlState.ClearFilters(_query), resetPaging: true);
+
+    private async Task NextPageAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_nextCursor))
+            return;
+        _cursorHistory.Add(_query.Cursor ?? "");
+        await SetQueryAsync(_query with { Cursor = _nextCursor });
+    }
+
+    private async Task PreviousPageAsync()
+    {
+        if (_cursorHistory.Count == 0)
+            return;
+        var cursor = _cursorHistory[^1];
+        _cursorHistory.RemoveAt(_cursorHistory.Count - 1);
+        await SetQueryAsync(_query with { Cursor = string.IsNullOrWhiteSpace(cursor) ? null : cursor });
+    }
+
+    /// <summary>
+    /// Applies a new query. Paging keeps the cursor stack intact; a tab or filter change resets it. Tab and
+    /// filter changes push a history entry so browser back returns to the previous view, while a corrected
+    /// deep link replaces the entry it came from instead of trapping the user in a loop.
+    /// </summary>
+    private async Task SetQueryAsync(UserTaskListQuery query, bool resetPaging = false, bool replace = false)
+    {
+        _query = query;
+        if (resetPaging)
+            _cursorHistory.Clear();
+        _appliedUri = UserTaskUrlState.ToUri(NavigationManager, query);
+        NavigationManager.NavigateTo(_appliedUri, replace: replace);
+        await LoadAsync(_lifetime.Token);
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs args)
+    {
+        // Our own navigations already loaded; only browser back/forward reaches past this guard. The cursor
+        // stack cannot be reconstructed from the URL alone, so it is cleared and the Previous button then
+        // reflects what the page can actually do.
+        if (string.Equals(args.Location, _appliedUri, StringComparison.Ordinal))
+            return;
+
+        _ = InvokeAsync(async () =>
+        {
+            _appliedUri = args.Location;
+            _query = UserTaskUrlState.Parse(args.Location);
+            _cursorHistory.Clear();
+            await LoadAsync(_lifetime.Token);
+            StateHasChanged();
+        });
+    }
+
+    private Task OnInvalidatedAsync(UserTaskInvalidation invalidation)
+    {
+        _reloadDebounce?.Cancel();
+        _reloadDebounce?.Dispose();
+        _reloadDebounce = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        return DebouncedReloadAsync(_reloadDebounce.Token);
+    }
+
+    private async Task DebouncedReloadAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(250, cancellationToken);
+            await InvokeAsync(() => LoadAsync(cancellationToken));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+    }
+
+    private Task OnConnectionChangedAsync(bool connected)
+    {
+        if (!connected)
+        {
+            StartPolling();
+            return Task.CompletedTask;
+        }
+
+        // Reconnect can hide a gap of missed invalidations, so close it with a full reload.
+        StopPolling();
+        return LoadAsync(_lifetime.Token);
+    }
+
+    private void StartPolling()
+    {
+        if (_pollingLifetime != null || _capabilities == null)
+            return;
+        _pollingLifetime = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        _ = PollingService.RunAsync(TimeSpan.FromSeconds(Math.Max(5, _capabilities.PollingIntervalSeconds)), LoadAsync, _pollingLifetime.Token);
+    }
+
+    private void StopPolling()
+    {
+        _pollingLifetime?.Cancel();
+        _pollingLifetime?.Dispose();
+        _pollingLifetime = null;
+    }
+
+    private Task OpenAsync(UserTaskSummary task)
+    {
+        NavigationManager.NavigateTo($"workflows/user-tasks/{Uri.EscapeDataString(task.Id)}?returnUrl={Uri.EscapeDataString(NavigationManager.Uri)}");
+        return Task.CompletedTask;
+    }
+
+    private Task OnRowClick(TableRowClickEventArgs<UserTaskSummary> args) => args.Item == null ? Task.CompletedTask : OpenAsync(args.Item);
+
+    private Task ClaimAsync(UserTaskSummary task) =>
+        ExecuteMutationAsync(task, (api, request, token) => api.ClaimAsync(task.Id, request, token), "Task claimed");
+
+    private Task ReleaseAsync(UserTaskSummary task) =>
+        ExecuteMutationAsync(task, (api, request, token) => api.ReleaseAsync(task.Id, request, token), "Task released");
+
+    private async Task ExecuteMutationAsync(UserTaskSummary task, Func<IUserTasksApi, UserTaskMutationRequest, CancellationToken, Task<UserTaskOperationResponse>> operation, string successMessage)
+    {
+        if (!_busyTaskIds.Add(task.Id))
+            return;
+
+        // One operation ID per user action, reused if this call is retried, so a retry can never be
+        // recorded as a second command.
+        var operationId = Guid.NewGuid().ToString("N");
+        try
+        {
+            var api = await ApiClientProvider.GetApiAsync<IUserTasksApi>(_lifetime.Token);
+            await operation(api, new(task.Revision, operationId), _lifetime.Token);
+            Snackbar.Add(successMessage, Severity.Success);
+            await LoadAsync(_lifetime.Token);
+        }
+        catch (Exception exception)
+        {
+            var error = UserTaskErrorMapper.Describe(exception);
+            Snackbar.Add(error.Message, error.RequiresReload ? Severity.Warning : Severity.Error);
+            if (error.RequiresReload)
+                await LoadAsync(_lifetime.Token);
+        }
+        finally
+        {
+            _busyTaskIds.Remove(task.Id);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private bool IsBusy(string taskId) => _busyTaskIds.Contains(taskId);
+
+    /// <summary>
+    /// A control appears only when the row's server-issued <c>allowedActions</c> permits it. The feature
+    /// capability is a second, coarser gate; neither is treated as authorization on its own.
+    /// </summary>
+    private bool Can(UserTaskSummary task, string action) => task.Allows(action) && action switch
+    {
+        UserTaskActions.Claim => _capabilities?.CanClaim == true,
+        UserTaskActions.Release => _capabilities?.CanRelease == true,
+        UserTaskActions.Assign => _capabilities?.CanAssign == true,
+        UserTaskActions.Complete => _capabilities?.CanComplete == true,
+        UserTaskActions.Cancel => _capabilities?.CanCancel == true,
+        _ => false
+    };
+
+    private string PageSummary() => _totalCount is { } total
+        ? $"Showing {_items.Count} of {total}"
+        : $"Showing {_items.Count}";
+
+    private static string WorkflowText(UserTaskSummary task) => task switch
+    {
+        { WorkflowDefinitionName: { Length: > 0 } name, WorkflowDefinitionVersion: { } version } => $"{name} v{version}",
+        { WorkflowDefinitionName: { Length: > 0 } name } => name,
+        _ => "—"
+    };
+
+    public async ValueTask DisposeAsync()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+        RealtimeClient.Invalidated -= OnInvalidatedAsync;
+        RealtimeClient.ConnectionChanged -= OnConnectionChangedAsync;
+        await _lifetime.CancelAsync();
+        StopPolling();
+        _lifetime.Dispose();
+        _reloadDebounce?.Dispose();
+        await RealtimeClient.DisposeAsync();
+    }
+}

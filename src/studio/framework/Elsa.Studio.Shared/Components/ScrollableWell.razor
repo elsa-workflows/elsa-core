@@ -1,0 +1,20 @@
+<div style="@($"max-height: {MaxHeight}px; overflow-y: scroll;")">
+    <div class="pa-4">
+        @ChildContent
+    </div>
+</div>
+
+@code
+{
+    /// <summary>
+    /// The maximum height of the <see cref="ScrollableWell"/> component.
+    /// </summary>
+    [Parameter]
+    public int MaxHeight { get; set; } = 300;
+
+    /// <summary>
+    /// The content to be rendered inside the <see cref="ScrollableWell"/> component.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

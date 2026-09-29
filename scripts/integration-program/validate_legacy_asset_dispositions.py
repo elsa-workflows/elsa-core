@@ -145,6 +145,9 @@ def _completion_errors(row: dict[str, Any], root: Path) -> list[str]:
     represented = {"active_path", "active_blob", "active_mode", "representation"}
     retired = {"reason"}
     expected = common | (represented if row["status"] == "represented_in_core" else retired)
+    # A represented asset may record a later reviewed change to its active file; the original decision stays.
+    if row["status"] == "represented_in_core" and "active_update" in completion:
+        expected = expected | {"active_update"}
     if set(completion) != expected:
         return [f"completed asset has unexpected evidence fields: {source}"]
 
@@ -162,6 +165,15 @@ def _completion_errors(row: dict[str, Any], root: Path) -> list[str]:
     if not isinstance(completion["merge_commit"], str) or not re.fullmatch(
             r"[0-9a-f]{40}", completion["merge_commit"]):
         errors.append(f"completed asset has invalid merge commit: {source}")
+
+    if "active_update" in completion:
+        update = completion["active_update"]
+        if (not isinstance(update, dict) or set(update) != {"pr_url", "reason"}
+                or not isinstance(update["pr_url"], str)
+                or not re.fullmatch(r"https://github\.com/elsa-workflows/elsa-core/pull/[1-9][0-9]*", update["pr_url"])
+                or update["pr_url"] == completion["pr_url"]
+                or not isinstance(update["reason"], str) or not update["reason"].strip()):
+            errors.append(f"completed asset has invalid active update evidence: {source}")
 
     if row["status"] == "represented_in_core":
         active_path = completion["active_path"]

@@ -1,0 +1,40 @@
+@using System.Text.Json
+@using System.Text.Json.Nodes
+@using Elsa.Studio.Localization
+@using Variant = MudBlazor.Variant
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+@if (_fields.Count > 0)
+{
+    <MudStack Spacing="2" Class="ml-4">
+        @foreach (var field in _fields)
+        {
+            @if (field.Options.Count > 0)
+            {
+                <MudSelect T="string" Label="@Localizer[field.Label]" HelperText="@Localizer[field.Description]" Value="@GetTextValue(field.Name)" ValueChanged="@(value => UpdateEnumAsync(field, value))" Required="@field.IsRequired" ReadOnly="IsReadOnly" Disabled="IsReadOnly" Dense="true" Variant="Variant.Outlined">
+                    @foreach (var option in field.Options)
+                    {
+                        <MudSelectItem Value="@option">@option</MudSelectItem>
+                    }
+                </MudSelect>
+            }
+            else if (field.Type == "boolean")
+            {
+                <MudCheckBox T="bool" Label="@Localizer[field.Label]" Value="@GetBooleanValue(field.Name)" ValueChanged="@(value => UpdateBooleanAsync(field.Name, value))" ReadOnly="IsReadOnly" Disabled="IsReadOnly" />
+            }
+            else
+            {
+                <MudTextField T="string" Label="@Localizer[field.Label]" HelperText="@Localizer[field.Description]" Value="@GetTextValue(field.Name)" ValueChanged="@(value => UpdateTextAsync(field, value))" Required="@field.IsRequired" ReadOnly="IsReadOnly" Disabled="IsReadOnly" Variant="Variant.Outlined" />
+            }
+        }
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <MudAlert Severity="Severity.Error" Dense="true">@_error</MudAlert>
+        }
+    </MudStack>
+}
+else
+{
+    <MudTextField T="string" Label="@Localizer["Converter settings"]" HelperText="@Localizer["Enter a JSON object."]" Value="@_rawSettings" ValueChanged="OnRawSettingsChangedAsync" Error="@(!string.IsNullOrEmpty(_error))" ErrorText="@_error" ReadOnly="IsReadOnly" Disabled="IsReadOnly" Lines="6" Variant="Variant.Outlined" Class="ml-4" />
+}

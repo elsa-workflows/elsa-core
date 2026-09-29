@@ -1,0 +1,89 @@
+@using Variant = MudBlazor.Variant
+@using Elsa.Studio.Workflows.Pages.WorkflowInstances.View.Models
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<MudPaper Class="mx-2 mt-2 mb-0" Elevation="0" Outlined="true">
+    <MudToolBar Dense="true">
+        <MudToggleIconButton
+            Icon="@Icons.Material.Outlined.Timer"
+            ToggledIcon="@Icons.Material.Outlined.AccessTime"
+            title="@(TimeMetricMode == TimeMetricMode.Accumulated ? @Localizer["Show relative time"] : @Localizer["Show accumulated time"])"
+            Toggled="@(TimeMetricMode == TimeMetricMode.Accumulated)"
+            ToggledChanged="OnTimeMetricButtonToggleChanged"/>
+
+        <MudToggleIconButton
+            Icon="@Icons.Material.Outlined.DataArray"
+            ToggledIcon="@Icons.Material.Outlined.DataArray"
+            title="@(ShowScopedEvents ? @Localizer["Showing all events"] : @Localizer["Show events scoped to current container"])"
+            Color="Color.Default"
+            ToggledColor="Color.Primary"
+            Toggled="ShowScopedEvents"
+            ToggledChanged="OnScopeToggleChanged">
+        </MudToggleIconButton>
+
+        <MudToggleIconButton
+            Icon="@Icons.Material.Outlined.ErrorOutline"
+            ToggledIcon="@Icons.Material.Outlined.ErrorOutline"
+            title="@(ShowIncidents ? @Localizer["Show incidents"] : @Localizer["Showing incidents"])"
+            Color="Color.Default"
+            ToggledColor="Color.Error"
+            Toggled="ShowIncidents"
+            ToggledChanged="OnShowIncidentsToggleChanged">
+        </MudToggleIconButton>
+    </MudToolBar>
+</MudPaper>
+<div class="px-4" style="overflow-y: auto; height: calc(100vh - var(--mud-appbar-height) - 160px);">
+    <MudTimeline SelectedIndexChanged="OnJournalEntrySelected" SelectedIndex="SelectedIndex">
+        <Virtualize @ref="VirtualizeComponent" ItemsProvider="FetchExecutionLogRecordsAsync" OverscanCount="50" ItemSize="@(88.53f)">
+            @{
+                var journalEntry = context;
+                var record = journalEntry.Record;
+                var activityDescriptor = journalEntry.ActivityDescriptor;
+                var displaySettings = journalEntry.ActivityDisplaySettings;
+                var activityIcon = displaySettings?.Icon;
+                var timeMetric = context.TimeMetric;
+                
+                // UX Logic: prioritize the custom display text the user entered for the activity, to correlate to what the designer shows on the node.
+                // Fall back to the activity name (e.g., "WriteLine1"), then to the activity type for uniqueness.
+                var designerActivityName = GetActivityName?.Invoke(record.ActivityId);
+                var customDisplayName = GetCustomActivityName?.Invoke(record.ActivityId);
+                var typeName = activityDescriptor?.DisplayName ?? record.ActivityType;
+                
+                // Hierarchy: Custom Display Text > Activity Name > Activity Type
+                var displayName = ActivityLabelResolver.Resolve(customDisplayName, designerActivityName, typeName);
+                
+                var bgClass = SelectedEntry != null && journalEntry.Record.Id == SelectedEntry.Record.Id ? "gray lighten-3 rounded" : "";
+                var statusColor =
+                    record.EventName switch
+                    {
+                        "Started" => Color.Primary,
+                        "Completed" => Color.Success,
+                        "Faulted" => Color.Error,
+                        "Error" => Color.Error,
+                        "Suspended" => Color.Warning,
+                        "Resumed" => Color.Warning,
+                        _ => Color.Default
+                        };
+            }
+            <MudTimelineItem Color="statusColor" Size="Size.Small" Variant="Variant.Filled" TimelineAlign="TimelineAlign.Start" Class="@($"cursor-pointer pa-1 {bgClass}")">
+                <ItemDot>
+                    <MudIcon Icon="@activityIcon" Size="Size.Small"></MudIcon>
+                </ItemDot>
+                <ItemContent>
+                    <MudText Typo="Typo.body2">@displayName</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="mud-text-secondary">@typeName - @record.EventName</MudText>
+                </ItemContent>
+                <ItemOpposite>
+                    <div class="d-flex justify-end gap-4">
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary"><Timestamp Value="record.Timestamp"/></MudText>
+                    </div>
+                    <div class="d-flex justify-end gap-4">
+                        <MudIcon Icon="@(TimeMetricMode == TimeMetricMode.Relative ? Icons.Material.Outlined.Timer : Icons.Material.Outlined.AccessTime)" Size="Size.Small"></MudIcon>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">@timeMetric.ToString("hh\\:mm\\:ss\\.fff")</MudText>
+                    </div>
+                </ItemOpposite>
+            </MudTimelineItem>
+        </Virtualize>
+    </MudTimeline>
+</div>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                   xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1"
+                   id="Definitions_publish-gate-process"
+                   targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="publish-gate-process" name="Publish Gate Process" isExecutable="true">
+    <bpmn:startEvent id="Start_1">
+      <bpmn:timerEventDefinition>
+        <bpmn:timeCycle>R/PT1H</bpmn:timeCycle>
+      </bpmn:timerEventDefinition>
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="NotifyWarehouse" name="Notify Warehouse">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Notifying the warehouse"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End_1">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="NotifyWarehouse" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="NotifyWarehouse" targetRef="End_1" />
+  </bpmn:process>
+</bpmn:definitions>

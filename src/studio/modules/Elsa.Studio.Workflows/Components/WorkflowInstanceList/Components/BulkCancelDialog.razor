@@ -1,0 +1,15 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@MudDialog.Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack>
+            <MudText Typo="Typo.body1">Are you sure you want to cancel the selected workflow instances?</MudText>
+            <MudCheckBox @bind-Value="ApplyToAllMatches" Label="Apply to all matches"/>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">No</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Yes</MudButton>
+    </DialogActions>
+</MudDialog>

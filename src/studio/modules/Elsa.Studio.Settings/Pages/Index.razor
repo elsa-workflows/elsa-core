@@ -1,0 +1,55 @@
+@page "/settings"
+@inject ISettingsSectionRegistry Sections
+
+<PageTitle>Settings</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large">
+    <PageHeading Text="Settings" />
+    <MudText Typo="Typo.body1" Class="mb-6">
+        Configure installed Elsa Studio capabilities. Each section owns its data and authorization rules.
+    </MudText>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" aria-label="Loading settings" />
+    }
+    else if (_sections.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">No settings sections are available to your account.</MudAlert>
+    }
+    else
+    {
+        <MudGrid>
+            @foreach (var section in _sections)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard Outlined="true" Style="height:100%">
+                        <MudCardContent>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@section.Icon" Color="Color.Primary" />
+                                <MudText Typo="Typo.h6">@section.DisplayName</MudText>
+                            </MudStack>
+                            <MudText Typo="Typo.body2" Class="mt-3">@section.Description</MudText>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Href="@section.Href" Variant="Variant.Text" Color="Color.Primary">
+                                Open @section.DisplayName
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    private IReadOnlyList<SettingsSectionDescriptor> _sections = [];
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _sections = await Sections.ListAsync();
+        _loading = false;
+    }
+}

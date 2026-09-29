@@ -1,0 +1,63 @@
+﻿@page "/login"
+@using Elsa.Studio.Branding
+@using Elsa.Studio.Localization
+@using Radzen.Blazor
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+@inject IBrandingProvider BrandingProvider
+@layout BasicLayout
+
+@{
+#pragma warning disable CS0618 // Login layout still needs the legacy scalar branding values.
+    var logoUrl = BrandingProvider.LogoUrl;
+    var appName = BrandingProvider.AppName;
+#pragma warning restore CS0618
+}
+
+<div class="login-page" style="background-image: url('@BrandingProvider.Login.BackgroundUrl'); background-size:cover; min-height:100%;">
+    <RadzenStack Gap="3" Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" JustifyContent="Radzen.JustifyContent.End">
+        @if (BrandingProvider.AppBarIcons.ShowDocumentationLink)
+        {
+            <MudIconButton Icon="@Icons.Material.Outlined.Book" Color="Color.Inherit" Href="https://v3.elsaworkflows.io/" Target="_blank" title="Documentation" />
+        }
+        @if (BrandingProvider.AppBarIcons.ShowGitHubLink)
+        {
+            <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Href="https://github.com/elsa-workflows/elsa-core" Target="_blank" title="Source code" />
+        }
+    </RadzenStack>
+
+    <RadzenRow Gap="0" class="rz-my-12 rz-mx-auto rz-border-radius-6 rz-shadow-10" Style="width: 100%; max-width: 800px; overflow: hidden;">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenCard class="rz-shadow-0 rz-border-radius-0 rz-text-align-center rz-p-12 rz-background-color-info"
+                        Style="height: 100%; display:flex; flex-direction:column; justify-content:space-between; background: var(--rz-primary-light) no-repeat 100% 70% fixed">
+                
+                <RadzenStack Gap="6" AlignItems="Radzen.AlignItems.Center">
+                    <RadzenImage Path="@logoUrl" Style="width: 3rem; padding-bottom: 1rem" AlternateText="logo" />
+                    <RadzenText TextStyle="TextStyle.DisplayH3" TagName="TagName.H2" class="rz-color-white">@appName</RadzenText>
+                    <RadzenText TextStyle="TextStyle.H6" class="rz-color-white">@BrandingProvider.AppTagline</RadzenText>
+                </RadzenStack>
+
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-color-white">@ClientVersion</RadzenText>
+            </RadzenCard>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenCard class="rz-shadow-0 rz-border-radius-0 rz-p-12">
+                <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H2" class="rz-mb-6">
+                    @Localizer["Login"]
+                </RadzenText>
+                <RadzenTemplateForm Data="@("LoginValues")">
+                    <RadzenLogin Login="@TryLogin"
+                                 UserNameAutoCompleteType="AutoCompleteType.Username"
+                                 PasswordAutoCompleteType="AutoCompleteType.CurrentPassword"
+                                 UserText="@Localizer["Username"]"
+                                 PasswordText="@Localizer["Password"]"
+                                 RememberMeText="@Localizer["Remember Me"]"
+                                 AllowRememberMe="true"
+                                 AllowRegister="false"
+                                 AllowResetPassword="false"
+                                 ShowLoginButton="true" />
+                </RadzenTemplateForm>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+</div>

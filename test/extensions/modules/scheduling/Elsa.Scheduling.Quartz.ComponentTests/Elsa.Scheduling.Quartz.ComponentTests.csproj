@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="../../../../../src/common/Elsa.Testing.Shared.Component/Elsa.Testing.Shared.Component.csproj" />
+        <ProjectReference Include="../../../../../src/modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../../../../../src/extensions/scheduling/Elsa.Scheduling.Quartz/Elsa.Scheduling.Quartz.csproj" />
+        <ProjectReference Include="../../../workbench/Elsa.TestServer.Web/Elsa.TestServer.Web.csproj" />
+    </ItemGroup>
+
+</Project>

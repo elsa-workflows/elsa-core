@@ -1,0 +1,35 @@
+@using Elsa.Studio.Localization
+@using Elsa.Studio.Models
+
+@if (DisplayText?.Length > TruncationLength)
+{
+    <div>
+        @DisplayText.Substring(0, TruncationLength)
+        <MudTooltip Text="@Localizer["Show all"]" Delay="500">
+            <MudLink OnClick="@OnViewClicked"><small>[...]</small></MudLink>
+        </MudTooltip>
+    </div>
+}
+else
+{
+    <span>@DisplayText</span>
+}
+
+@code {
+    /// <summary>
+    /// The text to display.
+    /// </summary>
+    [Parameter] public string? DisplayText { get; set; }
+
+    /// <summary>
+    /// The maximum length before truncation.
+    /// </summary>
+    [Parameter] public int TruncationLength { get; set; } = DataPanel.DefaultTruncationLength;
+
+    /// <summary>
+    /// Callback invoked when the "show all" link is clicked.
+    /// </summary>
+    [Parameter] public EventCallback OnViewClicked { get; set; }
+
+    [Inject] private ILocalizer Localizer { get; set; } = null!;
+}

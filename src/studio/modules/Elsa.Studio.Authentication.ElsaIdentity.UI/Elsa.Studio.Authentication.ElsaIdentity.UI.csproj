@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <Description>Login UI for Elsa Studio ElsaIdentity (Elsa Identity) authentication.</Description>
+    <PackageTags>elsa studio authentication elsa identity ui</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../framework/Elsa.Studio.Shared/Elsa.Studio.Shared.csproj" />
+    <ProjectReference Include="../Elsa.Studio.Authentication.Abstractions/Elsa.Studio.Authentication.Abstractions.csproj" />
+    <ProjectReference Include="../Elsa.Studio.Authentication.ElsaIdentity/Elsa.Studio.Authentication.ElsaIdentity.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.WebUtilities" />
+  </ItemGroup>
+
+</Project>

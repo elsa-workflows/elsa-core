@@ -1,0 +1,22 @@
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+@if (ActivityExecution == null)
+{
+    <MudAlert Severity="Severity.Info">@Localizer["No execution selected."]</MudAlert>
+}
+else
+{
+    <MudStack Row="false" Spacing="3">
+        <DataPanel Title="@Localizer["State"]" Data="@ActivityState" HideEmptyValues="false" ShowNoDataAlert="true" NoDataMessage="@Localizer["No state associated with this execution."]"/>
+        <DataPanel Title="@Localizer["Outcomes"]" Data="@OutcomesData" HideEmptyValues="true" ShowNoDataAlert="true" NoDataMessage="@Localizer["No outcomes associated with this execution."]"/>
+        <DataPanel Title="@Localizer["Output"]" Data="@OutputData" HideEmptyValues="false" ShowNoDataAlert="true" NoDataMessage="@Localizer["No output associated with this execution."]"/>
+        @if (Retries.TotalCount > 0)
+        {
+            <div>
+                <MudText Typo="Typo.overline" GutterBottom="true" Align="Align.Left">@Localizer["Retry Attempts"]</MudText>
+                <RetriesTab Retries="@Retries.Items" />
+            </div>
+        }
+    </MudStack>
+}

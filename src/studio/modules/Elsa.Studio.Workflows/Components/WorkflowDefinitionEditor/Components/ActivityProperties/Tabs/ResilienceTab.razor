@@ -1,0 +1,32 @@
+@using Elsa.Api.Client.Extensions
+@using Variant = MudBlazor.Variant
+@inject ILocalizer Localizer
+<MudForm>
+    <MudStack Spacing="5">
+        <ExpressionEditor
+            @ref="@ExpressionEditor"
+            ExpressionChanged="@OnExpressionChangedAsync"
+            Expression="Expression"
+            DisplayName="@Localizer["Resilience Strategy"]"
+            Description="@Localizer["Enter the expression that will be used to determine the resilience strategy for this activity."]"
+            CustomProperties="@GetExpressionEditorProps()"
+            ReadOnly="IsReadOnly">
+            <MudSelect Label="@Localizer["Resilience Strategy"]"
+                       T="string"
+                       Variant="@Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Dense="true"
+                       Value="@ResilienceStrategyId"
+                       ValueChanged="@OnStrategyChanged"
+                       ReadOnly="IsReadOnly"
+                       Disabled="IsReadOnly">
+                @foreach (var strategy in ResilienceStrategies)
+                {
+                    var id = strategy.GetResilienceStrategyId();
+                    var displayName = strategy.GetResilienceStrategyDisplayName();
+                    <MudSelectItem Value="@id">@Localizer[displayName]</MudSelectItem>
+                }
+            </MudSelect>
+        </ExpressionEditor>
+    </MudStack>
+</MudForm>

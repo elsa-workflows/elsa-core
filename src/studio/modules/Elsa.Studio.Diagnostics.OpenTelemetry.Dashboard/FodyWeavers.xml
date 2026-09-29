@@ -1,0 +1,3 @@
+<Weavers>
+  <ConfigureAwait ContinueOnCapturedContext="false" />
+</Weavers>

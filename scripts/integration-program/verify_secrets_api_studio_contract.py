@@ -33,10 +33,16 @@ def verify_pin(repo, expected):
 
 
 def read_source(repo, ref, path):
+    # A None ref reads the working tree, so an uncommitted drift cannot pass a local run.
+    if ref is None:
+        return (Path(repo) / path).read_text(encoding='utf-8')
     return git(repo, 'show', f'{ref}:{path}')
 
 
 def tracked_paths(repo, ref, prefix):
+    if ref is None:
+        root = Path(repo)
+        return sorted(path.relative_to(root).as_posix() for path in (root / prefix).rglob('*') if path.is_file())
     output = git(repo, 'ls-tree', '-r', '--name-only', ref, '--', prefix)
     return [path for path in output.splitlines() if path]
 
@@ -201,6 +207,58 @@ def verify_legacy_identity_disposition(fixture, core_secret, core_version, legac
     return expected
 
 
+def verify_route_tables(fixture, core_routes, legacy_routes, studio_routes):
+    assert_equal('Core endpoint routes', core_routes, fixture['coreRoutes'])
+    assert_equal('Legacy endpoint routes', legacy_routes, fixture['legacyRoutes'])
+    assert_equal('Studio Refit methods', studio_routes, fixture['studioRoutes'])
+
+    conflicts = route_conflicts(core_routes, legacy_routes)
+    assert_equal('Normalized legacy/Core route collisions', conflicts, fixture['routeConflicts'])
+    core_keys = [(row['verb'], normalize_route(row['path'])) for row in core_routes]
+    for route in studio_routes:
+        key = (route['verb'], normalize_route(route['path']))
+        if core_keys.count(key) != 1:
+            fail(f'Studio route must have exactly one Core owner: {route}')
+    return conflicts
+
+
+def verify_list_query_projection(fixture, core_models_source, studio_routes):
+    list_query_names = sorted(name[0].upper() + name[1:] for name in next(row for row in studio_routes if row['method'] == 'ListAsync')['query'])
+    list_omissions = sorted(set(property_names(core_models_source, 'ListSecretsRequest')) - set(list_query_names))
+    assert_equal('Studio optional list query omissions', list_omissions, fixture['dtoProjectionDifferences']['ListSecretsRequest'])
+
+
+def verify_studio_dto_projection(fixture, core_dtos, studio_dtos):
+    for name in fixture['sharedStudioDtos']:
+        omitted = sorted(set(core_dtos[name]) - set(studio_dtos[name]))
+        unexpected = sorted(set(studio_dtos[name]) - set(core_dtos[name]))
+        assert_equal(f'{name} Studio-only fields', unexpected, [])
+        assert_equal(f'{name} intentional Core fields omitted by Studio', omitted, fixture['dtoProjectionDifferences'].get(name, []))
+
+
+def verify_import_candidate(root, fixture):
+    """Check that the draft history import carries the pinned contract in its own tree.
+
+    The Core endpoints, the imported legacy API package and the imported Studio client must declare the
+    pinned routes, permissions and DTO projection, and the Studio files compiled into the HTTP test must be
+    byte-identical to the imported Studio source. A missing mapped path fails instead of being skipped.
+    """
+    paths = fixture['importCandidateSourcePaths']
+    core_routes = parse_api_routes(root, None, paths['coreApi'], 'core')
+    legacy_routes = parse_api_routes(root, None, paths['legacyApi'], 'legacy')
+    studio_routes = parse_studio_routes(root, None, paths['studioApi'])
+    conflicts = verify_route_tables(fixture, core_routes, legacy_routes, studio_routes)
+    verify_studio_dto_projection(
+        fixture,
+        property_map(root, None, paths['coreModels'], fixture['sharedStudioDtos']),
+        property_map(root, None, paths['studioModels'], fixture['sharedStudioDtos']))
+    verify_list_query_projection(fixture, read_source(root, None, paths['coreModels']), studio_routes)
+    for source_name, snapshot_path in fixture['studioTestSourceSnapshots'].items():
+        if (Path(root) / snapshot_path).read_bytes() != (Path(root) / paths[source_name]).read_bytes():
+            fail(f'Studio integration-test source snapshot {snapshot_path} differs from imported {paths[source_name]}')
+    return conflicts
+
+
 def verify(core_repo, extensions_repo, studio_repo, fixture):
     pins = fixture['sourcePins']
     for name, repo in [('core', core_repo), ('extensions', extensions_repo), ('studio', studio_repo)]:
@@ -218,17 +276,7 @@ def verify(core_repo, extensions_repo, studio_repo, fixture):
     core_routes = parse_api_routes(core_repo, pins['core'], fixture['sourcePaths']['coreApi'], 'core')
     legacy_routes = parse_api_routes(extensions_repo, pins['extensions'], fixture['sourcePaths']['legacyApi'], 'legacy')
     studio_routes = parse_studio_routes(studio_repo, pins['studio'], fixture['sourcePaths']['studioApi'])
-    assert_equal('Core endpoint routes', core_routes, fixture['coreRoutes'])
-    assert_equal('Legacy endpoint routes', legacy_routes, fixture['legacyRoutes'])
-    assert_equal('Studio Refit methods', studio_routes, fixture['studioRoutes'])
-
-    conflicts = route_conflicts(core_routes, legacy_routes)
-    assert_equal('Normalized legacy/Core route collisions', conflicts, fixture['routeConflicts'])
-    core_keys = [(row['verb'], normalize_route(row['path'])) for row in core_routes]
-    for route in studio_routes:
-        key = (route['verb'], normalize_route(route['path']))
-        if core_keys.count(key) != 1:
-            fail(f'Studio route must have exactly one Core owner: {route}')
+    conflicts = verify_route_tables(fixture, core_routes, legacy_routes, studio_routes)
 
     core_models = read_source(core_repo, pins['core'], fixture['sourcePaths']['coreModels'])
     studio_models = read_source(studio_repo, pins['studio'], fixture['sourcePaths']['studioModels'])
@@ -241,19 +289,13 @@ def verify(core_repo, extensions_repo, studio_repo, fixture):
     assert_equal('Legacy SecretInputModel properties', property_names(legacy_input_model, 'SecretInputModel'), fixture['legacySecretInputModelProperties'])
     core_dtos = property_map(core_repo, pins['core'], fixture['sourcePaths']['coreModels'], fixture['sharedStudioDtos'])
     studio_dtos = property_map(studio_repo, pins['studio'], fixture['sourcePaths']['studioModels'], fixture['sharedStudioDtos'])
-    for name in fixture['sharedStudioDtos']:
-        omitted = sorted(set(core_dtos[name]) - set(studio_dtos[name]))
-        unexpected = sorted(set(studio_dtos[name]) - set(core_dtos[name]))
-        assert_equal(f'{name} Studio-only fields', unexpected, [])
-        assert_equal(f'{name} intentional Core fields omitted by Studio', omitted, fixture['dtoProjectionDifferences'].get(name, []))
+    verify_studio_dto_projection(fixture, core_dtos, studio_dtos)
     sensitive_fields = {value.casefold() for value in fixture['secretValueFields']}
     if sensitive_fields & {value.casefold() for value in core_dtos['SecretModel']}:
         fail('Core SecretModel exposes plaintext or encrypted secret value fields')
     if sensitive_fields & {value.casefold() for value in studio_dtos['SecretModel']}:
         fail('Studio SecretModel includes plaintext or encrypted secret value fields')
-    list_query_names = sorted(name[0].upper() + name[1:] for name in next(row for row in studio_routes if row['method'] == 'ListAsync')['query'])
-    list_omissions = sorted(set(property_names(core_models, 'ListSecretsRequest')) - set(list_query_names))
-    assert_equal('Studio optional list query omissions', list_omissions, fixture['dtoProjectionDifferences']['ListSecretsRequest'])
+    verify_list_query_projection(fixture, core_models, studio_routes)
     if not all(name in legacy_models for name in fixture['legacyModelMarkers']):
         fail('The pinned legacy DTO no longer contains all recorded identity/value fields')
     if not all(name in legacy_entity for name in fixture['legacyEntityMarkers']):

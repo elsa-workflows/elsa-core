@@ -1,0 +1,18 @@
+@using Variant = MudBlazor.Variant
+@inherits StudioComponentBase
+@using Elsa.Studio.Workflows.Services
+@inject ILocalizer Localizer
+
+<MudDialog>
+    <DialogContent>
+        <MudStack>
+            <MudCheckBox @bind-Value="_includeConsumingWorkflows" Label="@Localizer["Include referencing workflows"]" Color="Color.Primary" />
+            <MudText Typo="Typo.caption" Class="ml-8 mt-n2">@Localizer["Workflows that reference the selected workflow(s) will be included in the export."]</MudText>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked">@Localizer["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="OnExportClicked">@Localizer["Export"]</MudButton>
+    </DialogActions>
+</MudDialog>
+

@@ -1,0 +1,145 @@
+@using Elsa.Api.Client.Resources.Scripting.Models
+@using Elsa.Studio.Localization
+@using MudBlazor
+@using MudVariant = MudBlazor.Variant
+@namespace Elsa.Studio.Workflows.DiagramDesigners.StateMachines.Presentation
+@inject ILocalizer Localizer
+
+<MudDialog Class="state-machine-condition-editor-dialog">
+    <TitleContent>
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">@Localizer["Edit transition condition"]</MudText>
+            <MudText Typo="Typo.body2">@Localizer["Choose when this transition is eligible. Changes are applied only when you select Apply."]</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <div class="state-machine-condition-editor" data-testid="condition-editor">
+            <div class="state-machine-condition-editor__story" aria-label="@Localizer["Condition story"]">
+                <span class="state-machine-condition-editor__story-label">@Localizer["WHEN"]</span>
+                <span class="state-machine-condition-editor__story-arrow" aria-hidden="true">→</span>
+                <strong>@Localizer["ONLY IF"]</strong>
+                <span class="state-machine-condition-editor__story-arrow" aria-hidden="true">→</span>
+                <span class="state-machine-condition-editor__story-label">@Localizer["THEN"]</span>
+            </div>
+
+            <div class="state-machine-condition-editor__modes" role="tablist" aria-label="@Localizer["Condition mode"]">
+                <button type="button" role="tab" data-mode="always" aria-selected="@(_mode == BooleanConditionEditorMode.Always)" class="@ModeClass(BooleanConditionEditorMode.Always)" disabled="@IsReadOnly" @onclick="() => SetMode(BooleanConditionEditorMode.Always)">
+                    <strong>@Localizer["Always"]</strong>
+                    <span>@Localizer["No condition"]</span>
+                </button>
+                <button type="button" role="tab" data-mode="never" aria-selected="@(_mode == BooleanConditionEditorMode.Never)" class="@ModeClass(BooleanConditionEditorMode.Never)" disabled="@IsReadOnly" @onclick="() => SetMode(BooleanConditionEditorMode.Never)">
+                    <strong>@Localizer["Never"]</strong>
+                    <span>@Localizer["Explicitly false"]</span>
+                </button>
+                <button type="button" role="tab" data-mode="provider" aria-selected="@(_mode == BooleanConditionEditorMode.Provider)" class="@ModeClass(BooleanConditionEditorMode.Provider)" disabled="@(IsReadOnly || !HasProviders)" @onclick="() => SetMode(BooleanConditionEditorMode.Provider)">
+                    <strong>@Localizer["Expression"]</strong>
+                    <span>@Localizer["Use a provider"]</span>
+                </button>
+                <button type="button" role="tab" data-mode="custom" aria-selected="@(_mode == BooleanConditionEditorMode.Custom)" class="@ModeClass(BooleanConditionEditorMode.Custom)" disabled="@IsReadOnly" @onclick="() => SetMode(BooleanConditionEditorMode.Custom)">
+                    <strong>@Localizer["Custom JSON"]</strong>
+                    <span>@Localizer["Advanced escape hatch"]</span>
+                </button>
+            </div>
+
+            @if (IsLossySwitch)
+            {
+                <div role="status" data-testid="condition-editor-lossy-warning">
+                    <MudAlert Severity="Severity.Warning" Variant="MudVariant.Outlined" Dense="true">
+                        @Localizer["Applying this mode will replace the existing condition representation. Cancel to keep it unchanged."]
+                    </MudAlert>
+                </div>
+            }
+
+            @if (_providerLoadError != null)
+            {
+                <MudAlert Severity="Severity.Warning" Variant="MudVariant.Outlined" Dense="true" data-testid="condition-editor-provider-load-warning" role="status">
+                    @_providerLoadError
+                </MudAlert>
+            }
+
+            @if (_mode == BooleanConditionEditorMode.Always)
+            {
+                <MudAlert Severity="Severity.Info" Variant="MudVariant.Outlined" Dense="true">
+                    @Localizer["This transition is always eligible."]
+                </MudAlert>
+                @if (_originalIsExplicitTrue)
+                {
+                    <label class="state-machine-condition-editor__preserve-option">
+                        <input type="checkbox"
+                               data-testid="condition-editor-preserve-explicit-true"
+                               checked="@_preserveExplicitTrue"
+                               disabled="@IsReadOnly"
+                               @onchange="OnPreserveExplicitTrueChanged" />
+                        <span>
+                            <strong>@Localizer["Preserve the explicit true definition"]</strong>
+                            <small>@Localizer["Turn this off only if you want Apply to clear the condition slot."]</small>
+                        </span>
+                    </label>
+                }
+                else
+                {
+                    <p class="state-machine-condition-editor__hint">@Localizer["Apply stores Always as an empty condition slot."]</p>
+                }
+            }
+            else if (_mode == BooleanConditionEditorMode.Never)
+            {
+                <MudAlert Severity="Severity.Warning" Variant="MudVariant.Outlined" Dense="true" data-testid="condition-editor-never-warning">
+                    @Localizer["This transition will never be taken while the condition is false."]
+                </MudAlert>
+            }
+            else if (_mode == BooleanConditionEditorMode.Provider)
+            {
+                @if (!HasProviders)
+                {
+                    <MudAlert Severity="Severity.Warning" Variant="MudVariant.Outlined" Dense="true">@Localizer["No expression providers are available. Use Custom JSON to preserve this condition."]</MudAlert>
+                }
+                else
+                {
+                    <div class="state-machine-condition-editor__provider">
+                        <label for="condition-editor-provider">@Localizer["Expression provider"]</label>
+                        <select id="condition-editor-provider" data-testid="condition-editor-provider" value="@_providerType" disabled="@IsReadOnly" @onchange="OnProviderChanged">
+                            @foreach (var provider in _providers)
+                            {
+                                <option value="@provider.Type">@DisplayProvider(provider)</option>
+                            }
+                        </select>
+                        <label for="condition-editor-provider-expression">@Localizer["Expression"]</label>
+                        <textarea id="condition-editor-provider-expression"
+                                  data-testid="condition-editor-provider-expression"
+                                  rows="8"
+                                  spellcheck="false"
+                                  value="@(_providerExpression?.Value?.ToString() ?? string.Empty)"
+                                  disabled="@IsReadOnly"
+                                  @oninput="OnProviderInput"></textarea>
+                        <p class="state-machine-condition-editor__hint">@Localizer["The expression is evaluated by the selected provider and must return Boolean."]</p>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="state-machine-condition-editor__custom">
+                    <label for="condition-editor-custom-json">@Localizer["Condition JSON"]</label>
+                    <textarea id="condition-editor-custom-json"
+                              data-testid="condition-editor-custom-json"
+                              rows="12"
+                              spellcheck="false"
+                              value="@_customSource"
+                              disabled="@IsReadOnly"
+                              @oninput="OnCustomInput"></textarea>
+                    @if (_customError != null)
+                    {
+                        <p class="state-machine-condition-editor__error" role="alert" data-testid="condition-editor-custom-error">@_customError</p>
+                    }
+                    else
+                    {
+                        <p class="state-machine-condition-editor__hint">@Localizer["Unknown condition shapes are preserved. Valid JSON must represent a Boolean condition."]</p>
+                    }
+                </div>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton data-testid="condition-editor-cancel" Variant="MudVariant.Text" OnClick="Cancel">@Localizer["Cancel"]</MudButton>
+        <MudButton data-testid="condition-editor-apply" Variant="MudVariant.Filled" Color="Color.Primary" Disabled="@(!CanApply)" OnClick="Apply">@Localizer["Apply"]</MudButton>
+    </DialogActions>
+</MudDialog>

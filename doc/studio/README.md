@@ -1,5 +1,43 @@
 # Elsa Studio documentation
 
+Studio's backend-facing clients, Blazor modules, hosts, and tests live in
+[`src/studio`](../../src/studio) in the consolidated source tree. Open the
+repository's canonical [`Elsa.sln`](../../Elsa.sln) to change the backend and
+Studio together. The standalone Studio README retained in the
+[import provenance](../integration-program/legacy/studio/README.md.source)
+uses the former clone and solution paths; follow this page for the imported
+layout.
+
+Studio's Designer and DomInterop browser bundles use Node 22. From the
+repository root, run the [reviewed ClientLib build script](../../scripts/integration-program/build_studio_clientlibs.sh)
+and build the canonical solution:
+
+```sh
+./scripts/integration-program/build_studio_clientlibs.sh
+dotnet build Elsa.sln
+```
+
+Start a backend such as [`Elsa.Server.Web`](../../src/apps/Elsa.Server.Web)
+and run the [`Elsa.Studio.Host.Server`](../../src/studio/hosts/Elsa.Studio.Host.Server)
+project in separate terminals to work on the Blazor UI. Its default backend URL is
+`https://localhost:7294/elsa/api`. The checked-in `Elsa.Server.Web` launch
+profile instead listens on `https://localhost:5001`; for this pairing, put
+the following in the Studio host's ignored `appsettings.Local.json`:
+
+```json
+{
+  "Backend": {
+    "Url": "https://localhost:5001/elsa/api"
+  }
+}
+```
+
+The host defaults to ElsaIdentity authentication. Keep developer credentials and client
+secrets out of committed settings. The
+[paired backend/Blazor proof](../integration-program/paired-blazor-host.md)
+records the bounded source-breakpoint demonstration; it is not a production
+host configuration.
+
 The [interface design system](design/system.md) is the Studio-approved baseline
 dated 2026-09-01. It describes UI conventions for Studio contributors; evaluate
 new work against the current module and its tests as well.

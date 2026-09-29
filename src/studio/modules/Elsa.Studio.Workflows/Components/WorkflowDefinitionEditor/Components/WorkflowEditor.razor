@@ -1,0 +1,107 @@
+@using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.ActivityProperties
+@using Elsa.Studio.Workflows.DiagramDesigners.Bpmn
+@using Orientation = Radzen.Orientation
+@using Variant = MudBlazor.Variant
+@inherits WorkflowEditorComponentBase
+@inject ILocalizer Localizer
+
+<RadzenSplitter Orientation="Orientation.Vertical" Style="height: calc(100vh - var(--mud-appbar-height) - 50px);" Resize="@OnResize">
+    <RadzenSplitterPane Size="70%">
+        <CascadingValue Name="@BpmnDesignerWrapper.ElementSelectedCascadeName" Value="_bpmnElementSelected" IsFixed="true">
+        <DiagramDesignerWrapper @ref="_diagramDesigner"
+                                WorkflowDefinitionVersionId="@_workflowDefinition?.Id"
+                                WorkflowDefinition="@_workflowDefinition"
+                                Activity="@Activity"
+                                IsProgressing="@IsProgressing"
+                                ActivitySelected="@OnActivitySelected"
+                                GraphUpdated="@OnGraphUpdated"
+                                ActivityUpdated="@OnActivityUpdated">
+            <CustomToolbarItems>
+                <MudTooltip Text="@Localizer["Auto-save"]" Delay="500">
+                    <MudSwitch T="bool?" Value="@AutoSave" Color="Color.Primary" Label="@Localizer["Auto-save"]" LabelPlacement="Placement.Start" ValueChanged="@OnAutoSaveChanged" />
+                </MudTooltip>
+                <MudTooltip Text="@Localizer["Save"]" Delay="500">
+                    <MudBadge Color="@(IsDirty ? Color.Warning: Color.Success)" Dot="true" Overlap="true" Origin="Origin.BottomRight" Bordered="true" Class="elsa-toolbar-icon">
+                        <MudIconButton Icon="@Icons.Material.Outlined.Save" OnClick="@OnSaveClick" />
+                    </MudBadge>
+                </MudTooltip>
+
+                <div id="workflow-file-upload-button-wrapper" class="d-none">
+                    <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="@OnFilesSelected" />
+                </div>
+
+                <MudButtonGroup Color="Color.Default" Variant="Variant.Text" DropShadow="false">
+                    <MudTooltip Text="@Localizer["Publish workflow"]" Delay="500">
+                        <MudIconButton Icon="@Icons.Material.Filled.CloudUpload" Color="Color.Primary" OnClick="@OnPublishClicked" />
+                    </MudTooltip>
+                    <Zone Name="@ZoneNames.WorkflowDefinitionEditorToolbarActions" Attributes="@WorkflowDefinitionEditorToolbarActionAttributes" />
+                    <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown" Dense="true">
+                        <MudTooltip Text="@Localizer["Save As"]" Inline="false" Delay="500">
+                            <MudMenuItem Icon="@Icons.Material.Filled.SaveAs" OnClick="@OnSaveAsClick">@Localizer["Save As"]</MudMenuItem>
+                        </MudTooltip>
+                        <MudDivider DividerType="DividerType.FullWidth"></MudDivider>
+                        @if (_workflowDefinition?.IsPublished == true)
+                        {
+                            <MudTooltip Text="@Localizer["Unpublish the current workflow"]" Inline="false" Delay="500">
+                                <MudMenuItem Icon="@Icons.Material.Filled.CloudDownload" OnClick="@OnRetractClicked">@Localizer["Unpublish"]</MudMenuItem>
+                            </MudTooltip>
+                            <MudDivider DividerType="DividerType.FullWidth"></MudDivider>
+                        }
+                        <MudTooltip Text="@Localizer["Export the current workflow as a JSON file"]" Inline="false" Delay="500">
+                            <MudMenuItem Icon="@Icons.Material.Filled.FileDownload" OnClick="@OnExportClicked">@Localizer["Export"]</MudMenuItem>
+                        </MudTooltip>
+                        <MudTooltip Text="@Localizer["Import a JSON file containing workflow data to override the current workflow's contents."]" Inline="false" Delay="500">
+                            <MudMenuItem Icon="@Icons.Material.Filled.FileUpload" OnClick="@OnImportClicked">@Localizer["Import"]</MudMenuItem>
+                        </MudTooltip>
+                    </MudMenu>
+                </MudButtonGroup>
+                <MudTooltip Text="@Localizer["Run Workflow"]" Delay="500">
+                    <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Success" Variant="Variant.Text" Class="ml-4" OnClick="@OnRunWorkflowClicked" />
+                </MudTooltip>
+            </CustomToolbarItems>
+        </DiagramDesignerWrapper>
+        </CascadingValue>
+    </RadzenSplitterPane>
+    <RadzenSplitterPane Size="30%" @ref="ActivityPropertiesPane">
+        @if (_bpmnDocumentSession is { } bpmnDocumentSession)
+        {
+            @* A BPMN-imported workflow's activities come from its BPMN document: they are bound in the document, never
+               edited in the activity properties panel, whose edits only the ordinary save could persist. *@
+            <BpmnPerformedByPanel WorkflowDefinition="@_workflowDefinition" RootActivity="@Activity" Selection="@_selectedBpmnElement" Session="@bpmnDocumentSession"
+                                  DocumentChanged="@OnBpmnDocumentChangedAsync" SaveRequested="@SaveBpmnDocumentBackedDefinitionAsync" ReloadRequested="@ReloadBpmnDocumentBackedDefinitionAsync"
+                                  VisiblePaneHeight="@_activityPropertiesPaneHeight" />
+        }
+        else
+        {
+            <ActivityPropertiesPanel @key="@SelectedActivityId" @ref="ActivityPropertiesPanel" WorkflowDefinition="@_workflowDefinition" Activity="@SelectedActivity" ActivityDescriptor="@ActivityDescriptor" OnActivityUpdated="@OnSelectedActivityUpdated" VisiblePaneHeight="@_activityPropertiesPaneHeight" />
+        }
+    </RadzenSplitterPane>
+</RadzenSplitter>
+
+<script>
+    window.editorHotkeys = {
+        _hotkeyHandler: null,
+        register: function (dotNetRef) {
+            function handler(e) {
+                // Ctrl+S (Windows/Linux) and Cmd+S (Mac)
+                if ((e.ctrlKey || e.metaKey) && e.key === 's' && !e.shiftKey) {
+                    e.preventDefault();
+                    dotNetRef.invokeMethodAsync('OnHotKeysCtrlS');
+                }
+                // Ctrl+Shift+S (Windows/Linux) and Cmd+Shift+S (Mac) for Save As
+                if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
+                    e.preventDefault();
+                    dotNetRef.invokeMethodAsync('OnHotKeysCtrlShiftS');
+                }
+            }
+            window.addEventListener('keydown', handler);
+            this._hotkeyHandler = handler;
+        },
+        dispose: function (dotNetRef) {
+            if (this._hotkeyHandler) {
+                window.removeEventListener('keydown', this._hotkeyHandler);
+                this._hotkeyHandler = null;
+            }
+        }
+    };
+</script>

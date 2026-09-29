@@ -3,7 +3,11 @@ name: Integration program tools
 on:
   pull_request:
     paths:
+      - 'Elsa.sln'
+      - 'Elsa.Extensions.slnf'
+      - 'Elsa.Studio.slnf'
       - 'scripts/integration-program/**'
+      - 'samples/extensions/workbench/**'
       - 'doc/integration-program/verify-hierarchy.py'
       - 'doc/integration-program/hierarchy.json'
       - '.github/workflows/integration-program-tools.yml'
@@ -23,6 +27,16 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          # Symbol-pair tests and the pinned Secrets lockfiles use this SDK.
+          dotnet-version: '10.0.300'
+      - name: Install the pinned workflow parser
+        # The r7 source-tip receipt test shells out to scripts/validate_packages_workflow_gates.py, which needs this.
+        # PyYAML 6.0.3, CPython 3.12 manylinux x86_64 wheel.
+        run: |
+          echo 'PyYAML==6.0.3 --hash=sha256:ba1cc08a7ccde2d2ec775841541641e4548226580ab850948cbfda66a1befcdc' > "$RUNNER_TEMP/gate-requirements.txt"
+          python3 -m pip install --only-binary :all: --require-hashes -r "$RUNNER_TEMP/gate-requirements.txt"
       - name: Verify program graph, import safety and history preservation
         run: |
           python doc/integration-program/verify-hierarchy.py
@@ -32,10 +46,6 @@ jobs:
         run: |
           python -m unittest discover -s scripts/integration-program/activity-compatibility -p 'test_*.py'
           python -O -m unittest discover -s scripts/integration-program/activity-compatibility -p 'test_*.py'
-      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
-        with:
-          # The pinned lockfiles include SDK-resolved ILLink tooling; keep the SDK stable.
-          dotnet-version: '10.0.300'
       - name: Verify synthetic Secrets SQLite bridge against current Core
         run: |
           python scripts/integration-program/run_secrets_sqlite_bridge_contract.py \

@@ -1,0 +1,11 @@
+@using Elsa.Studio.Dashboard.Widgets
+
+@if (Context.Snapshot != null)
+{
+    <DashboardNeedsAttention Items="@Context.Snapshot.NeedsAttention.Findings" Capability="@Context.Snapshot.NeedsAttention.Capability" />
+}
+
+@code {
+    [Parameter] public DashboardWidgetContext Context { get; set; } = null!;
+    [Parameter] public DashboardWidgetDescriptor Descriptor { get; set; } = null!;
+}

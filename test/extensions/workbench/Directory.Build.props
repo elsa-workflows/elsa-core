@@ -1,0 +1,10 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  
+  <ItemGroup>
+    <PackageReference Include="Testcontainers.PostgreSql"/>
+    <PackageReference Include="Testcontainers.RabbitMq"/>
+  </ItemGroup>
+
+</Project>

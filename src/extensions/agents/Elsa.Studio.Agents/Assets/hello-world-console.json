@@ -1,0 +1,86 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "9c0e75247cce1f49",
+  "definitionId": "c61f744c9c8e09a5",
+  "name": "Hello World Console",
+  "createdAt": "2025-06-24T16:52:51.600334\u002B00:00",
+  "version": 1,
+  "toolVersion": "3.6.0.0",
+  "variables": [
+    {
+      "id": "35d43f6e96407b08",
+      "name": "Metadata",
+      "typeName": "JSON",
+      "isArray": false,
+      "storageDriverTypeName": "Elsa.Workflows.WorkflowInstanceStorageDriver, Elsa.Workflows.Core"
+    },
+    {
+      "id": "e24bbd9a8b2088ba",
+      "name": "PostedFiles",
+      "typeName": "FormFile[]",
+      "isArray": false,
+      "storageDriverTypeName": "Elsa.Workflows.MemoryStorageDriver, Elsa.Workflows.Core"
+    }
+  ],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {
+    "VariableTestValues": {}
+  },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "id": "5dd0507c8a6a9cc2",
+    "nodeId": "Workflow1:5dd0507c8a6a9cc2",
+    "name": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+    "activities": [
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Hello World!"
+          }
+        },
+        "id": "7a626e0695a695d1",
+        "nodeId": "Workflow1:5dd0507c8a6a9cc2:7a626e0695a695d1",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -129.611572265625,
+              "y": -304.64398193359375
+            },
+            "size": {
+              "width": 175.984375,
+              "height": 67.9765625
+            }
+          },
+          "displayText": "Hello World!"
+        }
+      }
+    ],
+    "variables": [],
+    "connections": []
+  }
+}

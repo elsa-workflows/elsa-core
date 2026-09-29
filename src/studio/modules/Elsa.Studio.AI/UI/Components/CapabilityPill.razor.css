@@ -1,0 +1,17 @@
+.weaver-capability-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 0.82rem;
+}
+
+.weaver-capability-pill.is-enabled {
+    color: var(--mud-palette-success);
+}
+
+.weaver-capability-pill.is-disabled {
+    color: var(--mud-palette-text-secondary);
+}

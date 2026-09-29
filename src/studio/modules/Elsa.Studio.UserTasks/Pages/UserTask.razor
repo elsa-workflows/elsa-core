@@ -1,0 +1,627 @@
+@page "/workflows/user-tasks/{TaskId}"
+@attribute [Authorize]
+@implements IAsyncDisposable
+@inject IBackendApiClientProvider ApiClientProvider
+@inject IUserTaskRealtimeClient RealtimeClient
+@inject IUserTaskPollingService PollingService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+<PageTitle>@(_task?.Title ?? "User Task")</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
+    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Outlined.ArrowBack" OnClick="NavigateBack">User Tasks</MudButton>
+
+    @if (_task == null)
+    {
+        @if (_loadError != null)
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Outlined">
+                @_loadError.Message
+                <MudButton Variant="Variant.Text" OnClick="@(() => LoadAsync())" Class="ml-2">Retry</MudButton>
+            </MudAlert>
+        }
+        else
+        {
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" aria-label="Loading task"/>
+        }
+    }
+    else
+    {
+        <MudStack Spacing="3" Class="mt-3">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start" Class="flex-wrap">
+                <div>
+                    <MudText Typo="Typo.h4">@_task.Title</MudText>
+                    <MudText Typo="Typo.subtitle2">@_task.TaskType</MudText>
+                </div>
+                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                    @if (_task.IsOverdue)
+                    {
+                        <MudChip T="string" Size="Size.Small" Icon="@Icons.Material.Filled.Warning" Class="user-task-overdue">Overdue</MudChip>
+                    }
+                    <MudChip T="string">@_task.Status</MudChip>
+                </MudStack>
+            </MudStack>
+
+            @if (_conflict != null)
+            {
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">
+                    @_conflict.Message
+                    <MudButton Variant="Variant.Text" OnClick="@(() => LoadAsync())" Class="ml-2">Reload task</MudButton>
+                </MudAlert>
+            }
+            @if (_acceptedOperationId != null)
+            {
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">Your response was accepted. The workflow continuation is being processed.</MudAlert>
+            }
+            @if (IsReadOnly)
+            {
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+                    @(_task.IsTerminal ? "This task has reached its final state and is read-only." : "This task is finishing. It is read-only until the workflow continues.")
+                </MudAlert>
+            }
+
+            <MudTabs @bind-ActivePanelIndex="_activeTab" Elevation="0">
+                <MudTabPanel Text="Task">
+                    <div class="user-task-detail-grid mt-4">
+                        <MudPaper Class="pa-4" Elevation="0" Outlined="true">
+                            @if (!string.IsNullOrWhiteSpace(_task.Summary))
+                            {
+                                <MudText Typo="Typo.body1">@_task.Summary</MudText>
+                            }
+                            @if (_task.Disclosure.CanViewProtected && !string.IsNullOrWhiteSpace(_task.Instructions))
+                            {
+                                <MudText Typo="Typo.body2" Class="mt-3">@_task.Instructions</MudText>
+                            }
+
+                            @if (_task.Form is { } form)
+                            {
+                                <MudStack Spacing="2" Class="mt-4">
+                                    @foreach (var field in form.Fields)
+                                    {
+                                        <div>
+                                            @if (field.Masked && !_revealed.ContainsKey(field.Key))
+                                            {
+                                                @* A masked value is never shipped with the detail. It stays hidden until the
+                                                   server discloses it through the audited reveal command. *@
+                                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                                    <MudTextField T="string" Label="@field.Label" Value="@MaskedPlaceholder" ReadOnly="true" InputType="InputType.Password"/>
+                                                    @if (field.CanReveal)
+                                                    {
+                                                        <MudButton Variant="Variant.Text" Size="Size.Small" Disabled="@_busy"
+                                                                   OnClick="@(() => RevealAsync(field))"
+                                                                   AriaLabel="@($"Reveal {field.Label}")">Reveal</MudButton>
+                                                    }
+                                                </MudStack>
+                                            }
+                                            else
+                                            {
+                                                <MudTextField T="string" Label="@field.Label" Required="@field.Required"
+                                                              ReadOnly="@IsReadOnly" Disabled="@_busy"
+                                                              Value="@FieldValue(field)" ValueChanged="@(value => SetField(field.Key, value))"
+                                                              Error="@_fieldErrors.ContainsKey(field.Key)"
+                                                              ErrorText="@(_fieldErrors.TryGetValue(field.Key, out var error) ? error : null)"/>
+                                            }
+                                        </div>
+                                    }
+                                </MudStack>
+                            }
+
+                            @if (CompletionActions.Count > 0)
+                            {
+                                <MudSelect T="string" Label="Outcome" Class="mt-3" Value="@_actionKey" ValueChanged="SetAction" Disabled="@(IsReadOnly || _busy)" Required="true">
+                                    @foreach (var action in CompletionActions)
+                                    {
+                                        <MudSelectItem Value="@action.Key">@action.Label</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            }
+                            else if (_task.IsTerminal && _task.Disclosure.CanViewProtected && !string.IsNullOrWhiteSpace(_task.Outcome))
+                            {
+                                <MudText Typo="Typo.body2" Class="mt-4">Outcome: @_task.Outcome</MudText>
+                            }
+                        </MudPaper>
+
+                        <MudStack Spacing="3">
+                            <MudPaper Class="pa-4" Elevation="0" Outlined="true">
+                                <MudText Typo="Typo.h6">Details</MudText>
+                                <MudText Typo="Typo.body2">Priority: @_task.Priority</MudText>
+                                <MudText Typo="Typo.body2">Due: @(_task.DueAt?.ToLocalTime().ToString("g") ?? "No due date")</MudText>
+                                <MudText Typo="Typo.body2">Assignee: @(_task.Assignee?.Label ?? _task.CandidateSummary ?? "Unassigned")</MudText>
+                                @if (!string.IsNullOrWhiteSpace(_task.Reference))
+                                {
+                                    <MudText Typo="Typo.body2">Reference: @_task.Reference</MudText>
+                                }
+                            </MudPaper>
+
+                            @if (Can(UserTaskActions.Assign) || Can(UserTaskActions.UpdateScheduling) || Can(UserTaskActions.RetryResolution) || Can(UserTaskActions.Invite))
+                            {
+                                <MudPaper Class="pa-4" Elevation="0" Outlined="true">
+                                    <MudText Typo="Typo.h6">Manage</MudText>
+
+                                    @if (Can(UserTaskActions.Assign))
+                                    {
+                                        <MudStack Spacing="2" Class="mt-2">
+                                            <MudAutocomplete T="UserTaskParticipantSummary" Label="Assign to"
+                                                             Value="@_assignee" ValueChanged="SetAssignee"
+                                                             SearchFunc="SearchParticipantsAsync" ToStringFunc="@(x => x?.Label ?? "")"
+                                                             Disabled="@(IsReadOnly || _busy)" Clearable="true"
+                                                             HelperText="@(_capabilities?.ParticipantPicker == true ? null : "No participant directory is installed; enter a reference below.")"/>
+                                            @if (_capabilities?.ParticipantPicker != true)
+                                            {
+                                                @* Without a directory the module still works: the reference is entered directly. *@
+                                                <MudTextField T="string" Label="Participant reference" Value="@_assigneeReference" ValueChanged="SetAssigneeReference" Disabled="@(IsReadOnly || _busy)"/>
+                                            }
+                                            <MudTextField T="string" Label="Reason" Value="@_assignReason" ValueChanged="@(v => _assignReason = v ?? "")" Disabled="@(IsReadOnly || _busy)"/>
+                                            <MudButton Variant="Variant.Outlined" Disabled="@(IsReadOnly || _busy || !HasAssignee)" OnClick="AssignAsync">Assign</MudButton>
+                                        </MudStack>
+                                    }
+
+                                    @if (Can(UserTaskActions.UpdateScheduling))
+                                    {
+                                        <MudStack Spacing="2" Class="mt-4">
+                                            <MudNumericField T="int?" Label="Priority" Min="0" Max="100" Value="@_priority" ValueChanged="@(v => _priority = v)" Disabled="@(IsReadOnly || _busy)"/>
+                                            <MudDatePicker Label="Due date" Date="@_dueAt" DateChanged="@(d => _dueAt = d)" Disabled="@(IsReadOnly || _busy)" Clearable="true"/>
+                                            <MudButton Variant="Variant.Outlined" Disabled="@(IsReadOnly || _busy)" OnClick="UpdateSchedulingAsync">Update schedule</MudButton>
+                                        </MudStack>
+                                    }
+
+                                    @if (Can(UserTaskActions.RetryResolution))
+                                    {
+                                        <MudButton Variant="Variant.Outlined" Class="mt-4" Disabled="@_busy" OnClick="RetryResolutionAsync">Retry resolution</MudButton>
+                                    }
+
+                                    @if (Can(UserTaskActions.Invite))
+                                    {
+                                        <MudStack Spacing="2" Class="mt-4">
+                                            <MudText Typo="Typo.subtitle2">Guest links</MudText>
+                                            <MudTextField T="string" Label="Verifier" Value="@_invitationVerifier" ValueChanged="@(v => _invitationVerifier = v ?? "")" Disabled="@(IsReadOnly || _busy)"/>
+                                            <MudTextField T="string" Label="Recipient" Value="@_invitationRecipient" ValueChanged="@(v => _invitationRecipient = v ?? "")" Disabled="@(IsReadOnly || _busy)"/>
+                                            <MudSelect T="string" Label="Allowed actions" MultiSelection="true" SelectedValues="@_invitationActions" SelectedValuesChanged="@(v => _invitationActions = v?.ToArray() ?? [])" Disabled="@(IsReadOnly || _busy)">
+                                                @foreach (var action in CompletionActions)
+                                                {
+                                                    <MudSelectItem T="string" Value="@action.Key">@action.Label</MudSelectItem>
+                                                }
+                                            </MudSelect>
+                                            <MudButton Variant="Variant.Outlined" Disabled="@(IsReadOnly || _busy || string.IsNullOrWhiteSpace(_invitationVerifier) || _invitationActions.Count == 0)" OnClick="CreateInvitationAsync">Create guest link</MudButton>
+                                            <MudText Typo="Typo.caption">The link itself is sent to the recipient by the server and is never shown here.</MudText>
+
+                                            @foreach (var invitation in _invitations)
+                                            {
+                                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                                    <MudText Typo="Typo.caption">@invitation.Status · expires @invitation.ExpiresAt.ToLocalTime().ToString("g")</MudText>
+                                                    <MudButton Variant="Variant.Text" Size="Size.Small" Disabled="@_busy"
+                                                               OnClick="@(() => RevokeInvitationAsync(invitation))"
+                                                               AriaLabel="@($"Revoke guest link issued {invitation.IssuedAt.ToLocalTime():g}")">Revoke</MudButton>
+                                                </MudStack>
+                                            }
+                                        </MudStack>
+                                    }
+                                </MudPaper>
+                            }
+                        </MudStack>
+                    </div>
+                </MudTabPanel>
+
+                @if (_task.Disclosure.CanViewWorkflow && _task.Workflow is { } workflowContext)
+                {
+                    <MudTabPanel Text="Workflow">
+                        <MudPaper Class="pa-4 mt-4" Elevation="0" Outlined="true">
+                            <MudText>Definition: @workflowContext.DefinitionName</MudText>
+                            <MudText>Version: @workflowContext.DefinitionVersion</MudText>
+                            <MudText>Instance: @workflowContext.InstanceReference</MudText>
+                            @if (!string.IsNullOrWhiteSpace(workflowContext.InstanceId))
+                            {
+                                <MudLink Href="@($"workflows/instances/{Uri.EscapeDataString(workflowContext.InstanceId)}/view")">Open workflow instance</MudLink>
+                            }
+                        </MudPaper>
+                    </MudTabPanel>
+                }
+
+                @if (_task.Disclosure.CanViewHistory)
+                {
+                    <MudTabPanel Text="History">
+                        <MudStack Spacing="1" Class="mt-4">
+                            @foreach (var item in _events)
+                            {
+                                <MudPaper Class="pa-3" Elevation="0" Outlined="true">
+                                    <MudText>@(item.Summary ?? item.Kind)</MudText>
+                                    <MudText Typo="Typo.caption">@item.OccurredAt.ToLocalTime().ToString("g")@(string.IsNullOrWhiteSpace(item.ActorDisplayName) ? null : $" · {item.ActorDisplayName}")</MudText>
+                                </MudPaper>
+                            }
+                            @if (_events.Count == 0)
+                            {
+                                <MudText Typo="Typo.body2">No history entries.</MudText>
+                            }
+                        </MudStack>
+                    </MudTabPanel>
+                }
+            </MudTabs>
+
+            <div class="user-task-detail-actions user-task-sticky-actions">
+                @if (Can(UserTaskActions.Claim))
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@_busy" OnClick="ClaimAsync" AriaLabel="@($"Claim {_task.Title}")">Claim</MudButton>
+                }
+                @if (Can(UserTaskActions.Release))
+                {
+                    <MudButton Variant="Variant.Outlined" Disabled="@_busy" OnClick="ReleaseAsync" AriaLabel="@($"Release {_task.Title}")">Release</MudButton>
+                }
+                @if (Can(UserTaskActions.Complete))
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" Disabled="@(_busy || IsReadOnly)" OnClick="CompleteAsync" AriaLabel="@($"Submit response for {_task.Title}")">Complete</MudButton>
+                }
+                @if (Can(UserTaskActions.Cancel))
+                {
+                    <MudTextField T="string" Label="Cancellation reason" Required="true" Value="@_cancelReason" ValueChanged="SetCancelReason" Disabled="@(_busy || IsReadOnly)"/>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" Disabled="@(_busy || IsReadOnly || string.IsNullOrWhiteSpace(_cancelReason))" OnClick="CancelAsync" AriaLabel="@($"Cancel {_task.Title}")">Cancel task</MudButton>
+                }
+            </div>
+        </MudStack>
+    }
+</MudContainer>
+
+@code {
+    private const string MaskedPlaceholder = "••••••••";
+
+    [Parameter] public string TaskId { get; set; } = "";
+
+    private readonly Dictionary<string, string?> _formData = [];
+    private readonly Dictionary<string, string> _fieldErrors = [];
+    private readonly Dictionary<string, string> _revealed = [];
+    private readonly CancellationTokenSource _lifetime = new();
+    private CancellationTokenSource? _pollingLifetime;
+
+    private UserTaskDetail? _task;
+    private UserTaskCapabilities? _taskCapabilities;
+    private UserTaskFeatureCapabilities? _capabilities;
+    private IReadOnlyCollection<UserTaskEvent> _events = [];
+    private IReadOnlyCollection<UserTaskInvitationSummary> _invitations = [];
+    private UserTaskErrorInfo? _loadError;
+    private UserTaskErrorInfo? _conflict;
+    private string _actionKey = "";
+    private string _cancelReason = "";
+    private string? _acceptedOperationId;
+    private bool _busy;
+    private int _activeTab;
+
+    // Manager surface state.
+    private UserTaskParticipantSummary? _assignee;
+    private string _assigneeReference = "";
+    private string _assignReason = "";
+    private int? _priority;
+    private DateTime? _dueAt;
+    private string _invitationVerifier = "";
+    private string _invitationRecipient = "";
+    private IReadOnlyCollection<string> _invitationActions = [];
+
+    /// <summary>
+    /// A terminal or transitional task is read-only. Editing one would let the user build a response the
+    /// server is guaranteed to reject, and would overwrite another actor's completion in the UI.
+    /// </summary>
+    private bool IsReadOnly => _task is null || _task.IsTerminal || _task.IsTransitioning;
+
+    private IReadOnlyCollection<UserTaskFormAction> CompletionActions =>
+        _task is null || IsReadOnly ? [] : _task.Form?.Actions.Count > 0 ? _task.Form.Actions : _task.Actions;
+
+    private bool HasAssignee => _assignee != null || !string.IsNullOrWhiteSpace(_assigneeReference);
+
+    private string? ReturnUrl => QueryHelpers.ParseQuery(new Uri(NavigationManager.Uri).Query).TryGetValue("returnUrl", out var value)
+        ? Uri.UnescapeDataString(value.FirstOrDefault() ?? "")
+        : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+
+        // The detail view follows the same invalidation contract as the list, with the same polling
+        // fallback, so an open task does not go stale while another actor acts on it.
+        if (_capabilities?.Realtime == true)
+        {
+            RealtimeClient.Invalidated += OnInvalidatedAsync;
+            RealtimeClient.ConnectionChanged += OnConnectionChangedAsync;
+            await RealtimeClient.StartAsync(_lifetime.Token);
+        }
+        if (!RealtimeClient.IsConnected)
+            StartPolling();
+    }
+
+    private async Task LoadAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var api = await ApiClientProvider.GetApiAsync<IUserTasksApi>(cancellationToken);
+            _capabilities ??= await api.GetCapabilitiesAsync(cancellationToken);
+            _task = await api.GetAsync(TaskId, cancellationToken);
+            _taskCapabilities = await api.GetTaskCapabilitiesAsync(TaskId, cancellationToken);
+            _loadError = null;
+
+            // A reload is the resolution of a conflict, so any pending conflict banner clears with it.
+            _conflict = null;
+            _revealed.Clear();
+            _priority = _task.Priority;
+            _dueAt = _task.DueAt?.LocalDateTime;
+            if (!CompletionActions.Any(x => x.Key == _actionKey))
+                _actionKey = CompletionActions.FirstOrDefault()?.Key ?? "";
+
+            _events = _task.Disclosure.CanViewHistory ? (await api.GetEventsAsync(TaskId, limit: 100, cancellationToken: cancellationToken)).Items : [];
+            _invitations = Can(UserTaskActions.Invite) ? (await api.ListInvitationsAsync(TaskId, cancellationToken)).Items : [];
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _loadError = UserTaskErrorMapper.Describe(exception);
+        }
+        finally
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    /// <summary>
+    /// A control is rendered only when the task's own <c>allowedActions</c> names it. The feature descriptor
+    /// is a second, coarser gate; neither replaces the server's per-request decision.
+    /// </summary>
+    private bool Can(string action) => _task?.Allows(action) == true && action switch
+    {
+        UserTaskActions.Claim => _capabilities?.CanClaim == true,
+        UserTaskActions.Release => _capabilities?.CanRelease == true,
+        UserTaskActions.Assign => _capabilities?.CanAssign == true,
+        UserTaskActions.UpdateScheduling => _capabilities?.CanUpdate == true,
+        UserTaskActions.Complete => _capabilities?.CanComplete == true,
+        UserTaskActions.Cancel => _capabilities?.CanCancel == true,
+        UserTaskActions.Invite => _capabilities?.CanCreateGuestLinks == true,
+        UserTaskActions.RetryResolution => _taskCapabilities?.CanManage == true,
+        _ => false
+    };
+
+    private string? FieldValue(UserTaskFormField field)
+    {
+        if (_formData.TryGetValue(field.Key, out var edited))
+            return edited;
+        if (_revealed.TryGetValue(field.Key, out var revealed))
+            return revealed;
+        return field.Value is { } value ? value.ValueKind == JsonValueKind.String ? value.GetString() : value.ToString() : null;
+    }
+
+    private void SetField(string key, string? value)
+    {
+        _formData[key] = value;
+        _fieldErrors.Remove(key);
+    }
+
+    private void SetAction(string? value) => _actionKey = value ?? "";
+    private void SetCancelReason(string? value) => _cancelReason = value ?? "";
+    private void SetAssignee(UserTaskParticipantSummary? value) => _assignee = value;
+    private void SetAssigneeReference(string? value) => _assigneeReference = value ?? "";
+
+    private async Task<IEnumerable<UserTaskParticipantSummary>> SearchParticipantsAsync(string? value, CancellationToken cancellationToken)
+    {
+        if (_capabilities?.ParticipantPicker != true)
+            return [];
+        try
+        {
+            var api = await ApiClientProvider.GetApiAsync<IUserTasksApi>(cancellationToken);
+            return (await api.SearchParticipantsAsync(value, limit: 20, cancellationToken: cancellationToken)).Items;
+        }
+        catch (Exception)
+        {
+            // A missing or failing directory degrades the picker to the plain reference editor rather than
+            // breaking the page.
+            return [];
+        }
+    }
+
+    private async Task RevealAsync(UserTaskFormField field)
+    {
+        await RunAsync(async (api, _, cancellationToken) =>
+        {
+            var response = await api.RevealFieldAsync(TaskId, new(field.Key), cancellationToken);
+            if (response.Value is { } value)
+                _revealed[field.Key] = value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : value.ToString();
+            return null;
+        }, successMessage: null);
+    }
+
+    private Task ClaimAsync() => RunAsync(async (api, operationId, cancellationToken) =>
+    {
+        await api.ClaimAsync(TaskId, new(_task!.Revision, operationId), cancellationToken);
+        return null;
+    }, "Task claimed", reloadAfter: true);
+
+    private Task ReleaseAsync() => RunAsync(async (api, operationId, cancellationToken) =>
+    {
+        await api.ReleaseAsync(TaskId, new(_task!.Revision, operationId), cancellationToken);
+        return null;
+    }, "Task released", reloadAfter: true);
+
+    private Task AssignAsync() => RunAsync(async (api, operationId, cancellationToken) =>
+    {
+        var assignee = _assignee ?? new UserTaskParticipantSummary { Id = _assigneeReference.Trim() };
+        await api.AssignAsync(TaskId, new(_task!.Revision, assignee, operationId, string.IsNullOrWhiteSpace(_assignReason) ? null : _assignReason), cancellationToken);
+        return null;
+    }, "Task assigned", reloadAfter: true);
+
+    private Task UpdateSchedulingAsync() => RunAsync(async (api, operationId, cancellationToken) =>
+    {
+        var dueAt = _dueAt is { } value ? new DateTimeOffset(value, TimeZoneInfo.Local.GetUtcOffset(value)) : (DateTimeOffset?)null;
+        await api.UpdateSchedulingAsync(TaskId, new(_task!.Revision, _priority, dueAt, operationId), cancellationToken);
+        return null;
+    }, "Schedule updated", reloadAfter: true);
+
+    private Task RetryResolutionAsync() => RunAsync(async (api, operationId, cancellationToken) =>
+    {
+        await api.RetryResolutionAsync(TaskId, new(_task!.Revision, operationId), cancellationToken);
+        return null;
+    }, "Resolution retry accepted", reloadAfter: true);
+
+    private Task CreateInvitationAsync() => RunAsync(async (api, operationId, cancellationToken) =>
+    {
+        await api.CreateInvitationAsync(TaskId, new()
+        {
+            ExpectedRevision = _task!.Revision,
+            VerifierName = _invitationVerifier.Trim(),
+            AllowedActions = _invitationActions,
+            Recipient = string.IsNullOrWhiteSpace(_invitationRecipient) ? null : _invitationRecipient.Trim(),
+            OperationId = operationId
+        }, cancellationToken);
+        return null;
+    }, "Guest link created and sent", reloadAfter: true);
+
+    private Task RevokeInvitationAsync(UserTaskInvitationSummary invitation) => RunAsync(async (api, operationId, cancellationToken) =>
+    {
+        await api.DeleteInvitationAsync(TaskId, invitation.Id, new(_task!.Revision, operationId), cancellationToken);
+        return null;
+    }, "Guest link revoked", reloadAfter: true);
+
+    private async Task CompleteAsync()
+    {
+        if (_task == null || IsReadOnly)
+            return;
+        if (string.IsNullOrWhiteSpace(_actionKey))
+        {
+            Snackbar.Add("Choose an outcome before completing the task.", Severity.Warning);
+            return;
+        }
+        if (!ValidateForm())
+        {
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        JsonElement? data = _task.Form == null || _formData.Count == 0 ? null : JsonSerializer.SerializeToElement(_formData);
+        await RunAsync(async (api, operationId, cancellationToken) =>
+        {
+            var operation = await api.CompleteAsync(TaskId, new(_task.Revision, operationId, _actionKey, data), cancellationToken);
+            _acceptedOperationId = operation.OperationId ?? operationId;
+            return null;
+        }, "Response accepted", reloadAfter: true);
+    }
+
+    private async Task CancelAsync()
+    {
+        if (_task == null || IsReadOnly || string.IsNullOrWhiteSpace(_cancelReason))
+            return;
+
+        await RunAsync(async (api, operationId, cancellationToken) =>
+        {
+            var operation = await api.CancelAsync(TaskId, new(_task.Revision, operationId, _cancelReason), cancellationToken);
+            _acceptedOperationId = operation.OperationId ?? operationId;
+            return null;
+        }, "Cancellation accepted", reloadAfter: true);
+    }
+
+    /// <summary>
+    /// Client-side validation mirrors the form's own required flags. It is a convenience only: the server
+    /// validates the same response and remains authoritative.
+    /// </summary>
+    private bool ValidateForm()
+    {
+        _fieldErrors.Clear();
+        if (_task?.Form is not { } form)
+            return true;
+
+        foreach (var field in form.Fields.Where(x => x.Required))
+        {
+            var value = FieldValue(field);
+            // A masked field that was never revealed keeps whatever the server already holds.
+            if (field.Masked && !_revealed.ContainsKey(field.Key) && !_formData.ContainsKey(field.Key))
+                continue;
+            if (string.IsNullOrWhiteSpace(value))
+                _fieldErrors[field.Key] = $"{field.Label} is required.";
+        }
+
+        return _fieldErrors.Count == 0;
+    }
+
+    /// <summary>
+    /// Runs one command. A single operation ID is minted per submission and reused on retry, the surface is
+    /// disabled while the call is in flight, and failures are mapped to safe copy rather than raw exceptions.
+    /// </summary>
+    private async Task RunAsync(Func<IUserTasksApi, string, CancellationToken, Task<string?>> operation, string? successMessage, bool reloadAfter = false)
+    {
+        if (_busy || _task == null)
+            return;
+
+        _busy = true;
+        var operationId = Guid.NewGuid().ToString("N");
+        try
+        {
+            var api = await ApiClientProvider.GetApiAsync<IUserTasksApi>(_lifetime.Token);
+            await operation(api, operationId, _lifetime.Token);
+            if (successMessage != null)
+                Snackbar.Add(successMessage, Severity.Success);
+            if (reloadAfter)
+                await LoadAsync(_lifetime.Token);
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            var error = UserTaskErrorMapper.Describe(exception);
+            if (error.RequiresReload)
+                _conflict = error;
+            else
+                Snackbar.Add(error.Message, error.IsAuthorization ? Severity.Warning : Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private Task OnInvalidatedAsync(UserTaskInvalidation invalidation) =>
+        string.Equals(invalidation.TaskId, TaskId, StringComparison.Ordinal)
+            ? InvokeAsync(() => LoadAsync(_lifetime.Token))
+            : Task.CompletedTask;
+
+    private Task OnConnectionChangedAsync(bool connected)
+    {
+        if (!connected)
+        {
+            StartPolling();
+            return Task.CompletedTask;
+        }
+
+        StopPolling();
+        return InvokeAsync(() => LoadAsync(_lifetime.Token));
+    }
+
+    private void StartPolling()
+    {
+        if (_pollingLifetime != null || _capabilities == null)
+            return;
+        _pollingLifetime = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        _ = PollingService.RunAsync(TimeSpan.FromSeconds(Math.Max(5, _capabilities.PollingIntervalSeconds)), LoadAsync, _pollingLifetime.Token);
+    }
+
+    private void StopPolling()
+    {
+        _pollingLifetime?.Cancel();
+        _pollingLifetime?.Dispose();
+        _pollingLifetime = null;
+    }
+
+    private void NavigateBack()
+    {
+        var returnUrl = ReturnUrl;
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Uri.TryCreate(returnUrl, UriKind.Absolute, out var parsed) && parsed.Host == new Uri(NavigationManager.BaseUri).Host)
+            NavigationManager.NavigateTo(parsed.PathAndQuery);
+        else
+            NavigationManager.NavigateTo("workflows/user-tasks");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        RealtimeClient.Invalidated -= OnInvalidatedAsync;
+        RealtimeClient.ConnectionChanged -= OnConnectionChangedAsync;
+        await _lifetime.CancelAsync();
+        StopPolling();
+        _lifetime.Dispose();
+        await RealtimeClient.DisposeAsync();
+    }
+}

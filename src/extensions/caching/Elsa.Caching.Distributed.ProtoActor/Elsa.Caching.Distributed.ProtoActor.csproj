@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides distributed caching services leveraging Proto.Actor for transport of signals.
+        </Description>
+        <PackageTags>elsa extension module distributed caching proto.actor</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Google.Protobuf" />
+      <PackageReference Include="Grpc.Tools" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../../actors/Elsa.Actors.ProtoActor/Elsa.Actors.ProtoActor.csproj" />
+        <ProjectReference Include="../Elsa.Caching.Distributed/Elsa.Caching.Distributed.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Protobuf Include="Proto\LocalCache.Messages.proto" AdditionalImportDirs="./Proto" />
+    </ItemGroup>
+
+</Project>
