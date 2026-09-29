@@ -13,6 +13,8 @@ from collections import Counter
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from verify_import_source_tip_refresh_r2 import LANDED_IMPORT
+
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_LEDGER = ROOT / "doc/integration-program/consolidation/legacy-asset-dispositions.json"
@@ -123,6 +125,17 @@ def _active_git_blob_and_mode(root: Path, relative_path: str) -> tuple[str, str]
     return blob, mode
 
 
+def _landed_blob_and_mode(root: Path, relative_path: str) -> tuple[str, str] | None:
+    """The file's identity where the import landed; None when that commit is not in this repository."""
+    entry = subprocess.run(
+        ["git", "ls-tree", LANDED_IMPORT, "--", relative_path], cwd=root, capture_output=True, text=True, check=False,
+    )
+    if entry.returncode != 0 or not entry.stdout.strip():
+        return None
+    mode, kind, blob, _ = entry.stdout.split(None, 3)
+    return (blob, mode) if kind == "blob" else None
+
+
 def _receipt_provenance_error(receipt: dict[str, Any]) -> str | None:
     provenance = receipt.get("provenance")
     if provenance is None:
@@ -184,8 +197,9 @@ def _completion_errors(row: dict[str, Any], root: Path) -> list[str]:
             if not _is_regular_repo_file(root, active_path):
                 errors.append(f"completed asset active file is missing: {source}")
             else:
-                identity = _active_git_blob_and_mode(root, active_path)
-                if (completion["active_blob"], completion["active_mode"]) != identity:
+                # The ledger pins the reviewed file as the import landed; later edits on main are ordinary reviewed changes.
+                pinned = (completion["active_blob"], completion["active_mode"])
+                if pinned != _active_git_blob_and_mode(root, active_path) and pinned != _landed_blob_and_mode(root, active_path):
                     errors.append(f"completed asset active blob or mode changed: {source}")
         if (not isinstance(completion["representation"], str)
                 or completion["representation"] not in {"identical", "expanded"}):

@@ -81,7 +81,7 @@ public static class ParameterizedQueryBuilderExtensions
     public static ParameterizedQuery Delete(this ParameterizedQuery query, string table, string primaryKey, ParameterizedQuery innerQuery)
     {
         query.Sql.AppendLine(query.Dialect.Delete(table));
-        query.Sql.AppendLine($"and {primaryKey} in (");
+        query.Sql.AppendLine($"and {query.QuoteIdent(primaryKey)} in (");
         query.Sql.AppendLine(innerQuery.Sql.ToString());
         query.Sql.AppendLine(")");
         return query;
@@ -175,7 +175,7 @@ public static class ParameterizedQueryBuilderExtensions
         if (string.IsNullOrWhiteSpace(searchTerm)) return query;
 
         var searchTermLike = $"%{searchTerm}%";
-        query.Sql.AppendLine("and (Name like @SearchTermLike or Description like @SearchTermLike or Id like @SearchTerm or DefinitionId like @SearchTerm)");
+        query.Sql.AppendLine($"and ({query.QuoteIdent("Name")} like @SearchTermLike or {query.QuoteIdent("Description")} like @SearchTermLike or {query.QuoteIdent("Id")} like @SearchTerm or {query.QuoteIdent("DefinitionId")} like @SearchTerm)");
         query.Parameters.Add("@SearchTerm", searchTerm);
         query.Parameters.Add("@SearchTermLike", searchTermLike);
         return query;
@@ -242,7 +242,7 @@ public static class ParameterizedQueryBuilderExtensions
             return query;
 
         var searchTermLike = $"{value}%";
-        query.Sql.AppendLine($"and {field} like @SearchTermLike");
+        query.Sql.AppendLine($"and {query.QuoteIdent(field)} like @SearchTermLike");
         query.Parameters.Add($"@{field}", searchTermLike);
 
         return query;
@@ -259,27 +259,11 @@ public static class ParameterizedQueryBuilderExtensions
 
         var sql = query.Sql;
         var options = versionOptions.Value;
-        if (options.IsDraft)
-        {
-            query.Is("IsPublished", false);
-        }
-        if (options.IsLatest)
-        {
-            query.Is("IsLatest", true);
-        }
-        if (options.IsPublished)
-        {
-            query.Is("IsPublished", true);
-        }
-        if (options.IsLatestOrPublished)
-        {
-            sql.AppendLine("and (IsLatest = @VersionFlagTrue or IsPublished = @VersionFlagTrue)");
-            query.Parameters.Add("VersionFlagTrue", true);
-        }
-        if (options.IsLatestAndPublished)
-        {
-            query.Is("IsLatest", true).Is("IsPublished", true);
-        }
+        if (options.IsDraft) sql.AppendLine($"and {query.QuoteIdent("IsPublished")} = {query.BoolLit(false)}");
+        if (options.IsLatest) sql.AppendLine($"and {query.QuoteIdent("IsLatest")} = {query.BoolLit(true)}");
+        if (options.IsPublished) sql.AppendLine($"and {query.QuoteIdent("IsPublished")} = {query.BoolLit(true)}");
+        if (options.IsLatestOrPublished) sql.AppendLine($"and ({query.QuoteIdent("IsLatest")} = {query.BoolLit(true)} or {query.QuoteIdent("IsPublished")} = {query.BoolLit(true)})");
+        if (options.IsLatestAndPublished) sql.AppendLine($"and {query.QuoteIdent("IsLatest")} = {query.BoolLit(true)} and {query.QuoteIdent("IsPublished")} = {query.BoolLit(true)}");
         if (options.Version > 0)
         {
             sql.AppendLine(query.Dialect.And("Version"));
@@ -299,7 +283,7 @@ public static class ParameterizedQueryBuilderExtensions
         if (string.IsNullOrWhiteSpace(searchTerm)) return query;
 
         var searchTermLike = $"%{searchTerm}%";
-        query.Sql.AppendLine("and (Name like @SearchTermLike or ID like @SearchTerm or DefinitionId like @SearchTerm or DefinitionVersionId like @SearchTerm or CorrelationId like @SearchTerm)");
+        query.Sql.AppendLine($"and ({query.QuoteIdent("Name")} like @SearchTermLike or {query.QuoteIdent("Id")} like @SearchTerm or {query.QuoteIdent("DefinitionId")} like @SearchTerm or {query.QuoteIdent("DefinitionVersionId")} like @SearchTerm or {query.QuoteIdent("CorrelationId")} like @SearchTerm)");
         query.Parameters.Add("@SearchTerm", searchTerm);
         query.Parameters.Add("@SearchTermLike", searchTermLike);
         return query;
@@ -328,7 +312,7 @@ public static class ParameterizedQueryBuilderExtensions
     public static ParameterizedQuery OrderBy(this ParameterizedQuery query, string field, OrderDirection direction)
     {
         var directionString = direction == OrderDirection.Ascending ? "asc" : "desc";
-        query.Sql.AppendLine($"order by {field} {directionString}");
+        query.Sql.AppendLine($"order by {query.QuoteIdent(field)} {directionString}");
         return query;
     }
 
@@ -342,7 +326,7 @@ public static class ParameterizedQueryBuilderExtensions
         if (!orderFields.Any())
             return query;
 
-        var clauses = string.Join(",", orderFields.Select(x => $"{x.Field} {(x.Direction == OrderDirection.Ascending ? "asc" : "desc")}"));
+        var clauses = string.Join(",", orderFields.Select(x => $"{query.QuoteIdent(x.Field)} {(x.Direction == OrderDirection.Ascending ? "asc" : "desc")}"));
         query.Sql.AppendLine($"order by {clauses}");
         return query;
     }
@@ -510,4 +494,10 @@ public static class ParameterizedQueryBuilderExtensions
         if (type == typeof(byte[])) return DbType.Binary;
         return null;
     }
+
+    private static string QuoteIdent(this ParameterizedQuery query, string name) =>
+        query.Dialect.QuoteIdentifier(name);
+
+    private static string BoolLit(this ParameterizedQuery query, bool value) =>
+        query.Dialect.BooleanLiteral(value);
 }

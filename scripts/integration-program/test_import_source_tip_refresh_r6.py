@@ -20,6 +20,7 @@ from verify_import_source_tip_refresh_r6 import (
     git_bytes,
     verify,
 )
+from verify_import_source_tip_refresh_r2 import LANDED_IMPORT
 
 OTHER_R1_PATH = "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs"
 OTHER_R2_PATH = "src/extensions/persistence/Elsa.Persistence.Dapper/Services/Store.cs"
@@ -27,9 +28,9 @@ CHANGED = {"blob": "0" * 40, "mode": "100644"}
 
 
 def changed_at_head(module: str, path: str):
-    """Patch a verifier module so HEAD reports different bytes for one path."""
+    """Patch a verifier module so the landed import reports different bytes for one path."""
 
-    return changed_at(module, path, "HEAD")
+    return changed_at(module, path, LANDED_IMPORT)
 
 
 def changed_at(module: str, path: str, commit: str):
@@ -94,7 +95,7 @@ class SourceTipRefreshR6Tests(unittest.TestCase):
         receipt["publicationPerformed"] = True
         self.rejects("must not claim a package publication", receipt)
         # This receipt only checks the two publisher paths through its own #8293 delta commit now;
-        # the seventh receipt owns the live HEAD comparison (see test_import_source_tip_refresh_r7.py).
+        # the seventh receipt owns the landed-import comparison (see test_import_source_tip_refresh_r7.py).
         with changed_at("verify_import_source_tip_refresh_r6", ".github/workflows/packages.yml", DELTA_COMMIT):
             self.rejects(f"changed active publisher workflow at {DELTA_COMMIT}")
 
@@ -107,7 +108,7 @@ class SourceTipRefreshR6Tests(unittest.TestCase):
     def test_superseded_files_must_match_final_mapped_at_head(self) -> None:
         for path in (UPSTREAM_TESTS, QUERY):
             with self.subTest(path=path), changed_at_head("verify_import_source_tip_refresh_r6", path):
-                self.rejects("Changed finalMapped at HEAD")
+                self.rejects(f"Changed finalMapped at {LANDED_IMPORT}")
 
     def test_unreviewed_transform_is_rejected(self) -> None:
         for path, old, message in (
@@ -141,7 +142,7 @@ class SourceTipRefreshR6Tests(unittest.TestCase):
 
     def test_current_solution_must_select_reviewed_tests(self) -> None:
         def without_tests(*args: str, **kwargs: object) -> bytes:
-            return b"" if args == ("show", "HEAD:Elsa.sln") else git_bytes(*args, **kwargs)
+            return b"" if args == ("show", f"{LANDED_IMPORT}:Elsa.sln") else git_bytes(*args, **kwargs)
 
         with patch("verify_import_source_tip_refresh_r6.git_bytes", side_effect=without_tests):
             self.rejects("Current Elsa.sln does not select the reviewed Dapper tests")

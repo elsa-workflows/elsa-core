@@ -19,7 +19,7 @@ from typing import Any
 import verify_import_source_tip_refresh_r3 as r3
 import verify_import_source_tip_refresh_r4 as r4
 import verify_import_source_tip_refresh_r6 as r6
-from verify_import_source_tip_refresh_r2 import blob_and_mode, git
+from verify_import_source_tip_refresh_r2 import LANDED_IMPORT, blob_and_mode, git
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -88,7 +88,7 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
     if before[".github/workflows/update-wiki.yml"] != after[".github/workflows/update-wiki.yml"]:
         raise ValueError("Reviewed publisher-gate merge unexpectedly changed update-wiki.yml")
     for path in PUBLISHERS:
-        for commit in (REVIEWED_GATE_COMMIT, MERGED_MAIN_COMMIT, MERGE_COMMIT, "HEAD"):
+        for commit in (REVIEWED_GATE_COMMIT, MERGED_MAIN_COMMIT, MERGE_COMMIT, LANDED_IMPORT):
             if blob_and_mode(commit, path, root) != after[path]:
                 raise ValueError(f"Publisher-gate merge changed active publisher workflow at {commit}: {path}")
 
@@ -107,7 +107,7 @@ def main() -> int:
     except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError) as error:
         print(f"Invalid seventh source-tip refresh: {error}", file=sys.stderr)
         return 1
-    print("Verified the reviewed #8497 publisher-gate merge, superseded prior publisher pins and current HEAD")
+    print("Verified the reviewed #8497 publisher-gate merge, superseded prior publisher pins and the landed import")
     return 0
 
 

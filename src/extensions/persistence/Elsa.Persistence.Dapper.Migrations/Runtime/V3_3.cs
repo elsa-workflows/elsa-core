@@ -21,33 +21,36 @@ public class V3_3 : Migration
         Alter.Table("ActivityExecutionRecords").AddColumn("SerializedProperties").AsString(MaxValue).Nullable();
         Alter.Table("KeyValuePairs").AddColumn("TenantId").AsString().Nullable();
 
-        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
-            .Create
-            .Table("BookmarkQueueItems")
-            .WithColumn("Id").AsString().PrimaryKey()
-            .WithColumn("TenantId").AsString().Nullable()
-            .WithColumn("WorkflowInstanceId").AsString().Nullable()
-            .WithColumn("CorrelationId").AsString().Nullable()
-            .WithColumn("BookmarkId").AsString().Nullable()
-            .WithColumn("StimulusHash").AsString().Nullable()
-            .WithColumn("ActivityInstanceId").AsString().Nullable()
-            .WithColumn("ActivityTypeName").AsString().Nullable()
-            .WithColumn("CreatedAt").AsDateTimeOffset().NotNullable()
-            ;
+        if (!Schema.Table("BookmarkQueueItems").Exists())
+        {
+            IfDatabase(MigrationDatabases.DateTimeOffsetProviders)
+                .Create
+                .Table("BookmarkQueueItems")
+                .WithColumn("Id").AsString().PrimaryKey()
+                .WithColumn("TenantId").AsString().Nullable()
+                .WithColumn("WorkflowInstanceId").AsString().Nullable()
+                .WithColumn("CorrelationId").AsString().Nullable()
+                .WithColumn("BookmarkId").AsString().Nullable()
+                .WithColumn("StimulusHash").AsString().Nullable()
+                .WithColumn("ActivityInstanceId").AsString().Nullable()
+                .WithColumn("ActivityTypeName").AsString().Nullable()
+                .WithColumn("CreatedAt").AsDateTimeOffset().NotNullable()
+                ;
 
-        IfDatabase("Sqlite")
-            .Create
-            .Table("BookmarkQueueItems")
-            .WithColumn("Id").AsString().PrimaryKey()
-            .WithColumn("TenantId").AsString().Nullable()
-            .WithColumn("WorkflowInstanceId").AsString().Nullable()
-            .WithColumn("CorrelationId").AsString().Nullable()
-            .WithColumn("BookmarkId").AsString().Nullable()
-            .WithColumn("StimulusHash").AsString().Nullable()
-            .WithColumn("ActivityInstanceId").AsString().Nullable()
-            .WithColumn("ActivityTypeName").AsString().Nullable()
-            .WithColumn("CreatedAt").AsDateTime2().NotNullable()
-            ;
+            IfDatabase("Sqlite")
+                .Create
+                .Table("BookmarkQueueItems")
+                .WithColumn("Id").AsString().PrimaryKey()
+                .WithColumn("TenantId").AsString().Nullable()
+                .WithColumn("WorkflowInstanceId").AsString().Nullable()
+                .WithColumn("CorrelationId").AsString().Nullable()
+                .WithColumn("BookmarkId").AsString().Nullable()
+                .WithColumn("StimulusHash").AsString().Nullable()
+                .WithColumn("ActivityInstanceId").AsString().Nullable()
+                .WithColumn("ActivityTypeName").AsString().Nullable()
+                .WithColumn("CreatedAt").AsDateTime2().NotNullable()
+                ;
+        }
     }
 
     /// <inheritdoc />

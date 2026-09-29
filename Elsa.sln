@@ -873,6 +873,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.MongoDb.UnitTests", "t
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.Dapper.UnitTests", "test\extensions\modules\persistence\Elsa.Persistence.Dapper.UnitTests\Elsa.Persistence.Dapper.UnitTests.csproj", "{90C6FC77-1B4E-5457-9019-A860AA0BA5CB}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Management.UnitTests", "test\extensions\modules\secrets\Elsa.Secrets.Management.UnitTests\Elsa.Secrets.Management.UnitTests.csproj", "{F7E8DAEB-246E-5DFA-BBD3-FA553BEBAC83}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Runtime.ProtoActor.UnitTests", "test\extensions\modules\runtimes\Elsa.Workflows.Runtime.ProtoActor.UnitTests\Elsa.Workflows.Runtime.ProtoActor.UnitTests.csproj", "{8B4F0408-3892-58AA-96B3-B176F86E3E12}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Hangfire.UnitTests", "test\extensions\modules\scheduling\Elsa.Scheduling.Hangfire.UnitTests\Elsa.Scheduling.Hangfire.UnitTests.csproj", "{482DDEEB-9060-5D3A-B807-BB3D229C53DF}"
@@ -2843,6 +2845,18 @@ Global
 		{90C6FC77-1B4E-5457-9019-A860AA0BA5CB}.Release|x64.Build.0 = Release|Any CPU
 		{90C6FC77-1B4E-5457-9019-A860AA0BA5CB}.Release|x86.ActiveCfg = Release|Any CPU
 		{90C6FC77-1B4E-5457-9019-A860AA0BA5CB}.Release|x86.Build.0 = Release|Any CPU
+		{F7E8DAEB-246E-5DFA-BBD3-FA553BEBAC83}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7E8DAEB-246E-5DFA-BBD3-FA553BEBAC83}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7E8DAEB-246E-5DFA-BBD3-FA553BEBAC83}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F7E8DAEB-246E-5DFA-BBD3-FA553BEBAC83}.Debug|x64.Build.0 = Debug|Any CPU
+		{F7E8DAEB-246E-5DFA-BBD3-FA553BEBAC83}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F7E8DAEB-246E-5DFA-BBD3-FA553BEBAC83}.Debug|x86.Build.0 = Debug|Any CPU
+		{F7E8DAEB-246E-5DFA-BBD3-FA553BEBAC83}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7E8DAEB-246E-5DFA-BBD3-FA553BEBAC83}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7E8DAEB-246E-5DFA-BBD3-FA553BEBAC83}.Release|x64.ActiveCfg = Release|Any CPU
+		{F7E8DAEB-246E-5DFA-BBD3-FA553BEBAC83}.Release|x64.Build.0 = Release|Any CPU
+		{F7E8DAEB-246E-5DFA-BBD3-FA553BEBAC83}.Release|x86.ActiveCfg = Release|Any CPU
+		{F7E8DAEB-246E-5DFA-BBD3-FA553BEBAC83}.Release|x86.Build.0 = Release|Any CPU
 		{8B4F0408-3892-58AA-96B3-B176F86E3E12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8B4F0408-3892-58AA-96B3-B176F86E3E12}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8B4F0408-3892-58AA-96B3-B176F86E3E12}.Debug|x64.ActiveCfg = Debug|Any CPU

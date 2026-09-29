@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from verify_import_source_tip_refresh_r2 import blob_and_mode, git, git_bytes, mapped_path
+from verify_import_source_tip_refresh_r2 import LANDED_IMPORT, blob_and_mode, git, git_bytes, mapped_path
 import verify_import_source_tip_refresh_r7 as publisher_receipt
 
 
@@ -74,11 +74,11 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
             raise ValueError(f"Wrong mapped path for {source}")
         for key, commit, path in (
             ("oldSource", old, source), ("oldMapped", base, mapped),
-            ("newSource", new, source), ("finalMapped", "HEAD", mapped),
+            ("newSource", new, source), ("finalMapped", LANDED_IMPORT, mapped),
         ):
             if row[key] != blob_and_mode(commit, path, root):
                 raise ValueError(f"Changed {key} for {mapped}")
-        if git_bytes("show", f"HEAD:{mapped}", root=root) != git_bytes("show", f"{new}:{source}", root=root):
+        if git_bytes("show", f"{LANDED_IMPORT}:{mapped}", root=root) != git_bytes("show", f"{new}:{source}", root=root):
             raise ValueError(f"Mapped MongoDB file differs from upstream: {mapped}")
 
     for workflow in publisher_receipt.PUBLISHERS:
@@ -87,7 +87,7 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
     # The seventh receipt owns the reviewed publisher-workflow bytes at HEAD; defer to it rather than pin them twice.
     publisher_receipt.verify(json.loads((root / publisher_receipt.RECEIPT.relative_to(ROOT)).read_bytes()), root)
 
-    solution = git_bytes("show", "HEAD:Elsa.sln", root=root)
+    solution = git_bytes("show", f"{LANDED_IMPORT}:Elsa.sln", root=root)
     entries = re.findall(rb'^Project\([^)]*\) = "[^"]*", "' + re.escape(MONGO_TEST_SOLUTION_ENTRY) + rb'", "(\{[^}]+\})"',
                          solution, re.MULTILINE)
     if len(entries) != 1:
@@ -102,7 +102,7 @@ def main() -> int:
     except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError) as error:
         print(f"Invalid eighth source-tip refresh: {error}", file=sys.stderr)
         return 1
-    print("Verified the Extensions c2618de7 history join, the mapped MongoDB files and current HEAD")
+    print("Verified the Extensions c2618de7 history join, the mapped MongoDB files and the landed import")
     return 0
 
 

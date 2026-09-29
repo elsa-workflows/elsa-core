@@ -13,6 +13,7 @@ using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Serialization.Serializers;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
+using System.Text.RegularExpressions;
 
 namespace Elsa.Persistence.Dapper.UnitTests;
 
@@ -26,6 +27,9 @@ public sealed class DapperWorkflowDefinitionStoreTests : IDisposable
     private readonly DefaultTenantAccessor _tenant = new();
     private readonly IPayloadSerializer _serializer;
     private readonly DapperWorkflowDefinitionStore _store;
+
+    // Raw fixture SQL names identifiers the way the provider's dialect does.
+    private string Q(string identifier) => _backend == "postgres" ? $"\"{identifier}\"" : identifier;
 
     public DapperWorkflowDefinitionStoreTests()
     {
@@ -43,7 +47,7 @@ public sealed class DapperWorkflowDefinitionStoreTests : IDisposable
         };
         using var connection = _provider.GetConnection();
         var schema = $$"""
-            create table {{_table}} (
+            create table {{Q(_table)}} (
                 Id text primary key, TenantId text null, DefinitionId text not null,
                 Name text null, ToolVersion text null, Description text null, ProviderName text null,
                 MaterializerName text not null, MaterializerContext text null, Props text not null,
@@ -55,6 +59,8 @@ public sealed class DapperWorkflowDefinitionStoreTests : IDisposable
         if (_backend == "postgres")
         {
             schema = schema.Replace("blob", "bytea").Replace("CreatedAt text", "CreatedAt timestamptz").Replace("integer", "boolean").Replace("Version boolean", "Version integer");
+            // The PostgreSQL dialect quotes identifiers, as FluentMigrator's ForceQuote tables do, so quote the column names too.
+            schema = Regex.Replace(schema, @"(?<=[(,]\s*)([A-Z][A-Za-z]*)(?= )", "\"$1\"");
         }
         else if (_backend == "sqlserver")
         {
@@ -78,7 +84,7 @@ public sealed class DapperWorkflowDefinitionStoreTests : IDisposable
         var result = await store.TryUpdateLatestAsync(Filter(), _ => true, Edited);
         Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, result.Outcome);
         using var connection = _provider.GetConnection();
-        connection.Execute($"update {_table} set TenantId = 'other' where Id = 'v1'");
+        connection.Execute($"update {Q(_table)} set {Q("TenantId")} = 'other' where {Q("Id")} = 'v1'");
         var otherTenant = await store.TryUpdateLatestAsync(Filter(), _ => true, _ => throw new InvalidOperationException());
         Assert.Equal(WorkflowDefinitionUpdateOutcome.NotFound, otherTenant.Outcome);
     }
@@ -89,7 +95,7 @@ public sealed class DapperWorkflowDefinitionStoreTests : IDisposable
         await _store.SaveAsync(Definition());
         using (var connection = _provider.GetConnection())
         {
-            connection.Execute($"update {_table} set Name = 'concurrent name', ToolVersion = 'legacy' where Id = 'v1'");
+            connection.Execute($"update {Q(_table)} set {Q("Name")} = 'concurrent name', {Q("ToolVersion")} = 'legacy' where {Q("Id")} = 'v1'");
         }
         var result = await _store.TryUpdateLatestAsync(Filter(), current => current.StringData == "old", current => Edited(current));
         Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, result.Outcome);
@@ -98,7 +104,7 @@ public sealed class DapperWorkflowDefinitionStoreTests : IDisposable
         Assert.Equal("new", saved.StringData);
         Assert.Equal("kept", saved.CustomProperties["metadata"].ToString());
         using var verify = _provider.GetConnection();
-        Assert.Equal("legacy", verify.QuerySingle<string>($"select ToolVersion from {_table}"));
+        Assert.Equal("legacy", verify.QuerySingle<string>($"select {Q("ToolVersion")} from {Q(_table)}"));
     }
 
     [Fact]
@@ -213,14 +219,14 @@ public sealed class DapperWorkflowDefinitionStoreTests : IDisposable
         await _store.SaveAsync(definition);
         using (var connection = _provider.GetConnection())
         {
-            connection.Execute($"update {_table} set TenantId = 'tenant-a'");
+            connection.Execute($"update {Q(_table)} set {Q("TenantId")} = 'tenant-a'");
         }
         Assert.Equal(WorkflowDefinitionUpdateOutcome.NotFound, (await _store.TryUpdateLatestAsync(Filter(), _ => true, current => Edited(current))).Outcome);
         var result = await _store.TryUpdateLatestAsync(new WorkflowDefinitionFilter { Id = "v1", TenantAgnostic = true }, _ => true, current => Edited(current));
         Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, result.Outcome);
         Assert.Equal("tenant-a", result.Definition!.TenantId);
         using var verify = _provider.GetConnection();
-        Assert.Equal("tenant-a", verify.QuerySingle<string>($"select TenantId from {_table}"));
+        Assert.Equal("tenant-a", verify.QuerySingle<string>($"select {Q("TenantId")} from {Q(_table)}"));
     }
 
     [Theory]
@@ -294,7 +300,7 @@ public sealed class DapperWorkflowDefinitionStoreTests : IDisposable
         Assert.Equal("v2", (await _store.FindAsync(Filter()))!.Id);
         using (var connection = _provider.GetConnection())
         {
-            connection.Execute($"update {_table} set TenantId = 'other'");
+            connection.Execute($"update {Q(_table)} set {Q("TenantId")} = 'other'");
         }
         Assert.Equal(WorkflowDefinitionUpdateOutcome.NotFound, (await _store.TryUpdateLatestAsync(superseded, _ => true, _ => throw new InvalidOperationException())).Outcome);
     }
@@ -320,7 +326,7 @@ public sealed class DapperWorkflowDefinitionStoreTests : IDisposable
         _services.Dispose();
         using (var connection = _provider.GetConnection())
         {
-            connection.Execute($"drop table {_table}");
+            connection.Execute($"drop table {Q(_table)}");
         }
         File.Delete(_path);
     }

@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from verify_import_source_tip_refresh_r9 import RECEIPT, git, git_bytes, verify
+from verify_import_source_tip_refresh_r2 import LANDED_IMPORT
 
 
 class SourceTipRefreshR9Tests(unittest.TestCase):
@@ -53,7 +54,7 @@ class SourceTipRefreshR9Tests(unittest.TestCase):
     def test_mapped_bytes_must_match_upstream(self) -> None:
         def edited_mapping(*args: str, **kwargs: object) -> bytes:
             content = git_bytes(*args, **kwargs)
-            return content + b"\n" if args[1].startswith("HEAD:src/studio/") else content
+            return content + b"\n" if args[1].startswith(f"{LANDED_IMPORT}:src/studio/") else content
 
         with patch("verify_import_source_tip_refresh_r9.git_bytes", side_effect=edited_mapping):
             with self.assertRaisesRegex(ValueError, "differs from upstream"):
@@ -65,12 +66,12 @@ class SourceTipRefreshR9Tests(unittest.TestCase):
         real = r7.blob_and_mode
 
         def drifted(commit: str, path: str, root: object = r7.ROOT) -> dict[str, str] | None:
-            if commit == "HEAD" and path == ".github/workflows/packages.yml":
+            if commit == LANDED_IMPORT and path == ".github/workflows/packages.yml":
                 return {"blob": "0" * 40, "mode": "100644"}
             return real(commit, path, root)
 
         with patch("verify_import_source_tip_refresh_r7.blob_and_mode", side_effect=drifted):
-            with self.assertRaisesRegex(ValueError, "changed active publisher workflow at HEAD"):
+            with self.assertRaisesRegex(ValueError, f"changed active publisher workflow at {LANDED_IMPORT}"):
                 verify(self.receipt)
 
     def test_extra_upstream_or_mapped_diff_path_is_rejected(self) -> None:

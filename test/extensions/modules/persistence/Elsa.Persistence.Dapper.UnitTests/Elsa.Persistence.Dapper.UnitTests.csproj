@@ -1,8 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
+        <PackageReference Include="FluentMigrator.Runner.MySql" />
+        <PackageReference Include="FluentMigrator.Runner.Oracle" />
+        <PackageReference Include="FluentMigrator.Runner.Postgres" />
+        <PackageReference Include="FluentMigrator.Runner.SqlServer" />
         <PackageReference Include="FluentMigrator.Runner.SQLite" />
         <PackageReference Include="Microsoft.Data.Sqlite" />
+        <PackageReference Include="Npgsql" />
+        <PackageReference Include="Testcontainers.PostgreSql" />
     </ItemGroup>
 
     <ItemGroup>

@@ -11,6 +11,9 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
+# #8409 landed the import on main (merge 8b34ab1e). Receipts pin the reviewed bytes as they landed at this import
+# head; later edits to those files are ordinary reviewed changes on main, not import provenance.
+LANDED_IMPORT = "b6baab6b95c84a5773a17bf69dbc3a1d68a673ac"
 RECEIPT = ROOT / "doc/integration-program/consolidation/source-tip-refresh-2026-09-25-r2.json"
 TEST_FRIEND = b'        <InternalsVisibleTo Include="Elsa.Dapper.UnitTests" />\n'
 EXISTING_FRIEND = b'        <InternalsVisibleTo Include="Elsa.Persistence.Dapper.UnitTests" />'

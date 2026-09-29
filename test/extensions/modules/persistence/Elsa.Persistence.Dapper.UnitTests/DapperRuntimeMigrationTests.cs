@@ -80,6 +80,22 @@ public sealed class DapperRuntimeMigrationTests : IDisposable
         Assert.True(TableExists("Roles"));
     }
 
+    [Fact(DisplayName = "Replaying 10001/20001 when tables already exist does not fail (no VersionInfo rows)")]
+    public void ReplayingCreateTableMigrations_WhenTablesAlreadyExist_DoesNotFail()
+    {
+        MigrateUp();
+        using (var connection = new SqliteConnection(_connectionString))
+            connection.Execute("DELETE FROM VersionInfo WHERE Version IN (10001, 20001)");
+
+        MigrateUp();
+
+        Assert.True(TableExists("WorkflowDefinitions"));
+        Assert.True(TableExists("WorkflowInstances"));
+        Assert.True(TableExists("Bookmarks"));
+        Assert.True(TableExists("ActivityExecutionRecords"));
+        Assert.True(TableExists("Roles"));
+    }
+
     [Fact(DisplayName = "Rolling back V3_7 leaves V3_5's AggregateFaultCount so V3_5.Down() does not double-drop")]
     public void RollingBackThroughV3_7AndV3_5_DoesNotDoubleDropAggregateFaultCount()
     {

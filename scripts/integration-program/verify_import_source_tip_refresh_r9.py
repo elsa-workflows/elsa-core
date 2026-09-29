@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from verify_import_source_tip_refresh_r2 import blob_and_mode, git, git_bytes
+from verify_import_source_tip_refresh_r2 import LANDED_IMPORT, blob_and_mode, git, git_bytes
 import verify_import_source_tip_refresh_r7 as publisher_receipt
 
 
@@ -77,14 +77,14 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
             raise ValueError(f"Wrong mapped path for {source}")
         for key, commit, path in (
             ("oldSource", old, source), ("oldMapped", base, mapped),
-            ("newSource", new, source), ("finalMapped", "HEAD", mapped),
+            ("newSource", new, source), ("finalMapped", LANDED_IMPORT, mapped),
         ):
             if row[key] != blob_and_mode(commit, path, root):
                 raise ValueError(f"Changed {key} for {mapped}")
         if row["status"] == "D":
             if row["newSource"] is not None or row["finalMapped"] is not None:
                 raise ValueError(f"Deleted upstream file is still mapped: {mapped}")
-        elif git_bytes("show", f"HEAD:{mapped}", root=root) != git_bytes("show", f"{new}:{source}", root=root):
+        elif git_bytes("show", f"{LANDED_IMPORT}:{mapped}", root=root) != git_bytes("show", f"{new}:{source}", root=root):
             raise ValueError(f"Mapped Studio file differs from upstream: {mapped}")
 
     for workflow in publisher_receipt.PUBLISHERS:
@@ -100,7 +100,7 @@ def main() -> int:
     except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError) as error:
         print(f"Invalid ninth source-tip refresh: {error}", file=sys.stderr)
         return 1
-    print("Verified the Studio 24337549 history join, the mapped host-branding files and current HEAD")
+    print("Verified the Studio 24337549 history join, the mapped host-branding files and the landed import")
     return 0
 
 

@@ -15,6 +15,7 @@ from verify_import_source_tip_refresh_r7 import (
     blob_and_mode,
     verify,
 )
+from verify_import_source_tip_refresh_r2 import LANDED_IMPORT
 
 CHANGED = {"blob": "0" * 40, "mode": "100644"}
 
@@ -77,7 +78,7 @@ class SourceTipRefreshR7Tests(unittest.TestCase):
             "79d6c41e09069927abb7825f16b5ba0a168cea38",
             "d0ea5b039c2525774b14592d3322078a645b993c",
             MERGE_COMMIT,
-            "HEAD",
+            LANDED_IMPORT,
         ):
             with self.subTest(commit=commit), changed_at(".github/workflows/packages.yml", commit):
                 self.rejects(f"changed active publisher workflow at {commit}")
