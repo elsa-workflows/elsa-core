@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Elsa.Persistence.EFCore.Modules.Identity;
 
-internal class Configurations : IEntityTypeConfiguration<User>, IEntityTypeConfiguration<Application>, IEntityTypeConfiguration<Role>
+internal class Configurations : IEntityTypeConfiguration<User>, IEntityTypeConfiguration<Application>, IEntityTypeConfiguration<Role>, IEntityTypeConfiguration<RevokedSession>
 {
     private static Expression<Func<ICollection<string>, string>> StringCollectionToStringConverter => v => string.Join(",", v);
     private static Expression<Func<string, ICollection<string>>> StringToStringCollectionConverter => v => v.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList();
@@ -39,5 +39,11 @@ internal class Configurations : IEntityTypeConfiguration<User>, IEntityTypeConfi
         builder.HasIndex(x => new { x.TenantId, x.Name }).HasDatabaseName($"IX_{nameof(Role)}_{nameof(Role.TenantId)}_{nameof(Role.Name)}").IsUnique();
         builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(Role)}_{nameof(Role.TenantId)}");
         builder.Property(x => x.Permissions).HasColumnName("Permissions").HasConversion(StringCollectionToStringConverter, StringToStringCollectionConverter).IsRequired().Metadata.SetValueComparer(StringCollectionComparer);
+    }
+
+    public void Configure(EntityTypeBuilder<RevokedSession> builder)
+    {
+        // Expired revocations are pruned by ExpiresAt each time a session is revoked.
+        builder.HasIndex(x => x.ExpiresAt).HasDatabaseName($"IX_{nameof(RevokedSession)}_{nameof(RevokedSession.ExpiresAt)}");
     }
 }

@@ -51,6 +51,28 @@ The default access-token lifetime drops from 1 hour to **15 minutes**. This is t
 
 For a tighter bound, enable the optional permission stamp (`Identity:PermissionStamp:IsEnabled`). It is derived from the user's roles rather than stored, so it needs no schema change and no cross-node cache invalidation. `CacheLifetime`, default 30 seconds, is the effective bound when enabled.
 
+## Signing out revokes the session
+
+`POST /identity/logout` revokes the caller's sign-in session: the refresh token it is given, and every refresh token issued in the same session, are refused by `/identity/refresh-token` with the same `401` as an invalid token. Access tokens are not revoked and stay valid until they expire. See [Signing Out](../wiki/identity-tenancy-security.md#signing-out) for the contract.
+
+Revocations need storage. With EF Core persistence, apply the `RevokedSessions` migration for your provider; it adds the `RevokedSessions` table (indexed on `ExpiresAt`) and changes nothing else. Without persistence, revocations are held in memory, which is only sound for a single node.
+
+**Apply the migration before upgraded hosts refresh tokens.** Every refresh consults the `RevokedSessions` table, so an upgraded host running against a database without it fails to refresh tokens. Elsa's automatic migration covers it: the Identity persistence features run their migrations at startup unless you turned that off (`RunMigrations = false`), in which case apply the `RevokedSessions` migration yourself before rolling out the new version.
+
+**Changing `RefreshTokenLifetime`.** Raising it is safe. A revocation outlives every refresh token issued with a lifetime no longer than the current one, and every refresh token that the one presented at sign-out was refreshed from, whatever lifetime they were issued with. Lowering it leaves one gap, for at most the old lifetime: a refresh token issued with the old, longer lifetime that the presented one was not refreshed from, such as one obtained by refreshing a copy of an earlier token of the session, can outlive the revocation and work again once it is pruned. See [Signing Out](../wiki/identity-tenancy-security.md#signing-out).
+
+### Breaking change: custom `IAccessTokenIssuer` implementations
+
+`IAccessTokenIssuer` has a new member, `IssueTokensAsync(User user, SignInSession? session, CancellationToken cancellationToken = default)`, without a default implementation, so a custom issuer no longer compiles until it implements it. `/identity/refresh-token` and `IIdentityRefreshTokenService` call it with the session of the refresh token they exchange; `null` starts a new session, as signing in does.
+
+The refresh token it issues must continue that session. Pass it to `IElsaTokenService.IssueRefreshTokenAsync` as `TokenIssuanceContext.Session`, which is what `DefaultAccessTokenIssuer` does. An issuer that creates refresh tokens itself puts `session.Id` in the `elsa:session_id` claim, and the later of `session.ExpiresAt` and the token's own expiry in the `elsa:session_exp` claim, in seconds since the Unix epoch like `exp`. An issuer that drops the session starts a new one on every refresh, and signing out then leaves valid, until they expire, the refresh tokens held before the latest refresh; a default implementation would have done exactly that without any sign, which is why there is none.
+
+### Breaking change: `DefaultIdentityRefreshTokenService` constructor
+
+The public constructor of `DefaultIdentityRefreshTokenService` now requires a `SessionRevoker`. This affects only code that constructs the service directly (for example, in tests or a hand-built container); hosts that use the registered `IIdentityRefreshTokenService` are unaffected. Resolve `SessionRevoker` from DI and pass it to the constructor.
+
+Nothing else changes for clients. Refresh tokens now carry `elsa:session_id` and `elsa:session_exp` claims, and ones issued before the upgrade keep working until they expire. Signing out with a pre-upgrade token revokes only the session derived from that token; older pre-upgrade tokens of the same refresh chain stay valid until they expire, at most `RefreshTokenLifetime` after the upgrade.
+
 ## External authentication grant boundaries
 
 `ExternalAuthentication:PermissionGrants:AllowedPermissions` and `DeniedPermissions` bound which permissions an

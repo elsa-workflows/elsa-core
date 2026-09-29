@@ -75,6 +75,11 @@ public class IdentityFeature : FeatureBase
     public Func<IServiceProvider, IRoleStore> RoleStore { get; set; } = sp => sp.GetRequiredService<MemoryRoleStore>();
 
     /// <summary>
+    /// A delegate that creates an instance of an implementation of <see cref="IRevokedSessionStore"/>.
+    /// </summary>
+    public Func<IServiceProvider, IRevokedSessionStore> RevokedSessionStore { get; set; } = sp => sp.GetRequiredService<MemoryRevokedSessionStore>();
+
+    /// <summary>
     /// A delegate that creates an instance of an implementation of <see cref="IUserProvider"/>.
     /// </summary>
     public Func<IServiceProvider, IUserProvider> UserProvider { get; set; } = sp => sp.GetRequiredService<StoreBasedUserProvider>();
@@ -186,7 +191,8 @@ public class IdentityFeature : FeatureBase
         Services
             .AddMemoryStore<User, MemoryUserStore>()
             .AddMemoryStore<Application, MemoryApplicationStore>()
-            .AddMemoryStore<Role, MemoryRoleStore>();
+            .AddMemoryStore<Role, MemoryRoleStore>()
+            .AddMemoryStore<RevokedSession, MemoryRevokedSessionStore>();
 
         // User providers.
         Services
@@ -215,6 +221,7 @@ public class IdentityFeature : FeatureBase
             .AddScoped(UserStore)
             .AddScoped(ApplicationStore)
             .AddScoped(RoleStore)
+            .AddScoped(RevokedSessionStore)
             .AddScoped(UserProvider)
             .AddScoped(ApplicationProvider)
             .AddScoped(RoleProvider)
@@ -230,6 +237,7 @@ public class IdentityFeature : FeatureBase
             .AddScoped<IElsaTokenService, DefaultElsaTokenService>()
             .AddScoped<IAccessTokenIssuer>(sp => ActivatorUtilities.CreateInstance<DefaultAccessTokenIssuer>(sp))
             .AddScoped<IIdentityRefreshTokenService, DefaultIdentityRefreshTokenService>()
+            .AddScoped<SessionRevoker>()
             .AddScoped<IUserCredentialsValidator, DefaultUserCredentialsValidator>()
             .AddScoped<IApplicationCredentialsValidator, DefaultApplicationCredentialsValidator>()
             .AddScoped<IApiKeyGenerator>(sp => sp.GetRequiredService<DefaultApiKeyGeneratorAndParser>())
