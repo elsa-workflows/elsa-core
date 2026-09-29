@@ -19,7 +19,7 @@
 <MudStack Spacing="3" Class="users-surface">
     <div>
         <MudText Typo="Typo.h5" HtmlTag="h1">Users</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">Accounts that can sign in to Elsa within the current tenant scope. Role chips describe what a user holds; they do not imply you can assign those roles.</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Accounts that can sign in to Elsa. Role chips describe what a user holds; they do not imply you can assign those roles.</MudText>
     </div>
 
     @if (!Access.CanCreate && !Access.CanUpdate && !Access.CanDelete)
@@ -42,7 +42,7 @@
                       Clearable="true"
                       Immediate="true"
                       Class="users-search"
-                      aria-label="Search users by name, ID, role, or tenant" />
+                      aria-label="Search users by name, ID, or role" />
 
         @if (Access.CanCreate)
         {
@@ -87,8 +87,6 @@
         <div class="users-summary" role="status" aria-live="polite">
             <MudIcon Icon="@Icons.Material.Outlined.CheckCircle" Size="Size.Small" Class="users-summary-icon" aria-hidden="true" />
             <span>@ResultSummary</span>
-            <span aria-hidden="true">·</span>
-            <span>@ScopeSummary</span>
         </div>
 
         @if (_users.Count == 0)
@@ -96,7 +94,7 @@
             <MudPaper Outlined="true" Class="users-state-card">
                 <MudIcon Icon="@Icons.Material.Outlined.People" Color="Color.Secondary" Size="Size.Large" aria-hidden="true" />
                 <MudText Typo="Typo.h6">No users yet</MudText>
-                <MudText Typo="Typo.body2">@(Access.CanCreate ? "Create a user to grant access to Elsa." : "No accounts exist in this tenant scope.")</MudText>
+                <MudText Typo="Typo.body2">@(Access.CanCreate ? "Create a user to grant access to Elsa." : "No accounts exist yet.")</MudText>
                 @if (Access.CanCreate)
                 {
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="security/users/new" aria-label="Create your first user">Create first user</MudButton>
@@ -108,7 +106,7 @@
             <MudPaper Outlined="true" Class="users-state-card">
                 <MudIcon Icon="@Icons.Material.Outlined.SearchOff" Color="Color.Secondary" Size="Size.Large" aria-hidden="true" />
                 <MudText Typo="Typo.h6">No matching users</MudText>
-                <MudText Typo="Typo.body2">Try a different name, ID, role, or tenant.</MudText>
+                <MudText Typo="Typo.body2">Try a different name, ID, or role.</MudText>
             </MudPaper>
         }
         else
@@ -126,7 +124,6 @@
                     <MudTh>Name</MudTh>
                     <MudTh>User ID</MudTh>
                     <MudTh>Roles</MudTh>
-                    <MudTh>Scope</MudTh>
                     <MudTh Class="users-actions"><span class="users-visually-hidden">Actions</span></MudTh>
                 </HeaderContent>
                 <RowTemplate>
@@ -158,7 +155,6 @@
                             </MudStack>
                         }
                     </MudTd>
-                    <MudTd DataLabel="Scope">@Scope(context.TenantId)</MudTd>
                     <MudTd DataLabel="Actions" Class="users-actions">
                         <div @onclick:stopPropagation="true">
                             <MudIconButton Icon="@(Access.CanUpdate ? Icons.Material.Outlined.Edit : Icons.Material.Outlined.Visibility)"
