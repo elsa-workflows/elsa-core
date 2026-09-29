@@ -86,7 +86,9 @@ public class InstalledFeaturesAuthorizationTests : IAsyncLifetime
         var request = new HttpRequestMessage(HttpMethod.Get, path);
 
         if (authenticated)
+        {
             request.Headers.Add(HeaderAuthenticationHandler.HeaderName, "user-without-grants");
+        }
 
         return _app.GetTestClient().SendAsync(request);
     }
@@ -107,7 +109,9 @@ public class InstalledFeaturesAuthorizationTests : IAsyncLifetime
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             if (!Request.Headers.TryGetValue(HeaderName, out var user))
+            {
                 return Task.FromResult(AuthenticateResult.NoResult());
+            }
 
             var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, user.ToString())], SchemeName);
 
