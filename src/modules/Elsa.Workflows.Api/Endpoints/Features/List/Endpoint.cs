@@ -1,4 +1,3 @@
-using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Features.Contracts;
 using Elsa.Features.Models;
@@ -17,7 +16,9 @@ internal class List(IInstalledFeatureProvider installedFeatureProvider) : ElsaEn
     public override void Configure()
     {
         Get("/features/installed");
-        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.SystemFeatures, CoreVerbs.View);
+
+        // Clients such as Studio decide which modules to render from this list, so every signed-in user needs it.
+        RequireAuthenticatedOnly();
     }
 
     /// <inheritdoc />
