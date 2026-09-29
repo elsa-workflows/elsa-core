@@ -104,8 +104,9 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
         var ended = await LoginAsync(Alice);
         var other = await LoginAsync(Alice);
 
-        await LogoutAsync(ended.AccessToken, ended.RefreshToken);
+        await AssertLogoutAsync(HttpStatusCode.NoContent, ended.AccessToken, ended.RefreshToken);
 
+        await AssertRefreshRejectedAsync(ended.RefreshToken);
         await AssertRefreshWorksAsync(other.RefreshToken);
     }
 
@@ -123,10 +124,11 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
     public async Task RevokingAnUnknownTokenSucceedsWithoutEndingTheSession()
     {
         var tokens = await LoginAsync(Alice);
-        var signedElsewhere = LegacyRefreshToken.Create(new() { SigningKey = "another-signing-key-with-at-least-32-chars" }, Alice);
+        // Well-formed refresh token, but signed with a key this deployment does not use.
+        var signedWithAnotherKey = LegacyRefreshToken.Create(new() { SigningKey = "another-signing-key-with-at-least-32-chars" }, Alice);
 
         await AssertLogoutAsync(HttpStatusCode.NoContent, tokens.AccessToken, "not-a-token");
-        await AssertLogoutAsync(HttpStatusCode.NoContent, tokens.AccessToken, signedElsewhere);
+        await AssertLogoutAsync(HttpStatusCode.NoContent, tokens.AccessToken, signedWithAnotherKey);
 
         await AssertRefreshWorksAsync(tokens.RefreshToken);
     }
@@ -218,7 +220,7 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
 
     private async Task<IssuedTokens> RefreshTokensAsync(string refreshToken) => await ReadTokensAsync(await RefreshAsync(refreshToken));
 
-    private async Task AssertRefreshWorksAsync(string refreshToken) => await RefreshTokensAsync(refreshToken);
+    private Task AssertRefreshWorksAsync(string refreshToken) => RefreshTokensAsync(refreshToken);
 
     private async Task AssertRefreshRejectedAsync(string refreshToken) => Assert.Equal(HttpStatusCode.Unauthorized, (await RefreshAsync(refreshToken)).StatusCode);
 

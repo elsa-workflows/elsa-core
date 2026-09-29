@@ -54,7 +54,7 @@ Content-Type: application/json
 | --- | --- |
 | `204 No Content` | The session is revoked. Also returned when it already was, when the refresh token has expired (its session is still revoked), and when the token is not one Elsa Identity recognises, so a client can always sign out. |
 | `400 Bad Request` | `refreshToken` is missing, or is a token of this deployment that is not a refresh token, such as the access token. |
-| `403 Forbidden` | The refresh token belongs to another user. |
+| `403 Forbidden` | The refresh token does not belong to the caller: it was issued to another user, to the same user in a different tenant than the access token, or it has no subject. |
 | `401 Unauthorized` | No valid access token. |
 
 The endpoint requires a valid access token. A client whose access token has expired refreshes first, then calls logout with the new refresh token, which belongs to the same session.

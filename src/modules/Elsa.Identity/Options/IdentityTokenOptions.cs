@@ -87,7 +87,7 @@ public class IdentityTokenOptions
                 return;
             }
 
-            if (requiredTokenUse == TokenUse.Refresh)
+            if (string.Equals(requiredTokenUse, TokenUse.Refresh, StringComparison.Ordinal))
                 await RejectRevokedSessionAsync(context);
         };
     }
