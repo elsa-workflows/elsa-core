@@ -13,7 +13,7 @@ from typing import Any
 
 import verify_import_source_tip_refresh as r1
 import verify_import_source_tip_refresh_r5 as r5
-from verify_import_source_tip_refresh_r2 import RECEIPT as R2_RECEIPT, blob_and_mode, git, git_bytes
+from verify_import_source_tip_refresh_r2 import LANDED_IMPORT, RECEIPT as R2_RECEIPT, blob_and_mode, git, git_bytes
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -231,7 +231,7 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
     reviewed = reviewed_result(patch, root)
     for row in rows:
         path = row["path"]
-        for key, commit in (("oldMapped", BASE_IMPORT_HEAD), ("finalMapped", DELTA_COMMIT), ("finalMapped", "HEAD")):
+        for key, commit in (("oldMapped", BASE_IMPORT_HEAD), ("finalMapped", DELTA_COMMIT), ("finalMapped", LANDED_IMPORT)):
             if row[key] != blob_and_mode(commit, path, root):
                 raise ValueError(f"Changed {key} at {commit} for {path}")
         old = git_bytes("show", f"{BASE_IMPORT_HEAD}:{path}", root=root) if row["oldMapped"] else None
@@ -251,7 +251,7 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
     for path in PUBLISHERS:
         if blob_and_mode(DELTA_COMMIT, path, root) != receipt["publisherWorkflows"][path]:
             raise ValueError(f"#8293 delta changed active publisher workflow at {DELTA_COMMIT}: {path}")
-    if git_bytes("show", "HEAD:Elsa.sln", root=root).count(PERSISTENCE_TEST_SOLUTION_ENTRY) != 1:
+    if git_bytes("show", f"{LANDED_IMPORT}:Elsa.sln", root=root).count(PERSISTENCE_TEST_SOLUTION_ENTRY) != 1:
         raise ValueError("Current Elsa.sln does not select the reviewed Dapper tests exactly once")
     # Each older receipt still verifies its reviewed commits and every path it did not hand over to this receipt.
     r1.verify(prior_receipts[R1_PATH], root)
@@ -267,7 +267,7 @@ def main() -> int:
     except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError) as error:
         print(f"Invalid sixth source-tip refresh: {error}", file=sys.stderr)
         return 1
-    print("Verified the reviewed #8293 Dapper delta, five mapped files, superseded prior pins and current HEAD")
+    print("Verified the reviewed #8293 Dapper delta, five mapped files, superseded prior pins and the landed import")
     return 0
 
 

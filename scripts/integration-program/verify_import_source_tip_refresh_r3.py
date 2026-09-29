@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from verify_import_source_tip_refresh_r2 import LANDED_IMPORT
+
 
 ROOT = Path(__file__).resolve().parents[2]
 RECEIPT = ROOT / "doc/integration-program/consolidation/source-tip-refresh-2026-09-25-r3.json"
@@ -94,7 +96,7 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
             ("oldMapped", base, target),
             ("newSource", new_studio, source),
             ("mappedAtDelta", mapped, target),
-            ("finalMapped", "HEAD", target),
+            ("finalMapped", LANDED_IMPORT, target),
         ):
             if row[field] != entry(commit, path, root):
                 raise ValueError(f"Studio {field} blob changed: {source}")

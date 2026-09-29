@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from verify_import_source_tip_refresh_r2 import LANDED_IMPORT
+
 
 ROOT = Path(__file__).resolve().parents[2]
 RECEIPT = ROOT / "doc/integration-program/consolidation/source-tip-refresh-2026-09-25.json"
@@ -77,7 +79,7 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
             raise ValueError(f"Old source or mapped import changed: {repository}/{source}")
         if row["new"] != blob_and_mode(new[repository], source, root) or row["new"] != blob_and_mode(join, mapped, root):
             raise ValueError(f"Refreshed source mapping changed: {repository}/{source}")
-        if mapped not in PATHS_SUPERSEDED_BY_R6 and row["new"] != blob_and_mode("HEAD", mapped, root):
+        if mapped not in PATHS_SUPERSEDED_BY_R6 and row["new"] != blob_and_mode(LANDED_IMPORT, mapped, root):
             raise ValueError(f"Refreshed mapped file changed after history join: {mapped}")
     actual_paths = set(git("diff", "--name-only", base, join, root=root).splitlines())
     if actual_paths != {row["mappedPath"] for row in rows}:
@@ -99,7 +101,7 @@ def main() -> int:
     except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError) as error:
         print(f"Invalid source-tip refresh: {error}", file=sys.stderr)
         return 1
-    print(f"Verified {len(receipt['mappedChanges'])} exact source deltas, both refreshed histories and current HEAD")
+    print(f"Verified {len(receipt['mappedChanges'])} exact source deltas, both refreshed histories and the landed import")
     return 0
 
 

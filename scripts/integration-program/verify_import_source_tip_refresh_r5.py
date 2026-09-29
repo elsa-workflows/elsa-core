@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from verify_import_source_tip_refresh_r2 import (
+    LANDED_IMPORT,
     DAPPER_TEST_SOLUTION_ENTRY,
     RECEIPT as R2_RECEIPT,
     blob_and_mode,
@@ -97,12 +98,12 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
             raise ValueError(f"Wrong mapped path for {source}")
         for key, commit, path in (
             ("oldSource", old, source), ("oldMapped", base, mapped),
-            ("newSource", new, source), ("finalMapped", "HEAD", mapped),
+            ("newSource", new, source), ("finalMapped", LANDED_IMPORT, mapped),
         ):
             if row[key] != blob_and_mode(commit, path, root):
                 raise ValueError(f"Changed {key} for {mapped}")
         upstream_bytes = git_bytes("show", f"{new}:{source}", root=root)
-        active_bytes = git_bytes("show", f"HEAD:{mapped}", root=root)
+        active_bytes = git_bytes("show", f"{LANDED_IMPORT}:{mapped}", root=root)
         if row["status"] == "A":
             if row["oldSource"] is not None or row["oldMapped"] is not None or active_bytes != upstream_bytes:
                 raise ValueError(f"New regression test differs from upstream: {mapped}")
@@ -112,12 +113,12 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
     superseded = {mapped_path(source) for source in SOURCE_PATHS} | R2_PATHS_SUPERSEDED_BY_R6
     prior = json.loads(historical)
     for row in prior["mappedChanges"]:
-        if row["mappedPath"] not in superseded and row["finalMapped"] != blob_and_mode("HEAD", row["mappedPath"], root):
+        if row["mappedPath"] not in superseded and row["finalMapped"] != blob_and_mode(LANDED_IMPORT, row["mappedPath"], root):
             raise ValueError(f"Earlier reviewed mapping changed without another receipt: {row['mappedPath']}")
     for workflow in (".github/workflows/packages.yml", ".github/workflows/update-wiki.yml"):
         if blob_and_mode(base, workflow, root) != blob_and_mode(accepted, workflow, root):
             raise ValueError(f"Source refresh changed active publisher workflow: {workflow}")
-    if git_bytes("show", "HEAD:Elsa.sln", root=root).count(DAPPER_TEST_SOLUTION_ENTRY) != 1:
+    if git_bytes("show", f"{LANDED_IMPORT}:Elsa.sln", root=root).count(DAPPER_TEST_SOLUTION_ENTRY) != 1:
         raise ValueError("Current Elsa.sln does not select the mapped Dapper tests exactly once")
 
 
@@ -132,7 +133,7 @@ def main() -> int:
     except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError) as error:
         print(f"Invalid fifth source-tip refresh: {error}", file=sys.stderr)
         return 1
-    print("Verified current Extensions history, three mapped Dapper files, prior asset scope and current HEAD")
+    print("Verified current Extensions history, three mapped Dapper files, prior asset scope and the landed import")
     return 0
 
 

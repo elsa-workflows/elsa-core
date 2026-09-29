@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from verify_import_source_tip_refresh_r10 import RECEIPT, git, git_bytes, verify
+from verify_import_source_tip_refresh_r2 import LANDED_IMPORT
 
 
 class SourceTipRefreshR10Tests(unittest.TestCase):
@@ -45,7 +46,7 @@ class SourceTipRefreshR10Tests(unittest.TestCase):
     def test_mapped_bytes_must_match_upstream(self) -> None:
         def edited_mapping(*args: str, **kwargs: object) -> bytes:
             content = git_bytes(*args, **kwargs)
-            return content + b"\n" if args[1].startswith("HEAD:src/extensions/") else content
+            return content + b"\n" if args[1].startswith(f"{LANDED_IMPORT}:src/extensions/") else content
 
         with patch("verify_import_source_tip_refresh_r10.git_bytes", side_effect=edited_mapping):
             with self.assertRaisesRegex(ValueError, "differs from upstream"):
@@ -53,7 +54,7 @@ class SourceTipRefreshR10Tests(unittest.TestCase):
 
     def test_current_solution_must_select_dapper_tests(self) -> None:
         def without_current_test(*args: str, **kwargs: object) -> bytes:
-            return b"" if args == ("show", "HEAD:Elsa.sln") else git_bytes(*args, **kwargs)
+            return b"" if args == ("show", f"{LANDED_IMPORT}:Elsa.sln") else git_bytes(*args, **kwargs)
 
         with patch("verify_import_source_tip_refresh_r10.git_bytes", side_effect=without_current_test):
             with self.assertRaisesRegex(ValueError, "Current Elsa.sln does not select"):
@@ -62,7 +63,7 @@ class SourceTipRefreshR10Tests(unittest.TestCase):
     def test_solution_must_build_the_dapper_tests(self) -> None:
         def without_build_rows(*args: str, **kwargs: object) -> bytes:
             content = git_bytes(*args, **kwargs)
-            if args != ("show", "HEAD:Elsa.sln"):
+            if args != ("show", f"{LANDED_IMPORT}:Elsa.sln"):
                 return content
             return b"".join(line for line in content.splitlines(keepends=True)
                             if not (b"90C6FC77-1B4E-5457-9019-A860AA0BA5CB" in line and b".Build.0" in line))
@@ -77,12 +78,12 @@ class SourceTipRefreshR10Tests(unittest.TestCase):
         real = r7.blob_and_mode
 
         def drifted(commit: str, path: str, root: object = r7.ROOT) -> dict[str, str] | None:
-            if commit == "HEAD" and path == ".github/workflows/packages.yml":
+            if commit == LANDED_IMPORT and path == ".github/workflows/packages.yml":
                 return {"blob": "0" * 40, "mode": "100644"}
             return real(commit, path, root)
 
         with patch("verify_import_source_tip_refresh_r7.blob_and_mode", side_effect=drifted):
-            with self.assertRaisesRegex(ValueError, "changed active publisher workflow at HEAD"):
+            with self.assertRaisesRegex(ValueError, f"changed active publisher workflow at {LANDED_IMPORT}"):
                 verify(self.receipt)
 
     def test_extra_upstream_or_mapped_diff_path_is_rejected(self) -> None:
@@ -128,7 +129,7 @@ class SourceTipRefreshR10Tests(unittest.TestCase):
 
         def moved(*args: str, **kwargs: object) -> bytes:
             content = git_bytes(*args, **kwargs)
-            if args == ("show", f"HEAD:{project['mappedPath']}"):
+            if args == ("show", f"{LANDED_IMPORT}:{project['mappedPath']}"):
                 text = content.decode("utf-8")
                 line = '        <PackageReference Include="FluentMigrator.Runner.SQLite" />\n'
                 text = text.replace(line, "", 1).replace("    </ItemGroup>\n\n</Project>", line + "    </ItemGroup>\n\n</Project>", 1)

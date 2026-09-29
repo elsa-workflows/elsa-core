@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from verify_import_source_tip_refresh_r3 import PUBLISHER_BLOBS, ROOT, entry, git, parents
+from verify_import_source_tip_refresh_r3 import LANDED_IMPORT, PUBLISHER_BLOBS, ROOT, entry, git, parents
 
 
 RECEIPT = ROOT / "doc/integration-program/consolidation/source-tip-refresh-2026-09-25-r4.json"
@@ -62,7 +62,7 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
         ("oldMapped", base, MAPPED),
         ("newSource", NEW_STUDIO, SOURCE),
         ("mappedAtDelta", mapped, MAPPED),
-        ("finalMapped", "HEAD", MAPPED),
+        ("finalMapped", LANDED_IMPORT, MAPPED),
     ):
         if row.get(field) != entry(commit, path, root):
             raise ValueError(f"Studio timer {field} blob changed")
