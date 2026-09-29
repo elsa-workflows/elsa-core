@@ -8,7 +8,7 @@ namespace Elsa.Persistence.EFCore.Modules.Identity;
 public static class IdentityFeatureExtensions
 {
     /// <summary>
-    /// Sets up the EF Core persistence provider for the User, Application and Role stores. 
+    /// Sets up the EF Core persistence provider for the User, Application, Role and revoked session stores.
     /// </summary>
     public static IdentityFeature UseEntityFrameworkCore(this IdentityFeature feature, Action<EFCoreIdentityPersistenceFeature>? configure = null)
     {

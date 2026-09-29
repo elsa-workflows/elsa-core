@@ -111,7 +111,7 @@ public sealed class LegacyIdentityEndpointTests : IAsyncLifetime
     {
         var user = new User { Id = "user-a", Name = "admin" };
         _userProvider.FindAsync(Arg.Is<UserFilter>(filter => filter.Name == "admin"), Arg.Any<CancellationToken>()).Returns(user);
-        _tokenIssuer.IssueTokensAsync(user, Arg.Any<CancellationToken>()).Returns(new IssuedTokens("access-b", "refresh-b"));
+        _tokenIssuer.IssueTokensAsync(user, Arg.Any<SignInSession?>(), Arg.Any<CancellationToken>()).Returns(new IssuedTokens("access-b", "refresh-b"));
 
         var response = await _client!.PostAsync("/identity/refresh-token", null);
         var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());

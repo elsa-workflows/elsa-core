@@ -38,6 +38,43 @@ Identity JWTs include a `token_use` claim. API bearer authentication accepts onl
 
 JWT signing keys must be configured with a secure random value before production startup. Missing keys, weak keys shorter than 32 ASCII characters, and known public defaults are rejected by options startup validation. Known public defaults are only tolerated in the explicit `Development` or `Demo` environments for local/demo hosts. Use environment variables or a secrets manager, such as `Identity__Tokens__SigningKey` for code-first hosts or `CShells__Shells__Default__Features__Identity__SigningKey` for shell-based hosts.
 
+### Signing Out
+
+Each sign-in starts a session. Its refresh token carries the session ID in the `elsa:session_id` claim, and every refresh token obtained by refreshing it carries the same ID. Each one also carries, in `elsa:session_exp`, the latest expiry of the refresh tokens it was refreshed through, including its own. `POST /identity/logout` ends a session of Elsa Identity (JWT) refresh tokens:
+
+```http
+POST /identity/logout
+Authorization: Bearer <access token>
+Content-Type: application/json
+
+{ "refreshToken": "<refresh token>" }
+```
+
+| Response | When |
+| --- | --- |
+| `204 No Content` | The session is revoked. Also returned when it already was, when the refresh token has expired (its session is still revoked), and when the token is not one Elsa Identity recognises, so a client can always sign out. |
+| `400 Bad Request` | `refreshToken` is missing, or is a token of this deployment that is not a refresh token, such as the access token. |
+| `403 Forbidden` | The refresh token does not belong to the caller: it was issued to another user, to the same user in a different tenant than the access token, or it has no subject. |
+| `401 Unauthorized` | No valid access token. |
+
+The endpoint requires a valid access token. A client whose access token has expired refreshes first, then calls logout with the new refresh token, which belongs to the same session.
+
+Opaque refresh tokens issued by the External Authentication broker (`<sessionId>.<secret>`) are not Elsa Identity tokens: this endpoint answers `204` for them without revoking anything. They are revoked through the broker's own sign-out and session revocation.
+
+After that, `/identity/refresh-token` answers `401` for every refresh token of the session, including those it held before its latest refresh, exactly as it does for an invalid or expired token. The external authentication broker's `refresh_token` grant refuses them as well. Other sessions of the same user are unaffected; there is no "sign out everywhere".
+
+**Access tokens are not revoked.** One already issued stays valid until it expires, which `AccessTokenLifetime` (default 15 minutes) bounds, so clients discard it themselves when signing out. A denylist would put a store lookup on every authenticated request on every node to shorten a window that short; refresh is the only call that consults revocations.
+
+Revocations are kept by `IRevokedSessionStore` until the later of the presented refresh token's `elsa:session_exp` and one `RefreshTokenLifetime` after sign-out, plus a margin for clock skew, and pruned when the next session is revoked. Signing out of the same session again can extend a revocation, never shorten it. The default store is in memory: revocations are lost on restart and not shared between nodes, so a revoked refresh token keeps working on any other node until it expires. Deployments with more than one node, or that must survive a restart, use EF Core persistence (`identity.UseEntityFrameworkCore(...)`, or a provider's Identity persistence shell feature), which stores them in the `RevokedSessions` table added by the `RevokedSessions` migration. A custom persistence provider registers its own `IRevokedSessionStore`, whose `AddOrExtendAsync` must keep the later expiry of two revocations of the same session, also when they are written concurrently.
+
+A revocation therefore outlives every refresh token of the session issued with a lifetime no longer than the current `RefreshTokenLifetime`, and every refresh token the presented one was refreshed from, whatever lifetime they were issued with, so raising `RefreshTokenLifetime` is safe. Lowering it leaves one gap, for at most the old lifetime: a refresh token issued with the old, longer lifetime that the presented one was not refreshed from can outlive the revocation, and works again once the revocation is pruned. That takes a session refreshed twice from the same token, such as a copy of it, or signing out with an older refresh token than the session's newest; a client that signs out with its newest refresh token, and whose tokens were not copied, is covered.
+
+Apply the `RevokedSessions` migration before upgraded hosts refresh tokens, otherwise refresh fails; automatic startup migration covers it unless disabled (`RunMigrations = false`). See the [authorization model migration guide](../migrations/authorization-model.md#signing-out-revokes-the-session).
+
+Refresh tokens issued before sessions existed keep working. Each one derives its own session ID from its hash, and a token refreshed from it carries that ID. A chain that was already refreshed before the upgrade has no session claim on its older tokens, so signing out with the newest token revokes only the session derived from that token. Older pre-upgrade tokens of the same chain stay valid until they expire, at most `RefreshTokenLifetime` after the upgrade.
+
+A custom `IAccessTokenIssuer` must implement `IssueTokensAsync(User, SignInSession? session, ...)`, which has no default implementation, and continue `session` in the refresh token it issues, for example by passing it to `IElsaTokenService.IssueRefreshTokenAsync` as `TokenIssuanceContext.Session`. See the [migration guide](../migrations/authorization-model.md#breaking-change-custom-iaccesstokenissuer-implementations).
+
 ## Default Admin Bootstrap
 
 The default admin bootstrap is documented in [src/modules/Elsa.Identity/README.md](../../src/modules/Elsa.Identity/README.md) and [ADR 0010](../adr/0010-default-admin-user-bootstrap-for-initial-identity-access.md).

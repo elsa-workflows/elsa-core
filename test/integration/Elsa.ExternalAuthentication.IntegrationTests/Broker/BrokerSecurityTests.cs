@@ -49,14 +49,7 @@ public class BrokerSecurityTests
         var roles = Substitute.For<IRoleProvider>();
         roles.FindManyAsync(Arg.Any<RoleFilter>(), Arg.Any<CancellationToken>())
             .Returns(_ => ValueTask.FromResult<IEnumerable<Role>>(tenantAccessor.TenantId == "tenant-a" ? [role] : []));
-        var tokenOptions = Microsoft.Extensions.Options.Options.Create(new IdentityTokenOptions
-        {
-            SigningKey = "local-external-authentication-test-signing-key",
-            Issuer = "https://elsa.test",
-            Audience = "elsa-api"
-        });
-        var tokens = new DefaultElsaTokenService(new CurrentTestClock(), tokenOptions);
-        var refreshTokens = new DefaultIdentityRefreshTokenService(users, new DefaultAccessTokenIssuer(roles, tokens), tenantAccessor, tokenOptions);
+        var local = CreateLocalIdentityServices(users, roles, tenantAccessor);
         var externalTokenIssuer = Substitute.For<IExternalAuthenticationTokenIssuer>();
         externalTokenIssuer.RefreshAsync("studio", Arg.Any<SensitiveString>(), Arg.Any<CancellationToken>())
             .Returns(ValueTask.FromException<ExternalTokenResponse>(new InvalidOperationException("A local refresh token must not use the external-session issuer.")));
@@ -66,8 +59,8 @@ public class BrokerSecurityTests
             credentialsValidator: credentials,
             userProvider: users,
             roleProvider: roles,
-            tokenService: tokens,
-            identityRefreshTokenService: refreshTokens,
+            tokenService: local.Tokens,
+            identityRefreshTokenService: local.RefreshTokens,
             tenantAccessor: tenantAccessor);
         BrokerCallbackResult authorization;
         using (tenantAccessor.PushContext(new Tenant { Id = "tenant-a", Name = "Tenant A" }))
@@ -124,6 +117,35 @@ public class BrokerSecurityTests
         Assert.Contains(refreshedAccessToken.Claims, claim => claim.Type == "permissions" && claim.Value == "workflows:manage");
         Assert.DoesNotContain(refreshedAccessToken.Claims, claim => claim.Type == "permissions" && claim.Value == "*");
         await externalTokenIssuer.DidNotReceive().RefreshAsync(Arg.Any<string>(), Arg.Any<SensitiveString>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task LocalRefreshGrantRefusesARevokedSession()
+    {
+        var user = new User { Id = "user-a", Name = "admin" };
+        var users = Substitute.For<IUserProvider>();
+        users.FindAsync(Arg.Any<UserFilter>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult<User?>(user));
+        var roles = Substitute.For<IRoleProvider>();
+        roles.FindManyAsync(Arg.Any<RoleFilter>(), Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult<IEnumerable<Role>>([]));
+        var tenantAccessor = new DefaultTenantAccessor();
+        var local = CreateLocalIdentityServices(users, roles, tenantAccessor);
+        var broker = CreateBroker(
+            new RecordingAdapter(),
+            userProvider: users,
+            roleProvider: roles,
+            identityRefreshTokenService: local.RefreshTokens,
+            tenantAccessor: tenantAccessor);
+        var session = new SignInSession("session-a", DateTimeOffset.UtcNow);
+        var refreshToken = (await local.AccessTokenIssuer.IssueTokensAsync(user, session)).RefreshToken;
+        var request = new BrokerTokenRequest("refresh_token", "studio", null, null, null, refreshToken, "https://studio.example");
+
+        Assert.Null((await broker.ExchangeAsync(request)).Error);
+
+        await local.SessionRevoker.RevokeAsync(session);
+
+        var refused = await broker.ExchangeAsync(request);
+        Assert.NotNull(refused.Error);
+        Assert.Null(refused.Token);
     }
 
     [Fact]
@@ -529,6 +551,26 @@ public class BrokerSecurityTests
         await scenario.Broker.InitiateExternalAsync(Request("/workflows"), "tenant-a");
         return await scenario.Broker.CompleteCallbackAsync("contoso", scenario.Adapter.CorrelationState!, new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = [scenario.Adapter.CorrelationState!] });
     }
+
+    private static LocalIdentityServices CreateLocalIdentityServices(IUserProvider users, IRoleProvider roles, DefaultTenantAccessor tenantAccessor)
+    {
+        var options = Microsoft.Extensions.Options.Options.Create(new IdentityTokenOptions
+        {
+            SigningKey = "local-external-authentication-test-signing-key",
+            Issuer = "https://elsa.test",
+            Audience = "elsa-api"
+        });
+        var tokens = new DefaultElsaTokenService(new CurrentTestClock(), options);
+        var accessTokenIssuer = new DefaultAccessTokenIssuer(roles, tokens);
+        var sessionRevoker = new SessionRevoker(new MemoryRevokedSessionStore(new MemoryStore<RevokedSession>()), new CurrentTestClock(), options);
+        return new(tokens, accessTokenIssuer, sessionRevoker, new DefaultIdentityRefreshTokenService(users, accessTokenIssuer, tenantAccessor, sessionRevoker, options));
+    }
+
+    private sealed record LocalIdentityServices(
+        DefaultElsaTokenService Tokens,
+        DefaultAccessTokenIssuer AccessTokenIssuer,
+        SessionRevoker SessionRevoker,
+        DefaultIdentityRefreshTokenService RefreshTokens);
 
     private sealed class TestClock : ISystemClock { public DateTimeOffset UtcNow => DateTimeOffset.Parse("2026-01-01T00:00:00Z"); }
     private sealed class CurrentTestClock : ISystemClock { public DateTimeOffset UtcNow => DateTimeOffset.UtcNow; }

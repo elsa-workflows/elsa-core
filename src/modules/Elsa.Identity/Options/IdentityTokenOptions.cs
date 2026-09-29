@@ -1,8 +1,12 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using Elsa.Identity.Constants;
+using Elsa.Identity.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using JsonWebToken = Microsoft.IdentityModel.JsonWebTokens.JsonWebToken;
 
 namespace Elsa.Identity.Options;
 
@@ -59,6 +63,10 @@ public class IdentityTokenOptions
     /// </summary>
     /// <param name="options">The options to configure.</param>
     /// <param name="requiredTokenUse">The required token usage claim value.</param>
+    /// <remarks>
+    /// For <see cref="TokenUse.Refresh"/>, a token whose session was revoked is rejected too, using the request's
+    /// <see cref="SessionRevoker"/>.
+    /// </remarks>
     public void ConfigureJwtBearerOptions(JwtBearerOptions options, string requiredTokenUse)
     {
         options.TokenValidationParameters = CreateTokenValidationParameters();
@@ -74,7 +82,13 @@ public class IdentityTokenOptions
             var tokenUse = context.Principal?.FindFirst(TokenUse.ClaimType)?.Value;
 
             if (!string.Equals(tokenUse, requiredTokenUse, StringComparison.Ordinal))
+            {
                 context.Fail($"The token is not a valid {requiredTokenUse} token.");
+                return;
+            }
+
+            if (string.Equals(requiredTokenUse, TokenUse.Refresh, StringComparison.Ordinal))
+                await RejectRevokedSessionAsync(context);
         };
     }
 
@@ -91,6 +105,29 @@ public class IdentityTokenOptions
         LifetimeValidator = ValidateLifetime,
         NameClaimType = JwtRegisteredClaimNames.Name
     };
+
+    private static async Task RejectRevokedSessionAsync(TokenValidatedContext context)
+    {
+        var identity = (ClaimsIdentity)context.Principal!.Identity!;
+        var refreshToken = context.SecurityToken switch
+        {
+            JsonWebToken token => token.EncodedToken,
+            JwtSecurityToken token => token.RawData,
+            var token => throw new InvalidOperationException($"Cannot read a refresh token of type {token.GetType().Name}.")
+        };
+        var session = SessionRevoker.GetSession(identity, refreshToken);
+        var sessionRevoker = context.HttpContext.RequestServices.GetRequiredService<SessionRevoker>();
+
+        if (await sessionRevoker.IsRevokedAsync(session.Id, context.HttpContext.RequestAborted))
+        {
+            context.Fail("The refresh token has been revoked.");
+            return;
+        }
+
+        // Refreshing continues the session, including the one derived for a token issued before sessions existed.
+        if (!identity.HasClaim(x => x.Type == CustomClaimTypes.SessionId))
+            identity.AddClaim(new(CustomClaimTypes.SessionId, session.Id));
+    }
 
     private static bool ValidateLifetime(DateTime? notBefore, DateTime? expires, SecurityToken securityToken, TokenValidationParameters validationParameters)
     {

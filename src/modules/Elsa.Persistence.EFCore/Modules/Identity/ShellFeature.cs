@@ -17,8 +17,10 @@ public abstract class EFCoreIdentityPersistenceShellFeatureBase : PersistenceShe
         services.AddScoped<IUserStore, EFCoreUserStore>();
         services.AddScoped<IApplicationStore, EFCoreApplicationStore>();
         services.AddScoped<IRoleStore, EFCoreRoleStore>();
+        services.AddScoped<IRevokedSessionStore, EFCoreRevokedSessionStore>();
         AddEntityStore<User, EFCoreUserStore>(services);
         AddEntityStore<Application, EFCoreApplicationStore>(services);
         AddEntityStore<Role, EFCoreRoleStore>(services);
+        AddEntityStore<RevokedSession, EFCoreRevokedSessionStore>(services);
     }
 }

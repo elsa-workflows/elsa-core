@@ -1,7 +1,9 @@
-﻿using Elsa.Extensions;
+﻿using System.Security.Claims;
+using Elsa.Extensions;
 using Elsa.Identity.Constants;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
+using Elsa.Identity.Services;
 using FastEndpoints;
 using JetBrains.Annotations;
 
@@ -38,7 +40,10 @@ internal class RefreshToken : EndpointWithoutRequest<LoginResponse>
         if (user == null)
             return new LoginResponse(false, null, null);
 
-        var tokens = await _tokenIssuer.IssueTokensAsync(user, cancellationToken);
+        // The refresh-token scheme rejects revoked sessions and puts the session on the principal; the new refresh
+        // token continues it, so revoking the session later also revokes this one.
+        var session = SessionRevoker.FindSession((ClaimsIdentity)User.Identity!);
+        var tokens = await _tokenIssuer.IssueTokensAsync(user, session, cancellationToken);
 
         return new LoginResponse(true, tokens.AccessToken, tokens.RefreshToken);
     }
