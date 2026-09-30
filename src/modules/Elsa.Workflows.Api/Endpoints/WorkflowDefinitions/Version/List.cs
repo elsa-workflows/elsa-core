@@ -15,7 +15,9 @@ internal class ListVersions(IWorkflowDefinitionStore store) : ElsaEndpointWithou
     public override void Configure()
     {
         Get("workflow-definitions/{definitionId}/versions");
-        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DefinitionVersions, CoreVerbs.View);
+
+        // Anyone who can read a definition can already read any of its versions, and the designer lists them to open one.
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)

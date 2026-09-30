@@ -1,4 +1,3 @@
-using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Resilience.Serialization;
@@ -11,7 +10,9 @@ public class Endpoint(IResilienceStrategyCatalog catalog, ResilienceStrategySeri
     public override void Configure()
     {
         Get("/resilience/strategies");
-        RequirePermission(Elsa.Resilience.Permissions.ResiliencePermissions.Strategies, CoreVerbs.View);
+
+        // The configured resilience strategies, which the designer needs to open any definition, so every signed-in user may read it.
+        RequireAuthenticatedOnly();
     }
 
     public override async Task HandleAsync(CancellationToken ct)

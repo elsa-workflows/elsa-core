@@ -1,4 +1,3 @@
-using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
@@ -20,7 +19,10 @@ internal class Get : ElsaEndpoint<Request, ActivityDescriptor>
     public override void Configure()
     {
         Get("/descriptors/activities/{typeName}");
-        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsActivities, CoreVerbs.View);
+
+        // The designer needs the activity descriptors to open any definition, so every signed-in user may read them. Besides the installed
+        // activities this includes workflows marked as usable as an activity, whose name, description and inputs are therefore visible too.
+        RequireAuthenticatedOnly();
     }
 
     /// <inheritdoc />

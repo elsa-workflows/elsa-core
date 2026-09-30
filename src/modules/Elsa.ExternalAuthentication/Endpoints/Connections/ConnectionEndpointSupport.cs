@@ -3,7 +3,6 @@ using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Services;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.ExternalAuthentication.Endpoints.Connections;
 
@@ -49,7 +48,7 @@ internal static class ConnectionEndpointSupport
     /// to, also silently stopped matching anything once the legacy permission names were retired.
     /// </remarks>
     public static bool HasPermission(HttpContext context, string resource, string verb) =>
-        (context.RequestServices.GetService<IPermissionEvaluator>() ?? PermissionEvaluator.Shared).HasPermission(context.User, resource, verb);
+        context.GetPermissionEvaluator().HasPermission(context.User, resource, verb);
     public static bool RequiresPolicyManagement(ConnectionRequest request) => request.UnlinkedPolicy is not null || request.PermissionGrantSources is { Count: > 0 };
     public static bool IsDatabaseOwned(EffectiveIdentityProviderConnection connection) => connection.Ownership == ConnectionSourceOwnership.Database;
 }

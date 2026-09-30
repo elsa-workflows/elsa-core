@@ -1,4 +1,3 @@
-using Elsa.Authorization;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
@@ -19,7 +18,9 @@ internal class List(IEnumerable<IWorkflowActivationStrategy> strategies, ISerial
     public override void Configure()
     {
         Get("/descriptors/workflow-activation-strategies");
-        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsActivationStrategies, CoreVerbs.View);
+
+        // Static metadata about what is installed, which the designer needs to open any definition, so every signed-in user may read it.
+        RequireAuthenticatedOnly();
     }
 
     public override Task<ListResponse<WorkflowActivationStrategyDescriptor>> ExecuteAsync(CancellationToken cancellationToken)

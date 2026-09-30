@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Api.UnitTests.OutputConverters;
 public class OutputConverterEndpointTests
 {
     [Fact]
-    public void Configure_ExposesTheAuthorizedDescriptorRoute()
+    public void Configure_ExposesTheDescriptorRouteWithoutRequiringAPermission()
     {
         var endpoint = new List(Substitute.For<IOutputConverterRegistry>(), SerializationTypeRegistry.CreateDefault());
         var definition = new EndpointDefinition(typeof(List), typeof(EmptyRequest), typeof(ListResponse<OutputConverterDescriptorModel>));
@@ -21,11 +21,7 @@ public class OutputConverterEndpointTests
 
         Assert.Contains("/descriptors/output-converters", definition.Routes);
 
-        var permission = Elsa.Authorization.EndpointPermissionRegistry.Find(typeof(List));
-
-        Assert.True(permission.HasValue);
-        Assert.Equal(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsOutputConverters, permission!.Value.Resource);
-        Assert.Equal(Elsa.Authorization.CoreVerbs.View, permission.Value.Verb);
+        Assert.Null(Elsa.Authorization.EndpointPermissionRegistry.Find(typeof(List)));
     }
 
     [Fact]
