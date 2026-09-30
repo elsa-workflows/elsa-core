@@ -321,7 +321,7 @@ therefore declare every permission its cards and panels carry, or a caller holdi
 them. This way a signed-in account with no dashboard permissions costs no database counts, runtime queries or log
 queries. An undeclared section still needs `dashboard:view`. Needs-attention, trends,
 recent activity and hotspots always invoke every contributor and filter afterwards by the `Permission` on what it returns.
-A section the caller may read whose contributor failed is reported `Unavailable`, never `Unauthorized`. A caller whose
+When several contributors add to one section, contributions the caller may not read are ignored. If any contribution the caller may read failed, the section is `Unavailable` with no figures, never partial totals and never `Unauthorized`; it is `Unauthorized` only when the caller may read none of them. A caller whose
 permissions read nothing the contributors declared or supplied gets every section as `Unauthorized`, including the ones no module supplies,
 so the response does not reveal which modules are installed, and `backendName` and `environmentName` are left empty.
 

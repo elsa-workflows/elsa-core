@@ -30,11 +30,11 @@ public class DefaultDashboardProvider(
         }
 
         var unauthorized = DashboardCapabilityStatus.Unauthorized;
-        var unavailable = DashboardCapabilityStatus.Unavailable;
-        var runtime = MergeSection(contributions, skipped, failed, canRead, x => x.Runtime, x => x.Runtime, MergeRuntime, new() { Capability = unauthorized }, new() { Capability = unavailable });
-        var workflowInstances = MergeSection(contributions, skipped, failed, canRead, x => x.WorkflowInstances, x => x.WorkflowInstances, MergeWorkflowMetrics, new() { Capability = unauthorized }, new() { Capability = unavailable });
-        var structuredLogs = MergeSection(contributions, skipped, failed, canRead, x => Installed(x.Diagnostics?.StructuredLogs, y => y.Capability), x => x.StructuredLogs, summaries => summaries.FirstOrDefault() ?? new(), new() { Capability = unauthorized }, new() { Capability = unavailable });
-        var consoleLogs = MergeSection(contributions, skipped, failed, canRead, x => Installed(x.Diagnostics?.ConsoleLogs, y => y.Capability), x => x.ConsoleLogs, summaries => summaries.FirstOrDefault() ?? new(), new() { Capability = unauthorized }, new() { Capability = unavailable });
+        var unavailable = new DashboardCapabilityStatus(DashboardCapabilityStatus.Unavailable.Status, "Some sources are unavailable; figures would be incomplete");
+        var runtime = MergeSection(contributions, skipped, failed, canRead, x => x.Runtime, x => x.Runtime, x => x.Capability.Status == unavailable.Status || x.Status == DashboardRuntimeStatusKeys.Unavailable, MergeRuntime, new() { Capability = unauthorized }, new() { Capability = unavailable });
+        var workflowInstances = MergeSection(contributions, skipped, failed, canRead, x => x.WorkflowInstances, x => x.WorkflowInstances, x => x.Capability.Status == unavailable.Status, MergeWorkflowMetrics, new() { Capability = unauthorized }, new() { Capability = unavailable });
+        var structuredLogs = MergeSection(contributions, skipped, failed, canRead, x => Installed(x.Diagnostics?.StructuredLogs, y => y.Capability), x => x.StructuredLogs, x => x.Capability.Status == unavailable.Status, summaries => summaries.FirstOrDefault() ?? new(), new() { Capability = unauthorized }, new() { Capability = unavailable });
+        var consoleLogs = MergeSection(contributions, skipped, failed, canRead, x => Installed(x.Diagnostics?.ConsoleLogs, y => y.Capability), x => x.ConsoleLogs, x => x.Capability.Status == unavailable.Status, summaries => summaries.FirstOrDefault() ?? new(), new() { Capability = unauthorized }, new() { Capability = unavailable });
         var metrics = contributions.SelectMany(x => x.Contribution.Metrics).Where(x => canRead(x.Permission)).OrderBy(x => x.Order).ThenBy(x => x.Id, StringComparer.Ordinal).ToList();
         var panels = contributions.SelectMany(x => x.Contribution.Panels).Where(x => canRead(x.Permission)).OrderBy(x => x.Order).ThenBy(x => x.Id, StringComparer.Ordinal).ToList();
 
@@ -269,11 +269,12 @@ public class DefaultDashboardProvider(
     }
 
     /// <summary>
-    /// Merges the contributions of one overview section the caller may read. A section some contributor supplied, or
-    /// declared and was skipped for, but the caller may not read at all is <paramref name="denied"/>, never the
-    /// default, so a denied section is told apart from one nobody supplied. A section supplied without a declared
-    /// permission needs <c>dashboard:view</c>. A section the caller may read that no contributor supplied because the
-    /// contributor declaring it was invoked and returned nothing (it failed) is <paramref name="unavailable"/>, never denied.
+    /// Merges the contributions to one overview section by one rule, per contribution. Contributions the caller may not
+    /// read are ignored. If any contribution the caller may read failed (it reported <paramref name="isFailed"/>, or its
+    /// contributor declared the section and returned nothing), the section is <paramref name="unavailable"/> with no
+    /// figures, so partial totals are never presented as complete. Otherwise the readable contributions are merged. Only
+    /// when the caller may read none of them is the section <paramref name="denied"/>, which tells a denied section apart
+    /// from one nobody supplied. A section supplied without a declared permission needs <c>dashboard:view</c>.
     /// </summary>
     private static OverviewSection<T> MergeSection<T>(
         IEnumerable<(DashboardOverviewPermissions? Declared, DashboardOverviewContribution Contribution)> contributions,
@@ -282,6 +283,7 @@ public class DefaultDashboardProvider(
         Func<DashboardPermission?, bool> canRead,
         Func<DashboardOverviewContribution, T?> select,
         Func<DashboardOverviewPermissions, DashboardPermission?> permissionOf,
+        Func<T, bool> isFailed,
         Func<IReadOnlyCollection<T>, T> merge,
         T denied,
         T unavailable)
@@ -292,12 +294,13 @@ public class DefaultDashboardProvider(
             .Where(x => x.Section != null)
             .ToList();
         var readable = supplied.Where(x => canRead(x.Permission)).Select(x => x.Section!).ToList();
+        var readableFailure = readable.Any(isFailed) || failed.Any(x => permissionOf(x) is { } permission && canRead(permission));
+
+        if (readableFailure)
+            return new(unavailable, denied, false);
 
         if (readable.Count > 0)
             return new(merge(readable), denied, true);
-
-        if (supplied.Count == 0 && failed.Any(x => permissionOf(x) is { } permission && canRead(permission)))
-            return new(unavailable, denied, false);
 
         var wasWithheld = supplied.Count > 0 || skipped.Concat(failed).Any(x => permissionOf(x) != null);
 
@@ -314,12 +317,8 @@ public class DefaultDashboardProvider(
     private static DashboardRuntimeStatus MergeRuntime(IReadOnlyCollection<DashboardRuntimeStatus> runtimes) =>
         runtimes.FirstOrDefault(x => x.Status != DashboardRuntimeStatusKeys.Unavailable) ?? new();
 
-    private static DashboardWorkflowInstanceMetrics MergeWorkflowMetrics(IReadOnlyCollection<DashboardWorkflowInstanceMetrics> all)
-    {
-        // A contributor that could not count reports Unavailable; it adds nothing, and only when all do is the section Unavailable.
-        var metrics = all.Where(x => x.Capability.Status != DashboardCapabilityStatus.Unavailable.Status).ToList();
-
-        return metrics.Count == 0 ? all.FirstOrDefault() ?? new() : new()
+    private static DashboardWorkflowInstanceMetrics MergeWorkflowMetrics(IReadOnlyCollection<DashboardWorkflowInstanceMetrics> metrics) =>
+        new()
         {
             Running = metrics.Sum(x => x.Running),
             Completed = metrics.Sum(x => x.Completed),
@@ -329,7 +328,6 @@ public class DefaultDashboardProvider(
             IncidentBearing = metrics.Sum(x => x.IncidentBearing),
             AverageDuration = AverageDuration(metrics.Select(x => x.AverageDuration))
         };
-    }
 
     private static TimeSpan? AverageDuration(IEnumerable<TimeSpan?> durations)
     {

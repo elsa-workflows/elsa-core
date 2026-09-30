@@ -232,6 +232,63 @@ public class DefaultDashboardProviderTests
         Assert.DoesNotContain("secret", response.Findings.Single().Message);
     }
 
+    [Fact]
+    public async Task GetOverviewAsync_WithOneInstanceContributorFailingAndAnotherSucceeding_ReportsUnavailableWithoutPartialTotals()
+    {
+        var provider = CreateProvider(InstanceContributor("failed", 1, new() { Capability = DashboardCapabilityStatus.Unavailable }), InstanceContributor("healthy", 2, new() { Running = 5 }));
+
+        var overview = await provider.GetOverviewAsync(new() { CanRead = x => x == InstancesView });
+
+        Assert.Equal(DashboardCapabilityStatus.Unavailable.Status, overview.WorkflowInstances.Capability.Status);
+        Assert.NotNull(overview.WorkflowInstances.Capability.Reason);
+        Assert.Equal(0, overview.WorkflowInstances.Running);
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_WithReadableContributorFailingAndAnUnreadableOneForTheSameSection_ReportsUnavailableNotUnauthorized()
+    {
+        var unreadable = new TestContributor("unreadable", 2)
+        {
+            Overview = new() { WorkflowInstances = new() { Running = 9 } },
+            OverviewPermissions = new() { WorkflowInstances = WholeOverview, StructuredLogs = InstancesView }
+        };
+        var provider = CreateProvider(new ThrowingContributor("broken", 1) { OverviewPermissions = new() { WorkflowInstances = InstancesView } }, unreadable);
+
+        var overview = await provider.GetOverviewAsync(new() { CanRead = x => x == InstancesView });
+
+        Assert.Equal(1, unreadable.Invocations);
+        Assert.Equal(DashboardCapabilityStatus.Unavailable.Status, overview.WorkflowInstances.Capability.Status);
+        Assert.Equal(0, overview.WorkflowInstances.Running);
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_WithOnlyUnreadableInstanceContributions_ReportsUnauthorized()
+    {
+        var provider = CreateProvider(InstanceContributor("failed", 1, new() { Capability = DashboardCapabilityStatus.Unavailable }), InstanceContributor("healthy", 2, new() { Running = 5 }));
+
+        var overview = await provider.GetOverviewAsync(new() { CanRead = x => x == RuntimeView });
+
+        Assert.Equal(DashboardCapabilityStatus.Unauthorized.Status, overview.WorkflowInstances.Capability.Status);
+        Assert.Equal(0, overview.WorkflowInstances.Running);
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_WithEveryReadableInstanceContributorSucceeding_MergesTotalsAsAvailable()
+    {
+        var provider = CreateProvider(InstanceContributor("a", 1, new() { Running = 5 }), InstanceContributor("b", 2, new() { Running = 3 }));
+
+        var overview = await provider.GetOverviewAsync(new() { CanRead = x => x == InstancesView });
+
+        Assert.Equal(DashboardCapabilityStatus.Available.Status, overview.WorkflowInstances.Capability.Status);
+        Assert.Equal(8, overview.WorkflowInstances.Running);
+    }
+
+    private static TestContributor InstanceContributor(string id, int order, DashboardWorkflowInstanceMetrics metrics) => new(id, order)
+    {
+        Overview = new() { WorkflowInstances = metrics },
+        OverviewPermissions = new() { WorkflowInstances = InstancesView }
+    };
+
     private static WorkflowDashboardContributor CreateWorkflowContributorWithFailingInstanceStore()
     {
         var store = Substitute.For<IWorkflowInstanceStore>();
