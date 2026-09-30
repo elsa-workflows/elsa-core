@@ -1,70 +1,32 @@
-# Getting Started with Create React App
+# Elsa Studio workflow definition editor in React
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A minimal React app, built with [Vite](https://vite.dev), that hosts the Elsa Studio workflow definition editor. The editor is a Blazor WebAssembly custom element, `<elsa-workflow-definition-editor>`, shipped in the [`@elsa-workflows/elsa-studio-wasm`](https://www.npmjs.com/package/@elsa-workflows/elsa-studio-wasm) npm package.
 
-## Available Scripts
+## How it fits together
 
-In the project directory, you can run:
+- `npm install` runs `scripts/copy-elsa-studio-wasm.js`, which replaces the Blazor assets in `public/` (`_framework`, `_content`, `appsettings.json` and the scoped stylesheet) with a fresh copy from the npm package, so they are served from the site root.
+- `index.html` loads the Studio stylesheets and scripts, ending with `_framework/blazor.webassembly.js`, which registers the custom element.
+- `src/components/WorkflowDefinitionEditor.jsx` wraps the custom element in a React component, mapping `definitionId`, `remoteEndpoint` and `apiKey` props to its attributes. `src/App.jsx` renders it.
+
+## Prerequisites
+
+- Node.js `^20.19.0 || >=22.12.0` (the range Vite 8 supports).
+- A running Elsa Server that allows CORS requests from `http://localhost:3000`. `src/App.jsx` passes its API URL as `remoteEndpoint` (default `https://localhost:5001/elsa/api`).
+
+## Scripts
 
 ### `npm start`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Runs the app in development mode at [http://localhost:3000](http://localhost:3000).
 
 ### `npm run build`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Builds the app for production into `dist/`.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### `npm test`
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Checks that the postinstall copy step provides every Studio asset `index.html` references and leaves no stale files behind.
 
-### `npm run eject`
+### `npm run preview`
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Serves the production build locally.

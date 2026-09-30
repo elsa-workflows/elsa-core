@@ -2,41 +2,25 @@
   "name": "workflow-definition-editor-app",
   "version": "0.1.0",
   "private": true,
-  "dependencies": {
-    "@elsa-workflows/elsa-studio-wasm": "^3.0.0-preview.1",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4",
-    "uuid": "^9.0.0"
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
   },
+  "type": "module",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test",
     "postinstall": "npm run copy:elsa-studio-wasm",
-    "copy:elsa-studio-wasm": "cp -r node_modules/@elsa-workflows/elsa-studio-wasm/_content public/ && cp -r node_modules/@elsa-workflows/elsa-studio-wasm/_framework public/ && cp -r node_modules/@elsa-workflows/elsa-studio-wasm/appsettings.json public/"
+    "copy:elsa-studio-wasm": "node scripts/copy-elsa-studio-wasm.js"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+  "dependencies": {
+    "@elsa-workflows/elsa-studio-wasm": "^3.8.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.1",
+    "vite": "^8.3.1"
   }
 }
