@@ -20,6 +20,7 @@
 		<ProjectReference Include="../../../../../src/modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj" />
         <ProjectReference Include="../../../../../src/modules/Elsa.WorkflowProviders.BlobStorage/Elsa.WorkflowProviders.BlobStorage.csproj" />
         <PackageReference Include="Testcontainers.PostgreSql" />
+        <PackageReference Include="SSH.NET" PrivateAssets="All"/>
         <PackageReference Include="Testcontainers.RabbitMq" />
     </ItemGroup>
 

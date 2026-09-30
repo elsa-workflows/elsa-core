@@ -4,6 +4,7 @@
   
   <ItemGroup>
     <PackageReference Include="Testcontainers.PostgreSql"/>
+    <PackageReference Include="SSH.NET" PrivateAssets="All"/>
     <PackageReference Include="Testcontainers.RabbitMq"/>
   </ItemGroup>
 
