@@ -50,10 +50,15 @@ public sealed class ElsaIdentitySignOutTests : AppBarUserMenuTests<ElsaIdentityU
             .Single(item => item.TextContent.Trim() == "Sign out")
             .Click();
 
-        menu.WaitForAssertion(() => Assert.Empty(menu.FindAll(".mud-menu")));
+        var history = Services.GetRequiredService<BunitNavigationManager>().History;
+        menu.WaitForAssertion(() =>
+        {
+            Assert.Empty(menu.FindAll(".mud-menu"));
+            Assert.NotEmpty(history);
+        });
         Assert.Empty(_tokens.Tokens);
         Assert.False(Assert.Single(stateChanges).User.Identity?.IsAuthenticated);
-        var navigation = Assert.Single(Services.GetRequiredService<BunitNavigationManager>().History);
+        var navigation = Assert.Single(history);
         Assert.Equal("/login", navigation.Uri);
         Assert.True(navigation.Options.ForceLoad);
     }

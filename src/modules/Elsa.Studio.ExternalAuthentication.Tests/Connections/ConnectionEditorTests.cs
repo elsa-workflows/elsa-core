@@ -2198,10 +2198,10 @@ public sealed class ConnectionEditorTests : BunitContext, IAsyncLifetime
         Assert.Equal($"security/external-authentication/connections/{connection.Id}", manageLink.GetAttribute("href"));
         cut.Find("tbody tr").Click();
 
-        Assert.EndsWith(
+        cut.WaitForAssertion(() => Assert.EndsWith(
             $"/security/external-authentication/connections/{connection.Id}",
             Services.GetRequiredService<NavigationManager>().Uri,
-            StringComparison.Ordinal);
+            StringComparison.Ordinal));
     }
 
     [Fact]
@@ -2609,7 +2609,7 @@ public sealed class ConnectionEditorTests : BunitContext, IAsyncLifetime
         });
 
         cut.FindAll("button").Single(button => button.TextContent.Contains("Manage existing Database record", StringComparison.Ordinal)).Click();
-        Assert.EndsWith("/security/external-authentication/connections/stored-override", Services.GetRequiredService<NavigationManager>().Uri, StringComparison.Ordinal);
+        cut.WaitForAssertion(() => Assert.EndsWith("/security/external-authentication/connections/stored-override", Services.GetRequiredService<NavigationManager>().Uri, StringComparison.Ordinal));
     }
 
     [Fact]
