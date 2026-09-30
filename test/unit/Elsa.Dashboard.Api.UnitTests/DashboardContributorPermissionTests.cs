@@ -69,6 +69,44 @@ public class DashboardContributorPermissionTests
             permissions => Assert.Equal(ConsoleLogsView, permissions.ConsoleLogs),
             ConsoleLogsView);
 
+    [Fact]
+    public async Task BuiltInContributors_DeclareEveryPermissionTheirOverviewCardsAndPanelsUse()
+    {
+        var runtime = Substitute.For<IWorkflowRuntimeAdminService>();
+        runtime.GetStatus().Returns(new RuntimeAdminStatus(QuiescenceState.Initial("generation"), [], 0));
+        var contributors = new IDashboardContributor[]
+        {
+            new WorkflowDashboardContributor(CreateStore(), runtime),
+            new StructuredLogsDashboardContributor(Substitute.For<IStructuredLogProvider>(), []),
+            new ConsoleLogsDashboardContributor(Substitute.For<IConsoleLogProvider>())
+        };
+
+        foreach (var contributor in contributors)
+        {
+            var overview = await contributor.GetOverviewAsync(_context);
+            var declared = contributor.OverviewPermissions!.All().ToList();
+            var used = overview!.Metrics.Select(x => x.Permission).Concat(overview.Panels.Select(x => x.Permission)).ToList();
+
+            Assert.All(used, permission => Assert.Contains(permission!.Value, declared));
+        }
+    }
+
+    [Fact]
+    public async Task WorkflowContributor_WithFailingInstanceStore_KeepsRuntimeAndReportsInstancesUnavailable()
+    {
+        var store = Substitute.For<IWorkflowInstanceStore>();
+        store.CountAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>()).Returns<long>(_ => throw new InvalidOperationException("secret connection string"));
+        store.SummarizeManyAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>()).Returns<IEnumerable<WorkflowInstanceSummary>>(_ => throw new InvalidOperationException("secret connection string"));
+        var runtime = Substitute.For<IWorkflowRuntimeAdminService>();
+        runtime.GetStatus().Returns(new RuntimeAdminStatus(QuiescenceState.Initial("generation"), [], 0));
+
+        var overview = await new WorkflowDashboardContributor(store, runtime).GetOverviewAsync(_context);
+
+        Assert.Equal(DashboardRuntimeStatusKeys.AcceptingWork, overview!.Runtime!.Status);
+        Assert.Equal(DashboardCapabilityStatus.Unavailable.Status, overview.WorkflowInstances!.Capability.Status);
+        Assert.DoesNotContain("secret", overview.WorkflowInstances.Capability.Reason);
+    }
+
     private static IWorkflowInstanceStore CreateStore()
     {
         var store = Substitute.For<IWorkflowInstanceStore>();

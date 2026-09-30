@@ -16,28 +16,34 @@ public class DefaultDashboardProvider(
         var context = CreateContext(range, query.IncludeSystem, cancellationToken);
         var canRead = DashboardAccess.WithDefault(query.CanRead);
         var contributions = new List<(DashboardOverviewPermissions? Declared, DashboardOverviewContribution Contribution)>();
+        var failed = new List<DashboardOverviewPermissions>();
 
-        var readable = ReadableContributors(canRead, out var skipped);
+        var readable = ReadableContributors(canRead, out var skipped, out var declaredPermissions);
 
         foreach (var contributor in readable)
         {
             var contribution = await ExecuteContributorAsync(contributor, x => x.GetOverviewAsync(context).AsTask(), cancellationToken);
             if (contribution != null)
                 contributions.Add((contributor.OverviewPermissions, contribution));
+            else if (contributor.OverviewPermissions != null)
+                failed.Add(contributor.OverviewPermissions);
         }
 
         var unauthorized = DashboardCapabilityStatus.Unauthorized;
-        var runtime = MergeSection(contributions, skipped, canRead, x => x.Runtime, x => x.Runtime, MergeRuntime, new() { Capability = unauthorized });
-        var workflowInstances = MergeSection(contributions, skipped, canRead, x => x.WorkflowInstances, x => x.WorkflowInstances, MergeWorkflowMetrics, new() { Capability = unauthorized });
-        var structuredLogs = MergeSection(contributions, skipped, canRead, x => Installed(x.Diagnostics?.StructuredLogs, y => y.Capability), x => x.StructuredLogs, summaries => summaries.FirstOrDefault() ?? new(), new() { Capability = unauthorized });
-        var consoleLogs = MergeSection(contributions, skipped, canRead, x => Installed(x.Diagnostics?.ConsoleLogs, y => y.Capability), x => x.ConsoleLogs, summaries => summaries.FirstOrDefault() ?? new(), new() { Capability = unauthorized });
+        var unavailable = DashboardCapabilityStatus.Unavailable;
+        var runtime = MergeSection(contributions, skipped, failed, canRead, x => x.Runtime, x => x.Runtime, MergeRuntime, new() { Capability = unauthorized }, new() { Capability = unavailable });
+        var workflowInstances = MergeSection(contributions, skipped, failed, canRead, x => x.WorkflowInstances, x => x.WorkflowInstances, MergeWorkflowMetrics, new() { Capability = unauthorized }, new() { Capability = unavailable });
+        var structuredLogs = MergeSection(contributions, skipped, failed, canRead, x => Installed(x.Diagnostics?.StructuredLogs, y => y.Capability), x => x.StructuredLogs, summaries => summaries.FirstOrDefault() ?? new(), new() { Capability = unauthorized }, new() { Capability = unavailable });
+        var consoleLogs = MergeSection(contributions, skipped, failed, canRead, x => Installed(x.Diagnostics?.ConsoleLogs, y => y.Capability), x => x.ConsoleLogs, summaries => summaries.FirstOrDefault() ?? new(), new() { Capability = unauthorized }, new() { Capability = unavailable });
         var metrics = contributions.SelectMany(x => x.Contribution.Metrics).Where(x => canRead(x.Permission)).OrderBy(x => x.Order).ThenBy(x => x.Id, StringComparer.Ordinal).ToList();
         var panels = contributions.SelectMany(x => x.Contribution.Panels).Where(x => canRead(x.Permission)).OrderBy(x => x.Order).ThenBy(x => x.Id, StringComparer.Ordinal).ToList();
 
-        // A caller who may read nothing that was returned, and not the whole overview either, learns nothing about the
-        // deployment: no names, and no hint of which modules are installed. The range is the caller's own.
-        var withheld = !runtime.Readable && !workflowInstances.Readable && !structuredLogs.Readable && !consoleLogs.Readable
-                       && metrics.Count == 0 && panels.Count == 0 && !canRead(null);
+        // A caller whose permissions read nothing the contributors declared or supplied, and not the whole overview
+        // either, learns nothing about the deployment: no names, and no hint of which modules are installed. This
+        // follows the caller's permissions, never what happened to come back, so a contributor that failed for a caller
+        // who may read its data makes that section Unavailable, not the caller one who reads nothing. The range is the caller's own.
+        var suppliedPermissions = contributions.SelectMany(x => x.Contribution.Metrics.Select(y => y.Permission).Concat(x.Contribution.Panels.Select(y => y.Permission)));
+        var withheld = !canRead(null) && !declaredPermissions.Cast<DashboardPermission?>().Concat(suppliedPermissions).Any(canRead);
         T Section<T>(OverviewSection<T> section) => withheld ? section.Denied : section.Value;
 
         return new()
@@ -183,18 +189,23 @@ public class DefaultDashboardProvider(
 
     /// <summary>
     /// The contributors worth invoking for the overview, in order. A contributor that declared its overview permissions
-    /// and whose permissions the caller may all not read has nothing the caller can see in the overview, so it is not
-    /// invoked; it is returned in <paramref name="skipped"/> so the sections it declared can still be reported as withheld.
+    /// (those of everything it adds: sections, metric cards and panels) and whose permissions the caller may all not
+    /// read has nothing the caller can see in the overview, so it is not invoked; it is returned in <paramref name="skipped"/> so the sections it declared can still be reported as withheld.
     /// Only the overview skips: every other call invokes every contributor and filters afterwards.
     /// </summary>
-    private IReadOnlyCollection<IDashboardContributor> ReadableContributors(Func<DashboardPermission?, bool> canRead, out IReadOnlyCollection<DashboardOverviewPermissions> skipped)
+    private IReadOnlyCollection<IDashboardContributor> ReadableContributors(
+        Func<DashboardPermission?, bool> canRead,
+        out IReadOnlyCollection<DashboardOverviewPermissions> skipped,
+        out IReadOnlyCollection<DashboardPermission> declaredPermissions)
     {
         var readable = new List<IDashboardContributor>();
         var skippedPermissions = new List<DashboardOverviewPermissions>();
+        var allDeclared = new List<DashboardPermission>();
 
         foreach (var contributor in OrderedContributors)
         {
             var declared = contributor.OverviewPermissions?.All().ToList();
+            allDeclared.AddRange(declared ?? []);
 
             if (declared is { Count: > 0 } && !declared.Any(x => canRead(x)))
                 skippedPermissions.Add(contributor.OverviewPermissions!);
@@ -203,6 +214,7 @@ public class DefaultDashboardProvider(
         }
 
         skipped = skippedPermissions;
+        declaredPermissions = allDeclared;
         return readable;
     }
 
@@ -260,16 +272,19 @@ public class DefaultDashboardProvider(
     /// Merges the contributions of one overview section the caller may read. A section some contributor supplied, or
     /// declared and was skipped for, but the caller may not read at all is <paramref name="denied"/>, never the
     /// default, so a denied section is told apart from one nobody supplied. A section supplied without a declared
-    /// permission needs <c>dashboard:view</c>.
+    /// permission needs <c>dashboard:view</c>. A section the caller may read that no contributor supplied because the
+    /// contributor declaring it was invoked and returned nothing (it failed) is <paramref name="unavailable"/>, never denied.
     /// </summary>
     private static OverviewSection<T> MergeSection<T>(
         IEnumerable<(DashboardOverviewPermissions? Declared, DashboardOverviewContribution Contribution)> contributions,
         IReadOnlyCollection<DashboardOverviewPermissions> skipped,
+        IReadOnlyCollection<DashboardOverviewPermissions> failed,
         Func<DashboardPermission?, bool> canRead,
         Func<DashboardOverviewContribution, T?> select,
         Func<DashboardOverviewPermissions, DashboardPermission?> permissionOf,
         Func<IReadOnlyCollection<T>, T> merge,
-        T denied)
+        T denied,
+        T unavailable)
         where T : class
     {
         var supplied = contributions
@@ -281,7 +296,10 @@ public class DefaultDashboardProvider(
         if (readable.Count > 0)
             return new(merge(readable), denied, true);
 
-        var wasWithheld = supplied.Count > 0 || skipped.Any(x => permissionOf(x) != null);
+        if (supplied.Count == 0 && failed.Any(x => permissionOf(x) is { } permission && canRead(permission)))
+            return new(unavailable, denied, false);
+
+        var wasWithheld = supplied.Count > 0 || skipped.Concat(failed).Any(x => permissionOf(x) != null);
 
         return new(wasWithheld ? denied : merge(readable), denied, false);
     }
@@ -296,8 +314,12 @@ public class DefaultDashboardProvider(
     private static DashboardRuntimeStatus MergeRuntime(IReadOnlyCollection<DashboardRuntimeStatus> runtimes) =>
         runtimes.FirstOrDefault(x => x.Status != DashboardRuntimeStatusKeys.Unavailable) ?? new();
 
-    private static DashboardWorkflowInstanceMetrics MergeWorkflowMetrics(IReadOnlyCollection<DashboardWorkflowInstanceMetrics> metrics) =>
-        new()
+    private static DashboardWorkflowInstanceMetrics MergeWorkflowMetrics(IReadOnlyCollection<DashboardWorkflowInstanceMetrics> all)
+    {
+        // A contributor that could not count reports Unavailable; it adds nothing, and only when all do is the section Unavailable.
+        var metrics = all.Where(x => x.Capability.Status != DashboardCapabilityStatus.Unavailable.Status).ToList();
+
+        return metrics.Count == 0 ? all.FirstOrDefault() ?? new() : new()
         {
             Running = metrics.Sum(x => x.Running),
             Completed = metrics.Sum(x => x.Completed),
@@ -307,6 +329,7 @@ public class DefaultDashboardProvider(
             IncidentBearing = metrics.Sum(x => x.IncidentBearing),
             AverageDuration = AverageDuration(metrics.Select(x => x.AverageDuration))
         };
+    }
 
     private static TimeSpan? AverageDuration(IEnumerable<TimeSpan?> durations)
     {

@@ -6,6 +6,8 @@ using Elsa.Diagnostics.ConsoleLogs.Dashboard.Extensions;
 using Elsa.Diagnostics.StructuredLogs.Dashboard;
 using Elsa.Diagnostics.StructuredLogs.Dashboard.Extensions;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Dashboard;
 using Elsa.Workflows.Runtime.Dashboard.Extensions;
@@ -135,6 +137,93 @@ public class DefaultDashboardProviderTests
         Assert.Null(overview.BackendName);
         Assert.Null(overview.EnvironmentName);
         Assert.Equal(DashboardRangeKeys.SevenDays, overview.AppliedRange);
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_WithCardOnlyTheCallerMayRead_InvokesTheContributorThatDeclaredItsPermission()
+    {
+        var contributor = new TestContributor("cards", 1)
+        {
+            Overview = new() { Metrics = [new() { Id = "card", Label = "Card", Permission = InstancesView }] },
+            OverviewPermissions = new() { Runtime = RuntimeView, WorkflowInstances = InstancesView }
+        };
+
+        var overview = await CreateProvider(contributor).GetOverviewAsync(new() { CanRead = x => x == InstancesView });
+
+        Assert.Equal(1, contributor.Invocations);
+        Assert.Equal(["card"], overview.Metrics.Select(x => x.Id));
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_WithCardPermissionTheContributorDidNotDeclare_SkipsItForACallerHoldingOnlyThatPermission()
+    {
+        var contributor = new TestContributor("under-declared", 1)
+        {
+            Overview = new() { Metrics = [new() { Id = "card", Label = "Card", Permission = InstancesView }] },
+            OverviewPermissions = new() { Runtime = RuntimeView }
+        };
+
+        var overview = await CreateProvider(contributor).GetOverviewAsync(new() { CanRead = x => x == InstancesView });
+
+        Assert.Equal(0, contributor.Invocations);
+        Assert.Empty(overview.Metrics);
+    }
+
+    public static readonly TheoryData<DashboardPermission, string, string> FailingInstanceStoreCallers = new()
+    {
+        { RuntimeView, DashboardCapabilityStatus.Unauthorized.Status, DashboardRuntimeStatusKeys.AcceptingWork },
+        { InstancesView, DashboardCapabilityStatus.Unavailable.Status, DashboardRuntimeStatusKeys.Unavailable }
+    };
+
+    [Theory]
+    [MemberData(nameof(FailingInstanceStoreCallers))]
+    public async Task GetOverviewAsync_WithFailingInstanceStore_ReportsReadableSectionsAvailableOrUnavailableNeverUnauthorized(
+        DashboardPermission permission, string instancesStatus, string runtimeStatus)
+    {
+        var provider = CreateProvider(CreateWorkflowContributorWithFailingInstanceStore());
+
+        var overview = await provider.GetOverviewAsync(new() { CanRead = x => x == permission });
+
+        Assert.Equal("Elsa.TestHost", overview.BackendName);
+        Assert.Equal(instancesStatus, overview.WorkflowInstances.Capability.Status);
+        Assert.Equal(runtimeStatus, overview.Runtime.Status);
+        Assert.Equal(permission == RuntimeView ? DashboardCapabilityStatus.Available.Status : DashboardCapabilityStatus.Unauthorized.Status, overview.Runtime.Capability.Status);
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_WithFailingInstanceStoreAndCallerWhoMayReadNothing_WithholdsEverything()
+    {
+        var provider = CreateProvider(CreateWorkflowContributorWithFailingInstanceStore());
+
+        var overview = await provider.GetOverviewAsync(new() { CanRead = _ => false });
+
+        Assert.Null(overview.BackendName);
+        Assert.Null(overview.EnvironmentName);
+        Assert.Equal(DashboardCapabilityStatus.Unauthorized.Status, overview.Runtime.Capability.Status);
+        Assert.Equal(DashboardCapabilityStatus.Unauthorized.Status, overview.WorkflowInstances.Capability.Status);
+        Assert.Equal(DashboardCapabilityStatus.Unauthorized.Status, overview.Diagnostics.StructuredLogs.Capability.Status);
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_WithContributorThatFailsForCallerWhoMayReadItsSection_ReportsItUnavailableNotUnauthorized()
+    {
+        var provider = CreateProvider(new ThrowingContributor("broken", 1) { OverviewPermissions = new() { Runtime = RuntimeView, WorkflowInstances = InstancesView } });
+
+        var overview = await provider.GetOverviewAsync(new() { CanRead = x => x == InstancesView });
+
+        Assert.Equal("Elsa.TestHost", overview.BackendName);
+        Assert.Equal(DashboardCapabilityStatus.Unavailable.Status, overview.WorkflowInstances.Capability.Status);
+        Assert.Equal(DashboardCapabilityStatus.Unauthorized.Status, overview.Runtime.Capability.Status);
+    }
+
+    private static WorkflowDashboardContributor CreateWorkflowContributorWithFailingInstanceStore()
+    {
+        var store = Substitute.For<IWorkflowInstanceStore>();
+        store.CountAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>()).Returns<long>(_ => throw new InvalidOperationException("Store down"));
+        store.SummarizeManyAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>()).Returns<IEnumerable<WorkflowInstanceSummary>>(_ => throw new InvalidOperationException("Store down"));
+        var runtime = Substitute.For<IWorkflowRuntimeAdminService>();
+        runtime.GetStatus().Returns(new RuntimeAdminStatus(QuiescenceState.Initial("generation"), [], 0));
+        return new(store, runtime);
     }
 
     [Fact]
@@ -502,6 +591,8 @@ public class DefaultDashboardProviderTests
     private sealed class ThrowingContributor(string id, int order) : IDashboardContributor
     {
         public string Id { get; } = id;
+
+        public DashboardOverviewPermissions? OverviewPermissions { get; init; }
 
         public int Order { get; } = order;
 

@@ -27,11 +27,25 @@ public class WorkflowDashboardContributor(
 
     public async ValueTask<DashboardOverviewContribution?> GetOverviewAsync(DashboardContext context)
     {
-        return new()
+        // Runtime status does not depend on the instance store, so an instance store outage leaves it intact.
+        var runtime = GetRuntimeStatus();
+
+        try
         {
-            Runtime = GetRuntimeStatus(),
-            WorkflowInstances = await GetWorkflowMetricsAsync(context.Range, context.IncludeSystem, context.CancellationToken)
-        };
+            return new()
+            {
+                Runtime = runtime,
+                WorkflowInstances = await GetWorkflowMetricsAsync(context.Range, context.IncludeSystem, context.CancellationToken)
+            };
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            return new()
+            {
+                Runtime = runtime,
+                WorkflowInstances = new() { Capability = new(DashboardCapabilityStatus.Unavailable.Status, "Workflow instance metrics are unavailable") }
+            };
+        }
     }
 
     public async ValueTask<IReadOnlyCollection<DashboardFinding>> GetFindingsAsync(DashboardContext context)

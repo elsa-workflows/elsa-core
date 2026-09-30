@@ -9,8 +9,10 @@ public interface IDashboardContributor
     int Order { get; }
 
     /// <summary>
-    /// Optional, up front: the permissions of the overview sections this contributor supplies; used only to skip the
-    /// overview call for a caller who can read none of them; an undeclared section still needs <c>dashboard:view</c>.
+    /// Optional, up front: the permissions of everything this contributor adds to the overview (its sections, metric
+    /// cards and panels); used only to skip the overview call for a caller who can read none of them. A contributor
+    /// must therefore declare every permission its cards and panels carry: one that does not is skipped for a caller who
+    /// holds only the undeclared permission. An undeclared section still needs <c>dashboard:view</c>.
     /// The other calls (findings, trends, recent activity and hotspots) always invoke the contributor and filter by the
     /// permission on what it returns. When <c>null</c> the contributor always runs.
     /// </summary>
