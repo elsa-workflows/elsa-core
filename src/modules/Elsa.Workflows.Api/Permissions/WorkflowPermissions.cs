@@ -12,7 +12,7 @@ public static class WorkflowPermissions
 {
     /// <summary>Author, publish, run, and refresh workflow definitions.</summary>
     public const string Definitions = "workflows/definitions";
-    /// <summary>Inspect, delete, and revert individual definition versions.</summary>
+    /// <summary>Delete and revert individual definition versions.</summary>
     public const string DefinitionVersions = "workflows/definitions/versions";
     /// <summary>Inspect, import, delete, and cancel workflow instances.</summary>
     public const string Instances = "workflows/instances";
@@ -61,7 +61,7 @@ public sealed class WorkflowPermissionsDescriptorProvider : IPermissionDescripto
     public IEnumerable<PermissionDescriptor> GetDescriptors() =>
     [
         new(WorkflowPermissions.Definitions, [CoreVerbs.View, CoreVerbs.Write, CoreVerbs.Delete, CoreVerbs.Execute, "publish", "retract", "refresh", "reload"], "Workflow definitions", "Author, publish, run, and refresh workflow definitions.", "Workflows"),
-        new(WorkflowPermissions.DefinitionVersions, [CoreVerbs.View, CoreVerbs.Delete, "revert"], "Workflow definition versions", "Inspect, delete, and revert individual definition versions.", "Workflows"),
+        new(WorkflowPermissions.DefinitionVersions, [CoreVerbs.View, CoreVerbs.Delete, "revert"], "Workflow definition versions", "Delete and revert individual definition versions. Listing versions is covered by workflows/definitions:view; the view verb is retained so existing roles that hold it stay valid.", "Workflows"),
         new(WorkflowPermissions.Instances, [CoreVerbs.View, CoreVerbs.Write, CoreVerbs.Delete, "cancel"], "Workflow instances", "Inspect, import, delete, and cancel workflow instances.", "Workflows"),
         new(WorkflowPermissions.ActivityExecutions, [CoreVerbs.View], "Activity executions", "Inspect activity execution records and summaries.", "Workflows"),
         new(WorkflowPermissions.Runtime, [CoreVerbs.View, "control"], "Workflow runtime", "Inspect runtime status, and pause, resume, or drain the runtime.", "Workflows"),
@@ -69,15 +69,15 @@ public sealed class WorkflowPermissionsDescriptorProvider : IPermissionDescripto
         new(WorkflowPermissions.Events, ["trigger"], "Workflow events", "Trigger workflow events.", "Workflows"),
         new(WorkflowPermissions.Tasks, ["complete"], "Workflow tasks", "Complete external workflow tasks.", "Workflows"),
         new(WorkflowPermissions.Tests, [CoreVerbs.Execute], "Activity tests", "Execute activity tests.", "Workflows"),
-        new(WorkflowPermissions.DescriptorsActivities, [CoreVerbs.View], "Activity descriptors", "Browse available activity types and their options.", "Workflows"),
-        new(WorkflowPermissions.DescriptorsExpressions, [CoreVerbs.View], "Expression descriptors", "Browse available expression types.", "Workflows"),
-        new(WorkflowPermissions.DescriptorsStorageDrivers, [CoreVerbs.View], "Storage driver descriptors", "Browse available storage drivers.", "Workflows"),
-        new(WorkflowPermissions.DescriptorsVariables, [CoreVerbs.View], "Variable descriptors", "Browse available variable types.", "Workflows"),
-        new(WorkflowPermissions.DescriptorsCommitStrategies, [CoreVerbs.View], "Commit strategy descriptors", "Browse available commit strategies.", "Workflows"),
-        new(WorkflowPermissions.DescriptorsIncidentStrategies, [CoreVerbs.View], "Incident strategy descriptors", "Browse available incident strategies.", "Workflows"),
-        new(WorkflowPermissions.DescriptorsLogPersistenceStrategies, [CoreVerbs.View], "Log persistence strategy descriptors", "Browse available log persistence strategies.", "Workflows"),
-        new(WorkflowPermissions.DescriptorsOutputConverters, [CoreVerbs.View], "Output converter descriptors", "Browse available output converters.", "Workflows"),
-        new(WorkflowPermissions.DescriptorsActivationStrategies, [CoreVerbs.View], "Activation strategy descriptors", "Browse available workflow activation strategies.", "Workflows"),
+        new(WorkflowPermissions.DescriptorsActivities, [CoreVerbs.View], "Activity descriptors", "No longer required: any authenticated caller may read this catalog. Retained so existing roles that hold it stay valid.", "Workflows"),
+        new(WorkflowPermissions.DescriptorsExpressions, [CoreVerbs.View], "Expression descriptors", "No longer required: any authenticated caller may read this catalog. Retained so existing roles that hold it stay valid.", "Workflows"),
+        new(WorkflowPermissions.DescriptorsStorageDrivers, [CoreVerbs.View], "Storage driver descriptors", "No longer required: any authenticated caller may read this catalog. Retained so existing roles that hold it stay valid.", "Workflows"),
+        new(WorkflowPermissions.DescriptorsVariables, [CoreVerbs.View], "Variable descriptors", "No longer required: any authenticated caller may read this catalog. Retained so existing roles that hold it stay valid.", "Workflows"),
+        new(WorkflowPermissions.DescriptorsCommitStrategies, [CoreVerbs.View], "Commit strategy descriptors", "No longer required: any authenticated caller may read this catalog. Retained so existing roles that hold it stay valid.", "Workflows"),
+        new(WorkflowPermissions.DescriptorsIncidentStrategies, [CoreVerbs.View], "Incident strategy descriptors", "No longer required: any authenticated caller may read this catalog. Retained so existing roles that hold it stay valid.", "Workflows"),
+        new(WorkflowPermissions.DescriptorsLogPersistenceStrategies, [CoreVerbs.View], "Log persistence strategy descriptors", "No longer required: any authenticated caller may read this catalog. Retained so existing roles that hold it stay valid.", "Workflows"),
+        new(WorkflowPermissions.DescriptorsOutputConverters, [CoreVerbs.View], "Output converter descriptors", "No longer required: any authenticated caller may read this catalog. Retained so existing roles that hold it stay valid.", "Workflows"),
+        new(WorkflowPermissions.DescriptorsActivationStrategies, [CoreVerbs.View], "Activation strategy descriptors", "No longer required: any authenticated caller may read this catalog. Retained so existing roles that hold it stay valid.", "Workflows"),
         new(WorkflowPermissions.SystemFeatures, [CoreVerbs.View], "Installed features", "No longer required: any authenticated caller may list installed features. Retained so existing roles that hold it stay valid.", "Workflows"),
     ];
 }

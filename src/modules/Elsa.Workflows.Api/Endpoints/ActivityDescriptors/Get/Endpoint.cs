@@ -1,4 +1,3 @@
-using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
@@ -20,7 +19,9 @@ internal class Get : ElsaEndpoint<Request, ActivityDescriptor>
     public override void Configure()
     {
         Get("/descriptors/activities/{typeName}");
-        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsActivities, CoreVerbs.View);
+
+        // Static metadata about what is installed, which the designer needs to open any definition, so every signed-in user may read it.
+        RequireAuthenticatedOnly();
     }
 
     /// <inheritdoc />

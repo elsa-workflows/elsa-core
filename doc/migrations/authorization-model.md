@@ -228,6 +228,37 @@ still rejected.
 so roles that already hold it keep resolving instead of being reported by the startup validator; you can drop
 it from your roles at your convenience.
 
+## Descriptor catalogs are readable by any signed-in user, and a definition viewer can list versions
+
+Elsa Studio loads the descriptor catalogs, and a definition's versions, to open the designer. A role holding only
+`workflows/definitions:view` could list definitions but got a 403 on each of those calls when it opened one.
+
+These read-only catalogs now require an authenticated caller and no permission. They describe what is installed,
+not anything stored, so gating them added no protection. Anonymous callers are still rejected.
+
+- `GET /descriptors/activities` and `GET /descriptors/activities/{typeName}`
+- `GET /descriptors/variables`
+- `GET /descriptors/storage-drivers`
+- `GET /descriptors/output-converters`
+- `GET /descriptors/expression-descriptors`
+- `GET /descriptors/workflow-activation-strategies`
+- `GET /descriptors/incident-strategies`
+- `GET /descriptors/log-persistence-strategies`
+- `GET /descriptors/commit-strategies/activities` and `GET /descriptors/commit-strategies/workflows`
+- `GET /resilience/strategies`
+
+`GET /workflow-definitions/{definitionId}/versions` now requires `workflows/definitions:view` instead of
+`workflows/definitions/versions:view`. It is not a static catalog, but a caller who can read a definition could already
+read every one of its versions, so the version list disclosed nothing further. A role that held
+`workflows/definitions/versions:view` without `workflows/definitions:view` can no longer list versions; grant
+`workflows/definitions:view`, which the `read:workflow-definitions` mapping below already includes. Deleting and
+reverting versions still require `workflows/definitions/versions:delete` and `:revert`.
+
+The permissions these endpoints used to require (`workflows/descriptors/<kind>:view`, `resilience/strategies:view` and
+`workflows/definitions/versions:view`) no longer gate anything. They stay in the catalog, and in the mapping below, so
+roles that already hold them keep resolving instead of being reported by the startup validator; you can drop them from
+your roles at your convenience.
+
 ## Third-party modules
 
 Modules outside this repository keep compiling. `ConfigurePermissions(params string[])` remains available but obsolete, and a permission that resolves to no registered descriptor registers an implicit one marked unverified, logs a warning, and appears as such in the catalog. The module keeps working and the gap stays visible.

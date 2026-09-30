@@ -1,4 +1,3 @@
-using Elsa.Authorization;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
@@ -24,7 +23,9 @@ public class List : ElsaEndpointWithoutRequest<Response>
     public override void Configure()
     {
         Get("/descriptors/storage-drivers");
-        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsStorageDrivers, CoreVerbs.View);
+
+        // Static metadata about what is installed, which the designer needs to open any definition, so every signed-in user may read it.
+        RequireAuthenticatedOnly();
     }
 
     /// <inheritdoc />

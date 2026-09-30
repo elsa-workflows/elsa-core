@@ -26,7 +26,7 @@ public sealed class ResiliencePermissionsDescriptorProvider : IPermissionDescrip
     public IEnumerable<PermissionDescriptor> GetDescriptors() =>
     [
         new(ResiliencePermissions.Retries, [CoreVerbs.View], "Retry attempts", "Inspect retry attempt records.", "Resilience"),
-        new(ResiliencePermissions.Strategies, [CoreVerbs.View], "Resilience strategies", "Browse available resilience strategies.", "Resilience"),
+        new(ResiliencePermissions.Strategies, [CoreVerbs.View], "Resilience strategies", "No longer required: any authenticated caller may browse the available resilience strategies. Retained so existing roles that hold it stay valid.", "Resilience"),
         new(ResiliencePermissions.Simulation, [CoreVerbs.Execute], "Resilience simulation", "Simulate a resilience response.", "Resilience"),
     ];
 }

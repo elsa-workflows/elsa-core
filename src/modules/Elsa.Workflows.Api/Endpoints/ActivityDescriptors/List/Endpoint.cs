@@ -1,4 +1,3 @@
-using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Management;
 using JetBrains.Annotations;
@@ -11,7 +10,9 @@ internal class List(IActivityRegistry registry, IActivityRegistryPopulator regis
     public override void Configure()
     {
         Get("/descriptors/activities");
-        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsActivities, CoreVerbs.View);
+
+        // Static metadata about what is installed, which the designer needs to open any definition, so every signed-in user may read it.
+        RequireAuthenticatedOnly();
     }
 
     public override async Task<Response> ExecuteAsync(CancellationToken cancellationToken)
