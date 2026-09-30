@@ -10,6 +10,7 @@ using Elsa.Api.Client.Shared.Models;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Contracts;
 using Elsa.Studio.Localization;
+using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.Components.WorkflowInstanceViewer.Components;
 using Elsa.Studio.Workflows.Contracts;
 using Elsa.Studio.Workflows.Domain.Contracts;
@@ -18,7 +19,6 @@ using Elsa.Studio.Workflows.Shared.Components;
 using Elsa.Studio.Workflows.UI.Contracts;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using Xunit;
 
@@ -772,12 +772,6 @@ public sealed class WorkflowInstanceDesignerDisconnectRefreshTests : BunitContex
     {
         public Task<bool> IsEnabledAsync(string featureName, CancellationToken cancellationToken = default) => Task.FromResult(false);
         public Task<IEnumerable<Elsa.Api.Client.Resources.Features.Models.FeatureDescriptor>> ListAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException();
-    }
-
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
     }
 
     /// <summary>

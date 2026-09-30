@@ -3,6 +3,7 @@ using Bunit;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Localization;
+using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.DiagramDesigners.Bpmn;
 using Elsa.Studio.Workflows.Designer.Extensions;
 using Elsa.Studio.Workflows.Designer.Models;
@@ -10,7 +11,6 @@ using Elsa.Studio.Workflows.Designer.Options;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Extensions;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using MudBlazor.Services;
 using Xunit;
 
@@ -128,12 +128,6 @@ public sealed class BpmnDesignerWrapperTests : BunitContext, IAsyncLifetime
         };
 
         return activity;
-    }
-
-    private class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
     }
 
     private sealed class NoOpActivityRegistry : IActivityRegistry

@@ -5,10 +5,10 @@ using Elsa.Api.Client.Shared.Models;
 using Elsa.Studio.DomInterop.Contracts;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Localization.Time;
+using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.Components.WorkflowInstanceViewer.Components;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using MudBlazor;
 using MudBlazor.Services;
 using Xunit;
@@ -146,11 +146,5 @@ public sealed class ActivityExecutionDetailsTests : BunitContext, IAsyncLifetime
     {
         public string Format(DateTimeOffset? value, string format = "G", string emptyString = "") =>
             value?.ToString(format) ?? emptyString;
-    }
-
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
     }
 }

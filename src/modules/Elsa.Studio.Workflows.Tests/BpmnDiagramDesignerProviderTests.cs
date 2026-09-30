@@ -1,11 +1,11 @@
 using System.Text.Json.Nodes;
 using Elsa.Studio.Localization;
+using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.DiagramDesigners.Bpmn;
 using Elsa.Studio.Workflows.DiagramDesigners.Fallback;
 using Elsa.Studio.Workflows.DiagramDesigners.Flowcharts;
 using Elsa.Studio.Workflows.Designer.Options;
 using Elsa.Studio.Workflows.UI.Services;
-using Microsoft.Extensions.Localization;
 using Xunit;
 
 namespace Elsa.Studio.Workflows.Tests;
@@ -70,10 +70,4 @@ public class BpmnDiagramDesignerProviderTests
     {
         ["type"] = type
     };
-
-    private class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
-    }
 }

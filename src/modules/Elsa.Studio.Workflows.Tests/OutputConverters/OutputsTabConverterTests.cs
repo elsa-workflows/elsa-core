@@ -6,13 +6,13 @@ using Elsa.Api.Client.Resources.OutputConverters.Models;
 using Elsa.Api.Client.Resources.VariableTypes.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Studio.Localization;
+using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.ActivityProperties.Tabs.Outputs.Components;
 using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.ActivityProperties.Tabs.Outputs.Models;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.UI.Contracts;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using MudBlazor;
 using MudBlazor.Services;
 using Xunit;
@@ -496,11 +496,5 @@ public sealed class OutputsTabConverterTests : BunitContext, IAsyncLifetime
     {
         public bool IsReadOnly { get; } = isReadOnly;
         public bool HasWorkflowEditPermission => !IsReadOnly;
-    }
-
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
     }
 }
