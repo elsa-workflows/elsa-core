@@ -28,23 +28,51 @@ public static class WorkflowPermissions
     public const string Tasks = "workflows/tasks";
     /// <summary>Execute activity tests.</summary>
     public const string Tests = "workflows/tests";
-    /// <summary>Browse available activity types and their options.</summary>
+    /// <summary>
+    /// Still guards requesting a registry refresh (<c>GET /descriptors/activities?refresh=true</c>) and resolving an activity
+    /// property's options (<c>POST /descriptors/activities/{activityTypeName}/options/{propertyName}</c>). Reading the
+    /// activity catalog no longer requires it.
+    /// </summary>
     public const string DescriptorsActivities = "workflows/descriptors/activities";
-    /// <summary>Browse available expression types.</summary>
+    /// <summary>
+    /// Formerly guarded browsing the expression types, which now requires only an authenticated caller. Kept so roles that
+    /// already hold it still resolve rather than being reported as invalid at startup.
+    /// </summary>
     public const string DescriptorsExpressions = "workflows/descriptors/expressions";
-    /// <summary>Browse available storage drivers.</summary>
+    /// <summary>
+    /// Formerly guarded browsing the storage drivers, which now requires only an authenticated caller. Kept so roles that
+    /// already hold it still resolve rather than being reported as invalid at startup.
+    /// </summary>
     public const string DescriptorsStorageDrivers = "workflows/descriptors/storage-drivers";
-    /// <summary>Browse available variable types.</summary>
+    /// <summary>
+    /// Formerly guarded browsing the variable types, which now requires only an authenticated caller. Kept so roles that
+    /// already hold it still resolve rather than being reported as invalid at startup.
+    /// </summary>
     public const string DescriptorsVariables = "workflows/descriptors/variables";
-    /// <summary>Browse available commit strategies.</summary>
+    /// <summary>
+    /// Formerly guarded browsing the commit strategies, which now requires only an authenticated caller. Kept so roles that
+    /// already hold it still resolve rather than being reported as invalid at startup.
+    /// </summary>
     public const string DescriptorsCommitStrategies = "workflows/descriptors/commit-strategies";
-    /// <summary>Browse available incident strategies.</summary>
+    /// <summary>
+    /// Formerly guarded browsing the incident strategies, which now requires only an authenticated caller. Kept so roles that
+    /// already hold it still resolve rather than being reported as invalid at startup.
+    /// </summary>
     public const string DescriptorsIncidentStrategies = "workflows/descriptors/incident-strategies";
-    /// <summary>Browse available log persistence strategies.</summary>
+    /// <summary>
+    /// Formerly guarded browsing the log persistence strategies, which now requires only an authenticated caller. Kept so roles that
+    /// already hold it still resolve rather than being reported as invalid at startup.
+    /// </summary>
     public const string DescriptorsLogPersistenceStrategies = "workflows/descriptors/log-persistence-strategies";
-    /// <summary>Browse available output converters.</summary>
+    /// <summary>
+    /// Formerly guarded browsing the output converters, which now requires only an authenticated caller. Kept so roles that
+    /// already hold it still resolve rather than being reported as invalid at startup.
+    /// </summary>
     public const string DescriptorsOutputConverters = "workflows/descriptors/output-converters";
-    /// <summary>Browse available workflow activation strategies.</summary>
+    /// <summary>
+    /// Formerly guarded browsing the workflow activation strategies, which now requires only an authenticated caller. Kept so roles that
+    /// already hold it still resolve rather than being reported as invalid at startup.
+    /// </summary>
     public const string DescriptorsActivationStrategies = "workflows/descriptors/activation-strategies";
     /// <summary>
     /// Formerly guarded the installed-features endpoints, which now require only an authenticated caller. Kept so
@@ -69,7 +97,7 @@ public sealed class WorkflowPermissionsDescriptorProvider : IPermissionDescripto
         new(WorkflowPermissions.Events, ["trigger"], "Workflow events", "Trigger workflow events.", "Workflows"),
         new(WorkflowPermissions.Tasks, ["complete"], "Workflow tasks", "Complete external workflow tasks.", "Workflows"),
         new(WorkflowPermissions.Tests, [CoreVerbs.Execute], "Activity tests", "Execute activity tests.", "Workflows"),
-        new(WorkflowPermissions.DescriptorsActivities, [CoreVerbs.View], "Activity descriptors", "No longer required: any authenticated caller may read this catalog. Retained so existing roles that hold it stay valid.", "Workflows"),
+        new(WorkflowPermissions.DescriptorsActivities, [CoreVerbs.View], "Activity descriptors", "Required to refresh the activity registry (GET /descriptors/activities?refresh=true) and to resolve activity property options. Reading the activity catalog no longer requires it; roles that hold it stay valid.", "Workflows"),
         new(WorkflowPermissions.DescriptorsExpressions, [CoreVerbs.View], "Expression descriptors", "No longer required: any authenticated caller may read this catalog. Retained so existing roles that hold it stay valid.", "Workflows"),
         new(WorkflowPermissions.DescriptorsStorageDrivers, [CoreVerbs.View], "Storage driver descriptors", "No longer required: any authenticated caller may read this catalog. Retained so existing roles that hold it stay valid.", "Workflows"),
         new(WorkflowPermissions.DescriptorsVariables, [CoreVerbs.View], "Variable descriptors", "No longer required: any authenticated caller may read this catalog. Retained so existing roles that hold it stay valid.", "Workflows"),

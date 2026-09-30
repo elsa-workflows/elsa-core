@@ -12,7 +12,10 @@ public static class ResiliencePermissions
 {
     /// <summary>Inspect retry attempt records.</summary>
     public const string Retries = "resilience/retries";
-    /// <summary>Browse available resilience strategies.</summary>
+    /// <summary>
+    /// Formerly guarded browsing the resilience strategies, which now requires only an authenticated caller. Kept so roles
+    /// that already hold it still resolve rather than being reported as invalid at startup.
+    /// </summary>
     public const string Strategies = "resilience/strategies";
     /// <summary>Simulate a resilience response.</summary>
     public const string Simulation = "resilience/simulation";

@@ -20,7 +20,8 @@ internal class Get : ElsaEndpoint<Request, ActivityDescriptor>
     {
         Get("/descriptors/activities/{typeName}");
 
-        // Static metadata about what is installed, which the designer needs to open any definition, so every signed-in user may read it.
+        // The designer needs the activity descriptors to open any definition, so every signed-in user may read them. Besides the installed
+        // activities this includes workflows marked as usable as an activity, whose name, description and inputs are therefore visible too.
         RequireAuthenticatedOnly();
     }
 

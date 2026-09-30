@@ -33,7 +33,26 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
     private const string DefinitionsView = "workflows/definitions:view";
     private const string VersionsPath = "/workflow-definitions/my-definition/versions";
     private const string TypeName = "Elsa.Test";
+    private const string DescriptorsActivitiesView = "workflows/descriptors/activities:view";
+
+    public static readonly TheoryData<string> Paths = new()
+    {
+        "/descriptors/activities",
+        "/descriptors/activities/" + TypeName,
+        "/descriptors/variables",
+        "/descriptors/storage-drivers",
+        "/descriptors/output-converters?sourceType=string&destinationType=string",
+        "/descriptors/expression-descriptors",
+        "/descriptors/workflow-activation-strategies",
+        "/descriptors/incident-strategies",
+        "/descriptors/log-persistence-strategies",
+        "/descriptors/commit-strategies/activities",
+        "/descriptors/commit-strategies/workflows",
+        VersionsPath
+    };
+
     private readonly WebApplication _app;
+    private readonly IActivityRegistryPopulator _registryPopulator = Substitute.For<IActivityRegistryPopulator>();
 
     public DescriptorCatalogAuthorizationTests()
     {
@@ -46,7 +65,7 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
         });
 
         var activityRegistry = Substitute.For<IActivityRegistry>();
-        activityRegistry.ListAll().Returns([]);
+        activityRegistry.ListAll().Returns([new ActivityDescriptor { TypeName = TypeName }]);
         var activityLookup = Substitute.For<IActivityRegistryLookupService>();
         activityLookup.FindAsync(TypeName).Returns(new ActivityDescriptor { TypeName = TypeName });
         var expressionRegistry = Substitute.For<IExpressionDescriptorRegistry>();
@@ -63,7 +82,7 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
 
         builder.Services
             .AddSingleton(activityRegistry)
-            .AddSingleton(Substitute.For<IActivityRegistryPopulator>())
+            .AddSingleton(_registryPopulator)
             .AddSingleton(activityLookup)
             .AddSingleton(expressionRegistry)
             .AddSingleton(storageDrivers)
@@ -108,43 +127,47 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
     }
 
     [Theory]
-    [InlineData("/descriptors/activities")]
-    [InlineData("/descriptors/activities/" + TypeName)]
-    [InlineData("/descriptors/variables")]
-    [InlineData("/descriptors/storage-drivers")]
-    [InlineData("/descriptors/output-converters?sourceType=string&destinationType=string")]
-    [InlineData("/descriptors/expression-descriptors")]
-    [InlineData("/descriptors/workflow-activation-strategies")]
-    [InlineData("/descriptors/incident-strategies")]
-    [InlineData("/descriptors/log-persistence-strategies")]
-    [InlineData("/descriptors/commit-strategies/activities")]
-    [InlineData("/descriptors/commit-strategies/workflows")]
-    [InlineData(VersionsPath)]
-    public async Task UserWhoCanOnlyViewDefinitions_IsAllowed(string path)
+    [MemberData(nameof(Paths))]
+    public async Task AuthenticatedUserWithoutAnyPermission_IsAllowed_ExceptForVersions(string path)
     {
-        var response = await SendAsync(path, DefinitionsView);
+        // The version list is stored data, so it follows workflows/definitions:view; every catalog needs no grant at all.
+        var response = path == VersionsPath ? await SendAsync(path, DefinitionsView) : await SendAsync(path, authenticated: true);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.NotEmpty(body);
+
+        if (path.StartsWith("/descriptors/activities", StringComparison.Ordinal))
+        {
+            Assert.Contains(TypeName, body);
+        }
     }
 
     [Theory]
-    [InlineData("/descriptors/activities")]
-    [InlineData("/descriptors/activities/" + TypeName)]
-    [InlineData("/descriptors/variables")]
-    [InlineData("/descriptors/storage-drivers")]
-    [InlineData("/descriptors/output-converters?sourceType=string&destinationType=string")]
-    [InlineData("/descriptors/expression-descriptors")]
-    [InlineData("/descriptors/workflow-activation-strategies")]
-    [InlineData("/descriptors/incident-strategies")]
-    [InlineData("/descriptors/log-persistence-strategies")]
-    [InlineData("/descriptors/commit-strategies/activities")]
-    [InlineData("/descriptors/commit-strategies/workflows")]
-    [InlineData(VersionsPath)]
+    [MemberData(nameof(Paths))]
     public async Task AnonymousCaller_IsRejected(string path)
     {
         var response = await SendAsync(path);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RefreshingTheActivityRegistry_WithOnlyDefinitionsView_IsForbidden()
+    {
+        var response = await SendAsync("/descriptors/activities?refresh=true", DefinitionsView);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await _registryPopulator.DidNotReceiveWithAnyArgs().PopulateRegistryAsync(default);
+    }
+
+    [Fact]
+    public async Task RefreshingTheActivityRegistry_WithActivityDescriptorsView_IsAllowed()
+    {
+        var response = await SendAsync("/descriptors/activities?refresh=true", DescriptorsActivitiesView);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await _registryPopulator.Received(1).PopulateRegistryAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -155,20 +178,26 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    private Task<HttpResponseMessage> SendAsync(string path, string? permissions = null)
+    private Task<HttpResponseMessage> SendAsync(string path, string? permissions = null, bool authenticated = false)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, path);
 
         if (permissions != null)
         {
-            request.Headers.Add(PermissionHeaderAuthenticationHandler.HeaderName, permissions);
+            request.Headers.Add(PermissionHeaderAuthenticationHandler.PermissionsHeaderName, permissions);
+        }
+
+        if (authenticated || permissions != null)
+        {
+            request.Headers.Add(PermissionHeaderAuthenticationHandler.UserHeaderName, "test-user");
         }
 
         return _app.GetTestClient().SendAsync(request);
     }
 
     /// <summary>
-    /// Authenticates a caller holding the permissions named in a header; a request without the header stays anonymous.
+    /// Authenticates a caller that names itself in a header, holding the permissions named in another header (none when
+    /// absent); a request without the user header stays anonymous.
     /// </summary>
     private sealed class PermissionHeaderAuthenticationHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -177,16 +206,17 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
         : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
     {
         public const string SchemeName = "Header";
-        public const string HeaderName = "X-Test-Permissions";
+        public const string UserHeaderName = "X-Test-User";
+        public const string PermissionsHeaderName = "X-Test-Permissions";
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            if (!Request.Headers.TryGetValue(HeaderName, out var permissions))
+            if (!Request.Headers.ContainsKey(UserHeaderName))
             {
                 return Task.FromResult(AuthenticateResult.NoResult());
             }
 
-            var claims = permissions.ToString().Split(',').Select(x => new Claim(PermissionNames.ClaimType, x));
+            var claims = Request.Headers[PermissionsHeaderName].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries).Select(x => new Claim(PermissionNames.ClaimType, x));
             var identity = new ClaimsIdentity(claims, SchemeName);
 
             return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName)));

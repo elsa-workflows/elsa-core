@@ -233,8 +233,12 @@ it from your roles at your convenience.
 Elsa Studio loads the descriptor catalogs, and a definition's versions, to open the designer. A role holding only
 `workflows/definitions:view` could list definitions but got a 403 on each of those calls when it opened one.
 
-These read-only catalogs now require an authenticated caller and no permission. They describe what is installed,
-not anything stored, so gating them added no protection. Anonymous callers are still rejected.
+These read-only catalogs now require an authenticated caller and no permission. Anonymous callers are still rejected.
+Most describe what is installed, not anything stored, so gating them added no protection. The exception is the
+activity catalog: `GET /descriptors/activities` and `GET /descriptors/activities/{typeName}` also list an activity for
+each stored workflow definition that is marked as usable as an activity, so any authenticated user in the tenant can
+now see those workflows' names, descriptions and inputs. This is deliberate, because instance viewers need those
+descriptors to render workflows that use them.
 
 - `GET /descriptors/activities` and `GET /descriptors/activities/{typeName}`
 - `GET /descriptors/variables`
@@ -255,9 +259,24 @@ read every one of its versions, so the version list disclosed nothing further. A
 reverting versions still require `workflows/definitions/versions:delete` and `:revert`.
 
 The permissions these endpoints used to require (`workflows/descriptors/<kind>:view`, `resilience/strategies:view` and
-`workflows/definitions/versions:view`) no longer gate anything. They stay in the catalog, and in the mapping below, so
-roles that already hold them keep resolving instead of being reported by the startup validator; you can drop them from
-your roles at your convenience.
+`workflows/definitions/versions:view`) no longer gate reading them, with one exception described below. They stay in the
+catalog, and in the mapping below, so roles that already hold them keep resolving instead of being reported by the
+startup validator; you can drop them from your roles at your convenience.
+
+`workflows/descriptors/activities:view` is not one of the permissions you can drop. It still guards two things:
+
+- `GET /descriptors/activities?refresh=true`, which rebuilds the activity registry. The plain read needs no permission,
+  but a caller who asks for a refresh without the permission gets a 403. Elsa Studio requests the refresh on every load
+  of its activity registry, so a role that should open the designer needs this permission as well.
+- `POST /descriptors/activities/{activityTypeName}/options/{propertyName}`, which runs the property's option provider
+  with caller-supplied context.
+
+Some other calls the designer makes are also unchanged, so a role holding only `workflows/definitions:view` still
+needs their own permissions for them:
+
+- `GET /workflow-definitions/{definitionId}/labels` and `GET /labels` (the label permissions)
+- `POST /scripting/javascript/type-definitions/{definitionId}` (the JavaScript scripting permission)
+- `GET /secrets/descriptors` (the secrets permission)
 
 ## Third-party modules
 

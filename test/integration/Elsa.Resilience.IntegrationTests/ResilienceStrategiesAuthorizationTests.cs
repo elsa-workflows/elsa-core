@@ -41,7 +41,7 @@ public class ResilienceStrategiesAuthorizationTests : IAsyncLifetime
         });
 
         var catalog = Substitute.For<IResilienceStrategyCatalog>();
-        catalog.ListAsync(Arg.Any<CancellationToken>()).Returns([]);
+        catalog.ListAsync(Arg.Any<CancellationToken>()).Returns([new HttpResilienceStrategy()]);
         builder.Services.AddOptions<ResilienceOptions>().Configure(o => o.StrategyTypes.Add(typeof(HttpResilienceStrategy)));
         builder.Services
             .AddSingleton(catalog)
@@ -68,11 +68,12 @@ public class ResilienceStrategiesAuthorizationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task UserWhoCanOnlyViewDefinitions_IsAllowed()
+    public async Task AuthenticatedUserWithoutAnyPermission_IsAllowed()
     {
-        var response = await SendAsync("workflows/definitions:view");
+        var response = await SendAsync(authenticated: true);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains(nameof(HttpResilienceStrategy), await response.Content.ReadAsStringAsync());
     }
 
     [Fact]
@@ -83,20 +84,21 @@ public class ResilienceStrategiesAuthorizationTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    private Task<HttpResponseMessage> SendAsync(string? permissions = null)
+    private Task<HttpResponseMessage> SendAsync(bool authenticated = false)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Path);
 
-        if (permissions != null)
+        if (authenticated)
         {
-            request.Headers.Add(PermissionHeaderAuthenticationHandler.HeaderName, permissions);
+            request.Headers.Add(PermissionHeaderAuthenticationHandler.HeaderName, "user-without-grants");
         }
 
         return _app.GetTestClient().SendAsync(request);
     }
 
     /// <summary>
-    /// Authenticates a caller holding the permissions named in a header; a request without the header stays anonymous.
+    /// Authenticates a caller that names itself in a header, with no permission claims at all; a request without the
+    /// header stays anonymous.
     /// </summary>
     private sealed class PermissionHeaderAuthenticationHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -105,17 +107,16 @@ public class ResilienceStrategiesAuthorizationTests : IAsyncLifetime
         : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
     {
         public const string SchemeName = "Header";
-        public const string HeaderName = "X-Test-Permissions";
+        public const string HeaderName = "X-Test-User";
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            if (!Request.Headers.TryGetValue(HeaderName, out var permissions))
+            if (!Request.Headers.ContainsKey(HeaderName))
             {
                 return Task.FromResult(AuthenticateResult.NoResult());
             }
 
-            var claims = permissions.ToString().Split(',').Select(x => new Claim(PermissionNames.ClaimType, x));
-            var identity = new ClaimsIdentity(claims, SchemeName);
+            var identity = new ClaimsIdentity(SchemeName);
 
             return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName)));
         }
