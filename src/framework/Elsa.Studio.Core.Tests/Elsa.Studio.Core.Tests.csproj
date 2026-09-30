@@ -16,6 +16,7 @@
 
     <ItemGroup>
         <Compile Include="..\..\testing\StubPermissionService.cs" Link="Authorization\StubPermissionService.cs" />
+        <Compile Include="..\..\testing\ApiExceptions.cs" Link="Errors\ApiExceptions.cs" />
     </ItemGroup>
 
     <ItemGroup>

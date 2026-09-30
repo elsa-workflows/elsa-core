@@ -4,6 +4,7 @@ using Bunit;
 using Elsa.Studio.Components;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Contracts;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Security.Client;
 using Elsa.Studio.Security.Components;
 using Elsa.Studio.Security.Contracts;
@@ -362,7 +363,7 @@ public sealed class IdentityManagementTests : BunitContext, IAsyncLifetime
         await cut.InvokeAsync(() => cut.FindAll("input[type='password']")[1].Change("replacement-password"));
         await cut.InvokeAsync(() => cut.FindAll("button").Single(x => x.TextContent.Trim() == "Save changes").Click());
 
-        cut.WaitForAssertion(() => Assert.Contains("You are not allowed to perform this user administration action.", cut.Markup));
+        cut.WaitForAssertion(() => Assert.Contains(AuthorizationFailureExtensions.ForbiddenMessage, cut.Markup));
         Assert.DoesNotContain(UserEditorSurface.RoleAssignmentForbiddenMessage, cut.Markup);
     }
 

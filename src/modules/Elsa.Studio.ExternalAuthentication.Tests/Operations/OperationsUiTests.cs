@@ -1,11 +1,14 @@
+using System.Net;
 using Bunit;
 using Elsa.Studio.Contracts;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.ExternalAuthentication.Client;
 using Elsa.Studio.ExternalAuthentication.Components.Operations;
 using Elsa.Studio.ExternalAuthentication.Components.Sessions;
 using Elsa.Studio.ExternalAuthentication.Models;
 using SessionsIndex = Elsa.Studio.ExternalAuthentication.Pages.Sessions.Index;
 using Elsa.Studio.ExternalAuthentication.Services;
+using Elsa.Studio.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 using MudBlazor.Services;
@@ -183,6 +186,20 @@ public sealed class OperationsUiTests : BunitContext, IAsyncLifetime
         Assert.Empty(_dialogProvider.FindComponents<ExternalAuthenticationSessionDetailsDialog>());
     }
 
+    [Theory]
+    [InlineData(HttpStatusCode.Forbidden, AuthorizationFailureExtensions.ForbiddenMessage)]
+    [InlineData(HttpStatusCode.Unauthorized, AuthorizationFailureExtensions.UnauthorizedMessage)]
+    [InlineData(HttpStatusCode.InternalServerError, "External authentication sessions could not be loaded.")]
+    public void SessionsPage_ExplainsARefusedLoad_AndKeepsItsOwnTextForOtherFailures(HttpStatusCode statusCode, string expected)
+    {
+        _operations.ListSessionsException = ApiExceptions.Create(statusCode);
+
+        Render<SessionsIndex>();
+
+        var snackbar = Services.GetRequiredService<ISnackbar>();
+        Assert.Equal(expected, Assert.Single(snackbar.ShownSnackbars).Message);
+    }
+
     [Fact]
     public void SessionsPage_RowClickOpensSafeSessionDetails()
     {
@@ -238,6 +255,7 @@ public sealed class OperationsUiTests : BunitContext, IAsyncLifetime
         public string? LastPreviewHandle { get; private set; }
         public Exception? TestException { get; set; }
         public Exception? PreviewException { get; set; }
+        public Exception? ListSessionsException { get; set; }
 
         public Task<ConnectionTestResult> TestAsync(string connectionId, string ifMatch, CancellationToken cancellationToken = default)
         {
@@ -261,7 +279,7 @@ public sealed class OperationsUiTests : BunitContext, IAsyncLifetime
         }
 
         public Task<ListExternalAuthenticationSessionsResponse> ListSessionsAsync(string? userId = null, string? connectionId = null, string? status = null, string? cursor = null, int pageSize = 25, CancellationToken cancellationToken = default) =>
-            Task.FromResult(new ListExternalAuthenticationSessionsResponse
+            ListSessionsException is not null ? Task.FromException<ListExternalAuthenticationSessionsResponse>(ListSessionsException) : Task.FromResult(new ListExternalAuthenticationSessionsResponse
             {
                 Items = [new ExternalAuthenticationSessionSummary
                 {

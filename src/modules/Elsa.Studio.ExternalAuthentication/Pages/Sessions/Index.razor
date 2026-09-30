@@ -1,6 +1,7 @@
 @page "/security/external-authentication/sessions"
 @attribute [RequirePermission(ExternalAuthenticationPermissions.Sessions, PermissionVerbs.View)]
 @using Elsa.Studio.ExternalAuthentication.Components.Sessions
+@using Elsa.Studio.Extensions
 @using Elsa.Studio.ExternalAuthentication.Services
 @inject Elsa.Studio.Contracts.IBackendApiClientProvider ApiClientProvider
 @inject Elsa.Studio.ExternalAuthentication.Services.IExternalAuthenticationPermissionService Permissions
@@ -173,9 +174,9 @@
             _sessions.AddRange(response.Items);
             _nextCursor = response.NextCursor;
         }
-        catch (Exception)
+        catch (Exception exception)
         {
-            Snackbar.Add("External authentication sessions could not be loaded.", Severity.Error);
+            Snackbar.Add(exception.GetAuthorizationFailureMessage() ?? "External authentication sessions could not be loaded.", Severity.Error);
         }
     }
 
@@ -196,9 +197,9 @@
             Snackbar.Add("External authentication session revoked.", Severity.Success);
             await ReloadAsync();
         }
-        catch (Exception)
+        catch (Exception exception)
         {
-            Snackbar.Add("The external authentication session could not be revoked.", Severity.Error);
+            Snackbar.Add(exception.GetAuthorizationFailureMessage() ?? "The external authentication session could not be revoked.", Severity.Error);
         }
     }
 

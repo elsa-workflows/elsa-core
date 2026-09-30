@@ -13,6 +13,8 @@ using MudBlazor;
 using MudBlazor.Services;
 using Xunit;
 using IdentityLinksPage = Elsa.Studio.ExternalAuthentication.Pages.IdentityLinks.Index;
+using Elsa.Studio.Extensions;
+using Elsa.Studio.Testing;
 
 namespace Elsa.Studio.ExternalAuthentication.Tests.Links;
 
@@ -93,6 +95,17 @@ public sealed class ExternalIdentityLinksTests : BunitContext, IAsyncLifetime
             Assert.Contains("Unlink", _popoverProvider.Markup, StringComparison.Ordinal);
         });
         Assert.DoesNotContain("Edit external identity link", _dialogProvider.Markup, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ARefusedLinkList_ShowsThePermissionGuidance_InsteadOfTheRawException()
+    {
+        _links.ListException = ApiExceptions.Create(HttpStatusCode.Forbidden);
+
+        Render<IdentityLinksPage>();
+
+        var snackbar = Services.GetRequiredService<ISnackbar>();
+        Assert.Equal(AuthorizationFailureExtensions.ForbiddenMessage, Assert.Single(snackbar.ShownSnackbars).Message);
     }
 
     [Fact]
@@ -266,7 +279,7 @@ public sealed class ExternalIdentityLinksTests : BunitContext, IAsyncLifetime
     public async Task ReplacementConflictStaysInTheDialog()
     {
         var cut = RenderPageWithOneLink();
-        _links.ReplaceException = await CreateApiExceptionAsync(HttpStatusCode.Conflict, """{"error":"conflict"}""");
+        _links.ReplaceException = ApiExceptions.Create(HttpStatusCode.Conflict, """{"error":"conflict"}""");
 
         OpenEditDialog(cut);
         _dialogProvider.Find("input[type=password]").Change("conflicting-subject");
@@ -285,7 +298,7 @@ public sealed class ExternalIdentityLinksTests : BunitContext, IAsyncLifetime
     public async Task ReplacementDistinguishesAStaleLinkFromAnUnsupportedBackend(string responseBody, bool closes)
     {
         var cut = RenderPageWithOneLink(enqueueReload: closes);
-        _links.ReplaceException = await CreateApiExceptionAsync(HttpStatusCode.NotFound, responseBody);
+        _links.ReplaceException = ApiExceptions.Create(HttpStatusCode.NotFound, responseBody);
 
         OpenEditDialog(cut);
         _dialogProvider.Find("input[type=password]").Change("replacement-subject");
@@ -312,7 +325,7 @@ public sealed class ExternalIdentityLinksTests : BunitContext, IAsyncLifetime
         var cut = RenderPageWithOneLink();
         var original = _links.ListedLinks.Single();
         _links.ListResults.Enqueue(new([original], null));
-        _links.ReplaceException = await CreateApiExceptionAsync(
+        _links.ReplaceException = ApiExceptions.Create(
             HttpStatusCode.NotFound,
             """{"error":"not_found","message":"The requested resource was not found."}""");
 
@@ -409,17 +422,6 @@ public sealed class ExternalIdentityLinksTests : BunitContext, IAsyncLifetime
         _dialogProvider.WaitForAssertion(() => Assert.Contains("Edit external identity link", _dialogProvider.Markup));
     }
 
-    private static async Task<Refit.ApiException> CreateApiExceptionAsync(HttpStatusCode statusCode, string content)
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Post, "https://elsa.example.test/external-authentication/identity-links/link-1/replace");
-        using var response = new HttpResponseMessage(statusCode)
-        {
-            RequestMessage = request,
-            Content = new StringContent(content)
-        };
-        return await Refit.ApiException.Create(request, HttpMethod.Post, response, new Refit.RefitSettings());
-    }
-
     private sealed class ApiProvider(LinksApi links, ConnectionsApi connections) : IBackendApiClientProvider
     {
         public Uri Url { get; } = new("https://elsa.example.test/elsa/api/");
@@ -445,9 +447,13 @@ public sealed class ExternalIdentityLinksTests : BunitContext, IAsyncLifetime
         public TaskCompletionSource<ExternalIdentityLink>? PrelinkCompletion { get; set; }
         public string? ReplacedLinkId { get; private set; }
         public Exception? ReplaceException { get; set; }
+        public Exception? ListException { get; set; }
 
         public Task<ListExternalIdentityLinksResponse> ListAsync(string? userId = null, string? connectionKey = null, string? cursor = null, int pageSize = 25, CancellationToken cancellationToken = default)
         {
+            if (ListException != null)
+                return Task.FromException<ListExternalIdentityLinksResponse>(ListException);
+
             Cursors.Add(cursor);
             var response = ListResults.Dequeue();
             ListedLinks = response.Items;

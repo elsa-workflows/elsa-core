@@ -3,6 +3,7 @@
 @using System.Text.Json
 @using Elsa.Studio.Contracts
 @using Elsa.Studio.Diagnostics.OpenTelemetry.Contracts
+@using Elsa.Studio.Extensions
 @using Microsoft.AspNetCore.WebUtilities
 @using Microsoft.JSInterop
 @inherits StudioComponentBase
@@ -600,7 +601,7 @@
         }
         catch (Exception ex)
         {
-            _error = ex.Message;
+            _error = ex.ToUserMessage(Localizer);
             StopLiveSubscription();
         }
         finally

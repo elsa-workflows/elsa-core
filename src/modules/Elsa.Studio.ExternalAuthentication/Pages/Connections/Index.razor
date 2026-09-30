@@ -286,7 +286,7 @@
         }
         catch (Exception exception)
         {
-            Snackbar.Add(exception.Message, Severity.Error);
+            Snackbar.Add(ConnectionManagementError.Describe(exception), Severity.Error);
         }
     }
 
@@ -363,7 +363,7 @@
         catch (Exception exception)
         {
             if (_requests.IsCurrent(request))
-                Snackbar.Add(exception.Message, Severity.Error);
+                Snackbar.Add(ConnectionManagementError.Describe(exception), Severity.Error);
         }
         finally
         {
@@ -457,7 +457,7 @@
         }
         catch (Exception exception)
         {
-            Snackbar.Add(exception.Message, Severity.Error);
+            Snackbar.Add(ConnectionManagementError.Describe(exception), Severity.Error);
         }
     }
 
@@ -500,7 +500,7 @@
         }
         catch (Exception exception)
         {
-            Snackbar.Add(exception.Message, Severity.Error);
+            Snackbar.Add(ConnectionManagementError.Describe(exception), Severity.Error);
         }
     }
 }

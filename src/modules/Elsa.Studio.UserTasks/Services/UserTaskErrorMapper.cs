@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.UserTasks.Models;
 using Refit;
 
@@ -38,8 +39,8 @@ public static class UserTaskErrorMapper
         return exception.StatusCode switch
         {
             HttpStatusCode.NotFound => new("not-found", "This task is no longer available.", false, false),
-            HttpStatusCode.Forbidden => new("forbidden", "You are not allowed to perform this action on this task.", false, true),
-            HttpStatusCode.Unauthorized => new("unauthorized", "Your session has expired. Sign in again to continue.", false, true),
+            HttpStatusCode.Forbidden => new("forbidden", AuthorizationFailureExtensions.ForbiddenMessage, false, true),
+            HttpStatusCode.Unauthorized => new("unauthorized", AuthorizationFailureExtensions.UnauthorizedMessage, false, true),
             HttpStatusCode.Conflict => new("conflict", "The task changed since it was loaded. Reload it and try again.", true, false),
             HttpStatusCode.UnprocessableEntity => new("invalid", "The response did not pass validation.", false, false),
             HttpStatusCode.TooManyRequests => new("throttled", "Too many attempts. Wait a moment and try again.", false, false),

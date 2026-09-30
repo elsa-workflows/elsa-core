@@ -167,7 +167,7 @@ public partial class CodeView : IDisposable
         }
         catch (Exception ex)
         {
-            _applyErrorMessage = ex.Message;
+            _applyErrorMessage = ex.ToUserMessage(Localizer);
             await InvokeAsync(StateHasChanged);
             return false;
         }

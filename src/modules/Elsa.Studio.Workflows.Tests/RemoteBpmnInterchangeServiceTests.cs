@@ -3,6 +3,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json.Nodes;
 using Elsa.Studio.Contracts;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Workflows.Client;
 using Elsa.Studio.Workflows.Domain.Models.Bpmn;
 using Elsa.Studio.Workflows.Domain.Services;
@@ -265,6 +266,23 @@ public class RemoteBpmnInterchangeServiceTests : IDisposable
 
         Assert.Equal(BpmnDocumentFailureReason.CapabilityUnsupported, result.Failure!.Reason);
         Assert.Equal(["Gateway_1"], result.Failure.CapabilityRefusal!.ElementIds);
+    }
+
+    [Fact]
+    public async Task AnUnexplainedForbiddenResponse_IsReportedAsThePermissionGuidance_RatherThanItsReasonPhrase()
+    {
+        _api.AnalyzeException = await CreateApiExceptionAsync(HttpStatusCode.Forbidden, "");
+        _api.ExportResponse = new(HttpStatusCode.Forbidden) { Content = new StringContent("") };
+        _api.GetDocumentResponse = new(HttpStatusCode.Forbidden) { Content = new StringContent("") };
+
+        using var stream = new MemoryStream();
+        var analysis = await _service.AnalyzeAsync(stream, "process.bpmn");
+        var export = await _service.ExportAsync("wf-1");
+        var document = await _service.GetDocumentAsync("wf-1");
+
+        Assert.Equal(AuthorizationFailureExtensions.ForbiddenMessage, Assert.Single(analysis.Failure!.Errors).ErrorMessage);
+        Assert.Equal(AuthorizationFailureExtensions.ForbiddenMessage, export.Failure!.Message);
+        Assert.Equal(AuthorizationFailureExtensions.ForbiddenMessage, document.Failure!.Message);
     }
 
     private static HttpResponseMessage Json(HttpStatusCode status, string body, string? eTag = null)

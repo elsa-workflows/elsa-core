@@ -1,6 +1,7 @@
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Resources.WorkflowExecutionContexts.Models;
 using Elsa.Studio.Authorization;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Labels.Client;
 using Elsa.Studio.Labels.Contracts;
 using Elsa.Studio.Labels.Models;
@@ -80,7 +81,7 @@ public partial class WorkflowDefinitionLabelsEditor
             }
             catch (Exception e)
             {
-                Snackbar.Add(e.Message, Severity.Error);
+                Snackbar.Add(e.ToUserMessage(Localizer), Severity.Error);
             }
         }
     }
