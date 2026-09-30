@@ -200,7 +200,7 @@
         <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.73.0"/>
         <PackageVersion Include="Microsoft.SemanticKernel.Connectors.InMemory" Version="1.73.0-preview"/>
         <PackageVersion Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.73.0"/>
-        <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.401"/>
+        <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0"/>
         <PackageVersion Include="MongoDB.Driver" Version="3.5.2"/>
         <PackageVersion Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="3.0.0"/>
         <PackageVersion Include="MongoDB.Driver.Extensions" Version="2.0.2"/>
