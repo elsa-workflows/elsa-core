@@ -228,6 +228,58 @@ still rejected.
 so roles that already hold it keep resolving instead of being reported by the startup validator; you can drop
 it from your roles at your convenience.
 
+## Descriptor catalogs are readable by any signed-in user, and a definition viewer can list versions
+
+Elsa Studio loads the descriptor catalogs, and a definition's versions, to open the designer. A role holding only
+`workflows/definitions:view` could list definitions but got a 403 on each of those calls when it opened one.
+
+These read-only catalogs now require an authenticated caller and no permission. Anonymous callers are still rejected.
+Most describe what is installed, not anything stored, so gating them added no protection. The exception is the
+activity catalog: `GET /descriptors/activities` and `GET /descriptors/activities/{typeName}` also list an activity for
+each stored workflow definition that is marked as usable as an activity, so any authenticated user in the tenant can
+now see those workflows' names, descriptions and inputs. This is deliberate, because instance viewers need those
+descriptors to render workflows that use them.
+
+- `GET /descriptors/activities` and `GET /descriptors/activities/{typeName}`
+- `GET /descriptors/variables`
+- `GET /descriptors/storage-drivers`
+- `GET /descriptors/output-converters`
+- `GET /descriptors/expression-descriptors`
+- `GET /descriptors/workflow-activation-strategies`
+- `GET /descriptors/incident-strategies`
+- `GET /descriptors/log-persistence-strategies`
+- `GET /descriptors/commit-strategies/activities` and `GET /descriptors/commit-strategies/workflows`
+- `GET /resilience/strategies`
+
+`GET /workflow-definitions/{definitionId}/versions` now requires `workflows/definitions:view` instead of
+`workflows/definitions/versions:view`. It is not a static catalog, but a caller who can read a definition could already
+read every one of its versions, so the version list disclosed nothing further. A role that held
+`workflows/definitions/versions:view` without `workflows/definitions:view` can no longer list versions; grant
+`workflows/definitions:view`, which the `read:workflow-definitions` mapping below already includes. Deleting and
+reverting versions still require `workflows/definitions/versions:delete` and `:revert`.
+
+The permissions these endpoints used to require (`workflows/descriptors/<kind>:view`, `resilience/strategies:view` and
+`workflows/definitions/versions:view`) no longer gate reading them, with one exception described below. They stay in the
+catalog, and in the mapping below, so roles that already hold them keep resolving instead of being reported by the
+startup validator; you can drop them from your roles at your convenience.
+
+`workflows/descriptors/activities:view` is not one of the permissions you can drop. It still guards two things:
+
+- `GET /descriptors/activities?refresh=true`, which rebuilds the activity registry from the stored definitions. The flag
+  takes effect for a caller holding this permission or `workflows/definitions:view`; any other caller is not rejected,
+  the flag is ignored and the current registry is returned. Elsa Studio sends the flag on every load, which in a cluster
+  is how a node picks up a workflow-as-activity published through another node, so a role holding only
+  `workflows/definitions:view` opens the designer with a current catalog.
+- `POST /descriptors/activities/{activityTypeName}/options/{propertyName}`, which runs the property's option provider
+  with caller-supplied context.
+
+Some other calls the designer makes are also unchanged, so a role holding only `workflows/definitions:view` still
+needs their own permissions for them:
+
+- `GET /workflow-definitions/{definitionId}/labels` and `GET /labels` (the label permissions)
+- `POST /scripting/javascript/type-definitions/{definitionId}` (the JavaScript scripting permission)
+- `GET /secrets/descriptors` (the secrets permission)
+
 ## Third-party modules
 
 Modules outside this repository keep compiling. `ConfigurePermissions(params string[])` remains available but obsolete, and a permission that resolves to no registered descriptor registers an implicit one marked unverified, logs a warning, and appears as such in the catalog. The module keeps working and the gap stays visible.

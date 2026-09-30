@@ -1,4 +1,3 @@
-using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Workflows.CommitStates;
@@ -17,7 +16,9 @@ internal class List(ICommitStrategyRegistry registry) : ElsaEndpointWithoutReque
     public override void Configure()
     {
         Get("/descriptors/commit-strategies/activities");
-        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsCommitStrategies, CoreVerbs.View);
+
+        // Static metadata about what is installed, which the designer needs to open any definition, so every signed-in user may read it.
+        RequireAuthenticatedOnly();
     }
 
     public override Task<ListResponse<CommitStrategyDescriptor>> ExecuteAsync(CancellationToken cancellationToken)
