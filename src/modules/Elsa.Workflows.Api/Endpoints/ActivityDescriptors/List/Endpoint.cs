@@ -30,14 +30,16 @@ internal class List(IActivityRegistry registry, IActivityRegistryPopulator regis
         return response;
     }
 
-    // Studio always sends refresh=true. Rebuilding the registry is expensive, so the flag is honoured only for callers
-    // holding the activities permission and silently ignored for everyone else, who get the current registry.
+    // Studio sends refresh=true on every load, and in a cluster that is how a node picks up workflows published through
+    // another node. Rebuilding is expensive and reads the stored definitions, so the flag is honoured for callers who may
+    // read definitions or hold the activities permission, and silently ignored for everyone else, who get the current registry.
     private bool CanRefresh()
     {
         if (!EndpointSecurityOptions.SecurityIsEnabled)
             return true;
 
         var evaluator = HttpContext.GetPermissionEvaluator();
-        return evaluator.HasPermission(User, Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsActivities, CoreVerbs.View);
+        return evaluator.HasPermission(User, Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsActivities, CoreVerbs.View)
+               || evaluator.HasPermission(User, Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.View);
     }
 }

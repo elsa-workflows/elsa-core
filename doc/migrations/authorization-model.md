@@ -265,11 +265,11 @@ startup validator; you can drop them from your roles at your convenience.
 
 `workflows/descriptors/activities:view` is not one of the permissions you can drop. It still guards two things:
 
-- `GET /descriptors/activities?refresh=true`, which rebuilds the activity registry. The permission now only makes the
-  flag take effect: a caller without it is not rejected, the flag is ignored and the current registry is returned. Elsa
-  Studio sends the flag on every load, so a role holding only `workflows/definitions:view` can still open the designer.
-  Without the permission a newly published workflow-as-activity still appears, because publishing updates the registry
-  itself; the same goes for a definitions reload. Only a rebuild from scratch waits for a caller who holds the permission.
+- `GET /descriptors/activities?refresh=true`, which rebuilds the activity registry from the stored definitions. The flag
+  takes effect for a caller holding this permission or `workflows/definitions:view`; any other caller is not rejected,
+  the flag is ignored and the current registry is returned. Elsa Studio sends the flag on every load, which in a cluster
+  is how a node picks up a workflow-as-activity published through another node, so a role holding only
+  `workflows/definitions:view` opens the designer with a current catalog.
 - `POST /descriptors/activities/{activityTypeName}/options/{propertyName}`, which runs the property's option provider
   with caller-supplied context.
 

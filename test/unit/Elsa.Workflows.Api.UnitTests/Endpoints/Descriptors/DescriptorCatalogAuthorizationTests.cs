@@ -72,6 +72,7 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
     ];
 
     public static readonly TheoryData<string> CatalogPaths = new(CatalogPathList);
+    public static readonly TheoryData<string> RefreshPermissions = new(DefinitionsView, DescriptorsActivitiesView);
     public static readonly TheoryData<string> AuthenticatedOnlyPaths = new([.. CatalogPathList, VersionsPath]);
 
     private readonly bool _wasSecurityEnabled = EndpointSecurityOptions.SecurityIsEnabled;
@@ -188,19 +189,20 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task RefreshingTheActivityRegistry_WithOnlyDefinitionsView_IgnoresTheFlag()
+    public async Task RefreshingTheActivityRegistry_WithoutAPermissionThatAllowsIt_IgnoresTheFlag()
     {
-        var response = await SendAsync("/descriptors/activities?refresh=true", DefinitionsView);
+        var response = await SendAsync("/descriptors/activities?refresh=true", InstancesView);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains(TypeName, await response.Content.ReadAsStringAsync());
         await _registryPopulator.DidNotReceiveWithAnyArgs().PopulateRegistryAsync(default);
     }
 
-    [Fact]
-    public async Task RefreshingTheActivityRegistry_WithActivityDescriptorsView_IsAllowed()
+    [Theory]
+    [MemberData(nameof(RefreshPermissions))]
+    public async Task RefreshingTheActivityRegistry_WithDefinitionsOrActivityDescriptorsView_Refreshes(string permission)
     {
-        var response = await SendAsync("/descriptors/activities?refresh=true", DescriptorsActivitiesView);
+        var response = await SendAsync("/descriptors/activities?refresh=true", permission);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains(TypeName, await response.Content.ReadAsStringAsync());
