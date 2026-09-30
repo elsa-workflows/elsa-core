@@ -29,25 +29,27 @@ public class DefaultDashboardProvider(
         var unauthorized = DashboardCapabilityStatus.Unauthorized;
         var runtime = MergeSection(contributions, skipped, canRead, x => x.Runtime, x => x.Runtime, MergeRuntime, new() { Capability = unauthorized });
         var workflowInstances = MergeSection(contributions, skipped, canRead, x => x.WorkflowInstances, x => x.WorkflowInstances, MergeWorkflowMetrics, new() { Capability = unauthorized });
-        var structuredLogs = MergeSection(contributions, skipped, canRead, x => Installed(x.Diagnostics?.StructuredLogs, y => y.Capability), x => x.StructuredLogs, MergeStructuredLogs, new() { Capability = unauthorized });
-        var consoleLogs = MergeSection(contributions, skipped, canRead, x => Installed(x.Diagnostics?.ConsoleLogs, y => y.Capability), x => x.ConsoleLogs, MergeConsoleLogs, new() { Capability = unauthorized });
+        var structuredLogs = MergeSection(contributions, skipped, canRead, x => Installed(x.Diagnostics?.StructuredLogs, y => y.Capability), x => x.StructuredLogs, summaries => summaries.FirstOrDefault() ?? new(), new() { Capability = unauthorized });
+        var consoleLogs = MergeSection(contributions, skipped, canRead, x => Installed(x.Diagnostics?.ConsoleLogs, y => y.Capability), x => x.ConsoleLogs, summaries => summaries.FirstOrDefault() ?? new(), new() { Capability = unauthorized });
         var metrics = contributions.SelectMany(x => x.Contribution.Metrics).Where(x => canRead(x.Permission)).OrderBy(x => x.Order).ThenBy(x => x.Id, StringComparer.Ordinal).ToList();
         var panels = contributions.SelectMany(x => x.Contribution.Panels).Where(x => canRead(x.Permission)).OrderBy(x => x.Order).ThenBy(x => x.Id, StringComparer.Ordinal).ToList();
 
-        // A caller who may read nothing learns nothing about the deployment either; the range is the caller's own.
-        var withheld = new[] { runtime.Capability, workflowInstances.Capability, structuredLogs.Capability, consoleLogs.Capability }.All(x => x.Status == unauthorized.Status)
-                       && metrics.Count == 0 && panels.Count == 0;
+        // A caller who may read nothing that was returned, and not the whole overview either, learns nothing about the
+        // deployment: no names, and no hint of which modules are installed. The range is the caller's own.
+        var withheld = !runtime.Readable && !workflowInstances.Readable && !structuredLogs.Readable && !consoleLogs.Readable
+                       && metrics.Count == 0 && panels.Count == 0 && !canRead(null);
+        T Section<T>(OverviewSection<T> section) => withheld ? section.Denied : section.Value;
 
         return new()
         {
             BackendName = withheld ? null : environment.ApplicationName,
             EnvironmentName = withheld ? null : environment.EnvironmentName,
-            Runtime = runtime,
-            WorkflowInstances = workflowInstances,
+            Runtime = Section(runtime),
+            WorkflowInstances = Section(workflowInstances),
             Diagnostics = new()
             {
-                StructuredLogs = structuredLogs,
-                ConsoleLogs = consoleLogs
+                StructuredLogs = Section(structuredLogs),
+                ConsoleLogs = Section(consoleLogs)
             },
             Metrics = metrics,
             Panels = panels,
@@ -63,7 +65,7 @@ public class DefaultDashboardProvider(
         var granularity = rangeResolver.ResolveGranularity(request.Granularity, range.Key);
         var context = new DashboardTrendContext(range, granularity, request.IncludeSystem, cancellationToken, EnvironmentName: environment.EnvironmentName);
         var canRead = DashboardAccess.WithDefault(request.CanRead);
-        var responses = (await CollectAsync(canRead, contributor => contributor.GetWorkflowTrendsAsync(context).AsTask(), cancellationToken))
+        var responses = (await CollectAsync(contributor => contributor.GetWorkflowTrendsAsync(context).AsTask(), cancellationToken))
             .Where(x => canRead(x.Permission))
             .ToList();
         var buckets = responses
@@ -97,7 +99,7 @@ public class DefaultDashboardProvider(
         var range = rangeResolver.Resolve(query.Range);
         var context = CreateContext(range, query.IncludeSystem, cancellationToken);
         var canRead = DashboardAccess.WithDefault(query.CanRead);
-        var findings = (await CollectManyAsync(canRead, contributor => contributor.GetFindingsAsync(context).AsTask(), cancellationToken))
+        var findings = (await CollectManyAsync(contributor => contributor.GetFindingsAsync(context).AsTask(), cancellationToken))
             .Where(x => canRead(x.Permission));
 
         return new()
@@ -116,7 +118,7 @@ public class DefaultDashboardProvider(
         var range = rangeResolver.Resolve(query.Range);
         var context = new DashboardListContext(range, Math.Clamp(take, 1, 100), query.IncludeSystem, cancellationToken, EnvironmentName: environment.EnvironmentName);
         var canRead = DashboardAccess.WithDefault(query.CanRead);
-        var responses = (await CollectAsync(canRead, contributor => contributor.GetRecentActivityAsync(context).AsTask(), cancellationToken))
+        var responses = (await CollectAsync(contributor => contributor.GetRecentActivityAsync(context).AsTask(), cancellationToken))
             .Where(x => canRead(x.Permission))
             .ToList();
         var items = responses
@@ -142,7 +144,7 @@ public class DefaultDashboardProvider(
         var take = Math.Clamp(request.Take, 1, 50);
         var context = new DashboardHotspotsContext(range, metric, take, request.IncludeSystem, cancellationToken, EnvironmentName: environment.EnvironmentName);
         var canRead = DashboardAccess.WithDefault(request.CanRead);
-        var responses = (await CollectAsync(canRead, contributor => contributor.GetWorkflowHotspotsAsync(context).AsTask(), cancellationToken))
+        var responses = (await CollectAsync(contributor => contributor.GetWorkflowHotspotsAsync(context).AsTask(), cancellationToken))
             .Where(x => canRead(x.Permission))
             .ToList();
         var items = responses
@@ -180,9 +182,10 @@ public class DefaultDashboardProvider(
         new(range, includeSystem, cancellationToken, EnvironmentName: environment.EnvironmentName);
 
     /// <summary>
-    /// The contributors worth invoking for this caller, in order. A contributor that declared its permissions and whose
-    /// permissions the caller may all not read has nothing the caller can see, so it is not invoked; it is returned in
-    /// <paramref name="skipped"/> so the sections it declared can still be reported as withheld.
+    /// The contributors worth invoking for the overview, in order. A contributor that declared its overview permissions
+    /// and whose permissions the caller may all not read has nothing the caller can see in the overview, so it is not
+    /// invoked; it is returned in <paramref name="skipped"/> so the sections it declared can still be reported as withheld.
+    /// Only the overview skips: every other call invokes every contributor and filters afterwards.
     /// </summary>
     private IReadOnlyCollection<IDashboardContributor> ReadableContributors(Func<DashboardPermission?, bool> canRead, out IReadOnlyCollection<DashboardOverviewPermissions> skipped)
     {
@@ -203,16 +206,13 @@ public class DefaultDashboardProvider(
         return readable;
     }
 
-    private IReadOnlyCollection<IDashboardContributor> ReadableContributors(Func<DashboardPermission?, bool> canRead) => ReadableContributors(canRead, out _);
-
     private async Task<IReadOnlyCollection<T>> CollectAsync<T>(
-        Func<DashboardPermission?, bool> canRead,
         Func<IDashboardContributor, Task<T?>> action,
         CancellationToken cancellationToken)
         where T : class
     {
         var results = new List<T>();
-        foreach (var contributor in ReadableContributors(canRead))
+        foreach (var contributor in OrderedContributors)
         {
             var result = await ExecuteContributorAsync(contributor, action, cancellationToken);
             if (result != null)
@@ -223,12 +223,11 @@ public class DefaultDashboardProvider(
     }
 
     private async Task<IReadOnlyCollection<T>> CollectManyAsync<T>(
-        Func<DashboardPermission?, bool> canRead,
         Func<IDashboardContributor, Task<IReadOnlyCollection<T>>> action,
         CancellationToken cancellationToken)
     {
         var results = new List<T>();
-        foreach (var contributor in ReadableContributors(canRead))
+        foreach (var contributor in OrderedContributors)
         {
             var result = await ExecuteContributorAsync(contributor, action, cancellationToken);
             if (result != null)
@@ -259,18 +258,18 @@ public class DefaultDashboardProvider(
 
     /// <summary>
     /// Merges the contributions of one overview section the caller may read. A section some contributor supplied, or
-    /// declared and was skipped for, but the caller may not read at all is <paramref name="unauthorized"/>, never the
+    /// declared and was skipped for, but the caller may not read at all is <paramref name="denied"/>, never the
     /// default, so a denied section is told apart from one nobody supplied. A section supplied without a declared
     /// permission needs <c>dashboard:view</c>.
     /// </summary>
-    private static T MergeSection<T>(
+    private static OverviewSection<T> MergeSection<T>(
         IEnumerable<(DashboardOverviewPermissions? Declared, DashboardOverviewContribution Contribution)> contributions,
         IReadOnlyCollection<DashboardOverviewPermissions> skipped,
         Func<DashboardPermission?, bool> canRead,
         Func<DashboardOverviewContribution, T?> select,
         Func<DashboardOverviewPermissions, DashboardPermission?> permissionOf,
         Func<IReadOnlyCollection<T>, T> merge,
-        T unauthorized)
+        T denied)
         where T : class
     {
         var supplied = contributions
@@ -278,10 +277,17 @@ public class DefaultDashboardProvider(
             .Where(x => x.Section != null)
             .ToList();
         var readable = supplied.Where(x => canRead(x.Permission)).Select(x => x.Section!).ToList();
-        var skippedSupply = skipped.Any(x => permissionOf(x) != null);
 
-        return readable.Count == 0 && (supplied.Count > 0 || skippedSupply) ? unauthorized : merge(readable);
+        if (readable.Count > 0)
+            return new(merge(readable), denied, true);
+
+        var wasWithheld = supplied.Count > 0 || skipped.Any(x => permissionOf(x) != null);
+
+        return new(wasWithheld ? denied : merge(readable), denied, false);
     }
+
+    /// <summary>A merged overview section, the <paramref name="Denied"/> form of it, and whether the caller read any of it.</summary>
+    private sealed record OverviewSection<T>(T Value, T Denied, bool Readable);
 
     // A diagnostics slice that reports NotInstalled was not supplied: every contribution carries both slices.
     private static T? Installed<T>(T? section, Func<T, DashboardCapabilityStatus> capability) where T : class =>
@@ -301,12 +307,6 @@ public class DefaultDashboardProvider(
             IncidentBearing = metrics.Sum(x => x.IncidentBearing),
             AverageDuration = AverageDuration(metrics.Select(x => x.AverageDuration))
         };
-
-    private static DashboardStructuredLogSummary MergeStructuredLogs(IReadOnlyCollection<DashboardStructuredLogSummary> summaries) =>
-        summaries.FirstOrDefault() ?? new();
-
-    private static DashboardConsoleLogSummary MergeConsoleLogs(IReadOnlyCollection<DashboardConsoleLogSummary> summaries) =>
-        summaries.FirstOrDefault() ?? new();
 
     private static TimeSpan? AverageDuration(IEnumerable<TimeSpan?> durations)
     {

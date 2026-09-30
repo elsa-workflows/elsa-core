@@ -9,12 +9,10 @@ public interface IDashboardContributor
     int Order { get; }
 
     /// <summary>
-    /// Optional, up front: the permission guarding each overview section this contributor supplies. A caller reads a
-    /// section with the permission declared here or with <c>dashboard:view</c>. The dashboard does not invoke a
-    /// contributor that declares permissions when the caller may read none of them, and marks the sections it
-    /// declared as unauthorized. Declare every permission used by anything the contributor supplies: its findings, trends,
-    /// recent activity and hotspots as well as the overview. When <c>null</c> the contributor always runs, and whatever
-    /// it supplies without a permission needs <c>dashboard:view</c>.
+    /// Optional, up front: the permissions of the overview sections this contributor supplies; used only to skip the
+    /// overview call for a caller who can read none of them; an undeclared section still needs <c>dashboard:view</c>.
+    /// The other calls (findings, trends, recent activity and hotspots) always invoke the contributor and filter by the
+    /// permission on what it returns. When <c>null</c> the contributor always runs.
     /// </summary>
     DashboardOverviewPermissions? OverviewPermissions => null;
 

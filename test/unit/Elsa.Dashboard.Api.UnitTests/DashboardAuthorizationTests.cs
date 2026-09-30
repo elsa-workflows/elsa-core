@@ -4,8 +4,10 @@ using System.Text.Json;
 using Elsa.Authorization;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
+using Elsa.Dashboard.Api.Authorization;
 using Elsa.Dashboard.Api.Services;
 using Elsa.Testing.Shared.Authorization;
+using Elsa.Workflows.Api.Permissions;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
@@ -24,11 +26,8 @@ namespace Elsa.Dashboard.Api.UnitTests;
 [Collection(nameof(EndpointSecurityCollection))]
 public class DashboardAuthorizationTests : IAsyncLifetime
 {
-    private static readonly string WholeOverviewPermission = new Permission(WholeOverview.Resource, WholeOverview.Verb).ToString();
-    private static readonly string RuntimePermission = new Permission(RuntimeView.Resource, RuntimeView.Verb).ToString();
-    private static readonly string InstancesPermission = new Permission(InstancesView.Resource, InstancesView.Verb).ToString();
-    private static readonly string StructuredLogsPermission = new Permission(StructuredLogsView.Resource, StructuredLogsView.Verb).ToString();
-    private static readonly string ConsoleLogsPermission = new Permission(ConsoleLogsView.Resource, ConsoleLogsView.Verb).ToString();
+    private static readonly string WholeOverviewPermission = Format(WholeOverview);
+    private static readonly string InstancesPermission = Format(InstancesView);
 
     private static readonly (HttpMethod Method, string Path)[] InstanceEndpointList =
     [
@@ -45,23 +44,26 @@ public class DashboardAuthorizationTests : IAsyncLifetime
     public static readonly TheoryData<string, string> InstanceEndpoints = ToTheoryData(InstanceEndpointList);
     public static readonly TheoryData<string, string> AllEndpoints = ToTheoryData(InstanceEndpointList.Append(OverviewEndpoint));
 
+    /// <summary>Every instance endpoint crossed with each permission that reads instance data.</summary>
+    public static readonly TheoryData<string, string, string> InstanceEndpointsWithInstanceAccess = ToTheoryData(
+        from endpoint in InstanceEndpointList
+        from permission in new[] { InstancesPermission, WholeOverviewPermission }
+        select (endpoint.Method, endpoint.Path, permission));
+
     /// <summary>Every instance endpoint crossed with each permission that guards only another section.</summary>
     public static readonly TheoryData<string, string, string> InstanceEndpointsWithAnotherSectionsPermission = ToTheoryData(
         from endpoint in InstanceEndpointList
-        from permission in new[] { RuntimePermission, StructuredLogsPermission, ConsoleLogsPermission }
+        from permission in new[] { RuntimeView, StructuredLogsView, ConsoleLogsView }.Select(Format)
         select (endpoint.Method, endpoint.Path, permission));
 
     /// <summary>The sections a caller holding only the permission reads; every other section is withheld.</summary>
-    public static readonly TheoryData<string, SectionAccess> ReadableSections = new()
-    {
-        { RuntimePermission, new() { Runtime = true } },
-        { InstancesPermission, new() { Instances = true } },
-        { StructuredLogsPermission, new() { StructuredLogs = true } },
-        { ConsoleLogsPermission, new() { ConsoleLogs = true } },
-        { WholeOverviewPermission, SectionAccess.All },
-        { "workflows/*:view", new() { Runtime = true, Instances = true } },
-        { "*:view", SectionAccess.All }
-    };
+    public static readonly TheoryData<string, SectionAccess> ReadableSections = SectionAccess.BySinglePermission.Select(x => (Format(x.Permission), x.Readable))
+        .Concat([
+            (WholeOverviewPermission, SectionAccess.All),
+            ("workflows/*:view", new SectionAccess { Runtime = true, Instances = true }),
+            ("*:view", SectionAccess.All)
+        ])
+        .ToTheoryData();
 
     private readonly bool _wasSecurityEnabled = EndpointSecurityOptions.SecurityIsEnabled;
     private readonly WebApplication _app;
@@ -152,22 +154,13 @@ public class DashboardAuthorizationTests : IAsyncLifetime
     }
 
     [Theory]
-    [MemberData(nameof(InstanceEndpoints))]
-    public async Task InstanceEndpoint_WithInstancesView_IsAllowed(string method, string path)
+    [MemberData(nameof(InstanceEndpointsWithInstanceAccess))]
+    public async Task InstanceEndpoint_WithInstancesViewOrDashboardView_IsAllowed(string method, string path, string permission)
     {
-        var response = await SendAsync(new(method), path, InstancesPermission);
+        var response = await SendAsync(new(method), path, permission);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotEmpty(await response.Content.ReadAsStringAsync());
-    }
-
-    [Theory]
-    [MemberData(nameof(InstanceEndpoints))]
-    public async Task InstanceEndpoint_WithDashboardView_IsAllowed(string method, string path)
-    {
-        var response = await SendAsync(new(method), path, WholeOverviewPermission);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Theory]
@@ -220,16 +213,27 @@ public class DashboardAuthorizationTests : IAsyncLifetime
     }
 
     [Theory]
-    [InlineData("/dashboard/overview", "metrics")]
-    [InlineData("/dashboard/needs-attention", "findings")]
-    public async Task Response_NeverSerializesThePermissionsThatGuardIt(string path, string collection)
+    [InlineData("GET", "/dashboard/overview", "metrics")]
+    [InlineData("GET", "/dashboard/needs-attention", "findings")]
+    [InlineData("POST", "/dashboard/workflow-trends", "buckets")]
+    [InlineData("GET", "/dashboard/recent-activity", "items")]
+    [InlineData("POST", "/dashboard/workflow-hotspots", "items")]
+    public async Task Response_NeverSerializesThePermissionsThatGuardIt(string method, string path, string collection)
     {
-        var response = await SendAsync(HttpMethod.Get, path, WholeOverviewPermission);
+        var response = await SendAsync(new(method), path, WholeOverviewPermission);
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
         Assert.NotEmpty(json.RootElement.GetProperty(collection).EnumerateArray());
         Assert.DoesNotContain("permission", json.RootElement.GetRawText(), StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void DashboardAccess_PinsTheInstancesPermissionToTheWorkflowsModule()
+    {
+        Assert.Equal(new DashboardPermission(WorkflowPermissions.Instances, CoreVerbs.View), DashboardAccess.WorkflowInstances);
+    }
+
+    private static string Format(DashboardPermission permission) => new Permission(permission.Resource, permission.Verb).ToString();
 
     private static TheoryData<string, string> ToTheoryData(IEnumerable<(HttpMethod Method, string Path)> endpoints)
     {

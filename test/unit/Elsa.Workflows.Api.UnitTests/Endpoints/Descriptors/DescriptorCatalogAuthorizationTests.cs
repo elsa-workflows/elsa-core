@@ -1,9 +1,8 @@
 using System.Net;
-using System.Security.Claims;
-using System.Text.Encodings.Web;
 using Elsa.Authorization;
 using Elsa.Common.Serialization;
 using Elsa.Expressions.Contracts;
+using Elsa.Testing.Shared.Authorization;
 using Elsa.Workflows.Api.Permissions;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.LogPersistence;
@@ -17,7 +16,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using WorkflowsApiFeature = Elsa.Workflows.Api.Features.WorkflowsApiFeature;
@@ -260,34 +258,6 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
         }
 
         return _app.GetTestClient().SendAsync(request);
-    }
-
-    /// <summary>
-    /// Authenticates a caller that names itself in a header, holding the permissions named in another header (none when
-    /// absent); a request without the user header stays anonymous.
-    /// </summary>
-    private sealed class PermissionHeaderAuthenticationHandler(
-        IOptionsMonitor<AuthenticationSchemeOptions> options,
-        ILoggerFactory logger,
-        UrlEncoder encoder)
-        : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
-    {
-        public const string SchemeName = "Header";
-        public const string UserHeaderName = "X-Test-User";
-        public const string PermissionsHeaderName = "X-Test-Permissions";
-
-        protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-        {
-            if (!Request.Headers.ContainsKey(UserHeaderName))
-            {
-                return Task.FromResult(AuthenticateResult.NoResult());
-            }
-
-            var claims = Request.Headers[PermissionsHeaderName].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries).Select(x => new Claim(PermissionNames.ClaimType, x));
-            var identity = new ClaimsIdentity(claims, SchemeName);
-
-            return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName)));
-        }
     }
 }
 

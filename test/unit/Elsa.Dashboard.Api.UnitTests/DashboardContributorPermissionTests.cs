@@ -1,4 +1,5 @@
 using ConsoleLogStreaming.Core;
+using Elsa.Common.Models;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
 using Elsa.Diagnostics.ConsoleLogs.Dashboard;
@@ -25,9 +26,7 @@ public class DashboardContributorPermissionTests
     [Fact]
     public async Task WorkflowContributor_GuardsRuntimeAndInstancesAndTheirFindings()
     {
-        var store = Substitute.For<IWorkflowInstanceStore>();
-        store.CountAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>()).Returns(1L);
-        store.SummarizeManyAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>()).Returns(Array.Empty<WorkflowInstanceSummary>());
+        var store = CreateStore();
         var runtime = Substitute.For<IWorkflowRuntimeAdminService>();
         runtime.GetStatus().Returns(new RuntimeAdminStatus(
             QuiescenceState.Initial("generation") with { Reason = QuiescenceReason.AdministrativePause },
@@ -39,6 +38,21 @@ public class DashboardContributorPermissionTests
             permissions => Assert.Equal((RuntimeView, InstancesView), (permissions.Runtime!.Value, permissions.WorkflowInstances!.Value)),
             RuntimeView,
             InstancesView);
+    }
+
+    [Fact]
+    public async Task WorkflowContributor_GuardsItsTrendsRecentActivityAndHotspotsWithInstancesView()
+    {
+        var contributor = new WorkflowDashboardContributor(CreateStore(), Substitute.For<IWorkflowRuntimeAdminService>());
+        var range = _context.Range;
+
+        var trends = await contributor.GetWorkflowTrendsAsync(new(range, DashboardTrendGranularity.Hour, false, CancellationToken.None));
+        var activity = await contributor.GetRecentActivityAsync(new(range, 10, false, CancellationToken.None));
+        var hotspots = await contributor.GetWorkflowHotspotsAsync(new(range, DashboardHotspotMetric.Faults, 10, false, CancellationToken.None));
+
+        Assert.Equal(InstancesView, trends!.Permission);
+        Assert.Equal(InstancesView, activity!.Permission);
+        Assert.Equal(InstancesView, hotspots!.Permission);
     }
 
     [Fact]
@@ -54,6 +68,16 @@ public class DashboardContributorPermissionTests
             new ConsoleLogsDashboardContributor(Substitute.For<IConsoleLogProvider>()),
             permissions => Assert.Equal(ConsoleLogsView, permissions.ConsoleLogs),
             ConsoleLogsView);
+
+    private static IWorkflowInstanceStore CreateStore()
+    {
+        var store = Substitute.For<IWorkflowInstanceStore>();
+        store.CountAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>()).Returns(1L);
+        store.SummarizeManyAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>()).Returns(Array.Empty<WorkflowInstanceSummary>());
+        store.SummarizeManyAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<PageArgs>(), Arg.Any<WorkflowInstanceOrder<DateTimeOffset?>>(), Arg.Any<CancellationToken>())
+            .Returns(new Page<WorkflowInstanceSummary>([], 0));
+        return store;
+    }
 
     private async Task AssertGuardsAsync(IDashboardContributor contributor, Action<DashboardOverviewPermissions> assertDeclared, params DashboardPermission[] findingPermissions)
     {

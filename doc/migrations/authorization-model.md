@@ -315,10 +315,12 @@ and stays hidden from callers holding only a narrower permission until it declar
 activity and hotspot rows: a caller holding only `workflows/instances:view` receives only the rows of contributions
 that declare `workflows/instances:view`, which the built-in workflow contributor does.
 
-A contributor that declares `OverviewPermissions` is not invoked for a caller who holds none of them, so a signed-in
-account with no dashboard permissions costs no database counts, runtime queries or log queries; the sections it declared
-come back `Unauthorized`. A contributor that declares nothing always runs and is filtered afterwards. When every section is
-withheld the overview also leaves `backendName` and `environmentName` empty.
+`OverviewPermissions` lists the permissions of the overview sections a contributor supplies and is used only to skip the
+overview call for a caller who holds none of them, so a signed-in account with no dashboard permissions costs no database
+counts, runtime queries or log queries; an undeclared section still needs `dashboard:view`. Needs-attention, trends,
+recent activity and hotspots always invoke every contributor and filter afterwards by the `Permission` on what it returns.
+A caller who can read nothing in the overview gets every section as `Unauthorized`, including the ones no module supplies,
+so the response does not reveal which modules are installed, and `backendName` and `environmentName` are left empty.
 
 ## Third-party modules
 

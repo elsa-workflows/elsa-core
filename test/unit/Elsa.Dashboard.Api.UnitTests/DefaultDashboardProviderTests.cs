@@ -1,16 +1,16 @@
-using Elsa.Authorization;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
-using Elsa.Dashboard.Api.Authorization;
 using Elsa.Dashboard.Api.Services;
 using Elsa.Diagnostics.ConsoleLogs.Dashboard;
 using Elsa.Diagnostics.ConsoleLogs.Dashboard.Extensions;
 using Elsa.Diagnostics.StructuredLogs.Dashboard;
 using Elsa.Diagnostics.StructuredLogs.Dashboard.Extensions;
-using Elsa.Workflows.Api.Permissions;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Dashboard;
 using Elsa.Workflows.Runtime.Dashboard.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
 using static Elsa.Dashboard.Api.UnitTests.TestContributor;
 
 namespace Elsa.Dashboard.Api.UnitTests;
@@ -82,32 +82,20 @@ public class DefaultDashboardProviderTests
         Assert.Equal(2, overview.Diagnostics.StructuredLogs.SourceCount);
     }
 
-    [Fact]
-    public async Task GetOverviewAsync_WithCallerWhoMayReadOnlyInstances_WithholdsEveryOtherSection()
+    public static readonly TheoryData<DashboardPermission, SectionAccess> SinglePermissions = SectionAccess.BySinglePermission.ToTheoryData();
+
+    [Theory]
+    [MemberData(nameof(SinglePermissions))]
+    public async Task GetOverviewAsync_WithCallerWhoMayReadOnlyOneSection_WithholdsEveryOtherSection(DashboardPermission permission, SectionAccess readable)
     {
         var provider = CreateProvider(Declared());
 
-        var overview = await provider.GetOverviewAsync(new() { CanRead = permission => permission == InstancesView });
+        var overview = await provider.GetOverviewAsync(new() { CanRead = x => x == permission });
 
-        Assert.Equal(3, overview.WorkflowInstances.Running);
-        new SectionAccess { Instances = true }.AssertOn(overview);
+        readable.AssertOn(overview);
         Assert.Equal("Elsa.TestHost", overview.BackendName);
-        Assert.Equal([InstancesMetric], overview.Metrics.Select(x => x.Id));
-        Assert.Equal([InstancesPanel], overview.Panels.Select(x => x.Id));
-    }
-
-    [Fact]
-    public async Task GetOverviewAsync_WithCallerWhoMayReadOnlyStructuredLogs_WithholdsEveryOtherSection()
-    {
-        var provider = CreateProvider(Declared());
-
-        var overview = await provider.GetOverviewAsync(new() { CanRead = permission => permission == StructuredLogsView });
-
-        Assert.Equal(DashboardCapabilityStatus.Available.Status, overview.Diagnostics.StructuredLogs.Capability.Status);
-        Assert.Equal(2, overview.Diagnostics.StructuredLogs.SourceCount);
-        new SectionAccess { StructuredLogs = true }.AssertOn(overview);
-        Assert.Empty(overview.Metrics);
-        Assert.Equal([LogsPanel], overview.Panels.Select(x => x.Id));
+        Assert.Equal(readable.Metrics, overview.Metrics.Select(x => x.Id));
+        Assert.Equal(readable.Panels, overview.Panels.Select(x => x.Id));
     }
 
     [Fact]
@@ -156,9 +144,27 @@ public class DefaultDashboardProviderTests
         var provider = CreateProvider(declared);
 
         await provider.GetOverviewAsync(new() { CanRead = _ => false });
-        await provider.GetNeedsAttentionAsync(new() { CanRead = _ => false }, 10);
 
         Assert.Equal(0, declared.Invocations);
+    }
+
+    [Fact]
+    public async Task OtherCalls_WithCallerWhoMayReadNothing_StillInvokeContributorsThatDeclaredOverviewPermissionsAndFilterAfterwards()
+    {
+        var declared = Declared();
+        var provider = CreateProvider(declared);
+        DashboardQuery query = new() { CanRead = _ => false };
+
+        var findings = await provider.GetNeedsAttentionAsync(query, 10);
+        var trends = await provider.GetWorkflowTrendsAsync(new() { CanRead = _ => false });
+        var activity = await provider.GetRecentActivityAsync(query, 10);
+        var hotspots = await provider.GetWorkflowHotspotsAsync(new() { CanRead = _ => false });
+
+        Assert.Equal(4, declared.Invocations);
+        Assert.Empty(findings.Findings);
+        Assert.Empty(trends.Buckets);
+        Assert.Empty(activity.Items);
+        Assert.Empty(hotspots.Items);
     }
 
     [Fact]
@@ -192,14 +198,48 @@ public class DefaultDashboardProviderTests
     }
 
     [Fact]
-    public async Task GetOverviewAsync_WithASectionNobodySupplied_LeavesItAtItsDefaultForACallerWhoMayReadNothing()
+    public async Task GetOverviewAsync_WithCallerWhoMayReadNothing_DoesNotDiscloseWhichModulesAreInstalled()
     {
-        var provider = CreateProvider();
+        var provider = CreateProvider(new WorkflowDashboardContributor(Substitute.For<IWorkflowInstanceStore>(), Substitute.For<IWorkflowRuntimeAdminService>()));
 
         var overview = await provider.GetOverviewAsync(new() { CanRead = _ => false });
 
+        SectionAccess.None.AssertOn(overview);
+        Assert.Null(overview.BackendName);
+        Assert.Null(overview.EnvironmentName);
+        Assert.Equal(DashboardCapabilityStatus.Unauthorized.Status, overview.Diagnostics.StructuredLogs.Capability.Status);
+        Assert.Equal(DashboardCapabilityStatus.Unauthorized.Status, overview.Diagnostics.ConsoleLogs.Capability.Status);
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_WithCallerWhoMayReadTheWholeOverview_LeavesASectionNobodySuppliedNotInstalled()
+    {
+        var provider = CreateProvider(new TestContributor("workflows", 1)
+        {
+            Overview = new() { Runtime = new() { Status = DashboardRuntimeStatusKeys.AcceptingWork }, WorkflowInstances = new() { Running = 3 } },
+            OverviewPermissions = new() { Runtime = RuntimeView, WorkflowInstances = InstancesView }
+        });
+
+        var overview = await provider.GetOverviewAsync(new() { CanRead = _ => true });
+
+        Assert.Equal("Elsa.TestHost", overview.BackendName);
         Assert.Equal(DashboardCapabilityStatus.NotInstalled.Status, overview.Diagnostics.StructuredLogs.Capability.Status);
-        Assert.Equal(DashboardCapabilityStatus.Available.Status, overview.WorkflowInstances.Capability.Status);
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_WithASectionItsContributorDidNotDeclare_NeedsTheWholeOverviewPermission()
+    {
+        var provider = CreateProvider(new TestContributor("runtime-only", 1)
+        {
+            Overview = new() { Runtime = new() { Status = DashboardRuntimeStatusKeys.AcceptingWork }, WorkflowInstances = new() { Running = 3 } },
+            OverviewPermissions = new() { Runtime = RuntimeView }
+        });
+
+        var overview = await provider.GetOverviewAsync(new() { CanRead = permission => permission == RuntimeView });
+
+        Assert.Equal(DashboardRuntimeStatusKeys.AcceptingWork, overview.Runtime.Status);
+        Assert.Equal(DashboardCapabilityStatus.Unauthorized.Status, overview.WorkflowInstances.Capability.Status);
+        Assert.Equal(0, overview.WorkflowInstances.Running);
     }
 
     [Fact]
@@ -377,12 +417,6 @@ public class DefaultDashboardProviderTests
 
         Assert.Equal(["definition"], narrow.Items.Select(x => x.DefinitionId));
         Assert.Equal(["definition", "undeclared"], whole.Items.Select(x => x.DefinitionId).Order());
-    }
-
-    [Fact]
-    public void DashboardAccess_PinsTheInstancesPermissionToTheWorkflowsModule()
-    {
-        Assert.Equal(new DashboardPermission(WorkflowPermissions.Instances, CoreVerbs.View), DashboardAccess.WorkflowInstances);
     }
 
     [Fact]
