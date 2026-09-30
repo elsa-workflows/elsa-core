@@ -51,7 +51,7 @@ public class WorkflowDashboardContributor(
     public async ValueTask<IReadOnlyCollection<DashboardFinding>> GetFindingsAsync(DashboardContext context)
     {
         var runtime = GetRuntimeStatus();
-        var workflowMetrics = await GetWorkflowMetricsAsync(context.Range, context.IncludeSystem, context.CancellationToken);
+        var workflowMetrics = await TryGetWorkflowMetricsAsync(context);
         var findings = new List<DashboardFinding>();
 
         if (runtime.Status == DashboardRuntimeStatusKeys.Paused)
@@ -61,6 +61,9 @@ public class WorkflowDashboardContributor(
 
         if (runtime.FailedIngressSourceCount > 0)
             findings.Add(Finding("ingress-source-failures", DashboardFindingSeverity.Warning, $"{runtime.FailedIngressSourceCount} ingress sources need attention", "Runtime", "runtime", 30, RuntimeView));
+
+        if (workflowMetrics == null)
+            return findings;
 
         if (workflowMetrics.Faulted > 0)
             findings.Add(Finding("workflow-faults", DashboardFindingSeverity.Error, $"{workflowMetrics.Faulted} workflows faulted in the selected range", "WorkflowInstances", "faulted", 40, InstancesView));
@@ -72,6 +75,19 @@ public class WorkflowDashboardContributor(
             findings.Add(Finding("workflow-incidents", DashboardFindingSeverity.Error, $"{workflowMetrics.IncidentBearing} workflows have incidents", "WorkflowInstances", "incidents", 60, InstancesView));
 
         return findings;
+    }
+
+    // An instance store failure omits the instance findings without taking the runtime findings down with it.
+    private async Task<DashboardWorkflowInstanceMetrics?> TryGetWorkflowMetricsAsync(DashboardContext context)
+    {
+        try
+        {
+            return await GetWorkflowMetricsAsync(context.Range, context.IncludeSystem, context.CancellationToken);
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            return null;
+        }
     }
 
     public async ValueTask<DashboardTrendResponse?> GetWorkflowTrendsAsync(DashboardTrendContext context)

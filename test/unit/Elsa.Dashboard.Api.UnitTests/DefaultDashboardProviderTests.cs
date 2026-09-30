@@ -216,6 +216,22 @@ public class DefaultDashboardProviderTests
         Assert.Equal(DashboardCapabilityStatus.Unauthorized.Status, overview.Runtime.Capability.Status);
     }
 
+    [Fact]
+    public async Task GetNeedsAttentionAsync_WithFailingInstanceStore_StillReturnsRuntimeFindings()
+    {
+        var store = Substitute.For<IWorkflowInstanceStore>();
+        store.CountAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>()).Returns<long>(_ => throw new InvalidOperationException("secret"));
+        store.SummarizeManyAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>()).Returns<IEnumerable<WorkflowInstanceSummary>>(_ => throw new InvalidOperationException("secret"));
+        var runtime = Substitute.For<IWorkflowRuntimeAdminService>();
+        runtime.GetStatus().Returns(new RuntimeAdminStatus(QuiescenceState.Initial("generation") with { Reason = QuiescenceReason.AdministrativePause }, [], 0));
+
+        var response = await CreateProvider(new WorkflowDashboardContributor(store, runtime))
+            .GetNeedsAttentionAsync(new() { CanRead = x => x == RuntimeView }, 10);
+
+        Assert.Equal(["runtime-paused"], response.Findings.Select(x => x.Id));
+        Assert.DoesNotContain("secret", response.Findings.Single().Message);
+    }
+
     private static WorkflowDashboardContributor CreateWorkflowContributorWithFailingInstanceStore()
     {
         var store = Substitute.For<IWorkflowInstanceStore>();
