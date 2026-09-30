@@ -117,6 +117,7 @@
       "src/modules/Elsa.Diagnostics.StructuredLogs/Elsa.Diagnostics.StructuredLogs.csproj",
       "src/modules/Elsa.Dsl.ElsaScript/Elsa.Dsl.ElsaScript.csproj",
       "src/modules/Elsa.Expressions.CSharp/Elsa.Expressions.CSharp.csproj",
+      "src/modules/Elsa.Expressions.JavaScript.Libraries/Elsa.Expressions.JavaScript.Libraries.csproj",
       "src/modules/Elsa.Expressions.JavaScript/Elsa.Expressions.JavaScript.csproj",
       "src/modules/Elsa.Expressions.Liquid/Elsa.Expressions.Liquid.csproj",
       "src/modules/Elsa.Expressions.Python/Elsa.Expressions.Python.csproj",
