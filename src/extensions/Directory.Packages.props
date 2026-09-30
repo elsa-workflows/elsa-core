@@ -201,7 +201,7 @@
         <PackageVersion Include="Microsoft.SemanticKernel.Connectors.InMemory" Version="1.73.0-preview"/>
         <PackageVersion Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.73.0"/>
         <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0"/>
-        <PackageVersion Include="MongoDB.Driver" Version="3.5.2"/>
+        <PackageVersion Include="MongoDB.Driver" Version="3.9.0"/>
         <PackageVersion Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="3.0.0"/>
         <PackageVersion Include="MongoDB.Driver.Extensions" Version="2.0.2"/>
         <PackageVersion Include="Moq" Version="4.20.72" />
@@ -241,6 +241,8 @@
         <PackageVersion Include="System.Linq.Async" Version="7.0.1"/>
         <PackageVersion Include="System.Memory.Data" Version="10.0.3"/>
         <PackageVersion Include="System.Text.Json" Version="10.0.9"/>
+        <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3"/>
+        <PackageVersion Include="SSH.NET" Version="2026.0.0"/>
         <PackageVersion Include="Testcontainers" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.MongoDb" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.PostgreSql" Version="4.9.0"/>

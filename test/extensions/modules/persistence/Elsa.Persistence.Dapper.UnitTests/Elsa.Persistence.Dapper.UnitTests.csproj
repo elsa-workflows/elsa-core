@@ -9,6 +9,7 @@
         <PackageReference Include="Microsoft.Data.Sqlite" />
         <PackageReference Include="Npgsql" />
         <PackageReference Include="Testcontainers.PostgreSql" />
+        <PackageReference Include="SSH.NET" PrivateAssets="All"/>
     </ItemGroup>
 
     <ItemGroup>

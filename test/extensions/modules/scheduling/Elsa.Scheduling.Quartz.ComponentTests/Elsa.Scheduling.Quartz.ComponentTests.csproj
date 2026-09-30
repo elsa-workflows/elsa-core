@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
+        <PackageReference Include="SSH.NET" PrivateAssets="All" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="../../../../../src/common/Elsa.Testing.Shared.Component/Elsa.Testing.Shared.Component.csproj" />
         <ProjectReference Include="../../../../../src/modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj" />
     </ItemGroup>
