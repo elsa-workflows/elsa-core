@@ -3,11 +3,11 @@ using Elsa.Api.Client.Resources.StorageDrivers.Models;
 using Elsa.Api.Client.Resources.VariableTypes.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Studio.Localization;
+using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.WorkflowProperties.Tabs.Variables.Components;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using MudBlazor;
 using MudBlazor.Extensions;
 using MudBlazor.Services;
@@ -80,11 +80,5 @@ public sealed class VariableTypeaheadTests : BunitContext, IAsyncLifetime
     private sealed class IdentityGeneratorStub : IIdentityGenerator
     {
         public string GenerateId() => "test-variable";
-    }
-
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string key] => new(key, key);
-        public LocalizedString this[string key, params object[] arguments] => new(key, string.Format(key, arguments));
     }
 }

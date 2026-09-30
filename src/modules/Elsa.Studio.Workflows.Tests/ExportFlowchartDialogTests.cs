@@ -2,12 +2,12 @@ using System.Text.Json.Nodes;
 using Bunit;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Studio.Localization;
+using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.Designer.Models;
 using Elsa.Studio.Workflows.DiagramDesigners.Flowcharts;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using MudBlazor;
 using MudBlazor.Services;
 using Xunit;
@@ -254,10 +254,4 @@ public sealed class ExportFlowchartDialogTests : BunitContext, IAsyncLifetime
     private IReadOnlyList<IRenderedComponent<MudNumericField<int>>> PaddingFields() => _dialogProvider.FindComponents<MudNumericField<int>>();
 
     private AngleSharp.Dom.IElement OkButton() => _dialogProvider.FindAll("button").Single(x => x.TextContent.Trim() == "Ok");
-
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
-    }
 }

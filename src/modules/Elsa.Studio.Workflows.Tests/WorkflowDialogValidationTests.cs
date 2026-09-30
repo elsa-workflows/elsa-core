@@ -7,6 +7,7 @@ using Elsa.Api.Client.Resources.WorkflowDefinitions.Responses;
 using Elsa.Api.Client.Shared.Models;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Models;
+using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.WorkflowProperties.Tabs.InputOutput.Components.Inputs;
 using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.WorkflowProperties.Tabs.InputOutput.Components.Outputs;
 using Elsa.Studio.Workflows.Components.WorkflowDefinitionList;
@@ -18,7 +19,6 @@ using Elsa.Studio.Workflows.Tests.Support;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using MudBlazor;
 using MudBlazor.Services;
 using MudExtensions.Services;
@@ -620,12 +620,5 @@ public sealed class WorkflowDialogValidationTests : BunitContext, IAsyncLifetime
 
             return [new("System.String", "String", "Text", null)];
         }
-    }
-
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] =>
-            new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
     }
 }

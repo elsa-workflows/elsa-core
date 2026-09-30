@@ -1,8 +1,8 @@
 using System.Text.Json.Nodes;
 using Elsa.Studio.Localization;
+using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.DiagramDesigners.Bpmn;
 using Elsa.Studio.Workflows.Designer.Options;
-using Microsoft.Extensions.Localization;
 using Xunit;
 
 namespace Elsa.Studio.Workflows.Tests;
@@ -79,11 +79,5 @@ public class BpmnDiagramDesignerTests
         var path = Path.Combine(AppContext.BaseDirectory, "DesignerAssets", "camunda-order-process.activity.json");
         var json = File.ReadAllText(path);
         return JsonNode.Parse(json)!.AsObject();
-    }
-
-    private class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
     }
 }

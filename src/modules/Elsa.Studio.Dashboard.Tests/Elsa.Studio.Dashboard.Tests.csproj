@@ -18,6 +18,7 @@
     <ItemGroup>
         <Compile Include="..\..\testing\BunitTestDefaults.cs" Link="BunitTestDefaults.cs" />
         <Compile Include="..\..\testing\StubPermissionService.cs" Link="StubPermissionService.cs" />
+        <Compile Include="..\..\testing\TestLocalizer.cs" Link="TestLocalizer.cs" />
     </ItemGroup>
 
     <ItemGroup>

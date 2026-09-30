@@ -4,8 +4,8 @@ using Elsa.Studio.Dashboard.Models;
 using Elsa.Studio.Dashboard.Services;
 using Elsa.Studio.Dashboard.Widgets;
 using Elsa.Studio.Localization;
+using Elsa.Studio.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using MudBlazor;
 using MudBlazor.Services;
 using Xunit;
@@ -100,11 +100,5 @@ public sealed class DashboardStatusTests : BunitContext, IAsyncLifetime
         public event Action? Initialized { add { } remove { } }
         public IEnumerable<IFeature> GetFeatures() => [];
         public Task InitializeFeaturesAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
-    }
-
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
     }
 }

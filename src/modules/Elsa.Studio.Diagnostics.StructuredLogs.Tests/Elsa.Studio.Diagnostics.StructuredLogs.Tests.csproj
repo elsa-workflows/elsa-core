@@ -19,6 +19,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Compile Include="..\..\testing\TestLocalizer.cs" Link="TestLocalizer.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
         <None Include="..\Elsa.Studio.Diagnostics.StructuredLogs\wwwroot\structuredLogs.css"
               Link="Assets\structuredLogs.css"
               CopyToOutputDirectory="PreserveNewest" />
