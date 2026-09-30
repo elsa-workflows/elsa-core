@@ -1,5 +1,11 @@
 @using Elsa.Studio.Authorization
+@using Elsa.Studio.Contracts
+@using Elsa.Studio.Extensions
+@using Microsoft.Extensions.Logging
 @inherits PermissionTrackingComponentBase
+@inject IMenuService MenuService
+@inject NavigationManager NavigationManager
+@inject ILogger<PermissionPageGuard> Logger
 
 @if (TrackedPermissions == null)
 {
@@ -7,8 +13,17 @@
 }
 else if (TrackedPermissions.GetMissing(_requiredPermissions) is { Count: > 0 } missingPermissions)
 {
-    <PageTitle>Access denied</PageTitle>
-    <AccessDenied MissingPermissions="missingPermissions" />
+    @* Signing in lands on the Dashboard, so a user who cannot view it is sent to the first page they can open (see OnAfterRenderAsync). *@
+    if (!IsLandingPage || _menuUnavailable)
+    {
+        <PageTitle>Access denied</PageTitle>
+        <AccessDenied MissingPermissions="missingPermissions" />
+    }
+    else if (_hasNoAccessiblePage)
+    {
+        <PageTitle>No pages available</PageTitle>
+        <NoAccessiblePages />
+    }
 }
 else
 {
@@ -22,6 +37,10 @@ else
 @code {
     private Type? _pageType;
     private IReadOnlyCollection<Permission> _requiredPermissions = [];
+    private UserPermissions? _landingResolvedFor;
+    private bool _hasNoAccessiblePage;
+    private bool _menuUnavailable;
+    private int _landingResolution;
 
     /// <summary>The current route, cascaded by the shell's router.</summary>
     [CascadingParameter] public RouteData? RouteData { get; set; }
@@ -44,6 +63,61 @@ else
             return;
 
         _pageType = pageType;
+        _landingResolvedFor = null;
+        _landingResolution++;
+        _hasNoAccessiblePage = false;
+        _menuUnavailable = false;
         _requiredPermissions = pageType != null ? RequirePermissionAttribute.GetRequiredPermissions(pageType) : [];
     }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Resolved once per set of permissions and route, so the redirect cannot loop and a permission change is picked up.
+        if (TrackedPermissions == null || ReferenceEquals(TrackedPermissions, _landingResolvedFor) || !IsLandingPage || TrackedPermissions.HasAll(_requiredPermissions))
+            return;
+
+        _landingResolvedFor = TrackedPermissions;
+        _hasNoAccessiblePage = false;
+        _menuUnavailable = false;
+
+        var resolution = ++_landingResolution;
+        string? href;
+
+        try
+        {
+            href = (await MenuService.GetNavigationAsync()).FindFirstHref();
+        }
+        catch (Exception exception)
+        {
+            if (IsStale(resolution))
+                return;
+
+            // Without a menu there is nowhere to send the user: show the routed page's access-denied, as before.
+            Logger.LogWarning(exception, "Could not resolve the navigation menu to find the first accessible page.");
+            _menuUnavailable = true;
+            StateHasChanged();
+            return;
+        }
+
+        // The user may have navigated away, or the permissions been resolved again, while the menu loaded.
+        if (IsStale(resolution))
+            return;
+
+        if (href != null)
+        {
+            NavigationManager.NavigateTo(href, replace: true);
+            return;
+        }
+
+        _hasNoAccessiblePage = true;
+        StateHasChanged();
+    }
+
+    // A resolution is stale once a newer one has started or the routed page changed (both advance the counter), once the
+    // URL is no longer the landing page, or once the user has been granted the landing page after all.
+    private bool IsStale(int resolution) =>
+        resolution != _landingResolution || !IsLandingPage || TrackedPermissions?.HasAll(_requiredPermissions) != false;
+
+    private bool IsLandingPage => NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0].Trim('/').Length == 0;
 }

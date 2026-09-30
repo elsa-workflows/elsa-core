@@ -6,6 +6,7 @@ using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Contracts;
 using Elsa.Studio.ExternalAuthentication.Models;
 using Elsa.Studio.ExternalAuthentication.Services;
+using Elsa.Studio.Services;
 using Elsa.Studio.Testing;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -36,6 +37,7 @@ public sealed class AccessDeniedPagesTests : BunitContext
         Services.AddSingleton<IClipboard, NoClipboard>();
         Services.AddSingleton<AuthenticationStateProvider>(new StaticAuthenticationStateProvider(new(_identity)));
         Services.AddSingleton<IPermissionService>(_shellPermissions);
+        Services.AddSingleton<IMenuService>(new DefaultMenuService([], []));
         Services.AddScoped<IExternalAuthenticationPermissionService, ExternalAuthenticationPermissionService>();
         Services.AddSingleton<ICustomConnectionEditorRegistry, CustomConnectionEditorRegistry>();
     }
@@ -58,6 +60,7 @@ public sealed class AccessDeniedPagesTests : BunitContext
     public void ShellGuard_WhenThePermissionIsMissing_RendersOnlyTheSharedAccessDenied(Type page)
     {
         var declared = RequirePermissionAttribute.GetRequiredPermissions(page).Single();
+        Services.GetRequiredService<NavigationManager>().NavigateTo("security/external-authentication"); // only the landing page redirects
 
         var cut = Render<PermissionPageGuard>(parameters => parameters
             .AddCascadingValue(new RouteData(page, new Dictionary<string, object?>()))
