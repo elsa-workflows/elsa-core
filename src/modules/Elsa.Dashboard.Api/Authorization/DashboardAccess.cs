@@ -27,7 +27,9 @@ internal static class DashboardAccess
     public static Func<DashboardPermission, bool> CreateReadCheck(HttpContext context)
     {
         if (!EndpointSecurityOptions.SecurityIsEnabled)
+        {
             return _ => true;
+        }
 
         var evaluator = context.GetPermissionEvaluator();
         var user = context.User;

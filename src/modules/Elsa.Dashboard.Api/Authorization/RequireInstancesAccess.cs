@@ -17,6 +17,8 @@ internal sealed class RequireInstancesAccess<TRequest> : IPreProcessor<TRequest>
     public async Task PreProcessAsync(IPreProcessorContext<TRequest> context, CancellationToken cancellationToken)
     {
         if (!DashboardAccess.CanReadInstances(context.HttpContext))
+        {
             await context.HttpContext.Response.SendForbiddenAsync(cancellationToken);
+        }
     }
 }

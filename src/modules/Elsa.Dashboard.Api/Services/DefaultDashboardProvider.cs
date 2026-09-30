@@ -24,9 +24,13 @@ public class DefaultDashboardProvider(
         {
             var contribution = await ExecuteContributorAsync(contributor, x => x.GetOverviewAsync(context).AsTask(), cancellationToken);
             if (contribution != null)
+            {
                 contributions.Add((contributor.OverviewPermissions, contribution));
+            }
             else if (contributor.OverviewPermissions != null)
+            {
                 failed.Add(contributor.OverviewPermissions);
+            }
         }
 
         var unauthorized = DashboardCapabilityStatus.Unauthorized;
@@ -208,9 +212,13 @@ public class DefaultDashboardProvider(
             allDeclared.AddRange(declared ?? []);
 
             if (declared is { Count: > 0 } && !declared.Any(x => canRead(x)))
+            {
                 skippedPermissions.Add(contributor.OverviewPermissions!);
+            }
             else
+            {
                 readable.Add(contributor);
+            }
         }
 
         skipped = skippedPermissions;
@@ -297,10 +305,14 @@ public class DefaultDashboardProvider(
         var readableFailure = readable.Any(isFailed) || failed.Any(x => permissionOf(x) is { } permission && canRead(permission));
 
         if (readableFailure)
+        {
             return new(unavailable, denied, false);
+        }
 
         if (readable.Count > 0)
+        {
             return new(merge(readable), denied, true);
+        }
 
         var wasWithheld = supplied.Count > 0 || skipped.Concat(failed).Any(x => permissionOf(x) != null);
 

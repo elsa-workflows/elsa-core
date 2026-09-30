@@ -63,7 +63,9 @@ public class WorkflowDashboardContributor(
             findings.Add(Finding("ingress-source-failures", DashboardFindingSeverity.Warning, $"{runtime.FailedIngressSourceCount} ingress sources need attention", "Runtime", "runtime", 30, RuntimeView));
 
         if (workflowMetrics == null)
+        {
             return findings;
+        }
 
         if (workflowMetrics.Faulted > 0)
             findings.Add(Finding("workflow-faults", DashboardFindingSeverity.Error, $"{workflowMetrics.Faulted} workflows faulted in the selected range", "WorkflowInstances", "faulted", 40, InstancesView));
