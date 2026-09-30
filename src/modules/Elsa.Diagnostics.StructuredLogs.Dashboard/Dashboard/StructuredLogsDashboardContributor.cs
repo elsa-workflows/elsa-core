@@ -21,6 +21,8 @@ public class StructuredLogsDashboardContributor(
 
     public int Order => 300;
 
+    public DashboardOverviewPermissions? OverviewPermissions { get; } = new() { StructuredLogs = StructuredLogsView };
+
     public async ValueTask<DashboardOverviewContribution?> GetOverviewAsync(DashboardContext context)
     {
         var summary = await GetSummaryAsync(context.Range, context.CancellationToken);
@@ -29,8 +31,7 @@ public class StructuredLogsDashboardContributor(
             Diagnostics = new()
             {
                 StructuredLogs = summary
-            },
-            Permissions = new() { StructuredLogs = StructuredLogsView }
+            }
         };
     }
 

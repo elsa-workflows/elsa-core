@@ -307,11 +307,18 @@ them does not receive them. A caller holding no dashboard-related permission get
 Findings on `needs-attention` follow the same rule per finding, so a caller holding only `workflows/instances:view` sees the
 workflow findings but not the runtime or diagnostics ones.
 
-Modules that add to the dashboard declare the permission of their data on what they contribute:
-`DashboardOverviewContribution.Permissions` for the runtime, instance and diagnostics sections, and `Permission` on a
-metric card, panel or finding. Anything a contribution supplies without a declaration needs `dashboard:view`, so an
-existing third-party contributor keeps working and stays hidden from callers holding only a narrower permission until it
-declares one.
+Modules that add to the dashboard declare the permission of their data. A contributor declares
+`IDashboardContributor.OverviewPermissions` up front for the runtime, instance and diagnostics sections it supplies, and
+sets `Permission` on each metric card, panel, finding, and trend, recent-activity or hotspot response it returns. Anything
+a contributor supplies without a declaration needs `dashboard:view`, so an existing third-party contributor keeps working
+and stays hidden from callers holding only a narrower permission until it declares one. That includes trend, recent
+activity and hotspot rows: a caller holding only `workflows/instances:view` receives only the rows of contributions
+that declare `workflows/instances:view`, which the built-in workflow contributor does.
+
+A contributor that declares `OverviewPermissions` is not invoked for a caller who holds none of them, so a signed-in
+account with no dashboard permissions costs no database counts, runtime queries or log queries; the sections it declared
+come back `Unauthorized`. A contributor that declares nothing always runs and is filtered afterwards. When every section is
+withheld the overview also leaves `backendName` and `environmentName` empty.
 
 ## Third-party modules
 

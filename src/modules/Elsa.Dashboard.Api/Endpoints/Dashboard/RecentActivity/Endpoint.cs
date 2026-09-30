@@ -2,6 +2,7 @@ using Elsa.Abstractions;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
 using Elsa.Dashboard.Api.Authorization;
+using FastEndpoints;
 using JetBrains.Annotations;
 
 namespace Elsa.Dashboard.Api.Endpoints.Dashboard.RecentActivity;
@@ -13,19 +14,14 @@ internal class Endpoint(IDashboardProvider dashboardProvider) : ElsaEndpointWith
     {
         Get("/dashboard/recent-activity");
         RequireAuthenticatedOnly();
+        PreProcessor<RequireInstancesAccess<EmptyRequest>>();
     }
 
-    public override async Task HandleAsync(CancellationToken cancellationToken)
+    public override async Task<DashboardRecentActivityResponse> ExecuteAsync(CancellationToken cancellationToken)
     {
-        if (!DashboardAccess.CanReadInstances(HttpContext))
-        {
-            await Send.ForbiddenAsync(cancellationToken);
-            return;
-        }
-
         var range = Query<string?>("range", false);
         var take = Query<int?>("take", false) ?? 20;
         var includeSystem = Query<bool>("includeSystem", false);
-        await Send.OkAsync(await dashboardProvider.GetRecentActivityAsync(new(range, includeSystem), take, cancellationToken), cancellationToken);
+        return await dashboardProvider.GetRecentActivityAsync(new(range, includeSystem) { CanRead = DashboardAccess.CreateReadCheck(HttpContext) }, take, cancellationToken);
     }
 }

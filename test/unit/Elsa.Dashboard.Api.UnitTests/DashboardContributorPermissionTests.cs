@@ -36,7 +36,7 @@ public class DashboardContributorPermissionTests
 
         await AssertGuardsAsync(
             new WorkflowDashboardContributor(store, runtime),
-            overview => Assert.Equal((RuntimeView, InstancesView), (overview.Permissions.Runtime!.Value, overview.Permissions.WorkflowInstances!.Value)),
+            permissions => Assert.Equal((RuntimeView, InstancesView), (permissions.Runtime!.Value, permissions.WorkflowInstances!.Value)),
             RuntimeView,
             InstancesView);
     }
@@ -45,19 +45,19 @@ public class DashboardContributorPermissionTests
     public async Task StructuredLogsContributor_GuardsItsSummaryAndFindings() =>
         await AssertGuardsAsync(
             new StructuredLogsDashboardContributor(Substitute.For<IStructuredLogProvider>(), []),
-            overview => Assert.Equal(StructuredLogsView, overview.Permissions.StructuredLogs),
+            permissions => Assert.Equal(StructuredLogsView, permissions.StructuredLogs),
             StructuredLogsView);
 
     [Fact]
     public async Task ConsoleLogsContributor_GuardsItsSummaryAndFindings() =>
         await AssertGuardsAsync(
             new ConsoleLogsDashboardContributor(Substitute.For<IConsoleLogProvider>()),
-            overview => Assert.Equal(ConsoleLogsView, overview.Permissions.ConsoleLogs),
+            permissions => Assert.Equal(ConsoleLogsView, permissions.ConsoleLogs),
             ConsoleLogsView);
 
-    private async Task AssertGuardsAsync(IDashboardContributor contributor, Action<DashboardOverviewContribution> assertOverview, params DashboardPermission[] findingPermissions)
+    private async Task AssertGuardsAsync(IDashboardContributor contributor, Action<DashboardOverviewPermissions> assertDeclared, params DashboardPermission[] findingPermissions)
     {
-        assertOverview((await contributor.GetOverviewAsync(_context))!);
+        assertDeclared(contributor.OverviewPermissions!);
 
         var findings = await contributor.GetFindingsAsync(_context);
 

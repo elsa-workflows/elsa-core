@@ -15,6 +15,8 @@ public class ConsoleLogsDashboardContributor(IConsoleLogProvider provider) : IDa
 
     public int Order => 400;
 
+    public DashboardOverviewPermissions? OverviewPermissions { get; } = new() { ConsoleLogs = ConsoleLogsView };
+
     public async ValueTask<DashboardOverviewContribution?> GetOverviewAsync(DashboardContext context)
     {
         var summary = await GetSummaryAsync(context.Range, context.CancellationToken);
@@ -23,8 +25,7 @@ public class ConsoleLogsDashboardContributor(IConsoleLogProvider provider) : IDa
             Diagnostics = new()
             {
                 ConsoleLogs = summary
-            },
-            Permissions = new() { ConsoleLogs = ConsoleLogsView }
+            }
         };
     }
 

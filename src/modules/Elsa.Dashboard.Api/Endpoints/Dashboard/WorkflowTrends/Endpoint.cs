@@ -13,16 +13,11 @@ internal class Endpoint(IDashboardProvider dashboardProvider) : ElsaEndpoint<Das
     {
         Post("/dashboard/workflow-trends");
         RequireAuthenticatedOnly();
+        PreProcessor<RequireInstancesAccess<DashboardTrendRequest>>();
     }
 
-    public override async Task HandleAsync(DashboardTrendRequest request, CancellationToken cancellationToken)
+    public override async Task<DashboardTrendResponse> ExecuteAsync(DashboardTrendRequest request, CancellationToken cancellationToken)
     {
-        if (!DashboardAccess.CanReadInstances(HttpContext))
-        {
-            await Send.ForbiddenAsync(cancellationToken);
-            return;
-        }
-
-        await Send.OkAsync(await dashboardProvider.GetWorkflowTrendsAsync(request, cancellationToken), cancellationToken);
+        return await dashboardProvider.GetWorkflowTrendsAsync(request with { CanRead = DashboardAccess.CreateReadCheck(HttpContext) }, cancellationToken);
     }
 }

@@ -24,15 +24,8 @@ internal sealed class TestContributor(string id, int order) : IDashboardContribu
     /// <summary>A contributor supplying every section, each guarded by the permission of its data.</summary>
     public static TestContributor Declared() => new("declared", 1)
     {
-        Overview = new()
+        Overview = SectionData() with
         {
-            Runtime = new() { Status = DashboardRuntimeStatusKeys.AcceptingWork },
-            WorkflowInstances = new() { Running = 3 },
-            Diagnostics = new()
-            {
-                StructuredLogs = new() { Capability = DashboardCapabilityStatus.Available, SourceCount = 2 },
-                ConsoleLogs = new() { Capability = DashboardCapabilityStatus.Available, SourceCount = 4 }
-            },
             Metrics =
             [
                 new() { Id = InstancesMetric, Label = "Instances", Permission = InstancesView },
@@ -44,28 +37,54 @@ internal sealed class TestContributor(string id, int order) : IDashboardContribu
                 new() { Id = InstancesPanel, Title = "Instances", Permission = InstancesView },
                 new() { Id = LogsPanel, Title = "Logs", Permission = StructuredLogsView },
                 new() { Id = "both", Title = "Both", Permission = WholeOverview }
-            ],
-            Permissions = new()
-            {
-                Runtime = RuntimeView,
-                WorkflowInstances = InstancesView,
-                StructuredLogs = StructuredLogsView,
-                ConsoleLogs = ConsoleLogsView
-            }
+            ]
+        },
+        OverviewPermissions = new()
+        {
+            Runtime = RuntimeView,
+            WorkflowInstances = InstancesView,
+            StructuredLogs = StructuredLogsView,
+            ConsoleLogs = ConsoleLogsView
         },
         Findings =
         [
             new() { Id = InstancesFinding, Message = "Instances", Permission = InstancesView },
             new() { Id = "logs-finding", Message = "Logs", Permission = StructuredLogsView }
         ],
-        Trend = new() { Buckets = [new() { CreatedOrStarted = 1 }] },
-        RecentActivity = new() { Items = [new() { InstanceId = "instance", DefinitionId = "definition", Status = "Finished", SubStatus = "Finished" }] },
-        Hotspots = new() { Items = [new() { DefinitionId = "definition", Value = 1 }] }
+        Trend = new() { Buckets = [new() { CreatedOrStarted = 1 }], Permission = InstancesView },
+        RecentActivity = new() { Items = [new() { InstanceId = "instance", DefinitionId = "definition", Status = "Finished", SubStatus = "Finished" }], Permission = InstancesView },
+        Hotspots = new() { Items = [new() { DefinitionId = "definition", Value = 1 }], Permission = InstancesView }
+    };
+
+    /// <summary>A contributor supplying every section, as a third party would before declaring any permission.</summary>
+    public static TestContributor Undeclared() => new("undeclared", 2)
+    {
+        Overview = SectionData() with { Metrics = [new() { Id = "undeclared", Label = "Undeclared" }] },
+        Findings = [new() { Id = "undeclared", Message = "Undeclared" }],
+        Trend = new() { Buckets = [new() { CreatedOrStarted = 10 }] },
+        RecentActivity = new() { Items = [new() { InstanceId = "undeclared", DefinitionId = "undeclared", Status = "Finished", SubStatus = "Finished" }] },
+        Hotspots = new() { Items = [new() { DefinitionId = "undeclared", Value = 10 }] }
+    };
+
+    private static DashboardOverviewContribution SectionData() => new()
+    {
+        Runtime = new() { Status = DashboardRuntimeStatusKeys.AcceptingWork },
+        WorkflowInstances = new() { Running = 3 },
+        Diagnostics = new()
+        {
+            StructuredLogs = new() { Capability = DashboardCapabilityStatus.Available, SourceCount = 2 },
+            ConsoleLogs = new() { Capability = DashboardCapabilityStatus.Available, SourceCount = 4 }
+        }
     };
 
     public string Id { get; } = id;
 
     public int Order { get; } = order;
+
+    public DashboardOverviewPermissions? OverviewPermissions { get; init; }
+
+    /// <summary>How many times the dashboard invoked this contributor.</summary>
+    public int Invocations { get; private set; }
 
     public DashboardOverviewContribution? Overview { get; init; }
 
@@ -77,13 +96,46 @@ internal sealed class TestContributor(string id, int order) : IDashboardContribu
 
     public DashboardWorkflowHotspotsResponse? Hotspots { get; init; }
 
-    public ValueTask<DashboardOverviewContribution?> GetOverviewAsync(DashboardContext context) => ValueTask.FromResult(Overview);
+    public ValueTask<DashboardOverviewContribution?> GetOverviewAsync(DashboardContext context) => Invoked(Overview);
 
-    public ValueTask<IReadOnlyCollection<DashboardFinding>> GetFindingsAsync(DashboardContext context) => ValueTask.FromResult(Findings);
+    public ValueTask<IReadOnlyCollection<DashboardFinding>> GetFindingsAsync(DashboardContext context) => Invoked(Findings);
 
-    public ValueTask<DashboardTrendResponse?> GetWorkflowTrendsAsync(DashboardTrendContext context) => ValueTask.FromResult(Trend);
+    public ValueTask<DashboardTrendResponse?> GetWorkflowTrendsAsync(DashboardTrendContext context) => Invoked(Trend);
 
-    public ValueTask<DashboardRecentActivityResponse?> GetRecentActivityAsync(DashboardListContext context) => ValueTask.FromResult(RecentActivity);
+    public ValueTask<DashboardRecentActivityResponse?> GetRecentActivityAsync(DashboardListContext context) => Invoked(RecentActivity);
 
-    public ValueTask<DashboardWorkflowHotspotsResponse?> GetWorkflowHotspotsAsync(DashboardHotspotsContext context) => ValueTask.FromResult(Hotspots);
+    public ValueTask<DashboardWorkflowHotspotsResponse?> GetWorkflowHotspotsAsync(DashboardHotspotsContext context) => Invoked(Hotspots);
+
+    private ValueTask<T> Invoked<T>(T result)
+    {
+        Invocations++;
+        return ValueTask.FromResult(result);
+    }
+}
+
+/// <summary>Which overview sections a caller reads: a section is either readable, with its data, or withheld, without it.</summary>
+public record SectionAccess
+{
+    public static readonly SectionAccess None = new();
+    public static readonly SectionAccess All = new() { Runtime = true, Instances = true, StructuredLogs = true, ConsoleLogs = true };
+
+    public bool Runtime { get; init; }
+    public bool Instances { get; init; }
+    public bool StructuredLogs { get; init; }
+    public bool ConsoleLogs { get; init; }
+
+    /// <summary>Asserts the overview of a caller against the sections it may read, for contributors supplying <see cref="TestContributor.Declared"/> data.</summary>
+    public void AssertOn(DashboardOverview overview)
+    {
+        AssertSection(Runtime, overview.Runtime.Capability, overview.Runtime.Status == DashboardRuntimeStatusKeys.AcceptingWork);
+        AssertSection(Instances, overview.WorkflowInstances.Capability, overview.WorkflowInstances.Running == 3);
+        AssertSection(StructuredLogs, overview.Diagnostics.StructuredLogs.Capability, overview.Diagnostics.StructuredLogs.SourceCount == 2);
+        AssertSection(ConsoleLogs, overview.Diagnostics.ConsoleLogs.Capability, overview.Diagnostics.ConsoleLogs.SourceCount == 4);
+    }
+
+    private static void AssertSection(bool readable, DashboardCapabilityStatus capability, bool hasData)
+    {
+        Assert.Equal(readable, capability.Status != DashboardCapabilityStatus.Unauthorized.Status);
+        Assert.Equal(readable, hasData);
+    }
 }

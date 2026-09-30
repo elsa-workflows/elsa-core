@@ -12,8 +12,12 @@ public record DashboardQuery(string? Range = null, bool IncludeSystem = false)
 {
     /// <summary>
     /// Tells whether the caller may read data guarded by a permission. When <c>null</c> the query is unrestricted and
-    /// nothing is withheld.
+    /// nothing is withheld: this is fail-open on purpose, so programmatic callers such as background jobs and tests that
+    /// build a query themselves see everything, and every endpoint must therefore set it from the request's user. It is
+    /// a delegate on a record: it takes part in record equality by reference, so two queries with equal values but
+    /// different delegates are not equal, and it cannot be serialized or deserialized, so it never comes from a request body.
     /// </summary>
+    [JsonIgnore]
     public Func<DashboardPermission, bool>? CanRead { get; init; }
 }
 
@@ -171,6 +175,10 @@ public record DashboardTrendRequest
     public string? Range { get; init; }
     public string? Granularity { get; init; }
     public bool IncludeSystem { get; init; }
+
+    /// <summary>Tells whether the caller may read data guarded by a permission; <c>null</c> withholds nothing. See <see cref="DashboardQuery.CanRead"/>.</summary>
+    [JsonIgnore]
+    public Func<DashboardPermission, bool>? CanRead { get; init; }
 }
 
 public record DashboardTrendResponse
@@ -180,6 +188,13 @@ public record DashboardTrendResponse
     public string Granularity { get; init; } = DashboardTrendGranularity.Hour;
     public DateTimeOffset From { get; init; }
     public DateTimeOffset To { get; init; }
+
+    /// <summary>
+    /// The permission guarding the data in this response. A caller needs it, or <c>dashboard:view</c>. When <c>null</c> only
+    /// <c>dashboard:view</c> reads it. Not part of the response.
+    /// </summary>
+    [JsonIgnore]
+    public DashboardPermission? Permission { get; init; }
 }
 
 public record DashboardTrendBucket
@@ -213,6 +228,13 @@ public record DashboardRecentActivityResponse
     public string AppliedRange { get; init; } = DashboardRangeKeys.TwentyFourHours;
     public DateTimeOffset From { get; init; }
     public DateTimeOffset To { get; init; }
+
+    /// <summary>
+    /// The permission guarding the data in this response. A caller needs it, or <c>dashboard:view</c>. When <c>null</c> only
+    /// <c>dashboard:view</c> reads it. Not part of the response.
+    /// </summary>
+    [JsonIgnore]
+    public DashboardPermission? Permission { get; init; }
 }
 
 public record DashboardWorkflowHotspotsRequest
@@ -221,6 +243,10 @@ public record DashboardWorkflowHotspotsRequest
     public string Metric { get; init; } = DashboardHotspotMetric.Faults;
     public int Take { get; init; } = 10;
     public bool IncludeSystem { get; init; }
+
+    /// <summary>Tells whether the caller may read data guarded by a permission; <c>null</c> withholds nothing. See <see cref="DashboardQuery.CanRead"/>.</summary>
+    [JsonIgnore]
+    public Func<DashboardPermission, bool>? CanRead { get; init; }
 }
 
 public record DashboardWorkflowHotspotsResponse
@@ -230,6 +256,13 @@ public record DashboardWorkflowHotspotsResponse
     public string Metric { get; init; } = DashboardHotspotMetric.Faults;
     public DateTimeOffset From { get; init; }
     public DateTimeOffset To { get; init; }
+
+    /// <summary>
+    /// The permission guarding the data in this response. A caller needs it, or <c>dashboard:view</c>. When <c>null</c> only
+    /// <c>dashboard:view</c> reads it. Not part of the response.
+    /// </summary>
+    [JsonIgnore]
+    public DashboardPermission? Permission { get; init; }
 }
 
 public record DashboardHotspot

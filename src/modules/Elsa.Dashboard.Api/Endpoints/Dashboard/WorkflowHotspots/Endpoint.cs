@@ -13,16 +13,11 @@ internal class Endpoint(IDashboardProvider dashboardProvider) : ElsaEndpoint<Das
     {
         Post("/dashboard/workflow-hotspots");
         RequireAuthenticatedOnly();
+        PreProcessor<RequireInstancesAccess<DashboardWorkflowHotspotsRequest>>();
     }
 
-    public override async Task HandleAsync(DashboardWorkflowHotspotsRequest request, CancellationToken cancellationToken)
+    public override async Task<DashboardWorkflowHotspotsResponse> ExecuteAsync(DashboardWorkflowHotspotsRequest request, CancellationToken cancellationToken)
     {
-        if (!DashboardAccess.CanReadInstances(HttpContext))
-        {
-            await Send.ForbiddenAsync(cancellationToken);
-            return;
-        }
-
-        await Send.OkAsync(await dashboardProvider.GetWorkflowHotspotsAsync(request, cancellationToken), cancellationToken);
+        return await dashboardProvider.GetWorkflowHotspotsAsync(request with { CanRead = DashboardAccess.CreateReadCheck(HttpContext) }, cancellationToken);
     }
 }

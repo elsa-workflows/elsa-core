@@ -23,17 +23,14 @@ public class WorkflowDashboardContributor(
 
     public int Order => 100;
 
+    public DashboardOverviewPermissions? OverviewPermissions { get; } = new() { Runtime = RuntimeView, WorkflowInstances = InstancesView };
+
     public async ValueTask<DashboardOverviewContribution?> GetOverviewAsync(DashboardContext context)
     {
         return new()
         {
             Runtime = GetRuntimeStatus(),
-            WorkflowInstances = await GetWorkflowMetricsAsync(context.Range, context.IncludeSystem, context.CancellationToken),
-            Permissions = new()
-            {
-                Runtime = RuntimeView,
-                WorkflowInstances = InstancesView
-            }
+            WorkflowInstances = await GetWorkflowMetricsAsync(context.Range, context.IncludeSystem, context.CancellationToken)
         };
     }
 
@@ -89,7 +86,8 @@ public class WorkflowDashboardContributor(
             AppliedRange = context.Range.Key,
             Granularity = context.Granularity,
             From = context.Range.From,
-            To = context.Range.To
+            To = context.Range.To,
+            Permission = InstancesView
         };
     }
 
@@ -108,7 +106,8 @@ public class WorkflowDashboardContributor(
             Items = page.Items.Select(MapRecentActivity).ToList(),
             AppliedRange = context.Range.Key,
             From = context.Range.From,
-            To = context.Range.To
+            To = context.Range.To,
+            Permission = InstancesView
         };
     }
 
@@ -129,7 +128,8 @@ public class WorkflowDashboardContributor(
             AppliedRange = context.Range.Key,
             Metric = context.Metric,
             From = context.Range.From,
-            To = context.Range.To
+            To = context.Range.To,
+            Permission = InstancesView
         };
     }
 

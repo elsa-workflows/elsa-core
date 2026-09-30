@@ -8,6 +8,16 @@ public interface IDashboardContributor
 
     int Order { get; }
 
+    /// <summary>
+    /// Optional, up front: the permission guarding each overview section this contributor supplies. A caller reads a
+    /// section with the permission declared here or with <c>dashboard:view</c>. The dashboard does not invoke a
+    /// contributor that declares permissions when the caller may read none of them, and marks the sections it
+    /// declared as unauthorized. Declare every permission used by anything the contributor supplies: its findings, trends,
+    /// recent activity and hotspots as well as the overview. When <c>null</c> the contributor always runs, and whatever
+    /// it supplies without a permission needs <c>dashboard:view</c>.
+    /// </summary>
+    DashboardOverviewPermissions? OverviewPermissions => null;
+
     ValueTask<DashboardOverviewContribution?> GetOverviewAsync(DashboardContext context)
     {
         return ValueTask.FromResult<DashboardOverviewContribution?>(null);
@@ -73,15 +83,12 @@ public record DashboardOverviewContribution
     public DashboardDiagnosticsSummary? Diagnostics { get; init; }
     public IReadOnlyCollection<DashboardMetricCard> Metrics { get; init; } = [];
     public IReadOnlyCollection<DashboardPanelSummary> Panels { get; init; } = [];
-
-    /// <summary>The permissions guarding the sections this contribution supplies.</summary>
-    public DashboardOverviewPermissions Permissions { get; init; } = new();
 }
 
 /// <summary>
-/// The permission guarding each section of an overview contribution. A caller reads a section with the permission
+/// The permission guarding each overview section a contributor supplies. A caller reads a section with the permission
 /// declared here or with <c>dashboard:view</c>. A section supplied without a declaration needs <c>dashboard:view</c>, so
-/// a contribution that declares nothing is never exposed to callers who hold only a narrower permission.
+/// a contributor that declares nothing is never exposed to callers who hold only a narrower permission.
 /// </summary>
 public record DashboardOverviewPermissions
 {
@@ -89,4 +96,7 @@ public record DashboardOverviewPermissions
     public DashboardPermission? WorkflowInstances { get; init; }
     public DashboardPermission? StructuredLogs { get; init; }
     public DashboardPermission? ConsoleLogs { get; init; }
+
+    /// <summary>The permissions declared for any section.</summary>
+    public IEnumerable<DashboardPermission> All() => new[] { Runtime, WorkflowInstances, StructuredLogs, ConsoleLogs }.OfType<DashboardPermission>();
 }

@@ -2,6 +2,7 @@ using Elsa.Abstractions;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
 using Elsa.Dashboard.Api.Authorization;
+using FastEndpoints;
 using JetBrains.Annotations;
 
 namespace Elsa.Dashboard.Api.Endpoints.Dashboard.NeedsAttention;
@@ -13,21 +14,14 @@ internal class Endpoint(IDashboardProvider dashboardProvider) : ElsaEndpointWith
     {
         Get("/dashboard/needs-attention");
         RequireAuthenticatedOnly();
+        PreProcessor<RequireInstancesAccess<EmptyRequest>>();
     }
 
-    public override async Task HandleAsync(CancellationToken cancellationToken)
+    public override async Task<DashboardNeedsAttentionResponse> ExecuteAsync(CancellationToken cancellationToken)
     {
-        var canRead = DashboardAccess.CreateReadCheck(HttpContext);
-
-        if (!canRead(DashboardAccess.WorkflowInstances))
-        {
-            await Send.ForbiddenAsync(cancellationToken);
-            return;
-        }
-
         var range = Query<string?>("range", false);
         var take = Query<int?>("take", false) ?? 8;
         var includeSystem = Query<bool>("includeSystem", false);
-        await Send.OkAsync(await dashboardProvider.GetNeedsAttentionAsync(new(range, includeSystem) { CanRead = canRead }, take, cancellationToken), cancellationToken);
+        return await dashboardProvider.GetNeedsAttentionAsync(new(range, includeSystem) { CanRead = DashboardAccess.CreateReadCheck(HttpContext) }, take, cancellationToken);
     }
 }

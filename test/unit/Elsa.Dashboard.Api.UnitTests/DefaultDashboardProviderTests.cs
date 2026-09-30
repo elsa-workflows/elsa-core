@@ -1,10 +1,13 @@
+using Elsa.Authorization;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
+using Elsa.Dashboard.Api.Authorization;
 using Elsa.Dashboard.Api.Services;
 using Elsa.Diagnostics.ConsoleLogs.Dashboard;
 using Elsa.Diagnostics.ConsoleLogs.Dashboard.Extensions;
 using Elsa.Diagnostics.StructuredLogs.Dashboard;
 using Elsa.Diagnostics.StructuredLogs.Dashboard.Extensions;
+using Elsa.Workflows.Api.Permissions;
 using Elsa.Workflows.Runtime.Dashboard;
 using Elsa.Workflows.Runtime.Dashboard.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -87,8 +90,8 @@ public class DefaultDashboardProviderTests
         var overview = await provider.GetOverviewAsync(new() { CanRead = permission => permission == InstancesView });
 
         Assert.Equal(3, overview.WorkflowInstances.Running);
-        Assert.Equal(DashboardCapabilityStatus.Available.Status, overview.WorkflowInstances.Capability.Status);
-        AssertWithheld(overview, runtime: true, structuredLogs: true, consoleLogs: true);
+        new SectionAccess { Instances = true }.AssertOn(overview);
+        Assert.Equal("Elsa.TestHost", overview.BackendName);
         Assert.Equal([InstancesMetric], overview.Metrics.Select(x => x.Id));
         Assert.Equal([InstancesPanel], overview.Panels.Select(x => x.Id));
     }
@@ -102,7 +105,7 @@ public class DefaultDashboardProviderTests
 
         Assert.Equal(DashboardCapabilityStatus.Available.Status, overview.Diagnostics.StructuredLogs.Capability.Status);
         Assert.Equal(2, overview.Diagnostics.StructuredLogs.SourceCount);
-        AssertWithheld(overview, runtime: true, instances: true, consoleLogs: true);
+        new SectionAccess { StructuredLogs = true }.AssertOn(overview);
         Assert.Empty(overview.Metrics);
         Assert.Equal([LogsPanel], overview.Panels.Select(x => x.Id));
     }
@@ -114,11 +117,7 @@ public class DefaultDashboardProviderTests
 
         var overview = await provider.GetOverviewAsync(new() { CanRead = _ => true });
 
-        AssertWithheld(overview);
-        Assert.Equal(DashboardRuntimeStatusKeys.AcceptingWork, overview.Runtime.Status);
-        Assert.Equal(3, overview.WorkflowInstances.Running);
-        Assert.Equal(2, overview.Diagnostics.StructuredLogs.SourceCount);
-        Assert.Equal(4, overview.Diagnostics.ConsoleLogs.SourceCount);
+        SectionAccess.All.AssertOn(overview);
         Assert.Equal(3, overview.Metrics.Count);
         Assert.Equal(3, overview.Panels.Count);
     }
@@ -126,23 +125,70 @@ public class DefaultDashboardProviderTests
     [Fact]
     public async Task GetOverviewAsync_WithSectionsThatDeclareNoPermission_NeedsTheWholeOverviewPermission()
     {
-        var undeclared = new TestContributor("undeclared", 1)
-        {
-            Overview = new()
-            {
-                WorkflowInstances = new() { Running = 3 },
-                Metrics = [new() { Id = "undeclared", Label = "Undeclared" }]
-            }
-        };
-        var provider = CreateProvider(undeclared);
+        var provider = CreateProvider(Undeclared());
 
         var narrow = await provider.GetOverviewAsync(new() { CanRead = permission => permission == InstancesView });
         var whole = await provider.GetOverviewAsync(new() { CanRead = permission => permission == WholeOverview });
 
-        AssertWithheld(narrow, instances: true);
+        SectionAccess.None.AssertOn(narrow);
         Assert.Empty(narrow.Metrics);
-        Assert.Equal(3, whole.WorkflowInstances.Running);
+        SectionAccess.All.AssertOn(whole);
         Assert.Single(whole.Metrics);
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_WithCallerWhoMayReadNothing_WithholdsEverySectionAndTheDeploymentNames()
+    {
+        var provider = CreateProvider(Declared());
+
+        var overview = await provider.GetOverviewAsync(new(DashboardRangeKeys.SevenDays) { CanRead = _ => false });
+
+        SectionAccess.None.AssertOn(overview);
+        Assert.Null(overview.BackendName);
+        Assert.Null(overview.EnvironmentName);
+        Assert.Equal(DashboardRangeKeys.SevenDays, overview.AppliedRange);
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_WithCallerWhoMayReadNothing_DoesNotInvokeContributorsThatDeclaredTheirPermissions()
+    {
+        var declared = Declared();
+        var provider = CreateProvider(declared);
+
+        await provider.GetOverviewAsync(new() { CanRead = _ => false });
+        await provider.GetNeedsAttentionAsync(new() { CanRead = _ => false }, 10);
+
+        Assert.Equal(0, declared.Invocations);
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_SkipsOnlyTheContributorsWhoseEveryDeclaredPermissionIsUnreadable()
+    {
+        var logsOnly = new TestContributor("logs", 2)
+        {
+            Overview = new() { Diagnostics = new() { StructuredLogs = new() { Capability = DashboardCapabilityStatus.Available, SourceCount = 2 } } },
+            OverviewPermissions = new() { StructuredLogs = StructuredLogsView }
+        };
+        var declared = Declared();
+        var provider = CreateProvider(declared, logsOnly);
+
+        var overview = await provider.GetOverviewAsync(new() { CanRead = permission => permission == InstancesView });
+
+        Assert.Equal(1, declared.Invocations);
+        Assert.Equal(0, logsOnly.Invocations);
+        Assert.Equal(DashboardCapabilityStatus.Unauthorized.Status, overview.Diagnostics.StructuredLogs.Capability.Status);
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_WithContributorThatDeclaredNothing_StillInvokesItAndFiltersAfterwards()
+    {
+        var undeclared = Undeclared();
+        var provider = CreateProvider(undeclared);
+
+        var overview = await provider.GetOverviewAsync(new() { CanRead = _ => false });
+
+        Assert.Equal(1, undeclared.Invocations);
+        SectionAccess.None.AssertOn(overview);
     }
 
     [Fact]
@@ -169,7 +215,7 @@ public class DefaultDashboardProviderTests
     [Fact]
     public async Task GetNeedsAttentionAsync_WithFindingsThatDeclareNoPermission_NeedsTheWholeOverviewPermission()
     {
-        var provider = CreateProvider(new TestContributor("undeclared", 1) { Findings = [new() { Id = "undeclared", Message = "Undeclared" }] });
+        var provider = CreateProvider(Undeclared());
 
         var narrow = await provider.GetNeedsAttentionAsync(new() { CanRead = permission => permission == InstancesView }, 10);
         var whole = await provider.GetNeedsAttentionAsync(new() { CanRead = permission => permission == WholeOverview }, 10);
@@ -298,6 +344,48 @@ public class DefaultDashboardProviderTests
     }
 
     [Fact]
+    public async Task GetWorkflowTrendsAsync_WithholdsContributionsTheCallerMayNotRead()
+    {
+        var provider = CreateProvider(Declared(), Undeclared());
+
+        var narrow = await provider.GetWorkflowTrendsAsync(new() { CanRead = permission => permission == InstancesView });
+        var whole = await provider.GetWorkflowTrendsAsync(new() { CanRead = _ => true });
+
+        Assert.Equal([1L], narrow.Buckets.Select(x => x.CreatedOrStarted));
+        Assert.Equal([11L], whole.Buckets.Select(x => x.CreatedOrStarted));
+    }
+
+    [Fact]
+    public async Task GetRecentActivityAsync_WithholdsContributionsTheCallerMayNotRead()
+    {
+        var provider = CreateProvider(Declared(), Undeclared());
+
+        var narrow = await provider.GetRecentActivityAsync(new() { CanRead = permission => permission == InstancesView }, 10);
+        var whole = await provider.GetRecentActivityAsync(new() { CanRead = _ => true }, 10);
+
+        Assert.Equal(["instance"], narrow.Items.Select(x => x.InstanceId));
+        Assert.Equal(["instance", "undeclared"], whole.Items.Select(x => x.InstanceId).Order());
+    }
+
+    [Fact]
+    public async Task GetWorkflowHotspotsAsync_WithholdsContributionsTheCallerMayNotRead()
+    {
+        var provider = CreateProvider(Declared(), Undeclared());
+
+        var narrow = await provider.GetWorkflowHotspotsAsync(new() { CanRead = permission => permission == InstancesView });
+        var whole = await provider.GetWorkflowHotspotsAsync(new() { CanRead = _ => true });
+
+        Assert.Equal(["definition"], narrow.Items.Select(x => x.DefinitionId));
+        Assert.Equal(["definition", "undeclared"], whole.Items.Select(x => x.DefinitionId).Order());
+    }
+
+    [Fact]
+    public void DashboardAccess_PinsTheInstancesPermissionToTheWorkflowsModule()
+    {
+        Assert.Equal(new DashboardPermission(WorkflowPermissions.Instances, CoreVerbs.View), DashboardAccess.WorkflowInstances);
+    }
+
+    [Fact]
     public void DashboardApiProject_DoesNotReferenceWorkflowOrDiagnosticsModules()
     {
         var projectFile = FindRepositoryRoot().Combine("src/modules/Elsa.Dashboard.Api/Elsa.Dashboard.Api.csproj");
@@ -340,21 +428,6 @@ public class DefaultDashboardProviderTests
         AssertRegisteredContributor<StructuredLogsDashboardContributor>(services);
         AssertRegisteredContributor<ConsoleLogsDashboardContributor>(services);
         Assert.Equal(3, services.Count(x => x.ServiceType == typeof(IDashboardContributor)));
-    }
-
-    private static void AssertWithheld(DashboardOverview overview, bool runtime = false, bool instances = false, bool structuredLogs = false, bool consoleLogs = false)
-    {
-        AssertWithheld(runtime, overview.Runtime.Capability, overview.Runtime.Status != DashboardRuntimeStatusKeys.AcceptingWork);
-        AssertWithheld(instances, overview.WorkflowInstances.Capability, overview.WorkflowInstances.Running == 0);
-        AssertWithheld(structuredLogs, overview.Diagnostics.StructuredLogs.Capability, overview.Diagnostics.StructuredLogs.SourceCount == 0);
-        AssertWithheld(consoleLogs, overview.Diagnostics.ConsoleLogs.Capability, overview.Diagnostics.ConsoleLogs.SourceCount == 0);
-    }
-
-    /// <summary>A withheld section is marked Unauthorized and carries no data; any other is not marked.</summary>
-    private static void AssertWithheld(bool expected, DashboardCapabilityStatus capability, bool hasNoData)
-    {
-        Assert.Equal(expected, capability.Status == DashboardCapabilityStatus.Unauthorized.Status);
-        Assert.True(!expected || hasNoData);
     }
 
     private DefaultDashboardProvider CreateProvider(params IDashboardContributor[] contributors) =>

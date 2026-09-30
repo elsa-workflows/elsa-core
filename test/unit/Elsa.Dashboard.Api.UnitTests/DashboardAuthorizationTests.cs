@@ -1,19 +1,16 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Security.Claims;
-using System.Text.Encodings.Web;
 using System.Text.Json;
 using Elsa.Authorization;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
 using Elsa.Dashboard.Api.Services;
+using Elsa.Testing.Shared.Authorization;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using DashboardApiFeature = Elsa.Dashboard.Api.Features.DashboardApiFeature;
 using static Elsa.Dashboard.Api.UnitTests.TestContributor;
 
@@ -48,14 +45,22 @@ public class DashboardAuthorizationTests : IAsyncLifetime
     public static readonly TheoryData<string, string> InstanceEndpoints = ToTheoryData(InstanceEndpointList);
     public static readonly TheoryData<string, string> AllEndpoints = ToTheoryData(InstanceEndpointList.Append(OverviewEndpoint));
 
+    /// <summary>Every instance endpoint crossed with each permission that guards only another section.</summary>
+    public static readonly TheoryData<string, string, string> InstanceEndpointsWithAnotherSectionsPermission = ToTheoryData(
+        from endpoint in InstanceEndpointList
+        from permission in new[] { RuntimePermission, StructuredLogsPermission, ConsoleLogsPermission }
+        select (endpoint.Method, endpoint.Path, permission));
+
     /// <summary>The sections a caller holding only the permission reads; every other section is withheld.</summary>
-    public static readonly TheoryData<string, bool, bool, bool, bool> ReadableSections = new()
+    public static readonly TheoryData<string, SectionAccess> ReadableSections = new()
     {
-        { RuntimePermission, true, false, false, false },
-        { InstancesPermission, false, true, false, false },
-        { StructuredLogsPermission, false, false, true, false },
-        { ConsoleLogsPermission, false, false, false, true },
-        { WholeOverviewPermission, true, true, true, true }
+        { RuntimePermission, new() { Runtime = true } },
+        { InstancesPermission, new() { Instances = true } },
+        { StructuredLogsPermission, new() { StructuredLogs = true } },
+        { ConsoleLogsPermission, new() { ConsoleLogs = true } },
+        { WholeOverviewPermission, SectionAccess.All },
+        { "workflows/*:view", new() { Runtime = true, Instances = true } },
+        { "*:view", SectionAccess.All }
     };
 
     private readonly bool _wasSecurityEnabled = EndpointSecurityOptions.SecurityIsEnabled;
@@ -105,16 +110,13 @@ public class DashboardAuthorizationTests : IAsyncLifetime
 
     [Theory]
     [MemberData(nameof(ReadableSections))]
-    public async Task Overview_WithOnePermission_ReturnsOnlyTheSectionItGuards(string permission, bool runtime, bool instances, bool structuredLogs, bool consoleLogs)
+    public async Task Overview_WithOnePermission_ReturnsOnlyTheSectionsItGuards(string permission, SectionAccess readable)
     {
         var response = await SendAsync(HttpMethod.Get, OverviewEndpoint.Path, permission);
         var overview = await ReadOverviewAsync(response);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        AssertSection(runtime, overview.Runtime.Capability, overview.Runtime.Status == DashboardRuntimeStatusKeys.AcceptingWork);
-        AssertSection(instances, overview.WorkflowInstances.Capability, overview.WorkflowInstances.Running == 3);
-        AssertSection(structuredLogs, overview.Diagnostics.StructuredLogs.Capability, overview.Diagnostics.StructuredLogs.SourceCount == 2);
-        AssertSection(consoleLogs, overview.Diagnostics.ConsoleLogs.Capability, overview.Diagnostics.ConsoleLogs.SourceCount == 4);
+        readable.AssertOn(overview);
     }
 
     [Fact]
@@ -124,10 +126,9 @@ public class DashboardAuthorizationTests : IAsyncLifetime
         var overview = await ReadOverviewAsync(response);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        AssertSection(false, overview.Runtime.Capability, false);
-        AssertSection(false, overview.WorkflowInstances.Capability, false);
-        AssertSection(false, overview.Diagnostics.StructuredLogs.Capability, false);
-        AssertSection(false, overview.Diagnostics.ConsoleLogs.Capability, false);
+        SectionAccess.None.AssertOn(overview);
+        Assert.Null(overview.BackendName);
+        Assert.Null(overview.EnvironmentName);
         Assert.Empty(overview.Metrics);
         Assert.Empty(overview.Panels);
     }
@@ -170,15 +171,12 @@ public class DashboardAuthorizationTests : IAsyncLifetime
     }
 
     [Theory]
-    [MemberData(nameof(InstanceEndpoints))]
-    public async Task InstanceEndpoint_WithAPermissionOnlyForAnotherSection_IsForbidden(string method, string path)
+    [MemberData(nameof(InstanceEndpointsWithAnotherSectionsPermission))]
+    public async Task InstanceEndpoint_WithAPermissionOnlyForAnotherSection_IsForbidden(string method, string path, string permission)
     {
-        foreach (var permission in new[] { RuntimePermission, StructuredLogsPermission, ConsoleLogsPermission })
-        {
-            var response = await SendAsync(new(method), path, permission);
+        var response = await SendAsync(new(method), path, permission);
 
-            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        }
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Theory]
@@ -217,8 +215,20 @@ public class DashboardAuthorizationTests : IAsyncLifetime
 
         var overview = await ReadOverviewAsync(await SendAsync(HttpMethod.Get, OverviewEndpoint.Path, authenticated: true));
 
-        AssertSection(true, overview.Runtime.Capability, overview.Runtime.Status == DashboardRuntimeStatusKeys.AcceptingWork);
+        SectionAccess.All.AssertOn(overview);
         Assert.Equal(3, overview.Metrics.Count);
+    }
+
+    [Theory]
+    [InlineData("/dashboard/overview", "metrics")]
+    [InlineData("/dashboard/needs-attention", "findings")]
+    public async Task Response_NeverSerializesThePermissionsThatGuardIt(string path, string collection)
+    {
+        var response = await SendAsync(HttpMethod.Get, path, WholeOverviewPermission);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+        Assert.NotEmpty(json.RootElement.GetProperty(collection).EnumerateArray());
+        Assert.DoesNotContain("permission", json.RootElement.GetRawText(), StringComparison.OrdinalIgnoreCase);
     }
 
     private static TheoryData<string, string> ToTheoryData(IEnumerable<(HttpMethod Method, string Path)> endpoints)
@@ -233,11 +243,16 @@ public class DashboardAuthorizationTests : IAsyncLifetime
         return data;
     }
 
-    /// <summary>A section is either readable, with its data, or marked Unauthorized, without it.</summary>
-    private static void AssertSection(bool readable, DashboardCapabilityStatus capability, bool hasData)
+    private static TheoryData<string, string, string> ToTheoryData(IEnumerable<(HttpMethod Method, string Path, string Permission)> cases)
     {
-        Assert.Equal(readable, capability.Status != DashboardCapabilityStatus.Unauthorized.Status);
-        Assert.Equal(readable, hasData);
+        var data = new TheoryData<string, string, string>();
+
+        foreach (var (method, path, permission) in cases)
+        {
+            data.Add(method.Method, path, permission);
+        }
+
+        return data;
     }
 
     private static async Task<DashboardOverview> ReadOverviewAsync(HttpResponseMessage response) =>
@@ -263,34 +278,6 @@ public class DashboardAuthorizationTests : IAsyncLifetime
         }
 
         return _app.GetTestClient().SendAsync(request);
-    }
-
-    /// <summary>
-    /// Authenticates a caller that names itself in a header, holding the permissions named in another header (none when
-    /// absent); a request without the user header stays anonymous.
-    /// </summary>
-    private sealed class PermissionHeaderAuthenticationHandler(
-        IOptionsMonitor<AuthenticationSchemeOptions> options,
-        ILoggerFactory logger,
-        UrlEncoder encoder)
-        : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
-    {
-        public const string SchemeName = "Header";
-        public const string UserHeaderName = "X-Test-User";
-        public const string PermissionsHeaderName = "X-Test-Permissions";
-
-        protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-        {
-            if (!Request.Headers.ContainsKey(UserHeaderName))
-            {
-                return Task.FromResult(AuthenticateResult.NoResult());
-            }
-
-            var claims = Request.Headers[PermissionsHeaderName].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries).Select(x => new Claim(PermissionNames.ClaimType, x));
-            var identity = new ClaimsIdentity(claims, SchemeName);
-
-            return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName)));
-        }
     }
 }
 
