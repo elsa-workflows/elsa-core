@@ -202,9 +202,7 @@ public sealed class LoginChooserTests : BunitContext, IAsyncLifetime
         var signIn = coordinator.HoldSignIn();
 
         var cut = RenderLoginPage();
-        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll("input").Count));
-        cut.FindAll("input")[0].Change("alice");
-        cut.FindAll("input")[1].Change("secret");
+        FillCredentials(cut);
         cut.Find(LocalSignInButton).Click();
 
         cut.WaitForAssertion(() =>
@@ -222,6 +220,41 @@ public sealed class LoginChooserTests : BunitContext, IAsyncLifetime
             AssertIdle(cut.Find(LocalSignInButton), "Sign in");
             Assert.All(cut.FindAll("input"), input => Assert.False(input.HasAttribute("disabled")));
         });
+    }
+
+    [Theory]
+    [InlineData(UserNameField)]
+    [InlineData(PasswordField)]
+    public void BrowserLocalMethod_StartsSignInWhenEnterIsPressedInEitherField(int field)
+    {
+        var coordinator = Register(new([Method("local", "Elsa account", "local", 0)], null));
+        coordinator.HoldSignIn();
+
+        var cut = RenderLoginPage();
+        FillCredentials(cut);
+        cut.FindAll("input")[field].KeyDown(Key.Enter);
+
+        cut.WaitForAssertion(() => AssertBusy(cut.Find(LocalSignInButton), "Signing in…"));
+        Assert.Equal(1, coordinator.LocalBegins);
+    }
+
+    [Fact]
+    public void BrowserLocalMethod_IgnoresEnterWhileSigningIn()
+    {
+        var coordinator = Register(new([Method("local", "Elsa account", "local", 0)], null));
+        var signIn = coordinator.HoldSignIn();
+
+        var cut = RenderLoginPage();
+        FillCredentials(cut);
+        cut.Find(LocalSignInButton).Click();
+        cut.WaitForAssertion(() => AssertBusy(cut.Find(LocalSignInButton), "Signing in…"));
+
+        cut.FindAll("input")[PasswordField].KeyDown(Key.Enter);
+
+        // A second request would reach the coordinator after the form validates, so let the first one finish before counting.
+        signIn.SetException(new InvalidOperationException());
+        cut.WaitForAssertion(() => AssertIdle(cut.Find(LocalSignInButton), "Sign in"));
+        Assert.Equal(1, coordinator.LocalBegins);
     }
 
     [Fact]
@@ -331,6 +364,15 @@ public sealed class LoginChooserTests : BunitContext, IAsyncLifetime
 
     private const string ContosoButton = "button[aria-label='Sign in with Contoso']";
     private const string LocalSignInButton = "button.mud-button-filled";
+    private const int UserNameField = 0;
+    private const int PasswordField = 1;
+
+    private static void FillCredentials(IRenderedComponent<LoginPage> cut)
+    {
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll("input").Count));
+        cut.FindAll("input")[UserNameField].Input("alice");
+        cut.FindAll("input")[PasswordField].Input("secret");
+    }
 
     private static void AssertBusy(IElement button, string busyText)
     {

@@ -6,6 +6,7 @@ using Elsa.Studio.Authentication.ElsaIdentity.Models;
 using Elsa.Studio.Authentication.ElsaIdentity.UI.Components;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 
@@ -14,6 +15,8 @@ namespace Elsa.Studio.Authentication.UI.Tests;
 public sealed class ElsaIdentityLoginMethodTests : BunitContext, IAsyncLifetime
 {
     private const string SignInButton = "button.mud-button-filled";
+    private const int UserNameField = 0;
+    private const int PasswordField = 1;
 
     private readonly PendingCredentialsValidator _validator = new();
     private readonly List<string> _failures = [];
@@ -88,11 +91,67 @@ public sealed class ElsaIdentityLoginMethodTests : BunitContext, IAsyncLifetime
         Assert.Equal(0, _validator.Calls);
     }
 
+    [Theory]
+    [InlineData(UserNameField)]
+    [InlineData(PasswordField)]
+    public void PressingEnterInEitherField_StartsSignIn(int field)
+    {
+        FillCredentials();
+
+        _cut.FindAll("input")[field].KeyDown(Key.Enter);
+
+        _cut.WaitForAssertion(() => Assert.True(_cut.Find(SignInButton).HasAttribute("disabled")));
+        Assert.Equal(1, _validator.Calls);
+    }
+
+    [Fact]
+    public void PressingEnterToConfirmAnImeComposition_DoesNotStartSignIn()
+    {
+        FillCredentials();
+
+        _cut.FindAll("input")[PasswordField].KeyDown(new KeyboardEventArgs { Key = "Enter", IsComposing = true });
+
+        AssertIdle();
+        Assert.Equal(0, _validator.Calls);
+    }
+
+    [Fact]
+    public void PressingEnterWithMissingCredentials_NeverStartsTheRequestOrGoesBusy()
+    {
+        _cut.FindAll("input")[PasswordField].KeyDown(Key.Enter);
+
+        _cut.WaitForAssertion(AssertIdle);
+        Assert.Equal(0, _validator.Calls);
+    }
+
+    [Fact]
+    public void PressingEnterWhileSigningIn_DoesNotStartASecondRequest()
+    {
+        SubmitCredentials();
+        _cut.WaitForAssertion(() => Assert.True(_cut.Find(SignInButton).HasAttribute("disabled")));
+
+        _cut.FindAll("input")[PasswordField].KeyDown(Key.Enter);
+
+        // A second request would reach the validator after the form validates, so let the first one finish before counting.
+        _validator.Complete(new(false, null, null));
+        _cut.WaitForAssertion(() =>
+        {
+            Assert.Equal(["Invalid credentials. Try again."], _failures);
+            AssertIdle();
+        });
+        Assert.Equal(1, _validator.Calls);
+    }
+
     private void SubmitCredentials()
     {
-        _cut.FindAll("input")[0].Change("alice");
-        _cut.FindAll("input")[1].Change("secret");
+        FillCredentials();
         _cut.Find(SignInButton).Click();
+    }
+
+    private void FillCredentials()
+    {
+        _cut.FindAll("input")[UserNameField].Input("alice");
+        _cut.FindAll("input")[PasswordField].Input("secret");
     }
 
     private void AssertIdle()
