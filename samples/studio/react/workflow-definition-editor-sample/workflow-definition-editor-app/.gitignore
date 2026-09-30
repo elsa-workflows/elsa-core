@@ -9,7 +9,10 @@
 /coverage
 
 # production
-/build
+/dist
+
+# Copied from @elsa-workflows/elsa-studio-wasm on npm install, alongside the paths the root .gitignore covers
+/public/Elsa.Studio.Host.CustomElements.styles.css
 
 # misc
 .DS_Store
