@@ -29,9 +29,9 @@ public static class WorkflowPermissions
     /// <summary>Execute activity tests.</summary>
     public const string Tests = "workflows/tests";
     /// <summary>
-    /// Still guards requesting a registry refresh (<c>GET /descriptors/activities?refresh=true</c>) and resolving an activity
-    /// property's options (<c>POST /descriptors/activities/{activityTypeName}/options/{propertyName}</c>). Reading the
-    /// activity catalog no longer requires it.
+    /// Reading the activity catalog no longer requires it. It still makes <c>GET /descriptors/activities?refresh=true</c>
+    /// rebuild the registry (callers without it get the current registry, the flag ignored) and guards resolving an activity
+    /// property's options (<c>POST /descriptors/activities/{activityTypeName}/options/{propertyName}</c>).
     /// </summary>
     public const string DescriptorsActivities = "workflows/descriptors/activities";
     /// <summary>
@@ -97,7 +97,7 @@ public sealed class WorkflowPermissionsDescriptorProvider : IPermissionDescripto
         new(WorkflowPermissions.Events, ["trigger"], "Workflow events", "Trigger workflow events.", "Workflows"),
         new(WorkflowPermissions.Tasks, ["complete"], "Workflow tasks", "Complete external workflow tasks.", "Workflows"),
         new(WorkflowPermissions.Tests, [CoreVerbs.Execute], "Activity tests", "Execute activity tests.", "Workflows"),
-        new(WorkflowPermissions.DescriptorsActivities, [CoreVerbs.View], "Activity descriptors", "Required to refresh the activity registry (GET /descriptors/activities?refresh=true) and to resolve activity property options. Reading the activity catalog no longer requires it; roles that hold it stay valid.", "Workflows"),
+        new(WorkflowPermissions.DescriptorsActivities, [CoreVerbs.View], "Activity descriptors", "Makes GET /descriptors/activities?refresh=true rebuild the activity registry (ignored without it) and is required to resolve activity property options. Reading the activity catalog no longer requires it; roles that hold it stay valid.", "Workflows"),
         new(WorkflowPermissions.DescriptorsExpressions, [CoreVerbs.View], "Expression descriptors", "No longer required: any authenticated caller may read this catalog. Retained so existing roles that hold it stay valid.", "Workflows"),
         new(WorkflowPermissions.DescriptorsStorageDrivers, [CoreVerbs.View], "Storage driver descriptors", "No longer required: any authenticated caller may read this catalog. Retained so existing roles that hold it stay valid.", "Workflows"),
         new(WorkflowPermissions.DescriptorsVariables, [CoreVerbs.View], "Variable descriptors", "No longer required: any authenticated caller may read this catalog. Retained so existing roles that hold it stay valid.", "Workflows"),

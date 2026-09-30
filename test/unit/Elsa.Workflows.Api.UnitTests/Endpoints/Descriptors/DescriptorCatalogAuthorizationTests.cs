@@ -153,11 +153,12 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task RefreshingTheActivityRegistry_WithOnlyDefinitionsView_IsForbidden()
+    public async Task RefreshingTheActivityRegistry_WithOnlyDefinitionsView_IgnoresTheFlag()
     {
         var response = await SendAsync("/descriptors/activities?refresh=true", DefinitionsView);
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains(TypeName, await response.Content.ReadAsStringAsync());
         await _registryPopulator.DidNotReceiveWithAnyArgs().PopulateRegistryAsync(default);
     }
 
@@ -167,6 +168,7 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
         var response = await SendAsync("/descriptors/activities?refresh=true", DescriptorsActivitiesView);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains(TypeName, await response.Content.ReadAsStringAsync());
         await _registryPopulator.Received(1).PopulateRegistryAsync(Arg.Any<CancellationToken>());
     }
 
