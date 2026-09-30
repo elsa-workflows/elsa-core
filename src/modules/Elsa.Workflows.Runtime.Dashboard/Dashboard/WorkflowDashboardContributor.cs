@@ -1,7 +1,9 @@
+using Elsa.Authorization;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
+using Elsa.Workflows.Api.Permissions;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Enums;
@@ -14,6 +16,9 @@ public class WorkflowDashboardContributor(
     IWorkflowInstanceStore workflowInstanceStore,
     IWorkflowRuntimeAdminService runtimeAdminService) : IDashboardContributor
 {
+    private static readonly DashboardPermission RuntimeView = new(WorkflowPermissions.Runtime, CoreVerbs.View);
+    private static readonly DashboardPermission InstancesView = new(WorkflowPermissions.Instances, CoreVerbs.View);
+
     public string Id => "workflows";
 
     public int Order => 100;
@@ -23,7 +28,12 @@ public class WorkflowDashboardContributor(
         return new()
         {
             Runtime = GetRuntimeStatus(),
-            WorkflowInstances = await GetWorkflowMetricsAsync(context.Range, context.IncludeSystem, context.CancellationToken)
+            WorkflowInstances = await GetWorkflowMetricsAsync(context.Range, context.IncludeSystem, context.CancellationToken),
+            Permissions = new()
+            {
+                Runtime = RuntimeView,
+                WorkflowInstances = InstancesView
+            }
         };
     }
 
@@ -34,21 +44,21 @@ public class WorkflowDashboardContributor(
         var findings = new List<DashboardFinding>();
 
         if (runtime.Status == DashboardRuntimeStatusKeys.Paused)
-            findings.Add(Finding("runtime-paused", DashboardFindingSeverity.Warning, "Runtime is paused", "Runtime", "runtime", 10));
+            findings.Add(Finding("runtime-paused", DashboardFindingSeverity.Warning, "Runtime is paused", "Runtime", "runtime", 10, RuntimeView));
         else if (runtime.Status == DashboardRuntimeStatusKeys.Draining)
-            findings.Add(Finding("runtime-draining", DashboardFindingSeverity.Warning, "Runtime is draining", "Runtime", "runtime", 20));
+            findings.Add(Finding("runtime-draining", DashboardFindingSeverity.Warning, "Runtime is draining", "Runtime", "runtime", 20, RuntimeView));
 
         if (runtime.FailedIngressSourceCount > 0)
-            findings.Add(Finding("ingress-source-failures", DashboardFindingSeverity.Warning, $"{runtime.FailedIngressSourceCount} ingress sources need attention", "Runtime", "runtime", 30));
+            findings.Add(Finding("ingress-source-failures", DashboardFindingSeverity.Warning, $"{runtime.FailedIngressSourceCount} ingress sources need attention", "Runtime", "runtime", 30, RuntimeView));
 
         if (workflowMetrics.Faulted > 0)
-            findings.Add(Finding("workflow-faults", DashboardFindingSeverity.Error, $"{workflowMetrics.Faulted} workflows faulted in the selected range", "WorkflowInstances", "faulted", 40));
+            findings.Add(Finding("workflow-faults", DashboardFindingSeverity.Error, $"{workflowMetrics.Faulted} workflows faulted in the selected range", "WorkflowInstances", "faulted", 40, InstancesView));
 
         if (workflowMetrics.Interrupted > 0)
-            findings.Add(Finding("workflow-interrupted", DashboardFindingSeverity.Warning, $"{workflowMetrics.Interrupted} workflows were interrupted in the selected range", "WorkflowInstances", "interrupted", 50));
+            findings.Add(Finding("workflow-interrupted", DashboardFindingSeverity.Warning, $"{workflowMetrics.Interrupted} workflows were interrupted in the selected range", "WorkflowInstances", "interrupted", 50, InstancesView));
 
         if (workflowMetrics.IncidentBearing > 0)
-            findings.Add(Finding("workflow-incidents", DashboardFindingSeverity.Error, $"{workflowMetrics.IncidentBearing} workflows have incidents", "WorkflowInstances", "incidents", 60));
+            findings.Add(Finding("workflow-incidents", DashboardFindingSeverity.Error, $"{workflowMetrics.IncidentBearing} workflows have incidents", "WorkflowInstances", "incidents", 60, InstancesView));
 
         return findings;
     }
@@ -254,14 +264,15 @@ public class WorkflowDashboardContributor(
                 ? TimeSpan.FromDays(1)
                 : TimeSpan.FromHours(1);
 
-    private static DashboardFinding Finding(string id, string severity, string message, string? targetKind, string? target, int priority) => new()
+    private static DashboardFinding Finding(string id, string severity, string message, string? targetKind, string? target, int priority, DashboardPermission permission) => new()
     {
         Id = id,
         Severity = severity,
         Message = message,
         TargetKind = targetKind,
         Target = target,
-        Priority = priority
+        Priority = priority,
+        Permission = permission
     };
 
     private static DateTimeOffset Min(DateTimeOffset left, DateTimeOffset right) => left <= right ? left : right;

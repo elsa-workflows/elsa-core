@@ -10,7 +10,9 @@ namespace Elsa.Dashboard.Api.Permissions;
 /// </summary>
 public static class DashboardResourcePermissions
 {
-    /// <summary>View operational dashboards.</summary>
+    /// <summary>
+    /// View the whole operational dashboard. The permission guarding a section's data reads just that section.
+    /// </summary>
     public const string Dashboard = "dashboard";
 }
 
@@ -21,6 +23,6 @@ public sealed class DashboardResourcePermissionsDescriptorProvider : IPermission
     /// <inheritdoc />
     public IEnumerable<PermissionDescriptor> GetDescriptors() =>
     [
-        new(DashboardResourcePermissions.Dashboard, [CoreVerbs.View], "Dashboard", "View operational dashboards.", "Dashboard"),
+        new(DashboardResourcePermissions.Dashboard, [CoreVerbs.View], "Dashboard", "View the whole operational dashboard. The permission that guards a section's data, such as workflows/instances:view, reads just that section.", "Dashboard"),
     ];
 }

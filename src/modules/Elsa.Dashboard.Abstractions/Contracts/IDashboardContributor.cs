@@ -73,4 +73,20 @@ public record DashboardOverviewContribution
     public DashboardDiagnosticsSummary? Diagnostics { get; init; }
     public IReadOnlyCollection<DashboardMetricCard> Metrics { get; init; } = [];
     public IReadOnlyCollection<DashboardPanelSummary> Panels { get; init; } = [];
+
+    /// <summary>The permissions guarding the sections this contribution supplies.</summary>
+    public DashboardOverviewPermissions Permissions { get; init; } = new();
+}
+
+/// <summary>
+/// The permission guarding each section of an overview contribution. A caller reads a section with the permission
+/// declared here or with <c>dashboard:view</c>. A section supplied without a declaration needs <c>dashboard:view</c>, so
+/// a contribution that declares nothing is never exposed to callers who hold only a narrower permission.
+/// </summary>
+public record DashboardOverviewPermissions
+{
+    public DashboardPermission? Runtime { get; init; }
+    public DashboardPermission? WorkflowInstances { get; init; }
+    public DashboardPermission? StructuredLogs { get; init; }
+    public DashboardPermission? ConsoleLogs { get; init; }
 }

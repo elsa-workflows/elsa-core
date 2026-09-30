@@ -87,6 +87,8 @@ Dashboard core owns the public `/dashboard/*` routes, permissions, range resolut
 - `GetRecentActivityAsync` for compact activity rows.
 - `GetWorkflowHotspotsAsync` for hotspot rows.
 
+Each contribution declares the permission of the data it adds, so the dashboard can withhold it from callers who may not read it. A caller reads a section with the declared permission or with `dashboard:view`; anything supplied without a declaration needs `dashboard:view`. Set `DashboardOverviewContribution.Permissions` for the runtime, workflow instance and diagnostics sections, and `Permission` on a metric card, panel or finding. A section the caller may not read is returned with `Capability = Unauthorized` and no data.
+
 Contributor failures are isolated by the dashboard composer. A failed contributor does not break the whole dashboard response; request cancellation is still honored.
 
 ### Backend Weather Example

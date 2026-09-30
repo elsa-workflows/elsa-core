@@ -1,4 +1,3 @@
-using Elsa.Common;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
 using Elsa.Dashboard.Api.Services;
@@ -9,8 +8,7 @@ using Elsa.Diagnostics.StructuredLogs.Dashboard.Extensions;
 using Elsa.Workflows.Runtime.Dashboard;
 using Elsa.Workflows.Runtime.Dashboard.Extensions;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Hosting;
+using static Elsa.Dashboard.Api.UnitTests.TestContributor;
 
 namespace Elsa.Dashboard.Api.UnitTests;
 
@@ -79,6 +77,105 @@ public class DefaultDashboardProviderTests
         Assert.Equal(1, overview.WorkflowInstances.Faulted);
         Assert.Equal(DashboardCapabilityStatus.Available.Status, overview.Diagnostics.StructuredLogs.Capability.Status);
         Assert.Equal(2, overview.Diagnostics.StructuredLogs.SourceCount);
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_WithCallerWhoMayReadOnlyInstances_WithholdsEveryOtherSection()
+    {
+        var provider = CreateProvider(Declared());
+
+        var overview = await provider.GetOverviewAsync(new() { CanRead = permission => permission == InstancesView });
+
+        Assert.Equal(3, overview.WorkflowInstances.Running);
+        Assert.Equal(DashboardCapabilityStatus.Available.Status, overview.WorkflowInstances.Capability.Status);
+        AssertWithheld(overview, runtime: true, structuredLogs: true, consoleLogs: true);
+        Assert.Equal([InstancesMetric], overview.Metrics.Select(x => x.Id));
+        Assert.Equal([InstancesPanel], overview.Panels.Select(x => x.Id));
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_WithCallerWhoMayReadOnlyStructuredLogs_WithholdsEveryOtherSection()
+    {
+        var provider = CreateProvider(Declared());
+
+        var overview = await provider.GetOverviewAsync(new() { CanRead = permission => permission == StructuredLogsView });
+
+        Assert.Equal(DashboardCapabilityStatus.Available.Status, overview.Diagnostics.StructuredLogs.Capability.Status);
+        Assert.Equal(2, overview.Diagnostics.StructuredLogs.SourceCount);
+        AssertWithheld(overview, runtime: true, instances: true, consoleLogs: true);
+        Assert.Empty(overview.Metrics);
+        Assert.Equal([LogsPanel], overview.Panels.Select(x => x.Id));
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_WithCallerWhoMayReadTheWholeOverview_ReturnsEverything()
+    {
+        var provider = CreateProvider(Declared());
+
+        var overview = await provider.GetOverviewAsync(new() { CanRead = _ => true });
+
+        AssertWithheld(overview);
+        Assert.Equal(DashboardRuntimeStatusKeys.AcceptingWork, overview.Runtime.Status);
+        Assert.Equal(3, overview.WorkflowInstances.Running);
+        Assert.Equal(2, overview.Diagnostics.StructuredLogs.SourceCount);
+        Assert.Equal(4, overview.Diagnostics.ConsoleLogs.SourceCount);
+        Assert.Equal(3, overview.Metrics.Count);
+        Assert.Equal(3, overview.Panels.Count);
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_WithSectionsThatDeclareNoPermission_NeedsTheWholeOverviewPermission()
+    {
+        var undeclared = new TestContributor("undeclared", 1)
+        {
+            Overview = new()
+            {
+                WorkflowInstances = new() { Running = 3 },
+                Metrics = [new() { Id = "undeclared", Label = "Undeclared" }]
+            }
+        };
+        var provider = CreateProvider(undeclared);
+
+        var narrow = await provider.GetOverviewAsync(new() { CanRead = permission => permission == InstancesView });
+        var whole = await provider.GetOverviewAsync(new() { CanRead = permission => permission == WholeOverview });
+
+        AssertWithheld(narrow, instances: true);
+        Assert.Empty(narrow.Metrics);
+        Assert.Equal(3, whole.WorkflowInstances.Running);
+        Assert.Single(whole.Metrics);
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_WithASectionNobodySupplied_LeavesItAtItsDefaultForACallerWhoMayReadNothing()
+    {
+        var provider = CreateProvider();
+
+        var overview = await provider.GetOverviewAsync(new() { CanRead = _ => false });
+
+        Assert.Equal(DashboardCapabilityStatus.NotInstalled.Status, overview.Diagnostics.StructuredLogs.Capability.Status);
+        Assert.Equal(DashboardCapabilityStatus.Available.Status, overview.WorkflowInstances.Capability.Status);
+    }
+
+    [Fact]
+    public async Task GetNeedsAttentionAsync_WithholdsFindingsTheCallerMayNotRead()
+    {
+        var provider = CreateProvider(Declared());
+
+        var response = await provider.GetNeedsAttentionAsync(new() { CanRead = permission => permission == InstancesView }, 10);
+
+        Assert.Equal([InstancesFinding], response.Findings.Select(x => x.Id));
+    }
+
+    [Fact]
+    public async Task GetNeedsAttentionAsync_WithFindingsThatDeclareNoPermission_NeedsTheWholeOverviewPermission()
+    {
+        var provider = CreateProvider(new TestContributor("undeclared", 1) { Findings = [new() { Id = "undeclared", Message = "Undeclared" }] });
+
+        var narrow = await provider.GetNeedsAttentionAsync(new() { CanRead = permission => permission == InstancesView }, 10);
+        var whole = await provider.GetNeedsAttentionAsync(new() { CanRead = permission => permission == WholeOverview }, 10);
+
+        Assert.Empty(narrow.Findings);
+        Assert.Single(whole.Findings);
     }
 
     [Fact]
@@ -245,6 +342,21 @@ public class DefaultDashboardProviderTests
         Assert.Equal(3, services.Count(x => x.ServiceType == typeof(IDashboardContributor)));
     }
 
+    private static void AssertWithheld(DashboardOverview overview, bool runtime = false, bool instances = false, bool structuredLogs = false, bool consoleLogs = false)
+    {
+        AssertWithheld(runtime, overview.Runtime.Capability, overview.Runtime.Status != DashboardRuntimeStatusKeys.AcceptingWork);
+        AssertWithheld(instances, overview.WorkflowInstances.Capability, overview.WorkflowInstances.Running == 0);
+        AssertWithheld(structuredLogs, overview.Diagnostics.StructuredLogs.Capability, overview.Diagnostics.StructuredLogs.SourceCount == 0);
+        AssertWithheld(consoleLogs, overview.Diagnostics.ConsoleLogs.Capability, overview.Diagnostics.ConsoleLogs.SourceCount == 0);
+    }
+
+    /// <summary>A withheld section is marked Unauthorized and carries no data; any other is not marked.</summary>
+    private static void AssertWithheld(bool expected, DashboardCapabilityStatus capability, bool hasNoData)
+    {
+        Assert.Equal(expected, capability.Status == DashboardCapabilityStatus.Unauthorized.Status);
+        Assert.True(!expected || hasNoData);
+    }
+
     private DefaultDashboardProvider CreateProvider(params IDashboardContributor[] contributors) =>
         new(contributors, new(new TestClock(_now)), new TestHostEnvironment());
 
@@ -280,29 +392,6 @@ public class DefaultDashboardProviderTests
         throw new InvalidOperationException("Could not locate repository root.");
     }
 
-    private sealed class TestContributor(string id, int order) : IDashboardContributor
-    {
-        public string Id { get; } = id;
-
-        public int Order { get; } = order;
-
-        public DashboardOverviewContribution? Overview { get; init; }
-
-        public IReadOnlyCollection<DashboardFinding> Findings { get; init; } = [];
-
-        public DashboardTrendResponse? Trend { get; init; }
-
-        public DashboardRecentActivityResponse? RecentActivity { get; init; }
-
-        public ValueTask<DashboardOverviewContribution?> GetOverviewAsync(DashboardContext context) => ValueTask.FromResult(Overview);
-
-        public ValueTask<IReadOnlyCollection<DashboardFinding>> GetFindingsAsync(DashboardContext context) => ValueTask.FromResult(Findings);
-
-        public ValueTask<DashboardTrendResponse?> GetWorkflowTrendsAsync(DashboardTrendContext context) => ValueTask.FromResult(Trend);
-
-        public ValueTask<DashboardRecentActivityResponse?> GetRecentActivityAsync(DashboardListContext context) => ValueTask.FromResult(RecentActivity);
-    }
-
     private sealed class ThrowingContributor(string id, int order) : IDashboardContributor
     {
         public string Id { get; } = id;
@@ -321,22 +410,6 @@ public class DefaultDashboardProviderTests
         public int Order => 0;
 
         public ValueTask<DashboardOverviewContribution?> GetOverviewAsync(DashboardContext context) => throw new OperationCanceledException(context.CancellationToken);
-    }
-
-    private sealed class TestClock(DateTimeOffset utcNow) : ISystemClock
-    {
-        public DateTimeOffset UtcNow { get; } = utcNow;
-    }
-
-    private sealed class TestHostEnvironment : IHostEnvironment
-    {
-        public string EnvironmentName { get; set; } = "Integration";
-
-        public string ApplicationName { get; set; } = "Elsa.TestHost";
-
-        public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
-
-        public IFileProvider ContentRootFileProvider { get; set; } = null!;
     }
 }
 

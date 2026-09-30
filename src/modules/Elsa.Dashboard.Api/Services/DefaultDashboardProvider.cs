@@ -1,5 +1,6 @@
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
+using Elsa.Dashboard.Api.Authorization;
 using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Dashboard.Api.Services;
@@ -13,6 +14,7 @@ public class DefaultDashboardProvider(
     {
         var range = rangeResolver.Resolve(query.Range);
         var context = CreateContext(range, query.IncludeSystem, cancellationToken);
+        var canRead = CanRead(query);
         var contributions = new List<DashboardOverviewContribution>();
 
         foreach (var contributor in OrderedContributors)
@@ -26,11 +28,15 @@ public class DefaultDashboardProvider(
         {
             BackendName = environment.ApplicationName,
             EnvironmentName = environment.EnvironmentName,
-            Runtime = MergeRuntime(contributions),
-            WorkflowInstances = MergeWorkflowMetrics(contributions),
-            Diagnostics = MergeDiagnostics(contributions),
-            Metrics = contributions.SelectMany(x => x.Metrics).OrderBy(x => x.Order).ThenBy(x => x.Id, StringComparer.Ordinal).ToList(),
-            Panels = contributions.SelectMany(x => x.Panels).OrderBy(x => x.Order).ThenBy(x => x.Id, StringComparer.Ordinal).ToList(),
+            Runtime = MergeSection(contributions, canRead, x => x.Runtime, x => x.Runtime, MergeRuntime, new() { Capability = DashboardCapabilityStatus.Unauthorized }),
+            WorkflowInstances = MergeSection(contributions, canRead, x => x.WorkflowInstances, x => x.WorkflowInstances, MergeWorkflowMetrics, new() { Capability = DashboardCapabilityStatus.Unauthorized }),
+            Diagnostics = new()
+            {
+                StructuredLogs = MergeSection(contributions, canRead, x => Installed(x.Diagnostics?.StructuredLogs, y => y.Capability), x => x.StructuredLogs, MergeStructuredLogs, new() { Capability = DashboardCapabilityStatus.Unauthorized }),
+                ConsoleLogs = MergeSection(contributions, canRead, x => Installed(x.Diagnostics?.ConsoleLogs, y => y.Capability), x => x.ConsoleLogs, MergeConsoleLogs, new() { Capability = DashboardCapabilityStatus.Unauthorized })
+            },
+            Metrics = contributions.SelectMany(x => x.Metrics).Where(x => canRead(x.Permission ?? DashboardAccess.Overview)).OrderBy(x => x.Order).ThenBy(x => x.Id, StringComparer.Ordinal).ToList(),
+            Panels = contributions.SelectMany(x => x.Panels).Where(x => canRead(x.Permission ?? DashboardAccess.Overview)).OrderBy(x => x.Order).ThenBy(x => x.Id, StringComparer.Ordinal).ToList(),
             AppliedRange = range.Key,
             From = range.From,
             To = range.To
@@ -73,7 +79,9 @@ public class DefaultDashboardProvider(
     {
         var range = rangeResolver.Resolve(query.Range);
         var context = CreateContext(range, query.IncludeSystem, cancellationToken);
-        var findings = await CollectManyAsync(contributor => contributor.GetFindingsAsync(context).AsTask(), cancellationToken);
+        var canRead = CanRead(query);
+        var findings = (await CollectManyAsync(contributor => contributor.GetFindingsAsync(context).AsTask(), cancellationToken))
+            .Where(x => canRead(x.Permission ?? DashboardAccess.Overview));
 
         return new()
         {
@@ -198,16 +206,40 @@ public class DefaultDashboardProvider(
         }
     }
 
-    private static DashboardRuntimeStatus MergeRuntime(IEnumerable<DashboardOverviewContribution> contributions) =>
-        contributions
-            .Select(x => x.Runtime)
-            .FirstOrDefault(x => x != null && x.Status != DashboardRuntimeStatusKeys.Unavailable)
-        ?? new();
+    private static Func<DashboardPermission, bool> CanRead(DashboardQuery query) => query.CanRead ?? (_ => true);
 
-    private static DashboardWorkflowInstanceMetrics MergeWorkflowMetrics(IEnumerable<DashboardOverviewContribution> contributions)
+    /// <summary>
+    /// Merges the contributions of one overview section the caller may read. A section some contribution supplied but the
+    /// caller may not read at all is <paramref name="unauthorized"/>, never the default, so a denied section is told
+    /// apart from one nobody supplied. A section supplied without a declared permission needs <c>dashboard:view</c>.
+    /// </summary>
+    private static T MergeSection<T>(
+        IEnumerable<DashboardOverviewContribution> contributions,
+        Func<DashboardPermission, bool> canRead,
+        Func<DashboardOverviewContribution, T?> select,
+        Func<DashboardOverviewPermissions, DashboardPermission?> permissionOf,
+        Func<IReadOnlyCollection<T>, T> merge,
+        T unauthorized)
+        where T : class
     {
-        var metrics = contributions.Select(x => x.WorkflowInstances).OfType<DashboardWorkflowInstanceMetrics>().ToList();
-        return new()
+        var supplied = contributions
+            .Select(x => (Section: select(x), Permission: permissionOf(x.Permissions) ?? DashboardAccess.Overview))
+            .Where(x => x.Section != null)
+            .ToList();
+        var readable = supplied.Where(x => canRead(x.Permission)).Select(x => x.Section!).ToList();
+
+        return supplied.Count > 0 && readable.Count == 0 ? unauthorized : merge(readable);
+    }
+
+    // A diagnostics slice that reports NotInstalled was not supplied: every contribution carries both slices.
+    private static T? Installed<T>(T? section, Func<T, DashboardCapabilityStatus> capability) where T : class =>
+        section != null && capability(section).Status != DashboardCapabilityStatus.NotInstalled.Status ? section : null;
+
+    private static DashboardRuntimeStatus MergeRuntime(IReadOnlyCollection<DashboardRuntimeStatus> runtimes) =>
+        runtimes.FirstOrDefault(x => x.Status != DashboardRuntimeStatusKeys.Unavailable) ?? new();
+
+    private static DashboardWorkflowInstanceMetrics MergeWorkflowMetrics(IReadOnlyCollection<DashboardWorkflowInstanceMetrics> metrics) =>
+        new()
         {
             Running = metrics.Sum(x => x.Running),
             Completed = metrics.Sum(x => x.Completed),
@@ -217,17 +249,12 @@ public class DefaultDashboardProvider(
             IncidentBearing = metrics.Sum(x => x.IncidentBearing),
             AverageDuration = AverageDuration(metrics.Select(x => x.AverageDuration))
         };
-    }
 
-    private static DashboardDiagnosticsSummary MergeDiagnostics(IEnumerable<DashboardOverviewContribution> contributions)
-    {
-        var summaries = contributions.Select(x => x.Diagnostics).OfType<DashboardDiagnosticsSummary>().ToList();
-        return new()
-        {
-            StructuredLogs = summaries.Select(x => x.StructuredLogs).FirstOrDefault(x => x.Capability.Status != DashboardCapabilityStatus.NotInstalled.Status) ?? new(),
-            ConsoleLogs = summaries.Select(x => x.ConsoleLogs).FirstOrDefault(x => x.Capability.Status != DashboardCapabilityStatus.NotInstalled.Status) ?? new()
-        };
-    }
+    private static DashboardStructuredLogSummary MergeStructuredLogs(IReadOnlyCollection<DashboardStructuredLogSummary> summaries) =>
+        summaries.FirstOrDefault() ?? new();
+
+    private static DashboardConsoleLogSummary MergeConsoleLogs(IReadOnlyCollection<DashboardConsoleLogSummary> summaries) =>
+        summaries.FirstOrDefault() ?? new();
 
     private static TimeSpan? AverageDuration(IEnumerable<TimeSpan?> durations)
     {

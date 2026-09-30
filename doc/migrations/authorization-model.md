@@ -280,6 +280,39 @@ needs their own permissions for them:
 - `POST /scripting/javascript/type-definitions/{definitionId}` (the JavaScript scripting permission)
 - `GET /secrets/descriptors` (the secrets permission)
 
+## The dashboard is readable by any signed-in user, one section at a time
+
+Elsa Studio shows the Dashboard to every signed-in user and gates each widget by the permission of the data it shows. The
+API applies the same rule. `dashboard:view` still reads the whole operational overview, so roles that hold it keep working
+unchanged; a narrower permission now reads just the data it guards.
+
+`GET /dashboard/overview` requires an authenticated caller and no permission; anonymous callers still get 401. It never
+refuses a caller who can read part of it. A section the caller may not read comes back with `Capability` set to
+`Unauthorized` and no data:
+
+| Overview section | Readable with `dashboard:view` or |
+| --- | --- |
+| `workflowInstances` | `workflows/instances:view` |
+| `runtime` | `workflows/runtime:view` |
+| `diagnostics.structuredLogs` | `diagnostics/structured-logs:view` |
+| `diagnostics.consoleLogs` | `diagnostics/console-logs:view` |
+
+`runtime` and `workflowInstances` carry a new `capability` field for this, which reads `Available` for a section the
+caller may read. Metric cards and panels follow the permission of the data they summarise, and a caller who may not read
+them does not receive them. A caller holding no dashboard-related permission gets an overview with every section
+`Unauthorized`.
+
+`POST /dashboard/workflow-trends`, `GET /dashboard/recent-activity`, `GET /dashboard/needs-attention` and
+`POST /dashboard/workflow-hotspots` answer 403 unless the caller holds `dashboard:view` or `workflows/instances:view`.
+Findings on `needs-attention` follow the same rule per finding, so a caller holding only `workflows/instances:view` sees the
+workflow findings but not the runtime or diagnostics ones.
+
+Modules that add to the dashboard declare the permission of their data on what they contribute:
+`DashboardOverviewContribution.Permissions` for the runtime, instance and diagnostics sections, and `Permission` on a
+metric card, panel or finding. Anything a contribution supplies without a declaration needs `dashboard:view`, so an
+existing third-party contributor keeps working and stays hidden from callers holding only a narrower permission until it
+declares one.
+
 ## Third-party modules
 
 Modules outside this repository keep compiling. `ConfigurePermissions(params string[])` remains available but obsolete, and a permission that resolves to no registered descriptor registers an implicit one marked unverified, logs a warning, and appears as such in the catalog. The module keeps working and the gap stays visible.

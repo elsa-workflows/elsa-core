@@ -1,12 +1,16 @@
 using ConsoleLogStreaming.Core;
 using ConsoleLogStreaming.Core.Models;
+using Elsa.Authorization;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
+using Elsa.Diagnostics.ConsoleLogs.Permissions;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Dashboard;
 
 public class ConsoleLogsDashboardContributor(IConsoleLogProvider provider) : IDashboardContributor
 {
+    private static readonly DashboardPermission ConsoleLogsView = new(ConsoleLogsResourcePermissions.ConsoleLogs, CoreVerbs.View);
+
     public string Id => "diagnostics.console-logs";
 
     public int Order => 400;
@@ -19,7 +23,8 @@ public class ConsoleLogsDashboardContributor(IConsoleLogProvider provider) : IDa
             Diagnostics = new()
             {
                 ConsoleLogs = summary
-            }
+            },
+            Permissions = new() { ConsoleLogs = ConsoleLogsView }
         };
     }
 
@@ -29,14 +34,14 @@ public class ConsoleLogsDashboardContributor(IConsoleLogProvider provider) : IDa
         var findings = new List<DashboardFinding>();
 
         if (summary.Capability.Status == DashboardCapabilityStatus.Unauthorized.Status)
-            findings.Add(Finding("console-log-unauthorized", DashboardFindingSeverity.Warning, "Console log dashboard data is not accessible", "ConsoleLogs", "access", 100));
+            findings.Add(Finding("console-log-unauthorized", DashboardFindingSeverity.Warning, "Console log dashboard data is not accessible", "ConsoleLogs", "access", 100, ConsoleLogsView));
         else if (summary.Capability.Status == DashboardCapabilityStatus.Unavailable.Status)
-            findings.Add(Finding("console-log-unavailable", DashboardFindingSeverity.Warning, "Console log dashboard data is unavailable", "ConsoleLogs", "status", 100));
+            findings.Add(Finding("console-log-unavailable", DashboardFindingSeverity.Warning, "Console log dashboard data is unavailable", "ConsoleLogs", "status", 100, ConsoleLogsView));
 
         if (summary.StaleSourceCount > 0)
-            findings.Add(Finding("console-log-stale-sources", DashboardFindingSeverity.Warning, $"{summary.StaleSourceCount} console log sources are stale", "ConsoleLogs", "sources", 100));
+            findings.Add(Finding("console-log-stale-sources", DashboardFindingSeverity.Warning, $"{summary.StaleSourceCount} console log sources are stale", "ConsoleLogs", "sources", 100, ConsoleLogsView));
         if (summary.DroppedLineCount > 0)
-            findings.Add(Finding("console-log-dropped-lines", DashboardFindingSeverity.Warning, "Console log capture dropped lines", "ConsoleLogs", "dropped", 110));
+            findings.Add(Finding("console-log-dropped-lines", DashboardFindingSeverity.Warning, "Console log capture dropped lines", "ConsoleLogs", "dropped", 110, ConsoleLogsView));
 
         return findings;
     }
@@ -73,13 +78,14 @@ public class ConsoleLogsDashboardContributor(IConsoleLogProvider provider) : IDa
         }
     }
 
-    private static DashboardFinding Finding(string id, string severity, string message, string? targetKind, string? target, int priority) => new()
+    private static DashboardFinding Finding(string id, string severity, string message, string? targetKind, string? target, int priority, DashboardPermission permission) => new()
     {
         Id = id,
         Severity = severity,
         Message = message,
         TargetKind = targetKind,
         Target = target,
-        Priority = priority
+        Priority = priority,
+        Permission = permission
     };
 }

@@ -1,6 +1,21 @@
+using System.Text.Json.Serialization;
+
 namespace Elsa.Dashboard.Abstractions.Models;
 
-public record DashboardQuery(string? Range = null, bool IncludeSystem = false);
+/// <summary>
+/// A permission, as a resource path and a verb, that guards a piece of dashboard data. Contributors declare the one that
+/// guards what they add, so the dashboard can withhold it from callers who may not read it.
+/// </summary>
+public readonly record struct DashboardPermission(string Resource, string Verb);
+
+public record DashboardQuery(string? Range = null, bool IncludeSystem = false)
+{
+    /// <summary>
+    /// Tells whether the caller may read data guarded by a permission. When <c>null</c> the query is unrestricted and
+    /// nothing is withheld.
+    /// </summary>
+    public Func<DashboardPermission, bool>? CanRead { get; init; }
+}
 
 public record DashboardOverview
 {
@@ -36,6 +51,7 @@ public record DashboardCapabilityStatus
 
 public record DashboardRuntimeStatus
 {
+    public DashboardCapabilityStatus Capability { get; init; } = DashboardCapabilityStatus.Available;
     public string Status { get; init; } = DashboardRuntimeStatusKeys.Unavailable;
     public bool IsAcceptingWork { get; init; }
     public int ActiveExecutionCycleCount { get; init; }
@@ -48,6 +64,7 @@ public record DashboardRuntimeStatus
 
 public record DashboardWorkflowInstanceMetrics
 {
+    public DashboardCapabilityStatus Capability { get; init; } = DashboardCapabilityStatus.Available;
     public long Running { get; init; }
     public long Completed { get; init; }
     public long Faulted { get; init; }
@@ -92,6 +109,13 @@ public record DashboardMetricCard
     public string? Color { get; init; }
     public DashboardNavigationTarget? Navigation { get; init; }
     public int Order { get; init; }
+
+    /// <summary>
+    /// The permission guarding the data this card shows. A caller needs it, or <c>dashboard:view</c>. When <c>null</c> only
+    /// <c>dashboard:view</c> reads it. Not part of the response.
+    /// </summary>
+    [JsonIgnore]
+    public DashboardPermission? Permission { get; init; }
 }
 
 public record DashboardPanelSummary
@@ -102,6 +126,13 @@ public record DashboardPanelSummary
     public DashboardCapabilityStatus Capability { get; init; } = DashboardCapabilityStatus.Available;
     public DashboardNavigationTarget? Navigation { get; init; }
     public int Order { get; init; }
+
+    /// <summary>
+    /// The permission guarding the data this panel shows. A caller needs it, or <c>dashboard:view</c>. When <c>null</c> only
+    /// <c>dashboard:view</c> reads it. Not part of the response.
+    /// </summary>
+    [JsonIgnore]
+    public DashboardPermission? Permission { get; init; }
 }
 
 public record DashboardNavigationTarget
@@ -119,6 +150,13 @@ public record DashboardFinding
     public string? TargetKind { get; init; }
     public string? Target { get; init; }
     public int Priority { get; init; }
+
+    /// <summary>
+    /// The permission guarding the data this finding reports. A caller needs it, or <c>dashboard:view</c>. When <c>null</c> only
+    /// <c>dashboard:view</c> reads it. Not part of the response.
+    /// </summary>
+    [JsonIgnore]
+    public DashboardPermission? Permission { get; init; }
 }
 
 public record DashboardNeedsAttentionResponse

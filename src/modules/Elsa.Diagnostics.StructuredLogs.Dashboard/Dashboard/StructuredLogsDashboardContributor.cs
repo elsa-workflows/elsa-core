@@ -1,7 +1,9 @@
+using Elsa.Authorization;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
 using Elsa.Diagnostics.StructuredLogs.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Models;
+using Elsa.Diagnostics.StructuredLogs.Permissions;
 using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
@@ -13,6 +15,8 @@ public class StructuredLogsDashboardContributor(
     IStructuredLogProvider provider,
     IEnumerable<IStructuredLogStorageDiagnostics> storageDiagnostics) : IDashboardContributor
 {
+    private static readonly DashboardPermission StructuredLogsView = new(StructuredLogsResourcePermissions.StructuredLogs, CoreVerbs.View);
+
     public string Id => "diagnostics.structured-logs";
 
     public int Order => 300;
@@ -25,7 +29,8 @@ public class StructuredLogsDashboardContributor(
             Diagnostics = new()
             {
                 StructuredLogs = summary
-            }
+            },
+            Permissions = new() { StructuredLogs = StructuredLogsView }
         };
     }
 
@@ -35,16 +40,16 @@ public class StructuredLogsDashboardContributor(
         var findings = new List<DashboardFinding>();
 
         if (summary.Capability.Status == DashboardCapabilityStatus.Unauthorized.Status)
-            findings.Add(Finding("structured-log-unauthorized", DashboardFindingSeverity.Warning, "Structured log dashboard data is not accessible", "StructuredLogs", "access", 70));
+            findings.Add(Finding("structured-log-unauthorized", DashboardFindingSeverity.Warning, "Structured log dashboard data is not accessible", "StructuredLogs", "access", 70, StructuredLogsView));
         else if (summary.Capability.Status == DashboardCapabilityStatus.Unavailable.Status)
-            findings.Add(Finding("structured-log-unavailable", DashboardFindingSeverity.Warning, "Structured log dashboard data is unavailable", "StructuredLogs", "status", 70));
+            findings.Add(Finding("structured-log-unavailable", DashboardFindingSeverity.Warning, "Structured log dashboard data is unavailable", "StructuredLogs", "status", 70, StructuredLogsView));
 
         if (summary.StaleSourceCount > 0)
-            findings.Add(Finding("structured-log-stale-sources", DashboardFindingSeverity.Warning, $"{summary.StaleSourceCount} structured log sources are stale", "StructuredLogs", "sources", 70));
+            findings.Add(Finding("structured-log-stale-sources", DashboardFindingSeverity.Warning, $"{summary.StaleSourceCount} structured log sources are stale", "StructuredLogs", "sources", 70, StructuredLogsView));
         if (summary.DroppedWriteCount > 0)
-            findings.Add(Finding("structured-log-dropped-writes", DashboardFindingSeverity.Error, "Structured log storage dropped writes", "StructuredLogs", "storage", 80));
+            findings.Add(Finding("structured-log-dropped-writes", DashboardFindingSeverity.Error, "Structured log storage dropped writes", "StructuredLogs", "storage", 80, StructuredLogsView));
         if (summary.RecentErrorOrCriticalCount > 0)
-            findings.Add(Finding("structured-log-errors", DashboardFindingSeverity.Error, $"{summary.RecentErrorOrCriticalCount} error or critical structured logs were recorded", "StructuredLogs", "errors", 90));
+            findings.Add(Finding("structured-log-errors", DashboardFindingSeverity.Error, $"{summary.RecentErrorOrCriticalCount} error or critical structured logs were recorded", "StructuredLogs", "errors", 90, StructuredLogsView));
 
         return findings;
     }
@@ -82,13 +87,14 @@ public class StructuredLogsDashboardContributor(
         }
     }
 
-    private static DashboardFinding Finding(string id, string severity, string message, string? targetKind, string? target, int priority) => new()
+    private static DashboardFinding Finding(string id, string severity, string message, string? targetKind, string? target, int priority, DashboardPermission permission) => new()
     {
         Id = id,
         Severity = severity,
         Message = message,
         TargetKind = targetKind,
         Target = target,
-        Priority = priority
+        Priority = priority,
+        Permission = permission
     };
 }
