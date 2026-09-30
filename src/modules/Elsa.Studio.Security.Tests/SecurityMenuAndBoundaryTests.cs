@@ -1,4 +1,5 @@
 using Bunit;
+using Elsa.Studio.Components;
 using Elsa.Studio.Security.Components;
 using Elsa.Studio.Security.Contracts;
 using Elsa.Studio.Security.Menu;
@@ -103,14 +104,14 @@ public sealed class RoleAdministrationAccessBoundaryTests : BunitContext, IAsync
     }
 
     [Fact]
-    public void Render_WhenAccessIsForbidden_ShowsThePermissionRequiredState()
+    public void Render_WhenAccessIsForbidden_ShowsTheSharedAccessDeniedState()
     {
         Services.AddSingleton<IRoleAdministrationAccessService>(new TestRoleAccessService(RoleAdministrationAccess.Forbidden));
 
         var cut = Render<RoleAdministrationAccessBoundary>(parameters =>
             parameters.Add(component => component.ChildContent, Child("ready")));
 
-        cut.WaitForAssertion(() => Assert.Contains("Role administration access is required", cut.Markup));
+        cut.WaitForAssertion(() => Assert.Contains("identity/roles:view", cut.FindComponent<AccessDenied>().Markup));
         Assert.DoesNotContain("ready", cut.Markup);
     }
 
@@ -123,6 +124,7 @@ public sealed class RoleAdministrationAccessBoundaryTests : BunitContext, IAsync
             parameters.Add(component => component.ChildContent, Child("ready")));
 
         cut.WaitForAssertion(() => Assert.Contains("Role administration is unavailable", cut.Markup));
+        Assert.Empty(cut.FindComponents<AccessDenied>());
         Assert.DoesNotContain("ready", cut.Markup);
     }
 
@@ -136,7 +138,7 @@ public sealed class RoleAdministrationAccessBoundaryTests : BunitContext, IAsync
             parameters.Add(component => component.ChildContent, Child("authorized")));
 
         cut.WaitForAssertion(() => Assert.Contains("authorized", cut.Markup));
-        Assert.DoesNotContain("Role administration access is required", cut.Markup);
+        Assert.Empty(cut.FindComponents<AccessDenied>());
         Assert.DoesNotContain("Role administration is unavailable", cut.Markup);
     }
 
@@ -172,15 +174,14 @@ public sealed class UserAdministrationAccessBoundaryTests : BunitContext, IAsync
     }
 
     [Fact]
-    public void Render_WhenAccessIsForbidden_ShowsThePermissionRequiredState()
+    public void Render_WhenAccessIsForbidden_ShowsTheSharedAccessDeniedState()
     {
         Services.AddSingleton<IUserAdministrationAccessService>(new TestUserAccessService(UserAdministrationAccess.Forbidden));
 
         var cut = Render<UserAdministrationAccessBoundary>(parameters =>
             parameters.Add(component => component.ChildContent, Child("ready")));
 
-        cut.WaitForAssertion(() => Assert.Contains("User administration access is required", cut.Markup));
-        Assert.Contains("identity/users:view", cut.Markup);
+        cut.WaitForAssertion(() => Assert.Contains("identity/users:view", cut.FindComponent<AccessDenied>().Markup));
         Assert.DoesNotContain("ready", cut.Markup);
     }
 
@@ -194,6 +195,7 @@ public sealed class UserAdministrationAccessBoundaryTests : BunitContext, IAsync
             parameters.Add(component => component.ChildContent, Child("ready")));
 
         cut.WaitForAssertion(() => Assert.Contains("User administration is unavailable", cut.Markup));
+        Assert.Empty(cut.FindComponents<AccessDenied>());
         Assert.DoesNotContain("ready", cut.Markup);
 
         service.Access = new UserAdministrationAccess(UserAdministrationAccessState.Ready, CanView: true, CanCreate: false, CanUpdate: false, CanDelete: false);
@@ -213,7 +215,7 @@ public sealed class UserAdministrationAccessBoundaryTests : BunitContext, IAsync
             parameters.Add(component => component.ChildContent, Child("authorized")));
 
         cut.WaitForAssertion(() => Assert.Contains("authorized:True", cut.Markup));
-        Assert.DoesNotContain("User administration access is required", cut.Markup);
+        Assert.Empty(cut.FindComponents<AccessDenied>());
         Assert.DoesNotContain("User administration is unavailable", cut.Markup);
     }
 

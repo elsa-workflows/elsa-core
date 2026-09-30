@@ -40,9 +40,4 @@ public class ExternalAuthenticationPermissionServiceTests
 
     private static ExternalAuthenticationPermissionService CreateService(params string[] grants) =>
         new(new StaticAuthenticationStateProvider(new(new ClaimsIdentity(grants.Select(x => new Claim("permissions", x)), "test"))));
-
-    private sealed class StaticAuthenticationStateProvider(ClaimsPrincipal user) : AuthenticationStateProvider
-    {
-        public override Task<AuthenticationState> GetAuthenticationStateAsync() => Task.FromResult(new AuthenticationState(user));
-    }
 }

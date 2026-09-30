@@ -10,10 +10,7 @@
 }
 else if (_access.State == RoleAdministrationAccessState.Forbidden)
 {
-    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined">
-        <MudText Typo="Typo.subtitle1">Role administration access is required</MudText>
-        <MudText Typo="Typo.body2">Your current sign-in does not include permission to view roles. Ask an administrator for <code>identity/roles:view</code>, then sign in again.</MudText>
-    </MudAlert>
+    <AccessDenied MissingPermissions="_missingPermissions" />
 }
 else if (_access.State == RoleAdministrationAccessState.Unavailable)
 {
@@ -31,6 +28,7 @@ else
 @code {
     [Parameter, EditorRequired] public RenderFragment<RoleAdministrationAccess> ChildContent { get; set; } = default!;
 
+    private static readonly Permission[] _missingPermissions = [new(IdentityPermissions.RolesResource, IdentityPermissions.View)];
     private readonly CancellationTokenSource _lifetime = new();
     private RoleAdministrationAccess? _access;
     private bool _accessLoading;

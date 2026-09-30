@@ -1,4 +1,5 @@
 @page "/security/external-authentication/identity-links"
+@attribute [RequirePermission(ExternalAuthenticationPermissions.IdentityLinks, PermissionVerbs.Write)]
 @using Elsa.Studio.ExternalAuthentication.Components.IdentityLinks
 @using Elsa.Studio.ExternalAuthentication.Services
 @inject Elsa.Studio.Contracts.IBackendApiClientProvider ApiClientProvider
@@ -30,10 +31,6 @@
     @if (_loading)
     {
         <MudProgressLinear Indeterminate="true" aria-label="Loading external identity links" />
-    }
-    else if (!_canManage)
-    {
-        <MudAlert Severity="Severity.Warning">You do not have permission to manage external identity links.</MudAlert>
     }
     else
     {
