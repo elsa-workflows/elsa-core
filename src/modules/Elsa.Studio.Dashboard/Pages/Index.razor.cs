@@ -50,14 +50,21 @@ public partial class Index : IAsyncDisposable
 
     private string LastRefreshedLabel => _lastRefreshedAt == null ? "Not refreshed yet" : $"Refreshed {DashboardMetricFormatter.RelativeTimestamp(_lastRefreshedAt)}";
 
+    private bool IsLoadingFirstSnapshot => _loading && _snapshot == null;
+
     private string StatusLabel => _status switch
     {
+        _ when IsLoadingFirstSnapshot => "Loading dashboard",
         DashboardLoadStatus.Unauthorized => "No access",
         DashboardLoadStatus.BackendDisconnected => "Backend disconnected",
         DashboardLoadStatus.Failed => "Refresh failed",
         DashboardLoadStatus.Loaded => "Loaded",
         _ => "Dashboard unavailable"
     };
+
+    private Color StatusColor => IsLoadingFirstSnapshot ? Color.Default : Color.Error;
+
+    private string StatusIcon => IsLoadingFirstSnapshot ? Icons.Material.Outlined.HourglassEmpty : Icons.Material.Outlined.CloudOff;
 
     private Severity AlertSeverity => _status switch
     {

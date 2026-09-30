@@ -50,6 +50,19 @@ public abstract class AppBarUserMenuTests<TFeature, TMenu> : BunitContext, IAsyn
         Assert.Empty(menu.FindAll(".mud-menu"));
     }
 
+    [Fact]
+    public void UserMenu_OpensBelowItsButton()
+    {
+        SignIn();
+        var menu = RenderAppBarMenu();
+
+        var popover = FindInOpenMenu(menu, ".mud-popover");
+
+        // The popover's top edge sits on the button's bottom edge, rather than its bottom edge covering the button.
+        Assert.Contains("mud-popover-anchor-bottom-right", popover.ClassList);
+        Assert.Contains("mud-popover-top-right", popover.ClassList);
+    }
+
     protected abstract void SignIn();
 
     /// <summary>Renders the app bar component the provider's feature contributed, the way the shell does.</summary>
