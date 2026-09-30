@@ -7,6 +7,7 @@ using Elsa.Studio.Authentication.ElsaIdentity.Contracts;
 using Elsa.Studio.Authentication.ElsaIdentity.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Studio.Authentication.ElsaIdentity.Extensions;
 
@@ -34,6 +35,7 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient(ElsaIdentityRefreshTokenService.AnonymousClientName);
         services.AddScoped<IRefreshTokenService, ElsaIdentityRefreshTokenService>();
         services.AddScoped<ElsaIdentitySessionGate>();
+        services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<ISignOutService, ElsaIdentitySignOutService>();
 
         return services;

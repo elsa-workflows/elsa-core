@@ -2,5 +2,17 @@
 @inject Contracts.ISignOutService SignOutService
 
 <UserMenu>
-    <MudMenuItem OnClick="@SignOutService.SignOutAsync">Sign out</MudMenuItem>
+    <MudMenuItem Disabled="_signOut.IsBusy" OnClick="SignOutAsync">Sign out</MudMenuItem>
 </UserMenu>
+
+@code {
+    private readonly BusyState _signOut = new();
+
+    // Signing out asks the backend to revoke the session first, so a repeat click must not start a second one. It
+    // navigates to the login page, so the item stays busy rather than flashing back to idle.
+    private Task SignOutAsync() => _signOut.RunAsync(async () =>
+    {
+        await SignOutService.SignOutAsync();
+        return true;
+    });
+}

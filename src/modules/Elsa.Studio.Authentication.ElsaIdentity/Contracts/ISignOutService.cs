@@ -6,7 +6,7 @@ namespace Elsa.Studio.Authentication.ElsaIdentity.Contracts;
 public interface ISignOutService
 {
     /// <summary>
-    /// Clears the stored tokens, publishes the anonymous authentication state and navigates to the login page.
+    /// Revokes the session at the backend when possible, clears the stored tokens, publishes the anonymous authentication state and navigates to the login page.
     /// </summary>
     Task SignOutAsync();
 }
