@@ -1,5 +1,7 @@
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Unicode;
 
 namespace Elsa.Common.Services;
 
@@ -10,14 +12,17 @@ public class JsonFormatter : IFormatter
     
     public JsonFormatter()
     {
-        _options = new JsonSerializerOptions();
+        _options = new JsonSerializerOptions
+        {
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+        };
         _options.Converters.Add(new JsonStringEnumConverter());
     }
     
     /// <inheritdoc />
     public ValueTask<string> ToStringAsync(object value, CancellationToken cancellationToken = default)
     {
-        var json = JsonSerializer.Serialize(value);
+        var json = JsonSerializer.Serialize(value, _options);
         return ValueTask.FromResult(json);
     }
 
