@@ -2,11 +2,15 @@
   "name": "workflow-definition-editor-app",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
   "type": "module",
   "scripts": {
     "start": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "test": "node --test",
     "postinstall": "npm run copy:elsa-studio-wasm",
     "copy:elsa-studio-wasm": "node scripts/copy-elsa-studio-wasm.js"
   },
