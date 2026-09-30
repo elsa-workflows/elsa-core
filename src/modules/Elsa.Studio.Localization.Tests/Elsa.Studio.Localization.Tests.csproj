@@ -21,9 +21,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Studio.Environments\Elsa.Studio.Environments.csproj" />
-        <ProjectReference Include="..\Elsa.Studio.Authentication.ElsaIdentity.BlazorServer\Elsa.Studio.Authentication.ElsaIdentity.BlazorServer.csproj" />
-        <ProjectReference Include="..\..\framework\Elsa.Studio.Core.BlazorServer\Elsa.Studio.Core.BlazorServer.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Localization\Elsa.Studio.Localization.csproj" />
     </ItemGroup>
 
 </Project>

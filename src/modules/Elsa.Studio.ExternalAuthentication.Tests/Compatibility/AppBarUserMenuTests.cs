@@ -2,6 +2,7 @@ using AngleSharp.Dom;
 using Bunit;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Services;
+using Elsa.Studio.Testing;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
@@ -56,11 +57,7 @@ public abstract class AppBarUserMenuTests<TFeature, TMenu> : BunitContext, IAsyn
         SignIn();
         var menu = RenderAppBarMenu();
 
-        var popover = FindInOpenMenu(menu, ".mud-popover");
-
-        // The popover's top edge sits on the button's bottom edge, rather than its bottom edge covering the button.
-        Assert.Contains("mud-popover-anchor-bottom-right", popover.ClassList);
-        Assert.Contains("mud-popover-top-right", popover.ClassList);
+        MenuPopoverAssert.OpensBelowItsButton(FindInOpenMenu(menu, ".mud-popover"));
     }
 
     protected abstract void SignIn();
