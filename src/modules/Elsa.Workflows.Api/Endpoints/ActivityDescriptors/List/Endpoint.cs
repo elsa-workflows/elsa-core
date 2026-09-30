@@ -2,7 +2,6 @@ using Elsa.Abstractions;
 using Elsa.Authorization;
 using Elsa.Workflows.Management;
 using JetBrains.Annotations;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptors.List;
 
@@ -15,8 +14,6 @@ internal class List(IActivityRegistry registry, IActivityRegistryPopulator regis
 
         // The plain read lists the activities the designer needs to open any definition, so every signed-in user may read it.
         // That includes activities built from stored workflow definitions that are marked as usable as an activity.
-        // Studio always sends refresh=true. Rebuilding the registry is expensive, so the flag is honoured only for callers
-        // holding the activities permission and silently ignored for everyone else, who get the current registry.
         RequireAuthenticatedOnly();
     }
 
@@ -33,12 +30,14 @@ internal class List(IActivityRegistry registry, IActivityRegistryPopulator regis
         return response;
     }
 
+    // Studio always sends refresh=true. Rebuilding the registry is expensive, so the flag is honoured only for callers
+    // holding the activities permission and silently ignored for everyone else, who get the current registry.
     private bool CanRefresh()
     {
         if (!EndpointSecurityOptions.SecurityIsEnabled)
             return true;
 
-        var evaluator = HttpContext.RequestServices.GetService<IPermissionEvaluator>() ?? PermissionEvaluator.Shared;
+        var evaluator = HttpContext.GetPermissionEvaluator();
         return evaluator.HasPermission(User, Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsActivities, CoreVerbs.View);
     }
 }

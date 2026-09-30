@@ -268,6 +268,8 @@ startup validator; you can drop them from your roles at your convenience.
 - `GET /descriptors/activities?refresh=true`, which rebuilds the activity registry. The permission now only makes the
   flag take effect: a caller without it is not rejected, the flag is ignored and the current registry is returned. Elsa
   Studio sends the flag on every load, so a role holding only `workflows/definitions:view` can still open the designer.
+  Without the permission a newly published workflow-as-activity still appears, because publishing updates the registry
+  itself; the same goes for a definitions reload. Only a rebuild from scratch waits for a caller who holds the permission.
 - `POST /descriptors/activities/{activityTypeName}/options/{propertyName}`, which runs the property's option provider
   with caller-supplied context.
 

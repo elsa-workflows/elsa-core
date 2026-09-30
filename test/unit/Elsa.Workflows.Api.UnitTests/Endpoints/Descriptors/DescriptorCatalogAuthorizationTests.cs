@@ -1,8 +1,10 @@
 using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using Elsa.Authorization;
 using Elsa.Common.Serialization;
 using Elsa.Expressions.Contracts;
+using Elsa.Workflows.Api.Permissions;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Management;
@@ -28,15 +30,34 @@ namespace Elsa.Workflows.Api.UnitTests.Endpoints.Descriptors;
 /// stored, so they need an authenticated caller and no grant; the version list is stored data, so it follows the
 /// permission that already lets the caller read every version of a definition.
 /// </summary>
+[Collection(nameof(EndpointSecurityCollection))]
 public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
 {
-    private const string DefinitionsView = "workflows/definitions:view";
     private const string VersionsPath = "/workflow-definitions/my-definition/versions";
     private const string TypeName = "Elsa.Test";
-    private const string DescriptorsActivitiesView = "workflows/descriptors/activities:view";
+    private const string OptionsPath = "/descriptors/activities/" + TypeName + "/options/Property";
 
-    public static readonly TheoryData<string> Paths = new()
-    {
+    private static readonly string DefinitionsView = new Permission(WorkflowPermissions.Definitions, CoreVerbs.View).ToString();
+    private static readonly string VersionsView = new Permission(WorkflowPermissions.DefinitionVersions, CoreVerbs.View).ToString();
+    private static readonly string InstancesView = new Permission(WorkflowPermissions.Instances, CoreVerbs.View).ToString();
+    private static readonly string DescriptorsActivitiesView = new Permission(WorkflowPermissions.DescriptorsActivities, CoreVerbs.View).ToString();
+
+    private static readonly string[] CatalogNamespaces =
+    [
+        "Elsa.Workflows.Api.Endpoints.ActivityDescriptorOptions",
+        "Elsa.Workflows.Api.Endpoints.ActivityDescriptors",
+        "Elsa.Workflows.Api.Endpoints.CommitStrategies",
+        "Elsa.Workflows.Api.Endpoints.IncidentStrategies",
+        "Elsa.Workflows.Api.Endpoints.LogPersistenceStrategies",
+        "Elsa.Workflows.Api.Endpoints.OutputConverters",
+        "Elsa.Workflows.Api.Endpoints.Scripting.ExpressionDescriptors",
+        "Elsa.Workflows.Api.Endpoints.StorageDrivers",
+        "Elsa.Workflows.Api.Endpoints.VariableTypes",
+        "Elsa.Workflows.Api.Endpoints.WorkflowActivationStrategies"
+    ];
+
+    private static readonly string[] CatalogPathList =
+    [
         "/descriptors/activities",
         "/descriptors/activities/" + TypeName,
         "/descriptors/variables",
@@ -47,15 +68,20 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
         "/descriptors/incident-strategies",
         "/descriptors/log-persistence-strategies",
         "/descriptors/commit-strategies/activities",
-        "/descriptors/commit-strategies/workflows",
-        VersionsPath
-    };
+        "/descriptors/commit-strategies/workflows"
+    ];
 
+    public static readonly TheoryData<string> CatalogPaths = new(CatalogPathList);
+    public static readonly TheoryData<string> AuthenticatedOnlyPaths = new([.. CatalogPathList, VersionsPath]);
+
+    private readonly bool _wasSecurityEnabled = EndpointSecurityOptions.SecurityIsEnabled;
     private readonly WebApplication _app;
     private readonly IActivityRegistryPopulator _registryPopulator = Substitute.For<IActivityRegistryPopulator>();
 
     public DescriptorCatalogAuthorizationTests()
     {
+        EndpointSecurityOptions.SecurityIsEnabled = true;
+
         var builder = WebApplication.CreateSlimBuilder();
         builder.WebHost.UseTestServer();
         builder.Services.AddFastEndpoints(options =>
@@ -84,6 +110,7 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
             .AddSingleton(activityRegistry)
             .AddSingleton(_registryPopulator)
             .AddSingleton(activityLookup)
+            .AddSingleton(Substitute.For<IPropertyUIHandlerResolver>())
             .AddSingleton(expressionRegistry)
             .AddSingleton(storageDrivers)
             .AddSingleton(logPersistence)
@@ -105,46 +132,54 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
         _app.UseFastEndpoints();
     }
 
-    private static string[] CatalogNamespaces =>
-    [
-        "Elsa.Workflows.Api.Endpoints.ActivityDescriptors",
-        "Elsa.Workflows.Api.Endpoints.CommitStrategies",
-        "Elsa.Workflows.Api.Endpoints.IncidentStrategies",
-        "Elsa.Workflows.Api.Endpoints.LogPersistenceStrategies",
-        "Elsa.Workflows.Api.Endpoints.OutputConverters",
-        "Elsa.Workflows.Api.Endpoints.Scripting.ExpressionDescriptors",
-        "Elsa.Workflows.Api.Endpoints.StorageDrivers",
-        "Elsa.Workflows.Api.Endpoints.VariableTypes",
-        "Elsa.Workflows.Api.Endpoints.WorkflowActivationStrategies"
-    ];
-
     public Task InitializeAsync() => _app.StartAsync();
 
     public async Task DisposeAsync()
     {
+        EndpointSecurityOptions.SecurityIsEnabled = _wasSecurityEnabled;
         await _app.StopAsync();
         await _app.DisposeAsync();
     }
 
     [Theory]
-    [MemberData(nameof(Paths))]
-    public async Task AuthenticatedUserWithoutAnyPermission_IsAllowed_ExceptForVersions(string path)
+    [MemberData(nameof(CatalogPaths))]
+    public async Task Catalog_AuthenticatedUserWithoutAnyPermission_IsAllowed(string path)
     {
-        // The version list is stored data, so it follows workflows/definitions:view; every catalog needs no grant at all.
-        var response = path == VersionsPath ? await SendAsync(path, DefinitionsView) : await SendAsync(path, authenticated: true);
+        var response = await SendAsync(path, authenticated: true);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadAsStringAsync();
-        Assert.NotEmpty(body);
+        Assert.NotEmpty(await response.Content.ReadAsStringAsync());
+    }
 
-        if (path.StartsWith("/descriptors/activities", StringComparison.Ordinal))
-        {
-            Assert.Contains(TypeName, body);
-        }
+    [Fact]
+    public async Task ActivityCatalog_AuthenticatedUserWithoutAnyPermission_ListsTheActivity()
+    {
+        var response = await SendAsync("/descriptors/activities", authenticated: true);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains(TypeName, await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task ActivityDescriptor_AuthenticatedUserWithoutAnyPermission_ReturnsTheDescriptor()
+    {
+        var response = await SendAsync("/descriptors/activities/" + TypeName, authenticated: true);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains(TypeName, await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task VersionList_WithDefinitionsView_IsAllowed()
+    {
+        var response = await SendAsync(VersionsPath, DefinitionsView);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotEmpty(await response.Content.ReadAsStringAsync());
     }
 
     [Theory]
-    [MemberData(nameof(Paths))]
+    [MemberData(nameof(AuthenticatedOnlyPaths))]
     public async Task AnonymousCaller_IsRejected(string path)
     {
         var response = await SendAsync(path);
@@ -173,16 +208,44 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task VersionList_StillRequiresAGrantThatCoversReadingDefinitions()
+    public async Task VersionList_WithoutDefinitionsView_IsForbidden()
     {
-        var response = await SendAsync(VersionsPath, "workflows/instances:view");
+        var response = await SendAsync(VersionsPath, InstancesView);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    private Task<HttpResponseMessage> SendAsync(string path, string? permissions = null, bool authenticated = false)
+    [Fact]
+    public async Task VersionList_WithOnlyVersionsView_IsForbidden()
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, path);
+        // The documented behaviour change: the versions permission alone no longer lists versions.
+        var response = await SendAsync(VersionsPath, VersionsView);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ActivityPropertyOptions_WithoutActivitiesView_IsForbidden()
+    {
+        var response = await SendAsync(OptionsPath, DefinitionsView, method: HttpMethod.Post);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RefreshingTheActivityRegistry_WithSecurityDisabled_RefreshesForAnyCaller()
+    {
+        EndpointSecurityOptions.SecurityIsEnabled = false;
+
+        var response = await SendAsync("/descriptors/activities?refresh=true", authenticated: true);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await _registryPopulator.Received(1).PopulateRegistryAsync(Arg.Any<CancellationToken>());
+    }
+
+    private Task<HttpResponseMessage> SendAsync(string path, string? permissions = null, bool authenticated = false, HttpMethod? method = null)
+    {
+        var request = new HttpRequestMessage(method ?? HttpMethod.Get, path);
 
         if (permissions != null)
         {
@@ -225,3 +288,6 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
         }
     }
 }
+
+[CollectionDefinition(nameof(EndpointSecurityCollection), DisableParallelization = true)]
+public class EndpointSecurityCollection;

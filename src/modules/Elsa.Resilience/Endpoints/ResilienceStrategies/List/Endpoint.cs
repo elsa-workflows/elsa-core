@@ -11,7 +11,7 @@ public class Endpoint(IResilienceStrategyCatalog catalog, ResilienceStrategySeri
     {
         Get("/resilience/strategies");
 
-        // Static metadata about what is installed, which the designer needs to open any definition, so every signed-in user may read it.
+        // The configured resilience strategies, which the designer needs to open any definition, so every signed-in user may read it.
         RequireAuthenticatedOnly();
     }
 

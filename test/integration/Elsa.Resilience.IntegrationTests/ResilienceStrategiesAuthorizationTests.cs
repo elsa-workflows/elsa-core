@@ -1,6 +1,4 @@
 using System.Net;
-using System.Security.Claims;
-using System.Text.Encodings.Web;
 using Elsa.Http.Resilience;
 using Elsa.Resilience.Features;
 using Elsa.Resilience.Options;
@@ -10,8 +8,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using NSubstitute;
 
 namespace Elsa.Resilience.IntegrationTests;
@@ -48,8 +44,8 @@ public class ResilienceStrategiesAuthorizationTests : IAsyncLifetime
             .AddSingleton<ResilienceStrategySerializer>();
 
         builder.Services
-            .AddAuthentication(PermissionHeaderAuthenticationHandler.SchemeName)
-            .AddScheme<AuthenticationSchemeOptions, PermissionHeaderAuthenticationHandler>(PermissionHeaderAuthenticationHandler.SchemeName, _ => { });
+            .AddAuthentication(TestAuthenticationHandler.AuthenticationScheme)
+            .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>(TestAuthenticationHandler.AuthenticationScheme, _ => { });
         builder.Services.AddAuthorization();
 
         _app = builder.Build();
@@ -90,35 +86,10 @@ public class ResilienceStrategiesAuthorizationTests : IAsyncLifetime
 
         if (authenticated)
         {
-            request.Headers.Add(PermissionHeaderAuthenticationHandler.HeaderName, "user-without-grants");
+            // The handler authenticates only when the header is present; a value that parses to no permission grants nothing.
+            request.Headers.Add(TestAuthenticationHandler.PermissionHeader, "no-grants");
         }
 
         return _app.GetTestClient().SendAsync(request);
-    }
-
-    /// <summary>
-    /// Authenticates a caller that names itself in a header, with no permission claims at all; a request without the
-    /// header stays anonymous.
-    /// </summary>
-    private sealed class PermissionHeaderAuthenticationHandler(
-        IOptionsMonitor<AuthenticationSchemeOptions> options,
-        ILoggerFactory logger,
-        UrlEncoder encoder)
-        : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
-    {
-        public const string SchemeName = "Header";
-        public const string HeaderName = "X-Test-User";
-
-        protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-        {
-            if (!Request.Headers.ContainsKey(HeaderName))
-            {
-                return Task.FromResult(AuthenticateResult.NoResult());
-            }
-
-            var identity = new ClaimsIdentity(SchemeName);
-
-            return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName)));
-        }
     }
 }
