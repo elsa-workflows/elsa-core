@@ -20,43 +20,30 @@ namespace Elsa.Authorization;
 public static class EndpointPermissionRegistry
 {
     private static readonly ConcurrentDictionary<Type, EndpointPermissionRequirement> Requirements = new();
-    private static readonly ConcurrentDictionary<Type, Permission> SinglePermissions = new();
-    private static readonly object WriteLock = new();
 
     /// <summary>Records that <paramref name="endpointType"/> requires <paramref name="permission"/>.</summary>
     public static void Record(Type endpointType, Permission permission) => Record(endpointType, new EndpointPermissionRequirement([permission]));
 
     /// <summary>Records that <paramref name="endpointType"/> requires <paramref name="requirement"/>, replacing what it recorded before.</summary>
-    public static void Record(Type endpointType, EndpointPermissionRequirement requirement)
-    {
-        // Writers are serialized so the two views cannot disagree about a type recorded twice concurrently.
-        lock (WriteLock)
-        {
-            Requirements[endpointType] = requirement;
-
-            if (requirement.AnyOf.Count == 1)
-            {
-                SinglePermissions[endpointType] = requirement.AnyOf.Single();
-            }
-            else
-            {
-                SinglePermissions.TryRemove(endpointType, out _);
-            }
-        }
-    }
+    public static void Record(Type endpointType, EndpointPermissionRequirement requirement) => Requirements[endpointType] = requirement;
 
     /// <summary>
     /// The permission <paramref name="endpointType"/> declares, if it requires exactly one. <c>null</c> both when it
-    /// declares none and when it accepts any of several; <see cref="FindRequirement"/> tells the two apart.
+    /// declares none and when it accepts any of several.
     /// </summary>
-    public static Permission? Find(Type endpointType) => SinglePermissions.TryGetValue(endpointType, out var permission) ? permission : null;
+    /// <remarks>Omits any-of endpoints. A caller needing the full requirement should use <see cref="FindRequirement"/>, which also tells the two <c>null</c> cases apart.</remarks>
+    public static Permission? Find(Type endpointType) => Requirements.TryGetValue(endpointType, out var requirement) ? SinglePermissionOf(requirement) : null;
 
     /// <summary>The requirement <paramref name="endpointType"/> declares, if it declares one.</summary>
     public static EndpointPermissionRequirement? FindRequirement(Type endpointType) => Requirements.TryGetValue(endpointType, out var requirement) ? requirement : null;
 
-    /// <summary>Every recorded declaration of exactly one permission. Omits endpoints accepting any of several; see <see cref="AllRequirements"/>.</summary>
-    public static IReadOnlyDictionary<Type, Permission> All => SinglePermissions;
+    /// <summary>Every recorded declaration of exactly one permission, as a snapshot.</summary>
+    /// <remarks>Omits any-of endpoints. A caller needing every declaration should use <see cref="AllRequirements"/>.</remarks>
+    public static IReadOnlyDictionary<Type, Permission> All =>
+        Requirements.Where(x => x.Value.AnyOf.Count == 1).ToDictionary(x => x.Key, x => x.Value.AnyOf.Single());
 
     /// <summary>Every recorded declaration.</summary>
     public static IReadOnlyDictionary<Type, EndpointPermissionRequirement> AllRequirements => Requirements;
+
+    private static Permission? SinglePermissionOf(EndpointPermissionRequirement requirement) => requirement.AnyOf.Count == 1 ? requirement.AnyOf.Single() : null;
 }

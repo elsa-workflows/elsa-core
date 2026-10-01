@@ -1,12 +1,9 @@
 using System.Net;
+using System.Reflection;
 using Elsa.Abstractions;
 using Elsa.Authorization;
 using Elsa.Testing.Shared.Authorization;
 using FastEndpoints;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Api.Common.UnitTests.Abstractions;
 
@@ -26,22 +23,11 @@ public class RequireAnyPermissionTests : IAsyncLifetime
     /// <summary>Grants close to one of the two permissions that satisfy neither.</summary>
     public static readonly TheoryData<string> UnsatisfyingGrants = new("tests/gamma:view", "tests/alpha:delete", "tests/alpha/child:view", "*:delete");
 
-    private readonly bool _wasSecurityEnabled = EndpointSecurityOptions.SecurityIsEnabled;
-    private WebApplication _app;
+    private AuthorizationTestHost _host = null!;
 
-    public RequireAnyPermissionTests()
-    {
-        EndpointSecurityOptions.SecurityIsEnabled = true;
-        _app = CreateApp();
-    }
+    public async Task InitializeAsync() => _host = await AuthorizationTestHost.StartAsync<AnyOfEndpoint>(endpoint => endpoint == typeof(AnyOfEndpoint));
 
-    public Task InitializeAsync() => _app.StartAsync();
-
-    public async Task DisposeAsync()
-    {
-        EndpointSecurityOptions.SecurityIsEnabled = _wasSecurityEnabled;
-        await StopAppAsync();
-    }
+    public async Task DisposeAsync() => await _host.DisposeAsync();
 
     [Theory]
     [MemberData(nameof(SatisfyingGrants))]
@@ -80,11 +66,7 @@ public class RequireAnyPermissionTests : IAsyncLifetime
     [Fact]
     public async Task AnonymousCaller_WithSecurityDisabled_IsAllowed()
     {
-        // Disabled the way a deployment disables it: before the host maps its endpoints, which is when it is read.
-        await StopAppAsync();
-        EndpointSecurityOptions.SecurityIsEnabled = false;
-        _app = CreateApp();
-        await _app.StartAsync();
+        await _host.RestartWithSecurityDisabledAsync();
 
         var response = await SendAsync();
 
@@ -101,49 +83,32 @@ public class RequireAnyPermissionTests : IAsyncLifetime
         Assert.Null(EndpointPermissionRegistry.Find(typeof(AnyOfEndpoint)));
     }
 
-    private static WebApplication CreateApp()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void DeclaringNoPermissions_IsRejected_WhetherOrNotSecurityIsEnabled(bool securityIsEnabled)
     {
-        var builder = WebApplication.CreateSlimBuilder();
-        builder.WebHost.UseTestServer();
-        builder.Services.AddFastEndpoints(options =>
+        // The empty declaration is rejected before the security check, so a host running without security still surfaces the mistake.
+        var wasSecurityEnabled = EndpointSecurityOptions.SecurityIsEnabled;
+        EndpointSecurityOptions.SecurityIsEnabled = securityIsEnabled;
+
+        try
         {
-            options.Assemblies = [typeof(AnyOfEndpoint).Assembly];
-            options.Filter = endpoint => endpoint == typeof(AnyOfEndpoint);
-        });
-        builder.Services
-            .AddAuthentication(PermissionHeaderAuthenticationHandler.SchemeName)
-            .AddScheme<AuthenticationSchemeOptions, PermissionHeaderAuthenticationHandler>(PermissionHeaderAuthenticationHandler.SchemeName, _ => { });
-        builder.Services.AddAuthorization();
+            var endpoint = new EmptyDeclarationEndpoint();
+            typeof(EmptyDeclarationEndpoint)
+                .GetProperty("Definition", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
+                .SetValue(endpoint, new EndpointDefinition(typeof(EmptyDeclarationEndpoint), typeof(EmptyRequest), typeof(string)));
 
-        var app = builder.Build();
-        app.UseAuthentication();
-        app.UseAuthorization();
-        app.UseFastEndpoints();
-        return app;
-    }
-
-    private async Task StopAppAsync()
-    {
-        await _app.StopAsync();
-        await _app.DisposeAsync();
-    }
-
-    private Task<HttpResponseMessage> SendAsync(string? permissions = null, bool authenticated = false)
-    {
-        var request = new HttpRequestMessage(HttpMethod.Get, AnyOfEndpoint.Route);
-
-        if (permissions != null)
-        {
-            request.Headers.Add(PermissionHeaderAuthenticationHandler.PermissionsHeaderName, permissions);
+            Assert.Throws<ArgumentException>(endpoint.Configure);
         }
-
-        if (authenticated || permissions != null)
+        finally
         {
-            request.Headers.Add(PermissionHeaderAuthenticationHandler.UserHeaderName, "test-user");
+            EndpointSecurityOptions.SecurityIsEnabled = wasSecurityEnabled;
         }
-
-        return _app.GetTestClient().SendAsync(request);
     }
+
+    private Task<HttpResponseMessage> SendAsync(string? permissions = null, bool authenticated = false) =>
+        _host.SendAsync(HttpMethod.Get, AnyOfEndpoint.Route, permissions, authenticated);
 
     public sealed class AnyOfEndpoint : ElsaEndpointWithoutRequest<string>
     {
@@ -153,6 +118,17 @@ public class RequireAnyPermissionTests : IAsyncLifetime
         {
             Get(Route);
             RequireAnyPermission((Alpha.Resource, Alpha.Verb), (Beta.Resource, Beta.Verb));
+        }
+
+        public override Task<string> ExecuteAsync(CancellationToken ct) => Task.FromResult("ok");
+    }
+
+    public sealed class EmptyDeclarationEndpoint : ElsaEndpointWithoutRequest<string>
+    {
+        public override void Configure()
+        {
+            Get("/tests/empty");
+            RequireAnyPermission();
         }
 
         public override Task<string> ExecuteAsync(CancellationToken ct) => Task.FromResult("ok");

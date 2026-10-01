@@ -24,7 +24,7 @@ internal static class DashboardAccess
     /// The permissions any one of which opens an endpoint serving only workflow instance data (trends, recent activity,
     /// needs attention and hotspots): <c>dashboard:view</c> or <c>workflows/instances:view</c>.
     /// </summary>
-    public static (string Resource, string Verb)[] InstanceEndpointPermissions => [(Overview.Resource, Overview.Verb), (WorkflowInstances.Resource, WorkflowInstances.Verb)];
+    public static readonly (string Resource, string Verb)[] InstanceEndpointPermissions = [(Overview.Resource, Overview.Verb), (WorkflowInstances.Resource, WorkflowInstances.Verb)];
 
     /// <summary>
     /// Tells whether the caller may read data guarded by a permission: they hold <c>dashboard:view</c> or the permission
