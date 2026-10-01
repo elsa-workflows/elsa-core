@@ -55,6 +55,19 @@ public class FeatureCatalogTests
         Assert.True(defaultOnly.Initialized);
     }
 
+    // The dashboard relies on it to tell widgets that are still being registered from widgets that do not exist.
+    [Fact]
+    public async Task InitializeFeatures_IsReportedThroughTheEnvironmentAwareService()
+    {
+        using var provider = BuildServices(environmentsFirst: true, CreateCatalogHandler());
+        var features = provider.GetRequiredService<IFeatureService>();
+        Assert.False(features.IsInitialized);
+
+        await features.InitializeFeaturesAsync();
+
+        Assert.True(features.IsInitialized);
+    }
+
     private static async Task AssertUsesDefaultCatalog(bool environmentsFirst)
     {
         // Arrange

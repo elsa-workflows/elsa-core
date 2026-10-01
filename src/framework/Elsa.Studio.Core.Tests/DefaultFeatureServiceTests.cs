@@ -84,6 +84,20 @@ public class DefaultFeatureServiceTests
         Assert.True(local.Initialized);
     }
 
+    [Fact]
+    public async Task InitializeFeatures_ReportsItIsInitialized_ByTheTimeInitializedIsRaised()
+    {
+        IFeatureService service = new DefaultFeatureService([new LocalFeature()], new CatalogRemoteFeatureProvider());
+        var initializedWhenRaised = false;
+        service.Initialized += () => initializedWhenRaised = service.IsInitialized;
+        Assert.False(service.IsInitialized);
+
+        await service.InitializeFeaturesAsync();
+
+        Assert.True(initializedWhenRaised);
+        Assert.True(service.IsInitialized);
+    }
+
     [RemoteFeature(RemoteFeatureName)]
     private sealed class WorkflowRuntimeDashboardFeature : TrackingFeature
     {

@@ -5,6 +5,7 @@ using Elsa.Studio.Dashboard.Services;
 using Elsa.Studio.Dashboard.Widgets;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Testing;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 using MudBlazor.Services;
@@ -15,6 +16,7 @@ namespace Elsa.Studio.Dashboard.Tests;
 
 /// <summary>
 /// The dashboard header reports "unavailable" only once a load has actually failed, not while the first snapshot is on its way.
+/// The user sees a widget, so the dashboard loads rather than welcomes them.
 /// </summary>
 public sealed class DashboardStatusTests : BunitContext, IAsyncLifetime
 {
@@ -28,7 +30,8 @@ public sealed class DashboardStatusTests : BunitContext, IAsyncLifetime
         Services.AddSingleton<IDashboardService>(new StubDashboardService(_loads));
         Services.AddSingleton<IDashboardWidgetRegistry, DashboardWidgetRegistry>();
         Services.AddSingleton<IFeatureService, StubFeatureService>();
-        Services.AddSingleton<IEnumerable<DashboardWidgetDescriptor>>([]);
+        Services.AddSingleton(TimeProvider.System);
+        Services.AddSingleton<IEnumerable<DashboardWidgetDescriptor>>([new("test", DashboardWidgetZones.Metrics, 0, typeof(TestWidget)) { RequiredPermissions = DashboardPermissions.ForData(DashboardPermissions.WorkflowInstances) }]);
         Render<MudPopoverProvider>();
     }
 
@@ -95,10 +98,5 @@ public sealed class DashboardStatusTests : BunitContext, IAsyncLifetime
         public Task<DashboardLoadResult<DashboardOverview>> LoadOverviewAsync(string range, bool includeSystem = false, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 
-    private sealed class StubFeatureService : IFeatureService
-    {
-        public event Action? Initialized { add { } remove { } }
-        public IEnumerable<IFeature> GetFeatures() => [];
-        public Task InitializeFeaturesAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
-    }
+    private sealed class TestWidget : ComponentBase;
 }

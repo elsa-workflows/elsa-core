@@ -1,3 +1,4 @@
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Dashboard.Models;
 using Microsoft.AspNetCore.Components;
 
@@ -12,7 +13,16 @@ public record DashboardWidgetDescriptor(
     string? RequiredBackendCapability = null,
     string? PayloadKind = null)
 {
+    /// <summary>
+    /// The permissions that let a user see the widget: it is shown to users holding any of them, and hidden from everyone
+    /// else. Declare the view permission of the data the widget shows. A widget declaring none is shown to every user.
+    /// </summary>
+    public IReadOnlyCollection<Permission> RequiredPermissions { get; init; } = [];
+
     public bool IsVisible(DashboardWidgetContext context) => context.Snapshot != null;
+
+    /// <summary>Whether the user may see the widget (see <see cref="RequiredPermissions"/>).</summary>
+    public bool IsPermitted(UserPermissions permissions) => RequiredPermissions.Count == 0 || permissions.HasAny(RequiredPermissions);
 }
 
 public interface IDashboardWidgetRegistry

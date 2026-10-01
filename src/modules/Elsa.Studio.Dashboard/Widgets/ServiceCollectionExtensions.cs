@@ -1,3 +1,4 @@
+using Elsa.Studio.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,6 +14,22 @@ public static class ServiceCollectionExtensions
         string? title = null,
         string? requiredBackendCapability = null,
         string? payloadKind = null)
+        where TComponent : IComponent =>
+        services.AddDashboardWidget<TComponent>(id, zone, order, [], title, requiredBackendCapability, payloadKind);
+
+    /// <summary>
+    /// Registers a dashboard widget that is shown to users holding any of <paramref name="requiredPermissions"/>
+    /// (see <see cref="DashboardWidgetDescriptor.RequiredPermissions"/>).
+    /// </summary>
+    public static IServiceCollection AddDashboardWidget<TComponent>(
+        this IServiceCollection services,
+        string id,
+        string zone,
+        int order,
+        IEnumerable<Permission> requiredPermissions,
+        string? title = null,
+        string? requiredBackendCapability = null,
+        string? payloadKind = null)
         where TComponent : IComponent
     {
         return services.AddScoped(_ => new DashboardWidgetDescriptor(
@@ -22,6 +39,9 @@ public static class ServiceCollectionExtensions
             typeof(TComponent),
             title,
             requiredBackendCapability,
-            payloadKind));
+            payloadKind)
+        {
+            RequiredPermissions = requiredPermissions.ToList()
+        });
     }
 }

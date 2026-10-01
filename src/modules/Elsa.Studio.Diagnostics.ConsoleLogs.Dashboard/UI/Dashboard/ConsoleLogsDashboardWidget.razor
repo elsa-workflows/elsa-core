@@ -1,7 +1,7 @@
 @using Elsa.Studio.Authorization
 @using Elsa.Studio.Components
 
-@if (Context.Snapshot != null)
+@if (Context.Snapshot != null && !Context.Snapshot.Overview.Diagnostics.ConsoleLogs.Capability.IsUnauthorized)
 {
     var summary = Context.Snapshot.Overview.Diagnostics.ConsoleLogs;
 

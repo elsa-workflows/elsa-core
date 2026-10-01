@@ -36,6 +36,16 @@ public sealed class UserPermissions
     /// <summary>Whether the user holds grants satisfying every one of <paramref name="required"/>.</summary>
     public bool HasAll(IEnumerable<Permission> required) => required.All(Has);
 
+    /// <summary>Whether the user holds a grant satisfying at least one of <paramref name="required"/>.</summary>
+    public bool HasAny(IEnumerable<Permission> required) => required.Any(Has);
+
     /// <summary>The permissions in <paramref name="required"/> the user does not hold.</summary>
     public IReadOnlyCollection<Permission> GetMissing(IEnumerable<Permission> required) => required.Where(x => !Has(x)).ToArray();
+
+    /// <summary>
+    /// Whether <paramref name="other"/> describes the same permissions: both unknown, or both known with the same grants.
+    /// A renewed sign-in resolves a new instance even when nothing changed, so compare with this rather than by reference.
+    /// </summary>
+    public bool IsEquivalentTo(UserPermissions? other) =>
+        other != null && IsKnown == other.IsKnown && Grants.Count == other.Grants.Count && Grants.All(other.Grants.Contains);
 }

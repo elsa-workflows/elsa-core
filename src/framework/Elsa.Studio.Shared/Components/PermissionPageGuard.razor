@@ -13,7 +13,7 @@
 }
 else if (TrackedPermissions.GetMissing(_requiredPermissions) is { Count: > 0 } missingPermissions)
 {
-    @* Signing in lands on the Dashboard, so a user who cannot view it is sent to the first page they can open (see OnAfterRenderAsync). *@
+    @* Signing in lands on the landing page, so a user who cannot view it is sent to the first page they can open (see OnAfterRenderAsync). *@
     if (!IsLandingPage || _menuUnavailable)
     {
         <PageTitle>Access denied</PageTitle>

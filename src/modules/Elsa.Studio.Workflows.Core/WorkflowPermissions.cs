@@ -12,6 +12,9 @@ public static class WorkflowPermissions
     /// <summary>Workflow instances.</summary>
     public const string Instances = "workflows/instances";
 
+    /// <summary>The workflow runtime, whose status the dashboard shows.</summary>
+    public const string Runtime = "workflows/runtime";
+
     /// <summary>Activity tests run from the designer.</summary>
     public const string Tests = "workflows/tests";
 
