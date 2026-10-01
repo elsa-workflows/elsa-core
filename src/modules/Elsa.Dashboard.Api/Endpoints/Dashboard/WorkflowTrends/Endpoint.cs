@@ -1,8 +1,7 @@
-using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
-using Elsa.Dashboard.Api.Permissions;
+using Elsa.Dashboard.Api.Authorization;
 using JetBrains.Annotations;
 
 namespace Elsa.Dashboard.Api.Endpoints.Dashboard.WorkflowTrends;
@@ -13,11 +12,12 @@ internal class Endpoint(IDashboardProvider dashboardProvider) : ElsaEndpoint<Das
     public override void Configure()
     {
         Post("/dashboard/workflow-trends");
-        RequirePermission(Elsa.Dashboard.Api.Permissions.DashboardResourcePermissions.Dashboard, CoreVerbs.View);
+        RequireAuthenticatedOnly();
+        PreProcessor<RequireInstancesAccess<DashboardTrendRequest>>();
     }
 
     public override async Task<DashboardTrendResponse> ExecuteAsync(DashboardTrendRequest request, CancellationToken cancellationToken)
     {
-        return await dashboardProvider.GetWorkflowTrendsAsync(request, cancellationToken);
+        return await dashboardProvider.GetWorkflowTrendsAsync(request with { CanRead = DashboardAccess.CreateReadCheck(HttpContext) }, cancellationToken);
     }
 }

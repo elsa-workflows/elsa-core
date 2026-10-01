@@ -280,6 +280,51 @@ needs their own permissions for them:
 - `POST /scripting/javascript/type-definitions/{definitionId}` (the JavaScript scripting permission)
 - `GET /secrets/descriptors` (the secrets permission)
 
+## The dashboard is readable by any signed-in user, one section at a time
+
+Elsa Studio shows the Dashboard to every signed-in user and gates each widget by the permission of the data it shows. The
+API applies the same rule. `dashboard:view` still reads the whole operational overview, so roles that hold it keep working
+unchanged; a narrower permission now reads just the data it guards.
+
+`GET /dashboard/overview` requires an authenticated caller and no permission; anonymous callers still get 401. It never
+refuses a caller who can read part of it. A section the caller may not read comes back with `Capability` set to
+`Unauthorized` and no data:
+
+| Overview section | Readable with `dashboard:view` or |
+| --- | --- |
+| `workflowInstances` | `workflows/instances:view` |
+| `runtime` | `workflows/runtime:view` |
+| `diagnostics.structuredLogs` | `diagnostics/structured-logs:view` |
+| `diagnostics.consoleLogs` | `diagnostics/console-logs:view` |
+
+`runtime` and `workflowInstances` carry a new `capability` field for this, which reads `Available` for a section the
+caller may read. Metric cards and panels follow the permission of the data they summarise, and a caller who may not read
+them does not receive them. A caller holding no dashboard-related permission gets an overview with every section
+`Unauthorized`.
+
+`POST /dashboard/workflow-trends`, `GET /dashboard/recent-activity`, `GET /dashboard/needs-attention` and
+`POST /dashboard/workflow-hotspots` answer 403 unless the caller holds `dashboard:view` or `workflows/instances:view`.
+Findings on `needs-attention` follow the same rule per finding, so a caller holding only `workflows/instances:view` sees the
+workflow findings but not the runtime or diagnostics ones.
+
+Modules that add to the dashboard declare the permission of their data. A contributor declares
+`IDashboardContributor.OverviewPermissions` up front for the runtime, instance and diagnostics sections it supplies, and
+sets `Permission` on each metric card, panel, finding, and trend, recent-activity or hotspot response it returns. Anything
+a contributor supplies without a declaration needs `dashboard:view`, so an existing third-party contributor keeps working
+and stays hidden from callers holding only a narrower permission until it declares one. That includes trend, recent
+activity and hotspot rows: a caller holding only `workflows/instances:view` receives only the rows of contributions
+that declare `workflows/instances:view`, which the built-in workflow contributor does.
+
+`OverviewPermissions` lists the permissions of everything a contributor adds to the overview, that is its sections, metric
+cards and panels, and is used only to skip the overview call for a caller who holds none of them; a contributor must
+therefore declare every permission its cards and panels carry, or a caller holding only that permission never receives
+them. This way a signed-in account with no dashboard permissions costs no database counts, runtime queries or log
+queries. An undeclared section still needs `dashboard:view`. Needs-attention, trends,
+recent activity and hotspots always invoke every contributor and filter afterwards by the `Permission` on what it returns.
+When several contributors add to one section, contributions the caller may not read are ignored. If any contribution the caller may read failed, the section is `Unavailable` with no figures, never partial totals and never `Unauthorized`; it is `Unauthorized` only when the caller may read none of them. A caller whose
+permissions read nothing the contributors declared or supplied gets every section as `Unauthorized`, including the ones no module supplies,
+so the response does not reveal which modules are installed, and `backendName` and `environmentName` are left empty.
+
 ## Third-party modules
 
 Modules outside this repository keep compiling. `ConfigurePermissions(params string[])` remains available but obsolete, and a permission that resolves to no registered descriptor registers an implicit one marked unverified, logs a warning, and appears as such in the catalog. The module keeps working and the gap stays visible.
