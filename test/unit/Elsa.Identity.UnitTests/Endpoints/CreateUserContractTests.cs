@@ -3,6 +3,7 @@ using Elsa.Identity.Contracts;
 using Elsa.Identity.Endpoints.Users.Create;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
+using Elsa.Testing.Shared;
 using FastEndpoints;
 using Microsoft.AspNetCore.Http;
 using NSubstitute;

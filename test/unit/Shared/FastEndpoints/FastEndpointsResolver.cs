@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using FastEndpoints;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,9 +10,7 @@ namespace Elsa.Testing.Shared;
 /// <see cref="ObjectDisposedException"/> for whatever touches it next. <c>Factory.Create</c> does: it only installs a
 /// resolver of its own when none is set.
 ///
-/// A test class that starts an endpoint host calls <see cref="Reset"/> once the host is disposed. Because the resolver
-/// is process-global, those classes and the ones using <c>Factory.Create</c> also have to share a non-parallel xunit
-/// collection, or a host could replace or dispose the resolver in the middle of another class's test.
+/// A test class that starts an endpoint host therefore calls <see cref="Reset"/> when it disposes that host.
 /// </summary>
 /// <remarks>
 /// Linked into the test projects that need it rather than living in <c>Elsa.Testing.Shared</c>: that library also
@@ -20,12 +19,17 @@ namespace Elsa.Testing.Shared;
 /// </remarks>
 internal static class FastEndpointsResolver
 {
-    // Never disposed, so the resolver it backs stays usable for the rest of the test run.
+    // Never disposed, so the resolver it backs stays usable for the rest of the test run. The empty list of
+    // discovered types keeps FastEndpoints from scanning every loaded assembly for message handlers.
     private static readonly IServiceProvider Services = new ServiceCollection()
         .AddHttpContextAccessor()
         .AddMessaging(new List<Type>())
         .BuildServiceProvider();
 
-    /// <summary>Points the process-wide resolver at a container that outlives every test host.</summary>
+    /// <summary>
+    /// Points the process-wide resolver at a container that outlives every test host. Also runs when the test assembly
+    /// loads, so <c>Factory.Create</c> finds the same resolver whether or not a host ran before it.
+    /// </summary>
+    [ModuleInitializer]
     public static void Reset() => Services.UseMessaging();
 }

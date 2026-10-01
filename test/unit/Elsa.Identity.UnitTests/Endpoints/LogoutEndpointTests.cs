@@ -73,10 +73,10 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
+        FastEndpointsResolver.Reset();
         _client.Dispose();
         await _app.StopAsync();
         await _app.DisposeAsync();
-        FastEndpointsResolver.Reset();
     }
 
     [Fact]

@@ -4,7 +4,6 @@ using System.Text.Encodings.Web;
 using Elsa.Features.Contracts;
 using Elsa.Features.Models;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Api.UnitTests.Endpoints.Descriptors;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
@@ -22,7 +21,7 @@ namespace Elsa.Workflows.Api.UnitTests.Endpoints.Features;
 /// them. Requiring <c>system/features:view</c> hid every feature-gated module, including ones the caller holds
 /// permissions for, from anyone without that grant.
 /// </summary>
-[Collection(nameof(EndpointSecurityCollection))]
+[Collection(nameof(FastEndpointsCollection))]
 public class InstalledFeaturesAuthorizationTests : IAsyncLifetime
 {
     private const string FeatureFullName = "Elsa.Secrets.SecretsFeature";
@@ -59,9 +58,9 @@ public class InstalledFeaturesAuthorizationTests : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
+        FastEndpointsResolver.Reset();
         await _app.StopAsync();
         await _app.DisposeAsync();
-        FastEndpointsResolver.Reset();
     }
 
     [Theory]

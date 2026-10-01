@@ -25,7 +25,7 @@ namespace Elsa.Workflows.Api.UnitTests.Endpoints.Descriptors;
 /// stored, so they need an authenticated caller and no grant; the version list is stored data, so it follows the
 /// permission that already lets the caller read every version of a definition.
 /// </summary>
-[Collection(nameof(EndpointSecurityCollection))]
+[Collection(nameof(FastEndpointsCollection))]
 public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
 {
     private const string VersionsPath = "/workflow-definitions/my-definition/versions";
@@ -79,8 +79,8 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
-        await _host.DisposeAsync();
         FastEndpointsResolver.Reset();
+        await _host.DisposeAsync();
     }
 
     [Theory]
@@ -223,13 +223,3 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
     private Task<HttpResponseMessage> SendAsync(string path, string? permissions = null, bool authenticated = false, HttpMethod? method = null) =>
         _host.SendAsync(method ?? HttpMethod.Get, path, permissions, authenticated);
 }
-
-/// <summary>
-/// Serializes the classes that depend on FastEndpoints' process-wide state: <see cref="EndpointSecurityOptions.SecurityIsEnabled"/>,
-/// which <see cref="AuthorizationTestHost"/> pins for its lifetime, and the service resolver, which <c>UseFastEndpoints()</c>
-/// points at the host being built and <c>Factory.Create</c> reuses. Any class that builds an endpoint host or uses
-/// <c>Factory.Create</c> belongs in this collection, and a host has to call <see cref="FastEndpointsResolver.Reset"/>
-/// once it is disposed so the resolver does not keep pointing at its disposed container.
-/// </summary>
-[CollectionDefinition(nameof(EndpointSecurityCollection), DisableParallelization = true)]
-public class EndpointSecurityCollection;

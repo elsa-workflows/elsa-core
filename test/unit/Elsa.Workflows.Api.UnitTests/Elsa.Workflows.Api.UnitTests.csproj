@@ -11,7 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="..\Shared\FastEndpointsResolver.cs" Link="FastEndpointsResolver.cs" />
+        <Compile Include="..\Shared\FastEndpoints\*.cs" LinkBase="Shared\FastEndpoints" />
     </ItemGroup>
 
 </Project>
