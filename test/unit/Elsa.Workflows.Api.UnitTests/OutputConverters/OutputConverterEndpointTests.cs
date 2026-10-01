@@ -21,7 +21,7 @@ public class OutputConverterEndpointTests
 
         Assert.Contains("/descriptors/output-converters", definition.Routes);
 
-        Assert.Null(Elsa.Authorization.EndpointPermissionRegistry.Find(typeof(List)));
+        Assert.Null(Elsa.Authorization.EndpointPermissionRegistry.FindRequirement(typeof(List)));
     }
 
     [Fact]

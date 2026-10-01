@@ -304,6 +304,8 @@ them does not receive them. A caller holding no dashboard-related permission get
 
 `POST /dashboard/workflow-trends`, `GET /dashboard/recent-activity`, `GET /dashboard/needs-attention` and
 `POST /dashboard/workflow-hotspots` answer 403 unless the caller holds `dashboard:view` or `workflows/instances:view`.
+They declare this with `RequireAnyPermission`, so `EndpointPermissionRegistry.FindRequirement` reports both permissions
+for them.
 Findings on `needs-attention` follow the same rule per finding, so a caller holding only `workflows/instances:view` sees the
 workflow findings but not the runtime or diagnostics ones.
 
@@ -328,6 +330,14 @@ so the response does not reveal which modules are installed, and `backendName` a
 ## Third-party modules
 
 Modules outside this repository keep compiling. `ConfigurePermissions(params string[])` remains available but obsolete, and a permission that resolves to no registered descriptor registers an implicit one marked unverified, logs a warning, and appears as such in the catalog. The module keeps working and the gap stays visible.
+
+An endpoint that accepts any one of several permissions declares `RequireAnyPermission((resource, verb), ...)`. It is
+evaluated, recorded and governed by `EndpointSecurityOptions.SecurityIsEnabled` exactly as `RequirePermission` is, and
+the endpoint coverage gate accepts it. `EndpointPermissionRegistry` records each declaration as an
+`EndpointPermissionRequirement` whose `AnyOf` lists the permissions that satisfy it; read it with `FindRequirement`, or
+enumerate every declaration with `AllRequirements`. `Find` and `All` are unchanged for an endpoint that requires exactly
+one permission, and report nothing for one that accepts any of several, so tooling that should see those endpoints
+moves to the new accessors.
 
 ## Per-tenant identity uniqueness
 

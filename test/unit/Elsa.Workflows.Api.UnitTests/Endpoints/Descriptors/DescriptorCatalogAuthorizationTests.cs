@@ -11,10 +11,6 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
-using FastEndpoints;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using NSubstitute;
@@ -73,72 +69,14 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
     public static readonly TheoryData<string> RefreshPermissions = new(DefinitionsView, DescriptorsActivitiesView);
     public static readonly TheoryData<string> AuthenticatedOnlyPaths = new([.. CatalogPathList, VersionsPath]);
 
-    private readonly bool _wasSecurityEnabled = EndpointSecurityOptions.SecurityIsEnabled;
-    private readonly WebApplication _app;
     private readonly IActivityRegistryPopulator _registryPopulator = Substitute.For<IActivityRegistryPopulator>();
+    private AuthorizationTestHost _host = null!;
 
-    public DescriptorCatalogAuthorizationTests()
-    {
-        EndpointSecurityOptions.SecurityIsEnabled = true;
+    public async Task InitializeAsync() => _host = await AuthorizationTestHost.StartAsync<WorkflowsApiFeature>(
+        endpoint => endpoint.Name == "ListVersions" || CatalogNamespaces.Any(x => endpoint.Namespace?.StartsWith(x, StringComparison.Ordinal) == true),
+        ConfigureServices);
 
-        var builder = WebApplication.CreateSlimBuilder();
-        builder.WebHost.UseTestServer();
-        builder.Services.AddFastEndpoints(options =>
-        {
-            options.Assemblies = [typeof(WorkflowsApiFeature).Assembly];
-            options.Filter = endpoint => endpoint.Name == "ListVersions" || CatalogNamespaces.Any(x => endpoint.Namespace?.StartsWith(x, StringComparison.Ordinal) == true);
-        });
-
-        var activityRegistry = Substitute.For<IActivityRegistry>();
-        activityRegistry.ListAll().Returns([new ActivityDescriptor { TypeName = TypeName }]);
-        var activityLookup = Substitute.For<IActivityRegistryLookupService>();
-        activityLookup.FindAsync(TypeName).Returns(new ActivityDescriptor { TypeName = TypeName });
-        var expressionRegistry = Substitute.For<IExpressionDescriptorRegistry>();
-        expressionRegistry.ListAll().Returns([]);
-        var storageDrivers = Substitute.For<IStorageDriverManager>();
-        storageDrivers.List().Returns([]);
-        var logPersistence = Substitute.For<ILogPersistenceStrategyService>();
-        logPersistence.ListStrategies().Returns([]);
-        var commitStrategies = Substitute.For<ICommitStrategyRegistry>();
-        commitStrategies.ListWorkflowStrategyRegistrations().Returns([]);
-        commitStrategies.ListActivityStrategyRegistrations().Returns([]);
-        var definitionStore = Substitute.For<IWorkflowDefinitionStore>();
-        definitionStore.FindManyAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<WorkflowDefinitionOrder<int>>(), Arg.Any<CancellationToken>()).Returns([new WorkflowDefinition()]);
-
-        builder.Services
-            .AddSingleton(activityRegistry)
-            .AddSingleton(_registryPopulator)
-            .AddSingleton(activityLookup)
-            .AddSingleton(Substitute.For<IPropertyUIHandlerResolver>())
-            .AddSingleton(expressionRegistry)
-            .AddSingleton(storageDrivers)
-            .AddSingleton(logPersistence)
-            .AddSingleton(commitStrategies)
-            .AddSingleton(Substitute.For<IOutputConverterRegistry>())
-            .AddSingleton(Substitute.For<IWellKnownTypeRegistry>())
-            .AddSingleton(SerializationTypeRegistry.CreateDefault())
-            .AddSingleton(definitionStore)
-            .AddSingleton<IOptions<ManagementOptions>>(new OptionsWrapper<ManagementOptions>(new ManagementOptions()));
-
-        builder.Services
-            .AddAuthentication(PermissionHeaderAuthenticationHandler.SchemeName)
-            .AddScheme<AuthenticationSchemeOptions, PermissionHeaderAuthenticationHandler>(PermissionHeaderAuthenticationHandler.SchemeName, _ => { });
-        builder.Services.AddAuthorization();
-
-        _app = builder.Build();
-        _app.UseAuthentication();
-        _app.UseAuthorization();
-        _app.UseFastEndpoints();
-    }
-
-    public Task InitializeAsync() => _app.StartAsync();
-
-    public async Task DisposeAsync()
-    {
-        EndpointSecurityOptions.SecurityIsEnabled = _wasSecurityEnabled;
-        await _app.StopAsync();
-        await _app.DisposeAsync();
-    }
+    public async Task DisposeAsync() => await _host.DisposeAsync();
 
     [Theory]
     [MemberData(nameof(CatalogPaths))]
@@ -235,7 +173,7 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
     [Fact]
     public async Task RefreshingTheActivityRegistry_WithSecurityDisabled_RefreshesForAnyCaller()
     {
-        EndpointSecurityOptions.SecurityIsEnabled = false;
+        await _host.RestartWithSecurityDisabledAsync();
 
         var response = await SendAsync("/descriptors/activities?refresh=true", authenticated: true);
 
@@ -243,22 +181,42 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
         await _registryPopulator.Received(1).PopulateRegistryAsync(Arg.Any<CancellationToken>());
     }
 
-    private Task<HttpResponseMessage> SendAsync(string path, string? permissions = null, bool authenticated = false, HttpMethod? method = null)
+    private void ConfigureServices(IServiceCollection services)
     {
-        var request = new HttpRequestMessage(method ?? HttpMethod.Get, path);
+        var activityRegistry = Substitute.For<IActivityRegistry>();
+        activityRegistry.ListAll().Returns([new ActivityDescriptor { TypeName = TypeName }]);
+        var activityLookup = Substitute.For<IActivityRegistryLookupService>();
+        activityLookup.FindAsync(TypeName).Returns(new ActivityDescriptor { TypeName = TypeName });
+        var expressionRegistry = Substitute.For<IExpressionDescriptorRegistry>();
+        expressionRegistry.ListAll().Returns([]);
+        var storageDrivers = Substitute.For<IStorageDriverManager>();
+        storageDrivers.List().Returns([]);
+        var logPersistence = Substitute.For<ILogPersistenceStrategyService>();
+        logPersistence.ListStrategies().Returns([]);
+        var commitStrategies = Substitute.For<ICommitStrategyRegistry>();
+        commitStrategies.ListWorkflowStrategyRegistrations().Returns([]);
+        commitStrategies.ListActivityStrategyRegistrations().Returns([]);
+        var definitionStore = Substitute.For<IWorkflowDefinitionStore>();
+        definitionStore.FindManyAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<WorkflowDefinitionOrder<int>>(), Arg.Any<CancellationToken>()).Returns([new WorkflowDefinition()]);
 
-        if (permissions != null)
-        {
-            request.Headers.Add(PermissionHeaderAuthenticationHandler.PermissionsHeaderName, permissions);
-        }
-
-        if (authenticated || permissions != null)
-        {
-            request.Headers.Add(PermissionHeaderAuthenticationHandler.UserHeaderName, "test-user");
-        }
-
-        return _app.GetTestClient().SendAsync(request);
+        services
+            .AddSingleton(activityRegistry)
+            .AddSingleton(_registryPopulator)
+            .AddSingleton(activityLookup)
+            .AddSingleton(Substitute.For<IPropertyUIHandlerResolver>())
+            .AddSingleton(expressionRegistry)
+            .AddSingleton(storageDrivers)
+            .AddSingleton(logPersistence)
+            .AddSingleton(commitStrategies)
+            .AddSingleton(Substitute.For<IOutputConverterRegistry>())
+            .AddSingleton(Substitute.For<IWellKnownTypeRegistry>())
+            .AddSingleton(SerializationTypeRegistry.CreateDefault())
+            .AddSingleton(definitionStore)
+            .AddSingleton<IOptions<ManagementOptions>>(new OptionsWrapper<ManagementOptions>(new ManagementOptions()));
     }
+
+    private Task<HttpResponseMessage> SendAsync(string path, string? permissions = null, bool authenticated = false, HttpMethod? method = null) =>
+        _host.SendAsync(method ?? HttpMethod.Get, path, permissions, authenticated);
 }
 
 [CollectionDefinition(nameof(EndpointSecurityCollection), DisableParallelization = true)]

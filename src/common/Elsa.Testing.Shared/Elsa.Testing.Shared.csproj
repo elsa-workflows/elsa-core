@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" />
         <PackageReference Include="xunit.abstractions" />
         <PackageReference Include="xunit.assert" />
         <PackageReference Include="xunit.extensibility.core" />
