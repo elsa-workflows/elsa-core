@@ -60,6 +60,12 @@ Body:
 
 Returns top workflow definitions for the selected metric. Studio treats this panel as optional and may omit it if the endpoint is unavailable.
 
+## Authorization
+
+`GET /dashboard/overview` requires an authenticated caller and no permission, and withholds each section the caller may not read (see [Extension Model](#extension-model)).
+
+The workflow-trends, needs-attention, recent-activity and workflow-hotspots endpoints serve workflow instance data. They declare `RequireAnyPermission` with `dashboard:view` and `workflows/instances:view`: a caller holding either one is allowed, a signed-in caller holding neither gets 403, and an anonymous caller gets 401. `EndpointPermissionRegistry.FindRequirement` reports both permissions for them. With endpoint security disabled, every dashboard endpoint allows every caller.
+
 ## Capability States
 
 Diagnostics summaries carry a `capability` object:

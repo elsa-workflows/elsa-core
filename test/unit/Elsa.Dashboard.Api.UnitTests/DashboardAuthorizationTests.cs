@@ -5,13 +5,10 @@ using Elsa.Authorization;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
 using Elsa.Dashboard.Api.Authorization;
+using Elsa.Dashboard.Api.Permissions;
 using Elsa.Dashboard.Api.Services;
 using Elsa.Testing.Shared.Authorization;
 using Elsa.Workflows.Api.Permissions;
-using FastEndpoints;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using DashboardApiFeature = Elsa.Dashboard.Api.Features.DashboardApiFeature;
 using static Elsa.Dashboard.Api.UnitTests.TestContributor;
@@ -44,6 +41,12 @@ public class DashboardAuthorizationTests : IAsyncLifetime
     public static readonly TheoryData<string, string> InstanceEndpoints = ToTheoryData(InstanceEndpointList);
     public static readonly TheoryData<string, string> AllEndpoints = ToTheoryData(InstanceEndpointList.Append(OverviewEndpoint));
 
+    public static readonly TheoryData<Type> InstanceEndpointTypes = new(
+        typeof(Endpoints.Dashboard.WorkflowTrends.Endpoint),
+        typeof(Endpoints.Dashboard.RecentActivity.Endpoint),
+        typeof(Endpoints.Dashboard.NeedsAttention.Endpoint),
+        typeof(Endpoints.Dashboard.WorkflowHotspots.Endpoint));
+
     /// <summary>Every instance endpoint crossed with each permission that reads instance data.</summary>
     public static readonly TheoryData<string, string, string> InstanceEndpointsWithInstanceAccess = ToTheoryData(
         from endpoint in InstanceEndpointList
@@ -65,41 +68,13 @@ public class DashboardAuthorizationTests : IAsyncLifetime
         ])
         .ToTheoryData();
 
-    private readonly bool _wasSecurityEnabled = EndpointSecurityOptions.SecurityIsEnabled;
-    private readonly WebApplication _app;
+    private AuthorizationTestHost _host = null!;
 
-    public DashboardAuthorizationTests()
-    {
-        EndpointSecurityOptions.SecurityIsEnabled = true;
+    public async Task InitializeAsync() => _host = await AuthorizationTestHost.StartAsync<DashboardApiFeature>(
+        endpoint => endpoint.Namespace?.StartsWith("Elsa.Dashboard.Api.Endpoints", StringComparison.Ordinal) == true,
+        services => services.AddSingleton<IDashboardProvider>(new DefaultDashboardProvider([Declared()], new(new TestClock(DateTimeOffset.UtcNow)), new TestHostEnvironment())));
 
-        var builder = WebApplication.CreateSlimBuilder();
-        builder.WebHost.UseTestServer();
-        builder.Services.AddFastEndpoints(options =>
-        {
-            options.Assemblies = [typeof(DashboardApiFeature).Assembly];
-            options.Filter = endpoint => endpoint.Namespace?.StartsWith("Elsa.Dashboard.Api.Endpoints", StringComparison.Ordinal) == true;
-        });
-
-        builder.Services.AddSingleton<IDashboardProvider>(new DefaultDashboardProvider([Declared()], new(new TestClock(DateTimeOffset.UtcNow)), new TestHostEnvironment()));
-        builder.Services
-            .AddAuthentication(PermissionHeaderAuthenticationHandler.SchemeName)
-            .AddScheme<AuthenticationSchemeOptions, PermissionHeaderAuthenticationHandler>(PermissionHeaderAuthenticationHandler.SchemeName, _ => { });
-        builder.Services.AddAuthorization();
-
-        _app = builder.Build();
-        _app.UseAuthentication();
-        _app.UseAuthorization();
-        _app.UseFastEndpoints();
-    }
-
-    public Task InitializeAsync() => _app.StartAsync();
-
-    public async Task DisposeAsync()
-    {
-        EndpointSecurityOptions.SecurityIsEnabled = _wasSecurityEnabled;
-        await _app.StopAsync();
-        await _app.DisposeAsync();
-    }
+    public async Task DisposeAsync() => await _host.DisposeAsync();
 
     [Theory]
     [MemberData(nameof(AllEndpoints))]
@@ -194,7 +169,7 @@ public class DashboardAuthorizationTests : IAsyncLifetime
     [MemberData(nameof(AllEndpoints))]
     public async Task CallerWithoutPermissions_WithSecurityDisabled_IsAllowedEverything(string method, string path)
     {
-        EndpointSecurityOptions.SecurityIsEnabled = false;
+        await _host.RestartWithSecurityDisabledAsync();
 
         var response = await SendAsync(new(method), path, authenticated: true);
 
@@ -204,7 +179,7 @@ public class DashboardAuthorizationTests : IAsyncLifetime
     [Fact]
     public async Task Overview_WithSecurityDisabled_ReturnsEverything()
     {
-        EndpointSecurityOptions.SecurityIsEnabled = false;
+        await _host.RestartWithSecurityDisabledAsync();
 
         var overview = await ReadOverviewAsync(await SendAsync(HttpMethod.Get, OverviewEndpoint.Path, authenticated: true));
 
@@ -225,6 +200,16 @@ public class DashboardAuthorizationTests : IAsyncLifetime
 
         Assert.NotEmpty(json.RootElement.GetProperty(collection).EnumerateArray());
         Assert.DoesNotContain("permission", json.RootElement.GetRawText(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [MemberData(nameof(InstanceEndpointTypes))]
+    public void InstanceEndpoint_RecordsBothPermissionsThatOpenIt(Type endpointType)
+    {
+        var requirement = EndpointPermissionRegistry.FindRequirement(endpointType);
+
+        Assert.NotNull(requirement);
+        Assert.Equivalent(new[] { new Permission(DashboardResourcePermissions.Dashboard, CoreVerbs.View), new Permission(WorkflowPermissions.Instances, CoreVerbs.View) }, requirement.AnyOf, strict: true);
     }
 
     [Fact]
@@ -262,27 +247,8 @@ public class DashboardAuthorizationTests : IAsyncLifetime
     private static async Task<DashboardOverview> ReadOverviewAsync(HttpResponseMessage response) =>
         (await response.Content.ReadFromJsonAsync<DashboardOverview>(JsonOptions))!;
 
-    private Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, string? permissions = null, bool authenticated = false)
-    {
-        var request = new HttpRequestMessage(method, path);
-
-        if (method == HttpMethod.Post)
-        {
-            request.Content = JsonContent.Create(new { });
-        }
-
-        if (permissions != null)
-        {
-            request.Headers.Add(PermissionHeaderAuthenticationHandler.PermissionsHeaderName, permissions);
-        }
-
-        if (authenticated || permissions != null)
-        {
-            request.Headers.Add(PermissionHeaderAuthenticationHandler.UserHeaderName, "test-user");
-        }
-
-        return _app.GetTestClient().SendAsync(request);
-    }
+    private Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, string? permissions = null, bool authenticated = false) =>
+        _host.SendAsync(method, path, permissions, authenticated, method == HttpMethod.Post ? JsonContent.Create(new { }) : null);
 }
 
 [CollectionDefinition(nameof(EndpointSecurityCollection), DisableParallelization = true)]

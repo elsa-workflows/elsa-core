@@ -2,7 +2,6 @@ using Elsa.Abstractions;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
 using Elsa.Dashboard.Api.Authorization;
-using FastEndpoints;
 using JetBrains.Annotations;
 
 namespace Elsa.Dashboard.Api.Endpoints.Dashboard.RecentActivity;
@@ -13,8 +12,7 @@ internal class Endpoint(IDashboardProvider dashboardProvider) : ElsaEndpointWith
     public override void Configure()
     {
         Get("/dashboard/recent-activity");
-        RequireAuthenticatedOnly();
-        PreProcessor<RequireInstancesAccess<EmptyRequest>>();
+        RequireAnyPermission(DashboardAccess.InstanceEndpointPermissions);
     }
 
     public override async Task<DashboardRecentActivityResponse> ExecuteAsync(CancellationToken cancellationToken)
