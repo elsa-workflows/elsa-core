@@ -1,6 +1,6 @@
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Endpoints.Users.Create;
-using Elsa.Testing.Shared;
+using Elsa.UnitTests.Shared;
 using FastEndpoints;
 using NSubstitute;
 

@@ -12,7 +12,7 @@ using Elsa.Identity.HostedServices;
 using Elsa.Identity.Models;
 using Elsa.Identity.Options;
 using Elsa.Identity.Services;
-using Elsa.Testing.Shared;
+using Elsa.UnitTests.Shared;
 using FastEndpoints;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;

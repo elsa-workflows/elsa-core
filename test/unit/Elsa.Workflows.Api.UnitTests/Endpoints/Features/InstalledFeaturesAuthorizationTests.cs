@@ -3,7 +3,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Elsa.Features.Contracts;
 using Elsa.Features.Models;
-using Elsa.Testing.Shared;
+using Elsa.UnitTests.Shared;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
