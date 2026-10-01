@@ -5,6 +5,7 @@ using Elsa.Authorization;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
 using Elsa.Dashboard.Api.Authorization;
+using Elsa.Dashboard.Api.Permissions;
 using Elsa.Dashboard.Api.Services;
 using Elsa.Testing.Shared.Authorization;
 using Elsa.Workflows.Api.Permissions;
@@ -44,6 +45,12 @@ public class DashboardAuthorizationTests : IAsyncLifetime
     public static readonly TheoryData<string, string> InstanceEndpoints = ToTheoryData(InstanceEndpointList);
     public static readonly TheoryData<string, string> AllEndpoints = ToTheoryData(InstanceEndpointList.Append(OverviewEndpoint));
 
+    public static readonly TheoryData<Type> InstanceEndpointTypes = new(
+        typeof(Endpoints.Dashboard.WorkflowTrends.Endpoint),
+        typeof(Endpoints.Dashboard.RecentActivity.Endpoint),
+        typeof(Endpoints.Dashboard.NeedsAttention.Endpoint),
+        typeof(Endpoints.Dashboard.WorkflowHotspots.Endpoint));
+
     /// <summary>Every instance endpoint crossed with each permission that reads instance data.</summary>
     public static readonly TheoryData<string, string, string> InstanceEndpointsWithInstanceAccess = ToTheoryData(
         from endpoint in InstanceEndpointList
@@ -66,12 +73,24 @@ public class DashboardAuthorizationTests : IAsyncLifetime
         .ToTheoryData();
 
     private readonly bool _wasSecurityEnabled = EndpointSecurityOptions.SecurityIsEnabled;
-    private readonly WebApplication _app;
+    private WebApplication _app;
 
     public DashboardAuthorizationTests()
     {
         EndpointSecurityOptions.SecurityIsEnabled = true;
+        _app = CreateApp();
+    }
 
+    public Task InitializeAsync() => _app.StartAsync();
+
+    public async Task DisposeAsync()
+    {
+        EndpointSecurityOptions.SecurityIsEnabled = _wasSecurityEnabled;
+        await StopAppAsync();
+    }
+
+    private static WebApplication CreateApp()
+    {
         var builder = WebApplication.CreateSlimBuilder();
         builder.WebHost.UseTestServer();
         builder.Services.AddFastEndpoints(options =>
@@ -86,17 +105,27 @@ public class DashboardAuthorizationTests : IAsyncLifetime
             .AddScheme<AuthenticationSchemeOptions, PermissionHeaderAuthenticationHandler>(PermissionHeaderAuthenticationHandler.SchemeName, _ => { });
         builder.Services.AddAuthorization();
 
-        _app = builder.Build();
-        _app.UseAuthentication();
-        _app.UseAuthorization();
-        _app.UseFastEndpoints();
+        var app = builder.Build();
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.UseFastEndpoints();
+        return app;
     }
 
-    public Task InitializeAsync() => _app.StartAsync();
-
-    public async Task DisposeAsync()
+    /// <summary>
+    /// Endpoints read <see cref="EndpointSecurityOptions.SecurityIsEnabled"/> when the host maps them, so security is
+    /// disabled the way a deployment disables it: before a host is built.
+    /// </summary>
+    private async Task DisableSecurityAsync()
     {
-        EndpointSecurityOptions.SecurityIsEnabled = _wasSecurityEnabled;
+        await StopAppAsync();
+        EndpointSecurityOptions.SecurityIsEnabled = false;
+        _app = CreateApp();
+        await _app.StartAsync();
+    }
+
+    private async Task StopAppAsync()
+    {
         await _app.StopAsync();
         await _app.DisposeAsync();
     }
@@ -194,7 +223,7 @@ public class DashboardAuthorizationTests : IAsyncLifetime
     [MemberData(nameof(AllEndpoints))]
     public async Task CallerWithoutPermissions_WithSecurityDisabled_IsAllowedEverything(string method, string path)
     {
-        EndpointSecurityOptions.SecurityIsEnabled = false;
+        await DisableSecurityAsync();
 
         var response = await SendAsync(new(method), path, authenticated: true);
 
@@ -204,7 +233,7 @@ public class DashboardAuthorizationTests : IAsyncLifetime
     [Fact]
     public async Task Overview_WithSecurityDisabled_ReturnsEverything()
     {
-        EndpointSecurityOptions.SecurityIsEnabled = false;
+        await DisableSecurityAsync();
 
         var overview = await ReadOverviewAsync(await SendAsync(HttpMethod.Get, OverviewEndpoint.Path, authenticated: true));
 
@@ -225,6 +254,16 @@ public class DashboardAuthorizationTests : IAsyncLifetime
 
         Assert.NotEmpty(json.RootElement.GetProperty(collection).EnumerateArray());
         Assert.DoesNotContain("permission", json.RootElement.GetRawText(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [MemberData(nameof(InstanceEndpointTypes))]
+    public void InstanceEndpoint_RecordsBothPermissionsThatOpenIt(Type endpointType)
+    {
+        var requirement = EndpointPermissionRegistry.FindRequirement(endpointType);
+
+        Assert.NotNull(requirement);
+        Assert.Equivalent(new[] { new Permission(DashboardResourcePermissions.Dashboard, CoreVerbs.View), new Permission(WorkflowPermissions.Instances, CoreVerbs.View) }, requirement.AnyOf, strict: true);
     }
 
     [Fact]

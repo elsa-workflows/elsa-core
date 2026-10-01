@@ -21,6 +21,12 @@ internal static class DashboardAccess
     public static readonly DashboardPermission WorkflowInstances = new("workflows/instances", CoreVerbs.View);
 
     /// <summary>
+    /// The permissions any one of which opens an endpoint serving only workflow instance data (trends, recent activity,
+    /// needs attention and hotspots): <c>dashboard:view</c> or <c>workflows/instances:view</c>.
+    /// </summary>
+    public static (string Resource, string Verb)[] InstanceEndpointPermissions => [(Overview.Resource, Overview.Verb), (WorkflowInstances.Resource, WorkflowInstances.Verb)];
+
+    /// <summary>
     /// Tells whether the caller may read data guarded by a permission: they hold <c>dashboard:view</c> or the permission
     /// itself. Allows everything when endpoint security is disabled, as <c>RequirePermission</c> does.
     /// </summary>
@@ -44,7 +50,4 @@ internal static class DashboardAccess
     /// </summary>
     public static Func<DashboardPermission?, bool> WithDefault(Func<DashboardPermission, bool>? canRead) =>
         permission => canRead == null || canRead(permission ?? Overview);
-
-    /// <summary>Tells whether the caller may read workflow instance data: trends, recent activity, findings and hotspots.</summary>
-    public static bool CanReadInstances(HttpContext context) => CreateReadCheck(context)(WorkflowInstances);
 }

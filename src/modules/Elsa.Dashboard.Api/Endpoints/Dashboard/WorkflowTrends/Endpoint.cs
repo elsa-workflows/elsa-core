@@ -12,8 +12,7 @@ internal class Endpoint(IDashboardProvider dashboardProvider) : ElsaEndpoint<Das
     public override void Configure()
     {
         Post("/dashboard/workflow-trends");
-        RequireAuthenticatedOnly();
-        PreProcessor<RequireInstancesAccess<DashboardTrendRequest>>();
+        RequireAnyPermission(DashboardAccess.InstanceEndpointPermissions);
     }
 
     public override async Task<DashboardTrendResponse> ExecuteAsync(DashboardTrendRequest request, CancellationToken cancellationToken)

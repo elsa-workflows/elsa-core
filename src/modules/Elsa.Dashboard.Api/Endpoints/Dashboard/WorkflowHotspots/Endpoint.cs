@@ -12,8 +12,7 @@ internal class Endpoint(IDashboardProvider dashboardProvider) : ElsaEndpoint<Das
     public override void Configure()
     {
         Post("/dashboard/workflow-hotspots");
-        RequireAuthenticatedOnly();
-        PreProcessor<RequireInstancesAccess<DashboardWorkflowHotspotsRequest>>();
+        RequireAnyPermission(DashboardAccess.InstanceEndpointPermissions);
     }
 
     public override async Task<DashboardWorkflowHotspotsResponse> ExecuteAsync(DashboardWorkflowHotspotsRequest request, CancellationToken cancellationToken)
