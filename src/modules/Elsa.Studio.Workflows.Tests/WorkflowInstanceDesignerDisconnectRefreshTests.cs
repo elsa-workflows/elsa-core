@@ -187,7 +187,7 @@ public sealed class WorkflowInstanceDesignerDisconnectRefreshTests : BunitContex
     /// <summary>
     /// Pins that the refresh timer is detached from <c>_refreshTimer</c> atomically, before the
     /// (potentially slow) <see cref="Timer.DisposeAsync"/> call completes. To exercise that, the
-    /// refresh timer's callback is kept running (blocked on <paramref name="release"/> below) while
+    /// refresh timer's callback is kept running (a <see cref="BlockingTimerCallback"/>) while
     /// the first disposal is in flight, so a second, concurrent disposal genuinely overlaps with it
     /// instead of running after the first has already finished.
     /// </summary>
@@ -199,13 +199,8 @@ public sealed class WorkflowInstanceDesignerDisconnectRefreshTests : BunitContex
         var cut = RenderDesigner(activityExecutionService);
         SetLastActivityExecution(cut.Instance, "node-1");
 
-        using var started = new ManualResetEventSlim(false);
-        using var release = new ManualResetEventSlim(false);
-        using var refreshTimer = new Timer(_ =>
-        {
-            started.Set();
-            release.Wait(timeout);
-        }, null, Timeout.Infinite, Timeout.Infinite);
+        await using var callback = new BlockingTimerCallback(timeout);
+        using var refreshTimer = new Timer(callback.Invoke, null, Timeout.Infinite, Timeout.Infinite);
         using var elapsedTimer = new Timer(_ => { }, null, Timeout.Infinite, Timeout.Infinite);
 
         SetRefreshTimer(cut.Instance, refreshTimer);
@@ -213,12 +208,12 @@ public sealed class WorkflowInstanceDesignerDisconnectRefreshTests : BunitContex
 
         // Fire the refresh timer's callback immediately and wait for it to actually start running.
         refreshTimer.Change(TimeSpan.Zero, Timeout.InfiniteTimeSpan);
-        Assert.True(started.Wait(timeout), "The refresh timer callback did not start in time.");
+        await callback.Started.WaitAsync(timeout);
 
         var disposable = (IAsyncDisposable)cut.Instance;
 
         // System.Threading.Timer.DisposeAsync only completes once any in-flight callback finishes, so
-        // this first disposal stays pending while the callback above is blocked on `release`.
+        // this first disposal stays pending while the callback above is blocked until released.
         var firstDisposeTask = disposable.DisposeAsync().AsTask();
 
         // The atomic Interlocked.Exchange detach in StopRefreshActivityStatePeriodically happens
@@ -233,7 +228,7 @@ public sealed class WorkflowInstanceDesignerDisconnectRefreshTests : BunitContex
         Assert.Null(secondDisposeException);
         Assert.False(firstDisposeTask.IsCompleted, "The first disposal should still be pending on the blocked callback.");
 
-        release.Set();
+        callback.Release();
 
         var completedTask = await Task.WhenAny(firstDisposeTask, Task.Delay(timeout));
         Assert.Same(firstDisposeTask, completedTask);
@@ -267,49 +262,25 @@ public sealed class WorkflowInstanceDesignerDisconnectRefreshTests : BunitContex
         var activityExecutionService = new RecordingActivityExecutionService();
         var cut = RenderDesigner(activityExecutionService);
 
-        var started = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var finished = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var refreshTimer = new Timer(_ =>
-        {
-            started.TrySetResult(true);
-            try
-            {
-                // Keep the callback in flight beyond the assertion window without blocking forever
-                // if the test fails before releasing it.
-                release.Task.Wait(TimeSpan.FromSeconds(10));
-            }
-            finally
-            {
-                finished.TrySetResult(true);
-            }
-        }, null, Timeout.Infinite, Timeout.Infinite);
+        // Keep the callback in flight beyond the assertion window without blocking forever if the test
+        // fails before releasing it.
+        await using var callback = new BlockingTimerCallback(TimeSpan.FromSeconds(10));
+        using var refreshTimer = new Timer(callback.Invoke, null, Timeout.Infinite, Timeout.Infinite);
 
         SetRefreshTimer(cut.Instance, refreshTimer);
 
-        try
-        {
-            // Fire the timer's own callback and wait for it to actually start running, so a genuine
-            // callback is in flight on the timer while the stop call below tries to stop it.
-            refreshTimer.Change(TimeSpan.Zero, Timeout.InfiniteTimeSpan);
-            await started.Task.WaitAsync(startTimeout);
+        // Fire the timer's own callback and wait for it to actually start running, so a genuine
+        // callback is in flight on the timer while the stop call below tries to stop it.
+        refreshTimer.Change(TimeSpan.Zero, Timeout.InfiniteTimeSpan);
+        await callback.Started.WaitAsync(startTimeout);
 
-            var stopMethod = typeof(WorkflowInstanceDesigner).GetMethod("StopRefreshTimer", BindingFlags.Instance | BindingFlags.NonPublic)!;
-            var stopwatch = Stopwatch.StartNew();
+        var stopMethod = typeof(WorkflowInstanceDesigner).GetMethod("StopRefreshTimer", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var stopwatch = Stopwatch.StartNew();
 
-            stopMethod.Invoke(cut.Instance, null);
+        stopMethod.Invoke(cut.Instance, null);
 
-            Assert.True(stopwatch.Elapsed < assertionBound, $"Stopping the timer from the tick path took {stopwatch.Elapsed}, which suggests it waited for the blocked callback.");
-            Assert.Null(GetRefreshTimer(cut.Instance));
-        }
-        finally
-        {
-            release.TrySetResult(true);
-            if (started.Task.IsCompleted)
-            {
-                await finished.Task.WaitAsync(TimeSpan.FromSeconds(10));
-            }
-        }
+        Assert.True(stopwatch.Elapsed < assertionBound, $"Stopping the timer from the tick path took {stopwatch.Elapsed}, which suggests it waited for the blocked callback.");
+        Assert.Null(GetRefreshTimer(cut.Instance));
     }
 
     [Fact]
@@ -615,6 +586,50 @@ public sealed class WorkflowInstanceDesignerDisconnectRefreshTests : BunitContex
 
         var field = typeof(WorkflowInstanceDesigner).GetField("_designer", BindingFlags.Instance | BindingFlags.NonPublic)!;
         field.SetValue(instance, designer);
+    }
+
+    /// <summary>
+    /// A <see cref="Timer"/> callback that signals when it starts and then blocks (for at most
+    /// <paramref name="maxBlock"/>) until released, keeping a genuine callback "in flight" on the timer.
+    /// Its signals are never disposed, and <see cref="DisposeAsync"/> releases the callback and waits for
+    /// it to return, so a callback still running on the thread pool can neither outlive the test nor hit
+    /// a disposed object - which would crash the test host instead of failing the test.
+    /// </summary>
+    private sealed class BlockingTimerCallback(TimeSpan maxBlock) : IAsyncDisposable
+    {
+        private readonly TaskCompletionSource _started = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _finished = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        /// Completes once the callback has started running.
+        public Task Started => _started.Task;
+
+        public void Invoke(object? state)
+        {
+            _started.TrySetResult();
+
+            try
+            {
+                _release.Task.Wait(maxBlock);
+            }
+            finally
+            {
+                _finished.TrySetResult();
+            }
+        }
+
+        /// Unblocks the in-flight callback.
+        public void Release() => _release.TrySetResult();
+
+        public async ValueTask DisposeAsync()
+        {
+            Release();
+
+            // A callback that never started has nothing to wait for. Timing out is swallowed so teardown
+            // cannot mask the test's own failure; the released callback only touches the signals above.
+            if (_started.Task.IsCompleted)
+                await _finished.Task.WaitAsync(maxBlock).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+        }
     }
 
     /// <summary>
