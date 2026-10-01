@@ -19,14 +19,15 @@ namespace Elsa.Testing.Shared.Authorization;
 /// </remarks>
 public sealed class AuthorizationTestHost : IAsyncDisposable
 {
-    private readonly bool _wasSecurityEnabled = EndpointSecurityOptions.SecurityIsEnabled;
+    private readonly bool _wasSecurityEnabled;
     private readonly Type _endpointAssemblyMarker;
     private readonly Func<Type, bool> _endpointFilter;
     private readonly Action<IServiceCollection>? _configureServices;
     private WebApplication _app;
 
-    private AuthorizationTestHost(Type endpointAssemblyMarker, Func<Type, bool> endpointFilter, Action<IServiceCollection>? configureServices, WebApplication app)
+    private AuthorizationTestHost(bool wasSecurityEnabled, Type endpointAssemblyMarker, Func<Type, bool> endpointFilter, Action<IServiceCollection>? configureServices, WebApplication app)
     {
+        _wasSecurityEnabled = wasSecurityEnabled;
         _endpointAssemblyMarker = endpointAssemblyMarker;
         _endpointFilter = endpointFilter;
         _configureServices = configureServices;
@@ -43,7 +44,8 @@ public sealed class AuthorizationTestHost : IAsyncDisposable
         {
             var app = Build(typeof(TAssemblyMarker), endpointFilter, configureServices);
             await app.StartAsync();
-            return new(typeof(TAssemblyMarker), endpointFilter, configureServices, app);
+            // The setting from before the host pinned it, so disposal restores what the caller had.
+            return new(wasSecurityEnabled, typeof(TAssemblyMarker), endpointFilter, configureServices, app);
         }
         catch
         {
