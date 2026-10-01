@@ -7,6 +7,7 @@ using Elsa.Labels.Services;
 using Elsa.Models;
 using Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.List;
 using Elsa.Workflows.Api.Models;
+using Elsa.Workflows.Api.UnitTests.Endpoints.Descriptors;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Exceptions;
@@ -19,6 +20,7 @@ using NSubstitute;
 
 namespace Elsa.Workflows.Api.UnitTests.Endpoints.WorkflowDefinitions;
 
+[Collection(nameof(EndpointSecurityCollection))]
 public class WorkflowDefinitionLabelFilterTests
 {
     [Fact]

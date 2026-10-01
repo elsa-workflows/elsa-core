@@ -2,6 +2,7 @@ using System.Net;
 using Elsa.Authorization;
 using Elsa.Common.Serialization;
 using Elsa.Expressions.Contracts;
+using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Authorization;
 using Elsa.Workflows.Api.Permissions;
 using Elsa.Workflows.CommitStates;
@@ -76,7 +77,11 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
         endpoint => endpoint.Name == "ListVersions" || CatalogNamespaces.Any(x => endpoint.Namespace?.StartsWith(x, StringComparison.Ordinal) == true),
         ConfigureServices);
 
-    public async Task DisposeAsync() => await _host.DisposeAsync();
+    public async Task DisposeAsync()
+    {
+        await _host.DisposeAsync();
+        FastEndpointsResolver.Reset();
+    }
 
     [Theory]
     [MemberData(nameof(CatalogPaths))]
@@ -219,5 +224,12 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
         _host.SendAsync(method ?? HttpMethod.Get, path, permissions, authenticated);
 }
 
+/// <summary>
+/// Serializes the classes that depend on FastEndpoints' process-wide state: <see cref="EndpointSecurityOptions.SecurityIsEnabled"/>,
+/// which <see cref="AuthorizationTestHost"/> pins for its lifetime, and the service resolver, which <c>UseFastEndpoints()</c>
+/// points at the host being built and <c>Factory.Create</c> reuses. Any class that builds an endpoint host or uses
+/// <c>Factory.Create</c> belongs in this collection, and a host has to call <see cref="FastEndpointsResolver.Reset"/>
+/// once it is disposed so the resolver does not keep pointing at its disposed container.
+/// </summary>
 [CollectionDefinition(nameof(EndpointSecurityCollection), DisableParallelization = true)]
 public class EndpointSecurityCollection;

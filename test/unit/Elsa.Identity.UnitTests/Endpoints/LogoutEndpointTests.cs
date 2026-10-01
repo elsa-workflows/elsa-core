@@ -12,6 +12,7 @@ using Elsa.Identity.HostedServices;
 using Elsa.Identity.Models;
 using Elsa.Identity.Options;
 using Elsa.Identity.Services;
+using Elsa.Testing.Shared;
 using FastEndpoints;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
@@ -26,6 +27,7 @@ namespace Elsa.Identity.UnitTests.Endpoints;
 /// Signs in, refreshes and signs out through the real endpoints, authentication schemes, token services and the
 /// in-memory revocation store.
 /// </summary>
+[Collection(nameof(FastEndpointsCollection))]
 public sealed class LogoutEndpointTests : IAsyncLifetime
 {
     private static readonly User Alice = new() { Id = "alice-id", Name = "alice" };
@@ -74,6 +76,7 @@ public sealed class LogoutEndpointTests : IAsyncLifetime
         _client.Dispose();
         await _app.StopAsync();
         await _app.DisposeAsync();
+        FastEndpointsResolver.Reset();
     }
 
     [Fact]
