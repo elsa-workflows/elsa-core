@@ -9,5 +9,9 @@
       <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Compile Include="..\Shared\FastEndpoints\*.cs" LinkBase="Shared\FastEndpoints" />
+    </ItemGroup>
+
 </Project>
 

@@ -3,6 +3,7 @@ using Elsa.Authorization;
 using Elsa.Common.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Testing.Shared.Authorization;
+using Elsa.UnitTests.Shared;
 using Elsa.Workflows.Api.Permissions;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.LogPersistence;
@@ -24,7 +25,7 @@ namespace Elsa.Workflows.Api.UnitTests.Endpoints.Descriptors;
 /// stored, so they need an authenticated caller and no grant; the version list is stored data, so it follows the
 /// permission that already lets the caller read every version of a definition.
 /// </summary>
-[Collection(nameof(EndpointSecurityCollection))]
+[Collection(nameof(FastEndpointsCollection))]
 public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
 {
     private const string VersionsPath = "/workflow-definitions/my-definition/versions";
@@ -76,7 +77,11 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
         endpoint => endpoint.Name == "ListVersions" || CatalogNamespaces.Any(x => endpoint.Namespace?.StartsWith(x, StringComparison.Ordinal) == true),
         ConfigureServices);
 
-    public async Task DisposeAsync() => await _host.DisposeAsync();
+    public async Task DisposeAsync()
+    {
+        FastEndpointsResolver.Reset();
+        await _host.DisposeAsync();
+    }
 
     [Theory]
     [MemberData(nameof(CatalogPaths))]
@@ -218,6 +223,3 @@ public class DescriptorCatalogAuthorizationTests : IAsyncLifetime
     private Task<HttpResponseMessage> SendAsync(string path, string? permissions = null, bool authenticated = false, HttpMethod? method = null) =>
         _host.SendAsync(method ?? HttpMethod.Get, path, permissions, authenticated);
 }
-
-[CollectionDefinition(nameof(EndpointSecurityCollection), DisableParallelization = true)]
-public class EndpointSecurityCollection;
