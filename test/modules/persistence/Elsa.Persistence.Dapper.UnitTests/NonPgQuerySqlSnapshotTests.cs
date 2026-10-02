@@ -190,7 +190,7 @@ public sealed class NonPgQuerySqlSnapshotTests
             "and (Name like @SearchTermLike or Id like @SearchTerm or DefinitionId like @SearchTerm or DefinitionVersionId like @SearchTerm or CorrelationId like @SearchTerm)"),
         ["starts-with"] = Join(
             "select * from WorkflowInstances where 1=1",
-            "and Name like @SearchTermLike"),
+            "and Name like @NameStartsWith"),
         ["less-than"] = Join(
             "select * from WorkflowInstances where 1=1",
             "and UpdatedAt < @UpdatedAt"),
