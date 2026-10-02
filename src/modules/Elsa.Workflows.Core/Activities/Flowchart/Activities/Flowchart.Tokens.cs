@@ -72,7 +72,9 @@ public partial class Flowchart
                         // Cancel the losing branches only after the target is scheduled. Cancelling first leaves the flowchart
                         // without pending work, so its cancel handler completes it before the join runs (#8464).
                         if (mergeMode == MergeMode.Race)
+                        {
                             await flowContext.CancelInboundAncestorsAsync(targetActivity);
+                        }
 
                         // Block other inbound connections (adjust per mode if needed).
                         var otherInboundConnections = flowGraph.GetForwardInboundConnections(targetActivity)
@@ -88,7 +90,9 @@ public partial class Flowchart
                     else
                     {
                         if (mergeMode == MergeMode.Race)
+                        {
                             await flowContext.CancelInboundAncestorsAsync(targetActivity);
+                        }
 
                         // Consume the block without scheduling.
                         existingBlockedToken.Consume();
