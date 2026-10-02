@@ -1,0 +1,128 @@
+{
+  "limitations": [
+    "The imported test project targets net10.0 only; net8.0/net9.0 V2 contracts are covered by the activity compatibility probe, not by these tests.",
+    "Restore uses the imported tree's NuGet configuration and the ambient package cache; this is not a fresh-cache or feed-provenance attestation.",
+    "No GitHub API call, credential, package pack or publisher is used."
+  ],
+  "port": {
+    "files": [
+      {
+        "bom": true,
+        "matches": true,
+        "path": "src/extensions/devops/Elsa.DevOps.GitHub/Activities/Comments/DeleteCommentV2.cs",
+        "sha256": "e096655adb88c74b87bd99ffda4f211729fe6ccf0e54cda0654000ea5d8e87f3"
+      },
+      {
+        "bom": true,
+        "matches": true,
+        "path": "src/extensions/devops/Elsa.DevOps.GitHub/Activities/Comments/GetCommentV2.cs",
+        "sha256": "cae4c59f9b02cd187d48f9f8b6d6218b73448196eed132083e42cd1b21baceed"
+      },
+      {
+        "bom": true,
+        "matches": true,
+        "path": "src/extensions/devops/Elsa.DevOps.GitHub/Activities/Comments/UpdateCommentV2.cs",
+        "sha256": "721307ad7bdb3b17bf042e669164e604b8e99def76498a23c00aa3b0f534ef43"
+      },
+      {
+        "bom": true,
+        "matches": true,
+        "path": "src/extensions/devops/Elsa.DevOps.GitHub/Activities/Gists/GetGistV2.cs",
+        "sha256": "cebc9ee5e3c60d7204647529265651d1300b72c413daff25739d4f203c07f99e"
+      },
+      {
+        "bom": false,
+        "matches": true,
+        "path": "test/extensions/modules/devops/Elsa.DevOps.GitHub.UnitTests/Elsa.DevOps.GitHub.UnitTests.csproj",
+        "sha256": "d57667151acf065ae7a11f74b9ef17eefa9d4990c7d0961b0ec6bc99cbde9f3c"
+      },
+      {
+        "bom": false,
+        "matches": true,
+        "path": "test/extensions/modules/devops/Elsa.DevOps.GitHub.UnitTests/GitHubActivityIdentityTests.cs",
+        "sha256": "8b16c40c1d40bc14716762d28013a3a624e43d3d555d82660876ff32b715d9ad"
+      }
+    ],
+    "patch": {
+      "path": "scripts/integration-program/github-activity-id-compatibility/extensions-v2.patch",
+      "sha256": "cc75ee242495cb9714840059b7eb62b0be7646fa99466b453451cc55d932640f"
+    },
+    "pathMap": [
+      [
+        "src/modules/devops/",
+        "src/extensions/devops/"
+      ],
+      [
+        "test/modules/devops/",
+        "test/extensions/modules/devops/"
+      ]
+    ],
+    "projectReferenceMap": [
+      "Include=\"../../../../src/modules/devops/Elsa.DevOps.GitHub/Elsa.DevOps.GitHub.csproj\"",
+      "Include=\"../../../../../src/extensions/devops/Elsa.DevOps.GitHub/Elsa.DevOps.GitHub.csproj\""
+    ]
+  },
+  "schemaVersion": 1,
+  "scope": "Focused GitHub activity-ID tests in the imported source layout; no package publication",
+  "source": {
+    "cleanAfterTest": true,
+    "cleanBeforeTest": true,
+    "head": "3add8104f72986f44adcb496a880a9c1db656f63"
+  },
+  "status": "passed",
+  "test": {
+    "command": [
+      "$DOTNET",
+      "test",
+      "test/extensions/modules/devops/Elsa.DevOps.GitHub.UnitTests/Elsa.DevOps.GitHub.UnitTests.csproj",
+      "--framework",
+      "net10.0",
+      "--logger",
+      "trx;LogFileName=github-activity-id.trx",
+      "--results-directory",
+      "<output>/net10-results"
+    ],
+    "counters": {
+      "aborted": 0,
+      "completed": 0,
+      "disconnected": 0,
+      "error": 0,
+      "executed": 6,
+      "failed": 0,
+      "inProgress": 0,
+      "inconclusive": 0,
+      "notExecuted": 0,
+      "notRunnable": 0,
+      "passed": 6,
+      "passedButRunAborted": 0,
+      "pending": 0,
+      "timeout": 0,
+      "total": 6,
+      "warning": 0
+    },
+    "exitCode": 0,
+    "expectedCount": 6,
+    "framework": "net10.0",
+    "logPath": "net10-dotnet-test.log",
+    "logSha256": "67108f16e131fb9be7672570cdbb9e2a87d83c62f5ca067cf65f310113ff3bfb",
+    "outcomes": [
+      "Passed",
+      "Passed",
+      "Passed",
+      "Passed",
+      "Passed",
+      "Passed"
+    ],
+    "passed": true,
+    "testNames": [
+      "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.BothActivitySerializerEntryPointsRoundTripFourRootActivitiesWithoutIdCollisions",
+      "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.FourReleasedV1ShapesRetainTheirProviderInputsAndVersionlessPayloadIsRejectedByLatestV2Dispatch",
+      "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.UnaffectedNeighboringGitHubActivitiesKeepTheirExistingContracts",
+      "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.V2ActivitiesKeepTheirLogicalNameAndVersionForDirectAndDescriptorConstruction",
+      "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.WorkflowDefinitionModelUsesRootActivityShapeAndCanEmitMigrationFixture",
+      "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.BothActivitySerializerEntryPointsRoundTripActivitiesNestedInSequence"
+    ],
+    "trxPath": "net10-results/github-activity-id.trx",
+    "trxSha256": "d2949128423c6d871120660df81315384ac4d4e447e4a3c02879fd494fb09531"
+  }
+}

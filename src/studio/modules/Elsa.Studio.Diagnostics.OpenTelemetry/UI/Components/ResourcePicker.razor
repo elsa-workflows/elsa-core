@@ -1,0 +1,27 @@
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="flex-wrap" aria-label="OpenTelemetry resources">
+    <MudButton Variant="@ButtonVariant(null)" Color="Color.Primary" Size="Size.Small" OnClick="() => SelectAsync(null)">All resources</MudButton>
+    @foreach (var resource in Resources.OrderBy(x => x.ServiceName, StringComparer.OrdinalIgnoreCase))
+    {
+        <MudTooltip Text="@resource.Id" Delay="500">
+            <MudButton Variant="@ButtonVariant(resource.Id)" Color="Color.Primary" Size="Size.Small" OnClick="() => SelectAsync(resource.Id)">
+                @resource.ServiceName
+            </MudButton>
+        </MudTooltip>
+    }
+</MudStack>
+
+@code {
+    [Parameter] public IReadOnlyCollection<TelemetryResource> Resources { get; set; } = [];
+    [Parameter] public string? SelectedResourceId { get; set; }
+    [Parameter] public EventCallback<string?> SelectedResourceIdChanged { get; set; }
+
+    private async Task SelectAsync(string? resourceId)
+    {
+        if (SelectedResourceIdChanged.HasDelegate)
+            await SelectedResourceIdChanged.InvokeAsync(resourceId);
+    }
+
+    private Variant ButtonVariant(string? resourceId) => string.Equals(resourceId, SelectedResourceId, StringComparison.Ordinal)
+        ? Variant.Filled
+        : Variant.Outlined;
+}

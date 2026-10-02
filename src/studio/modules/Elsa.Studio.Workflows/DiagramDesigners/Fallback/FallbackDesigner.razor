@@ -1,0 +1,11 @@
+@using System.Text.Json.Nodes
+<MudPaper Width="100%" Class="pa-16">
+    <MudAlert Severity="Severity.Warning">This activity cannot be rendered because no designer is registered for its type.</MudAlert>
+</MudPaper>
+
+@code {
+
+    [Parameter]
+    public JsonObject? Activity { get; set; }
+
+}

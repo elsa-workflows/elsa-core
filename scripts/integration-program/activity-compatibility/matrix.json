@@ -12,7 +12,153 @@
   {
     "assembly": "Elsa.DevOps.GitHub",
     "sourceProject": "src/extensions/devops/Elsa.DevOps.GitHub/Elsa.DevOps.GitHub.csproj",
-    "releasedVersion": "3.8.4"
+    "releasedVersion": "3.8.4",
+    "reviewedReleasedAssemblyAdditions": [
+      {
+        "review": "elsa-core#8325",
+        "revision": 1,
+        "reason": "Version-2 provider-ID activities per doc/adr/2026-09-24-version-github-activities-with-provider-ids.md. Only these exact normalized contracts are approved; the unchanged version-1 contracts keep their released identity failures.",
+        "descriptors": [
+          {
+            "Assembly": "Elsa.DevOps.GitHub",
+            "ClrType": "Elsa.DevOps.GitHub.Activities.Comments.DeleteCommentV2",
+            "TypeName": "Elsa.GitHub.Comments.DeleteComment",
+            "Version": 2,
+            "Kind": "Action",
+            "Inputs": [
+              {
+                "Name": "CommentId",
+                "ContractType": "System.Int32, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+                "IsSerializable": true
+              },
+              {
+                "Name": "Owner",
+                "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+                "IsSerializable": true
+              },
+              {
+                "Name": "Repository",
+                "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+                "IsSerializable": true
+              },
+              {
+                "Name": "Token",
+                "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+                "IsSerializable": true
+              }
+            ],
+            "Outputs": [],
+            "Ports": []
+          },
+          {
+            "Assembly": "Elsa.DevOps.GitHub",
+            "ClrType": "Elsa.DevOps.GitHub.Activities.Comments.GetCommentV2",
+            "TypeName": "Elsa.GitHub.Comments.GetComment",
+            "Version": 2,
+            "Kind": "Action",
+            "Inputs": [
+              {
+                "Name": "CommentId",
+                "ContractType": "System.Int32, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+                "IsSerializable": true
+              },
+              {
+                "Name": "Owner",
+                "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+                "IsSerializable": true
+              },
+              {
+                "Name": "Repository",
+                "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+                "IsSerializable": true
+              },
+              {
+                "Name": "Token",
+                "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+                "IsSerializable": true
+              }
+            ],
+            "Outputs": [
+              {
+                "Name": "RetrievedComment",
+                "ContractType": "Octokit.IssueComment, Octokit, Culture=neutral, PublicKeyToken=0be8860aee462442",
+                "IsSerializable": true
+              }
+            ],
+            "Ports": []
+          },
+          {
+            "Assembly": "Elsa.DevOps.GitHub",
+            "ClrType": "Elsa.DevOps.GitHub.Activities.Comments.UpdateCommentV2",
+            "TypeName": "Elsa.GitHub.Comments.UpdateComment",
+            "Version": 2,
+            "Kind": "Action",
+            "Inputs": [
+              {
+                "Name": "Body",
+                "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+                "IsSerializable": true
+              },
+              {
+                "Name": "CommentId",
+                "ContractType": "System.Int32, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+                "IsSerializable": true
+              },
+              {
+                "Name": "Owner",
+                "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+                "IsSerializable": true
+              },
+              {
+                "Name": "Repository",
+                "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+                "IsSerializable": true
+              },
+              {
+                "Name": "Token",
+                "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+                "IsSerializable": true
+              }
+            ],
+            "Outputs": [
+              {
+                "Name": "UpdatedComment",
+                "ContractType": "Octokit.IssueComment, Octokit, Culture=neutral, PublicKeyToken=0be8860aee462442",
+                "IsSerializable": true
+              }
+            ],
+            "Ports": []
+          },
+          {
+            "Assembly": "Elsa.DevOps.GitHub",
+            "ClrType": "Elsa.DevOps.GitHub.Activities.Gists.GetGistV2",
+            "TypeName": "Elsa.GitHub.Gists.GetGist",
+            "Version": 2,
+            "Kind": "Action",
+            "Inputs": [
+              {
+                "Name": "GistId",
+                "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+                "IsSerializable": true
+              },
+              {
+                "Name": "Token",
+                "ContractType": "System.String, System.Private.CoreLib, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+                "IsSerializable": true
+              }
+            ],
+            "Outputs": [
+              {
+                "Name": "RetrievedGist",
+                "ContractType": "Octokit.Gist, Octokit, Culture=neutral, PublicKeyToken=0be8860aee462442",
+                "IsSerializable": true
+              }
+            ],
+            "Ports": []
+          }
+        ]
+      }
+    ]
   },
   {
     "assembly": "Elsa.Email",

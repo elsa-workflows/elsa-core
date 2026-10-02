@@ -1,0 +1,15 @@
+@page "/security/roles/new"
+@page "/security/roles/{RoleId}"
+@inherits StudioComponentBase
+
+<PageTitle>@(string.IsNullOrWhiteSpace(RoleId) ? "New role" : "Edit role")</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.False" Class="py-4">
+    <RoleAdministrationAccessBoundary Context="access">
+        <RoleEditorSurface RoleId="@RoleId" Access="@access" />
+    </RoleAdministrationAccessBoundary>
+</MudContainer>
+
+@code {
+    [Parameter] public string? RoleId { get; set; }
+}

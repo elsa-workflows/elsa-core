@@ -1,0 +1,1 @@
+<Project><Import Project="../../src/studio/Directory.Build.props"/><PropertyGroup><IsPackable>false</IsPackable></PropertyGroup></Project>

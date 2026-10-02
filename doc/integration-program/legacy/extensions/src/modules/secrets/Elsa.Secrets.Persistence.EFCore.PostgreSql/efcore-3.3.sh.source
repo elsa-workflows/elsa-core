@@ -1,0 +1,1 @@
+ef-migration-runtime-schema --interface Elsa.Persistence.EFCore.IElsaDbContextSchema --efOptions "migrations add V3_3 -c SecretsDbContext -o Migrations"

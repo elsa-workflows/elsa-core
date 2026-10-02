@@ -2,6 +2,10 @@
 
 This is a source and package-metadata audit for the five duplicate package IDs in the consolidation inventory. It identifies a canonical candidate and the compatibility work still required. It does not approve package retirement, publisher cutover, or a credential-data conversion.
 
+## Maintainer decisions (2026-09-28)
+
+The open policy questions in this ledger are decided. Legacy values are re-entered or rotated into Core, never converted. The five legacy packages are deprecated at 3.10.0 and are not packed by the monorepo. The #8360 unsupported-ID policy is the reviewed decision for #8301 criterion 5. The legacy `secrets:write` widening is documented, not changed. Host aliases stay a routing concern. See [the disposition record](consolidation/secrets-legacy-package-disposition.md) and the [upgrade guide](../migrations/secrets-legacy-extensions-upgrade.md). The evidence below is unchanged.
+
 ## Source snapshots
 
 The executable source comparison uses these exact commits:
@@ -86,7 +90,15 @@ The executable [API and Studio source contract](../../scripts/integration-progra
 
 `SecretsApiContractTests` reflects the Core endpoint `Configure()` methods and checks their route/permission declarations and permission evaluator behavior. The separate `Elsa.Secrets.Api.IntegrationTests` project compiles exact Studio `f0eeb3c` Refit interface and DTO snapshots, then calls them against an in-process ASP.NET Core TestServer. Its Core feature registration follows the corrected Workbench Secrets block in the [reviewed canonical patch](https://github.com/elsa-workflows/elsa-core/blob/72c2731f6e0a98ec89a94e3b76c983531e82818c/scripts/integration-program/consolidated-build/workbench-canonical-secrets.patch): `UseSecrets`, EF Core SQLite, and `UseSecretsJavaScript`; the fixture substitutes a unique SQLite file and test-only encryption/authentication settings. A Python regression check compares that fixture's feature registrations with the patch. The HTTP suite verifies the ten expected Core routes appear once, descriptor names are unique, anonymous and mismatched permissions are denied, `secrets:write` permits create/update/rotate/revoke, `secrets:delete` permits delete, and `secrets:test` permits test. It also verifies that view-only cannot update/rotate/revoke/test, legacy `secrets:read` and `read:secrets` do not authorize Core view, legacy `write:secrets` does not authorize Core create, and the legacy plaintext `GET /secrets/{id}/input` returns 404. Same-name records stay isolated by the synthetic tenant-header resolver: an empty tenant cannot update/delete another tenant's record, and updating/rotating/revoking/deleting tenant A leaves tenant B unchanged. Captured responses contain neither supplied secret values nor value/ciphertext fields. This demonstrates request tenant-context isolation only: the test principal can choose the header, so membership authorization is not exercised. These are in-process HTTP contract checks with isolated SQLite and test authentication; they do not start the full Workbench host or Studio UI and do not prove browser behavior.
 
-This HTTP fixture activates only the canonical Core Secrets feature block, with test-only SQLite configuration. It does not start the full corrected consolidated sample host, activate both endpoint assemblies together, use the production database selected by the Workbench configuration, or verify legacy-ID sidecar behavior. Static source comparison still identifies the five normalized route collisions; a dual-assembly runtime collision test remains unverified.
+This HTTP fixture activates only the canonical Core Secrets feature block, with test-only SQLite configuration; like the static [source contract verifier](../../scripts/integration-program/verify_secrets_api_studio_contract.py) it does not itself start a host. `Elsa.Secrets.DefaultHost.IntegrationTests` now boots the default Workbench sample host (`samples/extensions/workbench/Elsa.Server.Web`) in-process through its own `Program`, using its tracked `appsettings.json` and overriding only the SQLite connection string, so the full corrected consolidated sample host does start under test. That test does not activate both endpoint assemblies together, use the production database selected by the Workbench configuration, or verify legacy-ID sidecar behavior; those remain unverified. Static source comparison still identifies the five normalized route collisions; a dual-assembly runtime collision test remains unverified.
+
+The [Secrets API and Studio contract acceptance record](secrets/api-studio-contract-acceptance-2026-09-27.md) gives the per-criterion status for #8301 and records the tests added for it:
+
+- a per-principal authorization matrix covering anonymous, no grant, view-only, `secrets:*`, `*` and each pinned legacy token across all ten operations;
+- cross-tenant checks for view-only and manage principals;
+- a check that Core has no owner predicate;
+- a working-tree check that the draft import's Core, legacy and Studio sources still carry the pinned contract;
+- a default-host test that boots the Workbench in-process and checks that each canonical route has one Core endpoint, that no legacy route or assembly is present, and that the default configuration registers no Secrets route.
 
 ### Host aliases and authenticated tenant scope
 

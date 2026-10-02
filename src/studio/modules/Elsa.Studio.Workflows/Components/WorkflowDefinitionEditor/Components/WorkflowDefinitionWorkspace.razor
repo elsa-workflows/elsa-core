@@ -1,0 +1,96 @@
+@using BlazorMonaco.Editor
+@using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.WorkflowProperties
+@using Orientation = Radzen.Orientation
+@inherits StudioComponentBase
+@using Elsa.Studio.Workflows.Services
+@inject ILocalizer Localizer
+
+<style>
+    .pane-left {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .tabs-root {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+        .tabs-root .mud-tabs-panels {
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+
+    .code-tab-content {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+</style>
+
+<CascadingValue Name="WorkflowDefinitionReloadVersion" Value="_workflowDefinitionReloadVersion">
+    <CascadingValue Value="this">
+        <RadzenSplitter Orientation="Orientation.Horizontal" Style="height:100%;">
+        <RadzenSplitterPane Size="65%" Class="pane-left">
+            @if (_selectedWorkflowDefinition != null)
+            {
+                <MudDynamicTabs @ref="@_dynamicTabs"
+                                @bind-ActivePanelIndex="@_tabIndex"
+                                Class="tabs-root"
+                                AddIconClass="d-none"
+                                AddIconToolTip="@Localizer["Click to open a new workflow tab"]"
+                                CloseIconToolTip="@Localizer["Close workflow"]"
+                                Elevation="0"
+                                ApplyEffectsToContainer>
+
+                    <MudTabPanel Icon="@Icons.Material.Outlined.AccountTree"
+                                 Text="@_selectedWorkflowDefinition.Name"
+                                 ShowCloseIcon="false"
+                                 Style="height:100%;">
+                        @if (!IsReadOnly)
+                        {
+                            <WorkflowEditor @key="_selectedWorkflowDefinition.DefinitionId"
+                                            @ref="WorkflowEditor"
+                                            @bind-AutoSave="_autoSave"
+                                            WorkflowDefinition="_selectedWorkflowDefinition"
+                                            WorkflowDefinitionUpdated="OnWorkflowDefinitionUpdated"
+                                            WorkflowDefinitionReloaded="OnWorkflowDefinitionReloaded"
+                                            WorkflowDefinitionExecuted="WorkflowDefinitionExecuted"
+                                            ActivitySelected="ActivitySelected" />
+                        }
+                        else
+                        {
+                            <WorkflowDefinitionVersionViewer @key="_selectedWorkflowDefinition.DefinitionId"
+                                                             WorkflowDefinition="_selectedWorkflowDefinition"
+                                                             WorkflowDefinitionExecuted="WorkflowDefinitionExecuted"
+                                                             ActivitySelected="ActivitySelected" />
+                        }
+                    </MudTabPanel>
+                    <MudTabPanel Icon="@Icons.Material.Outlined.Code"
+                                    Text="@Localizer["Code View"]"
+                                    ShowCloseIcon="false"
+                                    Style="height:100%;">
+                        <div class="code-tab-content">
+                            <CodeView @ref="CodeView"
+                                      @bind-AutoApply="_autoApply"
+                                      IsReadOnly="IsReadOnly"
+                                      WorkflowDefinitionSerialized="@WorkflowDefinitionSerialized"
+                                      ApplyWorkflowDefinition="OnApplyWorkflowDefinition" />
+                        </div>
+                    </MudTabPanel>
+                </MudDynamicTabs>
+            }
+        </RadzenSplitterPane>
+        <RadzenSplitterPane Size="35%" Min="100px">
+            @if (_selectedWorkflowDefinition != null)
+            {
+                <WorkflowProperties
+                    WorkflowDefinition="@_selectedWorkflowDefinition"
+                    WorkflowDefinitionUpdated="OnWorkflowDefinitionPropsUpdated"/>
+            }
+        </RadzenSplitterPane>
+        </RadzenSplitter>
+    </CascadingValue>
+</CascadingValue>

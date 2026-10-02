@@ -1,0 +1,988 @@
+/* Alterations module styling.
+ * Clean professional surface that defers to the embedded React Flow diagram. Uses MudBlazor
+ * design tokens (var(--mud-…)) so the look adapts to light/dark themes. */
+
+:root {
+    --elsa-alt-radius: 10px;
+    --elsa-alt-radius-sm: 6px;
+    --elsa-alt-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+    --elsa-alt-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.04);
+    --elsa-alt-border: 1px solid var(--mud-palette-lines-default, rgba(0, 0, 0, 0.08));
+    --elsa-alt-surface: var(--mud-palette-surface, #fff);
+    --elsa-alt-bg: var(--mud-palette-background-grey, #f6f7f9);
+    --elsa-alt-muted: var(--mud-palette-text-secondary, #6b7280);
+    --elsa-alt-transition: 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    --elsa-alt-side-width: 380px;
+}
+
+/* ============================================================================
+ * Page-level layout (shared by list / plan-details / landing)
+ * ============================================================================ */
+
+.elsa-alterations-breadcrumbs {
+    padding: 0 0 8px 0;
+}
+
+.elsa-alterations-page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 4px;
+}
+
+.elsa-alterations-page-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.elsa-alterations-card {
+    border: var(--elsa-alt-border);
+    border-radius: var(--elsa-alt-radius);
+    background: var(--elsa-alt-surface);
+    overflow: hidden;
+}
+
+.elsa-alterations-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 16px;
+    color: var(--elsa-alt-muted);
+}
+
+.elsa-alterations-table .mud-table-toolbar {
+    border-bottom: var(--elsa-alt-border);
+    padding: 12px 16px;
+}
+
+.elsa-alterations-search {
+    max-width: 360px;
+}
+
+.elsa-alterations-row {
+    cursor: pointer;
+    transition: background-color var(--elsa-alt-transition);
+}
+
+.elsa-alterations-row:hover {
+    background: var(--mud-palette-action-default-hover, rgba(0, 0, 0, 0.03));
+}
+
+.elsa-alterations-row-title {
+    font-weight: 500;
+}
+
+/* ============================================================================
+ * Designer host: toolbar (full-width) + canvas (left) + side panel (right)
+ *
+ * Layout choices:
+ * - 2 grid rows: toolbar / main; main row has 2 cols (canvas / side panel).
+ * - Side panel collapses to width:0 with a transition on grid-template-columns.
+ *   We animate that property directly — supported in modern browsers, and a
+ *   single declaration keeps the markup simple.
+ * - Toolbar uses grid-column: 1 / -1 so it spans both columns regardless of
+ *   the side-panel width.
+ * ============================================================================ */
+
+.elsa-alterations-host {
+    display: grid;
+    grid-template-columns: 1fr var(--elsa-alt-side-width);
+    grid-template-rows: auto 1fr;
+    height: 100%;
+    min-height: 0;
+    background: var(--elsa-alt-bg);
+    transition: grid-template-columns 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.elsa-alterations-host.is-panel-collapsed {
+    grid-template-columns: 1fr 0;
+}
+
+.elsa-alterations-toolbar {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--elsa-alt-surface);
+    border-bottom: var(--elsa-alt-border);
+    box-shadow: var(--elsa-alt-shadow-sm);
+    z-index: 2;
+}
+
+.elsa-alterations-toolbar-title {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.elsa-alterations-toolbar-title .label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--elsa-alt-muted);
+}
+
+.elsa-alterations-toolbar-title .name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--mud-palette-text-primary, #1f2937);
+}
+
+.elsa-alterations-toolbar-spacer {
+    flex: 1;
+}
+
+.elsa-alterations-canvas {
+    grid-column: 1;
+    grid-row: 2;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+    background: var(--elsa-alt-bg);
+}
+
+/* ============================================================================
+ * Right-side inspector panel
+ *
+ * Width is controlled by the host grid; the panel itself just fills its cell.
+ * Inside: tab strip at top, scrollable content, optional sticky footer in the
+ * Plan tab.
+ * ============================================================================ */
+
+.elsa-alt-side {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    background: var(--elsa-alt-surface);
+    border-left: var(--elsa-alt-border);
+    box-shadow: -2px 0 6px rgba(15, 23, 42, 0.04);
+    min-height: 0;
+    /* When the host collapses the column to 0 the contents would still try to
+       render at full width and clip awkwardly. Hide overflow so the animation
+       reads as a clean slide-out. */
+    overflow: hidden;
+}
+
+.elsa-alt-side.is-collapsed {
+    /* Host grid collapses the column to 0; nothing more needed here. */
+}
+
+/* ---------- Tab strip ----------------------------------------------------- */
+
+.elsa-alt-side-tabs {
+    display: flex;
+    align-items: stretch;
+    height: 44px;
+    border-bottom: var(--elsa-alt-border);
+    background: var(--elsa-alt-surface);
+    flex-shrink: 0;
+    padding: 0 4px;
+}
+
+.elsa-alt-side-tab {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 8px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--elsa-alt-muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: color var(--elsa-alt-transition),
+                border-color var(--elsa-alt-transition),
+                background-color var(--elsa-alt-transition);
+    position: relative;
+    min-width: 0;
+}
+
+.elsa-alt-side-tab:hover {
+    color: var(--mud-palette-text-primary);
+    background: var(--mud-palette-action-default-hover, rgba(0, 0, 0, 0.02));
+}
+
+.elsa-alt-side-tab.is-active {
+    color: var(--mud-palette-primary);
+    border-bottom-color: var(--mud-palette-primary);
+}
+
+.elsa-alt-side-tab span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.elsa-alt-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 16px;
+    padding: 0 5px;
+    border-radius: 8px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    background: var(--mud-palette-action-default, rgba(0, 0, 0, 0.08));
+    color: var(--mud-palette-text-primary);
+}
+
+.elsa-alt-tab-badge.primary {
+    background: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text, #fff);
+}
+
+.elsa-alt-tab-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--mud-palette-info);
+}
+
+/* ---------- Scrollable body ---------------------------------------------- */
+
+.elsa-alt-side-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ---------- Section blocks ------------------------------------------------ */
+
+.elsa-alt-section {
+    padding: 16px 18px 4px;
+    border-bottom: 1px dashed var(--mud-palette-lines-default, rgba(0, 0, 0, 0.06));
+}
+
+.elsa-alt-section:last-child {
+    border-bottom: none;
+}
+
+.elsa-alt-section--filled {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.elsa-alt-section-title {
+    margin: 0 0 10px 0;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--elsa-alt-muted);
+}
+
+.elsa-alt-kv {
+    display: grid;
+    grid-template-columns: 70px 1fr;
+    gap: 6px 10px;
+    margin: 0 0 6px 0;
+    font-size: 0.82rem;
+}
+
+.elsa-alt-kv dt {
+    color: var(--elsa-alt-muted);
+    font-weight: 500;
+}
+
+.elsa-alt-kv dd {
+    margin: 0;
+    color: var(--mud-palette-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.elsa-alt-kv dd code {
+    font-size: 0.75rem;
+    font-family: var(--mud-typography-input-font-family, ui-monospace, SFMono-Regular, monospace);
+    background: var(--elsa-alt-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.elsa-alt-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 6px 0 12px;
+    padding: 8px 10px;
+    border: 1px dashed var(--mud-palette-lines-default, rgba(0, 0, 0, 0.08));
+    border-radius: var(--elsa-alt-radius-sm);
+    color: var(--elsa-alt-muted);
+    font-size: 0.78rem;
+    background: var(--elsa-alt-bg);
+}
+
+.elsa-alt-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 32px 12px;
+    color: var(--elsa-alt-muted);
+    text-align: center;
+    font-size: 0.85rem;
+}
+
+.elsa-alt-empty .hint {
+    font-size: 0.78rem;
+    max-width: 260px;
+}
+
+/* ---------- Action buttons ------------------------------------------------ */
+
+.elsa-alt-action-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.elsa-alt-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    background: var(--elsa-alt-surface);
+    border: 1px solid var(--mud-palette-lines-default, rgba(0, 0, 0, 0.08));
+    border-radius: var(--elsa-alt-radius-sm);
+    padding: 10px 12px;
+    cursor: pointer;
+    color: var(--mud-palette-text-primary);
+    font-size: 0.875rem;
+    position: relative;
+    text-align: left;
+    transition: background-color var(--elsa-alt-transition),
+                border-color var(--elsa-alt-transition),
+                transform var(--elsa-alt-transition);
+}
+
+.elsa-alt-action-btn::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 6px; bottom: 6px;
+    width: 3px;
+    background: var(--accent, transparent);
+    border-radius: 2px;
+}
+
+.elsa-alt-action-btn:hover {
+    background: var(--mud-palette-action-default-hover, rgba(0, 0, 0, 0.03));
+    border-color: var(--mud-palette-primary, #594ae2);
+    transform: translateY(-1px);
+}
+
+.elsa-alt-action-btn:active {
+    transform: translateY(0);
+}
+
+.elsa-alt-action-btn .label {
+    flex: 1;
+}
+
+.elsa-alt-action-btn-affordance {
+    color: var(--elsa-alt-muted);
+}
+
+.elsa-alt-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--elsa-alt-muted);
+    transition: background-color var(--elsa-alt-transition),
+                color var(--elsa-alt-transition);
+}
+
+.elsa-alt-icon-btn:hover {
+    background: var(--mud-palette-action-default-hover, rgba(0, 0, 0, 0.05));
+    color: var(--mud-palette-text-primary);
+}
+
+.elsa-alt-icon-btn.small { width: 24px; height: 24px; }
+
+.elsa-alt-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: transparent;
+    border: none;
+    color: var(--mud-palette-primary);
+    cursor: pointer;
+    padding: 4px 0;
+    font-size: 0.78rem;
+    margin-top: 4px;
+}
+
+.elsa-alt-link-btn:hover {
+    text-decoration: underline;
+}
+
+/* ---------- Variables tab ------------------------------------------------- */
+
+.elsa-alt-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    background: var(--elsa-alt-bg);
+    border: var(--elsa-alt-border);
+    border-radius: var(--elsa-alt-radius-sm);
+    padding: 0 8px;
+    height: 34px;
+}
+
+.elsa-alt-search-icon { color: var(--elsa-alt-muted); }
+
+.elsa-alt-search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 0.85rem;
+    color: var(--mud-palette-text-primary);
+    padding: 0 8px;
+    height: 100%;
+}
+
+.elsa-alt-search-input::placeholder { color: var(--elsa-alt-muted); }
+
+.elsa-alt-search-clear {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--elsa-alt-muted);
+    padding: 4px;
+    display: inline-flex;
+}
+
+.elsa-alt-var-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--mud-palette-lines-default, rgba(0, 0, 0, 0.06));
+    border-radius: var(--elsa-alt-radius-sm);
+    overflow: hidden;
+}
+
+.elsa-alt-var-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--elsa-alt-surface);
+    transition: background-color var(--elsa-alt-transition);
+}
+
+.elsa-alt-var-row:hover { background: var(--mud-palette-action-default-hover, rgba(0, 0, 0, 0.02)); }
+
+.elsa-alt-var-meta {
+    flex: 1;
+    min-width: 0;
+}
+
+.elsa-alt-var-meta .name {
+    font-weight: 500;
+    color: var(--mud-palette-text-primary);
+    font-size: 0.85rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.elsa-alt-var-meta .value {
+    display: block;
+    font-family: var(--mud-typography-input-font-family, ui-monospace, SFMono-Regular, monospace);
+    font-size: 0.75rem;
+    color: var(--elsa-alt-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 2px;
+    background: transparent;
+    padding: 0;
+}
+
+/* ---------- Plan tab ------------------------------------------------------ */
+
+.elsa-alt-plan {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.elsa-alt-plan-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.elsa-alt-plan-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 11px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text, #fff);
+}
+
+.elsa-alt-plan-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.elsa-alt-plan-card {
+    background: var(--elsa-alt-surface);
+    border: var(--elsa-alt-border);
+    border-radius: var(--elsa-alt-radius-sm);
+    padding: 10px 12px;
+    position: relative;
+    box-shadow: var(--elsa-alt-shadow-sm);
+    animation: elsa-alt-plan-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.elsa-alt-plan-card::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 8px; bottom: 8px;
+    width: 3px;
+    background: var(--accent, var(--mud-palette-primary));
+    border-radius: 2px;
+}
+
+@keyframes elsa-alt-plan-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.elsa-alt-plan-card .header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.elsa-alt-plan-card .header .title {
+    flex: 1;
+    font-weight: 500;
+    color: var(--mud-palette-text-primary);
+}
+
+.elsa-alt-plan-card .target {
+    font-size: 0.75rem;
+    color: var(--elsa-alt-muted);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.elsa-alt-plan-card .config {
+    margin-top: 4px;
+    font-size: 0.72rem;
+    color: var(--elsa-alt-muted);
+    font-family: var(--mud-typography-input-font-family, ui-monospace, SFMono-Regular, monospace);
+    background: var(--elsa-alt-bg);
+    padding: 4px 6px;
+    border-radius: 4px;
+    word-break: break-word;
+}
+
+.elsa-alt-plan-footer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 18px;
+    border-top: var(--elsa-alt-border);
+    background: var(--elsa-alt-surface);
+    flex-shrink: 0;
+}
+
+.elsa-alt-primary-btn,
+.elsa-alt-secondary-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: var(--elsa-alt-radius-sm);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--elsa-alt-transition),
+                border-color var(--elsa-alt-transition);
+}
+
+.elsa-alt-primary-btn {
+    flex: 1;
+    background: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text, #fff);
+    border: 1px solid var(--mud-palette-primary);
+}
+
+.elsa-alt-primary-btn:hover:not(:disabled) {
+    background: var(--mud-palette-primary-darken, #4a3eb8);
+}
+
+.elsa-alt-primary-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.elsa-alt-secondary-btn {
+    background: transparent;
+    border: 1px solid var(--mud-palette-lines-default, rgba(0, 0, 0, 0.12));
+    color: var(--mud-palette-text-primary);
+}
+
+.elsa-alt-secondary-btn:hover:not(:disabled) {
+    background: var(--mud-palette-action-default-hover, rgba(0, 0, 0, 0.03));
+}
+
+.elsa-alt-secondary-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* ============================================================================
+ * Submit wizard dialog
+ * ============================================================================ */
+
+.elsa-alt-submit-dialog .mud-dialog-content {
+    min-width: min(600px, 100%);
+    max-width: 800px;
+}
+
+.elsa-alt-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 16px 0 24px;
+}
+
+.elsa-alt-stepper-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.elsa-alt-stepper-step .num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--mud-palette-action-default, rgba(0, 0, 0, 0.08));
+    color: var(--elsa-alt-muted);
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: 2px solid transparent;
+    transition: background-color var(--elsa-alt-transition),
+                color var(--elsa-alt-transition),
+                border-color var(--elsa-alt-transition);
+}
+
+.elsa-alt-stepper-step.active .num {
+    background: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text, #fff);
+    border-color: var(--mud-palette-primary);
+    box-shadow: 0 0 0 4px rgba(89, 74, 226, 0.15);
+}
+
+.elsa-alt-stepper-step.done .num {
+    background: var(--mud-palette-success);
+    color: var(--mud-palette-success-text, #fff);
+}
+
+.elsa-alt-stepper-step .label {
+    font-size: 0.85rem;
+    color: var(--elsa-alt-muted);
+}
+
+.elsa-alt-stepper-step.active .label {
+    color: var(--mud-palette-text-primary);
+    font-weight: 600;
+}
+
+.elsa-alt-stepper-line {
+    flex: 0 0 60px;
+    height: 2px;
+    background: var(--mud-palette-lines-default, rgba(0, 0, 0, 0.12));
+    margin: 0 8px;
+    transition: background-color var(--elsa-alt-transition);
+}
+
+.elsa-alt-stepper-line.done {
+    background: var(--mud-palette-success);
+}
+
+.elsa-alt-step-body {
+    padding: 4px 4px 8px;
+}
+
+.elsa-alt-review-list {
+    display: grid;
+    gap: 8px;
+}
+
+.elsa-alt-review-card {
+    background: var(--elsa-alt-bg);
+    border: var(--elsa-alt-border);
+    border-radius: var(--elsa-alt-radius-sm);
+    padding: 10px 12px;
+    position: relative;
+}
+
+.elsa-alt-review-card::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 8px; bottom: 8px;
+    width: 3px;
+    background: var(--accent, var(--mud-palette-primary));
+    border-radius: 2px;
+}
+
+.elsa-alt-review-card .header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.elsa-alt-review-card .meta {
+    font-size: 0.78rem;
+    color: var(--elsa-alt-muted);
+    margin-top: 3px;
+}
+
+.elsa-alt-review-card .cfg {
+    font-size: 0.75rem;
+    margin-top: 4px;
+}
+
+.elsa-alt-review-card .cfg code {
+    background: var(--elsa-alt-surface);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.elsa-alt-preview-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 8px 10px;
+    background: var(--elsa-alt-bg);
+    border: var(--elsa-alt-border);
+    border-radius: var(--elsa-alt-radius-sm);
+    font-family: var(--mud-typography-input-font-family, ui-monospace, SFMono-Regular, monospace);
+    font-size: 0.85rem;
+}
+
+.elsa-alt-preview-line .method {
+    background: var(--mud-palette-warning);
+    color: var(--mud-palette-warning-text, #fff);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.elsa-alt-preview-line .path {
+    color: var(--mud-palette-text-primary);
+    word-break: break-all;
+}
+
+.elsa-alt-preview-json {
+    background: var(--mud-palette-text-primary, #1f2937);
+    color: var(--mud-palette-surface, #f9fafb);
+    padding: 14px 16px;
+    border-radius: var(--elsa-alt-radius-sm);
+    overflow: auto;
+    max-height: 320px;
+    font-size: 0.78rem;
+    font-family: var(--mud-typography-input-font-family, ui-monospace, SFMono-Regular, monospace);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.elsa-alt-result-busy {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 36px 16px;
+}
+
+/* ============================================================================
+ * Plan details page
+ * ============================================================================ */
+
+.elsa-alterations-plan-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.elsa-alterations-plan-meta .item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    color: var(--elsa-alt-muted);
+}
+
+.elsa-alterations-alteration-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 12px;
+    border-bottom: var(--elsa-alt-border);
+}
+
+.elsa-alterations-alteration-row:last-child {
+    border-bottom: none;
+}
+
+.elsa-alterations-alteration-row pre {
+    margin: 0;
+    white-space: pre-wrap;
+    font-size: 0.78rem;
+    color: var(--mud-palette-text-primary);
+    background: var(--elsa-alt-bg);
+    padding: 8px 10px;
+    border-radius: var(--elsa-alt-radius-sm);
+    flex: 1;
+    overflow-x: auto;
+}
+
+/* ---------- Per-job rows + expandable log -------------------------------- */
+
+.elsa-alt-job {
+    border-bottom: var(--elsa-alt-border);
+}
+
+.elsa-alt-job:last-child {
+    border-bottom: none;
+}
+
+.elsa-alt-job-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--mud-palette-text-primary);
+    font-size: 0.875rem;
+    text-align: left;
+    transition: background-color var(--elsa-alt-transition);
+}
+
+.elsa-alt-job-row:hover {
+    background: var(--mud-palette-action-default-hover, rgba(0, 0, 0, 0.03));
+}
+
+.elsa-alt-job-link {
+    font-family: var(--mud-typography-input-font-family, ui-monospace, SFMono-Regular, monospace);
+    font-size: 0.78rem;
+    color: var(--mud-palette-primary);
+    text-decoration: none;
+}
+
+.elsa-alt-job-link:hover {
+    text-decoration: underline;
+}
+
+.elsa-alt-job-meta {
+    color: var(--elsa-alt-muted);
+    font-size: 0.78rem;
+}
+
+.elsa-alt-job-spacer {
+    flex: 1;
+}
+
+.elsa-alt-job-log-count {
+    color: var(--elsa-alt-muted);
+    font-size: 0.78rem;
+}
+
+.elsa-alt-job-log {
+    background: var(--elsa-alt-bg);
+    border-top: var(--elsa-alt-border);
+    padding: 8px 16px 12px;
+}
+
+.elsa-alt-log-entry {
+    display: grid;
+    grid-template-columns: 90px 80px auto 1fr;
+    gap: 10px;
+    padding: 4px 0;
+    font-family: var(--mud-typography-input-font-family, ui-monospace, SFMono-Regular, monospace);
+    font-size: 0.78rem;
+    border-bottom: 1px dashed var(--mud-palette-lines-default, rgba(0, 0, 0, 0.05));
+}
+
+.elsa-alt-log-entry:last-child {
+    border-bottom: none;
+}
+
+.elsa-alt-log-entry .time { color: var(--elsa-alt-muted); }
+
+.elsa-alt-log-entry .level {
+    text-transform: uppercase;
+    font-weight: 600;
+    font-size: 0.7rem;
+}
+
+.elsa-alt-log-entry.error .level   { color: var(--mud-palette-error); }
+.elsa-alt-log-entry.warning .level { color: var(--mud-palette-warning); }
+.elsa-alt-log-entry.info .level    { color: var(--mud-palette-info); }
+.elsa-alt-log-entry.debug .level   { color: var(--elsa-alt-muted); }
+
+.elsa-alt-log-entry .event {
+    color: var(--mud-palette-text-primary);
+    background: var(--elsa-alt-surface);
+    padding: 0 6px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    align-self: center;
+    border: var(--elsa-alt-border);
+}
+
+.elsa-alt-log-entry .msg {
+    color: var(--mud-palette-text-primary);
+    word-break: break-word;
+    white-space: pre-wrap;
+}

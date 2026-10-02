@@ -1,0 +1,11 @@
+@using Elsa.Studio.Dashboard.Widgets
+
+@if (Context.Snapshot != null)
+{
+    <DashboardTrendChart Response="@Context.Snapshot.Trend" Loading="@Context.Loading" />
+}
+
+@code {
+    [Parameter] public DashboardWidgetContext Context { get; set; } = null!;
+    [Parameter] public DashboardWidgetDescriptor Descriptor { get; set; } = null!;
+}

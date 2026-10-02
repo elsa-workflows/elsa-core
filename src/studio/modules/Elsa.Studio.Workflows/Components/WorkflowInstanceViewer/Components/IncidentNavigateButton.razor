@@ -1,0 +1,10 @@
+@using ButtonType = MudBlazor.ButtonType
+@using Variant = MudBlazor.Variant
+
+<MudTooltip Text="Navigate to activity that caused the incident">
+    <MudButton OnClick="@OnClick" Variant="Variant.Filled" ButtonType="ButtonType.Button" Color="Color.Primary" Size="Size.Small">Navigate</MudButton>
+</MudTooltip>
+
+@code {
+    [Parameter] public EventCallback OnClick { get; set; }
+}

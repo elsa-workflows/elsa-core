@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Adds an alterations designer to the studio.</Description>
+        <PackageTags>elsa studio module alterations</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../../framework/Elsa.Studio.Shared/Elsa.Studio.Shared.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Workflows/Elsa.Studio.Workflows.csproj" />
+    </ItemGroup>
+
+    <!-- The static web assets under wwwroot/ are git-ignored (see the root .gitignore rule
+         `src/modules/**/wwwroot/`). The authored sources live in Assets/ and are copied into
+         wwwroot/ at build time, so wwwroot/ is purely generated output.
+
+         The generated copies are registered as Content with explicit paths (rather than relying
+         on the SDK's `wwwroot/**` glob, which is evaluated before the copy target runs and so
+         misses them on a clean checkout where wwwroot/ does not yet exist). Only generated
+         alteration assets are removed first to avoid duplicate items on incremental builds. -->
+    <ItemGroup>
+        <AlterationAsset Include="Assets\**\*.*" />
+        <None Include="@(AlterationAsset)" />
+        <Content Remove="@(AlterationAsset->'wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" />
+        <Content Include="@(AlterationAsset->'wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" />
+    </ItemGroup>
+
+    <Target Name="CopyAlterationAssetsToWwwroot"
+            BeforeTargets="AssignTargetPaths"
+            Inputs="@(AlterationAsset)"
+            Outputs="@(AlterationAsset->'wwwroot\%(RecursiveDir)%(Filename)%(Extension)')">
+        <Copy SourceFiles="@(AlterationAsset)"
+              DestinationFiles="@(AlterationAsset->'wwwroot\%(RecursiveDir)%(Filename)%(Extension)')"
+              SkipUnchangedFiles="true" />
+    </Target>
+
+</Project>

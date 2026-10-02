@@ -1,0 +1,2 @@
+# Retain full command output byte-for-byte; build and test tables contain alignment spaces.
+*.log -text -whitespace

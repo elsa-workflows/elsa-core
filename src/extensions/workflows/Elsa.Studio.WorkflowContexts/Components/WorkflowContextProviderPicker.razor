@@ -1,0 +1,24 @@
+@using Elsa.Api.Client.Shared.UIHints.DropDown
+@inherits StudioComponentBase
+@{
+    var inputDescriptor = EditorContext.InputDescriptor;
+    var displayName = inputDescriptor.DisplayName;
+    var description = inputDescriptor.Description;
+    var selectedValue = GetSelectedValue();
+    var searchBox = _items.Count > 10;
+}
+
+<MudSelectExtended
+    T="SelectListItem"
+    Label="@displayName"
+    Variant="MudBlazor.Variant.Outlined"
+    HelperText="@description"
+    Margin="Margin.Dense"
+    Value="@selectedValue"
+    SearchBox="@searchBox"
+    ItemCollection="@_items"
+    ToStringFunc="@(item => item?.Text ?? "")"
+    ValueChanged="OnValueChanged"
+    ReadOnly="EditorContext.IsReadOnly"
+    Disabled="EditorContext.IsReadOnly">
+</MudSelectExtended>

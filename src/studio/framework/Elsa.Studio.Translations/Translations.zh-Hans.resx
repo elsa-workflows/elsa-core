@@ -1,0 +1,1576 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" id="root">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="180 days" xml:space="preserve">
+    <value>180 天</value>
+  </data>
+  <data name="30 days" xml:space="preserve">
+    <value>30 天</value>
+  </data>
+  <data name="7 days" xml:space="preserve">
+    <value>7 天</value>
+  </data>
+  <data name="90 days" xml:space="preserve">
+    <value>90 天</value>
+  </data>
+  <data name="A brief description of the workflow." xml:space="preserve">
+    <value>工作流的简要描述。</value>
+  </data>
+  <data name="A brief description of the agent." xml:space="preserve">
+    <value>代理的简要描述。</value>
+  </data>
+  <data name="A default value." xml:space="preserve">
+    <value>默认值。</value>
+  </data>
+  <data name="Activity" xml:space="preserve">
+    <value>活动</value>
+  </data>
+  <data name="Activity Instance ID" xml:space="preserve">
+    <value>活动实例ID</value>
+  </data>
+  <data name="Add input" xml:space="preserve">
+    <value>添加输入</value>
+  </data>
+  <data name="Add variable" xml:space="preserve">
+    <value>添加变量</value>
+  </data>
+  <data name="Aggregation" xml:space="preserve">
+    <value>聚合</value>
+  </data>
+  <data name="Allow this workflow to be used as an activity." xml:space="preserve">
+    <value>允许该工作流作为一个活动。</value>
+  </data>
+  <data name="Bulk actions" xml:space="preserve">
+    <value>批量操作</value>
+  </data>
+  <data name="Bulk Dispatch Workflows" xml:space="preserve">
+    <value>批量调度工作流</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="Clear" xml:space="preserve">
+    <value>清空</value>
+  </data>
+  <data name="Click to open a new workflow tab" xml:space="preserve">
+    <value>点击打开一个新的工作流标签页</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="Close workflow" xml:space="preserve">
+    <value>关闭工作流</value>
+  </data>
+  <data name="Common" xml:space="preserve">
+    <value>公共</value>
+  </data>
+  <data name="Break" xml:space="preserve">
+    <value>跳出</value>
+  </data>
+  <data name="Composition" xml:space="preserve">
+    <value>混合</value>
+  </data>
+  <data name="Console" xml:space="preserve">
+    <value>控制台</value>
+  </data>
+  <data name="Container" xml:space="preserve">
+    <value>容器</value>
+  </data>
+  <data name="Correlate" xml:space="preserve">
+    <value>关联</value>
+  </data>
+  <data name="Correlation ID" xml:space="preserve">
+    <value>关联ID</value>
+  </data>
+  <data name="Create API Key" xml:space="preserve">
+    <value>创建 API Key</value>
+  </data>
+  <data name="Create Service" xml:space="preserve">
+    <value>创建 Service</value>
+  </data>
+  <data name="CreatedAt" xml:space="preserve">
+    <value>创建于</value>
+  </data>
+  <data name="Cron" xml:space="preserve">
+    <value>Cron表达式</value>
+  </data>
+  <data name="Dashboard" xml:space="preserve">
+    <value>仪表盘</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>日期</value>
+  </data>
+  <data name="Date Filters" xml:space="preserve">
+    <value>日期筛选器</value>
+  </data>
+  <data name="Decision" xml:space="preserve">
+    <value>决策</value>
+  </data>
+  <data name="Default configuration" xml:space="preserve">
+    <value>默认配置</value>
+  </data>
+  <data name="Default value" xml:space="preserve">
+    <value>默认值</value>
+  </data>
+  <data name="Definition version ID" xml:space="preserve">
+    <value>工作流定义版本ID</value>
+  </data>
+  <data name="Definitions" xml:space="preserve">
+    <value>工作流定义列表</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>删除</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>描述</value>
+  </data>
+  <data name="Dispatch Workflow" xml:space="preserve">
+    <value>调度工作流</value>
+  </data>
+  <data name="Display name" xml:space="preserve">
+    <value>显示名称</value>
+  </data>
+  <data name="Display text" xml:space="preserve">
+    <value>显示文本</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>编辑</value>
+  </data>
+  <data name="End" xml:space="preserve">
+    <value>结束</value>
+  </data>
+  <data name="Event" xml:space="preserve">
+    <value>事件</value>
+  </data>
+  <data name="Excel Parser" xml:space="preserve">
+    <value>Excel 解析器</value>
+  </data>
+  <data name="Executions" xml:space="preserve">
+    <value>Execution 列表</value>
+  </data>
+  <data name="Export" xml:space="preserve">
+    <value>导出</value>
+  </data>
+  <data name="Export this version as a JSON file." xml:space="preserve">
+    <value>导出该版本到JSON文件</value>
+  </data>
+  <data name="Fault" xml:space="preserve">
+    <value>错误</value>
+  </data>
+  <data name="Finish" xml:space="preserve">
+    <value>完成</value>
+  </data>
+  <data name="Finished" xml:space="preserve">
+    <value>已完成</value>
+  </data>
+  <data name="Flow" xml:space="preserve">
+    <value>Flow</value>
+  </data>
+  <data name="14 days" xml:space="preserve">
+    <value>14 天</value>
+  </data>
+  <data name="A brief description of this output." xml:space="preserve">
+    <value>输出的简要描述。</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>添加</value>
+  </data>
+  <data name="A brief description of this input." xml:space="preserve">
+    <value>输入的简要描述。</value>
+  </data>
+  <data name="A brief description of the secret." xml:space="preserve">
+    <value>secret的简要描述。</value>
+  </data>
+  <data name="Activities" xml:space="preserve">
+    <value>活动列表</value>
+  </data>
+  <data name="Add output" xml:space="preserve">
+    <value>添加输出</value>
+  </data>
+  <data name="Apply" xml:space="preserve">
+    <value>应用</value>
+  </data>
+  <data name="Auto-save" xml:space="preserve">
+    <value>自动保存</value>
+  </data>
+  <data name="Category" xml:space="preserve">
+    <value>分类</value>
+  </data>
+  <data name="Complete" xml:space="preserve">
+    <value>完成</value>
+  </data>
+  <data name="Completed" xml:space="preserve">
+    <value>已完成</value>
+  </data>
+  <data name="Definition ID" xml:space="preserve">
+    <value>工作流定义ID</value>
+  </data>
+  <data name="For" xml:space="preserve">
+    <value>For</value>
+  </data>
+  <data name="Definition version" xml:space="preserve">
+    <value>工作流定义版本</value>
+  </data>
+  <data name="Delay" xml:space="preserve">
+    <value>延迟</value>
+  </data>
+  <data name="Create Secret" xml:space="preserve">
+    <value>创建 Secret</value>
+  </data>
+  <data name="Created" xml:space="preserve">
+    <value>已创建</value>
+  </data>
+  <data name="Create workflow" xml:space="preserve">
+    <value>创建工作流</value>
+  </data>
+  <data name="Details" xml:space="preserve">
+    <value>详情</value>
+  </data>
+  <data name="Download File" xml:space="preserve">
+    <value>下载文件</value>
+  </data>
+  <data name="Branching" xml:space="preserve">
+    <value>分支</value>
+  </data>
+  <data name="Execution Settings" xml:space="preserve">
+    <value>Execution 设置</value>
+  </data>
+  <data name="Duration" xml:space="preserve">
+    <value>间隔</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>邮件</value>
+  </data>
+  <data name="Events" xml:space="preserve">
+    <value>事件列表</value>
+  </data>
+  <data name="Export the current workflow as a JSON file" xml:space="preserve">
+    <value>导出当前工作流的JSON文件</value>
+  </data>
+  <data name="ID" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="Import" xml:space="preserve">
+    <value>导入</value>
+  </data>
+  <data name="If" xml:space="preserve">
+    <value>If</value>
+  </data>
+  <data name="FinishedAt" xml:space="preserve">
+    <value>完成于</value>
+  </data>
+  <data name="Activation strategy" xml:space="preserve">
+    <value>激活策略</value>
+  </data>
+  <data name="Agent" xml:space="preserve">
+    <value>代理</value>
+  </data>
+  <data name="Agents" xml:space="preserve">
+    <value>代理列表</value>
+  </data>
+  <data name="API Key" xml:space="preserve">
+    <value>API Key</value>
+  </data>
+  <data name="Auto-update consuming workflows" xml:space="preserve">
+    <value>自动更新使用中的工作流</value>
+  </data>
+  <data name="API Keys" xml:space="preserve">
+    <value>接口密钥</value>
+  </data>
+  <data name="Connection Strings" xml:space="preserve">
+    <value>连接字符串</value>
+  </data>
+  <data name="Create Agent" xml:space="preserve">
+    <value>创建代理</value>
+  </data>
+  <data name="Enter a list of possible outcomes for this workflow." xml:space="preserve">
+    <value>键入此工作流可能的结果列表。</value>
+  </data>
+  <data name="HTTP File Response" xml:space="preserve">
+    <value>HTTP文件响应</value>
+  </data>
+  <data name="The ID of the activity." xml:space="preserve">
+    <value>此活动的ID。</value>
+  </data>
+  <data name="Info" xml:space="preserve">
+    <value>信息</value>
+  </data>
+  <data name="Information" xml:space="preserve">
+    <value>信息</value>
+  </data>
+  <data name="Input Properties" xml:space="preserve">
+    <value>输入属性列表</value>
+  </data>
+  <data name="Input/output" xml:space="preserve">
+    <value>输入/输出</value>
+  </data>
+  <data name="Is After" xml:space="preserve">
+    <value>在此之后</value>
+  </data>
+  <data name="Is Not" xml:space="preserve">
+    <value>不包含</value>
+  </data>
+  <data name="Join" xml:space="preserve">
+    <value>连接</value>
+  </data>
+  <data name="Latest version" xml:space="preserve">
+    <value>最新版本</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>加载中</value>
+  </data>
+  <data name="Log Persistence Strategy" xml:space="preserve">
+    <value>日志持久化策略</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>否</value>
+  </data>
+  <data name="No inputs" xml:space="preserve">
+    <value>输入列表为空</value>
+  </data>
+  <data name="No outcomes associated with this execution." xml:space="preserve">
+    <value>此执行过程没有任何结果。</value>
+  </data>
+  <data name="No variables" xml:space="preserve">
+    <value>没有变量列表</value>
+  </data>
+  <data name="object" xml:space="preserve">
+    <value>对象(Object)</value>
+  </data>
+  <data name="Ok" xml:space="preserve">
+    <value>确认</value>
+  </data>
+  <data name="Open File" xml:space="preserve">
+    <value>打开文件</value>
+  </data>
+  <data name="Outcomes" xml:space="preserve">
+    <value>结果列表</value>
+  </data>
+  <data name="Output" xml:space="preserve">
+    <value>输出</value>
+  </data>
+  <data name="Output Properties" xml:space="preserve">
+    <value>输出属性</value>
+  </data>
+  <data name="Outputs" xml:space="preserve">
+    <value>输出列表</value>
+  </data>
+  <data name="Log Persistence" xml:space="preserve">
+    <value>日志持久化</value>
+  </data>
+  <data name="Metadata" xml:space="preserve">
+    <value>元数据</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>名称</value>
+  </data>
+  <data name="Properties" xml:space="preserve">
+    <value>属性列表</value>
+  </data>
+  <data name="Publish Event" xml:space="preserve">
+    <value>发布事件</value>
+  </data>
+  <data name="Published" xml:space="preserve">
+    <value>已发布</value>
+  </data>
+  <data name="Publish the current workflow" xml:space="preserve">
+    <value>发布当前工作流</value>
+  </data>
+  <data name="Read Data from Configuration / Runtime" xml:space="preserve">
+    <value>从配置/运行时读取数据</value>
+  </data>
+  <data name="Read Data from Database" xml:space="preserve">
+    <value>从数据库读取数据</value>
+  </data>
+  <data name="Rollback to this version" xml:space="preserve">
+    <value>回退到此版本</value>
+  </data>
+  <data name="Secret" xml:space="preserve">
+    <value>Secret</value>
+  </data>
+  <data name="Send Email" xml:space="preserve">
+    <value>发送电子邮件</value>
+  </data>
+  <data name="Services" xml:space="preserve">
+    <value>服务</value>
+  </data>
+  <data name="Rows Per Page" xml:space="preserve">
+    <value>每页行数</value>
+  </data>
+  <data name="Run" xml:space="preserve">
+    <value>运行</value>
+  </data>
+  <data name="Run Asynchronously" xml:space="preserve">
+    <value>运行(异步)</value>
+  </data>
+  <data name="Run JavaScript" xml:space="preserve">
+    <value>运行JavaScript</value>
+  </data>
+  <data name="Run Python" xml:space="preserve">
+    <value>运行Python</value>
+  </data>
+  <data name="Run workflow" xml:space="preserve">
+    <value>运行工作流</value>
+  </data>
+  <data name="Save File" xml:space="preserve">
+    <value>保存文件</value>
+  </data>
+  <data name="Scope" xml:space="preserve">
+    <value>范围</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>设置列表</value>
+  </data>
+  <data name="Start" xml:space="preserve">
+    <value>开始</value>
+  </data>
+  <data name="Started" xml:space="preserve">
+    <value>已开始</value>
+  </data>
+  <data name="State" xml:space="preserve">
+    <value>状态</value>
+  </data>
+  <data name="Storage" xml:space="preserve">
+    <value>存储库</value>
+  </data>
+  <data name="string" xml:space="preserve">
+    <value>字符串</value>
+  </data>
+  <data name="Sub-Workflow Inputs" xml:space="preserve">
+    <value>子工作流输入列表</value>
+  </data>
+  <data name="The name of the new agent." xml:space="preserve">
+    <value>新代理的名称。</value>
+  </data>
+  <data name="Sub-Workflow Outputs" xml:space="preserve">
+    <value>子工作流输出列表</value>
+  </data>
+  <data name="SubStatus" xml:space="preserve">
+    <value>子状态</value>
+  </data>
+  <data name="Switch" xml:space="preserve">
+    <value>选择器</value>
+  </data>
+  <data name="Switch (flow)" xml:space="preserve">
+    <value>选择器(流模式)</value>
+  </data>
+  <data name="Task" xml:space="preserve">
+    <value>任务</value>
+  </data>
+  <data name="The description of the output variable." xml:space="preserve">
+    <value>输出变量的描述。</value>
+  </data>
+  <data name="This output is an array" xml:space="preserve">
+    <value>这个输出是一个数组</value>
+  </data>
+  <data name="This input is an array" xml:space="preserve">
+    <value>这个输入是一个数组</value>
+  </data>
+  <data name="This activity does not have any output properties." xml:space="preserve">
+    <value>这个活动没有任何输出属性。</value>
+  </data>
+  <data name="There are currently no variables defined." xml:space="preserve">
+    <value>目前没有定义任何变量。</value>
+  </data>
+  <data name="There are currently no inputs defined." xml:space="preserve">
+    <value>目前没有定义任何输入。</value>
+  </data>
+  <data name="There are currently no outputs defined." xml:space="preserve">
+    <value>目前没有定义任何输出。</value>
+  </data>
+  <data name="The type of the service." xml:space="preserve">
+    <value>服务的类型。</value>
+  </data>
+  <data name="Variables" xml:space="preserve">
+    <value>变量列表</value>
+  </data>
+  <data name="Version history" xml:space="preserve">
+    <value>历史版本</value>
+  </data>
+  <data name="View" xml:space="preserve">
+    <value>视图</value>
+  </data>
+  <data name="When you publish" xml:space="preserve">
+    <value>当您发布一个新版本时，所有的被使用工作流将被更新，以指向该工作流的新版本。</value>
+  </data>
+  <data name="Workflow Context" xml:space="preserve">
+    <value>工作流上下文</value>
+  </data>
+  <data name="Workflow Contexts" xml:space="preserve">
+    <value>工作流上下文列表</value>
+  </data>
+  <data name="Workflow definitions Editor" xml:space="preserve">
+    <value>工作流定义编辑器</value>
+  </data>
+  <data name="Workflow instances" xml:space="preserve">
+    <value>工作流实例</value>
+  </data>
+  <data name="The name of the workflow." xml:space="preserve">
+    <value>工作流的名称。</value>
+  </data>
+  <data name="You are running in read-only mode. Workflow operations are disabled" xml:space="preserve">
+    <value>您正在以只读模式运行。工作流操作被禁止</value>
+  </data>
+  <data name="You can find documentation and examples here" xml:space="preserve">
+    <value>你可以在这里找到文档和示例</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>版本</value>
+  </data>
+  <data name="Webhooks" xml:space="preserve">
+    <value>Webhooks</value>
+  </data>
+  <data name="When checked, the workflow will be executed asynchronously." xml:space="preserve">
+    <value>选中时，工作流将异步执行。</value>
+  </data>
+  <data name="Whether to show the description in the designer." xml:space="preserve">
+    <value>是否在设计器中显示描述。</value>
+  </data>
+  <data name="Workflow Context Settings" xml:space="preserve">
+    <value>工作流上下文设置</value>
+  </data>
+  <data name="Timer" xml:space="preserve">
+    <value>计时器</value>
+  </data>
+  <data name="Time" xml:space="preserve">
+    <value>时间</value>
+  </data>
+  <data name="This variable is an array" xml:space="preserve">
+    <value>这个变量是一个数组</value>
+  </data>
+  <data name="This activity does not have any input properties." xml:space="preserve">
+    <value>这个活动没有任何输入属性。</value>
+  </data>
+  <data name="The value of the API key." xml:space="preserve">
+    <value>API密钥的值。</value>
+  </data>
+  <data name="The name of the agent." xml:space="preserve">
+    <value>代理的名称。</value>
+  </data>
+  <data name="The name of the function that the agent will execute." xml:space="preserve">
+    <value>代理将执行的函数的名称。</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>搜索…</value>
+  </data>
+  <data name="Value" xml:space="preserve">
+    <value>值</value>
+  </data>
+  <data name="Write Line" xml:space="preserve">
+    <value>写行</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>是</value>
+  </data>
+  <data name="Search on name, id, definition id, definition version id, correlation id" xml:space="preserve">
+    <value>搜索 名称，id，定义id，定义版本id，相关id</value>
+  </data>
+  <data name="Search on name, description, id, definition id" xml:space="preserve">
+    <value>搜索 名称，描述，id，定义id</value>
+  </data>
+  <data name="Set Workflow Context Parameter" xml:space="preserve">
+    <value>设置工作流上下文参数</value>
+  </data>
+  <data name="Set Output" xml:space="preserve">
+    <value>设置输出</value>
+  </data>
+  <data name="Set Variable" xml:space="preserve">
+    <value>设置变量</value>
+  </data>
+  <data name="Showing all events" xml:space="preserve">
+    <value>显示所有事件</value>
+  </data>
+  <data name="Start at" xml:space="preserve">
+    <value>开始于</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>状态</value>
+  </data>
+  <data name="Sub status" xml:space="preserve">
+    <value>子状态</value>
+  </data>
+  <data name="Sub-Workflow" xml:space="preserve">
+    <value>子工作流</value>
+  </data>
+  <data name="Temperature" xml:space="preserve">
+    <value>温度</value>
+  </data>
+  <data name="The name of the activity. Named activities can be referenced by other activities." xml:space="preserve">
+    <value>活动的名称。命名活动后可以被其他活动引用。</value>
+  </data>
+  <data name="No output associated with this execution." xml:space="preserve">
+    <value>此执行过程没有任何输出。</value>
+  </data>
+  <data name="No outputs" xml:space="preserve">
+    <value>输出列表为空</value>
+  </data>
+  <data name="Plugins" xml:space="preserve">
+    <value>插件列表</value>
+  </data>
+  <data name="Publish" xml:space="preserve">
+    <value>发布</value>
+  </data>
+  <data name="Published version" xml:space="preserve">
+    <value>已发布版本</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="HTTP Endpoint" xml:space="preserve">
+    <value>HTTP 终节点</value>
+  </data>
+  <data name="HTTP Request" xml:space="preserve">
+    <value>HTTP请求</value>
+  </data>
+  <data name="HTTP Request (flow)" xml:space="preserve">
+    <value>HTTP请求(流模式)</value>
+  </data>
+  <data name="HTTP Response" xml:space="preserve">
+    <value>HTTP响应</value>
+  </data>
+  <data name="Input" xml:space="preserve">
+    <value>输入</value>
+  </data>
+  <data name="Import a JSON file containing workflow data to override the current workflow's contents." xml:space="preserve">
+    <value>导入一个包含工作流数据的JSON文件，以覆盖当前工作流的内容。</value>
+  </data>
+  <data name="Inputs" xml:space="preserve">
+    <value>输入列表</value>
+  </data>
+  <data name="Instances" xml:space="preserve">
+    <value>实例列表</value>
+  </data>
+  <data name="int" xml:space="preserve">
+    <value>整型(Int)</value>
+  </data>
+  <data name="Is array" xml:space="preserve">
+    <value>是数组</value>
+  </data>
+  <data name="Is Before" xml:space="preserve">
+    <value>在此之前</value>
+  </data>
+  <data name="A description about the role and purpose of this input variable." xml:space="preserve">
+    <value>关于此输入变量的角色和目的的描述。</value>
+  </data>
+  <data name="A custom activity category to assign this workflow-as-an-activity to." xml:space="preserve">
+    <value>分配给此工作流作为活动的自定义活动类别。</value>
+  </data>
+  <data name="A custom category by which to group this input." xml:space="preserve">
+    <value>用于对此输入进行分组的自定义类别。</value>
+  </data>
+  <data name="A custom category by which to group this output." xml:space="preserve">
+    <value>用于对此输出进行分组的自定义类别。</value>
+  </data>
+  <data name="A description about the secret." xml:space="preserve">
+    <value>关于此密钥的描述。</value>
+  </data>
+  <data name="A technical name for the function" xml:space="preserve">
+    <value>此代理执行的功能名称。例如：编写代码（WriteCode）</value>
+  </data>
+  <data name="Acknowledge Datasource Event" xml:space="preserve">
+    <value>确认数据源事件</value>
+  </data>
+  <data name="Check this option if the variable holds an array of the selected type." xml:space="preserve">
+    <value>如果变量持有选定类型的数组，请勾选此选项。</value>
+  </data>
+  <data name="Expires" xml:space="preserve">
+    <value>过期</value>
+  </data>
+  <data name="Expires In" xml:space="preserve">
+    <value>过期于</value>
+  </data>
+  <data name="Fork (flow)" xml:space="preserve">
+    <value>分支（流）</value>
+  </data>
+  <data name="Frequency Penalty" xml:space="preserve">
+    <value>频率惩罚</value>
+  </data>
+  <data name="Function" xml:space="preserve">
+    <value>函数</value>
+  </data>
+  <data name="Function Name" xml:space="preserve">
+    <value>函数名称</value>
+  </data>
+  <data name="General" xml:space="preserve">
+    <value>常规</value>
+  </data>
+  <data name="HTTP" xml:space="preserve">
+    <value>HTTP</value>
+  </data>
+  <data name="Has Incidents" xml:space="preserve">
+    <value>存在异常事件</value>
+  </data>
+  <data name="IncidentCount" xml:space="preserve">
+    <value>异常事件数量</value>
+  </data>
+  <data name="Incident Strategy" xml:space="preserve">
+    <value>异常事件策略</value>
+  </data>
+  <data name="Incidents" xml:space="preserve">
+    <value>异常事件列表</value>
+  </data>
+  <data name="Is" xml:space="preserve">
+    <value>是</value>
+  </data>
+  <data name="Is on or After" xml:space="preserve">
+    <value>等于或在此之后</value>
+  </data>
+  <data name="Is on or Before" xml:space="preserve">
+    <value>等于或在此之前</value>
+  </data>
+  <data name="No agents found" xml:space="preserve">
+    <value>未找到任何代理</value>
+  </data>
+  <data name="No API keys found" xml:space="preserve">
+    <value>未找到任何 API keys</value>
+  </data>
+  <data name="No secrets found" xml:space="preserve">
+    <value>未找到任何 secrets</value>
+  </data>
+  <data name="No services found" xml:space="preserve">
+    <value>未找到任何服务</value>
+  </data>
+  <data name="No state associated with this execution." xml:space="preserve">
+    <value>此执行过程没有任何状态。</value>
+  </data>
+  <data name="No workflow instances found" xml:space="preserve">
+    <value>未找到任何工作流实例</value>
+  </data>
+  <data name="No workflow definitions found" xml:space="preserve">
+    <value>未找到任何工作流定义</value>
+  </data>
+  <data name="OpenAIChatCompletion" xml:space="preserve">
+    <value>OpenAI对话模型（OpenAIChatCompletion）</value>
+  </data>
+  <data name="OpenAITextToImage" xml:space="preserve">
+    <value>OpenAI文本转图像模型（OpenAITextToImage）</value>
+  </data>
+  <data name="Parser" xml:space="preserve">
+    <value>解析器</value>
+  </data>
+  <data name="Looping" xml:space="preserve">
+    <value>循环控制</value>
+  </data>
+  <data name="Manage all the things" xml:space="preserve">
+    <value>管理所有事项</value>
+  </data>
+  <data name="Max Tokens" xml:space="preserve">
+    <value>最大 Tokens 数量</value>
+  </data>
+  <data name="Never" xml:space="preserve">
+    <value>从不</value>
+  </data>
+  <data name="Prompt Template" xml:space="preserve">
+    <value>提示词模版</value>
+  </data>
+  <data name="Presence Penalty" xml:space="preserve">
+    <value>重复惩罚（Presence Penalty）</value>
+  </data>
+  <data name="Run Task" xml:space="preserve">
+    <value>运行Task</value>
+  </data>
+  <data name="Set Name" xml:space="preserve">
+    <value>设置名称</value>
+  </data>
+  <data name="Scheduling" xml:space="preserve">
+    <value>计划控制</value>
+  </data>
+  <data name="Secrets" xml:space="preserve">
+    <value>Secrets列表</value>
+  </data>
+  <data name="Show accumulated time" xml:space="preserve">
+    <value>显示累计时长</value>
+  </data>
+  <data name="Show incidents" xml:space="preserve">
+    <value>显示异常事件列表</value>
+  </data>
+  <data name="Showing incidents" xml:space="preserve">
+    <value>正显示异常事件列表中</value>
+  </data>
+  <data name="Start of workflow" xml:space="preserve">
+    <value>启动工作流</value>
+  </data>
+  <data name="The lifetime of this secret" xml:space="preserve">
+    <value>此 secret 的生命周期</value>
+  </data>
+  <data name="The .NET type of the input variable." xml:space="preserve">
+    <value>此输入变量的.NET类型</value>
+  </data>
+  <data name="The .NET type of the output variable." xml:space="preserve">
+    <value>此输出变量的.NET类型</value>
+  </data>
+  <data name="The maximum number" xml:space="preserve">
+    <value>可生成的最大tokens数量。留空时为可用的最大值。</value>
+  </data>
+  <data name="The name of the new secret." xml:space="preserve">
+    <value>新 secret 的名称。</value>
+  </data>
+  <data name="The name of the new workflow." xml:space="preserve">
+    <value>新工作流的名称。</value>
+  </data>
+  <data name="The name of the variable." xml:space="preserve">
+    <value>此变量的名称。</value>
+  </data>
+  <data name="The penalty for repeating" xml:space="preserve">
+    <value>当Token重复时的惩罚。重复惩罚值越高，生成重复Token的可能性就越低，从而促进生成更多样化的文本。</value>
+  </data>
+  <data name="The plugins that the agent can use." xml:space="preserve">
+    <value>此代理可用的插件列表</value>
+  </data>
+  <data name="The technical name of the service." xml:space="preserve">
+    <value>此服务的专业名称。</value>
+  </data>
+  <data name="The technical name of the input." xml:space="preserve">
+    <value>此输入的专业名称。</value>
+  </data>
+  <data name="The technical name of the API key." xml:space="preserve">
+    <value>此 API key 的专业名称。</value>
+  </data>
+  <data name="The technical name of the input variable" xml:space="preserve">
+    <value>此输入变量的专业名称。在提示模板中引用此变量时，请使用此名称。</value>
+  </data>
+  <data name="Unable to make changes as the workflow or application is currently in read-only mode" xml:space="preserve">
+    <value>无法更改，因为当前工作流或应用处于只读模式。</value>
+  </data>
+  <data name="UI Hint" xml:space="preserve">
+    <value>用户界面提示</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>类型</value>
+  </data>
+  <data name="Trigger workflow" xml:space="preserve">
+    <value>触发工作流</value>
+  </data>
+  <data name="TopP" xml:space="preserve">
+    <value>TopP</value>
+  </data>
+  <data name="Top Probability determines" xml:space="preserve">
+    <value>TopP 决定了文本生成过程中 Token 选择的累积概率阈值。较低的值会导致多样性减少，使模型仅从最可能的 Token 中选择。较高的值将允许输出更加多样化，因为模型会考虑更广泛的 Token 范围。</value>
+  </data>
+  <data name="This activity does not have any common properties." xml:space="preserve">
+    <value>此活动没有任何公共属性。</value>
+  </data>
+  <data name="The user-friendly name of this output." xml:space="preserve">
+    <value>此输出的显示文本。</value>
+  </data>
+  <data name="The user-friendly name of this input." xml:space="preserve">
+    <value>此输入出的显示文本。</value>
+  </data>
+  <data name="Used" xml:space="preserve">
+    <value>已使用</value>
+  </data>
+  <data name="Use this version" xml:space="preserve">
+    <value>使用此版本</value>
+  </data>
+  <data name="Use JSON Response" xml:space="preserve">
+    <value>启用 JSON Response</value>
+  </data>
+  <data name="Usable as activity" xml:space="preserve">
+    <value>可用作活动</value>
+  </data>
+  <data name="UpdatedAt" xml:space="preserve">
+    <value>更新于</value>
+  </data>
+  <data name="Updated" xml:space="preserve">
+    <value>已更新</value>
+  </data>
+  <data name="Unpublish the current workflow" xml:space="preserve">
+    <value>取消发布当前工作流。</value>
+  </data>
+  <data name="Unpublish" xml:space="preserve">
+    <value>取消发布</value>
+  </data>
+  <data name="Workflows" xml:space="preserve">
+    <value>工作流列表</value>
+  </data>
+  <data name="Incident handling strategy" xml:space="preserve">
+    <value>异常事件处理策略</value>
+  </data>
+  <data name="A description of this activity to be displayed in the designer." xml:space="preserve">
+    <value>在设计器中显示的此活动的描述。</value>
+  </data>
+  <data name="A description about the role and purpose of this agent." xml:space="preserve">
+    <value>关于此代理的角色和目的的描述。</value>
+  </data>
+  <data name="The services that the agent requires." xml:space="preserve">
+    <value>此代理所需的服务列表</value>
+  </data>
+  <data name="The secret value." xml:space="preserve">
+    <value>此 secret 的值</value>
+  </data>
+  <data name="Used to define the initial instructions" xml:space="preserve">
+    <value>初始指令或上下文，用于定义Semantic Kernel代理如何生成内容。此模板指导代理的行为，并帮助它理解需要扮演的角色或执行的任务。</value>
+  </data>
+  <data name="The temperature of the model" xml:space="preserve">
+    <value>模型的温度。值越高，意味着模型将承担更大的风险。尝试0.1以获得与模型训练内容非常接近的结果。尝试0.9以获得极具创意的结果。</value>
+  </data>
+  <data name="Journal" xml:space="preserve">
+    <value>日志</value>
+  </data>
+  <data name="Primitives" xml:space="preserve">
+    <value>基本元素</value>
+  </data>
+  <data name="Scripting" xml:space="preserve">
+    <value>脚本语言</value>
+  </data>
+  <data name="Show events scoped to current container" xml:space="preserve">
+    <value>显示当前容器范围内的事件</value>
+  </data>
+  <data name="Show relative time" xml:space="preserve">
+    <value>显示相对时间</value>
+  </data>
+  <data name="The settings of the service in JSON format." xml:space="preserve">
+    <value>服务的设置以JSON格式表示。</value>
+  </data>
+  <data name="The system prompt template that the agent will use." xml:space="preserve">
+    <value>系统提示模板，代理将使用该模板。</value>
+  </data>
+  <data name="The penalty for repeating any one token" xml:space="preserve">
+    <value>重复任何一个token的惩罚。更高的频率惩罚将减少token重复的可能性，促进更多样化的文本生成。</value>
+  </data>
+  <data name="The scope of the secret helps the UI to filter available options from dropdown lists." xml:space="preserve">
+    <value>secret的范围可以从下拉列表中筛选可用选项。</value>
+  </data>
+  <data name="A code editor" xml:space="preserve">
+    <value>代码编辑器</value>
+  </data>
+  <data name="A dropdown list" xml:space="preserve">
+    <value>下拉列表</value>
+  </data>
+  <data name="A JSON editor" xml:space="preserve">
+    <value>JSON编辑器</value>
+  </data>
+  <data name="A list of checkboxes" xml:space="preserve">
+    <value>复选框列表</value>
+  </data>
+  <data name="A list of radio buttons" xml:space="preserve">
+    <value>单选按钮列表</value>
+  </data>
+  <data name="A single line of text input" xml:space="preserve">
+    <value>单行文本输入</value>
+  </data>
+  <data name="A checkbox" xml:space="preserve">
+    <value>复选框</value>
+  </data>
+  <data name="A variable with this name already exists in the current scope." xml:space="preserve">
+    <value>当前作用域中已经存在这个名称的变量。</value>
+  </data>
+  <data name="A workflow definition picker" xml:space="preserve">
+    <value>工作流定义选择器</value>
+  </data>
+  <data name="A workflow output definition picker" xml:space="preserve">
+    <value>工作流输出定义选择器</value>
+  </data>
+  <data name="An input with this name already exists." xml:space="preserve">
+    <value>这个名称的输入已经存在。</value>
+  </data>
+  <data name="Are you sure you want to delete the selected input?" xml:space="preserve">
+    <value>您确定要删除选定的输入吗？</value>
+  </data>
+  <data name="Are you sure you want to delete the selected workflows?" xml:space="preserve">
+    <value>您确定要删除选定的工作流吗？</value>
+  </data>
+  <data name="Are you sure you want to delete this version?" xml:space="preserve">
+    <value>您确定要删除此版本吗？</value>
+  </data>
+  <data name="Are you sure you want to delete this workflow instance?" xml:space="preserve">
+    <value>您确定要删除此工作流实例吗？</value>
+  </data>
+  <data name="Cancel running workflow instances?" xml:space="preserve">
+    <value>确定取消正在运行的工作流实例？</value>
+  </data>
+  <data name="Cancel selected workflow instances?" xml:space="preserve">
+    <value>确定取消选定的工作流实例？</value>
+  </data>
+  <data name="Checkbox" xml:space="preserve">
+    <value>复选框</value>
+  </data>
+  <data name="Create variable" xml:space="preserve">
+    <value>创建变量</value>
+  </data>
+  <data name="Default" xml:space="preserve">
+    <value>默认</value>
+  </data>
+  <data name="Delete selected input?" xml:space="preserve">
+    <value>确定删除选定的输入？</value>
+  </data>
+  <data name="Delete selected workflow instances?" xml:space="preserve">
+    <value>确认删除选定的工作流实例？</value>
+  </data>
+  <data name="Delete selected workflows?" xml:space="preserve">
+    <value>确定删除选定的工作流？</value>
+  </data>
+  <data name="Edit variable" xml:space="preserve">
+    <value>编辑变量</value>
+  </data>
+  <data name="Enter the expression that will be used to determine the log persistence strategy for this property." xml:space="preserve">
+    <value>输入将用于确定此属性的日志持久性策略的表达式。</value>
+  </data>
+  <data name="Failed to import {0} workflow definitions. Errors: {1}" xml:space="preserve">
+    <value>导入 {0} 个工作流定义失败。错误:{1}</value>
+  </data>
+  <data name="imported successfully." xml:space="preserve">
+    <value>导入成功。</value>
+  </data>
+  <data name="Inherit" xml:space="preserve">
+    <value>继承</value>
+  </data>
+  <data name="Multi line" xml:space="preserve">
+    <value>多行</value>
+  </data>
+  <data name="Multi text" xml:space="preserve">
+    <value>多文本</value>
+  </data>
+  <data name="Not executed" xml:space="preserve">
+    <value>未执行</value>
+  </data>
+  <data name="None" xml:space="preserve">
+    <value>无</value>
+  </data>
+  <data name="Not usable as activity." xml:space="preserve">
+    <value>不能作为活动使用。</value>
+  </data>
+  <data name="One workflow consuming a published workflow has been updated" xml:space="preserve">
+    <value>一个使用已发布工作流的工作流已被更新</value>
+  </data>
+  <data name="One workflow is already published" xml:space="preserve">
+    <value>已经发布了一个工作流</value>
+  </data>
+  <data name="Output picker" xml:space="preserve">
+    <value>输出选择器</value>
+  </data>
+  <data name="Please enter a name for the variable." xml:space="preserve">
+    <value>请输入这个变量的名称。</value>
+  </data>
+  <data name="Please enter a name for the workflow." xml:space="preserve">
+    <value>请输入这个工作流的名称。</value>
+  </data>
+  <data name="Single line" xml:space="preserve">
+    <value>单行</value>
+  </data>
+  <data name="Successfully imported" xml:space="preserve">
+    <value>导入成功</value>
+  </data>
+  <data name="The text to display in the designer." xml:space="preserve">
+    <value>要在设计器中显示的文本。</value>
+  </data>
+  <data name="Timestamp" xml:space="preserve">
+    <value>时间戳</value>
+  </data>
+  <data name="When checked, this activity is the start of this workflow." xml:space="preserve">
+    <value>当选中时，此活动是此工作流的开始。</value>
+  </data>
+  <data name="Workflow definition picker" xml:space="preserve">
+    <value>工作流定义选择器</value>
+  </data>
+  <data name="Workflow published" xml:space="preserve">
+    <value>工作流已发布</value>
+  </data>
+  <data name="Workflow published with Not Found activities" xml:space="preserve">
+    <value>发布的工作流没有找到活动</value>
+  </data>
+  <data name="workflows are unpublished" xml:space="preserve">
+    <value>工作流已撤销发布</value>
+  </data>
+  <data name="workflows consuming published workflows have been updated" xml:space="preserve">
+    <value>已更新使用当前已发布工作流的其他工作流</value>
+  </data>
+  <data name="Delete version {0}" xml:space="preserve">
+    <value>删除版本 {0}</value>
+  </data>
+  <data name="{0} workflows are already published" xml:space="preserve">
+    <value>{0} 个工作流已发布</value>
+  </data>
+  <data name="{0} workflows consuming published workflows have been updated" xml:space="preserve">
+    <value>已更新 {0} 个使用已发布工作流的工作流</value>
+  </data>
+  <data name="{0} {1} imported successfully." xml:space="preserve">
+    <value>{0} {1} 导入成功。</value>
+  </data>
+  <data name="Are you sure you want to cancel this workflow instance?" xml:space="preserve">
+    <value>您确定要取消此工作流实例吗？</value>
+  </data>
+  <data name="No workflows found to import." xml:space="preserve">
+    <value>没有找到要导入的工作流。</value>
+  </data>
+  <data name="Delete workflow?" xml:space="preserve">
+    <value>确定删除工作流？</value>
+  </data>
+  <data name="No workflows were imported." xml:space="preserve">
+    <value>没有导入任何工作流。</value>
+  </data>
+  <data name="Multiple lines of text input" xml:space="preserve">
+    <value>多行文本输入</value>
+  </data>
+  <data name="Successfully imported 1 workflow definition." xml:space="preserve">
+    <value>成功导入 1 个工作流定义。</value>
+  </data>
+  <data name="Delete version" xml:space="preserve">
+    <value>删除版本</value>
+  </data>
+  <data name="Checklist" xml:space="preserve">
+    <value>复选框列表</value>
+  </data>
+  <data name="A workflow with this name already exists." xml:space="preserve">
+    <value>具有此名称的工作流已经存在。</value>
+  </data>
+  <data name="Are you sure you want to delete the selected output?" xml:space="preserve">
+    <value>您确定要删除选定的输出吗？</value>
+  </data>
+  <data name="The workflow cannot be started" xml:space="preserve">
+    <value>无法启动工作流</value>
+  </data>
+  <data name="Create input" xml:space="preserve">
+    <value>创建输入</value>
+  </data>
+  <data name="One workflow is published" xml:space="preserve">
+    <value>发布一个工作流</value>
+  </data>
+  <data name="Delete selected versions" xml:space="preserve">
+    <value>删除选定版本</value>
+  </data>
+  <data name="Publish selected workflows?" xml:space="preserve">
+    <value>发布选定的工作流？</value>
+  </data>
+  <data name="Successfully started workflow" xml:space="preserve">
+    <value>启动工作流成功</value>
+  </data>
+  <data name="Edit output" xml:space="preserve">
+    <value>编辑输出</value>
+  </data>
+  <data name="Are you sure you want to cancel the selected workflow instances?" xml:space="preserve">
+    <value>您确定要取消选定的工作流实例吗？</value>
+  </data>
+  <data name="Are you sure you want to delete this workflow?" xml:space="preserve">
+    <value>您确定要删除此工作流吗？</value>
+  </data>
+  <data name="A variable picker" xml:space="preserve">
+    <value>变量选择器</value>
+  </data>
+  <data name="Default Strategy" xml:space="preserve">
+    <value>默认策略</value>
+  </data>
+  <data name="Code editor" xml:space="preserve">
+    <value>代码编辑器</value>
+  </data>
+  <data name="Are you sure you want to cancel all running workflow instances of this workflow definition?" xml:space="preserve">
+    <value>确定要取消此工作流定义的所有正在运行的工作流实例吗？</value>
+  </data>
+  <data name="Are you sure you want to publish the selected workflows?" xml:space="preserve">
+    <value>您确定要发布选定的工作流吗？</value>
+  </data>
+  <data name="Are you sure you want to delete the selected variable?" xml:space="preserve">
+    <value>您确定要删除选定的变量吗？</value>
+  </data>
+  <data name="Create output" xml:space="preserve">
+    <value>创建输出</value>
+  </data>
+  <data name="Delete workflow instance?" xml:space="preserve">
+    <value>确定删除工作流实例？</value>
+  </data>
+  <data name="An outcome picker" xml:space="preserve">
+    <value>结果选择器</value>
+  </data>
+  <data name="Are you sure you want to delete the selected versions?" xml:space="preserve">
+    <value>您确定要删除选定的版本吗？</value>
+  </data>
+  <data name="An input for multiple words, like a tagging input" xml:space="preserve">
+    <value>多个单词的输入，如标记输入</value>
+  </data>
+  <data name="Are you sure you want to delete the selected workflow instances?" xml:space="preserve">
+    <value>您确定要删除选定的工作流实例吗？</value>
+  </data>
+  <data name="Are you sure you want to unpublish the selected workflows?" xml:space="preserve">
+    <value>您确定要取消选定的工作流吗？</value>
+  </data>
+  <data name="Delete selected variable?" xml:space="preserve">
+    <value>确认删除选定的变量？</value>
+  </data>
+  <data name="Please enter a name for the output." xml:space="preserve">
+    <value>请输入这个输出的名称。</value>
+  </data>
+  <data name="Cancel workflow instance?" xml:space="preserve">
+    <value>取消工作流实例？</value>
+  </data>
+  <data name="Edit Workflow Definition" xml:space="preserve">
+    <value>编辑工作流定义</value>
+  </data>
+  <data name="New workflow" xml:space="preserve">
+    <value>新工作流</value>
+  </data>
+  <data name="One workflow is not found" xml:space="preserve">
+    <value>没有找到一个工作流</value>
+  </data>
+  <data name="Delete selected output?" xml:space="preserve">
+    <value>确定删除选定的输出？</value>
+  </data>
+  <data name="{0} consuming workflow(s) updated" xml:space="preserve">
+    <value>{0} 个使用中的工作流已更新</value>
+  </data>
+  <data name="Dropdown" xml:space="preserve">
+    <value>下拉</value>
+  </data>
+  <data name="Radio list" xml:space="preserve">
+    <value>单选列表</value>
+  </data>
+  <data name="Message" xml:space="preserve">
+    <value>消息</value>
+  </data>
+  <data name="One workflow is unpublished" xml:space="preserve">
+    <value>撤销发布一个工作流</value>
+  </data>
+  <data name="JSON editor" xml:space="preserve">
+    <value>JSON 编辑器</value>
+  </data>
+  <data name="Please enter a name for the input." xml:space="preserve">
+    <value>请输入这个输入的名称。</value>
+  </data>
+  <data name="Workflow was already published" xml:space="preserve">
+    <value>工作流已经发布</value>
+  </data>
+  <data name="Outcome picker" xml:space="preserve">
+    <value>结果选择器</value>
+  </data>
+  <data name="One workflow is already unpublished" xml:space="preserve">
+    <value>一个工作流已经撤销发布</value>
+  </data>
+  <data name="Readonly" xml:space="preserve">
+    <value>只读</value>
+  </data>
+  <data name="Successfully imported one instance" xml:space="preserve">
+    <value>成功导入一个实例</value>
+  </data>
+  <data name="workflow definitions." xml:space="preserve">
+    <value>工作流定义。</value>
+  </data>
+  <data name="Show description" xml:space="preserve">
+    <value>显示描述</value>
+  </data>
+  <data name="Workflow retracted" xml:space="preserve">
+    <value>已撤销工作流</value>
+  </data>
+  <data name="The commit strategy to use that controls when the workflow state should be committed." xml:space="preserve">
+    <value>要使用的提交策略控制应何时该提交工作流状态。</value>
+  </data>
+  <data name="The ID of the variable." xml:space="preserve">
+    <value>变量的ID。</value>
+  </data>
+  <data name="The read-only workflows will not be affected." xml:space="preserve">
+    <value>只读工作流不会受到影响。</value>
+  </data>
+  <data name="Upload JSON and/or ZIP files containing workflow data to import." xml:space="preserve">
+    <value>上传包含工作流数据的JSON文件或包含工作流数据的JSON文件的压缩包(ZIP)导入。</value>
+  </data>
+  <data name="Variable picker" xml:space="preserve">
+    <value>变量选择器</value>
+  </data>
+  <data name="Unpublish selected workflows?" xml:space="preserve">
+    <value>确定取消发布选定的工作流？</value>
+  </data>
+  <data name="When checked, this activity can trigger this workflow." xml:space="preserve">
+    <value>当被选中时，此活动可以触发此工作流。</value>
+  </data>
+  <data name="Workflow saved" xml:space="preserve">
+    <value>已保存工作流</value>
+  </data>
+  <data name="workflows are not found" xml:space="preserve">
+    <value>未找到工作流</value>
+  </data>
+  <data name="workflows are already published" xml:space="preserve">
+    <value>工作流已经发布</value>
+  </data>
+  <data name="Successfully imported {0} instances" xml:space="preserve">
+    <value>成功导入 {0} 个实例</value>
+  </data>
+  <data name="Workflow unpublished" xml:space="preserve">
+    <value>已取消发布工作流</value>
+  </data>
+  <data name="workflows are already unpublished" xml:space="preserve">
+    <value>工作流已撤销发布</value>
+  </data>
+  <data name="workflows are published" xml:space="preserve">
+    <value>工作流已发布</value>
+  </data>
+  <data name="{0} workflows are published" xml:space="preserve">
+    <value>{0} 个工作流已发布</value>
+  </data>
+  <data name="Failed to import {0} {1}." xml:space="preserve">
+    <value>{0} {1} 导入失败。</value>
+  </data>
+  <data name="Successfully imported {0} workflow definitions." xml:space="preserve">
+    <value>成功导入 {0} 个工作流定义。</value>
+  </data>
+  <data name="{0} workflows are unpublished" xml:space="preserve">
+    <value>{0} 个工作流已取消发布</value>
+  </data>
+  <data name="{0} workflows are not found" xml:space="preserve">
+    <value>{0} 个工作流未找到</value>
+  </data>
+  <data name="{0} workflows are already unpublished" xml:space="preserve">
+    <value>{0} 个工作流已取消发布</value>
+  </data>
+  <data name="The join mode determines whether this activity should continue as soon as one inbound path comes in (Wait Any), or once all inbound paths have executed (Wait All)." xml:space="preserve">
+    <value>连接模式决定这个活动是否应该在一个入站路径进入时就继续（等待任意一个），还是在所有入站路径都执行完毕后才继续（等待全部）。</value>
+  </data>
+  <data name="The data source to use for dispatching the workflows." xml:space="preserve">
+    <value>用于分派工作流的数据源。</value>
+  </data>
+  <data name="The default key to use for the input name when sending the current item to the dispatched workflow. Will not be used if the Items field contain a list of dictionaries" xml:space="preserve">
+    <value>在将当前项发送到被分派的工作流时用于输入名称的默认键。如果Items字段包含字典列表，则不会使用该键</value>
+  </data>
+  <data name="Auto layout" xml:space="preserve">
+    <value>自动布局</value>
+  </data>
+  <data name="Center" xml:space="preserve">
+    <value>中心</value>
+  </data>
+  <data name="Zoom to fit the screen" xml:space="preserve">
+    <value>缩放适应屏幕</value>
+  </data>
+  <data name="A function to compute the correlation ID to associate a dispatched workflow with." xml:space="preserve">
+    <value>一个用来计算关联分发的工作流的相关性ID的函数。</value>
+  </data>
+  <data name="A list of expected outcomes to handle." xml:space="preserve">
+    <value>一个预期结果列表进行处理。</value>
+  </data>
+  <data name="A list of expected status codes to handle." xml:space="preserve">
+    <value>一个要处理的预期状态码列表。</value>
+  </data>
+  <data name="A value that allows to add the Authorization header without validation." xml:space="preserve">
+    <value>一个允许在不进行验证的情况下添加授权头的值。</value>
+  </data>
+  <data name="Always allow the creation" xml:space="preserve">
+    <value>始终允许创建</value>
+  </data>
+  <data name="Branches" xml:space="preserve">
+    <value>分支</value>
+  </data>
+  <data name="Break out of a loop." xml:space="preserve">
+    <value>跳出循环。</value>
+  </data>
+  <data name="Cancelled" xml:space="preserve">
+    <value>已取消</value>
+  </data>
+  <data name="Condition" xml:space="preserve">
+    <value>状态</value>
+  </data>
+  <data name="Content Type" xml:space="preserve">
+    <value>内容形式</value>
+  </data>
+  <data name="Correlation ID Function" xml:space="preserve">
+    <value>相关 ID 函数</value>
+  </data>
+  <data name="Default Item Input Key" xml:space="preserve">
+    <value>默认项目输入键</value>
+  </data>
+  <data name="Disable Authorization Header Validation" xml:space="preserve">
+    <value>禁用授权头验证</value>
+  </data>
+  <data name="Executes javaScript code" xml:space="preserve">
+    <value>执行JavaScript代码</value>
+  </data>
+  <data name="Executing" xml:space="preserve">
+    <value>执行中</value>
+  </data>
+  <data name="Expected Status Codes" xml:space="preserve">
+    <value>预期的状态码</value>
+  </data>
+  <data name="Method" xml:space="preserve">
+    <value>方法</value>
+  </data>
+  <data name="Mode" xml:space="preserve">
+    <value>模式</value>
+  </data>
+  <data name="Request Content." xml:space="preserve">
+    <value>请求内容。</value>
+  </data>
+  <data name="Result" xml:space="preserve">
+    <value>结果</value>
+  </data>
+  <data name="Running" xml:space="preserve">
+    <value>运行中</value>
+  </data>
+  <data name="Supported Methods" xml:space="preserve">
+    <value>建议方法</value>
+  </data>
+  <data name="The Authorization header value to send with the request. For example: Bearer {some-access-token}" xml:space="preserve">
+    <value>和请求一起发送的授权头值。例如：Bearer {some - access - token}</value>
+  </data>
+  <data name="The content to send with the request. Can be a string, an object, a byte array or a stream." xml:space="preserve">
+    <value>随请求发送的内容。可以是字符串、对象、字节数组或者流。</value>
+  </data>
+  <data name="The content type to use when sending the request." xml:space="preserve">
+    <value>发送请求时使用的内容类型。</value>
+  </data>
+  <data name="The definition ID of the workflows to dispatch." xml:space="preserve">
+    <value>要分派的工作流的定义ID。</value>
+  </data>
+  <data name="The HTTP method to use when sending the request." xml:space="preserve">
+    <value>发送请求时使用的HTTP方法。</value>
+  </data>
+  <data name="The HTTP methods to accept." xml:space="preserve">
+    <value>要接受的HTTP方法。</value>
+  </data>
+  <data name="The outcome or set of outcomes to complete this activity with." xml:space="preserve">
+    <value>完成此活动的结果或结果集。</value>
+  </data>
+  <data name="The path to associate with the workflow." xml:space="preserve">
+    <value>与工作流关联的路径。</value>
+  </data>
+  <data name="The switch mode determines whether the first match should be scheduled, or all matches." xml:space="preserve">
+    <value>切换模式决定是应该安排第一个匹配项，还是安排所有匹配项。</value>
+  </data>
+  <data name="The URL to download the file from." xml:space="preserve">
+    <value>用于下载文件的URL。</value>
+  </data>
+  <data name="Time Duration" xml:space="preserve">
+    <value>持续时间</value>
+  </data>
+  <data name="Trigger execution at a specific time in the future." xml:space="preserve">
+    <value>在未来特定的时间触发执行。</value>
+  </data>
+  <data name="URL" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="Validation Result" xml:space="preserve">
+    <value>验证结果</value>
+  </data>
+  <data name="Workflow Definition" xml:space="preserve">
+    <value>工作流定义</value>
+  </data>
+  <data name="Add case" xml:space="preserve">
+    <value>添加示例</value>
+  </data>
+  <data name="Data" xml:space="preserve">
+    <value>数据</value>
+  </data>
+  <data name="Label" xml:space="preserve">
+    <value>标签</value>
+  </data>
+  <data name="String7" xml:space="preserve">
+    <value>结果</value>
+  </data>
+  <data name="Zoom to fit" xml:space="preserve">
+    <value>缩放匹配</value>
+  </data>
+  <data name="Always allow the creation of a new workflow instance." xml:space="preserve">
+    <value>总是允许创建新的工作流实例。</value>
+  </data>
+  <data name="Assign the current value to the specified variable." xml:space="preserve">
+    <value>将当前值赋给指定的变量。</value>
+  </data>
+  <data name="Code" xml:space="preserve">
+    <value>代码</value>
+  </data>
+  <data name="Controls whether the end step is upper/lowerbound inclusive or exclusive. True (inclusive) by default." xml:space="preserve">
+    <value>控制结束步骤是包含还是排除上界/下界。默认为True（包含）。</value>
+  </data>
+  <data name="Current Value" xml:space="preserve">
+    <value>现有赋值</value>
+  </data>
+  <data name="Interval" xml:space="preserve">
+    <value>间隔</value>
+  </data>
+  <data name="Outer Bound Inclusive" xml:space="preserve">
+    <value>包含外部边界</value>
+  </data>
+  <data name="Payload" xml:space="preserve">
+    <value>负载</value>
+  </data>
+  <data name="Step" xml:space="preserve">
+    <value>步</value>
+  </data>
+  <data name="The end step." xml:space="preserve">
+    <value>终止步骤。</value>
+  </data>
+  <data name="The items to iterate through." xml:space="preserve">
+    <value>要迭代的项目。</value>
+  </data>
+  <data name="The set of values to iterate." xml:space="preserve">
+    <value>要迭代的值集合。</value>
+  </data>
+  <data name="The start step." xml:space="preserve">
+    <value>初始化。</value>
+  </data>
+  <data name="The step size. To count down, enter a negative number." xml:space="preserve">
+    <value>步长。要倒计时，请输入一个负数。</value>
+  </data>
+  <data name="Variable" xml:space="preserve">
+    <value>变量</value>
+  </data>
+  <data name="Exclude" xml:space="preserve">
+    <value>排除</value>
+  </data>
+  <data name="Include" xml:space="preserve">
+    <value>包括</value>
+  </data>
+  <data name="Load" xml:space="preserve">
+    <value>加载</value>
+  </data>
+  <data name="Configuration" xml:space="preserve">
+    <value>配置</value>
+  </data>
+  <data name="Provider Type" xml:space="preserve">
+    <value>提供者类型</value>
+  </data>
+  <data name="Pending" xml:space="preserve">
+    <value>待处理</value>
+  </data>
+</root>

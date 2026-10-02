@@ -1,0 +1,286 @@
+@using System.Net
+@using System.Text.Json
+@using ApiException = Refit.ApiException
+@using Elsa.Studio.Contracts
+@using Elsa.Studio.ExternalAuthentication.Services
+@implements IDisposable
+@inject IBackendApiClientProvider ApiClientProvider
+
+<MudDialog>
+    <DialogContent>
+        <form id="identity-link-form" @onsubmit="SubmitAsync" @onsubmit:preventDefault>
+            <MudStack Spacing="2">
+                @if (IsEditing)
+                {
+                    <MudAlert Severity="Severity.Warning" Dense="true">
+                        Enter the external subject again. Saving creates a new external identity link, resets its sign-in history, and cannot be undone.
+                    </MudAlert>
+                }
+
+                <MudTextField
+                    @bind-Value="_userSearch"
+                    Label="Find Elsa user"
+                    Immediate="true"
+                    DebounceInterval="300"
+                    AutoFocus="true"
+                    OnBlur="@(_ => FindUsersAsync())" />
+                <MudSelect T="string" @bind-Value="_request.UserId" Label="Elsa user" Required="true">
+                    @foreach (var user in _users)
+                    {
+                        <MudSelectItem T="string" Value="@user.Id">@user.DisplayName</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudSelect T="string" @bind-Value="_request.ConnectionKey" Label="Identity provider connection" Required="true">
+                    @foreach (var connection in Connections)
+                    {
+                        <MudSelectItem T="string" Value="@connection.Key">@ConnectionDisplay(connection)</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudTextField
+                    @bind-Value="_request.Issuer"
+                    Label="Issuer namespace"
+                    InputType="InputType.Url"
+                    Required="true"
+                    HelperText="For example: https://login.contoso.example" />
+                <MudTextField
+                    @bind-Value="_request.Subject"
+                    Label="External subject"
+                    InputType="@(_showSubject ? InputType.Text : InputType.Password)"
+                    Required="true"
+                    autocomplete="off"
+                    HelperText="Accepted for this operation only; it will not be returned."
+                    Adornment="Adornment.End"
+                    AdornmentIcon="@(_showSubject ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                    AdornmentAriaLabel="@(_showSubject ? "Hide external subject" : "Show external subject")"
+                    OnAdornmentClick="ToggleSubjectVisibility" />
+
+                @foreach (var error in _errors)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Error" role="alert">@error</MudText>
+                }
+            </MudStack>
+        </form>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="_submitting" OnClick="Cancel">Cancel</MudButton>
+        <MudButton
+            Color="Color.Primary"
+            Variant="Variant.Filled"
+            Disabled="_submitting"
+            ButtonType="ButtonType.Submit"
+            form="identity-link-form">
+            @(IsEditing ? "Replace link" : "Create link")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private readonly List<IdentityLinkUser> _users = [];
+    private readonly List<string> _errors = [];
+    private ExternalIdentityLinkMutationRequest _request = new PrelinkExternalIdentityRequest();
+    private string? _userSearch;
+    private bool _showSubject;
+    private bool _submitting;
+
+    [Parameter] public ExternalIdentityLink? ExistingLink { get; set; }
+    [Parameter] public IdentityLinkUser? ExistingUser { get; set; }
+    [Parameter] public IReadOnlyCollection<IdentityLinkUser> Users { get; set; } = [];
+    [Parameter] public IReadOnlyCollection<ConnectionSummary> Connections { get; set; } = [];
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private bool IsEditing => ExistingLink is not null;
+
+    protected override void OnInitialized()
+    {
+        ReplaceUsers(Users);
+        if (ExistingLink is null)
+            return;
+
+        _request = new ReplaceExternalIdentityLinkRequest
+        {
+            UserId = ExistingLink.UserId,
+            ConnectionKey = ExistingLink.ConnectionKey,
+            Issuer = ExistingLink.Issuer
+        };
+        EnsureExistingUser();
+    }
+
+    private async Task FindUsersAsync()
+    {
+        try
+        {
+            var api = await ApiClientProvider.GetApiAsync<IExternalIdentityLinksApi>();
+            var response = await api.FindUsersAsync(_userSearch, pageSize: 25);
+            ReplaceUsers(response.Items);
+            EnsureExistingUser();
+        }
+        catch (Exception)
+        {
+            SetError("Elsa users could not be loaded.");
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        _errors.Clear();
+        _errors.AddRange(IdentityLinkUiState.Validate(_request));
+        if (_errors.Count > 0)
+            return;
+
+        _submitting = true;
+        try
+        {
+            await SetDismissalAsync(false);
+            var api = await ApiClientProvider.GetApiAsync<IExternalIdentityLinksApi>();
+            if (ExistingLink is null)
+            {
+                await api.PrelinkAsync((PrelinkExternalIdentityRequest)_request);
+            }
+            else
+            {
+                await api.ReplaceAsync(ExistingLink.Id, (ReplaceExternalIdentityLinkRequest)_request);
+            }
+
+            await FinishSubmittingAsync();
+            ClearSubject();
+            MudDialog.Close(DialogResult.Ok(IdentityLinkDialogOutcome.Saved));
+        }
+        catch (ApiException exception) when (IsEditing && exception.StatusCode == HttpStatusCode.NotFound && IsStructuredNotFound(exception.Content))
+        {
+            await HandleStructuredNotFoundAsync();
+        }
+        catch (ApiException exception) when (IsEditing && exception.StatusCode == HttpStatusCode.NotFound)
+        {
+            SetError("This backend does not support editing external identity links.");
+        }
+        catch (ApiException exception) when (exception.StatusCode == HttpStatusCode.Conflict)
+        {
+            SetError("An external identity link already exists for these details.");
+        }
+        catch (Exception)
+        {
+            SetError(IsEditing
+                ? "The external identity link could not be replaced. The original link was left unchanged."
+                : "The external identity link could not be created.");
+        }
+        finally
+        {
+            await FinishSubmittingAsync();
+        }
+    }
+
+    private void Cancel()
+    {
+        if (_submitting)
+            return;
+
+        ClearSubject();
+        MudDialog.Cancel();
+    }
+
+    private void ToggleSubjectVisibility() => _showSubject = !_showSubject;
+
+    private void ClearSubject()
+    {
+        _request.Subject = string.Empty;
+        _showSubject = false;
+    }
+
+    private void ReplaceUsers(IEnumerable<IdentityLinkUser> users)
+    {
+        _users.Clear();
+        _users.AddRange(users);
+    }
+
+    private void EnsureExistingUser()
+    {
+        if (ExistingUser is not null && _users.All(x => !string.Equals(x.Id, ExistingUser.Id, StringComparison.Ordinal)))
+            _users.Insert(0, ExistingUser);
+    }
+
+    private void SetError(string message)
+    {
+        _errors.Clear();
+        _errors.Add(message);
+    }
+
+    public void Dispose() => ClearSubject();
+
+    private async Task HandleStructuredNotFoundAsync()
+    {
+        try
+        {
+            if (await OriginalLinkStillExistsAsync())
+            {
+                SetError("The selected Elsa user or identity provider connection is no longer available. The original link was left unchanged.");
+                return;
+            }
+
+            await FinishSubmittingAsync();
+            ClearSubject();
+            MudDialog.Close(DialogResult.Ok(IdentityLinkDialogOutcome.Stale));
+        }
+        catch (Exception)
+        {
+            SetError("The replacement could not be completed or verified. The original link was left unchanged.");
+        }
+    }
+
+    private async Task<bool> OriginalLinkStillExistsAsync()
+    {
+        var link = ExistingLink!;
+        var api = await ApiClientProvider.GetApiAsync<IExternalIdentityLinksApi>();
+        string? cursor = null;
+        do
+        {
+            var response = await api.ListAsync(link.UserId, link.ConnectionKey, cursor, 100);
+            if (response.Items.Any(x => string.Equals(x.Id, link.Id, StringComparison.Ordinal)))
+                return true;
+            cursor = response.NextCursor;
+        } while (!string.IsNullOrWhiteSpace(cursor));
+
+        return false;
+    }
+
+    private async Task FinishSubmittingAsync()
+    {
+        if (!_submitting)
+            return;
+
+        _submitting = false;
+        await SetDismissalAsync(true);
+    }
+
+    private Task SetDismissalAsync(bool enabled) =>
+        MudDialog.SetOptionsAsync(MudDialog.Options with
+        {
+            CloseButton = enabled,
+            CloseOnEscapeKey = enabled,
+            BackdropClick = enabled
+        });
+
+    private static bool IsStructuredNotFound(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return false;
+
+        try
+        {
+            using var document = JsonDocument.Parse(content);
+            return document.RootElement.ValueKind == JsonValueKind.Object &&
+                   document.RootElement.TryGetProperty("error", out var error) &&
+                   error.ValueKind == JsonValueKind.String &&
+                   string.Equals(error.GetString(), "not_found", StringComparison.Ordinal);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static string ConnectionDisplay(ConnectionSummary connection)
+    {
+        var enabled = connection.EffectivelyEnabled ? "Enabled" : "Disabled";
+        return $"{connection.DisplayName} ({connection.Key}) · {enabled} · {connection.Validity}";
+    }
+}

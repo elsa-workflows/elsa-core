@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 9,
+  "issue": 8286,
+  "baseImportHead": "ab109c6286999ddb56f8f24172191c69d0f6fcc0",
+  "mappedDeltaCommit": "1043d3d9a6be3f4670016d82eab21ad4c2fbed94",
+  "historyJoinCommit": "0653505a7b0640350703c29d1b2312dcba847460",
+  "acceptedMergeCommit": "b42d93879dfb8e2026084271259669b8aa679d60",
+  "oldStudioCommit": "5b34ec327caffd132e18bfd88bfc9e862dc35c43",
+  "newStudioCommit": "24337549a28be797b639708a87d5fcb9b8c693ee",
+  "sourcePullRequest": "https://github.com/elsa-workflows/elsa-core/pull/8530",
+  "upstreamPullRequests": [
+    "https://github.com/elsa-workflows/elsa-studio/pull/1073"
+  ],
+  "mappedChanges": [
+    {
+      "status": "M",
+      "source": "src/framework/Elsa.Studio.Core/ToolVersion.cs",
+      "mappedPath": "src/studio/framework/Elsa.Studio.Core/ToolVersion.cs",
+      "oldSource": {
+        "blob": "c3f4e70c835a1d92b496b7068951afaa66673793",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "c3f4e70c835a1d92b496b7068951afaa66673793",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "11d6207d1d4929d553672cffde70e57ac64a72d8",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "11d6207d1d4929d553672cffde70e57ac64a72d8",
+        "mode": "100644"
+      }
+    },
+    {
+      "status": "M",
+      "source": "src/hosts/Elsa.Studio.Host.Server/Program.cs",
+      "mappedPath": "src/studio/hosts/Elsa.Studio.Host.Server/Program.cs",
+      "oldSource": {
+        "blob": "6754052ee31e6ff2b2a261d4af2b78eecba65fab",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "6754052ee31e6ff2b2a261d4af2b78eecba65fab",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "20a54523b9a59dcf67accfb802fe6503d77daa44",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "20a54523b9a59dcf67accfb802fe6503d77daa44",
+        "mode": "100644"
+      }
+    },
+    {
+      "status": "D",
+      "source": "src/hosts/Elsa.Studio.Host.Server/StudioBrandingProvider.cs",
+      "mappedPath": "src/studio/hosts/Elsa.Studio.Host.Server/StudioBrandingProvider.cs",
+      "oldSource": {
+        "blob": "b7e62d5a65b3fcf3970c9a6218c40d9da4c4c9d5",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "b7e62d5a65b3fcf3970c9a6218c40d9da4c4c9d5",
+        "mode": "100644"
+      },
+      "newSource": null,
+      "finalMapped": null
+    },
+    {
+      "status": "M",
+      "source": "src/hosts/Elsa.Studio.Host.Wasm/wwwroot/index.html",
+      "mappedPath": "src/studio/hosts/Elsa.Studio.Host.Wasm/wwwroot/index.html",
+      "oldSource": {
+        "blob": "c6bb7fe71025638d494ee4195ace5b0a50993ce5",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "c6bb7fe71025638d494ee4195ace5b0a50993ce5",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "e16e77b5edd768d0862faae83f1a8d2a7b6e3f6b",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "e16e77b5edd768d0862faae83f1a8d2a7b6e3f6b",
+        "mode": "100644"
+      }
+    }
+  ],
+  "publicationPerformed": false
+}

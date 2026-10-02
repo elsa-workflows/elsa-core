@@ -1,0 +1,15 @@
+@page "/workflows/definitions/{definitionId}/edit"
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<PageTitle>@Localizer["Workflow definitions Editor"]</PageTitle>
+<WorkflowDefinitionEditor DefinitionId="@DefinitionId"/>
+
+@code
+{
+    /// <summary>
+    /// The ID of the workflow definition to edit.
+    /// </summary>
+    [Parameter]
+    public string DefinitionId { get; set; } = null!;
+}

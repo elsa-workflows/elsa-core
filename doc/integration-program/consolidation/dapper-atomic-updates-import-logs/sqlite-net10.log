@@ -1,0 +1,47 @@
+Test run for /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/bin/Debug/net10.0/Elsa.Persistence.Dapper.UnitTests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.8)
+[xUnit.net 00:00:00.11]   Discovering: Elsa.Persistence.Dapper.UnitTests
+[xUnit.net 00:00:00.16]   Discovered:  Elsa.Persistence.Dapper.UnitTests
+[xUnit.net 00:00:00.19]   Starting:    Elsa.Persistence.Dapper.UnitTests
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.MissingReturnsNotFound [109 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.ParameterizedQueryBuilderExtensionsTests.In_WithValues_DoesNotMatchAnotherTenant [144 ms]
+  Passed A match that fails is Conflict and the stored row is unchanged [152 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperBookmarkStoreTests.FindAsync_WithBookmarkId_ReturnsOnlyRequestedBookmark [159 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.ParameterizedQueryBuilderExtensionsTests.In_WithTenantAgnosticFilter_ReturnsMatchingRowsAcrossTenants [17 ms]
+  Passed A loaded row that is no longer IsLatest is Conflict and writes nothing [13 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperBookmarkStoreTests.FindManyAsync_WithTenantAgnosticBookmarkIds_ReturnsMatchingRowsAcrossTenants [14 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.ParameterizedQueryBuilderExtensionsTests.In_WithValues_ReturnsOnlyMatchingRowsForCurrentTenant [10 ms]
+  Passed A matching latest row is updated and the callback sees that just-loaded row [8 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.ParameterizedQueryBuilderExtensionsTests.In_WithNullValues_PreservesOtherFilters [8 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperBookmarkStoreTests.FindManyAsync_WithUnknownOrEmptyBookmarkIds_ReturnsNoRows [15 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.ParameterizedQueryBuilderExtensionsTests.In_WithEmptyValues_ReturnsNoRows [8 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.CallbackDatabaseFailureIsNotReportedAsContention [93 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperBookmarkStoreTests.FindManyAsync_WithBookmarkIds_PaginatesMatchingRowsAndReportsTotalCount [26 ms]
+  Passed A new draft from a published version unmarks the old latest [38 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperBookmarkStoreTests.FindManyAsync_WithBookmarkIds_ComposesWithOtherFilters [10 ms]
+  Passed A missing definition is NotFound [9 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperBookmarkStoreTests.FindManyAsync_WithoutBookmarkIds_PreservesUnfilteredBehavior [6 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperBookmarkStoreTests.DeleteAsync_WithBookmarkIds_DeletesOnlyRequestedRows [12 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperBookmarkStoreTests.FindManyAsync_WithBookmarkIds_ReturnsOnlyRequestedIdsForCurrentTenant [6 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.ConcurrentExpectedSnapshotHasOneWinner [190 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.FailedInsertRollsBackUnmark [27 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.TenantScopeIsRequiredAndAgnosticUpdatePreservesTenant [17 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.UpdateUsesCurrentMetadataAndPreservesUnmappedColumns [21 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.SupersededVersionIsConflictOnlyInsideTenantScope [21 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.OptionalTenantAccessorUsesDefaultTenantAndExcludesOtherTenants [17 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.NewDraftUnmarksPreviousInSameTransaction [25 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "latest-and-published", expected: 0) [13 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "latest", expected: 1) [10 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "draft", expected: 1) [9 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "published", expected: 1) [17 ms]
+[xUnit.net 00:00:01.94]   Finished:    Elsa.Persistence.Dapper.UnitTests
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "latest-or-published", expected: 2) [10 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.WrongExpectedSnapshotDoesNotInvokeUpdate [12 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.SerializableReadExcludesLegacyWriterUntilCommit [1 s]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.CannotMoveTenantOrDefinition [13 ms]
+
+Test Run Successful.
+Total tests: 35
+     Passed: 35
+ Total time: 2,6411 Seconds

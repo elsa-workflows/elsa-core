@@ -1,0 +1,79 @@
+﻿@using Elsa.Studio.Contracts
+@using Elsa.Studio.Enums
+@using Elsa.Studio.Models
+
+<style>
+    .field-container {
+        transition: border 0.3s ease-in-out;
+        border-radius: 8px; 
+        padding: 10px;
+        margin: -10px;
+        border: 1px solid transparent;
+    }
+
+    .field-container.hovered {
+        border-color: #ccc
+    }
+
+    .no-padding-stack {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+</style>
+
+@if (hasExtensions)
+{
+    <MudStack Spacing="1" Class=@($"field-container {(isHovered && hasExtensions ? "hovered" : "")}") @onmouseenter="() => isHovered = true" @onmouseleave="() => isHovered = false">
+        @foreach (var extension in TopExtensions ?? Enumerable.Empty<IUIFieldExtensionHandler>())
+        {
+            @extension.DisplayExtension(EditorContext)
+        }
+        @ChildContent
+        @foreach (var extension in BottomExtensions ?? Enumerable.Empty<IUIFieldExtensionHandler>())
+        {
+            @extension.DisplayExtension(EditorContext)
+        }
+    </MudStack>
+}
+else
+{
+    @ChildContent
+}
+
+
+@code
+{
+    private bool isHovered = false;
+    private bool hasExtensions => AllExtensions?.Count != 0;
+    private List<IUIFieldExtensionHandler>? AllExtensions;
+    private List<IUIFieldExtensionHandler>? TopExtensions;
+    private List<IUIFieldExtensionHandler>? BottomExtensions;
+
+    /// <summary>
+    /// The UI Hint component type the extensions should be rendered for.
+    /// </summary>
+    [Parameter] public string UIHintComponent { get; set; } = default!;
+
+    /// <summary>
+    /// The editor context.
+    /// </summary>
+    [Parameter] public DisplayInputEditorContext EditorContext { get; set; } = default!;
+
+    /// <summary>
+    /// The content wrap with <see cref="IUIFieldExtensionHandler"/> extensions.
+    /// </summary>
+    [Parameter] public RenderFragment ChildContent { get; set; } = default!;
+
+    [Inject] private IUIFieldExtensionService FieldExtensionService { get; set; } = default!;
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        AllExtensions = FieldExtensionService.TryGetHandlers(UIHintComponent, EditorContext);
+        if (AllExtensions is not null)
+        {
+            TopExtensions = AllExtensions.Where(p => p.Position == FieldExtensionPosition.Top).ToList();
+            BottomExtensions = AllExtensions.Where(p => p.Position == FieldExtensionPosition.Bottom).ToList();
+        }
+    }
+}

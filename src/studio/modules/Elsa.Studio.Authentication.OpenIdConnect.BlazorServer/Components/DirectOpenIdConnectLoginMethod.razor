@@ -1,0 +1,19 @@
+@implements Elsa.Studio.Authentication.Abstractions.Contracts.ILoginMethodComponent
+@using Elsa.Studio.Authentication.UI.Components
+@using MudBlazor
+@inject NavigationManager Navigation
+
+<LoginMethodButton Method="Context.Method"
+                   Icon="@Icons.Material.Outlined.Login"
+                   OnClick="SignInAsync" />
+
+@code {
+    [Parameter, EditorRequired]
+    public Elsa.Studio.Authentication.Abstractions.Models.LoginMethodComponentContext Context { get; set; } = default!;
+
+    private Task SignInAsync()
+    {
+        Navigation.NavigateTo($"/authentication/login?returnUrl={Uri.EscapeDataString(Context.ReturnPath)}", forceLoad: true);
+        return Task.CompletedTask;
+    }
+}

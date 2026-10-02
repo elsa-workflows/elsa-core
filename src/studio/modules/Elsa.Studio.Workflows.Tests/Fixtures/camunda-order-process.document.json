@@ -1,0 +1,342 @@
+{
+  "id": "Definitions_order-process",
+  "targetNamespace": "http://bpmn.io/schema/bpmn",
+  "exporter": "Camunda Modeler",
+  "exporterVersion": "5.16.0",
+  "collaboration": null,
+  "processes": [
+    {
+      "processId": "order-process",
+      "name": "Order Process",
+      "isExecutable": true,
+      "isTransaction": false,
+      "elements": [
+        {
+          "elementId": "StartEvent_1",
+          "elementType": "startEvent",
+          "name": "Order Received",
+          "bindingRef": null,
+          "laneId": null,
+          "defaultFlowId": null,
+          "eventDefinitions": [],
+          "properties": {},
+          "attachedToRef": null,
+          "cancelActivity": true,
+          "loopCharacteristics": null,
+          "isForCompensation": false,
+          "compensationHandlerElementId": null,
+          "isTransaction": false,
+          "triggeredByEvent": false,
+          "listenerBindingRef": null,
+          "extensions": {
+            "documentation": [],
+            "extensionElements": [],
+            "foreignAttributes": [],
+            "foreignChildren": []
+          }
+        },
+        {
+          "elementId": "NotifyWarehouse",
+          "elementType": "serviceTask",
+          "name": "Notify Warehouse",
+          "bindingRef": "node-NotifyWarehouse",
+          "laneId": null,
+          "defaultFlowId": null,
+          "eventDefinitions": [],
+          "properties": {},
+          "attachedToRef": null,
+          "cancelActivity": true,
+          "loopCharacteristics": null,
+          "isForCompensation": false,
+          "compensationHandlerElementId": null,
+          "isTransaction": false,
+          "triggeredByEvent": false,
+          "listenerBindingRef": null,
+          "extensions": {
+            "documentation": [
+              {
+                "text": "Tells the warehouse an order needs picking.",
+                "textFormat": null
+              }
+            ],
+            "extensionElements": [
+              {
+                "name": {
+                  "ns": "http://camunda.org/schema/1.0/bpmn",
+                  "localName": "inputOutput"
+                },
+                "value": null,
+                "attributes": [],
+                "children": [
+                  {
+                    "name": {
+                      "ns": "http://camunda.org/schema/1.0/bpmn",
+                      "localName": "inputParameter"
+                    },
+                    "value": "${orderId}",
+                    "attributes": [
+                      {
+                        "name": {
+                          "ns": null,
+                          "localName": "name"
+                        },
+                        "value": "orderId"
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": {
+                  "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                  "localName": "activityBinding"
+                },
+                "value": null,
+                "attributes": [
+                  {
+                    "name": {
+                      "ns": null,
+                      "localName": "activityType"
+                    },
+                    "value": "Elsa.WriteLine"
+                  }
+                ],
+                "children": [
+                  {
+                    "name": {
+                      "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                      "localName": "input"
+                    },
+                    "value": "{\u0022typeName\u0022:\u0022String\u0022,\u0022expression\u0022:{\u0022type\u0022:\u0022Literal\u0022,\u0022value\u0022:\u0022Notifying the warehouse\u0022}}",
+                    "attributes": [
+                      {
+                        "name": {
+                          "ns": null,
+                          "localName": "name"
+                        },
+                        "value": "text"
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              }
+            ],
+            "foreignAttributes": [
+              {
+                "name": {
+                  "ns": "http://camunda.org/schema/1.0/bpmn",
+                  "localName": "asyncBefore"
+                },
+                "value": "true"
+              }
+            ],
+            "foreignChildren": []
+          }
+        },
+        {
+          "elementId": "EndEvent_1",
+          "elementType": "endEvent",
+          "name": "Order Handled",
+          "bindingRef": null,
+          "laneId": null,
+          "defaultFlowId": null,
+          "eventDefinitions": [],
+          "properties": {},
+          "attachedToRef": null,
+          "cancelActivity": true,
+          "loopCharacteristics": null,
+          "isForCompensation": false,
+          "compensationHandlerElementId": null,
+          "isTransaction": false,
+          "triggeredByEvent": false,
+          "listenerBindingRef": null,
+          "extensions": {
+            "documentation": [],
+            "extensionElements": [],
+            "foreignAttributes": [],
+            "foreignChildren": []
+          }
+        }
+      ],
+      "sequenceFlows": [
+        {
+          "flowId": "Flow_1",
+          "sourceRef": "StartEvent_1",
+          "targetRef": "NotifyWarehouse",
+          "name": null,
+          "conditionOutcome": null,
+          "isDefault": false,
+          "extensions": {
+            "documentation": [],
+            "extensionElements": [],
+            "foreignAttributes": [],
+            "foreignChildren": []
+          }
+        },
+        {
+          "flowId": "Flow_2",
+          "sourceRef": "NotifyWarehouse",
+          "targetRef": "EndEvent_1",
+          "name": null,
+          "conditionOutcome": null,
+          "isDefault": false,
+          "extensions": {
+            "documentation": [],
+            "extensionElements": [],
+            "foreignAttributes": [],
+            "foreignChildren": []
+          }
+        }
+      ],
+      "lanes": [],
+      "variables": [],
+      "extensions": {
+        "documentation": [],
+        "extensionElements": [
+          {
+            "name": {
+              "ns": "http://camunda.org/schema/1.0/bpmn",
+              "localName": "properties"
+            },
+            "value": null,
+            "attributes": [],
+            "children": [
+              {
+                "name": {
+                  "ns": "http://camunda.org/schema/1.0/bpmn",
+                  "localName": "property"
+                },
+                "value": null,
+                "attributes": [
+                  {
+                    "name": {
+                      "ns": null,
+                      "localName": "name"
+                    },
+                    "value": "owner"
+                  },
+                  {
+                    "name": {
+                      "ns": null,
+                      "localName": "value"
+                    },
+                    "value": "fulfillment-team"
+                  }
+                ],
+                "children": []
+              }
+            ]
+          }
+        ],
+        "foreignAttributes": [
+          {
+            "name": {
+              "ns": "http://camunda.org/schema/1.0/bpmn",
+              "localName": "versionTag"
+            },
+            "value": "1.0"
+          }
+        ],
+        "foreignChildren": []
+      }
+    }
+  ],
+  "diagrams": [
+    {
+      "id": "BPMNDiagram_1",
+      "name": null,
+      "plane": {
+        "id": "BPMNPlane_1",
+        "bpmnElementRef": "order-process",
+        "shapes": [
+          {
+            "id": "StartEvent_1_di",
+            "bpmnElementRef": "StartEvent_1",
+            "bounds": {
+              "x": 152,
+              "y": 102,
+              "width": 36,
+              "height": 36
+            },
+            "isHorizontal": null,
+            "isExpanded": null,
+            "isMarkerVisible": null,
+            "label": null
+          },
+          {
+            "id": "NotifyWarehouse_di",
+            "bpmnElementRef": "NotifyWarehouse",
+            "bounds": {
+              "x": 240,
+              "y": 80,
+              "width": 100,
+              "height": 80
+            },
+            "isHorizontal": null,
+            "isExpanded": null,
+            "isMarkerVisible": null,
+            "label": null
+          },
+          {
+            "id": "EndEvent_1_di",
+            "bpmnElementRef": "EndEvent_1",
+            "bounds": {
+              "x": 392,
+              "y": 102,
+              "width": 36,
+              "height": 36
+            },
+            "isHorizontal": null,
+            "isExpanded": null,
+            "isMarkerVisible": null,
+            "label": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "Flow_1_di",
+            "bpmnElementRef": "Flow_1",
+            "label": null,
+            "waypoints": [
+              {
+                "x": 188,
+                "y": 120
+              },
+              {
+                "x": 240,
+                "y": 120
+              }
+            ]
+          },
+          {
+            "id": "Flow_2_di",
+            "bpmnElementRef": "Flow_2",
+            "label": null,
+            "waypoints": [
+              {
+                "x": 340,
+                "y": 120
+              },
+              {
+                "x": 392,
+                "y": 120
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "messages": [],
+  "signals": [],
+  "errors": [],
+  "escalations": [],
+  "extensions": {
+    "documentation": [],
+    "extensionElements": [],
+    "foreignAttributes": [],
+    "foreignChildren": []
+  }
+}

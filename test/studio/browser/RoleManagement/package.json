@@ -1,0 +1,19 @@
+{
+  "private": true,
+  "scripts": {
+    "test": "playwright test --config playwright.config.ts",
+    "test:identity-absent": "playwright test --config playwright.identity-absent.config.ts",
+    "typecheck": "tsc --noEmit",
+    "fixtures:prepare": "tsx fixture-tool.ts prepare",
+    "fixtures:serve": "tsx fixture-tool.ts serve",
+    "fixtures:cleanup": "tsx fixture-tool.ts cleanup",
+    "proxy:serve": "tsx core-cors-proxy.ts"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/test": "^1.54.2",
+    "@types/node": "^26.4.1",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3"
+  }
+}

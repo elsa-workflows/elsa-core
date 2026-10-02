@@ -1,0 +1,37 @@
+@using Variant = MudBlazor.Variant
+@using Elsa.Api.Client.Resources.VariableTypes.Models
+@inherits StudioComponentBase
+@using Elsa.Studio.Workflows.Services
+@inject ILocalizer Localizer
+
+<MudDialog>
+    <DialogContent>
+        <EditForm @key="_editContext" EditContext="_editContext" OnValidSubmit="OnValidSubmit">
+            <FluentValidator Validator="_validator"/>
+            <MudStack>
+                <MudTextField Label="@Localizer["Name"]" @bind-Value="_model.Name" For="@(() => _model.Name)" HelperText="@Localizer["The technical name of the output."]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudSelectExtended T="VariableTypeDescriptor" @bind-Value="_model.Type" ToStringFunc="@(x => x?.DisplayName)" Label="Type" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true">
+                    @foreach (var grouping in _groupedVariableTypes)
+                    {
+                        <MudSelectItemGroupExtended T="string" Text="@grouping.Key">
+                            @foreach (var variableType in grouping)
+                            {
+                                <MudSelectItemExtended T="VariableTypeDescriptor" Value="@variableType">@variableType.DisplayName</MudSelectItemExtended>
+                            }
+                        </MudSelectItemGroupExtended>
+                    }
+                </MudSelectExtended>
+                <MudField Variant="Variant.Text" HelperText="@Localizer["Check this option if the variable holds an array of the selected type."]" Margin="Margin.Dense">
+                    <MudCheckBox T="bool" @bind-Value="_model.IsArray" Label="@Localizer["This output is an array"]" Dense="true"></MudCheckBox>
+                </MudField>
+                <MudTextField Label="@Localizer["Display name"]" @bind-Value="_model.DisplayName" HelperText="@Localizer["The user-friendly name of this output."]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudTextField Label="@Localizer["Description"]" @bind-Value="_model.Description" HelperText="@Localizer["A brief description of this output."]" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="3" />
+                <MudTextField Label="@Localizer["Category"]" @bind-Value="_model.Category" HelperText="@Localizer["A custom category by which to group this output."]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            </MudStack>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked">@Localizer["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" OnClick="OnSubmitClicked">@Localizer["Ok"]</MudButton>
+    </DialogActions>
+</MudDialog>

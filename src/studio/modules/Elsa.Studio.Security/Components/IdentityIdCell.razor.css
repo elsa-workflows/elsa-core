@@ -1,0 +1,32 @@
+.identity-id-cell {
+    max-width: 28rem;
+    min-width: 18rem;
+    width: 22rem;
+}
+
+.identity-id-content {
+    min-width: 0;
+}
+
+.identity-id-value {
+    color: var(--mud-palette-text-secondary, #5f6b7a);
+    flex: 1 1 auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: var(--mud-typography-caption-size, .75rem);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.identity-id-copy {
+    flex: 0 0 auto;
+}
+
+@media (max-width: 60rem) {
+    .identity-id-cell {
+        max-width: 20rem;
+        min-width: 13rem;
+        width: 16rem;
+    }
+}

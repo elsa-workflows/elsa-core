@@ -1,0 +1,352 @@
+@page "/ai/weaver"
+@inherits StudioComponentBase
+@implements IAsyncDisposable
+@inject Elsa.Studio.AI.Contracts.IWeaverService WeaverService
+
+<PageTitle>Weaver</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.False" Class="weaver-page">
+    <div class="weaver-heading">
+        <PageHeading Text="Weaver" />
+        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+            <MudChip T="string" Size="Size.Small" Color="@CapabilityColor">@CapabilityLabel</MudChip>
+            @if (!string.IsNullOrWhiteSpace(State.ConversationId))
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">Conversation @ShortId(State.ConversationId)</MudChip>
+            }
+        </MudStack>
+    </div>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else if (_capabilities == null)
+    {
+        <MudAlert Severity="Severity.Warning">Weaver is not available on this backend.</MudAlert>
+    }
+    else
+    {
+        <div class="weaver-workspace">
+            <section class="weaver-main">
+                <MudPaper Class="weaver-thread" Elevation="0">
+                    <div class="weaver-thread-header">
+                        <MudText Typo="Typo.subtitle1">Conversation</MudText>
+                        <MudStack Row="true" Spacing="1">
+                            <MudTooltip Text="@ReconnectTooltip">
+                                <MudIconButton Icon="@Icons.Material.Filled.Sync" Size="Size.Small" Disabled="@(!CanReconnect)" OnClick="ReconnectAsync" />
+                            </MudTooltip>
+                            <MudTooltip Text="Start a clean conversation">
+                                <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Small" Disabled="@State.IsBusy" OnClick="NewConversation" />
+                            </MudTooltip>
+                        </MudStack>
+                    </div>
+
+                    <div class="weaver-message-list">
+                        @if (State.Messages.Count == 0)
+                        {
+                            <div class="weaver-empty">
+                                <MudText Typo="Typo.subtitle2">Ask Weaver to explain, inspect, or propose workflow changes.</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">Attach workflow definitions or instances, then start a turn.</MudText>
+                            </div>
+                        }
+                        @foreach (var message in State.Messages)
+                        {
+                            <div class="weaver-message @MessageClass(message.Role)">
+                                <div class="weaver-message-meta">@message.Role</div>
+                                <MudText Typo="Typo.body2" Class="weaver-message-text">@message.Content</MudText>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(State.ErrorMessage))
+                    {
+                        <MudAlert Severity="Severity.Error" Dense="true">@State.ErrorMessage</MudAlert>
+                    }
+
+                    <div class="weaver-composer">
+                        <MudStack Row="true" Spacing="1" Class="weaver-attachments">
+                            @foreach (var attachment in State.Attachments)
+                            {
+                                <MudChip T="string" Size="Size.Small" OnClose="@(() => RemoveAttachment(attachment))">
+                                    @attachment.Kind: @ShortId(attachment.ReferenceId)
+                                </MudChip>
+                            }
+                        </MudStack>
+
+                        <MudTextField @bind-Value="_message"
+                                      Lines="3"
+                                      Placeholder="Ask Weaver about the selected workflow context"
+                                      Disabled="@(!CanCompose)"
+                                      Immediate="true" />
+                        <div class="weaver-composer-actions">
+                            <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                <MudSelect T="string" Dense="true" Label="Agent" @bind-Value="_agent" Disabled="@State.IsBusy" Class="weaver-agent-select">
+                                    <MudSelectItem T="string" Value="@((string?)null)">Default</MudSelectItem>
+                                    @foreach (var agent in _capabilities.Agents)
+                                    {
+                                        <MudSelectItem T="string" Value="@agent.Name">@agent.DisplayName</MudSelectItem>
+                                    }
+                                </MudSelect>
+                                <MudSelect T="string" Dense="true" Label="Context" @bind-Value="_attachmentKind" Disabled="@State.IsBusy" Class="weaver-context-kind">
+                                    @foreach (var kind in SupportedContextKinds)
+                                    {
+                                        <MudSelectItem T="string" Value="@kind">@kind</MudSelectItem>
+                                    }
+                                </MudSelect>
+                                <MudTextField @bind-Value="_attachmentReferenceId" Placeholder="Reference ID" Disabled="@State.IsBusy" Class="weaver-reference-input" />
+                                <MudTooltip Text="Attach workflow context">
+                                    <MudIconButton Icon="@Icons.Material.Filled.AttachFile" Size="Size.Small" Disabled="@(!CanAttach)" OnClick="AddAttachment" />
+                                </MudTooltip>
+                            </MudStack>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Send" Disabled="@(!CanSend)" OnClick="SendAsync">Send</MudButton>
+                        </div>
+                    </div>
+                </MudPaper>
+            </section>
+
+            <aside class="weaver-side">
+                <MudPaper Class="weaver-panel" Elevation="0">
+                    <MudText Typo="Typo.subtitle2">Capabilities</MudText>
+                    <div class="weaver-capability-grid">
+                        <CapabilityPill Label="Streaming" Enabled="@_capabilities.Streaming" />
+                        <CapabilityPill Label="Persistence" Enabled="@_capabilities.ConversationPersistence" />
+                        <CapabilityPill Label="Proposals" Enabled="@_capabilities.ProposalReview" />
+                        <CapabilityPill Label="Steering" Enabled="@WeaverWorkspaceReducer.SupportsSteering(_capabilities)" />
+                        <CapabilityPill Label="Queueing" Enabled="@WeaverWorkspaceReducer.SupportsServerQueueing(_capabilities)" />
+                    </div>
+                </MudPaper>
+
+                <MudPaper Class="weaver-panel" Elevation="0">
+                    <div class="weaver-panel-title">
+                        <MudText Typo="Typo.subtitle2">Agent Activity</MudText>
+                        @if (State.IsBusy)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                        }
+                    </div>
+                    <div class="weaver-activity-list">
+                        @foreach (var item in State.Activity.OrderByDescending(x => x.Timestamp).Take(12))
+                        {
+                            <div class="weaver-activity">
+                                <MudIcon Icon="@ActivityIcon(item)" Size="Size.Small" />
+                                <div>
+                                    <MudText Typo="Typo.body2">@item.Name</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@item.Status @item.Summary</MudText>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </MudPaper>
+
+                <MudPaper Class="weaver-panel" Elevation="0">
+                    <MudText Typo="Typo.subtitle2">Tools</MudText>
+                    <div class="weaver-tool-list">
+                        @foreach (var tool in _tools)
+                        {
+                            <div class="weaver-tool">
+                                <div>
+                                    <MudText Typo="Typo.body2">@ToolDisplayName(tool)</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@tool.Mutability · @tool.DangerLevel</MudText>
+                                </div>
+                                <MudChip T="string" Size="Size.Small" Color="@(tool.IsEnabled ? Color.Success : Color.Default)">@ToolState(tool)</MudChip>
+                            </div>
+                        }
+                    </div>
+                </MudPaper>
+
+                <MudPaper Class="weaver-panel" Elevation="0">
+                    <MudText Typo="Typo.subtitle2">Proposals</MudText>
+                    @if (State.Proposals.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">No proposals in this conversation.</MudText>
+                    }
+                    @foreach (var proposal in State.Proposals.OrderByDescending(x => x.Timestamp))
+                    {
+                        <div class="weaver-proposal">
+                            <MudText Typo="Typo.body2">@ProposalTitle(proposal)</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@proposal.Status @proposal.Summary</MudText>
+                            <MudStack Row="true" Spacing="1" Class="mt-2">
+                                <MudTooltip Text="@ProposalActionTooltip">
+                                    <MudButton Size="Size.Small" Disabled="true">Approve</MudButton>
+                                </MudTooltip>
+                                <MudTooltip Text="@ProposalActionTooltip">
+                                    <MudButton Size="Size.Small" Disabled="true">Reject</MudButton>
+                                </MudTooltip>
+                                <MudTooltip Text="@ProposalActionTooltip">
+                                    <MudButton Size="Size.Small" Disabled="true">Apply</MudButton>
+                                </MudTooltip>
+                            </MudStack>
+                        </div>
+                    }
+                </MudPaper>
+            </aside>
+        </div>
+    }
+</MudContainer>
+
+@code {
+    private readonly WeaverWorkspaceState State = new();
+    private WeaverCapabilities? _capabilities;
+    private IReadOnlyCollection<WeaverToolDefinition> _tools = [];
+    private CancellationTokenSource? _turnCancellationTokenSource;
+    private bool _isLoading = true;
+    private string _message = "";
+    private string? _agent;
+    private string _attachmentKind = "WorkflowDefinition";
+    private string? _attachmentReferenceId;
+
+    private IEnumerable<string> SupportedContextKinds => (_capabilities?.SupportedAttachmentKinds.Count ?? 0) == 0
+        ? ["WorkflowDefinition", "WorkflowInstance"]
+        : _capabilities!.SupportedAttachmentKinds;
+
+    private bool CanCompose => _capabilities?.Streaming == true && !State.IsBusy;
+    private bool CanSend => WeaverWorkspaceReducer.CanSend(_capabilities, State, _message);
+    private bool CanReconnect => WeaverWorkspaceReducer.CanReconnect(_capabilities, State);
+    private bool CanAttach => !State.IsBusy && !string.IsNullOrWhiteSpace(_attachmentKind) && !string.IsNullOrWhiteSpace(_attachmentReferenceId) && _capabilities?.SupportsAttachmentKind(_attachmentKind) == true;
+    private string CapabilityLabel => _capabilities?.Streaming == true ? "Ready" : "Unavailable";
+    private Color CapabilityColor => _capabilities?.Streaming == true ? Color.Success : Color.Warning;
+    private string ReconnectTooltip => _capabilities?.ConversationPersistence == true ? "Reconnect to this conversation" : "Backend conversation persistence is not available";
+    private string ProposalActionTooltip => "Proposal review endpoints are not exposed by the current backend API.";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBackendStateAsync();
+    }
+
+    private async Task LoadBackendStateAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _capabilities = await WeaverService.GetCapabilitiesAsync();
+            if (_capabilities != null)
+            {
+                _attachmentKind = SupportedContextKinds.FirstOrDefault(x => string.Equals(x, "WorkflowDefinition", StringComparison.OrdinalIgnoreCase)) ?? SupportedContextKinds.First();
+                _tools = await WeaverService.GetToolsAsync(_agent);
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SendAsync()
+    {
+        if (!CanSend)
+            return;
+
+        var message = _message.Trim();
+        _message = "";
+        WeaverWorkspaceReducer.AddUserTurn(State, message, DateTimeOffset.UtcNow);
+        await StreamTurnAsync(new()
+        {
+            ConversationId = State.ConversationId,
+            Message = message,
+            Agent = _agent,
+            Attachments = State.Attachments.ToList()
+        });
+    }
+
+    private async Task ReconnectAsync()
+    {
+        if (!CanReconnect)
+            return;
+
+        State.IsReconnecting = true;
+        await StreamTurnAsync(new()
+        {
+            ConversationId = State.ConversationId,
+            Message = State.Messages.LastOrDefault(x => x.Role == WeaverMessageRole.User)?.Content ?? "",
+            Agent = _agent,
+            Attachments = State.Attachments.ToList()
+        });
+    }
+
+    private async Task StreamTurnAsync(WeaverChatRequest request)
+    {
+        await CancelTurnAsync();
+        _turnCancellationTokenSource = new();
+        try
+        {
+            await foreach (var streamEvent in WeaverService.StreamChatAsync(request, _turnCancellationTokenSource.Token))
+            {
+                WeaverWorkspaceReducer.Apply(State, streamEvent);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception e)
+        {
+            State.IsBusy = false;
+            State.IsReconnecting = false;
+            State.ErrorMessage = e.Message;
+        }
+        finally
+        {
+            State.IsBusy = false;
+            State.IsReconnecting = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void AddAttachment()
+    {
+        if (!CanAttach)
+            return;
+
+        State.Attachments.Add(new()
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Kind = _attachmentKind,
+            ReferenceId = _attachmentReferenceId!.Trim()
+        });
+        _attachmentReferenceId = "";
+    }
+
+    private void RemoveAttachment(WeaverContextAttachment attachment)
+    {
+        State.Attachments.Remove(attachment);
+    }
+
+    private void NewConversation()
+    {
+        State.ConversationId = null;
+        State.IsBusy = false;
+        State.IsReconnecting = false;
+        State.ErrorMessage = null;
+        State.Messages.Clear();
+        State.Activity.Clear();
+        State.Proposals.Clear();
+    }
+
+    private async ValueTask CancelTurnAsync()
+    {
+        if (_turnCancellationTokenSource == null)
+            return;
+
+        await _turnCancellationTokenSource.CancelAsync();
+        _turnCancellationTokenSource.Dispose();
+        _turnCancellationTokenSource = null;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await CancelTurnAsync();
+    }
+
+    private static string MessageClass(WeaverMessageRole role) => role == WeaverMessageRole.User ? "is-user" : "is-assistant";
+    private static string ShortId(string? value) => string.IsNullOrWhiteSpace(value) ? "" : value.Length <= 8 ? value : value[..8];
+    private static string ToolDisplayName(WeaverToolDefinition tool) => string.IsNullOrWhiteSpace(tool.DisplayName) ? tool.Name : tool.DisplayName;
+    private static string ToolState(WeaverToolDefinition tool) => tool.IsEnabled ? "Enabled" : "Disabled";
+    private static string ProposalTitle(WeaverProposalItem proposal) => string.IsNullOrWhiteSpace(proposal.Kind) ? $"Proposal {ShortId(proposal.Id)}" : $"{proposal.Kind} {ShortId(proposal.Id)}";
+
+    private static string ActivityIcon(WeaverActivityItem item) => item.Type.Equals("Tool", StringComparison.OrdinalIgnoreCase)
+        ? Icons.Material.Filled.Build
+        : item.Status.Equals("Error", StringComparison.OrdinalIgnoreCase)
+            ? Icons.Material.Filled.Error
+            : Icons.Material.Filled.AutoAwesome;
+}

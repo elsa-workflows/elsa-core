@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides activities to save and load files to and from a confogurable storage provider.
+        </Description>
+        <PackageTags>elsa extension module activities storage</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+		<PackageReference Include="FluentStorage" />
+	</ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="$(UseProjectReferences) != true">
+        <ProjectReference Include="../../../modules/Elsa.Workflows.Management/Elsa.Workflows.Management.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="$(UseProjectReferences) == true">
+        <ProjectReference Include="../../../modules/Elsa.Workflows.Management/Elsa.Workflows.Management.csproj" />
+    </ItemGroup>
+	
+</Project>

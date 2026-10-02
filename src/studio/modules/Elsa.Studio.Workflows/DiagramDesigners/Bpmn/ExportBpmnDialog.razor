@@ -1,0 +1,13 @@
+@using Variant = MudBlazor.Variant
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<MudDialog>
+    <DialogContent>
+        <MudText>@Localizer["The exported file contains this workflow's binding configuration and expressions."]</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked">@Localizer["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="OnExportClicked">@Localizer["Export"]</MudButton>
+    </DialogActions>
+</MudDialog>

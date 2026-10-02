@@ -1,0 +1,33 @@
+﻿@using Elsa.Studio.Contracts
+@using Elsa.Studio.Models
+@inject IMenuService MenuService;
+
+<MudNavMenu Color="Color.Primary" Margin="Margin.Dense" Class="studio-nav">
+    @foreach (var menuItemGroup in _menuItemsGroups.Values)
+    {
+        var menuItems = _menuItems.Where(x => x.GroupName == menuItemGroup.Name).ToList();
+
+        @if (menuItems.Any())
+        {
+            <MudText Typo="Typo.overline" Class="studio-nav__group-label">@menuItemGroup.Text</MudText>
+
+            foreach (var menuItem in menuItems)
+            {
+                <NavMenuItem MenuItem="menuItem" />
+            }
+        }
+    }
+</MudNavMenu>
+
+@code
+{
+    private IDictionary<string, MenuItemGroup> _menuItemsGroups = new Dictionary<string, MenuItemGroup>();
+    private IEnumerable<MenuItem> _menuItems = new List<MenuItem>();
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        _menuItemsGroups = (await MenuService.GetMenuItemGroupsAsync()).ToDictionary(x => x.Name);
+        _menuItems = await MenuService.GetMenuItemsAsync();
+    }
+}

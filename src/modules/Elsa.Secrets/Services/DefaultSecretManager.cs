@@ -49,8 +49,7 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
 
     public async Task<Secret> UpdateAsync(string name, UpdateSecretRequest request, CancellationToken cancellationToken = default)
     {
-        var secret = await GetExistingAsync(name, cancellationToken);
-        EnsureNotLifecycleManaged(secret);
+        var secret = await GetExistingGenericAsync(name, cancellationToken);
 
         secret.DisplayName = string.IsNullOrWhiteSpace(request.DisplayName) ? secret.Name : request.DisplayName.Trim();
         secret.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
@@ -62,8 +61,7 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
 
     public async Task<Secret> RotateAsync(string name, RotateSecretRequest request, CancellationToken cancellationToken = default)
     {
-        var secret = await GetExistingAsync(name, cancellationToken);
-        EnsureNotLifecycleManaged(secret);
+        var secret = await GetExistingGenericAsync(name, cancellationToken);
         if (secret.Status == SecretStatus.Revoked)
             throw new InvalidOperationException($"Secret '{secret.Name}' is revoked and cannot be rotated.");
 
@@ -90,11 +88,9 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
 
     public async Task<Secret?> RevokeAsync(string name, CancellationToken cancellationToken = default)
     {
-        var secret = await GetAsync(name, cancellationToken);
+        var secret = await GetGenericAsync(name, cancellationToken);
         if (secret == null)
             return null;
-
-        EnsureNotLifecycleManaged(secret);
 
         secret.Status = SecretStatus.Revoked;
         secret.UpdatedAt = DateTimeOffset.UtcNow;
@@ -107,11 +103,9 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
 
     public async Task<bool> DeleteAsync(string name, CancellationToken cancellationToken = default)
     {
-        var secret = await GetAsync(name, cancellationToken);
+        var secret = await GetGenericAsync(name, cancellationToken);
         if (secret == null)
             return false;
-
-        EnsureNotLifecycleManaged(secret);
 
         await storeRegistry.Get(secret.StoreName).DeleteAsync(secret, cancellationToken);
         secret.Status = SecretStatus.Deleted;
@@ -124,8 +118,7 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
     {
         try
         {
-            var secret = await GetExistingAsync(name, cancellationToken);
-            EnsureNotLifecycleManaged(secret);
+            var secret = await GetExistingGenericAsync(name, cancellationToken);
             var version = GetLatestActiveVersion(secret);
             var succeeded = await storeRegistry.Get(secret.StoreName).TestAsync(secret, version, cancellationToken);
             return new SecretTestResponse { Succeeded = succeeded, Error = succeeded ? null : "Secret value is unavailable." };
@@ -273,11 +266,23 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
         return secret;
     }
 
-    private async Task<Secret> GetExistingAsync(string name, CancellationToken cancellationToken)
+    private async Task<Secret> GetExistingAsync(string name, CancellationToken cancellationToken) =>
+        await GetAsync(name, cancellationToken) ?? throw SecretNotFound(name);
+
+    /// <summary>
+    /// Looks up a secret for the generic name-addressed operations, which treat lifecycle-managed generations as
+    /// absent -- the same rule <see cref="ListPageAsync"/> applies -- so they neither mutate nor confirm them.
+    /// </summary>
+    private async Task<Secret?> GetGenericAsync(string name, CancellationToken cancellationToken)
     {
         var secret = await GetAsync(name, cancellationToken);
-        return secret == null ? throw new KeyNotFoundException($"Secret '{name}' was not found.") : secret;
+        return secret is { IsLifecycleManaged: true } ? null : secret;
     }
+
+    private async Task<Secret> GetExistingGenericAsync(string name, CancellationToken cancellationToken) =>
+        await GetGenericAsync(name, cancellationToken) ?? throw SecretNotFound(name);
+
+    private static KeyNotFoundException SecretNotFound(string name) => new($"Secret '{name}' was not found.");
 
     private static SecretVersion GetLatestActiveVersion(Secret secret)
     {

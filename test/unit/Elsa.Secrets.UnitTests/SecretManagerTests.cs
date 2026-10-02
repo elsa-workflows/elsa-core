@@ -54,14 +54,15 @@ public class SecretManagerTests
         Assert.Equal("connection-1", managed.ManagedOwnerId);
         Assert.Equal("generation-1", managed.ManagedGenerationId);
         await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Resolver.ResolveAsync(managed.Name));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.UpdateAsync(managed.Name, new UpdateSecretRequest { Description = "changed" }));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.RotateAsync(managed.Name, new RotateSecretRequest { Value = "replacement" }));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.RevokeAsync(managed.Name));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.DeleteAsync(managed.Name));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _fixture.Manager.UpdateAsync(managed.Name, new UpdateSecretRequest { Description = "changed" }));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _fixture.Manager.RotateAsync(managed.Name, new RotateSecretRequest { Value = "replacement" }));
+        Assert.Null(await _fixture.Manager.RevokeAsync(managed.Name));
+        Assert.False(await _fixture.Manager.DeleteAsync(managed.Name));
 
         var testResult = await _fixture.Manager.TestAsync(managed.Name);
         Assert.False(testResult.Succeeded);
-        Assert.Equal("Lifecycle-managed secret generations can only be accessed through their owner.", testResult.Error);
+        Assert.Equal($"Secret '{managed.Name}' was not found.", testResult.Error);
+        Assert.Equal(SecretStatus.Active, (await _fixture.Repository.GetAsync(managed.Name))!.Status);
     }
 
     [Fact]

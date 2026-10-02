@@ -1,0 +1,290 @@
+@page "/alterations/plans/{Id}"
+@using Elsa.Api.Client.Resources.Alterations.Contracts
+@using Elsa.Api.Client.Resources.Alterations.Enums
+@using Elsa.Api.Client.Resources.Alterations.Models
+@using Elsa.Studio.Contracts
+@inherits StudioComponentBase
+@implements IDisposable
+@inject IBackendApiClientProvider BackendApiClientProvider
+@inject ILocalizer Localizer
+@inject NavigationManager Nav
+
+<HeadContent>
+    <link rel="stylesheet" href="_content/Elsa.Studio.Alterations/elsa-alterations.css" />
+</HeadContent>
+
+<PageTitle>@Localizer["Alteration plan"] @Id</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.False">
+    <PageHeading Text="@Localizer["Alteration plan"]" />
+
+    @* Header strip below the title — id, status, timestamps, refresh — uses MudPaper Outlined
+       (the same idiom Workflows' CodeView etc. use) so the visual weight matches.
+       Renders unconditionally with placeholders during load to keep the layout stable. *@
+    <MudPaper Class="pa-4 mb-4" Elevation="0" Outlined="true">
+        <div class="d-flex align-center flex-wrap gap-3">
+            <MudIcon Icon="@Icons.Material.Outlined.Tag" Size="Size.Small" Color="Color.Default" />
+            <MudText Typo="Typo.body2" Style="font-family:var(--mud-typography-input-font-family,monospace);">
+                @(_plan?.Id ?? Id)
+            </MudText>
+
+            <MudDivider Vertical="true" FlexItem="true" />
+
+            @if (_plan != null)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Filled"
+                         Color="@MapPlanStatusColor(_plan.Status)">
+                    @_plan.Status
+                </MudChip>
+
+                <MudText Typo="Typo.body2" Color="Color.Default">
+                    <MudIcon Icon="@Icons.Material.Outlined.Schedule" Size="Size.Small" Class="mr-1" />
+                    @Localizer["Created"] @_plan.CreatedAt.ToLocalTime().ToString("g")
+                </MudText>
+
+                @if (_plan.CompletedAt is { } c)
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Default">
+                        <MudIcon Icon="@Icons.Material.Outlined.CheckCircleOutline" Size="Size.Small" Class="mr-1" />
+                        @Localizer["Completed"] @c.ToLocalTime().ToString("g")
+                    </MudText>
+                }
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Color="Color.Default">@Localizer["Loading…"]</MudText>
+            }
+
+            <MudSpacer />
+
+            <MudIconButton Icon="@Icons.Material.Outlined.Refresh"
+                           OnClick="LoadAsync" Disabled="_loading" Size="Size.Small" />
+        </div>
+    </MudPaper>
+
+    @if (_loading && _plan == null)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else if (_plan == null)
+    {
+        <MudPaper Class="pa-6" Elevation="0" Outlined="true">
+            <div class="d-flex flex-column align-center pa-4">
+                <MudIcon Icon="@Icons.Material.Outlined.HelpOutline" Size="Size.Large" Class="mb-2" />
+                <MudText Typo="Typo.subtitle1">@Localizer["Plan not found"]</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Default" Class="mb-3">
+                    @Localizer["The plan id may be wrong, or it may have been deleted."]
+                </MudText>
+                <MudButton Variant="Variant.Outlined" Href="alterations">@Localizer["Back to alterations"]</MudButton>
+            </div>
+        </MudPaper>
+    }
+    else
+    {
+        <MudPaper Class="mb-4" Elevation="0" Outlined="true">
+            <div class="pa-4" style="border-bottom: 1px solid var(--mud-palette-lines-default);">
+                <MudText Typo="Typo.h6">
+                    @Localizer["Alterations"]
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="ml-2">
+                        @_plan.Alterations.Count
+                    </MudChip>
+                </MudText>
+            </div>
+            @foreach (var a in _plan.Alterations)
+            {
+                <div class="pa-3 d-flex align-start gap-3" style="border-bottom: 1px solid var(--mud-palette-lines-default);">
+                    <MudIcon Icon="@Icons.Material.Outlined.Build" Color="Color.Primary"
+                             Size="Size.Small" Class="mt-1" />
+                    <pre style="margin:0; flex:1; font-size:0.8rem; white-space:pre-wrap; background:var(--mud-palette-background-grey); padding:8px 10px; border-radius:4px;">@a.ToJsonString(_jsonOpts)</pre>
+                </div>
+            }
+        </MudPaper>
+
+        <MudPaper Elevation="0" Outlined="true">
+            <div class="pa-4" style="border-bottom: 1px solid var(--mud-palette-lines-default);">
+                <MudText Typo="Typo.h6">
+                    @Localizer["Jobs"]
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="ml-2">
+                        @(_jobs?.Count ?? 0)
+                    </MudChip>
+                </MudText>
+            </div>
+
+            @if (_jobs != null && _jobs.Count > 0)
+            {
+                @foreach (var job in _jobs)
+                {
+                    var expanded = _expandedJobs.Contains(job.Id);
+                    var entries = (IReadOnlyCollection<AlterationLogEntry>)(job.Log?.ToArray() ?? Array.Empty<AlterationLogEntry>());
+
+                    <div class="elsa-alt-job">
+                        <button type="button" class="elsa-alt-job-row" @onclick="@(() => ToggleJob(job.Id))">
+                            <MudIcon Icon="@(expanded ? Icons.Material.Outlined.ExpandLess : Icons.Material.Outlined.ExpandMore)"
+                                     Size="Size.Small" />
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Filled"
+                                     Color="@MapJobStatusColor(job.Status)">
+                                @job.Status
+                            </MudChip>
+                            <a href="@($"workflows/instances/{job.WorkflowInstanceId}/view")"
+                               class="elsa-alt-job-link"
+                               @onclick:stopPropagation="true">
+                                @job.WorkflowInstanceId
+                            </a>
+                            <span class="elsa-alt-job-meta">
+                                @Localizer["Created"]: @job.CreatedAt.ToLocalTime().ToString("g")
+                                @if (job.CompletedAt is { } c)
+                                {
+                                    <span> · @Localizer["Completed"]: @c.ToLocalTime().ToString("g")</span>
+                                }
+                            </span>
+                            <span class="elsa-alt-job-spacer"></span>
+                            <span class="elsa-alt-job-log-count">
+                                @entries.Count @Localizer["log entries"]
+                            </span>
+                        </button>
+
+                        @if (expanded)
+                        {
+                            <div class="elsa-alt-job-log">
+                                @if (entries.Count == 0)
+                                {
+                                    <div class="mud-text-secondary pa-3">@Localizer["No log entries — handler may not have run yet."]</div>
+                                }
+                                else
+                                {
+                                    @foreach (var entry in entries.OrderBy(e => e.Timestamp))
+                                    {
+                                        <div class="elsa-alt-log-entry @LevelClass(entry.LogLevel)">
+                                            <span class="time">@entry.Timestamp.ToLocalTime().ToString("HH:mm:ss.fff")</span>
+                                            <span class="level">@entry.LogLevel</span>
+                                            @if (!string.IsNullOrEmpty(entry.EventName))
+                                            {
+                                                <span class="event">@entry.EventName</span>
+                                            }
+                                            <span class="msg">@entry.Message</span>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <MudText Class="pa-4" Color="Color.Default">@Localizer["Waiting for jobs to be scheduled…"]</MudText>
+            }
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    private static readonly System.Text.Json.JsonSerializerOptions _jsonOpts = new()
+    {
+        WriteIndented = true,
+    };
+
+    private AlterationPlan? _plan;
+    private IList<AlterationJob>? _jobs;
+    private bool _loading = true;
+    private Timer? _pollingTimer;
+    private readonly HashSet<string> _expandedJobs = new();
+    private string? _loadedPlanId;
+
+    private void ToggleJob(string jobId)
+    {
+        if (!_expandedJobs.Add(jobId)) _expandedJobs.Remove(jobId);
+    }
+
+    private static string LevelClass(Microsoft.Extensions.Logging.LogLevel l) => l switch
+    {
+        Microsoft.Extensions.Logging.LogLevel.Error or Microsoft.Extensions.Logging.LogLevel.Critical => "error",
+        Microsoft.Extensions.Logging.LogLevel.Warning => "warning",
+        Microsoft.Extensions.Logging.LogLevel.Information => "info",
+        Microsoft.Extensions.Logging.LogLevel.Debug or Microsoft.Extensions.Logging.LogLevel.Trace => "debug",
+        _ => "info",
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        if (!IsTerminal(_plan?.Status))
+            StartPolling();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedPlanId != Id)
+        {
+            StopPolling();
+            await LoadAsync();
+            if (!IsTerminal(_plan?.Status))
+                StartPolling();
+        }
+    }
+
+    private void StartPolling()
+    {
+        StopPolling();
+        _pollingTimer = new Timer(_ =>
+        {
+            if (IsTerminal(_plan?.Status)) { StopPolling(); return; }
+            _ = InvokeAsync(LoadAsync);
+        }, null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
+    }
+
+    private void StopPolling()
+    {
+        _pollingTimer?.Dispose();
+        _pollingTimer = null;
+    }
+
+    public void Dispose() => StopPolling();
+
+    private static bool IsTerminal(AlterationPlanStatus? s)
+        => s is AlterationPlanStatus.Completed or AlterationPlanStatus.Failed;
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _loadedPlanId = Id;
+        StateHasChanged();
+        try
+        {
+            var api = await BackendApiClientProvider.GetApiAsync<IAlterationsApi>();
+            var resp = await api.GetAsync(Id, CancellationToken.None);
+            _plan = resp?.Plan;
+            _jobs = resp?.Jobs?.ToList();
+        }
+        catch
+        {
+            _plan = null;
+            _jobs = null;
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private static Color MapPlanStatusColor(AlterationPlanStatus s) => s switch
+    {
+        AlterationPlanStatus.Completed => Color.Success,
+        AlterationPlanStatus.Failed => Color.Error,
+        AlterationPlanStatus.Running or AlterationPlanStatus.Dispatching or AlterationPlanStatus.Generating => Color.Info,
+        AlterationPlanStatus.Pending => Color.Warning,
+        _ => Color.Default,
+    };
+
+    private static Color MapJobStatusColor(AlterationJobStatus s) => s switch
+    {
+        AlterationJobStatus.Completed => Color.Success,
+        AlterationJobStatus.Failed => Color.Error,
+        AlterationJobStatus.Running => Color.Info,
+        AlterationJobStatus.Pending => Color.Warning,
+        _ => Color.Default,
+    };
+}

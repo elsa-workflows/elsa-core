@@ -1,0 +1,822 @@
+{
+  "process": {
+    "processId": "subprocess-boundary-events",
+    "name": "Subprocess And Boundary Events",
+    "isExecutable": true,
+    "isTransaction": false,
+    "elements": [
+      {
+        "elementId": "Start_1",
+        "elementType": "startEvent",
+        "name": "Start",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "Fulfil",
+        "elementType": "subProcess",
+        "name": "Fulfil Order",
+        "bindingRef": "node-Fulfil",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "loopCharacteristics": {
+          "isSequential": false,
+          "collectionVariable": "orderLines",
+          "itemVariable": "line"
+        },
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "Escalate",
+        "elementType": "serviceTask",
+        "name": "Escalate",
+        "bindingRef": "node-Escalate",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [
+            {
+              "name": {
+                "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                "localName": "activityBinding"
+              },
+              "attributes": [
+                {
+                  "name": {
+                    "localName": "activityType"
+                  },
+                  "value": "Elsa.WriteLine"
+                }
+              ],
+              "children": [
+                {
+                  "name": {
+                    "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                    "localName": "input"
+                  },
+                  "value": "{\u0022typeName\u0022:\u0022String\u0022,\u0022expression\u0022:{\u0022type\u0022:\u0022Literal\u0022,\u0022value\u0022:\u0022escalate\u0022}}",
+                  "attributes": [
+                    {
+                      "name": {
+                        "localName": "name"
+                      },
+                      "value": "text"
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "RaiseLate",
+        "elementType": "intermediateThrowEvent",
+        "name": "Raise late",
+        "eventDefinitions": [
+          {
+            "type": "escalation",
+            "properties": {
+              "code": "LATE",
+              "name": "LateShipment"
+            }
+          }
+        ],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "End_Escalated",
+        "elementType": "endEvent",
+        "name": "Escalated",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "End_Terminated",
+        "elementType": "endEvent",
+        "name": "Terminated",
+        "eventDefinitions": [
+          {
+            "type": "terminate",
+            "properties": {}
+          }
+        ],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "OnRecall",
+        "elementType": "subProcess",
+        "name": "On Recall",
+        "bindingRef": "node-OnRecall",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": true,
+        "listenerBindingRef": "node-OnRecall-listener",
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "FulfilTimeout",
+        "elementType": "boundaryEvent",
+        "name": "After 1 hour",
+        "bindingRef": "node-FulfilTimeout",
+        "eventDefinitions": [
+          {
+            "type": "timer",
+            "properties": {
+              "interval": "PT1H"
+            }
+          }
+        ],
+        "properties": {},
+        "attachedToRef": "Fulfil",
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "FulfilNudge",
+        "elementType": "boundaryEvent",
+        "name": "Nudge",
+        "bindingRef": "node-FulfilNudge",
+        "eventDefinitions": [
+          {
+            "type": "message",
+            "properties": {
+              "name": "EscalationRequested"
+            }
+          }
+        ],
+        "properties": {},
+        "attachedToRef": "Fulfil",
+        "cancelActivity": false,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "FulfilFailed",
+        "elementType": "boundaryEvent",
+        "name": "Payment failed",
+        "eventDefinitions": [
+          {
+            "type": "error",
+            "properties": {}
+          }
+        ],
+        "properties": {
+          "bpmn.errorRef": "Error_Payment"
+        },
+        "attachedToRef": "Fulfil",
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      }
+    ],
+    "sequenceFlows": [
+      {
+        "flowId": "Flow_1",
+        "sourceRef": "Start_1",
+        "targetRef": "Fulfil",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_2",
+        "sourceRef": "Fulfil",
+        "targetRef": "End_Terminated",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_Timeout",
+        "sourceRef": "FulfilTimeout",
+        "targetRef": "Escalate",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_Nudge",
+        "sourceRef": "FulfilNudge",
+        "targetRef": "Escalate",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_Failed",
+        "sourceRef": "FulfilFailed",
+        "targetRef": "Escalate",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_3",
+        "sourceRef": "Escalate",
+        "targetRef": "RaiseLate",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_4",
+        "sourceRef": "RaiseLate",
+        "targetRef": "End_Escalated",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      }
+    ],
+    "lanes": [],
+    "variables": [
+      {
+        "name": "orderLines",
+        "typeHint": "Object"
+      }
+    ],
+    "extensions": {
+      "documentation": [],
+      "extensionElements": [],
+      "foreignAttributes": [],
+      "foreignChildren": []
+    }
+  },
+  "workBindings": {
+    "node-Fulfil": "subprocess-boundary-events:node-Fulfil",
+    "node-Escalate": "subprocess-boundary-events:node-Escalate",
+    "node-OnRecall-listener": "subprocess-boundary-events:node-OnRecall-listener",
+    "node-OnRecall": "subprocess-boundary-events:node-OnRecall",
+    "node-FulfilTimeout": "subprocess-boundary-events:node-FulfilTimeout",
+    "node-FulfilNudge": "subprocess-boundary-events:node-FulfilNudge"
+  },
+  "activities": [
+    {
+      "process": {
+        "processId": "Fulfil",
+        "name": "Fulfil Order",
+        "isExecutable": true,
+        "isTransaction": false,
+        "elements": [
+          {
+            "elementId": "Sub_Start",
+            "elementType": "startEvent",
+            "eventDefinitions": [],
+            "properties": {},
+            "cancelActivity": true,
+            "isForCompensation": false,
+            "isTransaction": false,
+            "triggeredByEvent": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          },
+          {
+            "elementId": "PickLine",
+            "elementType": "serviceTask",
+            "name": "Pick Line",
+            "bindingRef": "node-PickLine",
+            "eventDefinitions": [],
+            "properties": {},
+            "cancelActivity": true,
+            "isForCompensation": false,
+            "isTransaction": false,
+            "triggeredByEvent": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [
+                {
+                  "name": {
+                    "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                    "localName": "activityBinding"
+                  },
+                  "attributes": [
+                    {
+                      "name": {
+                        "localName": "activityType"
+                      },
+                      "value": "Elsa.WriteLine"
+                    }
+                  ],
+                  "children": [
+                    {
+                      "name": {
+                        "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                        "localName": "input"
+                      },
+                      "value": "{\u0022typeName\u0022:\u0022String\u0022,\u0022expression\u0022:{\u0022type\u0022:\u0022Literal\u0022,\u0022value\u0022:\u0022pick\u0022}}",
+                      "attributes": [
+                        {
+                          "name": {
+                            "localName": "name"
+                          },
+                          "value": "text"
+                        }
+                      ],
+                      "children": []
+                    }
+                  ]
+                }
+              ],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          },
+          {
+            "elementId": "Sub_End",
+            "elementType": "endEvent",
+            "eventDefinitions": [],
+            "properties": {},
+            "cancelActivity": true,
+            "isForCompensation": false,
+            "isTransaction": false,
+            "triggeredByEvent": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          }
+        ],
+        "sequenceFlows": [
+          {
+            "flowId": "Sub_Flow_1",
+            "sourceRef": "Sub_Start",
+            "targetRef": "PickLine",
+            "isDefault": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          },
+          {
+            "flowId": "Sub_Flow_2",
+            "sourceRef": "PickLine",
+            "targetRef": "Sub_End",
+            "isDefault": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          }
+        ],
+        "lanes": [],
+        "variables": [],
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": [
+            {
+              "element": {
+                "name": {
+                  "ns": "http://www.omg.org/spec/BPMN/20100524/MODEL",
+                  "localName": "multiInstanceLoopCharacteristics"
+                },
+                "attributes": [
+                  {
+                    "name": {
+                      "localName": "isSequential"
+                    },
+                    "value": "false"
+                  },
+                  {
+                    "name": {
+                      "ns": "https://bpmn.valenceworks.io/schema/bpmn",
+                      "localName": "collection"
+                    },
+                    "value": "orderLines"
+                  },
+                  {
+                    "name": {
+                      "ns": "https://bpmn.valenceworks.io/schema/bpmn",
+                      "localName": "itemVariable"
+                    },
+                    "value": "line"
+                  }
+                ],
+                "children": []
+              },
+              "index": 2
+            }
+          ]
+        }
+      },
+      "workBindings": {
+        "node-PickLine": "Fulfil:node-PickLine"
+      },
+      "activities": [
+        {
+          "text": {
+            "typeName": "String",
+            "expression": {
+              "type": "Literal",
+              "value": "pick"
+            }
+          },
+          "id": "Fulfil:node-PickLine",
+          "nodeId": null,
+          "name": null,
+          "type": "Elsa.WriteLine",
+          "version": 1,
+          "customProperties": {
+            "canStartWorkflow": false,
+            "runAsynchronously": false
+          },
+          "metadata": {}
+        }
+      ],
+      "variables": [],
+      "id": "subprocess-boundary-events:node-Fulfil",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.BpmnProcess",
+      "version": 1,
+      "customProperties": {
+        "source": "BpmnWorkBinder.cs:80"
+      },
+      "metadata": {}
+    },
+    {
+      "text": {
+        "typeName": "String",
+        "expression": {
+          "type": "Literal",
+          "value": "escalate"
+        }
+      },
+      "id": "subprocess-boundary-events:node-Escalate",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.WriteLine",
+      "version": 1,
+      "customProperties": {
+        "canStartWorkflow": false,
+        "runAsynchronously": false
+      },
+      "metadata": {}
+    },
+    {
+      "eventName": {
+        "typeName": "String",
+        "expression": {
+          "type": "Literal",
+          "value": "RecallIssued"
+        }
+      },
+      "result": null,
+      "id": "subprocess-boundary-events:node-OnRecall-listener",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.Event",
+      "version": 1,
+      "customProperties": {
+        "source": "BpmnWorkBinder.cs:121"
+      },
+      "metadata": {}
+    },
+    {
+      "process": {
+        "processId": "OnRecall",
+        "name": "On Recall",
+        "isExecutable": true,
+        "isTransaction": false,
+        "elements": [
+          {
+            "elementId": "RecallStart",
+            "elementType": "startEvent",
+            "eventDefinitions": [
+              {
+                "type": "signal",
+                "properties": {
+                  "name": "RecallIssued"
+                }
+              }
+            ],
+            "properties": {},
+            "cancelActivity": true,
+            "isForCompensation": false,
+            "isTransaction": false,
+            "triggeredByEvent": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          },
+          {
+            "elementId": "HandleRecall",
+            "elementType": "serviceTask",
+            "name": "Handle Recall",
+            "bindingRef": "node-HandleRecall",
+            "eventDefinitions": [],
+            "properties": {},
+            "cancelActivity": true,
+            "isForCompensation": false,
+            "isTransaction": false,
+            "triggeredByEvent": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [
+                {
+                  "name": {
+                    "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                    "localName": "activityBinding"
+                  },
+                  "attributes": [
+                    {
+                      "name": {
+                        "localName": "activityType"
+                      },
+                      "value": "Elsa.WriteLine"
+                    }
+                  ],
+                  "children": [
+                    {
+                      "name": {
+                        "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                        "localName": "input"
+                      },
+                      "value": "{\u0022typeName\u0022:\u0022String\u0022,\u0022expression\u0022:{\u0022type\u0022:\u0022Literal\u0022,\u0022value\u0022:\u0022recall\u0022}}",
+                      "attributes": [
+                        {
+                          "name": {
+                            "localName": "name"
+                          },
+                          "value": "text"
+                        }
+                      ],
+                      "children": []
+                    }
+                  ]
+                }
+              ],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          },
+          {
+            "elementId": "RecallEnd",
+            "elementType": "endEvent",
+            "eventDefinitions": [],
+            "properties": {},
+            "cancelActivity": true,
+            "isForCompensation": false,
+            "isTransaction": false,
+            "triggeredByEvent": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          }
+        ],
+        "sequenceFlows": [
+          {
+            "flowId": "Recall_Flow_1",
+            "sourceRef": "RecallStart",
+            "targetRef": "HandleRecall",
+            "isDefault": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          },
+          {
+            "flowId": "Recall_Flow_2",
+            "sourceRef": "HandleRecall",
+            "targetRef": "RecallEnd",
+            "isDefault": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          }
+        ],
+        "lanes": [],
+        "variables": [],
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      "workBindings": {
+        "node-HandleRecall": "OnRecall:node-HandleRecall"
+      },
+      "activities": [
+        {
+          "text": {
+            "typeName": "String",
+            "expression": {
+              "type": "Literal",
+              "value": "recall"
+            }
+          },
+          "id": "OnRecall:node-HandleRecall",
+          "nodeId": null,
+          "name": null,
+          "type": "Elsa.WriteLine",
+          "version": 1,
+          "customProperties": {
+            "canStartWorkflow": false,
+            "runAsynchronously": false
+          },
+          "metadata": {}
+        }
+      ],
+      "variables": [],
+      "id": "subprocess-boundary-events:node-OnRecall",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.BpmnProcess",
+      "version": 1,
+      "customProperties": {
+        "source": "BpmnWorkBinder.cs:80"
+      },
+      "metadata": {}
+    },
+    {
+      "timeSpan": {
+        "typeName": "TimeSpan",
+        "expression": {
+          "type": "Literal",
+          "value": "01:00:00"
+        }
+      },
+      "id": "subprocess-boundary-events:node-FulfilTimeout",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.Delay",
+      "version": 1,
+      "customProperties": {
+        "source": "BpmnWorkBinder.cs:119"
+      },
+      "metadata": {}
+    },
+    {
+      "eventName": {
+        "typeName": "String",
+        "expression": {
+          "type": "Literal",
+          "value": "EscalationRequested"
+        }
+      },
+      "result": null,
+      "id": "subprocess-boundary-events:node-FulfilNudge",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.Event",
+      "version": 1,
+      "customProperties": {
+        "source": "BpmnWorkBinder.cs:120"
+      },
+      "metadata": {}
+    }
+  ],
+  "variables": [
+    {
+      "id": "orderLinesVariable",
+      "name": "orderLines",
+      "typeName": "Object"
+    }
+  ],
+  "id": "subprocess-boundary-events",
+  "type": "Elsa.BpmnProcess",
+  "version": 1,
+  "customProperties": {
+    "source": "BpmnWorkBinder.cs:80",
+    "canStartWorkflow": true
+  },
+  "metadata": {}
+}

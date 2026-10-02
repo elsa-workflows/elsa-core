@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 6,
+  "issue": 8293,
+  "story": 8286,
+  "baseImportHead": "1976dd2d4781bad44f13384881e3f00605ba44f9",
+  "deltaCommit": "2d5d7d1e08773f20edb89c6ccad25b8c81a2e743",
+  "reviewedPatch": {
+    "path": "scripts/integration-program/consolidated-build/dapper-atomic-updates.patch",
+    "sha256": "0b73ba77d301b4288de1929bd22cf2d5ffc70947eccc2437a1d8f00392e6aa21",
+    "pullRequest": "https://github.com/elsa-workflows/elsa-core/pull/8297",
+    "extensionsBaseCommit": "33fa0bfd28c7585240e3d4f665058c067b17e287",
+    "evidence": "doc/integration-program/consolidation/dapper-atomic-updates-evidence.json"
+  },
+  "priorReceipts": [
+    {
+      "path": "doc/integration-program/consolidation/source-tip-refresh-2026-09-25.json",
+      "sha256": "e08029d00017ffb5f21f3f61a7cab3d4f3200e1789e74c811a254298b7c78a99",
+      "supersededMappedPaths": [
+        "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreCompareAndSwapTests.cs"
+      ]
+    },
+    {
+      "path": "doc/integration-program/consolidation/source-tip-refresh-2026-09-25-r2.json",
+      "sha256": "7974522e5fb69875bcf724c7d925592857d6a9b9a793831d5ec69faedf0ca516",
+      "supersededMappedPaths": [
+        "src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryBuilderExtensions.cs"
+      ]
+    },
+    {
+      "path": "doc/integration-program/consolidation/source-tip-refresh-2026-09-26-r5.json",
+      "sha256": "54cd2b37ee014012e7fc05ec5be973c0da0f0046fa1824d9f80d464a6a858dbb",
+      "supersededMappedPaths": []
+    }
+  ],
+  "mappedChanges": [
+    {
+      "path": "src/extensions/persistence/Elsa.Persistence.Dapper/Dialects/PostgreSqlDialect.cs",
+      "status": "M",
+      "transform": "reviewed-patch",
+      "oldMapped": {
+        "blob": "fcd37df54c5a798116bbe7ec6a002e3488ec7140",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "74e189dcd9a904d2bb0ddba08f25ffb782edfa61",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryBuilderExtensions.cs",
+      "status": "M",
+      "transform": "reviewed-patch",
+      "oldMapped": {
+        "blob": "8892ed91405db03b91380d7d60f4d439234ee605",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "7c55167adbee8488fc8239bc4f426d05f016bcca",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs",
+      "status": "M",
+      "transform": "reviewed-patch-with-superseded-version-probe",
+      "oldMapped": {
+        "blob": "e46fd01076c29a696c2c5152a5a8302944a53ff1",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "f2eb83a1c6112f67cb8ef6104cdc6e2864eebb2c",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreCompareAndSwapTests.cs",
+      "status": "M",
+      "transform": "store-constructor-arguments",
+      "oldMapped": {
+        "blob": "fb560e0ec6d5d8999cfc2f64a91df44dba2e453c",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "ff7459f4508a44b2423101aad94336c250d16c17",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs",
+      "status": "A",
+      "transform": "reviewed-patch-with-superseded-version-case",
+      "oldMapped": null,
+      "finalMapped": {
+        "blob": "7718fb4f7fdd94904ea76d153d187d9a2cfeca77",
+        "mode": "100644"
+      }
+    }
+  ],
+  "publisherWorkflows": {
+    ".github/workflows/packages.yml": {
+      "blob": "8cd229e2d5f6307826f144ee0b1de37f86f93ed8",
+      "mode": "100644"
+    },
+    ".github/workflows/update-wiki.yml": {
+      "blob": "65a8494fdb4cedcbe78b065ca23d4d16e6fb6b32",
+      "mode": "100644"
+    }
+  },
+  "publicationPerformed": false
+}

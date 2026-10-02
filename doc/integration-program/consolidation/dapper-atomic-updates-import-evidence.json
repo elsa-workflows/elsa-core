@@ -1,0 +1,184 @@
+{
+  "checkedDate": "2026-09-27",
+  "issue": 8293,
+  "story": 8286,
+  "scope": "Reviewed #8297 Dapper atomic updates incorporated into the draft consolidated import; no package publication",
+  "baseImportHead": "1976dd2d4781bad44f13384881e3f00605ba44f9",
+  "deltaCommit": "2d5d7d1e08773f20edb89c6ccad25b8c81a2e743",
+  "testedHead": "89162ff0ebf64b3f65c25ed40269746c9f777643",
+  "sourceTipReceipt": {
+    "path": "doc/integration-program/consolidation/source-tip-refresh-2026-09-27-r6.json",
+    "sha256": "f1db74ffbd599128476c86a65697ca91c534431a255daa961eb5a89a16206974",
+    "verifier": "scripts/integration-program/verify_import_source_tip_refresh_r6.py"
+  },
+  "reviewedEvidence": {
+    "path": "doc/integration-program/consolidation/dapper-atomic-updates-evidence.json",
+    "sha256": "9625b3bd06b5849a0cf2d1739485044d7584cb08ed4644d92c272f59364715e6"
+  },
+  "images": {
+    "postgres": {
+      "reference": "postgres@sha256:67f41722b7a8cbdb868a44a4995c846eddfdc2973bccb291ce937dce88ad5675",
+      "platform": "linux/arm64",
+      "serverVersion": "PostgreSQL 17.11"
+    },
+    "sqlserver": {
+      "reference": "mcr.microsoft.com/mssql/server@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090",
+      "platform": "linux/amd64 (emulated on arm64)",
+      "serverVersion": "SQL Server 2022 RTM-CU27 16.0.4295.3",
+      "commandTimeoutSeconds": 15
+    }
+  },
+  "testComposition": {
+    "existingPersistenceProjectCases": 18,
+    "reviewedCases": 16,
+    "addedSupersededVersionCases": 1
+  },
+  "tests": [
+    {
+      "backend": "sqlite",
+      "framework": "net10.0",
+      "project": "Elsa.Persistence.Dapper.UnitTests",
+      "filter": null,
+      "passed": 35,
+      "failed": 0,
+      "skipped": 0,
+      "log": "dapper-atomic-updates-import-logs/sqlite-net10.log",
+      "logSha256": "71687b2efce5ba3ead734d23bba482bf28175e12fd02d2afffdf6f89187d859a"
+    },
+    {
+      "backend": "sqlite",
+      "framework": "net9.0",
+      "project": "Elsa.Persistence.Dapper.UnitTests",
+      "filter": null,
+      "passed": 35,
+      "failed": 0,
+      "skipped": 0,
+      "log": "dapper-atomic-updates-import-logs/sqlite-net9.log",
+      "logSha256": "974de2c552be92de913fd1dc3d27d48afe4d1377295778004137017049a37a5f"
+    },
+    {
+      "backend": "postgres",
+      "framework": "net10.0",
+      "project": "Elsa.Persistence.Dapper.UnitTests",
+      "filter": "FullyQualifiedName~DapperWorkflowDefinitionStoreTests",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "log": "dapper-atomic-updates-import-logs/postgres-net10.log",
+      "logSha256": "202944b214b70db641b6da1d6b8dc8a6a0979e1943e11955ed556aa7166a04cc"
+    },
+    {
+      "backend": "postgres",
+      "framework": "net9.0",
+      "project": "Elsa.Persistence.Dapper.UnitTests",
+      "filter": "FullyQualifiedName~DapperWorkflowDefinitionStoreTests",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "log": "dapper-atomic-updates-import-logs/postgres-net9.log",
+      "logSha256": "e2dde64a4759b6f6b54a43ee78ad78e1c9ce2aaa24580600e0c489165b34afd7"
+    },
+    {
+      "backend": "sqlserver",
+      "framework": "net10.0",
+      "project": "Elsa.Persistence.Dapper.UnitTests",
+      "filter": "FullyQualifiedName~DapperWorkflowDefinitionStoreTests",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "log": "dapper-atomic-updates-import-logs/sqlserver-net10.log",
+      "logSha256": "de9d938ea07930448d39947a26ebe61fe04fa434a24cf1ea61cc0632b7275ba3"
+    },
+    {
+      "backend": "sqlserver",
+      "framework": "net9.0",
+      "project": "Elsa.Persistence.Dapper.UnitTests",
+      "filter": "FullyQualifiedName~DapperWorkflowDefinitionStoreTests",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "log": "dapper-atomic-updates-import-logs/sqlserver-net9.log",
+      "logSha256": "e3cf28f5b3fe66b460f6ac2ca0b2989318441839169b7f582a83b4792fdb8ccc"
+    },
+    {
+      "backend": "sqlite",
+      "framework": "net10.0",
+      "project": "Elsa.Dapper.UnitTests",
+      "filter": null,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "log": "dapper-atomic-updates-import-logs/elsa-dapper-unittests-net10.log",
+      "logSha256": "06abd7dfb93ab48acfcf8bfeb9e6c396aff7c4641eeec4158ced59faaaeb6b10"
+    }
+  ],
+  "baselineBeforeChange": {
+    "Elsa.Persistence.Dapper.UnitTests": {
+      "framework": "net10.0",
+      "passed": 18
+    },
+    "Elsa.Dapper.UnitTests": {
+      "framework": "net10.0",
+      "passed": 11
+    }
+  },
+  "unloggedRepeats": "PostgreSQL and SQL Server net10.0 also passed 17/17 on five earlier runs against the same C# source bytes at 2d5d7d1e.",
+  "negativeControls": [
+    {
+      "change": "Imported TryUpdateLatestAsync body with the reviewed constructor",
+      "backend": "sqlite",
+      "framework": "net10.0",
+      "passed": 31,
+      "failed": 4,
+      "failedTests": [
+        "ConcurrentExpectedSnapshotHasOneWinner",
+        "FailedInsertRollsBackUnmark",
+        "TenantScopeIsRequiredAndAgnosticUpdatePreservesTenant",
+        "SerializableReadExcludesLegacyWriterUntilCommit"
+      ],
+      "log": "dapper-atomic-updates-import-logs/negative-control-sqlite-imported-method-net10.log",
+      "logSha256": "3a33477ccf63bdc0aa1c044ba2310d6bbe6a671b789a5740a37fa8e8951e39df"
+    },
+    {
+      "change": "Imported PostgreSqlDialect and ParameterizedQueryBuilderExtensions with the fixed store",
+      "backend": "postgres",
+      "framework": "net10.0",
+      "passed": 0,
+      "failed": 17,
+      "sqlStates": {
+        "23502": 16,
+        "42883": 1
+      },
+      "log": "dapper-atomic-updates-import-logs/negative-control-postgres-imported-dialect-and-filters-net10.log",
+      "logSha256": "6e1e8545f0836e97c3ac2781a1499123d7c7fcc2fcb25aa265f7a32b8f9ba07e"
+    }
+  ],
+  "unavailable": [
+    {
+      "framework": "net8.0",
+      "reason": "NU1202: Microsoft.AspNetCore.Mvc.Testing 9.0.17 does not support net8.0; the test projects target net10.0",
+      "log": "dapper-atomic-updates-import-logs/persistence-tests-restore-net8.log",
+      "logSha256": "49cc61ce81584f866254166c804ddb7833fb3f9527e6547b10f1077df778549e"
+    }
+  ],
+  "build": {
+    "project": "Elsa.Persistence.Dapper",
+    "frameworks": [
+      "net8.0",
+      "net9.0",
+      "net10.0"
+    ],
+    "errors": 0,
+    "warnings": 65,
+    "warningsInChangedFiles": 0,
+    "log": "dapper-atomic-updates-import-logs/dapper-build-net8-net9-net10.log",
+    "logSha256": "4c5d63a917c76cf9d0fb665d62074676ad24d9b8e8fc85469f945e95fb972fb5"
+  },
+  "limitations": [
+    "Synthetic record table fixture, not historical migration replay",
+    "Oracle/MySQL/custom Dapper providers unverified",
+    "net8.0 covered by project build only",
+    "Complete consolidated NUKE run and mapped package proof at the final import head are separate gates"
+  ],
+  "publicationAuthorized": false
+}

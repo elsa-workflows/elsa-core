@@ -1,0 +1,741 @@
+@using Elsa.Studio.Contracts
+@using Elsa.Studio.Security.Client
+@using Elsa.Studio.Security.Services
+@inherits StudioComponentBase
+@implements IAsyncDisposable
+@inject IBackendApiClientProvider ApiClientProvider
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+
+<style>
+    .role-editor-header { align-items: flex-start; display: flex; gap: 1rem; justify-content: space-between; flex-wrap: wrap; }
+    .role-editor-actions { align-items: center; display: flex; gap: .5rem; flex-wrap: wrap; }
+    .role-editor-id { color: var(--mud-palette-text-secondary); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+    .role-editor-details { align-items: end; display: grid; gap: 1rem; grid-template-columns: minmax(16rem, 32rem) minmax(0, 1fr); }
+    .role-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+    .role-permissions-header { align-items: center; display: flex; flex-wrap: wrap; gap: .5rem 1rem; justify-content: space-between; }
+    .role-permissions-summary { color: var(--mud-palette-text-secondary); }
+    .role-category-title { align-items: center; display: flex; gap: .75rem; justify-content: space-between; min-width: 0; width: 100%; }
+    .role-category-title-copy { align-items: baseline; display: flex; flex-wrap: wrap; gap: .35rem .75rem; min-width: 0; }
+    .role-category-summary { color: var(--mud-palette-text-secondary); font-size: .75rem; }
+    .role-resource-list { border-top: 1px solid var(--mud-palette-lines-default); }
+    .role-resource-row { align-items: start; border-bottom: 1px solid var(--mud-palette-lines-default); display: grid; gap: .5rem 1rem; grid-template-columns: minmax(14rem, 1fr) minmax(20rem, 1.4fr); padding: .5rem .75rem; }
+    .role-resource-copy { min-width: 0; }
+    .role-resource-heading { align-items: center; display: flex; flex-wrap: wrap; gap: .35rem; }
+    .role-resource-description { color: var(--mud-palette-text-secondary); display: block; line-height: 1.25; margin-top: .15rem; }
+    .role-verb-list { align-items: start; display: flex; flex-wrap: wrap; gap: .25rem 1rem; justify-content: flex-start; min-width: 0; }
+    .role-verb-option { align-items: center; display: flex; flex-wrap: wrap; min-height: 2rem; min-width: 9rem; }
+    .role-verb-option .mud-checkbox { margin: 0; }
+    .role-grant-state { color: var(--mud-palette-text-secondary); font-size: .7rem; margin-left: -.2rem; }
+
+    @@media (max-width: 959.98px) {
+        .role-editor-details,
+        .role-resource-row { grid-template-columns: 1fr; }
+        .role-editor-actions { width: 100%; }
+        .role-editor-actions .mud-button-root { flex: 1 1 auto; }
+    }
+</style>
+
+@if (_loading)
+{
+    <MudStack AlignItems="AlignItems.Center" Class="pa-8" Role="status">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" aria-label="Loading role" />
+        <MudText Typo="Typo.body2">Loading role…</MudText>
+    </MudStack>
+}
+else if (_loadError != null)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined">
+        <MudText Typo="Typo.subtitle1">Could not load role</MudText>
+        <MudText Typo="Typo.body2">@_loadError</MudText>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-3" Disabled="@_loading" OnClick="ReloadAsync">Try again</MudButton>
+    </MudAlert>
+}
+else if (!CanOpen)
+{
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+        You can view roles, but your current sign-in cannot create a role.
+    </MudAlert>
+}
+else
+{
+    <MudStack Spacing="3">
+        <div class="role-editor-header">
+            <div>
+                <MudBreadcrumbs Items="@Breadcrumbs" Class="pa-0" />
+                <MudText Typo="Typo.h4" HtmlTag="h1">@(_isCreate ? "New role" : $"Edit role — {_name}")</MudText>
+                @if (!_isCreate)
+                {
+                    <MudText Typo="Typo.body2" Class="role-editor-id mt-1">ID <code>@RoleId</code></MudText>
+                }
+            </div>
+            <div class="role-editor-actions">
+                @if (!_isCreate && Access.CanDelete && _role is not null)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" Disabled="@_deleteDialogOpen" OnClick="OpenDeleteRoleAsync">Delete role</MudButton>
+                }
+                <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+                @if (!IsReadOnly)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!CanSave)" OnClick="SaveAsync">
+                        @(_saving ? "Saving…" : _isCreate ? "Create role" : "Save changes")
+                    </MudButton>
+                }
+            </div>
+        </div>
+
+        <MudPaper Outlined="true" Elevation="0" Class="pa-3">
+            <MudForm @ref="_form">
+                <div class="role-editor-details">
+                    <MudTextField T="string"
+                                  Label="Role name"
+                                  Value="@_name"
+                                  ValueChanged="OnNameChanged"
+                                  Required="true"
+                                  RequiredError="Role name is required."
+                                  Disabled="@IsReadOnly"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Immediate="true"
+                                  HelperText="@(_isCreate ? "Core generates the role ID after creation." : null)"
+                                  aria-label="Role name" />
+                    @if (!_isCreate)
+                    {
+                        <MudText Typo="Typo.caption" Class="role-permissions-summary">The role ID is read-only and shown beneath the page title.</MudText>
+                    }
+                </div>
+            </MudForm>
+        </MudPaper>
+
+        @if (_saveError != null)
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Outlined">@_saveError</MudAlert>
+        }
+
+        <MudPaper Outlined="true" Elevation="0" Class="pa-3">
+            <div class="role-permissions-header mb-1">
+                <MudText Typo="Typo.h6">Permissions</MudText>
+                <MudText Typo="Typo.caption" Class="role-permissions-summary">@DirectCount direct · @CoveredCount covered · @_advanced.Count advanced</MudText>
+            </div>
+            <MudTabs Border="false" Elevation="0" ActivePanelIndex="@_activeTab" ActivePanelIndexChanged="OnTabChanged" KeepPanelsAlive="true">
+                <MudTabPanel Text="Exact permissions">
+                    <MudStack Spacing="2" Class="pt-2">
+                        <MudText Typo="Typo.body2">Select concrete permissions. Category actions add exact grants only and never create a wildcard.</MudText>
+                        <MudTextField T="string" Label="Filter permissions" Placeholder="Search by name, ID, or permission" Value="@_search" ValueChanged="OnSearchChanged" Immediate="true" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Search" />
+                        <MudExpansionPanels MultiExpansion="true" Elevation="0">
+                            @foreach (var category in Categories)
+                            {
+                                var resources = GetFilteredResources(category).ToArray();
+                                if (resources.Length == 0)
+                                    continue;
+
+                                var categoryResources = GetCategoryResources(category).ToArray();
+                                var directCount = CategoryDirectCount(categoryResources);
+                                var coveredCount = CategoryCoveredCount(categoryResources);
+                                <MudExpansionPanel Text="@category" Expanded="@ShouldExpandCategory(categoryResources)" Dense="true" Gutters="false" Class="role-category-panel">
+                                    <TitleContent>
+                                        <div class="role-category-title">
+                                            <div class="role-category-title-copy">
+                                                <MudText Typo="Typo.body2"><strong>@category</strong></MudText>
+                                                <span class="role-category-summary">@CategorySummary(ConcreteCount(categoryResources), directCount, coveredCount)</span>
+                                            </div>
+                                            <div @onclick:stopPropagation="true">
+                                                @if (!IsReadOnly)
+                                                {
+                                                    <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="@(() => SelectCategory(categoryResources))">Select all exact</MudButton>
+                                                }
+                                            </div>
+                                        </div>
+                                    </TitleContent>
+                                    <ChildContent>
+                                        <div class="role-resource-list">
+                                            @foreach (var resource in resources)
+                                            {
+                                                <div class="role-resource-row">
+                                                    <div class="role-resource-copy">
+                                                        <div class="role-resource-heading">
+                                                            <MudText Typo="Typo.subtitle2">@resource.DisplayName</MudText>
+                                                            @if (!resource.Verified)
+                                                            {
+                                                                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined">Unverified · verified:false</MudChip>
+                                                            }
+                                                            @if (resource.NonCoreVerbs.Count > 0)
+                                                            {
+                                                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">Non-core: @string.Join(", ", resource.NonCoreVerbs)</MudChip>
+                                                            }
+                                                        </div>
+                                                        <MudText Typo="Typo.caption" Class="role-code">@resource.Resource</MudText>
+                                                        @if (!string.IsNullOrWhiteSpace(resource.Description))
+                                                        {
+                                                            <MudText Typo="Typo.caption" Class="role-resource-description">@resource.Description</MudText>
+                                                        }
+                                                    </div>
+                                                    <div class="role-verb-list">
+                                                    @foreach (var verb in resource.SupportedVerbs.OrderBy(x => x, StringComparer.Ordinal))
+                                                    {
+                                                        var permission = $"{resource.Resource}:{verb}";
+                                                        var direct = IsDirect(permission);
+                                                        var covering = FindCoveringWildcard(resource.Resource, verb);
+                                                        <div class="role-verb-option">
+                                                            <MudCheckBox T="bool" Label="@verb" Dense="true" Value="@direct" ValueChanged="@((bool value) => SetDirectGrant(permission, value))" Disabled="@(IsReadOnly || (!direct && covering != null))" Color="Color.Primary" aria-label="@permission" />
+                                                            @if (direct)
+                                                            {
+                                                                <span class="role-grant-state">Direct grant</span>
+                                                            }
+                                                            else if (covering != null)
+                                                            {
+                                                                <MudTooltip Text="Effective access only — not stored twice.">
+                                                                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">Covered by @covering</MudChip>
+                                                                </MudTooltip>
+                                                            }
+                                                        </div>
+                                                    }
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </ChildContent>
+                                </MudExpansionPanel>
+                            }
+                        </MudExpansionPanels>
+                    </MudStack>
+                </MudTabPanel>
+                <MudTabPanel Text="@($"Advanced grants{(_advanced.Count == 0 ? string.Empty : $" · {_advanced.Count}")}")">
+                    <MudStack Spacing="2" Class="pt-2">
+                        <MudText Typo="Typo.body2">Advanced grants are stored independently from exact selections. Each wildcard can cover current and future permissions.</MudText>
+                        @if (!IsReadOnly)
+                        {
+                            <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
+                                <MudTextField T="string" Label="Advanced grant" Placeholder="workflows/*:view or *" Value="@_advancedDraft" ValueChanged="@(value => _advancedDraft = value)" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAdvancedGrant">Add advanced grant</MudButton>
+                            </MudStack>
+                        }
+                        @if (_advancedError != null)
+                        {
+                            <MudAlert Severity="Severity.Error" Variant="Variant.Outlined">@_advancedError</MudAlert>
+                        }
+                        @if (_advanced.Count == 0)
+                        {
+                            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">No advanced grants. Add a wildcard only when its current coverage and future reach are understood.</MudAlert>
+                        }
+                        @foreach (var grant in _advanced)
+                        {
+                            <RoleAdvancedGrantCard Grant="@grant"
+                                                    Reach="@(_reach.TryGetValue(grant, out var reach) ? reach : null)"
+                                                    ReachLoading="@_reachLoading.Contains(grant)"
+                                                    ReachError="@(_reachErrors.TryGetValue(grant, out var reachError) ? reachError : null)"
+                                                    MaterializedDuplicates="@GetMaterializedDuplicates(grant)"
+                                                    IsReadOnly="@IsReadOnly"
+                                                    OnRemove="@(() => RemoveAdvancedGrant(grant))"
+                                                    OnLoadReach="@(() => LoadReachAsync(grant))" />
+                        }
+                    </MudStack>
+                </MudTabPanel>
+            </MudTabs>
+        </MudPaper>
+
+        @if (_unresolved.Count > 0)
+        {
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">
+                <MudText Typo="Typo.subtitle1">Review and repair · @_unresolved.Count issue(s)</MudText>
+                <MudText Typo="Typo.body2">Original grants are preserved verbatim. Remove or replace every unresolved grant before saving.</MudText>
+                @foreach (var original in _unresolved)
+                {
+                    <MudPaper Outlined="true" Elevation="0" Class="pa-3 mt-3">
+                        <MudText Class="role-code">@original</MudText>
+                        <MudText Typo="Typo.caption">Unresolved legacy grant · verified:false</MudText>
+                        @if (!IsReadOnly)
+                        {
+                            <MudStack Row="true" AlignItems="AlignItems.End" Spacing="2" Class="mt-2">
+                                <MudTextField T="string" Label="Replacement grant" Placeholder="resource:verb or wildcard" Value="@GetReplacement(original)" ValueChanged="@(value => SetReplacement(original, value))" Variant="Variant.Outlined" Class="flex-grow-1" />
+                                <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick="@(() => ReplaceGrant(original))">Replace</MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => RemoveUnresolved(original))">Remove</MudButton>
+                            </MudStack>
+                            @if (_repairErrors.TryGetValue(original, out var repairError))
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Error" Class="mt-1">@repairError</MudText>
+                            }
+                        }
+                    </MudPaper>
+                }
+            </MudAlert>
+        }
+
+        @if (!IsReadOnly && _unresolved.Count > 0)
+        {
+            <MudText Typo="Typo.caption"><MudIcon Icon="@Icons.Material.Outlined.Lock" Size="Size.Small" /> Save changes is disabled until issues are resolved.</MudText>
+        }
+        else if (IsReadOnly)
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">You can view this role, but your current sign-in cannot edit it.</MudAlert>
+        }
+    </MudStack>
+}
+
+@code {
+    [Parameter] public string? RoleId { get; set; }
+    [Parameter, EditorRequired] public RoleAdministrationAccess Access { get; set; } = RoleAdministrationAccess.Unavailable;
+
+    private MudForm? _form;
+    private PermissionCatalogResponse _catalog = new();
+    private string _name = string.Empty;
+    private string _search = string.Empty;
+    private string _advancedDraft = string.Empty;
+    private string? _loadError;
+    private string? _saveError;
+    private string? _advancedError;
+    private bool _loading = true;
+    private bool _saving;
+    private bool _deleteDialogOpen;
+    private bool _initialized;
+    private int _activeTab;
+    private RoleSummary? _role;
+    private readonly HashSet<string> _direct = new(StringComparer.Ordinal);
+    private readonly List<string> _advanced = [];
+    private readonly List<string> _unresolved = [];
+    private readonly Dictionary<string, string> _replacementDrafts = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _repairErrors = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, PermissionReachResponse?> _reach = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _reachLoading = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _reachErrors = new(StringComparer.Ordinal);
+    private readonly CancellationTokenSource _lifetime = new();
+    private IReadOnlyList<RoleSummary> _availableRoles = [];
+    private string? _loadedRoleId;
+
+    private bool _isCreate => string.IsNullOrWhiteSpace(RoleId);
+    private bool IsReadOnly => !_isCreate && !Access.CanUpdate;
+    private bool CanOpen => _isCreate ? Access.CanCreate : Access.CanView;
+    private bool CanSave => !IsReadOnly && !_saving && _unresolved.Count == 0 && !string.IsNullOrWhiteSpace(_name);
+    private IEnumerable<string> Categories => _catalog.Resources
+        .Select(x => string.IsNullOrWhiteSpace(x.Category) ? "Other" : x.Category)
+        .Distinct(StringComparer.Ordinal)
+        .OrderBy(x => x, StringComparer.Ordinal);
+    private int DirectCount => _direct.Count;
+    private int CoveredCount => _catalog.Resources.Sum(x => x.SupportedVerbs.Count(verb => FindCoveringWildcard(x.Resource, verb) != null && !IsDirect($"{x.Resource}:{verb}")));
+    private IReadOnlyList<BreadcrumbItem> Breadcrumbs =>
+        _isCreate
+            ? [new("Roles", href: "security/roles"), new("New role", href: null)]
+            : [new("Roles", href: "security/roles"), new(_name, href: null)];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_initialized && string.Equals(_loadedRoleId, RoleId, StringComparison.Ordinal))
+            return;
+
+        _initialized = true;
+        _loadedRoleId = RoleId;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _loadError = null;
+        _saveError = null;
+        ClearGrantState();
+        if (_isCreate)
+        {
+            _role = null;
+            _name = string.Empty;
+        }
+
+        try
+        {
+            if (!CanOpen)
+                return;
+
+            var permissionsApi = await ApiClientProvider.GetApiAsync<IPermissionsApi>(_lifetime.Token);
+            _catalog = await permissionsApi.ListAsync(_lifetime.Token);
+
+            if (!_isCreate)
+            {
+                var rolesApi = await ApiClientProvider.GetApiAsync<IRolesApi>(_lifetime.Token);
+                var roles = await rolesApi.ListAsync(_lifetime.Token);
+                var roleSummaries = roles.Roles ?? [];
+                _availableRoles = roleSummaries.ToList();
+                _role = roleSummaries.FirstOrDefault(x => string.Equals(x.Id, RoleId, StringComparison.Ordinal));
+                if (_role == null)
+                {
+                    _loadError = "The role no longer exists.";
+                    return;
+                }
+
+                _name = _role.Name;
+                LoadStoredGrants(_role.Permissions);
+                await LoadAllReachAsync(permissionsApi);
+            }
+            else
+            {
+                _role = null;
+                _name = string.Empty;
+            }
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+            // Navigation or disposal cancelled the in-flight reach lookup.
+        }
+        catch (Exception exception)
+        {
+            _loadError = IdentityApiErrorMapper.Describe(exception).Message;
+        }
+        finally
+        {
+            if (!_lifetime.IsCancellationRequested)
+                _loading = false;
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (_lifetime.IsCancellationRequested)
+            return;
+
+        await LoadAsync();
+    }
+
+    private void LoadStoredGrants(IEnumerable<string>? permissions)
+    {
+        ClearGrantState();
+        foreach (var original in permissions ?? [])
+        {
+            if (!RolePermissionAuthoring.IsRecognized(original, _catalog.Resources, out var kind))
+            {
+                _unresolved.Add(original);
+                continue;
+            }
+
+            var normalized = original.Trim();
+            if (kind == RolePermissionGrantKind.Exact)
+                _direct.Add(normalized);
+            else
+                _advanced.Add(normalized);
+        }
+
+        SortGrantState();
+    }
+
+    private void ClearGrantState()
+    {
+        _direct.Clear();
+        _advanced.Clear();
+        _unresolved.Clear();
+        _replacementDrafts.Clear();
+        _repairErrors.Clear();
+        _reach.Clear();
+        _reachLoading.Clear();
+        _reachErrors.Clear();
+    }
+
+    private void SortGrantState()
+    {
+        var orderedAdvanced = RolePermissionAuthoring.NormalizePermissions(_advanced);
+        _advanced.Clear();
+        _advanced.AddRange(orderedAdvanced);
+        var orderedUnresolved = _unresolved.ToArray();
+        _unresolved.Clear();
+        _unresolved.AddRange(orderedUnresolved);
+    }
+
+    private IEnumerable<PermissionResourceDescriptor> GetCategoryResources(string category) =>
+        _catalog.Resources
+            .Where(x => string.Equals(string.IsNullOrWhiteSpace(x.Category) ? "Other" : x.Category, category, StringComparison.Ordinal));
+
+    private IEnumerable<PermissionResourceDescriptor> GetFilteredResources(string category) =>
+        GetCategoryResources(category)
+            .Where(MatchesSearch)
+            .OrderBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(x => x.Resource, StringComparer.Ordinal);
+
+    private bool MatchesSearch(PermissionResourceDescriptor descriptor)
+    {
+        if (string.IsNullOrWhiteSpace(_search))
+            return true;
+
+        var search = _search.Trim();
+        return descriptor.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+               descriptor.Resource.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+               descriptor.Category.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+               descriptor.Description.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+               descriptor.SupportedVerbs.Any(x => x.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                                                  $"{descriptor.Resource}:{x}".Contains(search, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static int ConcreteCount(IEnumerable<PermissionResourceDescriptor> resources) =>
+        resources.Sum(x => x.SupportedVerbs.Count);
+
+    private int CategoryDirectCount(IEnumerable<PermissionResourceDescriptor> resources) =>
+        resources.Sum(resource => resource.SupportedVerbs.Count(verb => IsDirect($"{resource.Resource}:{verb}")));
+
+    private int CategoryCoveredCount(IEnumerable<PermissionResourceDescriptor> resources) =>
+        resources.Sum(resource => resource.SupportedVerbs.Count(verb =>
+            !IsDirect($"{resource.Resource}:{verb}") && FindCoveringWildcard(resource.Resource, verb) != null));
+
+    private bool ShouldExpandCategory(IEnumerable<PermissionResourceDescriptor> resources) =>
+        !string.IsNullOrWhiteSpace(_search) || CategoryDirectCount(resources) > 0;
+
+    private static string CategorySummary(int total, int direct, int covered)
+    {
+        var parts = new List<string>();
+        if (direct > 0)
+            parts.Add($"{direct} direct");
+        if (covered > 0)
+            parts.Add($"{covered} covered");
+        parts.Add($"{total} permissions");
+        return string.Join(" · ", parts);
+    }
+
+    private bool IsDirect(string permission) => _direct.Contains(permission);
+
+    private string? FindCoveringWildcard(string resource, string verb) =>
+        _advanced.FirstOrDefault(grant =>
+            RolePermissionAuthoring.TryParse(grant, out var pattern) &&
+            pattern.HasWildcard &&
+            RolePermissionAuthoring.IsValidPattern(pattern) &&
+            RolePermissionAuthoring.Matches(pattern, resource, verb));
+
+    private void SelectCategory(IEnumerable<PermissionResourceDescriptor> resources)
+    {
+        if (IsReadOnly)
+            return;
+
+        var additions = RolePermissionAuthoring.GetConcreteGrants(resources)
+            .Where(x => RolePermissionAuthoring.TryParse(x, out var pattern) && FindCoveringWildcard(pattern.Resource, pattern.Verb) == null);
+        foreach (var permission in additions)
+            _direct.Add(permission);
+    }
+
+    private void SetDirectGrant(string permission, bool selected)
+    {
+        if (IsReadOnly)
+            return;
+
+        if (!selected)
+            _direct.Remove(permission);
+        else if (RolePermissionAuthoring.TryParse(permission, out var pattern) && FindCoveringWildcard(pattern.Resource, pattern.Verb) == null)
+            _direct.Add(permission);
+    }
+
+    private async Task AddAdvancedGrant()
+    {
+        _advancedError = null;
+        var value = _advancedDraft.Trim();
+        if (!RolePermissionAuthoring.TryParse(value, out var pattern) || !RolePermissionAuthoring.IsValidPattern(pattern))
+        {
+            _advancedError = "Enter a valid grant. Wildcards may be *, a trailing resource /*, or the entire verb *.";
+            return;
+        }
+
+        if (!pattern.HasWildcard)
+        {
+            _advancedError = "This is an exact permission. Select it on the Exact permissions tab.";
+            return;
+        }
+
+        if (!_advanced.Contains(value, StringComparer.Ordinal))
+            _advanced.Add(value);
+        _advanced.Sort(StringComparer.Ordinal);
+        _advancedError = null;
+        _advancedDraft = string.Empty;
+        _reach.Remove(value);
+        _reachErrors.Remove(value);
+        await LoadReachAsync(value);
+    }
+
+    private void RemoveAdvancedGrant(string grant)
+    {
+        if (IsReadOnly)
+            return;
+
+        _advanced.Remove(grant);
+        _reach.Remove(grant);
+        _reachErrors.Remove(grant);
+    }
+
+    private Task LoadAllReachAsync(IPermissionsApi api) =>
+        Task.WhenAll(_advanced.Select(grant => LoadReachAsync(api, grant)));
+
+    private async Task LoadReachAsync(string grant)
+    {
+        try
+        {
+            var api = await ApiClientProvider.GetApiAsync<IPermissionsApi>(_lifetime.Token);
+            await LoadReachAsync(api, grant);
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+            // Navigation or disposal cancelled the in-flight reach lookup.
+        }
+        catch (Exception exception)
+        {
+            _reachErrors[grant] = IdentityApiErrorMapper.Describe(exception).Message;
+        }
+    }
+
+    private async Task LoadReachAsync(IPermissionsApi api, string grant)
+    {
+        if (_reach.ContainsKey(grant) || !RolePermissionAuthoring.TryParse(grant, out var pattern) || !_reachLoading.Add(grant))
+            return;
+
+        try
+        {
+            _reach[grant] = await api.GetReachAsync(pattern.Resource, _lifetime.Token);
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _reachErrors[grant] = IdentityApiErrorMapper.Describe(exception).Message;
+        }
+        finally
+        {
+            _reachLoading.Remove(grant);
+        }
+    }
+
+    private int GetMaterializedDuplicates(string grant)
+    {
+        if (!RolePermissionAuthoring.TryParse(grant, out var wildcard))
+            return 0;
+
+        return _direct.Count(permission =>
+            RolePermissionAuthoring.TryParse(permission, out var exact) &&
+            !exact.HasWildcard &&
+            RolePermissionAuthoring.Matches(wildcard, exact.Resource, exact.Verb));
+    }
+
+    private string GetReplacement(string original) => _replacementDrafts.TryGetValue(original, out var value) ? value : string.Empty;
+
+    private void SetReplacement(string original, string? value) => _replacementDrafts[original] = value ?? string.Empty;
+
+    private void ReplaceGrant(string original)
+    {
+        _repairErrors.Remove(original);
+        var replacement = GetReplacement(original).Trim();
+        if (!RolePermissionAuthoring.IsRecognized(replacement, _catalog.Resources, out var kind))
+        {
+            _repairErrors[original] = "Replacement must be a recognized catalog permission or valid wildcard.";
+            return;
+        }
+
+        _unresolved.Remove(original);
+        if (kind == RolePermissionGrantKind.Exact)
+        {
+            if (RolePermissionAuthoring.TryParse(replacement, out _))
+                _direct.Add(replacement);
+        }
+        else if (!_advanced.Contains(replacement, StringComparer.Ordinal))
+        {
+            _advanced.Add(replacement);
+            _advanced.Sort(StringComparer.Ordinal);
+        }
+
+        _replacementDrafts.Remove(original);
+    }
+
+    private void RemoveUnresolved(string original)
+    {
+        if (IsReadOnly)
+            return;
+
+        _unresolved.Remove(original);
+        _replacementDrafts.Remove(original);
+        _repairErrors.Remove(original);
+    }
+
+    private Task OnNameChanged(string value)
+    {
+        _name = value;
+        return Task.CompletedTask;
+    }
+
+    private Task OnSearchChanged(string value)
+    {
+        _search = value;
+        return Task.CompletedTask;
+    }
+
+    private Task OnTabChanged(int index)
+    {
+        _activeTab = index;
+        return Task.CompletedTask;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (!CanSave || _form == null || _saving)
+            return;
+
+        _saving = true;
+        _saveError = null;
+        try
+        {
+            await _form.Validate();
+            if (!_form.IsValid)
+                return;
+
+            var permissions = RolePermissionAuthoring.NormalizePermissions(_direct.Concat(_advanced).Concat(_unresolved));
+            var api = await ApiClientProvider.GetApiAsync<IRolesApi>(_lifetime.Token);
+            if (_isCreate)
+            {
+                var created = await api.CreateAsync(new CreateRoleRequest { Name = _name.Trim(), Permissions = permissions.ToArray() }, _lifetime.Token);
+                Snackbar.Add("Role created.", Severity.Success);
+                NavigationManager.NavigateTo($"security/roles/{Uri.EscapeDataString(created.Id)}");
+            }
+            else
+            {
+                var updated = await api.UpdateAsync(RoleId!, new UpdateRoleRequest { Name = _name.Trim(), Permissions = permissions.ToArray() }, _lifetime.Token);
+                Snackbar.Add("Role updated.", Severity.Success);
+                _role = new RoleSummary { Id = updated.Id, Name = updated.Name, Permissions = updated.Permissions, TenantId = updated.TenantId };
+                _name = updated.Name;
+                LoadStoredGrants(updated.Permissions);
+            }
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _saveError = IdentityApiErrorMapper.Describe(exception).Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Cancel() => NavigationManager.NavigateTo("security/roles");
+
+    private async Task OpenDeleteRoleAsync()
+    {
+        if (_deleteDialogOpen || _role is null || !Access.CanDelete)
+            return;
+
+        _deleteDialogOpen = true;
+        try
+        {
+            var result = await DialogService.ShowRoleDeletionAsync(_role, Access, _availableRoles);
+            if (result?.WasDeleted == true)
+            {
+                Snackbar.Add("Role deleted.", Severity.Success);
+                NavigationManager.NavigateTo("security/roles");
+            }
+            else if (result?.WasRetained == true)
+            {
+                Snackbar.Add("Role retained. Review the remaining dependencies before trying again.", Severity.Warning);
+            }
+        }
+        finally
+        {
+            _deleteDialogOpen = false;
+        }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _lifetime.Cancel();
+        _lifetime.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}

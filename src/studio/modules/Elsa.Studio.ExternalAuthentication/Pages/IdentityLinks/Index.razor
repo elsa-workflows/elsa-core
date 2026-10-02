@@ -1,0 +1,276 @@
+@page "/security/external-authentication/identity-links"
+@using Elsa.Studio.ExternalAuthentication.Components.IdentityLinks
+@using Elsa.Studio.ExternalAuthentication.Services
+@inject Elsa.Studio.Contracts.IBackendApiClientProvider ApiClientProvider
+@inject Elsa.Studio.ExternalAuthentication.Services.IExternalAuthenticationPermissionService Permissions
+@inject Elsa.Studio.DomInterop.Contracts.IClipboard Clipboard
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<PageTitle>External identity links</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.False">
+    <MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Spacing="2">
+        <PageHeading Text="External identity links" />
+        @if (_canManage)
+        {
+            <MudButton
+                Color="Color.Primary"
+                Variant="Variant.Filled"
+                StartIcon="@Icons.Material.Filled.Add"
+                OnClick="@(() => OpenLinkDialogAsync())">
+                Create link
+            </MudButton>
+        }
+    </MudStack>
+    <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">
+        Links are tenant-scoped. Elsa stores a keyed subject hash; raw external subjects and provider tokens are never returned.
+    </MudAlert>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" aria-label="Loading external identity links" />
+    }
+    else if (!_canManage)
+    {
+        <MudAlert Severity="Severity.Warning">You do not have permission to manage external identity links.</MudAlert>
+    }
+    else
+    {
+        <MudPaper Elevation="0" Outlined="true" Class="identity-link-list">
+            <MudGrid Spacing="2" Class="pa-4 align-center identity-link-list__toolbar">
+                <MudItem xs="12" sm="6" md="5">
+                    <MudTextField @bind-Value="_userIdFilter" Label="Filter by user ID" />
+                </MudItem>
+                <MudItem xs="12" sm="6" md="5">
+                    <MudTextField @bind-Value="_connectionKeyFilter" Label="Filter by connection key" />
+                </MudItem>
+                <MudItem xs="12" sm="6" md="2">
+                    <MudStack Row="true" Justify="Justify.FlexEnd">
+                        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.FilterAlt" OnClick="ReloadAsync">Apply filters</MudButton>
+                    </MudStack>
+                </MudItem>
+            </MudGrid>
+            <MudTable
+                T="ExternalIdentityLink"
+                Items="_links"
+                Dense="true"
+                Hover="true"
+                Elevation="0"
+                Breakpoint="Breakpoint.Md"
+                RowStyle="cursor: pointer;"
+                OnRowClick="OnRowClick"
+                Class="identity-link-list__table"
+                aria-label="External identity links">
+                <HeaderContent>
+                    <MudTh>User</MudTh>
+                    <MudTh>User ID</MudTh>
+                    <MudTh>Connection</MudTh>
+                    <MudTh>External identity</MudTh>
+                    <MudTh>Activity</MudTh>
+                    <MudTh aria-label="Actions"></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="User">
+                        <span @onclick:stopPropagation="true">
+                            <MudLink
+                                OnClick="@(_ => OpenLinkDialogAsync(context))"
+                                Color="Color.Inherit"
+                                Underline="Underline.Hover"
+                                Class="font-weight-medium"
+                                aria-label="@($"Edit identity link for {UserDisplay(context.UserId)} via {ConnectionDisplay(context.ConnectionKey)}")">
+                                @UserDisplay(context.UserId)
+                            </MudLink>
+                        </span>
+                    </MudTd>
+                    <MudTd DataLabel="User ID">
+                        <IdentityIdCell Value="@context.UserId" Label="User" OnCopy="@(() => CopyUserIdAsync(context.UserId))" />
+                    </MudTd>
+                    <MudTd DataLabel="Connection">
+                        <MudText Typo="Typo.body2" Class="font-weight-medium">@ConnectionDisplay(context.ConnectionKey)</MudText>
+                        @if (!string.Equals(ConnectionDisplay(context.ConnectionKey), context.ConnectionKey, StringComparison.Ordinal))
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@context.ConnectionKey</MudText>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="External identity" Class="identity-link-list__external-identity">
+                        <MudText Typo="Typo.body2">@context.Issuer</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@IdentityLinkUiState.SubjectDisplay(context)</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Activity">
+                        <MudText Typo="Typo.body2">@(context.LastSignedInAt is null ? "Never signed in" : $"Last sign-in {context.LastSignedInAt.Value.ToLocalTime():g}")</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Created @context.CreatedAt.ToLocalTime().ToString("g")</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: right;">
+                        <div @onclick:stopPropagation="true">
+                            <MudMenu
+                                Icon="@Icons.Material.Filled.MoreVert"
+                                Size="Size.Small"
+                                Dense="true"
+                                AriaLabel="@($"Actions for {UserDisplay(context.UserId)} via {ConnectionDisplay(context.ConnectionKey)}")">
+                                <MudMenuItem Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => OpenLinkDialogAsync(context))">Edit</MudMenuItem>
+                                <MudDivider />
+                                <MudMenuItem Icon="@Icons.Material.Outlined.LinkOff" OnClick="@(() => ConfirmUnlinkAsync(context))">Unlink</MudMenuItem>
+                            </MudMenu>
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent><MudText>No links match the current filters.</MudText></NoRecordsContent>
+            </MudTable>
+            <nav aria-label="External identity links pagination">
+                <MudStack Row="true" Justify="Justify.FlexEnd" Class="pa-3 identity-link-list__footer">
+                    <MudButton Variant="Variant.Outlined" Disabled="@string.IsNullOrWhiteSpace(_nextCursor)" OnClick="NextPageAsync">Next page</MudButton>
+                </MudStack>
+            </nav>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    private readonly List<ExternalIdentityLink> _links = [];
+    private readonly List<IdentityLinkUser> _users = [];
+    private readonly List<ConnectionSummary> _connections = [];
+    private string? _userIdFilter;
+    private string? _connectionKeyFilter;
+    private string? _nextCursor;
+    private bool _loading = true;
+    private bool _canManage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _canManage = await Permissions.HasAsync(ExternalAuthenticationPermissions.ManageLinks);
+        if (_canManage)
+        {
+            await Task.WhenAll(LoadConnectionsAsync(), FindUsersAsync());
+            await LoadLinksAsync();
+        }
+        _loading = false;
+    }
+
+    private async Task LoadConnectionsAsync()
+    {
+        var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+        _connections.Clear();
+        string? cursor = null;
+        do
+        {
+            var response = await api.ListAsync(shadowed: false, archived: false, cursor: cursor, pageSize: 100);
+            _connections.AddRange(response.Items.Where(x => !x.Shadowed && !x.Archived));
+            cursor = response.NextCursor;
+        } while (!string.IsNullOrWhiteSpace(cursor));
+    }
+
+    private async Task FindUsersAsync()
+    {
+        var api = await ApiClientProvider.GetApiAsync<IExternalIdentityLinksApi>();
+        var response = await api.FindUsersAsync(pageSize: 25);
+        _users.Clear();
+        _users.AddRange(response.Items);
+    }
+
+    private async Task ReloadAsync()
+    {
+        _nextCursor = null;
+        await LoadLinksAsync();
+    }
+
+    private Task NextPageAsync() => LoadLinksAsync(_nextCursor);
+
+    private async Task OnRowClick(TableRowClickEventArgs<ExternalIdentityLink> args)
+    {
+        if (args.Item is not null)
+            await OpenLinkDialogAsync(args.Item);
+    }
+
+    private async Task LoadLinksAsync(string? cursor = null)
+    {
+        try
+        {
+            var api = await ApiClientProvider.GetApiAsync<IExternalIdentityLinksApi>();
+            var response = await api.ListAsync(_userIdFilter, _connectionKeyFilter, cursor, 25);
+            _links.Clear();
+            _links.AddRange(response.Items);
+            _nextCursor = response.NextCursor;
+        }
+        catch (Exception exception)
+        {
+            Snackbar.Add(exception.Message, Severity.Error);
+        }
+    }
+
+    private async Task OpenLinkDialogAsync(ExternalIdentityLink? link = null)
+    {
+        var dialogConnections = _connections.ToList();
+        if (link is not null && dialogConnections.All(x => !string.Equals(x.Key, link.ConnectionKey, StringComparison.Ordinal)))
+        {
+            dialogConnections.Insert(0, new ConnectionSummary
+            {
+                Key = link.ConnectionKey,
+                DisplayName = ConnectionDisplay(link.ConnectionKey),
+                Validity = "unavailable"
+            });
+        }
+
+        var parameters = new DialogParameters<IdentityLinkDialog>
+        {
+            { x => x.ExistingLink, link },
+            { x => x.ExistingUser, link is null ? null : new IdentityLinkUser(link.UserId, UserDisplay(link.UserId)) },
+            { x => x.Users, _users.ToList() },
+            { x => x.Connections, dialogConnections }
+        };
+        var options = new DialogOptions
+        {
+            CloseButton = true,
+            CloseOnEscapeKey = true,
+            FullWidth = true,
+            MaxWidth = MaxWidth.Small
+        };
+        var title = link is null ? "Create external identity link" : "Edit external identity link";
+        var dialog = await Dialogs.ShowAsync<IdentityLinkDialog>(title, parameters, options);
+        var result = await dialog.Result;
+        if (result is not { Canceled: false, Data: IdentityLinkDialogOutcome outcome })
+            return;
+
+        if (outcome == IdentityLinkDialogOutcome.Stale)
+        {
+            Snackbar.Add("This link no longer exists.", Severity.Warning);
+            await ReloadAsync();
+            return;
+        }
+
+        Snackbar.Add(link is null ? "External identity link created." : "External identity link replaced. Sign-in history has been reset.", Severity.Success);
+        await ReloadAsync();
+    }
+
+    private async Task ConfirmUnlinkAsync(ExternalIdentityLink link)
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            "Unlink external identity?",
+            "The user will no longer sign in through this external identity.",
+            yesText: "Unlink",
+            cancelText: "Cancel");
+        if (confirmed != true)
+            return;
+
+        try
+        {
+            var api = await ApiClientProvider.GetApiAsync<IExternalIdentityLinksApi>();
+            await api.UnlinkAsync(link.Id);
+            Snackbar.Add("External identity unlinked.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception exception)
+        {
+            Snackbar.Add(exception.Message, Severity.Error);
+        }
+    }
+
+    private string UserDisplay(string userId) => _users.FirstOrDefault(x => x.Id == userId)?.DisplayName ?? userId;
+    private string ConnectionDisplay(string connectionKey) => _connections.FirstOrDefault(x => x.Key == connectionKey)?.DisplayName ?? connectionKey;
+
+    private async Task CopyUserIdAsync(string userId)
+    {
+        await Clipboard.CopyText(userId);
+        Snackbar.Add("User ID copied.", Severity.Success);
+    }
+}

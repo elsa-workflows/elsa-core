@@ -1,0 +1,25 @@
+@page "/authentication/external/callback"
+@page "/authentication/external/logout-callback"
+@using Elsa.Studio.ExternalAuthentication.BlazorWasm.Services
+@inject NavigationManager NavigationManager
+@inject ExternalAuthenticationWasmCallbackService CallbackService
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var callback = new Uri(NavigationManager.Uri, UriKind.Absolute);
+
+        try
+        {
+            var destination = callback.AbsolutePath.EndsWith("/logout-callback", StringComparison.Ordinal)
+                ? CallbackService.CompleteLogout(callback)
+                : await CallbackService.CompleteAsync(callback);
+            NavigationManager.NavigateTo(destination, replace: true);
+        }
+        catch
+        {
+            // Callback details are intentionally not exposed in browser UI or URLs.
+            NavigationManager.NavigateTo("/login?choose=true", replace: true);
+        }
+    }
+}

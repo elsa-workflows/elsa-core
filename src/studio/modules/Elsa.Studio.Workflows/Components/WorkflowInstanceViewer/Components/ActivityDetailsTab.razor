@@ -1,0 +1,33 @@
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<ScrollableWell MaxHeight="VisiblePaneHeight">
+    <MudStack>
+        <DataPanel Title="@Localizer["Activity"]" Data="ActivityInfo" HideEmptyValues="true"/>
+
+        @if (ActivityData.Any())
+        {
+            <DataPanel Title="@Localizer["State"]" Data="@ActivityData" HideEmptyValues="false"/>
+        }
+
+        @if (OutcomesData.Any())
+        {
+            <DataPanel Title="@Localizer["Outcomes"]" Data="OutcomesData" HideEmptyValues="true"/>
+        }
+
+        @if (OutputData.Any())
+        {
+            <DataPanel Title="@Localizer["Output"]" Data="OutputData" HideEmptyValues="false"/>
+        }
+
+        @if (ExceptionData.Any())
+        {
+            <DataPanel Title="@Localizer["Fault"]" Data="ExceptionData" HideEmptyValues="true"/>
+        }
+        
+        @if (ResilienceStrategyData.Any())
+        {
+            <DataPanel Title="@Localizer["Resilience Strategy"]" Data="ResilienceStrategyData" HideEmptyValues="true"/>
+        }
+    </MudStack>
+</ScrollableWell>

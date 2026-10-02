@@ -1,0 +1,19 @@
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+@{
+    var inputDescriptor = EditorContext.InputDescriptor;
+    var displayName = inputDescriptor.DisplayName ?? inputDescriptor.Name;
+    var description = inputDescriptor.Description ?? string.Empty;
+}
+
+<ExpressionInput EditorContext="@EditorContext">
+    <ChildContent>
+        <MudField Label="@Localizer[displayName]" Variant="Variant.Outlined" HelperText="@Localizer[description]" Margin="Margin.Dense" Disabled="EditorContext.IsReadOnly">
+            @foreach (var item in _checkListItems)
+            {
+                <MudCheckBox T="bool" Label="@item.Text" Value="@item.IsChecked" ValueChanged="@(state => OnCheckedChanged(item, state))" Dense="true" Disabled="EditorContext.IsReadOnly"></MudCheckBox>
+            }
+        </MudField>
+    </ChildContent>
+</ExpressionInput>

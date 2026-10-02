@@ -1,0 +1,482 @@
+using Elsa.Common;
+using Elsa.Common.Multitenancy;
+using Elsa.KeyValues.Contracts;
+using Elsa.KeyValues.Entities;
+using Elsa.KeyValues.Models;
+using Elsa.Persistence.EFCore;
+using Elsa.Persistence.EFCore.EntityHandlers;
+using Elsa.Persistence.EFCore.Extensions;
+using Elsa.Persistence.EFCore.Modules.Runtime;
+using Elsa.Persistence.EFCore.Sqlite;
+using Elsa.Tenants.Options;
+using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Services;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
+
+namespace Elsa.Persistence.EFCore.UnitTests;
+
+/// <summary>
+/// The host-wide pause key must persist as * so EF tenant filters cannot hide it, and a 3.8
+/// default-tenant/NULL or ambient named-tenant row on the old key must be adopted at startup.
+/// </summary>
+public class QuiescenceSignalPauseKeyTenantAgnosticEfTests
+{
+    private const string HostPauseKey = "elsa.quiescence.host-pause.default";
+    private const string LegacyPauseKey = "elsa.quiescence.pause.default";
+
+    [Fact(DisplayName = "Cross-tenant pause/resume keeps live and persisted state aligned")]
+    public async Task CrossTenantPauseResume_DoesNotThrow_AndPersistedStateMatchesLive()
+    {
+        await using var harness = await EfHarness.CreateAsync(tenancyEnabled: true);
+        var sut = harness.CreateSignal();
+
+        using (harness.UseTenant("tenant-x"))
+            await sut.PauseAsync("maintenance", "x", CancellationToken.None);
+        await AssertPausedAsync(harness, sut, "maintenance");
+
+        using (harness.UseTenant("tenant-y"))
+            await sut.ResumeAsync("y", CancellationToken.None);
+        await AssertResumedAsync(harness, sut);
+
+        using (harness.UseTenant("tenant-x"))
+            await sut.PauseAsync("again", "x", CancellationToken.None);
+        await AssertPausedAsync(harness, sut, "again");
+
+        using (harness.UseTenant("tenant-y"))
+            await sut.PauseAsync("from-y", "y", CancellationToken.None);
+        await AssertPausedAsync(harness, sut, "again");
+    }
+
+    [Fact(DisplayName = "Host-context startup restore sees a pause written from a tenant scope")]
+    public async Task HostStartupRestore_SeesPauseWrittenFromTenantScope()
+    {
+        await using var harness = await EfHarness.CreateAsync(tenancyEnabled: true);
+        var writer = harness.CreateSignal();
+        using (harness.UseTenant("tenant-x"))
+            await writer.PauseAsync("maintenance", "x", CancellationToken.None);
+
+        var restored = harness.CreateSignal();
+        await restored.InitializePersistedStateAsync(CancellationToken.None);
+
+        Assert.True(restored.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.Equal("maintenance", restored.CurrentState.PauseReasonText);
+        await AssertPausedAsync(harness, restored, "maintenance");
+    }
+
+    [Fact(DisplayName = "Legacy default-tenant row is adopted, then resume and restart stay unpaused")]
+    public async Task LegacyDefaultTenantRow_IsAdopted_AndResumeClearsIt()
+    {
+        await using var harness = await EfHarness.CreateAsync(tenancyEnabled: true);
+        await harness.SeedAsync(LegacyPauseKey, "legacy-maintenance", Tenant.DefaultTenantId);
+
+        var sut = harness.CreateSignal();
+        await sut.InitializePersistedStateAsync(CancellationToken.None);
+
+        Assert.True(sut.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.Equal("legacy-maintenance", sut.CurrentState.PauseReasonText);
+        await AssertPausedAsync(harness, sut, "legacy-maintenance");
+        Assert.Null(await harness.FindIgnoringFiltersAsync(LegacyPauseKey));
+
+        await sut.ResumeAsync("op", CancellationToken.None);
+        await AssertResumedAsync(harness, sut);
+
+        var restarted = harness.CreateSignal();
+        await restarted.InitializePersistedStateAsync(CancellationToken.None);
+        Assert.False(restarted.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+    }
+
+    [Fact(DisplayName = "Legacy named-tenant row does not block pause or resume")]
+    public async Task LegacyNamedTenantRow_DoesNotBlockPauseOrResume()
+    {
+        await using var harness = await EfHarness.CreateAsync(tenancyEnabled: true);
+        await harness.SeedAsync(LegacyPauseKey, "stale-named", "tenant-x");
+
+        var sut = harness.CreateSignal();
+        await sut.InitializePersistedStateAsync(CancellationToken.None);
+        Assert.False(sut.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+
+        using (harness.UseTenant("tenant-y"))
+            await sut.PauseAsync("maintenance", "y", CancellationToken.None);
+        await AssertPausedAsync(harness, sut, "maintenance");
+
+        using (harness.UseTenant("tenant-y"))
+            await sut.ResumeAsync("y", CancellationToken.None);
+        await AssertResumedAsync(harness, sut);
+
+        var leftover = await harness.FindIgnoringFiltersAsync(LegacyPauseKey);
+        Assert.NotNull(leftover);
+        Assert.Equal("tenant-x", leftover.TenantId);
+
+        var restarted = harness.CreateSignal();
+        await restarted.InitializePersistedStateAsync(CancellationToken.None);
+        Assert.False(restarted.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+    }
+
+    [Fact(DisplayName = "Legacy named-tenant row is adopted when startup runs under that tenant")]
+    public async Task LegacyNamedTenantRow_IsAdopted_WhenInitializedUnderThatTenant()
+    {
+        await using var harness = await EfHarness.CreateAsync(tenancyEnabled: true);
+        await harness.SeedAsync(LegacyPauseKey, "named-maintenance", "tenant-x");
+
+        var sut = harness.CreateSignal();
+        using (harness.UseTenant("tenant-x"))
+            await sut.InitializePersistedStateAsync(CancellationToken.None);
+
+        Assert.True(sut.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.Equal("named-maintenance", sut.CurrentState.PauseReasonText);
+        await AssertPausedAsync(harness, sut, "named-maintenance");
+        Assert.Null(await harness.FindIgnoringFiltersAsync(LegacyPauseKey));
+    }
+
+    [Fact(DisplayName = "A leftover legacy row is deleted even when the host-pause key already exists")]
+    public async Task LeftoverLegacyRow_IsDeleted_WhenHostPauseAlreadyExists()
+    {
+        await using var harness = await EfHarness.CreateAsync(tenancyEnabled: true);
+        await harness.SeedAsync(HostPauseKey, "current", Tenant.AgnosticTenantId);
+        await harness.SeedAsync(LegacyPauseKey, "stale-legacy", Tenant.DefaultTenantId);
+
+        var sut = harness.CreateSignal();
+        await sut.InitializePersistedStateAsync(CancellationToken.None);
+
+        Assert.True(sut.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.Equal("current", sut.CurrentState.PauseReasonText);
+        Assert.Null(await harness.FindIgnoringFiltersAsync(LegacyPauseKey));
+
+        await sut.ResumeAsync("op", CancellationToken.None);
+        await AssertResumedAsync(harness, sut);
+
+        var restarted = harness.CreateSignal();
+        await restarted.InitializePersistedStateAsync(CancellationToken.None);
+        Assert.False(restarted.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+    }
+
+    [Theory(DisplayName = "Two-node shared SQLite: restart is unpaused whether A resumes before or after B writes")]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TwoNodeLegacyAdoption_RestartIsUnpaused(bool resumeBeforeBWrites)
+    {
+        await using var harness = await EfHarness.CreateAsync(tenancyEnabled: true);
+        await harness.SeedAsync(LegacyPauseKey, "legacy-maintenance", Tenant.DefaultTenantId);
+
+        var gatedB = new GatedWritesKeyValueStore(harness.Store);
+        var nodeA = harness.CreateSignal();
+        var nodeB = harness.CreateSignal(gatedB);
+
+        var bInit = nodeB.InitializePersistedStateAsync(CancellationToken.None).AsTask();
+        await gatedB.WriteStarted.Task;
+        await nodeA.InitializePersistedStateAsync(CancellationToken.None);
+        Assert.True(nodeA.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+
+        if (resumeBeforeBWrites)
+            await nodeA.ResumeAsync("op", CancellationToken.None);
+
+        gatedB.ReleaseWrites();
+        await bInit;
+        Assert.True(nodeB.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+
+        if (!resumeBeforeBWrites)
+            await nodeA.ResumeAsync("op", CancellationToken.None);
+
+        var restarted = harness.CreateSignal();
+        await restarted.InitializePersistedStateAsync(CancellationToken.None);
+
+        Assert.False(restarted.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.Null(await harness.FindIgnoringFiltersAsync(HostPauseKey));
+        Assert.Null(await harness.FindIgnoringFiltersAsync(LegacyPauseKey));
+    }
+
+    [Fact(DisplayName = "Two-node shared SQLite: loser stays paused while the winner's host save is gated")]
+    public async Task TwoNodeLegacyAdoption_LoserIsPausedWhileWinnerHostSaveIsGated()
+    {
+        await using var harness = await EfHarness.CreateAsync(tenancyEnabled: true);
+        await harness.SeedAsync(LegacyPauseKey, "legacy-maintenance", Tenant.DefaultTenantId);
+
+        var gatedB = new GatedWritesKeyValueStore(harness.Store);
+        var gatedA = new GatedHostSaveKeyValueStore(harness.Store);
+        var nodeA = harness.CreateSignal(gatedA);
+        var nodeB = harness.CreateSignal(gatedB);
+
+        var bInit = nodeB.InitializePersistedStateAsync(CancellationToken.None).AsTask();
+        await gatedB.WriteStarted.Task;
+        var aInit = nodeA.InitializePersistedStateAsync(CancellationToken.None).AsTask();
+        await gatedA.SaveStarted.Task;
+
+        gatedB.ReleaseWrites();
+        await bInit;
+
+        Assert.True(nodeB.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.Equal("legacy-maintenance", nodeB.CurrentState.PauseReasonText);
+        Assert.Null(await harness.FindIgnoringFiltersAsync(HostPauseKey));
+
+        gatedA.ReleaseSave();
+        await aInit;
+        Assert.True(nodeA.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+    }
+
+    [Fact(DisplayName = "With multitenancy off, a legacy NULL row still restores as paused")]
+    public async Task LegacyNullRow_WithTenancyOff_RestoresPaused()
+    {
+        await using var harness = await EfHarness.CreateAsync(tenancyEnabled: false);
+        await harness.SeedAsync(LegacyPauseKey, "legacy-null", tenantId: null);
+
+        var sut = harness.CreateSignal();
+        await sut.InitializePersistedStateAsync(CancellationToken.None);
+
+        Assert.True(sut.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.Equal("legacy-null", sut.CurrentState.PauseReasonText);
+        await AssertPausedAsync(harness, sut, "legacy-null");
+        Assert.Null(await harness.FindIgnoringFiltersAsync(LegacyPauseKey));
+    }
+
+    private static async Task AssertPausedAsync(EfHarness harness, QuiescenceSignal sut, string reason)
+    {
+        Assert.True(sut.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.Equal(reason, sut.CurrentState.PauseReasonText);
+
+        using (harness.UseTenant("tenant-y"))
+            await AssertPersistedAsync(harness, reason);
+
+        using (harness.TenantAccessor.PushContext(Tenant.Default))
+            await AssertPersistedAsync(harness, reason);
+    }
+
+    private static async Task AssertResumedAsync(EfHarness harness, QuiescenceSignal sut)
+    {
+        Assert.False(sut.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+
+        using (harness.UseTenant("tenant-x"))
+            Assert.Null(await harness.FindHostPauseAsync());
+
+        using (harness.UseTenant("tenant-y"))
+            Assert.Null(await harness.FindHostPauseAsync());
+
+        using (harness.TenantAccessor.PushContext(Tenant.Default))
+            Assert.Null(await harness.FindHostPauseAsync());
+    }
+
+    private static async Task AssertPersistedAsync(EfHarness harness, string reason)
+    {
+        var pair = await harness.FindHostPauseAsync();
+        Assert.NotNull(pair);
+        Assert.Equal(reason, pair.SerializedValue);
+        Assert.Equal(Tenant.AgnosticTenantId, pair.TenantId);
+    }
+
+    private sealed class EfHarness : IAsyncDisposable
+    {
+        private readonly string _databasePath;
+        private readonly ServiceProvider _services;
+        private readonly IServiceScope _scope;
+        private readonly ISystemClock _clock;
+        private readonly IExecutionCycleRegistry _cycleRegistry;
+
+        private EfHarness(
+            string databasePath,
+            ServiceProvider services,
+            IServiceScope scope,
+            DefaultTenantAccessor tenantAccessor,
+            EFCoreKeyValueStore store,
+            ISystemClock clock,
+            IExecutionCycleRegistry cycleRegistry)
+        {
+            _databasePath = databasePath;
+            _services = services;
+            _scope = scope;
+            TenantAccessor = tenantAccessor;
+            Store = store;
+            _clock = clock;
+            _cycleRegistry = cycleRegistry;
+        }
+
+        public DefaultTenantAccessor TenantAccessor { get; }
+        public EFCoreKeyValueStore Store { get; }
+
+        public static async Task<EfHarness> CreateAsync(bool tenancyEnabled)
+        {
+            var databasePath = Path.Join(Path.GetTempPath(), $"elsa-quiescence-{Guid.NewGuid():N}.db");
+            var tenantAccessor = new DefaultTenantAccessor();
+            var clock = Substitute.For<ISystemClock>();
+            clock.UtcNow.Returns(DateTimeOffset.Parse("2026-04-24T10:00:00Z"));
+            var cycleRegistry = Substitute.For<IExecutionCycleRegistry>();
+            var migrationsAssembly = typeof(RuntimeDbContextFactory).Assembly;
+
+            var services = new ServiceCollection()
+                .AddLogging()
+                .AddSingleton<ITenantAccessor>(tenantAccessor)
+                .Configure<TenantsOptions>(options => options.IsEnabled = tenancyEnabled)
+                .AddScoped<IEntitySavingHandler, ApplyTenantId>()
+                .AddScoped<IEntityModelCreatingHandler, SetTenantIdFilter>()
+                .AddSqliteEntityModelCreatingHandlers()
+                .AddDbContextFactory<RuntimeElsaDbContext>((_, builder) =>
+                {
+                    builder.UseElsaSqlite(migrationsAssembly, $"Data Source={databasePath};Default Timeout=30");
+                    if (tenancyEnabled)
+                        builder.ReplaceService<IModelCacheKeyFactory, TenancyOnModelCacheKeyFactory>();
+                    else
+                        builder.ReplaceService<IModelCacheKeyFactory, TenancyOffModelCacheKeyFactory>();
+                })
+                .Decorate<IDbContextFactory<RuntimeElsaDbContext>, TenantAwareDbContextFactory<RuntimeElsaDbContext>>()
+                .AddScoped<Store<RuntimeElsaDbContext, SerializedKeyValuePair>>()
+                .AddScoped<EFCoreKeyValueStore>()
+                .BuildServiceProvider();
+
+            await using (var dbContext = await services.GetRequiredService<IDbContextFactory<RuntimeElsaDbContext>>().CreateDbContextAsync())
+                await dbContext.Database.EnsureCreatedAsync();
+
+            var scope = services.CreateScope();
+            return new(
+                databasePath,
+                services,
+                scope,
+                tenantAccessor,
+                scope.ServiceProvider.GetRequiredService<EFCoreKeyValueStore>(),
+                clock,
+                cycleRegistry);
+        }
+
+        public QuiescenceSignal CreateSignal(IKeyValueStore? store = null) =>
+            QuiescenceSignal.Create(
+                Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions
+                {
+                    PausePersistence = PausePersistencePolicy.AcrossReactivations
+                }),
+                _clock,
+                _cycleRegistry,
+                store ?? Store,
+                TenantAccessor);
+
+        public IDisposable UseTenant(string tenantId) =>
+            TenantAccessor.PushContext(new Tenant { Id = tenantId, Name = tenantId });
+
+        public Task<SerializedKeyValuePair?> FindHostPauseAsync() =>
+            Store.FindAsync(new KeyValueFilter { Key = HostPauseKey }, CancellationToken.None);
+
+        public async Task SeedAsync(string key, string value, string? tenantId)
+        {
+            var factory = _services.GetRequiredService<IDbContextFactory<RuntimeElsaDbContext>>();
+            await using var dbContext = await factory.CreateDbContextAsync();
+            dbContext.KeyValuePairs.Add(new SerializedKeyValuePair
+            {
+                Key = key,
+                SerializedValue = value,
+                TenantId = tenantId
+            });
+            await dbContext.SaveChangesAsync();
+        }
+
+        public async Task<SerializedKeyValuePair?> FindIgnoringFiltersAsync(string key)
+        {
+            var factory = _services.GetRequiredService<IDbContextFactory<RuntimeElsaDbContext>>();
+            await using var dbContext = await factory.CreateDbContextAsync();
+            return await dbContext.KeyValuePairs.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == key);
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            _scope.Dispose();
+            await _services.DisposeAsync();
+            SqliteConnection.ClearAllPools();
+            if (File.Exists(_databasePath))
+                File.Delete(_databasePath);
+        }
+    }
+
+    /// <summary>
+    /// Wraps the shared EF store and gates every write so a sibling can adopt (and optionally
+    /// resume) after this node has already read the leftover and decided to adopt.
+    /// </summary>
+    private sealed class GatedWritesKeyValueStore : IKeyValueStore
+    {
+        private readonly IKeyValueStore _inner;
+        public readonly TaskCompletionSource WriteStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _writeGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public GatedWritesKeyValueStore(IKeyValueStore inner) => _inner = inner;
+
+        public void ReleaseWrites() => _writeGate.TrySetResult();
+
+        public async Task SaveAsync(SerializedKeyValuePair keyValuePair, CancellationToken cancellationToken)
+        {
+            WriteStarted.TrySetResult();
+            await _writeGate.Task;
+            await _inner.SaveAsync(keyValuePair, cancellationToken);
+        }
+
+        public Task<SerializedKeyValuePair?> FindAsync(KeyValueFilter filter, CancellationToken cancellationToken) =>
+            _inner.FindAsync(filter, cancellationToken);
+
+        public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken) =>
+            _inner.FindManyAsync(filter, cancellationToken);
+
+        public async Task DeleteAsync(string key, CancellationToken cancellationToken)
+        {
+            WriteStarted.TrySetResult();
+            await _writeGate.Task;
+            await _inner.DeleteAsync(key, cancellationToken);
+        }
+
+        public async Task<bool> TryDeleteAsync(string key, CancellationToken cancellationToken = default)
+        {
+            WriteStarted.TrySetResult();
+            await _writeGate.Task;
+            return await _inner.TryDeleteAsync(key, cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// Wraps the shared EF store and gates only the host-pause SaveAsync so a sibling can lose
+    /// the leftover delete while the winner's host key is not yet visible.
+    /// </summary>
+    private sealed class GatedHostSaveKeyValueStore : IKeyValueStore
+    {
+        private readonly IKeyValueStore _inner;
+        public readonly TaskCompletionSource SaveStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _saveGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public GatedHostSaveKeyValueStore(IKeyValueStore inner) => _inner = inner;
+
+        public void ReleaseSave() => _saveGate.TrySetResult();
+
+        public async Task SaveAsync(SerializedKeyValuePair keyValuePair, CancellationToken cancellationToken)
+        {
+            if (keyValuePair.Key == HostPauseKey)
+            {
+                SaveStarted.TrySetResult();
+                await _saveGate.Task;
+            }
+
+            await _inner.SaveAsync(keyValuePair, cancellationToken);
+        }
+
+        public Task<SerializedKeyValuePair?> FindAsync(KeyValueFilter filter, CancellationToken cancellationToken) =>
+            _inner.FindAsync(filter, cancellationToken);
+
+        public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken) =>
+            _inner.FindManyAsync(filter, cancellationToken);
+
+        public Task DeleteAsync(string key, CancellationToken cancellationToken) =>
+            _inner.DeleteAsync(key, cancellationToken);
+
+        public Task<bool> TryDeleteAsync(string key, CancellationToken cancellationToken = default) =>
+            _inner.TryDeleteAsync(key, cancellationToken);
+    }
+
+    /// <summary>
+    /// Main gates <c>SetTenantIdFilter</c> at runtime, but a distinct cache key still keeps
+    /// tenancy-on and tenancy-off harnesses from sharing a stale model if that changes.
+    /// </summary>
+    private sealed class TenancyOnModelCacheKeyFactory : IModelCacheKeyFactory
+    {
+        public object Create(DbContext context, bool designTime) => (context.GetType(), designTime, "tenancy-on");
+    }
+
+    private sealed class TenancyOffModelCacheKeyFactory : IModelCacheKeyFactory
+    {
+        public object Create(DbContext context, bool designTime) => (context.GetType(), designTime, "tenancy-off");
+    }
+}

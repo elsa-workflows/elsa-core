@@ -1,0 +1,10 @@
+@using Elsa.Studio.Models
+
+<ExpressionInput EditorContext="@EditorContext" IsCodeOnly="true"/>
+
+@code {
+    
+    /// Gets or sets the editor context.
+    [Parameter]
+    public DisplayInputEditorContext EditorContext { get; set; } = null!;
+}

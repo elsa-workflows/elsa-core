@@ -1,0 +1,7 @@
+<Project>
+  <!-- Use project references instead of NuGet packages for local development -->
+  <PropertyGroup>
+    <UseProjectReferences>false</UseProjectReferences>
+  </PropertyGroup>
+</Project>
+

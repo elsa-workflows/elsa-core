@@ -1,0 +1,240 @@
+@using Elsa.Api.Client.Resources.WorkflowDefinitions.Models
+@using Elsa.Api.Client.Resources.WorkflowDefinitions.Requests
+@using Elsa.Api.Client.Resources.WorkflowInstances.Models
+@using Elsa.Studio.Workflows.Domain.Contracts
+@using Microsoft.AspNetCore.Components.Forms
+@inject ILocalizer Localizer
+@inject IWorkflowInstanceService WorkflowInstanceService
+@inject IWorkflowDefinitionService WorkflowDefinitionService
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-2">@Descriptor.Description</MudText>
+
+        @if (!string.IsNullOrEmpty(TargetLabel))
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">@TargetLabel</MudAlert>
+        }
+
+        <EditForm Model="_values" OnSubmit="OnSubmit">
+            @foreach (var field in Descriptor.ConfigFields)
+            {
+                var value = _values.GetValueOrDefault(field.Key, "");
+
+                <div class="mb-3">
+                    @switch (field.Kind)
+                    {
+                        case AlterationFieldKind.Integer:
+                            <MudNumericField T="long" Label="@field.DisplayName"
+                                             Value="@(long.TryParse(value, out var n) ? n : 0L)"
+                                             ValueChanged="@(v => SetValue(field.Key, v.ToString()))"
+                                             HelperText="@field.HelperText"
+                                             Required="@field.Required" />
+                            break;
+                        case AlterationFieldKind.Json:
+                            <MudTextField T="string" Label="@field.DisplayName"
+                                          Value="@value"
+                                          ValueChanged="@(v => SetValue(field.Key, v ?? ""))"
+                                          Lines="4" Variant="Variant.Outlined"
+                                          HelperText="@field.HelperText"
+                                          Required="@field.Required" />
+                            break;
+                        case AlterationFieldKind.VariablePicker:
+                            @if (_loadingVariables)
+                            {
+                                <MudProgressLinear Indeterminate="true" />
+                            }
+                            else if (_variables.Count == 0)
+                            {
+                                <MudAlert Severity="Severity.Warning" Dense="true">
+                                    @Localizer["No variables on this instance."]
+                                </MudAlert>
+                            }
+                            else
+                            {
+                                <MudSelect T="string" Label="@field.DisplayName"
+                                           Value="@value"
+                                           ValueChanged="@(v => SetValue(field.Key, v ?? ""))"
+                                           Variant="Variant.Outlined"
+                                           HelperText="@field.HelperText"
+                                           Required="@field.Required">
+                                    @foreach (var v in _variables)
+                                    {
+                                        <MudSelectItem T="string" Value="@v.Id">
+                                            @v.Name
+                                            @if (v.Value is not null)
+                                            {
+                                                <span class="mud-text-secondary" style="font-size:0.75rem; margin-left:6px;">
+                                                    = @SummariseValue(v.Value)
+                                                </span>
+                                            }
+                                        </MudSelectItem>
+                                    }
+                                </MudSelect>
+                            }
+                            break;
+                        case AlterationFieldKind.VersionPicker:
+                            @if (_loadingVersions)
+                            {
+                                <MudProgressLinear Indeterminate="true" />
+                            }
+                            else if (_versions.Count == 0)
+                            {
+                                <MudAlert Severity="Severity.Warning" Dense="true">
+                                    @Localizer["No published versions found."]
+                                </MudAlert>
+                            }
+                            else
+                            {
+                                <MudSelect T="string" Label="@field.DisplayName"
+                                           Value="@value"
+                                           ValueChanged="@(v => SetValue(field.Key, v ?? ""))"
+                                           Variant="Variant.Outlined"
+                                           HelperText="@field.HelperText"
+                                           Required="@field.Required">
+                                    @foreach (var v in _versions)
+                                    {
+                                        <MudSelectItem T="string" Value="@v.Version.ToString()">
+                                            v@(v.Version)
+                                            @if (v.IsPublished) { <span class="mud-text-secondary" style="margin-left:6px;">@Localizer["(published)"]</span> }
+                                            @if (v.IsLatest) { <span class="mud-text-secondary" style="margin-left:6px;">@Localizer["(latest)"]</span> }
+                                        </MudSelectItem>
+                                    }
+                                </MudSelect>
+                            }
+                            break;
+                        default:
+                            <MudTextField T="string" Label="@field.DisplayName"
+                                          Value="@value"
+                                          ValueChanged="@(v => SetValue(field.Key, v ?? ""))"
+                                          HelperText="@field.HelperText"
+                                          Required="@field.Required" />
+                            break;
+                    }
+                </div>
+            }
+        </EditForm>
+
+        @if (!string.IsNullOrEmpty(_validationMessage))
+        {
+            <MudAlert Severity="Severity.Error" Dense="true">@_validationMessage</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancel">@Localizer["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="OnSubmit">
+            @Localizer[ExistingValues == null ? "Stage" : "Save"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = null!;
+
+    [Parameter] public AlterationDescriptor Descriptor { get; set; } = null!;
+    [Parameter] public string? TargetLabel { get; set; }
+    [Parameter] public IDictionary<string, string>? ExistingValues { get; set; }
+
+    /// <summary>Used by VariablePicker to fetch variables from the running instance.</summary>
+    [Parameter] public string? WorkflowInstanceId { get; set; }
+
+    /// <summary>Used by VersionPicker to fetch all versions of the instance's workflow definition.</summary>
+    [Parameter] public string? DefinitionId { get; set; }
+
+    private Dictionary<string, string> _values = new();
+    private string? _validationMessage;
+    private List<ResolvedVariable> _variables = new();
+    private List<WorkflowDefinitionSummary> _versions = new();
+    private bool _loadingVariables;
+    private bool _loadingVersions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (ExistingValues != null)
+            _values = new Dictionary<string, string>(ExistingValues);
+
+        // Fire each fetch only when a field actually needs the data — avoids extra round-trips
+        // for alterations like Cancel that have no fields at all.
+        if (Descriptor.ConfigFields.Any(f => f.Kind == AlterationFieldKind.VariablePicker))
+            await LoadVariablesAsync();
+
+        if (Descriptor.ConfigFields.Any(f => f.Kind == AlterationFieldKind.VersionPicker))
+            await LoadVersionsAsync();
+    }
+
+    private async Task LoadVariablesAsync()
+    {
+        if (string.IsNullOrEmpty(WorkflowInstanceId)) return;
+        _loadingVariables = true;
+        try
+        {
+            var vars = await WorkflowInstanceService.GetVariablesAsync(WorkflowInstanceId);
+            _variables = vars?.ToList() ?? new();
+        }
+        catch
+        {
+            _variables = new();
+        }
+        finally
+        {
+            _loadingVariables = false;
+        }
+    }
+
+    private async Task LoadVersionsAsync()
+    {
+        if (string.IsNullOrEmpty(DefinitionId)) return;
+        _loadingVersions = true;
+        try
+        {
+            // Only published versions are valid migration targets — the server's alteration
+            // handler rejects drafts, so listing them would just set up a guaranteed-failure
+            // submit.
+            var request = new ListWorkflowDefinitionsRequest
+            {
+                DefinitionIds = new[] { DefinitionId },
+                Page = 0,
+                PageSize = 200,
+            };
+            var response = await WorkflowDefinitionService.ListAsync(
+                request,
+                Elsa.Api.Client.Shared.Models.VersionOptions.Published);
+            _versions = response.Items.OrderByDescending(v => v.Version).ToList();
+        }
+        catch
+        {
+            _versions = new();
+        }
+        finally
+        {
+            _loadingVersions = false;
+        }
+    }
+
+    private void SetValue(string key, string value) => _values[key] = value;
+
+    private void OnSubmit()
+    {
+        var missing = Descriptor.ConfigFields
+            .Where(f => f.Required && string.IsNullOrWhiteSpace(_values.GetValueOrDefault(f.Key, "")))
+            .ToList();
+
+        if (missing.Count > 0)
+        {
+            _validationMessage = string.Format(Localizer["Please fill in: {0}"],
+                string.Join(", ", missing.Select(f => f.DisplayName)));
+            return;
+        }
+
+        Dialog.Close(DialogResult.Ok<IDictionary<string, string>>(_values));
+    }
+
+    private void OnCancel() => Dialog.Cancel();
+
+    private static string SummariseValue(object? raw)
+    {
+        if (raw is null) return "null";
+        var s = raw.ToString() ?? "";
+        return s.Length <= 30 ? s : s[..30] + "…";
+    }
+}

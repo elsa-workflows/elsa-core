@@ -1,0 +1,38 @@
+@using Orientation = Radzen.Orientation
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<CascadingValue Value="this">
+    <RadzenSplitter Orientation="Orientation.Horizontal">
+        <RadzenSplitterPane Size="65%">
+
+            <MudDynamicTabs
+                Style="height: 100%"
+                AddIconClass="d-none"
+                AddIconToolTip="@Localizer["Click to open a new workflow tab"]" CloseIconToolTip="@Localizer["Close workflow"]"
+                Elevation="0"
+                ApplyEffectsToContainer>
+
+                @if (WorkflowInstance != null)
+                {
+                    <MudTabPanel Text="@WorkflowInstance.Id" ShowCloseIcon="false" Style="height: 100%">
+                        <WorkflowInstanceDesigner
+                            @ref="@_workflowInstanceDesigner"
+                            WorkflowInstance="WorkflowInstance"
+                            WorkflowDefinition="WorkflowDefinition"
+                            PathChanged="OnPathChanged"
+                            ActivitySelected="ActivitySelected"
+                            ActivityExecutionSelected="ActivityExecutionSelected"
+                            EditWorkflowDefinition="EditWorkflowDefinition"/>
+                    </MudTabPanel>
+                }
+
+            </MudDynamicTabs>
+
+        </RadzenSplitterPane>
+        <RadzenSplitterPane Size="35%" Min="100px">
+            <WorkflowInstanceDetails @ref="@_workflowInstanceDetails" WorkflowInstance="WorkflowInstance" WorkflowDefinition="WorkflowDefinition" IncidentActivityNodeIdClicked="OnIncidentActivityNodeIdClicked"/>
+        </RadzenSplitterPane>
+
+    </RadzenSplitter>
+</CascadingValue>

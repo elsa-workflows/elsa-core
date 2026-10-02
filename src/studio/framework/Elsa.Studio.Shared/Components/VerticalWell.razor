@@ -1,0 +1,16 @@
+<div class="pa-4" style="@($"overflow-y: scroll; max-height: calc(100vh - var(--mud-appbar-height) - {ExtraPadding}px);")">
+    @ChildContent
+</div>
+
+@code
+{
+    /// <summary>
+    /// The content to be rendered inside the <see cref="VerticalWell"/> component.
+    /// </summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    
+    /// <summary>
+    /// The amount of extra padding to add to the bottom of the <see cref="VerticalWell"/> component.
+    /// </summary>
+    [Parameter] public int ExtraPadding { get; set; }
+}

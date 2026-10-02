@@ -1,0 +1,18 @@
+@using Elsa.Studio.Branding
+
+<MudStack>
+    <div class="d-flex gap-2 align-center">
+        <MudImage Src="@LogoUrl" Alt="" ObjectFit="ObjectFit.ScaleDown" Fluid="true" Width="32"
+                  Height="32"></MudImage>
+        <MudText Typo="Typo.h6">@AppNameWithVersion </MudText>
+    </div>
+</MudStack>
+
+@code{
+    [Parameter] public IBrandingProvider BrandingProvider { get; set; } = default!;
+
+#pragma warning disable CS0618 // Default branding renders the legacy values for backward-compatible providers.
+    private string? LogoUrl => BrandingProvider.LogoUrl;
+    private string AppNameWithVersion => BrandingProvider.AppNameWithVersion;
+#pragma warning restore CS0618
+}

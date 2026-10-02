@@ -1,0 +1,85 @@
+﻿@using Elsa.Studio.Localization
+@using Radzen.Blazor
+@inject ILocalizer Localizer
+@inject IDialogService DialogService
+
+<MudDialog>
+    <TitleContent>
+        <MudToolBar Dense="true" Gutters="false">
+            <MudStack Spacing="0">
+                <MudStack AlignItems=AlignItems.Center Row=true>
+                    <MudText Typo="Typo.h5">@Label</MudText>
+                    <RadzenIcon class="filled-icon" Icon="markdown" IconColor="@Radzen.Colors.Info" title="Markdown supported" />
+                </MudStack>
+                <MudText Typo="Typo.caption">@HelperText</MudText>
+            </MudStack>
+            <MudSpacer />
+            <MudTooltip Text="@Localizer["Close"]">
+                <MudIconButton Icon="@Icons.Material.Outlined.Close" Size="Size.Medium" OnClick="OnClosedClicked" />
+            </MudTooltip>
+        </MudToolBar>
+    </TitleContent>
+    <DialogContent>
+        <MudStack>
+            <MudStack>
+                <MudTabs Position="MudBlazor.Position.Left"
+                         MinimumTabWidth="120px"
+                         Rounded="true"
+                         Border="true"
+                         Outlined="true"
+                         KeepPanelsAlive="true"
+                         ApplyEffectsToContainer="true"
+                         TabPanelsClass="pa-4">
+                    <MudPaper Height="100%" Width="100%" Elevation="0">
+                        @if (!IsReadOnly)
+                        {
+                            <MudTabPanel Text="@Localizer["Edit"]">
+                                <MudTextField T="string"
+                                              Label="@Label"
+                                              Value="@Value"
+                                              ValueChanged="@HandleValueChanged"
+                                              For="@(() => Value)"
+                                              Lines="33"
+                                              Margin="Margin.Dense"
+                                              Variant="Variant.Outlined" />
+                            </MudTabPanel>
+                        }
+                        <MudTabPanel Text="@Localizer["Preview"]">
+                            <div style="min-height:660px">
+
+                                @if (string.IsNullOrEmpty(Value))
+                                {
+                                    <MudText>No content to display.</MudText>
+                                }
+                                else
+                                {
+                                    <RadzenMarkdown Text="@Value"/>
+                                }
+                            </div>
+                        </MudTabPanel>
+                    </MudPaper>
+                </MudTabs>
+            </MudStack>
+        </MudStack>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter] public string Value { get; set; } = null!;
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter] public string Label { get; set; } = null!;
+    [Parameter] public string HelperText { get; set; } = null!;
+    [Parameter] public bool IsReadOnly { get; set; }
+
+    private void OnClosedClicked() => MudDialog.Close(DialogResult.Ok(Value));
+
+    private async Task HandleValueChanged(string newValue)
+    {
+        if (Value == newValue) return;
+        Value = newValue;
+        await ValueChanged.InvokeAsync(newValue);
+    }
+}

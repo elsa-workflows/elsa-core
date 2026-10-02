@@ -1,0 +1,78 @@
+name: Dapper provider tests
+
+# DapperWorkflowDefinitionStoreTests default to SQLite. This runs them against real
+# PostgreSQL and SQL Server. The images are the digests recorded in
+# doc/integration-program/consolidation/dapper-atomic-updates-import-evidence.json.
+# Both servers listen on loopback only. PostgreSQL uses trust auth and the
+# SQL Server password is derived per run, so no credential is committed.
+on:
+  pull_request:
+    paths:
+      - 'src/extensions/persistence/Elsa.Persistence.Dapper/**'
+      - 'src/extensions/persistence/Elsa.Persistence.Dapper.Migrations/**'
+      - 'test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/**'
+      # Npgsql, Microsoft.Data.SqlClient and Dapper versions for both projects are pinned here.
+      - 'src/extensions/Directory.Packages.props'
+      - 'test/extensions/Directory.Packages.props'
+      - '.github/workflows/dapper-provider-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PROJECT: test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj
+  FILTER: FullyQualifiedName~DapperWorkflowDefinitionStoreTests
+
+jobs:
+  store-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        # 17.11
+        image: postgres@sha256:67f41722b7a8cbdb868a44a4995c846eddfdc2973bccb291ce937dce88ad5675
+        env:
+          POSTGRES_USER: elsa
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: elsa_dapper
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U elsa -d elsa_dapper"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      sqlserver:
+        # 2022 RTM-CU27 16.0.4295.3
+        image: mcr.microsoft.com/mssql/server@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: ${{ format('Ci-{0}-{1}x', github.run_id, github.run_attempt) }}
+        ports:
+          - 127.0.0.1:1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P $MSSQL_SA_PASSWORD -Q 'SELECT 1' -b"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '10.0.300'
+      - id: build
+        name: Build
+        run: dotnet build "$PROJECT" -f net10.0
+      # TreatNoTestsAsError fails the step if a rename leaves the filter matching nothing.
+      - name: PostgreSQL
+        env:
+          ELSA_DAPPER_CAS_PROVIDER: postgres
+          ELSA_DAPPER_CAS_CONNECTION: Host=127.0.0.1;Port=5432;Database=elsa_dapper;Username=elsa
+        run: dotnet test "$PROJECT" -f net10.0 --no-build --filter "$FILTER" -- RunConfiguration.TreatNoTestsAsError=true
+      - name: SQL Server
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        env:
+          ELSA_DAPPER_CAS_PROVIDER: sqlserver
+          ELSA_DAPPER_CAS_CONNECTION: Server=127.0.0.1,1433;User Id=sa;Password=${{ format('Ci-{0}-{1}x', github.run_id, github.run_attempt) }};TrustServerCertificate=True;Command Timeout=15
+        run: dotnet test "$PROJECT" -f net10.0 --no-build --filter "$FILTER" -- RunConfiguration.TreatNoTestsAsError=true

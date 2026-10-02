@@ -1,0 +1,325 @@
+@page "/alterations"
+@using Elsa.Api.Client.Resources.Alterations.Contracts
+@using Elsa.Api.Client.Resources.Alterations.Enums
+@using Elsa.Api.Client.Resources.Alterations.Models
+@using Elsa.Api.Client.Resources.Alterations.Responses
+@using Elsa.Api.Client.Resources.WorkflowInstances.Enums
+@using Elsa.Api.Client.Resources.WorkflowInstances.Models
+@using Elsa.Api.Client.Resources.WorkflowInstances.Requests
+@using Elsa.Studio.Contracts
+@using Elsa.Studio.Workflows.Domain.Contracts
+@inherits StudioComponentBase
+@implements IDisposable
+@inject IWorkflowInstanceService WorkflowInstanceService
+@inject IBackendApiClientProvider BackendApiClientProvider
+@inject ILocalizer Localizer
+@inject NavigationManager Nav
+
+<PageTitle>@Localizer["Alteration plans"]</PageTitle>
+
+@* Layout matches the Workflows module exactly:
+   - MudContainer MaxWidth.False (full width)
+   - <PageHeading> for the title (Typo.h5, primary, my-6)
+   - MudTable Elevation=0 directly underneath, with toolbar actions in ToolBarContent.
+   No breadcrumbs and no MudPaper card wrapper — matches WorkflowInstanceList. *@
+<MudContainer MaxWidth="MaxWidth.False">
+    <PageHeading Text="@Localizer["Alteration plans"]" />
+
+    <MudTable T="WorkflowInstanceSummary"
+              ServerData="LoadAsync"
+              Dense="true" Hover="true" Elevation="0"
+              @ref="_table"
+              RowStyle="cursor: pointer;"
+              OnRowClick="OnRowClick">
+        <ToolBarContent>
+            <MudMenu EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
+                     Label="@Localizer["Actions"]"
+                     Color="Color.Primary"
+                     Variant="Variant.Filled"
+                     Dense="true">
+                <MudMenuItem Icon="@Icons.Material.Outlined.Refresh"
+                             OnClick="@(() => { _table?.ReloadServerData(); })">
+                    @Localizer["Refresh"]
+                </MudMenuItem>
+                <MudMenuItem Icon="@(_polling ? Icons.Material.Outlined.PauseCircle : Icons.Material.Outlined.Autorenew)"
+                             OnClick="@(() => OnPollingChanged(!_polling))">
+                    @(_polling ? Localizer["Pause polling"] : Localizer["Enable polling"])
+                </MudMenuItem>
+            </MudMenu>
+
+            <MudSpacer />
+
+            <MudTextField T="string"
+                          Text="@_searchTerm"
+                          Placeholder="@Localizer["Search by plan id"]"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          AdornmentIcon="@Icons.Material.Outlined.Search"
+                          Adornment="Adornment.End"
+                          Clearable="true"
+                          DebounceInterval="500"
+                          Immediate="true"
+                          Class="me-3"
+                          Style="height: 36.5px; width: 360px"
+                          ValueChanged="OnSearchChanged" />
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>@Localizer["Plan id"]</MudTh>
+            <MudTh>@Localizer["State"]</MudTh>
+            <MudTh>@Localizer["Jobs"]</MudTh>
+            <MudTh>@Localizer["Created"]</MudTh>
+            <MudTh>@Localizer["Finished"]</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            @{
+                var planId = ResolvePlanId(context);
+                var summary = _planSummaries.GetValueOrDefault(planId);
+            }
+            <MudTd DataLabel="@Localizer["Plan id"]">
+                <MudText Typo="Typo.body2" Style="font-family:var(--mud-typography-input-font-family,monospace);">
+                    @planId
+                </MudText>
+            </MudTd>
+            <MudTd DataLabel="@Localizer["State"]">
+                @if (summary == null)
+                {
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Default">
+                        @Localizer["Loading…"]
+                    </MudChip>
+                }
+                else
+                {
+                    <MudTooltip Text="@summary.StateTooltip">
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled"
+                                 Color="@summary.StateColor" Icon="@summary.StateIcon">
+                            @summary.StateLabel
+                        </MudChip>
+                    </MudTooltip>
+                }
+            </MudTd>
+            <MudTd DataLabel="@Localizer["Jobs"]">
+                @if (summary != null && summary.TotalJobs > 0)
+                {
+                    <MudText Typo="Typo.body2">
+                        @summary.CompletedJobs / @summary.TotalJobs
+                        @if (summary.FailedJobs > 0)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Filled"
+                                     Color="Color.Error" Class="ml-2">
+                                @summary.FailedJobs @Localizer["failed"]
+                            </MudChip>
+                        }
+                    </MudText>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Default">—</MudText>
+                }
+            </MudTd>
+            <MudTd DataLabel="@Localizer["Created"]">
+                <MudText Typo="Typo.body2">@context.CreatedAt.ToLocalTime().ToString("g")</MudText>
+            </MudTd>
+            <MudTd DataLabel="@Localizer["Finished"]">
+                <MudText Typo="Typo.body2">@(context.FinishedAt?.ToLocalTime().ToString("g") ?? "—")</MudText>
+            </MudTd>
+            <MudTd Style="text-align:right">
+                <MudIconButton Icon="@Icons.Material.Outlined.OpenInNew"
+                               Size="Size.Small"
+                               Color="Color.Primary"
+                               Href="@($"alterations/plans/{planId}")"
+                               title="@Localizer["Open"]" />
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Class="pa-4">@Localizer["No alteration plans yet."]</MudText>
+        </NoRecordsContent>
+        <LoadingContent>
+            <MudText>@Localizer["Loading…"]</MudText>
+        </LoadingContent>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
+</MudContainer>
+
+@code {
+    private const string ExecuteAlterationPlanDefinitionId = "Elsa.Alterations.ExecuteAlterationPlan";
+
+    private MudTable<WorkflowInstanceSummary>? _table;
+    private string _searchTerm = "";
+    private bool _polling = true;
+    private Timer? _pollingTimer;
+    private Dictionary<string, PlanRowSummary> _planSummaries = new();
+    private int _summaryLoadVersion;
+
+    protected override void OnInitialized() => StartPolling();
+
+    private void StartPolling()
+    {
+        StopPolling();
+        if (!_polling) return;
+        _pollingTimer = new Timer(_ =>
+        {
+            _ = InvokeAsync(() => { _table?.ReloadServerData(); });
+        }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+    }
+
+    private void StopPolling()
+    {
+        _pollingTimer?.Dispose();
+        _pollingTimer = null;
+    }
+
+    private void OnPollingChanged(bool value)
+    {
+        _polling = value;
+        if (_polling) StartPolling(); else StopPolling();
+    }
+
+    private void OnSearchChanged(string value)
+    {
+        _searchTerm = value;
+        _table?.ReloadServerData();
+    }
+
+    public void Dispose() => StopPolling();
+
+    private async Task<TableData<WorkflowInstanceSummary>> LoadAsync(TableState state, CancellationToken ct)
+    {
+        try
+        {
+            var request = new ListWorkflowInstancesRequest
+            {
+                Page = state.Page,
+                PageSize = state.PageSize,
+                DefinitionIds = new[] { ExecuteAlterationPlanDefinitionId },
+                IsSystem = true,
+                CorrelationId = string.IsNullOrWhiteSpace(_searchTerm) ? null : _searchTerm.Trim(),
+            };
+
+            var response = await WorkflowInstanceService.ListAsync(request, ct);
+
+            // Fan out per-plan detail fetches in parallel after the table renders. Real plan/job
+            // status comes from IAlterationsApi.GetAsync — the system workflow's Status/SubStatus is
+            // unreliable (commonly stuck at Suspended even after all jobs complete).
+            var summaryLoadVersion = Interlocked.Increment(ref _summaryLoadVersion);
+            _ = LoadPlanSummariesAsync(response.Items.ToList(), summaryLoadVersion, ct);
+
+            return new TableData<WorkflowInstanceSummary>
+            {
+                Items = response.Items,
+                TotalItems = (int)response.TotalCount,
+            };
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            return new TableData<WorkflowInstanceSummary> { Items = [], TotalItems = 0 };
+        }
+    }
+
+    private async Task LoadPlanSummariesAsync(IList<WorkflowInstanceSummary> instances, int loadVersion, CancellationToken ct)
+    {
+        try
+        {
+            var api = await BackendApiClientProvider.GetApiAsync<IAlterationsApi>(ct);
+            var ids = instances.Select(ResolvePlanId).Distinct().ToList();
+
+            var fetched = await Task.WhenAll(ids.Select(async id =>
+            {
+                try
+                {
+                    var resp = await api.GetAsync(id, ct);
+                    return (Id: id, Summary: BuildSummary(resp));
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch
+                {
+                    return (Id: id, Summary: BuildErrorSummary());
+                }
+            }));
+
+            if (loadVersion != Volatile.Read(ref _summaryLoadVersion))
+                return;
+
+            _planSummaries = fetched.ToDictionary(x => x.Id, x => x.Summary);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer table load is already in progress; leave current summaries untouched.
+        }
+        catch
+        {
+            // Network blip or auth — leave summaries empty; rows stay "Loading…" until the next
+            // poll succeeds.
+        }
+    }
+
+    private void OnRowClick(TableRowClickEventArgs<WorkflowInstanceSummary> args)
+    {
+        if (args.Item != null)
+            Nav.NavigateTo($"alterations/plans/{ResolvePlanId(args.Item)}");
+    }
+
+    private static string ResolvePlanId(WorkflowInstanceSummary i)
+        => string.IsNullOrEmpty(i.CorrelationId) ? i.Id : i.CorrelationId;
+
+    private record PlanRowSummary(
+        string StateLabel,
+        Color StateColor,
+        string StateIcon,
+        string StateTooltip,
+        int TotalJobs,
+        int CompletedJobs,
+        int FailedJobs);
+
+    private PlanRowSummary BuildSummary(GetAlterationPlanResponse? resp)
+    {
+        var jobs = resp?.Jobs?.ToList() ?? new();
+        var total = jobs.Count;
+        var completed = jobs.Count(j => j.Status == AlterationJobStatus.Completed);
+        var failed = jobs.Count(j => j.Status == AlterationJobStatus.Failed);
+        var terminal = completed + failed;
+        var planStatus = resp?.Plan?.Status;
+
+        if (planStatus == AlterationPlanStatus.Completed)
+            return new(Localizer["Completed"], Color.Success, Icons.Material.Outlined.CheckCircle,
+                Localizer["Plan finished. All jobs reported back."], total, completed, failed);
+
+        if (planStatus == AlterationPlanStatus.Failed)
+            return new(Localizer["Failed"], Color.Error, Icons.Material.Outlined.ErrorOutline,
+                Localizer["The plan itself failed."], total, completed, failed);
+
+        if (total == 0)
+            return new(Localizer["Generating"], Color.Info, Icons.Material.Outlined.HourglassTop,
+                Localizer["Jobs haven't been generated yet."], 0, 0, 0);
+
+        if (terminal == total)
+        {
+            if (failed > 0)
+                return new(Localizer["Done with failures"], Color.Warning, Icons.Material.Outlined.ReportProblem,
+                    string.Format(Localizer["All jobs are terminal but {0} failed. The plan may still be marked Running by the executor; check job logs."], failed),
+                    total, completed, failed);
+
+            return new(Localizer["Done"], Color.Success, Icons.Material.Outlined.CheckCircle,
+                Localizer["All jobs completed. The executor may not have updated the plan status yet."],
+                total, completed, failed);
+        }
+
+        return new(Localizer["Processing"], Color.Info, Icons.Material.Outlined.Sync,
+            string.Format(Localizer["{0} of {1} jobs done."], terminal, total),
+            total, completed, failed);
+    }
+
+    private PlanRowSummary BuildErrorSummary() =>
+        new("?", Color.Default, Icons.Material.Outlined.HelpOutline,
+            Localizer["Couldn't fetch this plan. Click Open for details."], 0, 0, 0);
+}

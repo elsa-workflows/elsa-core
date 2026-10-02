@@ -1,0 +1,47 @@
+@if (Span == null)
+{
+    <MudAlert Severity="Severity.Normal" Variant="Variant.Text">Select a span to inspect details.</MudAlert>
+}
+else
+{
+    <MudPaper Elevation="0" Outlined="true" Class="pa-3" aria-label="Span details">
+        <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Spacing="2" Class="mb-3">
+            <MudText Typo="Typo.subtitle1">@Span.Name</MudText>
+            <MudChip T="string" Size="Size.Small" Color="@StatusColor">@Span.Status</MudChip>
+        </MudStack>
+        <MudSimpleTable Dense="true" Hover="false">
+            <tbody>
+            <tr><th>Span ID</th><td class="elsa-otel-mono">@Span.SpanId</td></tr>
+            <tr><th>Parent Span ID</th><td class="elsa-otel-mono">@(Span.ParentSpanId ?? "-")</td></tr>
+            <tr><th>Kind</th><td>@Span.Kind</td></tr>
+            <tr><th>Started</th><td>@FormatTime(Span.StartTime)</td></tr>
+            <tr><th>Duration</th><td>@FormatDuration(Span.EndTime - Span.StartTime)</td></tr>
+            </tbody>
+        </MudSimpleTable>
+
+        @if (Span.Attributes.Count > 0)
+        {
+            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-2">Attributes</MudText>
+            <MudSimpleTable Dense="true" Hover="false">
+                <tbody>
+                @foreach (var item in Span.Attributes.OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase))
+                {
+                    <tr><th>@item.Key</th><td class="elsa-otel-mono">@item.Value</td></tr>
+                }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public TelemetrySpan? Span { get; set; }
+
+    private Color StatusColor => Span?.Status == SpanStatus.Error ? Color.Error : Color.Success;
+
+    private static string FormatDuration(TimeSpan duration) => duration.TotalMilliseconds >= 1000
+        ? $"{duration.TotalSeconds:n2}s"
+        : $"{duration.TotalMilliseconds:n0}ms";
+
+    private static string FormatTime(DateTimeOffset value) => value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
+}

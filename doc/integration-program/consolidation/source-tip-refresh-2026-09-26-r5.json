@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 5,
+  "issue": 8286,
+  "baseImportHead": "8f85a3db84af3fac12df5f4364f285b70c761451",
+  "mappedDeltaCommit": "55f56cef1d7ebf4f5beeea94c7576c3dd2d40d27",
+  "historyJoinCommit": "7419e3ac201e1adba4f1284f74b3852a6b48668a",
+  "acceptedMergeCommit": "1d8a567c53dba79a47d5503dda7b387411548aaf",
+  "oldExtensionsCommit": "9361c80e2ea56ccf71118fb53d6fd8f3d0fbbbf0",
+  "newExtensionsCommit": "807cd89328c01e76bf1cababf525aff3c29bec93",
+  "sourcePullRequest": "https://github.com/elsa-workflows/elsa-core/pull/8499",
+  "historicalReceiptSha256": "7974522e5fb69875bcf724c7d925592857d6a9b9a793831d5ec69faedf0ca516",
+  "mappedChanges": [
+    {
+      "status": "M",
+      "source": "src/modules/persistence/Elsa.Persistence.Dapper/Abstractions/SqlDialectBase.cs",
+      "mappedPath": "src/extensions/persistence/Elsa.Persistence.Dapper/Abstractions/SqlDialectBase.cs",
+      "oldSource": {
+        "blob": "0a7378ee6c7eb3744b2d2e50372caf6c617f463b",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "0a7378ee6c7eb3744b2d2e50372caf6c617f463b",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "2c130a477ebb433ca725cf05c97471c7066fb605",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "9485d99c2d0f7c791a771a0b3ad8a7f4f4076189",
+        "mode": "100644"
+      }
+    },
+    {
+      "status": "M",
+      "source": "src/modules/persistence/Elsa.Persistence.Dapper/Contracts/ISqlDialect.cs",
+      "mappedPath": "src/extensions/persistence/Elsa.Persistence.Dapper/Contracts/ISqlDialect.cs",
+      "oldSource": {
+        "blob": "6912440ef935ae85cdc0d4989000b586b4924753",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "6912440ef935ae85cdc0d4989000b586b4924753",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "52b5178a9d6baeedc122c56f41187f574e8069c6",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "8cc20f945a8946bea60533888493429dec8db5e7",
+        "mode": "100644"
+      }
+    },
+    {
+      "status": "A",
+      "source": "test/modules/persistence/Elsa.Dapper.UnitTests/SqlDialectDefaultUpdateTests.cs",
+      "mappedPath": "test/extensions/modules/persistence/Elsa.Dapper.UnitTests/SqlDialectDefaultUpdateTests.cs",
+      "oldSource": null,
+      "oldMapped": null,
+      "newSource": {
+        "blob": "ddc92d730a79b4cef777ccd69f434eea63115930",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "ddc92d730a79b4cef777ccd69f434eea63115930",
+        "mode": "100644"
+      }
+    }
+  ],
+  "publicationPerformed": false
+}

@@ -1,0 +1,32 @@
+using Elsa.Expressions.JavaScript.Extensions;
+using Elsa.Expressions.JavaScript.Features;
+using Elsa.Expressions.JavaScript.Notifications;
+using Elsa.Features.Abstractions;
+using Elsa.Features.Attributes;
+using Elsa.Features.Services;
+using Elsa.WorkflowContexts.Scripting.JavaScript;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Elsa.WorkflowContexts.Features;
+
+/// <summary>
+/// Enabled when both <see cref="WorkflowContextsFeature"/> and <see cref="JavaScriptFeature"/> are enabled.
+/// </summary>
+[DependencyOf(typeof(WorkflowContextsFeature))]
+[DependencyOf(typeof(JavaScriptFeature))]
+public class WorkflowContextsJavaScriptFeature : FeatureBase
+{
+    /// <inheritdoc />
+    public WorkflowContextsJavaScriptFeature(IModule module) : base(module)
+    {
+    }
+
+    /// <inheritdoc />
+    public override void Apply()
+    {
+        Services.AddScoped<ConfigureJavaScriptEngine>();
+        Services.AddNotificationHandler<ConfigureJavaScriptEngine, EvaluatingJavaScript>(sp => sp.GetRequiredService<ConfigureJavaScriptEngine>());
+        Services.AddTypeDefinitionProvider<ConfigureJavaScriptEngine>(sp => sp.GetRequiredService<ConfigureJavaScriptEngine>());
+        Services.AddFunctionDefinitionProvider<ConfigureJavaScriptEngine>(sp => sp.GetRequiredService<ConfigureJavaScriptEngine>());
+    }
+}

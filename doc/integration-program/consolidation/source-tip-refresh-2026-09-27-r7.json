@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 7,
+  "issue": 8497,
+  "story": 8286,
+  "sourcePullRequest": "https://github.com/elsa-workflows/elsa-core/pull/8497",
+  "baseImportHead": "ecd2a77613405efe98a4adb9f9587a8d668c31e7",
+  "mergedMainCommit": "d0ea5b039c2525774b14592d3322078a645b993c",
+  "reviewedGateCommit": "79d6c41e09069927abb7825f16b5ba0a168cea38",
+  "mergeCommit": "852a7ca7160670cd24ad3c9ca76a1bdc637c1d77",
+  "supersededPublisherReceipts": [
+    {
+      "path": "doc/integration-program/consolidation/source-tip-refresh-2026-09-25-r3.json",
+      "sha256": "196e606e8313865a380fa1334a09cc521a2be2837ae7f60cf6e847ac76694834"
+    },
+    {
+      "path": "doc/integration-program/consolidation/source-tip-refresh-2026-09-25-r4.json",
+      "sha256": "a81601e783e9da64ce67c4c9fc768cff7e8791ff6f67a9ebdbc7a149b14c4a05"
+    },
+    {
+      "path": "doc/integration-program/consolidation/source-tip-refresh-2026-09-27-r6.json",
+      "sha256": "f1db74ffbd599128476c86a65697ca91c534431a255daa961eb5a89a16206974"
+    }
+  ],
+  "publisherWorkflows": {
+    "before": {
+      ".github/workflows/packages.yml": {
+        "blob": "8cd229e2d5f6307826f144ee0b1de37f86f93ed8",
+        "mode": "100644"
+      },
+      ".github/workflows/update-wiki.yml": {
+        "blob": "65a8494fdb4cedcbe78b065ca23d4d16e6fb6b32",
+        "mode": "100644"
+      }
+    },
+    "after": {
+      ".github/workflows/packages.yml": {
+        "blob": "388c8ffcc3c6e83ff922005dede744d5b97767b9",
+        "mode": "100644"
+      },
+      ".github/workflows/update-wiki.yml": {
+        "blob": "65a8494fdb4cedcbe78b065ca23d4d16e6fb6b32",
+        "mode": "100644"
+      }
+    }
+  },
+  "gateValidator": "scripts/validate_packages_workflow_gates.py",
+  "publicationPerformed": false
+}

@@ -1,0 +1,365 @@
+.console-logs-page {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: calc(100vh - var(--mud-appbar-height));
+    min-height: 0;
+    overflow: hidden;
+    padding: 16px 24px 24px;
+}
+
+.console-log-viewer {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.console-log-viewer-embedded {
+    gap: 8px;
+    padding: 8px 12px 12px;
+}
+
+.console-log-viewer-embedded .console-logs-toolbar {
+    padding: 8px 10px;
+}
+
+.console-log-viewer-embedded .console-logs-switch-actions {
+    display: none;
+}
+
+.console-logs-toolbar,
+.console-logs-filters {
+    padding: 14px 16px;
+}
+
+.console-logs-summary {
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.console-logs-actions {
+    flex: 0 0 auto;
+}
+
+.console-logs-icon-actions,
+.console-logs-switch-actions {
+    flex: 0 0 auto;
+}
+
+.console-logs-icon-actions {
+    gap: 2px;
+}
+
+.console-logs-switch-actions {
+    gap: 10px;
+}
+
+.console-logs-switch {
+    margin: 0;
+    max-width: max-content;
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.console-logs-status {
+    align-items: center;
+    display: inline-flex;
+    font-weight: 600;
+    gap: 6px;
+}
+
+.console-logs-status-dot {
+    background: var(--mud-palette-warning);
+    border-radius: 999px;
+    display: inline-block;
+    height: 8px;
+    width: 8px;
+}
+
+.console-logs-status-connected .console-logs-status-dot {
+    background: var(--mud-palette-success);
+}
+
+.console-logs-status-paused .console-logs-status-dot {
+    background: var(--mud-palette-info);
+}
+
+.console-logs-status-error .console-logs-status-dot,
+.console-logs-status-unauthorized .console-logs-status-dot {
+    background: var(--mud-palette-error);
+}
+
+.console-logs-warning,
+.console-log-flag {
+    color: var(--mud-palette-warning-darken);
+    font-size: .75rem;
+}
+
+.console-logs-surface {
+    background: #111;
+    border: 1px solid var(--mud-palette-divider);
+    border-radius: 4px;
+    color: #f4f4f4;
+    flex: 1 1 auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: .82rem;
+    min-height: 0;
+    overflow: auto;
+    padding: 12px;
+}
+
+.console-log-row {
+    align-items: baseline;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 90px 54px minmax(110px, 180px) minmax(0, 1fr) auto auto;
+    line-height: 1.35;
+    min-width: 760px;
+    padding: 2px 0;
+}
+
+.console-logs-compact .console-log-row {
+    line-height: 1.2;
+    padding: 0;
+}
+
+.console-log-time,
+.console-log-source {
+    color: #a9b7c6;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.console-log-stream,
+.console-log-flag {
+    white-space: nowrap;
+}
+
+.console-log-source-health {
+    border: 1px solid var(--mud-palette-warning);
+    border-radius: 3px;
+    color: var(--mud-palette-warning);
+    font-size: .68rem;
+    font-weight: 700;
+    margin-left: 4px;
+    padding: 0 3px;
+    text-transform: uppercase;
+}
+
+.console-log-stream {
+    border-radius: 3px;
+    font-size: .72rem;
+    font-weight: 700;
+    padding: 1px 4px;
+    text-transform: uppercase;
+}
+
+.console-log-stream-stdout {
+    background: #1d4f35;
+    color: #d7ffdf;
+}
+
+.console-log-stream-stderr {
+    background: #633;
+    color: #ffd9d9;
+}
+
+.console-log-row-stderr .console-log-text {
+    color: #ffdede;
+}
+
+.console-log-text {
+    overflow-wrap: anywhere;
+    white-space: pre;
+}
+
+.console-logs-wrap .console-log-text {
+    white-space: pre-wrap;
+}
+
+.ansi-bg-black {
+    background-color: var(--ansi-black, #505a64);
+}
+
+.ansi-bg-red {
+    background-color: var(--ansi-red, #9f3f43);
+}
+
+.ansi-bg-green {
+    background-color: var(--ansi-green, #2f6f46);
+}
+
+.ansi-bg-yellow {
+    background-color: var(--ansi-yellow, #8a7227);
+}
+
+.ansi-bg-blue {
+    background-color: var(--ansi-blue, #386fa7);
+}
+
+.ansi-bg-magenta {
+    background-color: var(--ansi-magenta, #795690);
+}
+
+.ansi-bg-cyan {
+    background-color: var(--ansi-cyan, #237d87);
+}
+
+.ansi-bg-white {
+    background-color: var(--ansi-white, #7c858f);
+}
+
+.ansi-bg-bright-black {
+    background-color: var(--ansi-bright-black, #68727d);
+}
+
+.ansi-bg-bright-red {
+    background-color: var(--ansi-bright-red, #c55358);
+}
+
+.ansi-bg-bright-green {
+    background-color: var(--ansi-bright-green, #3f8f5a);
+}
+
+.ansi-bg-bright-yellow {
+    background-color: var(--ansi-bright-yellow, #a08630);
+}
+
+.ansi-bg-bright-blue {
+    background-color: var(--ansi-bright-blue, #4c84bf);
+}
+
+.ansi-bg-bright-magenta {
+    background-color: var(--ansi-bright-magenta, #9668af);
+}
+
+.ansi-bg-bright-cyan {
+    background-color: var(--ansi-bright-cyan, #2f98a3);
+}
+
+.ansi-bg-bright-white {
+    background-color: var(--ansi-bright-white, #98a2ad);
+}
+
+.ansi-fg-black,
+.ansi-fg-red,
+.ansi-fg-green,
+.ansi-fg-yellow,
+.ansi-fg-blue,
+.ansi-fg-magenta,
+.ansi-fg-cyan,
+.ansi-fg-white,
+.ansi-fg-bright-black,
+.ansi-fg-bright-red,
+.ansi-fg-bright-green,
+.ansi-fg-bright-yellow,
+.ansi-fg-bright-blue,
+.ansi-fg-bright-magenta,
+.ansi-fg-bright-cyan,
+.ansi-fg-bright-white {
+    color: inherit;
+}
+
+.ansi-fg-black {
+    color: var(--ansi-black, #505a64);
+}
+
+.ansi-fg-red {
+    color: var(--ansi-red, #9f3f43);
+}
+
+.ansi-fg-green {
+    color: var(--ansi-green, #2f6f46);
+}
+
+.ansi-fg-yellow {
+    color: var(--ansi-yellow, #8a7227);
+}
+
+.ansi-fg-blue {
+    color: var(--ansi-blue, #386fa7);
+}
+
+.ansi-fg-magenta {
+    color: var(--ansi-magenta, #795690);
+}
+
+.ansi-fg-cyan {
+    color: var(--ansi-cyan, #237d87);
+}
+
+.ansi-fg-white {
+    color: var(--ansi-white, #7c858f);
+}
+
+.ansi-fg-bright-black {
+    color: var(--ansi-bright-black, #68727d);
+}
+
+.ansi-fg-bright-red {
+    color: var(--ansi-bright-red, #c55358);
+}
+
+.ansi-fg-bright-green {
+    color: var(--ansi-bright-green, #3f8f5a);
+}
+
+.ansi-fg-bright-yellow {
+    color: var(--ansi-bright-yellow, #a08630);
+}
+
+.ansi-fg-bright-blue {
+    color: var(--ansi-bright-blue, #4c84bf);
+}
+
+.ansi-fg-bright-magenta {
+    color: var(--ansi-bright-magenta, #9668af);
+}
+
+.ansi-fg-bright-cyan {
+    color: var(--ansi-bright-cyan, #2f98a3);
+}
+
+.ansi-fg-bright-white {
+    color: var(--ansi-bright-white, #98a2ad);
+}
+
+.ansi-bold {
+    font-weight: 600;
+}
+
+.ansi-italic {
+    font-style: italic;
+}
+
+.ansi-underline {
+    text-decoration: underline;
+}
+
+.ansi-inverse {
+    filter: invert(100%);
+}
+
+.console-logs-empty {
+    color: #a9b7c6;
+    padding: 32px;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .console-logs-toolbar-row {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .console-logs-actions,
+    .console-logs-switch-actions {
+        flex-wrap: wrap;
+    }
+}

@@ -88,6 +88,8 @@ docker run \
 [Elsa Documentation Website](https://docs.elsaworkflows.io/).
 
 - [Default Admin User bootstrap (shell + legacy feature system)](src/modules/Elsa.Identity/README.md)
+- [Studio source and local development](doc/studio/README.md)
+- [Extensions source and package boundaries](doc/extensions/README.md)
 
 ## Known Issues and Limitations
 
@@ -115,7 +117,7 @@ Elsa offers a wide range of features for building and executing workflows, inclu
 - Actor model for increased workflow throughput.
 - Dynamic expressions with support for C#, JavaScript, Python, and Liquid.
 - Persistence agnostic, with support for Entity Framework Core, MongoDB, and Dapper out of the box.
-- [Elsa Studio](https://github.com/elsa-workflows/elsa-studio): a modular Blazor dashboard app for managing and designing workflows.
+- [Elsa Studio](src/studio): a modular Blazor dashboard app for managing and designing workflows.
 
 ## Roadmap
 

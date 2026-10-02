@@ -1,0 +1,621 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "fc53caee28cf7809",
+  "definitionId": "548164a9784905b6",
+  "name": "Loan Application",
+  "createdAt": "2025-06-30T17:34:11.72086\u002B00:00",
+  "version": 4,
+  "toolVersion": "3.6.0.0",
+  "variables": [
+    {
+      "id": "c5f704ddfd29f635",
+      "name": "LoanAdvisory",
+      "typeName": "Object",
+      "isArray": false,
+      "storageDriverTypeName": "Elsa.Workflows.WorkflowInstanceStorageDriver, Elsa.Workflows.Core"
+    },
+    {
+      "id": "5a95ed8456d35596",
+      "name": "LoanCustomerCommunicatorOutput",
+      "typeName": "Object",
+      "isArray": false,
+      "storageDriverTypeName": "Elsa.Workflows.WorkflowInstanceStorageDriver, Elsa.Workflows.Core"
+    },
+    {
+      "id": "6566b779a9545cfc",
+      "name": "ManualReviewResult",
+      "typeName": "Object",
+      "isArray": false,
+      "storageDriverTypeName": "Elsa.Workflows.WorkflowInstanceStorageDriver, Elsa.Workflows.Core"
+    },
+    {
+      "id": "566c0a25a3c67d48",
+      "name": "LoanApplication",
+      "typeName": "Object",
+      "isArray": false,
+      "storageDriverTypeName": "Elsa.Workflows.WorkflowInstanceStorageDriver, Elsa.Workflows.Core"
+    },
+    {
+      "id": "6bf3c053045919b5",
+      "name": "ReviewTaskId",
+      "typeName": "String",
+      "isArray": false,
+      "storageDriverTypeName": "Elsa.Workflows.WorkflowInstanceStorageDriver, Elsa.Workflows.Core"
+    }
+  ],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {
+    "VariableTestValues": {}
+  },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "id": "22eca9fbd00fdc56",
+    "nodeId": "Workflow1:22eca9fbd00fdc56",
+    "name": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+    "activities": [
+      {
+        "taskName": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "ReviewLoanRequest"
+          }
+        },
+        "payload": {
+          "typeName": "ObjectDictionary",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getLoanAdvisory()"
+          }
+        },
+        "taskId": {
+          "typeName": "String",
+          "memoryReference": {
+            "id": "6bf3c053045919b5"
+          }
+        },
+        "result": {
+          "typeName": "Object",
+          "memoryReference": {
+            "id": "6566b779a9545cfc"
+          }
+        },
+        "id": "6f0166518fd58f2",
+        "nodeId": "Workflow1:22eca9fbd00fdc56:6f0166518fd58f2",
+        "name": "RunTask1",
+        "type": "Elsa.RunTask",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 1980,
+              "y": 80
+            },
+            "size": {
+              "width": 240.2734375,
+              "height": 67.9765625
+            }
+          },
+          "displayText": "Review Loan Request"
+        }
+      },
+      {
+        "condition": {
+          "typeName": "Boolean",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getLoanAdvisory().Recommendation == \u0022ManualReview\u0022"
+          }
+        },
+        "id": "8d1cfd5b6afb8d1",
+        "nodeId": "Workflow1:22eca9fbd00fdc56:8d1cfd5b6afb8d1",
+        "name": "FlowDecision1",
+        "type": "Elsa.FlowDecision",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 1581.484375,
+              "y": 211.98046875
+            },
+            "size": {
+              "width": 282.515625,
+              "height": 67.9765625
+            }
+          },
+          "displayText": "Requires Manual Approval?"
+        }
+      },
+      {
+        "id": "a0140e4852cb9a15",
+        "nodeId": "Workflow1:22eca9fbd00fdc56:a0140e4852cb9a15",
+        "name": "Finish1",
+        "type": "Elsa.Finish",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 2864.79736328125,
+              "y": 211.98046875
+            },
+            "size": {
+              "width": 130.78125,
+              "height": 67.9765625
+            }
+          }
+        }
+      },
+      {
+        "id": "e5b3f28097a7ff20",
+        "nodeId": "Workflow1:22eca9fbd00fdc56:e5b3f28097a7ff20",
+        "name": "LoanCustomerCommunicatorWithEmailSkill1",
+        "type": "Elsa.Agents.LoanCustomerCommunicatorWithEmailSkill",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": true
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 1060,
+              "y": 211.98046875
+            },
+            "size": {
+              "width": 421.25,
+              "height": 67.9765625
+            }
+          }
+        },
+        "customerId": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getLoanApplication().CustomerId"
+          },
+          "memoryReference": {
+            "id": "e5b3f28097a7ff20:input-customer-id"
+          }
+        },
+        "loanAmount": {
+          "typeName": "Object",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getLoanAdvisory().LoanAmount"
+          },
+          "memoryReference": {
+            "id": "e5b3f28097a7ff20:input-loan-amount"
+          }
+        },
+        "recommendation": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getLoanAdvisory().Recommendation"
+          },
+          "memoryReference": {
+            "id": "e5b3f28097a7ff20:input-recommendation"
+          }
+        },
+        "recommendationReasoning": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getLoanAdvisory().RecommendationReasoning"
+          },
+          "memoryReference": {
+            "id": "e5b3f28097a7ff20:input-recommendation-reasoning"
+          }
+        },
+        "loanAmountCurrency": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getLoanAdvisory().LoanAmountCurrency"
+          },
+          "memoryReference": {
+            "id": "e5b3f28097a7ff20:input-loan-amount-currency"
+          }
+        },
+        "loanPurpose": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getLoanAdvisory().LoanPurpose"
+          },
+          "memoryReference": {
+            "id": "e5b3f28097a7ff20:input-loan-purpose"
+          }
+        },
+        "output": {
+          "typeName": "Object",
+          "memoryReference": {
+            "id": "5a95ed8456d35596"
+          }
+        }
+      },
+      {
+        "id": "e97af9271a88db13",
+        "nodeId": "Workflow1:22eca9fbd00fdc56:e97af9271a88db13",
+        "name": "LoanAdvisor1",
+        "type": "Elsa.Agents.LoanAdvisor",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": true
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 732.15625,
+              "y": 211.98046875
+            },
+            "size": {
+              "width": 180.953125,
+              "height": 67.9765625
+            }
+          }
+        },
+        "request": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getLoanApplication().Message"
+          },
+          "memoryReference": {
+            "id": "e97af9271a88db13:input-request"
+          }
+        },
+        "customerId": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getLoanApplication().CustomerId"
+          },
+          "memoryReference": {
+            "id": "e97af9271a88db13:input-customer-id"
+          }
+        },
+        "output": {
+          "typeName": "Object",
+          "memoryReference": {
+            "id": "c5f704ddfd29f635"
+          }
+        }
+      },
+      {
+        "id": "88d6b3ae7cc146c8",
+        "nodeId": "Workflow1:22eca9fbd00fdc56:88d6b3ae7cc146c8",
+        "name": "LoanCustomerCommunicatorWithEmailSkill3",
+        "type": "Elsa.Agents.LoanCustomerCommunicatorWithEmailSkill",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": true
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 2304,
+              "y": 80
+            },
+            "size": {
+              "width": 421.25,
+              "height": 67.9765625
+            }
+          }
+        },
+        "customerId": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getLoanApplication().CustomerId"
+          },
+          "memoryReference": {
+            "id": "88d6b3ae7cc146c8:input-customer-id"
+          }
+        },
+        "loanAmount": {
+          "typeName": "Object",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getLoanAdvisory().LoanAmount"
+          },
+          "memoryReference": {
+            "id": "88d6b3ae7cc146c8:input-loan-amount"
+          }
+        },
+        "recommendation": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getManualReviewResult().Recommendation"
+          },
+          "memoryReference": {
+            "id": "88d6b3ae7cc146c8:input-recommendation"
+          }
+        },
+        "recommendationReasoning": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getManualReviewResult().RecommendationReasoning"
+          },
+          "memoryReference": {
+            "id": "88d6b3ae7cc146c8:input-recommendation-reasoning"
+          }
+        },
+        "loanAmountCurrency": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getLoanAdvisory().LoanAmountCurrency"
+          },
+          "memoryReference": {
+            "id": "88d6b3ae7cc146c8:input-loan-amount-currency"
+          }
+        },
+        "loanPurpose": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getLoanAdvisory().LoanPurpose"
+          },
+          "memoryReference": {
+            "id": "88d6b3ae7cc146c8:input-loan-purpose"
+          }
+        },
+        "output": {
+          "typeName": "Object",
+          "memoryReference": {
+            "id": "5a95ed8456d35596"
+          }
+        }
+      },
+      {
+        "statusCode": {
+          "typeName": "System.Net.HttpStatusCode, System.Net.Primitives",
+          "expression": {
+            "type": "Literal",
+            "value": "OK"
+          }
+        },
+        "content": {
+          "typeName": "Object",
+          "expression": {
+            "type": "JavaScript",
+            "value": "return {\n    \u0022message\u0022: \u0022Loan Application received successfully.\u0022,\n    \u0022applicationId\u0022: getWorkflowInstanceId()\n}"
+          }
+        },
+        "contentType": null,
+        "responseHeaders": {
+          "typeName": "HttpHeaders",
+          "expression": {
+            "type": "Literal",
+            "value": "{}"
+          }
+        },
+        "id": "26d288c6ec81f028",
+        "nodeId": "Workflow1:22eca9fbd00fdc56:26d288c6ec81f028",
+        "name": "WriteHttpResponse1",
+        "type": "Elsa.WriteHttpResponse",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 435.90625,
+              "y": 211.98046875
+            },
+            "size": {
+              "width": 201.546875,
+              "height": 67.9765625
+            }
+          }
+        }
+      },
+      {
+        "path": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "loan-applications"
+          }
+        },
+        "supportedMethods": {
+          "typeName": "List\u003CString\u003E",
+          "expression": {
+            "type": "Object",
+            "value": "[\u0022POST\u0022]"
+          }
+        },
+        "authorize": {
+          "typeName": "Boolean",
+          "expression": {
+            "type": "Literal",
+            "value": false
+          }
+        },
+        "policy": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal"
+          }
+        },
+        "requestTimeout": null,
+        "requestSizeLimit": null,
+        "fileSizeLimit": null,
+        "allowedFileExtensions": null,
+        "blockedFileExtensions": null,
+        "allowedMimeTypes": null,
+        "exposeRequestTooLargeOutcome": false,
+        "exposeFileTooLargeOutcome": false,
+        "exposeInvalidFileExtensionOutcome": false,
+        "exposeInvalidFileMimeTypeOutcome": false,
+        "parsedContent": {
+          "typeName": "Object",
+          "memoryReference": {
+            "id": "566c0a25a3c67d48"
+          }
+        },
+        "files": null,
+        "routeData": null,
+        "queryStringData": null,
+        "headers": null,
+        "result": null,
+        "id": "eb2ba6d04b4184f8",
+        "nodeId": "Workflow1:22eca9fbd00fdc56:eb2ba6d04b4184f8",
+        "name": "HttpEndpoint1",
+        "type": "Elsa.HttpEndpoint",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": true,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 132.56640625,
+              "y": 211.98046875
+            },
+            "size": {
+              "width": 195.1328125,
+              "height": 67.9765625
+            }
+          }
+        }
+      }
+    ],
+    "variables": [],
+    "connections": [
+      {
+        "source": {
+          "activity": "6f0166518fd58f2",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "88d6b3ae7cc146c8",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "e97af9271a88db13",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "e5b3f28097a7ff20",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "e5b3f28097a7ff20",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "8d1cfd5b6afb8d1",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "8d1cfd5b6afb8d1",
+          "port": "True"
+        },
+        "target": {
+          "activity": "6f0166518fd58f2",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "8d1cfd5b6afb8d1",
+          "port": "False"
+        },
+        "target": {
+          "activity": "a0140e4852cb9a15",
+          "port": "In"
+        },
+        "vertices": [
+          {
+            "x": 1960,
+            "y": 380
+          },
+          {
+            "x": 2380,
+            "y": 380
+          }
+        ]
+      },
+      {
+        "source": {
+          "activity": "88d6b3ae7cc146c8",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "a0140e4852cb9a15",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "eb2ba6d04b4184f8",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "26d288c6ec81f028",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "26d288c6ec81f028",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "e97af9271a88db13",
+          "port": "In"
+        },
+        "vertices": []
+      }
+    ]
+  }
+}

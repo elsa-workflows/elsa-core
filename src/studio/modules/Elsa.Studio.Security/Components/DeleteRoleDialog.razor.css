@@ -1,0 +1,33 @@
+.delete-role-dialog-content {
+    max-height: min(70vh, 44rem);
+    overflow-y: auto;
+}
+
+.delete-role-dialog-actions {
+    gap: 0.5rem;
+}
+
+.role-deletion-path,
+.role-deletion-version {
+    overflow-wrap: anywhere;
+    font-family: var(--mud-font-family-monospace, monospace);
+}
+
+.delete-role-dialog ::deep .mud-alert-message {
+    width: 100%;
+}
+
+@media (max-width: 600px) {
+    .delete-role-dialog-content {
+        max-height: none;
+    }
+
+    .delete-role-dialog-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .delete-role-dialog-actions .mud-button {
+        width: 100%;
+    }
+}

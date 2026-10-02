@@ -1,0 +1,20 @@
+﻿@using Elsa.Studio.Models
+@if (!MenuItem.SubMenuItems.Any())
+{
+    <MudNavLink Href="@MenuItem.Href" Match="@MenuItem.Match" Icon="@MenuItem.Icon">@MenuItem.Text</MudNavLink>
+}
+else
+{
+    <MudNavGroup Icon="@MenuItem.Icon" Title="@MenuItem.Text">
+        @foreach (var subItem in MenuItem.SubMenuItems)
+        {
+            <NavMenuItem MenuItem="@subItem"/>
+        }
+    </MudNavGroup>
+}
+
+@code
+{
+    [Parameter]
+    public MenuItem MenuItem { get; set; } = default!;
+}

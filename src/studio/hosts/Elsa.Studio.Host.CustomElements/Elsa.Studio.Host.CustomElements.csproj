@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+    <PropertyGroup>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly"/>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication"/>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer"/>
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Content Update="appsettings.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <!--        <Content Update="npm\package.json">-->
+        <!--          <CopyToOutputDirectory>Always</CopyToOutputDirectory>-->
+        <!--          <CopyToPublishDirectory>Always</CopyToPublishDirectory>-->
+        <!--        </Content>-->
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../../framework/Elsa.Studio.Core.BlazorWasm/Elsa.Studio.Core.BlazorWasm.csproj" />
+        <ProjectReference Include="../../framework/Elsa.Studio.Shell/Elsa.Studio.Shell.csproj"/>
+        <ProjectReference Include="../../modules/Elsa.Studio.Localization.BlazorWasm/Elsa.Studio.Localization.BlazorWasm.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Login/Elsa.Studio.Login.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Secrets/Elsa.Studio.Secrets.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.UserTasks/Elsa.Studio.UserTasks.csproj" />
+        <ProjectReference Include="../../modules/Elsa.Studio.Workflows/Elsa.Studio.Workflows.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,254 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "3a4b5d0f2047c0f2",
+  "definitionId": "8650b7f6a7e4c98e",
+  "name": "Document Review Process",
+  "createdAt": "2025-06-24T16:31:35.74283\u002B00:00",
+  "version": 14,
+  "toolVersion": "3.6.0.0",
+  "variables": [
+    {
+      "id": "35d43f6e96407b08",
+      "name": "Metadata",
+      "typeName": "JSON",
+      "isArray": false,
+      "storageDriverTypeName": "Elsa.Workflows.WorkflowInstanceStorageDriver, Elsa.Workflows.Core"
+    },
+    {
+      "id": "e24bbd9a8b2088ba",
+      "name": "PostedFiles",
+      "typeName": "FormFile[]",
+      "isArray": false,
+      "storageDriverTypeName": "Elsa.Workflows.MemoryStorageDriver, Elsa.Workflows.Core"
+    }
+  ],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {
+    "VariableTestValues": {}
+  },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "id": "5dd0507c8a6a9cc2",
+    "nodeId": "Workflow1:5dd0507c8a6a9cc2",
+    "name": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+    "activities": [
+      {
+        "statusCode": {
+          "typeName": "System.Net.HttpStatusCode, System.Net.Primitives",
+          "expression": {
+            "type": "Literal",
+            "value": "OK"
+          }
+        },
+        "content": {
+          "typeName": "Object",
+          "expression": {
+            "type": "Liquid",
+            "value": "Your document will be reviewed shortly."
+          }
+        },
+        "contentType": null,
+        "responseHeaders": {
+          "typeName": "HttpHeaders",
+          "expression": {
+            "type": "Literal",
+            "value": "{}"
+          }
+        },
+        "id": "f77e16b81804f17e",
+        "nodeId": "Workflow1:5dd0507c8a6a9cc2:f77e16b81804f17e",
+        "name": "WriteHttpResponse1",
+        "type": "Elsa.WriteHttpResponse",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 339.203125,
+              "y": -153.9921875
+            },
+            "size": {
+              "width": 201.546875,
+              "height": 67.9765625
+            }
+          }
+        }
+      },
+      {
+        "path": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "review-document"
+          }
+        },
+        "supportedMethods": {
+          "typeName": "List\u003CString\u003E",
+          "expression": {
+            "type": "Object",
+            "value": "[\u0022POST\u0022]"
+          }
+        },
+        "authorize": {
+          "typeName": "Boolean",
+          "expression": {
+            "type": "Literal",
+            "value": false
+          }
+        },
+        "policy": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal"
+          }
+        },
+        "requestTimeout": null,
+        "requestSizeLimit": null,
+        "fileSizeLimit": null,
+        "allowedFileExtensions": null,
+        "blockedFileExtensions": null,
+        "allowedMimeTypes": null,
+        "exposeRequestTooLargeOutcome": false,
+        "exposeFileTooLargeOutcome": false,
+        "exposeInvalidFileExtensionOutcome": false,
+        "exposeInvalidFileMimeTypeOutcome": false,
+        "parsedContent": {
+          "typeName": "Object",
+          "memoryReference": {
+            "id": "35d43f6e96407b08"
+          }
+        },
+        "files": {
+          "typeName": "FormFile[]",
+          "memoryReference": {
+            "id": "e24bbd9a8b2088ba"
+          }
+        },
+        "routeData": null,
+        "queryStringData": null,
+        "headers": null,
+        "result": null,
+        "id": "6831c2f22bbe257",
+        "nodeId": "Workflow1:5dd0507c8a6a9cc2:6831c2f22bbe257",
+        "name": "HttpEndpoint1",
+        "type": "Elsa.HttpEndpoint",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": true,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -372.796875,
+              "y": -153.9921875
+            },
+            "size": {
+              "width": 195.1328125,
+              "height": 67.9765625
+            }
+          }
+        }
+      },
+      {
+        "from": null,
+        "to": {
+          "typeName": "List\u003CString\u003E",
+          "expression": {
+            "type": "Object",
+            "value": "[\u0022review@elsa.io\u0022]"
+          }
+        },
+        "cc": null,
+        "bcc": null,
+        "subject": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Please Review"
+          }
+        },
+        "attachments": {
+          "typeName": "Object",
+          "expression": {
+            "type": "JavaScript",
+            "value": "const file = getPostedFiles()[0];\nreturn new EmailAttachment(file.OpenReadStream(), file.FileName, file.ContentType);"
+          }
+        },
+        "body": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "JSON.stringify(getMetadata())"
+          }
+        },
+        "error": null,
+        "id": "5d5b94afef285839",
+        "nodeId": "Workflow1:5dd0507c8a6a9cc2:5d5b94afef285839",
+        "name": "SendEmail1",
+        "type": "Elsa.SendEmail",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 22.203125,
+              "y": -179
+            },
+            "size": {
+              "width": 168.015625,
+              "height": 117.9921875
+            }
+          }
+        }
+      }
+    ],
+    "variables": [],
+    "connections": [
+      {
+        "source": {
+          "activity": "6831c2f22bbe257",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "5d5b94afef285839",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "5d5b94afef285839",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "f77e16b81804f17e",
+          "port": "In"
+        },
+        "vertices": []
+      }
+    ]
+  }
+}

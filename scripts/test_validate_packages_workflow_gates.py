@@ -187,6 +187,32 @@ OTHER_BYPASSES = (
         "job 'leak' references secrets passed to a reusable workflow",
     ),
     (
+        "indexed secret with a computed (non-literal) index",
+        None,
+        """
+        leak:
+          runs-on: ubuntu-latest
+          steps:
+            - run: ./publish.sh
+              env:
+                KEY: ${{ secrets[vars.PACKAGE_FEED_SECRET] }}
+        """,
+        "job 'leak' references an indexed secrets access",
+    ),
+    (
+        "indexed, upper-case secret name",
+        None,
+        """
+        leak:
+          runs-on: ubuntu-latest
+          steps:
+            - run: ./publish.sh
+              env:
+                KEY: ${{ secrets['FEEDZ_API_KEY'] }}
+        """,
+        "job 'leak' references an indexed secrets access",
+    ),
+    (
         "push composite action in an ungated job",
         None,
         """
@@ -280,6 +306,16 @@ class WorkflowGateTests(unittest.TestCase):
     def test_rejects_selection_script_that_allows_3_10_on_nuget(self):
         with unittest.mock.patch.object(gates, "selection_errors", return_value=[]):
             self.assert_rejected(self.source, "the selection script must reject NuGet.org publication of a 3.10.x tag")
+
+    def test_accepts_ungated_job_whose_string_literal_merely_contains_secrets_bracket(self):
+        source = self.mutated(None, """
+            leak:
+              runs-on: ubuntu-latest
+              if: ${{ vars.MODE != 'secrets[disabled]' }}
+              steps:
+                - run: echo ok
+            """)
+        self.assertEqual([], gates.source_violations(source))
 
 
 if __name__ == "__main__":

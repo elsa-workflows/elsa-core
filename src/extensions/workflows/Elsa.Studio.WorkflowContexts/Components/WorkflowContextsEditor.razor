@@ -1,0 +1,13 @@
+@inherits StudioComponentBase
+@using Elsa.Studio.Workflows.Services
+@inject ILocalizer Localizer
+
+<MudText Typo="Typo.overline">@Localizer["Workflow Context"]</MudText>
+<MudPaper>
+    <MudStack Spacing="0">
+        @foreach (var descriptor in WorkflowContextDescriptors)
+        {
+            <MudCheckBox T="bool" Label="@Localizer[descriptor.Name]" Value="@(SelectedWorkflowContextTypes.Contains(descriptor.Type))" ValueChanged="@(isChecked => OnCheckChanged(descriptor, isChecked))" />
+        }
+    </MudStack>
+</MudPaper>

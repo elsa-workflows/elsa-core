@@ -1,0 +1,68 @@
+@using Elsa.Studio.Workflows.Services
+@using Variant = MudBlazor.Variant
+@using Elsa.Api.Client.Resources.ActivityDescriptors.Models
+@using System.Text.Json.Nodes
+@using System.Text.Json
+@using Elsa.Studio.Workflows.Domain.Contracts
+@using Elsa.Studio.Workflows.Models
+@using Elsa.Studio.Workflows.UI.Contracts
+@inherits StudioComponentBase
+@using Microsoft.Extensions.Localization
+@inject ILocalizer Localizer
+
+<MudTabs Elevation="0" ApplyEffectsToContainer="true">
+    <MudTabPanel Text="@Localizer["Activities"]">
+        <Well>
+            <MudStack>
+                <MudTextField @bind-Value="@_searchText"
+                              Placeholder="@Localizer["Search"]"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              Immediate="true"
+                              Clearable="true">
+                </MudTextField>
+
+                <VerticalWell ExtraPadding="120">
+                    <MudExpansionPanels Elevation="1">
+                        @foreach (var grouping in GroupedActivityDescriptors.OrderBy(x => x.Key))
+                        {
+                            var activityDescriptors = grouping.OrderBy(x => x.DisplayName ?? x.Name).ToList();
+                            var category = grouping.Key;
+
+                            <MudExpansionPanel Text="@Localizer[CategoryDisplayResolver(category)]">
+                                <MudStack>
+                                    @foreach (var activityDescriptor in activityDescriptors)
+                                    {
+                                        var displaySettings = ActivityDisplaySettingsRegistry.GetSettings(activityDescriptor.TypeName);
+                                        var icon = displaySettings.Icon;
+                                        var color = displaySettings.Color;
+
+                                        <MudTooltip Text="@Localizer[activityDescriptor.Description ?? string.Empty]">
+                                            <MudPaper
+                                                Class="pa-2 cursor-grab"
+                                                Style="@($"border-left: solid 6px {color}; filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06));")"
+                                                Width="fit-content"
+                                                Outlined="true"
+                                                draggable="true"
+                                                @ondragstart="@(() => OnDragStart(activityDescriptor))">
+                                                <MudStack Row="true">
+                                                    @if (icon != null)
+                                                    {
+                                                        <MudIcon Icon="@icon"></MudIcon>
+                                                    }
+                                                    @(Localizer[activityDescriptor.DisplayName ?? activityDescriptor.Name])
+                                                </MudStack>
+                                            </MudPaper>
+                                        </MudTooltip>
+                                    }
+                                </MudStack>
+                            </MudExpansionPanel>
+                        }
+                    </MudExpansionPanels>
+                </VerticalWell>
+            </MudStack>
+        </Well>
+    </MudTabPanel>
+</MudTabs>

@@ -1,0 +1,61 @@
+@inherits LoginThemeComponentBase
+
+<main class="classic-login-theme"
+      style="@BackgroundStyle"
+      aria-labelledby="elsa-login-heading">
+    <div class="classic-login-theme__utilities">
+        @Context.UtilityLinks
+    </div>
+
+    <article class="classic-login-theme__card">
+        <header class="classic-login-theme__brand">
+            <div class="classic-login-theme__brand-lockup">
+                @if (!string.IsNullOrWhiteSpace(BrandLogoUrl))
+                {
+                    <img class="classic-login-theme__logo"
+                         src="@BrandLogoUrl"
+                         alt="" />
+                }
+
+                <div class="classic-login-theme__brand-copy">
+                    <h1>@Context.Branding.ApplicationName</h1>
+                    @if (!string.IsNullOrWhiteSpace(Context.Branding.Tagline))
+                    {
+                        <p>@Context.Branding.Tagline</p>
+                    }
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Context.Version))
+            {
+                <span class="classic-login-theme__version">@Context.Version</span>
+            }
+        </header>
+
+        <div class="classic-login-theme__handoff" aria-hidden="true">
+            <span>@Localizer["Studio"]</span>
+            <span class="classic-login-theme__handoff-line"></span>
+            <span>@Localizer["Identity"]</span>
+            <span class="classic-login-theme__handoff-line"></span>
+            <span>@Localizer["Workspace"]</span>
+        </div>
+
+        <div class="classic-login-theme__panel">
+            @Context.LoginPanel
+        </div>
+
+        <footer class="classic-login-theme__footer">
+            <span>@Localizer["Secure sign-in"]</span>
+        </footer>
+    </article>
+</main>
+
+@code {
+    private string? BrandLogoUrl =>
+        Context.Branding.LogoUrl ?? Context.Branding.ReverseLogoUrl;
+
+    private string? BackgroundStyle =>
+        string.IsNullOrWhiteSpace(Context.Branding.ClassicBackgroundUrl)
+            ? null
+            : $"background-image: url('{Context.Branding.ClassicBackgroundUrl}')";
+}

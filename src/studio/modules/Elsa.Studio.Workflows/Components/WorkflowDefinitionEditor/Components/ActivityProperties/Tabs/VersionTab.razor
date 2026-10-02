@@ -1,0 +1,41 @@
+@using Elsa.Api.Client.Resources.WorkflowDefinitions.Models
+@inherits StudioComponentBase
+@using Elsa.Studio.Workflows.Services
+@inject ILocalizer Localizer
+
+<MudTable
+    @ref="Table"
+    ServerData="LoadVersionsAsync"
+    T="WorkflowDefinitionSummary"
+    Hover="true"
+    Dense="true"
+    Bordered="false"
+    Striped="false"
+    Elevation="0"
+    Outlined="true"
+    FixedHeader="true">
+    <HeaderContent>
+        <MudTh>@Localizer["Used"]</MudTh>
+        <MudTh>@Localizer["Version"]</MudTh>
+        <MudTh>@Localizer["Created"]</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>
+            @if (context.Version == CurrentVersionUsed)
+            {
+                <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Success"/>
+            }
+        </MudTd>
+        <MudTd>@context.Version</MudTd>
+        <MudTd>@context.CreatedAt.ToString("g")</MudTd>
+        <MudTd style="text-align: right;">
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Disabled="IsReadOnly || !_versionsUsableAsActivity.Contains(context.Version)" title="@(!_versionsUsableAsActivity.Contains(context.Version) ? @Localizer["Not usable as activity."] : "")">
+                <MudMenuItem OnClick="@(() => OnUseVersionClicked(context))">@Localizer["Use this version"]</MudMenuItem>
+            </MudMenu>
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager RowsPerPageString="@Localizer["Rows Per Page"]" />
+    </PagerContent>
+</MudTable>

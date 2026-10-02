@@ -1,0 +1,88 @@
+@implements Elsa.Studio.Authentication.Abstractions.Contracts.ILoginMethodComponent
+@inject Elsa.Studio.ExternalAuthentication.Services.IExternalAuthenticationLoginCoordinator LoginCoordinator
+@inject IServiceProvider Services
+
+<MudPaper Outlined="true" Class="pa-4">
+    <MudText Typo="Typo.h6">Elsa account</MudText>
+    @if (!string.IsNullOrWhiteSpace(LoginCoordinator.LocalLoginAction) && _antiforgeryToken is not null)
+    {
+        <form method="post" action="@LoginCoordinator.LocalLoginAction">
+            <input type="hidden" name="@_antiforgeryToken.FormFieldName" value="@_antiforgeryToken.RequestToken" />
+            <input type="hidden" name="returnPath" value="@Context.ReturnPath" />
+            <MudTextField T="string"
+                          name="username"
+                          Label="User name"
+                          autocomplete="username"
+                          Required="true"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense" />
+            <MudTextField T="string"
+                          name="password"
+                          Label="Password"
+                          InputType="InputType.Password"
+                          autocomplete="current-password"
+                          Required="true"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense" />
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">Sign in</MudButton>
+        </form>
+    }
+    else if (!string.IsNullOrWhiteSpace(LoginCoordinator.LocalLoginAction))
+    {
+        <MudAlert Severity="Severity.Error" Dense="true">Local sign-in could not be initialized. Refresh the page and try again.</MudAlert>
+    }
+    else
+    {
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="_username"
+                          Label="User name"
+                          autocomplete="username"
+                          Required="true"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense" />
+            <MudTextField @bind-Value="_password"
+                          Label="Password"
+                          InputType="InputType.Password"
+                          autocomplete="current-password"
+                          Required="true"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="SignInAsync">Sign in</MudButton>
+        </MudForm>
+    }
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired]
+    public Elsa.Studio.Authentication.Abstractions.Models.LoginMethodComponentContext Context { get; set; } = default!;
+
+    private MudForm _form = default!;
+    private string _username = string.Empty;
+    private string _password = string.Empty;
+    private Elsa.Studio.ExternalAuthentication.Services.ExternalAuthenticationAntiforgeryToken? _antiforgeryToken;
+
+    protected override void OnInitialized()
+    {
+        if (string.IsNullOrWhiteSpace(LoginCoordinator.LocalLoginAction))
+            return;
+
+        var provider = Services.GetService(typeof(Elsa.Studio.ExternalAuthentication.Services.IExternalAuthenticationAntiforgeryTokenProvider)) as Elsa.Studio.ExternalAuthentication.Services.IExternalAuthenticationAntiforgeryTokenProvider;
+        _antiforgeryToken = provider?.GetToken();
+    }
+
+    private async Task SignInAsync()
+    {
+        await _form.Validate();
+        if (!_form.IsValid)
+            return;
+
+        try
+        {
+            await LoginCoordinator.BeginLocalAsync(_username, _password, Context.ReturnPath);
+        }
+        catch
+        {
+            await Context.ReportFailureAsync("Sign-in failed. Check your credentials and try again.");
+        }
+    }
+}

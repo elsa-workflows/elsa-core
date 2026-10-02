@@ -1,0 +1,23 @@
+@using Variant = MudBlazor.Variant
+@using Elsa.Api.Client.Resources.CommitStrategies.Models
+@inject ILocalizer Localizer
+
+<MudForm>
+    <MudStack>
+        <MudSelect
+            T="CommitStrategyDescriptor"
+            Label="@Localizer["Commit Strategy"]"
+            Variant="@Variant.Outlined"
+            Margin="Margin.Dense"
+            Value="_selectedCommitStrategy"
+            ToStringFunc="@(x => x?.DisplayName.ToString() ?? Localizer["Default"])"
+            ValueChanged="@OnCommitStrategySelectionChanged"
+                    HelperText="@Localizer["The commit strategy to use that controls when the workflow state should be committed."]"
+            ReadOnly="IsReadOnly" Disabled="IsReadOnly">
+            @foreach (var commitStrategy in _commitStrategies)
+            {
+                <MudSelectItem Value="@commitStrategy">@(commitStrategy?.DisplayName ?? Localizer["Default"])</MudSelectItem>
+            }
+        </MudSelect>
+    </MudStack>
+</MudForm>

@@ -38,6 +38,31 @@ python3 scripts/integration-program/run_mapped_slack_package_proof.py \
   --output-dir /path/to/new-local-proof-output
 ```
 
+That command documents the runner at `7abe24b`; use that commit's script to
+reproduce the archived receipt. The current script additionally requires an
+explicit `--expected-import-head` and verifies both the [first source-tip
+receipt](source-tip-refresh-2026-09-25.md) and the [later Extensions persistence
+refresh](source-tip-refresh-2026-09-25-r2.md) at the candidate head. For the
+current draft, run it from a clean, full-history elsa-core checkout with its
+GitHub `origin` and pass the exact 40-character checkout HEAD. A changed head
+requires a fresh local proof and receipt:
+
+```sh
+python3 scripts/integration-program/run_mapped_slack_package_proof.py \
+  --rehearsal /path/to/current-import-checkout \
+  --core-source /path/to/core-at-e96 \
+  --extensions-source /path/to/extensions-at-ba8b \
+  --studio-source /path/to/studio-at-20cea \
+  --source-profile imported --expected-import-head "$(git -C /path/to/current-import-checkout rev-parse HEAD)" \
+  --sourcelink-tool /path/to/pinned/sourcelink \
+  --output-dir /path/to/new-local-proof-output
+```
+
+The older pinned source checkouts validate the original three-parent import;
+the refreshed receipt separately checks both newer Extensions and Studio tips,
+their six exact mapped deltas, and the final checkout's mapped files. This is
+a local-only pack and consumer proof. It never authorizes feed publication.
+
 The `--sourcelink-tool` must be the installed, payload-verified 3.1.1 CLI described in [Slack package proof](../slack-package-proof.md). Rollback is removing the disposable import and output checkouts; the upstream sources, public feeds and release versions were unchanged.
 
 ### Current imported-source profile, 2026-09-25

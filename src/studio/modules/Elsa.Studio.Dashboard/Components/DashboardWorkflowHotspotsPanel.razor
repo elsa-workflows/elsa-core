@@ -1,0 +1,40 @@
+@if (Response != null)
+{
+    <MudPaper Outlined="true" Elevation="0" Class="dashboard-panel dashboard-section" Style="@DashboardStyles.Panel">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="dashboard-section-header" Style="@DashboardStyles.SectionHeader">
+            <MudText Typo="Typo.subtitle1">Workflow hotspots</MudText>
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@Response.Metric</MudChip>
+        </MudStack>
+
+        @if (Response.Items.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" Variant="Variant.Text">No hotspots in this range.</MudAlert>
+        }
+        else
+        {
+            <MudTable T="DashboardHotspot" Items="@Response.Items" Dense="true" Hover="true" Elevation="0" Breakpoint="Breakpoint.Sm">
+                <HeaderContent>
+                    <MudTh>Workflow</MudTh>
+                    <MudTh>Value</MudTh>
+                    <MudTh>Avg duration</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Workflow">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.body2">@DisplayName(context)</MudText>
+                            <MudText Typo="Typo.caption" Class="dashboard-muted">@context.DefinitionId</MudText>
+                        </MudStack>
+                    </MudTd>
+                    <MudTd DataLabel="Value">@DashboardMetricFormatter.Count(context.Value)</MudTd>
+                    <MudTd DataLabel="Avg duration">@DashboardMetricFormatter.Duration(context.AverageDuration)</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public DashboardWorkflowHotspotsResponse? Response { get; set; }
+
+    private static string DisplayName(DashboardHotspot item) => string.IsNullOrWhiteSpace(item.WorkflowName) ? item.DefinitionId : item.WorkflowName!;
+}

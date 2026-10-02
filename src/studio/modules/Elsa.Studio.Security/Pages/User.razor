@@ -1,0 +1,15 @@
+@page "/security/users/new"
+@page "/security/users/{Id}"
+@inherits StudioComponentBase
+
+<PageTitle>@(string.IsNullOrWhiteSpace(Id) ? "Create user" : "Edit user")</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
+    <UserAdministrationAccessBoundary Context="access">
+        <UserEditorSurface Id="@Id" Access="@access" />
+    </UserAdministrationAccessBoundary>
+</MudContainer>
+
+@code {
+    [Parameter] public string? Id { get; set; }
+}

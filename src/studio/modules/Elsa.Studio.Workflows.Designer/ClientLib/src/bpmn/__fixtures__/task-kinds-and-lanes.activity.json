@@ -1,0 +1,780 @@
+{
+  "process": {
+    "processId": "task-kinds-and-lanes",
+    "name": "Task Kinds And Lanes",
+    "isExecutable": true,
+    "isTransaction": false,
+    "elements": [
+      {
+        "elementId": "Start_1",
+        "elementType": "startEvent",
+        "name": "Order Placed",
+        "laneId": "Lane_Automated",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "AbstractTask",
+        "elementType": "task",
+        "name": "Abstract Task",
+        "bindingRef": "node-AbstractTask",
+        "laneId": "Lane_Automated",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [
+            {
+              "name": {
+                "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                "localName": "activityBinding"
+              },
+              "attributes": [
+                {
+                  "name": {
+                    "localName": "activityType"
+                  },
+                  "value": "Elsa.WriteLine"
+                }
+              ],
+              "children": [
+                {
+                  "name": {
+                    "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                    "localName": "input"
+                  },
+                  "value": "{\u0022typeName\u0022:\u0022String\u0022,\u0022expression\u0022:{\u0022type\u0022:\u0022Literal\u0022,\u0022value\u0022:\u0022abstract\u0022}}",
+                  "attributes": [
+                    {
+                      "name": {
+                        "localName": "name"
+                      },
+                      "value": "text"
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "ReviewOrder",
+        "elementType": "userTask",
+        "name": "Review Order",
+        "bindingRef": "node-ReviewOrder",
+        "laneId": "Lane_People",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [
+            {
+              "name": {
+                "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                "localName": "activityBinding"
+              },
+              "attributes": [
+                {
+                  "name": {
+                    "localName": "activityType"
+                  },
+                  "value": "Elsa.WriteLine"
+                }
+              ],
+              "children": [
+                {
+                  "name": {
+                    "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                    "localName": "input"
+                  },
+                  "value": "{\u0022typeName\u0022:\u0022String\u0022,\u0022expression\u0022:{\u0022type\u0022:\u0022Literal\u0022,\u0022value\u0022:\u0022review\u0022}}",
+                  "attributes": [
+                    {
+                      "name": {
+                        "localName": "name"
+                      },
+                      "value": "text"
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "ServiceWork",
+        "elementType": "serviceTask",
+        "name": "Reserve Stock",
+        "bindingRef": "node-ServiceWork",
+        "laneId": "Lane_Automated",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [
+            {
+              "name": {
+                "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                "localName": "activityBinding"
+              },
+              "attributes": [
+                {
+                  "name": {
+                    "localName": "activityType"
+                  },
+                  "value": "Elsa.WriteLine"
+                }
+              ],
+              "children": [
+                {
+                  "name": {
+                    "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                    "localName": "input"
+                  },
+                  "value": "{\u0022typeName\u0022:\u0022String\u0022,\u0022expression\u0022:{\u0022type\u0022:\u0022Literal\u0022,\u0022value\u0022:\u0022reserve\u0022}}",
+                  "attributes": [
+                    {
+                      "name": {
+                        "localName": "name"
+                      },
+                      "value": "text"
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "ScriptWork",
+        "elementType": "scriptTask",
+        "name": "Compute Total",
+        "bindingRef": "node-ScriptWork",
+        "laneId": "Lane_Automated",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [
+            {
+              "name": {
+                "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                "localName": "activityBinding"
+              },
+              "attributes": [
+                {
+                  "name": {
+                    "localName": "activityType"
+                  },
+                  "value": "Elsa.WriteLine"
+                }
+              ],
+              "children": [
+                {
+                  "name": {
+                    "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                    "localName": "input"
+                  },
+                  "value": "{\u0022typeName\u0022:\u0022String\u0022,\u0022expression\u0022:{\u0022type\u0022:\u0022Literal\u0022,\u0022value\u0022:\u0022total\u0022}}",
+                  "attributes": [
+                    {
+                      "name": {
+                        "localName": "name"
+                      },
+                      "value": "text"
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "PackBox",
+        "elementType": "manualTask",
+        "name": "Pack Box",
+        "bindingRef": "node-PackBox",
+        "laneId": "Lane_People",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [
+            {
+              "name": {
+                "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                "localName": "activityBinding"
+              },
+              "attributes": [
+                {
+                  "name": {
+                    "localName": "activityType"
+                  },
+                  "value": "Elsa.WriteLine"
+                }
+              ],
+              "children": [
+                {
+                  "name": {
+                    "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                    "localName": "input"
+                  },
+                  "value": "{\u0022typeName\u0022:\u0022String\u0022,\u0022expression\u0022:{\u0022type\u0022:\u0022Literal\u0022,\u0022value\u0022:\u0022pack\u0022}}",
+                  "attributes": [
+                    {
+                      "name": {
+                        "localName": "name"
+                      },
+                      "value": "text"
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "DecideRules",
+        "elementType": "businessRuleTask",
+        "name": "Apply Discount Rules",
+        "bindingRef": "node-DecideRules",
+        "laneId": "Lane_Automated",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [
+            {
+              "name": {
+                "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                "localName": "activityBinding"
+              },
+              "attributes": [
+                {
+                  "name": {
+                    "localName": "activityType"
+                  },
+                  "value": "Elsa.WriteLine"
+                }
+              ],
+              "children": [
+                {
+                  "name": {
+                    "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                    "localName": "input"
+                  },
+                  "value": "{\u0022typeName\u0022:\u0022String\u0022,\u0022expression\u0022:{\u0022type\u0022:\u0022Literal\u0022,\u0022value\u0022:\u0022rules\u0022}}",
+                  "attributes": [
+                    {
+                      "name": {
+                        "localName": "name"
+                      },
+                      "value": "text"
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "SendShipped",
+        "elementType": "sendTask",
+        "name": "Announce Shipment",
+        "bindingRef": "node-SendShipped",
+        "laneId": "Lane_Automated",
+        "eventDefinitions": [],
+        "properties": {
+          "bpmn.messageName": "OrderShipped"
+        },
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "AwaitConfirm",
+        "elementType": "receiveTask",
+        "name": "Await Confirmation",
+        "bindingRef": "node-AwaitConfirm",
+        "laneId": "Lane_Automated",
+        "eventDefinitions": [],
+        "properties": {
+          "bpmn.messageName": "ShipmentConfirmed"
+        },
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "ArchiveOrder",
+        "elementType": "callActivity",
+        "name": "Archive Order",
+        "bindingRef": "node-ArchiveOrder",
+        "laneId": "Lane_Automated",
+        "eventDefinitions": [],
+        "properties": {
+          "bpmn.calledElement": "archive-order-process"
+        },
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "End_1",
+        "elementType": "endEvent",
+        "name": "Order Complete",
+        "laneId": "Lane_Automated",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      }
+    ],
+    "sequenceFlows": [
+      {
+        "flowId": "Flow_1",
+        "sourceRef": "Start_1",
+        "targetRef": "AbstractTask",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_2",
+        "sourceRef": "AbstractTask",
+        "targetRef": "ReviewOrder",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_3",
+        "sourceRef": "ReviewOrder",
+        "targetRef": "ServiceWork",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_4",
+        "sourceRef": "ServiceWork",
+        "targetRef": "ScriptWork",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_5",
+        "sourceRef": "ScriptWork",
+        "targetRef": "PackBox",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_6",
+        "sourceRef": "PackBox",
+        "targetRef": "DecideRules",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_7",
+        "sourceRef": "DecideRules",
+        "targetRef": "SendShipped",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_8",
+        "sourceRef": "SendShipped",
+        "targetRef": "AwaitConfirm",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_9",
+        "sourceRef": "AwaitConfirm",
+        "targetRef": "ArchiveOrder",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_10",
+        "sourceRef": "ArchiveOrder",
+        "targetRef": "End_1",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      }
+    ],
+    "lanes": [
+      {
+        "laneId": "Lane_Automated",
+        "poolId": "Participant_Fulfilment",
+        "name": "Automated",
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "laneId": "Lane_People",
+        "poolId": "Participant_Fulfilment",
+        "name": "People",
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      }
+    ],
+    "variables": [],
+    "extensions": {
+      "documentation": [],
+      "extensionElements": [],
+      "foreignAttributes": [],
+      "foreignChildren": []
+    }
+  },
+  "workBindings": {
+    "node-AbstractTask": "task-kinds-and-lanes:node-AbstractTask",
+    "node-ReviewOrder": "task-kinds-and-lanes:node-ReviewOrder",
+    "node-ServiceWork": "task-kinds-and-lanes:node-ServiceWork",
+    "node-ScriptWork": "task-kinds-and-lanes:node-ScriptWork",
+    "node-PackBox": "task-kinds-and-lanes:node-PackBox",
+    "node-DecideRules": "task-kinds-and-lanes:node-DecideRules",
+    "node-SendShipped": "task-kinds-and-lanes:node-SendShipped",
+    "node-AwaitConfirm": "task-kinds-and-lanes:node-AwaitConfirm",
+    "node-ArchiveOrder": "task-kinds-and-lanes:node-ArchiveOrder"
+  },
+  "activities": [
+    {
+      "text": {
+        "typeName": "String",
+        "expression": {
+          "type": "Literal",
+          "value": "abstract"
+        }
+      },
+      "id": "task-kinds-and-lanes:node-AbstractTask",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.WriteLine",
+      "version": 1,
+      "customProperties": {
+        "canStartWorkflow": false,
+        "runAsynchronously": false
+      },
+      "metadata": {}
+    },
+    {
+      "text": {
+        "typeName": "String",
+        "expression": {
+          "type": "Literal",
+          "value": "review"
+        }
+      },
+      "id": "task-kinds-and-lanes:node-ReviewOrder",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.WriteLine",
+      "version": 1,
+      "customProperties": {
+        "canStartWorkflow": false,
+        "runAsynchronously": false
+      },
+      "metadata": {}
+    },
+    {
+      "text": {
+        "typeName": "String",
+        "expression": {
+          "type": "Literal",
+          "value": "reserve"
+        }
+      },
+      "id": "task-kinds-and-lanes:node-ServiceWork",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.WriteLine",
+      "version": 1,
+      "customProperties": {
+        "canStartWorkflow": false,
+        "runAsynchronously": false
+      },
+      "metadata": {}
+    },
+    {
+      "text": {
+        "typeName": "String",
+        "expression": {
+          "type": "Literal",
+          "value": "total"
+        }
+      },
+      "id": "task-kinds-and-lanes:node-ScriptWork",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.WriteLine",
+      "version": 1,
+      "customProperties": {
+        "canStartWorkflow": false,
+        "runAsynchronously": false
+      },
+      "metadata": {}
+    },
+    {
+      "text": {
+        "typeName": "String",
+        "expression": {
+          "type": "Literal",
+          "value": "pack"
+        }
+      },
+      "id": "task-kinds-and-lanes:node-PackBox",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.WriteLine",
+      "version": 1,
+      "customProperties": {
+        "canStartWorkflow": false,
+        "runAsynchronously": false
+      },
+      "metadata": {}
+    },
+    {
+      "text": {
+        "typeName": "String",
+        "expression": {
+          "type": "Literal",
+          "value": "rules"
+        }
+      },
+      "id": "task-kinds-and-lanes:node-DecideRules",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.WriteLine",
+      "version": 1,
+      "customProperties": {
+        "canStartWorkflow": false,
+        "runAsynchronously": false
+      },
+      "metadata": {}
+    },
+    {
+      "eventName": {
+        "typeName": "String",
+        "expression": {
+          "type": "Literal",
+          "value": "OrderShipped"
+        }
+      },
+      "correlationId": null,
+      "isLocalEvent": null,
+      "payload": null,
+      "id": "task-kinds-and-lanes:node-SendShipped",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.PublishEvent",
+      "version": 1,
+      "customProperties": {
+        "source": "BpmnWorkBinder.cs:122"
+      },
+      "metadata": {}
+    },
+    {
+      "eventName": {
+        "typeName": "String",
+        "expression": {
+          "type": "Literal",
+          "value": "ShipmentConfirmed"
+        }
+      },
+      "result": null,
+      "id": "task-kinds-and-lanes:node-AwaitConfirm",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.Event",
+      "version": 1,
+      "customProperties": {
+        "source": "BpmnWorkBinder.cs:120"
+      },
+      "metadata": {}
+    },
+    {
+      "workflowDefinitionId": {
+        "typeName": "String",
+        "expression": {
+          "type": "Literal",
+          "value": "archive-order-process"
+        }
+      },
+      "correlationId": null,
+      "input": null,
+      "waitForCompletion": {
+        "typeName": "Boolean",
+        "expression": {
+          "type": "Literal",
+          "value": true
+        }
+      },
+      "startNewTrace": null,
+      "channelName": null,
+      "result": null,
+      "id": "task-kinds-and-lanes:node-ArchiveOrder",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.DispatchWorkflow",
+      "version": 1,
+      "customProperties": {
+        "source": "BpmnWorkBinder.cs:126"
+      },
+      "metadata": {}
+    }
+  ],
+  "variables": [],
+  "id": "task-kinds-and-lanes",
+  "type": "Elsa.BpmnProcess",
+  "version": 1,
+  "customProperties": {
+    "source": "BpmnWorkBinder.cs:80",
+    "canStartWorkflow": true
+  },
+  "metadata": {}
+}

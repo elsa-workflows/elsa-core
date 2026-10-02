@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Adds workflow management to the studio.</Description>
+        <PackageTags>elsa studio module</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+	
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+		<PackageReference Include="Microsoft.AspNetCore.WebUtilities" />
+	</ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="../../framework/Elsa.Studio.DomInterop/Elsa.Studio.DomInterop.csproj" />
+      <ProjectReference Include="../../framework/Elsa.Studio.Shared/Elsa.Studio.Shared.csproj" />
+      <ProjectReference Include="../Elsa.Studio.ActivityPortProviders/Elsa.Studio.ActivityPortProviders.csproj" />
+      <ProjectReference Include="../Elsa.Studio.Authentication.Abstractions/Elsa.Studio.Authentication.Abstractions.csproj" />
+      <ProjectReference Include="../Elsa.Studio.UIHints/Elsa.Studio.UIHints.csproj" />
+      <ProjectReference Include="../Elsa.Studio.Workflows.Core/Elsa.Studio.Workflows.Core.csproj" />
+      <ProjectReference Include="../Elsa.Studio.Workflows.Designer/Elsa.Studio.Workflows.Designer.csproj" />
+    </ItemGroup>
+	
+</Project>

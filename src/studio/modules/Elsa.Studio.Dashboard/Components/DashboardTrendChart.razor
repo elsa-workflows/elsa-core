@@ -1,0 +1,51 @@
+<MudPaper Outlined="true" Elevation="0" Class="dashboard-panel dashboard-section dashboard-chart-panel" Style="@DashboardStyles.ChartPanel">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="dashboard-section-header" Style="@DashboardStyles.SectionHeader">
+        <MudText Typo="Typo.subtitle1">Execution trend</MudText>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexEnd" Spacing="1" Class="dashboard-trend-actions" Style="@DashboardStyles.TrendActions">
+            <MudText Typo="Typo.caption" Class="dashboard-muted">@RangeCaption</MudText>
+            @Actions
+        </MudStack>
+    </MudStack>
+
+    @if (Loading)
+    {
+        <MudSkeleton Height="220px" Animation="Animation.Wave" />
+    }
+    else if (Response.Buckets.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" Variant="Variant.Text">No workflow activity in this range.</MudAlert>
+    }
+    else
+    {
+        <div class="dashboard-trend-chart-frame">
+            <MudChart T="double"
+                      Class="dashboard-trend-chart"
+                      ChartType="ChartType.Line"
+                      ChartSeries="@Series"
+                      ChartLabels="@Labels"
+                      Width="100%"
+                      Height="220px"
+                      MatchBoundsToSize="true" />
+        </div>
+    }
+</MudPaper>
+
+@code {
+    [Parameter] public DashboardTrendResponse Response { get; set; } = new();
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+
+    private string RangeCaption => $"{DashboardMetricFormatter.DateTime(Response.From)} - {DashboardMetricFormatter.DateTime(Response.To)}";
+
+    private string[] Labels => Response.Buckets
+        .Select(x => x.From.ToLocalTime().ToString(Response.Granularity == DashboardTrendGranularity.Day ? "MMM d" : "HH:mm"))
+        .ToArray();
+
+    private List<ChartSeries<double>> Series =>
+    [
+        new() { Name = "Started", Data = Response.Buckets.Select(x => (double)x.CreatedOrStarted).ToArray() },
+        new() { Name = "Finished", Data = Response.Buckets.Select(x => (double)x.Finished).ToArray() },
+        new() { Name = "Faulted", Data = Response.Buckets.Select(x => (double)x.Faulted).ToArray() },
+        new() { Name = "Suspended", Data = Response.Buckets.Select(x => (double)x.Suspended).ToArray() }
+    ];
+}

@@ -1,0 +1,342 @@
+Test run for /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/bin/Debug/net10.0/Elsa.Persistence.Dapper.UnitTests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:02.86]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.MissingReturnsNotFound [FAIL]
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.MissingReturnsNotFound [1 s]
+  Error Message:
+   Npgsql.PostgresException : 42883: operator does not exist: boolean = integer
+
+POSITION: 113
+  Stack Trace:
+     at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+   at Dapper.SqlMapper.QueryRowAsync[T](IDbConnection cnn, Row row, Type effectiveType, CommandDefinition command) in /_/Dapper/SqlMapper.Async.cs:line 489
+   at Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowDefinitionStore.TryUpdateLatestAsync(WorkflowDefinitionFilter filter, Func`2 matchesExpected, Func`2 update, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs:line 148
+   at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.MissingReturnsNotFound() in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 116
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:03.55]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.CallbackDatabaseFailureIsNotReportedAsContention [FAIL]
+[xUnit.net 00:00:03.62]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.ConcurrentExpectedSnapshotHasOneWinner [FAIL]
+[xUnit.net 00:00:03.68]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.FailedInsertRollsBackUnmark [FAIL]
+[xUnit.net 00:00:03.72]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.TenantScopeIsRequiredAndAgnosticUpdatePreservesTenant [FAIL]
+[xUnit.net 00:00:03.74]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.UpdateUsesCurrentMetadataAndPreservesUnmappedColumns [FAIL]
+[xUnit.net 00:00:03.77]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.SupersededVersionIsConflictOnlyInsideTenantScope [FAIL]
+[xUnit.net 00:00:03.80]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.OptionalTenantAccessorUsesDefaultTenantAndExcludesOtherTenants [FAIL]
+[xUnit.net 00:00:03.82]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.NewDraftUnmarksPreviousInSameTransaction [FAIL]
+[xUnit.net 00:00:03.84]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "latest-and-published", expected: 0) [FAIL]
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.CallbackDatabaseFailureIsNotReportedAsContention [686 ms]
+  Error Message:
+   Npgsql.PostgresException : 23502: null value in column "id" of relation "workflowdefinitions_47fde5b61d4048388e72efad41bd6c03" violates not-null constraint
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+  Stack Trace:
+     at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Dapper.SqlMapper.ExecuteImplAsync(IDbConnection cnn, CommandDefinition command, Object param) in /_/Dapper/SqlMapper.Async.cs:line 662
+   at Elsa.Persistence.Dapper.Extensions.ParameterizedQueryExtensions.ExecuteAsync(ParameterizedQuery query, IDbConnection connection, IDbTransaction transaction, Nullable`1 commandTimeout, Nullable`1 commandType) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryExtensions.cs:line 82
+   at Elsa.Persistence.Dapper.Services.Store`1.SaveAsync(T record, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Services/Store.cs:line 355
+   at Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowDefinitionStore.SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs:line 121
+   at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.CallbackDatabaseFailureIsNotReportedAsContention() in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 257
+--- End of stack trace from previous location ---
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.ConcurrentExpectedSnapshotHasOneWinner [62 ms]
+  Error Message:
+   Npgsql.PostgresException : 23502: null value in column "id" of relation "workflowdefinitions_8def34d9341a457ba030c99b70289dda" violates not-null constraint
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+  Stack Trace:
+     at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Dapper.SqlMapper.ExecuteImplAsync(IDbConnection cnn, CommandDefinition command, Object param) in /_/Dapper/SqlMapper.Async.cs:line 662
+   at Elsa.Persistence.Dapper.Extensions.ParameterizedQueryExtensions.ExecuteAsync(ParameterizedQuery query, IDbConnection connection, IDbTransaction transaction, Nullable`1 commandTimeout, Nullable`1 commandType) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryExtensions.cs:line 82
+   at Elsa.Persistence.Dapper.Services.Store`1.SaveAsync(T record, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Services/Store.cs:line 355
+   at Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowDefinitionStore.SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs:line 121
+   at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.ConcurrentExpectedSnapshotHasOneWinner() in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 186
+--- End of stack trace from previous location ---
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.FailedInsertRollsBackUnmark [63 ms]
+  Error Message:
+   Npgsql.PostgresException : 23502: null value in column "id" of relation "workflowdefinitions_dd675aa6dd5446ea89b1ac327acacd40" violates not-null constraint
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+  Stack Trace:
+     at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Dapper.SqlMapper.ExecuteImplAsync(IDbConnection cnn, CommandDefinition command, Object param) in /_/Dapper/SqlMapper.Async.cs:line 662
+   at Elsa.Persistence.Dapper.Extensions.ParameterizedQueryExtensions.ExecuteAsync(ParameterizedQuery query, IDbConnection connection, IDbTransaction transaction, Nullable`1 commandTimeout, Nullable`1 commandType) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryExtensions.cs:line 82
+   at Elsa.Persistence.Dapper.Services.Store`1.SaveAsync(T record, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Services/Store.cs:line 355
+   at Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowDefinitionStore.SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs:line 121
+   at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.FailedInsertRollsBackUnmark() in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 142
+--- End of stack trace from previous location ---
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.TenantScopeIsRequiredAndAgnosticUpdatePreservesTenant [32 ms]
+  Error Message:
+   Npgsql.PostgresException : 23502: null value in column "id" of relation "workflowdefinitions_3a2fbaffa7b74792be17f611da2a32bb" violates not-null constraint
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+  Stack Trace:
+     at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Dapper.SqlMapper.ExecuteImplAsync(IDbConnection cnn, CommandDefinition command, Object param) in /_/Dapper/SqlMapper.Async.cs:line 662
+   at Elsa.Persistence.Dapper.Extensions.ParameterizedQueryExtensions.ExecuteAsync(ParameterizedQuery query, IDbConnection connection, IDbTransaction transaction, Nullable`1 commandTimeout, Nullable`1 commandType) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryExtensions.cs:line 82
+   at Elsa.Persistence.Dapper.Services.Store`1.SaveAsync(T record, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Services/Store.cs:line 355
+   at Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowDefinitionStore.SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs:line 121
+   at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.TenantScopeIsRequiredAndAgnosticUpdatePreservesTenant() in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 213
+--- End of stack trace from previous location ---
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.UpdateUsesCurrentMetadataAndPreservesUnmappedColumns [23 ms]
+  Error Message:
+   Npgsql.PostgresException : 23502: null value in column "id" of relation "workflowdefinitions_080f12442ee84f629209bc80598b1b15" violates not-null constraint
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+  Stack Trace:
+     at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Dapper.SqlMapper.ExecuteImplAsync(IDbConnection cnn, CommandDefinition command, Object param) in /_/Dapper/SqlMapper.Async.cs:line 662
+   at Elsa.Persistence.Dapper.Extensions.ParameterizedQueryExtensions.ExecuteAsync(ParameterizedQuery query, IDbConnection connection, IDbTransaction transaction, Nullable`1 commandTimeout, Nullable`1 commandType) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryExtensions.cs:line 82
+   at Elsa.Persistence.Dapper.Services.Store`1.SaveAsync(T record, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Services/Store.cs:line 355
+   at Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowDefinitionStore.SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs:line 121
+   at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.UpdateUsesCurrentMetadataAndPreservesUnmappedColumns() in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 89
+--- End of stack trace from previous location ---
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.SupersededVersionIsConflictOnlyInsideTenantScope [23 ms]
+  Error Message:
+   Npgsql.PostgresException : 23502: null value in column "id" of relation "workflowdefinitions_9f0a78a21f914127bb1e94b09cd26ef9" violates not-null constraint
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+  Stack Trace:
+     at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Dapper.SqlMapper.ExecuteImplAsync(IDbConnection cnn, CommandDefinition command, Object param) in /_/Dapper/SqlMapper.Async.cs:line 662
+   at Elsa.Persistence.Dapper.Extensions.ParameterizedQueryExtensions.ExecuteAsync(ParameterizedQuery query, IDbConnection connection, IDbTransaction transaction, Nullable`1 commandTimeout, Nullable`1 commandType) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryExtensions.cs:line 82
+   at Elsa.Persistence.Dapper.Services.Store`1.SaveAsync(T record, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Services/Store.cs:line 355
+   at Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowDefinitionStore.SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs:line 121
+   at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.SupersededVersionIsConflictOnlyInsideTenantScope() in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 281
+--- End of stack trace from previous location ---
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.OptionalTenantAccessorUsesDefaultTenantAndExcludesOtherTenants [25 ms]
+  Error Message:
+   Npgsql.PostgresException : 23502: null value in column "id" of relation "workflowdefinitions_fb9cabeba54744f6a442500cd11fd095" violates not-null constraint
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+  Stack Trace:
+     at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Dapper.SqlMapper.ExecuteImplAsync(IDbConnection cnn, CommandDefinition command, Object param) in /_/Dapper/SqlMapper.Async.cs:line 662
+   at Elsa.Persistence.Dapper.Extensions.ParameterizedQueryExtensions.ExecuteAsync(ParameterizedQuery query, IDbConnection connection, IDbTransaction transaction, Nullable`1 commandTimeout, Nullable`1 commandType) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryExtensions.cs:line 82
+   at Elsa.Persistence.Dapper.Services.Store`1.SaveAsync(T record, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Services/Store.cs:line 355
+   at Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowDefinitionStore.SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs:line 121
+   at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.OptionalTenantAccessorUsesDefaultTenantAndExcludesOtherTenants() in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 70
+--- End of stack trace from previous location ---
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.NewDraftUnmarksPreviousInSameTransaction [19 ms]
+  Error Message:
+   Npgsql.PostgresException : 23502: null value in column "id" of relation "workflowdefinitions_0e2ca306885b450ba9015edcd69539c8" violates not-null constraint
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+  Stack Trace:
+     at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Dapper.SqlMapper.ExecuteImplAsync(IDbConnection cnn, CommandDefinition command, Object param) in /_/Dapper/SqlMapper.Async.cs:line 662
+   at Elsa.Persistence.Dapper.Extensions.ParameterizedQueryExtensions.ExecuteAsync(ParameterizedQuery query, IDbConnection connection, IDbTransaction transaction, Nullable`1 commandTimeout, Nullable`1 commandType) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryExtensions.cs:line 82
+   at Elsa.Persistence.Dapper.Services.Store`1.SaveAsync(T record, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Services/Store.cs:line 355
+   at Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowDefinitionStore.SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs:line 121
+   at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.NewDraftUnmarksPreviousInSameTransaction() in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 125
+--- End of stack trace from previous location ---
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "latest-and-published", expected: 0) [21 ms]
+  Error Message:
+   Npgsql.PostgresException : 23502: null value in column "id" of relation "workflowdefinitions_6426cb7f7c44441bb6a53763b404198d" violates not-null constraint
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+  Stack Trace:
+     at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Dapper.SqlMapper.ExecuteImplAsync(IDbConnection cnn, CommandDefinition command, Object param) in /_/Dapper/SqlMapper.Async.cs:line 662
+   at Elsa.Persistence.Dapper.Extensions.ParameterizedQueryExtensions.ExecuteAsync(ParameterizedQuery query, IDbConnection connection, IDbTransaction transaction, Nullable`1 commandTimeout, Nullable`1 commandType) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryExtensions.cs:line 82
+   at Elsa.Persistence.Dapper.Services.Store`1.SaveAsync(T record, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Services/Store.cs:line 355
+   at Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowDefinitionStore.SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs:line 121
+   at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(String selection, Int32 expected) in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 237
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:03.90]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "latest", expected: 1) [FAIL]
+[xUnit.net 00:00:04.08]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "draft", expected: 1) [FAIL]
+[xUnit.net 00:00:04.22]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "published", expected: 1) [FAIL]
+[xUnit.net 00:00:04.25]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "latest-or-published", expected: 2) [FAIL]
+[xUnit.net 00:00:04.28]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.WrongExpectedSnapshotDoesNotInvokeUpdate [FAIL]
+[xUnit.net 00:00:04.31]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.SerializableReadExcludesLegacyWriterUntilCommit [FAIL]
+[xUnit.net 00:00:04.33]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.CannotMoveTenantOrDefinition [FAIL]
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "latest", expected: 1) [53 ms]
+  Error Message:
+   Npgsql.PostgresException : 23502: null value in column "id" of relation "workflowdefinitions_467c1b9172aa4f4dbb1928f7f62a3ae6" violates not-null constraint
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+  Stack Trace:
+     at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Dapper.SqlMapper.ExecuteImplAsync(IDbConnection cnn, CommandDefinition command, Object param) in /_/Dapper/SqlMapper.Async.cs:line 662
+   at Elsa.Persistence.Dapper.Extensions.ParameterizedQueryExtensions.ExecuteAsync(ParameterizedQuery query, IDbConnection connection, IDbTransaction transaction, Nullable`1 commandTimeout, Nullable`1 commandType) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryExtensions.cs:line 82
+   at Elsa.Persistence.Dapper.Services.Store`1.SaveAsync(T record, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Services/Store.cs:line 355
+   at Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowDefinitionStore.SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs:line 121
+   at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(String selection, Int32 expected) in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 237
+--- End of stack trace from previous location ---
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "draft", expected: 1) [184 ms]
+  Error Message:
+   Npgsql.PostgresException : 23502: null value in column "id" of relation "workflowdefinitions_884f6a75addd45358d98bdfaec8f24e3" violates not-null constraint
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+  Stack Trace:
+     at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Dapper.SqlMapper.ExecuteImplAsync(IDbConnection cnn, CommandDefinition command, Object param) in /_/Dapper/SqlMapper.Async.cs:line 662
+   at Elsa.Persistence.Dapper.Extensions.ParameterizedQueryExtensions.ExecuteAsync(ParameterizedQuery query, IDbConnection connection, IDbTransaction transaction, Nullable`1 commandTimeout, Nullable`1 commandType) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryExtensions.cs:line 82
+   at Elsa.Persistence.Dapper.Services.Store`1.SaveAsync(T record, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Services/Store.cs:line 355
+   at Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowDefinitionStore.SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs:line 121
+   at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(String selection, Int32 expected) in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 237
+--- End of stack trace from previous location ---
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "published", expected: 1) [130 ms]
+  Error Message:
+   Npgsql.PostgresException : 23502: null value in column "id" of relation "workflowdefinitions_fd8292d0671244da9b7fb0977c94de48" violates not-null constraint
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+  Stack Trace:
+     at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Dapper.SqlMapper.ExecuteImplAsync(IDbConnection cnn, CommandDefinition command, Object param) in /_/Dapper/SqlMapper.Async.cs:line 662
+   at Elsa.Persistence.Dapper.Extensions.ParameterizedQueryExtensions.ExecuteAsync(ParameterizedQuery query, IDbConnection connection, IDbTransaction transaction, Nullable`1 commandTimeout, Nullable`1 commandType) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryExtensions.cs:line 82
+   at Elsa.Persistence.Dapper.Services.Store`1.SaveAsync(T record, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Services/Store.cs:line 355
+   at Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowDefinitionStore.SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs:line 121
+   at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(String selection, Int32 expected) in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 237
+--- End of stack trace from previous location ---
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "latest-or-published", expected: 2) [31 ms]
+  Error Message:
+   Npgsql.PostgresException : 23502: null value in column "id" of relation "workflowdefinitions_a96051fc95ba4f38a66719a0913c3fc2" violates not-null constraint
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+  Stack Trace:
+     at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Dapper.SqlMapper.ExecuteImplAsync(IDbConnection cnn, CommandDefinition command, Object param) in /_/Dapper/SqlMapper.Async.cs:line 662
+   at Elsa.Persistence.Dapper.Extensions.ParameterizedQueryExtensions.ExecuteAsync(ParameterizedQuery query, IDbConnection connection, IDbTransaction transaction, Nullable`1 commandTimeout, Nullable`1 commandType) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryExtensions.cs:line 82
+   at Elsa.Persistence.Dapper.Services.Store`1.SaveAsync(T record, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Services/Store.cs:line 355
+   at Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowDefinitionStore.SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs:line 121
+   at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(String selection, Int32 expected) in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 237
+--- End of stack trace from previous location ---
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.WrongExpectedSnapshotDoesNotInvokeUpdate [29 ms]
+  Error Message:
+   Npgsql.PostgresException : 23502: null value in column "id" of relation "workflowdefinitions_a0cde349d2cd469991226f48ef510441" violates not-null constraint
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+  Stack Trace:
+     at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Dapper.SqlMapper.ExecuteImplAsync(IDbConnection cnn, CommandDefinition command, Object param) in /_/Dapper/SqlMapper.Async.cs:line 662
+   at Elsa.Persistence.Dapper.Extensions.ParameterizedQueryExtensions.ExecuteAsync(ParameterizedQuery query, IDbConnection connection, IDbTransaction transaction, Nullable`1 commandTimeout, Nullable`1 commandType) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryExtensions.cs:line 82
+   at Elsa.Persistence.Dapper.Services.Store`1.SaveAsync(T record, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Services/Store.cs:line 355
+   at Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowDefinitionStore.SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs:line 121
+   at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.WrongExpectedSnapshotDoesNotInvokeUpdate() in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 107
+--- End of stack trace from previous location ---
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.SerializableReadExcludesLegacyWriterUntilCommit [21 ms]
+  Error Message:
+   Npgsql.PostgresException : 23502: null value in column "id" of relation "workflowdefinitions_b75a9e7688cd475591c4dfa25f548f4f" violates not-null constraint
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+  Stack Trace:
+     at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Dapper.SqlMapper.ExecuteImplAsync(IDbConnection cnn, CommandDefinition command, Object param) in /_/Dapper/SqlMapper.Async.cs:line 662
+   at Elsa.Persistence.Dapper.Extensions.ParameterizedQueryExtensions.ExecuteAsync(ParameterizedQuery query, IDbConnection connection, IDbTransaction transaction, Nullable`1 commandTimeout, Nullable`1 commandType) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryExtensions.cs:line 82
+   at Elsa.Persistence.Dapper.Services.Store`1.SaveAsync(T record, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Services/Store.cs:line 355
+   at Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowDefinitionStore.SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs:line 121
+   at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.SerializableReadExcludesLegacyWriterUntilCommit() in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 160
+--- End of stack trace from previous location ---
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.CannotMoveTenantOrDefinition [26 ms]
+  Error Message:
+   Npgsql.PostgresException : 23502: null value in column "id" of relation "workflowdefinitions_cdedcbc121264511a083c8c5d10e11e5" violates not-null constraint
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+  Stack Trace:
+     at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Dapper.SqlMapper.ExecuteImplAsync(IDbConnection cnn, CommandDefinition command, Object param) in /_/Dapper/SqlMapper.Async.cs:line 662
+   at Elsa.Persistence.Dapper.Extensions.ParameterizedQueryExtensions.ExecuteAsync(ParameterizedQuery query, IDbConnection connection, IDbTransaction transaction, Nullable`1 commandTimeout, Nullable`1 commandType) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryExtensions.cs:line 82
+   at Elsa.Persistence.Dapper.Services.Store`1.SaveAsync(T record, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Services/Store.cs:line 355
+   at Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowDefinitionStore.SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs:line 121
+   at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.CannotMoveTenantOrDefinition() in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 266
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:    17, Passed:     0, Skipped:     0, Total:    17, Duration: 3 s - Elsa.Persistence.Dapper.UnitTests.dll (net10.0)

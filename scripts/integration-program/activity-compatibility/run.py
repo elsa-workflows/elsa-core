@@ -97,6 +97,19 @@ def classify_added_descriptors(before, after, matrix):
     return allowed, unexpected
 
 
+def classify_reviewed_released_additions(unexpected, after, matrix):
+    """Approve only exact contracts listed by a separate review of a released assembly."""
+    reviewed = [
+        row
+        for entry in matrix if entry['releasedVersion'] is not None
+        for review in entry.get('reviewedReleasedAssemblyAdditions', [])
+        for row in review['descriptors']
+        if row['Assembly'] == entry['assembly']
+    ]
+    approved = [key for key in unexpected if after[key] in reviewed]
+    return approved, [key for key in unexpected if key not in approved]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source-tree', type=Path, required=True)
@@ -145,7 +158,8 @@ def main():
         old, new = [json.loads(path.read_text()) for path in paths]
         a, b = [descriptor_map(result) for result in [old, new]]
         allowed_added, unexpected_added = classify_added_descriptors(a, b, entries)
-        receipt['comparison'] = {'allowedSourceOnlyAddedDescriptors': allowed_added, 'unexpectedAddedDescriptors': unexpected_added, 'missingDescriptors': sorted(a.keys() - b.keys()), 'addedDescriptors': sorted(b.keys() - a.keys()), 'changedDescriptors': sorted(k for k in a.keys() & b.keys() if a[k] != b[k]), 'releasedFailures': old['failures'], 'consolidatedFailures': new['failures'], 'historicalWorkflowPreserved': new['importedPreserved']}
+        reviewed_added, unexpected_added = classify_reviewed_released_additions(unexpected_added, b, entries)
+        receipt['comparison'] = {'allowedSourceOnlyAddedDescriptors': allowed_added, 'reviewedReleasedAssemblyAddedDescriptors': reviewed_added, 'unexpectedAddedDescriptors': unexpected_added, 'missingDescriptors': sorted(a.keys() - b.keys()), 'addedDescriptors': sorted(b.keys() - a.keys()), 'changedDescriptors': sorted(k for k in a.keys() & b.keys() if a[k] != b[k]), 'releasedFailures': old['failures'], 'consolidatedFailures': new['failures'], 'historicalWorkflowPreserved': new['importedPreserved']}
     receipt['sourceInputsUnchanged'] = before_inputs == source_inputs(source)
     receipt['sourceInputsSha256'] = digest(output / 'source-inputs.json')
     (output / 'receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')

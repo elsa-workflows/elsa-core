@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "issue": 8286,
+  "baseImportHead": "0a26ff1f763b07b49e140ae6c923434dfb38f855",
+  "mappedDeltaCommit": "fe0d6a32d38981bf7e63d75c03592fe8f0cd07cd",
+  "historyJoinCommit": "d4faa24545594cb3ea0bb5a14edd0a04c47f355f",
+  "coreMainMergeCommit": "9069fc28337651bef75ae600ff82891e3d283ba6",
+  "oldStudioCommit": "f0eeb3c7428443b09512049fe890635fa4f7b427",
+  "newStudioCommit": "099402226daba80e473a306bbd1243b8994465b8",
+  "coreMainCommit": "24349a9580dc15be04ed96bb440e42b362f8006e",
+  "studioPullRequest": "https://github.com/elsa-workflows/elsa-studio/pull/1067",
+  "corePullRequest": "https://github.com/elsa-workflows/elsa-core/pull/8463",
+  "mappedChanges": [
+    {
+      "status": "M",
+      "source": "samples/react/workflow-definition-editor-sample/workflow-definition-editor-app/src/App.js",
+      "mappedPath": "samples/studio/react/workflow-definition-editor-sample/workflow-definition-editor-app/src/App.js",
+      "oldSource": {
+        "blob": "dfd33e3accb47d882150c129a571b587faa437cc",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "dfd33e3accb47d882150c129a571b587faa437cc",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "1d8886efd9d49dd1a882926d1e9e67ec6fdef7b0",
+        "mode": "100644"
+      },
+      "mappedAtDelta": {
+        "blob": "1d8886efd9d49dd1a882926d1e9e67ec6fdef7b0",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "1d8886efd9d49dd1a882926d1e9e67ec6fdef7b0",
+        "mode": "100644"
+      }
+    },
+    {
+      "status": "M",
+      "source": "src/modules/Elsa.Studio.Diagnostics.OpenTelemetry.Tests/SignalROpenTelemetryObserverTests.cs",
+      "mappedPath": "src/studio/modules/Elsa.Studio.Diagnostics.OpenTelemetry.Tests/SignalROpenTelemetryObserverTests.cs",
+      "oldSource": {
+        "blob": "2b0de1e67f057a709ab91ffe70ddfa81c5aeb1a9",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "2b0de1e67f057a709ab91ffe70ddfa81c5aeb1a9",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "758eee0bf574e42d37d98884246fc0c9cde88d81",
+        "mode": "100644"
+      },
+      "mappedAtDelta": {
+        "blob": "758eee0bf574e42d37d98884246fc0c9cde88d81",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "758eee0bf574e42d37d98884246fc0c9cde88d81",
+        "mode": "100644"
+      }
+    }
+  ],
+  "publicationPerformed": false
+}

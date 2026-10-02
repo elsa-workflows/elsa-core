@@ -36,3 +36,5 @@ Compressed artifacts replace local filesystem prefixes only. The summary retains
 Use the commands in the static probe guide with this harness and a new output directory for each framework, then run `verify_probe.py` against each output. Never overwrite retained evidence or run concurrent builds against the same source output directories.
 
 This covers one controlled Agent schema and Orchard content type, one MassTransit CLR message, and the current Telnyx attributed payloads. It does not prove arbitrary generated schemas, live provider dispatch, provider side effects, final-host DI registration, historical tenant-specific configurations, or every literal CLR shape. Actual import, package consumers and approved pilot workflows have separate gates. Future fixes need fresh results; these nonzero baseline receipts must remain intact.
+
+The generated-descriptor rerun against the history-preserving import is recorded separately in [activity-compatibility-imported-ce1111e4.md](activity-compatibility-imported-ce1111e4.md). The rehearsal receipts above are unchanged.

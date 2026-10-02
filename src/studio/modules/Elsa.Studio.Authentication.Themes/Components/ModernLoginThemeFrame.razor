@@ -1,0 +1,72 @@
+@using System.Globalization
+
+<link href="_content/Elsa.Studio.Authentication.Themes/css/login-themes.css" rel="stylesheet" />
+
+<main class="modern-login-theme"
+      data-theme="@ThemeId"
+      aria-labelledby="elsa-login-heading">
+    <div class="modern-login-theme__artwork" aria-hidden="true">
+        <picture>
+            @if (!string.IsNullOrWhiteSpace(MobileArtwork))
+            {
+                <source media="(max-width: 720px)" srcset="@MobileArtwork" />
+            }
+            <img src="@DesktopArtwork" alt="" fetchpriority="low" />
+        </picture>
+    </div>
+
+    <div class="modern-login-theme__content">
+        <section class="modern-login-theme__surface">
+            <header class="modern-login-theme__brand">
+                @if (!string.IsNullOrWhiteSpace(BrandLogoUrl))
+                {
+                    <img class="modern-login-theme__logo" src="@BrandLogoUrl" alt="" />
+                }
+
+                <div>
+                    <h1>@Context.Branding.ApplicationName</h1>
+                    @if (!string.IsNullOrWhiteSpace(Context.Branding.Tagline))
+                    {
+                        <p class="modern-login-theme__tagline">@Context.Branding.Tagline</p>
+                    }
+                </div>
+            </header>
+
+            <div class="modern-login-theme__panel">
+                @Context.LoginPanel
+            </div>
+
+            <footer class="modern-login-theme__footer">
+                <div class="modern-login-theme__utilities">
+                    @Context.UtilityLinks
+                </div>
+                @if (ShowVersion && !string.IsNullOrWhiteSpace(Context.Version))
+                {
+                    <span class="modern-login-theme__version">
+                        @string.Format(CultureInfo.InvariantCulture, "v{0}", Context.Version)
+                    </span>
+                }
+            </footer>
+        </section>
+    </div>
+</main>
+
+@code {
+    [Parameter, EditorRequired]
+    public LoginThemeContext Context { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string ThemeId { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string DesktopArtwork { get; set; } = default!;
+
+    [Parameter]
+    public string? MobileArtwork { get; set; }
+
+    [Parameter]
+    public bool ShowVersion { get; set; }
+
+    private string? BrandLogoUrl =>
+        Context.Branding.LogoUrl ?? Context.Branding.ReverseLogoUrl;
+}

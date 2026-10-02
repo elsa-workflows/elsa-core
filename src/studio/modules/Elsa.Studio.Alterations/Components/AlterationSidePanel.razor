@@ -1,0 +1,394 @@
+@using Elsa.Api.Client.Resources.WorkflowInstances.Models
+@implements IDisposable
+@inject IAlterationStagingService Staging
+@inject IAlterationCatalog Catalog
+@inject ILocalizer Localizer
+
+<aside class="elsa-alt-side @(Collapsed ? "is-collapsed" : "")">
+    <header class="elsa-alt-side-tabs">
+        <button type="button" class="@TabClass(Tab.Selection)" @onclick="() => SetTab(Tab.Selection)">
+            <MudIcon Icon="@(HasSelectedActivity ? Icons.Material.Outlined.Adjust : Icons.Material.Outlined.AllInclusive)"
+                     Size="Size.Small" />
+            <span>@Localizer["Selection"]</span>
+            @if (HasSelectedActivity)
+            {
+                <span class="elsa-alt-tab-dot"></span>
+            }
+        </button>
+        <button type="button" class="@TabClass(Tab.Variables)" @onclick="() => SetTab(Tab.Variables)">
+            <MudIcon Icon="@Icons.Material.Outlined.DataObject" Size="Size.Small" />
+            <span>@Localizer["Variables"]</span>
+            @if (Variables is { Count: > 0 })
+            {
+                <span class="elsa-alt-tab-badge">@Variables.Count</span>
+            }
+        </button>
+        <button type="button" class="@TabClass(Tab.Plan)" @onclick="() => SetTab(Tab.Plan)">
+            <MudIcon Icon="@Icons.Material.Outlined.Layers" Size="Size.Small" />
+            <span>@Localizer["Plan"]</span>
+            @if (Staging.Items.Count > 0)
+            {
+                <span class="elsa-alt-tab-badge primary">@Staging.Items.Count</span>
+            }
+        </button>
+    </header>
+
+    <div class="elsa-alt-side-body">
+        @switch (_activeTab)
+        {
+            case Tab.Selection: @RenderSelection(); break;
+            case Tab.Variables: @RenderVariables(); break;
+            case Tab.Plan: @RenderPlan(); break;
+        }
+    </div>
+</aside>
+
+@code {
+    public enum Tab { Selection, Variables, Plan }
+
+    [Parameter] public string? SelectedActivityId { get; set; }
+    [Parameter] public string? SelectedActivityName { get; set; }
+    [Parameter] public string? SelectedActivityType { get; set; }
+    [Parameter] public string? InstanceId { get; set; }
+    [Parameter] public string? InstanceName { get; set; }
+    [Parameter] public string? InstanceStatus { get; set; }
+
+    [Parameter] public IReadOnlyList<ResolvedVariable>? Variables { get; set; }
+    [Parameter] public bool VariablesLoading { get; set; }
+
+    [Parameter] public bool Collapsed { get; set; }
+
+    [Parameter] public EventCallback<AlterationDescriptor> QuickActionRequested { get; set; }
+    [Parameter] public EventCallback<ResolvedVariable> ModifyVariableRequested { get; set; }
+    [Parameter] public EventCallback<StagedAlteration> EditStagedRequested { get; set; }
+    [Parameter] public EventCallback DryRunRequested { get; set; }
+    [Parameter] public EventCallback DiscardAllRequested { get; set; }
+    [Parameter] public EventCallback SubmitRequested { get; set; }
+    [Parameter] public bool Busy { get; set; }
+
+    private Tab _activeTab = Tab.Selection;
+    private string _variableSearch = "";
+    private IReadOnlyList<AlterationDescriptor>? _descriptors;
+
+    private bool HasSelectedActivity => !string.IsNullOrEmpty(SelectedActivityId);
+
+    /// <summary>
+    /// Allows the host to programmatically switch tabs — e.g., jump to Plan after staging an
+    /// item so the user immediately sees the result land.
+    /// </summary>
+    public void SwitchTo(Tab tab) { _activeTab = tab; StateHasChanged(); }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Staging.Changed += HandleStagingChanged;
+        _descriptors = await Catalog.ListAsync();
+    }
+
+    public void Dispose() => Staging.Changed -= HandleStagingChanged;
+
+    private void HandleStagingChanged() => InvokeAsync(StateHasChanged);
+
+    private void SetTab(Tab t) => _activeTab = t;
+
+    private string TabClass(Tab t) => "elsa-alt-side-tab" + (_activeTab == t ? " is-active" : "");
+
+    // ------------------------------------------------------------------------
+    // Selection tab — context-sensitive: shows the clicked activity OR the
+    // whole instance when nothing is selected.
+    // ------------------------------------------------------------------------
+    private RenderFragment RenderSelection() => __builder =>
+    {
+        var activityActions = _descriptors?.Where(d => d.Target == AlterationTargetKind.Activity).ToList() ?? new();
+        var instanceActions = _descriptors?.Where(d => d.Target != AlterationTargetKind.Activity).ToList() ?? new();
+
+        @if (HasSelectedActivity)
+        {
+            <section class="elsa-alt-section">
+                <h6 class="elsa-alt-section-title">@Localizer["Activity"]</h6>
+                <dl class="elsa-alt-kv">
+                    <dt>@Localizer["Name"]</dt>
+                    <dd>@SelectedActivityName</dd>
+                    <dt>@Localizer["Id"]</dt>
+                    <dd><code>@SelectedActivityId</code></dd>
+                    @if (!string.IsNullOrEmpty(SelectedActivityType))
+                    {
+                        <dt>@Localizer["Type"]</dt>
+                        <dd><code>@SelectedActivityType</code></dd>
+                    }
+                </dl>
+            </section>
+
+            <section class="elsa-alt-section">
+                <h6 class="elsa-alt-section-title">@Localizer["Actions"]</h6>
+                <div class="elsa-alt-action-list">
+                    @foreach (var d in activityActions)
+                    {
+                        @ActionButton(d)
+                    }
+                </div>
+            </section>
+        }
+        else
+        {
+            <section class="elsa-alt-section">
+                <h6 class="elsa-alt-section-title">@Localizer["Instance"]</h6>
+                <dl class="elsa-alt-kv">
+                    @if (!string.IsNullOrEmpty(InstanceName))
+                    {
+                        <dt>@Localizer["Name"]</dt>
+                        <dd>@InstanceName</dd>
+                    }
+                    <dt>@Localizer["Id"]</dt>
+                    <dd><code>@InstanceId</code></dd>
+                    @if (!string.IsNullOrEmpty(InstanceStatus))
+                    {
+                        <dt>@Localizer["Status"]</dt>
+                        <dd>@InstanceStatus</dd>
+                    }
+                </dl>
+
+                <div class="elsa-alt-hint">
+                    <MudIcon Icon="@Icons.Material.Outlined.TouchApp" Size="Size.Small" />
+                    <span>@Localizer["Click an activity in the diagram to inspect it."]</span>
+                </div>
+            </section>
+
+            <section class="elsa-alt-section">
+                <h6 class="elsa-alt-section-title">@Localizer["Whole-instance actions"]</h6>
+                <div class="elsa-alt-action-list">
+                    @foreach (var d in instanceActions)
+                    {
+                        @ActionButton(d)
+                    }
+                </div>
+            </section>
+        }
+    };
+
+    private RenderFragment ActionButton(AlterationDescriptor d) => __builder =>
+    {
+        var accent = ResolveAccent(d.Color);
+        <button type="button" class="elsa-alt-action-btn"
+                style="@($"--accent: {accent};")"
+                title="@d.Description"
+                @onclick="@(() => OnQuickAction(d))">
+            <MudIcon Icon="@d.Icon" Color="@MapColor(d.Color)" Size="Size.Small" />
+            <span class="label">@d.DisplayName</span>
+            @if (d.ConfigFields.Count > 0)
+            {
+                <MudIcon Icon="@Icons.Material.Outlined.MoreHoriz" Size="Size.Small"
+                         Class="elsa-alt-action-btn-affordance" />
+            }
+        </button>
+    };
+
+    // ------------------------------------------------------------------------
+    // Variables tab — searchable list, per-row Modify shortcut.
+    // ------------------------------------------------------------------------
+    private RenderFragment RenderVariables() => __builder =>
+    {
+        var filtered = (Variables ?? new List<ResolvedVariable>())
+            .Where(v => string.IsNullOrEmpty(_variableSearch)
+                        || (v.Name?.Contains(_variableSearch, StringComparison.OrdinalIgnoreCase) ?? false))
+            .ToList();
+
+        <section class="elsa-alt-section elsa-alt-section--filled">
+            <div class="elsa-alt-search">
+                <MudIcon Icon="@Icons.Material.Outlined.Search" Size="Size.Small"
+                         Class="elsa-alt-search-icon" />
+                <input type="text" placeholder="@Localizer["Search variables…"]"
+                       value="@_variableSearch"
+                       @oninput="@(e => _variableSearch = e.Value?.ToString() ?? "")"
+                       class="elsa-alt-search-input" />
+                @if (!string.IsNullOrEmpty(_variableSearch))
+                {
+                    <button type="button" class="elsa-alt-search-clear"
+                            @onclick="@(() => _variableSearch = "")">
+                        <MudIcon Icon="@Icons.Material.Outlined.Close" Size="Size.Small" />
+                    </button>
+                }
+            </div>
+
+            @if (VariablesLoading)
+            {
+                <MudProgressLinear Indeterminate="true" Class="mt-2" />
+            }
+            else if (Variables is null || Variables.Count == 0)
+            {
+                <div class="elsa-alt-empty">
+                    <MudIcon Icon="@Icons.Material.Outlined.DataObject" Size="Size.Medium" />
+                    <div>@Localizer["No variables on this instance."]</div>
+                </div>
+            }
+            else if (filtered.Count == 0)
+            {
+                <div class="elsa-alt-empty">
+                    <span>@Localizer["No matches."]</span>
+                </div>
+            }
+            else
+            {
+                <div class="elsa-alt-var-list">
+                    @foreach (var v in filtered)
+                    {
+                        <div class="elsa-alt-var-row">
+                            <div class="elsa-alt-var-meta">
+                                <div class="name">@v.Name</div>
+                                <code class="value" title="@v.Value?.ToString()">@FormatValue(v.Value)</code>
+                            </div>
+                            <button type="button" class="elsa-alt-icon-btn"
+                                    title="@Localizer["Modify"]"
+                                    @onclick="@(() => OnModifyVariable(v))">
+                                <MudIcon Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" />
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+    };
+
+    // ------------------------------------------------------------------------
+    // Plan tab — staged alterations with primary Submit at the bottom.
+    // ------------------------------------------------------------------------
+    private RenderFragment RenderPlan() => __builder =>
+    {
+        <section class="elsa-alt-section elsa-alt-plan">
+            <div class="elsa-alt-plan-header">
+                <h6 class="elsa-alt-section-title" style="margin:0;">@Localizer["Staged alterations"]</h6>
+                <span class="elsa-alt-plan-count">@Staging.Items.Count</span>
+            </div>
+
+            @if (Staging.Items.Count == 0)
+            {
+                <div class="elsa-alt-empty">
+                    <MudIcon Icon="@Icons.Material.Outlined.Layers" Size="Size.Medium" />
+                    <div>@Localizer["Nothing staged yet."]</div>
+                    <div class="hint">@Localizer["Click an activity or use the Selection tab actions to stage alterations."]</div>
+                </div>
+            }
+            else
+            {
+                <div class="elsa-alt-plan-list">
+                    @foreach (var item in Staging.Items)
+                    {
+                        <div class="elsa-alt-plan-card" style="@($"--accent: {ResolveAccent(item.Descriptor.Color)};")">
+                            <div class="header">
+                                <MudIcon Icon="@item.Descriptor.Icon" Size="Size.Small"
+                                         Color="@MapColor(item.Descriptor.Color)" />
+                                <span class="title">@item.Descriptor.DisplayName</span>
+                                <button type="button" class="elsa-alt-icon-btn small"
+                                        title="@Localizer["Remove"]"
+                                        @onclick="@(() => Staging.Remove(item.Id))">
+                                    <MudIcon Icon="@Icons.Material.Outlined.Close" Size="Size.Small" />
+                                </button>
+                            </div>
+                            <div class="target">
+                                <MudIcon Icon="@TargetIcon(item.Descriptor.Target)" Size="Size.Small" />
+                                @TargetText(item)
+                            </div>
+                            @{ var summary = item.SummariseConfig(); }
+                            @if (!string.IsNullOrEmpty(summary))
+                            {
+                                <div class="config">@summary</div>
+                            }
+                            @if (item.Descriptor.ConfigFields.Count > 0)
+                            {
+                                <button type="button" class="elsa-alt-link-btn"
+                                        @onclick="@(() => OnEditStaged(item))">
+                                    <MudIcon Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" />
+                                    <span>@Localizer["Edit"]</span>
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+
+        <footer class="elsa-alt-plan-footer">
+            <button type="button" class="elsa-alt-secondary-btn"
+                    disabled="@(Staging.Items.Count == 0 || Busy)"
+                    @onclick="@(() => DryRunRequested.InvokeAsync())">
+                <MudIcon Icon="@Icons.Material.Outlined.Search" Size="Size.Small" />
+                <span>@Localizer["Dry-run"]</span>
+            </button>
+            <button type="button" class="elsa-alt-secondary-btn"
+                    disabled="@(Staging.Items.Count == 0 || Busy)"
+                    @onclick="@(() => DiscardAllRequested.InvokeAsync())">
+                <MudIcon Icon="@Icons.Material.Outlined.DeleteSweep" Size="Size.Small" />
+                <span>@Localizer["Discard"]</span>
+            </button>
+            <button type="button" class="elsa-alt-primary-btn"
+                    disabled="@(Staging.Items.Count == 0 || Busy)"
+                    @onclick="@(() => SubmitRequested.InvokeAsync())">
+                <MudIcon Icon="@Icons.Material.Outlined.Send" Size="Size.Small" />
+                <span>@(Staging.Items.Count == 0 ? Localizer["Submit"] : string.Format(Localizer["Submit ({0})"], Staging.Items.Count))</span>
+            </button>
+        </footer>
+    };
+
+    // ------------------------------------------------------------------------
+    // Handlers + helpers
+    // ------------------------------------------------------------------------
+    private async Task OnQuickAction(AlterationDescriptor d)
+    {
+        if (QuickActionRequested.HasDelegate) await QuickActionRequested.InvokeAsync(d);
+        // After staging, jump to the Plan tab so the user sees the new card.
+        if (Staging.Items.Any()) _activeTab = Tab.Plan;
+    }
+
+    private async Task OnModifyVariable(ResolvedVariable v)
+    {
+        if (ModifyVariableRequested.HasDelegate) await ModifyVariableRequested.InvokeAsync(v);
+        if (Staging.Items.Any()) _activeTab = Tab.Plan;
+    }
+
+    private async Task OnEditStaged(StagedAlteration item)
+    {
+        if (EditStagedRequested.HasDelegate) await EditStagedRequested.InvokeAsync(item);
+    }
+
+    private string TargetText(StagedAlteration item) => item.Descriptor.Target switch
+    {
+        AlterationTargetKind.Activity when !string.IsNullOrEmpty(item.TargetActivityId)
+            => item.TargetActivityDisplayName ?? item.TargetActivityId,
+        AlterationTargetKind.Activity => Localizer["No activity"],
+        AlterationTargetKind.Variable => Localizer["Variable scope"],
+        _ => Localizer["Whole instance"],
+    };
+
+    private static string TargetIcon(AlterationTargetKind kind) => kind switch
+    {
+        AlterationTargetKind.Activity => Icons.Material.Outlined.Adjust,
+        AlterationTargetKind.Variable => Icons.Material.Outlined.DataObject,
+        _ => Icons.Material.Outlined.AllInclusive,
+    };
+
+    private static Color MapColor(string? c) => c switch
+    {
+        "error" => Color.Error,
+        "warning" => Color.Warning,
+        "info" => Color.Info,
+        "primary" => Color.Primary,
+        "secondary" => Color.Secondary,
+        _ => Color.Default,
+    };
+
+    private static string ResolveAccent(string? c) => c switch
+    {
+        "error" => "var(--mud-palette-error)",
+        "warning" => "var(--mud-palette-warning)",
+        "info" => "var(--mud-palette-info)",
+        "primary" => "var(--mud-palette-primary)",
+        "secondary" => "var(--mud-palette-secondary)",
+        _ => "var(--mud-palette-primary)",
+    };
+
+    private static string FormatValue(object? raw)
+    {
+        if (raw is null) return "null";
+        var s = raw.ToString() ?? "";
+        return s.Length <= 60 ? s : s[..60] + "…";
+    }
+}

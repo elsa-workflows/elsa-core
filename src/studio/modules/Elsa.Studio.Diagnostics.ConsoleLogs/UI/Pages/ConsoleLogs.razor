@@ -1,0 +1,10 @@
+@page "/diagnostics/console"
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<PageTitle>@Localizer["Console"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.False" Class="console-logs-page">
+    <PageHeading Text="@Localizer["Console"]" />
+    <ConsoleLogViewer UseUrlState="true" />
+</MudContainer>

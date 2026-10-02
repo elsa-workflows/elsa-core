@@ -1,0 +1,23 @@
+@using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.ActivityProperties
+@using Orientation = Radzen.Orientation
+@inherits WorkflowEditorComponentBase
+@using Variant = MudBlazor.Variant
+@using Elsa.Studio.Workflows.Services
+@inject ILocalizer Localizer
+
+<RadzenSplitter Orientation="Orientation.Vertical" Style="height: calc(100vh - var(--mud-appbar-height));" Resize="@OnResize">
+    <RadzenSplitterPane Size="70%">
+        <DiagramDesignerWrapper @ref="_diagramDesigner" WorkflowDefinitionVersionId="@_workflowDefinition!.Id" WorkflowDefinition="@_workflowDefinition" Activity="Activity" IsProgressing="IsProgressing" ActivitySelected="@OnActivitySelected" IsReadOnly="true">
+            <CustomToolbarItems>
+                <MudTooltip Text="@Localizer["Export this version as a JSON file."]" Inline="false">
+                    <MudIconButton Icon="@Icons.Material.Filled.FileDownload" OnClick="OnDownloadClicked">@Localizer["Export"]</MudIconButton>
+                </MudTooltip>
+                <MudText Typo="Typo.body1">@($"Version {_workflowDefinition?.Version ?? 0}")</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Success" Variant="Variant.Text" title="@Localizer["Run workflow"]" Class="ml-4" OnClick="@OnRunWorkflowClicked"/>
+            </CustomToolbarItems>
+        </DiagramDesignerWrapper>
+    </RadzenSplitterPane>
+    <RadzenSplitterPane Size="30%" @ref="ActivityPropertiesPane">
+        <ActivityPropertiesPanel @key="@SelectedActivityId" @ref="ActivityPropertiesTab" WorkflowDefinition="@_workflowDefinition" Activity="@SelectedActivity" ActivityDescriptor="@ActivityDescriptor" OnActivityUpdated="@OnSelectedActivityUpdated" VisiblePaneHeight="@_activityPropertiesPaneHeight"/>
+    </RadzenSplitterPane>
+</RadzenSplitter>

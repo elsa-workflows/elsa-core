@@ -1,0 +1,1 @@
+<Project><Import Project="../../Directory.Build.props"/><PropertyGroup><UseProjectReferences>true</UseProjectReferences><ElsaVersion>3.8.0-preview.5557</ElsaVersion><ElsaStudioVersion>3.8.0</ElsaStudioVersion><IsPackable>false</IsPackable></PropertyGroup></Project>

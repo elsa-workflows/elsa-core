@@ -1,0 +1,10 @@
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="dashboard-diagnostics-value">
+    <MudText Typo="Typo.body2" Class="dashboard-muted">@Label</MudText>
+    <MudText Typo="Typo.body2" Color="@Color">@Value</MudText>
+</MudStack>
+
+@code {
+    [Parameter] public string Label { get; set; } = null!;
+    [Parameter] public string Value { get; set; } = "0";
+    [Parameter] public Color Color { get; set; } = Color.Default;
+}

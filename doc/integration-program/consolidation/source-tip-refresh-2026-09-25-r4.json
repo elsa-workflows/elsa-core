@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "issue": 8286,
+  "baseImportHead": "e54e2f2ca63d62fd7f6d76bf89f87ca3757f1e00",
+  "mappedDeltaCommit": "286e5dfaa001c2d6f1b7bdbc8be7fe98b29474b1",
+  "historyJoinCommit": "6dec73e330208bedbc59e528f5e773312317db36",
+  "oldStudioCommit": "099402226daba80e473a306bbd1243b8994465b8",
+  "newStudioCommit": "5b34ec327caffd132e18bfd88bfc9e862dc35c43",
+  "studioPullRequest": "https://github.com/elsa-workflows/elsa-studio/pull/1069",
+  "mappedChanges": [
+    {
+      "status": "M",
+      "source": "src/modules/Elsa.Studio.Workflows.Tests/WorkflowInstanceDesignerDisconnectRefreshTests.cs",
+      "mappedPath": "src/studio/modules/Elsa.Studio.Workflows.Tests/WorkflowInstanceDesignerDisconnectRefreshTests.cs",
+      "oldSource": {
+        "blob": "a7569acd6c82454d3a0305c8554c076d97f5e38b",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "a7569acd6c82454d3a0305c8554c076d97f5e38b",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "435f287ebc3af4cb5af3afaac184727423f3c62e",
+        "mode": "100644"
+      },
+      "mappedAtDelta": {
+        "blob": "435f287ebc3af4cb5af3afaac184727423f3c62e",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "435f287ebc3af4cb5af3afaac184727423f3c62e",
+        "mode": "100644"
+      }
+    }
+  ],
+  "publicationPerformed": false
+}

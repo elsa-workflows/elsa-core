@@ -9,3 +9,6 @@ from the recorded Studio source without a review-visible fixture and pin update.
 The reviewed Git blobs are `27f4d47ccf6937f125d47d5efc7862d966cef3d1` for `ISecretsApi.cs` and
 `f33f97684f1b599dceef3fa7323cab4b396b87be` for `SecretModels.cs` at both the former and current tip.
 `Pages/Secrets.razor` did change between these commits; the browser proof remains separate.
+
+On the draft history import, `test_secrets_api_studio_contract.py` also requires both files to be
+byte-identical to the imported `src/studio/modules/Elsa.Studio.Secrets` sources.

@@ -1,0 +1,18 @@
+@if (Branding.ShowDocumentationLink || Branding.ShowSourceLink)
+{
+    <nav class="elsa-login-utilities" aria-label="@Localizer["Product links"]">
+        @if (Branding.ShowDocumentationLink)
+        {
+            <Documentation />
+        }
+        @if (Branding.ShowSourceLink)
+        {
+            <GitHub />
+        }
+    </nav>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public LoginThemeBranding Branding { get; set; } = null!;
+}

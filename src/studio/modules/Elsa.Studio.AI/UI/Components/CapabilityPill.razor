@@ -1,0 +1,9 @@
+<div class="weaver-capability-pill @(Enabled ? "is-enabled" : "is-disabled")">
+    <MudIcon Icon="@(Enabled ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RemoveCircle)" Size="Size.Small" />
+    <span>@Label</span>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public bool Enabled { get; set; }
+}

@@ -1,0 +1,68 @@
+﻿@using Elsa.Studio.Localization
+@using System.Linq.Expressions
+@inject ILocalizer Localizer
+@inject IDialogService DialogService
+
+<MudStack AlignItems=AlignItems.Start
+          Spacing="4"
+          Row=true>
+    <MudTextField @ref=@textField
+                  T="string"
+                  Label="@Label"
+                  HelperText="@HelperText"
+                  Value="@Value"
+                  ValueChanged="@HandleValueChanged"
+                  For="@For"
+                  Lines="5"
+                  OnBlur="OnBlur"
+                  ReadOnly="IsReadOnly"
+                  Disabled="IsReadOnly"
+                  Margin="Margin.Dense"
+                  Variant="Variant.Outlined"
+                  Immediate="true" />
+    <MudIconButton Icon="@(IsReadOnly ? Icons.Material.Outlined.ManageSearch : Icons.Material.Outlined.EditNote)"
+                   OnClick="@(() => ShowMarkdownEditor(false))"
+                   title="@Localizer[IsReadOnly ? "View" : "Edit"]" />
+</MudStack>
+
+
+@code {
+    [Parameter] public string Value { get; set; } = null!;
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public EventCallback<FocusEventArgs> OnBlur { get; set; }
+    [Parameter] public Expression<Func<string>>? For { get; set; }
+
+    [Parameter] public string Label { get; set; } = null!;
+    [Parameter] public string HelperText { get; set; } = null!;
+    [Parameter] public bool IsReadOnly { get; set; }
+
+    private MudTextField<string> textField = null!;
+
+    private async Task ShowMarkdownEditor(bool readOnly)
+    {
+        var param = new DialogParameters<MarkdownEditor>
+        {
+            { x => x.Label, Label },
+            { x => x.HelperText, HelperText },
+            { x => x.Value, Value },
+            { x => x.IsReadOnly, IsReadOnly ? true : readOnly }
+        };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, Position = DialogPosition.Center, FullWidth = true, MaxWidth = MaxWidth.Large };
+        var dialogRef = await DialogService.ShowAsync<MarkdownEditor>(Label, param, options);
+        var dialogResult = await dialogRef.Result;
+
+        if (dialogResult?.Data is string newValue && Value != newValue)
+        {
+            await textField.FocusAsync(); // Hack to ensure the auto save gets triggered
+            await HandleValueChanged(newValue);
+        }
+    }
+
+    private async Task HandleValueChanged(string newValue)
+    {
+        if (Value == newValue) return;
+        Value = newValue;
+        await ValueChanged.InvokeAsync(newValue);
+    }
+}

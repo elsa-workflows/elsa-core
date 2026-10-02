@@ -1,0 +1,148 @@
+@using System.Text.Json.Nodes
+@using Elsa.Studio.Localization
+@namespace Elsa.Studio.Workflows.DiagramDesigners.StateMachines.Presentation
+@inject ILocalizer Localizer
+
+<div class="state-machine-activity-slot"
+     data-slot-state="@Presentation.State.ToString().ToLowerInvariant()"
+     data-slot-action="drop"
+     aria-label="@Localizer[$"{SlotName} activity slot"]"
+     @ondragover="DragOverCallback"
+     @ondragover:preventDefault="@(!IsReadOnly)"
+     @ondrop="DropCallback"
+     @ondrop:preventDefault="@(!IsReadOnly)">
+    @if (Presentation.State == StateMachineActivityState.Empty)
+    {
+        <div class="state-machine-activity-slot__empty" data-testid="@($"{TestIdPrefix}-{SlotName}-empty")">
+            <strong>@EmptyTitle</strong>
+            <span>@EmptyDescription</span>
+            @if (!IsReadOnly)
+            {
+                <button type="button"
+                        class="state-machine-activity-slot__button"
+                        data-slot-action="add"
+                        aria-label="@Localizer[$"Add {SlotName} activity"]"
+                        @onclick="RequestAddAsync">
+                    @AddLabel
+                </button>
+                <span class="state-machine-activity-slot__drop-hint">@Localizer["or drop an activity here"]</span>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="@CardClass"
+             data-testid="@($"{TestIdPrefix}-{SlotName}-activity")"
+             data-activity-state="@Presentation.State.ToString().ToLowerInvariant()"
+             data-activity-selected="@IsSelected.ToString().ToLowerInvariant()">
+            <div class="state-machine-activity-slot__copy">
+                <strong>@Presentation.Title</strong>
+                <span>@Presentation.Detail</span>
+            </div>
+
+            @if (Presentation.State == StateMachineActivityState.Malformed)
+            {
+                <p class="state-machine-activity-slot__warning" role="status">
+                    @Localizer["This definition is invalid and will be preserved until you replace or clear it."]
+                </p>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Presentation.RawDefinition))
+            {
+                <details class="state-machine-activity-slot__definition">
+                    <summary>@Localizer["View definition"]</summary>
+                    <pre data-testid="@($"{TestIdPrefix}-{SlotName}-definition")">@Presentation.RawDefinition</pre>
+                </details>
+            }
+
+            <div class="state-machine-activity-slot__actions">
+                @if (Presentation.State != StateMachineActivityState.Malformed)
+                {
+                    <button type="button"
+                            class="state-machine-activity-slot__button state-machine-activity-slot__button--primary"
+                            data-slot-action="select"
+                            aria-pressed="@IsSelected"
+                            aria-label="@Localizer[$"{(IsReadOnly ? "View" : "Edit")} {SlotName} activity properties"]"
+                            @onclick="RequestSelectAsync">
+                        @(IsReadOnly ? Localizer["View properties"] : Localizer["Edit properties"])
+                    </button>
+                    @if (SupportsDesigner)
+                    {
+                        <button type="button"
+                                class="state-machine-activity-slot__button"
+                                data-slot-action="open"
+                                aria-label="@Localizer[$"Open {SlotName} activity designer"]"
+                                @onclick="RequestOpenAsync">
+                            @Localizer["Open designer"]
+                        </button>
+                    }
+                }
+                <button type="button"
+                        class="state-machine-activity-slot__button"
+                        data-slot-action="json"
+                        aria-label="@Localizer[$"{(IsReadOnly ? "View" : "Edit")} {SlotName} activity JSON"]"
+                        @onclick="RequestJsonAsync">
+                    @(IsReadOnly ? Localizer["View JSON"] : Localizer["Edit JSON"])
+                </button>
+                @if (!IsReadOnly)
+                {
+                    <button type="button"
+                            class="state-machine-activity-slot__button"
+                            data-slot-action="replace"
+                            aria-label="@Localizer[$"Replace {SlotName} activity"]"
+                            @onclick="RequestReplaceAsync">
+                        @Localizer["Replace"]
+                    </button>
+                    <button type="button"
+                            class="state-machine-activity-slot__button state-machine-activity-slot__button--subtle"
+                            data-slot-action="clear"
+                            aria-label="@Localizer[$"Clear {SlotName} activity"]"
+                            @onclick="RequestClearAsync">
+                        @Localizer["Clear"]
+                    </button>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string SlotName { get; set; } = null!;
+    [Parameter, EditorRequired] public string TestIdPrefix { get; set; } = null!;
+    [Parameter] public JsonNode? Value { get; set; }
+    [Parameter, EditorRequired] public string EmptyTitle { get; set; } = null!;
+    [Parameter, EditorRequired] public string EmptyDescription { get; set; } = null!;
+    [Parameter, EditorRequired] public string AddLabel { get; set; } = null!;
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public bool IsSelected { get; set; }
+    [Parameter] public bool SupportsDesigner { get; set; }
+    [Parameter] public EventCallback<string> AddRequested { get; set; }
+    [Parameter] public EventCallback<string> SelectRequested { get; set; }
+    [Parameter] public EventCallback<string> OpenRequested { get; set; }
+    [Parameter] public EventCallback<string> JsonRequested { get; set; }
+    [Parameter] public EventCallback<string> ReplaceRequested { get; set; }
+    [Parameter] public EventCallback<string> ClearRequested { get; set; }
+    [Parameter] public EventCallback<string> DropRequested { get; set; }
+
+    private StateMachineActivityPresentation Presentation => StateMachineActivityPresentation.Describe(Value, Localizer);
+    private string CardClass => string.Join(" ", new[]
+    {
+        "state-machine-activity-slot__card",
+        Presentation.State == StateMachineActivityState.Malformed ? "state-machine-activity-slot__card--invalid" : null,
+        IsSelected ? "state-machine-activity-slot__card--selected" : null
+    }.Where(x => x != null));
+    private EventCallback<DragEventArgs> DragOverCallback => IsReadOnly
+        ? default
+        : EventCallback.Factory.Create<DragEventArgs>(this, _ => Task.CompletedTask);
+    private EventCallback<DragEventArgs> DropCallback => IsReadOnly
+        ? default
+        : EventCallback.Factory.Create<DragEventArgs>(this, _ => RequestDropAsync());
+
+    private Task RequestAddAsync() => AddRequested.InvokeAsync(SlotName);
+    private Task RequestSelectAsync() => SelectRequested.InvokeAsync(SlotName);
+    private Task RequestOpenAsync() => OpenRequested.InvokeAsync(SlotName);
+    private Task RequestJsonAsync() => JsonRequested.InvokeAsync(SlotName);
+    private Task RequestReplaceAsync() => ReplaceRequested.InvokeAsync(SlotName);
+    private Task RequestClearAsync() => ClearRequested.InvokeAsync(SlotName);
+    private Task RequestDropAsync() => IsReadOnly ? Task.CompletedTask : DropRequested.InvokeAsync(SlotName);
+}

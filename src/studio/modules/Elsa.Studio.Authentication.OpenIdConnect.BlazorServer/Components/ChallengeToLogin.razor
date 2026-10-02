@@ -1,0 +1,12 @@
+@inject NavigationManager NavigationManager
+@code {
+    protected override void OnInitialized()
+    {
+        // Delegate to a server-side endpoint that triggers an OpenID Connect challenge.
+        // This keeps us aligned with ASP.NET Core authentication best practices.
+        var returnUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        var url = $"/authentication/login?returnUrl={Uri.EscapeDataString("/" + returnUrl)}";
+        NavigationManager.NavigateTo(url, forceLoad: true);
+    }
+}
+

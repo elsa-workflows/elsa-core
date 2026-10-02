@@ -1,0 +1,124 @@
+@using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.ActivityProperties.Tabs
+@using Elsa.Studio.Workflows.Domain.Models.Bpmn
+@using Variant = MudBlazor.Variant
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<CascadingValue Value="_expressionDescriptorProvider">
+    <ScrollableWell MaxHeight="VisiblePaneHeight">
+        <MudStack Spacing="2" data-testid="bpmn-performed-by">
+            @if (Session.IsLoading)
+            {
+                <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+            }
+
+            @if (Session.LoadFailure is { } loadFailure)
+            {
+                <MudAlert Severity="Severity.Warning" data-testid="bpmn-document-load-failure">@DescribeLoadFailure(loadFailure)</MudAlert>
+            }
+
+            @if (Session.SaveFailure is { } saveFailure)
+            {
+                <MudAlert Severity="Severity.Error" data-testid="bpmn-document-save-failure">@DescribeSaveFailure(saveFailure)</MudAlert>
+            }
+
+            @if (Session.LoadFailure != null || Session.SaveFailure?.Reason is BpmnDocumentFailureReason.PreconditionFailed or BpmnDocumentFailureReason.PreconditionRequired)
+            {
+                <div>
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="OnReloadClicked" data-testid="bpmn-reload">@Localizer["Reload"]</MudButton>
+                </div>
+            }
+
+            @if (Session.IsDirty)
+            {
+                <MudStack Row="true" AlignItems="MudBlazor.AlignItems.Center" data-testid="bpmn-unsaved">
+                    <MudText Typo="Typo.body2">@Localizer["Unsaved binding changes"]</MudText>
+                    <MudSpacer />
+                    <MudButton Variant="Variant.Text" Size="Size.Small" Disabled="_isSaving" OnClick="OnDiscardClicked" data-testid="bpmn-discard">@Localizer["Discard"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" Disabled="_isSaving" OnClick="OnSaveClicked" data-testid="bpmn-save">@Localizer["Save"]</MudButton>
+                </MudStack>
+            }
+
+            @if (Selection == null)
+            {
+                <MudText Typo="Typo.body2">@Localizer["Select a task on the canvas to choose the activity that performs it."]</MudText>
+            }
+            else if (Selection.BindingKind == null)
+            {
+                <MudText Typo="Typo.body2" data-testid="bpmn-no-work">@Localizer["'{0}' performs no work, so no activity is bound to it.", ElementLabel]</MudText>
+            }
+            else
+            {
+                <div>
+                    <MudText Typo="Typo.h6">@Localizer["Performed by"]</MudText>
+                    <MudText Typo="Typo.caption">@ElementLabel · @Selection.ElementType</MudText>
+                </div>
+
+                @if (!Selection.IsUnboundTask)
+                {
+                    <MudText data-testid="bpmn-bound-activity">@(DescribeActivity(GraphBoundActivity) ?? Localizer["Not bound"])</MudText>
+                    <MudText Typo="Typo.body2" data-testid="bpmn-automatic-binding">@Localizer["The BPMN document binds this element automatically, so its activity cannot be changed here."]</MudText>
+                }
+                else if (Session.Document == null)
+                {
+                    @* Without a document there is nothing to edit; say what the graph binds, and let the alert above say why. *@
+                    <MudText data-testid="bpmn-bound-activity">@(DescribeActivity(GraphBoundActivity) ?? Localizer["Not bound"])</MudText>
+                }
+                else
+                {
+                    @if (_element == null)
+                    {
+                        @if (ElementIsInSubprocess)
+                        {
+                            <MudAlert Severity="Severity.Warning" data-testid="bpmn-element-not-in-document">@Localizer["'{0}' is inside a subprocess, whose content Studio cannot see, so its binding cannot be edited here — a server limitation tracked in elsa-workflows/elsa-core#8076.", ElementLabel]</MudAlert>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Warning" data-testid="bpmn-element-missing">@Localizer["'{0}' is not in the BPMN document Studio loaded. Reload the document; if it persists, re-import the BPMN file.", ElementLabel]</MudAlert>
+                        }
+                    }
+                    else
+                    {
+                        @if (_bindingError != null)
+                        {
+                            <MudAlert Severity="Severity.Error" data-testid="bpmn-binding-unreadable">@Localizer["The binding the document declares for this task cannot be read: {0}", _bindingError]</MudAlert>
+                        }
+
+                        <MudStack Row="true" AlignItems="MudBlazor.AlignItems.Center">
+                            <MudText data-testid="bpmn-bound-activity">@(BoundActivityName ?? Localizer["Not bound"])</MudText>
+                            <MudSpacer />
+                            @if (CanEdit)
+                            {
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="Session.IsSaving" OnClick="OnPickActivityClicked" data-testid="bpmn-pick-activity">@(BoundActivityName == null ? Localizer["Choose activity"] : Localizer["Change activity"])</MudButton>
+                            }
+                        </MudStack>
+
+                        @if (CanEdit)
+                        {
+                            @if (Session.IsSaving)
+                            {
+                                @* The document just sent is being read back; editing it now could be lost to that reload. *@
+                                <MudText Typo="Typo.body2" data-testid="bpmn-saving">@Localizer["Saving…"]</MudText>
+                            }
+                            else if (_draft != null)
+                            {
+                                @if (_draft.Descriptor.Inputs.Any(input => input.IsBrowsable is not false))
+                                {
+                                    <InputsTab @key="_draftGeneration" WorkflowDefinition="WorkflowDefinition" Activity="_draft.Activity" ActivityDescriptor="_draft.Descriptor" OnActivityUpdated="OnDraftUpdatedAsync" />
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.body2">@Localizer["This activity does not have any input properties."]</MudText>
+                                }
+                            }
+                            else if (_binding != null)
+                            {
+                                <MudAlert Severity="Severity.Warning" data-testid="bpmn-activity-type-unavailable">@Localizer["The activity type '{0}' is not available in this Studio, so its inputs cannot be edited here.", _binding.ActivityType]</MudAlert>
+                            }
+                        }
+                    }
+                }
+            }
+        </MudStack>
+    </ScrollableWell>
+</CascadingValue>

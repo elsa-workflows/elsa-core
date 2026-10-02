@@ -1,0 +1,53 @@
+﻿@inherits LayoutComponentBase
+
+<MudThemeProvider IsDarkMode="@IsDarkMode" Theme="CurrentTheme"/>
+<MudPopoverProvider/>
+<MudDialogProvider/>
+<MudSnackbarProvider/>
+
+<MudLayout Class="elsa-studio-shell" data-elsa-theme="@ThemeId">
+    <MudAppBar Elevation="0" Color="Color.Inherit" Class="studio-appbar">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       Class="studio-appbar__menu"
+                       aria-label="Toggle navigation"
+                       OnClick="@DrawerToggle"/>
+        <MudSpacer/>
+        <div class="studio-appbar__actions">
+            @foreach (var appBarItem in AppBarService.AppBarComponents)
+            {
+                @appBarItem
+            }
+        </div>
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen"
+               Elevation="0"
+               ClipMode="DrawerClipMode.Always"
+               Class="studio-drawer">
+        <MudDrawerHeader Class="studio-drawer__header">
+            @BrandingProvider.Branding
+        </MudDrawerHeader>
+        <div class="studio-drawer__navigation">
+            <NavMenu/>
+        </div>
+    </MudDrawer>
+    <MudMainContent Class="studio-main-content">
+        <ErrorBoundary @ref="@_errorBoundary">
+            <ChildContent>
+                @Body
+            </ChildContent>
+            <ErrorContent>
+                @if (context is UnauthorizedAccessException)
+                {
+                    @UnauthorizedComponent
+                }
+                else
+                {
+                    @DisplayError(context)
+                }
+            </ErrorContent>
+        </ErrorBoundary>
+
+    </MudMainContent>
+</MudLayout>
