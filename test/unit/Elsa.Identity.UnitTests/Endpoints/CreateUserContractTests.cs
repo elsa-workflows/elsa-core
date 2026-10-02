@@ -3,6 +3,7 @@ using Elsa.Identity.Contracts;
 using Elsa.Identity.Endpoints.Users.Create;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
+using Elsa.UnitTests.Shared;
 using FastEndpoints;
 using Microsoft.AspNetCore.Http;
 using NSubstitute;
@@ -13,6 +14,7 @@ namespace Elsa.Identity.UnitTests.Endpoints;
 /// Pins the <c>POST /identity/users</c> response contract: no hashes or salts, no echo of a supplied password,
 /// and a generated password returned exactly once.
 /// </summary>
+[Collection(nameof(FastEndpointsCollection))]
 public class CreateUserContractTests
 {
     private static readonly User StoredUser = new()
