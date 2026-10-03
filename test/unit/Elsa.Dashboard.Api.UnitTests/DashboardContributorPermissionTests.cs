@@ -92,6 +92,24 @@ public class DashboardContributorPermissionTests
     }
 
     [Fact]
+    public async Task WorkflowContributor_WithRuntimeOnlyCaller_DoesNotQueryTheInstanceStore()
+    {
+        var store = Substitute.For<IWorkflowInstanceStore>();
+        store.CountAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>()).Returns(99L);
+        store.SummarizeManyAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>()).Returns(Array.Empty<WorkflowInstanceSummary>());
+        var runtime = Substitute.For<IWorkflowRuntimeAdminService>();
+        runtime.GetStatus().Returns(new RuntimeAdminStatus(QuiescenceState.Initial("generation"), [], 0));
+        var context = _context with { CanRead = permission => permission == RuntimeView };
+
+        var overview = await new WorkflowDashboardContributor(store, runtime).GetOverviewAsync(context);
+
+        await store.DidNotReceive().CountAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>());
+        await store.DidNotReceive().SummarizeManyAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>());
+        Assert.Equal(DashboardRuntimeStatusKeys.AcceptingWork, overview!.Runtime!.Status);
+        Assert.Equal(0, overview.WorkflowInstances!.Running);
+    }
+
+    [Fact]
     public async Task WorkflowContributor_WithFailingInstanceStore_KeepsRuntimeAndReportsInstancesUnavailable()
     {
         var store = Substitute.For<IWorkflowInstanceStore>();

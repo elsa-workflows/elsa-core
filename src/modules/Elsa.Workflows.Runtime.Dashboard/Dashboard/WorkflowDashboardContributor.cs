@@ -30,6 +30,12 @@ public class WorkflowDashboardContributor(
         // Runtime status does not depend on the instance store, so an instance store outage leaves it intact.
         var runtime = GetRuntimeStatus();
 
+        if (!CanReadInstances(context))
+        {
+            // Include an empty instance section so the provider can withhold it; do not query the store.
+            return new() { Runtime = runtime, WorkflowInstances = new() };
+        }
+
         try
         {
             return new()
@@ -78,6 +84,12 @@ public class WorkflowDashboardContributor(
 
         return findings;
     }
+
+    /// <summary>
+    /// Instance metrics are withheld from callers who cannot read <c>workflows/instances:view</c>, so skip the store
+    /// queries rather than fetching figures the provider will throw away.
+    /// </summary>
+    private static bool CanReadInstances(DashboardContext context) => context.CanRead?.Invoke(InstancesView) ?? true;
 
     // An instance store failure omits the instance findings without taking the runtime findings down with it.
     private async Task<DashboardWorkflowInstanceMetrics?> TryGetWorkflowMetricsAsync(DashboardContext context)
