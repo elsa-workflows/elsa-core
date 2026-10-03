@@ -36,7 +36,7 @@ See [src/apps/Elsa.Server.Web/Program.cs](../../src/apps/Elsa.Server.Web/Program
 
 Identity JWTs include a `token_use` claim. API bearer authentication accepts only access tokens (`token_use=access`), while `/identity/refresh-token` uses a dedicated refresh-token bearer scheme and accepts only refresh tokens (`token_use=refresh`). Clients should not send refresh tokens to normal API endpoints or access tokens to the refresh endpoint.
 
-Refresh resolves the caller only by the token's `sub` (or the inbound-mapped `NameIdentifier`). A missing, blank, or unknown subject is `401`, the same as an invalid token — not `200` with `isAuthenticated: false`. Only 3.8.0-preview1 issued Elsa refresh tokens without `sub`, and they had a 2-hour lifetime, so no Elsa-issued refresh token still in use lacks a subject.
+Refresh resolves the caller only when every `sub` and inbound-mapped `NameIdentifier` value agrees on one non-blank id. A missing, blank, conflicting, or unknown subject is `401`, the same as an invalid token — not `200` with `isAuthenticated: false`. 3.0–3.7 also issued refresh tokens without `sub`, but the refresh scheme already rejects those because they lack `token_use`. 3.8.0-preview1 is the only release whose refresh-scheme-accepted tokens lacked `sub`, and they had a 2-hour lifetime. See [refresh-token user resolution](../migrations/refresh-token-user-resolution.md).
 
 Elsa-issued access and refresh tokens always carry a `permissions` claim. Each grant is one value (`permissions` is a JSON array when there are two or more). A caller whose roles grant nothing receives the sentinel `none`, which is not a grant: it exists so clients can tell a known empty set from a token that omits the claim entirely. Third-party OIDC tokens that do not carry Elsa permissions keep omitting the claim; Studio treats that as unknown and fails open.
 
@@ -165,7 +165,7 @@ Start in [src/modules/Elsa.Secrets](../../src/modules/Elsa.Secrets).
 ### Built-In Stores
 
 | Store | Class | Notes |
-| --- | --- |
+| --- | --- | --- |
 | Elsa-managed encrypted store | [EncryptedSecretStore](../../src/modules/Elsa.Secrets/Stores/EncryptedSecretStore.cs) | Encrypts values with data protection. Default writable store. |
 | Configuration-backed read-only | [ConfigurationSecretStore](../../src/modules/Elsa.Secrets/Stores/ConfigurationSecretStore.cs) | Maps configuration keys to secret values. Read-only; cannot be written from the API. |
 

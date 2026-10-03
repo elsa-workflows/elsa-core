@@ -14,6 +14,7 @@ namespace Elsa.Identity.UnitTests.Services;
 public class DefaultIdentityRefreshTokenServiceTests
 {
     private static readonly User User = new() { Id = "user-a", Name = "admin" };
+    private static readonly User Victim = new() { Id = "victim-id", Name = "victim" };
     private static readonly IssuedTokens RefreshedTokens = new("access-b", "refresh-b");
     private readonly IdentityTokenOptions _options = new()
     {
@@ -32,7 +33,9 @@ public class DefaultIdentityRefreshTokenServiceTests
         var clock = new MutableSystemClock();
         var options = Microsoft.Extensions.Options.Options.Create(_options);
         _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Id == User.Id), Arg.Any<CancellationToken>()).Returns(User);
+        _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Id == Victim.Id), Arg.Any<CancellationToken>()).Returns(Victim);
         _accessTokenIssuer.IssueTokensAsync(User, Arg.Any<SignInSession?>(), Arg.Any<CancellationToken>()).Returns(RefreshedTokens);
+        _accessTokenIssuer.IssueTokensAsync(Victim, Arg.Any<SignInSession?>(), Arg.Any<CancellationToken>()).Returns(new IssuedTokens("access-victim", "refresh-victim"));
         _tokenService = new(clock, options);
         _sessionRevoker = new(new MemoryRevokedSessionStore(new MemoryStore<RevokedSession>()), clock, options);
         _service = new(_userProvider, _accessTokenIssuer, new DefaultTenantAccessor(), _sessionRevoker, options);
@@ -105,6 +108,49 @@ public class DefaultIdentityRefreshTokenServiceTests
 
         Assert.Null(await _service.RefreshAsync(LegacyRefreshToken.CreateWithoutSubject(_options, User)));
         await AssertNothingIssuedAsync();
+    }
+
+    [Fact]
+    public async Task RefreshAsyncRejectsATokenWithANameIdentifierAndABlankSubject()
+    {
+        Assert.Null(await _service.RefreshAsync(LegacyRefreshToken.CreateWithSubjectClaims(
+            _options,
+            User,
+            new Claim(ClaimTypes.NameIdentifier, Victim.Id),
+            new Claim(JwtRegisteredClaimNames.Sub, ""))));
+        await AssertNothingIssuedAsync();
+    }
+
+    [Fact]
+    public async Task RefreshAsyncRejectsATokenWithConflictingNameIdentifierAndSubject()
+    {
+        Assert.Null(await _service.RefreshAsync(LegacyRefreshToken.CreateWithSubjectClaims(
+            _options,
+            User,
+            new Claim(ClaimTypes.NameIdentifier, Victim.Id),
+            new Claim(JwtRegisteredClaimNames.Sub, User.Id))));
+        await AssertNothingIssuedAsync();
+    }
+
+    [Fact]
+    public async Task RefreshAsyncRejectsATokenWithTwoDifferentSubjects()
+    {
+        Assert.Null(await _service.RefreshAsync(LegacyRefreshToken.CreateWithSubjectClaims(
+            _options,
+            User,
+            new Claim(JwtRegisteredClaimNames.Sub, Victim.Id),
+            new Claim(JwtRegisteredClaimNames.Sub, User.Id))));
+        await AssertNothingIssuedAsync();
+    }
+
+    [Fact]
+    public async Task RefreshAsyncAcceptsATokenWithMatchingSubjectAndNameIdentifier()
+    {
+        Assert.Same(RefreshedTokens, await _service.RefreshAsync(LegacyRefreshToken.CreateWithSubjectClaims(
+            _options,
+            User,
+            new Claim(JwtRegisteredClaimNames.Sub, User.Id),
+            new Claim(ClaimTypes.NameIdentifier, User.Id))));
     }
 
     [Fact]

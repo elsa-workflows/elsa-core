@@ -32,6 +32,9 @@ public static class UserProviderExtensions
     /// <param name="id">The identifier.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The user with the specified identifier.</returns>
+    /// <remarks>
+    /// Identity refresh looks users up by this id and relies on ids being globally unique.
+    /// </remarks>
     public static Task<User?> FindByIdAsync(this IUserProvider userProvider, string id, CancellationToken cancellationToken = default)
     {
         return userProvider.FindAsync(new UserFilter

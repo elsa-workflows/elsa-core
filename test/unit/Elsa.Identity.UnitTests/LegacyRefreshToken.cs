@@ -18,9 +18,10 @@ internal static class LegacyRefreshToken
     public static string Create(IdentityTokenOptions options, User user) => Create(options, user.Name, user.Id);
 
     /// <summary>
-    /// Creates a refresh token without a subject claim. Only 3.8.0-preview1 issued Elsa refresh tokens this way,
-    /// and they had a 2-hour lifetime, so no Elsa-issued refresh token still in use lacks a <c>sub</c>. Refresh
-    /// now fails closed for these.
+    /// Creates a refresh token without a subject claim. 3.0–3.7 also issued refresh tokens this way, but the
+    /// refresh scheme already rejects those because they lack <c>token_use</c>. 3.8.0-preview1 is the only
+    /// release whose refresh-scheme-accepted tokens lacked <c>sub</c>, and they had a 2-hour lifetime.
+    /// Refresh now fails closed for these.
     /// </summary>
     public static string CreateWithoutSubject(IdentityTokenOptions options, User user) => Create(options, user.Name, subject: null);
 
@@ -30,18 +31,26 @@ internal static class LegacyRefreshToken
     /// </summary>
     public static string CreateWithSubject(IdentityTokenOptions options, User user, string subject) => Create(options, user.Name, subject);
 
+    /// <summary>
+    /// Creates a refresh token with the given subject claims, in the order supplied, so tests can pin
+    /// conflicting <c>sub</c> / <see cref="ClaimTypes.NameIdentifier"/> combinations.
+    /// </summary>
+    public static string CreateWithSubjectClaims(IdentityTokenOptions options, User user, params Claim[] subjectClaims) =>
+        Create(options, user.Name, subjectClaims);
+
     private static string Create(IdentityTokenOptions options, string name, string? subject)
     {
-        var claims = new List<Claim>
+        Claim[] subjectClaims = subject is null ? [] : [new Claim(JwtRegisteredClaimNames.Sub, subject)];
+        return Create(options, name, subjectClaims);
+    }
+
+    private static string Create(IdentityTokenOptions options, string name, IReadOnlyList<Claim> subjectClaims)
+    {
+        var claims = new List<Claim>(subjectClaims)
         {
             new(JwtRegisteredClaimNames.Name, name),
             new(TokenUse.ClaimType, TokenUse.Refresh)
         };
-
-        if (subject is not null)
-        {
-            claims.Insert(0, new Claim(JwtRegisteredClaimNames.Sub, subject));
-        }
 
         return new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
         {

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using Elsa.Common;
 using Elsa.Common.Services;
 using Elsa.Extensions;
@@ -28,6 +29,7 @@ namespace Elsa.Identity.UnitTests.Endpoints;
 public sealed class RefreshTokenEndpointTests : IAsyncLifetime
 {
     private static readonly User Alice = new() { Id = "alice-id", Name = "alice" };
+    private static readonly User Victim = new() { Id = "victim-id", Name = "victim" };
     private readonly MutableSystemClock _clock = new();
     private WebApplication _app = null!;
     private HttpClient _client = null!;
@@ -62,6 +64,7 @@ public sealed class RefreshTokenEndpointTests : IAsyncLifetime
         _tokenOptions = _app.Services.GetRequiredService<IOptions<IdentityTokenOptions>>().Value;
         _users = _app.Services.GetRequiredService<MemoryStore<User>>();
         _users.Save(Alice, x => x.Id);
+        _users.Save(Victim, x => x.Id);
         _app.UseAuthentication();
         _app.UseAuthorization();
         _app.UseFastEndpoints();
@@ -118,6 +121,48 @@ public sealed class RefreshTokenEndpointTests : IAsyncLifetime
     public async Task ARefreshTokenWithoutASubjectIsRejectedEvenWhenASameNameUserExists()
     {
         await AssertRefreshRejectedAsync(LegacyRefreshToken.CreateWithoutSubject(_tokenOptions, Alice));
+    }
+
+    [Fact]
+    public async Task ARefreshTokenWithANameIdentifierAndABlankSubjectIsRejected()
+    {
+        await AssertRefreshRejectedAsync(LegacyRefreshToken.CreateWithSubjectClaims(
+            _tokenOptions,
+            Alice,
+            new Claim(ClaimTypes.NameIdentifier, Victim.Id),
+            new Claim(JwtRegisteredClaimNames.Sub, "")));
+    }
+
+    [Fact]
+    public async Task ARefreshTokenWithConflictingNameIdentifierAndSubjectIsRejected()
+    {
+        await AssertRefreshRejectedAsync(LegacyRefreshToken.CreateWithSubjectClaims(
+            _tokenOptions,
+            Alice,
+            new Claim(ClaimTypes.NameIdentifier, Victim.Id),
+            new Claim(JwtRegisteredClaimNames.Sub, Alice.Id)));
+    }
+
+    [Fact]
+    public async Task ARefreshTokenWithTwoDifferentSubjectsIsRejected()
+    {
+        await AssertRefreshRejectedAsync(LegacyRefreshToken.CreateWithSubjectClaims(
+            _tokenOptions,
+            Alice,
+            new Claim(JwtRegisteredClaimNames.Sub, Victim.Id),
+            new Claim(JwtRegisteredClaimNames.Sub, Alice.Id)));
+    }
+
+    [Fact]
+    public async Task ARefreshTokenWithMatchingSubjectAndNameIdentifierStillWorks()
+    {
+        var refreshed = await RefreshTokensAsync(LegacyRefreshToken.CreateWithSubjectClaims(
+            _tokenOptions,
+            Alice,
+            new Claim(JwtRegisteredClaimNames.Sub, Alice.Id),
+            new Claim(ClaimTypes.NameIdentifier, Alice.Id)));
+
+        Assert.Equal(Alice.Id, ReadClaim(refreshed.RefreshToken, JwtRegisteredClaimNames.Sub));
     }
 
     private async Task<IssuedTokens> LoginAsync(User user) =>

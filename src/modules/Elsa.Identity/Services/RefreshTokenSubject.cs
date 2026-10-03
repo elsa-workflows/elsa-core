@@ -7,27 +7,36 @@ namespace Elsa.Identity.Services;
 /// Reads the user id from an Elsa Identity refresh token.
 /// </summary>
 /// <remarks>
-/// Claim order: <c>sub</c> (<see cref="JwtRegisteredClaimNames.Sub"/>) first, then the inbound-mapped
-/// <see cref="ClaimTypes.NameIdentifier"/>. Elsa issues <c>sub</c>; JWT bearer maps that inbound claim to
-/// NameIdentifier. Refresh resolves the user only by a non-blank subject. A missing or blank subject fails
-/// closed. Only 3.8.0-preview1 issued refresh tokens without <c>sub</c>, and they had a 2-hour lifetime, so
-/// no Elsa-issued refresh token still in use lacks a subject.
+/// Collects every <c>sub</c> (<see cref="JwtRegisteredClaimNames.Sub"/>) and inbound-mapped
+/// <see cref="ClaimTypes.NameIdentifier"/> value. Refresh resolves the user only when those values
+/// agree on one non-blank id. None, any blank, or more than one distinct value fails closed. The JWT
+/// bearer handler maps inbound <c>sub</c> to NameIdentifier and takes the first match, while
+/// <c>JsonWebTokenHandler</c> leaves <c>sub</c> unmapped; looking at every value keeps both paths
+/// aligned. 3.0–3.7 also issued refresh tokens without <c>sub</c>, but the refresh scheme already
+/// rejects those because they lack <c>token_use</c>. 3.8.0-preview1 is the only release whose
+/// refresh-scheme-accepted tokens lacked <c>sub</c>, and they had a 2-hour lifetime. Lookups are by
+/// id only; that is safe under tenant-scoped stores because user ids are globally unique.
 /// </remarks>
 internal static class RefreshTokenSubject
 {
     /// <summary>
-    /// The token's user id, or <c>null</c> when neither subject claim is present or the present value is blank.
+    /// The token's user id, or <c>null</c> when no subject claim is present, any subject is blank, or
+    /// the subject claims do not all agree.
     /// </summary>
     public static string? FindUserId(ClaimsPrincipal principal)
     {
-        var claim = principal.FindFirst(JwtRegisteredClaimNames.Sub) ?? principal.FindFirst(ClaimTypes.NameIdentifier);
+        var values = principal.FindAll(JwtRegisteredClaimNames.Sub)
+            .Concat(principal.FindAll(ClaimTypes.NameIdentifier))
+            .Select(claim => claim.Value)
+            .ToArray();
 
-        if (claim is null || string.IsNullOrWhiteSpace(claim.Value))
+        if (values.Length == 0 || values.Any(string.IsNullOrWhiteSpace))
         {
             return null;
         }
 
-        return claim.Value;
+        var distinct = values.Distinct(StringComparer.Ordinal).ToArray();
+        return distinct.Length == 1 ? distinct[0] : null;
     }
 
     /// <inheritdoc cref="FindUserId(ClaimsPrincipal)"/>
