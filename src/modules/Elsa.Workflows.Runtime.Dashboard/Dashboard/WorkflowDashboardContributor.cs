@@ -57,7 +57,7 @@ public class WorkflowDashboardContributor(
     public async ValueTask<IReadOnlyCollection<DashboardFinding>> GetFindingsAsync(DashboardContext context)
     {
         var runtime = GetRuntimeStatus();
-        var workflowMetrics = CanReadInstances(context) ? await TryGetWorkflowMetricsAsync(context) : null;
+        var workflowMetrics = await TryGetWorkflowMetricsAsync(context);
         var findings = new List<DashboardFinding>();
 
         if (runtime.Status == DashboardRuntimeStatusKeys.Paused)

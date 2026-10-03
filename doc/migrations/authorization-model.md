@@ -71,7 +71,7 @@ The refresh token it issues must continue that session. Pass it to `IElsaTokenSe
 
 The public constructor of `DefaultIdentityRefreshTokenService` now requires a `SessionRevoker`. This affects only code that constructs the service directly (for example, in tests or a hand-built container); hosts that use the registered `IIdentityRefreshTokenService` are unaffected. Resolve `SessionRevoker` from DI and pass it to the constructor.
 
-Nothing else changes for clients. Refresh tokens now carry `elsa:session_id` and `elsa:session_exp` claims, and ones issued before the upgrade keep working until they expire. Signing out with a pre-upgrade token revokes only the session derived from that token; older pre-upgrade tokens of the same refresh chain stay valid until they expire, at most `RefreshTokenLifetime` after the upgrade.
+Nothing else changes for clients. Refresh tokens now carry `elsa:session_id` and `elsa:session_exp` claims, and ones issued before the upgrade keep working until they expire. Signing out with a pre-upgrade token revokes only the session derived from that token; older pre-upgrade tokens of the same refresh chain stay valid for the remaining time under their issued expiry, which can outlast the current `RefreshTokenLifetime` if that setting was lowered during the upgrade.
 
 ## External authentication grant boundaries
 
@@ -309,7 +309,8 @@ for them.
 Findings on `needs-attention` follow the same rule per finding, so a caller holding only `workflows/instances:view` sees the
 workflow findings but not the runtime or diagnostics ones.
 
-Modules that add to the dashboard declare the permission of their data. A contributor declares
+Modules that add to the dashboard declare the permission of their data. A contributor can check
+`DashboardContext.CanRead` to skip queries for data the caller cannot read; `null` means unrestricted. A contributor declares
 `IDashboardContributor.OverviewPermissions` up front for the runtime, instance and diagnostics sections it supplies, and
 sets `Permission` on each metric card, panel, finding, and trend, recent-activity or hotspot response it returns. Anything
 a contributor supplies without a declaration needs `dashboard:view`, so an existing third-party contributor keeps working

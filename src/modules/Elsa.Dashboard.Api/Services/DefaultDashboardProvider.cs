@@ -189,7 +189,7 @@ public class DefaultDashboardProvider(
             .ToList();
 
     private DashboardContext CreateContext(DashboardRange range, bool includeSystem, Func<DashboardPermission?, bool> canRead, CancellationToken cancellationToken) =>
-        new(range, includeSystem, cancellationToken, EnvironmentName: environment.EnvironmentName, CanRead: canRead);
+        new(range, includeSystem, cancellationToken, EnvironmentName: environment.EnvironmentName) { CanRead = canRead };
 
     /// <summary>
     /// The contributors worth invoking for the overview, in order. A contributor that declared its overview permissions
