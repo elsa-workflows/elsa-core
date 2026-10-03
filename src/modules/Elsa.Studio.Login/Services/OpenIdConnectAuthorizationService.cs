@@ -29,7 +29,8 @@ public class OpenIdConnectAuthorizationService(IJwtAccessor jwtAccessor, IOption
             var generated = await pkceStateService.GeneratePkceCodeChallenge();
             url += $"&code_challenge={generated.CodeChallenge}&code_challenge_method={generated.Method}";
         }
-        if (navigationManager.ToBaseRelativePath(navigationManager.Uri) is { } returnUrl and not "/")
+        var returnUrl = CaptureReturnPath(navigationManager.Uri);
+        if (returnUrl is not "/")
         {
             url += "&state=" + WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(returnUrl));
         }
@@ -82,11 +83,17 @@ public class OpenIdConnectAuthorizationService(IJwtAccessor jwtAccessor, IOption
         string returnUrl = "/";
         if (!string.IsNullOrWhiteSpace(state))
         {
-            returnUrl = NormalizeStateReturnUrl(Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(state)));
+            returnUrl = LocalReturnPath.Normalize(Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(state)));
         }
 
         navigationManager.NavigateTo(returnUrl, true);
     }
+
+    /// <summary>
+    /// Captures the current request's path, including PathBase, so a hosted Studio does not drop its sub-path after OIDC sign-in.
+    /// </summary>
+    internal static string CaptureReturnPath(string uri) =>
+        LocalReturnPath.Normalize(new Uri(uri).PathAndQuery);
 
     private async Task ThrowTokenExchangeExceptionAsync(HttpResponseMessage response, OpenIdConnectConfiguration config, CancellationToken cancellationToken)
     {
@@ -110,18 +117,6 @@ public class OpenIdConnectAuthorizationService(IJwtAccessor jwtAccessor, IOption
             message += $"\nCorrelation IDs: {correlationIds}";
 
         throw new HttpRequestException(message, null, response.StatusCode);
-    }
-
-    private static string NormalizeStateReturnUrl(string candidate)
-    {
-        if (!candidate.StartsWith('/') &&
-            !candidate.StartsWith('\\') &&
-            candidate.IndexOf("://", StringComparison.Ordinal) < 0)
-        {
-            candidate = "/" + candidate;
-        }
-
-        return LocalReturnPath.Normalize(candidate);
     }
 
     private static string GetCorrelationIds(HttpResponseMessage response)

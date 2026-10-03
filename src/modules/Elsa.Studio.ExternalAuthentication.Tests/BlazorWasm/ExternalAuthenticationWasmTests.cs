@@ -6,6 +6,7 @@ using Elsa.Studio.ExternalAuthentication.BlazorWasm.Models;
 using Elsa.Studio.ExternalAuthentication.BlazorWasm.Services;
 using Elsa.Studio.ExternalAuthentication.Client;
 using Elsa.Studio.ExternalAuthentication.Models;
+using Elsa.Studio.ExternalAuthentication.Tests.Login;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
@@ -16,15 +17,7 @@ namespace Elsa.Studio.ExternalAuthentication.Tests.BlazorWasm;
 public class ExternalAuthenticationWasmTests
 {
     [Theory]
-    [InlineData(null, "/")]
-    [InlineData("", "/")]
-    [InlineData("/workflows?version=1", "/workflows?version=1")]
-    [InlineData("/workflows/definitions?x=1", "/workflows/definitions?x=1")]
-    [InlineData("https://evil.example/", "/")]
-    [InlineData("//evil.com", "/")]
-    [InlineData("/\\evil.com", "/")]
-    [InlineData("/%09/evil.com", "/")]
-    [InlineData("/%2F/evil.com", "/")]
+    [MemberData(nameof(LocalReturnPathCorpus.Cases), MemberType = typeof(LocalReturnPathCorpus))]
     public void ReturnPathsRemainClientLocal(string? candidate, string expected) =>
         Assert.Equal(expected, ExternalAuthenticationReturnPath.Normalize(candidate));
 

@@ -104,19 +104,10 @@ public sealed class LoginChooserTests : BunitContext, IAsyncLifetime
         Assert.Equal("Identity provider", registry.Resolve("https://untrusted.example/icon.svg").AccessibleName);
     }
 
-    [Fact]
-    public void InvalidReturnPaths_AreNeverForwarded()
-    {
-        Assert.Equal("/", LocalReturnPath.Normalize("https://attacker.example"));
-        Assert.Equal("/", LocalReturnPath.Normalize("//attacker.example"));
-        Assert.Equal("/", LocalReturnPath.Normalize("/\\attacker.example"));
-        Assert.Equal("/", LocalReturnPath.Normalize("/%09/evil.com"));
-        Assert.Equal("/", LocalReturnPath.Normalize("/%2F/evil.com"));
-        Assert.Equal("/", LocalReturnPath.Normalize("//evil.com"));
-        Assert.Equal("/", LocalReturnPath.Normalize("/\\evil.com"));
-        Assert.Equal("/workflows?tab=active", LocalReturnPath.Normalize("/workflows?tab=active"));
-        Assert.Equal("/workflows/definitions?x=1", LocalReturnPath.Normalize("/workflows/definitions?x=1"));
-    }
+    [Theory]
+    [MemberData(nameof(LocalReturnPathCorpus.Cases), MemberType = typeof(LocalReturnPathCorpus))]
+    public void InvalidReturnPaths_AreNeverForwarded(string? candidate, string expected) =>
+        Assert.Equal(expected, LocalReturnPath.Normalize(candidate));
 
     [Fact]
     public void Chooser_RendersTextFirstLocalAndExternalMethods()

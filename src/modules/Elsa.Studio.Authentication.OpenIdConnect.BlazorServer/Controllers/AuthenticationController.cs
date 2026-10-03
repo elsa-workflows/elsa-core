@@ -18,7 +18,7 @@ public class AuthenticationController : Controller
     [HttpGet("login")]
     public IActionResult Login([FromQuery] string? returnUrl = null)
     {
-        return Challenge(new AuthenticationProperties { RedirectUri = LocalReturnPath.Normalize(returnUrl) }, OpenIdConnectDefaults.AuthenticationScheme);
+        return Challenge(new AuthenticationProperties { RedirectUri = SafeRedirectUri(returnUrl) }, OpenIdConnectDefaults.AuthenticationScheme);
     }
 
     /// <summary>
@@ -32,8 +32,19 @@ public class AuthenticationController : Controller
     public IActionResult Logout([FromForm] string? returnUrl = null)
     {
         return SignOut(
-            new AuthenticationProperties { RedirectUri = LocalReturnPath.Normalize(returnUrl) },
+            new AuthenticationProperties { RedirectUri = SafeRedirectUri(returnUrl) },
             CookieAuthenticationDefaults.AuthenticationScheme,
             OpenIdConnectDefaults.AuthenticationScheme);
+    }
+
+    private string SafeRedirectUri(string? returnUrl)
+    {
+        var path = LocalReturnPath.Normalize(returnUrl);
+        if (Url?.IsLocalUrl(path) == false)
+        {
+            return "/";
+        }
+
+        return path;
     }
 }
