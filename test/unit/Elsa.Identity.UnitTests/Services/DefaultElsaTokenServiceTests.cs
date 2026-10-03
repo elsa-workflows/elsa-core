@@ -157,7 +157,9 @@ public class DefaultElsaTokenServiceTests
         };
 
         if (permissions is not null)
+        {
             claims[PermissionNames.ClaimType] = permissions;
+        }
 
         return new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
         {

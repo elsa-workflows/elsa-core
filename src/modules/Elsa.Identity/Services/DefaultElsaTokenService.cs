@@ -82,7 +82,9 @@ public sealed class DefaultElsaTokenService(ISystemClock systemClock, IOptions<I
     private static IEnumerable<Claim> PermissionClaims(IReadOnlyCollection<string> permissions)
     {
         if (permissions.Count == 0)
+        {
             return [new Claim(PermissionNames.ClaimType, PermissionNames.None)];
+        }
 
         return permissions.Select(permission => new Claim(PermissionNames.ClaimType, permission));
     }
