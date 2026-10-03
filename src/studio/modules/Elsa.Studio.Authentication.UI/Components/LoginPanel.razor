@@ -199,5 +199,6 @@
         string.Equals(method.Kind, "local", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(method.Kind, "elsa-identity", StringComparison.OrdinalIgnoreCase);
 
-    private static string NormalizeReturnPath(string? candidate) => LocalReturnPath.Normalize(candidate);
+    private string NormalizeReturnPath(string? candidate) =>
+        LocalReturnPath.RootAgainstBase(candidate, Navigation.BaseUri);
 }
