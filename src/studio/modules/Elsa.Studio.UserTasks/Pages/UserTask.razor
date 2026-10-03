@@ -1,4 +1,5 @@
 @page "/workflows/user-tasks/{TaskId}"
+@attribute [RequirePermission(UserTaskPermissions.UserTasks, PermissionVerbs.View)]
 @attribute [Authorize]
 @implements IAsyncDisposable
 @inject IBackendApiClientProvider ApiClientProvider
