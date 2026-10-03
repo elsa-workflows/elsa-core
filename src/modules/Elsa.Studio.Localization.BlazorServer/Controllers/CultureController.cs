@@ -25,6 +25,11 @@ public class CultureController : Controller
                     new RequestCulture(culture, culture)));
         }
 
+        if (!Url.IsLocalUrl(redirectUri))
+        {
+            return LocalRedirect("~/");
+        }
+
         return LocalRedirect(redirectUri);
     }
 }
