@@ -1,5 +1,6 @@
 using Bunit;
 using Elsa.Studio.Components;
+using Elsa.Studio.Contracts;
 using Elsa.Studio.Security.Components;
 using Elsa.Studio.Security.Contracts;
 using Elsa.Studio.Security.Menu;
@@ -158,8 +159,32 @@ public sealed class RoleAdministrationAccessBoundaryTests : BunitContext, IAsync
         service.Release.TrySetResult(RoleAdministrationAccess.Unavailable);
     }
 
+    [Fact]
+    public void Render_WhenSnapshotChangesFromAdminToViewOnly_HidesMutations()
+    {
+        var service = new TestRoleAccessService(new RoleAdministrationAccess(
+            RoleAdministrationAccessState.Ready, CanView: true, CanCreate: true, CanUpdate: true, CanDelete: true));
+        var cache = new TestPermissionSnapshotCache();
+        Services.AddSingleton<IRoleAdministrationAccessService>(service);
+        Services.AddSingleton<IPermissionSnapshotCache>(cache);
+
+        var cut = Render<RoleAdministrationAccessBoundary>(parameters =>
+            parameters.Add(component => component.ChildContent, Mutations));
+
+        cut.WaitForAssertion(() => Assert.Contains("create:True;update:True;delete:True", cut.Markup));
+
+        service.Access = new RoleAdministrationAccess(
+            RoleAdministrationAccessState.Ready, CanView: true, CanCreate: false, CanUpdate: false, CanDelete: false);
+        cache.Invalidate();
+
+        cut.WaitForAssertion(() => Assert.Contains("create:False;update:False;delete:False", cut.Markup));
+    }
+
     private static RenderFragment<RoleAdministrationAccess> Child(string text) =>
         access => builder => builder.AddContent(0, $"{text}:{access.CanView}");
+
+    private static RenderFragment<RoleAdministrationAccess> Mutations =>
+        access => builder => builder.AddContent(0, $"create:{access.CanCreate};update:{access.CanUpdate};delete:{access.CanDelete}");
 
     Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
     async Task IAsyncLifetime.DisposeAsync() => await base.DisposeAsync();
@@ -235,8 +260,32 @@ public sealed class UserAdministrationAccessBoundaryTests : BunitContext, IAsync
         service.Release.TrySetResult(UserAdministrationAccess.Unavailable);
     }
 
+    [Fact]
+    public void Render_WhenSnapshotChangesFromAdminToViewOnly_HidesMutations()
+    {
+        var service = new TestUserAccessService(new UserAdministrationAccess(
+            UserAdministrationAccessState.Ready, CanView: true, CanCreate: true, CanUpdate: true, CanDelete: true));
+        var cache = new TestPermissionSnapshotCache();
+        Services.AddSingleton<IUserAdministrationAccessService>(service);
+        Services.AddSingleton<IPermissionSnapshotCache>(cache);
+
+        var cut = Render<UserAdministrationAccessBoundary>(parameters =>
+            parameters.Add(component => component.ChildContent, Mutations));
+
+        cut.WaitForAssertion(() => Assert.Contains("create:True;update:True;delete:True", cut.Markup));
+
+        service.Access = new UserAdministrationAccess(
+            UserAdministrationAccessState.Ready, CanView: true, CanCreate: false, CanUpdate: false, CanDelete: false);
+        cache.Invalidate();
+
+        cut.WaitForAssertion(() => Assert.Contains("create:False;update:False;delete:False", cut.Markup));
+    }
+
     private static RenderFragment<UserAdministrationAccess> Child(string text) =>
         access => builder => builder.AddContent(0, $"{text}:{access.CanView}");
+
+    private static RenderFragment<UserAdministrationAccess> Mutations =>
+        access => builder => builder.AddContent(0, $"create:{access.CanCreate};update:{access.CanUpdate};delete:{access.CanDelete}");
 
     Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
     async Task IAsyncLifetime.DisposeAsync() => await base.DisposeAsync();
@@ -244,12 +293,13 @@ public sealed class UserAdministrationAccessBoundaryTests : BunitContext, IAsync
 
 internal sealed class TestRoleAccessService(RoleAdministrationAccess access) : IRoleAdministrationAccessService
 {
+    public RoleAdministrationAccess Access { get; set; } = access;
     public int Calls { get; private set; }
 
     public Task<RoleAdministrationAccess> GetAsync(CancellationToken cancellationToken = default)
     {
         Calls++;
-        return Task.FromResult(access);
+        return Task.FromResult(Access);
     }
 
     public void Invalidate()
@@ -293,3 +343,10 @@ internal abstract class BlockingAccessService<TAccess>
 internal sealed class BlockingRoleAccessService : BlockingAccessService<RoleAdministrationAccess>, IRoleAdministrationAccessService;
 
 internal sealed class BlockingUserAccessService : BlockingAccessService<UserAdministrationAccess>, IUserAdministrationAccessService;
+
+internal sealed class TestPermissionSnapshotCache : IPermissionSnapshotCache
+{
+    public event EventHandler? Changed;
+
+    public void Invalidate() => Changed?.Invoke(this, EventArgs.Empty);
+}

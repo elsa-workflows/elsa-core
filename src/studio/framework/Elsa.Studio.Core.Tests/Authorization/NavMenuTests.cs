@@ -1,7 +1,10 @@
 using Bunit;
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Components;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Models;
+using Elsa.Studio.Services;
+using Elsa.Studio.Testing;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -22,13 +25,13 @@ public sealed class NavMenuTests : BunitContext, IAsyncLifetime
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddMudServices();
-        Services.AddSingleton<IMenuService>(_menu);
         Services.AddSingleton<AuthenticationStateProvider>(_authentication);
     }
 
     [Fact]
     public void TheMenuIsRebuiltWhenTheAuthenticationStateChanges()
     {
+        Services.AddSingleton<IMenuService>(_menu);
         _menu.Items = [Item("Workflows")];
         var cut = Render<NavMenu>();
         cut.WaitForAssertion(() => Assert.Contains("Workflows", cut.Markup));
@@ -41,6 +44,33 @@ public sealed class NavMenuTests : BunitContext, IAsyncLifetime
             Assert.Contains("Secrets", cut.Markup);
             Assert.DoesNotContain("Workflows", cut.Markup);
         });
+    }
+
+    [Fact]
+    public void TheMenuIsRebuiltWhenThePermissionSnapshotChanges()
+    {
+        var permissions = new StubPermissionService("secrets:view");
+        var cache = new TestPermissionSnapshotCache();
+        Services.AddSingleton<IPermissionService>(permissions);
+        Services.AddSingleton<IPermissionSnapshotCache>(cache);
+        Services.AddSingleton<IMenuService>(new DefaultMenuService(
+            [new StaticMenuProvider(new MenuItem
+            {
+                Text = "Secrets",
+                Href = "security/secrets",
+                GroupName = "general",
+                RequiredPermissions = [new Permission("secrets", PermissionVerbs.View)]
+            })],
+            [new StaticMenuGroupProvider(new MenuItemGroup("general", "General"))],
+            permissions));
+
+        var cut = Render<NavMenu>();
+        cut.WaitForAssertion(() => Assert.Contains("Secrets", cut.Markup));
+
+        permissions.Permissions = StubPermissionService.Grants();
+        cache.Invalidate();
+
+        cut.WaitForAssertion(() => Assert.DoesNotContain("Secrets", cut.Markup));
     }
 
     public Task InitializeAsync() => Task.CompletedTask;
@@ -57,5 +87,22 @@ public sealed class NavMenuTests : BunitContext, IAsyncLifetime
 
         public ValueTask<IEnumerable<MenuItemGroup>> GetMenuItemGroupsAsync(CancellationToken cancellationToken = default) =>
             new([new MenuItemGroup("general", "General")]);
+    }
+
+    private sealed class StaticMenuProvider(MenuItem item) : IMenuProvider
+    {
+        public ValueTask<IEnumerable<MenuItem>> GetMenuItemsAsync(CancellationToken cancellationToken = default) => new([item]);
+    }
+
+    private sealed class StaticMenuGroupProvider(MenuItemGroup group) : IMenuGroupProvider
+    {
+        public ValueTask<IEnumerable<MenuItemGroup>> GetMenuGroupsAsync(CancellationToken cancellationToken = default) => new([group]);
+    }
+
+    private sealed class TestPermissionSnapshotCache : IPermissionSnapshotCache
+    {
+        public event EventHandler? Changed;
+
+        public void Invalidate() => Changed?.Invoke(this, EventArgs.Empty);
     }
 }
