@@ -98,5 +98,7 @@ public sealed class DashboardStatusTests : BunitContext, IAsyncLifetime
         public Task<DashboardLoadResult<DashboardOverview>> LoadOverviewAsync(string range, bool includeSystem = false, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 
-    private sealed class TestWidget : ComponentBase;
+    private sealed class TestWidget : ComponentBase
+    {
+    }
 }

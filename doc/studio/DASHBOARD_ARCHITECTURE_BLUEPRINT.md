@@ -237,7 +237,7 @@ Time range handling is centralized in `DashboardRangeMapper`:
 - `GET /dashboard/recent-activity`
 - `POST /dashboard/workflow-hotspots`
 
-`DashboardService.LoadAsync` requests overview, needs attention, trends, recent activity, and hotspots concurrently with `Task.WhenAll`. The page uses it only for users who may read workflow instance data (`dashboard:view` or `workflows/instances:view`); for other users with a visible widget it requests the overview alone through `LoadOverviewAsync`, and with no visible widget it requests nothing. Both map transport errors to `DashboardLoadResult`:
+`DashboardService.LoadAsync` requests overview, needs attention, trends, recent activity, and hotspots concurrently with `Task.WhenAll`. The page uses it only for users who may read workflow instance data (`dashboard:view` or `workflows/instances:view`); for other users with a visible widget it requests the overview alone through `LoadOverviewAsync`. A user with no visible widget who may read the runtime status (`dashboard:view` or `workflows/runtime:view`) also gets the overview, so the header chip can render; otherwise it requests nothing. Both map transport errors to `DashboardLoadResult`:
 
 - `404`: dashboard unavailable.
 - `401` or `403`: unauthorized.

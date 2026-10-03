@@ -6,6 +6,7 @@ using Elsa.Studio.Security.Contracts;
 using Elsa.Studio.Security.Menu;
 using Elsa.Studio.Security.Models;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 using MudBlazor.Services;
@@ -180,11 +181,54 @@ public sealed class RoleAdministrationAccessBoundaryTests : BunitContext, IAsync
         cut.WaitForAssertion(() => Assert.Contains("create:False;update:False;delete:False", cut.Markup));
     }
 
+    [Fact]
+    public async Task Render_WhenChangedArrivesDuringACheck_KeepsEditsAndHonoursTheQueuedRefresh()
+    {
+        var admin = new RoleAdministrationAccess(RoleAdministrationAccessState.Ready, CanView: true, CanCreate: true, CanUpdate: true, CanDelete: true);
+        var viewOnly = new RoleAdministrationAccess(RoleAdministrationAccessState.Ready, CanView: true, CanCreate: false, CanUpdate: false, CanDelete: false);
+        var service = new ControllableRoleAccessService(admin);
+        var cache = new TestPermissionSnapshotCache();
+        Services.AddSingleton<IRoleAdministrationAccessService>(service);
+        Services.AddSingleton<IPermissionSnapshotCache>(cache);
+
+        var cut = Render<RoleAdministrationAccessBoundary>(parameters =>
+            parameters.Add(component => component.ChildContent, Editor));
+
+        cut.WaitForAssertion(() => Assert.Contains("create:True", cut.Markup));
+        cut.Find("#draft").Change("kept");
+        Assert.Equal("kept", cut.Find("#draft").GetAttribute("value"));
+
+        service.Block = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        service.Results.Enqueue(admin);
+        service.Results.Enqueue(viewOnly);
+        cache.Invalidate();
+        await service.WaitForCallAsync(2);
+
+        Assert.Contains("create:True", cut.Markup);
+        Assert.DoesNotContain("Checking access", cut.Markup);
+        Assert.Equal("kept", cut.Find("#draft").GetAttribute("value"));
+
+        cache.Invalidate();
+        service.Block.SetResult();
+
+        cut.WaitForAssertion(() => Assert.Contains("create:False", cut.Markup));
+        Assert.DoesNotContain("Checking access", cut.Markup);
+        Assert.Equal(3, service.Calls);
+    }
+
     private static RenderFragment<RoleAdministrationAccess> Child(string text) =>
         access => builder => builder.AddContent(0, $"{text}:{access.CanView}");
 
     private static RenderFragment<RoleAdministrationAccess> Mutations =>
         access => builder => builder.AddContent(0, $"create:{access.CanCreate};update:{access.CanUpdate};delete:{access.CanDelete}");
+
+    private static RenderFragment<RoleAdministrationAccess> Editor =>
+        access => builder =>
+        {
+            builder.OpenComponent<DraftEditor>(0);
+            builder.AddAttribute(1, nameof(DraftEditor.AccessText), $"create:{access.CanCreate}");
+            builder.CloseComponent();
+        };
 
     Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
     async Task IAsyncLifetime.DisposeAsync() => await base.DisposeAsync();
@@ -281,11 +325,54 @@ public sealed class UserAdministrationAccessBoundaryTests : BunitContext, IAsync
         cut.WaitForAssertion(() => Assert.Contains("create:False;update:False;delete:False", cut.Markup));
     }
 
+    [Fact]
+    public async Task Render_WhenChangedArrivesDuringACheck_KeepsEditsAndHonoursTheQueuedRefresh()
+    {
+        var admin = new UserAdministrationAccess(UserAdministrationAccessState.Ready, CanView: true, CanCreate: true, CanUpdate: true, CanDelete: true);
+        var viewOnly = new UserAdministrationAccess(UserAdministrationAccessState.Ready, CanView: true, CanCreate: false, CanUpdate: false, CanDelete: false);
+        var service = new ControllableUserAccessService(admin);
+        var cache = new TestPermissionSnapshotCache();
+        Services.AddSingleton<IUserAdministrationAccessService>(service);
+        Services.AddSingleton<IPermissionSnapshotCache>(cache);
+
+        var cut = Render<UserAdministrationAccessBoundary>(parameters =>
+            parameters.Add(component => component.ChildContent, Editor));
+
+        cut.WaitForAssertion(() => Assert.Contains("create:True", cut.Markup));
+        cut.Find("#draft").Change("kept");
+        Assert.Equal("kept", cut.Find("#draft").GetAttribute("value"));
+
+        service.Block = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        service.Results.Enqueue(admin);
+        service.Results.Enqueue(viewOnly);
+        cache.Invalidate();
+        await service.WaitForCallAsync(2);
+
+        Assert.Contains("create:True", cut.Markup);
+        Assert.DoesNotContain("Checking access", cut.Markup);
+        Assert.Equal("kept", cut.Find("#draft").GetAttribute("value"));
+
+        cache.Invalidate();
+        service.Block.SetResult();
+
+        cut.WaitForAssertion(() => Assert.Contains("create:False", cut.Markup));
+        Assert.DoesNotContain("Checking access", cut.Markup);
+        Assert.Equal(3, service.Calls);
+    }
+
     private static RenderFragment<UserAdministrationAccess> Child(string text) =>
         access => builder => builder.AddContent(0, $"{text}:{access.CanView}");
 
     private static RenderFragment<UserAdministrationAccess> Mutations =>
         access => builder => builder.AddContent(0, $"create:{access.CanCreate};update:{access.CanUpdate};delete:{access.CanDelete}");
+
+    private static RenderFragment<UserAdministrationAccess> Editor =>
+        access => builder =>
+        {
+            builder.OpenComponent<DraftEditor>(0);
+            builder.AddAttribute(1, nameof(DraftEditor.AccessText), $"create:{access.CanCreate}");
+            builder.CloseComponent();
+        };
 
     Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
     async Task IAsyncLifetime.DisposeAsync() => await base.DisposeAsync();
@@ -344,9 +431,61 @@ internal sealed class BlockingRoleAccessService : BlockingAccessService<RoleAdmi
 
 internal sealed class BlockingUserAccessService : BlockingAccessService<UserAdministrationAccess>, IUserAdministrationAccessService;
 
+internal abstract class ControllableAccessService<TAccess>(TAccess access)
+{
+    private readonly TaskCompletionSource _started = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private int _calls;
+    public TAccess Access { get; set; } = access;
+    public Queue<TAccess> Results { get; } = new();
+    public TaskCompletionSource? Block { get; set; }
+    public int Calls => _calls;
+
+    public async Task<TAccess> GetAsync(CancellationToken cancellationToken = default)
+    {
+        var call = Interlocked.Increment(ref _calls);
+        if (call == 2)
+            _started.TrySetResult();
+        if (Block != null && call > 1)
+            await Block.Task.WaitAsync(cancellationToken);
+        return Results.Count > 0 ? Results.Dequeue() : Access;
+    }
+
+    public Task WaitForCallAsync(int call) =>
+        call == 2 ? _started.Task.WaitAsync(TimeSpan.FromSeconds(5)) : Task.CompletedTask;
+
+    public void Invalidate()
+    {
+    }
+}
+
+internal sealed class ControllableRoleAccessService(RoleAdministrationAccess access)
+    : ControllableAccessService<RoleAdministrationAccess>(access), IRoleAdministrationAccessService;
+
+internal sealed class ControllableUserAccessService(UserAdministrationAccess access)
+    : ControllableAccessService<UserAdministrationAccess>(access), IUserAdministrationAccessService;
+
 internal sealed class TestPermissionSnapshotCache : IPermissionSnapshotCache
 {
     public event EventHandler? Changed;
 
     public void Invalidate() => Changed?.Invoke(this, EventArgs.Empty);
+}
+
+internal sealed class DraftEditor : ComponentBase
+{
+    [Parameter] public string AccessText { get; set; } = "";
+
+    private string _draft = "";
+
+    protected override void BuildRenderTree(RenderTreeBuilder builder)
+    {
+        builder.OpenElement(0, "div");
+        builder.AddContent(1, AccessText);
+        builder.OpenElement(2, "input");
+        builder.AddAttribute(3, "id", "draft");
+        builder.AddAttribute(4, "value", _draft);
+        builder.AddAttribute(5, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args => _draft = args.Value?.ToString() ?? ""));
+        builder.CloseElement();
+        builder.CloseElement();
+    }
 }

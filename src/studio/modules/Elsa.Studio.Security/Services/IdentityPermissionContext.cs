@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using Elsa.Studio.Contracts;
@@ -20,9 +21,12 @@ namespace Elsa.Studio.Security.Services;
 /// <remarks>
 /// A snapshot is stored only for the generation it was loaded under, and <see cref="GetAsync"/>
 /// returns only current-generation grants. Generation and snapshot are published together.
+/// An overtaken load is retried at most <see cref="MaxOvertakenReloads"/> times, then
+/// <see cref="IdentityPermissionSnapshot.Unavailable"/> is returned without being cached.
 /// </remarks>
 public sealed class IdentityPermissionContext : IIdentityPermissionContext, IPermissionSnapshotCache, IDisposable
 {
+    internal const int MaxOvertakenReloads = 3;
     private readonly IBackendApiClientProvider _apiClientProvider;
     private readonly ILogger<IdentityPermissionContext> _logger;
     private readonly AuthenticationStateProvider[] _authenticationStateProviders;
@@ -52,7 +56,11 @@ public sealed class IdentityPermissionContext : IIdentityPermissionContext, IPer
     /// <inheritdoc />
     public event EventHandler? Changed;
 
-    /// <summary>Invoked after a load returns and before the generation check-and-store. Tests use this to Invalidate between those steps.</summary>
+    /// <summary>
+    /// Test-only hook invoked after a load returns and before the generation check-and-store.
+    /// Production code must not set this.
+    /// </summary>
+    [EditorBrowsable(EditorBrowsableState.Never)]
     internal Action? AfterLoad { get; set; }
 
     public async Task<IdentityPermissionSnapshot> GetAsync(CancellationToken cancellationToken = default)
@@ -63,6 +71,7 @@ public sealed class IdentityPermissionContext : IIdentityPermissionContext, IPer
         await _loadLock.WaitAsync(cancellationToken);
         try
         {
+            var overtakenReloads = 0;
             while (true)
             {
                 int generation;
@@ -83,6 +92,9 @@ public sealed class IdentityPermissionContext : IIdentityPermissionContext, IPer
                     {
                         if (IsUsable(_state.Snapshot))
                             return _state.Snapshot!;
+
+                        if (++overtakenReloads >= MaxOvertakenReloads)
+                            return IdentityPermissionSnapshot.Unavailable;
 
                         continue;
                     }

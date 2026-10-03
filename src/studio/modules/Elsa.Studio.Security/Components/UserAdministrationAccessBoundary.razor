@@ -36,6 +36,7 @@ else
     private IPermissionSnapshotCache[] _caches = [];
     private UserAdministrationAccess? _access;
     private bool _accessLoading;
+    private bool _reloadRequested;
     private bool _disposed;
 
     protected override Task OnInitializedAsync()
@@ -58,31 +59,41 @@ else
 
     private async Task LoadAccessAsync(CancellationToken cancellationToken)
     {
-        if (_disposed || _accessLoading)
+        if (_disposed)
             return;
 
-        _accessLoading = true;
-        _access = null;
-        await InvokeAsync(StateHasChanged);
-
-        try
+        if (_accessLoading)
         {
-            _access = await AccessService.GetAsync(cancellationToken);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
+            _reloadRequested = true;
             return;
         }
-        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+
+        do
         {
-            _access = UserAdministrationAccess.Unavailable;
+            _accessLoading = true;
+            _reloadRequested = false;
+
+            try
+            {
+                _access = await AccessService.GetAsync(cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception) when (!cancellationToken.IsCancellationRequested)
+            {
+                _access = UserAdministrationAccess.Unavailable;
+            }
+            finally
+            {
+                _accessLoading = false;
+            }
         }
-        finally
-        {
-            _accessLoading = false;
-            if (!cancellationToken.IsCancellationRequested)
-                await InvokeAsync(StateHasChanged);
-        }
+        while (_reloadRequested && !_disposed && !cancellationToken.IsCancellationRequested);
+
+        if (!cancellationToken.IsCancellationRequested)
+            await InvokeAsync(StateHasChanged);
     }
 
     private async void OnSnapshotChanged(object? sender, EventArgs e)

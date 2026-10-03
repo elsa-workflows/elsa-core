@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Elsa.Studio.Authentication.ElsaIdentity.Contracts;
 using Elsa.Studio.Authentication.ElsaIdentity.Extensions;
 using Elsa.Studio.Contracts;
@@ -22,6 +23,7 @@ public class JwtTokenProvider(
     }
 
     private static readonly TimeSpan RefreshSkew = TimeSpan.FromMinutes(2);
+    private static readonly StringComparer ClaimComparer = StringComparer.Ordinal;
 
     /// <inheritdoc />
     public async Task<string?> GetAccessTokenAsync(CancellationToken cancellationToken = default)
@@ -45,14 +47,42 @@ public class JwtTokenProvider(
             return null;
         }
 
-        NotifyRefresh();
-        return await jwtAccessor.ReadTokenAsync(TokenNames.AccessToken);
+        var refreshedToken = await jwtAccessor.ReadTokenAsync(TokenNames.AccessToken);
+        if (IdentityChanged(accessToken, refreshedToken))
+            NotifyRefresh();
+
+        return refreshedToken;
     }
 
     private void NotifyRefresh()
     {
         foreach (var signal in refreshSignals)
             signal.Raise();
+    }
+
+    private bool IdentityChanged(string previousToken, string? refreshedToken)
+    {
+        if (string.IsNullOrWhiteSpace(refreshedToken))
+            return true;
+
+        try
+        {
+            var previous = jwtParser.Parse(previousToken).ToList();
+            var refreshed = jwtParser.Parse(refreshedToken).ToList();
+            return !SameClaimValues(previous, refreshed, "sub") ||
+                   !SameClaimValues(previous, refreshed, "permissions");
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
+    private static bool SameClaimValues(IReadOnlyCollection<Claim> previous, IReadOnlyCollection<Claim> refreshed, string type)
+    {
+        var previousValues = previous.Where(x => x.Type == type).Select(x => x.Value).OrderBy(x => x, ClaimComparer);
+        var refreshedValues = refreshed.Where(x => x.Type == type).Select(x => x.Value).OrderBy(x => x, ClaimComparer);
+        return previousValues.SequenceEqual(refreshedValues, ClaimComparer);
     }
 
     private bool IsExpiredOrNearExpiry(string jwt)
