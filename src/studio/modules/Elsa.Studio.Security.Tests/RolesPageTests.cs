@@ -43,7 +43,11 @@ public sealed class RolesPageTests : BunitContext, IAsyncLifetime
 
         cut.WaitForAssertion(() => Assert.Contains("Administrators", cut.Markup));
         Assert.Equal("Roles", cut.Find("h1").TextContent.Trim());
-        Assert.Contains("2 roles · all loaded", cut.Markup);
+        Assert.Contains("2 roles", cut.Markup);
+        Assert.DoesNotContain("all loaded", cut.Markup);
+        Assert.DoesNotContain("matching search", cut.Markup);
+        Assert.DoesNotContain("No pagination", cut.Markup);
+        Assert.DoesNotContain(cut.FindAll("th"), x => x.TextContent.Trim() == "ID");
         Assert.Contains("Global access (*)", cut.Markup);
         Assert.DoesNotContain("Tenant", cut.Markup);
         Assert.DoesNotContain("mud-table-pagination", cut.Markup);
@@ -70,7 +74,7 @@ public sealed class RolesPageTests : BunitContext, IAsyncLifetime
         var cut = RenderRoles();
         cut.WaitForAssertion(() => Assert.Contains("Workflow Authors", cut.Markup));
 
-        var search = cut.Find("input[aria-label='Search roles by name, ID, or permission']");
+        var search = cut.Find("input[aria-label='Name, ID, or permission']");
         search.Input("retry");
 
         cut.WaitForAssertion(() =>
@@ -127,6 +131,41 @@ public sealed class RolesPageTests : BunitContext, IAsyncLifetime
 
         cut.WaitForAssertion(() => Assert.Contains("No roles yet", cut.Markup));
         Assert.Contains("Create first role", cut.Markup);
+        Assert.DoesNotContain("0 roles", cut.Markup);
+    }
+
+    [Fact]
+    public void Render_WhenSearchMatchesNothing_HidesTheCountAndClearSearchRestoresTheList()
+    {
+        var api = new StubRolesApi
+        {
+            Response = new ListRolesResponse
+            {
+                Roles = [new RoleSummary { Id = "auditors", Name = "Auditors", Permissions = ["workflows/*:view"] }]
+            }
+        };
+        Register(api, ReadyAccess);
+
+        var cut = RenderRoles();
+        cut.WaitForAssertion(() => Assert.Contains("1 role", cut.Markup));
+        Assert.DoesNotContain("all loaded", cut.Markup);
+
+        cut.Find("input[aria-label='Name, ID, or permission']").Input("no-such-role");
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("No matching roles", cut.Markup);
+            Assert.DoesNotContain("0 roles", cut.Markup);
+            Assert.DoesNotContain("matching search", cut.Markup);
+        });
+
+        cut.Find("button[aria-label='Clear search']").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("Auditors", cut.Markup);
+            Assert.Contains("1 role", cut.Markup);
+        });
     }
 
     [Fact]
