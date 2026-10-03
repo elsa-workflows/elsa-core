@@ -1,4 +1,6 @@
 @page "/alterations/instances"
+@attribute [RequirePermission(WorkflowPermissions.Instances, PermissionVerbs.View)]
+@attribute [RequirePermission(AlterationPermissions.Alterations, PermissionVerbs.Execute)]
 @using Elsa.Api.Client.Resources.WorkflowInstances.Enums
 @using Elsa.Api.Client.Resources.WorkflowInstances.Models
 @using Elsa.Api.Client.Resources.WorkflowInstances.Requests

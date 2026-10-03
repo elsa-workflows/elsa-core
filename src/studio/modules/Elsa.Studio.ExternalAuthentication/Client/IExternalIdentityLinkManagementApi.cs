@@ -3,7 +3,12 @@ using Refit;
 
 namespace Elsa.Studio.ExternalAuthentication.Client;
 
-public interface IExternalIdentityLinksApi
+/// <summary>
+/// Studio-local identity-link contract. Named distinctly from
+/// <c>Elsa.Api.Client</c>'s <c>IExternalIdentityLinksApi</c> so Refit does not reuse one
+/// authentication handler on two clients (#1075).
+/// </summary>
+public interface IExternalIdentityLinkManagementApi
 {
     [Get("/external-authentication/identity-links")]
     Task<ListExternalIdentityLinksResponse> ListAsync(

@@ -1,3 +1,4 @@
+using Elsa.Studio.Contracts;
 using Elsa.Studio.Environments.Contracts;
 using Elsa.Studio.Environments.Models;
 
@@ -6,8 +7,10 @@ namespace Elsa.Studio.Environments.Services;
 /// <summary>
 /// Provides the default implementation of the environment service.
 /// </summary>
-public class DefaultEnvironmentService : IEnvironmentService
+public class DefaultEnvironmentService(IEnumerable<IPermissionRefreshSignal>? refreshSignals = null) : IEnvironmentService
 {
+    private readonly IPermissionRefreshSignal[] _refreshSignals = refreshSignals?.ToArray() ?? [];
+
     /// <summary>
     /// Occurs when the list of environments changes.
     /// </summary>
@@ -55,6 +58,9 @@ public class DefaultEnvironmentService : IEnvironmentService
             return;
 
         CurrentEnvironment = environment;
+        foreach (var signal in _refreshSignals)
+            signal.Raise();
+
         CurrentEnvironmentChanged?.Invoke();
     }
 }

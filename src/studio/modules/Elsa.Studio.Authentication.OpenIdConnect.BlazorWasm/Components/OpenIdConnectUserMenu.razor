@@ -1,0 +1,8 @@
+@using Elsa.Studio.Components.AppBar
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using MudBlazor
+@inject NavigationManager Navigation
+
+<UserMenu>
+    <MudMenuItem OnClick="@(() => Navigation.NavigateToLogout("authentication/logout", Navigation.BaseUri))">Sign out</MudMenuItem>
+</UserMenu>

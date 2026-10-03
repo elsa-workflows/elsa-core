@@ -1,4 +1,7 @@
+@using Elsa.Studio.Contracts
+@using Microsoft.Extensions.DependencyInjection
 @inject IUserAdministrationAccessService AccessService
+@inject IServiceProvider Services
 @implements IAsyncDisposable
 
 @if (_access == null)
@@ -10,10 +13,7 @@
 }
 else if (_access.State == UserAdministrationAccessState.Forbidden)
 {
-    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined">
-        <MudText Typo="Typo.subtitle1">User administration access is required</MudText>
-        <MudText Typo="Typo.body2">Your current sign-in does not include permission to view users. Ask an administrator for <code>identity/users:view</code>, then sign in again.</MudText>
-    </MudAlert>
+    <AccessDenied MissingPermissions="_missingPermissions" />
 }
 else if (_access.State == UserAdministrationAccessState.Unavailable)
 {
@@ -25,18 +25,33 @@ else if (_access.State == UserAdministrationAccessState.Unavailable)
 }
 else
 {
-    @ChildContent(_access)
+    @ChildContent(DisplayedAccess)
 }
 
 @code {
     [Parameter, EditorRequired] public RenderFragment<UserAdministrationAccess> ChildContent { get; set; } = default!;
 
+    private static readonly Permission[] _missingPermissions = [new(IdentityPermissions.UsersResource, IdentityPermissions.View)];
     private readonly CancellationTokenSource _lifetime = new();
+    private IPermissionSnapshotCache[] _caches = [];
     private UserAdministrationAccess? _access;
     private bool _accessLoading;
+    private bool _reloadRequested;
     private bool _disposed;
 
-    protected override Task OnInitializedAsync() => LoadAccessAsync(_lifetime.Token);
+    private UserAdministrationAccess DisplayedAccess =>
+        _accessLoading && _access is { State: UserAdministrationAccessState.Ready }
+            ? _access with { CanCreate = false, CanUpdate = false, CanDelete = false }
+            : _access!;
+
+    protected override Task OnInitializedAsync()
+    {
+        _caches = Services.GetServices<IPermissionSnapshotCache>().ToArray();
+        foreach (var cache in _caches)
+            cache.Changed += OnSnapshotChanged;
+
+        return LoadAccessAsync(_lifetime.Token);
+    }
 
     private async Task ReloadAsync()
     {
@@ -49,30 +64,54 @@ else
 
     private async Task LoadAccessAsync(CancellationToken cancellationToken)
     {
-        if (_disposed || _accessLoading)
+        if (_disposed)
             return;
 
-        _accessLoading = true;
-        _access = null;
-        await InvokeAsync(StateHasChanged);
+        if (_accessLoading)
+        {
+            _reloadRequested = true;
+            return;
+        }
 
+        do
+        {
+            _accessLoading = true;
+            _reloadRequested = false;
+            if (_access != null)
+                await InvokeAsync(StateHasChanged);
+
+            try
+            {
+                _access = await AccessService.GetAsync(cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception) when (!cancellationToken.IsCancellationRequested)
+            {
+                _access = UserAdministrationAccess.Unavailable;
+            }
+            finally
+            {
+                _accessLoading = false;
+            }
+        }
+        while (_reloadRequested && !_disposed && !cancellationToken.IsCancellationRequested);
+
+        if (!cancellationToken.IsCancellationRequested)
+            await InvokeAsync(StateHasChanged);
+    }
+
+    private async void OnSnapshotChanged(object? sender, EventArgs e)
+    {
         try
         {
-            _access = await AccessService.GetAsync(cancellationToken);
+            await InvokeAsync(() => LoadAccessAsync(_lifetime.Token));
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (Exception)
         {
-            return;
-        }
-        catch (Exception) when (!cancellationToken.IsCancellationRequested)
-        {
-            _access = UserAdministrationAccess.Unavailable;
-        }
-        finally
-        {
-            _accessLoading = false;
-            if (!cancellationToken.IsCancellationRequested)
-                await InvokeAsync(StateHasChanged);
+            // A permission notification must not become an unobserved exception.
         }
     }
 
@@ -82,6 +121,8 @@ else
             return;
 
         _disposed = true;
+        foreach (var cache in _caches)
+            cache.Changed -= OnSnapshotChanged;
         await _lifetime.CancelAsync();
         _lifetime.Dispose();
     }

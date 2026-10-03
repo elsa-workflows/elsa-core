@@ -23,6 +23,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddDashboardModule(this IServiceCollection services)
     {
         services.TryAddSingleton<IDashboardWidgetRegistry, DashboardWidgetRegistry>();
+        services.TryAddSingleton(TimeProvider.System);
 
         return services
             .AddScoped<IFeature, Feature>()

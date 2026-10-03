@@ -175,7 +175,7 @@ Widget `Id` values must be globally unique across all providers and should use a
 
 - `Available`: render the widget component.
 - `Unavailable`: render consistent host unavailable chrome with the descriptor title and optional provider-supplied reason.
-- `Unauthorized`: render consistent host unauthorized chrome without leaking unavailable data details. The host must ignore `UnavailableReason` for unauthorized widgets even if a provider supplies one.
+- `Unauthorized`: leave the widget or section out entirely, without unauthorized chrome and without leaking unavailable data details: the user is not meant to see it. The host must ignore `UnavailableReason` for unauthorized widgets even if a provider supplies one.
 
 `DashboardWidgetRefreshMode` should define host behavior:
 
@@ -410,7 +410,7 @@ Behavior:
 
 - If a diagnostics module is absent, its provider is not registered and the widget is not contributed.
 - If the module is installed but its backend feature is unavailable, the provider may omit the widget or return it with `DashboardWidgetAvailability.Unavailable`.
-- If unauthorized, the provider may omit the widget or return it with `DashboardWidgetAvailability.Unauthorized` so the host can show `No access`.
+- If unauthorized, the provider may omit the widget or return it with `DashboardWidgetAvailability.Unauthorized` so the host leaves it out rather than showing `No access`.
 - Do not display raw log lines.
 
 ### Workflow Hotspots Widget
@@ -553,6 +553,15 @@ public interface IDashboardApi
 }
 ```
 
+## Access
+
+Decided in elsa-studio#1099, with the backend side in elsa-core#8561:
+
+- Every signed-in user can open the dashboard. The route and its menu item require no permission.
+- Each widget is gated by the permission of the data it shows, declared on its descriptor. A user sees a widget when they hold any of its permissions, and a widget the user may not see is hidden, not disabled. Built-in widgets accept `dashboard:view` or the view permission of their data: `workflows/instances` for workflow metrics, trends, activity, findings and hotspots, `diagnostics/structured-logs` and `diagnostics/console-logs` for the log summaries. The runtime status needs `dashboard:view` or `workflows/runtime:view`. The OpenTelemetry widget, which loads its figures from the OpenTelemetry API rather than the dashboard's, needs `diagnostics/opentelemetry:view`.
+- The backend applies the same rule. The overview marks a section the caller may not read with `Capability = Unauthorized` and sends no data for it, and the host leaves such a section out. Metric cards and panels the caller may not read are dropped, and needs-attention findings are filtered by the permission of what each reports. The workflow instance endpoints (trends, recent activity, needs attention, hotspots) refuse callers holding neither `dashboard:view` nor `workflows/instances:view`, so the host requests them only for users holding one of those. A user with no visible widget who may read the runtime status still gets the overview; otherwise the host requests nothing.
+- A user who may see no widget gets a welcome panel with shortcuts to the pages they can open, in navigation order, or the "No pages are available for your role" notice when there are none.
+
 ## Page States
 
 The dashboard must handle:
@@ -566,6 +575,7 @@ The dashboard must handle:
 - Empty workflow data.
 - Refresh failure after previous successful data.
 - No registered widget providers.
+- No widget the user may see (welcome panel), distinguished from widgets still being registered (loading).
 - A widget provider throwing during discovery.
 - A widget component failing while other widgets remain renderable.
 
@@ -688,5 +698,5 @@ Phase 3:
 - Should Studio include a limited fallback mode using existing workflow APIs before the backend dashboard API lands?
 - Should dashboard data auto-refresh by default, or stay manual for predictable backend load?
 - Should the dashboard expose an `include system workflows` toggle in the first version?
-- Should runtime status be visible to every dashboard reader or only users with workflow instance read permission?
+- Resolved: runtime status is visible to users holding `dashboard:view` or `workflows/runtime:view`, including a user with no visible widget, who sees it above the welcome shortcuts.
 - Should a future version add user preferences for hiding unavailable widgets that providers elect to return?

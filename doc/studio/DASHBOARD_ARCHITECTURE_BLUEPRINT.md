@@ -110,7 +110,10 @@ public record DashboardWidgetDescriptor(
     Type ComponentType,
     string? Title = null,
     string? RequiredBackendCapability = null,
-    string? PayloadKind = null);
+    string? PayloadKind = null)
+{
+    public IReadOnlyCollection<Permission> RequiredPermissions { get; init; } = [];
+}
 ```
 
 Descriptor fields:
@@ -122,6 +125,7 @@ Descriptor fields:
 - `Title`: optional metadata.
 - `RequiredBackendCapability`: metadata for the backend capability a widget expects. The current shell does not enforce this field.
 - `PayloadKind`: metadata documenting which snapshot payload the widget consumes.
+- `RequiredPermissions`: the widget is shown to users holding any of them, and to everyone when it declares none. See Authorization and Capability Awareness.
 
 ### Registry Pattern
 
@@ -138,12 +142,13 @@ The dashboard page merges both sources:
 Widgets
     .Concat(WidgetRegistry.List())
     .DistinctBy(x => x.Id)
+    .Where(x => x.IsPermitted(Permissions))
     .Where(x => x.Zone == zone && x.IsVisible(WidgetContext))
     .OrderBy(x => x.Order)
     .ThenBy(x => x.Id, StringComparer.Ordinal)
 ```
 
-`IsVisible` currently requires only a non-null snapshot. Capability-specific empty or unavailable states belong inside each widget component.
+`IsPermitted` checks the user's permissions against `RequiredPermissions`; `IsVisible` requires a non-null snapshot. Capability-specific empty or unavailable states belong inside each widget component.
 
 ### Zones
 
@@ -190,7 +195,7 @@ Remote-gated companion features:
 - Structured logs dashboard: `Elsa.Diagnostics.StructuredLogs.Dashboard.ShellFeatures.StructuredLogsDashboard`
 - Console logs dashboard: `Elsa.Diagnostics.ConsoleLogs.Dashboard.ShellFeatures.ConsoleLogsDashboard`
 
-The dashboard page subscribes to `IFeatureService.Initialized` after first render so late widget registration can trigger a UI refresh.
+The dashboard page subscribes to `IFeatureService.Initialized` before its first render so late widget registration can trigger a UI refresh, and a load of the data the new widgets need. Until `IFeatureService.IsInitialized` is true, a user with no permitted widget sees the loading state rather than the welcome panel, since their widgets may still be on their way.
 
 ## Data Architecture
 
@@ -232,7 +237,7 @@ Time range handling is centralized in `DashboardRangeMapper`:
 - `GET /dashboard/recent-activity`
 - `POST /dashboard/workflow-hotspots`
 
-`DashboardService.LoadAsync` requests overview, needs attention, trends, recent activity, and hotspots concurrently with `Task.WhenAll`. It maps transport errors to `DashboardLoadResult`:
+`DashboardService.LoadAsync` requests overview, needs attention, trends, recent activity, and hotspots concurrently with `Task.WhenAll`. The page uses it only for users who may read workflow instance data (`dashboard:view` or `workflows/instances:view`); for other users with a visible widget it requests the overview alone through `LoadOverviewAsync`. A user with no visible widget who may read the runtime status (`dashboard:view` or `workflows/runtime:view`) also gets the overview, so the header chip can render; otherwise it requests nothing. Both map transport errors to `DashboardLoadResult`:
 
 - `404`: dashboard unavailable.
 - `401` or `403`: unauthorized.
@@ -277,7 +282,16 @@ The shell uses MudBlazor for layout, chips, tables, charts, buttons, alerts, and
 
 ### Authorization and Capability Awareness
 
-Studio does not enforce dashboard authorization client-side. Authorization failures come from the backend and are mapped by `DashboardService`.
+Every signed-in user can open the dashboard: the page and its menu item declare no permission. The backend serves each overview section, and the workflow instance endpoints, to `dashboard:view` and to the view permission of the data (`workflows/instances`, `workflows/runtime`, `diagnostics/structured-logs`, `diagnostics/console-logs`). Studio mirrors that rule to tailor the page, never as an authorization decision:
+
+- widgets declare the permissions of their data in `RequiredPermissions` and are hidden from users holding none of them;
+- the page requests only the data its visible widgets need, from endpoints the user may call;
+- a section the backend returns with `Capability` `Unauthorized` is left out rather than reported, and the runtime chip is shown only to users who may read the runtime status;
+- a user with no visible widget gets a welcome panel with shortcuts to the pages they can open, or the "No pages are available for your role" notice; a user who may read the runtime status (`dashboard:view` or `workflows/runtime:view`) sees it above the shortcuts;
+- the page waits for the features to report they are initialized before welcoming a user, but no longer than a few seconds, so a host that never initializes them settles on the welcome; widgets registered later still appear;
+- when the overview loads but an instance endpoint refuses the user (unknown permissions, or an older backend), the overview stays and the widgets that need the refused part show nothing.
+
+When the user's permissions are unknown, every widget shows and every endpoint is requested, as before; refusals from the backend are then mapped by `DashboardService`.
 
 Remote feature gating controls whether companion widget features initialize. Per-widget `RequiredBackendCapability` is metadata today; widgets render their own capability chips or empty states based on snapshot data.
 

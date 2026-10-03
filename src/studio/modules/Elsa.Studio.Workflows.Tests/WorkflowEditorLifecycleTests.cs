@@ -4,6 +4,7 @@ using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Responses;
 using Elsa.Api.Client.Shared.Models;
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Contracts;
 using Elsa.Studio.DomInterop.Models;
@@ -17,6 +18,8 @@ using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Domain.Models;
 using Elsa.Studio.Workflows.Extensions;
 using Elsa.Studio.Workflows.Shared.Components;
+using Elsa.Studio.Testing;
+using Elsa.Studio.Workflows.Tests.Support;
 using Elsa.Studio.Workflows.UI.Contracts;
 using Elsa.Studio.Workflows.UI.Contexts;
 using Microsoft.AspNetCore.Components;
@@ -33,6 +36,7 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
 {
     private readonly DelayedWorkflowDefinitionEditorService _editorService = new();
     private readonly RecordingUserMessageService _userMessageService = new();
+    private IRenderedComponent<MudPopoverProvider> _popovers = null!;
 
     public WorkflowEditorLifecycleTests()
     {
@@ -52,6 +56,36 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
 
     Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
     async Task IAsyncLifetime.DisposeAsync() => await base.DisposeAsync();
+
+    [Theory]
+    [InlineData(new[] { "workflows/definitions:view" }, false, false)]
+    [InlineData(new[] { "workflows/definitions:view", "workflows/definitions:publish" }, true, false)]
+    [InlineData(new[] { "workflows/definitions:view", "workflows/definitions:execute" }, false, true)]
+    public void Toolbar_OffersPublishAndRunOnlyWithTheirPermissions(string[] grants, bool canPublish, bool canRun)
+    {
+        var cut = RenderEditor(CreateDefinition("gated"), () => Task.CompletedTask, StubPermissionService.Grants(grants));
+
+        var actions = cut.FindComponents<MudIconButton>().Select(x => x.Instance.Icon).ToList();
+        Assert.Equal(canPublish, actions.Contains(Icons.Material.Filled.CloudUpload));
+        Assert.Equal(canRun, actions.Contains(Icons.Material.Filled.PlayArrow));
+    }
+
+    [Theory]
+    [InlineData(new[] { "workflows/definitions:view" }, true, false)]
+    [InlineData(new[] { "workflows/definitions:view", "workflows/definitions:retract" }, true, true)]
+    [InlineData(new[] { "workflows/definitions:view", "workflows/definitions:retract" }, false, false)]
+    public void ToolbarMenu_OffersUnpublishOnlyForAPublishedWorkflowWithTheRetractPermission(string[] grants, bool isPublished, bool canUnpublish)
+    {
+        var definition = CreateDefinition("gated");
+        definition.IsPublished = isPublished;
+        var cut = RenderEditor(definition, () => Task.CompletedTask, StubPermissionService.Grants(grants));
+
+        cut.Find(".mud-menu button").Click();
+
+        var items = _popovers.FindAll(".mud-menu-item").Select(x => x.TextContent.Trim()).ToList();
+        Assert.Contains("Save As", items);
+        Assert.Equal(canUnpublish, items.Contains("Unpublish"));
+    }
 
     [Fact]
     public async Task SaveSuccessCompletedAfterInvalidationDoesNotReplaceOrInvokeSuccess()
@@ -283,13 +317,16 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
         Assert.Equal(0, failureCount);
     }
 
-    private IRenderedComponent<WorkflowEditor> RenderEditor(WorkflowDefinition definition, Func<Task> workflowDefinitionUpdated)
+    // The shell's page guard cascades the user's permissions; without them every action is offered.
+    private IRenderedComponent<WorkflowEditor> RenderEditor(WorkflowDefinition definition, Func<Task> workflowDefinitionUpdated, UserPermissions? permissions = null)
     {
         ComponentFactories.Add<DiagramDesignerWrapper, TestDiagramDesignerWrapper>();
         ComponentFactories.Add<ActivityPropertiesPanel, TestActivityPropertiesPanel>();
+        _popovers = Render<MudPopoverProvider>();
         return Render<WorkflowEditor>(parameters => parameters
             .Add(x => x.WorkflowDefinition, definition)
-            .Add(x => x.WorkflowDefinitionUpdated, workflowDefinitionUpdated));
+            .Add(x => x.WorkflowDefinitionUpdated, workflowDefinitionUpdated)
+            .AddCascadingValue(permissions ?? UserPermissions.Unknown));
     }
 
     private static Task InvokeSaveAsync(WorkflowEditor editor, Func<SaveWorkflowDefinitionResponse, Task>? onSuccess, Func<ValidationErrors, Task>? onFailure)
@@ -436,15 +473,6 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
     {
         public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
         public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
-    }
-
-    private sealed class TestDiagramDesignerWrapper : DiagramDesignerWrapper
-    {
-        protected override Task OnInitializedAsync() => Task.CompletedTask;
-
-        protected override void BuildRenderTree(RenderTreeBuilder builder)
-        {
-        }
     }
 
     private sealed class TestActivityPropertiesPanel : ActivityPropertiesPanel

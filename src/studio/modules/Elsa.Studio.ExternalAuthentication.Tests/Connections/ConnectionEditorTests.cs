@@ -2919,7 +2919,7 @@ public sealed class ConnectionEditorTests : BunitContext, IAsyncLifetime
     }
 
     private sealed class TestBackendApiClientProvider(
-        IExternalAuthenticationConnectionsApi connectionsApi,
+        IExternalAuthenticationConnectionManagementApi connectionsApi,
         IExternalAuthenticationOperationsApi operationsApi) : IBackendApiClientProvider
     {
         public Uri Url { get; } = new("https://elsa.example.test/elsa/api/");
@@ -2989,7 +2989,7 @@ public sealed class ConnectionEditorTests : BunitContext, IAsyncLifetime
         public Task RevokeSessionAsync(string sessionId, RevokeExternalAuthenticationSessionRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 
-    private sealed class TestConnectionsApi : IExternalAuthenticationConnectionsApi, IIdentityRolesApi
+    private sealed class TestConnectionsApi : IExternalAuthenticationConnectionManagementApi, IIdentityRolesApi
     {
         public Queue<ListConnectionsResponse> ListResults { get; } = new();
         public Queue<Task<ListConnectionsResponse>> PendingListResults { get; } = new();

@@ -1,10 +1,12 @@
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Requests;
 using Elsa.Api.Client.Shared.Models;
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Components;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Workflows.Domain.Contracts;
+using Elsa.Studio.Workflows.Extensions;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -43,6 +45,16 @@ public abstract class WorkflowEditorComponentBase : StudioComponentBase
     /// The injected user message service.
     /// </summary>
     [Inject] protected IUserMessageService UserMessageService { get; set; } = default!;
+
+    /// <summary>
+    /// The current user's permissions, cascaded by the page guard.
+    /// </summary>
+    [CascadingParameter] protected UserPermissions Permissions { get; set; } = UserPermissions.Unknown;
+
+    /// <summary>
+    /// Whether the user may run the workflow.
+    /// </summary>
+    protected bool CanRun => Permissions.CanExecuteDefinitions();
 
     /// <summary>
     /// Invoked when the user clicked the "Run Workflow" button.
