@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,6 +25,11 @@ public class CultureController : Controller
                 CookieRequestCultureProvider.MakeCookieValue(
                     new RequestCulture(culture, culture)),
                 new CookieOptions { Secure = true, HttpOnly = true, SameSite = SameSiteMode.Lax });
+        }
+
+        if (!Url.IsLocalUrl(redirectUri))
+        {
+            return LocalRedirect("~/");
         }
 
         return LocalRedirect(redirectUri);

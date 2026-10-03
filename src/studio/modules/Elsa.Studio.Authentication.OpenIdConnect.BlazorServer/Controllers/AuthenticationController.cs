@@ -18,7 +18,7 @@ public class AuthenticationController : Controller
     [HttpGet("login")]
     public IActionResult Login([FromQuery] string? returnUrl = null)
     {
-        return Challenge(new AuthenticationProperties { RedirectUri = LocalReturnPath.Normalize(returnUrl) }, OpenIdConnectDefaults.AuthenticationScheme);
+        return Challenge(new AuthenticationProperties { RedirectUri = SafeRedirectUri(returnUrl) }, OpenIdConnectDefaults.AuthenticationScheme);
     }
 
     /// <summary>
@@ -26,16 +26,27 @@ public class AuthenticationController : Controller
     /// </summary>
     /// <remarks>
     /// POST-only and antiforgery-protected so another site cannot sign the user out (#1081).
-    /// Return paths go through <see cref="LocalReturnPath"/> so #8585 can strengthen that helper
-    /// without another logout-controller rewrite.
+    /// Return paths go through <see cref="SafeRedirectUri"/> (#8585) so the local-path algorithm
+    /// and MVC <c>Url.IsLocalUrl</c> stay the single redirect gate.
     /// </remarks>
     [HttpPost("logout")]
     [ValidateAntiForgeryToken]
     public IActionResult Logout([FromForm] string? returnUrl = null)
     {
         return SignOut(
-            new AuthenticationProperties { RedirectUri = LocalReturnPath.Normalize(returnUrl) },
+            new AuthenticationProperties { RedirectUri = SafeRedirectUri(returnUrl) },
             CookieAuthenticationDefaults.AuthenticationScheme,
             OpenIdConnectDefaults.AuthenticationScheme);
+    }
+
+    private string SafeRedirectUri(string? returnUrl)
+    {
+        var path = LocalReturnPath.Normalize(returnUrl);
+        if (!Url.IsLocalUrl(path))
+        {
+            return "/";
+        }
+
+        return path;
     }
 }
