@@ -47,7 +47,7 @@ switch off; the switch is per language, so C# and Python can be decided separate
 
 ## Revocation
 
-The default access-token lifetime drops from 1 hour to **15 minutes**. This is the revocation bound: permission claims are issued at sign-in, and refreshing re-reads the user's roles, so removing a role takes effect at most one access-token lifetime later. Refresh already rotates both tokens, so no client change is required.
+The default access-token lifetime drops from 1 hour to **15 minutes**. This is the revocation bound: permission claims are issued at sign-in, and refreshing re-reads the user's roles, so removing a role takes effect at most one access-token lifetime later. Refresh already rotates both tokens, so no client change is required. User resolution on refresh is a separate break: see [refresh-token user resolution](refresh-token-user-resolution.md).
 
 For a tighter bound, enable the optional permission stamp (`Identity:PermissionStamp:IsEnabled`). It is derived from the user's roles rather than stored, so it needs no schema change and no cross-node cache invalidation. `CacheLifetime`, default 30 seconds, is the effective bound when enabled.
 
