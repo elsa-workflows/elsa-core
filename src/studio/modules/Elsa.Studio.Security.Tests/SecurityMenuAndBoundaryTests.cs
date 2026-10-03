@@ -110,7 +110,7 @@ public sealed class RoleAdministrationAccessBoundaryTests : BunitContext, IAsync
         var cut = Render<RoleAdministrationAccessBoundary>(parameters =>
             parameters.Add(component => component.ChildContent, Child("ready")));
 
-        cut.WaitForAssertion(() => Assert.Contains("Role administration access is required", cut.Markup));
+        cut.WaitForAssertion(() => Assert.Contains("You don't have access to this page", cut.Markup));
         Assert.DoesNotContain("ready", cut.Markup);
     }
 
@@ -136,7 +136,7 @@ public sealed class RoleAdministrationAccessBoundaryTests : BunitContext, IAsync
             parameters.Add(component => component.ChildContent, Child("authorized")));
 
         cut.WaitForAssertion(() => Assert.Contains("authorized", cut.Markup));
-        Assert.DoesNotContain("Role administration access is required", cut.Markup);
+        Assert.DoesNotContain("You don't have access to this page", cut.Markup);
         Assert.DoesNotContain("Role administration is unavailable", cut.Markup);
     }
 
@@ -179,7 +179,7 @@ public sealed class UserAdministrationAccessBoundaryTests : BunitContext, IAsync
         var cut = Render<UserAdministrationAccessBoundary>(parameters =>
             parameters.Add(component => component.ChildContent, Child("ready")));
 
-        cut.WaitForAssertion(() => Assert.Contains("User administration access is required", cut.Markup));
+        cut.WaitForAssertion(() => Assert.Contains("You don't have access to this page", cut.Markup));
         Assert.Contains("identity/users:view", cut.Markup);
         Assert.DoesNotContain("ready", cut.Markup);
     }
@@ -213,7 +213,7 @@ public sealed class UserAdministrationAccessBoundaryTests : BunitContext, IAsync
             parameters.Add(component => component.ChildContent, Child("authorized")));
 
         cut.WaitForAssertion(() => Assert.Contains("authorized:True", cut.Markup));
-        Assert.DoesNotContain("User administration access is required", cut.Markup);
+        Assert.DoesNotContain("You don't have access to this page", cut.Markup);
         Assert.DoesNotContain("User administration is unavailable", cut.Markup);
     }
 
