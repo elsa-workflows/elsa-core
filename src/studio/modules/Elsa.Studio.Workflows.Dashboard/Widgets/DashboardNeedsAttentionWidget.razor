@@ -1,6 +1,6 @@
 @using Elsa.Studio.Dashboard.Widgets
 
-@if (Context.Snapshot != null)
+@if (Context.Snapshot != null && !Context.Snapshot.NeedsAttention.Capability.IsUnauthorized)
 {
     <DashboardNeedsAttention Items="@Context.Snapshot.NeedsAttention.Findings" Capability="@Context.Snapshot.NeedsAttention.Capability" />
 }

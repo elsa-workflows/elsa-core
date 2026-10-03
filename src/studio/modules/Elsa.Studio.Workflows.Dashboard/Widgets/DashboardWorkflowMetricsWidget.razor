@@ -1,3 +1,4 @@
+@using Elsa.Studio.Authorization
 @using Elsa.Studio.Dashboard.Widgets
 
 @if (Context.Snapshot != null)
@@ -5,10 +6,10 @@
     var metrics = Context.Snapshot.Overview.WorkflowInstances;
     var healthMetrics = new[]
     {
-        new OperationalHealthMetric("Running", DashboardMetricFormatter.Count(metrics.Running), "Current active instances", Icons.Material.Outlined.PlayCircle, Color.Info, DashboardNavigationTargetMapper.ForMetric("running")),
+        new OperationalHealthMetric("Running", DashboardMetricFormatter.Count(metrics.Running), "Current active instances", Icons.Material.Outlined.PlayCircle, Color.Info, InstancesLink("running")),
         new OperationalHealthMetric("Completed", DashboardMetricFormatter.Count(metrics.Completed), RangeCaption, Icons.Material.Outlined.CheckCircle, Color.Success),
-        new OperationalHealthMetric("Faulted", DashboardMetricFormatter.Count(metrics.Faulted), RangeCaption, Icons.Material.Outlined.ErrorOutline, metrics.Faulted > 0 ? Color.Error : Color.Default, DashboardNavigationTargetMapper.ForMetric("faulted")),
-        new OperationalHealthMetric("Suspended", DashboardMetricFormatter.Count(metrics.Suspended), "Current suspended instances", Icons.Material.Outlined.PauseCircle, metrics.Suspended > 0 ? Color.Warning : Color.Default, DashboardNavigationTargetMapper.ForMetric("suspended")),
+        new OperationalHealthMetric("Faulted", DashboardMetricFormatter.Count(metrics.Faulted), RangeCaption, Icons.Material.Outlined.ErrorOutline, metrics.Faulted > 0 ? Color.Error : Color.Default, InstancesLink("faulted")),
+        new OperationalHealthMetric("Suspended", DashboardMetricFormatter.Count(metrics.Suspended), "Current suspended instances", Icons.Material.Outlined.PauseCircle, metrics.Suspended > 0 ? Color.Warning : Color.Default, InstancesLink("suspended")),
         new OperationalHealthMetric("Avg duration", DashboardMetricFormatter.Duration(metrics.AverageDuration), RangeCaption, Icons.Material.Outlined.Timer, Color.Default),
         new OperationalHealthMetric("Needs attention", DashboardMetricFormatter.Count(Context.Snapshot.NeedsAttention.Findings.Count), "Prioritized findings", Icons.Material.Outlined.ReportProblem, Context.Snapshot.NeedsAttention.Findings.Count > 0 ? Color.Warning : Color.Success)
     };
@@ -41,6 +42,12 @@
 @code {
     [Parameter] public DashboardWidgetContext Context { get; set; } = null!;
     [Parameter] public DashboardWidgetDescriptor Descriptor { get; set; } = null!;
+
+    [CascadingParameter] private UserPermissions Permissions { get; set; } = UserPermissions.Unknown;
+
+    // The metrics still show for users who cannot open the workflow instances list; they just do not link to it.
+    private string? InstancesLink(string metric) =>
+        Permissions.Has(WorkflowPermissions.Instances, PermissionVerbs.View) ? DashboardNavigationTargetMapper.ForMetric(metric) : null;
 
     private string RangeCaption => Context.SelectedRange switch
     {

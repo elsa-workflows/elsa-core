@@ -1,6 +1,5 @@
 using Elsa.Api.Client.Resources.ActivityDescriptors.Enums;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
-using Elsa.Api.Client.Resources.Scripting.Models;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Localization;
@@ -44,13 +43,5 @@ internal static class BpmnEditingTestServices
     {
         descriptor.IsContainer = container;
         return descriptor with { Ports = [new Port { Name = "Body", Type = PortType.Embedded }] };
-    }
-
-    private sealed class StubExpressionService : IExpressionService
-    {
-        private static readonly ExpressionDescriptor[] Descriptors = [new("Literal", "Literal"), new("JavaScript", "JavaScript")];
-
-        public Task<IEnumerable<ExpressionDescriptor>> ListDescriptorsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IEnumerable<ExpressionDescriptor>>(Descriptors);
-        public Task<ExpressionDescriptor?> GetByTypeAsync(string type, CancellationToken cancellationToken = default) => Task.FromResult(Descriptors.FirstOrDefault(x => x.Type == type));
     }
 }

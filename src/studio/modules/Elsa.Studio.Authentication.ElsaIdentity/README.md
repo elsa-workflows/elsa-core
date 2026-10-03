@@ -74,6 +74,9 @@ Tokens are stored using `IJwtAccessor`, which has platform-specific implementati
 Token names are defined in `TokenNames`:
 - `AccessToken` - The JWT access token
 - `RefreshToken` - The refresh token for silent token renewal
+- `IdToken` - Shared storage key with the legacy ElsaLogin module; ElsaIdentity does not issue one, but sign-out clears it with the other tokens
+
+`ElsaIdentitySessionGate` serializes token storage within a Blazor Server circuit (or the WASM app) so a refresh cannot store its response between sign-out clearing the session and the page unloading.
 
 ### Authentication Flow
 

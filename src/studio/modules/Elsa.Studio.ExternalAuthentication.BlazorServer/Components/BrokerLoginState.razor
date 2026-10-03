@@ -1,19 +1,11 @@
-@using Microsoft.AspNetCore.Components.Authorization
+@using Elsa.Studio.Components.AppBar
+@using Elsa.Studio.ExternalAuthentication.Services
 @using MudBlazor
-@implements IDisposable
-@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IServiceProvider Services
 
-@if (CurrentState?.User.Identity?.IsAuthenticated is true && _antiforgeryToken is not null)
+@if (_antiforgeryToken is not null)
 {
-    <MudMenu Label="@(CurrentState.User.Identity.Name ?? "Account")"
-             Variant="Variant.Text"
-             EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
-             IconColor="Color.Inherit"
-             AnchorOrigin="Origin.BottomRight"
-             TransformOrigin="Origin.BottomRight"
-             Color="Color.Inherit"
-             Dense="true">
+    <UserMenu>
         <form method="post" action="/authentication/external/logout">
             <input type="hidden" name="@_antiforgeryToken.FormFieldName" value="@_antiforgeryToken.RequestToken" />
             <input type="hidden" name="mode" value="local" />
@@ -26,27 +18,12 @@
             <input type="hidden" name="returnPath" value="/" />
             <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Text" FullWidth="true">Sign out upstream</MudButton>
         </form>
-    </MudMenu>
+    </UserMenu>
 }
 
 @code {
-    private AuthenticationState? CurrentState;
-    private Elsa.Studio.ExternalAuthentication.Services.ExternalAuthenticationAntiforgeryToken? _antiforgeryToken;
+    private ExternalAuthenticationAntiforgeryToken? _antiforgeryToken;
 
-    protected override async Task OnInitializedAsync()
-    {
-        CurrentState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
-
-        var provider = Services.GetService(typeof(Elsa.Studio.ExternalAuthentication.Services.IExternalAuthenticationAntiforgeryTokenProvider)) as Elsa.Studio.ExternalAuthentication.Services.IExternalAuthenticationAntiforgeryTokenProvider;
-        _antiforgeryToken = provider?.GetToken();
-    }
-
-    public void Dispose() => AuthenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
-
-    private async void OnAuthenticationStateChanged(Task<AuthenticationState> state)
-    {
-        CurrentState = await state;
-        await InvokeAsync(StateHasChanged);
-    }
+    protected override void OnInitialized() =>
+        _antiforgeryToken = (Services.GetService(typeof(IExternalAuthenticationAntiforgeryTokenProvider)) as IExternalAuthenticationAntiforgeryTokenProvider)?.GetToken();
 }
