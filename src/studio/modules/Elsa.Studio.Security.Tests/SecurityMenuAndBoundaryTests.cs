@@ -211,9 +211,14 @@ public sealed class RoleAdministrationAccessBoundaryTests : BunitContext, IAsync
         cache.Invalidate();
         service.Block.SetResult();
 
-        cut.WaitForAssertion(() => Assert.Contains("create:False", cut.Markup));
-        Assert.DoesNotContain("Checking access", cut.Markup);
-        Assert.Equal(3, service.Calls);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("create:False", cut.Markup);
+            Assert.DoesNotContain("Checking access", cut.Markup);
+            Assert.Equal(3, service.Calls);
+            Assert.Empty(service.Results);
+        });
+        Assert.Equal("kept", cut.Find("#draft").GetAttribute("value"));
     }
 
     private static RenderFragment<RoleAdministrationAccess> Child(string text) =>
@@ -355,9 +360,14 @@ public sealed class UserAdministrationAccessBoundaryTests : BunitContext, IAsync
         cache.Invalidate();
         service.Block.SetResult();
 
-        cut.WaitForAssertion(() => Assert.Contains("create:False", cut.Markup));
-        Assert.DoesNotContain("Checking access", cut.Markup);
-        Assert.Equal(3, service.Calls);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("create:False", cut.Markup);
+            Assert.DoesNotContain("Checking access", cut.Markup);
+            Assert.Equal(3, service.Calls);
+            Assert.Empty(service.Results);
+        });
+        Assert.Equal("kept", cut.Find("#draft").GetAttribute("value"));
     }
 
     private static RenderFragment<UserAdministrationAccess> Child(string text) =>
