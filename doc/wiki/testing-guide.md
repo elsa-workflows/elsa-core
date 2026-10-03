@@ -27,7 +27,7 @@ Shared helpers:
 | Expression evaluator/parser behavior | Unit test or language-specific integration test. |
 | Workflow execution semantics | Integration test with workflow runner/test fixture. |
 | Bookmarks, triggers, runtime dispatch, recovery | Integration test; component test if host lifecycle or persistence matters. |
-| API endpoint shape or authorization | Unit/integration endpoint test if existing pattern exists; component test for host-level behavior. |
+| API endpoint shape or authorization | Endpoint authorization tests with `AuthorizationTestHost`; component test for full host-level behavior. |
 | EF Core store or migration | Provider-specific integration/component test. |
 | HTTP workflows | Component test under HTTP workflow scenarios. |
 | Structured log SQLite persistence | SQLite integration test project. |
@@ -138,6 +138,34 @@ Console log tests are split by layer:
 - [test/integration/Elsa.Diagnostics.ConsoleLogs.IntegrationTests](../../test/integration/Elsa.Diagnostics.ConsoleLogs.IntegrationTests): module registration, endpoint authorization, SignalR hub, and recent query behavior.
 
 Run targeted console log tests when touching `Elsa.Diagnostics.ConsoleLogs`.
+
+## Authorization Tests
+
+`AuthorizationTestHost` in [Elsa.Testing.Shared](../../src/common/Elsa.Testing.Shared) spins up a minimal FastEndpoints host with a custom authentication scheme backed by request headers. This lets tests assert authorization requirements without a full application host:
+
+```csharp
+await using var host = await AuthorizationTestHost.StartAsync<MyEndpointMarker>(
+    endpointFilter: t => t == typeof(MyEndpoint));
+
+// Anonymous — should be 401 or 403
+var response = await host.SendAsync(HttpMethod.Get, "/elsa/api/my-endpoint");
+
+// Authenticated with a specific grant
+var response = await host.SendAsync(HttpMethod.Get, "/elsa/api/my-endpoint",
+    permissions: "read:my-resource");
+```
+
+`AuthorizationTestHost.SendAsync` accepts a `permissions` string (comma-separated grants) and an `authenticated` flag. A request is authenticated whenever either is supplied. `RestartWithSecurityDisabledAsync` rebuilds the host with security disabled to verify that endpoints are accessible without auth in permissive deployments.
+
+`EndpointPermissionRegistry.FindRequirement(typeof(MyEndpoint))` introspects the requirement an endpoint declared, so tests can assert the specific permission rather than only the response code.
+
+Test classes that use `AuthorizationTestHost` must share a **non-parallel xunit collection** within their assembly; the host pins `EndpointSecurityOptions.SecurityIsEnabled` for its lifetime, which is process-global.
+
+Examples:
+
+- [test/unit/Elsa.Api.Common.UnitTests/Abstractions/AuthorizationTestHostTests.cs](../../test/unit/Elsa.Api.Common.UnitTests/Abstractions/AuthorizationTestHostTests.cs)
+- [test/unit/Elsa.Workflows.Api.UnitTests/Endpoints/Descriptors/DescriptorCatalogAuthorizationTests.cs](../../test/unit/Elsa.Workflows.Api.UnitTests/Endpoints/Descriptors/DescriptorCatalogAuthorizationTests.cs)
+- [test/unit/Elsa.Dashboard.Api.UnitTests/DashboardAuthorizationTests.cs](../../test/unit/Elsa.Dashboard.Api.UnitTests/DashboardAuthorizationTests.cs)
 
 ## Good Test Hygiene
 
