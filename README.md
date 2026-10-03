@@ -72,16 +72,17 @@ docker run \
 ## Table of Contents
 
 - [Documentation](#documentation)
+- [Training](#training)
 - [Known Issues and Limitations](#known-issues-and-limitations)
 - [Features](#features)
 - [Roadmap](#roadmap)
 - [Use Cases](#use-cases)
 - [Coding Workflows](#coding-workflows)
-- [Designed Workflows](#designed-workflows)
+- [Designing Workflows](#designing-workflows)
 - [Contributing](#contributing)
 - [Support](#support)
   - [Community Support](#community-support)
-  - [Enterprise Support](#enterprise-support)
+  - [Professional Support](#professional-support)
 
 ## Documentation
 
@@ -90,6 +91,10 @@ docker run \
 - [Default Admin User bootstrap (shell + legacy feature system)](src/modules/Elsa.Identity/README.md)
 - [Studio source and local development](doc/studio/README.md)
 - [Extensions source and package boundaries](doc/extensions/README.md)
+
+## Training
+
+Prefer a guided path? The [Elsa+ training courses](https://www.elsaworkflows.io/elsa-plus/training) take you from the basics to advanced patterns, with hands-on labs.
 
 ## Known Issues and Limitations
 
