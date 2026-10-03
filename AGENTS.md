@@ -17,7 +17,7 @@ Guidance for AI coding agents working in this repository.
 - Update documentation when changing externally visible behavior, configuration, APIs, or developer workflows.
 - Do not delete generated-looking, artifact, or IDE files unless the task explicitly asks for cleanup.
 - If the worktree contains unrelated user changes, leave them untouched.
-- Before opening a PR, read `.github/reviewers.md` and request exactly one live reviewer from it.
+- Before opening a PR, read `.github/reviewers.md` and request exactly one live reviewer from it once the PR is open.
 
 ## Agent Operating Principles
 
