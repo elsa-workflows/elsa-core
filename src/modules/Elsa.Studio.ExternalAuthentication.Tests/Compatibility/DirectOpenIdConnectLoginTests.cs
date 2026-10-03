@@ -5,7 +5,7 @@ using Elsa.Studio.Login.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Routing;
 using Xunit;
@@ -63,7 +63,7 @@ public class DirectOpenIdConnectLoginTests
 
     private static AuthenticationController CreateController()
     {
-        var actionContext = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor());
+        var actionContext = new ActionContext(new DefaultHttpContext(), new RouteData(), new ControllerActionDescriptor());
         return new AuthenticationController
         {
             ControllerContext = new ControllerContext(actionContext),
