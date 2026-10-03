@@ -12,16 +12,33 @@ namespace Elsa.Identity.UnitTests;
 /// </summary>
 internal static class LegacyRefreshToken
 {
-    public static string Create(IdentityTokenOptions options, User user) => new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
+    public static string Create(IdentityTokenOptions options, User user) => Create(options, user, includeSubject: true);
+
+    /// <summary>
+    /// Creates a refresh token the way Elsa issued them before the subject claim was present.
+    /// </summary>
+    public static string CreateWithoutSubject(IdentityTokenOptions options, User user) => Create(options, user, includeSubject: false);
+
+    private static string Create(IdentityTokenOptions options, User user, bool includeSubject)
     {
-        Subject = new([
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-            new Claim(JwtRegisteredClaimNames.Name, user.Name),
-            new Claim(TokenUse.ClaimType, TokenUse.Refresh)
-        ]),
-        Expires = DateTime.UtcNow.Add(options.RefreshTokenLifetime),
-        Issuer = options.Issuer,
-        Audience = options.Audience,
-        SigningCredentials = new(options.CreateSecurityKey(), SecurityAlgorithms.HmacSha256Signature)
-    });
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Name, user.Name),
+            new(TokenUse.ClaimType, TokenUse.Refresh)
+        };
+
+        if (includeSubject)
+        {
+            claims.Insert(0, new Claim(JwtRegisteredClaimNames.Sub, user.Id));
+        }
+
+        return new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
+        {
+            Subject = new(claims),
+            Expires = DateTime.UtcNow.Add(options.RefreshTokenLifetime),
+            Issuer = options.Issuer,
+            Audience = options.Audience,
+            SigningCredentials = new(options.CreateSecurityKey(), SecurityAlgorithms.HmacSha256Signature)
+        });
+    }
 }

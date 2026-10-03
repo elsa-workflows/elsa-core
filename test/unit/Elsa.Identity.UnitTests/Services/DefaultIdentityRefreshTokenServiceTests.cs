@@ -22,6 +22,7 @@ public class DefaultIdentityRefreshTokenServiceTests
         Audience = "elsa-api"
     };
     private readonly IAccessTokenIssuer _accessTokenIssuer = Substitute.For<IAccessTokenIssuer>();
+    private readonly IUserProvider _userProvider = Substitute.For<IUserProvider>();
     private readonly DefaultElsaTokenService _tokenService;
     private readonly SessionRevoker _sessionRevoker;
     private readonly DefaultIdentityRefreshTokenService _service;
@@ -30,12 +31,11 @@ public class DefaultIdentityRefreshTokenServiceTests
     {
         var clock = new MutableSystemClock();
         var options = Microsoft.Extensions.Options.Options.Create(_options);
-        var userProvider = Substitute.For<IUserProvider>();
-        userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Id == User.Id), Arg.Any<CancellationToken>()).Returns(User);
+        _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Id == User.Id), Arg.Any<CancellationToken>()).Returns(User);
         _accessTokenIssuer.IssueTokensAsync(User, Arg.Any<SignInSession?>(), Arg.Any<CancellationToken>()).Returns(RefreshedTokens);
         _tokenService = new(clock, options);
         _sessionRevoker = new(new MemoryRevokedSessionStore(new MemoryStore<RevokedSession>()), clock, options);
-        _service = new(userProvider, _accessTokenIssuer, new DefaultTenantAccessor(), _sessionRevoker, options);
+        _service = new(_userProvider, _accessTokenIssuer, new DefaultTenantAccessor(), _sessionRevoker, options);
     }
 
     [Fact]
@@ -73,6 +73,28 @@ public class DefaultIdentityRefreshTokenServiceTests
 
         Assert.Null(await _service.RefreshAsync(refreshToken));
         await AssertNothingIssuedAsync();
+    }
+
+    [Fact]
+    public async Task RefreshAsyncRejectsATokenWhenTheUserIdNoLongerExistsEvenIfTheNameWasReused()
+    {
+        var replacement = new User { Id = "user-b", Name = User.Name };
+        _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Id == User.Id), Arg.Any<CancellationToken>()).Returns((User?)null);
+        _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Name == User.Name), Arg.Any<CancellationToken>()).Returns(replacement);
+        _accessTokenIssuer.IssueTokensAsync(replacement, Arg.Any<SignInSession?>(), Arg.Any<CancellationToken>()).Returns(new IssuedTokens("access-c", "refresh-c"));
+
+        Assert.Null(await _service.RefreshAsync(await IssueRefreshTokenAsync(new("session-a", DateTimeOffset.UtcNow))));
+        await AssertNothingIssuedAsync();
+    }
+
+    [Fact]
+    public async Task RefreshAsyncResolvesALegacyTokenWithoutSubjectByName()
+    {
+        _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Name == User.Name), Arg.Any<CancellationToken>()).Returns(User);
+
+        Assert.Same(RefreshedTokens, await _service.RefreshAsync(LegacyRefreshToken.CreateWithoutSubject(_options, User)));
+        await _accessTokenIssuer.Received(1).IssueTokensAsync(User, Arg.Any<SignInSession?>(), Arg.Any<CancellationToken>());
+        await _userProvider.DidNotReceive().FindAsync(Arg.Is<UserFilter>(x => x.Id != null), Arg.Any<CancellationToken>());
     }
 
     [Fact]

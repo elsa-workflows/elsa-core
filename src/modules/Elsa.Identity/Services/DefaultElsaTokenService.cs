@@ -58,6 +58,8 @@ public sealed class DefaultElsaTokenService(ISystemClock systemClock, IOptions<I
         if (string.IsNullOrWhiteSpace(tokenOptions.Audience))
             throw new InvalidOperationException("No audience configured");
 
+        // sub is the stable user id. Refresh-token exchange resolves the user by this claim so a
+        // later account that reuses the same name cannot inherit still-valid tokens.
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, context.User.Id),

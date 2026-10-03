@@ -46,6 +46,17 @@ public class DefaultElsaTokenServiceTests
         Assert.Contains(token.Claims, x => x.Type == TokenUse.ClaimType && x.Value == TokenUse.Access);
     }
 
+    [Fact(DisplayName = "A refresh token always carries the user's subject")]
+    public async Task IssueRefreshTokenAlwaysEmitsSubject()
+    {
+        var user = new User { Id = "user-1", Name = "alice" };
+        var token = await CreateService().IssueRefreshTokenAsync(new TokenIssuanceContext(user, [], [], []));
+        var jwt = new JsonWebTokenHandler().ReadJsonWebToken(token.Token);
+
+        Assert.Contains(jwt.Claims, x => x.Type == JwtRegisteredClaimNames.Sub && x.Value == user.Id);
+        Assert.Contains(jwt.Claims, x => x.Type == JwtRegisteredClaimNames.Name && x.Value == user.Name);
+    }
+
     [Fact(DisplayName = "A refresh token starts a new session unless the context continues one")]
     public async Task IssueRefreshTokenCarriesTheSession()
     {
