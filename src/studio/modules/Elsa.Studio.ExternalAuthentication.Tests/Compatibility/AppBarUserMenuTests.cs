@@ -2,6 +2,7 @@ using AngleSharp.Dom;
 using Bunit;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Services;
+using Elsa.Studio.Testing;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
@@ -48,6 +49,15 @@ public abstract class AppBarUserMenuTests<TFeature, TMenu> : BunitContext, IAsyn
         var menu = RenderAppBarMenu();
 
         Assert.Empty(menu.FindAll(".mud-menu"));
+    }
+
+    [Fact]
+    public void UserMenu_OpensBelowItsButton()
+    {
+        SignIn();
+        var menu = RenderAppBarMenu();
+
+        MenuPopoverAssert.OpensBelowItsButton(FindInOpenMenu(menu, ".mud-popover"));
     }
 
     protected abstract void SignIn();

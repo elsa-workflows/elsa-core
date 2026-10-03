@@ -11,6 +11,7 @@ using Elsa.Studio.DomInterop.Models;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Models;
+using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components;
 using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.ActivityProperties;
 using Elsa.Studio.Workflows.Contracts;
@@ -18,7 +19,6 @@ using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Domain.Models;
 using Elsa.Studio.Workflows.Extensions;
 using Elsa.Studio.Workflows.Shared.Components;
-using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.Tests.Support;
 using Elsa.Studio.Workflows.UI.Contracts;
 using Elsa.Studio.Workflows.UI.Contexts;
@@ -28,7 +28,6 @@ using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 using MudBlazor.Services;
 using Xunit;
-using Elsa.Studio.Testing;
 
 namespace Elsa.Studio.Workflows.Tests;
 

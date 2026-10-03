@@ -29,6 +29,7 @@
     <ItemGroup>
         <ProjectReference Include="../../framework/Elsa.Studio.Core/Elsa.Studio.Core.csproj" />
         <ProjectReference Include="../../framework/Elsa.Studio.Shared/Elsa.Studio.Shared.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Alterations/Elsa.Studio.Alterations.csproj" />
         <ProjectReference Include="../Elsa.Studio.Http.Webhooks/Elsa.Studio.Http.Webhooks.csproj" />
         <ProjectReference Include="../Elsa.Studio.Labels/Elsa.Studio.Labels.csproj" />
         <ProjectReference Include="../Elsa.Studio.Secrets/Elsa.Studio.Secrets.csproj" />

@@ -3,8 +3,8 @@ using Elsa.Api.Client.Resources.Features.Models;
 using Elsa.Api.Client.Shared.Models;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Services;
+using Elsa.Studio.Testing;
 using Microsoft.AspNetCore.Components.Authorization;
-using Refit;
 using System.Net;
 using System.Security.Claims;
 using Xunit;
@@ -46,7 +46,7 @@ public class RemoteFeatureProviderTests
     public async Task AuthenticationFailures_AreRetried(HttpStatusCode statusCode)
     {
         var api = new FeaturesApi();
-        api.Responses.Enqueue(_ => Task.FromException<ListResponse<FeatureDescriptor>>(CreateApiException(statusCode)));
+        api.Responses.Enqueue(_ => Task.FromException<ListResponse<FeatureDescriptor>>(ApiExceptions.Create(statusCode)));
         var provider = new RemoteFeatureProvider(new BackendApiClientProvider(api));
 
         Assert.False(await provider.IsEnabledAsync("Elsa.ExternalAuthentication"));
@@ -58,7 +58,7 @@ public class RemoteFeatureProviderTests
     public async Task MissingCatalog_IsCached()
     {
         var api = new FeaturesApi();
-        api.Responses.Enqueue(_ => Task.FromException<ListResponse<FeatureDescriptor>>(CreateApiException(HttpStatusCode.NotFound)));
+        api.Responses.Enqueue(_ => Task.FromException<ListResponse<FeatureDescriptor>>(ApiExceptions.Create(HttpStatusCode.NotFound)));
         var provider = new RemoteFeatureProvider(new BackendApiClientProvider(api));
 
         Assert.False(await provider.IsEnabledAsync("Elsa.ExternalAuthentication"));
@@ -105,13 +105,6 @@ public class RemoteFeatureProviderTests
         responseReady.SetResult();
         Assert.All(await Task.WhenAll(firstCheck, secondCheck), Assert.True);
         Assert.Equal(1, api.ListCalls);
-    }
-
-    private static ApiException CreateApiException(HttpStatusCode statusCode)
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://elsa.example.test/features");
-        using var response = new HttpResponseMessage(statusCode) { RequestMessage = request };
-        return ApiException.Create(request, HttpMethod.Get, response, new RefitSettings()).GetAwaiter().GetResult();
     }
 
     [Fact]

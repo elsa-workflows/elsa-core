@@ -97,6 +97,7 @@
       "src/studio/modules/Elsa.Studio.Labels/Elsa.Studio.Labels.csproj",
       "src/studio/modules/Elsa.Studio.Localization.BlazorServer/Elsa.Studio.Localization.BlazorServer.csproj",
       "src/studio/modules/Elsa.Studio.Localization.BlazorWasm/Elsa.Studio.Localization.BlazorWasm.csproj",
+      "src/studio/modules/Elsa.Studio.Localization.Tests/Elsa.Studio.Localization.Tests.csproj",
       "src/studio/modules/Elsa.Studio.Localization/Elsa.Studio.Localization.csproj",
       "src/studio/modules/Elsa.Studio.Login.BlazorServer/Elsa.Studio.Login.BlazorServer.csproj",
       "src/studio/modules/Elsa.Studio.Login.BlazorWasm/Elsa.Studio.Login.BlazorWasm.csproj",

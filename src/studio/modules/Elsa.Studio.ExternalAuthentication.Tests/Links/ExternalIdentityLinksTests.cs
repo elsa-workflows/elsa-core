@@ -279,7 +279,7 @@ public sealed class ExternalIdentityLinksTests : BunitContext, IAsyncLifetime
     public async Task ReplacementConflictStaysInTheDialog()
     {
         var cut = RenderPageWithOneLink();
-        _links.ReplaceException = await CreateApiExceptionAsync(HttpStatusCode.Conflict, """{"error":"conflict"}""");
+        _links.ReplaceException = ApiExceptions.Create(HttpStatusCode.Conflict, """{"error":"conflict"}""");
 
         OpenEditDialog(cut);
         _dialogProvider.Find("input[type=password]").Change("conflicting-subject");
@@ -298,7 +298,7 @@ public sealed class ExternalIdentityLinksTests : BunitContext, IAsyncLifetime
     public async Task ReplacementDistinguishesAStaleLinkFromAnUnsupportedBackend(string responseBody, bool closes)
     {
         var cut = RenderPageWithOneLink(enqueueReload: closes);
-        _links.ReplaceException = await CreateApiExceptionAsync(HttpStatusCode.NotFound, responseBody);
+        _links.ReplaceException = ApiExceptions.Create(HttpStatusCode.NotFound, responseBody);
 
         OpenEditDialog(cut);
         _dialogProvider.Find("input[type=password]").Change("replacement-subject");
@@ -325,7 +325,7 @@ public sealed class ExternalIdentityLinksTests : BunitContext, IAsyncLifetime
         var cut = RenderPageWithOneLink();
         var original = _links.ListedLinks.Single();
         _links.ListResults.Enqueue(new([original], null));
-        _links.ReplaceException = await CreateApiExceptionAsync(
+        _links.ReplaceException = ApiExceptions.Create(
             HttpStatusCode.NotFound,
             """{"error":"not_found","message":"The requested resource was not found."}""");
 
@@ -420,17 +420,6 @@ public sealed class ExternalIdentityLinksTests : BunitContext, IAsyncLifetime
             .Single(item => item.TextContent.Contains("Edit", StringComparison.Ordinal));
         edit.Click();
         _dialogProvider.WaitForAssertion(() => Assert.Contains("Edit external identity link", _dialogProvider.Markup));
-    }
-
-    private static async Task<Refit.ApiException> CreateApiExceptionAsync(HttpStatusCode statusCode, string content)
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Post, "https://elsa.example.test/external-authentication/identity-links/link-1/replace");
-        using var response = new HttpResponseMessage(statusCode)
-        {
-            RequestMessage = request,
-            Content = new StringContent(content)
-        };
-        return await Refit.ApiException.Create(request, HttpMethod.Post, response, new Refit.RefitSettings());
     }
 
     private sealed class ApiProvider(LinksApi links, ConnectionsApi connections) : IBackendApiClientProvider
