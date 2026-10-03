@@ -38,6 +38,7 @@ public class PermissionTests
     [InlineData("workflows:definitions:view")]  // verb may not contain the separator
     [InlineData("workflows:defs/view")]         // verb may not contain a path separator
     [InlineData("workflows/definitions:view,create")] // a comma can never appear: persistence joins on it
+    [InlineData("none")]                              // Elsa's known-empty sentinel, not a grant
     public void RejectsMalformedPermissions(string? value)
     {
         Assert.False(Permission.TryParse(value, out _));
