@@ -36,6 +36,8 @@ See [src/apps/Elsa.Server.Web/Program.cs](../../src/apps/Elsa.Server.Web/Program
 
 Identity JWTs include a `token_use` claim. API bearer authentication accepts only access tokens (`token_use=access`), while `/identity/refresh-token` uses a dedicated refresh-token bearer scheme and accepts only refresh tokens (`token_use=refresh`). Clients should not send refresh tokens to normal API endpoints or access tokens to the refresh endpoint.
 
+Refresh resolves the caller only by the token's `sub` (or the inbound-mapped `NameIdentifier`). A missing, blank, or unknown subject is `401`, the same as an invalid token — not `200` with `isAuthenticated: false`. Only 3.8.0-preview1 issued Elsa refresh tokens without `sub`, and they had a 2-hour lifetime, so no Elsa-issued refresh token still in use lacks a subject.
+
 JWT signing keys must be configured with a secure random value before production startup. Missing keys, weak keys shorter than 32 ASCII characters, and known public defaults are rejected by options startup validation. Known public defaults are only tolerated in the explicit `Development` or `Demo` environments for local/demo hosts. Use environment variables or a secrets manager, such as `Identity__Tokens__SigningKey` for code-first hosts or `CShells__Shells__Default__Features__Identity__SigningKey` for shell-based hosts.
 
 ## Default Admin Bootstrap
@@ -124,7 +126,7 @@ Start in [src/modules/Elsa.Secrets](../../src/modules/Elsa.Secrets).
 ### Built-In Stores
 
 | Store | Class | Notes |
-| --- | --- | --- |
+| --- | --- |
 | Elsa-managed encrypted store | [EncryptedSecretStore](../../src/modules/Elsa.Secrets/Stores/EncryptedSecretStore.cs) | Encrypts values with data protection. Default writable store. |
 | Configuration-backed read-only | [ConfigurationSecretStore](../../src/modules/Elsa.Secrets/Stores/ConfigurationSecretStore.cs) | Maps configuration keys to secret values. Read-only; cannot be written from the API. |
 
