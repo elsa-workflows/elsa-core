@@ -22,7 +22,7 @@ public sealed class WebhooksGatingTests
     [Fact]
     public void WebhooksPage_DeclaresTheSameViewPermission()
     {
-        var required = Assert.Single(RequirePermissionAttribute.GetRequiredPermissions(typeof(Index)));
+        var required = Assert.Single(RequirePermissionAttribute.GetRequiredPermissions(typeof(WebhooksPage)));
 
         Assert.Equal(WebhookPermissions.Webhooks, required.Resource);
         Assert.Equal(PermissionVerbs.View, required.Verb);
