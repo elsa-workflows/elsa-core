@@ -1,5 +1,6 @@
 using Elsa.Studio.Abstractions;
 using Elsa.Studio.Attributes;
+using Elsa.Studio.Dashboard;
 using Elsa.Studio.Dashboard.Widgets;
 using Elsa.Studio.Diagnostics.StructuredLogs.Dashboard.UI.Dashboard;
 
@@ -12,7 +13,10 @@ public class Feature(IDashboardWidgetRegistry widgetRegistry) : FeatureBase
 
     public override ValueTask InitializeAsync(CancellationToken cancellationToken = default)
     {
-        widgetRegistry.Add(new("diagnostics.structured-logs", DashboardWidgetZones.DiagnosticsStatus, 100, typeof(StructuredLogsDashboardWidget), "Structured logs", RequiredBackendCapability: "StructuredLogs", PayloadKind: "Diagnostics.StructuredLogs"));
+        widgetRegistry.Add(new("diagnostics.structured-logs", DashboardWidgetZones.DiagnosticsStatus, 100, typeof(StructuredLogsDashboardWidget), "Structured logs", RequiredBackendCapability: "StructuredLogs", PayloadKind: "Diagnostics.StructuredLogs")
+        {
+            RequiredPermissions = DashboardPermissions.ForData(StructuredLogsPermissions.StructuredLogs)
+        });
 
         return base.InitializeAsync(cancellationToken);
     }

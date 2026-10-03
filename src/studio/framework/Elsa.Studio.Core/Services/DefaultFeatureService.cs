@@ -23,6 +23,9 @@ public class DefaultFeatureService : IFeatureService
     public event Action? Initialized;
 
     /// <inheritdoc />
+    public bool IsInitialized { get; private set; }
+
+    /// <inheritdoc />
     public IEnumerable<IFeature> GetFeatures()
     {
         return _features.ToList();
@@ -54,6 +57,7 @@ public class DefaultFeatureService : IFeatureService
 
     private void OnInitialized()
     {
+        IsInitialized = true;
         Initialized?.Invoke();
     }
 }

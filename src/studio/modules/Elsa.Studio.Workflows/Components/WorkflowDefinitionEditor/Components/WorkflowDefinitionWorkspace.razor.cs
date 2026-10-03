@@ -1,5 +1,6 @@
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Shared.Models;
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.Models;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Extensions;
@@ -51,8 +52,11 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace
     /// An event that is invoked when the workflow definition is updated.
     public event Func<Task>? WorkflowDefinitionUpdated;
 
+    [CascadingParameter] private UserPermissions Permissions { get; set; } = UserPermissions.Unknown;
+
     /// <inheritdoc />
-    public bool IsReadOnly => _selectedWorkflowDefinition.GetIsReadOnly();
+    /// <remarks>A user who cannot save workflow definitions gets the read-only viewer and read-only properties.</remarks>
+    public bool IsReadOnly => _selectedWorkflowDefinition.GetIsReadOnly() || !Permissions.CanWriteDefinitions();
 
     /// <inheritdoc />
     public bool HasWorkflowEditPermission => (_selectedWorkflowDefinition?.Links?.Count(l => l.Rel == "publish") ?? 0) > 0;

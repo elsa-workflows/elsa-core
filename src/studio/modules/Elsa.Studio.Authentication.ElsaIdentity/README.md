@@ -32,6 +32,7 @@ This module provides the shared authentication services and abstractions for imp
 - **`AccessTokenAuthenticationStateProvider`** - Blazor authentication state provider based on JWT access tokens
 - **`ElsaIdentityCredentialsValidator`** - Validates credentials against the Elsa Identity `/identity/login` endpoint
 - **`ElsaIdentityRefreshTokenService`** - Refreshes access tokens using refresh tokens via the `/identity/refresh` endpoint
+- **`ElsaIdentitySignOutService`** - Ends the session: revokes it via the `/identity/logout` endpoint, then clears the stored tokens
 - **`JwtAuthenticationProvider`** - Main authentication provider implementation
 - **`JwtParser`** - JWT parsing and validation implementation
 - **`ElsaIdentityHttpConnectionOptionsConfigurator`** - Configures SignalR connections with JWT authentication
@@ -74,6 +75,9 @@ Tokens are stored using `IJwtAccessor`, which has platform-specific implementati
 Token names are defined in `TokenNames`:
 - `AccessToken` - The JWT access token
 - `RefreshToken` - The refresh token for silent token renewal
+- `IdToken` - Shared storage key with the legacy ElsaLogin module; ElsaIdentity does not issue one, but sign-out clears it with the other tokens
+
+`ElsaIdentitySessionGate` serializes token storage within a Blazor Server circuit (or the WASM app) so a refresh cannot store its response between sign-out clearing the session and the page unloading.
 
 ### Authentication Flow
 
@@ -121,6 +125,16 @@ The module automatically refreshes access tokens when they expire using the refr
 2. `IRefreshTokenService` calls the Elsa Identity refresh endpoint with the refresh token
 3. New tokens are stored via `IJwtAccessor`
 4. The original API request is retried with the new token
+
+## Sign Out
+
+Sign out first asks the backend to revoke the sign-in session with `POST /identity/logout`, sending the stored refresh token and authenticating with the access token, which is refreshed first if it has expired. Afterwards it clears the stored tokens and navigates to the login page.
+
+Revoking is best effort and bounded by a short timeout. If the backend is unreachable, is an older version without the endpoint (`404`), or refuses the request (`400`, `401`, `403`), Studio logs a warning and still ends the local session. The user sees no error.
+
+Access tokens that were already issued stay valid until they expire; revocation only stops the session's refresh tokens from being exchanged.
+
+`ElsaIdentitySessionGate` serializes token storage so a refresh cannot store its response between sign-out clearing the session and the page unloading.
 
 ## Security
 

@@ -1,5 +1,6 @@
 using System.Net;
 using Elsa.Api.Client.Resources.Features.Models;
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Security.Client;
 using Elsa.Studio.Security.Constants;
@@ -14,10 +15,12 @@ namespace Elsa.Studio.Security.Tests;
 
 public sealed class IdentityPermissionContextTests
 {
-    [Fact]
-    public async Task GetAsync_WhenMePermissionsReturnsForbidden_ReturnsForbiddenSnapshot()
+    [Theory]
+    [InlineData(HttpStatusCode.Unauthorized)]
+    [InlineData(HttpStatusCode.Forbidden)]
+    public async Task GetAsync_WhenMePermissionsRefusesTheCaller_ReturnsForbiddenSnapshot(HttpStatusCode statusCode)
     {
-        var api = new TestMePermissionsApi(_ => Task.FromException<CurrentCallerPermissionsResponse>(CreateApiException(HttpStatusCode.Forbidden)));
+        var api = new TestMePermissionsApi(_ => Task.FromException<CurrentCallerPermissionsResponse>(CreateApiException(statusCode)));
         var context = CreateContext(api);
 
         var snapshot = await context.GetAsync();
@@ -84,6 +87,87 @@ public sealed class IdentityPermissionContextTests
         Assert.Same(first, cached);
         Assert.NotSame(cached, refreshed);
         Assert.Equal(2, calls);
+    }
+
+    [Fact]
+    public async Task GetAsync_DoesNotCacheAnUnavailableSnapshot()
+    {
+        var calls = 0;
+        var api = new TestMePermissionsApi(_ =>
+        {
+            calls++;
+            return calls == 1
+                ? Task.FromException<CurrentCallerPermissionsResponse>(new HttpRequestException("Identity is unavailable."))
+                : Task.FromResult(new CurrentCallerPermissionsResponse
+                {
+                    Grants = [new CurrentCallerResourceGrant { Resource = IdentityPermissions.UsersResource, Verbs = [IdentityPermissions.View] }]
+                });
+        });
+        var context = CreateContext(api);
+
+        var unavailable = await context.GetAsync();
+        var recovered = await context.GetAsync();
+
+        Assert.Equal(IdentityPermissionSnapshotState.Unavailable, unavailable.State);
+        Assert.Equal(IdentityPermissionSnapshotState.Ready, recovered.State);
+        Assert.True(recovered.HasPermission(IdentityPermissions.UsersResource, IdentityPermissions.View));
+        Assert.Equal(2, calls);
+    }
+
+    [Fact]
+    public async Task GetAsync_AfterAdminThenZeroGrantInTheSameScope_DropsUsersView()
+    {
+        var calls = 0;
+        var api = new TestMePermissionsApi(_ =>
+        {
+            calls++;
+            return Task.FromResult(calls == 1
+                ? new CurrentCallerPermissionsResponse
+                {
+                    Grants = [new CurrentCallerResourceGrant { Resource = IdentityPermissions.UsersResource, Verbs = [IdentityPermissions.View] }]
+                }
+                : new CurrentCallerPermissionsResponse
+                {
+                    Grants = []
+                });
+        });
+        var context = CreateContext(api);
+
+        var admin = await new IdentityPermissionService(context).GetPermissionsAsync();
+        context.Invalidate();
+        var zeroGrant = await new IdentityPermissionService(context).GetPermissionsAsync();
+
+        Assert.True(admin.Has(IdentityPermissions.UsersResource, IdentityPermissions.View));
+        Assert.True(zeroGrant.IsKnown);
+        Assert.False(zeroGrant.Has(IdentityPermissions.UsersResource, IdentityPermissions.View));
+        Assert.Equal(2, calls);
+    }
+
+    [Fact]
+    public async Task PermissionService_WhenCallerIsAnonymous_FailsClosed()
+    {
+        var api = new TestMePermissionsApi(_ => Task.FromException<CurrentCallerPermissionsResponse>(CreateApiException(HttpStatusCode.Unauthorized)));
+        var permissions = await new IdentityPermissionService(CreateContext(api)).GetPermissionsAsync();
+
+        Assert.True(permissions.IsKnown);
+        Assert.NotSame(UserPermissions.Unknown, permissions);
+        Assert.Empty(permissions.Grants);
+        Assert.False(permissions.Has("identity/users", "view"));
+        Assert.False(permissions.Has("http/webhooks", "view"));
+    }
+
+    [Fact]
+    public async Task PermissionService_WhenTokenIsExpired_FailsClosed()
+    {
+        // An expired bearer token surfaces as 401 from GET /identity/me/permissions, same as anonymous.
+        var api = new TestMePermissionsApi(_ => Task.FromException<CurrentCallerPermissionsResponse>(CreateApiException(HttpStatusCode.Unauthorized)));
+        var permissions = await new IdentityPermissionService(CreateContext(api)).GetPermissionsAsync();
+
+        Assert.True(permissions.IsKnown);
+        Assert.NotSame(UserPermissions.Unknown, permissions);
+        Assert.Empty(permissions.Grants);
+        Assert.False(permissions.Has("identity/users", "view"));
+        Assert.False(permissions.Has("secrets", "view"));
     }
 
     [Fact]

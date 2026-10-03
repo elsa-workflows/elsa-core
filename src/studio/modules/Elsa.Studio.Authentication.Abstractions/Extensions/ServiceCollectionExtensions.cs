@@ -30,8 +30,10 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         StudioAuthenticationProvider provider)
     {
-        services.TryAddEnumerable(
-            ServiceDescriptor.Singleton(new StudioAuthenticationProviderRegistration(provider)));
+        // Instance descriptors have implementation type == service type. TryAddEnumerable
+        // rejects that shape on the first call (TryAddIndistinguishableTypeToEnumerable).
+        // AddSingleton still surfaces the marker through IEnumerable<T> for validation.
+        services.AddSingleton(new StudioAuthenticationProviderRegistration(provider));
         return services;
     }
 }

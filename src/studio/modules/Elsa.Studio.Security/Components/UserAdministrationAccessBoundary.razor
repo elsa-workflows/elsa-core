@@ -10,10 +10,7 @@
 }
 else if (_access.State == UserAdministrationAccessState.Forbidden)
 {
-    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined">
-        <MudText Typo="Typo.subtitle1">User administration access is required</MudText>
-        <MudText Typo="Typo.body2">Your current sign-in does not include permission to view users. Ask an administrator for <code>identity/users:view</code>, then sign in again.</MudText>
-    </MudAlert>
+    <AccessDenied MissingPermissions="_missingPermissions" />
 }
 else if (_access.State == UserAdministrationAccessState.Unavailable)
 {
@@ -31,6 +28,7 @@ else
 @code {
     [Parameter, EditorRequired] public RenderFragment<UserAdministrationAccess> ChildContent { get; set; } = default!;
 
+    private static readonly Permission[] _missingPermissions = [new(IdentityPermissions.UsersResource, IdentityPermissions.View)];
     private readonly CancellationTokenSource _lifetime = new();
     private UserAdministrationAccess? _access;
     private bool _accessLoading;
