@@ -25,7 +25,7 @@ else if (_access.State == RoleAdministrationAccessState.Unavailable)
 }
 else
 {
-    @ChildContent(_access)
+    @ChildContent(DisplayedAccess)
 }
 
 @code {
@@ -38,6 +38,11 @@ else
     private bool _accessLoading;
     private bool _reloadRequested;
     private bool _disposed;
+
+    private RoleAdministrationAccess DisplayedAccess =>
+        _accessLoading && _access is { State: RoleAdministrationAccessState.Ready }
+            ? _access with { CanCreate = false, CanUpdate = false, CanDelete = false }
+            : _access!;
 
     protected override Task OnInitializedAsync()
     {
@@ -72,6 +77,8 @@ else
         {
             _accessLoading = true;
             _reloadRequested = false;
+            if (_access != null)
+                await InvokeAsync(StateHasChanged);
 
             try
             {
