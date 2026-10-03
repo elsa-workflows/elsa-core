@@ -32,7 +32,8 @@ public class WorkflowDashboardContributor(
 
         if (!CanReadInstances(context))
         {
-            return new() { Runtime = runtime };
+            // Include an empty instance section so the provider can withhold it; do not query the store.
+            return new() { Runtime = runtime, WorkflowInstances = new() };
         }
 
         try

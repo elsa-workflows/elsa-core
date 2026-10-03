@@ -106,7 +106,7 @@ public class DashboardContributorPermissionTests
         await store.DidNotReceive().CountAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>());
         await store.DidNotReceive().SummarizeManyAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>());
         Assert.Equal(DashboardRuntimeStatusKeys.AcceptingWork, overview!.Runtime!.Status);
-        Assert.Null(overview.WorkflowInstances);
+        Assert.Equal(0, overview.WorkflowInstances!.Running);
     }
 
     [Fact]
