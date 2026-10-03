@@ -1,6 +1,6 @@
 using Elsa.Features.Services;
 using Elsa.WorkflowProviders.BlobStorage.Features;
-using FluentStorage.Blobs;
+using FluentStorage.Storage;
 using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
@@ -16,9 +16,9 @@ public static class ModuleExtensions
     /// Adds the fluent storage workflow definition provider.
     /// </summary>
     /// <param name="module">The module.</param>
-    /// <param name="blobStorage">A callback that creates an <see cref="IBlobStorage"/>.</param>
+    /// <param name="blobStorage">A callback that creates an <see cref="IStore"/>.</param>
     /// <returns>The module.</returns>
-    public static IModule UseFluentStorageProvider(this IModule module, Func<IServiceProvider, IBlobStorage> blobStorage)
+    public static IModule UseFluentStorageProvider(this IModule module, Func<IServiceProvider, IStore> blobStorage)
     {
         return module.UseFluentStorageProvider(feature => feature.BlobStorage = blobStorage);
     }

@@ -1,7 +1,8 @@
 ﻿using Elsa.Extensions;
 using Elsa.WorkflowProviders.BlobStorage.Contracts;
 using Elsa.Workflows.Runtime;
-using FluentStorage.Blobs;
+using FluentStorage.Model;
+using FluentStorage.Storage;
 using JetBrains.Annotations;
 
 namespace Elsa.WorkflowProviders.BlobStorage.Providers;
@@ -39,7 +40,7 @@ public class BlobStorageWorkflowsProvider : IWorkflowsProvider
             .Select(ext => ext.ToLowerInvariant())
             .ToHashSet();
 
-        var options = new ListOptions
+        var options = new StorageListOptions
         {
             Recurse = true,
             BrowseFilter = blob =>
@@ -55,7 +56,7 @@ public class BlobStorageWorkflowsProvider : IWorkflowsProvider
         };
 
         var blobStorage = _blobStorageProvider.GetBlobStorage();
-        var blobs = await blobStorage.ListFilesAsync(options, cancellationToken);
+        var blobs = await blobStorage.ListObjects(options, cancellationToken);
         var results = new List<MaterializedWorkflow>();
 
         foreach (var blob in blobs)
@@ -68,10 +69,10 @@ public class BlobStorageWorkflowsProvider : IWorkflowsProvider
         return results;
     }
 
-    private async Task<MaterializedWorkflow?> TryReadWorkflowAsync(Blob blob, CancellationToken cancellationToken)
+    private async Task<MaterializedWorkflow?> TryReadWorkflowAsync(StoreObject blob, CancellationToken cancellationToken)
     {
         var blobStorage = _blobStorageProvider.GetBlobStorage();
-        var content = await blobStorage.ReadTextAsync(blob.FullPath, cancellationToken: cancellationToken);
+        var content = await blobStorage.GetText(blob.FullPath, cancellationToken: cancellationToken);
         var contentType = blob.Properties.TryGetValue("ContentType", out var ct) ? ct?.ToString() : null;
 
         foreach (var handler in _handlers)
