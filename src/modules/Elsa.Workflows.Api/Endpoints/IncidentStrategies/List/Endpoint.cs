@@ -1,4 +1,3 @@
-using Elsa.Authorization;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
@@ -18,7 +17,9 @@ internal class List(IEnumerable<IIncidentStrategy> strategies, ISerializationTyp
     public override void Configure()
     {
         Get("/descriptors/incident-strategies");
-        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsIncidentStrategies, CoreVerbs.View);
+
+        // Static metadata about what is installed, which the designer needs to open any definition, so every signed-in user may read it.
+        RequireAuthenticatedOnly();
     }
 
     public override Task<ListResponse<IncidentStrategyDescriptor>> ExecuteAsync(CancellationToken cancellationToken)

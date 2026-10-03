@@ -10,7 +10,6 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.List;
 
@@ -68,7 +67,7 @@ internal class List(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker li
 
     private bool HasRequiredPermissions(IWorkflowDefinitionFilterProvider filterProvider, WorkflowDefinitionFilter filter)
     {
-        var evaluator = HttpContext.RequestServices.GetService<IPermissionEvaluator>() ?? PermissionEvaluator.Shared;
+        var evaluator = HttpContext.GetPermissionEvaluator();
         return filterProvider.GetRequiredPermissions(filter).All(permission => evaluator.HasPermission(HttpContext.User, permission));
     }
 

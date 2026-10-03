@@ -19,6 +19,7 @@ public static class EndpointCoverage
     private static readonly string[] Declarations =
     [
         "RequirePermission",
+        "RequireAnyPermission",
         "RequireAuthenticatedOnly",
         "ConfigurePermissions",
         "AllowAnonymous"
@@ -37,7 +38,7 @@ public static class EndpointCoverage
         Assert.True(
             undeclared.Length == 0,
             $"{undeclared.Length} endpoint(s) declare no access: {string.Join(", ", undeclared)}. "
-            + "Every endpoint must call exactly one of RequirePermission, RequireAuthenticatedOnly, or AllowAnonymous. "
+            + "Every endpoint must call exactly one of RequirePermission, RequireAnyPermission, RequireAuthenticatedOnly, or AllowAnonymous. "
             + "There is no exemption list: an endpoint that states nothing is indistinguishable from one whose author forgot.");
     }
 

@@ -1,6 +1,4 @@
 using System.Net;
-using System.Security.Claims;
-using System.Text.Encodings.Web;
 using Elsa;
 using Elsa.Resilience.Endpoints.SimulateResponse;
 using Elsa.Resilience.Features;
@@ -11,8 +9,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using NSubstitute;
 
 namespace Elsa.Resilience.IntegrationTests;
@@ -197,38 +193,6 @@ public class SimulateResponseEndpointTests : IAsyncLifetime
         public void Advance(TimeSpan timeSpan)
         {
             _now = _now.Add(timeSpan);
-        }
-    }
-
-    private sealed class TestAuthenticationHandler(
-        IOptionsMonitor<AuthenticationSchemeOptions> options,
-        ILoggerFactory logger,
-        UrlEncoder encoder) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
-    {
-        public const string AuthenticationScheme = "Test";
-        public const string IdentityHeader = "X-Test-Identity";
-        public const string PermissionHeader = "X-Test-Permissions";
-
-        protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-        {
-            if (!Request.Headers.TryGetValue(PermissionHeader, out var permissionHeader))
-                return Task.FromResult(AuthenticateResult.NoResult());
-
-            var identity = Request.Headers.TryGetValue(IdentityHeader, out var identityHeader)
-                ? identityHeader.FirstOrDefault()
-                : null;
-            var claims = permissionHeader
-                .SelectMany(x => x?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [])
-                .Select(x => new Claim("permissions", x))
-                .ToList();
-
-            claims.Add(new Claim(ClaimTypes.NameIdentifier, identity ?? "test-user"));
-
-            var claimsIdentity = new ClaimsIdentity(claims, AuthenticationScheme);
-            var principal = new ClaimsPrincipal(claimsIdentity);
-            var ticket = new AuthenticationTicket(principal, AuthenticationScheme);
-
-            return Task.FromResult(AuthenticateResult.Success(ticket));
         }
     }
 }
