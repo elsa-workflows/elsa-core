@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace Elsa.Studio.Authentication.Abstractions;
 
 /// <summary>
@@ -7,78 +5,102 @@ namespace Elsa.Studio.Authentication.Abstractions;
 /// </summary>
 public static class LocalReturnPath
 {
+    private const int MaxDecodePasses = 8;
+
     /// <summary>
-    /// Returns a rooted local path, or <c>/</c> when the candidate is missing, absolute, protocol-relative, or otherwise unsafe.
+    /// Returns the original candidate when it is a local destination, or <c>/</c> when it is missing, absolute, protocol-relative, or otherwise unsafe.
     /// </summary>
+    /// <remarks>
+    /// Validation runs on a decoded copy. The returned value is the original string so encoded query values and path segments stay byte-for-byte intact.
+    /// Scheme-less relative paths such as <c>workflows/x</c> are treated as local after prefixing <c>/</c> for the check only.
+    /// Decoding that does not reach a fixed point within <see cref="MaxDecodePasses"/> fails closed to <c>/</c>.
+    /// </remarks>
     public static string Normalize(string? candidate)
     {
-        if (string.IsNullOrWhiteSpace(candidate))
+        if (string.IsNullOrEmpty(candidate))
         {
             return "/";
         }
 
-        var sanitized = DecodeAndStrip(candidate);
-        if (!IsSafeLocalPath(sanitized))
+        var decoded = candidate;
+        for (var pass = 0; pass < MaxDecodePasses; pass++)
         {
-            return "/";
+            string next;
+            try
+            {
+                next = Uri.UnescapeDataString(decoded);
+            }
+            catch (UriFormatException)
+            {
+                return "/";
+            }
+
+            if (next == decoded)
+            {
+                return IsLocalDestination(candidate) && IsLocalDestination(decoded) ? candidate : "/";
+            }
+
+            decoded = next;
         }
 
-        return sanitized;
+        return "/";
     }
 
-    private static bool IsSafeLocalPath(string candidate)
+    private static bool IsLocalDestination(string path)
     {
-        if (string.IsNullOrEmpty(candidate) ||
-            !candidate.StartsWith("/", StringComparison.Ordinal) ||
-            candidate.StartsWith("//", StringComparison.Ordinal) ||
-            candidate.Contains('\\') ||
-            candidate.Contains("://", StringComparison.Ordinal))
+        if (IsRootedLocalPath(path))
+        {
+            return true;
+        }
+
+        if (path.Length == 0 || char.IsWhiteSpace(path[0]) || HasSchemeOrHost(path))
         {
             return false;
         }
 
-        return Uri.TryCreate(candidate, UriKind.Relative, out var uri) && !uri.IsAbsoluteUri;
+        return IsRootedLocalPath("/" + path);
     }
 
-    private static string DecodeAndStrip(string candidate)
+    private static bool IsRootedLocalPath(string path) =>
+        path.StartsWith('/') &&
+        !path.StartsWith("//", StringComparison.Ordinal) &&
+        !path.Any(c => c == '\\' || char.IsControl(c));
+
+    private static bool HasSchemeOrHost(string path)
     {
-        var current = candidate.Trim();
-        for (var i = 0; i < 8; i++)
+        if (path.StartsWith("//", StringComparison.Ordinal) ||
+            path.StartsWith('\\') ||
+            path.Contains('\\'))
         {
-            string decoded;
-            try
-            {
-                decoded = Uri.UnescapeDataString(current);
-            }
-            catch (UriFormatException)
-            {
-                return string.Empty;
-            }
-
-            if (decoded == current)
-            {
-                break;
-            }
-
-            current = decoded;
+            return true;
         }
 
-        return StripControlCharacters(current.Trim());
-    }
-
-    private static string StripControlCharacters(string value)
-    {
-        var builder = new StringBuilder(value.Length);
-        foreach (var ch in value)
+        var schemeSeparator = path.IndexOf(':');
+        if (schemeSeparator <= 0)
         {
-            if (char.IsControl(ch))
-            {
-                continue;
-            }
-
-            builder.Append(ch);
+            return false;
         }
 
-        return builder.ToString();
+        var queryStart = path.IndexOf('?');
+        if (queryStart >= 0 && schemeSeparator > queryStart)
+        {
+            return false;
+        }
+
+        if (!char.IsAsciiLetter(path[0]))
+        {
+            return false;
+        }
+
+        for (var i = 1; i < schemeSeparator; i++)
+        {
+            var c = path[i];
+            if (!char.IsAsciiLetterOrDigit(c) && c != '+' && c != '-' && c != '.')
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

@@ -1,5 +1,6 @@
 using Elsa.Studio.Authentication.OpenIdConnect.BlazorServer.Controllers;
 using Elsa.Studio.Authentication.OpenIdConnect.BlazorServer.Services;
+using Elsa.Studio.ExternalAuthentication.Tests.Login;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
@@ -19,16 +20,8 @@ public class DirectOpenIdConnectLoginTests
     }
 
     [Theory]
-    [InlineData("https://attacker.example", "/")]
-    [InlineData("http://attacker.example", "/")]
-    [InlineData("//evil.com", "/")]
-    [InlineData("/\\evil.com", "/")]
-    [InlineData("\\\\evil.com", "/")]
-    [InlineData("/%09/evil.com", "/")]
-    [InlineData("/%2F/evil.com", "/")]
-    [InlineData("/workflows?version=1", "/workflows?version=1")]
-    [InlineData("/workflows/definitions?x=1", "/workflows/definitions?x=1")]
-    public void DirectOpenIdConnectChallengeAcceptsOnlyLocalReturnUrls(string returnUrl, string expectedReturnUrl)
+    [MemberData(nameof(LocalReturnPathCorpus.Cases), MemberType = typeof(LocalReturnPathCorpus))]
+    public void DirectOpenIdConnectChallengeAcceptsOnlyLocalReturnUrls(string? returnUrl, string expectedReturnUrl)
     {
         var result = Assert.IsType<ChallengeResult>(new AuthenticationController().Login(returnUrl));
 
@@ -37,15 +30,21 @@ public class DirectOpenIdConnectLoginTests
     }
 
     [Theory]
-    [InlineData("/%09/evil.com", "/")]
-    [InlineData("//evil.com", "/")]
-    [InlineData("/\\evil.com", "/")]
-    [InlineData("/workflows/definitions?x=1", "/workflows/definitions?x=1")]
-    public void DirectOpenIdConnectSignOutAcceptsOnlyLocalReturnUrls(string returnUrl, string expectedReturnUrl)
+    [MemberData(nameof(LocalReturnPathCorpus.Cases), MemberType = typeof(LocalReturnPathCorpus))]
+    public void DirectOpenIdConnectSignOutAcceptsOnlyLocalReturnUrls(string? returnUrl, string expectedReturnUrl)
     {
         var result = Assert.IsType<SignOutResult>(new AuthenticationController().Logout(returnUrl));
 
         Assert.NotNull(result.Properties);
         Assert.Equal(expectedReturnUrl, result.Properties!.RedirectUri);
+    }
+
+    [Fact]
+    public void DirectOpenIdConnectChallengeRejectsBoundControlCharacterReturnUrls()
+    {
+        var result = Assert.IsType<ChallengeResult>(new AuthenticationController().Login("/\t/evil.com"));
+
+        Assert.NotNull(result.Properties);
+        Assert.Equal("/", result.Properties!.RedirectUri);
     }
 }
