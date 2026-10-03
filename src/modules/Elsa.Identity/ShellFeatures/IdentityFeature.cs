@@ -59,7 +59,8 @@ public class IdentityFeature : IFastEndpointsShellFeature
         services
             .AddMemoryStore<User, MemoryUserStore>()
             .AddMemoryStore<Application, MemoryApplicationStore>()
-            .AddMemoryStore<Role, MemoryRoleStore>();
+            .AddMemoryStore<Role, MemoryRoleStore>()
+            .AddMemoryStore<RevokedSession, MemoryRevokedSessionStore>();
 
         // User providers.
         services
@@ -94,6 +95,7 @@ public class IdentityFeature : IFastEndpointsShellFeature
             .AddScoped<IElsaTokenService, DefaultElsaTokenService>()
             .AddScoped<IAccessTokenIssuer>(sp => ActivatorUtilities.CreateInstance<DefaultAccessTokenIssuer>(sp))
             .AddScoped<IIdentityRefreshTokenService, DefaultIdentityRefreshTokenService>()
+            .AddScoped<SessionRevoker>()
             .AddScoped<IUserCredentialsValidator, DefaultUserCredentialsValidator>()
             .AddScoped<IApplicationCredentialsValidator, DefaultApplicationCredentialsValidator>()
             .AddScoped<IApiKeyGenerator>(sp => sp.GetRequiredService<DefaultApiKeyGeneratorAndParser>())
@@ -110,6 +112,7 @@ public class IdentityFeature : IFastEndpointsShellFeature
             .AddScoped<IUserStore, MemoryUserStore>()
             .AddScoped<IApplicationStore, MemoryApplicationStore>()
             .AddScoped<IRoleStore, MemoryRoleStore>()
+            .AddScoped<IRevokedSessionStore, MemoryRevokedSessionStore>()
             .AddScoped<IUserProvider, StoreBasedUserProvider>()
             .AddScoped<IApplicationProvider, StoreBasedApplicationProvider>()
             .AddScoped<IRoleProvider, StoreBasedRoleProvider>();

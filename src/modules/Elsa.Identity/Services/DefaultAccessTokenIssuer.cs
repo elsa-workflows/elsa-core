@@ -38,7 +38,10 @@ public class DefaultAccessTokenIssuer : IAccessTokenIssuer
     }
 
     /// <inheritdoc />
-    public async ValueTask<IssuedTokens> IssueTokensAsync(User user, CancellationToken cancellationToken = default)
+    public ValueTask<IssuedTokens> IssueTokensAsync(User user, CancellationToken cancellationToken = default) => IssueTokensAsync(user, null, cancellationToken);
+
+    /// <inheritdoc />
+    public async ValueTask<IssuedTokens> IssueTokensAsync(User user, SignInSession? session, CancellationToken cancellationToken = default)
     {
         var roles = (await _roleProvider.FindByIdsAsync(user.Roles, cancellationToken)).ToList();
         var permissions = roles.SelectMany(x => x.Permissions).ToList();
@@ -52,7 +55,7 @@ public class DefaultAccessTokenIssuer : IAccessTokenIssuer
             ? Array.Empty<System.Security.Claims.Claim>()
             : [new System.Security.Claims.Claim(PermissionStampCalculator.ClaimType, stamp)];
 
-        var context = new TokenIssuanceContext(user, roleNames, permissions, additionalClaims);
+        var context = new TokenIssuanceContext(user, roleNames, permissions, additionalClaims) { Session = session };
         var accessToken = await _tokenService.IssueAccessTokenAsync(context, cancellationToken);
         var refreshToken = await _tokenService.IssueRefreshTokenAsync(context, cancellationToken);
 

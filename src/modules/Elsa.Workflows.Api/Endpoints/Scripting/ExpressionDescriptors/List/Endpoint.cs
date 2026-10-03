@@ -1,4 +1,3 @@
-using Elsa.Authorization;
 using System.Collections.Frozen;
 using Elsa.Abstractions;
 using Elsa.Expressions.Contracts;
@@ -31,7 +30,9 @@ internal class List(IExpressionDescriptorRegistry expressionDescriptorRegistry) 
     public override void Configure()
     {
         Get("/descriptors/expression-descriptors");
-        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsExpressions, CoreVerbs.View);
+
+        // Static metadata about what is installed, which the designer needs to open any definition, so every signed-in user may read it.
+        RequireAuthenticatedOnly();
     }
 
     /// <inheritdoc />

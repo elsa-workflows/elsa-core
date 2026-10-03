@@ -10,4 +10,8 @@
         <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Compile Include="..\Shared\FastEndpoints\*.cs" LinkBase="Shared\FastEndpoints" />
+    </ItemGroup>
+
 </Project>

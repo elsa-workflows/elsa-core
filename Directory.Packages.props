@@ -15,6 +15,8 @@
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.17"/>
         <PackageVersion Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="9.0.17"/>
         <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.17"/>
+        <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="9.0.17" Condition="'$(TargetFramework)' == 'net9.0'"/>
+        <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="8.0.17" Condition="'$(TargetFramework)' == 'net8.0'"/>
         <PackageVersion Include="Microsoft.Data.Sqlite" Version="9.0.17"/>
         <PackageVersion Include="Microsoft.Data.Sqlite.Core" Version="9.0.17"/>
         <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.17"/>
@@ -57,6 +59,7 @@
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.9"/>
+        <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.Data.Sqlite.Core" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.9"/>

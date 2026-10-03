@@ -1,6 +1,6 @@
 using System.Security.Claims;
-using Elsa.Common;
 using Elsa.Common.Multitenancy;
+using Elsa.Common.Services;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
@@ -16,7 +16,7 @@ public class DefaultIdentityRefreshTokenServiceTests
     private static readonly User User = new() { Id = "user-a", Name = "admin" };
     private static readonly User Victim = new() { Id = "victim-id", Name = "victim" };
     private static readonly IssuedTokens RefreshedTokens = new("access-b", "refresh-b");
-    private readonly IdentityTokenOptions _tokenOptions = new()
+    private readonly IdentityTokenOptions _options = new()
     {
         SigningKey = IdentityTokenTestConstants.SigningKey,
         Issuer = "https://elsa.test",
@@ -25,17 +25,20 @@ public class DefaultIdentityRefreshTokenServiceTests
     private readonly IAccessTokenIssuer _accessTokenIssuer = Substitute.For<IAccessTokenIssuer>();
     private readonly IUserProvider _userProvider = Substitute.For<IUserProvider>();
     private readonly DefaultElsaTokenService _tokenService;
+    private readonly SessionRevoker _sessionRevoker;
     private readonly DefaultIdentityRefreshTokenService _service;
 
     public DefaultIdentityRefreshTokenServiceTests()
     {
-        var options = Microsoft.Extensions.Options.Options.Create(_tokenOptions);
+        var clock = new MutableSystemClock();
+        var options = Microsoft.Extensions.Options.Options.Create(_options);
         _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Id == User.Id), Arg.Any<CancellationToken>()).Returns(User);
         _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Id == Victim.Id), Arg.Any<CancellationToken>()).Returns(Victim);
-        _accessTokenIssuer.IssueTokensAsync(User, Arg.Any<CancellationToken>()).Returns(RefreshedTokens);
-        _accessTokenIssuer.IssueTokensAsync(Victim, Arg.Any<CancellationToken>()).Returns(new IssuedTokens("access-victim", "refresh-victim"));
-        _tokenService = new(new CurrentClock(), options);
-        _service = new(_userProvider, _accessTokenIssuer, new DefaultTenantAccessor(), options);
+        _accessTokenIssuer.IssueTokensAsync(User, Arg.Any<SignInSession?>(), Arg.Any<CancellationToken>()).Returns(RefreshedTokens);
+        _accessTokenIssuer.IssueTokensAsync(Victim, Arg.Any<SignInSession?>(), Arg.Any<CancellationToken>()).Returns(new IssuedTokens("access-victim", "refresh-victim"));
+        _tokenService = new(clock, options);
+        _sessionRevoker = new(new MemoryRevokedSessionStore(new MemoryStore<RevokedSession>()), clock, options);
+        _service = new(_userProvider, _accessTokenIssuer, new DefaultTenantAccessor(), _sessionRevoker, options);
     }
 
     [Fact]
@@ -52,7 +55,7 @@ public class DefaultIdentityRefreshTokenServiceTests
 
         Assert.Null(await _service.RefreshAsync(accessToken.Token));
         Assert.Null(await _service.RefreshAsync(tamperedRefreshToken));
-        await _accessTokenIssuer.DidNotReceive().IssueTokensAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
+        await AssertNothingIssuedAsync();
     }
 
     [Fact]
@@ -61,7 +64,7 @@ public class DefaultIdentityRefreshTokenServiceTests
         var refreshToken = (await _tokenService.IssueRefreshTokenAsync(new TokenIssuanceContext(User, [], [], []))).Token;
 
         Assert.Same(RefreshedTokens, await _service.RefreshAsync(refreshToken));
-        await _accessTokenIssuer.Received(1).IssueTokensAsync(User, Arg.Any<CancellationToken>());
+        await _accessTokenIssuer.Received(1).IssueTokensAsync(User, Arg.Any<SignInSession?>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -70,11 +73,11 @@ public class DefaultIdentityRefreshTokenServiceTests
         var replacement = new User { Id = "user-b", Name = User.Name };
         _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Id == User.Id), Arg.Any<CancellationToken>()).Returns((User?)null);
         _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Name == User.Name), Arg.Any<CancellationToken>()).Returns(replacement);
-        _accessTokenIssuer.IssueTokensAsync(replacement, Arg.Any<CancellationToken>()).Returns(new IssuedTokens("access-c", "refresh-c"));
+        _accessTokenIssuer.IssueTokensAsync(replacement, Arg.Any<SignInSession?>(), Arg.Any<CancellationToken>()).Returns(new IssuedTokens("access-c", "refresh-c"));
         var refreshToken = (await _tokenService.IssueRefreshTokenAsync(new TokenIssuanceContext(User, [], [], []))).Token;
 
         Assert.Null(await _service.RefreshAsync(refreshToken));
-        await _accessTokenIssuer.DidNotReceive().IssueTokensAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
+        await AssertNothingIssuedAsync();
     }
 
     [Theory]
@@ -84,8 +87,8 @@ public class DefaultIdentityRefreshTokenServiceTests
     {
         _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Name == User.Name), Arg.Any<CancellationToken>()).Returns(User);
 
-        Assert.Null(await _service.RefreshAsync(LegacyRefreshToken.CreateWithSubject(_tokenOptions, User, subject)));
-        await _accessTokenIssuer.DidNotReceive().IssueTokensAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
+        Assert.Null(await _service.RefreshAsync(LegacyRefreshToken.CreateWithSubject(_options, User, subject)));
+        await AssertNothingIssuedAsync();
     }
 
     [Fact]
@@ -93,55 +96,99 @@ public class DefaultIdentityRefreshTokenServiceTests
     {
         _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Name == User.Name), Arg.Any<CancellationToken>()).Returns(User);
 
-        Assert.Null(await _service.RefreshAsync(LegacyRefreshToken.CreateWithoutSubject(_tokenOptions, User)));
-        await _accessTokenIssuer.DidNotReceive().IssueTokensAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
+        Assert.Null(await _service.RefreshAsync(LegacyRefreshToken.CreateWithoutSubject(_options, User)));
+        await AssertNothingIssuedAsync();
     }
 
     [Fact]
     public async Task RefreshAsyncRejectsATokenWithANameIdentifierAndABlankSubject()
     {
         Assert.Null(await _service.RefreshAsync(LegacyRefreshToken.CreateWithSubjectClaims(
-            _tokenOptions,
+            _options,
             User,
             new Claim(ClaimTypes.NameIdentifier, Victim.Id),
             new Claim(JwtRegisteredClaimNames.Sub, ""))));
-        await _accessTokenIssuer.DidNotReceive().IssueTokensAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
+        await AssertNothingIssuedAsync();
     }
 
     [Fact]
     public async Task RefreshAsyncRejectsATokenWithConflictingNameIdentifierAndSubject()
     {
         Assert.Null(await _service.RefreshAsync(LegacyRefreshToken.CreateWithSubjectClaims(
-            _tokenOptions,
+            _options,
             User,
             new Claim(ClaimTypes.NameIdentifier, Victim.Id),
             new Claim(JwtRegisteredClaimNames.Sub, User.Id))));
-        await _accessTokenIssuer.DidNotReceive().IssueTokensAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
+        await AssertNothingIssuedAsync();
     }
 
     [Fact]
     public async Task RefreshAsyncRejectsATokenWithTwoDifferentSubjects()
     {
         Assert.Null(await _service.RefreshAsync(LegacyRefreshToken.CreateWithSubjectClaims(
-            _tokenOptions,
+            _options,
             User,
             new Claim(JwtRegisteredClaimNames.Sub, Victim.Id),
             new Claim(JwtRegisteredClaimNames.Sub, User.Id))));
-        await _accessTokenIssuer.DidNotReceive().IssueTokensAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
+        await AssertNothingIssuedAsync();
     }
 
     [Fact]
     public async Task RefreshAsyncAcceptsATokenWithMatchingSubjectAndNameIdentifier()
     {
         Assert.Same(RefreshedTokens, await _service.RefreshAsync(LegacyRefreshToken.CreateWithSubjectClaims(
-            _tokenOptions,
+            _options,
             User,
             new Claim(JwtRegisteredClaimNames.Sub, User.Id),
             new Claim(ClaimTypes.NameIdentifier, User.Id))));
+        await _accessTokenIssuer.Received(1).IssueTokensAsync(User, Arg.Any<SignInSession?>(), Arg.Any<CancellationToken>());
     }
 
-    private sealed class CurrentClock : ISystemClock
+    [Fact]
+    public async Task RefreshAsyncContinuesTheSessionOfTheRefreshToken()
     {
-        public DateTimeOffset UtcNow => DateTimeOffset.UtcNow;
+        var session = new SignInSession("session-a", DateTimeOffset.UtcNow.AddDays(30));
+        var refreshToken = await IssueRefreshTokenAsync(session);
+
+        Assert.Same(RefreshedTokens, await _service.RefreshAsync(refreshToken));
+        await _accessTokenIssuer.Received(1).IssueTokensAsync(User, Arg.Is<SignInSession?>(x => x!.Id == session.Id && x.ExpiresAt == TruncateToSeconds(session.ExpiresAt)), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RefreshAsyncRejectsARefreshTokenOfARevokedSession()
+    {
+        var refreshToken = await IssueRefreshTokenAsync(new("session-a", DateTimeOffset.UtcNow));
+        await _sessionRevoker.RevokeAsync(new("session-a", DateTimeOffset.UtcNow));
+
+        Assert.Null(await _service.RefreshAsync(refreshToken));
+        await AssertNothingIssuedAsync();
+    }
+
+    [Fact]
+    public async Task RefreshAsyncCarriesALegacyRefreshTokenIntoASessionThatRevocationEnds()
+    {
+        var refreshToken = LegacyRefreshToken.Create(_options, User);
+        var expectedSession = new SignInSession(SessionRevoker.GetSession(new ClaimsIdentity(), refreshToken).Id, ReadExpiry(refreshToken));
+
+        Assert.Same(RefreshedTokens, await _service.RefreshAsync(refreshToken));
+        await _accessTokenIssuer.Received(1).IssueTokensAsync(User, expectedSession, Arg.Any<CancellationToken>());
+
+        await _sessionRevoker.RevokeAsync(expectedSession);
+
+        Assert.Null(await _service.RefreshAsync(refreshToken));
+    }
+
+    private async Task<string> IssueRefreshTokenAsync(SignInSession session) =>
+        (await _tokenService.IssueRefreshTokenAsync(new TokenIssuanceContext(User, [], [], []) { Session = session })).Token;
+
+    private static DateTimeOffset ReadExpiry(string token) => new(new JsonWebTokenHandler().ReadJsonWebToken(token).ValidTo, TimeSpan.Zero);
+
+    private static DateTimeOffset TruncateToSeconds(DateTimeOffset value) => DateTimeOffset.FromUnixTimeSeconds(value.ToUnixTimeSeconds());
+
+    // Both overloads: a check against only the one that is no longer called would pass without proving anything.
+    private async Task AssertNothingIssuedAsync()
+    {
+        await _accessTokenIssuer.DidNotReceive().IssueTokensAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
+        await _accessTokenIssuer.DidNotReceive().IssueTokensAsync(Arg.Any<User>(), Arg.Any<SignInSession?>(), Arg.Any<CancellationToken>());
     }
 }
