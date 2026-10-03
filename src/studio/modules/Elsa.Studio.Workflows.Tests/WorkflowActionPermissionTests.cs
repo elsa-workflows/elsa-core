@@ -82,18 +82,17 @@ public sealed class WorkflowActionPermissionTests : BunitContext, IAsyncLifetime
             .AddCascadingValue(EditableWorkspace())
             .AddCascadingValue(StubPermissionService.Grants(grants)));
 
+        // The older version, the only row that can be rolled back to.
+        var menuItems = _popovers.OpenMenu(cut.WaitForElements("tbody .mud-menu button").Last());
         var bulkActions = cut.FindAll(".mud-menu").FirstOrDefault(x => x.TextContent.Contains("Bulk actions"));
-        cut.WaitForElements("tbody .mud-menu button");
-        cut.FindAll("tbody .mud-menu button").Last().Click(); // The older version, the only row that can be rolled back to.
 
-        var items = _popovers.FindAll(".mud-menu-item").Select(x => x.TextContent.Trim()).ToList();
+        var items = menuItems.Select(x => x.TextContent.Trim()).ToList();
         Assert.Contains("View", items);
         Assert.Equal(canRollback, items.Contains("Rollback to this version"));
         Assert.Equal(canDelete, items.Contains("Delete"));
         Assert.Equal(canDelete, bulkActions is not null);
 
         // The definition being viewed is editable, so every action the user is granted must also be usable.
-        var menuItems = _popovers.FindAll(".mud-menu-item");
         Assert.All(menuItems.Where(x => x.TextContent.Trim() is "Rollback to this version" or "Delete"), x => Assert.False(x.HasAttribute("disabled") || x.ClassList.Contains("mud-disabled")));
         if (canDelete)
             Assert.DoesNotContain("mud-disabled", bulkActions!.ClassList.Concat(bulkActions.QuerySelectorAll("*").SelectMany(x => x.ClassList)));

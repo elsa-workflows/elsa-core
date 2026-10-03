@@ -80,9 +80,7 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
         definition.IsPublished = isPublished;
         var cut = RenderEditor(definition, () => Task.CompletedTask, StubPermissionService.Grants(grants));
 
-        cut.Find(".mud-menu button").Click();
-
-        var items = _popovers.FindAll(".mud-menu-item").Select(x => x.TextContent.Trim()).ToList();
+        var items = _popovers.OpenMenu(cut.Find(".mud-menu button")).Select(x => x.TextContent.Trim()).ToList();
         Assert.Contains("Save As", items);
         Assert.Equal(canUnpublish, items.Contains("Unpublish"));
     }
