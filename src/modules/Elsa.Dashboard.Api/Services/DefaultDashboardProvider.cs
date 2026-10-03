@@ -13,8 +13,8 @@ public class DefaultDashboardProvider(
     public async Task<DashboardOverview> GetOverviewAsync(DashboardQuery query, CancellationToken cancellationToken = default)
     {
         var range = rangeResolver.Resolve(query.Range);
-        var context = CreateContext(range, query.IncludeSystem, cancellationToken);
         var canRead = DashboardAccess.WithDefault(query.CanRead);
+        var context = CreateContext(range, query.IncludeSystem, canRead, cancellationToken);
         var contributions = new List<(DashboardOverviewPermissions? Declared, DashboardOverviewContribution Contribution)>();
         var failed = new List<DashboardOverviewPermissions>();
 
@@ -107,8 +107,8 @@ public class DefaultDashboardProvider(
     public async Task<DashboardNeedsAttentionResponse> GetNeedsAttentionAsync(DashboardQuery query, int take, CancellationToken cancellationToken = default)
     {
         var range = rangeResolver.Resolve(query.Range);
-        var context = CreateContext(range, query.IncludeSystem, cancellationToken);
         var canRead = DashboardAccess.WithDefault(query.CanRead);
+        var context = CreateContext(range, query.IncludeSystem, canRead, cancellationToken);
         var findings = (await CollectManyAsync(contributor => contributor.GetFindingsAsync(context).AsTask(), cancellationToken))
             .Where(x => canRead(x.Permission));
 
@@ -188,8 +188,8 @@ public class DefaultDashboardProvider(
             .ThenBy(x => x.Id, StringComparer.Ordinal)
             .ToList();
 
-    private DashboardContext CreateContext(DashboardRange range, bool includeSystem, CancellationToken cancellationToken) =>
-        new(range, includeSystem, cancellationToken, EnvironmentName: environment.EnvironmentName);
+    private DashboardContext CreateContext(DashboardRange range, bool includeSystem, Func<DashboardPermission?, bool> canRead, CancellationToken cancellationToken) =>
+        new(range, includeSystem, cancellationToken, EnvironmentName: environment.EnvironmentName, CanRead: canRead);
 
     /// <summary>
     /// The contributors worth invoking for the overview, in order. A contributor that declared its overview permissions

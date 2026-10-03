@@ -217,6 +217,25 @@ public class DefaultDashboardProviderTests
     }
 
     [Fact]
+    public async Task GetOverviewAsync_WithRuntimeOnlyCaller_DoesNotQueryTheInstanceStore()
+    {
+        var store = Substitute.For<IWorkflowInstanceStore>();
+        store.CountAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>()).Returns(99L);
+        store.SummarizeManyAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>()).Returns(Array.Empty<WorkflowInstanceSummary>());
+        var runtime = Substitute.For<IWorkflowRuntimeAdminService>();
+        runtime.GetStatus().Returns(new RuntimeAdminStatus(QuiescenceState.Initial("generation"), [], 0));
+
+        var overview = await CreateProvider(new WorkflowDashboardContributor(store, runtime))
+            .GetOverviewAsync(new() { CanRead = x => x == RuntimeView });
+
+        await store.DidNotReceive().CountAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>());
+        await store.DidNotReceive().SummarizeManyAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>());
+        Assert.Equal(DashboardRuntimeStatusKeys.AcceptingWork, overview.Runtime.Status);
+        Assert.Equal(DashboardCapabilityStatus.Unauthorized.Status, overview.WorkflowInstances.Capability.Status);
+        Assert.Equal(0, overview.WorkflowInstances.Running);
+    }
+
+    [Fact]
     public async Task GetNeedsAttentionAsync_WithFailingInstanceStore_StillReturnsRuntimeFindings()
     {
         var store = Substitute.For<IWorkflowInstanceStore>();
