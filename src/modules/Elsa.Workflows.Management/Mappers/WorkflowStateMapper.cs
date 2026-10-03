@@ -35,6 +35,7 @@ public class WorkflowStateMapper
     public void Apply(WorkflowState source, WorkflowInstance target)
     {
         target.Id = source.Id;
+        target.TenantId = source.TenantId;
         target.CreatedAt = source.CreatedAt;
         target.DefinitionId = source.DefinitionId;
         target.DefinitionVersionId = source.DefinitionVersionId;
@@ -66,6 +67,7 @@ public class WorkflowStateMapper
 
         var workflowState = source.WorkflowState;
         workflowState.Id = source.Id;
+        workflowState.TenantId = source.TenantId;
         workflowState.CreatedAt = source.CreatedAt;
         workflowState.DefinitionId = source.DefinitionId;
         workflowState.DefinitionVersionId = source.DefinitionVersionId;
