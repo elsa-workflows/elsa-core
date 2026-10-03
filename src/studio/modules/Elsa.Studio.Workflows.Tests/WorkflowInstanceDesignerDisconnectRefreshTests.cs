@@ -18,9 +18,9 @@ using Elsa.Studio.Workflows.Shared.Components;
 using Elsa.Studio.Workflows.UI.Contracts;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using Xunit;
+using Elsa.Studio.Testing;
 
 namespace Elsa.Studio.Workflows.Tests;
 
@@ -795,11 +795,6 @@ public sealed class WorkflowInstanceDesignerDisconnectRefreshTests : BunitContex
         public Task<IEnumerable<Elsa.Api.Client.Resources.Features.Models.FeatureDescriptor>> ListAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
-    }
 
     /// <summary>
     /// A <see cref="DispatchProxy"/> that throws for every call, used for services this component

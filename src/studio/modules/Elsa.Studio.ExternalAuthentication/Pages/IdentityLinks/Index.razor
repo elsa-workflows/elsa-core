@@ -1,5 +1,6 @@
 @page "/security/external-authentication/identity-links"
 @attribute [RequirePermission(ExternalAuthenticationPermissions.IdentityLinks, PermissionVerbs.Write)]
+@using Elsa.Studio.Extensions
 @using Elsa.Studio.ExternalAuthentication.Components.IdentityLinks
 @using Elsa.Studio.ExternalAuthentication.Services
 @inject Elsa.Studio.Contracts.IBackendApiClientProvider ApiClientProvider
@@ -195,7 +196,7 @@
         }
         catch (Exception exception)
         {
-            Snackbar.Add(exception.Message, Severity.Error);
+            Snackbar.Add(exception.ToUserMessage(), Severity.Error);
         }
     }
 
@@ -262,7 +263,7 @@
         }
         catch (Exception exception)
         {
-            Snackbar.Add(exception.Message, Severity.Error);
+            Snackbar.Add(exception.ToUserMessage(), Severity.Error);
         }
     }
 

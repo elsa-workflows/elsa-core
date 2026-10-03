@@ -1,3 +1,4 @@
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Workflows.Domain.Models;
 using Refit;
 using System.Text.Json;
@@ -37,7 +38,7 @@ public static class ValidationApiExceptionExtensions
         if (!string.IsNullOrWhiteSpace(e.Content))
             return new ValidationErrors(new List<ValidationError> { new(e.Content) }, e.StatusCode);
 
-        return new ValidationErrors(new List<ValidationError> { new(e.ReasonPhrase ?? e.Message) }, e.StatusCode);
+        return new ValidationErrors(new List<ValidationError> { new(e.StatusCode.GetEmptyBodyFailureText(e.ReasonPhrase, e.Message)) }, e.StatusCode);
     }
 
     /// <summary>

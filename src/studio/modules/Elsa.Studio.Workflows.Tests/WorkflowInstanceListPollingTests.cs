@@ -10,11 +10,11 @@ using Elsa.Studio.Workflows.Components.WorkflowInstanceList.Models;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 using MudBlazor.Services;
 using Xunit;
+using Elsa.Studio.Testing;
 
 namespace Elsa.Studio.Workflows.Tests;
 
@@ -95,9 +95,4 @@ public class WorkflowInstanceListPollingTests
                 : throw new InvalidOperationException($"Unexpected call to {targetMethod.DeclaringType!.Name}.{targetMethod.Name}.");
     }
 
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string key] => new(key, key);
-        public LocalizedString this[string key, params object[] arguments] => new(key, string.Format(key, arguments));
-    }
 }

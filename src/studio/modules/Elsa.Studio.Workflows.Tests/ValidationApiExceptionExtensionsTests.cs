@@ -1,4 +1,6 @@
 using System.Net;
+using Elsa.Studio.Extensions;
+using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.Domain.Extensions;
 using Refit;
 using Xunit;
@@ -56,6 +58,14 @@ public class ValidationApiExceptionExtensionsTests
 
         var error = Assert.Single(errors.Errors);
         Assert.Equal(content, error.ErrorMessage);
+    }
+
+    [Fact]
+    public void GetValidationErrors_ExplainsABodylessForbiddenResponseAsThePermissionGuidance()
+    {
+        var errors = ApiExceptions.Create(HttpStatusCode.Forbidden).GetValidationErrors();
+
+        Assert.Equal(AuthorizationFailureExtensions.ForbiddenMessage, Assert.Single(errors.Errors).ErrorMessage);
     }
 
     private static async Task<ApiException> CreateApiExceptionAsync(string content)

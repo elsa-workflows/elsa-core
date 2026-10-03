@@ -16,6 +16,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Compile Include="..\..\testing\TestLocalizer.cs" Link="TestLocalizer.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="../Elsa.Studio.Diagnostics.StructuredLogs/Elsa.Studio.Diagnostics.StructuredLogs.csproj" />
     </ItemGroup>
 

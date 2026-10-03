@@ -8,9 +8,9 @@ using Elsa.Studio.Security.Contracts;
 using Elsa.Studio.Security.Menu;
 using Elsa.Studio.Security.Models;
 using Elsa.Studio.Services;
-using Microsoft.Extensions.Localization;
 using MudBlazor;
 using Xunit;
+using Elsa.Studio.Testing;
 
 namespace Elsa.Studio.Administration.Tests;
 
@@ -111,11 +111,6 @@ public class AdministrationNavigationTests
         Assert.Empty(await new SecurityMenu([contributor]).GetMenuItemsAsync());
     }
 
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
-    }
 
     private sealed class EnabledRemoteFeatureProvider : IRemoteFeatureProvider
     {

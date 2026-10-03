@@ -100,9 +100,9 @@ public sealed class WorkflowListPermissionTests : BunitContext, IAsyncLifetime
         var dialogs = Render<MudDialogProvider>();
         var cut = RenderList<WorkflowInstanceList>(InstanceId, "workflows/*:view", "alterations:execute");
 
-        cut.FindAll("button").Single(x => x.TextContent.Contains("Bulk actions")).Click();
+        var bulkActions = _popovers.OpenMenu(cut.FindAll("button").Single(x => x.TextContent.Contains("Bulk actions")));
         Assert.DoesNotContain("Delete", _popovers.Markup);
-        _popovers.FindAll(".mud-menu-item").Single(x => x.TextContent.Trim() == "Cancel").Click();
+        bulkActions.Single(x => x.TextContent.Trim() == "Cancel").Click();
 
         dialogs.WaitForAssertion(() => Assert.Contains("Cancel all matching workflow instances?", dialogs.Markup));
     }
@@ -134,7 +134,7 @@ public sealed class WorkflowListPermissionTests : BunitContext, IAsyncLifetime
 
     private string OpenRowActions<TList>(IRenderedComponent<TList> cut) where TList : IComponent
     {
-        cut.Find("tbody .mud-menu button").Click();
+        _popovers.OpenMenu(cut.Find("tbody .mud-menu button"));
         return _popovers.Markup;
     }
 

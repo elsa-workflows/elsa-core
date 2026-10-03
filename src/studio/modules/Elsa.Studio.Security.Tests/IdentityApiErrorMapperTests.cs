@@ -1,4 +1,5 @@
 using System.Net;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Security.Services;
 using Refit;
 using Xunit;
@@ -55,6 +56,17 @@ public sealed class IdentityApiErrorMapperTests
         Assert.Equal("The user no longer exists.", IdentityApiErrorMapper.Describe(notFound, IdentityApiErrorMapper.UserSubject).Message);
         Assert.True(IdentityApiErrorMapper.Describe(forbidden, IdentityApiErrorMapper.UserSubject).IsAuthorization);
         Assert.StartsWith("User administration is unavailable", IdentityApiErrorMapper.Describe(new InvalidOperationException(), IdentityApiErrorMapper.UserSubject).Message);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Forbidden, AuthorizationFailureExtensions.ForbiddenMessage)]
+    [InlineData(HttpStatusCode.Unauthorized, AuthorizationFailureExtensions.UnauthorizedMessage)]
+    public void Describe_GivesAnAuthorizationFailureWithoutAStructuredErrorTheSharedGuidance(HttpStatusCode statusCode, string expected)
+    {
+        var error = IdentityApiErrorMapper.Describe(CreateApiException(statusCode, string.Empty), IdentityApiErrorMapper.UserSubject);
+
+        Assert.Equal(expected, error.Message);
+        Assert.True(error.IsAuthorization);
     }
 
     private static ApiException CreateApiException(HttpStatusCode statusCode, string content) =>

@@ -2,14 +2,12 @@ using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
 using Elsa.Api.Client.Resources.Features.Models;
 using Elsa.Api.Client.Resources.Scripting.Models;
 using Elsa.Studio.Contracts;
-using Elsa.Studio.Localization;
 using Elsa.Studio.Localization.Time;
 using Elsa.Studio.Workflows.Contracts;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Models;
 using Elsa.Studio.Workflows.Shared.Components;
 using Microsoft.AspNetCore.Components.Rendering;
-using Microsoft.Extensions.Localization;
 
 namespace Elsa.Studio.Workflows.Tests.Support;
 
@@ -19,16 +17,6 @@ namespace Elsa.Studio.Workflows.Tests.Support;
 internal sealed class TestTimeFormatter : ITimeFormatter
 {
     public string Format(DateTimeOffset? value, string format = "G", string emptyString = "") => value?.ToString(format) ?? emptyString;
-}
-
-/// <summary>
-/// An <see cref="ILocalizer"/> that passes every key straight through, formatting arguments where given, so tests
-/// can assert on the text a component renders without wiring up real localization resources.
-/// </summary>
-internal sealed class TestLocalizer : ILocalizer
-{
-    public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-    public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
 }
 
 /// <summary>

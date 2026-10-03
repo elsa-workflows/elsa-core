@@ -7,9 +7,8 @@ using Elsa.Studio.ExternalAuthentication.Client;
 using Elsa.Studio.ExternalAuthentication.Components.ConnectionEditor;
 using Elsa.Studio.ExternalAuthentication.Menu;
 using Elsa.Studio.ExternalAuthentication.Models;
-using ConnectionIndex = Elsa.Studio.ExternalAuthentication.Pages.Connections.Index;
-using ConnectionEdit = Elsa.Studio.ExternalAuthentication.Pages.Connections.Edit;
 using Elsa.Studio.ExternalAuthentication.Services;
+using Elsa.Studio.Testing;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +16,8 @@ using MudBlazor;
 using MudBlazor.Extensions;
 using MudBlazor.Services;
 using Xunit;
+using ConnectionEdit = Elsa.Studio.ExternalAuthentication.Pages.Connections.Edit;
+using ConnectionIndex = Elsa.Studio.ExternalAuthentication.Pages.Connections.Index;
 
 namespace Elsa.Studio.ExternalAuthentication.Tests.Connections;
 
@@ -47,7 +48,6 @@ public sealed class ConnectionEditorTests : BunitContext, IAsyncLifetime
     Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
 
     async Task IAsyncLifetime.DisposeAsync() => await base.DisposeAsync();
-
 
     [Fact]
     public void ConfigurationOwnedConnection_IsClearlyReadOnly()
@@ -1277,7 +1277,7 @@ public sealed class ConnectionEditorTests : BunitContext, IAsyncLifetime
         connection.IsPreferred = true;
         _api.GetResult = connection;
         _api.Adapters = [CreateAdapter()];
-        _api.EnableException = await CreateApiExceptionAsync(
+        _api.EnableException = ApiExceptions.Create(
             HttpStatusCode.Conflict,
             """{"error":"conflict","message":"The requested connection change conflicts with current state.","details":{"code":"configuration_preferred_connection"}}""");
 
@@ -1943,7 +1943,7 @@ public sealed class ConnectionEditorTests : BunitContext, IAsyncLifetime
         var adapter = CreateAdapter();
         adapter.Fields.First().DefaultValue = JsonSerializer.SerializeToElement("https://issuer.example.test");
         _api.Adapters = [adapter];
-        _api.CreateException = await CreateApiExceptionAsync(
+        _api.CreateException = ApiExceptions.Create(
             HttpStatusCode.BadRequest,
             """
             {
@@ -2198,10 +2198,10 @@ public sealed class ConnectionEditorTests : BunitContext, IAsyncLifetime
         Assert.Equal($"security/external-authentication/connections/{connection.Id}", manageLink.GetAttribute("href"));
         cut.Find("tbody tr").Click();
 
-        Assert.EndsWith(
+        cut.WaitForAssertion(() => Assert.EndsWith(
             $"/security/external-authentication/connections/{connection.Id}",
             Services.GetRequiredService<NavigationManager>().Uri,
-            StringComparison.Ordinal);
+            StringComparison.Ordinal));
     }
 
     [Fact]
@@ -2609,7 +2609,7 @@ public sealed class ConnectionEditorTests : BunitContext, IAsyncLifetime
         });
 
         cut.FindAll("button").Single(button => button.TextContent.Contains("Manage existing Database record", StringComparison.Ordinal)).Click();
-        Assert.EndsWith("/security/external-authentication/connections/stored-override", Services.GetRequiredService<NavigationManager>().Uri, StringComparison.Ordinal);
+        cut.WaitForAssertion(() => Assert.EndsWith("/security/external-authentication/connections/stored-override", Services.GetRequiredService<NavigationManager>().Uri, StringComparison.Ordinal));
     }
 
     [Fact]
@@ -2746,17 +2746,6 @@ public sealed class ConnectionEditorTests : BunitContext, IAsyncLifetime
             .Select(x => x.Template)
             .Order(StringComparer.Ordinal)
             .ToArray();
-
-    private static async Task<Refit.ApiException> CreateApiExceptionAsync(HttpStatusCode statusCode, string content)
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Post, "https://elsa.example.test/external-authentication/connections");
-        using var response = new HttpResponseMessage(statusCode)
-        {
-            RequestMessage = request,
-            Content = new StringContent(content)
-        };
-        return await Refit.ApiException.Create(request, HttpMethod.Post, response, new Refit.RefitSettings());
-    }
 
     private (IRenderedComponent<DescriptorField> Component, Dictionary<string, JsonElement> Settings) RenderTagsArrayField()
     {

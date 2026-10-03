@@ -19,6 +19,7 @@
         <Compile Include="..\..\testing\BunitTestDefaults.cs" Link="BunitTestDefaults.cs" />
         <Compile Include="..\..\testing\StubPermissionService.cs" Link="StubPermissionService.cs" />
         <Compile Include="..\..\testing\TestLocalizer.cs" Link="TestLocalizer.cs" />
+        <Compile Include="..\..\testing\ApiExceptions.cs" Link="ApiExceptions.cs" />
     </ItemGroup>
 
     <ItemGroup>
@@ -28,6 +29,7 @@
     <ItemGroup>
         <ProjectReference Include="../../framework/Elsa.Studio.Core/Elsa.Studio.Core.csproj" />
         <ProjectReference Include="../../framework/Elsa.Studio.Shared/Elsa.Studio.Shared.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Alterations/Elsa.Studio.Alterations.csproj" />
         <ProjectReference Include="../Elsa.Studio.Http.Webhooks/Elsa.Studio.Http.Webhooks.csproj" />
         <ProjectReference Include="../Elsa.Studio.Labels/Elsa.Studio.Labels.csproj" />
         <ProjectReference Include="../Elsa.Studio.Secrets/Elsa.Studio.Secrets.csproj" />

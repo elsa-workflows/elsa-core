@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="AngleSharp" />
         <PackageReference Include="bunit" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
         <PackageReference Include="xunit" />
@@ -16,7 +17,9 @@
 
     <ItemGroup>
         <Compile Include="..\..\testing\BunitTestDefaults.cs" Link="BunitTestDefaults.cs" />
+        <Compile Include="..\..\testing\ApiExceptions.cs" Link="Errors\ApiExceptions.cs" />
         <Compile Include="..\..\testing\StubPermissionService.cs" Link="Authorization\StubPermissionService.cs" />
+        <Compile Include="..\..\testing\TestLocalizer.cs" Link="TestLocalizer.cs" />
     </ItemGroup>
 
     <ItemGroup>

@@ -4,6 +4,7 @@ using Bunit;
 using Elsa.Studio.Components;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Contracts;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Security.Client;
 using Elsa.Studio.Security.Components;
 using Elsa.Studio.Security.Contracts;
@@ -54,7 +55,8 @@ public sealed class IdentityManagementTests : BunitContext, IAsyncLifetime
     async Task IAsyncLifetime.DisposeAsync() => await base.DisposeAsync();
 
     [Fact]
-    public void UserList_RendersRolesTenantScopeAndFiltersLocally()
+    // Core only returns the caller's tenant's users, so the list shows no tenant or scope: it would repeat one value.
+    public void UserList_RendersRolesWithoutTenantUiAndFiltersLocally()
     {
         _users.Users =
         [
@@ -67,10 +69,10 @@ public sealed class IdentityManagementTests : BunitContext, IAsyncLifetime
         {
             Assert.Contains("alice", cut.Markup);
             Assert.Contains("operator", cut.Markup);
-            Assert.Contains("tenant-a", cut.Markup);
-            Assert.Contains("Host", cut.Markup);
             Assert.Contains("2 users · all loaded", cut.Markup);
-            Assert.Contains("Mixed tenant scopes", cut.Markup);
+            Assert.DoesNotContain("tenant-a", cut.Markup);
+            Assert.DoesNotContain("Host", cut.Markup);
+            Assert.DoesNotContain("Scope", cut.Markup);
             Assert.Contains("Open user alice", cut.Markup);
             Assert.Equal(Breakpoint.Md, cut.FindComponent<MudTable<UserSummary>>().Instance.Breakpoint);
         });
@@ -86,7 +88,7 @@ public sealed class IdentityManagementTests : BunitContext, IAsyncLifetime
     }
 
     [Fact]
-    public void UserList_ShowsTheTenantScopeCoreReturnedWithoutFilteringClientSide()
+    public void UserList_ShowsEveryUserCoreReturnedWithoutFilteringClientSide()
     {
         _users.Users =
         [
@@ -98,7 +100,6 @@ public sealed class IdentityManagementTests : BunitContext, IAsyncLifetime
 
         cut.WaitForAssertion(() =>
         {
-            Assert.Contains("Tenant tenant-a", cut.Markup);
             Assert.Equal(2, cut.FindAll("tbody tr").Count);
         });
         Assert.Equal(1, _users.ListCallCount);
@@ -362,7 +363,7 @@ public sealed class IdentityManagementTests : BunitContext, IAsyncLifetime
         await cut.InvokeAsync(() => cut.FindAll("input[type='password']")[1].Change("replacement-password"));
         await cut.InvokeAsync(() => cut.FindAll("button").Single(x => x.TextContent.Trim() == "Save changes").Click());
 
-        cut.WaitForAssertion(() => Assert.Contains("You are not allowed to perform this user administration action.", cut.Markup));
+        cut.WaitForAssertion(() => Assert.Contains(AuthorizationFailureExtensions.ForbiddenMessage, cut.Markup));
         Assert.DoesNotContain(UserEditorSurface.RoleAssignmentForbiddenMessage, cut.Markup);
     }
 
@@ -405,7 +406,7 @@ public sealed class IdentityManagementTests : BunitContext, IAsyncLifetime
         cut.WaitForAssertion(() =>
         {
             Assert.NotNull(cut.Find("input[readonly][value='server-carol']"));
-            Assert.Contains("Scope: tenant-a", cut.Markup);
+            Assert.DoesNotContain("Scope", cut.Markup);
             Assert.Contains("Copy user ID user-3", cut.Markup);
             Assert.All(cut.FindAll("input[type='password']"), input => Assert.True(string.IsNullOrEmpty(input.GetAttribute("value"))));
         });

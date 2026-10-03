@@ -2,6 +2,7 @@
 @using System.Text.Json
 @using ApiException = Refit.ApiException
 @using Elsa.Studio.Contracts
+@using Elsa.Studio.Extensions
 @using Elsa.Studio.ExternalAuthentication.Services
 @implements IDisposable
 @inject IBackendApiClientProvider ApiClientProvider
@@ -114,9 +115,9 @@
             ReplaceUsers(response.Items);
             EnsureExistingUser();
         }
-        catch (Exception)
+        catch (Exception exception)
         {
-            SetError("Elsa users could not be loaded.");
+            SetError(exception.GetAuthorizationFailureMessage() ?? "Elsa users could not be loaded.");
         }
     }
 
@@ -157,11 +158,11 @@
         {
             SetError("An external identity link already exists for these details.");
         }
-        catch (Exception)
+        catch (Exception exception)
         {
-            SetError(IsEditing
+            SetError(exception.GetAuthorizationFailureMessage() ?? (IsEditing
                 ? "The external identity link could not be replaced. The original link was left unchanged."
-                : "The external identity link could not be created.");
+                : "The external identity link could not be created."));
         }
         finally
         {
