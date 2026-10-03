@@ -1,3 +1,4 @@
+using AngleSharp.Html.Dom;
 using Bunit;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Security.Client;
@@ -274,6 +275,49 @@ public sealed class RoleEditorSurfaceTests : BunitContext, IAsyncLifetime
     }
 
     [Fact]
+    public void SelectAll_WithAnActiveFilter_GrantsOnlyTheVisibleResources()
+    {
+        Register(new StubRolesApi(), new StubPermissionsApi { Response = IdentityCatalog() });
+
+        var cut = Render<RoleEditorSurface>(parameters => parameters
+            .Add(x => x.Access, ReadyAccess));
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("input[aria-label='identity/roles:view']")));
+
+        cut.Find("input[placeholder='Search by name, ID, or permission']").Input("identity/roles");
+        cut.WaitForAssertion(() =>
+        {
+            Assert.NotEmpty(cut.FindAll("input[aria-label='identity/roles:view']"));
+            Assert.Empty(cut.FindAll("input[aria-label='identity/applications:view']"));
+            Assert.Empty(cut.FindAll("input[aria-label='identity/users:view']"));
+        });
+
+        cut.FindAll("button").Single(x => x.TextContent.Trim() == "Select all").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.True(IsPermissionChecked(cut, "identity/roles:view"));
+            Assert.True(IsPermissionChecked(cut, "identity/roles:create"));
+            Assert.True(IsPermissionChecked(cut, "identity/roles:update"));
+            Assert.Contains("3 direct · 3 permissions", cut.Markup);
+            Assert.DoesNotContain("9 direct", cut.Markup);
+        });
+
+        cut.Find("input[placeholder='Search by name, ID, or permission']").Input(string.Empty);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.True(IsPermissionChecked(cut, "identity/roles:view"));
+            Assert.True(IsPermissionChecked(cut, "identity/roles:create"));
+            Assert.True(IsPermissionChecked(cut, "identity/roles:update"));
+            Assert.False(IsPermissionChecked(cut, "identity/applications:view"));
+            Assert.False(IsPermissionChecked(cut, "identity/applications:create"));
+            Assert.False(IsPermissionChecked(cut, "identity/applications:update"));
+            Assert.False(IsPermissionChecked(cut, "identity/users:view"));
+            Assert.False(IsPermissionChecked(cut, "identity/users:create"));
+            Assert.False(IsPermissionChecked(cut, "identity/users:update"));
+        });
+    }
+
+    [Fact]
     public void ExactPermissionSearch_MatchesTheFullPermissionIdentifier()
     {
         Register(new StubRolesApi(), new StubPermissionsApi
@@ -538,6 +582,29 @@ public sealed class RoleEditorSurfaceTests : BunitContext, IAsyncLifetime
 
     private static AngleSharp.Dom.IElement EditInput(IRenderedComponent<RoleEditorSurface> cut, string grant) =>
         cut.Find($"input[aria-label='Edit advanced grant {grant}']");
+
+    private static bool IsPermissionChecked(IRenderedComponent<RoleEditorSurface> cut, string permission) =>
+        ((IHtmlInputElement)cut.Find($"input[aria-label='{permission}']")).IsChecked;
+
+    private static PermissionCatalogResponse IdentityCatalog() =>
+        new()
+        {
+            Resources =
+            [
+                Resource("identity/roles", "Roles", "view", "create", "update"),
+                Resource("identity/applications", "Applications", "view", "create", "update"),
+                Resource("identity/users", "Users", "view", "create", "update")
+            ]
+        };
+
+    private static PermissionResourceDescriptor Resource(string resource, string displayName, params string[] verbs) =>
+        new()
+        {
+            Resource = resource,
+            DisplayName = displayName,
+            Category = "Identity",
+            SupportedVerbs = verbs
+        };
 
     private static void ClickButton(IRenderedComponent<RoleEditorSurface> cut, string text, string within = "") =>
         cut.FindAll($"{within} button".Trim()).Single(x => x.TextContent.Trim() == text).Click();

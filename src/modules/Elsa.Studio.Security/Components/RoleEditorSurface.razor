@@ -131,20 +131,21 @@ else
                                 if (resources.Length == 0)
                                     continue;
 
-                                var categoryResources = GetCategoryResources(category).ToArray();
-                                var directCount = CategoryDirectCount(categoryResources);
-                                var coveredCount = CategoryCoveredCount(categoryResources);
-                                <MudExpansionPanel Text="@category" Expanded="@ShouldExpandCategory(categoryResources)" Dense="true" Gutters="false" Class="role-category-panel">
+                                var directCount = CategoryDirectCount(resources);
+                                var coveredCount = CategoryCoveredCount(resources);
+                                <MudExpansionPanel Text="@category" Expanded="@ShouldExpandCategory(resources)" Dense="true" Gutters="false" Class="role-category-panel">
                                     <TitleContent>
                                         <div class="role-category-title">
                                             <div class="role-category-title-copy">
                                                 <MudText Typo="Typo.body2"><strong>@category</strong></MudText>
-                                                <span class="role-category-summary">@CategorySummary(ConcreteCount(categoryResources), directCount, coveredCount)</span>
+                                                <span class="role-category-summary">@CategorySummary(ConcreteCount(resources), directCount, coveredCount)</span>
                                             </div>
                                             <div @onclick:stopPropagation="true">
                                                 @if (!IsReadOnly)
                                                 {
-                                                    <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="@(() => SelectCategory(categoryResources))">Select all</MudButton>
+                                                    <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="@(() => ToggleCategory(resources))">
+                                                        @(IsCategoryFullySelected(resources) ? "Deselect" : "Select all")
+                                                    </MudButton>
                                                 }
                                             </div>
                                         </div>
@@ -505,15 +506,44 @@ else
             RolePermissionAuthoring.IsValidPattern(pattern) &&
             RolePermissionAuthoring.Matches(pattern, resource, verb));
 
+    private IEnumerable<string> SelectableGrants(IEnumerable<PermissionResourceDescriptor> resources) =>
+        RolePermissionAuthoring.GetConcreteGrants(resources)
+            .Where(permission => RolePermissionAuthoring.TryParse(permission, out var pattern) &&
+                                 FindCoveringWildcard(pattern.Resource, pattern.Verb) == null);
+
+    private bool IsCategoryFullySelected(IEnumerable<PermissionResourceDescriptor> resources)
+    {
+        var selectable = SelectableGrants(resources).ToArray();
+        return selectable.Length > 0 && selectable.All(IsDirect);
+    }
+
+    private void ToggleCategory(IEnumerable<PermissionResourceDescriptor> resources)
+    {
+        if (IsReadOnly)
+            return;
+
+        if (IsCategoryFullySelected(resources))
+            DeselectCategory(resources);
+        else
+            SelectCategory(resources);
+    }
+
     private void SelectCategory(IEnumerable<PermissionResourceDescriptor> resources)
     {
         if (IsReadOnly)
             return;
 
-        var additions = RolePermissionAuthoring.GetConcreteGrants(resources)
-            .Where(x => RolePermissionAuthoring.TryParse(x, out var pattern) && FindCoveringWildcard(pattern.Resource, pattern.Verb) == null);
-        foreach (var permission in additions)
+        foreach (var permission in SelectableGrants(resources))
             _direct.Add(permission);
+    }
+
+    private void DeselectCategory(IEnumerable<PermissionResourceDescriptor> resources)
+    {
+        if (IsReadOnly)
+            return;
+
+        foreach (var permission in RolePermissionAuthoring.GetConcreteGrants(resources))
+            _direct.Remove(permission);
     }
 
     private void SetDirectGrant(string permission, bool selected)
