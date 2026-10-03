@@ -78,11 +78,11 @@ docker run \
 - [Roadmap](#roadmap)
 - [Use Cases](#use-cases)
 - [Coding Workflows](#coding-workflows)
-- [Designed Workflows](#designed-workflows)
+- [Designing Workflows](#designing-workflows)
 - [Contributing](#contributing)
 - [Support](#support)
   - [Community Support](#community-support)
-  - [Enterprise Support](#enterprise-support)
+  - [Professional Support](#professional-support)
 
 ## Documentation
 
@@ -94,7 +94,7 @@ docker run \
 
 ## Training
 
-Official [Elsa+ training courses](https://www.elsaworkflows.io/elsa-plus/training) are available for structured learning beyond the documentation.
+Prefer a guided path? The [Elsa+ training courses](https://www.elsaworkflows.io/elsa-plus/training) take you from the basics to advanced patterns, with hands-on labs.
 
 ## Known Issues and Limitations
 
