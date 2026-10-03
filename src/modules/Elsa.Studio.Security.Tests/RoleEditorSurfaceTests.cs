@@ -347,6 +347,43 @@ public sealed class RoleEditorSurfaceTests : BunitContext, IAsyncLifetime
     }
 
     [Fact]
+    public void Deselect_PreservesExactGrantsThatAreAlsoCoveredByAWildcard()
+    {
+        Register(new StubRolesApi
+        {
+            Response = new ListRolesResponse
+            {
+                Roles =
+                [
+                    new RoleSummary
+                    {
+                        Id = "auditors",
+                        Name = "Auditors",
+                        Permissions = ["identity/*:view", "identity/roles:view", "identity/roles:create", "identity/roles:update"]
+                    }
+                ]
+            }
+        }, new StubPermissionsApi { Response = IdentityCatalog() });
+
+        var cut = Render<RoleEditorSurface>(parameters => parameters
+            .Add(x => x.RoleId, "auditors")
+            .Add(x => x.Access, ReadyAccess));
+        cut.WaitForAssertion(() => Assert.True(IsPermissionChecked(cut, "identity/roles:view")));
+
+        cut.Find("input[placeholder='Name, ID, or permission']").Input("identity/roles");
+        cut.WaitForAssertion(() => Assert.Contains(cut.FindAll("button"), x => x.TextContent.Trim() == "Deselect"));
+
+        cut.FindAll("button").Single(x => x.TextContent.Trim() == "Deselect").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.True(IsPermissionChecked(cut, "identity/roles:view"));
+            Assert.False(IsPermissionChecked(cut, "identity/roles:create"));
+            Assert.False(IsPermissionChecked(cut, "identity/roles:update"));
+        });
+    }
+
+    [Fact]
     public void PermissionCounter_HidesAtZeroAndShowsSelectedCount()
     {
         Register(new StubRolesApi(), new StubPermissionsApi { Response = IdentityCatalog() });

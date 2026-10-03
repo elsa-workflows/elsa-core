@@ -548,7 +548,7 @@ else
         if (IsReadOnly)
             return;
 
-        foreach (var permission in RolePermissionAuthoring.GetConcreteGrants(resources))
+        foreach (var permission in SelectableGrants(resources))
             _direct.Remove(permission);
     }
 
