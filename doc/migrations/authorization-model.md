@@ -53,7 +53,7 @@ Elsa role and permission changes take effect on the next token refresh or expiry
 
 ## Signing out revokes the session
 
-`POST /identity/logout` revokes the caller's sign-in session: the refresh token it is given, and every refresh token issued in the same session, are refused by `/identity/refresh-token` with the same `401` as an invalid token. Access tokens are not revoked and stay valid until they expire. See [Signing Out](../wiki/identity-tenancy-security.md#signing-out) for the contract.
+`POST /identity/logout` revokes the caller's sign-in session: the refresh token it is given, and every refresh token issued in the same session, are refused by `/identity/refresh-token` with the same `401` as an invalid token. Access tokens are not revoked and stay valid until they expire. See [Signing Out](../wiki/identity-tenancy-security.md#signing-out) for the contract. User resolution on refresh is a separate break: see [refresh-token user resolution](refresh-token-user-resolution.md).
 
 Revocations need storage. With EF Core persistence, apply the `RevokedSessions` migration for your provider; it adds the `RevokedSessions` table (indexed on `ExpiresAt`) and changes nothing else. Without persistence, revocations are held in memory, which is only sound for a single node.
 

@@ -14,6 +14,7 @@ namespace Elsa.Identity.UnitTests.Services;
 public class DefaultIdentityRefreshTokenServiceTests
 {
     private static readonly User User = new() { Id = "user-a", Name = "admin" };
+    private static readonly User Victim = new() { Id = "victim-id", Name = "victim" };
     private static readonly IssuedTokens RefreshedTokens = new("access-b", "refresh-b");
     private readonly IdentityTokenOptions _options = new()
     {
@@ -22,6 +23,7 @@ public class DefaultIdentityRefreshTokenServiceTests
         Audience = "elsa-api"
     };
     private readonly IAccessTokenIssuer _accessTokenIssuer = Substitute.For<IAccessTokenIssuer>();
+    private readonly IUserProvider _userProvider = Substitute.For<IUserProvider>();
     private readonly DefaultElsaTokenService _tokenService;
     private readonly SessionRevoker _sessionRevoker;
     private readonly DefaultIdentityRefreshTokenService _service;
@@ -30,12 +32,13 @@ public class DefaultIdentityRefreshTokenServiceTests
     {
         var clock = new MutableSystemClock();
         var options = Microsoft.Extensions.Options.Options.Create(_options);
-        var userProvider = Substitute.For<IUserProvider>();
-        userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Id == User.Id), Arg.Any<CancellationToken>()).Returns(User);
+        _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Id == User.Id), Arg.Any<CancellationToken>()).Returns(User);
+        _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Id == Victim.Id), Arg.Any<CancellationToken>()).Returns(Victim);
         _accessTokenIssuer.IssueTokensAsync(User, Arg.Any<SignInSession?>(), Arg.Any<CancellationToken>()).Returns(RefreshedTokens);
+        _accessTokenIssuer.IssueTokensAsync(Victim, Arg.Any<SignInSession?>(), Arg.Any<CancellationToken>()).Returns(new IssuedTokens("access-victim", "refresh-victim"));
         _tokenService = new(clock, options);
         _sessionRevoker = new(new MemoryRevokedSessionStore(new MemoryStore<RevokedSession>()), clock, options);
-        _service = new(userProvider, _accessTokenIssuer, new DefaultTenantAccessor(), _sessionRevoker, options);
+        _service = new(_userProvider, _accessTokenIssuer, new DefaultTenantAccessor(), _sessionRevoker, options);
     }
 
     [Fact]
@@ -73,6 +76,81 @@ public class DefaultIdentityRefreshTokenServiceTests
 
         Assert.Null(await _service.RefreshAsync(refreshToken));
         await AssertNothingIssuedAsync();
+    }
+
+    [Fact]
+    public async Task RefreshAsyncRejectsATokenWhenTheUserIdNoLongerExistsEvenIfTheNameWasReused()
+    {
+        var replacement = new User { Id = "user-b", Name = User.Name };
+        _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Id == User.Id), Arg.Any<CancellationToken>()).Returns((User?)null);
+        _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Name == User.Name), Arg.Any<CancellationToken>()).Returns(replacement);
+        _accessTokenIssuer.IssueTokensAsync(replacement, Arg.Any<SignInSession?>(), Arg.Any<CancellationToken>()).Returns(new IssuedTokens("access-c", "refresh-c"));
+
+        Assert.Null(await _service.RefreshAsync(await IssueRefreshTokenAsync(new("session-a", DateTimeOffset.UtcNow))));
+        await AssertNothingIssuedAsync();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task RefreshAsyncRejectsATokenWithABlankSubjectEvenWhenTheNameWasReused(string subject)
+    {
+        _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Name == User.Name), Arg.Any<CancellationToken>()).Returns(User);
+
+        Assert.Null(await _service.RefreshAsync(LegacyRefreshToken.CreateWithSubject(_options, User, subject)));
+        await AssertNothingIssuedAsync();
+    }
+
+    [Fact]
+    public async Task RefreshAsyncRejectsATokenWithoutASubjectEvenWhenTheNameWasReused()
+    {
+        _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Name == User.Name), Arg.Any<CancellationToken>()).Returns(User);
+
+        Assert.Null(await _service.RefreshAsync(LegacyRefreshToken.CreateWithoutSubject(_options, User)));
+        await AssertNothingIssuedAsync();
+    }
+
+    [Fact]
+    public async Task RefreshAsyncRejectsATokenWithANameIdentifierAndABlankSubject()
+    {
+        Assert.Null(await _service.RefreshAsync(LegacyRefreshToken.CreateWithSubjectClaims(
+            _options,
+            User,
+            new Claim(ClaimTypes.NameIdentifier, Victim.Id),
+            new Claim(JwtRegisteredClaimNames.Sub, ""))));
+        await AssertNothingIssuedAsync();
+    }
+
+    [Fact]
+    public async Task RefreshAsyncRejectsATokenWithConflictingNameIdentifierAndSubject()
+    {
+        Assert.Null(await _service.RefreshAsync(LegacyRefreshToken.CreateWithSubjectClaims(
+            _options,
+            User,
+            new Claim(ClaimTypes.NameIdentifier, Victim.Id),
+            new Claim(JwtRegisteredClaimNames.Sub, User.Id))));
+        await AssertNothingIssuedAsync();
+    }
+
+    [Fact]
+    public async Task RefreshAsyncRejectsATokenWithTwoDifferentSubjects()
+    {
+        Assert.Null(await _service.RefreshAsync(LegacyRefreshToken.CreateWithSubjectClaims(
+            _options,
+            User,
+            new Claim(JwtRegisteredClaimNames.Sub, Victim.Id),
+            new Claim(JwtRegisteredClaimNames.Sub, User.Id))));
+        await AssertNothingIssuedAsync();
+    }
+
+    [Fact]
+    public async Task RefreshAsyncAcceptsATokenWithMatchingSubjectAndNameIdentifier()
+    {
+        Assert.Same(RefreshedTokens, await _service.RefreshAsync(LegacyRefreshToken.CreateWithSubjectClaims(
+            _options,
+            User,
+            new Claim(JwtRegisteredClaimNames.Sub, User.Id),
+            new Claim(ClaimTypes.NameIdentifier, User.Id))));
     }
 
     [Fact]
