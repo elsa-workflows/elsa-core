@@ -1,83 +1,158 @@
-using System.Security.Claims;
+using System.Net;
+using System.Net.Http.Json;
+using Elsa.Common;
+using Elsa.Common.Services;
+using Elsa.Extensions;
+using Elsa.Features.Services;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
+using Elsa.Identity.Features;
+using Elsa.Identity.HostedServices;
 using Elsa.Identity.Models;
+using Elsa.Identity.Options;
+using Elsa.UnitTests.Shared;
 using FastEndpoints;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using NSubstitute;
-using RefreshTokenEndpoint = Elsa.Identity.Endpoints.RefreshToken.RefreshToken;
 
 namespace Elsa.Identity.UnitTests.Endpoints;
 
 /// <summary>
-/// Refresh-token user resolution on the HTTP endpoint. Main has no SignInSession / logout
-/// work from the 3.9 identity PRs, so this exercises the endpoint through FastEndpoints'
-/// factory rather than a full authentication host.
+/// Refresh-token exchange through the real endpoint, authentication scheme and token issuer.
 /// </summary>
-public class RefreshTokenEndpointTests
+[Collection(nameof(FastEndpointsCollection))]
+public sealed class RefreshTokenEndpointTests : IAsyncLifetime
 {
     private static readonly User Alice = new() { Id = "alice-id", Name = "alice" };
-    private static readonly IssuedTokens Tokens = new("access-a", "refresh-a");
+    private WebApplication _app = null!;
+    private HttpClient _client = null!;
+    private IdentityTokenOptions _tokenOptions = null!;
+    private MemoryStore<User> _users = null!;
+
+    public async Task InitializeAsync()
+    {
+        var builder = WebApplication.CreateSlimBuilder();
+        builder.WebHost.UseTestServer();
+        var module = Substitute.For<IModule>();
+        module.Services.Returns(builder.Services);
+        new IdentityFeature(module) { TokenOptions = options => options.SigningKey = IdentityTokenTestConstants.SigningKey }.Apply();
+        new DefaultAuthenticationFeature(module).Apply();
+
+        // The startup diagnostics need the permission catalog, which this host does not install.
+        foreach (var diagnostic in builder.Services.Where(x => x.ImplementationType?.Namespace == typeof(StoredPermissionValidator).Namespace).ToList())
+        {
+            builder.Services.Remove(diagnostic);
+        }
+
+        builder.Services
+            .AddSingleton<ISystemClock>(_ => new UtcClock())
+            .AddScoped<IUserCredentialsValidator, NameOnlyCredentialsValidator>()
+            .AddFastEndpoints(options =>
+            {
+                options.Assemblies = [typeof(IdentityFeature).Assembly];
+                options.Filter = x => x.Namespace is "Elsa.Identity.Endpoints.Login" or "Elsa.Identity.Endpoints.RefreshToken";
+            });
+
+        _app = builder.Build();
+        _tokenOptions = _app.Services.GetRequiredService<IOptions<IdentityTokenOptions>>().Value;
+        _users = _app.Services.GetRequiredService<MemoryStore<User>>();
+        _users.Save(Alice, x => x.Id);
+        _app.UseAuthentication();
+        _app.UseAuthorization();
+        _app.UseFastEndpoints();
+        await _app.StartAsync();
+        _client = _app.GetTestClient();
+    }
+
+    public async Task DisposeAsync()
+    {
+        FastEndpointsResolver.Reset();
+        _client.Dispose();
+        await _app.StopAsync();
+        await _app.DisposeAsync();
+    }
 
     [Fact]
     public async Task ANormalRefreshStillWorks()
     {
-        var userProvider = Substitute.For<IUserProvider>();
-        var tokenIssuer = Substitute.For<IAccessTokenIssuer>();
-        userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Id == Alice.Id), Arg.Any<CancellationToken>()).Returns(Alice);
-        tokenIssuer.IssueTokensAsync(Alice, Arg.Any<CancellationToken>()).Returns(Tokens);
-        var endpoint = CreateEndpoint(userProvider, tokenIssuer, new Claim(ClaimTypes.NameIdentifier, Alice.Id), new Claim(ClaimTypes.Name, Alice.Name));
+        var tokens = await LoginAsync(Alice);
 
-        await endpoint.HandleAsync(CancellationToken.None);
+        var refreshed = await RefreshTokensAsync(tokens.RefreshToken);
 
-        Assert.Equal(StatusCodes.Status200OK, endpoint.HttpContext.Response.StatusCode);
-        await tokenIssuer.Received(1).IssueTokensAsync(Alice, Arg.Any<CancellationToken>());
+        Assert.False(string.IsNullOrWhiteSpace(refreshed.AccessToken));
+        Assert.False(string.IsNullOrWhiteSpace(refreshed.RefreshToken));
+        Assert.Equal(Alice.Id, ReadClaim(refreshed.RefreshToken, JwtRegisteredClaimNames.Sub));
+        Assert.Equal(Alice.Name, ReadClaim(refreshed.RefreshToken, JwtRegisteredClaimNames.Name));
     }
 
     [Fact]
     public async Task ARefreshTokenIsRejectedWhenTheUserIsDeletedAndRecreatedWithTheSameName()
     {
+        var tokens = await LoginAsync(Alice);
         var replacement = new User { Id = "alice-id-2", Name = Alice.Name };
-        var userProvider = Substitute.For<IUserProvider>();
-        var tokenIssuer = Substitute.For<IAccessTokenIssuer>();
-        userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Id == Alice.Id), Arg.Any<CancellationToken>()).Returns((User?)null);
-        userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Name == Alice.Name), Arg.Any<CancellationToken>()).Returns(replacement);
-        tokenIssuer.IssueTokensAsync(replacement, Arg.Any<CancellationToken>()).Returns(new IssuedTokens("access-b", "refresh-b"));
-        var endpoint = CreateEndpoint(
-            userProvider,
-            tokenIssuer,
-            new Claim(ClaimTypes.NameIdentifier, Alice.Id),
-            new Claim(JwtRegisteredClaimNames.Sub, Alice.Id),
-            new Claim(ClaimTypes.Name, Alice.Name));
 
-        await endpoint.HandleAsync(CancellationToken.None);
+        _users.Delete(Alice.Id);
+        _users.Save(replacement, x => x.Id);
 
-        Assert.Equal(StatusCodes.Status401Unauthorized, endpoint.HttpContext.Response.StatusCode);
-        await tokenIssuer.DidNotReceive().IssueTokensAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
+        await AssertRefreshRejectedAsync(tokens.RefreshToken);
+
+        var replacementTokens = await LoginAsync(replacement);
+        var refreshed = await RefreshTokensAsync(replacementTokens.RefreshToken);
+        Assert.Equal(replacement.Id, ReadClaim(refreshed.RefreshToken, JwtRegisteredClaimNames.Sub));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task ARefreshTokenWithABlankSubjectIsRejectedEvenWhenASameNameUserExists(string subject)
+    {
+        await AssertRefreshRejectedAsync(LegacyRefreshToken.CreateWithSubject(_tokenOptions, Alice, subject));
     }
 
     [Fact]
-    public async Task ALegacyTokenWithoutSubjectStillResolvesByName()
+    public async Task ARefreshTokenWithoutASubjectIsRejectedEvenWhenASameNameUserExists()
     {
-        var userProvider = Substitute.For<IUserProvider>();
-        var tokenIssuer = Substitute.For<IAccessTokenIssuer>();
-        userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Name == Alice.Name), Arg.Any<CancellationToken>()).Returns(Alice);
-        tokenIssuer.IssueTokensAsync(Alice, Arg.Any<CancellationToken>()).Returns(Tokens);
-        var endpoint = CreateEndpoint(userProvider, tokenIssuer, new Claim(ClaimTypes.Name, Alice.Name));
-
-        await endpoint.HandleAsync(CancellationToken.None);
-
-        Assert.Equal(StatusCodes.Status200OK, endpoint.HttpContext.Response.StatusCode);
-        await tokenIssuer.Received(1).IssueTokensAsync(Alice, Arg.Any<CancellationToken>());
-        await userProvider.DidNotReceive().FindAsync(Arg.Is<UserFilter>(x => x.Id != null), Arg.Any<CancellationToken>());
+        await AssertRefreshRejectedAsync(LegacyRefreshToken.CreateWithoutSubject(_tokenOptions, Alice));
     }
 
-    private static RefreshTokenEndpoint CreateEndpoint(IUserProvider userProvider, IAccessTokenIssuer tokenIssuer, params Claim[] claims)
+    private async Task<IssuedTokens> LoginAsync(User user) =>
+        await ReadTokensAsync(await _client.PostAsJsonAsync("/identity/login", new { username = user.Name, password = "unchecked" }));
+
+    private async Task<HttpResponseMessage> RefreshAsync(string refreshToken)
     {
-        return Factory.Create<RefreshTokenEndpoint>(context =>
-        {
-            context.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "refresh"));
-        }, userProvider, tokenIssuer);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/identity/refresh-token");
+        request.Headers.Authorization = new("Bearer", refreshToken);
+        return await _client.SendAsync(request);
+    }
+
+    private async Task<IssuedTokens> RefreshTokensAsync(string refreshToken) => await ReadTokensAsync(await RefreshAsync(refreshToken));
+
+    private async Task AssertRefreshRejectedAsync(string refreshToken) => Assert.Equal(HttpStatusCode.Unauthorized, (await RefreshAsync(refreshToken)).StatusCode);
+
+    private static string? ReadClaim(string token, string claimType) =>
+        new JsonWebTokenHandler().ReadJsonWebToken(token).Claims.FirstOrDefault(x => x.Type == claimType)?.Value;
+
+    private static async Task<IssuedTokens> ReadTokensAsync(HttpResponseMessage response)
+    {
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<LoginResponse>())!;
+        Assert.True(body.IsAuthenticated);
+        return new(body.AccessToken!, body.RefreshToken!);
+    }
+
+    // Password verification is not under test, and costs 600,000 PBKDF2 iterations per sign-in.
+    private sealed class NameOnlyCredentialsValidator(IUserProvider userProvider) : IUserCredentialsValidator
+    {
+        public async ValueTask<User?> ValidateAsync(string username, string password, CancellationToken cancellationToken = default) =>
+            await userProvider.FindByNameAsync(username, cancellationToken);
+    }
+
+    private sealed class UtcClock : ISystemClock
+    {
+        public DateTimeOffset UtcNow => DateTimeOffset.UtcNow;
     }
 }
