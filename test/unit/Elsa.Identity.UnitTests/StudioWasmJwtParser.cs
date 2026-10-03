@@ -15,7 +15,9 @@ internal static class StudioWasmJwtParser
         var claims = new List<Claim>();
 
         foreach (var property in ReadPayload(jwt).EnumerateObject())
+        {
             AddClaims(property.Name, property.Value, claims);
+        }
 
         return claims;
     }
@@ -37,7 +39,10 @@ internal static class StudioWasmJwtParser
                 return;
             case JsonValueKind.Array:
                 foreach (var item in value.EnumerateArray())
+                {
                     AddClaims(type, item, claims);
+                }
+
                 return;
             case JsonValueKind.String:
                 claims.Add(new(type, value.GetString() ?? string.Empty));

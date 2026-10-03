@@ -43,7 +43,9 @@ public sealed class EmptyPermissionsClaimTests : IAsyncLifetime
         new DefaultAuthenticationFeature(module).Apply();
 
         foreach (var diagnostic in builder.Services.Where(x => x.ImplementationType?.Namespace == typeof(StoredPermissionValidator).Namespace).ToList())
+        {
             builder.Services.Remove(diagnostic);
+        }
 
         builder.Services
             .AddSingleton<Elsa.Common.ISystemClock, Elsa.Common.Services.SystemClock>()
