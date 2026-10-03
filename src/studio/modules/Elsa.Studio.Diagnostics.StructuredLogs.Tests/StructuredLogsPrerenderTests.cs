@@ -109,7 +109,7 @@ public sealed class StructuredLogsInteractiveScrollTests : BunitContext, IAsyncL
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddMudServices();
-        Services.AddSingleton<ILocalizer, StructuredLogsPrerenderTests.TestLocalizer>();
+        Services.AddSingleton<ILocalizer, TestLocalizer>();
         Services.AddSingleton<IStructuredLogService, StructuredLogsPrerenderTests.TestStructuredLogService>();
         Services.AddSingleton<IStructuredLogObserver, StructuredLogsPrerenderTests.TestStructuredLogObserver>();
     }

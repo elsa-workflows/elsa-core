@@ -4,6 +4,7 @@ using Elsa.Api.Client.Resources.Scripting.Models;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Localization;
+using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Extensions;
 using Microsoft.Extensions.DependencyInjection;
