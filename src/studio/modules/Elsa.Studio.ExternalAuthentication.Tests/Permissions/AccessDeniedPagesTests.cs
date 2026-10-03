@@ -6,6 +6,7 @@ using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Contracts;
 using Elsa.Studio.ExternalAuthentication.Models;
 using Elsa.Studio.ExternalAuthentication.Services;
+using Elsa.Studio.Services;
 using Elsa.Studio.Testing;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -36,6 +37,7 @@ public sealed class AccessDeniedPagesTests : BunitContext
         Services.AddSingleton<IClipboard, NoClipboard>();
         Services.AddSingleton<AuthenticationStateProvider>(new StaticAuthenticationStateProvider(new(_identity)));
         Services.AddSingleton<IPermissionService>(_shellPermissions);
+        Services.AddSingleton<IMenuService>(new DefaultMenuService([], []));
         Services.AddScoped<IExternalAuthenticationPermissionService, ExternalAuthenticationPermissionService>();
         Services.AddSingleton<ICustomConnectionEditorRegistry, CustomConnectionEditorRegistry>();
     }
@@ -58,6 +60,8 @@ public sealed class AccessDeniedPagesTests : BunitContext
     public void ShellGuard_WhenThePermissionIsMissing_RendersOnlyTheSharedAccessDenied(Type page)
     {
         var declared = RequirePermissionAttribute.GetRequiredPermissions(page).Single();
+        // The stock dashboard landing (`/`) redirects instead of showing AccessDenied.
+        Services.GetRequiredService<NavigationManager>().NavigateTo("external-authentication/connections");
 
         var cut = Render<PermissionPageGuard>(parameters => parameters
             .AddCascadingValue(new RouteData(page, new Dictionary<string, object?>()))
@@ -76,7 +80,7 @@ public sealed class AccessDeniedPagesTests : BunitContext
     [InlineData(ExistingConnection, ExternalAuthenticationPermissions.Create, ViewConnections)]
     public void ConnectionEditor_WithoutItsRoutesPermission_RendersOnlyTheSharedAccessDenied(string? connectionId, string granted, string missing)
     {
-        _identity.AddClaim(new("permissions", granted));
+        _shellPermissions.Permissions = StubPermissionService.Grants(granted);
 
         var cut = RenderConnectionEditor(connectionId);
 
@@ -89,7 +93,7 @@ public sealed class AccessDeniedPagesTests : BunitContext
     [InlineData(ExistingConnection, ViewConnections)]
     public void ConnectionEditor_WithItsRoutesPermission_DoesNotRenderAccessDenied(string? connectionId, string granted)
     {
-        _identity.AddClaim(new("permissions", granted));
+        _shellPermissions.Permissions = StubPermissionService.Grants(granted);
 
         var cut = RenderConnectionEditor(connectionId);
 
@@ -100,7 +104,7 @@ public sealed class AccessDeniedPagesTests : BunitContext
     [Fact]
     public void ConnectionEditor_WhenANewConnectionMovesToItsExistingRoute_RechecksTheViewPermission()
     {
-        _identity.AddClaim(new("permissions", ExternalAuthenticationPermissions.Create));
+        _shellPermissions.Permissions = StubPermissionService.Grants(ExternalAuthenticationPermissions.Create);
         var cut = RenderConnectionEditor(null);
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("button")));
 

@@ -63,8 +63,9 @@ public sealed class OpenIdConnectBlazorServerSignOutTests
         app.UseEndpoints(endpoints => endpoints.MapControllers());
         _handleRequest = app.Build();
 
-        // Blazor Server renders in the same app, so the menu issues antiforgery tokens with the host's keys.
-        Services.AddOpenIdConnectAuth(ConfigureIdentityProvider);
+        // Blazor Server renders in the same app. Do not call AddOpenIdConnectAuth on the bUnit
+        // collection: that path registers MVC/Razor hosting services that need a real web host.
+        Services.AddScoped<IFeature, OpenIdConnectBlazorServerFeature>();
         Services.AddSingleton(_studio.Services.GetRequiredService<IAntiforgery>());
         Services.AddSingleton<IHttpContextAccessor>(_httpContextAccessor);
         Services.AddSingleton<AntiforgeryStateProvider>(_persistedAntiforgery);
