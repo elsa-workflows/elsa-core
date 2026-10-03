@@ -3,6 +3,8 @@ using Elsa.Studio.Contracts;
 using Elsa.Studio.Security.Client;
 using Elsa.Studio.Security.Contracts;
 using Elsa.Studio.Security.Models;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Refit;
 
@@ -10,28 +12,46 @@ namespace Elsa.Studio.Security.Services;
 
 /// <summary>
 /// Loads the current caller's effective permissions once per Studio scope.
+/// Forbidden snapshots are cached until <see cref="Invalidate"/>; Unavailable is never cached.
+/// Auth-state changes invalidate the cache so a later principal cannot keep the previous grants.
 /// </summary>
-public sealed class IdentityPermissionContext(
-    IBackendApiClientProvider apiClientProvider,
-    ILogger<IdentityPermissionContext> logger) : IIdentityPermissionContext
+public sealed class IdentityPermissionContext : IIdentityPermissionContext, IPermissionSnapshotCache, IDisposable
 {
+    private readonly IBackendApiClientProvider _apiClientProvider;
+    private readonly ILogger<IdentityPermissionContext> _logger;
+    private readonly AuthenticationStateProvider? _authenticationStateProvider;
     private readonly SemaphoreSlim _loadLock = new(1, 1);
     private IdentityPermissionSnapshot? _snapshot;
 
+    public IdentityPermissionContext(
+        IBackendApiClientProvider apiClientProvider,
+        ILogger<IdentityPermissionContext> logger,
+        IServiceProvider? services = null)
+    {
+        _apiClientProvider = apiClientProvider;
+        _logger = logger;
+        _authenticationStateProvider = services?.GetService<AuthenticationStateProvider>();
+
+        if (_authenticationStateProvider != null)
+        {
+            _authenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+        }
+    }
+
     public async Task<IdentityPermissionSnapshot> GetAsync(CancellationToken cancellationToken = default)
     {
-        if (_snapshot != null)
-            return _snapshot;
+        if (HasCachedSnapshot)
+            return _snapshot!;
 
         await _loadLock.WaitAsync(cancellationToken);
         try
         {
-            if (_snapshot != null)
-                return _snapshot;
+            if (HasCachedSnapshot)
+                return _snapshot!;
 
             try
             {
-                var api = await apiClientProvider.GetApiAsync<IMePermissionsApi>(cancellationToken);
+                var api = await _apiClientProvider.GetApiAsync<IMePermissionsApi>(cancellationToken);
                 var response = await api.GetAsync(cancellationToken);
                 var grants = response.Grants
                     .GroupBy(x => x.Resource, StringComparer.Ordinal)
@@ -50,12 +70,12 @@ public sealed class IdentityPermissionContext(
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
-                logger.LogWarning("Loading the current Identity permissions timed out");
+                _logger.LogWarning("Loading the current Identity permissions timed out");
                 _snapshot = IdentityPermissionSnapshot.Unavailable;
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
-                logger.LogWarning(exception, "Loading the current Identity permissions failed");
+                _logger.LogWarning(exception, "Loading the current Identity permissions failed");
                 _snapshot = IdentityPermissionSnapshot.Unavailable;
             }
 
@@ -68,4 +88,19 @@ public sealed class IdentityPermissionContext(
     }
 
     public void Invalidate() => _snapshot = null;
+
+    public void Dispose()
+    {
+        if (_authenticationStateProvider != null)
+        {
+            _authenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+        }
+
+        _loadLock.Dispose();
+    }
+
+    private bool HasCachedSnapshot =>
+        _snapshot is { State: not IdentityPermissionSnapshotState.Unavailable };
+
+    private void OnAuthenticationStateChanged(Task<AuthenticationState> _) => Invalidate();
 }

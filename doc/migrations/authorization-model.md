@@ -318,3 +318,9 @@ One caveat: the composite indexes only cover rows whose `TenantId` is non-null (
 | `ai:proposals:view` | *removed* — unused |
 | `ai:proposals:approve` | *removed* — unused |
 | `ai:proposals:apply` | *removed* — unused |
+
+## Studio hosts without the Security module
+
+Studio matches 3.9: a host that does not register `IPermissionService` (no Security module) uses `UserPermissions.Unknown`, so every permission check passes. That is an explicit choice for hosts that do not enforce authorization in the shell. Install the Security module to fail closed on `GET /identity/me/permissions`.
+
+The Webhooks page is gated on `http/webhooks:view`. That resource is in the backend catalog so a `*` administrator receives it. Dashboard per-widget gating depends on the dashboard section permissions from #8572.
