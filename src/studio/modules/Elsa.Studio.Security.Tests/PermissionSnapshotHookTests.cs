@@ -87,13 +87,13 @@ public sealed class PermissionSnapshotHookTests : BunitContext, IAsyncLifetime
     public async Task PermissionView_AfterSilentTokenRefresh_ReloadsGrants()
     {
         var tokens = new MemoryJwtAccessor();
-        tokens.Tokens[TokenNames.AccessToken] = CreateJwt(TimeSpan.FromMinutes(-5));
+        tokens.Tokens[TokenNames.AccessToken] = CreateJwt(TimeSpan.FromMinutes(-5), "user-1", "identity/users:view");
         tokens.Tokens[TokenNames.RefreshToken] = "refresh-token";
         var provider = new JwtTokenProvider(
             tokens,
             new JwtParser(),
             new SingleFlightCoordinator(),
-            new StaticRefreshTokenService(),
+            new WritingRefreshTokenService(tokens, CreateJwt(TimeSpan.FromMinutes(15), "user-1")),
             [_signal]);
 
         var cut = RenderAdminAction();
@@ -104,6 +104,31 @@ public sealed class PermissionSnapshotHookTests : BunitContext, IAsyncLifetime
 
         cut.WaitForAssertion(() => Assert.DoesNotContain(AdminAction, cut.Markup));
         Assert.Equal(2, _api.Calls);
+    }
+
+    [Fact]
+    public async Task GetAsync_WhenNearExpiryRefreshKeepsSubAndPermissions_DoesNotLoop()
+    {
+        var tokens = new MemoryJwtAccessor();
+        var nearExpiry = CreateJwt(TimeSpan.FromSeconds(90), "user-1", "identity/users:view");
+        tokens.Tokens[TokenNames.AccessToken] = nearExpiry;
+        tokens.Tokens[TokenNames.RefreshToken] = "refresh-token";
+        var raised = 0;
+        _signal.Raised += () => raised++;
+        var provider = new JwtTokenProvider(
+            tokens,
+            new JwtParser(),
+            new SingleFlightCoordinator(),
+            new WritingRefreshTokenService(tokens, CreateJwt(TimeSpan.FromSeconds(90), "user-1", "identity/users:view")),
+            [_signal]);
+        _api.OnGet = () => provider.GetAccessTokenAsync();
+
+        var snapshot = await _context.GetAsync().WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(IdentityPermissionSnapshotState.Ready, snapshot.State);
+        Assert.True(snapshot.HasPermission("identity/users", "view"));
+        Assert.Equal(1, _api.Calls);
+        Assert.Equal(0, raised);
     }
 
     public Task InitializeAsync() => Task.CompletedTask;
@@ -120,10 +145,20 @@ public sealed class PermissionSnapshotHookTests : BunitContext, IAsyncLifetime
             .Add(x => x.Verb, "view")
             .AddChildContent(AdminAction));
 
-    private static string CreateJwt(TimeSpan expiresIn)
+    private static string CreateJwt(TimeSpan expiresIn, string? sub = null, params string[] permissions)
     {
-        var payload = JsonSerializer.Serialize(new { exp = DateTimeOffset.UtcNow.Add(expiresIn).ToUnixTimeSeconds() });
-        return $"{Base64Url("{\"alg\":\"none\"}")}.{Base64Url(payload)}.signature";
+        var payload = new Dictionary<string, object?>
+        {
+            ["exp"] = DateTimeOffset.UtcNow.Add(expiresIn).ToUnixTimeSeconds()
+        };
+        if (sub != null)
+            payload["sub"] = sub;
+        if (permissions.Length == 1)
+            payload["permissions"] = permissions[0];
+        else if (permissions.Length > 1)
+            payload["permissions"] = permissions;
+
+        return $"{Base64Url("{\"alg\":\"none\"}")}.{Base64Url(JsonSerializer.Serialize(payload))}.signature";
     }
 
     private static string Base64Url(string value) =>
@@ -133,11 +168,14 @@ public sealed class PermissionSnapshotHookTests : BunitContext, IAsyncLifetime
     {
         public IReadOnlyList<CurrentCallerResourceGrant> Grants { get; set; } = [];
         public int Calls { get; private set; }
+        public Func<Task>? OnGet { get; set; }
 
-        public Task<CurrentCallerPermissionsResponse> GetAsync(CancellationToken cancellationToken = default)
+        public async Task<CurrentCallerPermissionsResponse> GetAsync(CancellationToken cancellationToken = default)
         {
             Calls++;
-            return Task.FromResult(new CurrentCallerPermissionsResponse { Grants = Grants.ToArray() });
+            if (OnGet != null)
+                await OnGet();
+            return new CurrentCallerPermissionsResponse { Grants = Grants.ToArray() };
         }
     }
 
@@ -169,9 +207,13 @@ public sealed class PermissionSnapshotHookTests : BunitContext, IAsyncLifetime
         }
     }
 
-    private sealed class StaticRefreshTokenService : IRefreshTokenService
+    private sealed class WritingRefreshTokenService(MemoryJwtAccessor tokens, string accessToken) : IRefreshTokenService
     {
-        public Task<LoginResponse> RefreshTokenAsync(CancellationToken cancellationToken) =>
-            Task.FromResult(new LoginResponse(true, "new-access", "new-refresh"));
+        public async Task<LoginResponse> RefreshTokenAsync(CancellationToken cancellationToken)
+        {
+            await tokens.WriteTokenAsync(TokenNames.AccessToken, accessToken);
+            await tokens.WriteTokenAsync(TokenNames.RefreshToken, "new-refresh");
+            return new LoginResponse(true, accessToken, "new-refresh");
+        }
     }
 }

@@ -236,6 +236,29 @@ public sealed class IdentityPermissionContextTests
     }
 
     [Fact]
+    public async Task GetAsync_WhenOvertakenReloadCapIsReached_ReturnsUnavailableWithoutCaching()
+    {
+        var calls = 0;
+        var context = CreateContext(new TestMePermissionsApi(_ =>
+        {
+            Interlocked.Increment(ref calls);
+            return Task.FromResult(new CurrentCallerPermissionsResponse
+            {
+                Grants = [new CurrentCallerResourceGrant { Resource = IdentityPermissions.UsersResource, Verbs = [IdentityPermissions.View] }]
+            });
+        }));
+        context.AfterLoad = context.Invalidate;
+
+        var snapshot = await context.GetAsync();
+        var retried = await context.GetAsync();
+
+        Assert.Equal(IdentityPermissionSnapshotState.Unavailable, snapshot.State);
+        Assert.False(snapshot.HasPermission(IdentityPermissions.UsersResource, IdentityPermissions.View));
+        Assert.Equal(IdentityPermissionSnapshotState.Unavailable, retried.State);
+        Assert.Equal(IdentityPermissionContext.MaxOvertakenReloads * 2, Volatile.Read(ref calls));
+    }
+
+    [Fact]
     public async Task Invalidate_RaisesChangedThenTheNextGetReloads()
     {
         var calls = 0;
