@@ -1,4 +1,5 @@
 using Elsa.Studio.Authorization;
+using Elsa.Studio.Contracts;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,16 +8,20 @@ namespace Elsa.Studio.Components;
 
 /// <summary>
 /// Base class for components that resolve the current user's permissions themselves. Once tracking starts, the
-/// permissions are resolved again whenever the authentication state changes (e.g. a refreshed token carrying new
-/// grants), and a resolution overtaken by a newer one is ignored.
+/// permissions are resolved again whenever the permission snapshot is invalidated (sign-in change, environment
+/// switch, silent token refresh), and a resolution overtaken by a newer one is ignored.
 /// </summary>
 /// <remarks>
 /// When no <see cref="IPermissionService"/> is registered, resolves to <see cref="UserPermissions.Unknown"/>
 /// so hosts without Security keep rendering. The production Identity adapter never returns Unknown.
+/// Re-resolution is driven by <see cref="IPermissionSnapshotCache.Changed"/> so the cache is already empty
+/// when the component reloads, regardless of which object constructed the cache first. Hosts without a cache
+/// still follow <see cref="AuthenticationStateProvider.AuthenticationStateChanged"/>.
 /// </remarks>
 public abstract class PermissionTrackingComponentBase : ComponentBase, IDisposable
 {
     private AuthenticationStateProvider? _authenticationStateProvider;
+    private IPermissionSnapshotCache[] _caches = [];
     private bool _isTracking;
     private int _resolution;
 
@@ -31,10 +36,17 @@ public abstract class PermissionTrackingComponentBase : ComponentBase, IDisposab
         if (!_isTracking)
         {
             _isTracking = true;
-            _authenticationStateProvider = Services.GetService<AuthenticationStateProvider>();
-            if (_authenticationStateProvider != null)
+            _caches = Services.GetServices<IPermissionSnapshotCache>().ToArray();
+            if (_caches.Length > 0)
             {
-                _authenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+                foreach (var cache in _caches)
+                    cache.Changed += OnSnapshotChanged;
+            }
+            else
+            {
+                _authenticationStateProvider = Services.GetService<AuthenticationStateProvider>();
+                if (_authenticationStateProvider != null)
+                    _authenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
             }
         }
 
@@ -44,10 +56,11 @@ public abstract class PermissionTrackingComponentBase : ComponentBase, IDisposab
     /// <inheritdoc />
     public void Dispose()
     {
+        foreach (var cache in _caches)
+            cache.Changed -= OnSnapshotChanged;
+
         if (_authenticationStateProvider != null)
-        {
             _authenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
-        }
     }
 
     private async Task ResolvePermissionsAsync()
@@ -65,8 +78,12 @@ public abstract class PermissionTrackingComponentBase : ComponentBase, IDisposab
         }
     }
 
+    private async void OnSnapshotChanged(object? sender, EventArgs e) => await RefreshUiAsync();
+
     // Keeps the current permissions while resolving, so permitted content is not unmounted while it runs.
-    private async void OnAuthenticationStateChanged(Task<AuthenticationState> state)
+    private async void OnAuthenticationStateChanged(Task<AuthenticationState> state) => await RefreshUiAsync();
+
+    private async Task RefreshUiAsync()
     {
         try
         {
@@ -78,7 +95,7 @@ public abstract class PermissionTrackingComponentBase : ComponentBase, IDisposab
         }
         catch
         {
-            // An auth-state notification must not become an unobserved exception.
+            // A permission notification must not become an unobserved exception.
         }
     }
 }

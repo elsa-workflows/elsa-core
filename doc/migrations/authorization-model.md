@@ -51,6 +51,28 @@ The default access-token lifetime drops from 1 hour to **15 minutes**. This is t
 
 Elsa role and permission changes take effect on the next token refresh or expiry. Changes to grants from an external identity provider take effect only after a fresh sign-in. Stamp-based revalidation (`Identity:PermissionStamp:IsEnabled` and a ~30 second `CacheLifetime`) is planned for 3.10; it is not available in 3.9.
 
+## Signing out revokes the session
+
+`POST /identity/logout` revokes the caller's sign-in session: the refresh token it is given, and every refresh token issued in the same session, are refused by `/identity/refresh-token` with the same `401` as an invalid token. Access tokens are not revoked and stay valid until they expire. See [Signing Out](../wiki/identity-tenancy-security.md#signing-out) for the contract.
+
+Revocations need storage. With EF Core persistence, apply the `RevokedSessions` migration for your provider; it adds the `RevokedSessions` table (indexed on `ExpiresAt`) and changes nothing else. Without persistence, revocations are held in memory, which is only sound for a single node.
+
+**Apply the migration before upgraded hosts refresh tokens.** Every refresh consults the `RevokedSessions` table, so an upgraded host running against a database without it fails to refresh tokens. Elsa's automatic migration covers it: the Identity persistence features run their migrations at startup unless you turned that off (`RunMigrations = false`), in which case apply the `RevokedSessions` migration yourself before rolling out the new version.
+
+**Changing `RefreshTokenLifetime`.** Raising it is safe. A revocation outlives every refresh token issued with a lifetime no longer than the current one, and every refresh token that the one presented at sign-out was refreshed from, whatever lifetime they were issued with. Lowering it leaves one gap, for at most the old lifetime: a refresh token issued with the old, longer lifetime that the presented one was not refreshed from, such as one obtained by refreshing a copy of an earlier token of the session, can outlive the revocation and work again once it is pruned. See [Signing Out](../wiki/identity-tenancy-security.md#signing-out).
+
+### Breaking change: custom `IAccessTokenIssuer` implementations
+
+`IAccessTokenIssuer` has a new member, `IssueTokensAsync(User user, SignInSession? session, CancellationToken cancellationToken = default)`, without a default implementation, so a custom issuer no longer compiles until it implements it. `/identity/refresh-token` and `IIdentityRefreshTokenService` call it with the session of the refresh token they exchange; `null` starts a new session, as signing in does.
+
+The refresh token it issues must continue that session. Pass it to `IElsaTokenService.IssueRefreshTokenAsync` as `TokenIssuanceContext.Session`, which is what `DefaultAccessTokenIssuer` does. An issuer that creates refresh tokens itself puts `session.Id` in the `elsa:session_id` claim, and the later of `session.ExpiresAt` and the token's own expiry in the `elsa:session_exp` claim, in seconds since the Unix epoch like `exp`. An issuer that drops the session starts a new one on every refresh, and signing out then leaves valid, until they expire, the refresh tokens held before the latest refresh; a default implementation would have done exactly that without warning, which is why there is none.
+
+### Breaking change: `DefaultIdentityRefreshTokenService` constructor
+
+The public constructor of `DefaultIdentityRefreshTokenService` now requires a `SessionRevoker`. This affects only code that constructs the service directly (for example, in tests or a hand-built container); hosts that use the registered `IIdentityRefreshTokenService` are unaffected. Resolve `SessionRevoker` from DI and pass it to the constructor.
+
+Nothing else changes for clients. Refresh tokens now carry `elsa:session_id` and `elsa:session_exp` claims, and ones issued before the upgrade keep working until they expire. Signing out with a pre-upgrade token revokes only the session derived from that token; older pre-upgrade tokens of the same refresh chain stay valid for the remaining time under their issued expiry, which can outlast the current `RefreshTokenLifetime` if that setting was lowered during the upgrade.
+
 ## External authentication grant boundaries
 
 `ExternalAuthentication:PermissionGrants:AllowedPermissions` and `DeniedPermissions` bound which permissions an
@@ -195,9 +217,128 @@ identity to audit. It was also already unable to do the thing it existed for: it
 If neither is configured and no users exist, startup now logs an error naming both options, rather than
 leaving every endpoint to answer 403 without explanation.
 
+## Installed features are readable by any signed-in user
+
+`GET /features/installed` and `GET /features/installed/{fullName}` require an authenticated caller and no
+permission. Clients such as Elsa Studio decide which modules to render from this list, so gating it hid every
+module, including ones the caller holds permissions for, from anyone without the grant. Anonymous callers are
+still rejected.
+
+`system/features:view` therefore no longer gates anything. It stays in the catalog, and in the mapping below,
+so roles that already hold it keep resolving instead of being reported by the startup validator; you can drop
+it from your roles at your convenience.
+
+## Descriptor catalogs are readable by any signed-in user, and a definition viewer can list versions
+
+Elsa Studio loads the descriptor catalogs, and a definition's versions, to open the designer. A role holding only
+`workflows/definitions:view` could list definitions but got a 403 on each of those calls when it opened one.
+
+These read-only catalogs now require an authenticated caller and no permission. Anonymous callers are still rejected.
+Most describe what is installed, not anything stored, so gating them added no protection. The exception is the
+activity catalog: `GET /descriptors/activities` and `GET /descriptors/activities/{typeName}` also list an activity for
+each stored workflow definition that is marked as usable as an activity, so any authenticated user in the tenant can
+now see those workflows' names, descriptions and inputs. This is deliberate, because instance viewers need those
+descriptors to render workflows that use them.
+
+- `GET /descriptors/activities` and `GET /descriptors/activities/{typeName}`
+- `GET /descriptors/variables`
+- `GET /descriptors/storage-drivers`
+- `GET /descriptors/output-converters`
+- `GET /descriptors/expression-descriptors`
+- `GET /descriptors/workflow-activation-strategies`
+- `GET /descriptors/incident-strategies`
+- `GET /descriptors/log-persistence-strategies`
+- `GET /descriptors/commit-strategies/activities` and `GET /descriptors/commit-strategies/workflows`
+- `GET /resilience/strategies`
+
+`GET /workflow-definitions/{definitionId}/versions` now requires `workflows/definitions:view` instead of
+`workflows/definitions/versions:view`. It is not a static catalog, but a caller who can read a definition could already
+read every one of its versions, so the version list disclosed nothing further. A role that held
+`workflows/definitions/versions:view` without `workflows/definitions:view` can no longer list versions; grant
+`workflows/definitions:view`, which the `read:workflow-definitions` mapping below already includes. Deleting and
+reverting versions still require `workflows/definitions/versions:delete` and `:revert`.
+
+The permissions these endpoints used to require (`workflows/descriptors/<kind>:view`, `resilience/strategies:view` and
+`workflows/definitions/versions:view`) no longer gate reading them, with one exception described below. They stay in the
+catalog, and in the mapping below, so roles that already hold them keep resolving instead of being reported by the
+startup validator; you can drop them from your roles at your convenience.
+
+`workflows/descriptors/activities:view` is not one of the permissions you can drop. It still guards two things:
+
+- `GET /descriptors/activities?refresh=true`, which rebuilds the activity registry from the stored definitions. The flag
+  takes effect for a caller holding this permission or `workflows/definitions:view`; any other caller is not rejected,
+  the flag is ignored and the current registry is returned. Elsa Studio sends the flag on every load, which in a cluster
+  is how a node picks up a workflow-as-activity published through another node, so a role holding only
+  `workflows/definitions:view` opens the designer with a current catalog.
+- `POST /descriptors/activities/{activityTypeName}/options/{propertyName}`, which runs the property's option provider
+  with caller-supplied context.
+
+Some other calls the designer makes are also unchanged, so a role holding only `workflows/definitions:view` still
+needs their own permissions for them:
+
+- `GET /workflow-definitions/{definitionId}/labels` and `GET /labels` (the label permissions)
+- `POST /scripting/javascript/type-definitions/{definitionId}` (the JavaScript scripting permission)
+- `GET /secrets/descriptors` (the secrets permission)
+
+## The dashboard is readable by any signed-in user, one section at a time
+
+Elsa Studio shows the Dashboard to every signed-in user and gates each widget by the permission of the data it shows. The
+API applies the same rule. `dashboard:view` still reads the whole operational overview, so roles that hold it keep working
+unchanged; a narrower permission now reads just the data it guards.
+
+`GET /dashboard/overview` requires an authenticated caller and no permission; anonymous callers still get 401. It never
+refuses a caller who can read part of it. A section the caller may not read comes back with `Capability` set to
+`Unauthorized` and no data:
+
+| Overview section | Readable with `dashboard:view` or |
+| --- | --- |
+| `workflowInstances` | `workflows/instances:view` |
+| `runtime` | `workflows/runtime:view` |
+| `diagnostics.structuredLogs` | `diagnostics/structured-logs:view` |
+| `diagnostics.consoleLogs` | `diagnostics/console-logs:view` |
+
+`runtime` and `workflowInstances` carry a new `capability` field for this, which reads `Available` for a section the
+caller may read. Metric cards and panels follow the permission of the data they summarise, and a caller who may not read
+them does not receive them. A caller holding no dashboard-related permission gets an overview with every section
+`Unauthorized`.
+
+`POST /dashboard/workflow-trends`, `GET /dashboard/recent-activity`, `GET /dashboard/needs-attention` and
+`POST /dashboard/workflow-hotspots` answer 403 unless the caller holds `dashboard:view` or `workflows/instances:view`.
+They declare this with `RequireAnyPermission`, so `EndpointPermissionRegistry.FindRequirement` reports both permissions
+for them.
+Findings on `needs-attention` follow the same rule per finding, so a caller holding only `workflows/instances:view` sees the
+workflow findings but not the runtime or diagnostics ones.
+
+Modules that add to the dashboard declare the permission of their data. A contributor can check
+`DashboardContext.CanRead` to skip queries for data the caller cannot read; `null` means unrestricted. A contributor declares
+`IDashboardContributor.OverviewPermissions` up front for the runtime, instance and diagnostics sections it supplies, and
+sets `Permission` on each metric card, panel, finding, and trend, recent-activity or hotspot response it returns. Anything
+a contributor supplies without a declaration needs `dashboard:view`, so an existing third-party contributor keeps working
+and stays hidden from callers holding only a narrower permission until it declares one. That includes trend, recent
+activity and hotspot rows: a caller holding only `workflows/instances:view` receives only the rows of contributions
+that declare `workflows/instances:view`, which the built-in workflow contributor does.
+
+`OverviewPermissions` lists the permissions of everything a contributor adds to the overview, that is its sections, metric
+cards and panels, and is used only to skip the overview call for a caller who holds none of them; a contributor must
+therefore declare every permission its cards and panels carry, or a caller holding only that permission never receives
+them. This way a signed-in account with no dashboard permissions costs no database counts, runtime queries or log
+queries. An undeclared section still needs `dashboard:view`. Needs-attention, trends,
+recent activity and hotspots always invoke every contributor and filter afterwards by the `Permission` on what it returns.
+When several contributors add to one section, contributions the caller may not read are ignored. If any contribution the caller may read failed, the section is `Unavailable` with no figures, never partial totals and never `Unauthorized`; it is `Unauthorized` only when the caller may read none of them. A caller whose
+permissions read nothing the contributors declared or supplied gets every section as `Unauthorized`, including the ones no module supplies,
+so the response does not reveal which modules are installed, and `backendName` and `environmentName` are left empty.
+
 ## Third-party modules
 
 Modules outside this repository keep compiling. `ConfigurePermissions(params string[])` remains available but obsolete, and a permission that resolves to no registered descriptor registers an implicit one marked unverified, logs a warning, and appears as such in the catalog. The module keeps working and the gap stays visible.
+
+An endpoint that accepts any one of several permissions declares `RequireAnyPermission((resource, verb), ...)`. It is
+evaluated, recorded and governed by `EndpointSecurityOptions.SecurityIsEnabled` exactly as `RequirePermission` is, and
+the endpoint coverage gate accepts it. `EndpointPermissionRegistry` records each declaration as an
+`EndpointPermissionRequirement` whose `AnyOf` lists the permissions that satisfy it; read it with `FindRequirement`, or
+enumerate every declaration with `AllRequirements`. `Find` and `All` are unchanged for an endpoint that requires exactly
+one permission, and report nothing for one that accepts any of several, so tooling that should see those endpoints
+moves to the new accessors.
 
 ## Per-tenant identity uniqueness
 
@@ -321,7 +462,7 @@ One caveat: the composite indexes only cover rows whose `TenantId` is non-null (
 
 ## Studio hosts without the Security module
 
-Studio matches 3.9: a host that does not register `IPermissionService` (no Security module) uses `UserPermissions.Unknown`, so every permission check passes. That is an explicit choice for hosts that do not enforce authorization in the shell. Install the Security module to fail closed on `GET /identity/me/permissions`.
+Studio matches 3.9: a host that does not register `IPermissionService` (no Security module) uses `UserPermissions.Unknown`, so every permission check passes. That is an explicit choice for hosts that do not enforce authorization in the shell. The CustomElements host (`Elsa.Studio.Host.CustomElements`) runs in this Unknown mode: it registers Core, Shell, Workflows, Secrets and User Tasks, but not Security. Install the Security module to fail closed on `GET /identity/me/permissions`.
 
 The Webhooks page is gated on `http/webhooks:view`. That resource is in the backend catalog so a `*` administrator receives it. Dashboard per-widget gating depends on the dashboard section permissions from #8572.
 
@@ -332,3 +473,8 @@ These Studio-side contract changes ship with this release and need a rebuild of 
 - Studio-local Refit interfaces were renamed so they do not collide with `Elsa.Api.Client`: `IExternalAuthenticationConnectionsApi` → `IExternalAuthenticationConnectionManagementApi`, and `IExternalIdentityLinksApi` → `IExternalIdentityLinkManagementApi`.
 - `ExternalAuthenticationPermissions` values now use the `{resource}:{verb}` grammar (`external-authentication/connections:view`, and so on). Old Studio-only names such as `external-authentication:connections:read` are not granted by the catalog.
 - `IFeatureService.IsInitialized` stays a default interface member (`=> false`). Third-party implementations and decorators do not have to add the member.
+- Direct OIDC logout is POST-only: `GET /authentication/logout` does not sign the user out. The hosted form posts to `NavigationManager.ToAbsoluteUri("authentication/logout")` so a PathBase such as `/studio/` is preserved.
+- `IPermissionSnapshotCache` is owned by `IdentityPermissionContext`. `Invalidate` increments a generation token, drops the snapshot, then raises `Changed` so permission-dependent UI re-fetches. An in-flight load whose generation no longer matches does not write the stale grants back. Environment switches and silent JWT refreshes raise `IPermissionRefreshSignal` (a no-dependency singleton) instead of taking the cache, which would cycle through the backend client.
+- `DefaultEnvironmentService` now takes an optional `IEnumerable<IPermissionRefreshSignal>` instead of `IEnumerable<IPermissionSnapshotCache>`. The previous cache parameter is gone.
+- `JwtTokenProvider` gained an `IEnumerable<IPermissionRefreshSignal>` constructor parameter; the original four-argument constructor remains and passes an empty set.
+- `ElsaIdentitySignOutService.LoginPath` is obsolete. Sign-out navigates with `NavigationManager.ToAbsoluteUri("login").PathAndQuery` so a PathBase is kept. If clearing the stored tokens fails, the service stays on the page rather than opening login with the token still present.

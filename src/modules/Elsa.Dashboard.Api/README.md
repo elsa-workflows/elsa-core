@@ -60,6 +60,12 @@ Body:
 
 Returns top workflow definitions for the selected metric. Studio treats this panel as optional and may omit it if the endpoint is unavailable.
 
+## Authorization
+
+`GET /dashboard/overview` requires an authenticated caller and no permission, and withholds each section the caller may not read (see [Extension Model](#extension-model)).
+
+The workflow-trends, needs-attention, recent-activity and workflow-hotspots endpoints serve workflow instance data. They declare `RequireAnyPermission` with `dashboard:view` and `workflows/instances:view`: a caller holding either one is allowed, a signed-in caller holding neither gets 403, and an anonymous caller gets 401. `EndpointPermissionRegistry.FindRequirement` reports both permissions for them. With endpoint security disabled, every dashboard endpoint allows every caller.
+
 ## Capability States
 
 Diagnostics summaries carry a `capability` object:
@@ -86,6 +92,8 @@ Dashboard core owns the public `/dashboard/*` routes, permissions, range resolut
 - `GetWorkflowTrendsAsync` for trend buckets.
 - `GetRecentActivityAsync` for compact activity rows.
 - `GetWorkflowHotspotsAsync` for hotspot rows.
+
+Each contributor declares the permission of the data it adds, so the dashboard can withhold it from callers who may not read it. A caller reads a section with the declared permission or with `dashboard:view`; anything supplied without a declaration needs `dashboard:view`. Set `IDashboardContributor.OverviewPermissions` for the runtime, workflow instance and diagnostics sections, and `Permission` on a metric card, panel, finding, or trend, recent-activity or hotspot response, so rows from a contribution that declares none reach only callers holding `dashboard:view`. `OverviewPermissions` lists the permissions of everything the contributor adds to the overview, that is its sections, metric cards and panels, and is used only to skip the overview call for a caller who can read none of them, so it must include every permission its cards and panels carry or a caller holding only that permission never receives them; an undeclared section still needs `dashboard:view`. Findings, trends, recent activity and hotspots always invoke every contributor and are filtered afterwards by the `Permission` on what it returns. A section the caller may not read is returned with `Capability = Unauthorized` and no data. When several contributors add to one section, contributions the caller may not read are ignored; if any contribution the caller may read failed, the section is returned with `Capability = Unavailable` and no figures, never partial totals and never `Unauthorized`. A caller whose permissions read nothing the contributors declared or supplied also gets every section as `Unauthorized`, so installed modules are not disclosed, and empty backend and environment names.
 
 Contributor failures are isolated by the dashboard composer. A failed contributor does not break the whole dashboard response; request cancellation is still honored.
 

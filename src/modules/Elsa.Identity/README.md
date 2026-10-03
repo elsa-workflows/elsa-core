@@ -93,7 +93,7 @@ New identity passwords, client secrets, and API keys are hashed with PBKDF2-SHA2
 
 External Authentication is additive to Elsa Identity:
 
-- Existing `/identity/login` and `/identity/refresh-token` contracts remain the direct local-credential flow.
+- Existing `/identity/login`, `/identity/refresh-token` and `/identity/logout` contracts remain the direct local-credential flow. `POST /identity/logout` revokes the sign-in session of the refresh token in its body; see [Signing Out](../../../doc/wiki/identity-tenancy-security.md#signing-out).
 - The optional broker exposes separate local and external completion endpoints that return a short-lived, PKCE-bound authorization code before issuing Elsa credentials.
 - Externally provisioned users may have no local password hash or salt. Such users fail direct local login with the same public result as any other invalid credential.
 - Elsa remains the issuer of access tokens and the authority for their `permissions` claim, regardless of how the user authenticated.

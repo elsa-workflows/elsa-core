@@ -13,6 +13,11 @@ namespace Elsa.Identity.UnitTests;
 internal static class LegacyRefreshToken
 {
     /// <summary>
+    /// Creates a refresh token the way Elsa issued them before sessions existed: with a subject, without a session claim.
+    /// </summary>
+    public static string Create(IdentityTokenOptions options, User user) => Create(options, user.Name, user.Id);
+
+    /// <summary>
     /// Creates a refresh token without a subject claim. 3.0–3.7 also issued refresh tokens this way, but the
     /// refresh scheme already rejects those because they lack <c>token_use</c>. 3.8.0-preview1 is the only
     /// release whose refresh-scheme-accepted tokens lacked <c>sub</c>, and they had a 2-hour lifetime.

@@ -77,6 +77,10 @@ public static class ServiceCollectionExtensions
         // Single-flight coordinator for preventing concurrent operations.
         services.TryAddScoped<ISingleFlightCoordinator, SingleFlightCoordinator>();
 
+        // Process-wide refresh/environment signal. Has no dependencies so Security and
+        // Environments can raise it without constructing the permission cache.
+        services.TryAddSingleton<IPermissionRefreshSignal, PermissionRefreshSignal>();
+
         return services;
     }
 

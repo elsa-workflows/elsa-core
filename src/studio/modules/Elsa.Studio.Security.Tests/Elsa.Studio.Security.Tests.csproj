@@ -18,6 +18,8 @@
 
     <ItemGroup>
         <ProjectReference Include="../../framework/Elsa.Studio.Shared/Elsa.Studio.Shared.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Authentication.ElsaIdentity/Elsa.Studio.Authentication.ElsaIdentity.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Environments/Elsa.Studio.Environments.csproj" />
         <ProjectReference Include="../Elsa.Studio.Security/Elsa.Studio.Security.csproj" />
     </ItemGroup>
 

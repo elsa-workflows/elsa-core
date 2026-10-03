@@ -10,7 +10,7 @@ public class JwtTokenProvider(
     IJwtParser jwtParser,
     ISingleFlightCoordinator refreshCoordinator,
     IRefreshTokenService refreshTokenService,
-    IEnumerable<IPermissionSnapshotCache> permissionCaches) : ITokenProvider
+    IEnumerable<IPermissionRefreshSignal> refreshSignals) : ITokenProvider
 {
     public JwtTokenProvider(
         IJwtAccessor jwtAccessor,
@@ -41,18 +41,18 @@ public class JwtTokenProvider(
         {
             // Refresh failed: clear local tokens so the app can transition to unauthenticated state.
             await jwtAccessor.ClearTokensAsync();
-            InvalidatePermissionSnapshots();
+            NotifyRefresh();
             return null;
         }
 
-        InvalidatePermissionSnapshots();
+        NotifyRefresh();
         return await jwtAccessor.ReadTokenAsync(TokenNames.AccessToken);
     }
 
-    private void InvalidatePermissionSnapshots()
+    private void NotifyRefresh()
     {
-        foreach (var cache in permissionCaches)
-            cache.Invalidate();
+        foreach (var signal in refreshSignals)
+            signal.Raise();
     }
 
     private bool IsExpiredOrNearExpiry(string jwt)

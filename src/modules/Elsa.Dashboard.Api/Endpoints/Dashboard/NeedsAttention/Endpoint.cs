@@ -1,8 +1,7 @@
-using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
-using Elsa.Dashboard.Api.Permissions;
+using Elsa.Dashboard.Api.Authorization;
 using JetBrains.Annotations;
 
 namespace Elsa.Dashboard.Api.Endpoints.Dashboard.NeedsAttention;
@@ -13,7 +12,7 @@ internal class Endpoint(IDashboardProvider dashboardProvider) : ElsaEndpointWith
     public override void Configure()
     {
         Get("/dashboard/needs-attention");
-        RequirePermission(Elsa.Dashboard.Api.Permissions.DashboardResourcePermissions.Dashboard, CoreVerbs.View);
+        RequireAnyPermission(DashboardAccess.InstanceEndpointPermissions);
     }
 
     public override async Task<DashboardNeedsAttentionResponse> ExecuteAsync(CancellationToken cancellationToken)
@@ -21,6 +20,6 @@ internal class Endpoint(IDashboardProvider dashboardProvider) : ElsaEndpointWith
         var range = Query<string?>("range", false);
         var take = Query<int?>("take", false) ?? 8;
         var includeSystem = Query<bool>("includeSystem", false);
-        return await dashboardProvider.GetNeedsAttentionAsync(new(range, includeSystem), take, cancellationToken);
+        return await dashboardProvider.GetNeedsAttentionAsync(new(range, includeSystem) { CanRead = DashboardAccess.CreateReadCheck(HttpContext) }, take, cancellationToken);
     }
 }

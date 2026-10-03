@@ -53,8 +53,8 @@ public sealed class SecurityServiceRegistrationTests
     [Fact]
     public void BackendConfigurationParameterRemainsOptionalForExistingCallers()
     {
-        var parameter = typeof(ServiceCollectionExtensions)
-            .GetMethod(nameof(ServiceCollectionExtensions.AddSecurityModule))!
+        var parameter = typeof(Elsa.Studio.Security.Extensions.ServiceCollectionExtensions)
+            .GetMethod(nameof(Elsa.Studio.Security.Extensions.ServiceCollectionExtensions.AddSecurityModule))!
             .GetParameters()[1];
 
         Assert.True(parameter.IsOptional);

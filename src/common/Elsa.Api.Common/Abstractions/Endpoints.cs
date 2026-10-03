@@ -10,6 +10,9 @@ public abstract class ElsaEndpointWithMapper<TRequest, TMapper> : EndpointWithMa
     /// <summary>Requires a permission satisfying <paramref name="resource"/> and <paramref name="verb"/>.</summary>
     protected void RequirePermission(string resource, string verb) => EndpointSecurity.RequirePermission(Definition, resource, verb);
 
+    /// <summary>Requires a permission satisfying any one of <paramref name="permissions"/>.</summary>
+    protected void RequireAnyPermission(params (string Resource, string Verb)[] permissions) => EndpointSecurity.RequireAnyPermission(Definition, permissions);
+
     /// <summary>Requires an authenticated caller but no permission.</summary>
     protected void RequireAuthenticatedOnly() => EndpointSecurity.RequireAuthenticatedOnly(Definition);
 
@@ -21,6 +24,9 @@ public abstract class ElsaEndpointWithoutRequest : EndpointWithoutRequest
 {
     /// <summary>Requires a permission satisfying <paramref name="resource"/> and <paramref name="verb"/>.</summary>
     protected void RequirePermission(string resource, string verb) => EndpointSecurity.RequirePermission(Definition, resource, verb);
+
+    /// <summary>Requires a permission satisfying any one of <paramref name="permissions"/>.</summary>
+    protected void RequireAnyPermission(params (string Resource, string Verb)[] permissions) => EndpointSecurity.RequireAnyPermission(Definition, permissions);
 
     /// <summary>Requires an authenticated caller but no permission.</summary>
     protected void RequireAuthenticatedOnly() => EndpointSecurity.RequireAuthenticatedOnly(Definition);
@@ -34,6 +40,9 @@ public abstract class ElsaEndpointWithoutRequest<TResponse> : EndpointWithoutReq
     /// <summary>Requires a permission satisfying <paramref name="resource"/> and <paramref name="verb"/>.</summary>
     protected void RequirePermission(string resource, string verb) => EndpointSecurity.RequirePermission(Definition, resource, verb);
 
+    /// <summary>Requires a permission satisfying any one of <paramref name="permissions"/>.</summary>
+    protected void RequireAnyPermission(params (string Resource, string Verb)[] permissions) => EndpointSecurity.RequireAnyPermission(Definition, permissions);
+
     /// <summary>Requires an authenticated caller but no permission.</summary>
     protected void RequireAuthenticatedOnly() => EndpointSecurity.RequireAuthenticatedOnly(Definition);
 
@@ -45,6 +54,9 @@ public class ElsaEndpoint<TRequest, TResponse> : Endpoint<TRequest, TResponse> w
 {
     /// <summary>Requires a permission satisfying <paramref name="resource"/> and <paramref name="verb"/>.</summary>
     protected void RequirePermission(string resource, string verb) => EndpointSecurity.RequirePermission(Definition, resource, verb);
+
+    /// <summary>Requires a permission satisfying any one of <paramref name="permissions"/>.</summary>
+    protected void RequireAnyPermission(params (string Resource, string Verb)[] permissions) => EndpointSecurity.RequireAnyPermission(Definition, permissions);
 
     /// <summary>Requires an authenticated caller but no permission.</summary>
     protected void RequireAuthenticatedOnly() => EndpointSecurity.RequireAuthenticatedOnly(Definition);
@@ -58,6 +70,9 @@ public class ElsaEndpoint<TRequest, TResponse, TMapper> : Endpoint<TRequest, TRe
     /// <summary>Requires a permission satisfying <paramref name="resource"/> and <paramref name="verb"/>.</summary>
     protected void RequirePermission(string resource, string verb) => EndpointSecurity.RequirePermission(Definition, resource, verb);
 
+    /// <summary>Requires a permission satisfying any one of <paramref name="permissions"/>.</summary>
+    protected void RequireAnyPermission(params (string Resource, string Verb)[] permissions) => EndpointSecurity.RequireAnyPermission(Definition, permissions);
+
     /// <summary>Requires an authenticated caller but no permission.</summary>
     protected void RequireAuthenticatedOnly() => EndpointSecurity.RequireAuthenticatedOnly(Definition);
 
@@ -69,6 +84,9 @@ public class ElsaEndpoint<TRequest> : Endpoint<TRequest> where TRequest : notnul
 {
     /// <summary>Requires a permission satisfying <paramref name="resource"/> and <paramref name="verb"/>.</summary>
     protected void RequirePermission(string resource, string verb) => EndpointSecurity.RequirePermission(Definition, resource, verb);
+
+    /// <summary>Requires a permission satisfying any one of <paramref name="permissions"/>.</summary>
+    protected void RequireAnyPermission(params (string Resource, string Verb)[] permissions) => EndpointSecurity.RequireAnyPermission(Definition, permissions);
 
     /// <summary>Requires an authenticated caller but no permission.</summary>
     protected void RequireAuthenticatedOnly() => EndpointSecurity.RequireAuthenticatedOnly(Definition);

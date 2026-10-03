@@ -50,6 +50,26 @@ public class DefaultAccessTokenIssuerRegistrationTests
         AssertUserDeletionCoordinatorResolves(services);
     }
 
+    [Fact]
+    public void ModuleFeatureRegistersInMemorySessionRevocation()
+    {
+        var services = CreateServices();
+        var module = Substitute.For<IModule>();
+        module.Services.Returns(services);
+        new ModuleIdentityFeature(module).Apply();
+
+        AssertInMemorySessionRevocationResolves(services);
+    }
+
+    [Fact]
+    public void ShellFeatureRegistersInMemorySessionRevocation()
+    {
+        var services = CreateServices();
+        new ShellIdentityFeature().ConfigureServices(services);
+
+        AssertInMemorySessionRevocationResolves(services);
+    }
+
     private static ServiceCollection CreateServices()
     {
         return new ServiceCollection();
@@ -61,6 +81,15 @@ public class DefaultAccessTokenIssuerRegistrationTests
         using var serviceProvider = services.BuildServiceProvider();
         using var scope = serviceProvider.CreateScope();
         Assert.IsType<DefaultAccessTokenIssuer>(scope.ServiceProvider.GetRequiredService<IAccessTokenIssuer>());
+    }
+
+    // SessionRevoker is checked by registration: resolving it binds the token options, which the shell feature reads from shell configuration.
+    private static void AssertInMemorySessionRevocationResolves(IServiceCollection services)
+    {
+        Assert.Contains(services, x => x.ServiceType == typeof(SessionRevoker));
+        using var serviceProvider = services.BuildServiceProvider();
+        using var scope = serviceProvider.CreateScope();
+        Assert.IsType<MemoryRevokedSessionStore>(scope.ServiceProvider.GetRequiredService<IRevokedSessionStore>());
     }
 
     private static void AssertUserDeletionCoordinatorResolves(IServiceCollection services)

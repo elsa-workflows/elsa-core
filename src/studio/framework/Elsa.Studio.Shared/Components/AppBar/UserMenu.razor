@@ -4,7 +4,7 @@
 
 @if (_currentState?.User.Identity?.IsAuthenticated is true)
 {
-    <MudMenu Label="@(_currentState.User.Identity.Name ?? "Account")"
+    <MudMenu Label="@(_currentState?.User.Identity?.Name ?? "Account")"
              Variant="Variant.Text"
              EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
              IconColor="Color.Inherit"

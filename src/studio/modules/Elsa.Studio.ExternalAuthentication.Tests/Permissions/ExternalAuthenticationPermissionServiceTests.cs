@@ -7,6 +7,35 @@ namespace Elsa.Studio.ExternalAuthentication.Tests.Permissions;
 
 public sealed class ExternalAuthenticationPermissionServiceTests
 {
+    [Theory]
+    [InlineData("external-authentication/connections:view")]
+    [InlineData("external-authentication/connections:*")]
+    [InlineData("external-authentication/*:view")]
+    [InlineData("external-authentication/*:*")]
+    [InlineData("*")]
+    public async Task HasAsync_HonorsCoreGrantsAndWildcards(string grant)
+    {
+        Assert.True(Permission.TryParse(grant, out var parsed));
+        var inner = new FixedPermissionService(UserPermissions.FromGrants([parsed]));
+        var service = new ExternalAuthenticationPermissionService(inner);
+
+        Assert.True(await service.HasAsync(ExternalAuthenticationPermissions.Read));
+    }
+
+    [Theory]
+    [InlineData("external-authentication/connections:update")]
+    [InlineData("external-authentication/sessions:*")]
+    [InlineData("external-authentication:connections:read")]
+    public async Task HasAsync_RejectsGrantsThatDoNotCoverTheRequirement(string grant)
+    {
+        var inner = Permission.TryParse(grant, out var parsed)
+            ? new FixedPermissionService(UserPermissions.FromGrants([parsed]))
+            : new FixedPermissionService(UserPermissions.FromGrants([]));
+        var service = new ExternalAuthenticationPermissionService(inner);
+
+        Assert.False(await service.HasAsync(ExternalAuthenticationPermissions.Read));
+    }
+
     [Fact]
     public async Task HasAsync_UsesTheSharedPermissionServiceAndFailsClosed()
     {

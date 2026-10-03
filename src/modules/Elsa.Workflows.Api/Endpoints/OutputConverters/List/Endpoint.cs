@@ -1,4 +1,3 @@
-using Elsa.Authorization;
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Serialization;
@@ -20,7 +19,9 @@ internal class List(IOutputConverterRegistry registry, ISerializationTypeRegistr
     public override void Configure()
     {
         Get("/descriptors/output-converters");
-        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsOutputConverters, CoreVerbs.View);
+
+        // Static metadata about what is installed, which the designer needs to open any definition, so every signed-in user may read it.
+        RequireAuthenticatedOnly();
     }
 
     /// <inheritdoc />
