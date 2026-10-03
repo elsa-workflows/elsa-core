@@ -72,6 +72,7 @@ docker run \
 ## Table of Contents
 
 - [Documentation](#documentation)
+- [Training](#training)
 - [Known Issues and Limitations](#known-issues-and-limitations)
 - [Features](#features)
 - [Roadmap](#roadmap)
@@ -90,6 +91,10 @@ docker run \
 - [Default Admin User bootstrap (shell + legacy feature system)](src/modules/Elsa.Identity/README.md)
 - [Studio source and local development](doc/studio/README.md)
 - [Extensions source and package boundaries](doc/extensions/README.md)
+
+## Training
+
+Official [Elsa+ training courses](https://www.elsaworkflows.io/elsa-plus/training) are available for structured learning beyond the documentation.
 
 ## Known Issues and Limitations
 
