@@ -49,7 +49,16 @@ public record DashboardContext(
     bool IncludeSystem,
     CancellationToken CancellationToken,
     string? TenantId = null,
-    string? EnvironmentName = null);
+    string? EnvironmentName = null)
+{
+    /// <summary>
+    /// Whether the caller may read data guarded by a permission, with the dashboard's default rule already applied
+    /// (<c>dashboard:view</c> reads everything, and data with no declared permission needs it). It only tells a
+    /// contributor which queries it can skip; the provider still filters what the contributor returns.
+    /// <c>null</c> means unrestricted.
+    /// </summary>
+    public Func<DashboardPermission?, bool>? CanRead { get; init; }
+}
 
 public record DashboardTrendContext(
     DashboardRange Range,
