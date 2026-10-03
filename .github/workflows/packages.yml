@@ -1,6 +1,15 @@
 name: Packages
 on:
   workflow_dispatch:
+    inputs:
+      publish_nuget:
+        description: Publish packages to nuget.org
+        type: boolean
+        default: false
+      publish_npm:
+        description: Publish packages to npmjs.org
+        type: boolean
+        default: false
   push:
     branches:
       - 'main'
@@ -30,6 +39,8 @@ jobs:
     name: Build packages
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Extract branch name
         run: |
@@ -68,6 +79,9 @@ jobs:
           else
             echo "VERSION=${{env.base_version}}-${PACKAGE_PREFIX}.${{github.run_number}}" >> $GITHUB_ENV
           fi
+      - name: Export version
+        id: version
+        run: echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
@@ -227,7 +241,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
+    # Dispatch-only. 3.10.x (including 3.10.0-preview.*) must never reach npmjs.org.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_npm && !startsWith(needs.build.outputs.version, '3.10.') }}
     permissions:
       contents: read
       id-token: write # Required: lets this job request the OIDC token npmjs.com exchanges for publish rights.
@@ -316,7 +331,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
+    # Dispatch-only. 3.10.x (including 3.10.0-preview.*) must never reach nuget.org.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && !startsWith(needs.build.outputs.version, '3.10.') }}
     permissions:
       contents: read
       id-token: write # Required: lets this job request the OIDC token that nuget.org exchanges for a temporary API key.
