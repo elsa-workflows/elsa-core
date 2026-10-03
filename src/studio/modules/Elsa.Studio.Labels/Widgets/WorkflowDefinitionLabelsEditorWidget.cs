@@ -1,3 +1,5 @@
+using Elsa.Studio.Authorization;
+using Elsa.Studio.Components;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Labels.Components;
 using Microsoft.AspNetCore.Components;
@@ -16,12 +18,11 @@ public class WorkflowDefinitionLabelsEditorWidget : IWidget
     public double Order => 25;
 
     /// <inheritdoc />
-    public Func<IDictionary<string, object?>, RenderFragment> Render => attributes => builder =>
+    public Func<IDictionary<string, object?>, RenderFragment> Render => attributes => PermissionView.Wrap(LabelPermissions.WorkflowDefinitionLabels, PermissionVerbs.View, builder =>
     {
         builder.OpenComponent<WorkflowDefinitionLabelsEditor>(0);
         builder.AddAttribute(1, nameof(WorkflowDefinitionLabelsEditor.WorkflowDefinition), attributes["WorkflowDefinition"]);
         builder.AddAttribute(2, nameof(WorkflowDefinitionLabelsEditor.WorkflowDefinitionUpdated), attributes["WorkflowDefinitionUpdated"]);
         builder.CloseComponent();
-
-    };
+    });
 }
