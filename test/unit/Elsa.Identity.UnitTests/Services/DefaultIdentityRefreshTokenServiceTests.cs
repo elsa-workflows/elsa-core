@@ -87,14 +87,24 @@ public class DefaultIdentityRefreshTokenServiceTests
         await AssertNothingIssuedAsync();
     }
 
-    [Fact]
-    public async Task RefreshAsyncResolvesALegacyTokenWithoutSubjectByName()
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task RefreshAsyncRejectsATokenWithABlankSubjectEvenWhenTheNameWasReused(string subject)
     {
         _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Name == User.Name), Arg.Any<CancellationToken>()).Returns(User);
 
-        Assert.Same(RefreshedTokens, await _service.RefreshAsync(LegacyRefreshToken.CreateWithoutSubject(_options, User)));
-        await _accessTokenIssuer.Received(1).IssueTokensAsync(User, Arg.Any<SignInSession?>(), Arg.Any<CancellationToken>());
-        await _userProvider.DidNotReceive().FindAsync(Arg.Is<UserFilter>(x => x.Id != null), Arg.Any<CancellationToken>());
+        Assert.Null(await _service.RefreshAsync(LegacyRefreshToken.CreateWithSubject(_options, User, subject)));
+        await AssertNothingIssuedAsync();
+    }
+
+    [Fact]
+    public async Task RefreshAsyncRejectsATokenWithoutASubjectEvenWhenTheNameWasReused()
+    {
+        _userProvider.FindAsync(Arg.Is<UserFilter>(x => x.Name == User.Name), Arg.Any<CancellationToken>()).Returns(User);
+
+        Assert.Null(await _service.RefreshAsync(LegacyRefreshToken.CreateWithoutSubject(_options, User)));
+        await AssertNothingIssuedAsync();
     }
 
     [Fact]
