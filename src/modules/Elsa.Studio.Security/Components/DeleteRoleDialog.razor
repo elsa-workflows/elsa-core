@@ -29,15 +29,15 @@
         else if (_state == DeleteRoleDialogViewState.SafeConfirmation)
         {
             <MudStack Spacing="3" data-testid="role-deletion-safe">
-                <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.CheckCircle">
-                    Safe to delete
-                </MudAlert>
+                @if (ConfigurationReferenceCount > 0 || EditableReferenceCount > 0)
+                {
+                    <MudText Typo="Typo.body2">
+                        @ConfigurationReferenceCount configuration references &middot; @EditableReferenceCount editable policy references
+                    </MudText>
+                    <MudDivider />
+                }
                 <MudText Typo="Typo.body2">
-                    @ConfigurationReferenceCount configuration references &middot; @EditableReferenceCount editable policy references
-                </MudText>
-                <MudDivider />
-                <MudText Typo="Typo.body2">
-                    This permanently deletes the role. Existing access tokens are not changed; permission changes take effect after token refresh or reissuance.
+                    Existing tokens keep working until they refresh.
                 </MudText>
             </MudStack>
         }
