@@ -9,6 +9,11 @@ public interface IFeatureService
     /// Event that is triggered when the features have been initialized.
     /// </summary>
     event Action? Initialized;
+
+    /// <summary>
+    /// Whether <see cref="InitializeFeaturesAsync"/> has completed.
+    /// </summary>
+    bool IsInitialized { get; }
     
     /// <summary>
     /// Returns all features.

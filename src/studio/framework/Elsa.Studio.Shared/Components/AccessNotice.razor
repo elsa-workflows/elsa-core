@@ -1,0 +1,20 @@
+<MudContainer MaxWidth="MaxWidth.False" Class="pt-4">
+    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Icon="@Icons.Material.Outlined.Lock" data-testid="@TestId">
+        <MudText Typo="Typo.subtitle1">@Title</MudText>
+        <MudText Typo="Typo.body2">
+            @Message
+            Ask an administrator to grant access, then sign in again.
+        </MudText>
+    </MudAlert>
+</MudContainer>
+
+@code {
+    /// <summary>The <c>data-testid</c> of the alert.</summary>
+    [Parameter, EditorRequired] public string TestId { get; set; } = default!;
+
+    /// <summary>The heading.</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = default!;
+
+    /// <summary>The explanation, shown before the closing advice to ask an administrator for access.</summary>
+    [Parameter, EditorRequired] public RenderFragment Message { get; set; } = default!;
+}
