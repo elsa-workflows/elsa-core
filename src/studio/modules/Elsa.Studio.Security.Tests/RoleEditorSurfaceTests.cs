@@ -66,7 +66,7 @@ public sealed class RoleEditorSurfaceTests : BunitContext, IAsyncLifetime
         {
             Assert.Contains("Edit role — Auditors", cut.Markup);
             Assert.Equal("Edit role — Auditors", cut.Find("h1").TextContent.Trim());
-            Assert.Contains("Direct grant", cut.Markup);
+            Assert.NotNull(cut.Find("[aria-label='workflows/definitions:update']"));
             Assert.Contains("Covered by workflows/*:view", cut.Markup);
             Assert.Contains("Unverified · verified:false", cut.Markup);
             Assert.Contains("WorkflowDefinitions:Publish", cut.Markup);

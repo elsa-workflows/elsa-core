@@ -1,9 +1,9 @@
 using Elsa.Studio.Authorization;
 using Elsa.Studio.Http.Webhooks;
 using Elsa.Studio.Http.Webhooks.Menu;
-using Elsa.Studio.Http.Webhooks.Pages;
 using Elsa.Studio.Testing;
 using Xunit;
+using WebhooksPage = Elsa.Studio.Http.Webhooks.Pages.Index;
 
 namespace Elsa.Studio.Administration.Tests;
 

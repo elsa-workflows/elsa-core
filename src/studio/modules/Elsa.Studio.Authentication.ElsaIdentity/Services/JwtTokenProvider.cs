@@ -12,6 +12,15 @@ public class JwtTokenProvider(
     IRefreshTokenService refreshTokenService,
     IEnumerable<IPermissionSnapshotCache> permissionCaches) : ITokenProvider
 {
+    public JwtTokenProvider(
+        IJwtAccessor jwtAccessor,
+        IJwtParser jwtParser,
+        ISingleFlightCoordinator refreshCoordinator,
+        IRefreshTokenService refreshTokenService)
+        : this(jwtAccessor, jwtParser, refreshCoordinator, refreshTokenService, [])
+    {
+    }
+
     private static readonly TimeSpan RefreshSkew = TimeSpan.FromMinutes(2);
 
     /// <inheritdoc />

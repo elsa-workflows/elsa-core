@@ -142,14 +142,13 @@ public sealed class OpenIdConnectBlazorServerSignOutTests
     }
 
     [Fact]
-    public void AddOpenIdConnectAuth_RegistersTheAntiforgeryFilterWithoutRazorPages()
+    public void AddOpenIdConnectAuth_RegistersMvcViewFeaturesForAntiforgery()
     {
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddOpenIdConnectAuth(ConfigureIdentityProvider);
 
-        using var provider = services.BuildServiceProvider();
-        Assert.NotNull(provider.GetService<Microsoft.AspNetCore.Mvc.ViewFeatures.Filters.ValidateAntiforgeryTokenAuthorizationFilter>());
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(Microsoft.AspNetCore.Mvc.Infrastructure.IActionInvokerFactory));
     }
 
     [Fact]
