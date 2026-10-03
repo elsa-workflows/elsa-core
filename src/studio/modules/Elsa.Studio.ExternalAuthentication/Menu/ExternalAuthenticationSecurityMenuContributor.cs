@@ -1,3 +1,4 @@
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.ExternalAuthentication.Models;
@@ -25,7 +26,8 @@ public sealed class ExternalAuthenticationSecurityMenuContributor(
                 Icon = Icons.Material.Filled.AdminPanelSettings,
                 Href = "security/external-authentication/connections",
                 Text = "Identity provider connections",
-                Order = 100
+                Order = 100,
+                RequiredPermissions = { new(ExternalAuthenticationPermissions.Connections, PermissionVerbs.View) }
             });
         }
 
@@ -36,7 +38,8 @@ public sealed class ExternalAuthenticationSecurityMenuContributor(
                 Icon = Icons.Material.Filled.Link,
                 Href = "security/external-authentication/identity-links",
                 Text = "External identity links",
-                Order = 200
+                Order = 200,
+                RequiredPermissions = { new(ExternalAuthenticationPermissions.IdentityLinks, PermissionVerbs.Write) }
             });
         }
 
@@ -47,7 +50,8 @@ public sealed class ExternalAuthenticationSecurityMenuContributor(
                 Icon = Icons.Material.Filled.Devices,
                 Href = "security/external-authentication/sessions",
                 Text = "Authentication sessions",
-                Order = 300
+                Order = 300,
+                RequiredPermissions = { new(ExternalAuthenticationPermissions.Sessions, PermissionVerbs.View) }
             });
         }
 

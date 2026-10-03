@@ -1,4 +1,5 @@
 @page "/security/external-authentication/connections"
+@attribute [RequirePermission(ExternalAuthenticationPermissions.Connections, PermissionVerbs.View)]
 @using Elsa.Studio.ExternalAuthentication.Components.Pagination
 @using Elsa.Studio.ExternalAuthentication.Services
 @inject Contracts.IBackendApiClientProvider ApiClientProvider
@@ -281,7 +282,7 @@
 
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
             var adapters = await api.GetAdaptersAsync();
             _adapters.Clear();
             foreach (var adapter in adapters)
@@ -289,7 +290,7 @@
         }
         catch (Exception exception)
         {
-            Snackbar.Add(exception.Message, Severity.Error);
+            Snackbar.Add(ConnectionManagementError.Describe(exception), Severity.Error);
         }
     }
 
@@ -354,7 +355,7 @@
         _loading = true;
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
             var response = await api.ListAsync(search, source, archived: includeArchived ? null : false, cursor: cursor, pageSize: _pageSize);
             if (!_requests.IsCurrent(request))
                 return;
@@ -366,7 +367,7 @@
         catch (Exception exception)
         {
             if (_requests.IsCurrent(request))
-                Snackbar.Add(exception.Message, Severity.Error);
+                Snackbar.Add(ConnectionManagementError.Describe(exception), Severity.Error);
         }
         finally
         {
@@ -453,14 +454,14 @@
 
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
             await api.ArchiveAsync(connection.Id, ConnectionConcurrency.ToIfMatch(connection.Revision));
             Snackbar.Add("Connection archived.", Severity.Success);
             await ReloadAsync();
         }
         catch (Exception exception)
         {
-            Snackbar.Add(exception.Message, Severity.Error);
+            Snackbar.Add(ConnectionManagementError.Describe(exception), Severity.Error);
         }
     }
 
@@ -494,7 +495,7 @@
                         cancelText: "Cancel") != true)
                     return;
 
-                var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionsApi>();
+                var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();
                 await api.EnableAsync(connection.Id, ConnectionConcurrency.ToIfMatch(connection.Revision));
             }
 
@@ -503,7 +504,7 @@
         }
         catch (Exception exception)
         {
-            Snackbar.Add(exception.Message, Severity.Error);
+            Snackbar.Add(ConnectionManagementError.Describe(exception), Severity.Error);
         }
     }
 }

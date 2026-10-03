@@ -35,7 +35,9 @@
     <MudMainContent Class="studio-main-content">
         <ErrorBoundary @ref="@_errorBoundary">
             <ChildContent>
-                @Body
+                <PermissionPageGuard>
+                    @Body
+                </PermissionPageGuard>
             </ChildContent>
             <ErrorContent>
                 @if (context is UnauthorizedAccessException)

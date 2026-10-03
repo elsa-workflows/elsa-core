@@ -1,3 +1,4 @@
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Localization;
@@ -44,7 +45,8 @@ public sealed class UserTasksMenu(
                 Text = localizer["User Tasks"],
                 Href = "workflows/user-tasks",
                 Icon = Icons.Material.Outlined.TaskAlt,
-                GroupName = MenuItemGroups.General.Name
+                GroupName = MenuItemGroups.General.Name,
+                RequiredPermissions = { new(UserTaskPermissions.UserTasks, PermissionVerbs.View) }
             }
         ];
     }

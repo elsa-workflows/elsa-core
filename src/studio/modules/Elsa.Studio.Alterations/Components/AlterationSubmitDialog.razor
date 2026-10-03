@@ -3,6 +3,7 @@
 @using Elsa.Api.Client.Resources.Alterations.Contracts
 @using Elsa.Api.Client.Resources.Alterations.Models
 @using Elsa.Studio.Contracts
+@using Elsa.Studio.Extensions
 @inject IBackendApiClientProvider BackendApiClientProvider
 @inject ILocalizer Localizer
 
@@ -248,7 +249,7 @@
         }
         catch (Refit.ApiException apiEx)
         {
-            _error = $"HTTP {(int)apiEx.StatusCode} {apiEx.StatusCode}\n{apiEx.Content}";
+            _error = apiEx.GetAuthorizationFailureMessage(Localizer) ?? $"HTTP {(int)apiEx.StatusCode} {apiEx.StatusCode}\n{apiEx.Content}";
         }
         catch (Exception ex)
         {

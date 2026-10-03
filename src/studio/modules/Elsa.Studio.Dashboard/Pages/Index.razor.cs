@@ -1,3 +1,4 @@
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Dashboard.Models;
 using Elsa.Studio.Dashboard.Services;
@@ -9,14 +10,24 @@ namespace Elsa.Studio.Dashboard.Pages;
 
 public partial class Index : IAsyncDisposable
 {
+    // How long to wait for the features to report they are initialized before settling for the widgets there are: a host
+    // that never initializes them (such as one without authorization) would otherwise leave the page loading forever.
+    private static readonly TimeSpan FeatureInitializationTimeout = TimeSpan.FromSeconds(3);
+    private static readonly IReadOnlyCollection<Permission> InstanceDataPermissions = DashboardPermissions.ForData(DashboardPermissions.WorkflowInstances);
+    private static readonly IReadOnlyCollection<Permission> RuntimeDataPermissions = DashboardPermissions.ForData(DashboardPermissions.WorkflowRuntime);
+
+    private ITimer? _initializationTimer;
+    private IReadOnlyCollection<DashboardWidgetDescriptor> _permittedWidgets = [];
+    private bool _widgetsSettled;
     private CancellationTokenSource? _loadCancellationTokenSource;
+    private DataScope? _loadedScope;
+    private UserPermissions? _loadedFor;
     private DashboardSnapshot? _snapshot;
     private DashboardLoadStatus _status = DashboardLoadStatus.Unavailable;
     private string _selectedRange = DashboardRangeKeys.TwentyFourHours;
     private string? _message;
     private bool _loading;
     private bool _disposed;
-    private bool _subscribedToFeatureInitialized;
     private DateTimeOffset? _lastRefreshedAt;
 
     [Inject] private IDashboardService DashboardService { get; set; } = null!;
@@ -24,6 +35,10 @@ public partial class Index : IAsyncDisposable
     [Inject] private IEnumerable<DashboardWidgetDescriptor> Widgets { get; set; } = [];
     [Inject] private NavigationManager NavigationManager { get; set; } = null!;
     [Inject] private IFeatureService FeatureService { get; set; } = null!;
+    [Inject] private TimeProvider TimeProvider { get; set; } = null!;
+
+    /// <summary>The user's permissions, cascaded by the shell's page guard.</summary>
+    [CascadingParameter] private UserPermissions Permissions { get; set; } = UserPermissions.Unknown;
 
     private DashboardWidgetContext WidgetContext => new(
         _selectedRange,
@@ -35,29 +50,49 @@ public partial class Index : IAsyncDisposable
         RefreshAsync,
         NavigationManager);
 
-    private string BackendLabel
+    private string? BackendLabel
     {
         get
         {
             if (_snapshot == null)
+            {
                 return "Selected backend";
+            }
 
             var overview = _snapshot.Overview;
-            var backendName = string.IsNullOrWhiteSpace(overview.BackendName) ? "Backend" : overview.BackendName;
-            return string.IsNullOrWhiteSpace(overview.EnvironmentName) ? backendName : $"{backendName} / {overview.EnvironmentName}";
+            var names = new[] { overview.BackendName, overview.EnvironmentName }.Where(x => !string.IsNullOrWhiteSpace(x));
+            return string.Join(" / ", names) is { Length: > 0 } label ? label : null;
         }
     }
 
     private string LastRefreshedLabel => _lastRefreshedAt == null ? "Not refreshed yet" : $"Refreshed {DashboardMetricFormatter.RelativeTimestamp(_lastRefreshedAt)}";
 
+    private bool IsLoadingFirstSnapshot => _snapshot == null && (_loading || AwaitingWidgets);
+
+    private bool WidgetsSettled => _widgetsSettled || FeatureService.IsInitialized;
+
+    private bool AwaitingWidgets => _permittedWidgets.Count == 0 && !WidgetsSettled;
+
+    private bool ShowWelcome => _permittedWidgets.Count == 0 && WidgetsSettled;
+
+    private bool ShowRuntime =>
+        _snapshot is { } snapshot
+        && !snapshot.Overview.Runtime.Capability.IsUnauthorized
+        && Permissions.HasAny(RuntimeDataPermissions);
+
     private string StatusLabel => _status switch
     {
+        _ when IsLoadingFirstSnapshot => "Loading dashboard",
         DashboardLoadStatus.Unauthorized => "No access",
         DashboardLoadStatus.BackendDisconnected => "Backend disconnected",
         DashboardLoadStatus.Failed => "Refresh failed",
         DashboardLoadStatus.Loaded => "Loaded",
         _ => "Dashboard unavailable"
     };
+
+    private Color StatusColor => IsLoadingFirstSnapshot ? Color.Default : Color.Error;
+
+    private string StatusIcon => IsLoadingFirstSnapshot ? Icons.Material.Outlined.HourglassEmpty : Icons.Material.Outlined.CloudOff;
 
     private Severity AlertSeverity => _status switch
     {
@@ -66,45 +101,95 @@ public partial class Index : IAsyncDisposable
         _ => Severity.Error
     };
 
-    private IReadOnlyCollection<DashboardWidgetDescriptor> GetWidgets(string zone) =>
-        Widgets
+    private void RefreshPermittedWidgets() =>
+        _permittedWidgets = Widgets
             .Concat(WidgetRegistry.List())
             .DistinctBy(x => x.Id)
+            .Where(x => x.IsPermitted(Permissions))
+            .ToList();
+
+    private static bool NeedsInstanceData(DashboardWidgetDescriptor widget) =>
+        widget.RequiredPermissions.Contains(new(DashboardPermissions.WorkflowInstances, PermissionVerbs.View));
+
+    private DataScope RequiredScope
+    {
+        get
+        {
+            if (_permittedWidgets.Count == 0)
+            {
+                return WidgetsSettled && Permissions.HasAny(RuntimeDataPermissions) ? DataScope.Overview : DataScope.None;
+            }
+
+            return _permittedWidgets.Any(NeedsInstanceData) && Permissions.HasAny(InstanceDataPermissions) ? DataScope.Everything : DataScope.Overview;
+        }
+    }
+
+    private IReadOnlyCollection<DashboardWidgetDescriptor> GetWidgets(string zone) =>
+        _permittedWidgets
             .Where(x => x.Zone == zone && x.IsVisible(WidgetContext))
             .OrderBy(x => x.Order)
             .ThenBy(x => x.Id, StringComparer.Ordinal)
             .ToList();
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        await RefreshAsync();
-    }
-
-    protected override void OnAfterRender(bool firstRender)
-    {
-        if (!firstRender || _disposed)
-            return;
-
         FeatureService.Initialized += OnFeatureServiceInitialized;
-        _subscribedToFeatureInitialized = true;
+
+        if (!FeatureService.IsInitialized)
+        {
+            _initializationTimer = TimeProvider.CreateTimer(_ => _ = RefreshWidgetsAsync(), null, FeatureInitializationTimeout, Timeout.InfiniteTimeSpan);
+        }
     }
 
-    private void OnFeatureServiceInitialized()
+    protected override Task OnParametersSetAsync()
     {
-        _ = RefreshWidgetsAfterFeatureInitializationAsync();
+        RefreshPermittedWidgets();
+        return LoadIfScopeChangedAsync();
     }
 
-    private async Task RefreshWidgetsAfterFeatureInitializationAsync()
+    private void OnFeatureServiceInitialized() => _ = RefreshWidgetsAsync();
+
+    private async Task RefreshWidgetsAsync()
     {
         if (_disposed)
+        {
             return;
+        }
 
         try
         {
-            await InvokeAsync(StateHasChanged);
+            await InvokeAsync(async () =>
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _widgetsSettled = true;
+                _initializationTimer?.Dispose();
+                RefreshPermittedWidgets();
+                var loading = LoadIfScopeChangedAsync();
+                StateHasChanged();
+                await loading;
+
+                if (!_disposed)
+                {
+                    StateHasChanged();
+                }
+            });
         }
-        catch (InvalidOperationException) when (_disposed)
+        catch (Exception e) when (_disposed && e is InvalidOperationException or ObjectDisposedException or TaskCanceledException)
         {
+        }
+    }
+
+    private async Task LoadIfScopeChangedAsync()
+    {
+        var scope = RequiredScope;
+
+        if (scope != _loadedScope || scope != DataScope.None && !Permissions.IsEquivalentTo(_loadedFor))
+        {
+            await RefreshAsync();
         }
     }
 
@@ -113,7 +198,9 @@ public partial class Index : IAsyncDisposable
         var selectedRange = DashboardRangeMapper.Normalize(range);
 
         if (_selectedRange == selectedRange)
+        {
             return;
+        }
 
         _selectedRange = selectedRange;
         await RefreshAsync();
@@ -126,7 +213,17 @@ public partial class Index : IAsyncDisposable
 
     private async Task LoadAsync(string range)
     {
+        var scope = RequiredScope;
+        _loadedScope = scope;
+        _loadedFor = Permissions;
+
         await CancelCurrentLoadAsync();
+
+        if (scope == DataScope.None)
+        {
+            _loading = false;
+            return;
+        }
 
         var cancellationTokenSource = new CancellationTokenSource();
         _loadCancellationTokenSource = cancellationTokenSource;
@@ -135,7 +232,9 @@ public partial class Index : IAsyncDisposable
 
         try
         {
-            var result = await DashboardService.LoadAsync(range, cancellationToken: cancellationTokenSource.Token);
+            var result = scope == DataScope.Everything
+                ? await DashboardService.LoadAsync(range, cancellationToken: cancellationTokenSource.Token)
+                : DashboardLoadResult.FromOverview(await DashboardService.LoadOverviewAsync(range, cancellationToken: cancellationTokenSource.Token));
             _status = result.Status;
 
             if (result.Snapshot != null)
@@ -172,7 +271,9 @@ public partial class Index : IAsyncDisposable
     private async Task CancelCurrentLoadAsync()
     {
         if (_loadCancellationTokenSource == null)
+        {
             return;
+        }
 
         await _loadCancellationTokenSource.CancelAsync();
         _loadCancellationTokenSource = null;
@@ -181,10 +282,15 @@ public partial class Index : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         _disposed = true;
-
-        if (_subscribedToFeatureInitialized)
-            FeatureService.Initialized -= OnFeatureServiceInitialized;
-
+        _initializationTimer?.Dispose();
+        FeatureService.Initialized -= OnFeatureServiceInitialized;
         await CancelCurrentLoadAsync();
+    }
+
+    private enum DataScope
+    {
+        None,
+        Overview,
+        Everything
     }
 }

@@ -31,16 +31,19 @@
                 </div>
 
                 <MudButtonGroup Color="Color.Default" Variant="Variant.Text" DropShadow="false">
-                    <MudTooltip Text="@Localizer["Publish workflow"]" Delay="500">
-                        <MudIconButton Icon="@Icons.Material.Filled.CloudUpload" Color="Color.Primary" OnClick="@OnPublishClicked" />
-                    </MudTooltip>
+                    @if (CanPublish)
+                    {
+                        <MudTooltip Text="@Localizer["Publish workflow"]" Delay="500">
+                            <MudIconButton Icon="@Icons.Material.Filled.CloudUpload" Color="Color.Primary" OnClick="@OnPublishClicked" />
+                        </MudTooltip>
+                    }
                     <Zone Name="@ZoneNames.WorkflowDefinitionEditorToolbarActions" Attributes="@WorkflowDefinitionEditorToolbarActionAttributes" />
                     <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown" Dense="true">
                         <MudTooltip Text="@Localizer["Save As"]" Inline="false" Delay="500">
                             <MudMenuItem Icon="@Icons.Material.Filled.SaveAs" OnClick="@OnSaveAsClick">@Localizer["Save As"]</MudMenuItem>
                         </MudTooltip>
                         <MudDivider DividerType="DividerType.FullWidth"></MudDivider>
-                        @if (_workflowDefinition?.IsPublished == true)
+                        @if (_workflowDefinition?.IsPublished == true && CanRetract)
                         {
                             <MudTooltip Text="@Localizer["Unpublish the current workflow"]" Inline="false" Delay="500">
                                 <MudMenuItem Icon="@Icons.Material.Filled.CloudDownload" OnClick="@OnRetractClicked">@Localizer["Unpublish"]</MudMenuItem>
@@ -55,9 +58,12 @@
                         </MudTooltip>
                     </MudMenu>
                 </MudButtonGroup>
-                <MudTooltip Text="@Localizer["Run Workflow"]" Delay="500">
-                    <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Success" Variant="Variant.Text" Class="ml-4" OnClick="@OnRunWorkflowClicked" />
-                </MudTooltip>
+                @if (CanRun)
+                {
+                    <MudTooltip Text="@Localizer["Run Workflow"]" Delay="500">
+                        <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Success" Variant="Variant.Text" Class="ml-4" OnClick="@OnRunWorkflowClicked" />
+                    </MudTooltip>
+                }
             </CustomToolbarItems>
         </DiagramDesignerWrapper>
         </CascadingValue>

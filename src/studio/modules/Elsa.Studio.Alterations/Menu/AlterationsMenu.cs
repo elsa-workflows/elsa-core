@@ -1,7 +1,9 @@
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Models;
+using Elsa.Studio.Workflows;
 using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
 
@@ -32,6 +34,7 @@ public class AlterationsMenu(ILocalizer localizer, IRemoteFeatureProvider remote
                         Text = localizer["Instances"],
                         Href = "alterations/instances",
                         Icon = Icons.Material.Outlined.PlayCircleOutline,
+                        RequiredPermissions = { new(WorkflowPermissions.Instances, PermissionVerbs.View), new(AlterationPermissions.Alterations, PermissionVerbs.Execute) },
                     },
                     // Match=All so this entry doesn't get highlighted whenever any /alterations/*
                     // route is active (otherwise both sub-items light up).
@@ -41,6 +44,7 @@ public class AlterationsMenu(ILocalizer localizer, IRemoteFeatureProvider remote
                         Href = "alterations",
                         Icon = Icons.Material.Outlined.History,
                         Match = NavLinkMatch.All,
+                        RequiredPermissions = { new(AlterationPermissions.Alterations, PermissionVerbs.View), new(WorkflowPermissions.Instances, PermissionVerbs.View) },
                     }
                 }
             }

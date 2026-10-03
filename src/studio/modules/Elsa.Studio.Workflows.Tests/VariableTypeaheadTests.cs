@@ -7,13 +7,13 @@ using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.Workf
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using MudBlazor;
 using MudBlazor.Extensions;
 using MudBlazor.Services;
 using MudExtensions;
 using MudExtensions.Services;
 using Xunit;
+using Elsa.Studio.Testing;
 
 namespace Elsa.Studio.Workflows.Tests;
 
@@ -82,9 +82,4 @@ public sealed class VariableTypeaheadTests : BunitContext, IAsyncLifetime
         public string GenerateId() => "test-variable";
     }
 
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string key] => new(key, key);
-        public LocalizedString this[string key, params object[] arguments] => new(key, string.Format(key, arguments));
-    }
 }

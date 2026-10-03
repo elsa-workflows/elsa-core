@@ -6,6 +6,7 @@ using Elsa.Api.Client.Converters;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Studio.Contracts;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Domain.Models;
 using Elsa.Studio.Workflows.Domain.Notifications;
@@ -86,7 +87,7 @@ public class WorkflowDefinitionImporter(IBackendApiClientProvider backendApiClie
                 await options.ErrorCallback(e);
             importResultList.Add(new()
             {
-                Failure = new(e.Message, WorkflowImportFailureType.Exception)
+                Failure = new(e.ToUserMessage(), WorkflowImportFailureType.Exception)
             });
         }
 
@@ -147,7 +148,7 @@ public class WorkflowDefinitionImporter(IBackendApiClientProvider backendApiClie
             return new()
             {
                 FileName = fileName,
-                Failure = new(e.Message, WorkflowImportFailureType.Exception)
+                Failure = new(e.ToUserMessage(), WorkflowImportFailureType.Exception)
             };
         }
     }

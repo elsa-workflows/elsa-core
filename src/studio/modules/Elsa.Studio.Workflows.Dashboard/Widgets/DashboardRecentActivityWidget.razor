@@ -1,8 +1,8 @@
 @using Elsa.Studio.Dashboard.Widgets
 
-@if (Context.Snapshot != null)
+@if (Context.Snapshot?.RecentActivity is { } recentActivity)
 {
-    <DashboardRecentActivityTable Items="@Context.Snapshot.RecentActivity.Items" />
+    <DashboardRecentActivityTable Items="@recentActivity.Items" />
 }
 
 @code {

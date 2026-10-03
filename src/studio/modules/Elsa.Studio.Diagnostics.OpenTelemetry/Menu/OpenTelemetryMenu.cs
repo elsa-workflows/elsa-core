@@ -1,3 +1,4 @@
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Models;
@@ -23,7 +24,8 @@ public class OpenTelemetryMenu(IRemoteFeatureProvider remoteFeatureProvider) : I
                 Icon = Icons.Material.Filled.Timeline,
                 Href = "diagnostics/opentelemetry",
                 Text = "OpenTelemetry",
-                GroupName = MenuItemGroups.Diagnostics.Name
+                GroupName = MenuItemGroups.Diagnostics.Name,
+                RequiredPermissions = { new(OpenTelemetryPermissions.OpenTelemetry, PermissionVerbs.View) }
             }
         ];
 

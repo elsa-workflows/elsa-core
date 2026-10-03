@@ -6,6 +6,9 @@
     .role-reach-summary { align-items: center; display: flex; flex-wrap: wrap; gap: .25rem .75rem; }
     .role-reach-future { color: var(--mud-palette-text-secondary); margin-top: .35rem; }
     .role-reach-examples { border-top: 1px solid var(--mud-palette-lines-default); margin-top: .5rem; padding-top: .5rem; }
+    .role-reach-actions { align-items: center; display: flex; gap: .25rem; }
+    .role-grant-edit { align-items: flex-start; display: flex; flex: 1 1 100%; flex-wrap: wrap; gap: .5rem; }
+    .role-grant-edit .mud-input-control { flex: 1 1 16rem; margin: 0; }
     .role-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
 </style>
 
@@ -13,22 +16,51 @@
 {
     <MudPaper Outlined="true" Elevation="0" Class="pa-3">
         <div class="role-reach-header">
-            <div class="role-reach-title">
-                <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">@GrantType(pattern)</MudChip>
-                <MudText Typo="Typo.subtitle1" Class="role-code"><strong>@Grant</strong></MudText>
-                <MudChip T="string" Size="Size.Small" Color="Color.Warning">Broad access</MudChip>
-                @if (Reach != null)
-                {
-                    <MudText Typo="Typo.caption"><strong>@Reach.Count</strong> resources today</MudText>
-                }
-            </div>
-            @if (!IsReadOnly)
+            @if (Edit != null)
             {
-                <MudIconButton Icon="@Icons.Material.Outlined.Delete"
-                               Color="Color.Error"
-                               Size="Size.Small"
-                               OnClick="OnRemove"
-                               aria-label="@($"Remove advanced grant {Grant}")" />
+                <div class="role-grant-edit">
+                    <MudTextField T="string"
+                                  Label="Advanced grant"
+                                  Placeholder="workflows/*:view or *"
+                                  Value="@Edit.Draft"
+                                  ValueChanged="@((string value) => { Edit.Draft = value; Edit.Error = null; })"
+                                  Immediate="true"
+                                  AutoFocus="true"
+                                  OnKeyDown="OnEditKeyDown"
+                                  Error="@(Edit.Error != null)"
+                                  ErrorText="@Edit.Error"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  aria-label="@($"Edit advanced grant {Grant}")" />
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="SaveEdit">Save</MudButton>
+                    <MudButton Variant="Variant.Text" OnClick="OnCancelEdit">Cancel</MudButton>
+                </div>
+            }
+            else
+            {
+                <div class="role-reach-title">
+                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">@GrantType(pattern)</MudChip>
+                    <MudText Typo="Typo.subtitle1" Class="role-code"><strong>@Grant</strong></MudText>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Warning">Broad access</MudChip>
+                    @if (Reach != null)
+                    {
+                        <MudText Typo="Typo.caption"><strong>@Reach.Count</strong> resources today</MudText>
+                    }
+                </div>
+                @if (!IsReadOnly)
+                {
+                    <div class="role-reach-actions">
+                        <MudIconButton Icon="@Icons.Material.Outlined.Edit"
+                                       Size="Size.Small"
+                                       OnClick="OnEdit"
+                                       aria-label="@($"Edit advanced grant {Grant}")" />
+                        <MudIconButton Icon="@Icons.Material.Outlined.Delete"
+                                       Color="Color.Error"
+                                       Size="Size.Small"
+                                       OnClick="OnRemove"
+                                       aria-label="@($"Remove advanced grant {Grant}")" />
+                    </div>
+                }
             }
         </div>
         <MudText Typo="Typo.caption" Class="role-reach-future"><strong>Future reach:</strong> @GetFutureReach(pattern)</MudText>
@@ -80,9 +112,22 @@
     [Parameter] public bool IsReadOnly { get; set; }
     [Parameter] public EventCallback OnRemove { get; set; }
     [Parameter] public EventCallback OnLoadReach { get; set; }
+    [Parameter] public AdvancedGrantEdit? Edit { get; set; }
+    [Parameter] public EventCallback OnEdit { get; set; }
+    [Parameter] public EventCallback OnSaveEdit { get; set; }
+    [Parameter] public EventCallback OnCancelEdit { get; set; }
     private bool _showCoverage;
 
     private void ToggleCoverage() => _showCoverage = !_showCoverage;
+
+    private Task SaveEdit() => OnSaveEdit.InvokeAsync();
+
+    private Task OnEditKeyDown(KeyboardEventArgs args) => args.Key switch
+    {
+        "Enter" => SaveEdit(),
+        "Escape" => OnCancelEdit.InvokeAsync(),
+        _ => Task.CompletedTask
+    };
 
     private static string GrantType(RolePermissionPattern pattern) => pattern switch
     {

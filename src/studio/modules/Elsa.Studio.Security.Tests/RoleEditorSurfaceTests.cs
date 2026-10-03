@@ -66,7 +66,7 @@ public sealed class RoleEditorSurfaceTests : BunitContext, IAsyncLifetime
         {
             Assert.Contains("Edit role — Auditors", cut.Markup);
             Assert.Equal("Edit role — Auditors", cut.Find("h1").TextContent.Trim());
-            Assert.Contains("Direct grant", cut.Markup);
+            Assert.NotNull(cut.Find("[aria-label='workflows/definitions:update']"));
             Assert.Contains("Covered by workflows/*:view", cut.Markup);
             Assert.Contains("Unverified · verified:false", cut.Markup);
             Assert.Contains("WorkflowDefinitions:Publish", cut.Markup);
@@ -220,10 +220,10 @@ public sealed class RoleEditorSurfaceTests : BunitContext, IAsyncLifetime
         cut.Find("input[aria-label='workflows/definitions:view']").Change(true);
         cut.FindAll("button").Single(x => x.TextContent.Contains("Create role", StringComparison.Ordinal)).Click();
 
-        cut.WaitForAssertion(() => Assert.Equal(1, roles.CreateCalls));
+        cut.WaitForAssertion(() => Assert.EndsWith("/security/roles/new-role", Services.GetRequiredService<NavigationManager>().Uri, StringComparison.Ordinal));
+        Assert.Equal(1, roles.CreateCalls);
         Assert.Equal("New role", roles.LastCreate!.Name);
         Assert.Equal(["workflows/definitions:view"], roles.LastCreate.Permissions);
-        Assert.EndsWith("/security/roles/new-role", Services.GetRequiredService<NavigationManager>().Uri, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -1,0 +1,49 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@implements IDisposable
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@if (_currentState?.User.Identity?.IsAuthenticated is true)
+{
+    <MudMenu Label="@(_currentState.User.Identity.Name ?? "Account")"
+             Variant="Variant.Text"
+             EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
+             IconColor="Color.Inherit"
+             AnchorOrigin="Origin.BottomRight"
+             TransformOrigin="Origin.TopRight"
+             Color="Color.Inherit"
+             Dense="true">
+        @ChildContent
+    </MudMenu>
+}
+
+@code {
+    private AuthenticationState? _currentState;
+
+    /// <summary>
+    /// The menu entries (e.g. sign-out actions) shown to the signed-in user.
+    /// </summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+        _currentState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+    }
+
+    /// <inheritdoc />
+    public void Dispose() => AuthenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+
+    private async void OnAuthenticationStateChanged(Task<AuthenticationState> state)
+    {
+        try
+        {
+            _currentState = await state;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch
+        {
+            // An auth-state notification must not become an unobserved exception.
+        }
+    }
+}

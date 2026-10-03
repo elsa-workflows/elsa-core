@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.UserTasks.Models;
 using Elsa.Studio.UserTasks.Services;
 using Refit;
@@ -190,6 +191,14 @@ public class UserTaskErrorMapperTests
         Assert.Equal(requiresReload, error.RequiresReload);
         Assert.Equal(isAuthorization, error.IsAuthorization);
         Assert.False(string.IsNullOrWhiteSpace(error.Message));
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Forbidden, AuthorizationFailureExtensions.ForbiddenMessage)]
+    [InlineData(HttpStatusCode.Unauthorized, AuthorizationFailureExtensions.UnauthorizedMessage)]
+    public void Describe_GivesAnAuthorizationFailureWithoutABodyTheSharedGuidance(HttpStatusCode statusCode, string expected)
+    {
+        Assert.Equal(expected, UserTaskErrorMapper.Describe(CreateApiException(statusCode, null)).Message);
     }
 
     [Fact]

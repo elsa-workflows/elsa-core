@@ -1,5 +1,8 @@
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Labels.Client;
+using Elsa.Studio.Localization;
 using Elsa.Studio.Labels.Models;
 using Elsa.Studio.Labels.UI.Components;
 using JetBrains.Annotations;
@@ -38,6 +41,11 @@ public partial class Labels
     /// Gets or sets the API client provider for accessing backend APIs.
     /// </summary>
     [Inject] private IBackendApiClientProvider ApiClientProvider { get; set; } = default!;
+
+    [CascadingParameter] private UserPermissions Permissions { get; set; } = UserPermissions.Unknown;
+
+    private bool CanCreate => Permissions.Has(LabelPermissions.Labels, PermissionVerbs.Create);
+    private bool CanDelete => Permissions.Has(LabelPermissions.Labels, PermissionVerbs.Delete);
 
     /// <summary>
     /// Retrieves the labels API client.
@@ -98,7 +106,7 @@ public partial class Labels
             }
             catch (Exception e)
             {
-                Snackbar.Add(e.Message, Severity.Error);
+                Snackbar.Add(e.ToUserMessage(Localizer), Severity.Error);
             }
         }
     }

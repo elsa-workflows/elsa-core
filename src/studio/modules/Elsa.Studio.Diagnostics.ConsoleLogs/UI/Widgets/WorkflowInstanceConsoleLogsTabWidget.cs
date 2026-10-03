@@ -1,6 +1,8 @@
 using System.Text.Json.Nodes;
 using Elsa.Api.Client.Extensions;
 using Elsa.Api.Client.Resources.ActivityExecutions.Models;
+using Elsa.Studio.Authorization;
+using Elsa.Studio.Components;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Diagnostics.ConsoleLogs.UI.Components;
 using Elsa.Studio.Localization;
@@ -33,7 +35,7 @@ public class WorkflowInstanceConsoleLogsTabWidget : IWidget
     public double Order => 100;
 
     /// <inheritdoc />
-    public Func<IDictionary<string, object?>, RenderFragment> Render => attributes => builder =>
+    public Func<IDictionary<string, object?>, RenderFragment> Render => attributes => PermissionView.Wrap(ConsoleLogsPermissions.ConsoleLogs, PermissionVerbs.View, builder =>
     {
         var workflowInstanceId = attributes.TryGetValue("WorkflowInstanceId", out var id) ? id as string : null;
         var selectedActivity = attributes.TryGetValue("SelectedActivity", out var activityValue) ? activityValue as JsonObject : null;
@@ -59,5 +61,5 @@ public class WorkflowInstanceConsoleLogsTabWidget : IWidget
             contentBuilder.CloseComponent();
         }));
         builder.CloseComponent();
-    };
+    });
 }

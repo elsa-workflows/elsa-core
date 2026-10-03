@@ -21,7 +21,7 @@ internal sealed record ConnectionActivationResult(
 internal static class ConnectionActivationWorkflow
 {
     public static async Task<ConnectionActivationResult> ExecuteAsync(
-        IExternalAuthenticationConnectionsApi api,
+        IExternalAuthenticationConnectionManagementApi api,
         ConnectionDetail candidate,
         bool requiresValidation,
         Func<string, Task> reportProgress,

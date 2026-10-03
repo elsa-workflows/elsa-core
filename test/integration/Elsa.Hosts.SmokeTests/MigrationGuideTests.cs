@@ -50,6 +50,16 @@ public class MigrationGuideTests
         Assert.True(unadvertised.Length == 0, $"{unadvertised.Length} replacement(s) name a resource or verb no module advertises, so a role rewritten as the guide says would not authorize anything: {string.Join(", ", unadvertised)}.");
     }
 
+    [Fact]
+    public void HttpWebhooksResourceIsAdvertisedSoStarAdministratorsReceiveIt()
+    {
+        var catalog = BuildCatalog();
+
+        Assert.True(
+            catalog.TryGetValue("http/webhooks", out var verbs) && verbs.Contains("view", StringComparer.Ordinal),
+            "The Webhooks catalog must advertise http/webhooks:view so a * administrator can see Studio's Webhooks page.");
+    }
+
     private static bool IsAdvertised(IReadOnlyDictionary<string, IReadOnlyCollection<string>> catalog, Permission permission) =>
         catalog.TryGetValue(permission.Resource, out var verbs) && verbs.Contains(permission.Verb, StringComparer.Ordinal);
 

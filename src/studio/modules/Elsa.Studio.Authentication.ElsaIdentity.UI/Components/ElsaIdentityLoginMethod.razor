@@ -1,3 +1,6 @@
+@using Elsa.Studio.Components
+@using Elsa.Studio.Extensions
+@using Microsoft.AspNetCore.Components.Web
 @using Variant = MudBlazor.Variant
 @implements Elsa.Studio.Authentication.Abstractions.Contracts.ILoginMethodComponent
 @inject Contracts.IJwtAccessor JwtAccessor
@@ -7,21 +10,32 @@
 
 <MudPaper Outlined="true" Class="pa-4">
     <MudText Typo="Typo.h6">Elsa account</MudText>
-    <MudForm @ref="_form">
+    <MudForm @ref="_form" Disabled="_busy.IsBusy">
         <MudTextField @bind-Value="_username"
+                      Immediate="true"
+                      OnKeyDown="OnKeyDownAsync"
                       Label="User name"
                       autocomplete="username"
                       Required="true"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense" />
         <MudTextField @bind-Value="_password"
+                      Immediate="true"
+                      OnKeyDown="OnKeyDownAsync"
                       Label="Password"
                       InputType="InputType.Password"
                       autocomplete="current-password"
                       Required="true"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense" />
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="SignInAsync">Sign in</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   FullWidth="true"
+                   Disabled="_busy.IsBusy"
+                   aria-busy="@(_busy.IsBusy ? "true" : "false")"
+                   OnClick="SignInAsync">
+            <BusyButtonContent Busy="_busy.IsBusy" BusyText="Signing in…">Sign in</BusyButtonContent>
+        </MudButton>
     </MudForm>
 </MudPaper>
 
@@ -32,18 +46,21 @@
     private MudForm _form = default!;
     private string _username = string.Empty;
     private string _password = string.Empty;
+    private readonly BusyState _busy = new();
 
-    private async Task SignInAsync()
+    private Task OnKeyDownAsync(KeyboardEventArgs e) => e.IsSubmitKey() ? SignInAsync() : Task.CompletedTask;
+
+    private Task SignInAsync() => _busy.RunAsync(async () =>
     {
         await _form.Validate();
         if (!_form.IsValid)
-            return;
+            return false;
 
         var result = await CredentialsValidator.ValidateCredentialsAsync(_username, _password);
         if (!result.IsValid)
         {
             await Context.ReportFailureAsync("Invalid credentials. Try again.");
-            return;
+            return false;
         }
 
         await JwtAccessor.WriteTokenAsync(Elsa.Studio.Authentication.ElsaIdentity.TokenNames.AccessToken, result.AccessToken!);
@@ -51,5 +68,6 @@
         if (AuthenticationStateProvider is Elsa.Studio.Authentication.ElsaIdentity.Services.AccessTokenAuthenticationStateProvider stateProvider)
             stateProvider.NotifyAuthenticationStateChanged();
         Navigation.NavigateTo(Elsa.Studio.Authentication.Abstractions.LocalReturnPath.RootAgainstBase(Context.ReturnPath, Navigation.BaseUri), forceLoad: true);
-    }
+        return true;
+    });
 }

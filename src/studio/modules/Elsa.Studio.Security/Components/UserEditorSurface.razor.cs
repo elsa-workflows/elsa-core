@@ -34,7 +34,6 @@ public partial class UserEditorSurface : IAsyncDisposable
     private string? _saveError;
     private string? _deleteError;
     private string? _name;
-    private string? _tenantId;
     private string? _password;
     private string? _passwordConfirmation;
     private string? _loadedId;
@@ -58,7 +57,6 @@ public partial class UserEditorSurface : IAsyncDisposable
     protected string SaveLabel => IsNew ? "Create user" : "Save changes";
     protected string PasswordHeading => IsNew ? "Password" : "Change password";
     protected string PasswordLabel => IsNew ? "Password (optional)" : "New password (optional)";
-    protected string ScopeLabel => string.IsNullOrWhiteSpace(_tenantId) ? "Host" : _tenantId;
     protected string CredentialGuidance => IsNew
         ? "Leave blank to let Elsa generate a password. A generated password is shown once after the account is created and cannot be retrieved later."
         : "Leave both fields blank to keep the current password. Passwords are never shown again after saving.";
@@ -252,12 +250,11 @@ public partial class UserEditorSurface : IAsyncDisposable
                 var user = users.Users.FirstOrDefault(x => string.Equals(x.Id, requestedId, StringComparison.Ordinal));
                 if (user == null)
                 {
-                    _loadError = "The user was not found in the current tenant scope.";
+                    _loadError = "The user was not found.";
                     return;
                 }
 
                 _name = user.Name;
-                _tenantId = user.TenantId;
                 _originalRoles.UnionWith(user.Roles);
                 _selectedRoles = _originalRoles.ToHashSet(StringComparer.Ordinal);
             }
@@ -299,7 +296,6 @@ public partial class UserEditorSurface : IAsyncDisposable
         _saveError = null;
         _deleteError = null;
         _name = null;
-        _tenantId = null;
         _password = null;
         _passwordConfirmation = null;
         _selectedRoles = [];

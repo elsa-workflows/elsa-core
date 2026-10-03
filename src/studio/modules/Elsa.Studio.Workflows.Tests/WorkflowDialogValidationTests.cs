@@ -18,11 +18,11 @@ using Elsa.Studio.Workflows.Tests.Support;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using MudBlazor;
 using MudBlazor.Services;
 using MudExtensions.Services;
 using Xunit;
+using Elsa.Studio.Testing;
 
 namespace Elsa.Studio.Workflows.Tests;
 
@@ -622,10 +622,4 @@ public sealed class WorkflowDialogValidationTests : BunitContext, IAsyncLifetime
         }
     }
 
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] =>
-            new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
-    }
 }

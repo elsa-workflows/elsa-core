@@ -1,5 +1,7 @@
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Resources.WorkflowExecutionContexts.Models;
+using Elsa.Studio.Authorization;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Labels.Client;
 using Elsa.Studio.Labels.Contracts;
 using Elsa.Studio.Labels.Models;
@@ -33,7 +35,14 @@ public partial class WorkflowDefinitionLabelsEditor
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
     [Inject] private IWorkflowDefinitionLabelsProvider workflowDefinitionLabelsProvider { get; set; } = default!;
 
+    [CascadingParameter] private UserPermissions Permissions { get; set; } = UserPermissions.Unknown;
+
     private ICollection<WorkflowDefinitionLabelDescriptor> Labels { get; set; } = new List<WorkflowDefinitionLabelDescriptor>();
+
+    private bool CanUpdate => Permissions.Has(LabelPermissions.WorkflowDefinitionLabels, PermissionVerbs.Update);
+
+    // Adding picks from the label list, which requires labels:view as well.
+    private bool CanAdd => CanUpdate && Permissions.Has(LabelPermissions.Labels, PermissionVerbs.View);
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
@@ -72,7 +81,7 @@ public partial class WorkflowDefinitionLabelsEditor
             }
             catch (Exception e)
             {
-                Snackbar.Add(e.Message, Severity.Error);
+                Snackbar.Add(e.ToUserMessage(Localizer), Severity.Error);
             }
         }
     }

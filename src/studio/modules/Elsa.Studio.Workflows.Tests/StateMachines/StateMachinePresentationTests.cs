@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Bunit;
 using Elsa.Studio.Localization;
+using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.Designer;
 using Elsa.Studio.Workflows.Designer.Models;
 using Elsa.Studio.Workflows.DiagramDesigners.StateMachines.Presentation;

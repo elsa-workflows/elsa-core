@@ -1,3 +1,4 @@
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Models;
@@ -16,7 +17,8 @@ public class WebhooksMenu(ILocalizer localizer) : IMenuProvider
                 Icon = Icons.Material.Filled.Http,
                 Href = "webhooks",
                 Text = localizer["Webhooks"],
-                GroupName = MenuItemGroups.Administration.Name
+                GroupName = MenuItemGroups.Administration.Name,
+                RequiredPermissions = { new(WebhookPermissions.Webhooks, PermissionVerbs.View) }
             }
         };
 

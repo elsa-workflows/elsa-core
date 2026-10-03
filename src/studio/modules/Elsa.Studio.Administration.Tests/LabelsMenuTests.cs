@@ -6,9 +6,9 @@ using Elsa.Studio.Labels;
 using Elsa.Studio.Labels.Menu;
 using Elsa.Studio.Localization;
 using Elsa.Studio.WorkflowContexts.Widgets;
-using Microsoft.Extensions.Localization;
 using System.Net;
 using Xunit;
+using Elsa.Studio.Testing;
 
 namespace Elsa.Studio.Labels.Tests;
 
@@ -69,12 +69,6 @@ public class LabelsMenuTests
     private static LabelsMenu CreateMenu(IRemoteFeatureProvider remoteFeatureProvider) =>
         new(new TestLocalizer(), remoteFeatureProvider);
 
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] =>
-            new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
-    }
 
     private sealed class TestRemoteFeatureProvider(bool enabled) : IRemoteFeatureProvider
     {
