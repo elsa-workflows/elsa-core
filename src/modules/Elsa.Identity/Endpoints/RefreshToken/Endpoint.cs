@@ -1,7 +1,8 @@
-﻿using Elsa.Extensions;
+using Elsa.Extensions;
 using Elsa.Identity.Constants;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
+using Elsa.Identity.Services;
 using FastEndpoints;
 using JetBrains.Annotations;
 
@@ -31,15 +32,26 @@ internal class RefreshToken : EndpointWithoutRequest<LoginResponse>
     }
 
     /// <inheritdoc />
-    public override async Task<LoginResponse> ExecuteAsync(CancellationToken cancellationToken)
+    public override async Task HandleAsync(CancellationToken cancellationToken)
     {
-        var user = await _userProvider.FindByNameAsync(User.Identity!.Name!, cancellationToken);
+        var userId = RefreshTokenSubject.FindUserId(User);
+
+        if (userId is null)
+        {
+            await Send.UnauthorizedAsync(cancellationToken);
+            return;
+        }
+
+        var user = await _userProvider.FindByIdAsync(userId, cancellationToken);
 
         if (user == null)
-            return new LoginResponse(false, null, null);
+        {
+            await Send.UnauthorizedAsync(cancellationToken);
+            return;
+        }
 
         var tokens = await _tokenIssuer.IssueTokensAsync(user, cancellationToken);
 
-        return new LoginResponse(true, tokens.AccessToken, tokens.RefreshToken);
+        await Send.OkAsync(new LoginResponse(true, tokens.AccessToken, tokens.RefreshToken), cancellationToken);
     }
 }
