@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using AspNetCore.Authentication.ApiKey;
+using Elsa;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
 
@@ -32,14 +33,23 @@ public class DefaultApiKeyProvider : IApiKeyProvider
         var application = await _applicationCredentialsValidator.ValidateAsync(key);
 
         if (application == null)
+        {
             return null;
+        }
 
         var filter = new RoleFilter { Ids = application.Roles.Distinct().ToList() };
         var roles = (await _roleProvider.FindManyAsync(filter)).ToList();
         var permissions = roles.SelectMany(x => x.Permissions).Distinct().ToList();
         var claims = new List<Claim>();
 
-        claims.AddRange(permissions.Select(p => new Claim("permissions", p)));
+        if (permissions.Count == 0)
+        {
+            claims.Add(new Claim(PermissionNames.ClaimType, PermissionNames.None));
+        }
+        else
+        {
+            claims.AddRange(permissions.Select(p => new Claim(PermissionNames.ClaimType, p)));
+        }
 
         return new ApiKey(key, application.ClientId, claims);
     }

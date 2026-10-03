@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using AspNetCore.Authentication.ApiKey;
+using Elsa;
 using Elsa.Identity.Models;
 using Elsa.Identity.Options;
 using Microsoft.Extensions.Options;
@@ -35,9 +36,21 @@ public class AdminApiKeyProvider(IOptions<AdminApiKeyOptions> options) : IApiKey
     {
         var apiKeyOptions = options.Value;
         if (string.IsNullOrWhiteSpace(apiKeyOptions.ApiKey) || key != apiKeyOptions.ApiKey)
+        {
             return Task.FromResult<IApiKey?>(null);
-        
-        var claims = apiKeyOptions.Permissions.Select(permission => new Claim("permissions", permission)).ToList();
+        }
+
+        var permissions = apiKeyOptions.Permissions.Where(permission => !string.IsNullOrWhiteSpace(permission)).ToList();
+        List<Claim> claims;
+        if (permissions.Count == 0)
+        {
+            claims = [new Claim(PermissionNames.ClaimType, PermissionNames.None)];
+        }
+        else
+        {
+            claims = permissions.Select(permission => new Claim(PermissionNames.ClaimType, permission)).ToList();
+        }
+
         var apiKey = new ApiKey(key, apiKeyOptions.OwnerName, claims);
         return Task.FromResult<IApiKey>(apiKey)!;
     }

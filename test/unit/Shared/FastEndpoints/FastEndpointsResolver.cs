@@ -28,9 +28,7 @@ internal static class FastEndpointsResolver
 
     /// <summary>
     /// Points the process-wide resolver at a container that outlives every test host. Also runs when the test assembly
-    /// loads, so <c>Factory.Create</c> finds the same resolver whether or not a host ran before it. That resolver is
-    /// not the unit-test one <c>Factory.Create</c> would install by itself: its <c>CreateScope()</c> creates a scope
-    /// from this container rather than from the services registered on the test's <c>HttpContext</c>.
+    /// loads, so <c>Factory.Create</c> finds the same resolver whether or not a host ran before it.
     /// </summary>
     [ModuleInitializer]
     public static void Reset() => Services.UseMessaging();
