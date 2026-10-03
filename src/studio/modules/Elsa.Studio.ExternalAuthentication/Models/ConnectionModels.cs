@@ -2,22 +2,35 @@ using System.Text.Json;
 
 namespace Elsa.Studio.ExternalAuthentication.Models;
 
+/// <summary>
+/// The Elsa 3.9 permissions guarding the External Authentication endpoints, in <c>{resource}:{verb}</c> form.
+/// They mirror core's resource grammar; the backend remains authoritative.
+/// </summary>
 public static class ExternalAuthenticationPermissions
 {
-    public const string Read = "external-authentication:connections:read";
-    public const string Create = "external-authentication:connections:create";
-    public const string Update = "external-authentication:connections:update";
-    public const string Archive = "external-authentication:connections:archive";
-    public const string Test = "external-authentication:connections:test";
-    public const string Preview = "external-authentication:connections:preview";
-    public const string ManagePolicies = "external-authentication:policies:manage";
-    public const string DelegatePermissions = "external-authentication:permissions:delegate";
-    public const string DelegatePermissionsUnrestricted = "external-authentication:permissions:delegate-unrestricted";
-    public const string ManageLinks = "external-authentication:links:manage";
-    public const string SessionsRead = "external-authentication:sessions:read";
-    public const string SessionsRevoke = "external-authentication:sessions:revoke";
-    public const string UnsafeProviderTrust = "external-authentication:provider-trust:unsafe";
-    public const string RolesRead = "read:role";
+    /// <summary>External identity provider connections: <c>view</c> lists and reads them, <c>create</c> adds them.</summary>
+    public const string Connections = "external-authentication/connections";
+
+    /// <summary>External identity links between Elsa users and identity providers.</summary>
+    public const string IdentityLinks = "external-authentication/identity-links";
+
+    /// <summary>External authentication sessions.</summary>
+    public const string Sessions = "external-authentication/sessions";
+
+    public const string Read = $"{Connections}:view";
+    public const string Create = $"{Connections}:create";
+    public const string Update = $"{Connections}:update";
+    public const string Archive = $"{Connections}:archive";
+    public const string Test = $"{Connections}:test";
+    public const string Preview = $"{Connections}:preview";
+    public const string ManagePolicies = "external-authentication/policies:update";
+    public const string DelegatePermissions = "external-authentication/permission-grants:delegate";
+    public const string DelegatePermissionsUnrestricted = "external-authentication/permission-grants:delegate-unrestricted";
+    public const string ManageLinks = $"{IdentityLinks}:write";
+    public const string SessionsRead = $"{Sessions}:view";
+    public const string SessionsRevoke = $"{Sessions}:revoke";
+    public const string UnsafeProviderTrust = "external-authentication/provider-trust:override";
+    public const string RolesRead = "identity/roles:view";
 }
 
 public sealed class ConnectionScope

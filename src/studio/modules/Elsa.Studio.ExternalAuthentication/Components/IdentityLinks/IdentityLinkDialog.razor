@@ -109,7 +109,7 @@
     {
         try
         {
-            var api = await ApiClientProvider.GetApiAsync<IExternalIdentityLinksApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalIdentityLinkManagementApi>();
             var response = await api.FindUsersAsync(_userSearch, pageSize: 25);
             ReplaceUsers(response.Items);
             EnsureExistingUser();
@@ -131,7 +131,7 @@
         try
         {
             await SetDismissalAsync(false);
-            var api = await ApiClientProvider.GetApiAsync<IExternalIdentityLinksApi>();
+            var api = await ApiClientProvider.GetApiAsync<IExternalIdentityLinkManagementApi>();
             if (ExistingLink is null)
             {
                 await api.PrelinkAsync((PrelinkExternalIdentityRequest)_request);
@@ -229,7 +229,7 @@
     private async Task<bool> OriginalLinkStillExistsAsync()
     {
         var link = ExistingLink!;
-        var api = await ApiClientProvider.GetApiAsync<IExternalIdentityLinksApi>();
+        var api = await ApiClientProvider.GetApiAsync<IExternalIdentityLinkManagementApi>();
         string? cursor = null;
         do
         {
