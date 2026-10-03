@@ -1,4 +1,7 @@
+@using Elsa.Studio.Contracts
+@using Microsoft.Extensions.DependencyInjection
 @inject IRoleAdministrationAccessService AccessService
+@inject IServiceProvider Services
 @implements IAsyncDisposable
 
 @if (_access == null)
@@ -30,11 +33,19 @@ else
 
     private static readonly Permission[] _missingPermissions = [new(IdentityPermissions.RolesResource, IdentityPermissions.View)];
     private readonly CancellationTokenSource _lifetime = new();
+    private IPermissionSnapshotCache[] _caches = [];
     private RoleAdministrationAccess? _access;
     private bool _accessLoading;
     private bool _disposed;
 
-    protected override Task OnInitializedAsync() => LoadAccessAsync(_lifetime.Token);
+    protected override Task OnInitializedAsync()
+    {
+        _caches = Services.GetServices<IPermissionSnapshotCache>().ToArray();
+        foreach (var cache in _caches)
+            cache.Changed += OnSnapshotChanged;
+
+        return LoadAccessAsync(_lifetime.Token);
+    }
 
     private async Task ReloadAsync()
     {
@@ -74,12 +85,26 @@ else
         }
     }
 
+    private async void OnSnapshotChanged(object? sender, EventArgs e)
+    {
+        try
+        {
+            await InvokeAsync(() => LoadAccessAsync(_lifetime.Token));
+        }
+        catch (Exception)
+        {
+            // A permission notification must not become an unobserved exception.
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
             return;
 
         _disposed = true;
+        foreach (var cache in _caches)
+            cache.Changed -= OnSnapshotChanged;
         await _lifetime.CancelAsync();
         _lifetime.Dispose();
     }

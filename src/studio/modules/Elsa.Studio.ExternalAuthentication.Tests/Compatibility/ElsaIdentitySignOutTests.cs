@@ -459,13 +459,31 @@ public sealed class ElsaIdentitySignOutTests : AppBarUserMenuTests<ElsaIdentityU
     private sealed class PausedHandler : HttpMessageHandler
     {
         private readonly TaskCompletionSource<HttpResponseMessage> _response = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly List<HttpResponseMessage> _owned = [];
 
-        public void Respond(string json) => _response.SetResult(new HttpResponseMessage(HttpStatusCode.OK)
+        public void Respond(string json) => _response.SetResult(Own(new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
-        });
+        }));
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => _response.Task;
+
+        private HttpResponseMessage Own(HttpResponseMessage response)
+        {
+            _owned.Add(response);
+            return response;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                foreach (var response in _owned)
+                    response.Dispose();
+            }
+
+            base.Dispose(disposing);
+        }
     }
 
     private sealed record RecordedRequest(string Endpoint, string? Authorization, string Body, Dictionary<string, string> Tokens);

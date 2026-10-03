@@ -3,6 +3,7 @@ using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Environments.Contracts;
 using Elsa.Studio.Environments.Extensions;
+using Elsa.Studio.Environments.Models;
 using Elsa.Studio.Environments.Services;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Models;
@@ -51,6 +52,45 @@ public sealed class CombinedModuleHostTests
             Assert.IsType<IdentityPermissionContext>(cache);
             Assert.NotNull(permissions);
         }, timeout.Token).WaitAsync(timeout.Token);
+    }
+
+    [Fact]
+    public void PermissionRefreshSignal_IsIsolatedAcrossScopes()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddCoreInternal();
+        services.AddSingleton<IRemoteFeatureProvider, NoRemoteFeatures>();
+
+        var backend = new BackendApiConfig
+        {
+            ConfigureBackendOptions = options => options.Url = new Uri("https://backend.example/")
+        };
+        services.AddRemoteBackend(backend);
+        services.AddEnvironmentsModule(backend);
+        services.AddSecurityModule(backend);
+
+        using var provider = services.BuildServiceProvider();
+        using var scopeA = provider.CreateScope();
+        using var scopeB = provider.CreateScope();
+
+        var environments = scopeA.ServiceProvider.GetRequiredService<IEnvironmentService>();
+        var cacheA = scopeA.ServiceProvider.GetRequiredService<IPermissionSnapshotCache>();
+        var cacheB = scopeB.ServiceProvider.GetRequiredService<IPermissionSnapshotCache>();
+        var raisedA = 0;
+        var raisedB = 0;
+        cacheA.Changed += (_, _) => raisedA++;
+        cacheB.Changed += (_, _) => raisedB++;
+
+        environments.SetEnvironments(
+        [
+            new ServerEnvironment { Name = "Dev", Url = new Uri("https://dev.example/") },
+            new ServerEnvironment { Name = "Prod", Url = new Uri("https://prod.example/") }
+        ], "Dev");
+        environments.SetCurrentEnvironment("Prod");
+
+        Assert.Equal(2, raisedA);
+        Assert.Equal(0, raisedB);
     }
 
     private sealed class NoRemoteFeatures : IRemoteFeatureProvider

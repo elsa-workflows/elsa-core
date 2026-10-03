@@ -370,10 +370,14 @@ public sealed class PermissionPageGuardTests : BunitContext, IAsyncLifetime
         protected override void NavigateToCore(string uri, NavigationOptions options) => Uri = ToAbsoluteUri(uri).ToString();
     }
 
-    private sealed class UngatedPage : ComponentBase;
+    private sealed class UngatedPage : ComponentBase
+    {
+    }
 
     [RequirePermission("dashboard", PermissionVerbs.View)]
-    private sealed class DashboardPage : ComponentBase;
+    private sealed class DashboardPage : ComponentBase
+    {
+    }
 
     // Navigation shaped like the built-in modules': Secrets is listed first but belongs to a later group.
     private sealed class LandingMenu(MenuItem[] extraItems, Func<Task?> hold) : IMenuProvider, IMenuGroupProvider
@@ -412,7 +416,9 @@ public sealed class PermissionPageGuardTests : BunitContext, IAsyncLifetime
 
     [RequirePermission("workflows/instances", PermissionVerbs.View)]
     [RequirePermission("workflows/definitions", PermissionVerbs.View)]
-    private sealed class WorkflowInstancesPage : ComponentBase;
+    private sealed class WorkflowInstancesPage : ComponentBase
+    {
+    }
 
     private sealed class PendingPermissionService : IPermissionService
     {

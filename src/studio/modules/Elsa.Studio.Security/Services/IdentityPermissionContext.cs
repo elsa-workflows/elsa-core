@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Security.Client;
@@ -16,6 +17,10 @@ namespace Elsa.Studio.Security.Services;
 /// environment, and silent-refresh signals, drops the cache, then raises <see cref="Changed"/>
 /// so UI re-resolves after the snapshot is gone.
 /// </summary>
+/// <remarks>
+/// A snapshot is stored only for the generation it was loaded under, and <see cref="GetAsync"/>
+/// returns only current-generation grants. Generation and snapshot are published together.
+/// </remarks>
 public sealed class IdentityPermissionContext : IIdentityPermissionContext, IPermissionSnapshotCache, IDisposable
 {
     private readonly IBackendApiClientProvider _apiClientProvider;
@@ -23,8 +28,8 @@ public sealed class IdentityPermissionContext : IIdentityPermissionContext, IPer
     private readonly AuthenticationStateProvider[] _authenticationStateProviders;
     private readonly IPermissionRefreshSignal[] _refreshSignals;
     private readonly SemaphoreSlim _loadLock = new(1, 1);
-    private IdentityPermissionSnapshot? _snapshot;
-    private int _generation;
+    private readonly object _sync = new();
+    private CacheState _state = new(0, null);
 
     public IdentityPermissionContext(
         IBackendApiClientProvider apiClientProvider,
@@ -47,29 +52,47 @@ public sealed class IdentityPermissionContext : IIdentityPermissionContext, IPer
     /// <inheritdoc />
     public event EventHandler? Changed;
 
+    /// <summary>Invoked after a load returns and before the generation check-and-store. Tests use this to Invalidate between those steps.</summary>
+    internal Action? AfterLoad { get; set; }
+
     public async Task<IdentityPermissionSnapshot> GetAsync(CancellationToken cancellationToken = default)
     {
-        if (HasCachedSnapshot)
-            return _snapshot!;
+        if (TryReadCachedSnapshot(out var cached))
+            return cached;
 
         await _loadLock.WaitAsync(cancellationToken);
         try
         {
-            if (HasCachedSnapshot)
-                return _snapshot!;
-
-            var generation = Volatile.Read(ref _generation);
-            var loaded = await LoadAsync(cancellationToken);
-
-            if (generation != Volatile.Read(ref _generation))
+            while (true)
             {
-                return HasCachedSnapshot ? _snapshot! : loaded;
+                int generation;
+                lock (_sync)
+                {
+                    if (IsUsable(_state.Snapshot))
+                        return _state.Snapshot!;
+
+                    generation = _state.Generation;
+                }
+
+                var loaded = await LoadAsync(cancellationToken);
+                AfterLoad?.Invoke();
+
+                lock (_sync)
+                {
+                    if (generation != _state.Generation)
+                    {
+                        if (IsUsable(_state.Snapshot))
+                            return _state.Snapshot!;
+
+                        continue;
+                    }
+
+                    if (loaded.State != IdentityPermissionSnapshotState.Unavailable)
+                        _state = new CacheState(generation, loaded);
+
+                    return loaded;
+                }
             }
-
-            if (loaded.State != IdentityPermissionSnapshotState.Unavailable)
-                _snapshot = loaded;
-
-            return loaded;
         }
         finally
         {
@@ -79,8 +102,9 @@ public sealed class IdentityPermissionContext : IIdentityPermissionContext, IPer
 
     public void Invalidate()
     {
-        Interlocked.Increment(ref _generation);
-        _snapshot = null;
+        lock (_sync)
+            _state = new CacheState(_state.Generation + 1, null);
+
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
@@ -95,8 +119,21 @@ public sealed class IdentityPermissionContext : IIdentityPermissionContext, IPer
         _loadLock.Dispose();
     }
 
-    private bool HasCachedSnapshot =>
-        _snapshot is { State: not IdentityPermissionSnapshotState.Unavailable };
+    private bool TryReadCachedSnapshot(out IdentityPermissionSnapshot snapshot)
+    {
+        var cached = Volatile.Read(ref _state).Snapshot;
+        if (IsUsable(cached))
+        {
+            snapshot = cached;
+            return true;
+        }
+
+        snapshot = null!;
+        return false;
+    }
+
+    private static bool IsUsable([NotNullWhen(true)] IdentityPermissionSnapshot? snapshot) =>
+        snapshot is { State: not IdentityPermissionSnapshotState.Unavailable };
 
     private void OnAuthenticationStateChanged(Task<AuthenticationState> _) => Invalidate();
 
@@ -134,4 +171,6 @@ public sealed class IdentityPermissionContext : IIdentityPermissionContext, IPer
             return IdentityPermissionSnapshot.Unavailable;
         }
     }
+
+    private sealed record CacheState(int Generation, IdentityPermissionSnapshot? Snapshot);
 }

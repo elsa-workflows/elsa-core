@@ -1,8 +1,5 @@
 using System.Net;
-using System.Text;
-using System.Text.Json;
 using Elsa.Api.Client.Resources.Features.Models;
-using Elsa.Studio.Authentication.ElsaIdentity.Services;
 using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Extensions;
@@ -161,17 +158,9 @@ public sealed class IdentityPermissionContextTests
     }
 
     [Fact]
-    public async Task PermissionService_WhenTokenIsExpired_FailsClosed()
+    public async Task PermissionService_When401_FailsClosed()
     {
-        var expiredJwt = CreateExpiredJwt();
-        Assert.True(new JwtParser().Parse(expiredJwt).IsExpired());
-
-        var api = new TestMePermissionsApi(_ =>
-        {
-            // Identity rejects an expired bearer the same way it rejects a missing one: 401.
-            // The token itself is what distinguishes this from the anonymous case above.
-            return Task.FromException<CurrentCallerPermissionsResponse>(CreateApiException(HttpStatusCode.Unauthorized));
-        });
+        var api = new TestMePermissionsApi(_ => Task.FromException<CurrentCallerPermissionsResponse>(CreateApiException(HttpStatusCode.Unauthorized)));
         var permissions = await new IdentityPermissionService(CreateContext(api)).GetPermissionsAsync();
 
         Assert.True(permissions.IsKnown);
@@ -208,13 +197,41 @@ public sealed class IdentityPermissionContextTests
             Grants = [new CurrentCallerResourceGrant { Resource = IdentityPermissions.UsersResource, Verbs = [IdentityPermissions.View] }]
         });
 
-        var stale = await load;
+        var current = await load;
         var refreshed = await context.GetAsync();
 
-        Assert.Equal(IdentityPermissionSnapshotState.Ready, stale.State);
-        Assert.True(stale.HasPermission(IdentityPermissions.UsersResource, IdentityPermissions.View));
+        Assert.Equal(IdentityPermissionSnapshotState.Ready, current.State);
+        Assert.False(current.HasPermission(IdentityPermissions.UsersResource, IdentityPermissions.View));
         Assert.Equal(IdentityPermissionSnapshotState.Ready, refreshed.State);
         Assert.False(refreshed.HasPermission(IdentityPermissions.UsersResource, IdentityPermissions.View));
+        Assert.Equal(2, Volatile.Read(ref calls));
+    }
+
+    [Fact]
+    public async Task GetAsync_WhenInvalidatedBetweenCheckAndStore_ReturnsTheCurrentGeneration()
+    {
+        var calls = 0;
+        var context = CreateContext(new TestMePermissionsApi(_ =>
+        {
+            var call = Interlocked.Increment(ref calls);
+            return Task.FromResult(new CurrentCallerPermissionsResponse
+            {
+                Grants = call == 1
+                    ? [new CurrentCallerResourceGrant { Resource = IdentityPermissions.UsersResource, Verbs = [IdentityPermissions.View] }]
+                    : []
+            });
+        }));
+        context.AfterLoad = () =>
+        {
+            if (Volatile.Read(ref calls) == 1)
+                context.Invalidate();
+        };
+
+        var snapshot = await context.GetAsync();
+        var cached = await context.GetAsync();
+
+        Assert.False(snapshot.HasPermission(IdentityPermissions.UsersResource, IdentityPermissions.View));
+        Assert.Same(snapshot, cached);
         Assert.Equal(2, Volatile.Read(ref calls));
     }
 
@@ -264,15 +281,6 @@ public sealed class IdentityPermissionContextTests
         using var response = new HttpResponseMessage(statusCode);
         return ApiException.Create(request, HttpMethod.Get, response, new RefitSettings()).GetAwaiter().GetResult();
     }
-
-    private static string CreateExpiredJwt()
-    {
-        var payload = JsonSerializer.Serialize(new { exp = DateTimeOffset.UtcNow.AddMinutes(-10).ToUnixTimeSeconds() });
-        return $"{Base64Url("{\"alg\":\"none\"}")}.{Base64Url(payload)}.signature";
-    }
-
-    private static string Base64Url(string value) =>
-        Convert.ToBase64String(Encoding.UTF8.GetBytes(value)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
     private static IdentityPermissionContext CreateContext(IMePermissionsApi api) =>
         new(new StaticBackendApiClientProvider(api), NullLogger<IdentityPermissionContext>.Instance);

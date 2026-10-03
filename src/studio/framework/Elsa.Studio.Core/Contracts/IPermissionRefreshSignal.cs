@@ -1,12 +1,14 @@
 namespace Elsa.Studio.Contracts;
 
 /// <summary>
-/// A process-wide signal that the current principal's tokens or backend identity just changed
+/// A per-circuit signal that the current principal's tokens or backend identity just changed
 /// without an <c>AuthenticationStateChanged</c> notification (silent JWT refresh or environment switch).
 /// </summary>
 /// <remarks>
 /// The signal has no dependencies so Environment and Identity modules can raise it without
 /// constructing the permission cache (which would cycle through the backend client).
+/// It is scoped so one Blazor Server circuit's refresh or environment switch does not
+/// invalidate other users' caches.
 /// </remarks>
 public interface IPermissionRefreshSignal
 {
