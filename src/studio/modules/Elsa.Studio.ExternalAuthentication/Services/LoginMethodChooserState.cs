@@ -16,5 +16,5 @@ public static class LoginMethodChooserState
 public static class LocalReturnPath
 {
     public static string Normalize(string? candidate) =>
-        Elsa.Studio.Authentication.Abstractions.LocalReturnPath.Normalize(candidate);
+        Authentication.Abstractions.LocalReturnPath.Normalize(candidate);
 }

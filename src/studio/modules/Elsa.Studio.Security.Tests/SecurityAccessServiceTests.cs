@@ -90,6 +90,60 @@ public sealed class IdentityPermissionContextTests
     }
 
     [Fact]
+    public async Task GetAsync_DoesNotCacheAnUnavailableSnapshot()
+    {
+        var calls = 0;
+        var api = new TestMePermissionsApi(_ =>
+        {
+            calls++;
+            return calls == 1
+                ? Task.FromException<CurrentCallerPermissionsResponse>(new HttpRequestException("Identity is unavailable."))
+                : Task.FromResult(new CurrentCallerPermissionsResponse
+                {
+                    Grants = [new CurrentCallerResourceGrant { Resource = IdentityPermissions.UsersResource, Verbs = [IdentityPermissions.View] }]
+                });
+        });
+        var context = CreateContext(api);
+
+        var unavailable = await context.GetAsync();
+        var recovered = await context.GetAsync();
+
+        Assert.Equal(IdentityPermissionSnapshotState.Unavailable, unavailable.State);
+        Assert.Equal(IdentityPermissionSnapshotState.Ready, recovered.State);
+        Assert.True(recovered.HasPermission(IdentityPermissions.UsersResource, IdentityPermissions.View));
+        Assert.Equal(2, calls);
+    }
+
+    [Fact]
+    public async Task GetAsync_AfterAdminThenZeroGrantInTheSameScope_DropsUsersView()
+    {
+        var calls = 0;
+        var api = new TestMePermissionsApi(_ =>
+        {
+            calls++;
+            return Task.FromResult(calls == 1
+                ? new CurrentCallerPermissionsResponse
+                {
+                    Grants = [new CurrentCallerResourceGrant { Resource = IdentityPermissions.UsersResource, Verbs = [IdentityPermissions.View] }]
+                }
+                : new CurrentCallerPermissionsResponse
+                {
+                    Grants = []
+                });
+        });
+        var context = CreateContext(api);
+
+        var admin = await new IdentityPermissionService(context).GetPermissionsAsync();
+        context.Invalidate();
+        var zeroGrant = await new IdentityPermissionService(context).GetPermissionsAsync();
+
+        Assert.True(admin.Has(IdentityPermissions.UsersResource, IdentityPermissions.View));
+        Assert.True(zeroGrant.IsKnown);
+        Assert.False(zeroGrant.Has(IdentityPermissions.UsersResource, IdentityPermissions.View));
+        Assert.Equal(2, calls);
+    }
+
+    [Fact]
     public async Task PermissionService_WhenCallerIsAnonymous_FailsClosed()
     {
         var api = new TestMePermissionsApi(_ => Task.FromException<CurrentCallerPermissionsResponse>(CreateApiException(HttpStatusCode.Unauthorized)));

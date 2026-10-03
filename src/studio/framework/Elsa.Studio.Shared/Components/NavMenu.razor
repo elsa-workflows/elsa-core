@@ -62,10 +62,19 @@
         _navigation = navigation;
     }
 
-    private async void OnAuthenticationStateChanged(Task<AuthenticationState> state) =>
-        await InvokeAsync(async () =>
+    private async void OnAuthenticationStateChanged(Task<AuthenticationState> state)
+    {
+        try
         {
-            await LoadMenuAsync();
-            StateHasChanged();
-        });
+            await InvokeAsync(async () =>
+            {
+                await LoadMenuAsync();
+                StateHasChanged();
+            });
+        }
+        catch
+        {
+            // An auth-state notification must not become an unobserved exception.
+        }
+    }
 }

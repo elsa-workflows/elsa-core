@@ -25,8 +25,8 @@
 
     <ItemGroup>
         <ProjectReference Include="../Elsa.Studio.Authentication.UI/Elsa.Studio.Authentication.UI.csproj" />
-        <ProjectReference Include="../Elsa.Studio.Authentication.Themes/Elsa.Studio.Authentication.Themes.csproj" />
         <ProjectReference Include="../Elsa.Studio.Authentication.ElsaIdentity.UI/Elsa.Studio.Authentication.ElsaIdentity.UI.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Authentication.Themes/Elsa.Studio.Authentication.Themes.csproj" />
         <ProjectReference Include="../../framework/Elsa.Studio.Core.BlazorServer/Elsa.Studio.Core.BlazorServer.csproj" />
     </ItemGroup>
 

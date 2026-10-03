@@ -18,6 +18,7 @@ public class WorkflowDefinitionLabelsEditorWidget : IWidget
     /// <inheritdoc />
     public double Order => 25;
 
+    // The editor lists the definition's labels as soon as it initializes, so it is not rendered at all without access.
     /// <inheritdoc />
     public Func<IDictionary<string, object?>, RenderFragment> Render => attributes => PermissionView.Wrap(LabelPermissions.WorkflowDefinitionLabels, PermissionVerbs.View, builder =>
     {

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Xunit;
 
 namespace Elsa.Studio.Core.Tests;
@@ -18,5 +19,15 @@ public class HostAuthenticationConfigurationTests
             .GetProperty("ExternalAuthentication")
             .GetProperty("ClientSecret")
             .GetString());
+    }
+
+    [Fact]
+    public void ServerHostPersistsAntiforgeryStateForSignOut()
+    {
+        var host = CssContractTestContext.ReadRepositoryFile(
+            "src", "hosts", "Elsa.Studio.Host.Server", "Pages", "_Host.cshtml");
+        var markup = Regex.Replace(host, @"@\*.*?\*@|<!--.*?-->", string.Empty, RegexOptions.Singleline);
+
+        Assert.Matches(@"<persist-component-state\s*/>", markup);
     }
 }

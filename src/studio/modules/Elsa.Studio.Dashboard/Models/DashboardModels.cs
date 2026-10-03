@@ -28,10 +28,17 @@ public record DashboardCapabilityStatus
 
     public string Status { get; init; }
     public string? Reason { get; init; }
+
+    /// <summary>
+    /// Whether the backend withheld the section because the user may not read it. The dashboard leaves such a section
+    /// out rather than report it: the user is not meant to see it.
+    /// </summary>
+    public bool IsUnauthorized => Status == Unauthorized.Status;
 }
 
 public record DashboardRuntimeStatus
 {
+    public DashboardCapabilityStatus Capability { get; init; } = DashboardCapabilityStatus.Available;
     public string Status { get; init; } = DashboardRuntimeStatusKeys.Unavailable;
     public bool IsAcceptingWork { get; init; }
     public int ActiveExecutionCycleCount { get; init; }
@@ -44,6 +51,7 @@ public record DashboardRuntimeStatus
 
 public record DashboardWorkflowInstanceMetrics
 {
+    public DashboardCapabilityStatus Capability { get; init; } = DashboardCapabilityStatus.Available;
     public long Running { get; init; }
     public long Completed { get; init; }
     public long Faulted { get; init; }
@@ -172,8 +180,8 @@ public record DashboardHotspot
 public record DashboardSnapshot(
     DashboardOverview Overview,
     DashboardNeedsAttentionResponse NeedsAttention,
-    DashboardTrendResponse Trend,
-    DashboardRecentActivityResponse RecentActivity,
+    DashboardTrendResponse? Trend,
+    DashboardRecentActivityResponse? RecentActivity,
     DashboardWorkflowHotspotsResponse? Hotspots);
 
 public record DashboardLoadResult(DashboardLoadStatus Status, DashboardSnapshot? Snapshot = null, string? Message = null)

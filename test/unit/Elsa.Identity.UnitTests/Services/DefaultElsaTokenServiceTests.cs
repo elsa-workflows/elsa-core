@@ -50,6 +50,22 @@ public class DefaultElsaTokenServiceTests
         Assert.Contains(token.Claims, x => x.Type == TokenUse.ClaimType && x.Value == TokenUse.Access);
     }
 
+    [Fact(DisplayName = "A refresh token always carries the user's subject")]
+    public async Task IssueRefreshTokenAlwaysEmitsSubject()
+    {
+        var user = new User { Id = "user-1", Name = "alice" };
+        var options = Microsoft.Extensions.Options.Options.Create(new IdentityTokenOptions
+        {
+            SigningKey = IdentityTokenTestConstants.SigningKey
+        });
+        var token = await new DefaultElsaTokenService(new TestSystemClock(DateTimeOffset.UtcNow), options)
+            .IssueRefreshTokenAsync(new TokenIssuanceContext(user, [], [], []));
+        var jwt = new JsonWebTokenHandler().ReadJsonWebToken(token.Token);
+
+        Assert.Contains(jwt.Claims, x => x.Type == JwtRegisteredClaimNames.Sub && x.Value == user.Id);
+        Assert.Contains(jwt.Claims, x => x.Type == JwtRegisteredClaimNames.Name && x.Value == user.Name);
+    }
+
     [Fact(DisplayName = "A zero-grant token carries the permissions sentinel, not an omitted claim")]
     public async Task ZeroGrantsEmitTheEmptySetSentinel()
     {

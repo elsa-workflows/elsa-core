@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using Bunit;
+using Elsa.Studio.Components;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Contracts;
 using Elsa.Studio.Extensions;
@@ -15,6 +16,7 @@ using MudBlazor.Services;
 using Refit;
 using Xunit;
 using UserEditor = Elsa.Studio.Security.Pages.User;
+using RolesPage = Elsa.Studio.Security.Pages.Roles;
 using UsersPage = Elsa.Studio.Security.Pages.Users;
 
 namespace Elsa.Studio.Administration.Tests;
@@ -131,9 +133,21 @@ public sealed class IdentityManagementTests : BunitContext, IAsyncLifetime
 
         var cut = Render<UsersPage>();
 
-        cut.WaitForAssertion(() => Assert.Contains("You don't have access to this page", cut.Markup));
+        AssertAccessDeniedWithoutControls(cut, "identity/users:view");
         Assert.DoesNotContain("alice", cut.Markup);
         Assert.Equal(0, _users.ListCallCount);
+    }
+
+    [Fact]
+    public void RoleList_WhenAccessIsForbidden_RendersTheSharedAccessDenied()
+    {
+        _roleAccess.Access = RoleAdministrationAccess.Forbidden;
+        _roles.Roles = [new() { Id = "admin-role", Name = "Administrators" }];
+
+        var cut = Render<RolesPage>();
+
+        AssertAccessDeniedWithoutControls(cut, "identity/roles:view");
+        Assert.DoesNotContain("Administrators", cut.Markup);
     }
 
     [Fact]
@@ -171,7 +185,7 @@ public sealed class IdentityManagementTests : BunitContext, IAsyncLifetime
 
         var cut = Render<UserEditor>(parameters => parameters.Add(component => component.Id, "user-1"));
 
-        cut.WaitForAssertion(() => Assert.Contains("You don't have access to this page", cut.Markup));
+        AssertAccessDeniedWithoutControls(cut, "identity/users:view");
         Assert.DoesNotContain("alice", cut.Markup);
         Assert.Equal(0, _users.ListCallCount);
         Assert.Equal(0, _roles.ListCallCount);
@@ -567,6 +581,12 @@ public sealed class IdentityManagementTests : BunitContext, IAsyncLifetime
         cut.Dispose();
 
         Assert.Equal(uriBeforeDisposal, navigation.Uri);
+    }
+
+    private static void AssertAccessDeniedWithoutControls(IRenderedComponent<IComponent> cut, string permission)
+    {
+        cut.WaitForAssertion(() => Assert.Contains(permission, cut.FindComponent<AccessDenied>().Markup));
+        Assert.Empty(cut.FindAll("input, button"));
     }
 
     private static ApiException CreateApiException(HttpStatusCode statusCode, string content = "")

@@ -46,6 +46,7 @@
 
     @if (ShowWelcome)
     {
+        @* Recreated when the permissions change, so the shortcuts follow the pages the user can open. *@
         <DashboardWelcome @key="Permissions" />
     }
     else

@@ -1,4 +1,4 @@
-@if (Context.Snapshot != null)
+@if (Context.Snapshot != null && !Context.Snapshot.Overview.Diagnostics.StructuredLogs.Capability.IsUnauthorized)
 {
     var summary = Context.Snapshot.Overview.Diagnostics.StructuredLogs;
 

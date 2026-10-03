@@ -57,6 +57,8 @@ public static class ServiceCollectionExtensions
         // Register core services
         services.AddHttpContextAccessor();
         services.AddAntiforgery();
+        // [ValidateAntiForgeryToken] needs the MVC view-feature filter. AddControllers() alone does not register it.
+        services.AddControllersWithViews();
         services.AddSingleton(options);
         services.AddScoped<IFeature, OpenIdConnectBlazorServerFeature>();
         services.AddScoped<ITokenProvider, ServerTokenProvider>();

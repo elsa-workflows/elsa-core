@@ -47,7 +47,7 @@ switch off; the switch is per language, so C# and Python can be decided separate
 
 ## Revocation
 
-The default access-token lifetime drops from 1 hour to **15 minutes**. This is the revocation bound: permission claims are issued at sign-in, and refreshing re-reads the user's roles, so removing a role takes effect at most one access-token lifetime later. Refresh already rotates both tokens, so no client change is required.
+The default access-token lifetime drops from 1 hour to **15 minutes**. This is the revocation bound: permission claims are issued at sign-in, and refreshing re-reads the user's roles, so removing a role takes effect at most one access-token lifetime later. Refresh already rotates both tokens, so no client change is required. User resolution on refresh is a separate break: see [refresh-token user resolution](refresh-token-user-resolution.md).
 
 Elsa role and permission changes take effect on the next token refresh or expiry. Changes to grants from an external identity provider take effect only after a fresh sign-in. Stamp-based revalidation (`Identity:PermissionStamp:IsEnabled` and a ~30 second `CacheLifetime`) is planned for 3.10; it is not available in 3.9.
 
@@ -318,3 +318,17 @@ One caveat: the composite indexes only cover rows whose `TenantId` is non-null (
 | `ai:proposals:view` | *removed* — unused |
 | `ai:proposals:approve` | *removed* — unused |
 | `ai:proposals:apply` | *removed* — unused |
+
+## Studio hosts without the Security module
+
+Studio matches 3.9: a host that does not register `IPermissionService` (no Security module) uses `UserPermissions.Unknown`, so every permission check passes. That is an explicit choice for hosts that do not enforce authorization in the shell. Install the Security module to fail closed on `GET /identity/me/permissions`.
+
+The Webhooks page is gated on `http/webhooks:view`. That resource is in the backend catalog so a `*` administrator receives it. Dashboard per-widget gating depends on the dashboard section permissions from #8572.
+
+## Studio public API notes
+
+These Studio-side contract changes ship with this release and need a rebuild of any extension that referenced the old names:
+
+- Studio-local Refit interfaces were renamed so they do not collide with `Elsa.Api.Client`: `IExternalAuthenticationConnectionsApi` → `IExternalAuthenticationConnectionManagementApi`, and `IExternalIdentityLinksApi` → `IExternalIdentityLinkManagementApi`.
+- `ExternalAuthenticationPermissions` values now use the `{resource}:{verb}` grammar (`external-authentication/connections:view`, and so on). Old Studio-only names such as `external-authentication:connections:read` are not granted by the catalog.
+- `IFeatureService.IsInitialized` stays a default interface member (`=> false`). Third-party implementations and decorators do not have to add the member.

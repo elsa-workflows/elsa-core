@@ -52,13 +52,11 @@ public sealed class StudioShellCssContractTests
     }
 
     [Theory]
-    [InlineData("Elsa.Studio.Login", "Components", "LoginState.razor")]
-    [InlineData("Elsa.Studio.Environments", "Components", "EnvironmentPicker.razor")]
-    [InlineData("Elsa.Studio.ExternalAuthentication.BlazorServer", "Components", "BrokerLoginState.razor")]
-    [InlineData("Elsa.Studio.ExternalAuthentication.BlazorWasm", "Components", "BrokerLoginState.razor")]
+    [InlineData("framework", "Elsa.Studio.Shared", "Components", "AppBar", "UserMenu.razor")]
+    [InlineData("modules", "Elsa.Studio.Environments", "Components", "EnvironmentPicker.razor")]
     public void AccountMenusInheritShellUtilityColor(params string[] componentPath)
     {
-        var path = new[] { "src", "modules" }.Concat(componentPath).ToArray();
+        var path = new[] { "src" }.Concat(componentPath).ToArray();
         var component = CssContractTestContext.ReadRepositoryFile(path);
 
         Assert.Contains("IconColor=\"Color.Inherit\"", component, StringComparison.Ordinal);

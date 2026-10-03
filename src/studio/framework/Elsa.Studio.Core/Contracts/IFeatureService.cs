@@ -13,7 +13,11 @@ public interface IFeatureService
     /// <summary>
     /// Whether <see cref="InitializeFeaturesAsync"/> has completed.
     /// </summary>
-    bool IsInitialized { get; }
+    /// <remarks>
+    /// Default is <c>false</c> so third-party implementations and decorators compiled against
+    /// earlier Studio packages keep working. Making this member abstract would be a binary break.
+    /// </remarks>
+    bool IsInitialized => false;
     
     /// <summary>
     /// Returns all features.

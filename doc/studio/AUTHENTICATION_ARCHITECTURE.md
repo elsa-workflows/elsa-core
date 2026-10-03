@@ -746,9 +746,9 @@ Options/
 ```
 Client/
 ├── IExternalAuthenticationBrokerApi.cs     # authorize / token / logout
-├── IExternalAuthenticationConnectionsApi.cs
+├── IExternalAuthenticationConnectionManagementApi.cs
 ├── IExternalAuthenticationOperationsApi.cs
-├── IExternalIdentityLinksApi.cs
+├── IExternalIdentityLinkManagementApi.cs
 └── IIdentityRolesApi.cs                    # (ILoginMethodsApi lives alongside the broker API)
 
 Models/

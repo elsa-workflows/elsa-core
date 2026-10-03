@@ -1,8 +1,8 @@
 @using Elsa.Studio.Dashboard.Widgets
 
-@if (Context.Snapshot != null)
+@if (Context.Snapshot?.Trend is { } trend)
 {
-    <DashboardTrendChart Response="@Context.Snapshot.Trend" Loading="@Context.Loading" />
+    <DashboardTrendChart Response="@trend" Loading="@Context.Loading" />
 }
 
 @code {

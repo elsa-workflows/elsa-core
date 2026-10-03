@@ -67,7 +67,7 @@
         await JwtAccessor.WriteTokenAsync(Elsa.Studio.Authentication.ElsaIdentity.TokenNames.RefreshToken, result.RefreshToken!);
         if (AuthenticationStateProvider is Elsa.Studio.Authentication.ElsaIdentity.Services.AccessTokenAuthenticationStateProvider stateProvider)
             stateProvider.NotifyAuthenticationStateChanged();
-        Navigation.NavigateTo(Context.ReturnPath, forceLoad: true);
+        Navigation.NavigateTo(Elsa.Studio.Authentication.Abstractions.LocalReturnPath.RootAgainstBase(Context.ReturnPath, Navigation.BaseUri), forceLoad: true);
         return true;
     });
 }

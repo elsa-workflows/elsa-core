@@ -27,8 +27,8 @@
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
-        _currentState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+        _currentState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
     }
 
     /// <inheritdoc />
@@ -36,7 +36,14 @@
 
     private async void OnAuthenticationStateChanged(Task<AuthenticationState> state)
     {
-        _currentState = await state;
-        await InvokeAsync(StateHasChanged);
+        try
+        {
+            _currentState = await state;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch
+        {
+            // An auth-state notification must not become an unobserved exception.
+        }
     }
 }
