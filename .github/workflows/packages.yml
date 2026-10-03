@@ -451,7 +451,7 @@ jobs:
         uses: ./.github/actions/push-nuget-packages
         with:
           feed-source: ${{ env.nuget_feed_source }}
-          api-key: ${{ secrets.NUGET_API_KEY }}
+          api-key: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
 
   deploy_coverage:
     name: Deploy coverage to GitHub Pages
