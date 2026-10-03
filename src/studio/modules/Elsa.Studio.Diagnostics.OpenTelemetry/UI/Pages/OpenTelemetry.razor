@@ -129,10 +129,10 @@
                     </MudItem>
                     <MudItem xs="12" sm="6" md="2">
                         <MudSelect T="string" Value="@_durationFilter" ValueChanged="SetDurationFilterAsync" Label="@Localizer["Duration"]" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true">
-                            <MudSelectItem T="string" Value="@(\"any\")">@Localizer["Any"]</MudSelectItem>
-                            <MudSelectItem T="string" Value="@(\"fast\")">@Localizer["Under 50ms"]</MudSelectItem>
-                            <MudSelectItem T="string" Value="@(\"medium\")">@Localizer["50-500ms"]</MudSelectItem>
-                            <MudSelectItem T="string" Value="@(\"slow\")">@Localizer["Over 500ms"]</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("any")">@Localizer["Any"]</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("fast")">@Localizer["Under 50ms"]</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("medium")">@Localizer["50-500ms"]</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("slow")">@Localizer["Over 500ms"]</MudSelectItem>
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12" md="2" Class="d-flex align-center justify-end">

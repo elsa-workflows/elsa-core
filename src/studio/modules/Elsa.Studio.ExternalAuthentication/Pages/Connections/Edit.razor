@@ -491,7 +491,7 @@
 
         var fieldName = field.Split('.', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? field;
         return fieldName switch
-    {
+        {
             "displayName" => "Display name",
             "key" => "Connection key",
             _ => _adapter?.Fields.FirstOrDefault(descriptor => string.Equals(descriptor.Name, fieldName, StringComparison.Ordinal))?.DisplayName ?? field
