@@ -69,7 +69,7 @@ public sealed class IdentityPermissionServiceTests
     public async Task DefaultMenuService_WithoutPermissionService_KeepsUngatedHostsUnfiltered()
     {
         var service = new DefaultMenuService(
-            [new StaticMenuProvider(new() { Text = "Secrets", Href = "security/secrets", RequiredPermissions = { new("secrets", "view") } })],
+            [new StaticMenuProvider(new Elsa.Studio.Models.MenuItem { Text = "Secrets", Href = "security/secrets", RequiredPermissions = { new("secrets", "view") } })],
             []);
 
         var items = (await service.GetMenuItemsAsync()).ToList();

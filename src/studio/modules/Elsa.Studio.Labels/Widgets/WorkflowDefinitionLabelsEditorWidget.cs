@@ -1,6 +1,7 @@
 using Elsa.Studio.Authorization;
 using Elsa.Studio.Components;
 using Elsa.Studio.Contracts;
+using Elsa.Studio.Labels;
 using Elsa.Studio.Labels.Components;
 using Microsoft.AspNetCore.Components;
 
