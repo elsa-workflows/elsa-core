@@ -1,3 +1,4 @@
+using Elsa.Studio.Authentication.Abstractions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -17,31 +18,24 @@ public class AuthenticationController : Controller
     [HttpGet("login")]
     public IActionResult Login([FromQuery] string? returnUrl = null)
     {
-        return Challenge(new AuthenticationProperties { RedirectUri = NormalizeReturnUrl(returnUrl) }, OpenIdConnectDefaults.AuthenticationScheme);
+        return Challenge(new AuthenticationProperties { RedirectUri = LocalReturnPath.Normalize(returnUrl) }, OpenIdConnectDefaults.AuthenticationScheme);
     }
 
     /// <summary>
     /// Signs out from both the local cookie and the OpenID Connect provider.
     /// </summary>
-    [HttpGet("logout")]
-    public IActionResult Logout([FromQuery] string? returnUrl = null)
+    /// <remarks>
+    /// POST-only and antiforgery-protected so another site cannot sign the user out (#1081).
+    /// Return paths go through <see cref="LocalReturnPath"/> so #8585 can strengthen that helper
+    /// without another logout-controller rewrite.
+    /// </remarks>
+    [HttpPost("logout")]
+    [ValidateAntiForgeryToken]
+    public IActionResult Logout([FromForm] string? returnUrl = null)
     {
         return SignOut(
-            new AuthenticationProperties { RedirectUri = NormalizeReturnUrl(returnUrl) },
+            new AuthenticationProperties { RedirectUri = LocalReturnPath.Normalize(returnUrl) },
             CookieAuthenticationDefaults.AuthenticationScheme,
             OpenIdConnectDefaults.AuthenticationScheme);
-    }
-
-    private static string NormalizeReturnUrl(string? candidate)
-    {
-        if (string.IsNullOrWhiteSpace(candidate) ||
-            !candidate.StartsWith("/", StringComparison.Ordinal) ||
-            candidate.StartsWith("//", StringComparison.Ordinal) ||
-            candidate.StartsWith("/\\", StringComparison.Ordinal))
-        {
-            return "/";
-        }
-
-        return Uri.TryCreate(candidate, UriKind.Relative, out _) ? candidate : "/";
     }
 }

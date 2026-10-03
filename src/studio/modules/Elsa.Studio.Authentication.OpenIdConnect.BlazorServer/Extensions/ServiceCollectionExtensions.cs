@@ -3,6 +3,7 @@ using Elsa.Studio.Authentication.Abstractions.Contracts;
 using Elsa.Studio.Authentication.Abstractions.Models;
 using Elsa.Studio.Authentication.OpenIdConnect.Contracts;
 using Elsa.Studio.Authentication.OpenIdConnect.Models;
+using Elsa.Studio.Authentication.OpenIdConnect.BlazorServer;
 using Elsa.Studio.Authentication.OpenIdConnect.BlazorServer.Services;
 using Elsa.Studio.Authentication.OpenIdConnect.BlazorServer.Components;
 using Elsa.Studio.Contracts;
@@ -55,7 +56,9 @@ public static class ServiceCollectionExtensions
 
         // Register core services
         services.AddHttpContextAccessor();
+        services.AddAntiforgery();
         services.AddSingleton(options);
+        services.AddScoped<IFeature, OpenIdConnectBlazorServerFeature>();
         services.AddScoped<ITokenProvider, ServerTokenProvider>();
         services.AddScoped<IHttpConnectionOptionsConfigurator, OpenIdConnect.Services.OidcHttpConnectionOptionsConfigurator>();
         
@@ -118,6 +121,9 @@ public static class ServiceCollectionExtensions
                     RoleClaimType = options.RoleClaimType,
                     ValidateIssuer = true
                 };
+
+                // Fall back to a local-only sign-out when the provider has no end_session_endpoint.
+                oidcOptions.Events.OnRedirectToIdentityProviderForSignOut = OidcSignOutEvents.RedirectToIdentityProviderForSignOut;
             });
 
         // Add authorization services

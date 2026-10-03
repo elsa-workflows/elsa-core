@@ -1,0 +1,33 @@
+@using Elsa.Studio.Components.AppBar
+@using Microsoft.AspNetCore.Antiforgery
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Http
+@using MudBlazor
+@inject IAntiforgery Antiforgery
+@inject AntiforgeryStateProvider AntiforgeryState
+@inject IHttpContextAccessor HttpContextAccessor
+
+<UserMenu>
+    <form method="post" action="/authentication/logout">
+        @if (_antiforgeryToken is { } token)
+        {
+            <input type="hidden" name="@token.FormFieldName" value="@token.Value" />
+        }
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Text" FullWidth="true">Sign out</MudButton>
+    </form>
+</UserMenu>
+
+@code {
+    private AntiforgeryRequestToken? _antiforgeryToken;
+
+    // The token is bound to the signed-in user, and only a signed-in user sees the menu. A circuit on long polling has
+    // no HttpContext, so it uses the token its prerender persisted, which needs <persist-component-state /> on the host page.
+    protected override void OnInitialized() =>
+        _antiforgeryToken = HttpContextAccessor.HttpContext switch
+        {
+            null => AntiforgeryState.GetAntiforgeryToken(),
+            { User.Identity.IsAuthenticated: true } context when Antiforgery.GetAndStoreTokens(context) is { RequestToken: { } value } tokens =>
+                new AntiforgeryRequestToken(value, tokens.FormFieldName),
+            _ => null
+        };
+}
