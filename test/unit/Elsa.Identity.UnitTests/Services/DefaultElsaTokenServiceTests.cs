@@ -59,8 +59,9 @@ public class DefaultElsaTokenServiceTests
 
         Assert.Contains(jwt.Claims, x => x.Type == PermissionNames.ClaimType && x.Value == PermissionNames.None);
         Assert.Single(jwt.Claims, x => x.Type == PermissionNames.ClaimType);
-        // A JSON array or empty string is dropped by JwtBearer and Studio's WASM parser. A non-empty
-        // string that is not a permission survives both and is not a grant.
+        // An empty-string claim survives as a single claim both server-side and in Studio's JwtParser.
+        // Only an empty JSON array (`[]`) disappears. A non-empty string that is not a permission
+        // also survives both and is not a grant.
         Assert.Equal(JsonValueKind.String, payload.GetProperty(PermissionNames.ClaimType).ValueKind);
         Assert.Equal(PermissionNames.None, payload.GetProperty(PermissionNames.ClaimType).GetString());
     }
@@ -111,8 +112,9 @@ public class DefaultElsaTokenServiceTests
         var token = CreateTokenWithPermissionsPayload(options, Array.Empty<string>());
         var payload = StudioWasmJwtParser.ReadPayload(token);
 
-        // JwtBearer may keep a claim for `[]`, but Studio's WASM parser expands arrays item-by-item
-        // and therefore produces zero permissions claims — UserPermissions.Unknown.
+        // Only an empty JSON array (`[]`) disappears: Studio's WASM parser expands arrays item-by-item
+        // and therefore produces zero permissions claims — UserPermissions.Unknown. An empty-string
+        // claim survives as a single claim both server-side and in Studio's JwtParser.
         Assert.Equal(JsonValueKind.Array, payload.GetProperty(PermissionNames.ClaimType).ValueKind);
         Assert.Equal(0, payload.GetProperty(PermissionNames.ClaimType).GetArrayLength());
         Assert.False(HasPermissionsClaim(StudioWasmJwtParser.Parse(token)));

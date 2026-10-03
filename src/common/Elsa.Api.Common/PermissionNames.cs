@@ -12,9 +12,10 @@ public static class PermissionNames
     /// a present unparseable <c>permissions</c> claim as a known empty set.
     /// </summary>
     /// <remarks>
-    /// An empty JSON array or empty-string claim is dropped or expanded to zero claims by ASP.NET Core
-    /// JwtBearer and by Studio's WASM JWT parser, which would collapse back to "unknown". A non-empty
-    /// string that is not a permission survives both paths.
+    /// An empty JSON array (<c>[]</c>) is expanded to zero claims by Studio's WASM JWT parser and
+    /// may disappear, which would collapse back to "unknown". An empty-string claim survives as a
+    /// single claim both server-side and in Studio's JwtParser. A non-empty string that is not a
+    /// permission also survives both paths.
     /// </remarks>
     public const string None = "none";
 
