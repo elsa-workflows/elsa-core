@@ -161,11 +161,11 @@ public sealed class EmptyPermissionsClaimTests : IAsyncLifetime
         return await ReadTokensAsync(await _client.SendAsync(request));
     }
 
-    private Task<HttpResponseMessage> SendAuthorizedAsync(HttpMethod method, string path, string accessToken)
+    private async Task<HttpResponseMessage> SendAuthorizedAsync(HttpMethod method, string path, string accessToken)
     {
-        var request = new HttpRequestMessage(method, path);
+        using var request = new HttpRequestMessage(method, path);
         request.Headers.Authorization = new("Bearer", accessToken);
-        return _client.SendAsync(request);
+        return await _client.SendAsync(request);
     }
 
     private static async Task<IssuedTokens> ReadTokensAsync(HttpResponseMessage response)
