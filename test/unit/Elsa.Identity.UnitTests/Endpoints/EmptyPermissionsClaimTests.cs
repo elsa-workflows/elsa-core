@@ -12,6 +12,7 @@ using Elsa.Identity.Features;
 using Elsa.Identity.HostedServices;
 using Elsa.Identity.Models;
 using Elsa.Identity.Permissions;
+using Elsa.UnitTests.Shared;
 using FastEndpoints;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
@@ -24,6 +25,7 @@ namespace Elsa.Identity.UnitTests.Endpoints;
 /// A zero-grant user's Elsa tokens must carry a surviving <c>permissions</c> claim so Studio can tell
 /// "known empty" from "unknown", while gated endpoints stay 403.
 /// </summary>
+[Collection(nameof(FastEndpointsCollection))]
 public sealed class EmptyPermissionsClaimTests : IAsyncLifetime
 {
     private static readonly User NoPerm = new() { Id = "noperm-id", Name = "noperm", Roles = ["noperm"] };
@@ -74,6 +76,7 @@ public sealed class EmptyPermissionsClaimTests : IAsyncLifetime
         _client.Dispose();
         await _app.StopAsync();
         await _app.DisposeAsync();
+        FastEndpointsResolver.Reset();
     }
 
     [Fact]
