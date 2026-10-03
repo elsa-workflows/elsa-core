@@ -1,8 +1,9 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Elsa.Studio.Authentication.Abstractions;
 using Elsa.Studio.Login.Contracts;
 using Elsa.Studio.Login.Models;
 using Microsoft.AspNetCore.Components;
@@ -32,7 +33,7 @@ public class OpenIdConnectAuthorizationService(IJwtAccessor jwtAccessor, IOption
             url += $"&code_challenge={generated.CodeChallenge}&code_challenge_method={generated.Method}";
         }
         var state = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
-        var returnPath = new Uri(navigationManager.Uri).PathAndQuery;
+        var returnPath = LocalReturnPath.Normalize(new Uri(navigationManager.Uri).PathAndQuery);
         await jsRuntime.InvokeVoidAsync("sessionStorage.setItem", PendingAuthorizationKey, JsonSerializer.Serialize(new PendingAuthorization(state, returnPath, DateTimeOffset.UtcNow)));
         url += "&state=" + WebUtility.UrlEncode(state);
 
@@ -91,8 +92,7 @@ public class OpenIdConnectAuthorizationService(IJwtAccessor jwtAccessor, IOption
         await jwtAccessor.WriteTokenAsync(TokenNames.AccessToken, tokens.AccessToken ?? "");
         await jwtAccessor.WriteTokenAsync(TokenNames.IdToken, tokens.IdToken ?? "");
 
-        var returnPath = pending.ReturnPath;
-        navigationManager.NavigateTo(returnPath.StartsWith('/') && !returnPath.StartsWith("//", StringComparison.Ordinal) && !returnPath.Contains('\\') ? returnPath : "/", true);
+        navigationManager.NavigateTo(LocalReturnPath.Normalize(pending.ReturnPath), true);
     }
 
     private static bool StateMatches(string supplied, string expected)

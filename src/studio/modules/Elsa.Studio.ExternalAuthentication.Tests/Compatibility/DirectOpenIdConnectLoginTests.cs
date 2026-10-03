@@ -1,7 +1,11 @@
 using Elsa.Studio.Authentication.OpenIdConnect.BlazorServer.Controllers;
 using Elsa.Studio.Authentication.OpenIdConnect.BlazorServer.Services;
-using Microsoft.AspNetCore.Authentication;
+using Elsa.Studio.ExternalAuthentication.Tests.Login;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Mvc.Routing;
+using Microsoft.AspNetCore.Routing;
 using Xunit;
 
 namespace Elsa.Studio.ExternalAuthentication.Tests.Compatibility;
@@ -19,15 +23,41 @@ public class DirectOpenIdConnectLoginTests
     }
 
     [Theory]
-    [InlineData("https://attacker.example", "/")]
-    [InlineData("//attacker.example", "/")]
-    [InlineData("/\\attacker.example", "/")]
-    [InlineData("/workflows?version=1", "/workflows?version=1")]
-    public void DirectOpenIdConnectChallengeAcceptsOnlyLocalReturnUrls(string returnUrl, string expectedReturnUrl)
+    [MemberData(nameof(LocalReturnPathCorpus.Cases), MemberType = typeof(LocalReturnPathCorpus))]
+    public void DirectOpenIdConnectChallengeAcceptsOnlyLocalReturnUrls(string? returnUrl, string expectedReturnUrl)
     {
-        var result = Assert.IsType<ChallengeResult>(new AuthenticationController().Login(returnUrl));
+        var result = Assert.IsType<ChallengeResult>(CreateController().Login(returnUrl));
 
         Assert.NotNull(result.Properties);
         Assert.Equal(expectedReturnUrl, result.Properties!.RedirectUri);
+    }
+
+    [Theory]
+    [MemberData(nameof(LocalReturnPathCorpus.Cases), MemberType = typeof(LocalReturnPathCorpus))]
+    public void DirectOpenIdConnectSignOutAcceptsOnlyLocalReturnUrls(string? returnUrl, string expectedReturnUrl)
+    {
+        var result = Assert.IsType<SignOutResult>(CreateController().Logout(returnUrl));
+
+        Assert.NotNull(result.Properties);
+        Assert.Equal(expectedReturnUrl, result.Properties!.RedirectUri);
+    }
+
+    [Fact]
+    public void DirectOpenIdConnectChallengeRejectsBoundControlCharacterReturnUrls()
+    {
+        var result = Assert.IsType<ChallengeResult>(CreateController().Login("/\t/evil.com"));
+
+        Assert.NotNull(result.Properties);
+        Assert.Equal("/", result.Properties!.RedirectUri);
+    }
+
+    private static AuthenticationController CreateController()
+    {
+        var actionContext = new ActionContext(new DefaultHttpContext(), new RouteData(), new ControllerActionDescriptor());
+        return new AuthenticationController
+        {
+            ControllerContext = new ControllerContext(actionContext),
+            Url = new UrlHelper(actionContext)
+        };
     }
 }

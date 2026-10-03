@@ -1,3 +1,4 @@
+using Elsa.Studio.Authentication.Abstractions;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Login.Contracts;
 using Elsa.Studio.Login.Services;
@@ -49,15 +50,20 @@ public partial class Login
         ((AccessTokenAuthenticationStateProvider)AuthenticationStateProvider).NotifyAuthenticationStateChanged();
 
         var uri = new Uri(NavigationManager.Uri);
-        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("returnUrl", out var returnUrl))
+        string? returnUrl = null;
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("returnUrl", out var values))
         {
-            NavigationManager.NavigateTo(returnUrl.FirstOrDefault() ?? "", true);
+            returnUrl = values.FirstOrDefault();
         }
-        else
-        {
-            NavigationManager.NavigateTo("", true);
-        }
+
+        NavigationManager.NavigateTo(ResolveReturnUrl(returnUrl, NavigationManager.BaseUri), true);
     }
+
+    /// <summary>
+    /// Roots a legacy ElsaLogin <c>returnUrl</c> against the Studio base path before the shared helper accepts only rooted destinations.
+    /// </summary>
+    internal static string ResolveReturnUrl(string? returnUrl, string baseUri) =>
+        LocalReturnPath.RootAgainstBase(returnUrl, baseUri);
 
     private async Task<bool> ValidateCredentials(string? username, string? password)
     {
