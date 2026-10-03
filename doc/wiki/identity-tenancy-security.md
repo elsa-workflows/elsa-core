@@ -38,6 +38,8 @@ Identity JWTs include a `token_use` claim. API bearer authentication accepts onl
 
 Refresh resolves the caller only by the token's `sub` (or the inbound-mapped `NameIdentifier`). A missing, blank, or unknown subject is `401`, the same as an invalid token — not `200` with `isAuthenticated: false`. Only 3.8.0-preview1 issued Elsa refresh tokens without `sub`, and they had a 2-hour lifetime, so no Elsa-issued refresh token still in use lacks a subject.
 
+Elsa-issued access and refresh tokens always carry a `permissions` claim. Each grant is one value (`permissions` is a JSON array when there are two or more). A caller whose roles grant nothing receives the sentinel `none`, which is not a grant: it exists so clients can tell a known empty set from a token that omits the claim entirely. Third-party OIDC tokens that do not carry Elsa permissions keep omitting the claim; Studio treats that as unknown and fails open.
+
 JWT signing keys must be configured with a secure random value before production startup. Missing keys, weak keys shorter than 32 ASCII characters, and known public defaults are rejected by options startup validation. Known public defaults are only tolerated in the explicit `Development` or `Demo` environments for local/demo hosts. Use environment variables or a secrets manager, such as `Identity__Tokens__SigningKey` for code-first hosts or `CShells__Shells__Default__Features__Identity__SigningKey` for shell-based hosts.
 
 ### Signing Out

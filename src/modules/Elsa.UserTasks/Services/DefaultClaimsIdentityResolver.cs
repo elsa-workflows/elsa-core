@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Elsa;
 using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Models;
 using Elsa.UserTasks.Options;
@@ -38,7 +39,7 @@ public sealed class DefaultClaimsIdentityResolver(IOptions<UserTasksOptions> opt
         var permissions = _options.PermissionClaimTypes
             .SelectMany(type => principal.FindAll(type))
             .Select(x => x.Value)
-            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Where(value => !string.IsNullOrWhiteSpace(value) && !string.Equals(value, PermissionNames.None, StringComparison.Ordinal))
             .ToHashSet(StringComparer.Ordinal);
         var actor = new UserTaskActor(subject, groups, subject.DisplayName) { Permissions = permissions };
 
