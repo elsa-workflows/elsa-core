@@ -67,9 +67,9 @@ public sealed class AuthorizationTestHost : IAsyncDisposable
     /// Sends a request. A request names a user, and so is authenticated, when <paramref name="authenticated"/> is set or
     /// <paramref name="permissions"/> (comma-separated grants) is given; otherwise it is anonymous.
     /// </summary>
-    public Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, string? permissions = null, bool authenticated = false, HttpContent? content = null)
+    public async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, string? permissions = null, bool authenticated = false, HttpContent? content = null)
     {
-        var request = new HttpRequestMessage(method, path) { Content = content };
+        using var request = new HttpRequestMessage(method, path) { Content = content };
 
         if (permissions != null)
         {
@@ -81,7 +81,7 @@ public sealed class AuthorizationTestHost : IAsyncDisposable
             request.Headers.Add(PermissionHeaderAuthenticationHandler.UserHeaderName, "test-user");
         }
 
-        return _app.GetTestClient().SendAsync(request);
+        return await _app.GetTestClient().SendAsync(request);
     }
 
     public async ValueTask DisposeAsync()

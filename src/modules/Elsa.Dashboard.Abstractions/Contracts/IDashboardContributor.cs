@@ -49,7 +49,8 @@ public record DashboardContext(
     bool IncludeSystem,
     CancellationToken CancellationToken,
     string? TenantId = null,
-    string? EnvironmentName = null);
+    string? EnvironmentName = null,
+    Func<DashboardPermission?, bool>? CanRead = null);
 
 public record DashboardTrendContext(
     DashboardRange Range,

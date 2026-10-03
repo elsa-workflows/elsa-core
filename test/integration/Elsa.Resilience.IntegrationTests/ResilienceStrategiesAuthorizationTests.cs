@@ -80,9 +80,9 @@ public class ResilienceStrategiesAuthorizationTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    private Task<HttpResponseMessage> SendAsync(bool authenticated = false)
+    private async Task<HttpResponseMessage> SendAsync(bool authenticated = false)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, Path);
+        using var request = new HttpRequestMessage(HttpMethod.Get, Path);
 
         if (authenticated)
         {
@@ -90,6 +90,6 @@ public class ResilienceStrategiesAuthorizationTests : IAsyncLifetime
             request.Headers.Add(TestAuthenticationHandler.PermissionHeader, "no-grants");
         }
 
-        return _app.GetTestClient().SendAsync(request);
+        return await _app.GetTestClient().SendAsync(request);
     }
 }

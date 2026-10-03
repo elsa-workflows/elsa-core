@@ -84,16 +84,16 @@ public class InstalledFeaturesAuthorizationTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    private Task<HttpResponseMessage> SendAsync(string path, bool authenticated)
+    private async Task<HttpResponseMessage> SendAsync(string path, bool authenticated)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, path);
+        using var request = new HttpRequestMessage(HttpMethod.Get, path);
 
         if (authenticated)
         {
             request.Headers.Add(HeaderAuthenticationHandler.HeaderName, "user-without-grants");
         }
 
-        return _app.GetTestClient().SendAsync(request);
+        return await _app.GetTestClient().SendAsync(request);
     }
 
     /// <summary>
