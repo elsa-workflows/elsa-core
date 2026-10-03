@@ -56,6 +56,16 @@ public class PermissionEvaluatorTests
     }
 
     [Fact]
+    public void TheEmptySetSentinelIsNotAGrant()
+    {
+        // Elsa writes "none" when it knows the caller has zero grants. It must never authorize anything.
+        var principal = PrincipalWith(PermissionNames.None);
+
+        Assert.Empty(_evaluator.GetGrants(principal));
+        Assert.False(_evaluator.HasPermission(principal, "dashboard", "view"));
+    }
+
+    [Fact]
     public void ANullOrAnonymousPrincipalHoldsNothing()
     {
         Assert.False(_evaluator.HasPermission(null, "dashboard", "view"));
