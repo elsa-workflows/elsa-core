@@ -106,15 +106,18 @@ public sealed class RefreshTokenEndpointTests : IAsyncLifetime
         Assert.Equal(replacement.Id, ReadClaim(refreshed.RefreshToken, JwtRegisteredClaimNames.Sub));
     }
 
-    [Fact]
-    public async Task ALegacyTokenWithoutSubjectStillResolvesByName()
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task ARefreshTokenWithABlankSubjectIsRejectedEvenWhenASameNameUserExists(string subject)
     {
-        var legacy = LegacyRefreshToken.CreateWithoutSubject(_tokenOptions, Alice);
+        await AssertRefreshRejectedAsync(LegacyRefreshToken.CreateWithSubject(_tokenOptions, Alice, subject));
+    }
 
-        var refreshed = await RefreshTokensAsync(legacy);
-
-        Assert.Equal(Alice.Id, ReadClaim(refreshed.RefreshToken, JwtRegisteredClaimNames.Sub));
-        Assert.Equal(Alice.Name, ReadClaim(refreshed.RefreshToken, JwtRegisteredClaimNames.Name));
+    [Fact]
+    public async Task ARefreshTokenWithoutASubjectIsRejectedEvenWhenASameNameUserExists()
+    {
+        await AssertRefreshRejectedAsync(LegacyRefreshToken.CreateWithoutSubject(_tokenOptions, Alice));
     }
 
     private async Task<IssuedTokens> LoginAsync(User user) =>
