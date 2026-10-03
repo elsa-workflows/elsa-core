@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Elsa;
 using Elsa.Authorization;
 using Elsa.UserTasks.Models;
 using Elsa.UserTasks.Options;
@@ -90,6 +91,23 @@ public class ActorPermissionMatchingTests
         var actor = await resolver.ResolveAsync(principal);
 
         Assert.False(actor!.IsManager);
+    }
+
+    [Fact]
+    public async Task ClaimsResolverOmitsTheEmptySetSentinel()
+    {
+        var resolver = new DefaultClaimsIdentityResolver(Microsoft.Extensions.Options.Options.Create(new UserTasksOptions()));
+        var principal = new ClaimsPrincipal(new ClaimsIdentity([
+            new Claim("sub", "user-1"),
+            new Claim("permissions", PermissionNames.None),
+            new Claim("permissions", "user-tasks:view")
+        ], "test"));
+
+        var actor = await resolver.ResolveAsync(principal);
+
+        Assert.NotNull(actor);
+        Assert.DoesNotContain(PermissionNames.None, actor.Permissions);
+        Assert.Contains("user-tasks:view", actor.Permissions);
     }
 
     [Fact]

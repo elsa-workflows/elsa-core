@@ -32,7 +32,7 @@ internal static class AIHttpContextIdentity
         context?.User
             .FindAll(PermissionNames.ClaimType)
             .Select(x => x.Value)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Where(x => !string.IsNullOrWhiteSpace(x) && !string.Equals(x, PermissionNames.None, StringComparison.Ordinal))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList() ?? [];
 
