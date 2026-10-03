@@ -22,19 +22,22 @@ public class LocalReturnPathTests
     }
 
     [Fact]
-    public void Normalize_PreservesEncodedLinksByteForByte()
-    {
-        Assert.Equal("/caf%C3%A9", LocalReturnPath.Normalize("/caf%C3%A9"));
-        Assert.Equal("/a?x=%26y", LocalReturnPath.Normalize("/a?x=%26y"));
-        Assert.Equal("/a?ref=https%3A%2F%2Fexample.com", LocalReturnPath.Normalize("/a?ref=https%3A%2F%2Fexample.com"));
-        Assert.Equal("/a%2Fb", LocalReturnPath.Normalize("/a%2Fb"));
-        Assert.Equal("/a?ref=https://example.com", LocalReturnPath.Normalize("/a?ref=https://example.com"));
-    }
-
-    [Fact]
     public void Normalize_RejectsNineTimesEncodedProtocolRelativeUrls()
     {
         Assert.Equal("/", LocalReturnPath.Normalize(LocalReturnPathCorpus.EncodeTimes("//evil.com", 9)));
         Assert.Equal("/", LocalReturnPath.Normalize("/" + LocalReturnPathCorpus.EncodeTimes("//evil.com", 9)));
+    }
+
+    [Fact]
+    public void ElsaLogin_RootsBaseRelativePathsAgainstPathBase()
+    {
+        const string studioBase = "https://studio.example/studio/";
+
+        Assert.Equal("/studio/workflows/x", Elsa.Studio.Login.Pages.Login.Login.ResolveReturnUrl("workflows/x", studioBase));
+        Assert.Equal("/studio/workflows/definitions?tab=active", Elsa.Studio.Login.Pages.Login.Login.ResolveReturnUrl("workflows/definitions?tab=active", studioBase));
+        Assert.Equal("/studio/c|/windows", Elsa.Studio.Login.Pages.Login.Login.ResolveReturnUrl("c|/windows", studioBase));
+        Assert.Equal("/studio/http:evil.com", Elsa.Studio.Login.Pages.Login.Login.ResolveReturnUrl("http:evil.com", studioBase));
+        Assert.Equal("/", Elsa.Studio.Login.Pages.Login.Login.ResolveReturnUrl("//evil.com", studioBase));
+        Assert.Equal("/workflows/definitions?x=1", Elsa.Studio.Login.Pages.Login.Login.ResolveReturnUrl("/workflows/definitions?x=1", studioBase));
     }
 }

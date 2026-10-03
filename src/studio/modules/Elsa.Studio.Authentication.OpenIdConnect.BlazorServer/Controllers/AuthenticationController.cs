@@ -36,7 +36,7 @@ public class AuthenticationController : Controller
     private string SafeRedirectUri(string? returnUrl)
     {
         var path = LocalReturnPath.Normalize(returnUrl);
-        if (Url?.IsLocalUrl(path) == false)
+        if (!Url.IsLocalUrl(path))
         {
             return "/";
         }

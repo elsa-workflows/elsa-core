@@ -56,8 +56,14 @@ public partial class Login
             returnUrl = values.FirstOrDefault();
         }
 
-        NavigationManager.NavigateTo(LocalReturnPath.Normalize(returnUrl), true);
+        NavigationManager.NavigateTo(ResolveReturnUrl(returnUrl, NavigationManager.BaseUri), true);
     }
+
+    /// <summary>
+    /// Roots a legacy ElsaLogin <c>returnUrl</c> against the Studio base path before the shared helper accepts only rooted destinations.
+    /// </summary>
+    internal static string ResolveReturnUrl(string? returnUrl, string baseUri) =>
+        LocalReturnPath.RootAgainstBase(returnUrl, baseUri);
 
     private async Task<bool> ValidateCredentials(string? username, string? password)
     {
