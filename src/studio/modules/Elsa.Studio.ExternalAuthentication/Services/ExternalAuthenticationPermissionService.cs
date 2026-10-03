@@ -11,6 +11,9 @@ public interface IExternalAuthenticationPermissionService
 /// <summary>Reads Elsa's authoritative <c>permissions</c> claims solely to tailor Studio affordances.</summary>
 public sealed class ExternalAuthenticationPermissionService(AuthenticationStateProvider authenticationStateProvider) : IExternalAuthenticationPermissionService
 {
+    /// <summary>Elsa's known-empty sentinel (<c>PermissionNames.None</c>). Not a grant.</summary>
+    private const string EmptySetSentinel = "none";
+
     public async ValueTask<bool> HasAsync(string permission, CancellationToken cancellationToken = default)
     {
         var permissions = await ListAsync(cancellationToken);
@@ -21,6 +24,9 @@ public sealed class ExternalAuthenticationPermissionService(AuthenticationStateP
     {
         cancellationToken.ThrowIfCancellationRequested();
         var user = (await authenticationStateProvider.GetAuthenticationStateAsync()).User;
-        return user.FindAll("permissions").Select(claim => claim.Value).ToHashSet(StringComparer.Ordinal);
+        return user.FindAll("permissions")
+            .Select(claim => claim.Value)
+            .Where(value => !string.Equals(value, EmptySetSentinel, StringComparison.Ordinal))
+            .ToHashSet(StringComparer.Ordinal);
     }
 }
