@@ -65,7 +65,7 @@ else
         <div class="role-editor-header">
             <div>
                 <MudBreadcrumbs Items="@Breadcrumbs" Class="pa-0" />
-                <MudText Typo="Typo.h4" HtmlTag="h1">@(_isCreate ? "New role" : $"Edit role — {_name}")</MudText>
+                <MudText Typo="Typo.h4" HtmlTag="h1">@(_isCreate ? "New role" : _name)</MudText>
                 @if (!_isCreate)
                 {
                     <MudText Typo="Typo.body2" Class="role-editor-id mt-1">ID <code>@RoleId</code></MudText>
@@ -74,7 +74,7 @@ else
             <div class="role-editor-actions">
                 @if (!_isCreate && Access.CanDelete && _role is not null)
                 {
-                    <MudButton Variant="Variant.Outlined" Color="Color.Error" Disabled="@_deleteDialogOpen" OnClick="OpenDeleteRoleAsync">Delete role</MudButton>
+                    <MudButton Variant="Variant.Text" Color="Color.Error" Disabled="@_deleteDialogOpen" OnClick="OpenDeleteRoleAsync">Delete role</MudButton>
                 }
                 <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
                 @if (!IsReadOnly)
@@ -99,12 +99,7 @@ else
                                   Variant="Variant.Outlined"
                                   Margin="Margin.Dense"
                                   Immediate="true"
-                                  HelperText="@(_isCreate ? "Core generates the role ID after creation." : null)"
                                   aria-label="Role name" />
-                    @if (!_isCreate)
-                    {
-                        <MudText Typo="Typo.caption" Class="role-permissions-summary">The role ID is read-only and shown beneath the page title.</MudText>
-                    }
                 </div>
             </MudForm>
         </MudPaper>
@@ -117,13 +112,15 @@ else
         <MudPaper Outlined="true" Elevation="0" Class="pa-3">
             <div class="role-permissions-header mb-1">
                 <MudText Typo="Typo.h6">Permissions</MudText>
-                <MudText Typo="Typo.caption" Class="role-permissions-summary">@DirectCount direct · @CoveredCount covered · @_advanced.Count advanced</MudText>
+                @if (SelectedCount > 0)
+                {
+                    <MudText Typo="Typo.caption" Class="role-permissions-summary">@SelectedCount selected</MudText>
+                }
             </div>
             <MudTabs Border="false" Elevation="0" ActivePanelIndex="@_activeTab" ActivePanelIndexChanged="OnTabChanged" KeepPanelsAlive="true">
                 <MudTabPanel Text="Exact permissions">
                     <MudStack Spacing="2" Class="pt-2">
-                        <MudText Typo="Typo.body2">Select concrete permissions. Category actions add exact grants only and never create a wildcard.</MudText>
-                        <MudTextField T="string" Label="Filter permissions" Placeholder="Search by name, ID, or permission" Value="@_search" ValueChanged="OnSearchChanged" Immediate="true" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Search" />
+                        <MudTextField T="string" Placeholder="Name, ID, or permission" Value="@_search" ValueChanged="OnSearchChanged" Immediate="true" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Search" aria-label="Name, ID, or permission" />
                         <MudExpansionPanels MultiExpansion="true" Elevation="0">
                             @foreach (var category in Categories)
                             {
@@ -154,6 +151,7 @@ else
                                         <div class="role-resource-list">
                                             @foreach (var resource in resources)
                                             {
+                                                var alsoCovered = AlsoCoveredWildcards(resource);
                                                 <div class="role-resource-row">
                                                     <div class="role-resource-copy">
                                                         <div class="role-resource-heading">
@@ -172,6 +170,12 @@ else
                                                         {
                                                             <MudText Typo="Typo.caption" Class="role-resource-description">@resource.Description</MudText>
                                                         }
+                                                        @foreach (var covering in alsoCovered)
+                                                        {
+                                                            <MudTooltip Text="The wildcard already grants this; the exact grant is redundant.">
+                                                                <span class="role-grant-state">Also covered by @covering</span>
+                                                            </MudTooltip>
+                                                        }
                                                     </div>
                                                     <div class="role-verb-list">
                                                     @foreach (var verb in resource.SupportedVerbs.OrderBy(x => x, StringComparer.Ordinal))
@@ -181,13 +185,7 @@ else
                                                         var covering = FindCoveringWildcard(resource.Resource, verb);
                                                         <div class="role-verb-option">
                                                             <MudCheckBox T="bool" Label="@verb" Dense="true" Value="@direct" ValueChanged="@((bool value) => SetDirectGrant(permission, value))" Disabled="@(IsReadOnly || (!direct && covering != null))" Color="Color.Primary" aria-label="@permission" />
-                                                            @if (covering != null && direct)
-                                                            {
-                                                                <MudTooltip Text="The wildcard already grants this; the exact grant is redundant.">
-                                                                    <span class="role-grant-state">Also covered by @covering</span>
-                                                                </MudTooltip>
-                                                            }
-                                                            else if (covering != null)
+                                                            @if (covering != null && !direct)
                                                             {
                                                                 <MudTooltip Text="Effective access only — not stored twice.">
                                                                     <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">Covered by @covering</MudChip>
@@ -207,12 +205,11 @@ else
                 </MudTabPanel>
                 <MudTabPanel Text="@($"Advanced grants{(_advanced.Count == 0 ? string.Empty : $" · {_advanced.Count}")}")">
                     <MudStack Spacing="2" Class="pt-2">
-                        <MudText Typo="Typo.body2">Advanced grants are stored independently from exact selections. Each wildcard can cover current and future permissions.</MudText>
                         @if (!IsReadOnly)
                         {
                             <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
                                 <MudTextField T="string" Label="Advanced grant" Placeholder="workflows/*:view or *" Value="@_advancedDraft" ValueChanged="@(value => _advancedDraft = value)" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
-                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAdvancedGrant">Add advanced grant</MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAdvancedGrant">Add</MudButton>
                             </MudStack>
                         }
                         @if (_advancedError != null)
@@ -221,7 +218,7 @@ else
                         }
                         @if (_advanced.Count == 0)
                         {
-                            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">No advanced grants. Add a wildcard only when its current coverage and future reach are understood.</MudAlert>
+                            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">No wildcards.</MudAlert>
                         }
                         @foreach (var grant in _advanced)
                         {
@@ -324,6 +321,7 @@ else
         .OrderBy(x => x, StringComparer.Ordinal);
     private int DirectCount => _direct.Count;
     private int CoveredCount => _catalog.Resources.Sum(x => x.SupportedVerbs.Count(verb => FindCoveringWildcard(x.Resource, verb) != null && !IsDirect($"{x.Resource}:{verb}")));
+    private int SelectedCount => DirectCount + CoveredCount + _advanced.Count;
     private IReadOnlyList<BreadcrumbItem> Breadcrumbs =>
         _isCreate
             ? [new("Roles", href: "security/roles"), new("New role", href: null)]
@@ -505,6 +503,14 @@ else
             pattern.HasWildcard &&
             RolePermissionAuthoring.IsValidPattern(pattern) &&
             RolePermissionAuthoring.Matches(pattern, resource, verb));
+
+    private IReadOnlyList<string> AlsoCoveredWildcards(PermissionResourceDescriptor resource) =>
+        resource.SupportedVerbs
+            .Where(verb => IsDirect($"{resource.Resource}:{verb}"))
+            .Select(verb => FindCoveringWildcard(resource.Resource, verb))
+            .OfType<string>()
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
 
     private IEnumerable<string> SelectableGrants(IEnumerable<PermissionResourceDescriptor> resources) =>
         RolePermissionAuthoring.GetConcreteGrants(resources)

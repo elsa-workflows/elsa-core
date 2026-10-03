@@ -58,8 +58,12 @@ public sealed class DeleteRoleDialogTests : BunitContext, IAsyncLifetime
         var cut = await ShowAsync("role-1", "Auditors", CanDelete);
         var dialog = cut.FindComponent<DeleteRoleDialog>();
 
-        Assert.Contains("Safe to delete", dialog.Markup, StringComparison.Ordinal);
+        Assert.DoesNotContain("Safe to delete", dialog.Markup, StringComparison.Ordinal);
+        Assert.DoesNotContain("0 configuration references", dialog.Markup, StringComparison.Ordinal);
+        Assert.Contains("Existing tokens keep working until they refresh.", dialog.Markup, StringComparison.Ordinal);
         Assert.Contains("Delete Auditors", dialog.Markup, StringComparison.Ordinal);
+        Assert.Contains("Cancel", dialog.Markup, StringComparison.Ordinal);
+        Assert.DoesNotContain(">Close<", dialog.Markup, StringComparison.Ordinal);
     }
 
     [Fact]
