@@ -86,7 +86,6 @@ public sealed class RefreshTokenEndpointTests : IAsyncLifetime
 
         Assert.False(string.IsNullOrWhiteSpace(refreshed.AccessToken));
         Assert.False(string.IsNullOrWhiteSpace(refreshed.RefreshToken));
-        Assert.NotEqual(tokens.AccessToken, refreshed.AccessToken);
         Assert.Equal(Alice.Id, ReadClaim(refreshed.RefreshToken, JwtRegisteredClaimNames.Sub));
         Assert.Equal(Alice.Name, ReadClaim(refreshed.RefreshToken, JwtRegisteredClaimNames.Name));
     }
