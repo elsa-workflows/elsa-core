@@ -29,6 +29,16 @@ public sealed class PermissionPageGuardTests : BunitContext, IAsyncLifetime
     }
 
     [Fact]
+    public void AGatedPage_DoesNotRenderWhilePermissionsAreUnresolved()
+    {
+        var permissions = new PendingPermissionService();
+        var cut = RenderGuard<WorkflowInstancesPage>(permissions);
+
+        Assert.DoesNotContain(PageContent, cut.Markup);
+        Assert.Empty(cut.FindAll("[data-testid='access-denied']"));
+    }
+
+    [Fact]
     public void AnUngatedPage_RendersWhateverTheUserHolds()
     {
         var cut = RenderGuard<UngatedPage>(new StubPermissionService("secrets:view"));
@@ -403,4 +413,10 @@ public sealed class PermissionPageGuardTests : BunitContext, IAsyncLifetime
     [RequirePermission("workflows/instances", PermissionVerbs.View)]
     [RequirePermission("workflows/definitions", PermissionVerbs.View)]
     private sealed class WorkflowInstancesPage : ComponentBase;
+
+    private sealed class PendingPermissionService : IPermissionService
+    {
+        public ValueTask<UserPermissions> GetPermissionsAsync(CancellationToken cancellationToken = default) =>
+            new(new TaskCompletionSource<UserPermissions>(TaskCreationOptions.RunContinuationsAsynchronously).Task);
+    }
 }

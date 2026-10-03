@@ -61,6 +61,18 @@ public sealed class PermissionViewTests : BunitContext, IAsyncLifetime
     }
 
     [Fact]
+    public void OutsideAPage_DoesNotRenderWhilePermissionsAreUnresolved()
+    {
+        var permissions = new PendingPermissionService();
+        Services.AddSingleton<IPermissionService>(permissions);
+
+        var cut = RenderView(pagePermissions: null, PermissionVerbs.Write);
+
+        Assert.DoesNotContain(Action, cut.Markup);
+        Assert.DoesNotContain(Fallback, cut.Markup);
+    }
+
+    [Fact]
     public void OutsideAPage_ThePermissionsAreResolvedAndFollowAuthenticationChanges()
     {
         var cut = RenderView(pagePermissions: null, PermissionVerbs.Write);

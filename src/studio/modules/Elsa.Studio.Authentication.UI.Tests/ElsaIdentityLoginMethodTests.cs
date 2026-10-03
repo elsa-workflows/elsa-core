@@ -90,8 +90,8 @@ public sealed class ElsaIdentityLoginMethodTests : BunitContext, IAsyncLifetime
 
     private void SubmitCredentials()
     {
-        _cut.FindAll("input")[0].Change("alice");
-        _cut.FindAll("input")[1].Change("secret");
+        _cut.FindAll("input")[0].Input("alice");
+        _cut.FindAll("input")[1].Input("secret");
         _cut.Find(SignInButton).Click();
     }
 

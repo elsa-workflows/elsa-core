@@ -123,6 +123,35 @@ public sealed class OpenIdConnectBlazorServerSignOutTests
         Assert.Empty(SetCookies(page.Response));
     }
 
+    [Theory]
+    [InlineData("https://studio.example/", "/authentication/logout")]
+    [InlineData("https://studio.example/studio/", "/studio/authentication/logout")]
+    [InlineData("https://studio.example/studio", "/studio/authentication/logout")]
+    public void LogoutFormAction_PreservesTheHostedPathBase(string baseUri, string expected) =>
+        Assert.Equal(expected, HostedAuthenticationPaths.LogoutFormAction(baseUri));
+
+    [Fact]
+    public void SignOutForm_PostsToTheHostedLogoutPath()
+    {
+        SignIn();
+
+        var menu = RenderWhileHandling(BrowserRequest(HttpMethods.Get, "/"), Prerender);
+        var form = ((IHtmlButtonElement)FindInOpenMenu(menu, "button[type=submit]")).Form!;
+
+        Assert.Equal("/authentication/logout", form.GetAttribute("action"));
+    }
+
+    [Fact]
+    public void AddOpenIdConnectAuth_RegistersTheAntiforgeryFilterWithoutRazorPages()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddOpenIdConnectAuth(ConfigureIdentityProvider);
+
+        using var provider = services.BuildServiceProvider();
+        Assert.NotNull(provider.GetService<Microsoft.AspNetCore.Mvc.ViewFeatures.Filters.ValidateAntiforgeryTokenAuthorizationFilter>());
+    }
+
     [Fact]
     public async Task SignOutEndpoint_DoesNotSignOutOnGet()
     {
