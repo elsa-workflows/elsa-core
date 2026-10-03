@@ -6,16 +6,18 @@ Last verified: 2026-10-03
 
 | Reviewer | Status | How to request | Notes |
 | --- | --- | --- | --- |
-| Greptile (`greptile-apps[bot]`) | live | Automatic when a PR is opened; comment `@greptileai` to re-request after new pushes | Posts a "Confidence Score: N/5" summary and a "Greptile Review" check (studio#1103, 2026-09-30). `@greptileai` re-reviews worked on studio#1071 and studio#1073 (2026-09-28). No out-of-credits messages. |
-| GitHub Copilot code review (`copilot-pull-request-reviewer[bot]`) | live | Add reviewer `@copilot`: `gh pr edit <n> --add-reviewer @copilot` (gh 2.88+) | Last review studio#1041 (2026-09-14); every earlier request got a review. Bot-authored PRs need the org policy that lets Copilot review them (core#7907, 2026-08-03: "no eligible user to bill"). |
-| CodeRabbit (`coderabbitai[bot]`) | live | Comment `@coderabbitai review` | Installed 2026-10-03. Auto-reviews PRs into `main` (first seen on studio#1104, 2026-10-03). Plan allowance: 10 included reviews per hour. With Greptile, PRs into `main` currently get two automatic reviews. |
+| Greptile (`greptile-apps[bot]`) | live | Automatic when a PR is opened; comment `@greptileai` after every push | **Required for merge** on this repository (see Rules). Posts a "Confidence Score: N/5" summary and a "Greptile Review" check. Reviews only allow-listed authors; others get "PR author is not in the allowed authors list". |
+| CodeRabbit (`coderabbitai[bot]`) | live | Automatic on PRs into `main`; comment `@coderabbitai review` for other base branches or a re-review after a push | Advisory. Skips PRs into other base branches unless requested. Reviews draw on an hourly allowance, so do not request it while its automatic review is pending. |
+| GitHub Copilot code review (`copilot-pull-request-reviewer[bot]`) | live | Add reviewer `@copilot`: `gh pr edit <n> --add-reviewer @copilot` (GitHub CLI 2.88 or later) | Advisory. A `@copilot review` comment does not trigger it. Bot-authored PRs need the org policy that lets Copilot review them. |
 | Cursor Bugbot | not live | Top-level PR comment `cursor review` (once enabled) | Must first be enabled in the Cursor dashboard. `cursor[bot]` comments on PRs come from Cursor cloud agents, not Bugbot. |
 
 ## Rules
 
-- Pick exactly one live reviewer before opening the PR, and request it right after the PR is open, using the command in the table. Do not request a second reviewer.
-- Automatic reviews (see Notes) run on their own and do not count against that limit. If the reviewer you picked already reviewed the current head automatically, that counts as the request; do not trigger it again.
-- If the picked reviewer declines or skips the PR (for example "PR author is not in the allowed authors list" or "Review skipped"), request a different live reviewer instead.
+- Greptile is a required reviewer on this repository. It reviews automatically when a PR is opened; after every push, comment `@greptileai` so it reviews the new head.
+- Besides Greptile, request at most one additional advisory reviewer (CodeRabbit or Copilot) once the PR is open. If your pick reviews automatically on this PR (CodeRabbit does on PRs into `main`), wait for that run instead of requesting it; request it manually only if no run appears, the PR targets another base branch, or you need a re-review after a push.
+- If the additional reviewer declines or skips the PR, you may request the other one instead.
 - The PR author (human or agent) never reviews or approves its own PR.
-- This review is advisory. It does not replace the merge gate: an Elsa 3 Code Review `APPROVE @ <head sha>` on the PR's current head commit, plus green CI. Any push after the approval needs a re-confirm.
-- Update this file whenever a reviewer is added, removed, or runs out of credits.
+- Merge gate: an Elsa 3 Code Review `APPROVE + HIGH @ <head sha>` (the full 40-character SHA of the PR's current head commit), green CI, and Greptile 5/5 on that same head. Any push after the approval needs a re-confirm on the new head.
+- Exception: if Greptile cannot review the head (unavailable, skipped, declined, or out of credits), `APPROVE + HIGH @ <head sha>` plus green CI is enough, and the Code Review must state that Greptile was required and unavailable.
+- CodeRabbit and Copilot reviews are advisory and never replace the merge gate.
+- Update this file whenever a reviewer is added, removed, or changes how it is requested.
