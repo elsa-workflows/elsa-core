@@ -17,6 +17,7 @@ Guidance for AI coding agents working in this repository.
 - Update documentation when changing externally visible behavior, configuration, APIs, or developer workflows.
 - Do not delete generated-looking, artifact, or IDE files unless the task explicitly asks for cleanup.
 - If the worktree contains unrelated user changes, leave them untouched.
+- Before opening a PR, read `.github/reviewers.md`: Greptile is required (re-request with `@greptileai` after each push), and request at most one additional advisory reviewer from the list once the PR is open.
 
 ## Agent Operating Principles
 
