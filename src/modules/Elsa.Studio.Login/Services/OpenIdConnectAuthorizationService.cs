@@ -1,4 +1,5 @@
-﻿using Elsa.Studio.Login.Contracts;
+﻿using Elsa.Studio.Authentication.Abstractions;
+using Elsa.Studio.Login.Contracts;
 using Elsa.Studio.Login.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.WebUtilities;
@@ -79,10 +80,11 @@ public class OpenIdConnectAuthorizationService(IJwtAccessor jwtAccessor, IOption
         await jwtAccessor.WriteTokenAsync(TokenNames.IdToken, tokens.IdToken ?? "");
 
         string returnUrl = "/";
-        if (!String.IsNullOrWhiteSpace(state))
+        if (!string.IsNullOrWhiteSpace(state))
         {
-            returnUrl = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(state));
+            returnUrl = NormalizeStateReturnUrl(Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(state)));
         }
+
         navigationManager.NavigateTo(returnUrl, true);
     }
 
@@ -108,6 +110,18 @@ public class OpenIdConnectAuthorizationService(IJwtAccessor jwtAccessor, IOption
             message += $"\nCorrelation IDs: {correlationIds}";
 
         throw new HttpRequestException(message, null, response.StatusCode);
+    }
+
+    private static string NormalizeStateReturnUrl(string candidate)
+    {
+        if (!candidate.StartsWith('/') &&
+            !candidate.StartsWith('\\') &&
+            candidate.IndexOf("://", StringComparison.Ordinal) < 0)
+        {
+            candidate = "/" + candidate;
+        }
+
+        return LocalReturnPath.Normalize(candidate);
     }
 
     private static string GetCorrelationIds(HttpResponseMessage response)

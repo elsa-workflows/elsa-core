@@ -110,7 +110,12 @@ public sealed class LoginChooserTests : BunitContext, IAsyncLifetime
         Assert.Equal("/", LocalReturnPath.Normalize("https://attacker.example"));
         Assert.Equal("/", LocalReturnPath.Normalize("//attacker.example"));
         Assert.Equal("/", LocalReturnPath.Normalize("/\\attacker.example"));
+        Assert.Equal("/", LocalReturnPath.Normalize("/%09/evil.com"));
+        Assert.Equal("/", LocalReturnPath.Normalize("/%2F/evil.com"));
+        Assert.Equal("/", LocalReturnPath.Normalize("//evil.com"));
+        Assert.Equal("/", LocalReturnPath.Normalize("/\\evil.com"));
         Assert.Equal("/workflows?tab=active", LocalReturnPath.Normalize("/workflows?tab=active"));
+        Assert.Equal("/workflows/definitions?x=1", LocalReturnPath.Normalize("/workflows/definitions?x=1"));
     }
 
     [Fact]

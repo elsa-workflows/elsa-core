@@ -19,9 +19,12 @@ public class ExternalAuthenticationWasmTests
     [InlineData(null, "/")]
     [InlineData("", "/")]
     [InlineData("/workflows?version=1", "/workflows?version=1")]
+    [InlineData("/workflows/definitions?x=1", "/workflows/definitions?x=1")]
     [InlineData("https://evil.example/", "/")]
-    [InlineData("//evil.example/", "/")]
-    [InlineData("/\\evil", "/")]
+    [InlineData("//evil.com", "/")]
+    [InlineData("/\\evil.com", "/")]
+    [InlineData("/%09/evil.com", "/")]
+    [InlineData("/%2F/evil.com", "/")]
     public void ReturnPathsRemainClientLocal(string? candidate, string expected) =>
         Assert.Equal(expected, ExternalAuthenticationReturnPath.Normalize(candidate));
 

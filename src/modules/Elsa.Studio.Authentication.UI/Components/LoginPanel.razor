@@ -199,14 +199,5 @@
         string.Equals(method.Kind, "local", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(method.Kind, "elsa-identity", StringComparison.OrdinalIgnoreCase);
 
-    private static string NormalizeReturnPath(string? candidate)
-    {
-        if (string.IsNullOrWhiteSpace(candidate) ||
-            !candidate.StartsWith("/", StringComparison.Ordinal) ||
-            candidate.StartsWith("//", StringComparison.Ordinal) ||
-            candidate.Contains('\\'))
-            return "/";
-
-        return Uri.TryCreate(candidate, UriKind.Relative, out _) ? candidate : "/";
-    }
+    private static string NormalizeReturnPath(string? candidate) => LocalReturnPath.Normalize(candidate);
 }
