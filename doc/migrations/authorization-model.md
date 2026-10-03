@@ -49,7 +49,7 @@ switch off; the switch is per language, so C# and Python can be decided separate
 
 The default access-token lifetime drops from 1 hour to **15 minutes**. This is the revocation bound: permission claims are issued at sign-in, and refreshing re-reads the user's roles, so removing a role takes effect at most one access-token lifetime later. Refresh already rotates both tokens, so no client change is required.
 
-Permission and role changes take effect when the user's access token expires or is refreshed. A fresh login or a token refresh picks the new grants up. Stamp-based revalidation (`Identity:PermissionStamp:IsEnabled` and a ~30 second `CacheLifetime`) is planned for 3.10; it is not available in 3.9.
+Elsa role and permission changes take effect on the next token refresh or expiry. Changes to grants from an external identity provider take effect only after a fresh sign-in. Stamp-based revalidation (`Identity:PermissionStamp:IsEnabled` and a ~30 second `CacheLifetime`) is planned for 3.10; it is not available in 3.9.
 
 ## External authentication grant boundaries
 
