@@ -17,13 +17,26 @@ public static class UserProviderExtensions
     /// <param name="name">The name.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The user with the specified name.</returns>
-    public static async Task<User?> FindByNameAsync(this IUserProvider userProvider, string name, CancellationToken cancellationToken = default)
+    public static Task<User?> FindByNameAsync(this IUserProvider userProvider, string name, CancellationToken cancellationToken = default)
     {
-        var filter = new UserFilter()
+        return userProvider.FindAsync(new UserFilter
         {
             Name = name
-        };
-        
-        return await userProvider.FindAsync(filter, cancellationToken);
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Finds the user with the specified identifier.
+    /// </summary>
+    /// <param name="userProvider">The user provider.</param>
+    /// <param name="id">The identifier.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The user with the specified identifier.</returns>
+    public static Task<User?> FindByIdAsync(this IUserProvider userProvider, string id, CancellationToken cancellationToken = default)
+    {
+        return userProvider.FindAsync(new UserFilter
+        {
+            Id = id
+        }, cancellationToken);
     }
 }

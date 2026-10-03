@@ -1,9 +1,12 @@
-﻿using Elsa.Extensions;
+﻿using System.Security.Claims;
+using Elsa.Extensions;
 using Elsa.Identity.Constants;
 using Elsa.Identity.Contracts;
+using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
 using FastEndpoints;
 using JetBrains.Annotations;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Elsa.Identity.Endpoints.RefreshToken;
 
@@ -31,15 +34,44 @@ internal class RefreshToken : EndpointWithoutRequest<LoginResponse>
     }
 
     /// <inheritdoc />
-    public override async Task<LoginResponse> ExecuteAsync(CancellationToken cancellationToken)
+    public override async Task HandleAsync(CancellationToken cancellationToken)
     {
-        var user = await _userProvider.FindByNameAsync(User.Identity!.Name!, cancellationToken);
+        var user = await FindUserAsync(cancellationToken);
 
         if (user == null)
-            return new LoginResponse(false, null, null);
+        {
+            await Send.UnauthorizedAsync(cancellationToken);
+            return;
+        }
 
         var tokens = await _tokenIssuer.IssueTokensAsync(user, cancellationToken);
 
-        return new LoginResponse(true, tokens.AccessToken, tokens.RefreshToken);
+        await Send.OkAsync(new LoginResponse(true, tokens.AccessToken, tokens.RefreshToken), cancellationToken);
+    }
+
+    /// <summary>
+    /// Resolves the caller by the token's subject (user id). Name is used only for tokens issued before
+    /// <c>sub</c> was present. A present <c>sub</c> that matches no user is rejected, even if a user with
+    /// the same name exists.
+    /// </summary>
+    private Task<User?> FindUserAsync(CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (!string.IsNullOrWhiteSpace(userId))
+        {
+            return _userProvider.FindByIdAsync(userId, cancellationToken);
+        }
+
+        var userName = User.Identity?.Name
+            ?? User.FindFirst(JwtRegisteredClaimNames.Name)?.Value
+            ?? User.FindFirst(ClaimTypes.Name)?.Value;
+
+        if (string.IsNullOrWhiteSpace(userName))
+        {
+            return Task.FromResult<User?>(null);
+        }
+
+        return _userProvider.FindByNameAsync(userName, cancellationToken);
     }
 }
