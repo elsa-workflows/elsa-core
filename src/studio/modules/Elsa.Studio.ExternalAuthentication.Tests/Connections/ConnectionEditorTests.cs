@@ -7,8 +7,6 @@ using Elsa.Studio.ExternalAuthentication.Client;
 using Elsa.Studio.ExternalAuthentication.Components.ConnectionEditor;
 using Elsa.Studio.ExternalAuthentication.Menu;
 using Elsa.Studio.ExternalAuthentication.Models;
-using ConnectionIndex = Elsa.Studio.ExternalAuthentication.Pages.Connections.Index;
-using ConnectionEdit = Elsa.Studio.ExternalAuthentication.Pages.Connections.Edit;
 using Elsa.Studio.ExternalAuthentication.Services;
 using Elsa.Studio.Testing;
 using Microsoft.AspNetCore.Components;
@@ -18,6 +16,8 @@ using MudBlazor;
 using MudBlazor.Extensions;
 using MudBlazor.Services;
 using Xunit;
+using ConnectionEdit = Elsa.Studio.ExternalAuthentication.Pages.Connections.Edit;
+using ConnectionIndex = Elsa.Studio.ExternalAuthentication.Pages.Connections.Index;
 
 namespace Elsa.Studio.ExternalAuthentication.Tests.Connections;
 
@@ -48,7 +48,6 @@ public sealed class ConnectionEditorTests : BunitContext, IAsyncLifetime
     Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
 
     async Task IAsyncLifetime.DisposeAsync() => await base.DisposeAsync();
-
 
     [Fact]
     public void ConfigurationOwnedConnection_IsClearlyReadOnly()

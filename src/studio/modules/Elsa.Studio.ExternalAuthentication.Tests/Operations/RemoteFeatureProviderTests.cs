@@ -1,3 +1,5 @@
+using System.Net;
+using System.Security.Claims;
 using Elsa.Api.Client.Resources.Features.Contracts;
 using Elsa.Api.Client.Resources.Features.Models;
 using Elsa.Api.Client.Shared.Models;
@@ -5,8 +7,6 @@ using Elsa.Studio.Contracts;
 using Elsa.Studio.Services;
 using Elsa.Studio.Testing;
 using Microsoft.AspNetCore.Components.Authorization;
-using System.Net;
-using System.Security.Claims;
 using Xunit;
 
 namespace Elsa.Studio.ExternalAuthentication.Tests.Operations;

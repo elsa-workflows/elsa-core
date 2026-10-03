@@ -11,6 +11,7 @@ using Elsa.Studio.ExternalAuthentication.Models;
 using Elsa.Studio.ExternalAuthentication.Services;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Services;
+using Elsa.Studio.Testing;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,7 +19,6 @@ using MudBlazor;
 using MudBlazor.Services;
 using Xunit;
 using LoginPage = Elsa.Studio.Authentication.UI.Pages.Login;
-using Elsa.Studio.Testing;
 
 namespace Elsa.Studio.ExternalAuthentication.Tests.Login;
 
