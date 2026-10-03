@@ -6,10 +6,10 @@ using Elsa.Studio.Localization.Time;
 using Elsa.Studio.Localization.Time.Components;
 using Elsa.Studio.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using MudBlazor;
 using MudBlazor.Services;
 using Xunit;
+using Elsa.Studio.Testing;
 
 namespace Elsa.Studio.Workflows.Tests;
 
@@ -88,9 +88,4 @@ public sealed class DataPanelTimestampTests : BunitContext, IAsyncLifetime
         }
     }
 
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
-    }
 }

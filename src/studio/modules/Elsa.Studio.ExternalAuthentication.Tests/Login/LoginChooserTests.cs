@@ -1,3 +1,4 @@
+using AngleSharp.Dom;
 using Bunit;
 using Elsa.Studio.Authentication.Abstractions.Contracts;
 using Elsa.Studio.Authentication.Abstractions.Models;
@@ -11,12 +12,13 @@ using Elsa.Studio.ExternalAuthentication.Services;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using MudBlazor;
 using MudBlazor.Services;
 using Xunit;
 using LoginPage = Elsa.Studio.Authentication.UI.Pages.Login;
+using Elsa.Studio.Testing;
 
 namespace Elsa.Studio.ExternalAuthentication.Tests.Login;
 
@@ -223,6 +225,41 @@ public sealed class LoginChooserTests : BunitContext, IAsyncLifetime
         cut.WaitForAssertion(() => Assert.Contains("No sign-in methods are currently available", cut.Markup));
     }
 
+    [Theory]
+    [InlineData(UserNameField)]
+    [InlineData(PasswordField)]
+    public void BrowserLocalMethod_StartsSignInWhenEnterIsPressedInEitherField(int field)
+    {
+        var coordinator = Register(new([Method("local", "Elsa account", "local", 0)], null));
+        coordinator.HoldSignIn();
+
+        var cut = RenderLoginPage();
+        FillCredentials(cut);
+        cut.FindAll("input")[field].KeyDown(Key.Enter);
+
+        cut.WaitForAssertion(() => AssertBusy(cut.Find(LocalSignInButton), "Signing in…"));
+        Assert.Equal(1, coordinator.LocalBegins);
+    }
+
+    [Fact]
+    public void BrowserLocalMethod_IgnoresEnterWhileSigningIn()
+    {
+        var coordinator = Register(new([Method("local", "Elsa account", "local", 0)], null));
+        var signIn = coordinator.HoldSignIn();
+
+        var cut = RenderLoginPage();
+        FillCredentials(cut);
+        cut.Find(LocalSignInButton).Click();
+        cut.WaitForAssertion(() => AssertBusy(cut.Find(LocalSignInButton), "Signing in…"));
+
+        cut.FindAll("input")[PasswordField].KeyDown(Key.Enter);
+
+        // A second request would reach the coordinator after the form validates, so let the first one finish before counting.
+        signIn.SetException(new InvalidOperationException());
+        cut.WaitForAssertion(() => AssertIdle(cut.Find(LocalSignInButton), "Sign in"));
+        Assert.Equal(1, coordinator.LocalBegins);
+    }
+
     [Fact]
     public void SecurityWarning_IsVisibleWhenConfigured()
     {
@@ -285,6 +322,31 @@ public sealed class LoginChooserTests : BunitContext, IAsyncLifetime
         return page;
     }
 
+    private const string LocalSignInButton = "button.mud-button-filled";
+    private const int UserNameField = 0;
+    private const int PasswordField = 1;
+
+    private static void FillCredentials(IRenderedComponent<LoginPage> cut)
+    {
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll("input").Count));
+        cut.FindAll("input")[UserNameField].Input("alice");
+        cut.FindAll("input")[PasswordField].Input("secret");
+    }
+
+    private static void AssertBusy(IElement button, string busyText)
+    {
+        Assert.True(button.HasAttribute("disabled"));
+        Assert.Equal("true", button.GetAttribute("aria-busy"));
+        Assert.Contains(busyText, button.TextContent);
+    }
+
+    private static void AssertIdle(IElement button, string idleText)
+    {
+        Assert.False(button.HasAttribute("disabled"));
+        Assert.Equal("false", button.GetAttribute("aria-busy"));
+        Assert.Equal(idleText, button.TextContent.Trim());
+    }
+
     private static LoginMethodDescriptor Method(
         string key,
         string name,
@@ -301,8 +363,16 @@ public sealed class LoginChooserTests : BunitContext, IAsyncLifetime
         string? localLoginAction = null) : IExternalAuthenticationLoginCoordinator
     {
         public int ExternalBegins { get; private set; }
+        public int LocalBegins { get; private set; }
         public string? SecurityWarning => securityWarning;
         public string? LocalLoginAction => localLoginAction;
+        private TaskCompletionSource? _localSignIn;
+
+        public TaskCompletionSource HoldSignIn()
+        {
+            _localSignIn = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            return _localSignIn;
+        }
 
         public ValueTask<LoginMethodsResponse> DiscoverAsync(CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(response);
@@ -320,8 +390,11 @@ public sealed class LoginChooserTests : BunitContext, IAsyncLifetime
             string username,
             string password,
             string returnPath,
-            CancellationToken cancellationToken = default) =>
-            Task.CompletedTask;
+            CancellationToken cancellationToken = default)
+        {
+            LocalBegins++;
+            return _localSignIn?.Task ?? Task.CompletedTask;
+        }
     }
 
     private sealed class FakeAntiforgeryTokenProvider(ExternalAuthenticationAntiforgeryToken token) : IExternalAuthenticationAntiforgeryTokenProvider
@@ -329,9 +402,4 @@ public sealed class LoginChooserTests : BunitContext, IAsyncLifetime
         public ExternalAuthenticationAntiforgeryToken GetToken() => token;
     }
 
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
-    }
 }

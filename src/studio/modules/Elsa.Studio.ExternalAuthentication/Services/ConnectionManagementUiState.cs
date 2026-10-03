@@ -1,7 +1,9 @@
 using System.Net;
 using System.Text.Json;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.ExternalAuthentication.Models;
 using MudBlazor;
+using Refit;
 
 namespace Elsa.Studio.ExternalAuthentication.Services;
 
@@ -411,8 +413,21 @@ public static class ConnectionManagementError
 {
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
 
+    /// <summary>
+    /// Describes a failed request for display. A 401 or 403 keeps the server's explanation when it sends one and gets the
+    /// shared permission guidance otherwise; any other failure keeps its own message.
+    /// </summary>
+    // Re-checks the status rather than using IsAuthorizationFailure: the server's explanation is in ApiException.Content.
+    public static string Describe(Exception exception) =>
+        exception is ApiException apiException && apiException.StatusCode.GetAuthorizationFailureMessage() != null
+            ? Parse(apiException.StatusCode, apiException.Content, apiException.Message).DisplayMessage
+            : exception.ToUserMessage();
+
     public static ConnectionManagementErrorInfo Parse(HttpStatusCode statusCode, string? content, string fallbackMessage)
     {
+        // A 401 or 403 without an explanation of its own gets the shared guidance, never the raw status text.
+        fallbackMessage = statusCode.GetAuthorizationFailureMessage() ?? fallbackMessage;
+
         if (string.IsNullOrWhiteSpace(content))
             return ConnectionManagementErrorInfo.Fallback(statusCode, fallbackMessage);
 

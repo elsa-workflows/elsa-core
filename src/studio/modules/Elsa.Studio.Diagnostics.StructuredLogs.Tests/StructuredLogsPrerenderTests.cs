@@ -3,6 +3,7 @@ using Elsa.Studio.Contracts;
 using Elsa.Studio.Diagnostics.StructuredLogs.Contracts;
 using Elsa.Studio.Diagnostics.StructuredLogs.Models;
 using Elsa.Studio.Localization;
+using Elsa.Studio.Testing;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,14 +46,6 @@ public sealed class StructuredLogsPrerenderTests
         Assert.DoesNotContain("import", jsRuntime.Invocations);
         Assert.DoesNotContain("scrollToBottomById", jsRuntime.Invocations);
         Assert.DoesNotContain("JavaScript interop is unavailable", rendered);
-    }
-
-    internal sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? "", key ?? "");
-
-        public LocalizedString this[string? key, params object[] arguments] =>
-            new(key ?? "", string.Format(key ?? "", arguments));
     }
 
     internal sealed class TestStructuredLogService : IStructuredLogService

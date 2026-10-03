@@ -17,13 +17,13 @@ using Elsa.Studio.Workflows.Extensions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 using MudBlazor.Services;
 using Xunit;
 
 using MetadataComponent = Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.WorkflowProperties.Tabs.Properties.Sections.Metadata.Metadata;
+using Elsa.Studio.Testing;
 
 namespace Elsa.Studio.Workflows.Tests;
 
@@ -473,11 +473,6 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
         }
     }
 
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
-    }
 
     private static TaskCompletionSource<T> NewCompletionSource<T>() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 }

@@ -8,6 +8,8 @@ using Elsa.Studio.ExternalAuthentication.Components.IdentityLinks;
 using Elsa.Studio.ExternalAuthentication.Menu;
 using Elsa.Studio.ExternalAuthentication.Models;
 using Elsa.Studio.ExternalAuthentication.Services;
+using Elsa.Studio.Extensions;
+using Elsa.Studio.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 using MudBlazor.Services;
@@ -93,6 +95,17 @@ public sealed class ExternalIdentityLinksTests : BunitContext, IAsyncLifetime
             Assert.Contains("Unlink", _popoverProvider.Markup, StringComparison.Ordinal);
         });
         Assert.DoesNotContain("Edit external identity link", _dialogProvider.Markup, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ARefusedLinkList_ShowsThePermissionGuidance_InsteadOfTheRawException()
+    {
+        _links.ListException = ApiExceptions.Create(HttpStatusCode.Forbidden);
+
+        Render<IdentityLinksPage>();
+
+        var snackbar = Services.GetRequiredService<ISnackbar>();
+        Assert.Equal(AuthorizationFailureExtensions.ForbiddenMessage, Assert.Single(snackbar.ShownSnackbars).Message);
     }
 
     [Fact]
@@ -445,9 +458,13 @@ public sealed class ExternalIdentityLinksTests : BunitContext, IAsyncLifetime
         public TaskCompletionSource<ExternalIdentityLink>? PrelinkCompletion { get; set; }
         public string? ReplacedLinkId { get; private set; }
         public Exception? ReplaceException { get; set; }
+        public Exception? ListException { get; set; }
 
         public Task<ListExternalIdentityLinksResponse> ListAsync(string? userId = null, string? connectionKey = null, string? cursor = null, int pageSize = 25, CancellationToken cancellationToken = default)
         {
+            if (ListException != null)
+                return Task.FromException<ListExternalIdentityLinksResponse>(ListException);
+
             Cursors.Add(cursor);
             var response = ListResults.Dequeue();
             ListedLinks = response.Items;

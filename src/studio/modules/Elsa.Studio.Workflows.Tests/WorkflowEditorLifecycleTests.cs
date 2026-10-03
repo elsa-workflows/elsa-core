@@ -22,10 +22,10 @@ using Elsa.Studio.Workflows.UI.Contexts;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using MudBlazor;
 using MudBlazor.Services;
 using Xunit;
+using Elsa.Studio.Testing;
 
 namespace Elsa.Studio.Workflows.Tests;
 
@@ -432,11 +432,6 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
         public void ShowSnackbarTextMessage(IEnumerable<string> messages, Severity severity = Severity.Normal, Action<SnackbarOptions>? snackbarOptions = null) => MessageCount++;
     }
 
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
-    }
 
     private sealed class TestDiagramDesignerWrapper : DiagramDesignerWrapper
     {

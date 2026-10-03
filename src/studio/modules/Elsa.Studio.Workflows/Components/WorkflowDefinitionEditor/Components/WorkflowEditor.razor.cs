@@ -887,7 +887,7 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
             },
             ErrorCallback = ex =>
             {
-                UserMessageService.ShowSnackbarTextMessage($"Failed to import workflow definition: {ex.Message}", Severity.Error);
+                UserMessageService.ShowSnackbarTextMessage($"Failed to import workflow definition: {ex.ToUserMessage(Localizer)}", Severity.Error);
                 return Task.CompletedTask;
             }
         };

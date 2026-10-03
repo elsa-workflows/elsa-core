@@ -14,7 +14,6 @@ using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using MudBlazor;
 using MudBlazor.Services;
 using Refit;
@@ -22,6 +21,7 @@ using System.Reflection;
 using Xunit;
 
 using MetadataComponent = Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.WorkflowProperties.Tabs.Properties.Sections.Metadata.Metadata;
+using Elsa.Studio.Testing;
 
 namespace Elsa.Studio.Workflows.Tests;
 
@@ -720,11 +720,6 @@ public sealed class WorkflowDefinitionMetadataTests : BunitContext, IAsyncLifeti
             where TNotification : INotification => Task.CompletedTask;
     }
 
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
-    }
 
     private sealed class MetadataHost : ComponentBase
     {

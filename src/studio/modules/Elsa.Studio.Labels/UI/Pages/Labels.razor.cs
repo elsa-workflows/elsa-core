@@ -1,5 +1,7 @@
 using Elsa.Studio.Contracts;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Labels.Client;
+using Elsa.Studio.Localization;
 using Elsa.Studio.Labels.Models;
 using Elsa.Studio.Labels.UI.Components;
 using JetBrains.Annotations;
@@ -98,7 +100,7 @@ public partial class Labels
             }
             catch (Exception e)
             {
-                Snackbar.Add(e.Message, Severity.Error);
+                Snackbar.Add(e.ToUserMessage(Localizer), Severity.Error);
             }
         }
     }

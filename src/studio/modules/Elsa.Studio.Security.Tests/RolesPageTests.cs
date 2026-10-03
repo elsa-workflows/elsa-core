@@ -165,14 +165,14 @@ public sealed class RolesPageTests : BunitContext, IAsyncLifetime
         cut.WaitForAssertion(() => Assert.Contains("Auditors", cut.Markup));
 
         cut.Find("button[aria-label='Create a new role']").Click();
-        Assert.EndsWith("/security/roles/new", navigation.Uri, StringComparison.Ordinal);
+        cut.WaitForAssertion(() => Assert.EndsWith("/security/roles/new", navigation.Uri, StringComparison.Ordinal));
 
         // A fresh render represents the list after the browser returns from the create route.
         var secondCut = Render<Roles>();
         secondCut.WaitForAssertion(() => Assert.Contains("Auditors", secondCut.Markup));
         secondCut.Find("tbody tr").Click();
 
-        Assert.EndsWith("/security/roles/auditors%2Fread%20only", navigation.Uri, StringComparison.Ordinal);
+        secondCut.WaitForAssertion(() => Assert.EndsWith("/security/roles/auditors%2Fread%20only", navigation.Uri, StringComparison.Ordinal));
     }
 
     [Fact]
