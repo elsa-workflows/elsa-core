@@ -15,7 +15,7 @@ public record DashboardWidgetDescriptor(
 {
     /// <summary>
     /// The permissions that let a user see the widget: it is shown to users holding any of them, and hidden from everyone
-    /// else. A widget declaring none is shown to every user.
+    /// else. Declare the view permission of the data the widget shows. A widget declaring none is shown to every user.
     /// </summary>
     public IReadOnlyCollection<Permission> RequiredPermissions { get; init; } = [];
 

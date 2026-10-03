@@ -14,6 +14,17 @@
 <PageTitle>@(IsNew ? "Create identity provider connection" : "Manage identity provider connection")</PageTitle>
 <NavigationLock ConfirmExternalNavigation="@(_isDirty || _activating)" OnBeforeInternalNavigation="ConfirmNavigationAsync" />
 
+@* Both routes share this page, so it checks the one its route needs: create for a new connection, view for an existing one. *@
+@if (!_permissionsChecked)
+{
+    <MudProgressLinear Indeterminate="true" aria-label="Loading identity provider connection" />
+}
+else if (MissingPermissions is not null)
+{
+    <AccessDenied MissingPermissions="MissingPermissions" />
+}
+else
+{
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="connection-workspace">
     <MudStack Spacing="3" Class="py-4">
         <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Outlined.ArrowBack" Class="align-self-start" Disabled="@_activating" OnClick="Back">Identity provider connections</MudButton>
@@ -353,8 +364,12 @@
         }
     </MudStack>
 </MudContainer>
+}
 
 @code {
+    private static readonly Permission[] _createPermission = [new(ExternalAuthenticationPermissions.Connections, PermissionVerbs.Create)];
+    private static readonly Permission[] _viewPermission = [new(ExternalAuthenticationPermissions.Connections, PermissionVerbs.View)];
+
     [Parameter] public string? ConnectionId { get; set; }
 
     private ConnectionDetail? _connection;
@@ -369,6 +384,8 @@
     private ConnectionMutation? _model;
     private ConnectionValidationResult? _validation;
     private bool _loading = true;
+    private bool _permissionsChecked;
+    private bool _canView;
     private bool _canCreate;
     private bool _canUpdate;
     private bool _canArchive;
@@ -424,6 +441,9 @@
                             ? Color.Info
                             : Color.Default;
     private bool IsNew => string.IsNullOrWhiteSpace(ConnectionId);
+
+    // Evaluated per render: saving a new connection moves this same instance to the existing-connection route, which needs view.
+    private Permission[]? MissingPermissions => IsNew ? _canCreate ? null : _createPermission : _canView ? null : _viewPermission;
     private bool CanSaveConnection => _connection?.IsConfigurationOwned != true && (IsNew ? _canCreate : _canUpdate);
     private bool UsesActivationActions =>
         !IsNew &&
@@ -558,6 +578,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _canView = await Permissions.HasAsync(ExternalAuthenticationPermissions.Read);
         _canCreate = await Permissions.HasAsync(ExternalAuthenticationPermissions.Create);
         _canUpdate = await Permissions.HasAsync(ExternalAuthenticationPermissions.Update);
         _canArchive = await Permissions.HasAsync(ExternalAuthenticationPermissions.Archive);
@@ -565,6 +586,13 @@
         _canConfigureUnsafeSettings = await Permissions.HasAsync(ExternalAuthenticationPermissions.UnsafeProviderTrust);
         _canManagePolicies = await Permissions.HasAsync(ExternalAuthenticationPermissions.ManagePolicies);
         _canReadRoles = await Permissions.HasAsync(ExternalAuthenticationPermissions.RolesRead);
+        _permissionsChecked = true;
+        if (MissingPermissions is not null)
+        {
+            _loading = false;
+            return;
+        }
+
         try
         {
             var api = await ApiClientProvider.GetApiAsync<IExternalAuthenticationConnectionManagementApi>();

@@ -66,10 +66,19 @@ public abstract class PermissionTrackingComponentBase : ComponentBase, IDisposab
     }
 
     // Keeps the current permissions while resolving, so permitted content is not unmounted while it runs.
-    private async void OnAuthenticationStateChanged(Task<AuthenticationState> state) =>
-        await InvokeAsync(async () =>
+    private async void OnAuthenticationStateChanged(Task<AuthenticationState> state)
+    {
+        try
         {
-            await ResolvePermissionsAsync();
-            StateHasChanged();
-        });
+            await InvokeAsync(async () =>
+            {
+                await ResolvePermissionsAsync();
+                StateHasChanged();
+            });
+        }
+        catch
+        {
+            // An auth-state notification must not become an unobserved exception.
+        }
+    }
 }

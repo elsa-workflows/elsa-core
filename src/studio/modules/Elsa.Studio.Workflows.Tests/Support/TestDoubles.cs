@@ -14,6 +14,14 @@ using Microsoft.Extensions.Localization;
 namespace Elsa.Studio.Workflows.Tests.Support;
 
 /// <summary>
+/// An <see cref="ITimeFormatter"/> that formats timestamps as they are, without time zone conversion.
+/// </summary>
+internal sealed class TestTimeFormatter : ITimeFormatter
+{
+    public string Format(DateTimeOffset? value, string format = "G", string emptyString = "") => value?.ToString(format) ?? emptyString;
+}
+
+/// <summary>
 /// An <see cref="ILocalizer"/> that passes every key straight through, formatting arguments where given, so tests
 /// can assert on the text a component renders without wiring up real localization resources.
 /// </summary>

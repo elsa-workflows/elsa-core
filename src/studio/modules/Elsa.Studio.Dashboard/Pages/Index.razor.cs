@@ -77,7 +77,7 @@ public partial class Index : IAsyncDisposable
 
     private bool ShowRuntime =>
         _snapshot is { } snapshot
-        && snapshot.Overview.Runtime.Status != DashboardRuntimeStatusKeys.Unavailable
+        && !snapshot.Overview.Runtime.Capability.IsUnauthorized
         && Permissions.HasAny(RuntimeDataPermissions);
 
     private string StatusLabel => _status switch

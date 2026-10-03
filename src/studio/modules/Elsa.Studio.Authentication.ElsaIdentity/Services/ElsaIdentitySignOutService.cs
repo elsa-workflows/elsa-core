@@ -39,18 +39,25 @@ public class ElsaIdentitySignOutService(
     {
         await RevokeSessionAsync();
 
-        // Serialized with a refresh storing its response, so the refresh sees the cleared session and backs off.
-        await sessionGate.RunAsync(async () =>
+        try
         {
-            await jwtAccessor.ClearTokensAsync();
-            return true;
-        });
+            // Serialized with a refresh storing its response, so the refresh sees the cleared session and backs off.
+            await sessionGate.RunAsync(async () =>
+            {
+                await jwtAccessor.ClearTokensAsync();
+                return true;
+            });
 
-        if (authenticationStateProvider is AccessTokenAuthenticationStateProvider accessTokenAuthenticationStateProvider)
-            accessTokenAuthenticationStateProvider.NotifyAuthenticationStateChanged();
+            if (authenticationStateProvider is AccessTokenAuthenticationStateProvider accessTokenAuthenticationStateProvider)
+                accessTokenAuthenticationStateProvider.NotifyAuthenticationStateChanged();
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(exception, "Clearing the local session on sign-out failed; navigating to login.");
+        }
 
-        // Force a reload so no in-memory state from the signed-out user survives.
-        navigationManager.NavigateTo(LoginPath, forceLoad: true);
+        // Base-relative so a PathBase such as /studio/ is preserved. LoginPath stays "/login" for docs.
+        navigationManager.NavigateTo(navigationManager.ToAbsoluteUri("login").PathAndQuery, forceLoad: true);
     }
 
     private async Task RevokeSessionAsync()
