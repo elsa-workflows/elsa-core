@@ -183,6 +183,10 @@ public record DashboardLoadResult(DashboardLoadStatus Status, DashboardSnapshot?
     public static DashboardLoadResult Unauthorized(string message) => new(DashboardLoadStatus.Unauthorized, null, message);
     public static DashboardLoadResult BackendDisconnected(string message) => new(DashboardLoadStatus.BackendDisconnected, null, message);
     public static DashboardLoadResult Failed(string message) => new(DashboardLoadStatus.Failed, null, message);
+
+    /// <summary>A snapshot of the overview alone, for users the dashboard API refuses the workflow instance data behind the rest.</summary>
+    public static DashboardLoadResult FromOverview(DashboardLoadResult<DashboardOverview> result) =>
+        new(result.Status, result.Value is { } overview ? new DashboardSnapshot(overview, new(), new(), new(), null) : null, result.Message);
 }
 
 public record DashboardLoadResult<T>(DashboardLoadStatus Status, T? Value = default, string? Message = null)
