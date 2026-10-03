@@ -1,4 +1,7 @@
 @page "/ai/weaver"
+@attribute [RequirePermission(AIPermissions.Capabilities, PermissionVerbs.View)]
+@attribute [RequirePermission(AIPermissions.Tools, PermissionVerbs.View)]
+@attribute [RequirePermission(AIPermissions.Chat, PermissionVerbs.Execute)]
 @inherits StudioComponentBase
 @implements IAsyncDisposable
 @inject Elsa.Studio.AI.Contracts.IWeaverService WeaverService

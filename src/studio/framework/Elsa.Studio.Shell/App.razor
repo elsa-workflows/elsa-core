@@ -1,6 +1,8 @@
 @inherits StudioComponentBase
 <Router AppAssembly="@typeof(App).Assembly" AdditionalAssemblies="@AdditionalAssemblies">
     <Found Context="routeData">
+        @* Cascaded so the layout's PermissionPageGuard can read the page's [RequirePermission] declarations. *@
+        <CascadingValue Value="routeData">
         @if (!AuthorizationIsDisabled)
         {
             <CascadingAuthenticationState>
@@ -21,6 +23,7 @@
             <RouteView RouteData="routeData" DefaultLayout="@typeof(MainLayout)">
             </RouteView>
         }
+        </CascadingValue>
         <FocusOnNavigate RouteData="@routeData" Selector="h1"/>
     </Found>
     <NotFound>
