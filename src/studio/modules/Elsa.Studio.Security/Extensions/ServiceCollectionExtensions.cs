@@ -1,3 +1,4 @@
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Extensions;
 using Elsa.Studio.Extensions;
@@ -28,6 +29,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<IMenuProvider, SecurityMenu>()
             .AddScoped<ISecurityMenuContributor, IdentitySecurityMenuContributor>()
             .AddScoped<IIdentityPermissionContext, IdentityPermissionContext>()
+            .AddScoped<IPermissionService, IdentityPermissionService>()
             .AddScoped<IUserAdministrationAccessService, UserAdministrationAccessService>()
             .AddScoped<IRoleAdministrationAccessService, RoleAdministrationAccessService>()
             .AddScoped<IRoleDeletionService, RoleDeletionService>()
