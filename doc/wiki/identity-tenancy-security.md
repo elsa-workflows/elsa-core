@@ -36,6 +36,8 @@ See [src/apps/Elsa.Server.Web/Program.cs](../../src/apps/Elsa.Server.Web/Program
 
 Identity JWTs include a `token_use` claim. API bearer authentication accepts only access tokens (`token_use=access`), while `/identity/refresh-token` uses a dedicated refresh-token bearer scheme and accepts only refresh tokens (`token_use=refresh`). Clients should not send refresh tokens to normal API endpoints or access tokens to the refresh endpoint.
 
+Elsa-issued access and refresh tokens always carry a `permissions` claim. Each grant is one value (`permissions` is a JSON array when there are two or more). A caller whose roles grant nothing receives the sentinel `none`, which is not a grant: it exists so clients can tell a known empty set from a token that omits the claim entirely. Third-party OIDC tokens that do not carry Elsa permissions keep omitting the claim, which remains unknown rather than a known empty set.
+
 JWT signing keys must be configured with a secure random value before production startup. Missing keys, weak keys shorter than 32 ASCII characters, and known public defaults are rejected by options startup validation. Known public defaults are only tolerated in the explicit `Development` or `Demo` environments for local/demo hosts. Use environment variables or a secrets manager, such as `Identity__Tokens__SigningKey` for code-first hosts or `CShells__Shells__Default__Features__Identity__SigningKey` for shell-based hosts.
 
 ## Default Admin Bootstrap

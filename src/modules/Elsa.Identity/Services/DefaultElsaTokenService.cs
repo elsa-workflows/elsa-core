@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Elsa;
 using Elsa.Common;
 using Elsa.Identity.Constants;
 using Elsa.Identity.Contracts;
@@ -58,7 +59,7 @@ public sealed class DefaultElsaTokenService(ISystemClock systemClock, IOptions<I
 
         var expiresAt = systemClock.UtcNow.Add(lifetime);
         claims.AddRange(context.Roles.Select(x => new Claim(ClaimTypes.Role, x)));
-        claims.AddRange(context.Permissions.Select(x => new Claim("permissions", x)));
+        claims.AddRange(PermissionClaims(context.Permissions));
         claims.Add(new Claim(TokenUse.ClaimType, tokenUse));
 
         var descriptor = new SecurityTokenDescriptor
@@ -72,5 +73,19 @@ public sealed class DefaultElsaTokenService(ISystemClock systemClock, IOptions<I
         var token = new JsonWebTokenHandler().CreateToken(descriptor);
 
         return ValueTask.FromResult(new IssuedAccessToken(token, expiresAt));
+    }
+
+    /// <summary>
+    /// Elsa tokens always carry <see cref="PermissionNames.ClaimType"/>. Zero grants become
+    /// <see cref="PermissionNames.None"/> so a missing claim can keep meaning "unknown".
+    /// </summary>
+    private static IEnumerable<Claim> PermissionClaims(IReadOnlyCollection<string> permissions)
+    {
+        if (permissions.Count == 0)
+        {
+            return [new Claim(PermissionNames.ClaimType, PermissionNames.None)];
+        }
+
+        return permissions.Select(permission => new Claim(PermissionNames.ClaimType, permission));
     }
 }
