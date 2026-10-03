@@ -55,7 +55,7 @@ public sealed class LegacyIdentityEndpointTests : IAsyncLifetime
         _app = builder.Build();
         _app.Use(async (context, next) =>
         {
-            context.User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.Name, "admin")], "legacy-refresh"));
+            context.User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-a"), new Claim(ClaimTypes.Name, "admin")], "legacy-refresh"));
             await next(context);
         });
         _app.UseAuthorization();
@@ -110,7 +110,7 @@ public sealed class LegacyIdentityEndpointTests : IAsyncLifetime
     public async Task IdentityRefreshTokenRetainsItsRouteAndLocalTokenContract()
     {
         var user = new User { Id = "user-a", Name = "admin" };
-        _userProvider.FindAsync(Arg.Is<UserFilter>(filter => filter.Name == "admin"), Arg.Any<CancellationToken>()).Returns(user);
+        _userProvider.FindAsync(Arg.Is<UserFilter>(filter => filter.Id == user.Id), Arg.Any<CancellationToken>()).Returns(user);
         _tokenIssuer.IssueTokensAsync(user, Arg.Any<SignInSession?>(), Arg.Any<CancellationToken>()).Returns(new IssuedTokens("access-b", "refresh-b"));
 
         var response = await _client!.PostAsync("/identity/refresh-token", null);
@@ -129,7 +129,7 @@ public sealed class LegacyIdentityEndpointTests : IAsyncLifetime
     {
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            var identity = new ClaimsIdentity([new Claim(ClaimTypes.Name, "admin")], Scheme.Name);
+            var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-a"), new Claim(ClaimTypes.Name, "admin")], Scheme.Name);
             var ticket = new AuthenticationTicket(new ClaimsPrincipal(identity), Scheme.Name);
             return Task.FromResult(AuthenticateResult.Success(ticket));
         }

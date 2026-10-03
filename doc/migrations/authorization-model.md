@@ -47,7 +47,7 @@ switch off; the switch is per language, so C# and Python can be decided separate
 
 ## Revocation
 
-The default access-token lifetime drops from 1 hour to **15 minutes**. This is the revocation bound: permission claims are issued at sign-in, and refreshing re-reads the user's roles, so removing a role takes effect at most one access-token lifetime later. Refresh already rotates both tokens, so no client change is required.
+The default access-token lifetime drops from 1 hour to **15 minutes**. This is the revocation bound: permission claims are issued at sign-in, and refreshing re-reads the user's roles, so removing a role takes effect at most one access-token lifetime later. Refresh already rotates both tokens, so no client change is required. User resolution on refresh is a separate break: see [refresh-token user resolution](refresh-token-user-resolution.md).
 
 Elsa role and permission changes take effect on the next token refresh or expiry. Changes to grants from an external identity provider take effect only after a fresh sign-in. Stamp-based revalidation (`Identity:PermissionStamp:IsEnabled` and a ~30 second `CacheLifetime`) is planned for 3.10; it is not available in 3.9.
 

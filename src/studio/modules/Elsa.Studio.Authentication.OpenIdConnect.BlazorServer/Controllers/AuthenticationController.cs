@@ -1,3 +1,4 @@
+using Elsa.Studio.Authentication.Abstractions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -17,7 +18,7 @@ public class AuthenticationController : Controller
     [HttpGet("login")]
     public IActionResult Login([FromQuery] string? returnUrl = null)
     {
-        return Challenge(new AuthenticationProperties { RedirectUri = NormalizeReturnUrl(returnUrl) }, OpenIdConnectDefaults.AuthenticationScheme);
+        return Challenge(new AuthenticationProperties { RedirectUri = SafeRedirectUri(returnUrl) }, OpenIdConnectDefaults.AuthenticationScheme);
     }
 
     /// <summary>
@@ -27,21 +28,19 @@ public class AuthenticationController : Controller
     public IActionResult Logout([FromQuery] string? returnUrl = null)
     {
         return SignOut(
-            new AuthenticationProperties { RedirectUri = NormalizeReturnUrl(returnUrl) },
+            new AuthenticationProperties { RedirectUri = SafeRedirectUri(returnUrl) },
             CookieAuthenticationDefaults.AuthenticationScheme,
             OpenIdConnectDefaults.AuthenticationScheme);
     }
 
-    private static string NormalizeReturnUrl(string? candidate)
+    private string SafeRedirectUri(string? returnUrl)
     {
-        if (string.IsNullOrWhiteSpace(candidate) ||
-            !candidate.StartsWith("/", StringComparison.Ordinal) ||
-            candidate.StartsWith("//", StringComparison.Ordinal) ||
-            candidate.StartsWith("/\\", StringComparison.Ordinal))
+        var path = LocalReturnPath.Normalize(returnUrl);
+        if (!Url.IsLocalUrl(path))
         {
             return "/";
         }
 
-        return Uri.TryCreate(candidate, UriKind.Relative, out _) ? candidate : "/";
+        return path;
     }
 }

@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Elsa.Extensions;
 using Elsa.Identity.Constants;
 using Elsa.Identity.Contracts;
@@ -33,18 +33,29 @@ internal class RefreshToken : EndpointWithoutRequest<LoginResponse>
     }
 
     /// <inheritdoc />
-    public override async Task<LoginResponse> ExecuteAsync(CancellationToken cancellationToken)
+    public override async Task HandleAsync(CancellationToken cancellationToken)
     {
-        var user = await _userProvider.FindByNameAsync(User.Identity!.Name!, cancellationToken);
+        var userId = RefreshTokenSubject.FindUserId(User);
+
+        if (userId is null)
+        {
+            await Send.UnauthorizedAsync(cancellationToken);
+            return;
+        }
+
+        var user = await _userProvider.FindByIdAsync(userId, cancellationToken);
 
         if (user == null)
-            return new LoginResponse(false, null, null);
+        {
+            await Send.UnauthorizedAsync(cancellationToken);
+            return;
+        }
 
         // The refresh-token scheme rejects revoked sessions and puts the session on the principal; the new refresh
         // token continues it, so revoking the session later also revokes this one.
         var session = SessionRevoker.FindSession((ClaimsIdentity)User.Identity!);
         var tokens = await _tokenIssuer.IssueTokensAsync(user, session, cancellationToken);
 
-        return new LoginResponse(true, tokens.AccessToken, tokens.RefreshToken);
+        await Send.OkAsync(new LoginResponse(true, tokens.AccessToken, tokens.RefreshToken), cancellationToken);
     }
 }
