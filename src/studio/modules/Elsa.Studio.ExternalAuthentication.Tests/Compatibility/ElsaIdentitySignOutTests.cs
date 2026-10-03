@@ -39,6 +39,7 @@ public sealed class ElsaIdentitySignOutTests : AppBarUserMenuTests<ElsaIdentityU
     public ElsaIdentitySignOutTests()
     {
         _backend = new(_tokens);
+        _backend.OnLogout = (_, _) => Task.FromResult(_backend.Own(new HttpResponseMessage(HttpStatusCode.NoContent)));
         Services.AddElsaIdentityCore();
         Services.AddElsaIdentityUI();
         Services.AddSingleton<IJwtAccessor>(_tokens);
@@ -100,7 +101,8 @@ public sealed class ElsaIdentitySignOutTests : AppBarUserMenuTests<ElsaIdentityU
     public async Task SignOut_WhenTheBackendRefusesToRevoke_StillEndsTheSession(HttpStatusCode status)
     {
         SignIn();
-        _backend.OnLogout = (_, _) => Task.FromResult(new HttpResponseMessage(status));
+        using var refused = new HttpResponseMessage(status);
+        _backend.OnLogout = (_, _) => Task.FromResult(refused);
 
         await SignOutAsync();
 
@@ -129,7 +131,7 @@ public sealed class ElsaIdentitySignOutTests : AppBarUserMenuTests<ElsaIdentityU
         _backend.OnLogout = async (_, cancellationToken) =>
         {
             await Task.Delay(Timeout.Infinite, cancellationToken);
-            return new HttpResponseMessage();
+            return _backend.Own(new HttpResponseMessage());
         };
 
         await SignOutAsync();
@@ -159,7 +161,8 @@ public sealed class ElsaIdentitySignOutTests : AppBarUserMenuTests<ElsaIdentityU
     {
         SignIn();
         var accessToken = _tokens.Tokens[TokenNames.AccessToken] = CreateJwt(UserName, TimeSpan.FromSeconds(90));
-        _backend.OnRefresh = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized));
+        using var unauthorized = new HttpResponseMessage(HttpStatusCode.Unauthorized);
+        _backend.OnRefresh = (_, _) => Task.FromResult(unauthorized);
 
         await SignOutAsync();
 
@@ -190,7 +193,7 @@ public sealed class ElsaIdentitySignOutTests : AppBarUserMenuTests<ElsaIdentityU
         _backend.OnRefresh = async (_, cancellationToken) =>
         {
             await Task.Delay(Timeout.Infinite, cancellationToken);
-            return new HttpResponseMessage();
+            return _backend.Own(new HttpResponseMessage());
         };
 
         await SignOutAsync();
@@ -215,7 +218,7 @@ public sealed class ElsaIdentitySignOutTests : AppBarUserMenuTests<ElsaIdentityU
         await ClickSignOutAsync(menu);
         await revoking.Task.WaitAsync(TimeSpan.FromSeconds(10));
         await ClickSignOutAsync(menu);
-        revoked.SetResult(new HttpResponseMessage(HttpStatusCode.NoContent));
+        revoked.SetResult(_backend.Own(new HttpResponseMessage(HttpStatusCode.NoContent)));
 
         menu.WaitForAssertion(() => Assert.NotEmpty(Services.GetRequiredService<BunitNavigationManager>().History));
         Assert.Single(_backend.Requests);
@@ -244,7 +247,8 @@ public sealed class ElsaIdentitySignOutTests : AppBarUserMenuTests<ElsaIdentityU
     public async Task SignOut_WhenTheRefreshFails_StillEndsTheSessionWithoutRevoking(HttpStatusCode status)
     {
         SignInWithExpiredAccessToken();
-        _backend.OnRefresh = (_, _) => Task.FromResult(new HttpResponseMessage(status));
+        using var failedRefresh = new HttpResponseMessage(status);
+        _backend.OnRefresh = (_, _) => Task.FromResult(failedRefresh);
 
         await SignOutAsync();
 
@@ -262,6 +266,20 @@ public sealed class ElsaIdentitySignOutTests : AppBarUserMenuTests<ElsaIdentityU
 
         Assert.DoesNotContain(_backend.Requests, request => request.Endpoint == LogoutEndpoint);
         AssertSignedOutLocally();
+    }
+
+    [Fact]
+    public async Task SignOut_WhenClearingTokensFails_DoesNotNavigateToLogin()
+    {
+        SignIn();
+        _tokens.ClearFailure = new InvalidOperationException("The browser token store is locked.");
+        var historyBefore = Services.GetRequiredService<BunitNavigationManager>().History.Count;
+
+        await SignOutAsync();
+
+        Assert.NotEmpty(_tokens.Tokens);
+        Assert.Equal(historyBefore, Services.GetRequiredService<BunitNavigationManager>().History.Count);
+        Assert.Contains(_warnings.Messages, message => message.Contains("staying on the page", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -306,7 +324,7 @@ public sealed class ElsaIdentitySignOutTests : AppBarUserMenuTests<ElsaIdentityU
         await revoking.Task.WaitAsync(TimeSpan.FromSeconds(10));
         refreshResponse.SetResult(RefreshedTokens());
         await refresh.WaitAsync(TimeSpan.FromSeconds(10));
-        revoked.SetResult(new HttpResponseMessage(HttpStatusCode.NoContent));
+        revoked.SetResult(_backend.Own(new HttpResponseMessage(HttpStatusCode.NoContent)));
         await signOut.WaitAsync(TimeSpan.FromSeconds(10));
 
         AssertSignedOutLocally();
@@ -402,9 +420,12 @@ public sealed class ElsaIdentitySignOutTests : AppBarUserMenuTests<ElsaIdentityU
         Assert.True(navigation.Options.ForceLoad);
     }
 
-    private static HttpResponseMessage RefreshedTokens() => Json("""{ "isAuthenticated": true, "accessToken": "new-access", "refreshToken": "new-refresh" }""");
+    private HttpResponseMessage RefreshedTokens() => Json("""{ "isAuthenticated": true, "accessToken": "new-access", "refreshToken": "new-refresh" }""");
 
-    private static HttpResponseMessage Json(string json) => new(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
+    private HttpResponseMessage Json(string json) => _backend.Own(new HttpResponseMessage(HttpStatusCode.OK)
+    {
+        Content = new StringContent(json, Encoding.UTF8, "application/json")
+    });
 
     private static string CreateJwt(string userName, TimeSpan? expiresIn = null)
     {
@@ -439,7 +460,10 @@ public sealed class ElsaIdentitySignOutTests : AppBarUserMenuTests<ElsaIdentityU
     {
         private readonly TaskCompletionSource<HttpResponseMessage> _response = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public void Respond(string json) => _response.SetResult(Json(json));
+        public void Respond(string json) => _response.SetResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        });
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => _response.Task;
     }
@@ -451,15 +475,34 @@ public sealed class ElsaIdentitySignOutTests : AppBarUserMenuTests<ElsaIdentityU
     {
         public List<RecordedRequest> Requests { get; } = [];
 
+        private readonly List<HttpResponseMessage> _owned = [];
+
         public Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> OnRefresh { get; set; } = (_, _) => throw new NotSupportedException();
 
-        public Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> OnLogout { get; set; } = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent));
+        public Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> OnLogout { get; set; } = (_, _) => throw new NotSupportedException();
+
+        public HttpResponseMessage Own(HttpResponseMessage response)
+        {
+            _owned.Add(response);
+            return response;
+        }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var body = request.Content == null ? "" : await request.Content.ReadAsStringAsync(cancellationToken);
             Requests.Add(new($"{request.Method} {request.RequestUri!.AbsolutePath}", request.Headers.Authorization?.ToString(), body, new(tokens.Tokens)));
             return await (request.RequestUri.AbsolutePath.EndsWith("/identity/logout") ? OnLogout : OnRefresh)(request, cancellationToken);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                foreach (var response in _owned)
+                    response.Dispose();
+            }
+
+            base.Dispose(disposing);
         }
     }
 
@@ -514,6 +557,9 @@ public sealed class ElsaIdentitySignOutTests : AppBarUserMenuTests<ElsaIdentityU
         /// <summary>Makes reads never complete, like browser storage that does not answer.</summary>
         public bool StallReads { get; set; }
 
+        /// <summary>When set, every clear attempt throws so sign-out cannot discard the stored session.</summary>
+        public Exception? ClearFailure { get; set; }
+
         public ValueTask<string?> ReadTokenAsync(string name) =>
             StallReads ? new(new TaskCompletionSource<string?>().Task) : ValueTask.FromResult(Tokens.GetValueOrDefault(name));
 
@@ -527,6 +573,9 @@ public sealed class ElsaIdentitySignOutTests : AppBarUserMenuTests<ElsaIdentityU
 
         public ValueTask ClearTokenAsync(string name)
         {
+            if (ClearFailure is not null)
+                throw ClearFailure;
+
             Tokens.Remove(name);
             return ValueTask.CompletedTask;
         }

@@ -433,8 +433,8 @@ public sealed class DashboardPagePermissionTests : BunitContext, IAsyncLifetime
             await page.DisposeAsync();
             gate.SetResult();
             await cut.InvokeAsync(() => { });
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+            await Task.Yield();
+            await Task.Yield();
         }
         finally
         {

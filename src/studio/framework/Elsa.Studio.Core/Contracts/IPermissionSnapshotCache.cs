@@ -5,6 +5,12 @@ namespace Elsa.Studio.Contracts;
 /// </summary>
 public interface IPermissionSnapshotCache
 {
-    /// <summary>Drops any cached snapshot, including Forbidden and Unavailable.</summary>
+    /// <summary>
+    /// Raised after <see cref="Invalidate"/> so permission-dependent UI can re-fetch.
+    /// Subscribers run after the snapshot is dropped, so a re-resolve cannot read the previous grants.
+    /// </summary>
+    event EventHandler? Changed;
+
+    /// <summary>Drops any cached snapshot, including Forbidden and Unavailable, then raises <see cref="Changed"/>.</summary>
     void Invalidate();
 }

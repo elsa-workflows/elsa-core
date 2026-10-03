@@ -7,9 +7,9 @@ namespace Elsa.Studio.Environments.Services;
 /// <summary>
 /// Provides the default implementation of the environment service.
 /// </summary>
-public class DefaultEnvironmentService(IEnumerable<IPermissionSnapshotCache>? permissionSnapshotCaches = null) : IEnvironmentService
+public class DefaultEnvironmentService(IEnumerable<IPermissionRefreshSignal>? refreshSignals = null) : IEnvironmentService
 {
-    private readonly IPermissionSnapshotCache[] _permissionSnapshotCaches = permissionSnapshotCaches?.ToArray() ?? [];
+    private readonly IPermissionRefreshSignal[] _refreshSignals = refreshSignals?.ToArray() ?? [];
 
     /// <summary>
     /// Occurs when the list of environments changes.
@@ -58,10 +58,8 @@ public class DefaultEnvironmentService(IEnumerable<IPermissionSnapshotCache>? pe
             return;
 
         CurrentEnvironment = environment;
-        foreach (var cache in _permissionSnapshotCaches)
-        {
-            cache.Invalidate();
-        }
+        foreach (var signal in _refreshSignals)
+            signal.Raise();
 
         CurrentEnvironmentChanged?.Invoke();
     }

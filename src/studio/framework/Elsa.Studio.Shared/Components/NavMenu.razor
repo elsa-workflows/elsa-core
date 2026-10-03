@@ -24,16 +24,24 @@
     private IReadOnlyList<MenuNavigationGroup> _navigation = [];
 
     private AuthenticationStateProvider? _authenticationStateProvider;
+    private IPermissionSnapshotCache[] _caches = [];
     private int _load;
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         // Menu items are filtered by the user's permissions, which can change while the shell stays loaded.
-        _authenticationStateProvider = Services.GetService<AuthenticationStateProvider>();
-        if (_authenticationStateProvider != null)
+        _caches = Services.GetServices<IPermissionSnapshotCache>().ToArray();
+        if (_caches.Length > 0)
         {
-            _authenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+            foreach (var cache in _caches)
+                cache.Changed += OnSnapshotChanged;
+        }
+        else
+        {
+            _authenticationStateProvider = Services.GetService<AuthenticationStateProvider>();
+            if (_authenticationStateProvider != null)
+                _authenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
         }
 
         await LoadMenuAsync();
@@ -42,10 +50,11 @@
     /// <inheritdoc />
     public void Dispose()
     {
+        foreach (var cache in _caches)
+            cache.Changed -= OnSnapshotChanged;
+
         if (_authenticationStateProvider != null)
-        {
             _authenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
-        }
     }
 
     private async Task LoadMenuAsync()
@@ -62,7 +71,11 @@
         _navigation = navigation;
     }
 
-    private async void OnAuthenticationStateChanged(Task<AuthenticationState> state)
+    private async void OnSnapshotChanged(object? sender, EventArgs e) => await ReloadMenuAsync();
+
+    private async void OnAuthenticationStateChanged(Task<AuthenticationState> state) => await ReloadMenuAsync();
+
+    private async Task ReloadMenuAsync()
     {
         try
         {
@@ -74,7 +87,7 @@
         }
         catch
         {
-            // An auth-state notification must not become an unobserved exception.
+            // A permission notification must not become an unobserved exception.
         }
     }
 }

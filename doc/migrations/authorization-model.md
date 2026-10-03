@@ -462,7 +462,7 @@ One caveat: the composite indexes only cover rows whose `TenantId` is non-null (
 
 ## Studio hosts without the Security module
 
-Studio matches 3.9: a host that does not register `IPermissionService` (no Security module) uses `UserPermissions.Unknown`, so every permission check passes. That is an explicit choice for hosts that do not enforce authorization in the shell. Install the Security module to fail closed on `GET /identity/me/permissions`.
+Studio matches 3.9: a host that does not register `IPermissionService` (no Security module) uses `UserPermissions.Unknown`, so every permission check passes. That is an explicit choice for hosts that do not enforce authorization in the shell. The CustomElements host (`Elsa.Studio.Host.CustomElements`) runs in this Unknown mode: it registers Core, Shell, Workflows, Secrets and User Tasks, but not Security. Install the Security module to fail closed on `GET /identity/me/permissions`.
 
 The Webhooks page is gated on `http/webhooks:view`. That resource is in the backend catalog so a `*` administrator receives it. Dashboard per-widget gating depends on the dashboard section permissions from #8572.
 
@@ -473,3 +473,8 @@ These Studio-side contract changes ship with this release and need a rebuild of 
 - Studio-local Refit interfaces were renamed so they do not collide with `Elsa.Api.Client`: `IExternalAuthenticationConnectionsApi` → `IExternalAuthenticationConnectionManagementApi`, and `IExternalIdentityLinksApi` → `IExternalIdentityLinkManagementApi`.
 - `ExternalAuthenticationPermissions` values now use the `{resource}:{verb}` grammar (`external-authentication/connections:view`, and so on). Old Studio-only names such as `external-authentication:connections:read` are not granted by the catalog.
 - `IFeatureService.IsInitialized` stays a default interface member (`=> false`). Third-party implementations and decorators do not have to add the member.
+- Direct OIDC logout is POST-only: `GET /authentication/logout` does not sign the user out. The hosted form posts to `NavigationManager.ToAbsoluteUri("authentication/logout")` so a PathBase such as `/studio/` is preserved.
+- `IPermissionSnapshotCache` is owned by `IdentityPermissionContext`. `Invalidate` increments a generation token, drops the snapshot, then raises `Changed` so permission-dependent UI re-fetches. An in-flight load whose generation no longer matches does not write the stale grants back. Environment switches and silent JWT refreshes raise `IPermissionRefreshSignal` (a no-dependency singleton) instead of taking the cache, which would cycle through the backend client.
+- `DefaultEnvironmentService` now takes an optional `IEnumerable<IPermissionRefreshSignal>` instead of `IEnumerable<IPermissionSnapshotCache>`. The previous cache parameter is gone.
+- `JwtTokenProvider` gained an `IEnumerable<IPermissionRefreshSignal>` constructor parameter; the original four-argument constructor remains and passes an empty set.
+- `ElsaIdentitySignOutService.LoginPath` is obsolete. Sign-out navigates with `NavigationManager.ToAbsoluteUri("login").PathAndQuery` so a PathBase is kept. If clearing the stored tokens fails, the service stays on the page rather than opening login with the token still present.

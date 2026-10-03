@@ -15,6 +15,7 @@
 
     <ItemGroup>
         <ProjectReference Include="../Elsa.Studio.Environments/Elsa.Studio.Environments.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Security/Elsa.Studio.Security.csproj" />
     </ItemGroup>
 
 </Project>

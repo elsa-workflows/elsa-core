@@ -83,6 +83,11 @@
     display: flex;
 }
 
+/* A widget that leaves itself out, such as one whose data the backend withholds, takes no cell. */
+.dashboard-shell ::deep .dashboard-diagnostics-grid-item:empty {
+    display: none;
+}
+
 .dashboard-shell ::deep .dashboard-diagnostics-grid-item > .dashboard-panel {
     width: 100%;
     height: 100%;

@@ -28,8 +28,9 @@ public class ElsaIdentitySignOutService(
     ILogger<ElsaIdentitySignOutService> logger) : ISignOutService
 {
     /// <summary>
-    /// The page the user lands on after signing out.
+    /// Historical login path. The real target is <c>NavigationManager.ToAbsoluteUri("login")</c> so a PathBase is kept.
     /// </summary>
+    [Obsolete("Use NavigationManager.ToAbsoluteUri(\"login\").PathAndQuery. This constant ignores PathBase.")]
     public const string LoginPath = "/login";
 
     private static readonly TimeSpan RevokeTimeout = TimeSpan.FromSeconds(5);
@@ -39,6 +40,25 @@ public class ElsaIdentitySignOutService(
     {
         await RevokeSessionAsync();
 
+        var cleared = await TryClearTokensAsync();
+        if (!cleared)
+            cleared = await TryClearTokensAsync();
+
+        if (!cleared)
+        {
+            logger.LogError("Clearing the local session on sign-out failed; staying on the page so a stored token cannot sign the user back in.");
+            return;
+        }
+
+        if (authenticationStateProvider is AccessTokenAuthenticationStateProvider accessTokenAuthenticationStateProvider)
+            accessTokenAuthenticationStateProvider.NotifyAuthenticationStateChanged();
+
+        // Base-relative so a PathBase such as /studio/ is preserved.
+        navigationManager.NavigateTo(navigationManager.ToAbsoluteUri("login").PathAndQuery, forceLoad: true);
+    }
+
+    private async Task<bool> TryClearTokensAsync()
+    {
         try
         {
             // Serialized with a refresh storing its response, so the refresh sees the cleared session and backs off.
@@ -47,17 +67,13 @@ public class ElsaIdentitySignOutService(
                 await jwtAccessor.ClearTokensAsync();
                 return true;
             });
-
-            if (authenticationStateProvider is AccessTokenAuthenticationStateProvider accessTokenAuthenticationStateProvider)
-                accessTokenAuthenticationStateProvider.NotifyAuthenticationStateChanged();
+            return true;
         }
         catch (Exception exception)
         {
-            logger.LogWarning(exception, "Clearing the local session on sign-out failed; navigating to login.");
+            logger.LogWarning(exception, "Clearing the local session on sign-out failed.");
+            return false;
         }
-
-        // Base-relative so a PathBase such as /studio/ is preserved. LoginPath stays "/login" for docs.
-        navigationManager.NavigateTo(navigationManager.ToAbsoluteUri("login").PathAndQuery, forceLoad: true);
     }
 
     private async Task RevokeSessionAsync()
