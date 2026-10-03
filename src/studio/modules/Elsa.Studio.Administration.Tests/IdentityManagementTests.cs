@@ -130,7 +130,7 @@ public sealed class IdentityManagementTests : BunitContext, IAsyncLifetime
 
         var cut = Render<UsersPage>();
 
-        cut.WaitForAssertion(() => Assert.Contains("User administration access is required", cut.Markup));
+        cut.WaitForAssertion(() => Assert.Contains("You don't have access to this page", cut.Markup));
         Assert.DoesNotContain("alice", cut.Markup);
         Assert.Equal(0, _users.ListCallCount);
     }
@@ -170,7 +170,7 @@ public sealed class IdentityManagementTests : BunitContext, IAsyncLifetime
 
         var cut = Render<UserEditor>(parameters => parameters.Add(component => component.Id, "user-1"));
 
-        cut.WaitForAssertion(() => Assert.Contains("User administration access is required", cut.Markup));
+        cut.WaitForAssertion(() => Assert.Contains("You don't have access to this page", cut.Markup));
         Assert.DoesNotContain("alice", cut.Markup);
         Assert.Equal(0, _users.ListCallCount);
         Assert.Equal(0, _roles.ListCallCount);
