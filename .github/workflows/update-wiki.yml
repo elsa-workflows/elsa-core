@@ -172,15 +172,13 @@ jobs:
             git push origin "HEAD:$UPDATE_BRANCH"
           fi
 
-          # `gh pr list --head` matches the bare branch name only; the "<owner>:<branch>" form
-          # silently matches nothing, which made every run fall through to `gh pr create` and
-          # fail with "A pull request already exists". Filter out fork PRs with the same branch name.
-          existing_pr="$(gh pr list \
-            --repo "$GITHUB_REPOSITORY" \
-            --state open \
-            --head "$UPDATE_BRANCH" \
-            --json number,isCrossRepository \
-            --jq '[.[] | select(.isCrossRepository | not)] | .[0].number // empty')"
+          # Look the PR up via the REST API: its `head=<owner>:<branch>` filter is applied
+          # server-side, so fork PRs reusing the branch name never match and no client-side
+          # limit can hide ours. (`gh pr list --head` does not support the "<owner>:<branch>"
+          # form; it silently matched nothing, so every run fell through to `gh pr create`.)
+          existing_pr="$(gh api \
+            "repos/$GITHUB_REPOSITORY/pulls?state=open&head=$GITHUB_REPOSITORY_OWNER:$UPDATE_BRANCH" \
+            --jq '.[0].number // empty')"
           body="$(cat <<'MD'
           ## Summary
 
