@@ -107,6 +107,15 @@ jobs:
         with:
           name: elsa-nuget-packages
 
+      - name: Check API key (feedz.io)
+        env:
+          API_KEY: ${{ secrets.FEEDZ_API_KEY }}
+        run: |
+          if [ -z "$API_KEY" ]; then
+            echo "::error::API key for feedz.io is empty. Check the secret or the NuGet login (OIDC) step output that feeds it; nothing was pushed."
+            exit 1
+          fi
+
       - name: Publish to feedz.io
         run: dotnet nuget push *.nupkg -k ${{ secrets.FEEDZ_API_KEY }} -s ${{ env.feedz_feed_source }} --skip-duplicate
 
@@ -135,6 +144,15 @@ jobs:
         id: nuget_login
         with:
           user: ${{ env.nuget_user }}
+
+      - name: Check API key (nuget.org)
+        env:
+          API_KEY: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
+        run: |
+          if [ -z "$API_KEY" ]; then
+            echo "::error::API key for nuget.org is empty. Check the secret or the NuGet login (OIDC) step output that feeds it; nothing was pushed."
+            exit 1
+          fi
 
       - name: Publish to nuget.org
         run: dotnet nuget push *.nupkg -k ${{ steps.nuget_login.outputs.NUGET_API_KEY }} -s ${{ env.nuget_feed_source }} --skip-duplicate
