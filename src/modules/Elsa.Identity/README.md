@@ -97,7 +97,7 @@ Code-first hosts do not bind a `DefaultAdminUser` configuration section automati
 - If a user with `AdminUserName` already exists, it is left unchanged. Changing `AdminPassword` later does not change the stored password, so rotate the password with `PUT /identity/users/{id}`.
 - If `AdminUserName` or `AdminPassword` is empty, the role is still created or updated, but user creation is skipped with a warning.
 - Do not keep development defaults in production, and prefer environment variables or a secret manager for admin credentials.
-- If no users exist and neither a default admin (`AdminUserName` and `AdminPassword`) nor an admin API key is configured, startup logs an error naming both options. Every management endpoint answers 403 until one of them is configured.
+- If no users exist and neither a default admin (`AdminUserName` and `AdminPassword`) nor an admin API key is configured, startup logs an error naming both options. Until one of them is configured, nobody can sign in: unauthenticated requests to permission-protected management endpoints get 401, and authenticated callers without the required permission get 403.
 
 ## Admin API Key Bootstrap
 
