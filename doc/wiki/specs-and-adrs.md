@@ -45,6 +45,22 @@ Current ADRs:
 
 > **Note on naming:** ADRs 0001–0027 use sequential integer prefixes. New ADRs added after 2026-08-25 use a `YYYY-MM-DD-` date prefix instead (see [2026-08-25-date-prefixed-adr-identifiers](../adr/2026-08-25-date-prefixed-adr-identifiers.md)) to avoid sequential numbering collisions on parallel branches.
 
+Date-prefixed ADRs:
+
+| ADR | Topic |
+| --- | --- |
+| [2026-08-25](../adr/2026-08-25-date-prefixed-adr-identifiers.md) | Identify new ADRs by date instead of a sequential number. |
+| [2026-09-15](../adr/2026-09-15-correlated-workflow-activation.md) | Refuse duplicate running instances through activation strategies. |
+| [2026-09-23](../adr/2026-09-23-bounded-connector-release-unit.md) | Bounded connector release unit and package proof (`Elsa.Slack`). |
+| [2026-09-23](../adr/2026-09-23-integration-credential-lifecycle.md) | Store connector credential material in Secrets; govern its lifecycle separately. |
+| [2026-09-23](../adr/2026-09-23-preserve-upstream-history-during-consolidation.md) | Preserve original upstream histories during repository consolidation. |
+| [2026-09-24](../adr/2026-09-24-version-github-activities-with-provider-ids.md) | Version GitHub activities that use provider IDs. |
+| [2026-09-25](../adr/2026-09-25-connection-metadata-inspection-boundary.md) | Authorize connection metadata inspection separately. (Superseded by 2026-09-27.) |
+| [2026-09-25](../adr/2026-09-25-reconcile-workflow-activity-registry-with-durable-generations.md) | Reconcile workflow-as-activity registries with durable generations. |
+| [2026-09-25](../adr/2026-09-25-separate-workflow-connection-sharing-authorization.md) | Separate workflow connection sharing from grant management and use. |
+| [2026-09-27](../adr/2026-09-27-dedicated-connection-metadata-inspection-policy.md) | Decide connection metadata inspection with its own host policy. (Supersedes 2026-09-25 inspection boundary.) |
+| [2026-09-28](../adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md) | Release the consolidated packages in lockstep and cut publishers over at 3.10.0. |
+
 ## Active And Recent Specs
 
 | Spec | Area | Why it matters |
