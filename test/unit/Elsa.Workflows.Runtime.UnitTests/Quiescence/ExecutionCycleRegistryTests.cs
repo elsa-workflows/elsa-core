@@ -1,5 +1,6 @@
 using Elsa.Common;
 using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.UnitTests.Support;
 using NSubstitute;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Quiescence;
@@ -122,40 +123,32 @@ public class ExecutionCycleRegistryTests
     public async Task TryCancelReportsFalseWhenDisposedDuringCancellationCallback()
     {
         var sut = new ExecutionCycleRegistry(_sources, _clock);
-        var callbackEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var releaseCallback = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var cancelGate = new CallbackGate("cancel callback");
         var handle = sut.BeginCycle(
             "instance-1",
             ingressSourceName: null,
             linkedToken: CancellationToken.None,
             cancelCallback: () =>
             {
-                callbackEntered.SetResult();
-                if (!releaseCallback.Task.Wait(TimeSpan.FromSeconds(10)))
-                    throw new TimeoutException("Timed out waiting for the test to release the cancel callback.");
+                cancelGate.SignalEntered();
+                cancelGate.WaitForRelease();
             });
 
         var cancelTask = Task.Run(handle.TryCancel);
         try
         {
-            await callbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await cancelGate.Entered.WaitAsync(CallbackGate.Timeout);
 
             handle.Dispose();
-            releaseCallback.SetResult();
+            cancelGate.Release();
 
-            Assert.False(await cancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
+            Assert.False(await cancelTask.WaitAsync(CallbackGate.Timeout));
         }
         finally
         {
-            releaseCallback.TrySetResult();
-            try
-            {
-                await cancelTask.WaitAsync(TimeSpan.FromSeconds(5));
-            }
-            catch (TimeoutException)
-            {
-                // Preserve the original assertion/timeout while observing the cleanup task.
-            }
+            cancelGate.Release();
+            await CallbackGate.ObserveCleanupAsync(cancelTask);
+            cancelGate.AssertNotTimedOut();
         }
     }
 
