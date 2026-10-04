@@ -131,16 +131,32 @@ public class ExecutionCycleRegistryTests
             cancelCallback: () =>
             {
                 callbackEntered.SetResult();
-                releaseCallback.Task.GetAwaiter().GetResult();
+                if (!releaseCallback.Task.Wait(TimeSpan.FromSeconds(10)))
+                    throw new TimeoutException("Timed out waiting for the test to release the cancel callback.");
             });
 
         var cancelTask = Task.Run(handle.TryCancel);
-        await callbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        try
+        {
+            await callbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-        handle.Dispose();
-        releaseCallback.SetResult();
+            handle.Dispose();
+            releaseCallback.SetResult();
 
-        Assert.False(await cancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
+            Assert.False(await cancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
+        }
+        finally
+        {
+            releaseCallback.TrySetResult();
+            try
+            {
+                await cancelTask.WaitAsync(TimeSpan.FromSeconds(5));
+            }
+            catch (TimeoutException)
+            {
+                // Preserve the original assertion/timeout while observing the cleanup task.
+            }
+        }
     }
 
     [Fact(DisplayName = "ExecutionCycleHandle.Dispose completes while a CTS callback waits for it")]

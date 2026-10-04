@@ -318,7 +318,7 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
             cancelCallback: () =>
             {
                 targetCallbackEntered.SetResult();
-                releaseTargetCallback.Task.GetAwaiter().GetResult();
+                WaitForRelease(releaseTargetCallback, "target cancel callback");
             });
         var blockerCallbackEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseBlockerCallback = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -331,7 +331,7 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
             cancelCallback: () =>
             {
                 blockerCallbackEntered.SetResult();
-                releaseBlockerCallback.Task.GetAwaiter().GetResult();
+                WaitForRelease(releaseBlockerCallback, "blocker cancel callback");
             });
         var preCancelTask = Task.Run(target.TryCancel);
         Task<DrainOutcome>? drainTask = null;
@@ -390,7 +390,7 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
             onDisposed: _ =>
             {
                 disposalEntered.SetResult();
-                releaseDisposal.Task.GetAwaiter().GetResult();
+                WaitForRelease(releaseDisposal, "deferred disposal");
             });
         var disposeTask = Task.Run(handle.Dispose);
         var blockerCallbackEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -404,7 +404,7 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
             cancelCallback: () =>
             {
                 blockerCallbackEntered.SetResult();
-                releaseBlockerCallback.Task.GetAwaiter().GetResult();
+                WaitForRelease(releaseBlockerCallback, "canceled-drain blocker callback");
             });
         ExecutionCycleRegistry.ActiveCount.Returns(2);
         ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { handle, blocker });
@@ -487,7 +487,7 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
             cancelCallback: () =>
             {
                 callbackEntered.SetResult();
-                releaseCallback.Task.GetAwaiter().GetResult();
+                WaitForRelease(releaseCallback, "dispose-during-cancel callback");
             });
         ExecutionCycleRegistry.ActiveCount.Returns(1);
         ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { handle });
@@ -504,17 +504,25 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
 
         var sut = BuildSut();
         var drainTask = Task.Run(async () => await sut.DrainAsync(DrainTrigger.OperatorForce));
-        await callbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        try
+        {
+            await callbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-        handle.Dispose();
-        releaseCallback.SetResult();
+            handle.Dispose();
+            releaseCallback.SetResult();
 
-        var outcome = await drainTask.WaitAsync(TimeSpan.FromSeconds(5));
-        Assert.Equal(DrainResult.Forced, outcome.OverallResult);
-        Assert.Equal(0, outcome.ExecutionCyclesForceCancelledCount);
-        await InstanceStore.DidNotReceive().TryMarkInterruptedAsync(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<bool>());
-        await InstanceStore.DidNotReceive().SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>());
-        await LogStore.DidNotReceive().AddAsync(Arg.Any<Entities.WorkflowExecutionLogRecord>(), Arg.Any<CancellationToken>());
+            var outcome = await drainTask.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal(DrainResult.Forced, outcome.OverallResult);
+            Assert.Equal(0, outcome.ExecutionCyclesForceCancelledCount);
+            await InstanceStore.DidNotReceive().TryMarkInterruptedAsync(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<bool>());
+            await InstanceStore.DidNotReceive().SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>());
+            await LogStore.DidNotReceive().AddAsync(Arg.Any<Entities.WorkflowExecutionLogRecord>(), Arg.Any<CancellationToken>());
+        }
+        finally
+        {
+            releaseCallback.TrySetResult();
+            await ObserveCleanupAsync(drainTask);
+        }
     }
 
     [Fact(DisplayName = "Waiting for a snapshot slot does not burn the per-Find 250ms budget")]
@@ -560,30 +568,39 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
             });
 
         var sut = BuildSut();
-        var outcome = await sut.DrainAsync(DrainTrigger.OperatorForce).AsTask().WaitAsync(TimeSpan.FromSeconds(8));
-
-        Assert.Equal(DrainResult.Forced, outcome.OverallResult);
-        Assert.Equal(count, outcome.ExecutionCyclesForceCancelledCount);
-        Assert.Equal(cap, stalledIds.Count);
-        Assert.Equal(extra, promotedIds.Count);
-        Assert.False(hang.Task.IsCompleted);
-
-        foreach (var id in stalledIds)
+        try
         {
-            await InstanceStore.DidNotReceive().TryMarkInterruptedAsync(id, Arg.Any<CancellationToken>(), Arg.Any<bool>());
-            await LogStore.DidNotReceive().AddAsync(
-                Arg.Is<Entities.WorkflowExecutionLogRecord>(r => r.WorkflowInstanceId == id),
-                Arg.Any<CancellationToken>());
+            var outcome = await sut.DrainAsync(DrainTrigger.OperatorForce).AsTask().WaitAsync(TimeSpan.FromSeconds(8));
+
+            Assert.Equal(DrainResult.Forced, outcome.OverallResult);
+            Assert.Equal(count, outcome.ExecutionCyclesForceCancelledCount);
+            Assert.Equal(cap, stalledIds.Count);
+            Assert.Equal(extra, promotedIds.Count);
+            Assert.False(hang.Task.IsCompleted);
+
+            foreach (var id in stalledIds)
+            {
+                await InstanceStore.DidNotReceive().TryMarkInterruptedAsync(id, Arg.Any<CancellationToken>(), Arg.Any<bool>());
+                await LogStore.DidNotReceive().AddAsync(
+                    Arg.Is<Entities.WorkflowExecutionLogRecord>(r => r.WorkflowInstanceId == id),
+                    Arg.Any<CancellationToken>());
+            }
+
+            foreach (var id in promotedIds)
+            {
+                await InstanceStore.DidNotReceive().TryMarkInterruptedAsync(id, Arg.Any<CancellationToken>(), Arg.Any<bool>());
+                await LogStore.Received().AddAsync(
+                    Arg.Is<Entities.WorkflowExecutionLogRecord>(r =>
+                        r.WorkflowInstanceId == id
+                        && r.EventName == WorkflowInterruptedPayload.WorkflowInterruptedEventName),
+                    Arg.Any<CancellationToken>());
+            }
         }
-
-        foreach (var id in promotedIds)
+        finally
         {
-            await InstanceStore.DidNotReceive().TryMarkInterruptedAsync(id, Arg.Any<CancellationToken>(), Arg.Any<bool>());
-            await LogStore.Received().AddAsync(
-                Arg.Is<Entities.WorkflowExecutionLogRecord>(r =>
-                    r.WorkflowInstanceId == id
-                    && r.EventName == WorkflowInterruptedPayload.WorkflowInterruptedEventName),
-                Arg.Any<CancellationToken>());
+            // The stalled Finds return this TCS so they can outlive the 250ms snapshot budget.
+            // Complete it so leftover tasks cannot keep testhost/coverlet alive after the test.
+            hang.TrySetResult(null);
         }
     }
 
@@ -597,6 +614,12 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         SubStatus = WorkflowSubStatus.Executing,
         IsExecuting = true,
     };
+
+    private static void WaitForRelease(TaskCompletionSource release, string gate)
+    {
+        if (!release.Task.Wait(TimeSpan.FromSeconds(10)))
+            throw new TimeoutException($"Timed out waiting for the test to release {gate}.");
+    }
 
     private static async Task ObserveCleanupAsync(Task task)
     {
