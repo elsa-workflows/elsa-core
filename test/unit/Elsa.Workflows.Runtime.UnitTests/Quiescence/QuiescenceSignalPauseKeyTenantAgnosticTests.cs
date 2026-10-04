@@ -11,9 +11,8 @@ using NSubstitute;
 namespace Elsa.Workflows.Runtime.UnitTests.Quiescence;
 
 /// <summary>
-/// The host-wide pause key must be written as * under an agnostic tenant scope. Main's
-/// MemoryKeyValueStore is not tenant-filtered; the * stamp and tenant push keep EF (and a
-/// later isolated memory store) aligned.
+/// The host-wide pause key must be written as * under an agnostic tenant scope so Memory isolation
+/// (#8434) can replace the row and every tenant plus the host can see it.
 /// </summary>
 public class QuiescenceSignalPauseKeyTenantAgnosticTests
 {
@@ -32,7 +31,7 @@ public class QuiescenceSignalPauseKeyTenantAgnosticTests
         _cycleRegistry = Substitute.For<IExecutionCycleRegistry>();
         _tenantAccessor = new DefaultTenantAccessor();
         _backing = new MemoryStore<SerializedKeyValuePair>();
-        _store = new MemoryKeyValueStore(_backing);
+        _store = new MemoryKeyValueStore(_backing, _tenantAccessor);
     }
 
     [Fact(DisplayName = "Cross-tenant pause/resume keeps live and persisted state aligned")]
@@ -94,7 +93,7 @@ public class QuiescenceSignalPauseKeyTenantAgnosticTests
     public async Task Pause_PushesAgnosticTenantContext()
     {
         var recording = new RecordingTenantAccessor();
-        var store = new MemoryKeyValueStore(new MemoryStore<SerializedKeyValuePair>());
+        var store = new MemoryKeyValueStore(new MemoryStore<SerializedKeyValuePair>(), recording);
         var sut = QuiescenceSignal.Create(
             Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions
             {
