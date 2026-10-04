@@ -22,22 +22,31 @@ Check:
 - The profile intentionally publishes named stable, RC, and preview GitHub releases to NuGet and Feedz. Automated branch previews are separate, Feedz-only builds. Studio named prereleases use npm `next`; stable uses `latest`. If the source workflow disagrees with this policy, resolve the mismatch before release; do not weaken verification to match missing output.
 - Identify advisories and build/test prerequisites early. Assess actual usage and document disposition; a known warning from a prior release is evidence, not permanent acceptance. Keep unrelated upgrades out of the release. New material unresolved risks or failures require an explicit resolution before irreversible publication.
 
-Before creating a named release, perform a trusted NuGet credential preflight for
-each repository whose workflow publishes to NuGet. Check only secret metadata;
+Before creating a named release, perform a trusted publishing credential preflight
+for each repository whose workflow publishes packages. Publishing to nuget.org uses
+Trusted Publishing: the `NuGet/login` (OIDC) step exchanges `NUGET_USER` for a
+short-lived key, so no long-lived `NUGET_API_KEY` secret is used. Feedz pushes use
+`FEEDZ_API_KEY`. Check only secret metadata (repository or organization level);
 never print or copy a secret value:
 
 ```bash
 for repository in elsa-workflows/elsa-core elsa-workflows/elsa-studio elsa-workflows/elsa-extensions elsa-workflows/elsa-templates; do
-  gh secret list --repo "$repository" --json name --jq '.[].name' \
-    | grep -Fx NUGET_API_KEY >/dev/null \
-    || { echo "Missing NUGET_API_KEY metadata in $repository" >&2; exit 1; }
+  names=$( { gh api "repos/$repository/actions/secrets" --paginate --jq '.secrets[].name'
+             gh api "repos/$repository/actions/organization-secrets" --paginate --jq '.secrets[].name'; } )
+  for secret in NUGET_USER FEEDZ_API_KEY; do
+    grep -Fx "$secret" <<<"$names" >/dev/null \
+      || { echo "Missing $secret metadata for $repository" >&2; exit 1; }
+  done
 done
 ```
 
-Run the equivalent check for separately configured publishers. Secret presence
-does not prove that its value is valid, but this catches an avoidable missing
-credential before an immutable release is created. Never substitute a local key
-or put a secret in workflow-dispatch input.
+Also confirm each repository has a Trusted Publishing policy on nuget.org for its
+`packages.yml` workflow. Secret presence does not prove a value is valid. If a key
+resolves empty at publish time (a missing Feedz secret, or an OIDC login that
+returned no key), the package workflow fails before pushing with an `::error::`
+line naming the empty key, and nothing is published to that feed; fix the
+credential and rerun the job. Never substitute a local key or put a secret in
+workflow-dispatch input.
 
 Use a persistent directory outside the repositories, for example `~/.codex/releases/elsa/3.9.0`. It holds source bindings, notes, artifact manifests/downloads, reports, and post receipts. Keep one release owner; the checkpoint uses an OS lock for concurrent updates. Do not run multiple publishing agents for the same version.
 
