@@ -5,6 +5,7 @@ using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Services;
 
@@ -15,6 +16,8 @@ namespace Elsa.Workflows.Runtime.UnitTests.Services;
 /// </summary>
 public class BookmarkQueueAmbientTenantTests
 {
+    private static readonly TimeSpan SignalTimeout = TimeSpan.FromSeconds(5);
+
     [Fact]
     public async Task SignalBookmarkQueueWorker_CanReadAmbientTenant_WhenSaveNotificationIsHandled()
     {
@@ -27,7 +30,7 @@ public class BookmarkQueueAmbientTenantTests
         using (accessor.PushContext(tenant))
             await handler.HandleAsync(new BookmarkSaved(Bookmark()), CancellationToken.None);
 
-        Assert.Equal("tenant-a", await awaiter);
+        Assert.Equal("tenant-a", await WaitForSignalAsync(awaiter, "tenant-a"));
     }
 
     [Fact]
@@ -61,13 +64,7 @@ public class BookmarkQueueAmbientTenantTests
     {
         var accessor = new DefaultTenantAccessor();
         var signaler = new BookmarkQueueSignaler(accessor);
-        var services = new ServiceCollection().AddSingleton<IBookmarkQueueProcessor>(new RecordingBookmarkQueueProcessor()).BuildServiceProvider();
-        var worker = new ImmediateBookmarkQueueWorker(
-            signaler,
-            services.GetRequiredService<IServiceScopeFactory>(),
-            NullLogger<BookmarkQueueWorker>.Instance,
-            new DefaultTenantScopeFactory(accessor, services.GetRequiredService<IServiceScopeFactory>()),
-            accessor);
+        var worker = Substitute.For<IBookmarkQueueWorker>();
         var task = new TriggerBookmarkQueueRecurringTask(worker, signaler, accessor);
         var tenant = Tenant("tenant-a");
         var awaiter = AwaitTenantAsync(signaler, accessor, "tenant-a");
@@ -76,10 +73,10 @@ public class BookmarkQueueAmbientTenantTests
             await task.StartAsync(CancellationToken.None);
 
         Assert.Null(accessor.Tenant);
+        worker.Received(1).Start();
         await task.ExecuteAsync(CancellationToken.None);
 
-        Assert.Equal("tenant-a", await awaiter);
-        worker.Stop();
+        Assert.Equal("tenant-a", await WaitForSignalAsync(awaiter, "tenant-a"));
     }
 
     private static Task<string> AwaitTenantAsync(IBookmarkQueueSignaler signaler, ITenantAccessor accessor, string tenantId)
@@ -92,6 +89,18 @@ public class BookmarkQueueAmbientTenantTests
                 return accessor.TenantId;
             }
         });
+    }
+
+    private static async Task<string> WaitForSignalAsync(Task<string> awaiter, string tenantId)
+    {
+        try
+        {
+            return await awaiter.WaitAsync(SignalTimeout);
+        }
+        catch (TimeoutException)
+        {
+            throw new TimeoutException($"Bookmark-queue signal for '{tenantId}' was not received within {SignalTimeout.TotalSeconds:0} seconds.");
+        }
     }
 
     private static Tenant Tenant(string id) => new() { Id = id, Name = id };

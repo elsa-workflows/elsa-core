@@ -42,3 +42,13 @@ jobs:
       - uses: actions/checkout@v6
       - name: 'Run: Compile, Test'
         run: ./build.cmd Compile Test
+      - name: Upload test results and hang dumps
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-and-hang-dumps
+          if-no-files-found: ignore
+          path: |
+            testresults/
+            **/*.dmp
+            **/*Sequence*.xml

@@ -76,6 +76,9 @@ partial class Build : NukeBuild, ITest, IPack
         ((IHazSolution)this).Solution.AllProjects.Where(x => x.Name.EndsWith("Tests"));
 
     public Configure<DotNetTestSettings, Project> TestProjectSettings => (testSettings, project) => testSettings
+        .EnableBlameHang()
+        .SetBlameHangTimeout("10m")
+        .SetBlameHangDumpType("mini")
         .When(_ => GitHubActions.Instance is not null, settings => settings.AddLoggers("GitHubActions;report-warnings=false"))
         .When(_ => AnalyseCode, settings => settings
             .SetCoverletOutputFormat(CoverletOutputFormat.opencover)
