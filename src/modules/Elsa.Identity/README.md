@@ -12,7 +12,7 @@ Identity token signing requires a secure random key. Configure it through enviro
 
 Elsa supports bootstrapping an initial admin role and user through the `DefaultAdminUser` feature.
 
-This is the recommended way to initialize identity access now that user-management endpoints are permission-based and no longer rely on the `SecurityRoot` policy.
+This is the recommended way to initialize identity access. Identity management endpoints are authorized by their own permissions. Elsa 3.9 removed the `SecurityRoot` policy and the localhost permission grant ([#8003](https://github.com/elsa-workflows/elsa-core/pull/8003)), so a fresh instance has no network-position shortcut. Configure a seeded administrator (below) or an [admin API key](#admin-api-key-bootstrap) instead. See [the authorization migration guide](../../../doc/migrations/authorization-model.md#the-securityroot-policy-and-the-localhost-grant-are-gone) for the full list of removed types and toggles.
 
 See `doc/adr/0010-default-admin-user-bootstrap-for-initial-identity-access.md` for the architectural decision.
 
@@ -77,13 +77,36 @@ You can also use the shorthand overload:
 identity.UseDefaultAdmin("admin", "REPLACE_WITH_SECURE_BOOTSTRAP_PASSWORD", "admin", new List<string> { "*" });
 ```
 
+### Options
+
+Both configuration styles set `Elsa.Identity.Options.DefaultAdminUserOptions`:
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `AdminUserName` | `""` | Required to create the user. |
+| `AdminPassword` | `""` | Required to create the user. Leading and trailing whitespace is trimmed before hashing. Elsa enforces no length or complexity rules, so choose a strong value. |
+| `AdminRoleName` | `"admin"` | The role is stored with this value as both its id and its name. If it is blank, nothing is created. |
+| `AdminRolePermissions` | `["*"]` | Permissions granted to the admin role. |
+
+Code-first hosts do not bind a `DefaultAdminUser` configuration section automatically. Read the values from your own configuration or secret store and pass them to `UseDefaultAdmin`.
+
 ### Operational notes
 
-- The initializer is idempotent: existing admin role/user are not recreated.
-- Do not keep development defaults in production.
-- Prefer environment variables or a secret manager for admin credentials.
-- After first bootstrap, rotate credentials according to your security policy.
-- Localhost requests no longer satisfy `SecurityRoot` by default. Legacy localhost bootstrap requires an explicit opt-in: call `EnableLocalHostPermissionGrantForSecurityRoot()` in code-first configuration or set `EnableLocalHostPermissionGrant` on the shell `DefaultAuthentication` feature; prefer `DefaultAdminUser` instead.
+- The initializer runs as a background task when each tenant is activated. It is idempotent and skips users that already exist, but a tenant activated later gets its admin user with the currently configured `AdminPassword`. If you rotate a seeded admin's password, update or remove the bootstrap password too, or a tenant activated later receives the old one.
+- If the role already exists, any configured permissions it lacks are added. Existing permissions are never removed.
+- If a user with `AdminUserName` already exists, it is left unchanged. Changing `AdminPassword` later does not change the stored password, so rotate the password with `PUT /identity/users/{id}`.
+- If `AdminUserName` or `AdminPassword` is empty, the role is still created or updated, but user creation is skipped with a warning.
+- Do not keep development defaults in production, and prefer environment variables or a secret manager for admin credentials.
+- If no users exist and neither a default admin (`AdminUserName` and `AdminPassword`) nor an admin API key is configured, startup logs an error naming both options. Until one of them is configured, unauthenticated requests to permission-protected management endpoints get 401, and authenticated callers without the required permission get 403.
+
+## Admin API Key Bootstrap
+
+You can also bootstrap with the built-in `AdminApiKeyProvider`. It accepts one explicitly configured key and is disabled unless you configure one. Requests send the key as `Authorization: ApiKey <key>`.
+
+- Shell-based hosts set `AdminApiKey` on the `DefaultAuthentication` shell feature. The key gets `*` permissions and the owner name `admin`. `UseDevelopmentAdminApiKey: true` instead enables the all-zero development key (`00000000-0000-0000-0000-000000000000`), and it takes precedence over `AdminApiKey`. Never enable it outside local development.
+- Code-first hosts call `UseAdminApiKey(key)` on `DefaultAuthenticationFeature`, for example `elsa.UseDefaultAuthentication(auth => auth.UseAdminApiKey(apiKey))`. `UseAdminApiKey(options => ...)` configures `AdminApiKeyOptions` directly: `ApiKey`, `OwnerName` (default `admin`) and `Permissions` (default `["*"]`). `UseDevelopmentAdminApiKey()` enables the all-zero development key.
+
+Enabling the admin API key replaces the default, application-based `DefaultApiKeyProvider`. While it is enabled, API keys issued to applications through `/identity/applications` are not accepted. Treat the admin key as a bootstrap or break-glass credential: create users, roles and applications with it, then remove it. In a code-first host, delete the `UseAdminApiKey(...)` or `UseDevelopmentAdminApiKey()` call, or switch back with `UseApiKeyAuthorization<DefaultApiKeyProvider>()`. `UseAdminApiKey("")` keeps the admin provider active, and that provider then rejects every API key. In a shell host, clearing `AdminApiKey` and leaving `UseDevelopmentAdminApiKey` off restores `DefaultApiKeyProvider`.
 
 ## Secret Hashing
 
