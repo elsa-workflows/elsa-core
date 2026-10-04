@@ -22,22 +22,60 @@ Check:
 - The profile intentionally publishes named stable, RC, and preview GitHub releases to NuGet and Feedz. Automated branch previews are separate, Feedz-only builds. Studio named prereleases use npm `next`; stable uses `latest`. If the source workflow disagrees with this policy, resolve the mismatch before release; do not weaken verification to match missing output.
 - Identify advisories and build/test prerequisites early. Assess actual usage and document disposition; a known warning from a prior release is evidence, not permanent acceptance. Keep unrelated upgrades out of the release. New material unresolved risks or failures require an explicit resolution before irreversible publication.
 
-Before creating a named release, perform a trusted NuGet credential preflight for
-each repository whose workflow publishes to NuGet. Check only secret metadata;
-never print or copy a secret value:
+Before creating a named release, perform a publishing credential preflight for
+each repository whose workflow publishes packages. Publishing to nuget.org uses
+Trusted Publishing: the `NuGet/login` (OIDC) step exchanges a GitHub OIDC token
+for a short-lived key under the Trusted Publishing policy owned by the nuget.org
+user it is given, so no long-lived `NUGET_API_KEY` secret is used. Check only
+secret metadata (repository or organization level), and only the secrets each
+repository's `.github/workflows/packages.yml` actually reads:
+
+| Repository | Secrets read by `packages.yml` | Also confirm |
+| --- | --- | --- |
+| `elsa-core` | `NUGET_USER` (nuget.org policy owner), `FEEDZ_API_KEY` | nuget.org Trusted Publishing policy for `packages.yml` |
+| `elsa-studio` | `NUGET_USER`, `FEEDZ_API_KEY`, `FEEDZ_API_KEY_BASE64` (Feedz npm) | nuget.org policy; npmjs.com trusted publisher for `@elsa-workflows/elsa-studio-wasm` and `@elsa-workflows/elsa-studio-wasm-react` |
+| `elsa-extensions` | `FEEDZ_API_KEY` (the nuget.org user is the hard-coded `nuget_user` env value) | nuget.org policy for that user |
+| `elsa-templates` | `NUGET_USER`, `FEEDZ_API_KEY` | nuget.org policy |
+
+Never print or copy a secret value. The check stops on any API error rather
+than treating it as a missing secret or passing on partial data. Paste it into
+any shell (zsh or bash, including macOS `/bin/bash` 3.2); it runs in its own
+`bash` process, so it leaves your shell's options alone:
 
 ```bash
-for repository in elsa-workflows/elsa-core elsa-workflows/elsa-studio elsa-workflows/elsa-extensions elsa-workflows/elsa-templates; do
-  gh secret list --repo "$repository" --json name --jq '.[].name' \
-    | grep -Fx NUGET_API_KEY >/dev/null \
-    || { echo "Missing NUGET_API_KEY metadata in $repository" >&2; exit 1; }
-done
+bash <<'EOF'
+set -euo pipefail
+check() {
+  repository=$1; shift
+  repo_names=$(gh api "repos/$repository/actions/secrets" --paginate --jq '.secrets[].name') \
+    || { echo "Cannot read secret metadata for $repository" >&2; exit 1; }
+  org_names=$(gh api "repos/$repository/actions/organization-secrets" --paginate --jq '.secrets[].name') \
+    || { echo "Cannot read organization secret metadata for $repository" >&2; exit 1; }
+  for secret in "$@"; do
+    printf '%s\n%s\n' "$repo_names" "$org_names" | grep -Fx "$secret" >/dev/null \
+      || { echo "Missing $secret metadata for $repository" >&2; exit 1; }
+  done
+}
+check elsa-workflows/elsa-core NUGET_USER FEEDZ_API_KEY
+check elsa-workflows/elsa-studio NUGET_USER FEEDZ_API_KEY FEEDZ_API_KEY_BASE64
+check elsa-workflows/elsa-extensions FEEDZ_API_KEY
+check elsa-workflows/elsa-templates NUGET_USER FEEDZ_API_KEY
+echo "Publishing credential preflight passed."
+EOF
 ```
 
-Run the equivalent check for separately configured publishers. Secret presence
-does not prove that its value is valid, but this catches an avoidable missing
-credential before an immutable release is created. Never substitute a local key
-or put a secret in workflow-dispatch input.
+The "Also confirm" column is a manual check in the nuget.org and npmjs.com
+settings; the GitHub API cannot read those policies.
+
+When a `packages.yml` changes which secrets it reads, update the table and the
+`check` lines with it. Run the equivalent check for separately configured publishers.
+Secret presence does not prove a value is valid. In `elsa-core`, `elsa-studio`
+and `elsa-extensions`, a key that resolves empty at publish time (a missing Feedz
+secret, or an OIDC login that returned no key) fails the job before any push
+with an `::error::` line naming the empty key's feed, and nothing is published
+to that feed; fix the credential and rerun the job. `elsa-templates` has no such
+guard yet (follow-up under #8600). Never substitute a local key or put a secret
+in workflow-dispatch input.
 
 Use a persistent directory outside the repositories, for example `~/.codex/releases/elsa/3.9.0`. It holds source bindings, notes, artifact manifests/downloads, reports, and post receipts. Keep one release owner; the checkpoint uses an OS lock for concurrent updates. Do not run multiple publishing agents for the same version.
 
