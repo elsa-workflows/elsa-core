@@ -172,7 +172,15 @@ jobs:
             git push origin "HEAD:$UPDATE_BRANCH"
           fi
 
-          existing_pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$GITHUB_REPOSITORY_OWNER:$UPDATE_BRANCH" --json number --jq '.[0].number // empty')"
+          # `gh pr list --head` matches the bare branch name only; the "<owner>:<branch>" form
+          # silently matches nothing, which made every run fall through to `gh pr create` and
+          # fail with "A pull request already exists". Filter out fork PRs with the same branch name.
+          existing_pr="$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --head "$UPDATE_BRANCH" \
+            --json number,isCrossRepository \
+            --jq '[.[] | select(.isCrossRepository | not)] | .[0].number // empty')"
           body="$(cat <<'MD'
           ## Summary
 
