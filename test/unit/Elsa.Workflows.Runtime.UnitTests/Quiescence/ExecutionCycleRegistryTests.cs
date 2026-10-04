@@ -1,5 +1,6 @@
 using Elsa.Common;
 using Elsa.Workflows.Runtime.Services;
+using Elsa.Workflows.Runtime.UnitTests.Support;
 using NSubstitute;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Quiescence;
@@ -122,25 +123,33 @@ public class ExecutionCycleRegistryTests
     public async Task TryCancelReportsFalseWhenDisposedDuringCancellationCallback()
     {
         var sut = new ExecutionCycleRegistry(_sources, _clock);
-        var callbackEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var releaseCallback = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var cancelGate = new CallbackGate("cancel callback");
         var handle = sut.BeginCycle(
             "instance-1",
             ingressSourceName: null,
             linkedToken: CancellationToken.None,
             cancelCallback: () =>
             {
-                callbackEntered.SetResult();
-                releaseCallback.Task.GetAwaiter().GetResult();
+                cancelGate.SignalEntered();
+                cancelGate.WaitForRelease();
             });
 
         var cancelTask = Task.Run(handle.TryCancel);
-        await callbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        try
+        {
+            await cancelGate.Entered.WaitAsync(CallbackGate.Timeout);
 
-        handle.Dispose();
-        releaseCallback.SetResult();
+            handle.Dispose();
+            cancelGate.Release();
 
-        Assert.False(await cancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
+            Assert.False(await cancelTask.WaitAsync(CallbackGate.Timeout));
+        }
+        finally
+        {
+            cancelGate.Release();
+            await CallbackGate.ObserveCleanupAsync(cancelTask);
+            cancelGate.AssertNotTimedOut();
+        }
     }
 
     [Fact(DisplayName = "ExecutionCycleHandle.Dispose completes while a CTS callback waits for it")]
