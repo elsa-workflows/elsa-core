@@ -33,35 +33,42 @@ repository's `.github/workflows/packages.yml` actually reads:
 | Repository | Secrets read by `packages.yml` | Also confirm |
 | --- | --- | --- |
 | `elsa-core` | `NUGET_USER` (nuget.org policy owner), `FEEDZ_API_KEY` | nuget.org Trusted Publishing policy for `packages.yml` |
-| `elsa-studio` | `NUGET_USER`, `FEEDZ_API_KEY`, `FEEDZ_API_KEY_BASE64` (Feedz npm) | nuget.org policy; npmjs.com trusted publisher for the npm packages |
+| `elsa-studio` | `NUGET_USER`, `FEEDZ_API_KEY`, `FEEDZ_API_KEY_BASE64` (Feedz npm) | nuget.org policy; npmjs.com trusted publisher for `@elsa-workflows/elsa-studio-wasm` and `@elsa-workflows/elsa-studio-wasm-react` |
 | `elsa-extensions` | `FEEDZ_API_KEY` (the nuget.org user is the hard-coded `nuget_user` env value) | nuget.org policy for that user |
 | `elsa-templates` | `NUGET_USER`, `FEEDZ_API_KEY` | nuget.org policy |
 
 Never print or copy a secret value. The check stops on any API error rather
-than treating it as a missing secret or passing on partial data:
+than treating it as a missing secret or passing on partial data. Paste it into
+any shell (zsh or bash, including macOS `/bin/bash` 3.2); it runs in its own
+`bash` process, so it leaves your shell's options alone:
 
 ```bash
+bash <<'EOF'
 set -euo pipefail
-declare -A required=(
-  [elsa-workflows/elsa-core]="NUGET_USER FEEDZ_API_KEY"
-  [elsa-workflows/elsa-studio]="NUGET_USER FEEDZ_API_KEY FEEDZ_API_KEY_BASE64"
-  [elsa-workflows/elsa-extensions]="FEEDZ_API_KEY"
-  [elsa-workflows/elsa-templates]="NUGET_USER FEEDZ_API_KEY"
-)
-for repository in "${!required[@]}"; do
+check() {
+  repository=$1; shift
   repo_names=$(gh api "repos/$repository/actions/secrets" --paginate --jq '.secrets[].name') \
     || { echo "Cannot read secret metadata for $repository" >&2; exit 1; }
   org_names=$(gh api "repos/$repository/actions/organization-secrets" --paginate --jq '.secrets[].name') \
     || { echo "Cannot read organization secret metadata for $repository" >&2; exit 1; }
-  for secret in ${required[$repository]}; do
+  for secret in "$@"; do
     printf '%s\n%s\n' "$repo_names" "$org_names" | grep -Fx "$secret" >/dev/null \
       || { echo "Missing $secret metadata for $repository" >&2; exit 1; }
   done
-done
+}
+check elsa-workflows/elsa-core NUGET_USER FEEDZ_API_KEY
+check elsa-workflows/elsa-studio NUGET_USER FEEDZ_API_KEY FEEDZ_API_KEY_BASE64
+check elsa-workflows/elsa-extensions FEEDZ_API_KEY
+check elsa-workflows/elsa-templates NUGET_USER FEEDZ_API_KEY
+echo "Publishing credential preflight passed."
+EOF
 ```
 
-When a `packages.yml` changes which secrets it reads, update this table and the
-check with it. Run the equivalent check for separately configured publishers.
+The "Also confirm" column is a manual check in the nuget.org and npmjs.com
+settings; the GitHub API cannot read those policies.
+
+When a `packages.yml` changes which secrets it reads, update the table and the
+`check` lines with it. Run the equivalent check for separately configured publishers.
 Secret presence does not prove a value is valid. In `elsa-core`, `elsa-studio`
 and `elsa-extensions`, a key that resolves empty at publish time (a missing Feedz
 secret, or an OIDC login that returned no key) fails the job before any push
