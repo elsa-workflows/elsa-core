@@ -207,9 +207,12 @@ caller then does:
 - **A seeded administrator.** `UseDefaultAdmin(username, password, roleName, permissions)` in code-first
   hosts, or the `DefaultAdminUser` shell feature in shell-based hosts. Code-first hosts do not bind a
   `DefaultAdminUser` configuration section automatically, so pass the values in from your own configuration.
-  It creates the admin role and user when each tenant is activated and is idempotent: a user that already
-  exists is left unchanged. A tenant activated later gets its admin user with the currently configured
-  password, so when you rotate a seeded admin's password, update or remove the bootstrap password too.
+  It runs when each tenant is activated and is idempotent: a user that already exists is not updated, but
+  configured permissions missing from an existing admin role are added, which widens what that role's users
+  can do. Role IDs are unique across the identity store, so when tenants share one store only the first
+  tenant activated is seeded; for the others, creating the role fails and no admin user is created. Whenever
+  it does create the user, it uses the currently configured password, so when you rotate a seeded admin's
+  password, update or remove the bootstrap password too.
 - **An admin API key.** In code-first hosts, `UseAdminApiKey(key)` on `DefaultAuthenticationFeature` (or
   `UseAdminApiKey(options => ...)` to also set the owner name and permissions). In shell-based hosts, the
   `AdminApiKey` setting on the `DefaultAuthentication` shell feature. Disabled unless configured. While it is
@@ -222,8 +225,8 @@ identity to audit. It was also already unable to do the thing it existed for: it
 `identity/users:create`, but `POST /identity/users` did not carry the policy that injected it.
 
 If neither is configured and no users exist, startup now logs an error naming both options, rather than
-leaving management endpoints to refuse every caller without explanation: anonymous requests get 401, and
-authenticated callers without the required permission get 403.
+leaving permission-protected management endpoints to refuse every caller without explanation: anonymous
+requests get 401, and authenticated callers without the required permission get 403.
 
 ## Installed features are readable by any signed-in user
 
