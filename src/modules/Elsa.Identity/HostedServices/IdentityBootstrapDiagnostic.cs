@@ -51,11 +51,11 @@ public class IdentityBootstrapDiagnostic(
 
             logger.LogError(
                 "No users exist and no identity bootstrap is configured, so unless users come from another " +
-                "provider nothing can sign in: anonymous requests to management endpoints get 401, and " +
-                "authenticated callers without the required permission get 403. Configure one of: (1) a seeded " +
-                "administrator via UseDefaultAdmin(...) in code-first hosts or the DefaultAdminUser shell " +
-                "feature in shell-based hosts, which creates the admin role and user when each tenant is " +
-                "activated and is idempotent; or (2) an admin API key via UseAdminApiKey(...) in code-first " +
+                "provider nothing can sign in: anonymous requests to permission-protected management endpoints " +
+                "get 401, and authenticated callers without the required permission get 403. Configure one of: " +
+                "(1) a seeded administrator via UseDefaultAdmin(...) in code-first hosts or the DefaultAdminUser " +
+                "shell feature in shell-based hosts, which creates the admin role and user at startup and is " +
+                "idempotent; or (2) an admin API key via UseAdminApiKey(...) in code-first " +
                 "hosts or the AdminApiKey setting on the DefaultAuthentication shell feature in shell-based " +
                 "hosts. Both work in a deployed environment.");
         }

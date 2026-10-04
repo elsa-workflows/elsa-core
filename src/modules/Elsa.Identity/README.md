@@ -92,7 +92,9 @@ Code-first hosts do not bind a `DefaultAdminUser` configuration section automati
 
 ### Operational notes
 
-- The initializer runs as a background task when each tenant is activated. It is idempotent and skips users that already exist, but a tenant activated later gets its admin user with the currently configured `AdminPassword`. If you rotate a seeded admin's password, update or remove the bootstrap password too, or a tenant activated later receives the old one.
+- The initializer runs as a background task when each tenant is activated. It is idempotent: a user that already exists is not updated.
+- Role IDs are unique across the whole identity store, and the admin role's ID is `AdminRoleName`. When several tenants share one store, only the first tenant activated is seeded. For later tenants, creating the role fails, the failure is logged as an `AdminUserInitializer` background-task error, and no admin user is created, so those tenants need another bootstrap path.
+- Whenever the initializer does create the user, for example on first startup or after the user was deleted, it uses the currently configured `AdminPassword`. If you rotate a seeded admin's password, update or remove the bootstrap password too, or a later run can recreate the user with the old one.
 - If the role already exists, any configured permissions it lacks are added. Existing permissions are never removed.
 - If a user with `AdminUserName` already exists, it is left unchanged. Changing `AdminPassword` later does not change the stored password, so rotate the password with `PUT /identity/users/{id}`.
 - If `AdminUserName` or `AdminPassword` is empty, the role is still created or updated, but user creation is skipped with a warning.
