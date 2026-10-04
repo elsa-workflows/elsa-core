@@ -106,7 +106,12 @@ You can also bootstrap with the built-in `AdminApiKeyProvider`. It accepts one e
 - Shell-based hosts set `AdminApiKey` on the `DefaultAuthentication` shell feature. The key gets `*` permissions and the owner name `admin`. `UseDevelopmentAdminApiKey: true` instead enables the all-zero development key (`00000000-0000-0000-0000-000000000000`), and it takes precedence over `AdminApiKey`. Never enable it outside local development.
 - Code-first hosts call `UseAdminApiKey(key)` on `DefaultAuthenticationFeature`, for example `elsa.UseDefaultAuthentication(auth => auth.UseAdminApiKey(apiKey))`. `UseAdminApiKey(options => ...)` configures `AdminApiKeyOptions` directly: `ApiKey`, `OwnerName` (default `admin`) and `Permissions` (default `["*"]`). `UseDevelopmentAdminApiKey()` enables the all-zero development key.
 
-Enabling the admin API key replaces the default, application-based `DefaultApiKeyProvider`. While it is enabled, API keys issued to applications through `/identity/applications` are not accepted. Treat the admin key as a bootstrap or break-glass credential: create users, roles and applications with it, then remove it. In a code-first host, delete the `UseAdminApiKey(...)` or `UseDevelopmentAdminApiKey()` call, or switch back with `UseApiKeyAuthorization<DefaultApiKeyProvider>()`. `UseAdminApiKey("")` keeps the admin provider active, and that provider then rejects every API key. In a shell host, clearing `AdminApiKey` and leaving `UseDevelopmentAdminApiKey` off restores `DefaultApiKeyProvider`.
+Enabling the admin API key replaces the default, application-based `DefaultApiKeyProvider`. While it is enabled, API keys issued to applications through `/identity/applications` are not accepted. Treat the admin key as a bootstrap or break-glass credential: create users, roles and applications with it, then turn it off.
+
+Turning it off:
+
+- Code-first hosts: delete the `UseAdminApiKey(...)` or `UseDevelopmentAdminApiKey()` call, or switch back with `UseApiKeyAuthorization<DefaultApiKeyProvider>()`. Do not use `UseAdminApiKey("")`: it keeps the admin provider active, and that provider then rejects every API key.
+- Shell-based hosts: clear `AdminApiKey` and leave `UseDevelopmentAdminApiKey` off. This restores `DefaultApiKeyProvider`.
 
 ## Secret Hashing
 
