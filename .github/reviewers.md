@@ -6,7 +6,7 @@ Last verified: 2026-10-04
 
 | Reviewer | Status | How to request | Notes |
 | --- | --- | --- | --- |
-| Greptile (`greptile-apps[bot]`) | live | Automatic when a PR is opened; comment `@greptileai` after every push | **Required for merge** on this repository (see Rules). Posts a "Confidence Score: N/5" summary and a "Greptile Review" check. Reviews only allow-listed authors; others get "PR author is not in the allowed authors list". |
+| Greptile (`greptile-apps[bot]`) | live | Automatic when a PR is opened; comment `@greptileai` to review a new head after a push | Advisory; not part of the merge gate (see Rules). Posts a "Confidence Score: N/5" summary and a "Greptile Review" check. Reviews only allow-listed authors; others get "PR author is not in the allowed authors list". |
 | CodeRabbit (`coderabbitai[bot]`) | live | Automatic on PRs into `main`; comment `@coderabbitai review` for other base branches or a re-review after a push | Advisory. Skips PRs into other base branches unless requested. Reviews draw on an hourly allowance, so do not request it while its automatic review is pending. |
 | GitHub Copilot code review (`copilot-pull-request-reviewer[bot]`) | live | Add reviewer `@copilot`: `gh pr edit <n> --add-reviewer @copilot` (GitHub CLI 2.88 or later) | Advisory. A `@copilot review` comment does not trigger it. Bot-authored PRs need the org policy that lets Copilot review them. |
 | Cursor Bugbot (`cursor[bot]`) | live (elsa-core only) | Mention-only: top-level PR comment `cursor review` (also `@cursor review` or `bugbot run`); comment again after a push to review the new head | Advisory. Enabled on elsa-core only, not on elsa-studio or elsa-extensions. Posts a review whose body starts with `<!-- BUGBOT_REVIEW -->` and names the reviewed commit; first verified on #8598 (review landed about 3 minutes after the comment). Cloud agents also comment as `cursor[bot]`, so identify Bugbot by that review marker. |
@@ -14,11 +14,11 @@ Last verified: 2026-10-04
 
 ## Rules
 
-- Greptile is a required reviewer on this repository. It reviews automatically when a PR is opened; after every push, comment `@greptileai` so it reviews the new head.
+- Greptile reviews automatically when a PR is opened. It is advisory: after a push you may comment `@greptileai` for a fresh review of the new head, but nobody waits for a Greptile score.
 - Besides Greptile, request at most one additional advisory reviewer (CodeRabbit, Copilot, or Bugbot on elsa-core) once the PR is open. If your pick reviews automatically on this PR (CodeRabbit does on PRs into `main`), wait for that run instead of requesting it; request it manually only if no run appears, the PR targets another base branch, or you need a re-review after a push.
 - If the additional reviewer declines or skips the PR, you may request another eligible reviewer instead.
 - The PR author (human or agent) never reviews or approves its own PR.
-- Merge gate: an Elsa 3 Code Review `APPROVE + HIGH @ <head sha>` (the full 40-character SHA of the PR's current head commit), green CI, and Greptile 5/5 on that same head. Any push after the approval needs a re-confirm on the new head.
-- Exception: if Greptile cannot review the head (unavailable, skipped, declined, or out of credits), `APPROVE + HIGH @ <head sha>` plus green CI is enough, and the Code Review must state that Greptile was required and unavailable.
-- CodeRabbit, Copilot and Bugbot reviews are advisory and never replace the merge gate.
+- Merge gate: the only merge gate is an Elsa 3 Code Review GitHub review on the PR whose body reads `APPROVE + HIGH @ <head sha>` (the full 40-character SHA of the PR's current head commit; posted as `sfmskywalker`, so its review state is COMMENTED, not APPROVED), plus green CI on that head.
+- Pin the merge to the approved SHA: `gh pr merge <n> --match-head-commit <sha>`, or the merge API (`PUT /repos/{owner}/{repo}/pulls/{n}/merge`) with `sha=<sha>`. Any push after the approval voids it; Code Review must re-confirm `APPROVE + HIGH @ <new head sha>` before merging.
+- Greptile, CodeRabbit, Copilot and Bugbot are advisory only. Their findings feed into the Code Review, but none of them is required for merge: there is no Greptile score gate (no 5/5 requirement) and no waive process.
 - Update this file whenever a reviewer is added, removed, or changes how it is requested.
