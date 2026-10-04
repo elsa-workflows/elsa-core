@@ -204,10 +204,21 @@ application.
 both work in a deployed environment, not just on localhost, and both attach an identity to whatever the
 caller then does:
 
-- **A seeded administrator.** `UseDefaultAdmin(username, password, roleName, permissions)`, or the
-  `DefaultAdminUser` configuration section. It creates the admin role and user at startup and is idempotent,
-  so it is safe to leave configured.
-- **An admin API key.** `UseAdminApiKey(key)` or the `AdminApiKey` setting. Disabled unless configured.
+- **A seeded administrator.** `UseDefaultAdmin(username, password, roleName, permissions)` in code-first
+  hosts, or the `DefaultAdminUser` shell feature in shell-based hosts. Code-first hosts do not bind a
+  `DefaultAdminUser` configuration section automatically, so pass the values in from your own configuration.
+  It runs when each tenant is activated and is idempotent: a user that already exists is not updated, but
+  configured permissions missing from an existing admin role are added, which widens what that role's users
+  can do. Role IDs are unique across the identity store and the admin role's ID is `AdminRoleName`, so when
+  tenants share one store and the same `AdminRoleName`, only the first tenant activated is seeded; for the
+  others, creating the role fails and no admin user is created. Whenever it does create the user, it uses
+  the currently configured password, so when you rotate a seeded admin's password, update or remove the
+  bootstrap password too.
+- **An admin API key.** In code-first hosts, `UseAdminApiKey(key)` on `DefaultAuthenticationFeature` (or
+  `UseAdminApiKey(options => ...)` to also set the owner name and permissions). In shell-based hosts, the
+  `AdminApiKey` setting on the `DefaultAuthentication` shell feature. Disabled unless configured. While it is
+  enabled it replaces the application-based API key provider; see the
+  [Identity README](../../src/modules/Elsa.Identity/README.md#admin-api-key-bootstrap) for turning it off.
 
 The localhost grant trusted network position, which stops meaning anything behind a reverse proxy, inside a
 container, or across a port-forward — and it granted *unauthenticated* access, so the bootstrap action had no
@@ -215,7 +226,8 @@ identity to audit. It was also already unable to do the thing it existed for: it
 `identity/users:create`, but `POST /identity/users` did not carry the policy that injected it.
 
 If neither is configured and no users exist, startup now logs an error naming both options, rather than
-leaving every endpoint to answer 403 without explanation.
+leaving permission-protected management endpoints to refuse every caller without explanation: anonymous
+requests get 401, and authenticated callers without the required permission get 403.
 
 ## Installed features are readable by any signed-in user
 
