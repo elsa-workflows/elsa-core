@@ -18,7 +18,7 @@ public static class RoleStoreExtensions
     /// only by its name must be looked up by name within the ambient tenant rather than by an ID derived from the
     /// name. The store applies the ambient tenant. The candidates are matched again here, preferring an exact match
     /// over a case-insensitive one, so a store that ignores <see cref="RoleFilter.Name"/> cannot hand back an
-    /// unrelated role.
+    /// unrelated role, and a role whose name differs only in case is found even on a case-sensitive store.
     /// </remarks>
     /// <param name="roleStore">The role store.</param>
     /// <param name="name">The role name.</param>
@@ -28,7 +28,12 @@ public static class RoleStoreExtensions
     {
         var candidates = (await roleStore.FindManyAsync(new RoleFilter { Name = name }, cancellationToken)).ToList();
 
-        return candidates.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.Ordinal))
-               ?? candidates.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
+        if (candidates.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.Ordinal)) is { } exactMatch)
+            return exactMatch;
+
+        // The name filter follows the store's own comparison, which is exact for the in-memory store and SQLite. A
+        // name that differs only in case is still the same role to RoleManager, so fall back to the tenant's roles.
+        var tenantRoles = await roleStore.FindManyAsync(new RoleFilter(), cancellationToken);
+        return tenantRoles.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
     }
 }

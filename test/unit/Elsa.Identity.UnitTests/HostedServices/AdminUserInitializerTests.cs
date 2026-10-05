@@ -91,6 +91,20 @@ public class AdminUserInitializerTests
             Assert.Equal(["*"], (await roleStore.FindAsync(new RoleFilter { Id = "admin" }))!.Permissions);
     }
 
+    [Fact]
+    public async Task ExecuteAsyncReusesAnAdminRoleWhoseNameDiffersOnlyInCase()
+    {
+        var roleStore = new MemoryRoleStore(new MemoryStore<Role>(), TestTenantAccessor.Default);
+        await roleStore.SaveAsync(new Role { Id = "generated-role", Name = "Admin", Permissions = ["*"] });
+        var roleManager = Substitute.For<IRoleManager>();
+        var userManager = CreateUserManager();
+
+        await CreateInitializer(roleStore, ["*"], roleManager, userManager, withUser: true).ExecuteAsync(CancellationToken.None);
+
+        await roleManager.DidNotReceiveWithAnyArgs().CreateRoleAsync(default!);
+        await userManager.Received(1).CreateUserAsync("admin", "password", Arg.Is<ICollection<string>?>(x => x!.SequenceEqual(new[] { "generated-role" })), Arg.Any<CancellationToken>());
+    }
+
     private static IUserManager CreateUserManager()
     {
         var userManager = Substitute.For<IUserManager>();

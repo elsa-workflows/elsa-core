@@ -65,4 +65,13 @@ public class RoleStoreExtensionsTests
 
         Assert.Equal("2", Assert.Single(filtered).Id);
     }
+
+    [Fact]
+    public async Task FindByNameAsyncFindsANameThatDiffersOnlyInCaseOnACaseSensitiveStore()
+    {
+        var store = new MemoryRoleStore(new MemoryStore<Role>(), TestTenantAccessor.Default);
+        await store.SaveAsync(new Role { Id = "generated-id", Name = "Admin" });
+
+        Assert.Equal("generated-id", (await store.FindByNameAsync("admin"))?.Id);
+    }
 }

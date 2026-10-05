@@ -6,12 +6,14 @@ using Elsa.Extensions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Endpoints.Roles.Create;
 using Elsa.Identity.Entities;
+using Elsa.Identity.Models;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
 using Elsa.Mediator.Contracts;
 using Elsa.Permissions;
 using Elsa.Testing.Shared.Multitenancy;
 using Elsa.UnitTests.Shared;
+using Elsa.Workflows.Exceptions;
 using FastEndpoints;
 using Microsoft.AspNetCore.Http;
 using NSubstitute;
@@ -61,13 +63,25 @@ public class CreateRoleTenancyTests
         Assert.Single(await _roleStore.FindManyAsync(new()));
     }
 
-    private async Task<Create> CreateAsync(string name)
+    [Fact]
+    public async Task AUniqueIndexViolationFromAConcurrentCreateIsAConflict()
+    {
+        var roleManager = Substitute.For<IRoleManager>();
+        roleManager.CreateRoleAsync(Arg.Any<string>(), Arg.Any<ICollection<string>?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns<CreateRoleResult>(_ => throw new UniqueKeyConstraintViolationException("Unable to save data", new Exception()));
+
+        var endpoint = await CreateAsync("Operators", roleManager);
+
+        Assert.Equal(StatusCodes.Status409Conflict, endpoint.HttpContext.Response.StatusCode);
+    }
+
+    private async Task<Create> CreateAsync(string name, IRoleManager? roleManager = null)
     {
         var roleAuthorization = Substitute.For<IRoleAuthorizationService>();
         roleAuthorization.CanCreateRoleWithPermissions(Arg.Any<ClaimsPrincipal>(), Arg.Any<IEnumerable<string>?>()).Returns(true);
         var grantValidator = Substitute.For<IPermissionGrantValidator>();
         grantValidator.Validate(Arg.Any<IEnumerable<string>?>()).Returns(PermissionGrantValidationResult.Valid);
-        var roleManager = new RoleManager(_roleStore, new StoreBasedRoleProvider(_roleStore), _tenantAccessor);
+        roleManager ??= new RoleManager(_roleStore, new StoreBasedRoleProvider(_roleStore), _tenantAccessor);
         var notifier = new RoleSecurityNotifier(Substitute.For<INotificationSender>(), _tenantAccessor, Substitute.For<ISystemClock>());
         var endpoint = Factory.Create<Create>(context => context.Response.Body = new MemoryStream(), roleManager, roleAuthorization, grantValidator, notifier);
 
