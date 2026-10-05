@@ -136,7 +136,8 @@ public class JsonNodeBsonConverter<TNode> : IBsonSerializer<TNode> where TNode :
                 reader.ReadNull();
                 return null;
             case BsonType.Document:
-                return DeserializeDocument(BsonDocumentSerializer.Instance.Deserialize(context));
+                // A nominal JsonObject may be a legacy map whose fields resemble a scalar envelope.
+                return DeserializeDocument(BsonDocumentSerializer.Instance.Deserialize(context), allowScalarEnvelope: typeof(TNode) != typeof(JsonObject));
             case BsonType.Array:
                 return DeserializeLegacyArray(BsonArraySerializer.Instance.Deserialize(context));
             default:
@@ -144,9 +145,9 @@ public class JsonNodeBsonConverter<TNode> : IBsonSerializer<TNode> where TNode :
         }
     }
 
-    private static JsonNode DeserializeDocument(BsonDocument document)
+    private static JsonNode DeserializeDocument(BsonDocument document, bool allowScalarEnvelope = true)
     {
-        if (IsTaggedJsonNode(document))
+        if (IsTaggedJsonNode(document, allowScalarEnvelope))
             return DeserializeTagged(document);
 
         // Legacy class-map / dictionary format written when only JsonNode was registered:
@@ -157,7 +158,7 @@ public class JsonNodeBsonConverter<TNode> : IBsonSerializer<TNode> where TNode :
         return obj;
     }
 
-    private static bool IsTaggedJsonNode(BsonDocument document)
+    private static bool IsTaggedJsonNode(BsonDocument document, bool allowScalarEnvelope)
     {
         if (document.ElementCount != 2 || !document.Contains("type") || !document.Contains("value"))
             return false;
@@ -168,7 +169,7 @@ public class JsonNodeBsonConverter<TNode> : IBsonSerializer<TNode> where TNode :
         return document["type"].AsString switch
         {
             "JsonObject" or "JsonArray" => document["value"].BsonType == BsonType.String,
-            "JsonValue" => true,
+            "JsonValue" => allowScalarEnvelope,
             _ => false
         };
     }
