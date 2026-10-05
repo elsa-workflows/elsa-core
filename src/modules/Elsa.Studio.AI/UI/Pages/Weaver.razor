@@ -1,6 +1,10 @@
 @page "/ai/weaver"
+@attribute [RequirePermission(AIPermissions.Capabilities, PermissionVerbs.View)]
+@attribute [RequirePermission(AIPermissions.Tools, PermissionVerbs.View)]
+@attribute [RequirePermission(AIPermissions.Chat, PermissionVerbs.Execute)]
 @inherits StudioComponentBase
 @implements IAsyncDisposable
+@using Elsa.Studio.Extensions
 @inject Elsa.Studio.AI.Contracts.IWeaverService WeaverService
 
 <PageTitle>Weaver</PageTitle>
@@ -283,7 +287,7 @@
         {
             State.IsBusy = false;
             State.IsReconnecting = false;
-            State.ErrorMessage = e.Message;
+            State.ErrorMessage = e.ToUserMessage();
         }
         finally
         {

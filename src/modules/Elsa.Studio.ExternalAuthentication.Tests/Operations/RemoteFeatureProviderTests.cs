@@ -8,6 +8,7 @@ using Refit;
 using System.Net;
 using System.Security.Claims;
 using Xunit;
+using Elsa.Studio.Testing;
 
 namespace Elsa.Studio.ExternalAuthentication.Tests.Operations;
 
@@ -23,6 +24,54 @@ public class RemoteFeatureProviderTests
         Assert.False(await provider.IsEnabledAsync("Elsa.AI"));
         Assert.Equal(1, api.ListCalls);
         Assert.Equal(0, api.GetCalls);
+    }
+
+    [Theory]
+    [InlineData("Elsa.Workflows.Runtime.Dashboard.ShellFeatures.WorkflowRuntimeDashboard", "Elsa.WorkflowRuntimeDashboard")]
+    [InlineData("Elsa.Diagnostics.StructuredLogs.Dashboard.ShellFeatures.StructuredLogsDashboard", "Elsa.StructuredLogsDashboard")]
+    [InlineData("Elsa.Diagnostics.StructuredLogs.ShellFeatures.StructuredLogs", "Elsa.StructuredLogs")]
+    [InlineData("Elsa.ExternalAuthentication.ShellFeatures.ExternalAuthentication", "Elsa.ExternalAuthentication")]
+    [InlineData("Elsa.Workflows.Runtime.Dashboard.ShellFeatures.WorkflowRuntimeDashboard", "Elsa.Workflows.Runtime.Dashboard.ShellFeatures.WorkflowRuntimeDashboard")]
+    public async Task FeatureChecks_AcceptStaticCatalogNames(string requestedName, string catalogFullName)
+    {
+        var api = new FeaturesApi
+        {
+            Features = new([new FeatureDescriptor { FullName = catalogFullName }], 1)
+        };
+        var provider = new RemoteFeatureProvider(new BackendApiClientProvider(api));
+
+        Assert.True(await provider.IsEnabledAsync(requestedName));
+        Assert.False(await provider.IsEnabledAsync("Elsa.MissingFeature"));
+    }
+
+    [Fact]
+    public async Task FeatureChecks_AcceptCatalogNameAsFeatureId()
+    {
+        var api = new FeaturesApi
+        {
+            Features = new([new FeatureDescriptor { Name = "WorkflowRuntimeDashboard", Namespace = "Elsa" }], 1)
+        };
+        var provider = new RemoteFeatureProvider(new BackendApiClientProvider(api));
+
+        Assert.True(await provider.IsEnabledAsync("Elsa.Workflows.Runtime.Dashboard.ShellFeatures.WorkflowRuntimeDashboard"));
+    }
+
+    [Theory]
+    [InlineData("Elsa.Workflows.Runtime.Dashboard.ShellFeatures.WorkflowRuntimeDashboard", "Acme.WorkflowRuntimeDashboard", "WorkflowRuntimeDashboard")]
+    [InlineData("Elsa.Identity.ShellFeatures.Identity", "Acme.Identity", "Identity")]
+    public async Task FeatureChecks_RejectNonElsaLastSegmentCollisions(string requestedName, string foreignFullName, string foreignName)
+    {
+        var fullNameCatalog = new FeaturesApi
+        {
+            Features = new([new FeatureDescriptor { FullName = foreignFullName }], 1)
+        };
+        var namespaceCatalog = new FeaturesApi
+        {
+            Features = new([new FeatureDescriptor { Name = foreignName, Namespace = "Acme" }], 1)
+        };
+
+        Assert.False(await new RemoteFeatureProvider(new BackendApiClientProvider(fullNameCatalog)).IsEnabledAsync(requestedName));
+        Assert.False(await new RemoteFeatureProvider(new BackendApiClientProvider(namespaceCatalog)).IsEnabledAsync(requestedName));
     }
 
     [Fact]
@@ -46,7 +95,7 @@ public class RemoteFeatureProviderTests
     public async Task AuthenticationFailures_AreRetried(HttpStatusCode statusCode)
     {
         var api = new FeaturesApi();
-        api.Responses.Enqueue(_ => Task.FromException<ListResponse<FeatureDescriptor>>(CreateApiException(statusCode)));
+        api.Responses.Enqueue(_ => Task.FromException<ListResponse<FeatureDescriptor>>(ApiExceptions.Create(statusCode)));
         var provider = new RemoteFeatureProvider(new BackendApiClientProvider(api));
 
         Assert.False(await provider.IsEnabledAsync("Elsa.ExternalAuthentication"));
@@ -58,7 +107,7 @@ public class RemoteFeatureProviderTests
     public async Task MissingCatalog_IsCached()
     {
         var api = new FeaturesApi();
-        api.Responses.Enqueue(_ => Task.FromException<ListResponse<FeatureDescriptor>>(CreateApiException(HttpStatusCode.NotFound)));
+        api.Responses.Enqueue(_ => Task.FromException<ListResponse<FeatureDescriptor>>(ApiExceptions.Create(HttpStatusCode.NotFound)));
         var provider = new RemoteFeatureProvider(new BackendApiClientProvider(api));
 
         Assert.False(await provider.IsEnabledAsync("Elsa.ExternalAuthentication"));
@@ -105,13 +154,6 @@ public class RemoteFeatureProviderTests
         responseReady.SetResult();
         Assert.All(await Task.WhenAll(firstCheck, secondCheck), Assert.True);
         Assert.Equal(1, api.ListCalls);
-    }
-
-    private static ApiException CreateApiException(HttpStatusCode statusCode)
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://elsa.example.test/features");
-        using var response = new HttpResponseMessage(statusCode) { RequestMessage = request };
-        return ApiException.Create(request, HttpMethod.Get, response, new RefitSettings()).GetAwaiter().GetResult();
     }
 
     [Fact]
@@ -181,6 +223,7 @@ public class RemoteFeatureProviderTests
             [new FeatureDescriptor { FullName = "Elsa.ExternalAuthentication" }],
             1);
 
+        public ListResponse<FeatureDescriptor> Features { get; set; } = InstalledFeatures;
         public Queue<Func<CancellationToken, Task<ListResponse<FeatureDescriptor>>>> Responses { get; } = new();
         public int GetCalls { get; private set; }
         public int ListCalls { get; private set; }
@@ -197,7 +240,7 @@ public class RemoteFeatureProviderTests
             if (Responses.TryDequeue(out var response))
                 return response(cancellationToken);
 
-            return Task.FromResult(InstalledFeatures);
+            return Task.FromResult(Features);
         }
     }
 

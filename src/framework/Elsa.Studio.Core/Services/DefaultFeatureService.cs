@@ -23,6 +23,9 @@ public class DefaultFeatureService : IFeatureService
     public event Action? Initialized;
 
     /// <inheritdoc />
+    public bool IsInitialized { get; private set; }
+
+    /// <inheritdoc />
     public IEnumerable<IFeature> GetFeatures()
     {
         return _features.ToList();
@@ -37,14 +40,9 @@ public class DefaultFeatureService : IFeatureService
         {
             var remoteFeatureName = feature.GetType().GetCustomAttribute<RemoteFeatureAttribute>()?.Name;
 
-            if (!string.IsNullOrWhiteSpace(remoteFeatureName))
-            {
-                // Check if the remote feature is enabled.
-                var remoteFeatureIsEnabled = remoteFeatures.Any(x => x.FullName == remoteFeatureName);
-
-                if (!remoteFeatureIsEnabled)
-                    continue;
-            }
+            if (!string.IsNullOrWhiteSpace(remoteFeatureName) &&
+                !RemoteFeatureCatalog.Contains(remoteFeatures, remoteFeatureName))
+                continue;
 
             await feature.InitializeAsync(cancellationToken);
         }
@@ -54,6 +52,7 @@ public class DefaultFeatureService : IFeatureService
 
     private void OnInitialized()
     {
+        IsInitialized = true;
         Initialized?.Invoke();
     }
 }

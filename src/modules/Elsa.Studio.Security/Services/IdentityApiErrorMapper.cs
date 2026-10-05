@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Security.Models;
 using Refit;
 
@@ -50,8 +51,8 @@ public static class IdentityApiErrorMapper
         return exception.StatusCode switch
         {
             HttpStatusCode.BadRequest => new("invalid", "The request did not pass validation.", IsValidation: true),
-            HttpStatusCode.Unauthorized => new("unauthorized", "Your session has expired. Sign in again to continue.", IsAuthorization: true),
-            HttpStatusCode.Forbidden => new("forbidden", $"You are not allowed to perform this {subject} administration action.", IsAuthorization: true),
+            HttpStatusCode.Unauthorized => new("unauthorized", AuthorizationFailureExtensions.UnauthorizedMessage, IsAuthorization: true),
+            HttpStatusCode.Forbidden => new("forbidden", AuthorizationFailureExtensions.ForbiddenMessage, IsAuthorization: true),
             HttpStatusCode.NotFound => new("not_found", $"The {subject} no longer exists.", IsNotFound: true),
             HttpStatusCode.Conflict => new("conflict", $"The {subject} or one of its dependencies changed. Refresh and review the latest state.", IsConflict: true),
             HttpStatusCode.TooManyRequests => new("throttled", "Too many requests. Wait a moment and try again."),

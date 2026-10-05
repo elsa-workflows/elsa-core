@@ -15,14 +15,6 @@ public static class LoginMethodChooserState
 /// <summary>Guards local post-authentication paths before a host constructs broker requests.</summary>
 public static class LocalReturnPath
 {
-    public static string Normalize(string? candidate)
-    {
-        if (string.IsNullOrWhiteSpace(candidate) ||
-            !candidate.StartsWith("/", StringComparison.Ordinal) ||
-            candidate.StartsWith("//", StringComparison.Ordinal) ||
-            candidate.Contains('\\'))
-            return "/";
-
-        return Uri.TryCreate(candidate, UriKind.Relative, out _) ? candidate : "/";
-    }
+    public static string Normalize(string? candidate) =>
+        Authentication.Abstractions.LocalReturnPath.Normalize(candidate);
 }

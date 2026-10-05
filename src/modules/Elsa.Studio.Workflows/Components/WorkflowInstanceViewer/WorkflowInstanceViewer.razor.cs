@@ -177,8 +177,7 @@ public partial class WorkflowInstanceViewer : IAsyncDisposable
         _programmaticallySelectedNodeId = record.ActivityNodeId;
         _selectedActivityNodeId = record.ActivityNodeId;
         _selectedExecutionForDrawer = record;
-        _isExecutionDetailsDrawerOpen = true;
-        StateHasChanged(); // Open drawer and highlight immediately.
+        OpenExecutionDetailsDrawer();
 
         await _workspace.SelectActivityByIdAsync(record.ActivityId, record.ActivityNodeId);
     }
@@ -225,9 +224,19 @@ public partial class WorkflowInstanceViewer : IAsyncDisposable
             _selectedActivityExecutionRecordId = record.Id;
             _selectedActivityNodeId = record.ActivityNodeId;
             _selectedExecutionForDrawer = record;
-            _isExecutionDetailsDrawerOpen = true;
-            StateHasChanged();
+            OpenExecutionDetailsDrawer();
         }
+    }
+
+    private void OpenExecutionDetailsDrawer()
+    {
+        _isExecutionDetailsDrawerOpen = true;
+        StateHasChanged();
+    }
+
+    private void OnExecutionDetailsDrawerOpenChanged(bool open)
+    {
+        _isExecutionDetailsDrawerOpen = open;
     }
 
     async ValueTask IAsyncDisposable.DisposeAsync()

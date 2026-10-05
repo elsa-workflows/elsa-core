@@ -9,7 +9,7 @@ using MudBlazor;
 namespace Elsa.Studio.Security.Components;
 
 /// <summary>
-/// Lists the users visible in the current tenant scope. Rendered only after
+/// Lists the users visible in the current tenant. Rendered only after
 /// <see cref="UserAdministrationAccessBoundary"/> established that the caller may view users.
 /// </summary>
 public partial class UserListSurface : IAsyncDisposable
@@ -44,21 +44,6 @@ public partial class UserListSurface : IAsyncDisposable
             return string.IsNullOrWhiteSpace(_search)
                 ? $"{count} {label} · all loaded"
                 : $"{count} {label} · matching search";
-        }
-    }
-
-    /// <summary>Describes the tenant scope of the loaded list without pretending to know more than Core returned.</summary>
-    protected string ScopeSummary
-    {
-        get
-        {
-            var scopes = _users.Select(x => Scope(x.TenantId)).Distinct(StringComparer.Ordinal).ToList();
-            return scopes.Count switch
-            {
-                0 => "Current tenant scope",
-                1 => scopes[0] == "Host" ? "Host scope" : $"Tenant {scopes[0]}",
-                _ => "Mixed tenant scopes"
-            };
         }
     }
 
@@ -124,7 +109,6 @@ public partial class UserListSurface : IAsyncDisposable
     protected static IEnumerable<string> Preview(ICollection<string> values) =>
         values.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).Take(PreviewLimit);
 
-    protected static string Scope(string? tenantId) => string.IsNullOrWhiteSpace(tenantId) ? "Host" : tenantId;
     protected static string UserUrl(string id) => $"security/users/{Uri.EscapeDataString(id)}";
     protected bool IsDeleting(string id) => _deletingIds.Contains(id);
 
@@ -159,8 +143,7 @@ public partial class UserListSurface : IAsyncDisposable
         var search = _search.Trim();
         return user.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
                || user.Id.Contains(search, StringComparison.OrdinalIgnoreCase)
-               || user.Roles.Any(x => x.Contains(search, StringComparison.OrdinalIgnoreCase))
-               || (user.TenantId?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false);
+               || user.Roles.Any(x => x.Contains(search, StringComparison.OrdinalIgnoreCase));
     }
 
     public async ValueTask DisposeAsync()

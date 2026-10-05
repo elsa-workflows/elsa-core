@@ -8,6 +8,7 @@ using Elsa.Api.Client.Resources.WorkflowInstances.Models;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Contracts;
 using Elsa.Studio.Localization;
+using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.Components.WorkflowInstanceViewer.Components;
 using Elsa.Studio.Workflows.Contracts;
 using Elsa.Studio.Workflows.Domain.Contracts;
@@ -18,7 +19,6 @@ using Elsa.Studio.Workflows.UI.Contracts;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using Xunit;
 
@@ -181,12 +181,6 @@ public sealed class WorkflowInstanceDesignerElementStatsRefreshTests : BunitCont
         public Elsa.Api.Client.Resources.ActivityDescriptors.Models.ActivityDescriptor? Find(string activityType, int? version = null) => throw new NotSupportedException();
         public IEnumerable<Elsa.Api.Client.Resources.ActivityDescriptors.Models.ActivityDescriptor> FindAll(string activityType) => throw new NotSupportedException();
         public void MarkStale() => throw new NotSupportedException();
-    }
-
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
     }
 
     /// <summary>A <see cref="DispatchProxy"/> that throws for every call, for services this test never exercises.</summary>

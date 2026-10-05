@@ -1,6 +1,8 @@
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Models;
+using Elsa.Studio.Security.Constants;
 using Elsa.Studio.Security.Contracts;
 using MudBlazor;
 
@@ -29,7 +31,8 @@ public sealed class IdentitySecurityMenuContributor(
                 Icon = Icons.Material.Filled.People,
                 Href = "security/users",
                 Text = "Users",
-                Order = 10
+                Order = 10,
+                RequiredPermissions = { new(IdentityPermissions.UsersResource, PermissionVerbs.View) }
             });
         }
 
@@ -41,7 +44,8 @@ public sealed class IdentitySecurityMenuContributor(
                 Icon = Icons.Material.Filled.Badge,
                 Href = "security/roles",
                 Text = "Roles",
-                Order = 20
+                Order = 20,
+                RequiredPermissions = { new(IdentityPermissions.RolesResource, PermissionVerbs.View) }
             });
         }
 

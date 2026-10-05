@@ -24,4 +24,8 @@
       <Folder Include="wwwroot\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <InternalsVisibleTo Include="Elsa.Studio.ExternalAuthentication.Tests" />
+    </ItemGroup>
+
 </Project>

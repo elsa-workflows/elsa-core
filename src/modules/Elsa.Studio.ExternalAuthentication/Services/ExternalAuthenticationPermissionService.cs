@@ -1,3 +1,4 @@
+using Elsa.Studio.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
 
 namespace Elsa.Studio.ExternalAuthentication.Services;
@@ -13,8 +14,12 @@ public sealed class ExternalAuthenticationPermissionService(AuthenticationStateP
 {
     public async ValueTask<bool> HasAsync(string permission, CancellationToken cancellationToken = default)
     {
-        var permissions = await ListAsync(cancellationToken);
-        return permissions.Contains("*") || permissions.Contains(permission);
+        // Unlike the shell's menu gating, this fails closed: without grants the affordances stay hidden.
+        if (!Permission.TryParse(permission, out var required))
+            return false;
+
+        var grants = (await ListAsync(cancellationToken)).Select(x => Permission.TryParse(x, out var grant) ? grant : (Permission?)null).OfType<Permission>();
+        return PermissionMatcher.Satisfies(grants, required);
     }
 
     public async ValueTask<IReadOnlySet<string>> ListAsync(CancellationToken cancellationToken = default)

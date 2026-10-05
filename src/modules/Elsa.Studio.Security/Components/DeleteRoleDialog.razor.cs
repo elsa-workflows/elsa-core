@@ -54,7 +54,7 @@ public partial class DeleteRoleDialog : ComponentBase, IAsyncDisposable
     private int EditableReferenceCount => EditableReferences.Count;
     private string DependencyVersion => _impact?.DependencyVersion ?? string.Empty;
     private string ErrorMessage => _errorMessage ?? "Role deletion is unavailable right now. Try again in a moment.";
-    private string CloseLabel => _state is DeleteRoleDialogViewState.SafeConfirmation or DeleteRoleDialogViewState.ConfigurationBlocked or DeleteRoleDialogViewState.Incomplete
+    private string CloseLabel => _state is DeleteRoleDialogViewState.ConfigurationBlocked or DeleteRoleDialogViewState.Incomplete
         ? "Close"
         : "Cancel";
 

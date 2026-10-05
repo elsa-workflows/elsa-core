@@ -1,6 +1,9 @@
+using System.Net;
 using Bunit;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Localization;
+using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.DiagramDesigners.StateMachines.Presentation;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Domain.Services;
@@ -262,6 +265,29 @@ public sealed class StateMachineActivityPickerDialogTests : BunitContext, IAsync
         _dialogProvider.FindAll("button").Single(x => x.TextContent.Trim() == "Cancel").Click();
         Assert.True((await dialog.Result)?.Canceled);
     }
+
+    [Fact]
+    public async Task Picker_ExplainsAForbiddenLoad_WithoutSuggestingToTryAgain()
+    {
+        await ShowDialogAsync(configure: FailToLoadWith(ApiExceptions.Create(HttpStatusCode.Forbidden)));
+
+        var state = _dialogProvider.WaitForElement("[data-picker-state='error']");
+        Assert.Equal(AuthorizationFailureExtensions.ForbiddenMessage, state.TextContent.Trim());
+    }
+
+    [Fact]
+    public async Task Picker_KeepsItsOwnMessageAndRetryHint_ForAnyOtherLoadFailure()
+    {
+        await ShowDialogAsync(configure: FailToLoadWith(new InvalidOperationException("boom")));
+
+        var state = _dialogProvider.WaitForElement("[data-picker-state='error']");
+        Assert.Contains("Activities could not be loaded", state.TextContent);
+        Assert.Contains("Close this dialog and try again.", state.TextContent);
+    }
+
+    // The picker reports whatever the registry lookup throws; a filter that throws is the shortest way to trigger it.
+    private static Action<DialogParameters<StateMachineActivityPickerDialog>> FailToLoadWith(Exception failure) =>
+        parameters => parameters.Add(x => x.DescriptorFilter, _ => throw failure);
 
     private async Task<IDialogReference> ShowDialogAsync(
         string slotName = "action",

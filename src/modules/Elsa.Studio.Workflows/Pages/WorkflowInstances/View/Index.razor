@@ -1,4 +1,6 @@
 @page "/workflows/instances/{id}/view"
+@attribute [RequirePermission(WorkflowPermissions.Instances, PermissionVerbs.View)]
+@attribute [RequirePermission(WorkflowPermissions.Definitions, PermissionVerbs.View)]
 @inherits StudioComponentBase
 
 <PageTitle>Workflow instance</PageTitle>

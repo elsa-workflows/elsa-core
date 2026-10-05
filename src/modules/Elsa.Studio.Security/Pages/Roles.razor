@@ -50,10 +50,6 @@
         margin-top: 16px;
     }
 
-    .roles-count-icon {
-        color: var(--mud-palette-primary);
-    }
-
     .roles-desktop-list {
         margin-top: 16px;
     }
@@ -167,15 +163,6 @@
         text-align: center;
     }
 
-    .roles-no-pagination {
-        align-items: center;
-        border-top: 1px solid var(--roles-border);
-        color: var(--roles-muted);
-        display: flex;
-        gap: 8px;
-        padding: 12px 16px;
-    }
-
     .roles-visually-hidden {
         clip: rect(0 0 0 0);
         clip-path: inset(50%);
@@ -222,15 +209,14 @@
             <MudTextField T="string"
                           Value="@_search"
                           ValueChanged="OnSearchChanged"
-                          Label="Search roles"
-                          Placeholder="Search by name, ID, or permission"
+                          Placeholder="Name, ID, or permission"
                           Variant="Variant.Outlined"
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Outlined.Search"
                           Clearable="true"
                           Immediate="true"
                           Class="roles-search"
-                          aria-label="Search roles by name, ID, or permission" />
+                          aria-label="Name, ID, or permission" />
 
             @if (access.CanCreate)
             {
@@ -246,10 +232,9 @@
             }
         </div>
 
-        @if (!_isLoading && _loadError is null)
+        @if (!_isLoading && _loadError is null && FilteredRoles.Count > 0)
         {
             <div class="roles-count" role="status" aria-live="polite">
-                <MudIcon Icon="@Icons.Material.Outlined.CheckCircle" Size="Size.Small" Class="roles-count-icon" aria-hidden="true" />
                 <span>@ResultSummary</span>
             </div>
         }
@@ -302,6 +287,11 @@
                 <MudIcon Icon="@Icons.Material.Outlined.SearchOff" Color="Color.Secondary" Size="Size.Large" aria-hidden="true" />
                 <MudText Typo="Typo.h6">No matching roles</MudText>
                 <MudText Typo="Typo.body2">Try a different name, ID, or permission.</MudText>
+                <MudButton Variant="Variant.Outlined"
+                            OnClick="ClearSearch"
+                            aria-label="Clear search">
+                    Clear search
+                </MudButton>
             </MudPaper>
         }
         else
@@ -317,7 +307,6 @@
                           Class="roles-table">
                     <HeaderContent>
                         <MudTh>Name</MudTh>
-                        <MudTh>ID</MudTh>
                         <MudTh>Permissions</MudTh>
                         @if (access.CanUpdate || access.CanDelete)
                         {
@@ -332,9 +321,6 @@
                                @onclick:stopPropagation="true">
                                 <MudText Typo="Typo.body2" Class="role-name">@context.Name</MudText>
                             </a>
-                        </MudTd>
-                        <MudTd DataLabel="ID">
-                            <code class="role-id">@context.Id</code>
                         </MudTd>
                         <MudTd DataLabel="Permissions">
                             <RolePermissionPreview Role="context" />
@@ -359,10 +345,6 @@
                         }
                     </RowTemplate>
                 </MudTable>
-                <div class="roles-no-pagination">
-                    <MudIcon Icon="@Icons.Material.Outlined.Info" Size="Size.Small" aria-hidden="true" />
-                    <span>All matching roles are shown. No pagination.</span>
-                </div>
             </div>
 
             <div class="roles-mobile-list" aria-label="Roles list">
@@ -374,7 +356,6 @@
                                href="@RoleDetailsUrl(role)"
                                aria-label="@($"Open {role.Name} role details")">
                                 <MudText Typo="Typo.body1" Class="role-name">@role.Name</MudText>
-                                <code class="role-id">@role.Id</code>
                             </a>
                             @if (access.CanUpdate || access.CanDelete)
                             {
@@ -427,9 +408,7 @@
         {
             var count = FilteredRoles.Count;
             var label = count == 1 ? "role" : "roles";
-            return string.IsNullOrWhiteSpace(_search)
-                ? $"{count} {label} · all loaded"
-                : $"{count} {label} · matching search";
+            return $"{count} {label}";
         }
     }
 
@@ -481,6 +460,8 @@
         _search = value ?? string.Empty;
         return InvokeAsync(StateHasChanged);
     }
+
+    private Task ClearSearch() => OnSearchChanged(string.Empty);
 
     private void NavigateToCreate()
     {

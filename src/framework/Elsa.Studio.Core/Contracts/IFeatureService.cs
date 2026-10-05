@@ -11,6 +11,13 @@ public interface IFeatureService
     event Action? Initialized;
     
     /// <summary>
+    /// Whether the features have been initialized, so everything they contribute (such as dashboard widgets) is in place.
+    /// Lets a component that renders after <see cref="Initialized"/> was raised tell that apart from one that has yet to
+    /// see it. A service that decorates another should forward it.
+    /// </summary>
+    bool IsInitialized => false;
+
+    /// <summary>
     /// Returns all features.
     /// </summary>
     IEnumerable<IFeature> GetFeatures();

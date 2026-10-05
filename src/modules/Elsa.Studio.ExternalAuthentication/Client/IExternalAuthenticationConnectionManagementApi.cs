@@ -6,7 +6,7 @@ namespace Elsa.Studio.ExternalAuthentication.Client;
 /// <summary>
 /// Studio-local management contract. It mirrors the server contract until the generated Elsa API client is available.
 /// </summary>
-public interface IExternalAuthenticationConnectionsApi
+public interface IExternalAuthenticationConnectionManagementApi
 {
     [Get("/external-authentication/connections")]
     Task<ListConnectionsResponse> ListAsync(string? search = null, string? source = null, string? scope = null, string? adapterType = null, bool? enabled = null, bool? valid = null, bool? shadowed = null, bool? archived = null, string? cursor = null, int pageSize = 25, CancellationToken cancellationToken = default);
