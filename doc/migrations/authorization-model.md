@@ -399,7 +399,10 @@ sharing one store could not each hold a same-named role, and only the first tena
     `RoleManager` before saving.
   - MongoDB replaces the store-wide unique role name index `Name_1` with a per-tenant `TenantId_1_Name_1` when the
     host starts. It creates the new index first and then drops the old one, so the collection is never without name
-    uniqueness and several nodes can start at once.
+    uniqueness and several nodes can start at once. Only `Name_1` is dropped automatically: a store-wide unique `Name`
+    index under another name is kept and reported with a warning at startup, and role names stay unique across tenants
+    until you drop it. Like the Dapper index on case-sensitive databases, the MongoDB index compares names exactly, so
+    names that differ only in case are rejected by `RoleManager` before saving rather than by the index.
   - **Rolling back on MongoDB:** once a second tenant has created a role with a name another tenant already uses, a
     3.9 node can no longer start, because it cannot recreate its store-wide `Name_1` index over those duplicates.
   - MongoDB still keeps user names, and application names and client IDs, unique across the whole store. A second
