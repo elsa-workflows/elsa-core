@@ -155,6 +155,35 @@ public abstract class DapperKeyValueStoreOwnershipTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task SustainedOwnedDeleteAndReinsert_SaveTerminatesWithoutCancellation()
+    {
+        var updates = 0;
+        var provider = new InterceptingProvider(Provider, beforeUpdate: async () =>
+        {
+            // Keep the regression bounded before the fix without leaking a background save.
+            if (++updates > 12)
+            {
+                throw new ChurnSafetyException();
+            }
+            using var connection = Provider.GetConnection();
+            await connection.ExecuteAsync($"""delete from "{_table}" where "Id" = 'shared' """);
+        }, afterUpdate: async count =>
+        {
+            Assert.Equal(0, count);
+            await Seed("alpha", "concurrent");
+            return count;
+        });
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => Save(CreateStore("alpha", provider), "requested"));
+
+        Assert.Contains("shared", error.Message, StringComparison.Ordinal);
+        Assert.Contains("sustained concurrent changes", error.Message, StringComparison.OrdinalIgnoreCase);
+        await AssertRow("alpha", "concurrent");
+    }
+
+    private sealed class ChurnSafetyException : Exception;
+
+    [Fact]
     public async Task UnrelatedInsertFailure_Propagates()
     {
         await Assert.ThrowsAnyAsync<DbException>(() => Save(CreateStore("alpha"), "forbidden"));
@@ -231,14 +260,14 @@ public abstract class DapperKeyValueStoreOwnershipTests : IAsyncLifetime
     }
 
     // Intercept actual database commands to reproduce insert races and providers reporting zero changed rows.
-    private sealed class InterceptingProvider(IDbConnectionProvider inner, Func<Task>? beforeInsert = null, Func<int, Task<int>>? afterUpdate = null) : IDbConnectionProvider
+    private sealed class InterceptingProvider(IDbConnectionProvider inner, Func<Task>? beforeInsert = null, Func<int, Task<int>>? afterUpdate = null, Func<Task>? beforeUpdate = null) : IDbConnectionProvider
     {
         public string GetConnectionString() => inner.GetConnectionString();
         public ISqlDialect Dialect => inner.Dialect;
-        public IDbConnection GetConnection() => new InterceptingConnection((DbConnection)inner.GetConnection(), beforeInsert, afterUpdate);
+        public IDbConnection GetConnection() => new InterceptingConnection((DbConnection)inner.GetConnection(), beforeInsert, afterUpdate, beforeUpdate);
     }
 
-    private sealed class InterceptingConnection(DbConnection inner, Func<Task>? beforeInsert, Func<int, Task<int>>? afterUpdate) : DbConnection
+    private sealed class InterceptingConnection(DbConnection inner, Func<Task>? beforeInsert, Func<int, Task<int>>? afterUpdate, Func<Task>? beforeUpdate) : DbConnection
     {
         [AllowNull] public override string ConnectionString { get => inner.ConnectionString; set => inner.ConnectionString = value; }
         public override string Database => inner.Database;
@@ -250,7 +279,7 @@ public abstract class DapperKeyValueStoreOwnershipTests : IAsyncLifetime
         public override void Open() => inner.Open();
         public override Task OpenAsync(CancellationToken cancellationToken) => inner.OpenAsync(cancellationToken);
         protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => inner.BeginTransaction(isolationLevel);
-        protected override DbCommand CreateDbCommand() => new InterceptingCommand(inner.CreateCommand(), beforeInsert, afterUpdate);
+        protected override DbCommand CreateDbCommand() => new InterceptingCommand(inner.CreateCommand(), beforeInsert, afterUpdate, beforeUpdate);
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -261,7 +290,7 @@ public abstract class DapperKeyValueStoreOwnershipTests : IAsyncLifetime
         }
     }
 
-    private sealed class InterceptingCommand(DbCommand inner, Func<Task>? beforeInsert, Func<int, Task<int>>? afterUpdate) : DbCommand
+    private sealed class InterceptingCommand(DbCommand inner, Func<Task>? beforeInsert, Func<int, Task<int>>? afterUpdate, Func<Task>? beforeUpdate) : DbCommand
     {
         [AllowNull] public override string CommandText { get => inner.CommandText; set => inner.CommandText = value; }
         public override int CommandTimeout { get => inner.CommandTimeout; set => inner.CommandTimeout = value; }
@@ -283,6 +312,10 @@ public abstract class DapperKeyValueStoreOwnershipTests : IAsyncLifetime
             if (beforeInsert != null && CommandText.StartsWith("insert", StringComparison.OrdinalIgnoreCase))
             {
                 await beforeInsert();
+            }
+            if (beforeUpdate != null && CommandText.StartsWith("update", StringComparison.OrdinalIgnoreCase))
+            {
+                await beforeUpdate();
             }
             var count = await inner.ExecuteNonQueryAsync(cancellationToken);
             return afterUpdate != null && CommandText.StartsWith("update", StringComparison.OrdinalIgnoreCase) ? await afterUpdate(count) : count;
