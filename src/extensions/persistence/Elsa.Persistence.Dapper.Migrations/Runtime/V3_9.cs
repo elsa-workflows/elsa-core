@@ -19,13 +19,17 @@ public class V3_9 : Migration
     public override void Up()
     {
         if (!Schema.Table("KeyValues").Exists())
+        {
             Create.Table("KeyValues")
                 .WithColumn("Id").AsString().PrimaryKey()
                 .WithColumn("TenantId").AsString().Nullable()
                 .WithColumn("Value").AsString(MaxValue).Nullable();
+        }
 
         if (!Schema.Table("BookmarkQueueItems").Column("SerializedOptions").Exists())
+        {
             Alter.Table("BookmarkQueueItems").AddColumn("SerializedOptions").AsString(MaxValue).Nullable();
+        }
     }
 
     /// <inheritdoc />

@@ -84,6 +84,32 @@ public sealed class ParameterizedQueryBuilderExtensionsTests : IDisposable
         Assert.Equal(0, result.TotalCount);
     }
 
+    [Theory]
+    [InlineData("order_", "order_under", "orderXunder")]
+    [InlineData("order%", "order%percent", "orderXpercent")]
+    [InlineData("order!", "order!bang", "orderbang")]
+    [InlineData("order[", "order[bracket", "orderAbracket")]
+    public async Task StartsWith_TreatsLikePatternCharactersAsLiterals(string prefix, string matchingId, string nonMatchingId)
+    {
+        var connectionString = new SqliteConnectionStringBuilder { DataSource = _databasePath, Pooling = false }.ToString();
+        using var connection = new SqliteConnection(connectionString);
+        connection.Open();
+        connection.Execute(
+            "insert into TestRecords (Id, TenantId, Value) values (@Id, 'tenant-a', 'value')",
+            new[] { new { Id = matchingId }, new { Id = nonMatchingId } });
+
+        var query = new ParameterizedQuery(new SqliteDialect())
+            .From("TestRecords")
+            .StartsWith("Id", true, prefix);
+
+        if (prefix.Contains('['))
+            Assert.DoesNotContain("escape '!'", query.Sql.ToString(), StringComparison.Ordinal);
+
+        var actualIds = await connection.QueryAsync<string>(query.Sql.ToString(), query.Parameters);
+
+        Assert.Equal([matchingId], actualIds);
+    }
+
     [Fact(DisplayName = "StartsWith binds @{field}StartsWith so it does not collide with Is(@{field})")]
     public void StartsWith_BindsFieldPrefixedParameter()
     {
@@ -121,6 +147,17 @@ public sealed class ParameterizedQueryBuilderExtensionsTests : IDisposable
         Assert.Contains("and \"Id\" like @IdStartsWith", sql, StringComparison.Ordinal);
         Assert.DoesNotContain("@SearchTermLike", sql, StringComparison.Ordinal);
         Assert.Equal("app:%", query.Parameters.Get<string>("IdStartsWith"));
+    }
+
+    [Fact(DisplayName = "StartsWith escapes LIKE syntax in SQL Server patterns")]
+    public void StartsWith_SqlServer_EscapesLikePatternCharacters()
+    {
+        var query = new ParameterizedQuery(new SqlServerDialect())
+            .From("KeyValues")
+            .StartsWith("Id", true, "order!_[");
+
+        Assert.Contains("and Id like @IdStartsWith escape '!'", query.Sql.ToString(), StringComparison.Ordinal);
+        Assert.Equal("order!!!_![%", query.Parameters.Get<string>("IdStartsWith"));
     }
 
     [Fact]
