@@ -104,9 +104,13 @@ public sealed class ParameterizedQueryBuilderExtensionsTests : IDisposable
             .StartsWith("Id", true, prefix);
 
         if (prefix.Contains('['))
+        {
             Assert.DoesNotContain("escape '!'", query.Sql.ToString(), StringComparison.Ordinal);
+        }
         if (prefix.Contains('\\'))
+        {
             Assert.Contains("escape '!'", query.Sql.ToString(), StringComparison.Ordinal);
+        }
 
         var actualIds = await connection.QueryAsync<string>(query.Sql.ToString(), query.Parameters);
 
