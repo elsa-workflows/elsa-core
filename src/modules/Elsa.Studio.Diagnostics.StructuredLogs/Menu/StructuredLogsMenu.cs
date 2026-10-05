@@ -1,3 +1,4 @@
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Models;
@@ -23,7 +24,8 @@ public class StructuredLogsMenu(IRemoteFeatureProvider remoteFeatureProvider) : 
                 Icon = Icons.Material.Filled.FormatListBulleted,
                 Href = "diagnostics/structured-logs",
                 Text = "Structured Logs",
-                GroupName = MenuItemGroups.Diagnostics.Name
+                GroupName = MenuItemGroups.Diagnostics.Name,
+                RequiredPermissions = { new(StructuredLogsPermissions.StructuredLogs, PermissionVerbs.View) }
             }
         ];
 

@@ -126,6 +126,8 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
 
     private JsonObject? Activity => _workflowDefinition?.Root;
     private bool IsDirty => _isDirty || _bpmnDocumentSession?.IsDirty == true;
+    private bool CanPublish => Permissions.CanPublishDefinitions();
+    private bool CanRetract => Permissions.CanRetractDefinitions();
     private JsonObject? SelectedActivity { get; set; }
     private ActivityDescriptor? ActivityDescriptor { get; set; }
     private ActivityPropertiesPanel? ActivityPropertiesPanel { get; set; }
@@ -887,7 +889,7 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
             },
             ErrorCallback = ex =>
             {
-                UserMessageService.ShowSnackbarTextMessage($"Failed to import workflow definition: {ex.Message}", Severity.Error);
+                UserMessageService.ShowSnackbarTextMessage($"Failed to import workflow definition: {ex.ToUserMessage(Localizer)}", Severity.Error);
                 return Task.CompletedTask;
             }
         };

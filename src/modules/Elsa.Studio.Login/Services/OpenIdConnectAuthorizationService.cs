@@ -1,4 +1,5 @@
-﻿using Elsa.Studio.Login.Contracts;
+﻿using Elsa.Studio.Authentication.Abstractions;
+using Elsa.Studio.Login.Contracts;
 using Elsa.Studio.Login.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.WebUtilities;
@@ -28,7 +29,8 @@ public class OpenIdConnectAuthorizationService(IJwtAccessor jwtAccessor, IOption
             var generated = await pkceStateService.GeneratePkceCodeChallenge();
             url += $"&code_challenge={generated.CodeChallenge}&code_challenge_method={generated.Method}";
         }
-        if (navigationManager.ToBaseRelativePath(navigationManager.Uri) is { } returnUrl and not "/")
+        var returnUrl = CaptureReturnPath(navigationManager.Uri);
+        if (returnUrl is not "/")
         {
             url += "&state=" + WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(returnUrl));
         }
@@ -79,12 +81,19 @@ public class OpenIdConnectAuthorizationService(IJwtAccessor jwtAccessor, IOption
         await jwtAccessor.WriteTokenAsync(TokenNames.IdToken, tokens.IdToken ?? "");
 
         string returnUrl = "/";
-        if (!String.IsNullOrWhiteSpace(state))
+        if (!string.IsNullOrWhiteSpace(state))
         {
-            returnUrl = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(state));
+            returnUrl = LocalReturnPath.Normalize(Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(state)));
         }
+
         navigationManager.NavigateTo(returnUrl, true);
     }
+
+    /// <summary>
+    /// Captures the current request's path, including PathBase, so a hosted Studio does not drop its sub-path after OIDC sign-in.
+    /// </summary>
+    internal static string CaptureReturnPath(string uri) =>
+        LocalReturnPath.Normalize(new Uri(uri).PathAndQuery);
 
     private async Task ThrowTokenExchangeExceptionAsync(HttpResponseMessage response, OpenIdConnectConfiguration config, CancellationToken cancellationToken)
     {

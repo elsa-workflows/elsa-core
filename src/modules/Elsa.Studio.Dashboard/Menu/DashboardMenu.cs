@@ -14,6 +14,8 @@ public class DashboardMenu(ILocalizer localizer) : IMenuProvider
     /// <inheritdoc />
     public ValueTask<IEnumerable<MenuItem>> GetMenuItemsAsync(CancellationToken cancellationToken = default)
     {
+        // No required permissions: every signed-in user can open the dashboard, which shows each user only the widgets
+        // they may see, or a welcome panel when there are none.
         var menuItems = new List<MenuItem>
         {
             new()

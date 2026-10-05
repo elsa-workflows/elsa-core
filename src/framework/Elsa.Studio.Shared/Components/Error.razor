@@ -1,5 +1,28 @@
-﻿<Well>
-    <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
-        @Context.GetType().Name: @Context.Message
-    </MudAlert>
+﻿@using Elsa.Studio.Extensions
+@using Elsa.Studio.Localization
+@inject ILocalizer Localizer
+@inject IServiceProvider Services
+
+<Well>
+    @if (_signingIn && SignIn is { } signIn)
+    {
+        @signIn
+    }
+    else if (Context.IsAuthorizationFailure())
+    {
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Icon="@Icons.Material.Outlined.Lock">
+            @Context.ToUserMessage(Localizer)
+        </MudAlert>
+        @* Signing in again is the user's choice: redirecting on its own would loop for a token the backend keeps rejecting. *@
+        @if (Context.IsUnauthorizedResponse() && SignIn != null)
+        {
+            <MudButton Variant="Variant.Text" Color="Color.Primary" Class="mt-2" OnClick="() => _signingIn = true">@Localizer["Sign in"]</MudButton>
+        }
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+            @Context.GetType().Name: @Context.Message
+        </MudAlert>
+    }
 </Well>

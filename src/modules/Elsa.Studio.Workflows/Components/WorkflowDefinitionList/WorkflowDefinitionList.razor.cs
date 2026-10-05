@@ -3,6 +3,7 @@ using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Requests;
 using Elsa.Api.Client.Resources.WorkflowInstances.Requests;
 using Elsa.Api.Client.Shared.Models;
+using Elsa.Studio.Authorization;
 using Elsa.Studio.Components;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Contracts;
@@ -10,6 +11,7 @@ using Elsa.Studio.Models;
 using Elsa.Studio.Workflows.Contracts;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Domain.Models;
+using Elsa.Studio.Workflows.Extensions;
 using Humanizer;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -40,6 +42,16 @@ public partial class WorkflowDefinitionList
     [Inject] private IWorkflowCloningDialogService WorkflowCloningService { get; set; } = null!;
     [Inject] private IWorkflowExportDialogService WorkflowExportDialogService { get; set; } = null!;
     [Inject] private IBpmnImportUiService BpmnImportUiService { get; set; } = null!;
+
+    [CascadingParameter] private UserPermissions Permissions { get; set; } = UserPermissions.Unknown;
+
+    // Creating, importing and duplicating require workflows/definitions:write.
+    private bool CanWrite => Permissions.CanWriteDefinitions();
+    private bool CanDelete => Permissions.CanDeleteDefinitions();
+    private bool CanPublish => Permissions.CanPublishDefinitions();
+    private bool CanRetract => Permissions.CanRetractDefinitions();
+    private bool CanExecute => Permissions.CanExecuteDefinitions();
+    private bool CanCancelInstances => Permissions.CanCancelInstances();
 
     private string SearchTerm { get; set; } = string.Empty;
     private bool IsReadOnlyMode { get; set; }

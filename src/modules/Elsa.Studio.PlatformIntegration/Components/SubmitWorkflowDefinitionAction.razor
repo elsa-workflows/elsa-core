@@ -1,6 +1,7 @@
 @using Elsa.Api.Client.Resources.WorkflowDefinitions.Models
 @using Elsa.Api.Client.Shared.Models
 @using Elsa.Studio.Contracts
+@using Elsa.Studio.Extensions
 @using Elsa.Studio.Localization
 @using Elsa.Studio.PlatformIntegration.Contracts
 @using Elsa.Studio.Workflows.Domain.Contracts
@@ -75,7 +76,7 @@
         }
         catch (Exception ex)
         {
-            UserMessageService.ShowSnackbarTextMessage(Localizer["Workflow submission to Platform failed: {0}", ex.Message], Severity.Error);
+            UserMessageService.ShowSnackbarTextMessage(Localizer["Workflow submission to Platform failed: {0}", ex.ToUserMessage(Localizer)], Severity.Error);
         }
         finally
         {

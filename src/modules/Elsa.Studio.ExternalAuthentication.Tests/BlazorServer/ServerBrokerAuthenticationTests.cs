@@ -277,6 +277,62 @@ public sealed class ServerBrokerAuthenticationTests
     }
 
     [Fact]
+    public async Task Callback_RelativeReturnPath_LocalRedirectsToRoot()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddAuthentication(ServerExternalAuthenticationStateProvider.Scheme)
+            .AddCookie(ServerExternalAuthenticationStateProvider.Scheme);
+        using var serviceProvider = services.BuildServiceProvider();
+        using var callbackScope = serviceProvider.CreateScope();
+        var context = new DefaultHttpContext { RequestServices = callbackScope.ServiceProvider };
+        context.Request.Scheme = "https";
+        context.Request.Host = new HostString("studio.example.test");
+        var accessor = new HttpContextAccessor { HttpContext = context };
+        var options = new ExternalAuthenticationClientOptions { ClientId = "studio-server", ClientSecret = "secret" };
+        var broker = new FakeBrokerApi();
+        var anonymous = new FakeAnonymousBackendApiClientProvider(broker);
+        var stateProvider = new ServerExternalAuthenticationStateProvider(accessor, anonymous, new ServerExternalAuthenticationRefreshCoordinator(), options);
+        var controller = CreateController(context, anonymous, new FakeTransactionStore(new("state", "verifier", "workflows/x", DateTimeOffset.UtcNow.AddMinutes(1))), stateProvider, options);
+
+        var result = await controller.Callback("completion-code", "state", null, CancellationToken.None);
+
+        Assert.Equal("/", Assert.IsType<LocalRedirectResult>(result).Url);
+    }
+
+    [Fact]
+    public async Task Logout_RelativeReturnPath_LocalRedirectsToRoot()
+    {
+        var ticket = CreateCurrentTicket();
+        var context = CreateAuthenticatedContext(ticket.Principal, new RecordingAuthenticationService(ticket));
+        var broker = new FakeBrokerApi { LogoutResult = new(true, null, null) };
+        var anonymous = new FakeAnonymousBackendApiClientProvider(broker);
+        var transactions = new FakeTransactionStore(new("unused", "", "/", DateTimeOffset.UtcNow.AddMinutes(1)));
+        var state = new ServerExternalAuthenticationStateProvider(new HttpContextAccessor { HttpContext = context }, anonymous, new ServerExternalAuthenticationRefreshCoordinator(), Options());
+
+        var result = await CreateController(context, anonymous, transactions, state, Options()).Logout("local", "workflows/x", CancellationToken.None);
+
+        Assert.Equal("/", Assert.IsType<LocalRedirectResult>(result).Url);
+    }
+
+    [Fact]
+    public void LogoutCallback_RelativeReturnPath_LocalRedirectsToRoot()
+    {
+        var context = new DefaultHttpContext();
+        var anonymous = new FakeAnonymousBackendApiClientProvider();
+        var transactions = new FakeTransactionStore(new("unused", "", "workflows/x", DateTimeOffset.UtcNow.AddMinutes(1), "logout"));
+        var state = new ServerExternalAuthenticationStateProvider(
+            new HttpContextAccessor { HttpContext = context },
+            anonymous,
+            new ServerExternalAuthenticationRefreshCoordinator(),
+            Options());
+
+        var result = CreateController(context, anonymous, transactions, state, Options()).LogoutCallback();
+
+        Assert.Equal("/", Assert.IsType<LocalRedirectResult>(result).Url);
+    }
+
+    [Fact]
     public async Task Callback_UsesConfidentialBasicExchangeAndExactState()
     {
         var services = new ServiceCollection();

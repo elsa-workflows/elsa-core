@@ -5,12 +5,12 @@ using Elsa.Api.Client.Shared.Models;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Contracts;
 using Elsa.Studio.Localization;
+using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.Components.WorkflowInstanceList;
 using Elsa.Studio.Workflows.Components.WorkflowInstanceList.Models;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 using MudBlazor.Services;
@@ -93,11 +93,5 @@ public class WorkflowInstanceListPollingTests
             targetMethod!.Name == nameof(IWorkflowDefinitionService.ListAsync)
                 ? Task.FromResult(new PagedListResponse<WorkflowDefinitionSummary> { Items = [] })
                 : throw new InvalidOperationException($"Unexpected call to {targetMethod.DeclaringType!.Name}.{targetMethod.Name}.");
-    }
-
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string key] => new(key, key);
-        public LocalizedString this[string key, params object[] arguments] => new(key, string.Format(key, arguments));
     }
 }

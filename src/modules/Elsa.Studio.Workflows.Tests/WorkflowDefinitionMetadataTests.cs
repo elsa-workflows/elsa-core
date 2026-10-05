@@ -5,6 +5,7 @@ using Elsa.Api.Client.Shared.Models;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Models;
 using Elsa.Studio.Contracts;
+using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Domain.Models;
@@ -14,7 +15,6 @@ using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using MudBlazor;
 using MudBlazor.Services;
 using Refit;
@@ -718,12 +718,6 @@ public sealed class WorkflowDefinitionMetadataTests : BunitContext, IAsyncLifeti
 
         public Task NotifyAsync<TNotification>(TNotification notification, CancellationToken cancellationToken = default)
             where TNotification : INotification => Task.CompletedTask;
-    }
-
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? string.Empty, key ?? string.Empty);
-        public LocalizedString this[string? key, params object[] arguments] => new(key ?? string.Empty, string.Format(key ?? string.Empty, arguments));
     }
 
     private sealed class MetadataHost : ComponentBase

@@ -17,6 +17,9 @@ internal sealed class EnvironmentAwareFeatureService(
     }
 
     /// <inheritdoc />
+    public bool IsInitialized => inner.IsInitialized;
+
+    /// <inheritdoc />
     public IEnumerable<IFeature> GetFeatures() => inner.GetFeatures();
 
     /// <inheritdoc />

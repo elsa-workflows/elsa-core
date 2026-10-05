@@ -18,6 +18,10 @@
 
     <ItemGroup>
         <Compile Include="..\..\testing\BunitTestDefaults.cs" Link="BunitTestDefaults.cs" />
+        <Compile Include="..\..\testing\MenuPopoverAssert.cs" Link="MenuPopoverAssert.cs" />
+        <Compile Include="..\..\testing\StubPermissionService.cs" Link="StubPermissionService.cs" />
+        <Compile Include="..\..\testing\ApiExceptions.cs" Link="ApiExceptions.cs" />
+        <Compile Include="..\..\testing\TestLocalizer.cs" Link="TestLocalizer.cs" />
     </ItemGroup>
 
     <ItemGroup>
@@ -27,10 +31,12 @@
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Studio.ExternalAuthentication\Elsa.Studio.ExternalAuthentication.csproj" />
         <ProjectReference Include="..\Elsa.Studio.Authentication.UI\Elsa.Studio.Authentication.UI.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Authentication.ElsaIdentity.UI\Elsa.Studio.Authentication.ElsaIdentity.UI.csproj" />
         <ProjectReference Include="..\Elsa.Studio.Authentication.OpenIdConnect.BlazorServer\Elsa.Studio.Authentication.OpenIdConnect.BlazorServer.csproj" />
         <ProjectReference Include="..\Elsa.Studio.Authentication.OpenIdConnect.BlazorWasm\Elsa.Studio.Authentication.OpenIdConnect.BlazorWasm.csproj" />
         <ProjectReference Include="..\Elsa.Studio.ExternalAuthentication.BlazorServer\Elsa.Studio.ExternalAuthentication.BlazorServer.csproj" />
         <ProjectReference Include="..\Elsa.Studio.ExternalAuthentication.BlazorWasm\Elsa.Studio.ExternalAuthentication.BlazorWasm.csproj" />
+        <ProjectReference Include="..\Elsa.Studio.Login\Elsa.Studio.Login.csproj" />
     </ItemGroup>
 
 </Project>

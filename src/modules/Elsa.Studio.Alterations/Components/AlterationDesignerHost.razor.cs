@@ -9,6 +9,7 @@ using Elsa.Studio.Alterations.Catalog;
 using Elsa.Studio.Alterations.Models;
 using Elsa.Studio.Alterations.Services;
 using Elsa.Studio.Contracts;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Microsoft.AspNetCore.Components;
@@ -272,7 +273,7 @@ public partial class AlterationDesignerHost : IDisposable
         }
         catch (Exception ex)
         {
-            Snackbar.Add(string.Format(Localizer["Dry-run failed: {0}"], ex.Message), Severity.Error);
+            Snackbar.Add(string.Format(Localizer["Dry-run failed: {0}"], ex.ToUserMessage(Localizer)), Severity.Error);
         }
         finally
         {

@@ -1,4 +1,5 @@
 using Elsa.Studio.Authentication.ElsaIdentity.Contracts;
+using Elsa.Studio.Authentication.ElsaIdentity.Extensions;
 using Elsa.Studio.Contracts;
 
 namespace Elsa.Studio.Authentication.ElsaIdentity.Services;
@@ -15,7 +16,7 @@ public class JwtTokenProvider(
     /// <inheritdoc />
     public async Task<string?> GetAccessTokenAsync(CancellationToken cancellationToken = default)
     {
-        var accessToken = await jwtAccessor.ReadTokenAsync("accessToken");
+        var accessToken = await jwtAccessor.ReadTokenAsync(TokenNames.AccessToken);
 
         if (string.IsNullOrWhiteSpace(accessToken))
             return null;
@@ -29,13 +30,11 @@ public class JwtTokenProvider(
         if (!refreshResponse.IsAuthenticated)
         {
             // Refresh failed: clear local tokens so the app can transition to unauthenticated state.
-            await jwtAccessor.ClearTokenAsync("accessToken");
-            await jwtAccessor.ClearTokenAsync("refreshToken");
-            await jwtAccessor.ClearTokenAsync("idToken");
+            await jwtAccessor.ClearTokensAsync();
             return null;
         }
 
-        return await jwtAccessor.ReadTokenAsync("accessToken");
+        return await jwtAccessor.ReadTokenAsync(TokenNames.AccessToken);
     }
 
     private bool IsExpiredOrNearExpiry(string jwt)

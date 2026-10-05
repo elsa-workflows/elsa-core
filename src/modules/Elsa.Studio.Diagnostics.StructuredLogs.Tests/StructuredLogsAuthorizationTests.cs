@@ -8,9 +8,9 @@ using Elsa.Studio.Diagnostics.StructuredLogs.Models;
 using Elsa.Studio.Diagnostics.StructuredLogs.Services;
 using Elsa.Studio.Diagnostics.StructuredLogs.UI.Pages;
 using Elsa.Studio.Localization;
+using Elsa.Studio.Testing;
 using Microsoft.AspNetCore.Http.Connections.Client;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using MudBlazor;
 using MudBlazor.Services;
@@ -121,14 +121,6 @@ public sealed class StructuredLogsAuthorizationTests : BunitContext, IAsyncLifet
 
     Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
     async Task IAsyncLifetime.DisposeAsync() => await base.DisposeAsync();
-
-    private sealed class TestLocalizer : ILocalizer
-    {
-        public LocalizedString this[string? key] => new(key ?? "", key ?? "");
-
-        public LocalizedString this[string? key, params object[] arguments] =>
-            new(key ?? "", string.Format(key ?? "", arguments));
-    }
 
     private sealed class TestStructuredLogService(bool denyRefresh, HttpStatusCode denialStatus) : IStructuredLogService
     {

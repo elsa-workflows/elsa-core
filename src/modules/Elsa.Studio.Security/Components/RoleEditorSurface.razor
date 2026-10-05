@@ -25,9 +25,10 @@
     .role-resource-heading { align-items: center; display: flex; flex-wrap: wrap; gap: .35rem; }
     .role-resource-description { color: var(--mud-palette-text-secondary); display: block; line-height: 1.25; margin-top: .15rem; }
     .role-verb-list { align-items: start; display: flex; flex-wrap: wrap; gap: .25rem 1rem; justify-content: flex-start; min-width: 0; }
-    .role-verb-option { align-items: center; display: flex; flex-wrap: wrap; min-height: 2rem; min-width: 9rem; }
-    .role-verb-option .mud-checkbox { margin: 0; }
-    .role-grant-state { color: var(--mud-palette-text-secondary); font-size: .7rem; margin-left: -.2rem; }
+    .role-verb-option { align-items: center; display: flex; flex-wrap: wrap; gap: 0 .5rem; max-width: 100%; min-height: 2rem; min-width: 9rem; }
+    .role-verb-option .mud-checkbox,
+    .role-verb-option .mud-chip { margin: 0; }
+    .role-grant-state { color: var(--mud-palette-text-secondary); font-size: .7rem; white-space: nowrap; }
 
     @@media (max-width: 959.98px) {
         .role-editor-details,
@@ -64,7 +65,7 @@ else
         <div class="role-editor-header">
             <div>
                 <MudBreadcrumbs Items="@Breadcrumbs" Class="pa-0" />
-                <MudText Typo="Typo.h4" HtmlTag="h1">@(_isCreate ? "New role" : $"Edit role — {_name}")</MudText>
+                <MudText Typo="Typo.h4" HtmlTag="h1">@(_isCreate ? "New role" : _name)</MudText>
                 @if (!_isCreate)
                 {
                     <MudText Typo="Typo.body2" Class="role-editor-id mt-1">ID <code>@RoleId</code></MudText>
@@ -73,7 +74,7 @@ else
             <div class="role-editor-actions">
                 @if (!_isCreate && Access.CanDelete && _role is not null)
                 {
-                    <MudButton Variant="Variant.Outlined" Color="Color.Error" Disabled="@_deleteDialogOpen" OnClick="OpenDeleteRoleAsync">Delete role</MudButton>
+                    <MudButton Variant="Variant.Text" Color="Color.Error" Disabled="@_deleteDialogOpen" OnClick="OpenDeleteRoleAsync">Delete role</MudButton>
                 }
                 <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
                 @if (!IsReadOnly)
@@ -98,12 +99,7 @@ else
                                   Variant="Variant.Outlined"
                                   Margin="Margin.Dense"
                                   Immediate="true"
-                                  HelperText="@(_isCreate ? "Core generates the role ID after creation." : null)"
                                   aria-label="Role name" />
-                    @if (!_isCreate)
-                    {
-                        <MudText Typo="Typo.caption" Class="role-permissions-summary">The role ID is read-only and shown beneath the page title.</MudText>
-                    }
                 </div>
             </MudForm>
         </MudPaper>
@@ -116,13 +112,15 @@ else
         <MudPaper Outlined="true" Elevation="0" Class="pa-3">
             <div class="role-permissions-header mb-1">
                 <MudText Typo="Typo.h6">Permissions</MudText>
-                <MudText Typo="Typo.caption" Class="role-permissions-summary">@DirectCount direct · @CoveredCount covered · @_advanced.Count advanced</MudText>
+                @if (SelectedCount > 0)
+                {
+                    <MudText Typo="Typo.caption" Class="role-permissions-summary">@SelectedCount selected</MudText>
+                }
             </div>
             <MudTabs Border="false" Elevation="0" ActivePanelIndex="@_activeTab" ActivePanelIndexChanged="OnTabChanged" KeepPanelsAlive="true">
                 <MudTabPanel Text="Exact permissions">
                     <MudStack Spacing="2" Class="pt-2">
-                        <MudText Typo="Typo.body2">Select concrete permissions. Category actions add exact grants only and never create a wildcard.</MudText>
-                        <MudTextField T="string" Label="Filter permissions" Placeholder="Search by name, ID, or permission" Value="@_search" ValueChanged="OnSearchChanged" Immediate="true" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Search" />
+                        <MudTextField T="string" Placeholder="Name, ID, or permission" Value="@_search" ValueChanged="OnSearchChanged" Immediate="true" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Search" aria-label="Name, ID, or permission" />
                         <MudExpansionPanels MultiExpansion="true" Elevation="0">
                             @foreach (var category in Categories)
                             {
@@ -130,20 +128,21 @@ else
                                 if (resources.Length == 0)
                                     continue;
 
-                                var categoryResources = GetCategoryResources(category).ToArray();
-                                var directCount = CategoryDirectCount(categoryResources);
-                                var coveredCount = CategoryCoveredCount(categoryResources);
-                                <MudExpansionPanel Text="@category" Expanded="@ShouldExpandCategory(categoryResources)" Dense="true" Gutters="false" Class="role-category-panel">
+                                var directCount = CategoryDirectCount(resources);
+                                var coveredCount = CategoryCoveredCount(resources);
+                                <MudExpansionPanel Text="@category" Expanded="@ShouldExpandCategory(resources)" Dense="true" Gutters="false" Class="role-category-panel">
                                     <TitleContent>
                                         <div class="role-category-title">
                                             <div class="role-category-title-copy">
                                                 <MudText Typo="Typo.body2"><strong>@category</strong></MudText>
-                                                <span class="role-category-summary">@CategorySummary(ConcreteCount(categoryResources), directCount, coveredCount)</span>
+                                                <span class="role-category-summary">@CategorySummary(ConcreteCount(resources), directCount, coveredCount)</span>
                                             </div>
                                             <div @onclick:stopPropagation="true">
                                                 @if (!IsReadOnly)
                                                 {
-                                                    <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="@(() => SelectCategory(categoryResources))">Select all exact</MudButton>
+                                                    <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="@(() => ToggleCategory(resources))">
+                                                        @(IsCategoryFullySelected(resources) ? "Deselect" : "Select all")
+                                                    </MudButton>
                                                 }
                                             </div>
                                         </div>
@@ -152,6 +151,7 @@ else
                                         <div class="role-resource-list">
                                             @foreach (var resource in resources)
                                             {
+                                                var alsoCovered = AlsoCoveredWildcards(resource);
                                                 <div class="role-resource-row">
                                                     <div class="role-resource-copy">
                                                         <div class="role-resource-heading">
@@ -170,6 +170,12 @@ else
                                                         {
                                                             <MudText Typo="Typo.caption" Class="role-resource-description">@resource.Description</MudText>
                                                         }
+                                                        @foreach (var covering in alsoCovered)
+                                                        {
+                                                            <MudTooltip Text="The wildcard already grants this; the exact grant is redundant.">
+                                                                <span class="role-grant-state">Also covered by @covering</span>
+                                                            </MudTooltip>
+                                                        }
                                                     </div>
                                                     <div class="role-verb-list">
                                                     @foreach (var verb in resource.SupportedVerbs.OrderBy(x => x, StringComparer.Ordinal))
@@ -179,11 +185,7 @@ else
                                                         var covering = FindCoveringWildcard(resource.Resource, verb);
                                                         <div class="role-verb-option">
                                                             <MudCheckBox T="bool" Label="@verb" Dense="true" Value="@direct" ValueChanged="@((bool value) => SetDirectGrant(permission, value))" Disabled="@(IsReadOnly || (!direct && covering != null))" Color="Color.Primary" aria-label="@permission" />
-                                                            @if (direct)
-                                                            {
-                                                                <span class="role-grant-state">Direct grant</span>
-                                                            }
-                                                            else if (covering != null)
+                                                            @if (covering != null && !direct)
                                                             {
                                                                 <MudTooltip Text="Effective access only — not stored twice.">
                                                                     <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">Covered by @covering</MudChip>
@@ -203,12 +205,11 @@ else
                 </MudTabPanel>
                 <MudTabPanel Text="@($"Advanced grants{(_advanced.Count == 0 ? string.Empty : $" · {_advanced.Count}")}")">
                     <MudStack Spacing="2" Class="pt-2">
-                        <MudText Typo="Typo.body2">Advanced grants are stored independently from exact selections. Each wildcard can cover current and future permissions.</MudText>
                         @if (!IsReadOnly)
                         {
                             <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
                                 <MudTextField T="string" Label="Advanced grant" Placeholder="workflows/*:view or *" Value="@_advancedDraft" ValueChanged="@(value => _advancedDraft = value)" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
-                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAdvancedGrant">Add advanced grant</MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAdvancedGrant">Add</MudButton>
                             </MudStack>
                         }
                         @if (_advancedError != null)
@@ -217,18 +218,23 @@ else
                         }
                         @if (_advanced.Count == 0)
                         {
-                            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">No advanced grants. Add a wildcard only when its current coverage and future reach are understood.</MudAlert>
+                            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">No wildcards.</MudAlert>
                         }
                         @foreach (var grant in _advanced)
                         {
-                            <RoleAdvancedGrantCard Grant="@grant"
+                            <RoleAdvancedGrantCard @key="grant"
+                                                    Grant="@grant"
                                                     Reach="@(_reach.TryGetValue(grant, out var reach) ? reach : null)"
                                                     ReachLoading="@_reachLoading.Contains(grant)"
                                                     ReachError="@(_reachErrors.TryGetValue(grant, out var reachError) ? reachError : null)"
                                                     MaterializedDuplicates="@GetMaterializedDuplicates(grant)"
                                                     IsReadOnly="@IsReadOnly"
                                                     OnRemove="@(() => RemoveAdvancedGrant(grant))"
-                                                    OnLoadReach="@(() => LoadReachAsync(grant))" />
+                                                    OnLoadReach="@(() => LoadReachAsync(grant))"
+                                                    Edit="@(_edit?.Original == grant ? _edit : null)"
+                                                    OnEdit="@(() => BeginEditAdvancedGrant(grant))"
+                                                    OnSaveEdit="@(() => ApplyAdvancedGrantEditAsync())"
+                                                    OnCancelEdit="CancelEditAdvancedGrant" />
                         }
                     </MudStack>
                 </MudTabPanel>
@@ -285,10 +291,12 @@ else
     private string? _loadError;
     private string? _saveError;
     private string? _advancedError;
+    private AdvancedGrantEdit? _edit;
     private bool _loading = true;
     private bool _saving;
     private bool _deleteDialogOpen;
     private bool _initialized;
+    private const int AdvancedGrantsTab = 1;
     private int _activeTab;
     private RoleSummary? _role;
     private readonly HashSet<string> _direct = new(StringComparer.Ordinal);
@@ -313,6 +321,7 @@ else
         .OrderBy(x => x, StringComparer.Ordinal);
     private int DirectCount => _direct.Count;
     private int CoveredCount => _catalog.Resources.Sum(x => x.SupportedVerbs.Count(verb => FindCoveringWildcard(x.Resource, verb) != null && !IsDirect($"{x.Resource}:{verb}")));
+    private int SelectedCount => DirectCount + CoveredCount + _advanced.Count;
     private IReadOnlyList<BreadcrumbItem> Breadcrumbs =>
         _isCreate
             ? [new("Roles", href: "security/roles"), new("New role", href: null)]
@@ -425,6 +434,7 @@ else
         _reach.Clear();
         _reachLoading.Clear();
         _reachErrors.Clear();
+        CancelEditAdvancedGrant();
     }
 
     private void SortGrantState()
@@ -494,15 +504,52 @@ else
             RolePermissionAuthoring.IsValidPattern(pattern) &&
             RolePermissionAuthoring.Matches(pattern, resource, verb));
 
+    private IReadOnlyList<string> AlsoCoveredWildcards(PermissionResourceDescriptor resource) =>
+        resource.SupportedVerbs
+            .Where(verb => IsDirect($"{resource.Resource}:{verb}"))
+            .Select(verb => FindCoveringWildcard(resource.Resource, verb))
+            .OfType<string>()
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+    private IEnumerable<string> SelectableGrants(IEnumerable<PermissionResourceDescriptor> resources) =>
+        RolePermissionAuthoring.GetConcreteGrants(resources)
+            .Where(permission => RolePermissionAuthoring.TryParse(permission, out var pattern) &&
+                                 FindCoveringWildcard(pattern.Resource, pattern.Verb) == null);
+
+    private bool IsCategoryFullySelected(IEnumerable<PermissionResourceDescriptor> resources)
+    {
+        var selectable = SelectableGrants(resources).ToArray();
+        return selectable.Length > 0 && selectable.All(IsDirect);
+    }
+
+    private void ToggleCategory(IEnumerable<PermissionResourceDescriptor> resources)
+    {
+        if (IsReadOnly)
+            return;
+
+        if (IsCategoryFullySelected(resources))
+            DeselectCategory(resources);
+        else
+            SelectCategory(resources);
+    }
+
     private void SelectCategory(IEnumerable<PermissionResourceDescriptor> resources)
     {
         if (IsReadOnly)
             return;
 
-        var additions = RolePermissionAuthoring.GetConcreteGrants(resources)
-            .Where(x => RolePermissionAuthoring.TryParse(x, out var pattern) && FindCoveringWildcard(pattern.Resource, pattern.Verb) == null);
-        foreach (var permission in additions)
+        foreach (var permission in SelectableGrants(resources))
             _direct.Add(permission);
+    }
+
+    private void DeselectCategory(IEnumerable<PermissionResourceDescriptor> resources)
+    {
+        if (IsReadOnly)
+            return;
+
+        foreach (var permission in SelectableGrants(resources))
+            _direct.Remove(permission);
     }
 
     private void SetDirectGrant(string permission, bool selected)
@@ -518,28 +565,13 @@ else
 
     private async Task AddAdvancedGrant()
     {
-        _advancedError = null;
-        var value = _advancedDraft.Trim();
-        if (!RolePermissionAuthoring.TryParse(value, out var pattern) || !RolePermissionAuthoring.IsValidPattern(pattern))
-        {
-            _advancedError = "Enter a valid grant. Wildcards may be *, a trailing resource /*, or the entire verb *.";
+        if (!TryValidateAdvancedGrant(_advancedDraft, null, out var value, out _advancedError))
             return;
-        }
 
-        if (!pattern.HasWildcard)
-        {
-            _advancedError = "This is an exact permission. Select it on the Exact permissions tab.";
-            return;
-        }
-
-        if (!_advanced.Contains(value, StringComparer.Ordinal))
-            _advanced.Add(value);
+        _advanced.Add(value);
         _advanced.Sort(StringComparer.Ordinal);
-        _advancedError = null;
         _advancedDraft = string.Empty;
-        _reach.Remove(value);
-        _reachErrors.Remove(value);
-        await LoadReachAsync(value);
+        await RefreshReachAsync(value);
     }
 
     private void RemoveAdvancedGrant(string grant)
@@ -547,7 +579,70 @@ else
         if (IsReadOnly)
             return;
 
+        if (_edit?.Original == grant)
+            CancelEditAdvancedGrant();
         _advanced.Remove(grant);
+        ForgetReach(grant);
+    }
+
+    private async Task BeginEditAdvancedGrant(string grant)
+    {
+        // Switching rows keeps the open edit's work: apply it first, and stay on it if it is invalid.
+        if (IsReadOnly || !await ApplyAdvancedGrantEditAsync())
+            return;
+
+        _edit = new(grant);
+    }
+
+    private void CancelEditAdvancedGrant() => _edit = null;
+
+    // Returns false when an open edit is invalid; the error is shown on its row and the edit stays open.
+    private async Task<bool> ApplyAdvancedGrantEditAsync()
+    {
+        if (IsReadOnly || _edit is not { } edit)
+            return true;
+
+        if (!TryValidateAdvancedGrant(edit.Draft, edit.Original, out var value, out var error))
+        {
+            edit.Error = error;
+            return false;
+        }
+
+        CancelEditAdvancedGrant();
+        var index = _advanced.IndexOf(edit.Original);
+        if (value == edit.Original || index < 0)
+            return true;
+
+        _advanced[index] = value;
+        ForgetReach(edit.Original);
+        await RefreshReachAsync(value);
+        return true;
+    }
+
+    // Shared by add and in-place edit so both apply identical normalization, wildcard rules and duplicate detection.
+    // `original` is the grant being edited, which may legitimately be kept as-is.
+    private bool TryValidateAdvancedGrant(string? input, string? original, out string value, out string? error)
+    {
+        value = (input ?? string.Empty).Trim();
+        error = null;
+        if (!RolePermissionAuthoring.TryParse(value, out var pattern) || !RolePermissionAuthoring.IsValidPattern(pattern))
+            error = "Enter a valid grant. Wildcards may be *, a trailing resource /*, or the entire verb *.";
+        else if (!pattern.HasWildcard)
+            error = "This is an exact permission. Select it on the Exact permissions tab.";
+        else if (value != original && _advanced.Contains(value, StringComparer.Ordinal))
+            error = $"{value} is already an advanced grant.";
+
+        return error == null;
+    }
+
+    private async Task RefreshReachAsync(string grant)
+    {
+        ForgetReach(grant);
+        await LoadReachAsync(grant);
+    }
+
+    private void ForgetReach(string grant)
+    {
         _reach.Remove(grant);
         _reachErrors.Remove(grant);
     }
@@ -671,6 +766,13 @@ else
         _saveError = null;
         try
         {
+            // An edit the user typed but never confirmed is part of what they mean to save.
+            if (!await ApplyAdvancedGrantEditAsync())
+            {
+                _activeTab = AdvancedGrantsTab;
+                return;
+            }
+
             await _form.Validate();
             if (!_form.IsValid)
                 return;

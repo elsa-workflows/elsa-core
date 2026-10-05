@@ -107,7 +107,7 @@ The default Elsa Studio hosts select the authentication provider from configurat
 | `UsePkce` | Enables PKCE in the Blazor Server OIDC handler. | `true` |
 | `SaveTokens` | Saves tokens in server auth properties. Blazor Server only. | `true` |
 | `CallbackPath` | Sign-in callback path. Server default: `/signin-oidc`; WASM default: `/authentication/login-callback`. | Host-specific |
-| `SignedOutCallbackPath` | Sign-out callback path. Server default: `/signout-callback-oidc`; WASM default: `/authentication/logout-callback`. | Host-specific |
+| `SignedOutCallbackPath` | Sign-out callback path. On Blazor Server it's the post-logout redirect URI (see [Signing Out](#signing-out)), default `/signout-callback-oidc`. WebAssembly always uses `/authentication/logout-callback`. | Host-specific |
 | `RequireHttpsMetadata` | Requires HTTPS metadata endpoints. | `true` |
 | `GetClaimsFromUserInfoEndpoint` | Calls the OIDC UserInfo endpoint after sign-in. | `false` |
 | `MetadataAddress` | Optional metadata endpoint override. | Auto-discovered |
@@ -156,6 +156,25 @@ Refresh prerequisites:
 ### Blazor WebAssembly
 
 WebAssembly uses `Microsoft.AspNetCore.Components.WebAssembly.Authentication`. Token acquisition and refresh are handled by the framework through `IAccessTokenProvider`.
+
+## Signing Out
+
+Both hosting packages add the shared app bar user menu for a signed-in user. It shows the user's name and a **Sign out** entry. Hosts don't need extra configuration.
+
+Sign-out always ends the Studio session. If the provider's discovery document advertises an `end_session_endpoint`, Studio also performs OpenID Connect RP-initiated logout. It redirects to that endpoint with `id_token_hint` and a `post_logout_redirect_uri` that brings the user back to Studio. If the provider doesn't advertise the endpoint, only the Studio session ends. The provider session stays active, so the next sign-in may complete without asking for credentials again.
+
+The user then lands on the Studio home page, which starts a new sign-in.
+
+| Host | What Sign out does | Post-logout redirect URI to allow at the provider |
+| --- | --- | --- |
+| Blazor Server | Posts an antiforgery-protected form to `POST /authentication/logout`. That removes the authentication cookie and signs out of the OpenID Connect handler. The handler reads `id_token_hint` from the saved tokens, so keep `SaveTokens = true`. | `https://<studio-host><SignedOutCallbackPath>`, by default `https://<studio-host>/signout-callback-oidc` |
+| Blazor WebAssembly | Calls `NavigationManager.NavigateToLogout("authentication/logout", ...)`. Microsoft's remote authenticator removes the stored user and, if available, redirects to the end-session endpoint. | `<studio-base-uri>authentication/logout-callback`. This is the framework default; the WebAssembly package doesn't apply `SignedOutCallbackPath`. |
+
+Register the post-logout redirect URI with the provider. Otherwise the provider rejects the request or doesn't redirect back.
+
+Blazor Server needs `<persist-component-state />` on the host page for Sign out to work on long-polling circuits; see the [Blazor Server troubleshooting note](../Elsa.Studio.Authentication.OpenIdConnect.BlazorServer/README.md#backend-calls-have-no-access-token-or-sign-out-returns-400).
+
+On Blazor Server, `/authentication/logout` accepts only an antiforgery-protected `POST`, so another site can't sign users out. Earlier versions also signed out on `GET /authentication/logout`. Custom links or buttons that used it must now submit a form with an antiforgery token, as `OpenIdConnectUserMenu` does.
 
 ## Microsoft Entra ID Notes
 
