@@ -106,14 +106,17 @@ public class AdminUserInitializer(
     /// Finds the current tenant's admin role. A role whose ID is <paramref name="adminRoleName"/> is what earlier
     /// versions created, and existing users reference that ID, so it is preferred even if it has since been renamed.
     /// Otherwise the role is looked up by name within the tenant. Both lookups only see roles visible to the
-    /// current tenant, so a role another tenant owns is never reused.
+    /// current tenant, so a role another tenant owns is never reused, and tenant-agnostic roles are skipped: the
+    /// initializer adds permissions to the role it finds, which must not widen a role that every tenant shares.
     /// </summary>
     private async Task<Role?> FindAdminRoleAsync(string adminRoleName, CancellationToken cancellationToken)
     {
         var legacyRole = await roleStore.FindAsync(new() { Id = adminRoleName }, cancellationToken);
-        if (legacyRole != null)
+        if (legacyRole != null && !RoleStoreExtensions.IsTenantAgnostic(legacyRole))
+        {
             return legacyRole;
+        }
 
-        return await roleStore.FindByNameAsync(adminRoleName, cancellationToken);
+        return await roleStore.FindByNameAsync(adminRoleName, includeTenantAgnostic: false, cancellationToken);
     }
 }

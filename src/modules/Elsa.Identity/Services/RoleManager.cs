@@ -1,4 +1,5 @@
 using Elsa.Common.Multitenancy;
+using Elsa.Extensions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
@@ -49,12 +50,16 @@ public class RoleManager : IRoleManager
         CancellationToken cancellationToken = default)
     {
         if (await FindSameNamedRoleAsync(name, cancellationToken) is { } sameNamedRole)
+        {
             throw new InvalidOperationException($"A role named '{sameNamedRole.Name}' already exists.");
+        }
 
         var roleId = string.IsNullOrWhiteSpace(id) ? _identityGenerator.GenerateId() : id;
 
         if (await RoleExistsAsync(roleId, cancellationToken))
+        {
             throw new InvalidOperationException($"A role with ID '{roleId}' already exists.");
+        }
 
         var role = new Role
         {
@@ -71,14 +76,18 @@ public class RoleManager : IRoleManager
     }
 
     /// <summary>
-    /// Finds a role visible to the current tenant whose name differs from <paramref name="name"/> at most in case.
+    /// Finds a role owned by the current tenant whose name differs from <paramref name="name"/> at most in case.
     /// Names that differ only in case used to collide on their derived ID, and case-insensitive databases reject
-    /// them through the per-tenant name index, so they are rejected here on every store alike.
+    /// them through the per-tenant name index, so they are rejected here on every store alike. Tenant-agnostic
+    /// roles are visible to the tenant but owned by none, and the stores' per-tenant name uniqueness lets a tenant
+    /// hold its own role of the same name, so they do not count.
     /// </summary>
     private async Task<Role?> FindSameNamedRoleAsync(string name, CancellationToken cancellationToken)
     {
         var tenantRoles = await _roleStore.FindManyAsync(new RoleFilter(), cancellationToken);
-        return tenantRoles.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
+        return tenantRoles
+            .Where(x => !RoleStoreExtensions.IsTenantAgnostic(x))
+            .FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
     }
 
     private async Task<bool> RoleExistsAsync(string roleId, CancellationToken cancellationToken)

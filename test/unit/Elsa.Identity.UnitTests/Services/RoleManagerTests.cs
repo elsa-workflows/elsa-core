@@ -164,4 +164,15 @@ public class RoleManagerTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => _manager.CreateRoleAsync("Operators", []));
     }
+
+    [Fact]
+    public async Task ATenantCanCreateItsOwnRoleNamedLikeATenantAgnosticOne()
+    {
+        await _roleStore.SaveAsync(new Role { Id = "platform-operators", Name = "Operators", TenantId = Tenant.AgnosticTenantId });
+
+        var result = await _manager.CreateRoleAsync("Operators", []);
+
+        Assert.Equal("tenant-a", result.Role.TenantId);
+        Assert.Equal(2, (await _roleStore.FindManyAsync(new() { Name = "Operators" })).Count());
+    }
 }

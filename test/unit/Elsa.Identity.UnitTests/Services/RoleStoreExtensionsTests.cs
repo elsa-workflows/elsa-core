@@ -74,4 +74,14 @@ public class RoleStoreExtensionsTests
 
         Assert.Equal("generated-id", (await store.FindByNameAsync("admin"))?.Id);
     }
+
+    [Fact]
+    public async Task FindByNameAsyncCanSkipTenantAgnosticRoles()
+    {
+        var store = new MemoryRoleStore(new MemoryStore<Role>(), new TestTenantAccessor("tenant-a"));
+        await store.SaveAsync(new Role { Id = "shared", Name = "admin", TenantId = Elsa.Common.Multitenancy.Tenant.AgnosticTenantId });
+
+        Assert.Equal("shared", (await store.FindByNameAsync("admin"))?.Id);
+        Assert.Null(await store.FindByNameAsync("admin", includeTenantAgnostic: false));
+    }
 }
