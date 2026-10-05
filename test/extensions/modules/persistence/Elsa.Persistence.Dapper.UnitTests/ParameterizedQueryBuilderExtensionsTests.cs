@@ -110,6 +110,29 @@ public sealed class ParameterizedQueryBuilderExtensionsTests : IDisposable
         Assert.Equal([matchingId], actualIds);
     }
 
+    [Fact]
+    public async Task LessThan_DateTimeOffset_ComparesInstantsAndKeepsCutoffExclusive()
+    {
+        var connectionString = new SqliteConnectionStringBuilder { DataSource = _databasePath, Pooling = false }.ToString();
+        using var connection = new SqliteConnection(connectionString);
+        connection.Open();
+        connection.Execute("""
+                          insert into TestRecords (Id, TenantId, Value) values
+                          ('older-offset', 'tenant-a', '2026-01-01 17:00:00+05:00'),
+                          ('newer-offset', 'tenant-a', '2026-01-01 08:00:00-05:00'),
+                          ('same-instant-offset', 'tenant-a', '2026-01-01 07:05:00-05:00');
+                          """);
+        var cutoff = new DateTimeOffset(2026, 1, 1, 12, 5, 0, TimeSpan.Zero);
+
+        var query = new ParameterizedQuery(new SqliteDialect())
+            .From("TestRecords", nameof(TestRecord.Id))
+            .LessThan(nameof(TestRecord.Value), cutoff);
+
+        var actualIds = await connection.QueryAsync<string>(query.Sql.ToString(), query.Parameters);
+
+        Assert.Equal(["older-offset"], actualIds);
+    }
+
     [Fact(DisplayName = "StartsWith binds @{field}StartsWith so it does not collide with Is(@{field})")]
     public void StartsWith_BindsFieldPrefixedParameter()
     {

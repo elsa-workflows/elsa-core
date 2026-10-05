@@ -189,7 +189,17 @@ public static class ParameterizedQueryBuilderExtensions
     {
         if (value == null) return query;
 
-        query.Sql.AppendLine($"and {query.QuoteIdent(field)} < @{field}");
+        var identifier = query.QuoteIdent(field);
+        if (query.Dialect is SqliteDialect && value is DateTimeOffset)
+        {
+            // SQLite date functions compare at millisecond precision. Keep this exclusive so a precision tie waits for the next scan.
+            query.Sql.AppendLine($"and julianday({identifier}) < julianday(@{field})");
+        }
+        else
+        {
+            query.Sql.AppendLine($"and {identifier} < @{field}");
+        }
+
         query.Parameters.Add($"@{field}", value);
 
         return query;
