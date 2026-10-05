@@ -32,4 +32,26 @@ internal static class MigrationDatabases
         "PostgreSQL",
         "PostgreSQL92"
     ];
+
+    /// <summary>
+    /// Providers whose FluentMigrator tables use quoted, case-preserved identifiers (PostgreSQL with
+    /// <c>ForceQuote</c>, Oracle), so raw SQL must quote <c>"Roles"</c>, <c>"Id"</c> and so on.
+    /// </summary>
+    public static readonly string[] QuotedIdentifiers =
+    [
+        "Oracle",
+        "Postgres",
+        "PostgreSQL",
+        "PostgreSQL92"
+    ];
+
+    /// <summary>
+    /// Providers whose FluentMigrator tables can be addressed with unquoted identifiers in raw SQL.
+    /// </summary>
+    public static readonly string[] UnquotedIdentifiers =
+    [
+        "Sqlite",
+        "SqlServer",
+        "MySql"
+    ];
 }

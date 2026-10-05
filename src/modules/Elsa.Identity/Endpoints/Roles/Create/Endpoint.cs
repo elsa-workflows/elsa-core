@@ -3,6 +3,7 @@ using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
 using Elsa.Permissions;
+using Elsa.Workflows.Exceptions;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 
@@ -55,6 +56,12 @@ internal class Create(IRoleManager roleManager, IRoleAuthorizationService roleAu
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
         {
+            await Send.ErrorsAsync(StatusCodes.Status409Conflict, cancellationToken);
+            return;
+        }
+        catch (UniqueKeyConstraintViolationException)
+        {
+            // A concurrent create of the same name or ID passed the pre-save check; the store's unique index caught it.
             await Send.ErrorsAsync(StatusCodes.Status409Conflict, cancellationToken);
             return;
         }

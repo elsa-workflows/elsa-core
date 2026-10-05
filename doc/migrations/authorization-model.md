@@ -205,15 +205,12 @@ both work in a deployed environment, not just on localhost, and both attach an i
 caller then does:
 
 - **A seeded administrator.** `UseDefaultAdmin(username, password, roleName, permissions)` in code-first
-  hosts, or the `DefaultAdminUser` shell feature in shell-based hosts. Code-first hosts do not bind a
-  `DefaultAdminUser` configuration section automatically, so pass the values in from your own configuration.
-  It runs when each tenant is activated and is idempotent: a user that already exists is not updated, but
-  configured permissions missing from an existing admin role are added, which widens what that role's users
-  can do. Role IDs are unique across the identity store and the admin role's ID is `AdminRoleName`, so when
-  tenants share one store and the same `AdminRoleName`, only the first tenant activated is seeded; for the
-  others, creating the role fails and no admin user is created. Whenever it does create the user, it uses
-  the currently configured password, so when you rotate a seeded admin's password, update or remove the
-  bootstrap password too.
+  hosts, or the `DefaultAdminUser` shell feature in shell-based hosts. It runs when each tenant is activated,
+  gives each tenant its own admin role and user (also when tenants share one store), and adds any configured
+  permissions an existing admin role lacks. See
+  [Default Admin User Bootstrap](../../src/modules/Elsa.Identity/README.md#default-admin-user-bootstrap) in the
+  Identity README for configuration and operational notes, including what to do with the bootstrap password
+  when you rotate the admin's password.
 - **An admin API key.** In code-first hosts, `UseAdminApiKey(key)` on `DefaultAuthenticationFeature` (or
   `UseAdminApiKey(options => ...)` to also set the owner name and permissions). In shell-based hosts, the
   `AdminApiKey` setting on the `DefaultAuthentication` shell feature. Disabled unless configured. While it is
@@ -359,6 +356,51 @@ Included in the same release: `User.Name`, `Role.Name`, `Application.Name` and `
 If you have duplicate names across tenants today, they were impossible to create, so no data conflict can arise. Going the other way — downgrading — will fail if duplicates exist by then.
 
 One caveat: the composite indexes only cover rows whose `TenantId` is non-null (SQL Server filters null rows out of the index; SQLite, PostgreSQL and MySQL treat nulls as distinct — Oracle alone still rejects null-tenant duplicates). `TenantId` is only assigned when multitenancy is enabled, so in a single-tenant deployment every row keeps null and user, role and application name uniqueness becomes application-enforced rather than schema-enforced: the pre-save existence checks block sequential duplicates, but the database no longer backstops concurrent ones. Likewise, rows written before the upgrade keep a null `TenantId`, and in a multi-tenant deployment's default tenant those legacy rows and new `""`-tenant rows are distinct index keys, so the index cannot catch a name collision between them. See the same caveat, with the reasoning, in [secrets-tenancy.md](secrets-tenancy.md).
+
+## 3.10: Generated role IDs and tenant-scoped role names
+
+Role IDs are unique across the whole identity store, but until 3.10 they were derived from the role name, so tenants
+sharing one store could not each hold a same-named role, and only the first tenant activated got a seeded admin
+([#8615](https://github.com/elsa-workflows/elsa-core/issues/8615)). From 3.10:
+
+- **New roles get generated IDs.** `POST /identity/roles` without an `id`, and the `DefaultAdminUser` seeder, create
+  roles with an opaque generated ID instead of the kebab-cased name (`admin`, `power-user`). A role name only has to
+  be unique within its tenant. Each tenant's seeded admin user references its own tenant's admin role by that ID.
+- **Existing data is unchanged.** No data migration is needed (the Dapper store adds an index; see below). Roles keep
+  their name-derived IDs, and users and applications that reference them keep resolving. The seeder still reuses an existing role whose ID is
+  `AdminRoleName`.
+- **Look IDs up instead of assuming them.** `GET /identity/roles` returns each role's `id` and `name` for the current
+  tenant, and `POST /identity/roles` returns the new role's `id`.
+- **Review hard-coded role IDs.** On a **new** store, the seeded admin role's ID is no longer `admin`, and a role
+  created through `POST /identity/roles` without an `id` no longer gets one derived from its name. Users and
+  applications that reference such an ID, including ones defined in configuration, **silently get no permissions** from
+  it. Requests that assign it are rejected instead: `POST /identity/users` and `PUT /identity/users/{id}` return 403,
+  saving an External Authentication connection whose unlinked-identity policy lists it in `defaultRoleIds` (for
+  example `defaultRoleIds: ["admin"]`) fails validation, and a policy that already stores it fails every new external
+  sign-in with "A configured default role no longer exists." Replace those values with the IDs from
+  `GET /identity/roles`. On an existing store whose `admin` role was created by an earlier version, those references
+  keep working.
+- **MongoDB and Dapper stores.** The 3.10 MongoDB and Dapper packages, published from this repository's
+  `src/extensions`, carry the matching store changes ([#8615](https://github.com/elsa-workflows/elsa-core/issues/8615),
+  ported from elsa-extensions#281):
+  - Dapper resolves role references by ID (earlier versions matched them against the name column, so a role whose
+    ID differs from its name granted nothing). A side effect on upgrade: a user or application that references a
+    legacy role whose ID differs from its name, for example `power-user`, now gets that role's permissions.
+  - Saving a Dapper role never moves another tenant's row or a tenant-agnostic (`*`) row into the current tenant;
+    it fails with an error instead.
+  - A new Dapper migration (`Elsa:Identity:V3.10`, version 30005) adds a unique index on `Roles (TenantId, Name)`.
+    It never changes or deletes rows: if one tenant already has two roles whose names match ignoring case (with
+    `NULL` and `''` both counted as the default tenant), the migration fails, lists the role IDs, and changes
+    nothing. Rename or remove the extra roles, update what references them, and run it again. SQL Server treats
+    `NULL`s as equal in a unique index; SQLite, PostgreSQL, MySQL and Oracle do not, so on those databases the
+    index does not stop a duplicate name among rows without a tenant. On case-sensitive collations (SQLite, PostgreSQL, Oracle) the index
+    only rejects exact duplicates, and names that differ only in case are rejected by `RoleManager` before saving.
+  - MongoDB replaces the store-wide unique role name index `Name_1` with a per-tenant `TenantId_1_Name_1` when the
+    host starts. It creates the new index first and then drops the old one, so the collection is never without name
+    uniqueness and several nodes can start at once.
+  - MongoDB still keeps user names, and application names and client IDs, unique across the whole store. A second
+    tenant sharing a MongoDB store therefore still cannot get a seeded admin user with the same user name. That is
+    tracked separately ([elsa-extensions#282](https://github.com/elsa-workflows/elsa-extensions/issues/282)).
 
 ## Full mapping
 

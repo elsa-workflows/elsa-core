@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Persistence.Dapper.Extensions;
 using Elsa.Persistence.Dapper.Models;
 using Elsa.Persistence.Dapper.Modules.Identity.Records;
@@ -15,10 +16,44 @@ namespace Elsa.Persistence.Dapper.Modules.Identity.Stores;
 internal class DapperRoleStore(Store<RoleRecord> store) : IRoleStore
 {
     /// <inheritdoc />
-    public async Task SaveAsync(Role application, CancellationToken cancellationToken = default)
+    /// <remarks>
+    /// <see cref="Store{T}.SaveAsync"/> upserts on the ID alone (SQLite <c>INSERT OR REPLACE</c>, SQL Server
+    /// <c>MERGE</c>), which would move another tenant's row into the current tenant when IDs collide, as they did
+    /// while role IDs were derived from the name. So a row is only updated when the current tenant owns it, and the
+    /// update itself is filtered by the current tenant as well as the ID. Otherwise the role is inserted, or refused
+    /// when its ID already belongs to another tenant or to a tenant-agnostic ('*') role.
+    /// </remarks>
+    public async Task SaveAsync(Role role, CancellationToken cancellationToken = default)
     {
-        var record = Map(application);
-        await store.SaveAsync(record, cancellationToken);
+        var record = Map(role);
+        var owned = await store.FindAsync(q => q.Is(nameof(RoleRecord.Id), record.Id), tenantAgnostic: false, cancellationToken);
+
+        if (owned != null)
+        {
+            // The filtered UpdateAsync overload adds the current tenant to the WHERE clause next to the ID.
+            var updated = await store.UpdateAsync(
+                record,
+                [x => x.Name, x => x.Permissions],
+                q => q.Is(nameof(RoleRecord.Id), record.Id),
+                cancellationToken);
+
+            if (updated > 0)
+            {
+                return;
+            }
+        }
+
+        var existing = await store.FindAsync(q => q.Is(nameof(RoleRecord.Id), record.Id), tenantAgnostic: true, cancellationToken);
+
+        if (existing != null)
+        {
+            var message = existing.TenantId == Tenant.AgnosticTenantId
+                ? $"A role with ID '{record.Id}' already exists as a tenant-agnostic ('*') role, which a tenant cannot overwrite."
+                : $"A role with ID '{record.Id}' already exists in another tenant.";
+            throw new InvalidOperationException(message);
+        }
+
+        await store.AddAsync(record, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -52,8 +87,9 @@ internal class DapperRoleStore(Store<RoleRecord> store) : IRoleStore
     {
         query
             .Is(nameof(RoleRecord.Id), filter.Id)
-            .In(nameof(RoleRecord.Name), filter.Ids)
-            ;   
+            .In(nameof(RoleRecord.Id), filter.Ids)
+            .Is(nameof(RoleRecord.Name), filter.Name)
+            ;
     }
     
     private RoleRecord Map(Role source)
