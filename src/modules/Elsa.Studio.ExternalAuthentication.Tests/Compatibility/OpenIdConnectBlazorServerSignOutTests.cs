@@ -41,6 +41,7 @@ public sealed class OpenIdConnectBlazorServerSignOutTests
     private static readonly RendererInfo Circuit = new("Server", isInteractive: true);
     private readonly OpenIdConnectConfiguration _provider = new() { EndSessionEndpoint = EndSessionEndpoint };
     private readonly StubHttpContextAccessor _httpContextAccessor = new();
+    private readonly HostedNavigationManager _navigation = new("https://studio.example/");
     private readonly PersistedAntiforgeryState _persistedAntiforgery = new();
     private readonly Dictionary<string, string> _browserCookies = [];
     private readonly WebApplication _studio;
@@ -68,6 +69,7 @@ public sealed class OpenIdConnectBlazorServerSignOutTests
         Services.AddSingleton(_studio.Services.GetRequiredService<IAntiforgery>());
         Services.AddSingleton<IHttpContextAccessor>(_httpContextAccessor);
         Services.AddSingleton<AntiforgeryStateProvider>(_persistedAntiforgery);
+        Services.AddSingleton<NavigationManager>(_navigation);
     }
 
     private CookieAuthenticationOptions SessionCookieOptions =>
@@ -121,6 +123,28 @@ public sealed class OpenIdConnectBlazorServerSignOutTests
         RenderWhileHandling(page, Prerender);
 
         Assert.Empty(SetCookies(page.Response));
+    }
+
+    [Theory]
+    [InlineData("https://studio.example/", "/authentication/logout")]
+    [InlineData("https://studio.example/studio/", "/studio/authentication/logout")]
+    [InlineData("https://studio.example/studio", "/studio/authentication/logout")]
+    public void LogoutFormAction_PreservesTheHostedPathBase(string baseUri, string expected) =>
+        Assert.Equal(expected, HostedAuthenticationPaths.LogoutFormAction(baseUri));
+
+    [Theory]
+    [InlineData("https://studio.example/", "/authentication/logout")]
+    [InlineData("https://studio.example/studio/", "/studio/authentication/logout")]
+    [InlineData("https://studio.example/elsa/studio/", "/elsa/studio/authentication/logout")]
+    public void SignOutForm_PreservesTheHostedPathBase(string baseUri, string expectedAction)
+    {
+        _navigation.SetBaseUri(baseUri);
+        SignIn();
+
+        var menu = RenderWhileHandling(BrowserRequest(HttpMethods.Get, "/"), Prerender);
+        var form = ((IHtmlButtonElement)FindInOpenMenu(menu, "button[type=submit]")).Form!;
+
+        Assert.Equal(expectedAction, form.GetAttribute("action"));
     }
 
     [Fact]
@@ -226,6 +250,19 @@ public sealed class OpenIdConnectBlazorServerSignOutTests
     {
         request.Features.Set<IHttpResponseFeature>(new StartedResponseFeature());
         return request;
+    }
+
+    private sealed class HostedNavigationManager : NavigationManager
+    {
+        public HostedNavigationManager(string baseUri) => Initialize(baseUri, baseUri);
+
+        public void SetBaseUri(string baseUri)
+        {
+            BaseUri = baseUri;
+            Uri = baseUri;
+        }
+
+        protected override void NavigateToCore(string uri, bool forceLoad) => throw new NotSupportedException();
     }
 
     private DefaultHttpContext FormRequest(string method, string path, Dictionary<string, StringValues> fields)
