@@ -11,7 +11,6 @@ using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
-using MongoDB.Driver.Linq;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Persistence.MongoDb.Modules.Management;
@@ -73,12 +72,8 @@ public class MongoWorkflowInstanceStore(MongoDbStore<WorkflowInstance> mongoDbSt
     /// <inheritdoc />
     public async ValueTask<Page<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var collection = mongoDbStore.GetCollection();
-        var queryable = Order(Filter(collection.AsQueryable(), filter), order);
-        var count = queryable.LongCount();
-        var mongoQueryable = queryable.Paginate(pageArgs);
-        var documents = await mongoQueryable.Select(ExpressionHelpers.WorkflowInstanceSummary).ToListAsync(cancellationToken);
-
+        var count = await mongoDbStore.CountAsync(query => Filter(query, filter), cancellationToken);
+        var documents = await mongoDbStore.FindManyAsync(query => OrderAndPaginate(Filter(query, filter), order, pageArgs), ExpressionHelpers.WorkflowInstanceSummary, cancellationToken).ToList();
         return Page.Of(documents, count);
     }
 
@@ -145,8 +140,8 @@ public class MongoWorkflowInstanceStore(MongoDbStore<WorkflowInstance> mongoDbSt
     /// </remarks>
     public async ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false)
     {
-        var collection = mongoDbStore.GetCollection();
         // Refuse every Finished row (#8419). allowFinishedCancelled is ignored.
+        // Single filtered update; tenant scope is applied by MongoDbStore (#228).
         var idFilter = Builders<WorkflowInstance>.Filter.Eq(x => x.Id, workflowInstanceId);
         var notFinished = Builders<WorkflowInstance>.Filter.Ne(x => x.Status, WorkflowStatus.Finished);
         var filter = Builders<WorkflowInstance>.Filter.And(idFilter, notFinished);
@@ -155,7 +150,7 @@ public class MongoWorkflowInstanceStore(MongoDbStore<WorkflowInstance> mongoDbSt
             .Set(x => x.SubStatus, WorkflowSubStatus.Interrupted)
             .Set(x => x.IsExecuting, false);
 
-        var result = await collection.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+        var result = await mongoDbStore.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
         return result.MatchedCount > 0;
     }
 

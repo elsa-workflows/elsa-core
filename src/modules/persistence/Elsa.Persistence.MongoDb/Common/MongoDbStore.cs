@@ -183,6 +183,20 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     }
 
     /// <summary>
+    /// Updates a single document matching <paramref name="filter"/>. Tenant scope is applied unless
+    /// <paramref name="tenantAgnostic"/> is true. This is a single filtered update.
+    /// </summary>
+    public Task<UpdateResult> UpdateOneAsync(
+        FilterDefinition<TDocument> filter,
+        UpdateDefinition<TDocument> update,
+        bool tenantAgnostic = false,
+        CancellationToken cancellationToken = default)
+    {
+        var scopedFilter = ApplyTenantScope(filter, tenantAgnostic);
+        return collection.UpdateOneAsync(scopedFilter, update, cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
     /// Finds the document matching the specified predicate
     /// </summary>
     /// <param name="predicate">The predicate to use.</param>
