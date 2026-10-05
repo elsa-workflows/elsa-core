@@ -16,7 +16,7 @@ public class ParameterizedQueryBuilderExtensionsTests
 
         var sql = query.Sql.ToString();
 
-        Assert.Contains("and UpdatedAt < @UpdatedAt", sql, StringComparison.Ordinal);
+        Assert.Contains("and julianday(UpdatedAt) < julianday(@UpdatedAt)", sql, StringComparison.Ordinal);
         Assert.DoesNotContain("<=", sql, StringComparison.Ordinal);
         Assert.Equal(cutoff, query.Parameters.Get<DateTimeOffset>("UpdatedAt"));
     }
