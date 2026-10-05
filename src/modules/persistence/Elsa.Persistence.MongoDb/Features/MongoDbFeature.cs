@@ -5,6 +5,7 @@ using Elsa.Persistence.MongoDb.Contracts;
 using Elsa.Persistence.MongoDb.HostedServices;
 using Elsa.Persistence.MongoDb.NamingStrategies;
 using Elsa.Persistence.MongoDb.Options;
+using Elsa.Persistence.MongoDb.Serializers;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,6 +52,7 @@ public class MongoDbFeature(IModule module) : FeatureBase(module)
 
         Services.TryAddScoped<DefaultNamingStrategy>();
         Services.AddScoped(CollectionNamingStrategy);
+        Services.TryAddSingleton<VariableSerializer>();
 
         RegisterClassMaps();
     }

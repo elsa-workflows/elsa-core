@@ -12,6 +12,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="Elsa.Dapper.UnitTests" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Azure.Identity"/>
         <PackageReference Include="Dapper"/>
         <PackageReference Include="FluentMigrator"/>

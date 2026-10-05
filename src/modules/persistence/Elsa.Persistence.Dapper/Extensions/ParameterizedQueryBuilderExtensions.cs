@@ -177,6 +177,22 @@ public static class ParameterizedQueryBuilderExtensions
     }
 
     /// <summary>
+    /// Appends an AND clause matching values strictly less than the specified value, if the value is not null.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="field">The field.</param>
+    /// <param name="value">The value.</param>
+    public static ParameterizedQuery LessThan(this ParameterizedQuery query, string field, object? value)
+    {
+        if (value == null) return query;
+
+        query.Sql.AppendLine($"and {query.QuoteIdent(field)} < @{field}");
+        query.Parameters.Add($"@{field}", value);
+
+        return query;
+    }
+
+    /// <summary>
     /// Appends a search term for workflow definitions to the search.
     /// </summary>
     /// <param name="query">The query.</param>

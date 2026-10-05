@@ -17,20 +17,21 @@ namespace Elsa.Persistence.MongoDb.HostedServices;
 /// <remarks>
 /// This class implements <see cref="IHostedService"/> and is responsible for registering serializers to handle
 /// specific types such as <see cref="object"/>, <see cref="Type"/>, <see cref="Variable"/>, <see cref="Version"/>,
-/// <see cref="JsonElement"/>, <see cref="JsonNode"/>, and <see cref="FlowScope"/>.
+/// <see cref="JsonElement"/>, <see cref="JsonNode"/> (including <see cref="JsonObject"/>, <see cref="JsonArray"/>,
+/// and <see cref="JsonValue"/>), and <see cref="FlowScope"/>.
 /// It uses helper methods to register these serializers during the application's startup process.
 /// </remarks>
 [UsedImplicitly]
-public class ConfigureMongoDbSerializers(IPayloadSerializer payloadSerializer) : IHostedService
+public class ConfigureMongoDbSerializers(IPayloadSerializer payloadSerializer, VariableSerializer variableSerializer) : IHostedService
 {
     public Task StartAsync(CancellationToken cancellationToken)
     {
         TryRegisterSerializer(typeof(object), new PolymorphicSerializer());
         TryRegisterSerializer(typeof(Type), new TypeSerializer());
-        TryRegisterSerializer(typeof(Variable), new VariableSerializer());
+        TryRegisterSerializer(typeof(Variable), variableSerializer);
         TryRegisterSerializer(typeof(Version), new VersionSerializer());
         TryRegisterSerializer(typeof(JsonElement), new JsonElementSerializer());
-        TryRegisterSerializer(typeof(JsonNode), new JsonNodeBsonConverter());
+        JsonNodeBsonConverter.RegisterSerializers();
         TryRegisterSerializer(typeof(FlowScope), new FlowScopeSerializer(payloadSerializer));
 
         return Task.CompletedTask;

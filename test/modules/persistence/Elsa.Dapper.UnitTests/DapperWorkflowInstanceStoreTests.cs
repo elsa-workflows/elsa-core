@@ -4,6 +4,7 @@ using Elsa.Persistence.Dapper.Modules.Management.Records;
 using Elsa.Persistence.Dapper.Modules.Management.Stores;
 using Elsa.Persistence.Dapper.Services;
 using Elsa.Workflows;
+using Elsa.Workflows.Management.Filters;
 using Microsoft.Data.Sqlite;
 using NSubstitute;
 
@@ -11,6 +12,8 @@ namespace Elsa.Dapper.UnitTests;
 
 public sealed class DapperWorkflowInstanceStoreTests : IDisposable
 {
+    private static readonly DateTimeOffset Cutoff = new(2026, 1, 1, 12, 5, 0, TimeSpan.Zero);
+
     private readonly string _databasePath = Path.Combine(Path.GetTempPath(), $"elsa-dapper-instances-{Guid.NewGuid():N}.db");
     private readonly string _connectionString;
     private readonly DapperWorkflowInstanceStore _store;
@@ -44,8 +47,63 @@ public sealed class DapperWorkflowInstanceStoreTests : IDisposable
                            );
                            """);
 
+        // Seeded through parameters rather than literals so the driver writes the timestamps in
+        // exactly the format it later binds them in for comparison.
+        Insert(connection, "stale-executing", Cutoff.AddMinutes(-5), isExecuting: true);
+        Insert(connection, "stale-idle", Cutoff.AddMinutes(-1), isExecuting: false);
+        Insert(connection, "at-cutoff", Cutoff, isExecuting: true);
+        Insert(connection, "fresh-executing", Cutoff.AddMinutes(4), isExecuting: true);
+
         var store = new Store<WorkflowInstanceRecord>(connectionProvider, _tenantAccessor, "WorkflowInstances");
         _store = new DapperWorkflowInstanceStore(store, Substitute.For<IWorkflowStateSerializer>());
+    }
+
+    [Fact]
+    public async Task FindManyIdsAsync_WithBeforeLastUpdated_ExcludesInstancesUpdatedAtOrAfterTheCutoff()
+    {
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+
+        var ids = await _store.FindManyIdsAsync(new WorkflowInstanceFilter { BeforeLastUpdated = Cutoff });
+
+        Assert.Equal(["stale-executing", "stale-idle"], ids.Order());
+    }
+
+    /// <summary>
+    /// Mirrors the filter used by RestartInterruptedWorkflowsTask. An instance that is executing right
+    /// now must not be reported as interrupted, or it gets restarted from the beginning mid-flight.
+    /// </summary>
+    [Fact]
+    public async Task FindManyIdsAsync_WithBeforeLastUpdatedAndIsExecuting_ExcludesInstancesThatAreStillActive()
+    {
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+
+        var ids = await _store.FindManyIdsAsync(new WorkflowInstanceFilter
+        {
+            IsExecuting = true,
+            BeforeLastUpdated = Cutoff
+        });
+
+        Assert.Equal(["stale-executing"], ids);
+    }
+
+    [Fact]
+    public async Task FindManyIdsAsync_WithoutBeforeLastUpdated_ReturnsAllInstances()
+    {
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+
+        var ids = await _store.FindManyIdsAsync(new WorkflowInstanceFilter());
+
+        Assert.Equal(["at-cutoff", "fresh-executing", "stale-executing", "stale-idle"], ids.Order());
+    }
+
+    [Fact]
+    public async Task CountAsync_WithBeforeLastUpdated_CountsOnlyInstancesUpdatedBeforeTheCutoff()
+    {
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+
+        var count = await _store.CountAsync(new WorkflowInstanceFilter { BeforeLastUpdated = Cutoff });
+
+        Assert.Equal(2, count);
     }
 
     [Fact(DisplayName = "TryMarkInterruptedAsync marks a Running instance as Running+Interrupted")]
