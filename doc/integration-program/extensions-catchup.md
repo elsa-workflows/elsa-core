@@ -37,3 +37,7 @@ The live slice adds the existence-guarded Dapper runtime migration 20008 (KeyVal
 Existing Core project-reference/SSH.NET compatibility adjustments and MigrationDatabases.QuotedIdentifiers/UnquotedIdentifiers are preserved. Identity V3_10 remains untouched. Files already equal to the reconciled source are recorded without rewriting them.
 
 Verification is recorded by the integrating lead after source and mapped Core test execution. No publication or cutover is performed by this local slice.
+
+## Persistence review follow-up
+
+[Extensions #286](https://github.com/elsa-workflows/elsa-extensions/pull/286) at `8626e81f4a780be7d5fde87a1ae8b15cc6915934` adds reviewed ownership-safe saves, literal prefix semantics, SQLite instant comparison, and legacy Mongo envelope-collision handling. The refreshed receipt includes all 48 paths from the previous imported source through this follow-up. Core keeps its documented API/layout adaptations. Full source and mapped persistence suite evidence is recorded in [the catch-up verification report](release-catchup-verification.md).

@@ -136,7 +136,7 @@
       "unchanged": true
     }
   ],
-  "coreValidation": "Source mapping and ancestry are verified at the recorded history join. Existing Core OIDC production code and 17 focused rendered sign-out cases were verified at 88c241591fdb61766bc5e3ce5b6dadb082aec67d. Later namespace and viewport review follow-ups are being qualified by source PR1125 and integration PR8624; detailed checkpoints are in release-catchup-verification.md.",
+  "coreValidation": "Source mapping and ancestry are verified at the recorded history joins. Existing Core OIDC production code and 17 focused rendered sign-out cases were verified at 88c241591fdb61766bc5e3ce5b6dadb082aec67d. Namespace and viewport follow-ups passed source PR1125 full CI; final Core qualification is recorded on PR8624. Detailed checkpoints are in release-catchup-verification.md.",
   "mapping": [
     {
       "source": ".github/reviewers.md",
@@ -7544,12 +7544,14 @@
     {
       "commit": "2cdfcc525945e99a2ab2c1a02fa3053a0e8dce20",
       "command": "dotnet build src/modules/Elsa.Studio.Authentication.OpenIdConnect.BlazorServer/Elsa.Studio.Authentication.OpenIdConnect.BlazorServer.csproj --configuration Release --framework net10.0 --no-restore -p:BuildProjectReferences=false; dotnet test src/modules/Elsa.Studio.ExternalAuthentication.Tests/Elsa.Studio.ExternalAuthentication.Tests.csproj --configuration Release --no-restore -p:BuildProjectReferences=false --filter FullyQualifiedName~OpenIdConnectBlazorServerSignOutTests",
-      "result": "OIDC net10.0 build 0 errors; signout tests 16 passed, 0 failed. Before the production fix, the rendered PathBase regression failed for both subpaths and passed for the root path.",
-      "logs": [
-        "/tmp/studio-1061-oidc-pathbase-build.log",
-        "/tmp/studio-1061-oidc-pathbase-after.log",
-        "/tmp/studio-1061-oidc-pathbase-before.log"
-      ]
+      "result": "OIDC net10.0 build 0 errors; signout tests 16 passed, 0 failed. Before the production fix, the rendered PathBase regression failed for both subpaths and passed for the root path."
+    },
+    {
+      "commit": "734da587eb3aca7b935375cce60bd536b6afdc6f",
+      "command": "Hosted build and full solution tests",
+      "result": "1911 passed, 0 failed, 0 skipped across 18 TFM results; 0 build errors",
+      "run": "https://github.com/elsa-workflows/elsa-studio/actions/runs/37386031336"
     }
-  ]
+  ],
+  "acceptedSourceMain": "3d028a4e9a3267b291f3d43d8064b5c81a6f2759"
 }

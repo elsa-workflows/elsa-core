@@ -1,8 +1,8 @@
 {
   "priorSourceCommit": "3cf502955791cbd20375022ef4597f0e195faf8a",
-  "reconciledSourceCommit": "b76f8fd216fdc529d41fbf39fd712d3fcd4e80fd",
+  "reconciledSourceCommit": "8626e81f4a780be7d5fde87a1ae8b15cc6915934",
   "coreBaseCommit": "91a1c07232e806436c5e759086bbb9b0aee92234",
-  "changedPaths": 47,
+  "changedPaths": 48,
   "records": [
     {
       "source": ".github/reviewers.md",
@@ -10,7 +10,9 @@
       "disposition": "refreshed-inert-source",
       "reason": "Updated source snapshot remains inert; live Core configuration preserved.",
       "sourceBlob": "bcf3c312791caec265480938591873b9826113b5",
-      "destinationBlob": "bcf3c312791caec265480938591873b9826113b5"
+      "destinationBlob": "bcf3c312791caec265480938591873b9826113b5",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": ".github/workflows/packages.yml",
@@ -18,7 +20,9 @@
       "disposition": "refreshed-inert-source",
       "reason": "Updated source snapshot remains inert; live Core configuration preserved.",
       "sourceBlob": "4763f3a806985edb0f5e690b048094fb77e192a9",
-      "destinationBlob": "4763f3a806985edb0f5e690b048094fb77e192a9"
+      "destinationBlob": "4763f3a806985edb0f5e690b048094fb77e192a9",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "AGENTS.md",
@@ -26,7 +30,9 @@
       "disposition": "refreshed-inert-source",
       "reason": "Updated source snapshot remains inert; live Core configuration preserved.",
       "sourceBlob": "e12665606dd6a24702150e7d7009cd9df71622d3",
-      "destinationBlob": "e12665606dd6a24702150e7d7009cd9df71622d3"
+      "destinationBlob": "e12665606dd6a24702150e7d7009cd9df71622d3",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "Directory.Build.props",
@@ -34,7 +40,9 @@
       "disposition": "refreshed-inert-source",
       "reason": "Updated source snapshot remains inert; live Core configuration preserved.",
       "sourceBlob": "1150b573e0b7993d4d8762d4b867054a10741812",
-      "destinationBlob": "1150b573e0b7993d4d8762d4b867054a10741812"
+      "destinationBlob": "1150b573e0b7993d4d8762d4b867054a10741812",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "Directory.Packages.props",
@@ -42,7 +50,9 @@
       "disposition": "refreshed-inert-source",
       "reason": "Updated source snapshot remains inert; live Core configuration preserved.",
       "sourceBlob": "ae4204b424431a7521f078f9f62be373612ecc4c",
-      "destinationBlob": "ae4204b424431a7521f078f9f62be373612ecc4c"
+      "destinationBlob": "ae4204b424431a7521f078f9f62be373612ecc4c",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "Elsa.Extensions.sln",
@@ -50,7 +60,9 @@
       "disposition": "refreshed-inert-source",
       "reason": "Updated source snapshot remains inert; live Core configuration preserved.",
       "sourceBlob": "42aace26dfd34157a608d8ec1ec8fe8570a21506",
-      "destinationBlob": "42aace26dfd34157a608d8ec1ec8fe8570a21506"
+      "destinationBlob": "42aace26dfd34157a608d8ec1ec8fe8570a21506",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.Dapper.Migrations/Elsa.Persistence.Dapper.Migrations.csproj",
@@ -58,7 +70,9 @@
       "disposition": "already-identical",
       "reason": "Preserve in-repository project references and Core-only SSH.NET compatibility pin; Dapper test friend assemblies already present.",
       "sourceBlob": "2754df91588c9ca5ed5ffaaa522598cb220283cb",
-      "destinationBlob": "2754df91588c9ca5ed5ffaaa522598cb220283cb"
+      "destinationBlob": "2754df91588c9ca5ed5ffaaa522598cb220283cb",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.Dapper.Migrations/Management/Initial.cs",
@@ -66,7 +80,9 @@
       "disposition": "already-identical",
       "reason": "Core already contains the exact reconciled source blob.",
       "sourceBlob": "0ca45c966205499217726fc49674a314da18d33a",
-      "destinationBlob": "0ca45c966205499217726fc49674a314da18d33a"
+      "destinationBlob": "0ca45c966205499217726fc49674a314da18d33a",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.Dapper.Migrations/MigrationDatabases.cs",
@@ -74,7 +90,9 @@
       "disposition": "preserved-core-adaptation",
       "reason": "Source provider arrays are already included; Core also requires QuotedIdentifiers/UnquotedIdentifiers for Identity V3_10.",
       "sourceBlob": "b0a5e00428dcb5d322882d8fd59a83aa8c55e129",
-      "destinationBlob": "db445d0be7998fc56ba652d394fdbff7fbaede4c"
+      "destinationBlob": "db445d0be7998fc56ba652d394fdbff7fbaede4c",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.Dapper.Migrations/Runtime/Initial.cs",
@@ -82,7 +100,9 @@
       "disposition": "already-identical",
       "reason": "Core already contains the exact reconciled source blob.",
       "sourceBlob": "7515ba24f736b1e17c8263a92232174b6d9a4998",
-      "destinationBlob": "7515ba24f736b1e17c8263a92232174b6d9a4998"
+      "destinationBlob": "7515ba24f736b1e17c8263a92232174b6d9a4998",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.Dapper.Migrations/Runtime/V3_3.cs",
@@ -90,15 +110,19 @@
       "disposition": "already-identical",
       "reason": "Core already contains the exact reconciled source blob.",
       "sourceBlob": "58af18ad6c6d79d43a2f27913acedfa5f33429e5",
-      "destinationBlob": "58af18ad6c6d79d43a2f27913acedfa5f33429e5"
+      "destinationBlob": "58af18ad6c6d79d43a2f27913acedfa5f33429e5",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.Dapper.Migrations/Runtime/V3_9.cs",
       "destination": "src/extensions/persistence/Elsa.Persistence.Dapper.Migrations/Runtime/V3_9.cs",
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
-      "sourceBlob": "7093264dde92a67424653bcc3a892aa36dfe9816",
-      "destinationBlob": "7093264dde92a67424653bcc3a892aa36dfe9816"
+      "sourceBlob": "22f0bf3b5dcc02f017cb2b5e28b539eecc3543be",
+      "destinationBlob": "22f0bf3b5dcc02f017cb2b5e28b539eecc3543be",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.Dapper/Abstractions/SqlDialectBase.cs",
@@ -106,7 +130,9 @@
       "disposition": "preserved-core-adaptation",
       "reason": "Behavior identical; preserve Core final newline.",
       "sourceBlob": "d5100e3cadb3ad7ee8b6d5ad90c7562aa74d279a",
-      "destinationBlob": "bfd03a6cf7a4e0692316fd1000d8ae42aff6f2bb"
+      "destinationBlob": "bfd03a6cf7a4e0692316fd1000d8ae42aff6f2bb",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.Dapper/Contracts/ISqlDialect.cs",
@@ -114,7 +140,9 @@
       "disposition": "preserved-core-adaptation",
       "reason": "Behavior identical; preserve Core final newline.",
       "sourceBlob": "e607b11fc841465a6ba4bdd5d6cb4a9513bab7a4",
-      "destinationBlob": "402bb001b2dcf95d3d6961cf7c2162a7bceff3bb"
+      "destinationBlob": "402bb001b2dcf95d3d6961cf7c2162a7bceff3bb",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.Dapper/Dialects/PostgreSqlDialect.cs",
@@ -122,15 +150,19 @@
       "disposition": "already-identical",
       "reason": "Core already contains the exact reconciled source blob.",
       "sourceBlob": "2dbc57df34ddd150949f6c534af14701de999a94",
-      "destinationBlob": "2dbc57df34ddd150949f6c534af14701de999a94"
+      "destinationBlob": "2dbc57df34ddd150949f6c534af14701de999a94",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryBuilderExtensions.cs",
       "destination": "src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryBuilderExtensions.cs",
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
-      "sourceBlob": "acc1ee4c766e9e08b099d96ec42eb294a579d2dc",
-      "destinationBlob": "acc1ee4c766e9e08b099d96ec42eb294a579d2dc"
+      "sourceBlob": "926c363d7a2c055170bdbc29c8e07a59a7fd232a",
+      "destinationBlob": "926c363d7a2c055170bdbc29c8e07a59a7fd232a",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowInstanceStore.cs",
@@ -138,15 +170,19 @@
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
       "sourceBlob": "df4745158edd0f25a671763a1aaae346df14f9a4",
-      "destinationBlob": "df4745158edd0f25a671763a1aaae346df14f9a4"
+      "destinationBlob": "df4745158edd0f25a671763a1aaae346df14f9a4",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.Dapper/Modules/Runtime/Stores/KeyValueStore.cs",
       "destination": "src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Runtime/Stores/KeyValueStore.cs",
       "disposition": "imported-with-core-adaptation",
       "reason": "Atomic method imported; Core API already provides TryDeleteAsync, so tests exercise interface dispatch and documentation drops obsolete external preview dependency caveat.",
-      "sourceBlob": "5781fd560cb68db3c213d8eadd89f4240c58031d",
-      "destinationBlob": "af7be287a8426587d161528dc1315c924746a950"
+      "sourceBlob": "f3682877c48c8fcc2eaf1e39c69f67734f50249b",
+      "destinationBlob": "2528a376c9a46f83e14900073e6d1b81fb39e41d",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.Dapper/Services/PostgreSqlDbConnectionProvider.cs",
@@ -154,7 +190,9 @@
       "disposition": "already-identical",
       "reason": "Core already contains the exact reconciled source blob.",
       "sourceBlob": "16829755b82c139ecaa8d4d4301cf356254fe211",
-      "destinationBlob": "16829755b82c139ecaa8d4d4301cf356254fe211"
+      "destinationBlob": "16829755b82c139ecaa8d4d4301cf356254fe211",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.Dapper/Services/Store.cs",
@@ -162,7 +200,9 @@
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
       "sourceBlob": "fe0857d2d8014f14a7b1ef6ec7923083967f163e",
-      "destinationBlob": "fe0857d2d8014f14a7b1ef6ec7923083967f163e"
+      "destinationBlob": "fe0857d2d8014f14a7b1ef6ec7923083967f163e",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.Dapper/TypeHandlers/PostgreSql/DateTimeOffsetHandler.cs",
@@ -170,7 +210,9 @@
       "disposition": "already-identical",
       "reason": "Core already contains the exact reconciled source blob.",
       "sourceBlob": "3315e29fa0f4bab38f56ee1728919d2a61f06a06",
-      "destinationBlob": "3315e29fa0f4bab38f56ee1728919d2a61f06a06"
+      "destinationBlob": "3315e29fa0f4bab38f56ee1728919d2a61f06a06",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.MongoDb/Common/MongoDbStore.cs",
@@ -178,7 +220,9 @@
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
       "sourceBlob": "df858189ad1a64ff82ed532cb924aa773798771c",
-      "destinationBlob": "df858189ad1a64ff82ed532cb924aa773798771c"
+      "destinationBlob": "df858189ad1a64ff82ed532cb924aa773798771c",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.MongoDb/Features/MongoDbFeature.cs",
@@ -186,7 +230,9 @@
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
       "sourceBlob": "13a71994c212d8bde4ad726cac0d25e884c5350c",
-      "destinationBlob": "13a71994c212d8bde4ad726cac0d25e884c5350c"
+      "destinationBlob": "13a71994c212d8bde4ad726cac0d25e884c5350c",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.MongoDb/HostedServices/ConfigureMongoDbSerializers.cs",
@@ -194,7 +240,9 @@
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
       "sourceBlob": "a6b540a385e3392778dd7148907b373728611d00",
-      "destinationBlob": "a6b540a385e3392778dd7148907b373728611d00"
+      "destinationBlob": "a6b540a385e3392778dd7148907b373728611d00",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowInstanceStore.cs",
@@ -202,7 +250,9 @@
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
       "sourceBlob": "b025fbbfad8787d872fbb32511d9e1e2b9131958",
-      "destinationBlob": "b025fbbfad8787d872fbb32511d9e1e2b9131958"
+      "destinationBlob": "b025fbbfad8787d872fbb32511d9e1e2b9131958",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.MongoDb/Modules/Runtime/KeyValueStore.cs",
@@ -210,15 +260,19 @@
       "disposition": "imported-with-core-adaptation",
       "reason": "Atomic method imported; Core API already provides TryDeleteAsync, so tests exercise interface dispatch and documentation drops obsolete external preview dependency caveat.",
       "sourceBlob": "b3de372b2ca6e51ebb510c686a4c0b2592befba1",
-      "destinationBlob": "0c198d26beb70d6ecbd27614c38341900ab7a881"
+      "destinationBlob": "0c198d26beb70d6ecbd27614c38341900ab7a881",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.MongoDb/Serializers/JsonNodeBsonSerializer.cs",
       "destination": "src/extensions/persistence/Elsa.Persistence.MongoDb/Serializers/JsonNodeBsonSerializer.cs",
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
-      "sourceBlob": "428ed51e8c30156ae2b952957adeb99a7b9ebb0d",
-      "destinationBlob": "428ed51e8c30156ae2b952957adeb99a7b9ebb0d"
+      "sourceBlob": "d904082b351f1d9519d33d13ee9a6aafc8197ef1",
+      "destinationBlob": "d904082b351f1d9519d33d13ee9a6aafc8197ef1",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/persistence/Elsa.Persistence.MongoDb/Serializers/VariableSerializer.cs",
@@ -226,7 +280,9 @@
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
       "sourceBlob": "de6547949c5b9b229d5520df360229f78b2ee09f",
-      "destinationBlob": "de6547949c5b9b229d5520df360229f78b2ee09f"
+      "destinationBlob": "de6547949c5b9b229d5520df360229f78b2ee09f",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "src/modules/secrets/Elsa.Secrets.Management/Services/DefaultSecretManager.cs",
@@ -234,7 +290,9 @@
       "disposition": "already-identical",
       "reason": "Core already contains the exact reconciled source blob.",
       "sourceBlob": "d203e55ac42b8462fdb357bdb2945eb09a01f420",
-      "destinationBlob": "d203e55ac42b8462fdb357bdb2945eb09a01f420"
+      "destinationBlob": "d203e55ac42b8462fdb357bdb2945eb09a01f420",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "test/modules/persistence/Elsa.Dapper.UnitTests/DapperWorkflowInstanceStoreTests.cs",
@@ -242,23 +300,29 @@
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
       "sourceBlob": "dd11d79bfbcd77f54285b1668cc68b8fa7126c2b",
-      "destinationBlob": "dd11d79bfbcd77f54285b1668cc68b8fa7126c2b"
+      "destinationBlob": "dd11d79bfbcd77f54285b1668cc68b8fa7126c2b",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "test/modules/persistence/Elsa.Dapper.UnitTests/ParameterizedQueryBuilderExtensionsTests.cs",
       "destination": "test/extensions/modules/persistence/Elsa.Dapper.UnitTests/ParameterizedQueryBuilderExtensionsTests.cs",
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
-      "sourceBlob": "071dab7092cf7787b3054dd841ca46669487bb53",
-      "destinationBlob": "071dab7092cf7787b3054dd841ca46669487bb53"
+      "sourceBlob": "2adfb29bd5ed7765a0c8412dac9f17830bc7fe44",
+      "destinationBlob": "2adfb29bd5ed7765a0c8412dac9f17830bc7fe44",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "test/modules/persistence/Elsa.MongoDb.UnitTests/JsonNodeBsonConverterTests.cs",
       "destination": "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/JsonNodeBsonConverterTests.cs",
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
-      "sourceBlob": "6e48fc688a8e5e698b31fc703e448ee77b1cd5aa",
-      "destinationBlob": "6e48fc688a8e5e698b31fc703e448ee77b1cd5aa"
+      "sourceBlob": "9adf84ee4a46ad02be70797b5ebb6ecec623ab99",
+      "destinationBlob": "9adf84ee4a46ad02be70797b5ebb6ecec623ab99",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "test/modules/persistence/Elsa.MongoDb.UnitTests/MongoKeyValueStoreTryDeleteTests.cs",
@@ -266,7 +330,9 @@
       "disposition": "imported-with-core-adaptation",
       "reason": "Atomic method imported; Core API already provides TryDeleteAsync, so tests exercise interface dispatch and documentation drops obsolete external preview dependency caveat.",
       "sourceBlob": "690a135e3aa4dae9817ffabcf4f11380371b4f5c",
-      "destinationBlob": "a880b56cd7e1de90c3ea8ccbcf11b874effc099e"
+      "destinationBlob": "a880b56cd7e1de90c3ea8ccbcf11b874effc099e",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "test/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowInstanceStoreTenantIsolationTests.cs",
@@ -274,7 +340,9 @@
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
       "sourceBlob": "ce457f43d82878d1876069b621bcedd972054fc0",
-      "destinationBlob": "ce457f43d82878d1876069b621bcedd972054fc0"
+      "destinationBlob": "ce457f43d82878d1876069b621bcedd972054fc0",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "test/modules/persistence/Elsa.MongoDb.UnitTests/VariableSerializerTests.cs",
@@ -282,7 +350,19 @@
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
       "sourceBlob": "62d305195034fd32032f661a04739192b9fd3128",
-      "destinationBlob": "62d305195034fd32032f661a04739192b9fd3128"
+      "destinationBlob": "62d305195034fd32032f661a04739192b9fd3128",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
+    },
+    {
+      "source": "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperKeyValueStoreOwnershipTests.cs",
+      "destination": "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperKeyValueStoreOwnershipTests.cs",
+      "disposition": "imported-source",
+      "reason": "Shared SQLite/PostgreSQL ownership and race regressions imported unchanged.",
+      "sourceBlob": "da1a706f6452e82810079a5fdf3da84f7736f049",
+      "destinationBlob": "da1a706f6452e82810079a5fdf3da84f7736f049",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperKeyValueStoreTryDeletePostgreSqlTests.cs",
@@ -290,7 +370,9 @@
       "disposition": "imported-with-core-adaptation",
       "reason": "Atomic method imported; Core API already provides TryDeleteAsync, so tests exercise interface dispatch and documentation drops obsolete external preview dependency caveat.",
       "sourceBlob": "1ccda52a5f50af53fc6d31b9c1df0a5df0021622",
-      "destinationBlob": "65638efa4de47e6cdf8142d00a20f26fe65366ec"
+      "destinationBlob": "65638efa4de47e6cdf8142d00a20f26fe65366ec",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperKeyValueStoreTryDeleteTests.cs",
@@ -298,7 +380,9 @@
       "disposition": "imported-with-core-adaptation",
       "reason": "Atomic method imported; Core API already provides TryDeleteAsync, so tests exercise interface dispatch and documentation drops obsolete external preview dependency caveat.",
       "sourceBlob": "5085ab94e9fdc2ae3e90fd513cd8ea7a7d06debd",
-      "destinationBlob": "9043ed52bd889a10db32f5a3545dfcf5467739da"
+      "destinationBlob": "9043ed52bd889a10db32f5a3545dfcf5467739da",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperKeyValuesAndBookmarkQueueTests.cs",
@@ -306,7 +390,9 @@
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
       "sourceBlob": "d1f8e5f76bf92fdcc7200d0bbcb66794f393fcf0",
-      "destinationBlob": "d1f8e5f76bf92fdcc7200d0bbcb66794f393fcf0"
+      "destinationBlob": "d1f8e5f76bf92fdcc7200d0bbcb66794f393fcf0",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperPostgreSqlMigrationTests.cs",
@@ -314,7 +400,9 @@
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
       "sourceBlob": "118e5b9fb2500496c21672bd84d4de185afac68f",
-      "destinationBlob": "118e5b9fb2500496c21672bd84d4de185afac68f"
+      "destinationBlob": "118e5b9fb2500496c21672bd84d4de185afac68f",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperPostgresProcessorNameTests.cs",
@@ -322,7 +410,9 @@
       "disposition": "already-identical",
       "reason": "Core already contains the exact reconciled source blob.",
       "sourceBlob": "e7d0b74392c37162db704e116e1a6ad99cd145ee",
-      "destinationBlob": "e7d0b74392c37162db704e116e1a6ad99cd145ee"
+      "destinationBlob": "e7d0b74392c37162db704e116e1a6ad99cd145ee",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperRuntimeMigrationTests.cs",
@@ -330,7 +420,9 @@
       "disposition": "already-identical",
       "reason": "Core already contains the exact reconciled source blob.",
       "sourceBlob": "75c5dc8a31070e3a45a2e18304aab26ecbc172d2",
-      "destinationBlob": "75c5dc8a31070e3a45a2e18304aab26ecbc172d2"
+      "destinationBlob": "75c5dc8a31070e3a45a2e18304aab26ecbc172d2",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj",
@@ -338,23 +430,29 @@
       "disposition": "imported-with-core-adaptation",
       "reason": "Map newly required Elsa aggregate package to an in-repository Elsa project reference for migrated workflow/DI tests; preserve SSH.NET compatibility pin and existing Dapper project reference.",
       "sourceBlob": "47666a7386af2263631c9e21f19b864838e00953",
-      "destinationBlob": "0ad8e97c62329c4777fdf1b256a3b3007615c984"
+      "destinationBlob": "0ad8e97c62329c4777fdf1b256a3b3007615c984",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/NonPgQuerySqlSnapshotTests.cs",
       "destination": "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/NonPgQuerySqlSnapshotTests.cs",
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
-      "sourceBlob": "cb0e4e92f99617a49403db3193273d384cf88317",
-      "destinationBlob": "cb0e4e92f99617a49403db3193273d384cf88317"
+      "sourceBlob": "d4470bdaf837cdf00b9a736c6ae25db4998eb725",
+      "destinationBlob": "d4470bdaf837cdf00b9a736c6ae25db4998eb725",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/ParameterizedQueryBuilderExtensionsTests.cs",
       "destination": "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/ParameterizedQueryBuilderExtensionsTests.cs",
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
-      "sourceBlob": "ff5c97a1fa45c61a242e53646c076fbd5a974edf",
-      "destinationBlob": "ff5c97a1fa45c61a242e53646c076fbd5a974edf"
+      "sourceBlob": "9958d46b0ba1b1b0033c137b6dbfe9813a82bf1a",
+      "destinationBlob": "9958d46b0ba1b1b0033c137b6dbfe9813a82bf1a",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/PostgreSqlDialectTests.cs",
@@ -362,7 +460,9 @@
       "disposition": "imported-source",
       "reason": "Imported reconciled source behavior/test.",
       "sourceBlob": "3a8caa40bed987e4f0952be60c4e5613a1b6af65",
-      "destinationBlob": "3a8caa40bed987e4f0952be60c4e5613a1b6af65"
+      "destinationBlob": "3a8caa40bed987e4f0952be60c4e5613a1b6af65",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "test/modules/secrets/Elsa.Secrets.Management.UnitTests/DefaultSecretManagerTests.cs",
@@ -370,7 +470,9 @@
       "disposition": "already-identical",
       "reason": "Core already contains the exact reconciled source blob.",
       "sourceBlob": "eaa58b5e09b7dcc9a16017993583430954520e26",
-      "destinationBlob": "eaa58b5e09b7dcc9a16017993583430954520e26"
+      "destinationBlob": "eaa58b5e09b7dcc9a16017993583430954520e26",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     },
     {
       "source": "test/modules/secrets/Elsa.Secrets.Management.UnitTests/Elsa.Secrets.Management.UnitTests.csproj",
@@ -378,7 +480,9 @@
       "disposition": "preserved-core-adaptation",
       "reason": "Preserve in-repository project references and Core-only SSH.NET compatibility pin; Dapper test friend assemblies already present.",
       "sourceBlob": "27c3fa9c74228beecde4c1686ec800744ba4530b",
-      "destinationBlob": "465fc3151c1ec55dbeb6385aeb9f9277c984e2fd"
+      "destinationBlob": "465fc3151c1ec55dbeb6385aeb9f9277c984e2fd",
+      "sourceMode": "100644",
+      "destinationMode": "100644"
     }
   ]
 }
