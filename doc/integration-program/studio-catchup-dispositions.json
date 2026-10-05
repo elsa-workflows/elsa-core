@@ -1,29 +1,30 @@
 {
   "previousSource": "24337549a28be797b639708a87d5fcb9b8c693ee",
-  "reconciledSource": "dea56950ab7e269d13d008fd61b2ebd10454843c",
+  "reconciledSource": "2cdfcc525945e99a2ab2c1a02fa3053a0e8dce20",
   "coreBase": "91a1c07232e806436c5e759086bbb9b0aee92234",
   "coreMappedDelta": "3bd9c4d0b8e904c538d9429201e2e9aaf8173c28",
-  "coreHistoryJoin": "1b06a98b1dc34085cb3de0730305a99b40a9b767",
-  "sourceDeltaPathCount": 352,
+  "coreHistoryJoin": "73f8354300270f68031b943e993fbe79326f5946",
+  "sourceDeltaPathCount": 353,
   "allPathsDispositioned": true,
   "unresolvedPathCount": 0,
   "counts": {
-    "inert-source-snapshot": 5,
-    "upstream-identical": 200,
-    "retained-core-improvement": 38,
-    "superseded-by-core-permission-snapshot": 2,
-    "merged-upstream-with-core-compatibility": 1,
-    "retained-core-project-layout": 10,
-    "equivalent-formatting-or-comments": 18,
-    "applied-upstream": 14,
-    "equivalent-line-endings": 1,
-    "equivalent-imports-or-empty-class-syntax": 54,
     "applied-source-capability-fixture": 1,
-    "merged-upstream-with-core-layout": 1,
-    "equivalent-razor-import-order": 4,
-    "merged-project-references": 1,
+    "applied-upstream": 14,
     "applied-upstream-deletion": 1,
-    "merged-backend-create-capability": 1
+    "equivalent-formatting-or-comments": 18,
+    "equivalent-imports-or-empty-class-syntax": 54,
+    "equivalent-line-endings": 1,
+    "equivalent-razor-import-order": 4,
+    "inert-source-snapshot": 5,
+    "merged-backend-create-capability": 1,
+    "merged-project-references": 1,
+    "merged-source-hosted-form-regressions": 1,
+    "merged-upstream-with-core-compatibility": 1,
+    "merged-upstream-with-core-layout": 1,
+    "retained-core-improvement": 36,
+    "retained-core-project-layout": 10,
+    "superseded-by-core-permission-snapshot": 2,
+    "upstream-identical": 202
   },
   "liveConfiguration": [
     {
@@ -135,7 +136,7 @@
       "unchanged": true
     }
   ],
-  "coreValidation": "Validation is recorded on the integration PR for #8623; this receipt verifies source mapping and ancestry.",
+  "coreValidation": "Validation is recorded on the integration PR for #8623; this receipt verifies source mapping and ancestry. The new rendered PathBase test additions are pending focused validation on the combined Core candidate.",
   "mapping": [
     {
       "source": ".github/reviewers.md",
@@ -2128,14 +2129,14 @@
       "beforeSource": null,
       "afterSource": [
         "100644",
-        "c07846a699256eb6fb5758ec519b34e232272fc7"
+        "159dd710fd68ae88ac8695972c3a34992940e552"
       ],
       "core": [
         "100644",
         "159dd710fd68ae88ac8695972c3a34992940e552"
       ],
-      "disposition": "retained-core-improvement",
-      "note": "Retain hosted logout form action preserving PathBase.",
+      "disposition": "upstream-identical",
+      "note": "Source now uses the existing canonical Core Navigation.BaseUri PathBase action byte-for-byte.",
       "result": [
         "100644",
         "159dd710fd68ae88ac8695972c3a34992940e552"
@@ -2183,6 +2184,25 @@
       "result": [
         "100644",
         "1e46cc5bad360fb04a896123b360386a6dfcdfd7"
+      ]
+    },
+    {
+      "source": "src/modules/Elsa.Studio.Authentication.OpenIdConnect.BlazorServer/HostedAuthenticationPaths.cs",
+      "destination": "src/studio/modules/Elsa.Studio.Authentication.OpenIdConnect.BlazorServer/HostedAuthenticationPaths.cs",
+      "disposition": "upstream-identical",
+      "note": "Existing canonical Core PathBase helper reused byte-for-byte in source; no Core runtime change required.",
+      "beforeSource": null,
+      "afterSource": [
+        "100644",
+        "8f3c395718745df4fcbb456843564997d4539e75"
+      ],
+      "core": [
+        "100644",
+        "8f3c395718745df4fcbb456843564997d4539e75"
+      ],
+      "result": [
+        "100644",
+        "8f3c395718745df4fcbb456843564997d4539e75"
       ]
     },
     {
@@ -3807,17 +3827,17 @@
       "beforeSource": null,
       "afterSource": [
         "100644",
-        "41ccda9aa6c7afef3368a4bdad1a25378884ac71"
+        "18a1dff8d17f481ded1f6825bec32c31d2355bba"
       ],
       "core": [
         "100644",
         "9ac4795eca17b8a13d56a6927b79e9c5522e85f5"
       ],
-      "disposition": "retained-core-improvement",
-      "note": "Retain MVC antiforgery host wiring and PathBase regression tests.",
+      "disposition": "merged-source-hosted-form-regressions",
+      "note": "Preserve newer Core MVC antiforgery host wiring and registration test; incorporate source rendered form regressions for root, /studio/, and nested /elsa/studio/ PathBase.",
       "result": [
         "100644",
-        "9ac4795eca17b8a13d56a6927b79e9c5522e85f5"
+        "c5c0ad0640da87bd1f9fb5877ced7da2d94c69bf"
       ]
     },
     {
@@ -7497,11 +7517,13 @@
   ],
   "coreMappedDeltas": [
     "3bd9c4d0b8e904c538d9429201e2e9aaf8173c28",
-    "45490a7e31bf41b0cb067f36ea65cfecfac06c9f"
+    "45490a7e31bf41b0cb067f36ea65cfecfac06c9f",
+    "6da1a33cbcd81e2881bb517e84d96b4c749ebd36"
   ],
   "sourceHistoryJoins": [
     "c445f9ffbe53d71e7fa5623f365b5436b7bb499e",
-    "1b06a98b1dc34085cb3de0730305a99b40a9b767"
+    "1b06a98b1dc34085cb3de0730305a99b40a9b767",
+    "73f8354300270f68031b943e993fbe79326f5946"
   ],
   "sourceValidation": [
     {
@@ -7518,6 +7540,16 @@
       "commit": "dea56950ab7e269d13d008fd61b2ebd10454843c",
       "command": "dotnet build src/modules/Elsa.Studio.Secrets/Elsa.Studio.Secrets.csproj --configuration Release --framework net10.0 --no-restore -p:BuildProjectReferences=false; dotnet test src/modules/Elsa.Studio.Administration.Tests/Elsa.Studio.Administration.Tests.csproj --configuration Release --no-restore -p:BuildProjectReferences=false",
       "result": "Secrets build 0 errors; Administration 71 passed"
+    },
+    {
+      "commit": "2cdfcc525945e99a2ab2c1a02fa3053a0e8dce20",
+      "command": "dotnet build src/modules/Elsa.Studio.Authentication.OpenIdConnect.BlazorServer/Elsa.Studio.Authentication.OpenIdConnect.BlazorServer.csproj --configuration Release --framework net10.0 --no-restore -p:BuildProjectReferences=false; dotnet test src/modules/Elsa.Studio.ExternalAuthentication.Tests/Elsa.Studio.ExternalAuthentication.Tests.csproj --configuration Release --no-restore -p:BuildProjectReferences=false --filter FullyQualifiedName~OpenIdConnectBlazorServerSignOutTests",
+      "result": "OIDC net10.0 build 0 errors; signout tests 16 passed, 0 failed. Before the production fix, the rendered PathBase regression failed for both subpaths and passed for the root path.",
+      "logs": [
+        "/tmp/studio-1061-oidc-pathbase-build.log",
+        "/tmp/studio-1061-oidc-pathbase-after.log",
+        "/tmp/studio-1061-oidc-pathbase-before.log"
+      ]
     }
   ]
 }
