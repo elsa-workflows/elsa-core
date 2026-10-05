@@ -144,6 +144,39 @@ public sealed class MongoRoleIndexMigrationTests : IClassFixture<RoleMongoFixtur
     }
 
     [Fact]
+    public async Task ANonUniqueCompoundIndexWithADescendingUniqueNameIndexKeepsItAndStarts()
+    {
+        await SeedEarlierVersionShapeAsync();
+        await _roles.Indexes.DropOneAsync(IdentityRoleIndexes.LegacyNameUnique);
+        await _roles.Indexes.CreateOneAsync(new CreateIndexModel<Role>(
+            Builders<Role>.IndexKeys.Descending(x => x.Name),
+            new CreateIndexOptions { Unique = true, Name = "Name_-1" }));
+        await _roles.Indexes.CreateOneAsync(new CreateIndexModel<Role>(
+            Builders<Role>.IndexKeys.Ascending(x => x.TenantId).Ascending(x => x.Name),
+            new CreateIndexOptions { Name = IdentityRoleIndexes.TenantIdNameUnique }));
+
+        var logger = new CollectingLogger();
+        var exception = await Record.ExceptionAsync(() => RunCreateIndicesAsync(logger));
+
+        Assert.Null(exception);
+        Assert.True((await ListIndexNamesAsync(_roles)).SetEquals(["_id_", "Name_-1", "TenantId_1", "TenantId_1_Name_1"]));
+        Assert.Contains(logger.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("'Name_-1' is kept", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task AUniqueDescendingCompoundIndexIsAccepted()
+    {
+        await SeedEarlierVersionShapeAsync();
+        await _roles.Indexes.CreateOneAsync(new CreateIndexModel<Role>(
+            Builders<Role>.IndexKeys.Ascending(x => x.TenantId).Descending(x => x.Name),
+            new CreateIndexOptions { Unique = true, Name = "TenantId_1_Name_-1" }));
+
+        await RunCreateIndicesAsync(new CollectingLogger());
+
+        Assert.True((await ListIndexNamesAsync(_roles)).SetEquals(["_id_", "TenantId_1", "TenantId_1_Name_-1"]));
+    }
+
+    [Fact]
     public async Task AUniqueCompoundIndexUnderAnotherNameIsAccepted()
     {
         await SeedEarlierVersionShapeAsync();

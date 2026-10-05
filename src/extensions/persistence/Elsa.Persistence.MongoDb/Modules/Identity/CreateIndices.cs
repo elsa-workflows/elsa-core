@@ -111,9 +111,17 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                 // (IndexNotFound) carries on instead of failing to start.
                 var existingIndexes = await ListIndexesAsync(collection, cancellationToken);
                 var existingNames = existingIndexes.Select(GetIndexName).OfType<string>().ToHashSet(StringComparer.Ordinal);
-                var tenantNameIndexes = existingIndexes.Where(HasTenantIdNameKey).ToList();
+                // Any unique index on (TenantId, Name) enforces per-tenant uniqueness, whatever the key directions. Only
+                // an ascending one blocks creating TenantId_1_Name_1, because MongoDB refuses a second index with the
+                // same keys.
+                var replacement = existingIndexes.FirstOrDefault(x => HasTenantIdNameKey(x, ascendingOnly: false) && IsPlainUnique(x));
+                var tenantNameIndexes = existingIndexes.Where(x => HasTenantIdNameKey(x, ascendingOnly: true)).ToList();
 
-                if (tenantNameIndexes.Count == 0)
+                if (replacement != null)
+                {
+                    logger.LogDebug("Role unique index '{IndexName}' on (TenantId, Name) is already present.", GetIndexName(replacement));
+                }
+                else if (tenantNameIndexes.Count == 0)
                 {
                     await collection.Indexes.CreateOneAsync(
                         new CreateIndexModel<Role>(
@@ -125,10 +133,6 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                             }),
                         cancellationToken: cancellationToken);
                     logger.LogDebug("Created role unique index '{IndexName}' on (TenantId, Name).", IdentityRoleIndexes.TenantIdNameUnique);
-                }
-                else if (tenantNameIndexes.FirstOrDefault(IsPlainUnique) is { } replacement)
-                {
-                    logger.LogDebug("Role unique index '{IndexName}' on (TenantId, Name) is already present.", GetIndexName(replacement));
                 }
                 else
                 {
@@ -193,26 +197,29 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
         index.TryGetValue("name", out var name) && name.BsonType == BsonType.String ? name.AsString : null;
 
     /// <summary>
-    /// Whether the index keys are exactly ascending TenantId, then ascending Name.
+    /// Whether the index keys are exactly TenantId, then Name: ascending only, or in any direction.
     /// </summary>
-    private static bool HasTenantIdNameKey(BsonDocument index)
+    private static bool HasTenantIdNameKey(BsonDocument index, bool ascendingOnly)
     {
         if (!index.TryGetValue("key", out var key) || key is not BsonDocument keyDocument || keyDocument.ElementCount != 2)
         {
             return false;
         }
 
-        return IsAscending(keyDocument.GetElement(0), nameof(Role.TenantId)) && IsAscending(keyDocument.GetElement(1), nameof(Role.Name));
+        return IsKey(keyDocument.GetElement(0), nameof(Role.TenantId), ascendingOnly) && IsKey(keyDocument.GetElement(1), nameof(Role.Name), ascendingOnly);
     }
 
     /// <summary>
-    /// Whether the index keys are exactly ascending Name, like the legacy store-wide index.
+    /// Whether the index keys are exactly Name, in either direction. Like the legacy store-wide index, a unique one keeps
+    /// role names unique across the store.
     /// </summary>
     private static bool HasNameOnlyKey(BsonDocument index) =>
-        index.TryGetValue("key", out var key) && key is BsonDocument keyDocument && keyDocument.ElementCount == 1 && IsAscending(keyDocument.GetElement(0), nameof(Role.Name));
+        index.TryGetValue("key", out var key) && key is BsonDocument keyDocument && keyDocument.ElementCount == 1 && IsKey(keyDocument.GetElement(0), nameof(Role.Name), ascendingOnly: false);
 
-    private static bool IsAscending(BsonElement element, string field) =>
-        string.Equals(element.Name, field, StringComparison.Ordinal) && element.Value.IsNumeric && element.Value.ToDouble() > 0;
+    private static bool IsKey(BsonElement element, string field, bool ascendingOnly) =>
+        string.Equals(element.Name, field, StringComparison.Ordinal)
+        && element.Value.IsNumeric
+        && (ascendingOnly ? element.Value.ToDouble() > 0 : element.Value.ToDouble() != 0);
 
     /// <summary>
     /// Whether the index is unique over every document, rather than non-unique or limited by a partial filter.
