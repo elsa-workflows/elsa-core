@@ -64,7 +64,8 @@ internal class DapperKeyValueStore(Store<KeyValuePairRecord> store) : IKeyValueS
 
     private async Task<bool> TryUpdateOwnedAsync(KeyValuePairRecord record, CancellationToken cancellationToken)
     {
-        while (true)
+        const int maxUpdateAttempts = 5;
+        for (var attempt = 0; attempt < maxUpdateAttempts; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var updated = await store.UpdateAsync(record, [x => x.Value], query => query.Is(nameof(KeyValuePairRecord.Id), record.Id), cancellationToken);
@@ -85,6 +86,9 @@ internal class DapperKeyValueStore(Store<KeyValuePairRecord> store) : IKeyValueS
             }
             // A same-owner insert after a missed update still needs the requested value applied.
         }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        throw new InvalidOperationException($"Cannot save key '{record.Id}' because sustained concurrent changes prevented an update after {maxUpdateAttempts} attempts.");
     }
 
     private Task<KeyValuePairRecord?> FindByGlobalIdAsync(string id, CancellationToken cancellationToken) =>
