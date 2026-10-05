@@ -100,7 +100,7 @@ public sealed class PermissionGatedActionsTests : BunitContext, IAsyncLifetime
     public async Task SecretsList_UnavailableCapability_CanRetryAndRecover()
     {
         _secretsApi.PickErrors.Enqueue(new HttpRequestException("The backend is unavailable."));
-        var cut = RenderPage<SecretsPage>(["secrets:view", "secrets:create"]);
+        var cut = RenderPage<SecretsPage>(["secrets:view", "secrets:write"]);
         cut.WaitForAssertion(() => Assert.Contains("Retry create access check", cut.Markup));
         Assert.DoesNotContain("Create Secret", cut.Markup);
 
@@ -171,11 +171,13 @@ public sealed class PermissionGatedActionsTests : BunitContext, IAsyncLifetime
     }
 
     [Theory]
-    [InlineData(new[] { "secrets:view" }, false)]
-    [InlineData(new[] { "secrets:view", "secrets:write" }, true)]
-    public void SecretPicker_OffersInlineCreateOnlyWithWriteAccess(string[] grants, bool offered)
+    [InlineData(new[] { "secrets:view" }, false, false)]
+    [InlineData(new[] { "secrets:view", "secrets:create" }, true, true)]
+    [InlineData(new[] { "secrets:view", "secrets:write" }, false, false)]
+    [InlineData(new[] { "secrets:view", "secrets:write" }, true, true)]
+    public void SecretPicker_InlineCreateFollowsTheBackendCapability(string[] grants, bool canCreate, bool offered)
     {
-        var cut = RenderPage<SecretPicker>(grants);
+        var cut = RenderPage<SecretPicker>(grants, canCreateInline: canCreate);
 
         Assert.Equal(offered, cut.FindComponents<MudIconButton>().Any(x => x.Instance.Icon == Icons.Material.Filled.Add));
     }
@@ -197,8 +199,7 @@ public sealed class PermissionGatedActionsTests : BunitContext, IAsyncLifetime
     private IRenderedComponent<TPage> RenderPage<TPage>(string[] grants, Action<ComponentParameterCollectionBuilder<TPage>>? parameters = null, bool? canCreateInline = null) where TPage : IComponent
     {
         var permissions = StubPermissionService.Grants(grants);
-        _secretsApi.CanCreateInline = canCreateInline ??
-            (permissions.Has("secrets", PermissionVerbs.Create) || permissions.Has("secrets", PermissionVerbs.Write));
+        _secretsApi.CanCreateInline = canCreateInline ?? permissions.Has("secrets", PermissionVerbs.Write);
         return Render<TPage>(builder =>
         {
             builder.AddCascadingValue(permissions);
