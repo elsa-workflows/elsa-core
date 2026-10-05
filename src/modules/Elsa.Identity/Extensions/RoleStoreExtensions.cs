@@ -44,7 +44,8 @@ public static class RoleStoreExtensions
     /// <returns>The matching role, or <see langword="null"/> when there is none.</returns>
     public static async Task<Role?> FindByNameAsync(this IRoleStore roleStore, string name, bool includeTenantAgnostic, CancellationToken cancellationToken = default)
     {
-        var nameMatch = BestMatch(await roleStore.FindManyAsync(new RoleFilter { Name = name }, cancellationToken), name, includeTenantAgnostic);
+        var nameCandidates = (await roleStore.FindManyAsync(new RoleFilter { Name = name }, cancellationToken)).ToList();
+        var nameMatch = BestMatch(nameCandidates, name, includeTenantAgnostic);
 
         if (nameMatch is not null && !IsTenantAgnostic(nameMatch))
         {
@@ -52,10 +53,12 @@ public static class RoleStoreExtensions
         }
 
         // The name filter follows the store's own comparison, which is exact for the in-memory store and SQLite. A
-        // name that differs only in case is still the same role to RoleManager, so scan the tenant's roles before
-        // settling for a tenant-agnostic match or nothing.
-        var tenantMatch = BestMatch(await roleStore.FindManyAsync(new RoleFilter(), cancellationToken), name, includeTenantAgnostic);
-        return tenantMatch ?? nameMatch;
+        // name that differs only in case is still the same role to RoleManager, so scan every role visible to the
+        // tenant before settling for a tenant-agnostic match or nothing. The scan can itself pick a tenant-agnostic
+        // role, so it is ranked together with the first pass's candidates: BestMatch then decides between them by the
+        // same rule, and nothing the first pass found can be lost.
+        var visibleRoles = await roleStore.FindManyAsync(new RoleFilter(), cancellationToken);
+        return BestMatch(nameCandidates.Concat(visibleRoles), name, includeTenantAgnostic);
     }
 
     /// <summary>

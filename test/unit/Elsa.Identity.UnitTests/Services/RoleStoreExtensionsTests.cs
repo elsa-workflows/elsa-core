@@ -139,4 +139,31 @@ public class RoleStoreExtensionsTests
 
         Assert.Equal("role-a", (await store.FindByNameAsync("Operators"))?.Id);
     }
+
+    [Fact]
+    public async Task FindByNameAsyncKeepsTheNameFilterMatchWhenTheScanOmitsIt()
+    {
+        // A store may return a role for the name filter that its unfiltered listing leaves out; the scan is ranked
+        // together with the name filter's candidates, so that match is not lost.
+        var sharedRole = new Role { Id = "shared", Name = "Operators", TenantId = Elsa.Common.Multitenancy.Tenant.AgnosticTenantId };
+        var store = Substitute.For<IRoleStore>();
+        store.FindManyAsync(Arg.Is<RoleFilter>(x => x.Name != null), Arg.Any<CancellationToken>()).Returns([sharedRole]);
+        store.FindManyAsync(Arg.Is<RoleFilter>(x => x.Name == null), Arg.Any<CancellationToken>()).Returns([]);
+
+        Assert.Equal("shared", (await store.FindByNameAsync("Operators"))?.Id);
+        Assert.Null(await store.FindByNameAsync("Operators", includeTenantAgnostic: false));
+    }
+
+    [Fact]
+    public async Task FindByNameAsyncPrefersATenantCaseVariantFoundByTheScanOverATenantAgnosticExactMatch()
+    {
+        var sharedRole = new Role { Id = "a-shared", Name = "operators", TenantId = Elsa.Common.Multitenancy.Tenant.AgnosticTenantId };
+        var tenantRole = new Role { Id = "z-tenant", Name = "Operators", TenantId = "tenant-a" };
+        var store = Substitute.For<IRoleStore>();
+        // An exact-match store: the name filter only finds the shared role.
+        store.FindManyAsync(Arg.Is<RoleFilter>(x => x.Name != null), Arg.Any<CancellationToken>()).Returns([sharedRole]);
+        store.FindManyAsync(Arg.Is<RoleFilter>(x => x.Name == null), Arg.Any<CancellationToken>()).Returns([sharedRole, tenantRole]);
+
+        Assert.Equal("z-tenant", (await store.FindByNameAsync("operators"))?.Id);
+    }
 }
