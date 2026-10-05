@@ -3,6 +3,7 @@ using Elsa.KeyValues.Entities;
 using Elsa.KeyValues.Models;
 using Elsa.Persistence.MongoDb.Common;
 using JetBrains.Annotations;
+using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 
 namespace Elsa.Persistence.MongoDb.Modules.Runtime;
@@ -35,6 +36,14 @@ public class MongoKeyValueStore(MongoDbStore<SerializedKeyValuePair> keyValueMon
     public Task DeleteAsync(string key, CancellationToken cancellationToken)
     {
         return keyValueMongoDbStore.DeleteWhereAsync(x => x.Key == key, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> TryDeleteAsync(string key, CancellationToken cancellationToken = default)
+    {
+        var filter = keyValueMongoDbStore.ApplyTenantScope(Builders<SerializedKeyValuePair>.Filter.Eq(x => x.Key, key));
+        var result = await keyValueMongoDbStore.GetCollection().DeleteOneAsync(filter, cancellationToken);
+        return result.DeletedCount > 0;
     }
 
     private IQueryable<SerializedKeyValuePair> Filter(IQueryable<SerializedKeyValuePair> queryable, KeyValueFilter filter)

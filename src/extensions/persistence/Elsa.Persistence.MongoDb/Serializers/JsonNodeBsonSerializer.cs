@@ -2,19 +2,77 @@ using System.Text.Json.Nodes;
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
+using static MongoDB.Bson.Serialization.BsonSerializer;
 
 namespace Elsa.Persistence.MongoDb.Serializers;
 
 /// <summary>
 /// Serializes a <see cref="JsonNode"/>.
 /// </summary>
-public class JsonNodeBsonConverter : IBsonSerializer<JsonNode>
+public class JsonNodeBsonConverter : JsonNodeBsonConverter<JsonNode>
+{
+    private static int _providerRegistered;
+
+    /// <summary>
+    /// Registers serializers for <see cref="JsonNode"/> and the concrete types
+    /// <see cref="JsonObject"/>, <see cref="JsonArray"/>, and <see cref="JsonValue"/>.
+    /// Also registers a serialization provider so internal <see cref="JsonValue"/>
+    /// implementations are looked up without falling back to a class map.
+    /// </summary>
+    public static void RegisterSerializers()
+    {
+        if (Interlocked.CompareExchange(ref _providerRegistered, 1, 0) == 0)
+            RegisterSerializationProvider(new JsonNodeBsonSerializationProvider());
+
+        TryRegisterSerializer(typeof(JsonNode), new JsonNodeBsonConverter());
+        TryRegisterSerializer(typeof(JsonObject), new JsonNodeBsonConverter<JsonObject>());
+        TryRegisterSerializer(typeof(JsonArray), new JsonNodeBsonConverter<JsonArray>());
+        TryRegisterSerializer(typeof(JsonValue), new JsonNodeBsonConverter<JsonValue>());
+    }
+}
+
+/// <summary>
+/// Serializes a <see cref="JsonNode"/> of the specified nominal type.
+/// <see cref="ValueType"/> must match the registered type so
+/// <c>BsonSerializer.LookupSerializer</c> (used by <see cref="PolymorphicSerializer"/>)
+/// finds this converter for <see cref="JsonObject"/>, <see cref="JsonArray"/>, and <see cref="JsonValue"/>.
+/// </summary>
+public class JsonNodeBsonConverter<TNode> : IBsonSerializer<TNode> where TNode : JsonNode
 {
     /// <inheritdoc />
-    public Type ValueType => typeof(JsonNode);
+    public Type ValueType => typeof(TNode);
 
     /// <inheritdoc />
-    public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, JsonNode value)
+    public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, TNode value)
+    {
+        SerializeJsonNode(context, value);
+    }
+
+    /// <inheritdoc />
+    public TNode Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
+    {
+        var node = DeserializeJsonNode(context);
+        if (node is null)
+            return null!;
+        if (node is TNode typed)
+            return typed;
+
+        throw new BsonSerializationException($"Deserialized JsonNode of type '{node.GetType().FullName}' is not assignable to '{typeof(TNode).FullName}'.");
+    }
+
+    /// <inheritdoc />
+    public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, object value)
+    {
+        SerializeJsonNode(context, (JsonNode)value);
+    }
+
+    object IBsonSerializer.Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
+    {
+        return DeserializeJsonNode(context)!;
+    }
+
+    private static void SerializeJsonNode(BsonSerializationContext context, JsonNode value)
     {
         if (value == null!)
         {
@@ -67,69 +125,140 @@ public class JsonNodeBsonConverter : IBsonSerializer<JsonNode>
         context.Writer.WriteEndDocument();
     }
 
-    public JsonNode Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
+    private static JsonNode? DeserializeJsonNode(BsonDeserializationContext context)
     {
-        context.Reader.ReadStartDocument();
-        var type = context.Reader.ReadString();
-        context.Reader.ReadName(Utf8NameDecoder.Instance);
+        var reader = context.Reader;
+        var bsonType = reader.GetCurrentBsonType();
 
-        JsonNode result;
+        switch (bsonType)
+        {
+            case BsonType.Null:
+                reader.ReadNull();
+                return null;
+            case BsonType.Document:
+                return DeserializeDocument(BsonDocumentSerializer.Instance.Deserialize(context));
+            case BsonType.Array:
+                return DeserializeLegacyArray(BsonArraySerializer.Instance.Deserialize(context));
+            default:
+                return DeserializePrimitiveJsonValue(ReadPrimitive(reader, bsonType));
+        }
+    }
+
+    private static JsonNode DeserializeDocument(BsonDocument document)
+    {
+        if (IsTaggedJsonNode(document))
+            return DeserializeTagged(document);
+
+        // Legacy class-map / dictionary format written when only JsonNode was registered:
+        // { "DialogId": { "type": "JsonValue", "value": "..." }, ... }
+        var obj = new JsonObject();
+        foreach (var element in document)
+            obj[element.Name] = DeserializeBsonValue(element.Value);
+        return obj;
+    }
+
+    private static bool IsTaggedJsonNode(BsonDocument document)
+    {
+        if (document.ElementCount != 2 || !document.Contains("type") || !document.Contains("value"))
+            return false;
+
+        if (document["type"].BsonType != BsonType.String)
+            return false;
+
+        return document["type"].AsString switch
+        {
+            "JsonObject" or "JsonArray" => document["value"].BsonType == BsonType.String,
+            "JsonValue" => true,
+            _ => false
+        };
+    }
+
+    private static JsonNode DeserializeTagged(BsonDocument document)
+    {
+        var type = document["type"].AsString;
+        var value = document["value"];
+
         switch (type)
         {
             case "JsonObject":
-                var jsonObjectString = context.Reader.ReadString();
-                result = JsonNode.Parse(jsonObjectString);
-                break;
-
             case "JsonArray":
-                var jsonArrayString = context.Reader.ReadString();
-                result = JsonNode.Parse(jsonArrayString);
-                break;
-
+                return JsonNode.Parse(value.AsString)!;
             case "JsonValue":
-                var bsonType = context.Reader.GetCurrentBsonType();
-                switch (bsonType)
-                {
-                    case BsonType.String:
-                        result = JsonValue.Create(context.Reader.ReadString());
-                        break;
-                    case BsonType.Int32:
-                        result = JsonValue.Create(context.Reader.ReadInt32());
-                        break;
-                    case BsonType.Int64:
-                        result = JsonValue.Create(context.Reader.ReadInt64());
-                        break;
-                    case BsonType.Double:
-                        result = JsonValue.Create(context.Reader.ReadDouble());
-                        break;
-                    case BsonType.Boolean:
-                        result = JsonValue.Create(context.Reader.ReadBoolean());
-                        break;
-                    case BsonType.DateTime:
-                        result = JsonValue.Create(context.Reader.ReadDateTime());
-                        break;
-                    default:
-                        throw new BsonSerializationException($"Unsupported BSON type: {bsonType}");
-                }
-                break;
-
+                return DeserializePrimitiveJsonValue(value);
             default:
                 throw new BsonSerializationException($"Unsupported JsonNode type: {type}");
         }
-
-        context.Reader.ReadEndDocument();
-        return result!;
     }
 
-    /// <inheritdoc />
-    public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, object value)
+    private static JsonNode? DeserializeBsonValue(BsonValue value)
     {
-        Serialize(context, args, (JsonNode)value);
+        return value.BsonType switch
+        {
+            BsonType.Null => null,
+            BsonType.Document => DeserializeDocument(value.AsBsonDocument),
+            BsonType.Array => DeserializeLegacyArray(value.AsBsonArray),
+            _ => DeserializePrimitiveJsonValue(value)
+        };
     }
 
-    object IBsonSerializer.Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
+    private static JsonArray DeserializeLegacyArray(BsonArray array)
     {
-        return Deserialize(context, args);
+        var result = new JsonArray();
+        foreach (var item in array)
+            result.Add(DeserializeBsonValue(item));
+        return result;
+    }
+
+    private static JsonValue DeserializePrimitiveJsonValue(BsonValue value)
+    {
+        switch (value.BsonType)
+        {
+            case BsonType.String:
+                return JsonValue.Create(value.AsString)!;
+            case BsonType.Int32:
+                return JsonValue.Create(value.AsInt32)!;
+            case BsonType.Int64:
+                return JsonValue.Create(value.AsInt64)!;
+            case BsonType.Double:
+                return JsonValue.Create(value.AsDouble)!;
+            case BsonType.Boolean:
+                return JsonValue.Create(value.AsBoolean)!;
+            case BsonType.DateTime:
+                return JsonValue.Create(value.AsBsonDateTime.MillisecondsSinceEpoch)!;
+            default:
+                throw new BsonSerializationException($"Unsupported BSON type: {value.BsonType}");
+        }
+    }
+
+    private static BsonValue ReadPrimitive(IBsonReader reader, BsonType bsonType)
+    {
+        return bsonType switch
+        {
+            BsonType.String => reader.ReadString(),
+            BsonType.Int32 => reader.ReadInt32(),
+            BsonType.Int64 => reader.ReadInt64(),
+            BsonType.Double => reader.ReadDouble(),
+            BsonType.Boolean => reader.ReadBoolean(),
+            BsonType.DateTime => new BsonDateTime(reader.ReadDateTime()),
+            _ => throw new BsonSerializationException($"Unsupported BSON type: {bsonType}")
+        };
     }
 }
 
+/// <summary>
+/// Provides <see cref="JsonNodeBsonConverter{TNode}"/> for any <see cref="JsonNode"/> subclass,
+/// including internal <see cref="JsonValue"/> implementations whose runtime type is not
+/// <see cref="JsonValue"/> itself.
+/// </summary>
+public class JsonNodeBsonSerializationProvider : IBsonSerializationProvider
+{
+    /// <inheritdoc />
+    public IBsonSerializer? GetSerializer(Type type)
+    {
+        if (type is null || !typeof(JsonNode).IsAssignableFrom(type))
+            return null;
+
+        var serializerType = typeof(JsonNodeBsonConverter<>).MakeGenericType(type);
+        return (IBsonSerializer)Activator.CreateInstance(serializerType)!;
+    }
+}

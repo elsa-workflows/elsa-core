@@ -1,6 +1,16 @@
 name: Packages
 on:
   workflow_dispatch:
+    inputs:
+      # Does nothing on main while base_version is 3.10.x. Dispatch VERSION is
+      # always ${base_version}-${prefix}.${run_number}, so the nuget.org job's
+      # !startsWith(..., '3.10.') gate never opens. Publishing 3.10 publicly
+      # later means deliberately removing that check and deciding how a dispatch
+      # run sets VERSION.
+      publish_nuget:
+        description: 'Publish packages to nuget.org (never for 3.10.x)'
+        type: boolean
+        default: false
   push:
     branches:
       - 'main'
@@ -26,6 +36,8 @@ jobs:
     name: Build packages
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      version: ${{ steps.set_version.outputs.version }}
     steps:
       - name: Extract branch name
         run: |
@@ -56,13 +68,17 @@ jobs:
             git branch --remote --contains | grep origin/${BRANCH_NAME}
           fi
       - name: Set VERSION variable
+        id: set_version
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && ("${{ github.event.action }}" == "published" || "${{ github.event.action }}" == "prereleased") ]]; then
             TAG_NAME=${{ github.ref }} # e.g., refs/tags/3.0.0
             TAG_NAME=${TAG_NAME#refs/tags/} # remove the refs/tags/ prefix
             echo "VERSION=${TAG_NAME}" >> $GITHUB_ENV
+            echo "version=${TAG_NAME}" >> $GITHUB_OUTPUT
           else
-            echo "VERSION=${{env.base_version}}-${PACKAGE_PREFIX}.${{github.run_number}}" >> $GITHUB_ENV
+            VERSION="${{env.base_version}}-${PACKAGE_PREFIX}.${{github.run_number}}"
+            echo "VERSION=${VERSION}" >> $GITHUB_ENV
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
           fi
       - uses: actions/setup-dotnet@v5
         with:
@@ -77,7 +93,7 @@ jobs:
         with:
           name: elsa-nuget-packages
           path: packages/*nupkg
-        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+        if: ${{ github.event_name == 'release' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'}}
   
   publish_preview_feedz:
     name: Publish to feedz.io
@@ -91,15 +107,30 @@ jobs:
         with:
           name: elsa-nuget-packages
 
+      - name: Check API key (feedz.io)
+        env:
+          API_KEY: ${{ secrets.FEEDZ_API_KEY }}
+        run: |
+          if [ -z "$API_KEY" ]; then
+            echo "::error::API key for feedz.io is empty. Check the FEEDZ_API_KEY repository secret; nothing was pushed."
+            exit 1
+          fi
+
       - name: Publish to feedz.io
-        run: dotnet nuget push *.nupkg -k ${{ secrets.FEEDZ_API_KEY }} -s ${{ env.feedz_feed_source }} --skip-duplicate
+        env:
+          API_KEY: ${{ secrets.FEEDZ_API_KEY }}
+        run: dotnet nuget push *.nupkg -k "$API_KEY" -s ${{ env.feedz_feed_source }} --skip-duplicate
 
   publish_nuget:
     name: Publish release to nuget.org
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
+    # Dispatch-only. 3.10.x (including 3.10.0-preview.*) must never reach nuget.org.
+    # publish_nuget does nothing on main while base_version is 3.10.x. Publishing
+    # 3.10 publicly later means deliberately removing the 3.10. check and deciding
+    # how a dispatch run sets VERSION (always base_version-prefix.run_number).
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && !startsWith(needs.build.outputs.version, '3.10.') }}
     permissions:
       # Required to request the OIDC token that nuget.org exchanges for a short-lived API key (Trusted Publishing).
       id-token: write
@@ -116,5 +147,16 @@ jobs:
         with:
           user: ${{ env.nuget_user }}
 
+      - name: Check API key (nuget.org)
+        env:
+          API_KEY: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
+        run: |
+          if [ -z "$API_KEY" ]; then
+            echo "::error::API key for nuget.org is empty. Check the NuGet login (OIDC) step output and the Trusted Publishing policy on nuget.org; nothing was pushed."
+            exit 1
+          fi
+
       - name: Publish to nuget.org
-        run: dotnet nuget push *.nupkg -k ${{ steps.nuget_login.outputs.NUGET_API_KEY }} -s ${{ env.nuget_feed_source }} --skip-duplicate
+        env:
+          API_KEY: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
+        run: dotnet nuget push *.nupkg -k "$API_KEY" -s ${{ env.nuget_feed_source }} --skip-duplicate

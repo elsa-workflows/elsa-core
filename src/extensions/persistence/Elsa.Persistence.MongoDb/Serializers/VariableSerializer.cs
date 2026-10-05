@@ -2,6 +2,7 @@ using Elsa.Common.Serialization;
 using Elsa.Workflows;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
@@ -18,10 +19,11 @@ public class VariableSerializer : IBsonSerializer<Variable>
     /// <summary>
     /// Initializes a new instance of the <see cref="VariableSerializer"/> class.
     /// </summary>
-    public VariableSerializer()
+    /// <param name="serializationTypeRegistry">The DI-registered serialization type registry used to resolve storage drivers and variable types.</param>
+    /// <param name="logger">The logger used by <see cref="VariableMapper"/> when type resolution fails.</param>
+    public VariableSerializer(ISerializationTypeRegistry serializationTypeRegistry, ILogger<VariableMapper>? logger = null)
     {
-        var serializationTypeRegistry = SerializationTypeRegistry.CreateDefault();
-        _mapper = new VariableMapper(serializationTypeRegistry, NullLogger<VariableMapper>.Instance);
+        _mapper = new VariableMapper(serializationTypeRegistry, logger ?? NullLogger<VariableMapper>.Instance);
     }
     
     /// <inheritdoc />
