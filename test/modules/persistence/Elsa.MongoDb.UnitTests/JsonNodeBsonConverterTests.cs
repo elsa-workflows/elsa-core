@@ -195,6 +195,45 @@ public class JsonNodeBsonConverterTests
         Assert.Equal(3, obj["Count"]!.GetValue<int>());
     }
 
+    [Fact(DisplayName = "A legacy JsonObject with scalar-envelope fields preserves its object type")]
+    public void Deserialize_LegacyScalarEnvelopeShapedJsonObject_PreservesFields()
+    {
+        var legacy = new BsonDocument { { "type", "JsonValue" }, { "value", "legacy-value" } };
+
+        var restored = DeserializeDocument(new JsonNodeBsonConverter<JsonObject>(), legacy);
+
+        Assert.Equal(2, restored.Count);
+        Assert.Equal("JsonValue", restored["type"]!.GetValue<string>());
+        Assert.Equal("legacy-value", restored["value"]!.GetValue<string>());
+    }
+
+    [Fact(DisplayName = "Polymorphic JsonObject dispatch preserves a legacy scalar-envelope-shaped object")]
+    public void PolymorphicSerializer_LegacyScalarEnvelopeShapedJsonObject_PreservesObjectType()
+    {
+        var document = new BsonDocument
+        {
+            { "$type", typeof(JsonObject).GetSimpleAssemblyQualifiedName() },
+            { "$value", new BsonDocument { { "type", "JsonValue" }, { "value", "legacy-value" } } }
+        };
+
+        var restored = DeserializeDocument(new PolymorphicSerializer(), document);
+
+        var obj = Assert.IsType<JsonObject>(restored);
+        Assert.Equal("JsonValue", obj["type"]!.GetValue<string>());
+        Assert.Equal("legacy-value", obj["value"]!.GetValue<string>());
+    }
+
+    [Fact(DisplayName = "JsonNode dispatch still restores a genuine scalar envelope as a JsonValue")]
+    public void JsonNode_RoundTrips_GenuineScalarEnvelope()
+    {
+        JsonNode original = JsonValue.Create("scalar-value")!;
+
+        var restored = RoundTrip(new JsonNodeBsonConverter(), original);
+
+        var value = Assert.IsAssignableFrom<JsonValue>(restored);
+        Assert.Equal("scalar-value", value.GetValue<string>());
+    }
+
     [Fact(DisplayName = "A type/value document that is not a two-field string envelope deserializes as a map")]
     public void Deserialize_AmbiguousTypeValueDocument_IsMapNotEnvelope()
     {
