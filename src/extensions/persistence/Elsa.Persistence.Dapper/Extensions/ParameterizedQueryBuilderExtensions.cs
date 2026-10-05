@@ -155,6 +155,17 @@ public static class ParameterizedQueryBuilderExtensions
     }
 
     /// <summary>
+    /// Matches a default-tenant stamp: <c>NULL</c> or empty string.
+    /// Legacy rows may use either; <see cref="Elsa.Common.Multitenancy.Tenant.DefaultTenantId"/> is <c>''</c>.
+    /// </summary>
+    public static ParameterizedQuery IsNullOrEmpty(this ParameterizedQuery query, string field)
+    {
+        var ident = query.QuoteIdent(field);
+        query.Sql.AppendLine($"and ({ident} is null or {ident} = '')");
+        return query;
+    }
+
+    /// <summary>
     /// Appends an IS NOT NULL clause to the query.
     /// </summary>
     /// <param name="query">The query.</param>
@@ -162,6 +173,22 @@ public static class ParameterizedQueryBuilderExtensions
     public static ParameterizedQuery IsNotNull(this ParameterizedQuery query, string field)
     {
         query.Sql.AppendLine(query.Dialect.IsNotNull(field));
+        return query;
+    }
+
+    /// <summary>
+    /// Appends an AND clause matching values strictly less than the specified value, if the value is not null.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="field">The field.</param>
+    /// <param name="value">The value.</param>
+    public static ParameterizedQuery LessThan(this ParameterizedQuery query, string field, object? value)
+    {
+        if (value == null) return query;
+
+        query.Sql.AppendLine($"and {query.QuoteIdent(field)} < @{field}");
+        query.Parameters.Add($"@{field}", value);
+
         return query;
     }
 
@@ -241,9 +268,9 @@ public static class ParameterizedQueryBuilderExtensions
         if (!startsWith || value == null || string.IsNullOrWhiteSpace(value))
             return query;
 
-        var searchTermLike = $"{value}%";
-        query.Sql.AppendLine($"and {query.QuoteIdent(field)} like @SearchTermLike");
-        query.Parameters.Add($"@{field}", searchTermLike);
+        var parameterName = $"@{field}StartsWith";
+        query.Sql.AppendLine($"and {query.QuoteIdent(field)} like {parameterName}");
+        query.Parameters.Add(parameterName, $"{value}%");
 
         return query;
     }
