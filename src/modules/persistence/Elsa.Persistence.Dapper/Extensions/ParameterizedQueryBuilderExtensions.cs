@@ -3,8 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
-using Elsa.Persistence.Dapper.Dialects;
 using Elsa.Extensions;
+using Elsa.Persistence.Dapper.Dialects;
 using Elsa.Persistence.Dapper.Models;
 using JetBrains.Annotations;
 
@@ -283,7 +283,10 @@ public static class ParameterizedQueryBuilderExtensions
 
         var parameterName = $"@{field}StartsWith";
         var isSqlServer = query.Dialect is SqlServerDialect;
-        var needsEscaping = value.IndexOfAny(['%', '_', LikeEscapeCharacter]) >= 0 || (isSqlServer && value.Contains('['));
+        // PostgreSQL treats backslash as LIKE's default escape, so use our explicit escape for literal paths.
+        var needsEscaping = value.IndexOfAny(['%', '_', LikeEscapeCharacter]) >= 0 ||
+                            value.Contains('\\') ||
+                            (isSqlServer && value.Contains('['));
         var escapeClause = needsEscaping ? $" escape '{LikeEscapeCharacter}'" : string.Empty;
         var escapedValue = value
             .Replace("!", "!!")
@@ -292,7 +295,9 @@ public static class ParameterizedQueryBuilderExtensions
 
         // SQL Server also treats '[' as a LIKE pattern character; the other supported dialects do not.
         if (isSqlServer)
+        {
             escapedValue = escapedValue.Replace("[", "![");
+        }
 
         query.Sql.AppendLine($"and {query.QuoteIdent(field)} like {parameterName}{escapeClause}");
         query.Parameters.Add(parameterName, $"{escapedValue}%");

@@ -89,6 +89,7 @@ public sealed class ParameterizedQueryBuilderExtensionsTests : IDisposable
     [InlineData("order%", "order%percent", "orderXpercent")]
     [InlineData("order!", "order!bang", "orderbang")]
     [InlineData("order[", "order[bracket", "orderAbracket")]
+    [InlineData("path\\", "path\\item", "pathXitem")]
     public async Task StartsWith_TreatsLikePatternCharactersAsLiterals(string prefix, string matchingId, string nonMatchingId)
     {
         var connectionString = new SqliteConnectionStringBuilder { DataSource = _databasePath, Pooling = false }.ToString();
@@ -104,6 +105,8 @@ public sealed class ParameterizedQueryBuilderExtensionsTests : IDisposable
 
         if (prefix.Contains('['))
             Assert.DoesNotContain("escape '!'", query.Sql.ToString(), StringComparison.Ordinal);
+        if (prefix.Contains('\\'))
+            Assert.Contains("escape '!'", query.Sql.ToString(), StringComparison.Ordinal);
 
         var actualIds = await connection.QueryAsync<string>(query.Sql.ToString(), query.Parameters);
 
@@ -170,6 +173,17 @@ public sealed class ParameterizedQueryBuilderExtensionsTests : IDisposable
         Assert.Contains("and \"Id\" like @IdStartsWith", sql, StringComparison.Ordinal);
         Assert.DoesNotContain("@SearchTermLike", sql, StringComparison.Ordinal);
         Assert.Equal("app:%", query.Parameters.Get<string>("IdStartsWith"));
+    }
+
+    [Fact(DisplayName = "StartsWith uses an explicit PostgreSQL escape when the prefix contains a backslash")]
+    public void StartsWith_PostgreSql_BackslashPrefixUsesExplicitEscape()
+    {
+        var query = new ParameterizedQuery(new PostgreSqlDialect())
+            .From("KeyValues")
+            .StartsWith("Id", true, "path\\");
+
+        Assert.Contains("and \"Id\" like @IdStartsWith escape '!'", query.Sql.ToString(), StringComparison.Ordinal);
+        Assert.Equal("path\\%", query.Parameters.Get<string>("IdStartsWith"));
     }
 
     [Fact(DisplayName = "StartsWith escapes LIKE syntax in SQL Server patterns")]
