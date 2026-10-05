@@ -136,8 +136,8 @@ public class JsonNodeBsonConverter<TNode> : IBsonSerializer<TNode> where TNode :
                 reader.ReadNull();
                 return null;
             case BsonType.Document:
-                // A nominal JsonObject may be a legacy map whose fields resemble a scalar envelope.
-                return DeserializeDocument(BsonDocumentSerializer.Instance.Deserialize(context), allowScalarEnvelope: typeof(TNode) != typeof(JsonObject));
+                // A nominal JsonObject may be a legacy map whose fields resemble another node kind's envelope.
+                return DeserializeDocument(BsonDocumentSerializer.Instance.Deserialize(context), requireObjectEnvelope: typeof(TNode) == typeof(JsonObject));
             case BsonType.Array:
                 return DeserializeLegacyArray(BsonArraySerializer.Instance.Deserialize(context));
             default:
@@ -145,9 +145,9 @@ public class JsonNodeBsonConverter<TNode> : IBsonSerializer<TNode> where TNode :
         }
     }
 
-    private static JsonNode DeserializeDocument(BsonDocument document, bool allowScalarEnvelope = true)
+    private static JsonNode DeserializeDocument(BsonDocument document, bool requireObjectEnvelope = false)
     {
-        if (IsTaggedJsonNode(document, allowScalarEnvelope))
+        if (IsTaggedJsonNode(document, requireObjectEnvelope))
             return DeserializeTagged(document);
 
         // Legacy class-map / dictionary format written when only JsonNode was registered:
@@ -158,7 +158,7 @@ public class JsonNodeBsonConverter<TNode> : IBsonSerializer<TNode> where TNode :
         return obj;
     }
 
-    private static bool IsTaggedJsonNode(BsonDocument document, bool allowScalarEnvelope)
+    private static bool IsTaggedJsonNode(BsonDocument document, bool requireObjectEnvelope)
     {
         if (document.ElementCount != 2 || !document.Contains("type") || !document.Contains("value"))
             return false;
@@ -166,10 +166,14 @@ public class JsonNodeBsonConverter<TNode> : IBsonSerializer<TNode> where TNode :
         if (document["type"].BsonType != BsonType.String)
             return false;
 
-        return document["type"].AsString switch
+        var type = document["type"].AsString;
+        if (requireObjectEnvelope && type != "JsonObject")
+            return false;
+
+        return type switch
         {
             "JsonObject" or "JsonArray" => document["value"].BsonType == BsonType.String,
-            "JsonValue" => allowScalarEnvelope,
+            "JsonValue" => true,
             _ => false
         };
     }
