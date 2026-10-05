@@ -9,9 +9,8 @@ namespace Elsa.Persistence.Dapper.UnitTests;
 
 /// <summary>
 /// Captured from the query builder on this branch before QuoteIdentifier was wired through
-/// ParameterizedQueryBuilderExtensions. SQLite and SQL Server (the only non-PG dialects
-/// in this repo; MySQL/Oracle use the same unquoted SqlDialectBase path) must stay
-/// byte-identical to these strings.
+/// ParameterizedQueryBuilderExtensions. The expected SQL preserves each dialect's contract,
+/// including intentional query-builder changes such as SQLite instant comparisons.
 /// </summary>
 public sealed class NonPgQuerySqlSnapshotTests
 {
@@ -200,6 +199,9 @@ public sealed class NonPgQuerySqlSnapshotTests
 
     private static readonly IReadOnlyDictionary<string, string> SqliteExpected = Merge(SharedExpected, new Dictionary<string, string>
     {
+        ["less-than"] = Join(
+            "select * from WorkflowInstances where 1=1",
+            "and julianday(UpdatedAt) < julianday(@UpdatedAt)"),
         ["paged-delete"] = Join(
             "delete from WorkflowInstances where 1=1",
             "and Id in (",
