@@ -205,15 +205,12 @@ both work in a deployed environment, not just on localhost, and both attach an i
 caller then does:
 
 - **A seeded administrator.** `UseDefaultAdmin(username, password, roleName, permissions)` in code-first
-  hosts, or the `DefaultAdminUser` shell feature in shell-based hosts. Code-first hosts do not bind a
-  `DefaultAdminUser` configuration section automatically, so pass the values in from your own configuration.
-  It runs when each tenant is activated and is idempotent: a user that already exists is not updated, but
-  configured permissions missing from an existing admin role are added, which widens what that role's users
-  can do. Role IDs are unique across the identity store and the admin role's ID is `AdminRoleName`, so when
-  tenants share one store and the same `AdminRoleName`, only the first tenant activated is seeded; for the
-  others, creating the role fails and no admin user is created. Whenever it does create the user, it uses
-  the currently configured password, so when you rotate a seeded admin's password, update or remove the
-  bootstrap password too.
+  hosts, or the `DefaultAdminUser` shell feature in shell-based hosts. It runs when each tenant is activated,
+  gives each tenant its own admin role and user (also when tenants share one store), and adds any configured
+  permissions an existing admin role lacks. See
+  [Default Admin User Bootstrap](../../src/modules/Elsa.Identity/README.md#default-admin-user-bootstrap) in the
+  Identity README for configuration and operational notes, including what to do with the bootstrap password
+  when you rotate the admin's password.
 - **An admin API key.** In code-first hosts, `UseAdminApiKey(key)` on `DefaultAuthenticationFeature` (or
   `UseAdminApiKey(options => ...)` to also set the owner name and permissions). In shell-based hosts, the
   `AdminApiKey` setting on the `DefaultAuthentication` shell feature. Disabled unless configured. While it is

@@ -4,6 +4,8 @@ using Elsa.Common.Services;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
+using Elsa.Workflows;
+using NSubstitute;
 
 namespace Elsa.Identity.UnitTests.Services;
 
@@ -107,5 +109,59 @@ public class RoleManagerTests
         var manager = new RoleManager(_roleStore, new AdminRoleProvider(), _tenantAccessor);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => manager.CreateRoleAsync("Replacement", [], "admin"));
+    }
+
+    [Fact]
+    public async Task CreateRoleWithoutAnIdGeneratesOneRatherThanDerivingItFromTheName()
+    {
+        var identityGenerator = Substitute.For<IIdentityGenerator>();
+        identityGenerator.GenerateId().Returns("generated-1");
+        var manager = new RoleManager(_roleStore, new StoreBasedRoleProvider(_roleStore), _tenantAccessor, identityGenerator);
+
+        var result = await manager.CreateRoleAsync("Power User", ["workflows/*:view"]);
+
+        Assert.Equal("generated-1", result.Role.Id);
+        Assert.Equal("Power User", result.Role.Name);
+        Assert.Equal("tenant-a", result.Role.TenantId);
+        Assert.Null(await _roleStore.FindAsync(new() { Id = "power-user" }));
+    }
+
+    [Fact]
+    public async Task TwoTenantsSharingAStoreCanEachCreateASameNamedRoleWithoutAnId()
+    {
+        var roleA = await _manager.CreateRoleAsync("Operators", ["tenant-a:permission"]);
+
+        using (_tenantAccessor.PushContext(new Tenant { Id = "tenant-b", Name = "Tenant B" }))
+        {
+            var roleB = await _manager.CreateRoleAsync("Operators", ["tenant-b:permission"]);
+
+            Assert.NotEqual(roleA.Role.Id, roleB.Role.Id);
+            Assert.Null(await _roleStore.FindAsync(new() { Id = roleA.Role.Id }));
+            Assert.Equal(roleB.Role.Id, Assert.Single(await _roleStore.FindManyAsync(new() { Name = "Operators" })).Id);
+        }
+
+        Assert.Equal(roleA.Role.Id, Assert.Single(await _roleStore.FindManyAsync(new() { Name = "Operators" })).Id);
+    }
+
+    [Theory]
+    [InlineData("Operators")]
+    [InlineData("operators")]
+    public async Task CreateRoleRejectsANameTheTenantAlreadyUses(string name)
+    {
+        await _manager.CreateRoleAsync("Operators", []);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _manager.CreateRoleAsync(name, []));
+
+        // The endpoint maps "already exists" to 409 Conflict.
+        Assert.Contains("already exists", exception.Message);
+        Assert.Single(await _roleStore.FindManyAsync(new()));
+    }
+
+    [Fact]
+    public async Task CreateRoleRejectsTheNameOfALegacyRoleWithANameDerivedId()
+    {
+        await _roleStore.SaveAsync(new Role { Id = "operators", Name = "Operators", TenantId = "tenant-a" });
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _manager.CreateRoleAsync("Operators", []));
     }
 }

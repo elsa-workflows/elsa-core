@@ -2,15 +2,45 @@ using Elsa.Common.Multitenancy;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
-using Humanizer;
+using Elsa.Workflows;
 
 namespace Elsa.Identity.Services;
 
 /// <summary>
 /// Default implementation of <see cref="IRoleManager"/>.
 /// </summary>
-public class RoleManager(IRoleStore roleStore, IRoleProvider roleProvider, ITenantAccessor tenantAccessor) : IRoleManager
+/// <remarks>
+/// Role IDs are unique across the whole store, which tenants may share, while role names are unique only per
+/// tenant. A new role therefore gets a generated ID rather than one derived from its name, and a name is checked
+/// for duplicates within the current tenant only, so two tenants can each hold a role with the same name.
+/// </remarks>
+public class RoleManager : IRoleManager
 {
+    private readonly IRoleStore _roleStore;
+    private readonly IRoleProvider _roleProvider;
+    private readonly ITenantAccessor _tenantAccessor;
+    private readonly IIdentityGenerator _identityGenerator;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RoleManager"/> class.
+    /// </summary>
+    public RoleManager(IRoleStore roleStore, IRoleProvider roleProvider, ITenantAccessor tenantAccessor, IIdentityGenerator identityGenerator)
+    {
+        _roleStore = roleStore;
+        _roleProvider = roleProvider;
+        _tenantAccessor = tenantAccessor;
+        _identityGenerator = identityGenerator;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RoleManager"/> class that generates role IDs with
+    /// <see cref="GuidIdentityGenerator"/>.
+    /// </summary>
+    public RoleManager(IRoleStore roleStore, IRoleProvider roleProvider, ITenantAccessor tenantAccessor)
+        : this(roleStore, roleProvider, tenantAccessor, new GuidIdentityGenerator())
+    {
+    }
+
     /// <inheritdoc />
     public async Task<CreateRoleResult> CreateRoleAsync(
         string name,
@@ -18,7 +48,10 @@ public class RoleManager(IRoleStore roleStore, IRoleProvider roleProvider, ITena
         string? id = null,
         CancellationToken cancellationToken = default)
     {
-        var roleId = id ?? name.Kebaberize();
+        if (await FindSameNamedRoleAsync(name, cancellationToken) is { } sameNamedRole)
+            throw new InvalidOperationException($"A role named '{sameNamedRole.Name}' already exists.");
+
+        var roleId = string.IsNullOrWhiteSpace(id) ? _identityGenerator.GenerateId() : id;
 
         if (await RoleExistsAsync(roleId, cancellationToken))
             throw new InvalidOperationException($"A role with ID '{roleId}' already exists.");
@@ -28,22 +61,33 @@ public class RoleManager(IRoleStore roleStore, IRoleProvider roleProvider, ITena
             Id = roleId,
             Name = name,
             // The in-memory path does not run EF's ApplyTenantId saving handler.
-            TenantId = tenantAccessor.TenantId,
+            TenantId = _tenantAccessor.TenantId,
             Permissions = permissions ?? new List<string>()
         };
 
-        await roleStore.SaveAsync(role, cancellationToken);
+        await _roleStore.SaveAsync(role, cancellationToken);
 
         return new CreateRoleResult(role);
     }
 
+    /// <summary>
+    /// Finds a role visible to the current tenant whose name differs from <paramref name="name"/> at most in case.
+    /// Names that differ only in case used to collide on their derived ID, and case-insensitive databases reject
+    /// them through the per-tenant name index, so they are rejected here on every store alike.
+    /// </summary>
+    private async Task<Role?> FindSameNamedRoleAsync(string name, CancellationToken cancellationToken)
+    {
+        var tenantRoles = await _roleStore.FindManyAsync(new RoleFilter(), cancellationToken);
+        return tenantRoles.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
+    }
+
     private async Task<bool> RoleExistsAsync(string roleId, CancellationToken cancellationToken)
     {
-        var storedRole = await roleStore.FindAsync(new() { Id = roleId }, cancellationToken);
+        var storedRole = await _roleStore.FindAsync(new() { Id = roleId }, cancellationToken);
         if (storedRole != null)
             return true;
 
-        var providedRoles = await roleProvider.FindManyAsync(new() { Id = roleId }, cancellationToken);
+        var providedRoles = await _roleProvider.FindManyAsync(new() { Id = roleId }, cancellationToken);
         return providedRoles.Any(x => x.Id == roleId);
     }
 }

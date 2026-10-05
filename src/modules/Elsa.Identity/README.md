@@ -85,15 +85,16 @@ Both configuration styles set `Elsa.Identity.Options.DefaultAdminUserOptions`:
 | --- | --- | --- |
 | `AdminUserName` | `""` | Required to create the user. |
 | `AdminPassword` | `""` | Required to create the user. Leading and trailing whitespace is trimmed before hashing. Elsa enforces no length or complexity rules, so choose a strong value. |
-| `AdminRoleName` | `"admin"` | The role is stored with this value as both its id and its name. If it is blank, nothing is created. |
+| `AdminRoleName` | `"admin"` | The admin role's name. A new admin role gets a generated id; see the operational notes. If it is blank, nothing is created. |
 | `AdminRolePermissions` | `["*"]` | Permissions granted to the admin role. |
 
 Code-first hosts do not bind a `DefaultAdminUser` configuration section automatically. Read the values from your own configuration or secret store and pass them to `UseDefaultAdmin`.
 
 ### Operational notes
 
-- The initializer runs as a background task when each tenant is activated. It is idempotent: a user that already exists is not updated.
-- Role IDs are unique across the whole identity store, and the admin role's ID is `AdminRoleName`. When several tenants share one store and the same `AdminRoleName`, only the first tenant activated is seeded. For later tenants, creating the role fails, the failure is logged as an `AdminUserInitializer` background-task error, and no admin user is created, so those tenants need another bootstrap path.
+- The initializer runs as a background task when each tenant is activated, and running it again is safe.
+- Each tenant gets its own admin role and user, including tenants that share one store and the same `AdminRoleName` (the default `admin` included). The initializer only looks at roles visible to the current tenant. It reuses the role whose id is `AdminRoleName`, which is what earlier versions created, or else the role named `AdminRoleName`. If there is neither, it creates the role with a generated id and gives the admin user that id. Existing roles, and the users and applications that reference them, are left as they are. Because a newly created admin role's id is generated, look it up with `GET /identity/roles` instead of assuming it is `admin`. The MongoDB and Dapper role stores in elsa-extensions need a matching update before this works on those providers (see [#8615](https://github.com/elsa-workflows/elsa-core/issues/8615)).
+- Roles created with `POST /identity/roles` without an `id` also get a generated id instead of one derived from the name. A role name only has to be unique within its tenant.
 - Whenever the initializer does create the user, for example on first startup or after the user was deleted, it uses the currently configured `AdminPassword`. If you rotate a seeded admin's password, update or remove the bootstrap password too, or a later run can recreate the user with the old one.
 - If the role already exists, any configured permissions it lacks are added. Existing permissions are never removed.
 - If a user with `AdminUserName` already exists, it is left unchanged. Changing `AdminPassword` later does not change the stored password, so rotate the password with `PUT /identity/users/{id}`.
