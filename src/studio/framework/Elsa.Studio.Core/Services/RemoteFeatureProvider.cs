@@ -22,7 +22,7 @@ public class RemoteFeatureProvider(
     public async Task<bool> IsEnabledAsync(string featureName, CancellationToken cancellationToken = default)
     {
         var catalog = await GetCatalogAsync(cancellationToken);
-        return catalog.Any(feature => string.Equals(feature.FullName, featureName, StringComparison.Ordinal));
+        return RemoteFeatureCatalog.Contains(catalog, featureName);
     }
 
     /// <inheritdoc />

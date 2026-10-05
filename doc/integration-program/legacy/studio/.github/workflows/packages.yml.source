@@ -1,6 +1,15 @@
 name: Packages
 on:
   workflow_dispatch:
+    inputs:
+      publish_nuget:
+        description: Publish packages to nuget.org
+        type: boolean
+        default: false
+      publish_npm:
+        description: Publish packages to npmjs.org
+        type: boolean
+        default: false
   push:
     branches:
       - 'main'
@@ -30,6 +39,8 @@ jobs:
     name: Build packages
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Extract branch name
         run: |
@@ -68,6 +79,9 @@ jobs:
           else
             echo "VERSION=${{env.base_version}}-${PACKAGE_PREFIX}.${{github.run_number}}" >> $GITHUB_ENV
           fi
+      - name: Export version
+        id: version
+        run: echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
@@ -227,7 +241,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
+    # Dispatch-only. 3.10.x (including 3.10.0-preview.*) must never reach npmjs.org.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_npm && !startsWith(needs.build.outputs.version, '3.10.') }}
     permissions:
       contents: read
       id-token: write # Required: lets this job request the OIDC token npmjs.com exchanges for publish rights.
@@ -308,15 +323,27 @@ jobs:
           name: elsa-studio-nuget-packages
           path: elsa-studio-nuget-packages
 
+      - name: Check API key (feedz.io)
+        env:
+          API_KEY: ${{ secrets.FEEDZ_API_KEY }}
+        run: |
+          if [ -z "$API_KEY" ]; then
+            echo "::error::API key for feedz.io is empty. Check the FEEDZ_API_KEY repository secret; nothing was pushed."
+            exit 1
+          fi
+
       - name: Publish to feedz.io
-        run: dotnet nuget push ./elsa-studio-nuget-packages/*.nupkg -k ${{ secrets.FEEDZ_API_KEY }} -s ${{ env.nuget_feed_feedzio }} --skip-duplicate
+        env:
+          API_KEY: ${{ secrets.FEEDZ_API_KEY }}
+        run: dotnet nuget push ./elsa-studio-nuget-packages/*.nupkg -k "$API_KEY" -s ${{ env.nuget_feed_feedzio }} --skip-duplicate
 
   publish_nuget_nuget:
     name: Publish to nuget.org
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
+    # Dispatch-only. 3.10.x (including 3.10.0-preview.*) must never reach nuget.org.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && !startsWith(needs.build.outputs.version, '3.10.') }}
     permissions:
       contents: read
       id-token: write # Required: lets this job request the OIDC token that nuget.org exchanges for a temporary API key.
@@ -337,5 +364,16 @@ jobs:
         with:
           user: ${{ secrets.NUGET_USER }} # nuget.org username (profile name), not an email address.
 
+      - name: Check API key (nuget.org)
+        env:
+          API_KEY: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
+        run: |
+          if [ -z "$API_KEY" ]; then
+            echo "::error::API key for nuget.org is empty. Check the NuGet login (OIDC) step output and the Trusted Publishing policy on nuget.org; nothing was pushed."
+            exit 1
+          fi
+
       - name: Publish to nuget.org
-        run: dotnet nuget push ./elsa-studio-nuget-packages/*.nupkg --api-key ${{ steps.nuget_login.outputs.NUGET_API_KEY }} --source ${{ env.nuget_feed_nuget }} --skip-duplicate
+        env:
+          API_KEY: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
+        run: dotnet nuget push ./elsa-studio-nuget-packages/*.nupkg --api-key "$API_KEY" --source ${{ env.nuget_feed_nuget }} --skip-duplicate
