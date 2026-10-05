@@ -133,13 +133,24 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                 else
                 {
                     // An index on (TenantId, Name) exists but does not enforce uniqueness on every row (it is not unique,
-                    // or it is partial). MongoDB will not create a second index with the same keys, and dropping Name_1
-                    // now would leave role names without any uniqueness, so keep Name_1 and let the operator fix it.
+                    // or it is partial), and MongoDB will not create a second index with the same keys. If a store-wide
+                    // unique Name index still protects role names, keep it and warn. Otherwise nothing enforces role name
+                    // uniqueness, so refuse to start rather than let a tenant save duplicate role names.
+                    var weakIndexName = GetIndexName(tenantNameIndexes[0]);
+                    var legacyIndex = existingIndexes.FirstOrDefault(x => HasNameOnlyKey(x) && IsPlainUnique(x));
+
+                    if (legacyIndex == null)
+                    {
+                        throw new InvalidOperationException(
+                            $"The role index '{weakIndexName}' on (TenantId, Name) is not a plain unique index, and no other index keeps role names unique. " +
+                            $"Drop '{weakIndexName}' (and remove any duplicate role names within a tenant), then restart so the unique index '{IdentityRoleIndexes.TenantIdNameUnique}' can be created.");
+                    }
+
                     logger.LogWarning(
                         "The role index '{IndexName}' on (TenantId, Name) is not a plain unique index, so the store-wide unique index '{LegacyIndexName}' is kept and role names stay unique across tenants. Drop '{IndexName}' and restart to make role names unique per tenant.",
-                        GetIndexName(tenantNameIndexes[0]),
-                        IdentityRoleIndexes.LegacyNameUnique,
-                        GetIndexName(tenantNameIndexes[0]));
+                        weakIndexName,
+                        GetIndexName(legacyIndex),
+                        weakIndexName);
                     await collection.Indexes.CreateOneAsync(new CreateIndexModel<Role>(indexBuilder.Ascending(x => x.TenantId)), cancellationToken: cancellationToken);
                     return;
                 }
@@ -193,6 +204,12 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
 
         return IsAscending(keyDocument.GetElement(0), nameof(Role.TenantId)) && IsAscending(keyDocument.GetElement(1), nameof(Role.Name));
     }
+
+    /// <summary>
+    /// Whether the index keys are exactly ascending Name, like the legacy store-wide index.
+    /// </summary>
+    private static bool HasNameOnlyKey(BsonDocument index) =>
+        index.TryGetValue("key", out var key) && key is BsonDocument keyDocument && keyDocument.ElementCount == 1 && IsAscending(keyDocument.GetElement(0), nameof(Role.Name));
 
     private static bool IsAscending(BsonElement element, string field) =>
         string.Equals(element.Name, field, StringComparison.Ordinal) && element.Value.IsNumeric && element.Value.ToDouble() > 0;
