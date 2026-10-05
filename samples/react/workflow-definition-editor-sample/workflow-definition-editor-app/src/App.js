@@ -1,5 +1,3 @@
-import WorkflowDefinitionEditor from "./components/WorkflowDefinitionEditor";
-
 function App() {
     return (
         <div className="App">

@@ -2,13 +2,12 @@ name: Packages
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Optional package version override (semver-ish, e.g. 3.8.1 or 3.8.0-preview.1). Required when publish is checked. Leave empty for default branch/tag versioning.'
-        required: false
-        type: string
-      publish:
-        description: 'Publish packed artifacts to feedz.io only. On main this never publishes to nuget.org or npmjs (3.10 is feedz-only until the maintainer allows otherwise). Requires a non-empty version override so a blank dispatch cannot ship 3.10.0-preview.N.'
-        required: false
+      publish_nuget:
+        description: Publish packages to nuget.org
+        type: boolean
+        default: false
+      publish_npm:
+        description: Publish packages to npmjs.org
         type: boolean
         default: false
   push:
@@ -40,6 +39,8 @@ jobs:
     name: Build packages
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Extract branch name
         run: |
@@ -70,34 +71,17 @@ jobs:
             git branch --remote --contains | grep origin/${BRANCH_NAME}
           fi
       - name: Set VERSION variable
-        env:
-          # Dispatcher input via env — do not interpolate inputs.version into bash.
-          VERSION: ${{ github.event.inputs.version }}
-          PUBLISH: ${{ github.event.inputs.publish }}
         run: |
-          set -euo pipefail
-          version_re='^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$'
-
-          if [[ "${PUBLISH:-}" == "true" ]]; then
-            if [[ -z "${VERSION:-}" || ! "$VERSION" =~ $version_re ]]; then
-              echo "publish requires a valid version (e.g. 3.8.1). Refusing to ship ${{ env.base_version }}-preview.N" >&2
-              exit 1
-            fi
-          fi
-
-          if [[ -n "${VERSION:-}" ]]; then
-            if [[ ! "$VERSION" =~ $version_re ]]; then
-              echo "Invalid version override. Expected a package version like 3.8.1 or 3.8.0-preview.1" >&2
-              exit 1
-            fi
-            echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          elif [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && ("${{ github.event.action }}" == "published" || "${{ github.event.action }}" == "prereleased") ]]; then
+          if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && ("${{ github.event.action }}" == "published" || "${{ github.event.action }}" == "prereleased") ]]; then
             TAG_NAME=${{ github.ref }} # e.g., refs/tags/3.0.0
             TAG_NAME=${TAG_NAME#refs/tags/} # remove the refs/tags/ prefix
-            echo "VERSION=${TAG_NAME}" >> "$GITHUB_ENV"
+            echo "VERSION=${TAG_NAME}" >> $GITHUB_ENV
           else
-            echo "VERSION=${{ env.base_version }}-${PACKAGE_PREFIX}.${{ github.run_number }}" >> "$GITHUB_ENV"
+            echo "VERSION=${{env.base_version}}-${PACKAGE_PREFIX}.${{github.run_number}}" >> $GITHUB_ENV
           fi
+      - name: Export version
+        id: version
+        run: echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
@@ -184,7 +168,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: ${{ github.event_name == 'release' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish && inputs.version != '') }}
+    if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -257,20 +241,12 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Fail-closed public npm: workflow_dispatch is intentionally omitted.
-    # A "Run workflow" click with publish=true + version=3.10.x (or any version)
-    # must not reach npmjs. 3.10 is feedz-only until Sipke allows otherwise.
-    # The only public-publish path is a published GitHub Release (not dispatch).
-    if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.event_name != 'workflow_dispatch' }}
+    # Dispatch-only. 3.10.x (including 3.10.0-preview.*) must never reach npmjs.org.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_npm && !startsWith(needs.build.outputs.version, '3.10.') }}
     permissions:
       contents: read
       id-token: write # Required: lets this job request the OIDC token npmjs.com exchanges for publish rights.
     steps:
-      - name: Refuse public npm publish from workflow_dispatch
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        run: |
-          echo "Fail-closed: workflow_dispatch cannot publish to npmjs from main. 3.10.x is feedz-only until the maintainer allows otherwise." >&2
-          exit 1
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -339,7 +315,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: ${{ github.event_name == 'release' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish && inputs.version != '') }}
+    if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
     steps:
       - name: Download Packages
         uses: actions/download-artifact@v4
@@ -347,28 +323,31 @@ jobs:
           name: elsa-studio-nuget-packages
           path: elsa-studio-nuget-packages
 
+      - name: Check API key (feedz.io)
+        env:
+          API_KEY: ${{ secrets.FEEDZ_API_KEY }}
+        run: |
+          if [ -z "$API_KEY" ]; then
+            echo "::error::API key for feedz.io is empty. Check the FEEDZ_API_KEY repository secret; nothing was pushed."
+            exit 1
+          fi
+
       - name: Publish to feedz.io
-        run: dotnet nuget push ./elsa-studio-nuget-packages/*.nupkg -k ${{ secrets.FEEDZ_API_KEY }} -s ${{ env.nuget_feed_feedzio }} --skip-duplicate
+        env:
+          API_KEY: ${{ secrets.FEEDZ_API_KEY }}
+        run: dotnet nuget push ./elsa-studio-nuget-packages/*.nupkg -k "$API_KEY" -s ${{ env.nuget_feed_feedzio }} --skip-duplicate
 
   publish_nuget_nuget:
     name: Publish to nuget.org
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Fail-closed public NuGet: workflow_dispatch is intentionally omitted.
-    # A "Run workflow" click with publish=true + version=3.10.x (or any version)
-    # must not reach nuget.org. 3.10 is feedz-only until Sipke allows otherwise.
-    # The only public-publish path is a published GitHub Release (not dispatch).
-    if: ${{ github.event_name == 'release' && github.event.action == 'published' && github.event_name != 'workflow_dispatch' }}
+    # Dispatch-only. 3.10.x (including 3.10.0-preview.*) must never reach nuget.org.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && !startsWith(needs.build.outputs.version, '3.10.') }}
     permissions:
       contents: read
       id-token: write # Required: lets this job request the OIDC token that nuget.org exchanges for a temporary API key.
     steps:
-      - name: Refuse public NuGet publish from workflow_dispatch
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        run: |
-          echo "Fail-closed: workflow_dispatch cannot publish to nuget.org from main. 3.10.x is feedz-only until the maintainer allows otherwise." >&2
-          exit 1
       - name: Download Packages
         uses: actions/download-artifact@v4
         with:
@@ -385,5 +364,16 @@ jobs:
         with:
           user: ${{ secrets.NUGET_USER }} # nuget.org username (profile name), not an email address.
 
+      - name: Check API key (nuget.org)
+        env:
+          API_KEY: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
+        run: |
+          if [ -z "$API_KEY" ]; then
+            echo "::error::API key for nuget.org is empty. Check the NuGet login (OIDC) step output and the Trusted Publishing policy on nuget.org; nothing was pushed."
+            exit 1
+          fi
+
       - name: Publish to nuget.org
-        run: dotnet nuget push ./elsa-studio-nuget-packages/*.nupkg --api-key ${{ steps.nuget_login.outputs.NUGET_API_KEY }} --source ${{ env.nuget_feed_nuget }} --skip-duplicate
+        env:
+          API_KEY: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
+        run: dotnet nuget push ./elsa-studio-nuget-packages/*.nupkg --api-key "$API_KEY" --source ${{ env.nuget_feed_nuget }} --skip-duplicate
