@@ -1,6 +1,6 @@
 {
   "priorSourceCommit": "3cf502955791cbd20375022ef4597f0e195faf8a",
-  "reconciledSourceCommit": "8626e81f4a780be7d5fde87a1ae8b15cc6915934",
+  "reconciledSourceCommit": "a24de2986e0a02c335bdd3f86e47bd049949d3b4",
   "coreBaseCommit": "91a1c07232e806436c5e759086bbb9b0aee92234",
   "changedPaths": 48,
   "records": [
@@ -179,8 +179,8 @@
       "destination": "src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Runtime/Stores/KeyValueStore.cs",
       "disposition": "imported-with-core-adaptation",
       "reason": "Atomic method imported; Core API already provides TryDeleteAsync, so tests exercise interface dispatch and documentation drops obsolete external preview dependency caveat.",
-      "sourceBlob": "f3682877c48c8fcc2eaf1e39c69f67734f50249b",
-      "destinationBlob": "2528a376c9a46f83e14900073e6d1b81fb39e41d",
+      "sourceBlob": "6b8b03783a3805152892cc9e6d83dfea5fe74e59",
+      "destinationBlob": "7e00e3e4cd6e67204595e5e7747eafa07a9bdec6",
       "sourceMode": "100644",
       "destinationMode": "100644"
     },
@@ -359,8 +359,8 @@
       "destination": "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperKeyValueStoreOwnershipTests.cs",
       "disposition": "imported-source",
       "reason": "Shared SQLite/PostgreSQL ownership and race regressions imported unchanged.",
-      "sourceBlob": "da1a706f6452e82810079a5fdf3da84f7736f049",
-      "destinationBlob": "da1a706f6452e82810079a5fdf3da84f7736f049",
+      "sourceBlob": "478070461f11e96b0a3b7ff94106072f0adfe968",
+      "destinationBlob": "478070461f11e96b0a3b7ff94106072f0adfe968",
       "sourceMode": "100644",
       "destinationMode": "100644"
     },
