@@ -94,7 +94,7 @@ public sealed class DapperKeyValueStoreTryDeletePostgreSqlTests : IAsyncLifetime
     }
 
     private IKeyValueStore CreateStore() =>
-        new(new Store<KeyValuePairRecord>(new PostgreSqlDbConnectionProvider(_connectionString), _tenants, "KeyValues"));
+        new DapperKeyValueStore(new Store<KeyValuePairRecord>(new PostgreSqlDbConnectionProvider(_connectionString), _tenants, "KeyValues"));
 
     private void MigrateUp()
     {
