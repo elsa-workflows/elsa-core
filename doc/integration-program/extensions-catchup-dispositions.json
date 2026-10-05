@@ -335,10 +335,10 @@
     {
       "source": "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj",
       "destination": "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj",
-      "disposition": "preserved-core-adaptation",
-      "reason": "Preserve in-repository project references and Core-only SSH.NET compatibility pin; Dapper test friend assemblies already present.",
+      "disposition": "imported-with-core-adaptation",
+      "reason": "Map newly required Elsa aggregate package to an in-repository Elsa project reference for migrated workflow/DI tests; preserve SSH.NET compatibility pin and existing Dapper project reference.",
       "sourceBlob": "47666a7386af2263631c9e21f19b864838e00953",
-      "destinationBlob": "d006fe6bfd3409c69ae950b6f76debcf91f7f5fe"
+      "destinationBlob": "0ad8e97c62329c4777fdf1b256a3b3007615c984"
     },
     {
       "source": "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/NonPgQuerySqlSnapshotTests.cs",
