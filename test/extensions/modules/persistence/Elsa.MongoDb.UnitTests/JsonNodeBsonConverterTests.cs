@@ -195,6 +195,49 @@ public class JsonNodeBsonConverterTests
         Assert.Equal(3, obj["Count"]!.GetValue<int>());
     }
 
+    [Theory(DisplayName = "A legacy JsonObject with incompatible envelope fields preserves its object type")]
+    [InlineData("JsonValue", "legacy-value")]
+    [InlineData("JsonArray", "[]")]
+    public void Deserialize_LegacyIncompatibleEnvelopeShapedJsonObject_PreservesFields(string type, string value)
+    {
+        var legacy = new BsonDocument { { "type", type }, { "value", value } };
+
+        var restored = DeserializeDocument(new JsonNodeBsonConverter<JsonObject>(), legacy);
+
+        Assert.Equal(2, restored.Count);
+        Assert.Equal(type, restored["type"]!.GetValue<string>());
+        Assert.Equal(value, restored["value"]!.GetValue<string>());
+    }
+
+    [Theory(DisplayName = "Polymorphic JsonObject dispatch preserves a legacy incompatible-envelope-shaped object")]
+    [InlineData("JsonValue", "legacy-value")]
+    [InlineData("JsonArray", "[]")]
+    public void PolymorphicSerializer_LegacyIncompatibleEnvelopeShapedJsonObject_PreservesObjectType(string type, string value)
+    {
+        var document = new BsonDocument
+        {
+            { "$type", typeof(JsonObject).GetSimpleAssemblyQualifiedName() },
+            { "$value", new BsonDocument { { "type", type }, { "value", value } } }
+        };
+
+        var restored = DeserializeDocument(new PolymorphicSerializer(), document);
+
+        var obj = Assert.IsType<JsonObject>(restored);
+        Assert.Equal(type, obj["type"]!.GetValue<string>());
+        Assert.Equal(value, obj["value"]!.GetValue<string>());
+    }
+
+    [Fact(DisplayName = "JsonNode dispatch still restores a genuine scalar envelope as a JsonValue")]
+    public void JsonNode_RoundTrips_GenuineScalarEnvelope()
+    {
+        JsonNode original = JsonValue.Create("scalar-value")!;
+
+        var restored = RoundTrip(new JsonNodeBsonConverter(), original);
+
+        var value = Assert.IsAssignableFrom<JsonValue>(restored);
+        Assert.Equal("scalar-value", value.GetValue<string>());
+    }
+
     [Fact(DisplayName = "A type/value document that is not a two-field string envelope deserializes as a map")]
     public void Deserialize_AmbiguousTypeValueDocument_IsMapNotEnvelope()
     {
