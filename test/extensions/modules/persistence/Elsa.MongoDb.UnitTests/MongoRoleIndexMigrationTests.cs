@@ -105,6 +105,43 @@ public sealed class MongoRoleIndexMigrationTests : IClassFixture<RoleMongoFixtur
     }
 
     [Fact]
+    public async Task ANonUniqueCompoundIndexKeepsTheLegacyIndexAndWarns()
+    {
+        await SeedEarlierVersionShapeAsync();
+        await _roles.Indexes.CreateOneAsync(new CreateIndexModel<Role>(
+            Builders<Role>.IndexKeys.Ascending(x => x.TenantId).Ascending(x => x.Name),
+            new CreateIndexOptions { Name = IdentityRoleIndexes.TenantIdNameUnique }));
+
+        var logger = new CollectingLogger();
+        var exception = await Record.ExceptionAsync(() => RunCreateIndicesAsync(logger));
+
+        Assert.Null(exception);
+        Assert.True((await ListIndexNamesAsync(_roles)).SetEquals(["_id_", "Name_1", "TenantId_1", "TenantId_1_Name_1"]));
+        Assert.Contains(logger.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("not a plain unique index", StringComparison.Ordinal));
+        Assert.DoesNotContain(logger.Entries, e => e.Message.Contains("Dropped", StringComparison.Ordinal));
+
+        // Name_1 still enforces store-wide uniqueness, so nothing is left unprotected.
+        var duplicate = await Record.ExceptionAsync(() => _roles.InsertOneAsync(Role("role-a-dup", "admin", "tenant-a")));
+        Assert.NotNull(duplicate);
+        Assert.True(MongoErrors.IsDuplicateKey(duplicate), duplicate.ToString());
+    }
+
+    [Fact]
+    public async Task AUniqueCompoundIndexUnderAnotherNameIsAccepted()
+    {
+        await SeedEarlierVersionShapeAsync();
+        await _roles.Indexes.CreateOneAsync(new CreateIndexModel<Role>(
+            Builders<Role>.IndexKeys.Ascending(x => x.TenantId).Ascending(x => x.Name),
+            new CreateIndexOptions { Unique = true, Name = "custom_tenant_name" }));
+
+        var logger = new CollectingLogger();
+        await RunCreateIndicesAsync(logger);
+
+        Assert.True((await ListIndexNamesAsync(_roles)).SetEquals(["_id_", "TenantId_1", "custom_tenant_name"]));
+        Assert.Contains(logger.Entries, e => e.Level == LogLevel.Information && e.Message.Contains("Dropped", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task AFreshDatabaseGetsOnlyThePerTenantIndex()
     {
         var logger = new CollectingLogger();

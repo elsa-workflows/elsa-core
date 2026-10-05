@@ -45,11 +45,25 @@ public class RoleFilter
     public IQueryable<Role> Apply(IQueryable<Role> queryable)
     {
         var filter = this;
-        if (filter.Id != null) queryable = queryable.Where(x => x.Id == filter.Id);
-        if (filter.Ids != null) queryable = queryable.Where(x => filter.Ids.Contains(x.Id));
-        if (filter.Name != null) queryable = queryable.Where(x => x.Name == filter.Name);
+        if (filter.Id != null)
+        {
+            queryable = queryable.Where(x => x.Id == filter.Id);
+        }
+
+        if (filter.Ids != null)
+        {
+            queryable = queryable.Where(x => filter.Ids.Contains(x.Id));
+        }
+
+        if (filter.Name != null)
+        {
+            queryable = queryable.Where(x => x.Name == filter.Name);
+        }
+
         if (filter.TenantId != null)
+        {
             queryable = queryable.Where(x => x.TenantId == filter.TenantId || x.TenantId == Tenant.AgnosticTenantId || (x.TenantId == null && filter.TenantId == Tenant.DefaultTenantId));
+        }
 
         return queryable;
     }

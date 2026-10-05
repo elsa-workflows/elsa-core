@@ -109,13 +109,11 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                 // uniqueness, and existing data always fits it because Name_1 was stricter. When several nodes start
                 // together, creating the same index again is a no-op and a node that finds Name_1 already dropped
                 // (IndexNotFound) carries on instead of failing to start.
-                var existingNames = await ListIndexNamesAsync(collection, cancellationToken);
+                var existingIndexes = await ListIndexesAsync(collection, cancellationToken);
+                var existingNames = existingIndexes.Select(GetIndexName).OfType<string>().ToHashSet(StringComparer.Ordinal);
+                var tenantNameIndexes = existingIndexes.Where(HasTenantIdNameKey).ToList();
 
-                if (existingNames.Contains(IdentityRoleIndexes.TenantIdNameUnique))
-                {
-                    logger.LogDebug("Role unique index '{IndexName}' is already present.", IdentityRoleIndexes.TenantIdNameUnique);
-                }
-                else
+                if (tenantNameIndexes.Count == 0)
                 {
                     await collection.Indexes.CreateOneAsync(
                         new CreateIndexModel<Role>(
@@ -127,6 +125,23 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                             }),
                         cancellationToken: cancellationToken);
                     logger.LogDebug("Created role unique index '{IndexName}' on (TenantId, Name).", IdentityRoleIndexes.TenantIdNameUnique);
+                }
+                else if (tenantNameIndexes.FirstOrDefault(IsPlainUnique) is { } replacement)
+                {
+                    logger.LogDebug("Role unique index '{IndexName}' on (TenantId, Name) is already present.", GetIndexName(replacement));
+                }
+                else
+                {
+                    // An index on (TenantId, Name) exists but does not enforce uniqueness on every row (it is not unique,
+                    // or it is partial). MongoDB will not create a second index with the same keys, and dropping Name_1
+                    // now would leave role names without any uniqueness, so keep Name_1 and let the operator fix it.
+                    logger.LogWarning(
+                        "The role index '{IndexName}' on (TenantId, Name) is not a plain unique index, so the store-wide unique index '{LegacyIndexName}' is kept and role names stay unique across tenants. Drop '{IndexName}' and restart to make role names unique per tenant.",
+                        GetIndexName(tenantNameIndexes[0]),
+                        IdentityRoleIndexes.LegacyNameUnique,
+                        GetIndexName(tenantNameIndexes[0]));
+                    await collection.Indexes.CreateOneAsync(new CreateIndexModel<Role>(indexBuilder.Ascending(x => x.TenantId)), cancellationToken: cancellationToken);
+                    return;
                 }
 
                 if (existingNames.Contains(IdentityRoleIndexes.LegacyNameUnique))
@@ -157,19 +172,34 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
         || string.Equals(exception.CodeName, "IndexNotFound", StringComparison.Ordinal)
         || exception.InnerException is MongoCommandException inner && IsIndexNotFound(inner);
 
-    private static async Task<HashSet<string>> ListIndexNamesAsync<T>(IMongoCollection<T> collection, CancellationToken cancellationToken)
+    private static async Task<List<BsonDocument>> ListIndexesAsync<T>(IMongoCollection<T> collection, CancellationToken cancellationToken)
     {
-        var names = new HashSet<string>(StringComparer.Ordinal);
         using var cursor = await collection.Indexes.ListAsync(cancellationToken);
+        return await cursor.ToListAsync(cancellationToken);
+    }
 
-        foreach (var index in await cursor.ToListAsync(cancellationToken))
+    private static string? GetIndexName(BsonDocument index) =>
+        index.TryGetValue("name", out var name) && name.BsonType == BsonType.String ? name.AsString : null;
+
+    /// <summary>
+    /// Whether the index keys are exactly ascending TenantId, then ascending Name.
+    /// </summary>
+    private static bool HasTenantIdNameKey(BsonDocument index)
+    {
+        if (!index.TryGetValue("key", out var key) || key is not BsonDocument keyDocument || keyDocument.ElementCount != 2)
         {
-            if (index.TryGetValue("name", out var name) && name.BsonType == BsonType.String)
-            {
-                names.Add(name.AsString);
-            }
+            return false;
         }
 
-        return names;
+        return IsAscending(keyDocument.GetElement(0), nameof(Role.TenantId)) && IsAscending(keyDocument.GetElement(1), nameof(Role.Name));
     }
+
+    private static bool IsAscending(BsonElement element, string field) =>
+        string.Equals(element.Name, field, StringComparison.Ordinal) && element.Value.IsNumeric && element.Value.ToDouble() > 0;
+
+    /// <summary>
+    /// Whether the index is unique over every document, rather than non-unique or limited by a partial filter.
+    /// </summary>
+    private static bool IsPlainUnique(BsonDocument index) =>
+        index.TryGetValue("unique", out var unique) && unique.ToBoolean() && !index.Contains("partialFilterExpression");
 }
