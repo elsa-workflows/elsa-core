@@ -102,85 +102,141 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
 
         return IndexHelpers.CreateAsync(
             roleCollection,
-            async (collection, indexBuilder) =>
-            {
-                // Role names are unique per tenant, not across the store (elsa-core#8615). The compound index is created
-                // before the legacy store-wide Name_1 index is dropped, so the collection is never without name
-                // uniqueness, and existing data always fits it because Name_1 was stricter. When several nodes start
-                // together, creating the same index again is a no-op and a node that finds Name_1 already dropped
-                // (IndexNotFound) carries on instead of failing to start.
-                var existingIndexes = await ListIndexesAsync(collection, cancellationToken);
-                var existingNames = existingIndexes.Select(GetIndexName).OfType<string>().ToHashSet(StringComparer.Ordinal);
-                // Any unique index on (TenantId, Name) enforces per-tenant uniqueness, whatever the key directions. Only
-                // an ascending one blocks creating TenantId_1_Name_1, because MongoDB refuses a second index with the
-                // same keys.
-                var replacement = existingIndexes.FirstOrDefault(x => HasTenantIdNameKey(x, ascendingOnly: false) && IsPlainUnique(x));
-                var tenantNameIndexes = existingIndexes.Where(x => HasTenantIdNameKey(x, ascendingOnly: true)).ToList();
-
-                if (replacement != null)
-                {
-                    logger.LogDebug("Role unique index '{IndexName}' on (TenantId, Name) is already present.", GetIndexName(replacement));
-                }
-                else if (tenantNameIndexes.Count == 0)
-                {
-                    await collection.Indexes.CreateOneAsync(
-                        new CreateIndexModel<Role>(
-                            indexBuilder.Ascending(x => x.TenantId).Ascending(x => x.Name),
-                            new CreateIndexOptions
-                            {
-                                Unique = true,
-                                Name = IdentityRoleIndexes.TenantIdNameUnique
-                            }),
-                        cancellationToken: cancellationToken);
-                    logger.LogDebug("Created role unique index '{IndexName}' on (TenantId, Name).", IdentityRoleIndexes.TenantIdNameUnique);
-                }
-                else
-                {
-                    // An index on (TenantId, Name) exists but does not enforce uniqueness on every row (it is not unique,
-                    // or it is partial), and MongoDB will not create a second index with the same keys. If a store-wide
-                    // unique Name index still protects role names, keep it and warn. Otherwise nothing enforces role name
-                    // uniqueness, so refuse to start rather than let a tenant save duplicate role names.
-                    var weakIndexName = GetIndexName(tenantNameIndexes[0]);
-                    var legacyIndex = existingIndexes.FirstOrDefault(x => HasNameOnlyKey(x) && IsPlainUnique(x));
-
-                    if (legacyIndex == null)
-                    {
-                        throw new InvalidOperationException(
-                            $"The role index '{weakIndexName}' on (TenantId, Name) is not a plain unique index, and no other index keeps role names unique. " +
-                            $"Drop '{weakIndexName}' (and remove any duplicate role names within a tenant), then restart so the unique index '{IdentityRoleIndexes.TenantIdNameUnique}' can be created.");
-                    }
-
-                    logger.LogWarning(
-                        "The role index '{IndexName}' on (TenantId, Name) is not a plain unique index, so the store-wide unique index '{LegacyIndexName}' is kept and role names stay unique across tenants. Drop '{IndexName}' and restart to make role names unique per tenant.",
-                        weakIndexName,
-                        GetIndexName(legacyIndex),
-                        weakIndexName);
-                    await collection.Indexes.CreateOneAsync(new CreateIndexModel<Role>(indexBuilder.Ascending(x => x.TenantId)), cancellationToken: cancellationToken);
-                    return;
-                }
-
-                if (existingNames.Contains(IdentityRoleIndexes.LegacyNameUnique))
-                {
-                    try
-                    {
-                        await collection.Indexes.DropOneAsync(IdentityRoleIndexes.LegacyNameUnique, cancellationToken);
-                        logger.LogInformation("Dropped the store-wide role unique index '{IndexName}'; role names are now unique per tenant through '{TenantIndexName}'.", IdentityRoleIndexes.LegacyNameUnique, IdentityRoleIndexes.TenantIdNameUnique);
-                    }
-                    catch (MongoCommandException exception) when (IsIndexNotFound(exception))
-                    {
-                        logger.LogDebug("Role unique index '{IndexName}' was already dropped.", IdentityRoleIndexes.LegacyNameUnique);
-                    }
-                }
-                else
-                {
-                    logger.LogDebug("Role unique index '{IndexName}' was not found.", IdentityRoleIndexes.LegacyNameUnique);
-                }
-
-                await collection.Indexes.CreateOneAsync(
-                    new CreateIndexModel<Role>(indexBuilder.Ascending(x => x.TenantId)),
-                    cancellationToken: cancellationToken);
-            });
+            (collection, indexBuilder) => EnsureRoleNameIndexesAsync(collection, indexBuilder, logger, cancellationToken));
     }
+
+    /// <summary>
+    /// What the existing indexes say about per-tenant role name uniqueness.
+    /// </summary>
+    private enum TenantRoleNameIndexState
+    {
+        /// <summary>No index on (TenantId, Name) exists yet, so the unique one can be created.</summary>
+        Missing,
+
+        /// <summary>A plain unique index on (TenantId, Name) exists, in any key direction and under any name.</summary>
+        Unique,
+
+        /// <summary>
+        /// An ascending (TenantId, Name) index exists that is not plain unique. MongoDB refuses a second index with the
+        /// same keys, so the unique one cannot be created until the operator drops it.
+        /// </summary>
+        Weak
+    }
+
+    /// <summary>
+    /// Makes role names unique per tenant rather than across the store (elsa-core#8615).
+    /// </summary>
+    /// <remarks>
+    /// The compound index is created before the legacy store-wide <c>Name_1</c> index is dropped, so the collection is
+    /// never without name uniqueness, and existing data always fits it because <c>Name_1</c> was stricter. When several
+    /// nodes start together, creating the same index again is a no-op, and a node that finds <c>Name_1</c> already
+    /// dropped (IndexNotFound) carries on instead of failing to start.
+    /// </remarks>
+    private static async Task EnsureRoleNameIndexesAsync(IMongoCollection<Role> collection, IndexKeysDefinitionBuilder<Role> indexBuilder, ILogger logger, CancellationToken cancellationToken)
+    {
+        var existingIndexes = await ListIndexesAsync(collection, cancellationToken);
+        var (state, stateIndex) = GetTenantRoleNameIndexState(existingIndexes);
+
+        switch (state)
+        {
+            case TenantRoleNameIndexState.Unique:
+                logger.LogDebug("Role unique index '{IndexName}' on (TenantId, Name) is already present.", GetIndexName(stateIndex!));
+                break;
+
+            case TenantRoleNameIndexState.Missing:
+                await collection.Indexes.CreateOneAsync(
+                    new CreateIndexModel<Role>(
+                        indexBuilder.Ascending(x => x.TenantId).Ascending(x => x.Name),
+                        new CreateIndexOptions
+                        {
+                            Unique = true,
+                            Name = IdentityRoleIndexes.TenantIdNameUnique
+                        }),
+                    cancellationToken: cancellationToken);
+                logger.LogDebug("Created role unique index '{IndexName}' on (TenantId, Name).", IdentityRoleIndexes.TenantIdNameUnique);
+                break;
+
+            case TenantRoleNameIndexState.Weak:
+                // If a store-wide unique Name index still protects role names, keep it and warn. Otherwise nothing
+                // enforces role name uniqueness, so refuse to start rather than let a tenant save duplicate role names.
+                var weakIndexName = GetIndexName(stateIndex!);
+                var storeWideIndex = existingIndexes.FirstOrDefault(IsStoreWideUniqueNameIndex);
+
+                if (storeWideIndex == null)
+                {
+                    throw new InvalidOperationException(
+                        $"The role index '{weakIndexName}' on (TenantId, Name) is not a plain unique index, and no other index keeps role names unique. " +
+                        $"Drop '{weakIndexName}' (and remove any duplicate role names within a tenant), then restart so the unique index '{IdentityRoleIndexes.TenantIdNameUnique}' can be created.");
+                }
+
+                logger.LogWarning(
+                    "The role index '{IndexName}' on (TenantId, Name) is not a plain unique index, so the store-wide unique index '{LegacyIndexName}' is kept and role names stay unique across tenants. Drop '{IndexName}' and restart to make role names unique per tenant.",
+                    weakIndexName,
+                    GetIndexName(storeWideIndex),
+                    weakIndexName);
+                await CreateTenantIdIndexAsync(collection, indexBuilder, cancellationToken);
+                return;
+        }
+
+        await DropLegacyNameIndexAsync(collection, existingIndexes, logger, cancellationToken);
+        WarnAboutOtherStoreWideNameIndexes(existingIndexes, logger);
+        await CreateTenantIdIndexAsync(collection, indexBuilder, cancellationToken);
+    }
+
+    private static (TenantRoleNameIndexState State, BsonDocument? Index) GetTenantRoleNameIndexState(IReadOnlyCollection<BsonDocument> existingIndexes)
+    {
+        // Any unique index on (TenantId, Name) enforces per-tenant uniqueness, whatever the key directions. Only an
+        // ascending one blocks creating TenantId_1_Name_1, because MongoDB refuses a second index with the same keys.
+        var unique = existingIndexes.FirstOrDefault(x => HasTenantIdNameKey(x, ascendingOnly: false) && IsPlainUnique(x));
+
+        if (unique != null)
+        {
+            return (TenantRoleNameIndexState.Unique, unique);
+        }
+
+        var weak = existingIndexes.FirstOrDefault(x => HasTenantIdNameKey(x, ascendingOnly: true));
+        return weak == null ? (TenantRoleNameIndexState.Missing, null) : (TenantRoleNameIndexState.Weak, weak);
+    }
+
+    private static async Task DropLegacyNameIndexAsync(IMongoCollection<Role> collection, IEnumerable<BsonDocument> existingIndexes, ILogger logger, CancellationToken cancellationToken)
+    {
+        if (!existingIndexes.Any(x => GetIndexName(x) == IdentityRoleIndexes.LegacyNameUnique))
+        {
+            logger.LogDebug("Role unique index '{IndexName}' was not found.", IdentityRoleIndexes.LegacyNameUnique);
+            return;
+        }
+
+        try
+        {
+            await collection.Indexes.DropOneAsync(IdentityRoleIndexes.LegacyNameUnique, cancellationToken);
+            logger.LogInformation("Dropped the store-wide role unique index '{IndexName}'; role names are now unique per tenant through '{TenantIndexName}'.", IdentityRoleIndexes.LegacyNameUnique, IdentityRoleIndexes.TenantIdNameUnique);
+        }
+        catch (MongoCommandException exception) when (IsIndexNotFound(exception))
+        {
+            logger.LogDebug("Role unique index '{IndexName}' was already dropped.", IdentityRoleIndexes.LegacyNameUnique);
+        }
+    }
+
+    /// <summary>
+    /// Only <c>Name_1</c> is dropped automatically. A store-wide unique Name index under another name was created by
+    /// someone else, so it is left alone, but it keeps role names unique across tenants, so say so.
+    /// </summary>
+    private static void WarnAboutOtherStoreWideNameIndexes(IEnumerable<BsonDocument> existingIndexes, ILogger logger)
+    {
+        foreach (var index in existingIndexes.Where(x => IsStoreWideUniqueNameIndex(x) && GetIndexName(x) != IdentityRoleIndexes.LegacyNameUnique))
+        {
+            logger.LogWarning(
+                "The role index '{IndexName}' keeps role names unique across the whole store, so tenants still cannot share a role name. Drop '{IndexName}' to make role names unique per tenant through '{TenantIndexName}'.",
+                GetIndexName(index),
+                GetIndexName(index),
+                IdentityRoleIndexes.TenantIdNameUnique);
+        }
+    }
+
+    private static Task CreateTenantIdIndexAsync(IMongoCollection<Role> collection, IndexKeysDefinitionBuilder<Role> indexBuilder, CancellationToken cancellationToken) =>
+        collection.Indexes.CreateOneAsync(new CreateIndexModel<Role>(indexBuilder.Ascending(x => x.TenantId)), cancellationToken: cancellationToken);
+
+    private static bool IsStoreWideUniqueNameIndex(BsonDocument index) => HasNameOnlyKey(index) && IsPlainUnique(index);
 
     private static bool IsIndexNotFound(MongoCommandException exception) =>
         exception.Code == IdentityRoleIndexes.IndexNotFoundCode

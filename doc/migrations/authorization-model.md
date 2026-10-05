@@ -366,8 +366,9 @@ sharing one store could not each hold a same-named role, and only the first tena
 - **New roles get generated IDs.** `POST /identity/roles` without an `id`, and the `DefaultAdminUser` seeder, create
   roles with an opaque generated ID instead of the kebab-cased name (`admin`, `power-user`). A role name only has to
   be unique within its tenant. Each tenant's seeded admin user references its own tenant's admin role by that ID.
-- **Existing data is unchanged.** No data migration is needed (the Dapper store adds an index; see below). Roles keep
-  their name-derived IDs, and users and applications that reference them keep resolving. The seeder still reuses an existing role whose ID is
+- **Existing data is unchanged.** No data migration is needed: Dapper adds an index, and MongoDB replaces its role
+  name index (`Name_1` becomes `TenantId_1_Name_1`) at startup; see below. Roles keep their name-derived IDs, and
+  users and applications that reference them keep resolving. The seeder still reuses an existing role whose ID is
   `AdminRoleName`.
 - **Look IDs up instead of assuming them.** `GET /identity/roles` returns each role's `id` and `name` for the current
   tenant, and `POST /identity/roles` returns the new role's `id`.
@@ -376,9 +377,9 @@ sharing one store could not each hold a same-named role, and only the first tena
   applications that reference such an ID, including ones defined in configuration, **silently get no permissions** from
   it. Requests that assign it are rejected instead: `POST /identity/users` and `PUT /identity/users/{id}` return 403,
   saving an External Authentication connection whose unlinked-identity policy lists it in `defaultRoleIds` (for
-  example `defaultRoleIds: ["admin"]`) fails validation, and a policy that already stores it fails every new external
-  sign-in with "A configured default role no longer exists." Replace those values with the IDs from
-  `GET /identity/roles`. On an existing store whose `admin` role was created by an earlier version, those references
+  example `defaultRoleIds: ["admin"]`) fails validation, and a policy that already stores it fails every external
+  sign-in that would create a new user with "A configured default role no longer exists." (users who are already
+  linked sign in normally). Replace those values with the IDs from `GET /identity/roles`. On an existing store whose `admin` role was created by an earlier version, those references
   keep working.
 - **MongoDB and Dapper stores.** The 3.10 MongoDB and Dapper packages, published from this repository's
   `src/extensions`, carry the matching store changes ([#8615](https://github.com/elsa-workflows/elsa-core/issues/8615),
@@ -393,14 +394,20 @@ sharing one store could not each hold a same-named role, and only the first tena
     `NULL` and `''` both counted as the default tenant), the migration fails, lists the role IDs, and changes
     nothing. Rename or remove the extra roles, update what references them, and run it again. SQL Server treats
     `NULL`s as equal in a unique index; SQLite, PostgreSQL, MySQL and Oracle do not, so on those databases the
-    index does not stop a duplicate name among rows without a tenant. On case-sensitive collations (SQLite, PostgreSQL, Oracle) the index
-    only rejects exact duplicates, and names that differ only in case are rejected by `RoleManager` before saving.
+    index does not stop a duplicate name among rows without a tenant. On case-sensitive collations (SQLite,
+    PostgreSQL, Oracle) the index only rejects exact duplicates, and names that differ only in case are rejected by
+    `RoleManager` before saving.
   - MongoDB replaces the store-wide unique role name index `Name_1` with a per-tenant `TenantId_1_Name_1` when the
     host starts. It creates the new index first and then drops the old one, so the collection is never without name
-    uniqueness and several nodes can start at once.
+    uniqueness and several nodes can start at once. Only `Name_1` is dropped automatically: a store-wide unique `Name`
+    index under another name is kept and reported with a warning at startup, and role names stay unique across tenants
+    until you drop it. Like the Dapper index on case-sensitive databases, the MongoDB index compares names exactly, so
+    names that differ only in case are rejected by `RoleManager` before saving rather than by the index.
+  - **Rolling back on MongoDB:** once a second tenant has created a role with a name another tenant already uses, a
+    3.9 node can no longer start, because it cannot recreate its store-wide `Name_1` index over those duplicates.
   - MongoDB still keeps user names, and application names and client IDs, unique across the whole store. A second
     tenant sharing a MongoDB store therefore still cannot get a seeded admin user with the same user name. That is
-    tracked separately ([elsa-extensions#282](https://github.com/elsa-workflows/elsa-extensions/issues/282)).
+    tracked separately ([#8617](https://github.com/elsa-workflows/elsa-core/issues/8617)).
 
 ## Full mapping
 
