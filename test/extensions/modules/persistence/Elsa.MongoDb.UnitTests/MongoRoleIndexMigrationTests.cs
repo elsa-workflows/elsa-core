@@ -177,6 +177,23 @@ public sealed class MongoRoleIndexMigrationTests : IClassFixture<RoleMongoFixtur
     }
 
     [Fact]
+    public async Task AStoreWideUniqueNameIndexUnderAnotherNameIsKeptWithAWarning()
+    {
+        await SeedEarlierVersionShapeAsync();
+        await _roles.Indexes.DropOneAsync(IdentityRoleIndexes.LegacyNameUnique);
+        await _roles.Indexes.CreateOneAsync(new CreateIndexModel<Role>(
+            Builders<Role>.IndexKeys.Ascending(x => x.Name),
+            new CreateIndexOptions { Unique = true, Name = "role_name_unique" }));
+
+        var logger = new CollectingLogger();
+        await RunCreateIndicesAsync(logger);
+
+        Assert.True((await ListIndexNamesAsync(_roles)).SetEquals(["_id_", "TenantId_1", "TenantId_1_Name_1", "role_name_unique"]));
+        Assert.Contains(logger.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("'role_name_unique' keeps role names unique across the whole store", StringComparison.Ordinal));
+        Assert.DoesNotContain(logger.Entries, e => e.Message.Contains("Dropped", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task AUniqueCompoundIndexUnderAnotherNameIsAccepted()
     {
         await SeedEarlierVersionShapeAsync();

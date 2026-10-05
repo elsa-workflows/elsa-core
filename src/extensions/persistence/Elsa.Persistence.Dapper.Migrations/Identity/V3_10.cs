@@ -54,6 +54,9 @@ public class V3_10 : Migration
             return;
         }
 
+        // The duplicate pre-check only runs on the providers listed in QuotedIdentifiers and UnquotedIdentifiers. Any
+        // other provider skips it silently and goes straight to creating the index, so existing duplicates there fail
+        // with the database's own unique-index error instead of the list of colliding role IDs.
         IfDatabase(MigrationDatabases.QuotedIdentifiers)
             .Execute.WithConnection((connection, transaction) => ThrowIfDuplicateTenantRoleNames(connection, transaction, quoted: true));
         IfDatabase(MigrationDatabases.UnquotedIdentifiers)
