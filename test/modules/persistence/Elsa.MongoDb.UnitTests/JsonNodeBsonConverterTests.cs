@@ -195,32 +195,36 @@ public class JsonNodeBsonConverterTests
         Assert.Equal(3, obj["Count"]!.GetValue<int>());
     }
 
-    [Fact(DisplayName = "A legacy JsonObject with scalar-envelope fields preserves its object type")]
-    public void Deserialize_LegacyScalarEnvelopeShapedJsonObject_PreservesFields()
+    [Theory(DisplayName = "A legacy JsonObject with incompatible envelope fields preserves its object type")]
+    [InlineData("JsonValue", "legacy-value")]
+    [InlineData("JsonArray", "[]")]
+    public void Deserialize_LegacyIncompatibleEnvelopeShapedJsonObject_PreservesFields(string type, string value)
     {
-        var legacy = new BsonDocument { { "type", "JsonValue" }, { "value", "legacy-value" } };
+        var legacy = new BsonDocument { { "type", type }, { "value", value } };
 
         var restored = DeserializeDocument(new JsonNodeBsonConverter<JsonObject>(), legacy);
 
         Assert.Equal(2, restored.Count);
-        Assert.Equal("JsonValue", restored["type"]!.GetValue<string>());
-        Assert.Equal("legacy-value", restored["value"]!.GetValue<string>());
+        Assert.Equal(type, restored["type"]!.GetValue<string>());
+        Assert.Equal(value, restored["value"]!.GetValue<string>());
     }
 
-    [Fact(DisplayName = "Polymorphic JsonObject dispatch preserves a legacy scalar-envelope-shaped object")]
-    public void PolymorphicSerializer_LegacyScalarEnvelopeShapedJsonObject_PreservesObjectType()
+    [Theory(DisplayName = "Polymorphic JsonObject dispatch preserves a legacy incompatible-envelope-shaped object")]
+    [InlineData("JsonValue", "legacy-value")]
+    [InlineData("JsonArray", "[]")]
+    public void PolymorphicSerializer_LegacyIncompatibleEnvelopeShapedJsonObject_PreservesObjectType(string type, string value)
     {
         var document = new BsonDocument
         {
             { "$type", typeof(JsonObject).GetSimpleAssemblyQualifiedName() },
-            { "$value", new BsonDocument { { "type", "JsonValue" }, { "value", "legacy-value" } } }
+            { "$value", new BsonDocument { { "type", type }, { "value", value } } }
         };
 
         var restored = DeserializeDocument(new PolymorphicSerializer(), document);
 
         var obj = Assert.IsType<JsonObject>(restored);
-        Assert.Equal("JsonValue", obj["type"]!.GetValue<string>());
-        Assert.Equal("legacy-value", obj["value"]!.GetValue<string>());
+        Assert.Equal(type, obj["type"]!.GetValue<string>());
+        Assert.Equal(value, obj["value"]!.GetValue<string>());
     }
 
     [Fact(DisplayName = "JsonNode dispatch still restores a genuine scalar envelope as a JsonValue")]
