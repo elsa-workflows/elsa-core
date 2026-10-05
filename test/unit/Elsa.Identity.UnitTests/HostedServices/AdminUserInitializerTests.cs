@@ -54,7 +54,7 @@ public class AdminUserInitializerTests
 
         // No ID is passed, so the role manager generates one rather than reusing AdminRoleName.
         await roleManager.Received(1).CreateRoleAsync("admin", Arg.Any<ICollection<string>?>(), null, Arg.Any<CancellationToken>());
-        await userManager.Received(1).CreateUserAsync("admin", "password", Arg.Is<ICollection<string>?>(x => x!.SequenceEqual(new[] { "generated-role" })), Arg.Any<CancellationToken>());
+        await AssertAdminUserCreatedWithRoleAsync(userManager, "generated-role");
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public class AdminUserInitializerTests
         await CreateInitializer(roleStore, ["*"], roleManager, userManager, withUser: true).ExecuteAsync(CancellationToken.None);
 
         await roleManager.DidNotReceiveWithAnyArgs().CreateRoleAsync(default!);
-        await userManager.Received(1).CreateUserAsync("admin", "password", Arg.Is<ICollection<string>?>(x => x!.SequenceEqual(new[] { "generated-role" })), Arg.Any<CancellationToken>());
+        await AssertAdminUserCreatedWithRoleAsync(userManager, "generated-role");
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public class AdminUserInitializerTests
         await CreateInitializer(roleStore, ["*"], roleManager, userManager, withUser: true).ExecuteAsync(CancellationToken.None);
 
         await roleManager.Received(1).CreateRoleAsync("admin", Arg.Any<ICollection<string>?>(), null, Arg.Any<CancellationToken>());
-        await userManager.Received(1).CreateUserAsync("admin", "password", Arg.Is<ICollection<string>?>(x => x!.SequenceEqual(new[] { "generated-role" })), Arg.Any<CancellationToken>());
+        await AssertAdminUserCreatedWithRoleAsync(userManager, "generated-role");
         using (tenantAccessor.PushContext(new Tenant { Id = "tenant-a", Name = "Tenant A" }))
             Assert.Equal(["*"], (await roleStore.FindAsync(new RoleFilter { Id = "admin" }))!.Permissions);
     }
@@ -102,8 +102,15 @@ public class AdminUserInitializerTests
         await CreateInitializer(roleStore, ["*"], roleManager, userManager, withUser: true).ExecuteAsync(CancellationToken.None);
 
         await roleManager.DidNotReceiveWithAnyArgs().CreateRoleAsync(default!);
-        await userManager.Received(1).CreateUserAsync("admin", "password", Arg.Is<ICollection<string>?>(x => x!.SequenceEqual(new[] { "generated-role" })), Arg.Any<CancellationToken>());
+        await AssertAdminUserCreatedWithRoleAsync(userManager, "generated-role");
     }
+
+    private static Task AssertAdminUserCreatedWithRoleAsync(IUserManager userManager, string roleId) =>
+        userManager.Received(1).CreateUserAsync(
+            "admin",
+            "password",
+            Arg.Is<ICollection<string>?>(x => x != null && x.SequenceEqual(new[] { roleId })),
+            Arg.Any<CancellationToken>());
 
     private static IUserManager CreateUserManager()
     {

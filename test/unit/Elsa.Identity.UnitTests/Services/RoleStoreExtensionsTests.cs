@@ -49,7 +49,8 @@ public class RoleStoreExtensionsTests
         ]);
 
         Assert.Equal("lower", (await store.FindByNameAsync("admin"))?.Id);
-        Assert.Equal("upper", (await store.FindByNameAsync("ADMIN"))?.Id);
+        // Neither matches exactly, so the case-insensitive tie is broken by ID.
+        Assert.Equal("lower", (await store.FindByNameAsync("ADMIN"))?.Id);
     }
 
     [Fact]
@@ -83,5 +84,59 @@ public class RoleStoreExtensionsTests
 
         Assert.Equal("shared", (await store.FindByNameAsync("admin"))?.Id);
         Assert.Null(await store.FindByNameAsync("admin", includeTenantAgnostic: false));
+    }
+
+    [Theory]
+    [InlineData(false, "Operators")]
+    [InlineData(true, "Operators")]
+    [InlineData(false, "operators")]
+    [InlineData(true, "operators")]
+    public async Task FindByNameAsyncPrefersTheTenantsOwnRoleOverATenantAgnosticOneWhateverTheStoreOrder(bool agnosticFirst, string requestedName)
+    {
+        // The tenant role's ID sorts after the shared one's, so only the ownership preference can make it win.
+        var tenantRole = new Role { Id = "z-tenant", Name = "Operators", TenantId = "tenant-a" };
+        var sharedRole = new Role { Id = "a-shared", Name = "Operators", TenantId = Elsa.Common.Multitenancy.Tenant.AgnosticTenantId };
+        var store = Substitute.For<IRoleStore>();
+        store.FindManyAsync(Arg.Any<RoleFilter>(), Arg.Any<CancellationToken>())
+            .Returns(agnosticFirst ? [sharedRole, tenantRole] : [tenantRole, sharedRole]);
+
+        Assert.Equal("z-tenant", (await store.FindByNameAsync(requestedName))?.Id);
+        Assert.Equal("z-tenant", (await store.FindByNameAsync(requestedName, includeTenantAgnostic: false))?.Id);
+    }
+
+    [Fact]
+    public async Task FindByNameAsyncPrefersTheTenantsOwnRoleOverAnExactTenantAgnosticMatch()
+    {
+        var store = Substitute.For<IRoleStore>();
+        store.FindManyAsync(Arg.Any<RoleFilter>(), Arg.Any<CancellationToken>()).Returns(
+        [
+            new Role { Id = "a-shared", Name = "operators", TenantId = Elsa.Common.Multitenancy.Tenant.AgnosticTenantId },
+            new Role { Id = "z-tenant", Name = "Operators", TenantId = "tenant-a" }
+        ]);
+
+        Assert.Equal("z-tenant", (await store.FindByNameAsync("operators"))?.Id);
+    }
+
+    [Fact]
+    public async Task FindByNameAsyncPrefersTheTenantsOwnRoleOnTheMemoryStore()
+    {
+        var store = new MemoryRoleStore(new MemoryStore<Role>(), new TestTenantAccessor("tenant-a"));
+        await store.SaveAsync(new Role { Id = "a-shared", Name = "Operators", TenantId = Elsa.Common.Multitenancy.Tenant.AgnosticTenantId });
+        await store.SaveAsync(new Role { Id = "z-tenant", Name = "Operators", TenantId = "tenant-a" });
+
+        Assert.Equal("z-tenant", (await store.FindByNameAsync("Operators"))?.Id);
+    }
+
+    [Fact]
+    public async Task FindByNameAsyncBreaksTiesById()
+    {
+        var store = Substitute.For<IRoleStore>();
+        store.FindManyAsync(Arg.Any<RoleFilter>(), Arg.Any<CancellationToken>()).Returns(
+        [
+            new Role { Id = "role-b", Name = "Operators", TenantId = "tenant-a" },
+            new Role { Id = "role-a", Name = "Operators", TenantId = "tenant-a" }
+        ]);
+
+        Assert.Equal("role-a", (await store.FindByNameAsync("Operators"))?.Id);
     }
 }

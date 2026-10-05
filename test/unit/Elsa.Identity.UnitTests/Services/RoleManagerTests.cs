@@ -19,7 +19,7 @@ public class RoleManagerTests
     {
         _tenantAccessor = new TestTenantAccessor("tenant-a");
         _roleStore = new MemoryRoleStore(new MemoryStore<Role>(), _tenantAccessor);
-        _manager = new RoleManager(_roleStore, new StoreBasedRoleProvider(_roleStore), _tenantAccessor);
+        _manager = new RoleManager(_roleStore, new StoreBasedRoleProvider(_roleStore), _tenantAccessor, new GuidIdentityGenerator());
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public class RoleManagerTests
     [Fact]
     public async Task CreateRoleRejectsProvidedAdminRoleIdCollision()
     {
-        var manager = new RoleManager(_roleStore, new AdminRoleProvider(), _tenantAccessor);
+        var manager = new RoleManager(_roleStore, new AdminRoleProvider(), _tenantAccessor, new GuidIdentityGenerator());
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => manager.CreateRoleAsync("Replacement", [], "admin"));
     }
@@ -174,5 +174,14 @@ public class RoleManagerTests
 
         Assert.Equal("tenant-a", result.Role.TenantId);
         Assert.Equal(2, (await _roleStore.FindManyAsync(new() { Name = "Operators" })).Count());
+    }
+
+    [Fact]
+    public async Task CreateRoleTrimsTheNameBeforeCheckingForDuplicates()
+    {
+        var created = await _manager.CreateRoleAsync("  Operators ", []);
+
+        Assert.Equal("Operators", created.Role.Name);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _manager.CreateRoleAsync("Operators  ", []));
     }
 }

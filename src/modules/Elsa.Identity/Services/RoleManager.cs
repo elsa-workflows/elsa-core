@@ -37,6 +37,7 @@ public class RoleManager : IRoleManager
     /// Initializes a new instance of the <see cref="RoleManager"/> class that generates role IDs with
     /// <see cref="GuidIdentityGenerator"/>.
     /// </summary>
+    [Obsolete("Use the constructor that takes an IIdentityGenerator, so role IDs come from the host's configured generator.")]
     public RoleManager(IRoleStore roleStore, IRoleProvider roleProvider, ITenantAccessor tenantAccessor)
         : this(roleStore, roleProvider, tenantAccessor, new GuidIdentityGenerator())
     {
@@ -49,6 +50,10 @@ public class RoleManager : IRoleManager
         string? id = null,
         CancellationToken cancellationToken = default)
     {
+        // Trimmed so the duplicate check below and the store's per-tenant name index agree: SQL Server, for one,
+        // ignores trailing spaces when comparing, which would otherwise turn a near-duplicate into a 500.
+        name = name.Trim();
+
         if (await FindSameNamedRoleAsync(name, cancellationToken) is { } sameNamedRole)
         {
             throw new InvalidOperationException($"A role named '{sameNamedRole.Name}' already exists.");

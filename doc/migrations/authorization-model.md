@@ -357,6 +357,31 @@ If you have duplicate names across tenants today, they were impossible to create
 
 One caveat: the composite indexes only cover rows whose `TenantId` is non-null (SQL Server filters null rows out of the index; SQLite, PostgreSQL and MySQL treat nulls as distinct — Oracle alone still rejects null-tenant duplicates). `TenantId` is only assigned when multitenancy is enabled, so in a single-tenant deployment every row keeps null and user, role and application name uniqueness becomes application-enforced rather than schema-enforced: the pre-save existence checks block sequential duplicates, but the database no longer backstops concurrent ones. Likewise, rows written before the upgrade keep a null `TenantId`, and in a multi-tenant deployment's default tenant those legacy rows and new `""`-tenant rows are distinct index keys, so the index cannot catch a name collision between them. See the same caveat, with the reasoning, in [secrets-tenancy.md](secrets-tenancy.md).
 
+## 3.10: Generated role IDs and tenant-scoped role names
+
+Role IDs are unique across the whole identity store, but until 3.10 they were derived from the role name, so tenants
+sharing one store could not each hold a same-named role, and only the first tenant activated got a seeded admin
+([#8615](https://github.com/elsa-workflows/elsa-core/issues/8615)). From 3.10:
+
+- **New roles get generated IDs.** `POST /identity/roles` without an `id`, and the `DefaultAdminUser` seeder, create
+  roles with an opaque generated ID instead of the kebab-cased name (`admin`, `power-user`). A role name only has to
+  be unique within its tenant. Each tenant's seeded admin user references its own tenant's admin role by that ID.
+- **Existing data is unchanged.** No migration is needed. Roles keep their name-derived IDs, and users and
+  applications that reference them keep resolving. The seeder still reuses an existing role whose ID is
+  `AdminRoleName`.
+- **Look IDs up instead of assuming them.** `GET /identity/roles` returns each role's `id` and `name` for the current
+  tenant, and `POST /identity/roles` returns the new role's `id`.
+- **Review hard-coded role IDs.** On a **new** store, the seeded admin role's ID is no longer `admin`. Anything that
+  references a seeded or newly created role by its old name-derived ID resolves to nothing and **silently grants no
+  permissions**. That includes an External Authentication connection's `defaultRoleIds: ["admin"]`, scripts that
+  assign roles with `POST /identity/users` or `PUT /identity/users/{id}`, and users or applications defined in
+  configuration. Replace those values with the IDs from `GET /identity/roles`. On an existing store whose `admin`
+  role was created by an earlier version, those references keep working.
+- **MongoDB and Dapper hosts need the matching elsa-extensions release**
+  ([elsa-extensions#282](https://github.com/elsa-workflows/elsa-extensions/issues/282)). Without it, MongoDB's
+  store-wide name indexes still stop a second tenant's admin from being created. Dapper also resolves role references
+  against the name column, so a newly seeded admin gets no permissions there, even in a single-tenant install.
+
 ## Full mapping
 
 | Legacy permission | Replacement |

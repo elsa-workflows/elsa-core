@@ -117,6 +117,7 @@ public class AdminUserInitializer(
             return legacyRole;
         }
 
-        return await roleStore.FindByNameAsync(adminRoleName, includeTenantAgnostic: false, cancellationToken);
+        // RoleManager trims role names on create, so look the name up the same way.
+        return await roleStore.FindByNameAsync(adminRoleName.Trim(), includeTenantAgnostic: false, cancellationToken);
     }
 }

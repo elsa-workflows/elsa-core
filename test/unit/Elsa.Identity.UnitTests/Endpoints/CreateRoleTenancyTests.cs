@@ -13,6 +13,7 @@ using Elsa.Mediator.Contracts;
 using Elsa.Permissions;
 using Elsa.Testing.Shared.Multitenancy;
 using Elsa.UnitTests.Shared;
+using Elsa.Workflows;
 using Elsa.Workflows.Exceptions;
 using FastEndpoints;
 using Microsoft.AspNetCore.Http;
@@ -81,7 +82,7 @@ public class CreateRoleTenancyTests
         roleAuthorization.CanCreateRoleWithPermissions(Arg.Any<ClaimsPrincipal>(), Arg.Any<IEnumerable<string>?>()).Returns(true);
         var grantValidator = Substitute.For<IPermissionGrantValidator>();
         grantValidator.Validate(Arg.Any<IEnumerable<string>?>()).Returns(PermissionGrantValidationResult.Valid);
-        roleManager ??= new RoleManager(_roleStore, new StoreBasedRoleProvider(_roleStore), _tenantAccessor);
+        roleManager ??= new RoleManager(_roleStore, new StoreBasedRoleProvider(_roleStore), _tenantAccessor, new GuidIdentityGenerator());
         var notifier = new RoleSecurityNotifier(Substitute.For<INotificationSender>(), _tenantAccessor, Substitute.For<ISystemClock>());
         var endpoint = Factory.Create<Create>(context => context.Response.Body = new MemoryStream(), roleManager, roleAuthorization, grantValidator, notifier);
 
