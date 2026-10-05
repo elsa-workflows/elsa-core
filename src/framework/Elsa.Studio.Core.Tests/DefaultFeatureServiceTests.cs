@@ -71,6 +71,22 @@ public class DefaultFeatureServiceTests
         Assert.False(identity.Initialized);
     }
 
+    [Theory]
+    [InlineData("Elsa.WorkflowRuntimeDashboard", "", "", false)]
+    [InlineData("", "Elsa", "WorkflowRuntimeDashboard", false)]
+    [InlineData("Acme.WorkflowRuntimeDashboard", "", "", true)]
+    public async Task InitializeFeatures_RequiresExactMatchesForForeignRequests(string fullName, string featureNamespace, string name, bool expected)
+    {
+        var feature = new ForeignDashboardFeature();
+        var service = new DefaultFeatureService(
+            [feature],
+            new CatalogRemoteFeatureProvider(new FeatureDescriptor { FullName = fullName, Namespace = featureNamespace, Name = name }));
+
+        await service.InitializeFeaturesAsync();
+
+        Assert.Equal(expected, feature.Initialized);
+    }
+
     [Fact]
     public async Task InitializeFeatures_AlwaysInitializesUngatedFeatures()
     {
@@ -109,6 +125,9 @@ public class DefaultFeatureServiceTests
 
     [RemoteFeature("Elsa.Identity.ShellFeatures.Identity")]
     private sealed class IdentityFeature : TrackingFeature;
+
+    [RemoteFeature("Acme.WorkflowRuntimeDashboard")]
+    private sealed class ForeignDashboardFeature : TrackingFeature;
 
     private sealed class LocalFeature : TrackingFeature;
 
