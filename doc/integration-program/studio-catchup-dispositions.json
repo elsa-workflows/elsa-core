@@ -136,7 +136,7 @@
       "unchanged": true
     }
   ],
-  "coreValidation": "Validation is recorded on the integration PR for #8623; this receipt verifies source mapping and ancestry. The new rendered PathBase test additions are pending focused validation on the combined Core candidate.",
+  "coreValidation": "The existing Core production implementation already preserves hosting prefixes. The stronger rendered OIDC sign-out tests passed all 17 focused cases on .NET 10 at 88c241591fdb61766bc5e3ce5b6dadb082aec67d. Broader validation is recorded in release-catchup-verification.md and on the integration PR for #8623.",
   "mapping": [
     {
       "source": ".github/reviewers.md",
