@@ -2,8 +2,8 @@
 @using Orientation = Radzen.Orientation
 @inject ILocalizer Localizer
 
-<MudDrawerContainer Class="mud-height-full" Style="display: flex; flex-direction: row; position: relative; overflow: hidden;">
-    <div style="flex: 1; overflow: hidden;">
+<MudDrawerContainer Class="mud-height-full" Style="position: relative; overflow: hidden; min-height: calc(100vh - var(--mud-appbar-height));">
+    <div style="height: 100%; overflow: hidden;">
         <RadzenSplitter Orientation="Orientation.Horizontal" Style="height: calc(100vh - var(--mud-appbar-height));">
             <RadzenSplitterPane Size="20%" Min="100px">
                 <MudTabs Elevation="0" ApplyEffectsToContainer="true" KeepPanelsAlive="true" @bind-ActivePanelIndex="_leftPanelTabIndex">
@@ -36,20 +36,7 @@
         </RadzenSplitter>
     </div>
 
-    <MudDrawer @bind-Open="_isExecutionDetailsDrawerOpen"
-               Anchor="Anchor.Right"
-               Width="600px"
-               Height="100%"
-               Elevation="2"
-               Variant="@DrawerVariant.Persistent">
-        <MudDrawerHeader>
-            <MudText Typo="Typo.h6">@Localizer["Execution Details"]</MudText>
-            <MudSpacer />
-            <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="@(() => _isExecutionDetailsDrawerOpen = false)" />
-        </MudDrawerHeader>
-        <MudDivider />
-        <div style="padding: 16px; overflow-y: auto; height: calc(100vh - var(--mud-appbar-height) - 64px);">
-            <ActivityExecutionDetails ActivityExecution="@_selectedExecutionForDrawer" />
-        </div>
-    </MudDrawer>
+    <ActivityExecutionDetailsDrawer Open="_isExecutionDetailsDrawerOpen"
+                                    ActivityExecution="_selectedExecutionForDrawer"
+                                    OpenChanged="OnExecutionDetailsDrawerOpenChanged"/>
 </MudDrawerContainer>
