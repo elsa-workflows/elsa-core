@@ -3,8 +3,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
-using Elsa.Persistence.Dapper.Models;
 using Elsa.Extensions;
+using Elsa.Persistence.Dapper.Dialects;
+using Elsa.Persistence.Dapper.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Persistence.Dapper.Extensions;
@@ -15,6 +16,8 @@ namespace Elsa.Persistence.Dapper.Extensions;
 [PublicAPI]
 public static class ParameterizedQueryBuilderExtensions
 {
+    private const char LikeEscapeCharacter = '!';
+
     /// <summary>
     /// Begins a SELECT FROM query.
     /// </summary>
@@ -186,7 +189,17 @@ public static class ParameterizedQueryBuilderExtensions
     {
         if (value == null) return query;
 
-        query.Sql.AppendLine($"and {query.QuoteIdent(field)} < @{field}");
+        var identifier = query.QuoteIdent(field);
+        if (query.Dialect is SqliteDialect && value is DateTimeOffset)
+        {
+            // SQLite date functions compare at millisecond precision. Keep this exclusive so a precision tie waits for the next scan.
+            query.Sql.AppendLine($"and julianday({identifier}) < julianday(@{field})");
+        }
+        else
+        {
+            query.Sql.AppendLine($"and {identifier} < @{field}");
+        }
+
         query.Parameters.Add($"@{field}", value);
 
         return query;
@@ -269,8 +282,25 @@ public static class ParameterizedQueryBuilderExtensions
             return query;
 
         var parameterName = $"@{field}StartsWith";
-        query.Sql.AppendLine($"and {query.QuoteIdent(field)} like {parameterName}");
-        query.Parameters.Add(parameterName, $"{value}%");
+        var isSqlServer = query.Dialect is SqlServerDialect;
+        // PostgreSQL treats backslash as LIKE's default escape, so use our explicit escape for literal paths.
+        var needsEscaping = value.IndexOfAny(['%', '_', LikeEscapeCharacter]) >= 0 ||
+                            value.Contains('\\') ||
+                            (isSqlServer && value.Contains('['));
+        var escapeClause = needsEscaping ? $" escape '{LikeEscapeCharacter}'" : string.Empty;
+        var escapedValue = value
+            .Replace("!", "!!")
+            .Replace("%", "!%")
+            .Replace("_", "!_");
+
+        // SQL Server also treats '[' as a LIKE pattern character; the other supported dialects do not.
+        if (isSqlServer)
+        {
+            escapedValue = escapedValue.Replace("[", "![");
+        }
+
+        query.Sql.AppendLine($"and {query.QuoteIdent(field)} like {parameterName}{escapeClause}");
+        query.Parameters.Add(parameterName, $"{escapedValue}%");
 
         return query;
     }
