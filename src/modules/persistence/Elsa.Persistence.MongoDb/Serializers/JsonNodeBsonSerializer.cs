@@ -168,7 +168,9 @@ public class JsonNodeBsonConverter<TNode> : IBsonSerializer<TNode> where TNode :
 
         var type = document["type"].AsString;
         if (requireObjectEnvelope && type != "JsonObject")
+        {
             return false;
+        }
 
         return type switch
         {
