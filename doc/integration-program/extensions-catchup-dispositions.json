@@ -290,7 +290,7 @@
       "disposition": "imported-with-core-adaptation",
       "reason": "Atomic method imported; Core API already provides TryDeleteAsync, so tests exercise interface dispatch and documentation drops obsolete external preview dependency caveat.",
       "sourceBlob": "1ccda52a5f50af53fc6d31b9c1df0a5df0021622",
-      "destinationBlob": "69d7faa0861cfcb9da0b9af9a89bcbd7935ccfb8"
+      "destinationBlob": "65638efa4de47e6cdf8142d00a20f26fe65366ec"
     },
     {
       "source": "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperKeyValueStoreTryDeleteTests.cs",
