@@ -40,6 +40,12 @@ BPMN_ID_SHA256 = {
     }.items()
 }
 BPMN_CHECKS = {"imported", "rendered", "selection_callback", "exported", "reimported", "semantic_preserved"}
+JSON_ROUNDTRIP_CHECKS = {
+    "exported", "import_chooser_observed", "imported", "saved", "reloaded",
+    "semantic_preserved", "published", "terminal", "output", "studio_terminal",
+}
+DOM_INTEROP_CHECKS = {"import_menu_clicked", "filechooser_observed", "import_succeeded", "save_callback_observed"}
+NATIVE_JSON_HOSTS = {"server", "wasm", "hosted-wasm"}
 
 
 def require(condition: bool, message: str) -> None:
@@ -172,6 +178,150 @@ def _validate_clipboard(value: object, assertion_passed: bool, proof: dict) -> N
     require(assertion_passed is observed_match, "Clipboard assertion does not match the native copy proof")
 
 
+def _validate_json_roundtrip(value: object, assertion_passed: bool, proof: dict, key: tuple[str, str, str]) -> None:
+    required = {
+        "definition_id_sha256", "root_id_sha256", "activity_id_sha256", "expected_value_sha256",
+        "source_semantic_sha256", "checks",
+    }
+    optional = {
+        "export_document_sha256", "export_document_bytes", "export_semantic_sha256",
+        "uploaded_document_sha256", "imported_document_sha256", "imported_semantic_sha256",
+        "saved_semantic_sha256", "reloaded_semantic_sha256", "instance_id_sha256", "actual_output_sha256",
+    }
+    require(isinstance(value, dict) and required <= set(value) <= required | optional,
+            "Unsafe native JSON roundtrip proof fields")
+    require(key[0] == "3.10.0" and key[2] in NATIVE_JSON_HOSTS, "Unexpected native JSON roundtrip host")
+    checks = value["checks"]
+    require(isinstance(checks, dict) and set(checks) == JSON_ROUNDTRIP_CHECKS and
+            all(type(flag) is bool for flag in checks.values()), "Invalid native JSON roundtrip checks")
+
+    hash_fields = (required - {"checks"}) | ((set(value) & optional) - {"export_document_bytes"})
+    for name in hash_fields:
+        _require_sha256(value[name], "Invalid native JSON roundtrip hash")
+    require(type(value.get("export_document_bytes", 0)) is int and
+            0 <= value.get("export_document_bytes", 0) <= 1024 * 1024,
+            "Invalid native JSON export size")
+
+    parent_bindings = {
+        "definition_id_sha256": "definition_id_sha256",
+        "root_id_sha256": "root_id_sha256",
+        "activity_id_sha256": "activity_id_sha256",
+        "expected_value_sha256": "value_sha256",
+    }
+    require(all(parent in proof for parent in parent_bindings.values()),
+            "Native JSON proof is missing candidate execution bindings")
+    for name, parent in parent_bindings.items():
+        require(value[name] == proof[parent], "Native JSON proof is bound to a different candidate workflow")
+
+    has_export_hash = "export_document_sha256" in value
+    has_export_size = "export_document_bytes" in value
+    has_export_semantic = "export_semantic_sha256" in value
+    require(has_export_hash == has_export_size == has_export_semantic == checks["exported"],
+            "Native JSON export fields differ from the observed download")
+    if checks["exported"]:
+        require(0 < value["export_document_bytes"] <= 1024 * 1024, "Invalid native JSON download size")
+
+    for name in ("uploaded_document_sha256", "imported_document_sha256"):
+        if name in value:
+            require(checks["import_chooser_observed"], "Native JSON upload hash has no native chooser observation")
+            require(has_export_hash and value[name] == value["export_document_sha256"],
+                    "Native JSON import did not use the observed export bytes")
+    if checks["import_chooser_observed"]:
+        require("uploaded_document_sha256" in value, "Native JSON chooser observation has no uploaded bytes binding")
+    if checks["imported"]:
+        require(checks["import_chooser_observed"] and "imported_document_sha256" in value and
+                "imported_semantic_sha256" in value, "Native JSON import is missing native UI or semantic evidence")
+    else:
+        require("imported_semantic_sha256" not in value, "Unobserved native JSON import has semantic evidence")
+
+    for stage, previous, field in (
+        ("saved", "imported", "saved_semantic_sha256"),
+        ("reloaded", "saved", "reloaded_semantic_sha256"),
+    ):
+        if checks[stage]:
+            require(checks[previous] and field in value, f"Native JSON {stage} is missing its prior stage or semantic hash")
+        else:
+            require(field not in value, f"Unobserved native JSON {stage} has semantic evidence")
+
+    semantic_stages = ["source_semantic_sha256", "export_semantic_sha256", "imported_semantic_sha256",
+                       "saved_semantic_sha256", "reloaded_semantic_sha256"]
+    semantic_complete = all(name in value for name in semantic_stages)
+    semantic_equal = semantic_complete and len({value[name] for name in semantic_stages}) == 1
+    require(not checks["semantic_preserved"] or all(checks[name] for name in ("exported", "imported", "saved", "reloaded")) and semantic_equal,
+            "Native JSON semantic preservation is not supported by matching roundtrip hashes")
+    if checks["published"]:
+        require(checks["semantic_preserved"], "Native JSON candidate was published before semantic preservation")
+    if checks["terminal"]:
+        require(checks["published"] and "instance_id_sha256" in value,
+                "Native JSON terminal proof is missing its published run")
+    require(("instance_id_sha256" in value) is checks["terminal"],
+            "Native JSON instance identity does not match terminal observation")
+    if "instance_id_sha256" in value:
+        _require_sha256(value["instance_id_sha256"])
+        require(proof.get("instance_id_sha256") == value["instance_id_sha256"],
+                "Native JSON proof belongs to a different candidate run")
+    if checks["output"]:
+        require(checks["terminal"] and "actual_output_sha256" in value and
+                value["actual_output_sha256"] == value["expected_value_sha256"],
+                "Native JSON output differs from the bound candidate value")
+    if "actual_output_sha256" in value:
+        require(checks["terminal"], "Native JSON output hash has no terminal run")
+    if checks["studio_terminal"]:
+        require(checks["output"], "Native JSON Studio terminal view preceded the verified output")
+
+    complete = all(checks.values()) and semantic_equal and has_export_hash and "instance_id_sha256" in value and \
+        value.get("actual_output_sha256") == value["expected_value_sha256"]
+    require(assertion_passed is complete, "JSON roundtrip assertion does not match its complete native proof")
+
+
+def _validate_dom_interop(value: object, assertion_passed: bool, proof: dict, key: tuple[str, str, str]) -> None:
+    required = {
+        "definition_id_sha256", "root_id_sha256", "activity_id_sha256", "expected_value_sha256", "checks",
+    }
+    optional = {"export_document_sha256", "uploaded_document_sha256"}
+    require(isinstance(value, dict) and required <= set(value) <= required | optional,
+            "Unsafe native DOM interop proof fields")
+    require(key[0] == "3.10.0" and key[2] in NATIVE_JSON_HOSTS, "Unexpected native DOM interop host")
+    checks = value["checks"]
+    require(isinstance(checks, dict) and set(checks) == DOM_INTEROP_CHECKS and
+            all(type(flag) is bool for flag in checks.values()), "Invalid native DOM interop checks")
+    for name in required - {"checks"} | optional & set(value):
+        _require_sha256(value[name], "Invalid native DOM interop hash")
+
+    json_proof = proof.get("json_roundtrip")
+    require(isinstance(json_proof, dict), "DOM interop proof is missing its candidate JSON journey")
+    for field, parent in (("definition_id_sha256", "definition_id_sha256"),
+                          ("root_id_sha256", "root_id_sha256"),
+                          ("activity_id_sha256", "activity_id_sha256"),
+                          ("expected_value_sha256", "value_sha256")):
+        require(value[field] == proof.get(parent) == json_proof.get(field),
+                "DOM interop proof is bound to a different candidate workflow")
+
+    if "export_document_sha256" in value:
+        require(value["export_document_sha256"] == json_proof.get("export_document_sha256"),
+                "DOM import action is bound to a different native export")
+    if checks["import_menu_clicked"]:
+        require(checks["filechooser_observed"] and "export_document_sha256" in value,
+                "DOM import click has no native chooser observation")
+    if checks["filechooser_observed"]:
+        require(checks["import_menu_clicked"] and "uploaded_document_sha256" in value and
+                value.get("uploaded_document_sha256") == value.get("export_document_sha256"),
+                "DOM file chooser does not carry the exact exported document")
+    else:
+        require("uploaded_document_sha256" not in value, "DOM upload hash has no native file chooser")
+    if checks["import_succeeded"]:
+        require(checks["filechooser_observed"] and json_proof["checks"]["import_chooser_observed"] and
+                json_proof["checks"]["imported"] and
+                value.get("uploaded_document_sha256") == json_proof.get("imported_document_sha256"),
+                "DOM import success has no completed native workflow import")
+    if checks["save_callback_observed"]:
+        require(checks["import_succeeded"] and json_proof["checks"]["saved"],
+                "DOM save callback has no completed native import and backend save")
+
+    complete = all(checks.values())
+    require(assertion_passed is complete, "DOM interop assertion does not match its native callback proof")
+
+
 DIRECT_BACKEND_CHECKS = {"distinct_origins", "login_request", "login_cors", "login_authenticated",
                          "descriptor_request", "descriptor_cors", "bearer_matches_login",
                          "login_precedes_descriptor", "activity_identity"}
@@ -224,11 +374,11 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     proof = record.get("proof", {})
     require(isinstance(proof, dict), "Invalid browser proof container")
     assertions_by_name = {item["name"]: item["passed"] for item in assertions}
-    stages = {"backend_authenticated", "login_navigation", "login_form", "login_submitted", "workflow_list", "create_dialog_opened", "create_name_filled", "create_submitted", "workflow_created", "output_tab_opened", "output_dialog_opened", "output_type_selected", "output_declared", "activity_registry", "activity_inserted", "property_saved", "edit_reloaded", "workflow_published", "workflow_run", "released_export_menu_opened", "released_export_dialog_opened", "released_document_exported", "baseline_imported", "baseline_reloaded", "baseline_run", "bpmn_input_validated", "bpmn_imported", "bpmn_rendered", "bpmn_selected", "bpmn_exported", "bpmn_reimported", "clipboard_copied"}
-    hashes = {"definition_id_sha256", "activity_id_sha256", "value_sha256", "synthetic_document_sha256", "instance_id_sha256", "released_document_sha256"}
+    stages = {"backend_authenticated", "login_navigation", "login_form", "login_submitted", "workflow_list", "create_dialog_opened", "create_name_filled", "create_submitted", "workflow_created", "output_tab_opened", "output_dialog_opened", "output_type_selected", "output_declared", "activity_registry", "activity_inserted", "property_saved", "edit_reloaded", "workflow_published", "workflow_run", "released_export_menu_opened", "released_export_dialog_opened", "released_document_exported", "candidate_export_menu_opened", "candidate_export_dialog_opened", "candidate_json_exported", "candidate_import_menu_opened", "candidate_import_chooser_observed", "candidate_json_imported", "candidate_json_saved", "candidate_json_reloaded", "baseline_imported", "baseline_reloaded", "baseline_run", "bpmn_input_validated", "bpmn_imported", "bpmn_rendered", "bpmn_selected", "bpmn_exported", "bpmn_reimported", "clipboard_copied"}
+    hashes = {"definition_id_sha256", "root_id_sha256", "activity_id_sha256", "value_sha256", "synthetic_document_sha256", "instance_id_sha256", "released_document_sha256"}
     flags = {"login_failure_visible", "login_form_visible", "server_circuit_observed", "server_render_frames_observed", "elsa_identity_ui_visible", "expected_auth_provider_observed", "interactive_validation_observed", "private_input_values_retained", "initial_list_navigation_completed", "editor_ready_observed"}
     counts = {"create_name_label_count", "create_name_textbox_count"}
-    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens", "bpmn_roundtrip", "clipboard", "direct_backend", "wasm_boot"}, "Unsafe browser proof field")
+    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens", "bpmn_roundtrip", "clipboard", "direct_backend", "wasm_boot", "json_roundtrip", "dom_interop"}, "Unsafe browser proof field")
     require("wasm_boot" not in proof or record["host"] == "wasm" and record["framework"] == "net10.0",
             "Unexpected standalone WASM boot proof")
     require(not assertions_by_name.get("wasm_boot", False) or record["host"] != "wasm" or "wasm_boot" in proof,
@@ -240,10 +390,18 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
             "Unexpected BPMN roundtrip proof")
     require("clipboard" not in proof or "clipboard" in assertions_by_name and record["version"] == "3.10.0",
             "Unexpected clipboard proof")
+    require("json_roundtrip" not in proof or record["version"] == "3.10.0" and record["host"] in NATIVE_JSON_HOSTS,
+            "Unexpected native JSON roundtrip proof")
+    require("dom_interop" not in proof or record["version"] == "3.10.0" and record["host"] in NATIVE_JSON_HOSTS,
+            "Unexpected native DOM interop proof")
     require(not assertions_by_name.get("bpmn_roundtrip", False) or "bpmn_roundtrip" in proof,
             "Missing BPMN roundtrip proof for passed assertion")
     require(not assertions_by_name.get("clipboard", False) or "clipboard" in proof,
             "Missing clipboard proof for passed assertion")
+    require(not assertions_by_name.get("json_roundtrip", False) or "json_roundtrip" in proof,
+            "Missing native JSON proof for passed assertion")
+    require(not assertions_by_name.get("dom_interop", False) or "dom_interop" in proof,
+            "Missing native DOM proof for passed assertion")
     for name, value in proof.items():
         if name == "wasm_boot":
             from paired_package_wasm_boot import validate_boot_receipt
@@ -261,6 +419,12 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
             continue
         if name == "clipboard":
             _validate_clipboard(value, assertions_by_name["clipboard"], proof)
+            continue
+        if name == "json_roundtrip":
+            _validate_json_roundtrip(value, assertions_by_name["json_roundtrip"], proof, key)
+            continue
+        if name == "dom_interop":
+            _validate_dom_interop(value, assertions_by_name["dom_interop"], proof, key)
             continue
         if name in counts:
             valid = type(value) is int and 0 <= value <= 100

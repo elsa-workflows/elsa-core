@@ -5,6 +5,7 @@ import { dirname, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { bpmnSemanticIdentity, checkedXmlText, type XmlElement } from './bpmn-roundtrip.js';
+import { readWorkflowJsonExport, workflowSemanticIdentity } from './json-roundtrip.js';
 import { DirectBackendObserver } from './direct-backend.js';
 import { WasmBootObserver, type ObservedBootResource } from './wasm-boot.js';
 const policy = JSON.parse(readFileSync(new URL('./coverage-policy.json', import.meta.url), 'utf8'));
@@ -132,6 +133,150 @@ async function downloadedBytes(download: Download): Promise<Buffer> {
   }
   if (!bytes || await download.failure()) throw new Error('native_download_failed');
   return Buffer.concat(chunks);
+}
+
+async function nativeWorkflowExport(page: Page, onStage: (stage: 'menu_opened' | 'dialog_opened' | 'downloaded') => void): Promise<Buffer> {
+  // This is WorkflowEditor's JSON menu, adjacent to its hidden native upload wrapper.
+  // The designer toolbar exposes a separate canvas export menu.
+  const menu = page.locator('#workflow-file-upload-button-wrapper + .mud-button-group-root .mud-menu-icon-button-activator');
+  await expect(menu).toHaveCount(1);
+  await menu.click();
+  onStage('menu_opened');
+  const exportItem = page.locator('.mud-menu-item:visible').filter({ hasText: /^Export$/ });
+  await expect(exportItem).toHaveCount(1);
+  await exportItem.click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  onStage('dialog_opened');
+  await expect(dialog.getByRole('checkbox', { name: 'Include referencing workflows', exact: true })).not.toBeChecked();
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    dialog.getByRole('button', { name: 'Export', exact: true }).click()
+  ]);
+  const bytes = await downloadedBytes(download);
+  onStage('downloaded');
+  return bytes;
+}
+
+async function nativeEditorImport(page: Page, bytes: Buffer, onStage: (stage: 'menu_opened' | 'chooser_observed' | 'imported') => void): Promise<void> {
+  const menu = page.locator('#workflow-file-upload-button-wrapper + .mud-button-group-root .mud-menu-icon-button-activator');
+  await expect(menu).toHaveCount(1);
+  await menu.click();
+  onStage('menu_opened');
+  const importItem = page.locator('.mud-menu-item:visible').filter({ hasText: /^Import$/ });
+  await expect(importItem).toHaveCount(1);
+  // WorkflowEditor.OnImportClicked uses IDomAccessor.ClickElementAsync on its real hidden file input.
+  const [chooser] = await Promise.all([page.waitForEvent('filechooser'), importItem.click()]);
+  onStage('chooser_observed');
+  await chooser.setFiles({ name: 'candidate-roundtrip.json', mimeType: 'application/json', buffer: bytes });
+  await expect(page.getByText('Successfully imported 1 workflow definition.', { exact: true })).toBeVisible();
+  onStage('imported');
+}
+
+async function nativeJsonRoundtrip(
+  page: Page,
+  getDefinition: () => Promise<any>,
+  source: any,
+  expectedValue: string,
+  proof: Record<string, unknown>,
+  passed: (name: string) => void): Promise<void> {
+  const sourceIdentity = workflowSemanticIdentity(source);
+  const definitionHash = hash(sourceIdentity.definitionId);
+  const activityHash = hash(sourceIdentity.activityIds[0] ?? '');
+  const expectedValueHash = hash(expectedValue);
+  if (sourceIdentity.activityIds.length !== 1 || sourceIdentity.outputName !== 'sentinel' || sourceIdentity.outputValue !== expectedValue)
+    throw new Error('candidate_workflow_output_unbound');
+
+  const record: Record<string, any> = {
+    definition_id_sha256: definitionHash,
+    root_id_sha256: hash(sourceIdentity.rootId),
+    activity_id_sha256: activityHash,
+    expected_value_sha256: expectedValueHash,
+    source_semantic_sha256: sourceIdentity.semanticSha256,
+    checks: {
+      exported: false, import_chooser_observed: false, imported: false,
+      saved: false, reloaded: false, semantic_preserved: false,
+      published: false, terminal: false, output: false, studio_terminal: false
+    }
+  };
+  const domProof: Record<string, any> = {
+    definition_id_sha256: definitionHash,
+    root_id_sha256: hash(sourceIdentity.rootId),
+    activity_id_sha256: activityHash,
+    expected_value_sha256: expectedValueHash,
+    checks: {
+      import_menu_clicked: false, filechooser_observed: false,
+      import_succeeded: false, save_callback_observed: false
+    }
+  };
+  proof.json_roundtrip = record;
+  proof.dom_interop = domProof;
+
+  const exported = await nativeWorkflowExport(page, stage => {
+    proof.last_completed_stage = stage === 'menu_opened' ? 'candidate_export_menu_opened' :
+      stage === 'dialog_opened' ? 'candidate_export_dialog_opened' : 'candidate_json_exported';
+  });
+  const checkedExport = readWorkflowJsonExport(exported);
+  record.export_document_sha256 = checkedExport.documentSha256;
+  record.export_document_bytes = checkedExport.bytes;
+  record.export_semantic_sha256 = checkedExport.semanticSha256;
+  record.checks.exported = true;
+  domProof.export_document_sha256 = checkedExport.documentSha256;
+  if (checkedExport.semanticSha256 !== sourceIdentity.semanticSha256 ||
+      checkedExport.definitionId !== sourceIdentity.definitionId || checkedExport.rootId !== sourceIdentity.rootId ||
+      checkedExport.activityIds.length !== 1 || checkedExport.activityIds[0] !== sourceIdentity.activityIds[0] ||
+      checkedExport.outputValue !== expectedValue)
+    throw new Error('candidate_json_export_semantic_mismatch');
+
+  await nativeEditorImport(page, exported, stage => {
+    if (stage === 'menu_opened') {
+      proof.last_completed_stage = 'candidate_import_menu_opened';
+    } else if (stage === 'chooser_observed') {
+      domProof.checks.import_menu_clicked = true;
+      domProof.checks.filechooser_observed = true;
+      domProof.uploaded_document_sha256 = checkedExport.documentSha256;
+      record.uploaded_document_sha256 = checkedExport.documentSha256;
+      record.checks.import_chooser_observed = true;
+      proof.last_completed_stage = 'candidate_import_chooser_observed';
+    } else {
+      domProof.checks.import_succeeded = true;
+      record.imported_document_sha256 = checkedExport.documentSha256;
+      proof.last_completed_stage = 'candidate_json_imported';
+    }
+  });
+
+  const imported = await getDefinition();
+  const importedIdentity = workflowSemanticIdentity(imported);
+  record.imported_semantic_sha256 = importedIdentity.semanticSha256;
+  record.checks.imported = true;
+  if (importedIdentity.semanticSha256 !== sourceIdentity.semanticSha256 ||
+      importedIdentity.definitionId !== sourceIdentity.definitionId || importedIdentity.rootId !== sourceIdentity.rootId ||
+      importedIdentity.activityIds.length !== 1 || importedIdentity.activityIds[0] !== sourceIdentity.activityIds[0])
+    throw new Error('candidate_json_import_semantic_mismatch');
+  await visibleReleasedActivity(page, checkedExport.document);
+
+  await page.keyboard.press('ControlOrMeta+s');
+  await expect(page.getByText('Workflow saved', { exact: true })).toBeVisible();
+  domProof.checks.save_callback_observed = true;
+  passed('dom_interop');
+  const saved = await getDefinition();
+  const savedIdentity = workflowSemanticIdentity(saved);
+  record.saved_semantic_sha256 = savedIdentity.semanticSha256;
+  record.checks.saved = true;
+  if (savedIdentity.semanticSha256 !== sourceIdentity.semanticSha256)
+    throw new Error('candidate_json_save_semantic_mismatch');
+  proof.last_completed_stage = 'candidate_json_saved';
+
+  await page.reload();
+  await visibleReleasedActivity(page, checkedExport.document);
+  const reloaded = await getDefinition();
+  const reloadedIdentity = workflowSemanticIdentity(reloaded);
+  record.reloaded_semantic_sha256 = reloadedIdentity.semanticSha256;
+  record.checks.reloaded = true;
+  if (reloadedIdentity.semanticSha256 !== sourceIdentity.semanticSha256)
+    throw new Error('candidate_json_reload_semantic_mismatch');
+  record.checks.semantic_preserved = true;
+  proof.last_completed_stage = 'candidate_json_reloaded';
 }
 
 async function bpmnTree(page: Page, raw: Buffer): Promise<XmlElement> {
@@ -478,49 +623,50 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   if (input.request.version !== '3.10.0') {
     if (input.released_document_output) {
       // Export the real saved workflow through the native menu and download interop.
-      // WorkflowEditor places its JSON-file menu beside the hidden native upload wrapper;
-      // the designer toolbar also has an unrelated canvas-export menu.
-      const menu = page.locator('#workflow-file-upload-button-wrapper + .mud-button-group-root .mud-menu-icon-button-activator');
-      await expect(menu).toHaveCount(1);
-      await menu.click();
-      proof.last_completed_stage = 'released_export_menu_opened';
-      // MudBlazor9 renders a native div.mud-menu-item without a menuitem role.
-      const exportItem = page.locator('.mud-menu-item:visible').filter({ hasText: /^Export$/ });
-      await expect(exportItem).toHaveCount(1);
-      await exportItem.click();
-      const exportDialog = page.getByRole('dialog');
-      await expect(exportDialog).toBeVisible();
-      proof.last_completed_stage = 'released_export_dialog_opened';
-      await expect(exportDialog.getByRole('checkbox', { name: 'Include referencing workflows', exact: true })).not.toBeChecked();
-      const [download] = await Promise.all([
-        page.waitForEvent('download'),
-        exportDialog.getByRole('button', { name: 'Export', exact: true }).click()
-      ]);
-      const document = await downloadedBytes(download);
+      const document = await nativeWorkflowExport(page, stage => {
+        proof.last_completed_stage = stage === 'menu_opened' ? 'released_export_menu_opened' :
+          stage === 'dialog_opened' ? 'released_export_dialog_opened' : 'released_document_exported';
+      });
       const output = input.released_document_output;
       if (!isAbsolute(output) || realpathSync(dirname(output)) !== dirname(output)) throw new Error('invalid_private_document_output');
       writeFileSync(output, document, { flag: 'wx', mode: 0o600 });
       proof.released_document_sha256 = hash(document);
-      proof.last_completed_stage = 'released_document_exported';
       // Shape, package provenance and retained-byte validation belong to the parent verifier.
     }
     return;
   }
+
+  proof.root_id_sha256 = hash(workflowSemanticIdentity(reloaded).rootId);
+  await nativeJsonRoundtrip(page, getDefinition, reloaded, sentinel, proof, passed);
+
   await toolbar(page, 'Publish workflow');
   await expect.poll(async () => (await getDefinition()).isPublished).toBe(true);
   proof.last_completed_stage = 'workflow_published';
+  const jsonRoundtrip = proof.json_roundtrip as Record<string, any>;
+  if (jsonRoundtrip) jsonRoundtrip.checks.published = true;
   await toolbar(page, 'Run Workflow');
   await expect(page).toHaveURL(/\/workflows\/instances\/[^/]+\/view/);
   proof.last_completed_stage = 'workflow_run';
   const instanceId = new URL(page.url()).pathname.split('/').at(-2)!;
+  proof.instance_id_sha256 = hash(instanceId);
   passed('publish_run');
   await expect.poll(async () => (await backend.get('/workflow-instances/' + instanceId)).status).toBe('Finished');
+  if (jsonRoundtrip) {
+    jsonRoundtrip.checks.terminal = true;
+    jsonRoundtrip.instance_id_sha256 = hash(instanceId);
+  }
   const instance = await backend.get('/workflow-instances/' + instanceId);
-  if (instance.workflowState?.output?.sentinel !== sentinel) throw new Error('backend_output_mismatch');
+  const actualOutput = instance.workflowState?.output?.sentinel;
+  if (jsonRoundtrip && typeof actualOutput === 'string' && actualOutput.length <= 1024)
+    jsonRoundtrip.actual_output_sha256 = hash(actualOutput);
+  if (actualOutput !== sentinel) throw new Error('backend_output_mismatch');
+  if (jsonRoundtrip) jsonRoundtrip.checks.output = true;
   passed('backend_output');
   await expect(page.getByText('Finished', { exact: true }).first()).toBeVisible();
   passed('studio_terminal');
-  proof.instance_id_sha256 = hash(instanceId);
+  if (jsonRoundtrip) jsonRoundtrip.checks.studio_terminal = true;
+  if (jsonRoundtrip && Object.values(jsonRoundtrip.checks).every(value => value === true))
+    passed('json_roundtrip');
   if (input.released_document_inputs) {
     await reopenReleased(page, input, backend, proof);
     passed('baseline_reopen');
