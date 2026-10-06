@@ -1,17 +1,138 @@
 import { chromium, expect, request, type Page, type APIRequestContext, type Locator } from '@playwright/test';
 import { createHash } from 'node:crypto';
-import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { closeSync, lstatSync, openSync, readFileSync, readSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { isDeepStrictEqual } from 'node:util';
 const policy = JSON.parse(readFileSync(new URL('./coverage-policy.json', import.meta.url), 'utf8'));
 
 type Cell = { host: 'server' | 'wasm' | 'hosted-wasm' | 'custom-elements'; framework: string; version: string; route_prefix?: string };
 type Resource = { path: string; sha256: string; bytes: number; content_type: string; owner: 'package' | 'fixture' | 'platform'; required?: boolean };
-type PrivateInput = { request: Cell; studio_url: string; backend_url: string; username: string; password: string; safe_ids: Record<string, string>; resources: Resource[]; released_document_output?: string };
+type ReleasedInput = { private_path: string; binding: { document: { source_cell: Cell; document_sha256: string; bytes: number; tool_version: string; definition_id_sha256: string; activity_id_sha256: string; value_sha256: string }; fixture_identity_sha256: string; source_evidence_sha256: string; browser_receipt_sha256: string }; source_binding_sha256: string; root_id_sha256: string };
+type PrivateInput = { request: Cell; studio_url: string; backend_url: string; username: string; password: string; safe_ids: Record<string, string>; resources: Resource[]; released_document_output?: string; released_document_inputs?: ReleasedInput[] };
 type Assertion = { name: string; passed: boolean; reason_category: string | null };
 const baseline: string[] = policy.baseline;
 const candidate: string[] = policy.candidate;
 const hostAssertions: Record<Cell['host'], string[]> = policy.host_assertions;
 const hash = (data: Buffer | string): string => createHash('sha256').update(data).digest('hex');
+
+export function readReleasedInput(input: ReleasedInput): { raw: Buffer; document: any } {
+  const path = input.private_path;
+  if (!isAbsolute(path) || realpathSync(path) !== path || lstatSync(path).isSymbolicLink() ||
+      !lstatSync(path).isFile() || (lstatSync(path).mode & 0o777) !== 0o600) throw new Error('invalid_private_released_input');
+  for (let parent = dirname(path); parent !== dirname(parent); parent = dirname(parent))
+    if (lstatSync(parent).isSymbolicLink()) throw new Error('invalid_private_released_ancestor');
+  const descriptor = openSync(path, 'r');
+  const buffer = Buffer.alloc(1024 * 1024 + 1);
+  let size = 0;
+  try {
+    while (size < buffer.length) {
+      const read = readSync(descriptor, buffer, size, buffer.length - size, null);
+      if (!read) break;
+      size += read;
+    }
+  } finally { closeSync(descriptor); }
+  const expected = input.binding.document;
+  if (!size || size > 1024 * 1024 || size !== expected.bytes) throw new Error('released_input_limit');
+  const raw = buffer.subarray(0, size);
+  if (hash(raw) !== expected.document_sha256) throw new Error('released_input_hash_mismatch');
+  const document = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(raw));
+  const activity = document.root?.activities?.[0];
+  if (![document.definitionId, document.root?.id, activity?.id].every(id => typeof id === 'string' && /^[0-9a-f]{1,16}$/.test(id)) ||
+      !/^paired-browser-[0-9a-f]{12}$/.test(document.name) ||
+      document.$schema !== 'https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json' ||
+      document.root.nodeId !== 'Workflow1:' + document.root.id || activity.nodeId !== document.root.nodeId + ':' + activity.id ||
+      document.root.name !== 'Flowchart1' || activity.name !== 'SetOutput1' ||
+      typeof activity?.outputValue?.expression?.value !== 'string' || document.toolVersion !== expected.tool_version ||
+      hash(document.root.id) !== input.root_id_sha256 ||
+      hash(document.definitionId) !== expected.definition_id_sha256 || hash(activity.id) !== expected.activity_id_sha256 ||
+      hash(activity.outputValue.expression.value) !== expected.value_sha256) throw new Error('released_input_identity_mismatch');
+  checkReleasedDefinition(document, document);
+  return { raw, document };
+}
+
+export function checkReleasedDefinition(actual: any, original: any): void {
+  const same = isDeepStrictEqual;
+  const root = actual.root, expectedRoot = original.root;
+  if (actual.definitionId !== original.definitionId || actual.name !== original.name ||
+      actual.toolVersion !== original.toolVersion || root?.type !== 'Elsa.Flowchart' ||
+      root.id !== expectedRoot.id || root.nodeId !== expectedRoot.nodeId || root.name !== expectedRoot.name || root.version !== 1 ||
+      !same(root.customProperties, expectedRoot.customProperties) ||
+      !same(root.variables, []) || !same(root.connections, []) || !Array.isArray(root.activities) || root.activities.length !== 1 ||
+      !same(actual.inputs, []) || !same(actual.variables, []) || !same(actual.outcomes, []) ||
+      !same(actual.outputs, [{ type: 'String', name: 'sentinel', displayName: 'sentinel', description: '', category: 'Primitives' }]))
+    throw new Error('released_graph_mismatch');
+  const child = root.activities[0], expected = expectedRoot.activities[0];
+  if (child.type !== 'Elsa.SetOutput' || child.version !== 1 || child.id !== expected.id ||
+      child.nodeId !== expected.nodeId || child.name !== expected.name ||
+      !same(child.customProperties, expected.customProperties) ||
+      !same(child.outputName, { typeName: 'String', expression: { type: 'Literal', value: 'sentinel' } }) ||
+      !same(child.outputValue, { typeName: 'Object', expression: { type: 'Literal', value: 'synthetic-browser-value' } }))
+    throw new Error('released_activity_or_value_mismatch');
+}
+
+async function visibleReleasedActivity(page: Page, document: any): Promise<void> {
+  const child = document.root.activities[0];
+  await expect(page.locator('.flowchart-diagram-designer-wrapper .x6-graph-svg')).toBeVisible();
+  await expect(page.getByLabel('Name', { exact: true })).toHaveValue(document.name);
+  const activity = page.locator('elsa-activity-wrapper[activity-id="' + child.id + '"]');
+  await expect(activity).toHaveCount(1); await activity.click();
+  await expect(inputControl(page, /^Output$/).locator('[tabindex="0"]').first()).toContainText('sentinel');
+  await expect(inputControl(page, /^Output Value$/i).locator('input[type="text"]')).toHaveValue(child.outputValue.expression.value);
+}
+
+async function reopenReleased(page: Page, input: PrivateInput, backend: Backend, proof: Record<string, unknown>): Promise<void> {
+  const entries = input.released_document_inputs!;
+  const reopens: Array<Record<string, any>> = [];
+  for (const entry of entries) {
+    const { raw, document } = readReleasedInput(entry);
+    const child = document.root.activities[0];
+    const checks = { imported: false, visible: false, saved: false, reloaded: false, published: false, studio_terminal: false, backend_output: false };
+    const row: Record<string, any> = { source_cell: entry.binding.document.source_cell, source_binding_sha256: entry.source_binding_sha256,
+      document_sha256: hash(raw), definition_id_sha256: hash(document.definitionId), root_id_sha256: hash(document.root.id),
+      activity_id_sha256: hash(child.id), value_sha256: hash(child.outputValue.expression.value), tool_version: document.toolVersion, checks };
+    reopens.push(row); // Preserve the actual partial journey if a later stage fails.
+    proof.baseline_reopens = reopens;
+    await page.goto(input.studio_url + '/workflows/definitions');
+    await page.waitForURL(url => url.pathname.endsWith('/workflows/definitions') && url.searchParams.get('page') === '1' && url.searchParams.get('pageSize') === '10');
+    const group = page.locator('.definitions-table .mud-button-group-root').filter({ has: page.getByRole('button', { name: 'Create workflow', exact: true }) });
+    await expect(group).toHaveCount(1);
+    await group.locator('.mud-menu-icon-button-activator').click();
+    const importItem = page.locator('.mud-menu-item:visible').filter({ hasText: /^Import$/ });
+    await expect(importItem).toHaveCount(1);
+    const [chooser] = await Promise.all([page.waitForEvent('filechooser'), importItem.click()]);
+    // Upload the original buffer through the native picker; no workflow is authored via HTTP.
+    await chooser.setFiles({ name: 'released-' + entry.binding.document.source_cell.version + '.json', mimeType: 'application/json', buffer: raw });
+    const get = () => backend.get('/workflow-definitions/by-definition-id/' + encodeURIComponent(document.definitionId) + '?versionOptions=Latest');
+    await expect(page.getByText('1 workflow imported successfully.', { exact: true })).toBeVisible();
+    checkReleasedDefinition(await get(), document);
+    checks.imported = true; proof.last_completed_stage = 'baseline_imported';
+    const tableRow = page.locator('.definitions-table tbody tr').filter({ has: page.getByText(document.definitionId, { exact: true }) });
+    await expect(tableRow).toHaveCount(1);
+    await tableRow.getByText(document.name, { exact: true }).click();
+    await expect(page).toHaveURL(new RegExp('/workflows/definitions/' + document.definitionId + '/edit'));
+    await visibleReleasedActivity(page, document);
+    checks.visible = true;
+    await page.keyboard.press('ControlOrMeta+s');
+    await expect(page.getByText('Workflow saved', { exact: true })).toBeVisible();
+    checkReleasedDefinition(await get(), document); checks.saved = true;
+    await page.reload();
+    await visibleReleasedActivity(page, document);
+    checkReleasedDefinition(await get(), document); checks.reloaded = true; proof.last_completed_stage = 'baseline_reloaded';
+    await toolbar(page, 'Publish workflow');
+    await expect.poll(async () => (await get()).isPublished).toBe(true); checks.published = true;
+    await toolbar(page, 'Run Workflow');
+    await expect(page).toHaveURL(/\/workflows\/instances\/[^/]+\/view/);
+    const instanceId = new URL(page.url()).pathname.split('/').at(-2)!;
+    row.instance_id_sha256 = hash(instanceId);
+    await expect.poll(async () => (await backend.get('/workflow-instances/' + instanceId)).status).toBe('Finished');
+    const instance = await backend.get('/workflow-instances/' + instanceId);
+    if (instance.workflowState?.output?.sentinel !== child.outputValue.expression.value) throw new Error('released_backend_output_mismatch');
+    checks.backend_output = true;
+    await expect(page.getByText('Finished', { exact: true }).first()).toBeVisible(); checks.studio_terminal = true;
+    proof.last_completed_stage = 'baseline_run';
+  }
+}
 
 function loopback(value: string): string {
   const url = new URL(value);
@@ -264,6 +385,10 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   await expect(page.getByText('Finished', { exact: true }).first()).toBeVisible();
   passed('studio_terminal');
   proof.instance_id_sha256 = hash(instanceId);
+  if (input.released_document_inputs) {
+    await reopenReleased(page, input, backend, proof);
+    passed('baseline_reopen');
+  }
 }
 
 async function main(): Promise<void> {
@@ -278,6 +403,14 @@ async function main(): Promise<void> {
   input.studio_url = loopback(input.studio_url); input.backend_url = loopback(input.backend_url);
   if (!hostAssertions[input.request.host] || !['3.8.4', '3.9.0', '3.10.0'].includes(input.request.version) || !['net8.0', 'net9.0', 'net10.0'].includes(input.request.framework))
     throw new Error('invalid_cell');
+  if (input.released_document_inputs) {
+    const entries = input.released_document_inputs;
+    if (input.request.version !== '3.10.0' || !Array.isArray(entries) || entries.length !== 2 ||
+        new Set(entries.map(entry => entry.binding.document.source_cell.version)).size !== 2 ||
+        entries.some(entry => !['3.8.4', '3.9.0'].includes(entry.binding.document.source_cell.version) ||
+          entry.binding.document.source_cell.framework !== input.request.framework || entry.binding.document.source_cell.host !== input.request.host))
+      throw new Error('invalid_released_input_cells');
+  }
   const required = [...baseline, ...(input.request.version === '3.10.0' ? candidate : []), ...hostAssertions[input.request.host]];
   const assertions: Assertion[] = required.map(name => ({ name, passed: false, reason_category: 'not_implemented' }));
   const passed = (name: string) => {
@@ -348,4 +481,5 @@ async function main(): Promise<void> {
   process.exitCode = failed ? 1 : 0;
 }
 
-main().catch(() => { process.stdout.write(JSON.stringify({ result: 'failed', failure_category: 'browser_setup_failed' })); process.exitCode = 1; });
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+  main().catch(() => { process.stdout.write(JSON.stringify({ result: 'failed', failure_category: 'browser_setup_failed' })); process.exitCode = 1; });

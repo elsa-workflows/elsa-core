@@ -42,12 +42,14 @@ def new_ledger() -> dict:
 
 
 def check_cell(record: dict) -> None:
-    identity(record)
+    key = identity(record)
     assertions = record.get("assertions", [])
     names = [item["name"] for item in assertions]
     require(len(names) == len(set(names)) and set(names) == required_assertions(record), "Missing, extra or duplicated browser assertion")
     require(all(item.get("passed") is True for item in assertions), "Required browser assertion failed")
     require(record.get("result") == "passed", "Browser cell did not pass")
+    if key[0] == "3.10.0":
+        _require_reopen_completion(record, key)
 
 
 def check_matrix(ledger: dict) -> None:
@@ -71,12 +73,15 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     for item in assertions:
         require(set(item) <= {"name", "passed", "reason_category"} and type(item.get("passed")) is bool and item.get("reason_category") in (None, "not_implemented"), "Unsafe browser assertion")
     proof = record.get("proof", {})
-    stages = {"backend_authenticated", "login_navigation", "login_form", "login_submitted", "workflow_list", "create_dialog_opened", "create_name_filled", "create_submitted", "workflow_created", "output_tab_opened", "output_dialog_opened", "output_type_selected", "output_declared", "activity_registry", "activity_inserted", "property_saved", "edit_reloaded", "workflow_published", "workflow_run", "released_export_menu_opened", "released_export_dialog_opened", "released_document_exported"}
+    stages = {"backend_authenticated", "login_navigation", "login_form", "login_submitted", "workflow_list", "create_dialog_opened", "create_name_filled", "create_submitted", "workflow_created", "output_tab_opened", "output_dialog_opened", "output_type_selected", "output_declared", "activity_registry", "activity_inserted", "property_saved", "edit_reloaded", "workflow_published", "workflow_run", "released_export_menu_opened", "released_export_dialog_opened", "released_document_exported", "baseline_imported", "baseline_reloaded", "baseline_run"}
     hashes = {"definition_id_sha256", "activity_id_sha256", "value_sha256", "synthetic_document_sha256", "instance_id_sha256", "released_document_sha256"}
     flags = {"login_failure_visible", "login_form_visible", "server_circuit_observed", "server_render_frames_observed", "elsa_identity_ui_visible", "expected_auth_provider_observed", "interactive_validation_observed", "private_input_values_retained", "initial_list_navigation_completed", "editor_ready_observed"}
     counts = {"create_name_label_count", "create_name_textbox_count"}
-    require(set(proof) <= hashes | flags | counts | {"last_completed_stage"}, "Unsafe browser proof field")
+    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens"}, "Unsafe browser proof field")
     for name, value in proof.items():
+        if name == "baseline_reopens":
+            _validate_reopens(value, key)
+            continue
         if name in counts:
             valid = type(value) is int and 0 <= value <= 100
         elif name in flags:
@@ -86,12 +91,91 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
         else:
             valid = isinstance(value, str) and re.fullmatch("[0-9a-f]{64}", value)
         require(valid, "Unsafe browser proof value")
+    if any(item["name"] == "baseline_reopen" and item["passed"] for item in assertions):
+        _require_reopen_completion(record, key)
     for resource in record.get("resources", []):
         require(set(resource) == {"path", "status", "content_type", "sha256", "bytes", "owner", "requested"}, "Unsafe resource receipt fields")
         require(isinstance(resource["path"], str) and re.fullmatch(r"/[A-Za-z0-9_./-]+", resource["path"]) and ".." not in resource["path"].split("/"), "Unsafe resource receipt path")
         require(resource["owner"] in ("package", "fixture", "platform") and resource["requested"] is True and type(resource["status"]) is int and 100 <= resource["status"] <= 599 and type(resource["bytes"]) is int and 0 <= resource["bytes"] <= 32 * 1024 * 1024, "Unsafe resource receipt metadata")
         require(isinstance(resource["sha256"], str) and re.fullmatch("[0-9a-f]{64}", resource["sha256"]) and resource["content_type"] in set(POLICY["resource_content_types"].values()) | {"application/javascript"}, "Unsafe resource receipt content metadata")
     return record
+
+
+REOPEN_CHECKS = {"imported", "visible", "saved", "reloaded", "published", "studio_terminal", "backend_output"}
+
+
+def _require_reopen_completion(record, key):
+    rows = record.get("proof", {}).get("baseline_reopens", [])
+    _validate_reopens(rows, key)
+    require(len(rows) == 2 and all(all(row["checks"].values()) and "instance_id_sha256" in row for row in rows),
+            "Both complete released reopen journeys are required")
+
+
+def _validate_reopens(rows, key):
+    require(key[0] == "3.10.0" and isinstance(rows, list) and 0 < len(rows) <= 2, "Invalid released reopen proof")
+    seen = set()
+    required = {"source_cell", "source_binding_sha256", "document_sha256", "definition_id_sha256", "root_id_sha256",
+                "activity_id_sha256", "value_sha256", "tool_version", "checks"}
+    for row in rows:
+        require(isinstance(row, dict) and required <= set(row) <= required | {"instance_id_sha256"}, "Unsafe reopen fields")
+        source = row["source_cell"]
+        require(isinstance(source, dict) and set(source) == {"version", "framework", "host"}, "Invalid reopen source cell")
+        version = source["version"]
+        require(version in {"3.8.4", "3.9.0"} and version not in seen and
+                (source["framework"], source["host"]) == key[1:], "Mismatched or duplicate reopen source")
+        seen.add(version)
+        require(row["tool_version"] == {"3.8.4": "3.8.0.0", "3.9.0": "3.9.0.0"}[version], "Wrong released tool marker")
+        require(isinstance(row["checks"], dict) and set(row["checks"]) == REOPEN_CHECKS and
+                all(type(value) is bool for value in row["checks"].values()), "Invalid reopen checks")
+        for name in set(row) - {"source_cell", "tool_version", "checks"}:
+            require(isinstance(row[name], str) and re.fullmatch(r"[0-9a-f]{64}", row[name]), "Unsafe reopen hash")
+
+
+def _released_inputs(key, inputs):
+    """Root verifies source provenance; transport independently rechecks native bytes."""
+    from paired_package_provenance import regular_file
+    from paired_package_released_documents import TOOL_VERSIONS, canonical_sha256, _bounded, _constant, _pairs
+    require(key[0] == "3.10.0" and isinstance(inputs, list) and len(inputs) == 2, "Candidate requires exactly two released inputs")
+    result, seen = [], set()
+    for item in inputs:
+        require(isinstance(item, dict) and set(item) == {"private_path", "binding"}, "Invalid private released input")
+        binding = item["binding"]
+        require(isinstance(binding, dict) and set(binding) == {"document", "fixture_identity_sha256", "source_evidence_sha256", "browser_receipt_sha256"}, "Invalid released source binding")
+        for field in set(binding) - {"document"}:
+            require(isinstance(binding[field], str) and re.fullmatch(r"[0-9a-f]{64}", binding[field]), "Invalid released source hash")
+        document = binding["document"]
+        require(isinstance(document, dict) and set(document) == {"schema", "source_cell", "document_sha256", "bytes", "tool_version", "definition_id_sha256", "activity_id_sha256", "value_sha256", "binding_sha256"}, "Invalid document binding")
+        source = document["source_cell"]
+        require(isinstance(source, dict) and set(source) == {"version", "framework", "host"}, "Invalid released source cell")
+        version = source["version"]
+        require(version in TOOL_VERSIONS and version not in seen and (source["framework"], source["host"]) == key[1:], "Released input host/framework/version differs")
+        seen.add(version)
+        require(type(document["schema"]) is int and document["schema"] == 1 and
+                type(document["bytes"]) is int and 0 < document["bytes"] <= 1024 * 1024 and
+                document["tool_version"] == TOOL_VERSIONS[version], "Invalid released document metadata")
+        for name in ("document_sha256", "definition_id_sha256", "activity_id_sha256", "value_sha256", "binding_sha256"):
+            require(isinstance(document[name], str) and re.fullmatch(r"[0-9a-f]{64}", document[name]), "Invalid released document hash")
+        require(canonical_sha256({name: value for name, value in document.items() if name != "binding_sha256"}) == document["binding_sha256"], "Released document binding differs")
+        path = regular_file(_external_path(Path(item["private_path"])))
+        require(path.stat().st_mode & 0o777 == 0o600, "Released input must remain private")
+        with path.open("rb") as stream:
+            raw = stream.read(1024 * 1024 + 1)
+        require(len(raw) == document["bytes"] and hashlib.sha256(raw).hexdigest() == document["document_sha256"], "Released input bytes differ")
+        try:
+            native = json.loads(raw.decode("utf-8"), object_pairs_hook=_pairs, parse_constant=_constant)
+            _bounded(native)
+            root_id = native["root"]["id"]
+            actual = {"definition_id_sha256": native["definitionId"], "activity_id_sha256": native["root"]["activities"][0]["id"],
+                      "value_sha256": native["root"]["activities"][0]["outputValue"]["expression"]["value"]}
+            require(isinstance(root_id, str) and re.fullmatch(r"[0-9a-f]{1,16}", root_id), "Invalid released root identity")
+            require(native["toolVersion"] == document["tool_version"] and all(isinstance(value, str) and
+                    hashlib.sha256(value.encode()).hexdigest() == document[name] for name, value in actual.items()),
+                    "Released input identity/value differs")
+        except (KeyError, IndexError, TypeError, UnicodeError, RecursionError):
+            raise ValueError("Invalid released input structure") from None
+        result.append({"private_path": str(path), "binding": json.loads(json.dumps(binding)), "source_binding_sha256": canonical_sha256(binding),
+                       "root_id_sha256": hashlib.sha256(root_id.encode()).hexdigest()})
+    return sorted(result, key=lambda item: item["binding"]["document"]["source_cell"]["version"])
 
 
 def run_matrix(execute: Callable[[tuple[str, str, str]], dict], selected: list[tuple[str, str, str]], output: Path) -> dict:
@@ -173,13 +257,15 @@ def prepare_candidate(inputs: Path, destination: Path, retained: Path, *, fixtur
 
 
 def run_browser(handle, request, resources: list[dict], *, timeout: int = 240,
-                released_document_output: Path | None = None) -> dict:
+                released_document_output: Path | None = None, released_document_inputs: list[dict] | None = None) -> dict:
     """Credentials only enter the child through stdin; raw process errors are discarded."""
     cell = asdict(request) if is_dataclass(request) else dict(request)
     identity(cell)
     payload = {"request": cell, "studio_url": handle.studio_url, "backend_url": handle.backend_url,
                "username": handle.username, "password": handle.password,
                "safe_ids": handle.safe_ids, "resources": resources}
+    if released_document_inputs is not None:
+        payload["released_document_inputs"] = _released_inputs(identity(cell), released_document_inputs)
     if released_document_output is not None:
         require(cell["version"] in {"3.8.4", "3.9.0"}, "Only released cells may author released documents")
         released_document_output = _external_path(released_document_output)
@@ -194,6 +280,17 @@ def run_browser(handle, request, resources: list[dict], *, timeout: int = 240,
         raise ValueError("Browser process failed to return a safe receipt") from None
     require(isinstance(record, dict) and all(key in record for key in ("host", "framework", "version")) and identity(record) == identity(cell), "Browser process returned an invalid cell")
     record = validate_browser_receipt(record, identity(cell))
+    reopens = record.get("proof", {}).get("baseline_reopens", [])
+    require(not reopens or released_document_inputs is not None, "Unrequested released reopen proof")
+    expected_sources = {item["binding"]["document"]["source_cell"]["version"]: item for item in payload.get("released_document_inputs", [])}
+    for row in reopens:
+        expected_source = expected_sources[row["source_cell"]["version"]]
+        expected_document = expected_source["binding"]["document"]
+        require(row["source_binding_sha256"] == expected_source["source_binding_sha256"] and
+                row["root_id_sha256"] == expected_source["root_id_sha256"] and
+                all(row[name] == expected_document[name] for name in
+                    ("document_sha256", "definition_id_sha256", "activity_id_sha256", "value_sha256")),
+                "Released reopen proof differs from supplied bytes/source")
     require(completed.returncode == (1 if record["result"] == "failed" else 0), "Inconsistent browser exit status")
     document_hash = record.get("proof", {}).get("released_document_sha256")
     require(released_document_output is None or not released_document_output.exists() or document_hash is not None,
