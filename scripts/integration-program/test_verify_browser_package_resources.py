@@ -1,4 +1,12 @@
+import copy
+import json
+from pathlib import Path
 import struct
+import tempfile
+from zipfile import ZipFile
+
+import consolidated_candidate_input as candidate
+import prove_consolidated_package_consumers as packages
 import unittest
 
 import verify_browser_package_resources as resources
@@ -74,7 +82,7 @@ class ResourceContracts(unittest.TestCase):
         asset = {"path": "/_content/Elsa.Studio.Workflows.Designer/designer.entry.js", "sha256": "a" * 64, "bytes": 123, "content_type": "text/javascript", "owner": "package"}
         fetched = {**asset, "status": 200}
         self.assertEqual(1, resources.verify_browser_resources([asset], [fetched])["requested"])
-        self.assertEqual(1, resources.verify_browser_resources([asset], [], require_all=False)["materialized"])
+        self.assertEqual(1, resources.verify_browser_resources([{**asset, "required": False}], [], require_all=False)["materialized"])
         with self.assertRaises(ValueError):
             resources.verify_browser_resources([asset], [])
         prefixed = {**asset, "path": "/compat" + asset["path"]}
@@ -85,6 +93,66 @@ class ResourceContracts(unittest.TestCase):
         for key, value in (("sha256", "b" * 64), ("bytes", 124), ("status", 404), ("path", asset["path"] + "?token=private"), ("content_type", "text/html")):
             with self.subTest(key=key), self.assertRaises(ValueError):
                 resources.verify_browser_resources([asset], [{**fetched, key: value}])
+
+    def test_actual_build_resource_identity_cache_and_sealed_archive_are_required(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            cache, artifacts = root / "cache", root / "artifacts"
+            artifacts.mkdir()
+            required = json.loads(resources.CONVERTER_POLICY.with_name("coverage-policy.json").read_text())["required_browser_assets"]
+            ids = set(packages.REQUIRED_PACKAGES) | {path.split("/")[2] for path in required}
+            manifest = {"version": "3.10.0", "source_commit": candidate.SOURCE, "packages": [], "external_package_exceptions": {name: "reviewed" for name in packages.AUDITED_EXTERNAL_ELSA_IDS}}
+            rows = []
+            for package_id in sorted(ids):
+                archive = artifacts / (package_id + ".3.10.0.nupkg")
+                pins = []
+                with ZipFile(archive, "w") as zipped:
+                    for path in required:
+                        if path.split("/")[2] != package_id:
+                            continue
+                        relative = path.rsplit("/", 1)[1]
+                        member, content = "staticwebassets/" + relative, relative.encode()
+                        cached = cache / package_id.lower() / "3.10.0" / member
+                        cached.parent.mkdir(parents=True, exist_ok=True)
+                        cached.write_bytes(content)
+                        zipped.writestr(member, content)
+                        pins.append({"package_path": member, "sha256": resources.sha256(content)})
+                        rows.append({"SourceId": package_id, "SourceType": "Package", "BasePath": "_content/" + package_id, "RelativePath": relative, "Identity": str(cached), "AssetRole": "Primary", "FileLength": len(content)})
+                manifest["packages"].append({"id": package_id, "frameworks": list(packages.FRAMEWORKS), "nupkg": archive.name, "nupkg_sha256": resources.sha256(archive.read_bytes()), "browser_assets": pins})
+            manifest_path = root / "verified-artifacts.json"
+            manifest_path.write_text(json.dumps(manifest))
+            build = root / "build.json"
+            def check(data):
+                build.write_text(json.dumps({"Assets": data}))
+                return resources.derive_candidate_resources(build, root, cache, verified_manifest_sha256=resources.sha256(manifest_path.read_bytes()))
+            receipt = check(rows)
+            with self.assertRaisesRegex(ValueError, "manifest changed"):
+                resources.derive_candidate_resources(build, root, cache, verified_manifest_sha256="0" * 64)
+            self.assertEqual(6, len(receipt["assets"]))
+            self.assertTrue(all(row["required"] for row in receipt["assets"]))
+            for mutate in (lambda data: data.pop(), lambda data: data.append(copy.deepcopy(data[0])),
+                           lambda data: data[0].update(SourceId="Elsa.Unknown"), lambda data: data[0].update(SourceType="Project"),
+                           lambda data: data[0].update(BasePath="_content/Elsa.Other"), lambda data: data[0].update(FileLength=0)):
+                changed = copy.deepcopy(rows)
+                mutate(changed)
+                with self.subTest(mutate=mutate), self.assertRaises(ValueError):
+                    check(changed)
+            original = manifest_path.read_text()
+            for key, value in (("version", "3.9.0"), ("source_commit", "b" * 40)):
+                altered = json.loads(original)
+                altered[key] = value
+                manifest_path.write_text(json.dumps(altered))
+                with self.subTest(key=key), self.assertRaises(ValueError):
+                    check(rows)
+            manifest_path.write_text(original)
+            Path(rows[0]["Identity"]).write_bytes(b"changed cache body")
+            with self.assertRaisesRegex(ValueError, "sealed package member"):
+                check(rows)
+            target = next(package for package in manifest["packages"] if package["id"] == rows[0]["SourceId"])
+            with (artifacts / target["nupkg"]).open("ab") as archive:
+                archive.write(b"changed original archive")
+            with self.assertRaisesRegex(ValueError, "archive changed"):
+                check(rows)
 
 
 if __name__ == "__main__":

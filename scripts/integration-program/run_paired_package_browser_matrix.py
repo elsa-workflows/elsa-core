@@ -90,7 +90,7 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
         require(set(resource) == {"path", "status", "content_type", "sha256", "bytes", "owner", "requested"}, "Unsafe resource receipt fields")
         require(isinstance(resource["path"], str) and re.fullmatch(r"/[A-Za-z0-9_./-]+", resource["path"]) and ".." not in resource["path"].split("/"), "Unsafe resource receipt path")
         require(resource["owner"] in ("package", "fixture", "platform") and resource["requested"] is True and type(resource["status"]) is int and 100 <= resource["status"] <= 599 and type(resource["bytes"]) is int and 0 <= resource["bytes"] <= 32 * 1024 * 1024, "Unsafe resource receipt metadata")
-        require(isinstance(resource["sha256"], str) and re.fullmatch("[0-9a-f]{64}", resource["sha256"]) and resource["content_type"] in ("text/javascript", "application/javascript", "application/wasm", "text/css"), "Unsafe resource receipt content metadata")
+        require(isinstance(resource["sha256"], str) and re.fullmatch("[0-9a-f]{64}", resource["sha256"]) and resource["content_type"] in set(POLICY["resource_content_types"].values()) | {"application/javascript"}, "Unsafe resource receipt content metadata")
     return record
 
 
@@ -127,9 +127,10 @@ def run_matrix(execute: Callable[[tuple[str, str, str]], dict], selected: list[t
 def _external_path(path: Path) -> Path:
     raw = path.absolute()
     require(".." not in raw.parts and not raw.is_symlink(), "Symlinked or escaping browser evidence root")
+    # macOS system aliases are fixed filesystem roots; arbitrary ancestor links are rejected.
+    aliases = {Path("/tmp"): Path("/private/tmp"), Path("/var"): Path("/private/var")}
     for component in raw.parents:
-        # macOS system aliases are fixed filesystem roots; arbitrary ancestor links are rejected.
-        require(not component.is_symlink() or component in (Path("/tmp"), Path("/var")), "Symlinked browser evidence ancestor")
+        require(not component.is_symlink() or aliases.get(component) == component.resolve(), "Symlinked browser evidence ancestor")
     result = raw.resolve()
     require(not result.is_relative_to(JOURNEY.parents[4].resolve()), "Browser evidence must be outside the source tree")
     return result
@@ -157,6 +158,7 @@ def prepare_candidate(inputs: Path, destination: Path, retained: Path, *, fixtur
     require(version == candidate.PRODUCER["version"] and source == candidate.SOURCE, "Browser candidate manifest identity differs")
     # Capture all tracked fixture/helper inputs, including host glue added by the host owner.
     tracked = subprocess.check_output(["git", "ls-files", "--", "scripts/integration-program", "test/studio/browser/PackageCompatibility"], cwd=JOURNEY.parents[4], text=True).splitlines()
+    provenance["verified_artifacts_sha256"] = hashlib.sha256((destination / "verified-artifacts.json").read_bytes()).hexdigest()
     files = [JOURNEY.parents[4] / name for name in tracked]
     require(all(path.is_file() and not path.is_symlink() and path.resolve().is_relative_to(JOURNEY.parents[4].resolve()) for path in files), "Untracked or symlinked fixture input")
     require(JOURNEY in files and Path(__file__).resolve() in files, "Browser entrypoints must be tracked")

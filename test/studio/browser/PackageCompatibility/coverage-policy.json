@@ -60,5 +60,30 @@
       "native_callbacks",
       "instance_list_viewer"
     ]
+  },
+  "required_browser_assets": [
+    "/_content/Elsa.Studio.Workflows.Designer/designer.entry.js",
+    "/_content/Elsa.Studio.Workflows.Designer/react-designer.entry.js",
+    "/_content/Elsa.Studio.Workflows.Designer/designer.css",
+    "/_content/Elsa.Studio.DomInterop/clipboard.entry.js",
+    "/_content/Elsa.Studio.DomInterop/dom.entry.js",
+    "/_content/Elsa.Studio.DomInterop/files.entry.js"
+  ],
+  "resource_content_types": {
+    ".js": "text/javascript",
+    ".css": "text/css",
+    ".wasm": "application/wasm",
+    ".png": "image/png",
+    ".avif": "image/avif",
+    ".svg": "image/svg+xml",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".ico": "image/x-icon",
+    ".map": "application/json",
+    ".json": "application/json",
+    ".webmanifest": "application/manifest+json",
+    ".woff": "font/woff",
+    ".woff2": "font/woff2",
+    ".ttf": "font/ttf"
   }
 }

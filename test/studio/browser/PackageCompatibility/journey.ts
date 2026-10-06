@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 const policy = JSON.parse(readFileSync(new URL('./coverage-policy.json', import.meta.url), 'utf8'));
 
 type Cell = { host: 'server' | 'wasm' | 'hosted-wasm' | 'custom-elements'; framework: string; version: string; route_prefix?: string };
-type Resource = { path: string; sha256: string; bytes: number; content_type: string; owner: 'package' | 'fixture' | 'platform' };
+type Resource = { path: string; sha256: string; bytes: number; content_type: string; owner: 'package' | 'fixture' | 'platform'; required?: boolean };
 type PrivateInput = { request: Cell; studio_url: string; backend_url: string; username: string; password: string; safe_ids: Record<string, string>; resources: Resource[] };
 type Assertion = { name: string; passed: boolean; reason_category: string | null };
 const baseline: string[] = policy.baseline;
@@ -239,7 +239,7 @@ async function main(): Promise<void> {
     await context.close(); await browser.close();
     passed('cleanup');
   }
-  const requiredResources = input.resources.filter(asset => asset.owner === 'package');
+  const requiredResources = input.resources.filter(asset => asset.owner === 'package' && asset.required !== false);
   if (requiredResources.length > 0 && requiredResources.every(asset => resources.some(record => record.path === asset.path && record.sha256 === asset.sha256 && record.status === 200 && record.content_type === asset.content_type && record.bytes === asset.bytes))) passed('browser_resources');
   const complete = assertions.every(assertion => assertion.passed) && !failed;
   process.stdout.write(JSON.stringify({ host: input.request.host, framework: input.request.framework, version: input.request.version, result: failed ? 'failed' : complete ? 'passed' : 'incomplete', assertions, resources, proof, browser_version: browser.version(), failure_category: failed ? 'browser_execution_or_validation_failed' : null }));
