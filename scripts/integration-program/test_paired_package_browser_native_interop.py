@@ -207,6 +207,23 @@ class NativeInteropProofContracts(unittest.TestCase):
             with self.subTest(mutate=mutate), self.assertRaises(ValueError):
                 matrix.validate_browser_receipt(changed, matrix.identity(changed))
 
+    def test_readback_failures_retain_safe_partial_import_and_save_evidence(self):
+        for clear, imported in ((clear_import_semantics, False), (clear_saved_semantics, True)):
+            record = receipt()
+            value = json_proof()
+            dom = dom_proof(value)
+            clear(value)
+            dom["checks"].update(import_succeeded=imported, save_callback_observed=False)
+            record["proof"].update(
+                definition_id_sha256=value["definition_id_sha256"], root_id_sha256=value["root_id_sha256"],
+                activity_id_sha256=value["activity_id_sha256"], value_sha256=value["expected_value_sha256"],
+                json_roundtrip=value, dom_interop=dom,
+            )
+            with self.subTest(imported=imported):
+                self.assertEqual(record, matrix.validate_browser_receipt(record, matrix.identity(record)))
+                self.assertTrue(dom["checks"]["filechooser_observed"])
+                self.assertFalse(next(a for a in record["assertions"] if a["name"] == "dom_interop")["passed"])
+
     def test_native_json_proofs_cannot_be_attached_to_custom_elements_cell(self):
         record = receipt("custom-elements")
         value = json_proof()

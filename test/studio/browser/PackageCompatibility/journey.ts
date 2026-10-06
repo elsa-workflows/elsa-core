@@ -239,7 +239,6 @@ async function nativeJsonRoundtrip(
       record.checks.import_chooser_observed = true;
       proof.last_completed_stage = 'candidate_import_chooser_observed';
     } else {
-      domProof.checks.import_succeeded = true;
       record.imported_document_sha256 = checkedExport.documentSha256;
       proof.last_completed_stage = 'candidate_json_imported';
     }
@@ -253,18 +252,19 @@ async function nativeJsonRoundtrip(
       importedIdentity.definitionId !== sourceIdentity.definitionId || importedIdentity.rootId !== sourceIdentity.rootId ||
       importedIdentity.activityIds.length !== 1 || importedIdentity.activityIds[0] !== sourceIdentity.activityIds[0])
     throw new Error('candidate_json_import_semantic_mismatch');
+  domProof.checks.import_succeeded = true;
   await visibleReleasedActivity(page, checkedExport.document);
 
   await page.keyboard.press('ControlOrMeta+s');
   await expect(page.getByText('Workflow saved', { exact: true })).toBeVisible();
-  domProof.checks.save_callback_observed = true;
-  passed('dom_interop');
   const saved = await getDefinition();
   const savedIdentity = workflowSemanticIdentity(saved);
   record.saved_semantic_sha256 = savedIdentity.semanticSha256;
   record.checks.saved = true;
   if (savedIdentity.semanticSha256 !== sourceIdentity.semanticSha256)
     throw new Error('candidate_json_save_semantic_mismatch');
+  domProof.checks.save_callback_observed = true;
+  passed('dom_interop');
   proof.last_completed_stage = 'candidate_json_saved';
 
   await page.reload();

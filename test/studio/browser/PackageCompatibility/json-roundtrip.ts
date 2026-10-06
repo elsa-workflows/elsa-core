@@ -7,6 +7,8 @@ type JsonObject = Record<string, unknown>;
 
 const nonSemanticDefinitionMetadata = new Set([
   '$schema',
+  // StaticWorkflowDefinitionLinker adds API navigation links; the exporter uses the unlinked model.
+  'links',
   'id',
   'version',
   'createdAt',

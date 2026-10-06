@@ -33,3 +33,15 @@ materialized source and verified build. Runtime configuration selects the public
 and native clients receive the matching public configuration value. Ambient
 DesignerOptions overrides are removed. Selecting a mode is host setup, not proof
 that its native editor callback or save journey passed.
+
+`start_designer_phases(layout, validate_project=...)` owns one candidate backend
+while sequential `owner.phase("x6")` and `owner.phase("react-flow")` contexts
+restart Studio on the same origin. Each phase rechecks the unchanged verified
+build and receives the same private backend credentials, keys, runtime database
+and synthetic identifiers. The caller must create a fresh browser context for
+each phase and separately bind their receipts. The owner checks process birth
+identities and descendant cleanup before admitting the next phase; uncertain
+ownership or cleanup prevents continuation. Its lifetime includes startup and is
+bounded to 600 seconds. This API supports the three full-shell host layouts;
+CustomElements remains separate. The execution/receipt composition and real
+React edit/save journey are still pending integration and runtime verification.

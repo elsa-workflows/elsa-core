@@ -55,8 +55,9 @@ apiReadback.version = 2;
 apiReadback.createdAt = '2026-10-08T00:00:00Z';
 apiReadback.isLatest = false;
 apiReadback.isPublished = true;
+Object.assign(apiReadback, { links: [{ href: '/workflow-definitions/by-definition-id/candidate-definition-id', rel: 'self', method: 'GET' }] });
 assert.equal(workflowSemanticIdentity(apiReadback).semanticSha256, checked.semanticSha256,
-  'Known export/version metadata must not change semantic identity');
+  'API navigation links and known export/version metadata must not change semantic identity');
 
 const semanticMutations: Array<(document: ReturnType<typeof definition>) => void> = [
   document => { document.definitionId = 'changed-definition'; },
@@ -71,6 +72,7 @@ const semanticMutations: Array<(document: ReturnType<typeof definition>) => void
   document => { document.inputs.push({ name: 'changed-input' }); },
   document => { document.options.usableAsActivity = true; },
   document => { document.customProperties.source = 'changed-source'; },
+  document => { Object.assign(document.root.customProperties, { links: ['semantic-nested-value'] }); },
   document => { (document as any).futureSemanticField = 'preserved-by-default'; }
 ];
 for (const mutate of semanticMutations) {

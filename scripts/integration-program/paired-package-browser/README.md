@@ -102,7 +102,7 @@ Candidate full-shell JSON proof uses the native editor Export download and Impor
 file chooser, then native save/reload and the same candidate's publish/run/output
 checks. Semantic hashes retain definition/root/activity identities, tenant scope,
 expressions, inputs, outputs, options, custom properties and other model fields;
-only known export/version metadata is excluded. The DOM proof requires the native
+only API navigation links and known export/version metadata are excluded. The DOM proof requires the native
 Import action to open its real file chooser and complete import/save callbacks.
 Receipts contain hashes and bounded checks, never raw candidate documents. These
 protocols still require actual browser verification; they do not certify the
