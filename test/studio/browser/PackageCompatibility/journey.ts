@@ -21,24 +21,32 @@ function loopback(value: string): string {
 
 async function toolbar(page: Page, title: string): Promise<void> {
   // MudTooltip gives the package toolbar icon its accessible description.
-  const button = page.getByRole('button', { name: title, exact: true });
+  const controls = page.locator('.pane-left [role="toolbar"]');
+  await expect(controls).toHaveCount(1);
+  await expect(controls).toBeVisible();
+  const button = controls.getByRole('button', { name: title, exact: true });
   if (await button.count() === 1) {
     await button.click();
     return;
   }
-  const titles = page.locator(`[title="${title}"], [aria-label="${title}"]`);
+  const titles = controls.locator(`[title="${title}"], [aria-label="${title}"]`);
   if (await titles.count() === 1) {
     await titles.click();
     return;
   }
   // Package versions without accessible icon labels still expose an actual tooltip.
-  for (const icon of await page.locator('.mud-tooltip-root button').all()) {
+  for (const icon of await controls.locator('.mud-tooltip-root button').all()) {
+    if (!await icon.isVisible() || !await icon.isEnabled()) continue;
+    const label = await icon.getAttribute('aria-label');
+    if (label && label !== title) continue;
     await icon.hover();
     const text = page.locator('.mud-tooltip').filter({ hasText: new RegExp('^' + title + '$') });
-    if (await text.isVisible()) {
-      await icon.click();
-      return;
-    }
+    try {
+      // WorkflowEditor declares a 500 ms tooltip delay; wait for the actual rendered title.
+      await expect(text).toBeVisible({ timeout: 1500 });
+    } catch { continue; }
+    await icon.click();
+    return;
   }
   throw new Error('toolbar_control_unavailable');
 }
@@ -200,6 +208,7 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   if (input.request.version !== '3.10.0') return;
   await toolbar(page, 'Publish workflow');
   await expect.poll(async () => (await getDefinition()).isPublished).toBe(true);
+  proof.last_completed_stage = 'workflow_published';
   await toolbar(page, 'Run Workflow');
   await expect(page).toHaveURL(/\/workflows\/instances\/[^/]+\/view/);
   proof.last_completed_stage = 'workflow_run';
