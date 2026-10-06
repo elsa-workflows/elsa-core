@@ -63,6 +63,18 @@ class SelectionErrorsTests(unittest.TestCase):
             with self.subTest(ref=ref, selected=sorted(selected)):
                 self.assertEqual([], errors(ref, selected))
 
+    def test_candidate_optins_and_artifact_selectors_have_no_publisher_route(self):
+        workflow = (SCRIPT.parents[1] / ".github/workflows/packages.yml").read_text()
+        for selector in ("ConsolidatedReleaseCandidate", "prepare-consolidated-release-candidate", "consolidated-candidate-",
+                         "artifact-id", "artifact_id", "candidate_run", "candidate_artifact"):
+            self.assertNotIn(selector, workflow)
+        for selector in ("candidate", "candidate_artifact_id", "candidate_run_id", "candidate_workflow"):
+            with self.subTest(selector=selector), self.assertRaises(TypeError):
+                selection_errors("refs/tags/3.10.0", **{selector: True})
+        self.assertEqual([], errors("refs/tags/3.10.0", {"feedz"}))
+        self.assertEqual([], errors("refs/tags/3.8.5", {"nuget"}))
+        self.assertEqual([], errors("refs/tags/3.9.1", {"nuget"}))
+
     def test_rejects_mismatched_selections_for_the_stated_reason(self):
         for ref, selected, reason in REJECTED:
             with self.subTest(ref=ref, selected=sorted(selected)):

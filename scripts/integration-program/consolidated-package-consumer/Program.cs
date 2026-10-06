@@ -1,5 +1,6 @@
 using FastEndpoints;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using Elsa.Extensions;
@@ -90,6 +91,18 @@ try
         framework = targetFramework,
         runtime = RuntimeInformation.FrameworkDescription,
         assemblyChecks,
+        loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies()
+            .Where(assembly => assembly.GetName().Name?.StartsWith("Elsa", StringComparison.Ordinal) == true)
+            .OrderBy(assembly => assembly.FullName, StringComparer.Ordinal)
+            .Select(assembly => new
+            {
+                name = assembly.GetName().Name,
+                fullName = assembly.FullName,
+                version = assembly.GetName().Version?.ToString(),
+                informationalVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion,
+                location = assembly.Location,
+                sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(assembly.Location))).ToLowerInvariant()
+            }).ToArray(),
         expected,
         featureMatches = true,
         httpRoundtrip = true,

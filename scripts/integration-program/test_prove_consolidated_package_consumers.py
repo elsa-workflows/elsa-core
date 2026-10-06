@@ -1,7 +1,10 @@
+import copy
+import hashlib
 import json
 import sys
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from subprocess import TimeoutExpired
 from unittest.mock import patch
@@ -14,6 +17,69 @@ import prove_consolidated_package_consumers as proof  # noqa: E402
 
 
 class ConsolidatedPackageConsumerTests(unittest.TestCase):
+    def test_parent_import_and_sdk_isolation_files_stop_ancestor_configuration(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            hashes = proof.prepare_isolation(root, "10.0.300")
+            for name in ("Directory.Build.props", "Directory.Build.targets", "Directory.Packages.props"):
+                self.assertEqual("<Project />", (root / name).read_text().strip())
+                self.assertEqual(hashlib.sha256((root / name).read_bytes()).hexdigest(), hashes[name])
+            self.assertEqual({"sdk": {"version": "10.0.300", "rollForward": "disable"}}, json.loads((root / "global.json").read_text()))
+
+    def test_effective_config_sources_cache_and_fallback_are_verified(self):
+        root = Path("/tmp/isolated-consumer").resolve()
+        cache = root / "fresh-packages"
+        artifacts = Path("/tmp/original-candidate/artifacts").resolve()
+        assets = {"project": {"restore": {"sources": {proof.NUGET_ORG: {}, str(artifacts): {}},
+                  "configFilePaths": [str(root / "NuGet.Config")]}}, "packageFolders": {str(cache): {}}}
+        proof.verify_restore_isolation(assets, root, cache, artifacts)
+        for alter, message in ((lambda data: data["project"]["restore"]["sources"].update({"/parent-feed": {}}), "sources"),
+                               (lambda data: data["project"]["restore"].update(configFilePaths=["/parent/NuGet.Config"]), "config"),
+                               (lambda data: data["packageFolders"].update({"/fallback": {}}), "fallback")):
+            changed = copy.deepcopy(assets)
+            alter(changed)
+            with self.subTest(message=message), self.assertRaisesRegex(RuntimeError, message):
+                proof.verify_restore_isolation(changed, root, cache, artifacts)
+
+    def test_all_loaded_identities_hashes_locations_and_exact_package_assets_are_corroborated(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            artifacts, cache = root / "artifacts", root / "cache"
+            artifacts.mkdir()
+            target, rows, by_id = {}, [], {}
+            for package_id in proof.REQUIRED_PACKAGES:
+                asset = f"lib/net8.0/{package_id}.dll"
+                content = package_id.encode()
+                cached = cache / package_id.lower() / "3.10.0" / asset
+                cached.parent.mkdir(parents=True)
+                cached.write_bytes(content)
+                archive = artifacts / f"{package_id}.3.10.0.nupkg"
+                with zipfile.ZipFile(archive, "w") as zipped:
+                    zipped.writestr(asset, content)
+                by_id[package_id.casefold()] = {"nupkg": archive.name}
+                target[f"{package_id}/3.10.0"] = {"type": "package", "runtime": {asset: {}}}
+                rows.append({"name": package_id, "version": "3.10.0.0", "fullName": package_id + ", Version=3.10.0.0, Culture=neutral, PublicKeyToken=null",
+                             "informationalVersion": "3.10.0+" + "a" * 40, "location": str(root / "bin/Release/net8.0" / (package_id + ".dll")),
+                             "sha256": hashlib.sha256(content).hexdigest()})
+            assets = {"targets": {"net8.0": target}}
+            def check(result):
+                return proof.verify_loaded_assemblies(result, assets, "net8.0", root, cache, artifacts, by_id, "3.10.0", "a" * 40)
+            checked = check({"loadedAssemblies": rows})
+            self.assertEqual(set(proof.REQUIRED_PACKAGES), {row["package_id"] for row in checked})
+            for key, value in (("sha256", "0" * 64), ("version", "3.8.4.0"), ("informationalVersion", "3.10.0+" + "b" * 40),
+                               ("location", "/source/bin/Elsa.dll"), ("fullName", "incomplete")):
+                changed = copy.deepcopy(rows)
+                changed[0][key] = value
+                with self.subTest(key=key), self.assertRaises(RuntimeError):
+                    check({"loadedAssemblies": changed})
+            with self.assertRaisesRegex(RuntimeError, "missing"):
+                check({"loadedAssemblies": rows[:-1]})
+            with self.assertRaisesRegex(RuntimeError, "duplicate"):
+                check({"loadedAssemblies": rows + [rows[0]]})
+            cached.write_bytes(b"cache corruption")
+            with self.assertRaisesRegex(RuntimeError, "exact package asset"):
+                check({"loadedAssemblies": rows})
+
     def test_source_mapping_routes_only_manifest_ids_to_the_local_feed(self):
         config = ElementTree.fromstring(
             proof.render_nuget_config(

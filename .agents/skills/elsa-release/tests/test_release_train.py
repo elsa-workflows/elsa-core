@@ -25,6 +25,12 @@ class TrainTests(unittest.TestCase):
         self.state=train.init(self.args)
         self.remote_existing=False
 
+    def test_candidate_profile_cannot_initialize_publication_train(self):
+        self.args.version = '3.10.0'
+        self.args.profile = train.DEFAULT_PROFILE.with_name('consolidated-feedz-profile.json')
+        with self.assertRaisesRegex(ValueError, 'candidate profiles cannot initialize'):
+            train.init(self.args)
+
     def bind_fixture(self,name):
         path=self.root/name;path.mkdir(exist_ok=True)
         manifest=path/'manifest.json';notes=path/'notes.md';report=path/'report.json'

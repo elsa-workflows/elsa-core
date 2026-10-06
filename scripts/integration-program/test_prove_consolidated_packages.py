@@ -274,7 +274,7 @@ class PackageProofTests(unittest.TestCase):
         resolved = {"Properties": {"AssemblyName": "Example", "PackageVersion": VERSION,
                     "GenerateElsaPackageManifest": "false", "ElsaPackageManifestIncludeInPackage": "false",
                     "ElsaPackageManifestPackagePath": "", "ProjectAssetsFile": str(self.directory / "project.assets.json")}}
-        with patch.object(proof, "stage_nuspecs", side_effect=lambda root, row, version, destination: destination.mkdir()), \
+        with patch.object(proof, "stage_nuspecs", side_effect=lambda root, row, version, destination, **kwargs: destination.mkdir()), \
                 patch.object(proof, "evaluate", return_value=resolved), \
                 patch.object(proof, "capture_compiler_evidence", side_effect=ValueError("rejected generator")), \
                 self.assertRaisesRegex(ValueError, "rejected generator"):
@@ -338,6 +338,8 @@ class PackageProofTests(unittest.TestCase):
         produced = {self.row["nupkg"]: b"package", self.row["snupkg"]: b"symbols"}
 
         def pack(*args, **kwargs):
+            if args[0][0] in ("dotnet", "node"):
+                return "10.0.300"
             for name, data in produced.items():
                 (packages / name).write_bytes(data)
 
@@ -623,7 +625,7 @@ class PackageProofTests(unittest.TestCase):
                 document = ET.parse(ROOT / f"src/{subtree}/Directory.Build.{suffix}")
                 guards = document.findall("./PropertyGroup/IsPackable")
                 self.assertEqual(1, len(guards))
-                self.assertEqual("'$(ConsolidatedPackageProof)' != 'true'", guards[0].get("Condition"))
+                self.assertEqual("'$(ConsolidatedPackageProof)' != 'true' and '$(ConsolidatedReleaseCandidate)' != 'true'", guards[0].get("Condition"))
                 self.assertEqual("false", guards[0].text)
         for path in (ROOT / "src/extensions/secrets").rglob("*.csproj"):
             self.assertEqual("false", ET.parse(path).findtext("./PropertyGroup/IsPackable"))

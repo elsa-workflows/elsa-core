@@ -31,7 +31,7 @@ EXTERNAL_PACKAGES = {
     "Elsa.Platform.PackageManifest.Generator": "External compiler tooling, not produced by Elsa.sln",
 }
 PROPERTIES = (
-    "IsPackable", "PackageId", "PackageVersion", "AssemblyName", "TargetFrameworks",
+    "Version", "Configuration", "IsPackable", "PackageId", "PackageVersion", "AssemblyName", "TargetFrameworks",
     "TargetFramework", "IncludeBuildOutput", "IncludeSymbols", "SymbolPackageFormat",
     "IsTestProject", "IsTool", "BuildOutputTargetFolder", "GeneratePackageOnBuild",
     "RepositoryUrl", "PackageProjectUrl", "ProjectAssetsFile", "GenerateElsaPackageManifest", "ElsaPackageManifestIncludeInPackage", "ElsaPackageManifestPackagePath",
@@ -89,10 +89,23 @@ def solution_projects(root: Path) -> list[Path]:
     return projects
 
 
+def validate_mode(version: str, mode: str) -> None:
+    require(mode in ("proof", "candidate"), "Unknown consolidated package mode")
+    if mode == "proof":
+        require(bool(PROOF_VERSION.fullmatch(version)), "Version must be 3.10.0-proof.<positive run>.<positive attempt>")
+    else:
+        require(version == "3.10.0", "Candidate requires exactly stable 3.10.0")
+
+
+def mode_properties(mode: str, enabled: bool = True) -> list[str]:
+    return [f"-p:ConsolidatedPackageProof={str(enabled and mode == 'proof').lower()}",
+            f"-p:ConsolidatedReleaseCandidate={str(enabled and mode == 'candidate').lower()}"]
+
+
 def evaluate(root: Path, project: Path, version: str, proof: bool,
-             framework: str | None = None, *, resolved: bool = False) -> dict:
+             framework: str | None = None, *, resolved: bool = False, mode: str = "proof") -> dict:
     command = ["dotnet", "msbuild", str(project), "-nologo", "-p:Configuration=Release",
-               f"-p:Version={version}", f"-p:ConsolidatedPackageProof={str(proof).lower()}",
+               f"-p:Version={version}", f"-p:PackageVersion={version}", *mode_properties(mode, proof),
                "-getProperty:" + ",".join(PROPERTIES)]
     if framework:
         command.append(f"-p:TargetFramework={framework}")
@@ -123,25 +136,25 @@ def package_row(project: str, properties: dict) -> dict:
     }
 
 
-def inventory(root: Path, version: str, commit: str, *, workers: int = 4) -> dict:
-    require(bool(PROOF_VERSION.fullmatch(version)), "Version must be 3.10.0-proof.<positive run>.<positive attempt>")
+def inventory(root: Path, version: str, commit: str, *, workers: int = 4, mode: str = "proof") -> dict:
+    validate_mode(version, mode)
     projects = solution_projects(root)
 
     def inspect(project: Path) -> tuple[dict | None, dict | None, dict]:
         path = project.relative_to(root).as_posix()
-        normal = evaluate(root, project, version, False)
-        proof = evaluate(root, project, version, True)
+        normal = evaluate(root, project, version, False, mode=mode)
+        proof = evaluate(root, project, version, True, mode=mode)
         imported = path.startswith(("src/extensions/", "src/studio/"))
         require(not imported or normal["IsPackable"].lower() == "false",
                 f"Imported project is packable by default: {path}")
         require(imported or normal["IsPackable"] == proof["IsPackable"],
                 f"Proof changes a non-imported packability setting: {path}")
-        record = {"project": path, "normal": normal, "proof": proof}
+        record = {"project": path, "normal": normal, mode: proof}
         if proof["IsPackable"].lower() != "true":
             return None, {"id": proof["PackageId"], "project": path,
                           "reason": "Project or inherited nonpackable setting remains active"}, record
         require(proof["IsTestProject"].lower() != "true", f"Test project is packable: {path}")
-        require(proof["PackageVersion"] == version, f"Wrong evaluated package version: {path}")
+        require(proof["PackageVersion"] == version and proof["Version"] == version and proof["Configuration"] == "Release", f"Wrong evaluated package version: {path}")
         require(proof["RepositoryUrl"].rstrip("/") == CORE_URL and
                 proof["PackageProjectUrl"].rstrip("/") == CORE_URL,
                 f"Noncanonical package metadata: {path}")
@@ -149,7 +162,7 @@ def inventory(root: Path, version: str, commit: str, *, workers: int = 4) -> dic
         require(all(row["frameworks"]), f"No evaluated frameworks: {path}")
         row["framework_properties"] = {}
         for framework in row["frameworks"]:
-            inner = evaluate(root, project, version, True, framework)
+            inner = evaluate(root, project, version, True, framework, mode=mode)
             require(inner["PackageId"] == row["id"] and inner["PackageVersion"] == version,
                     f"Framework changes package identity/version: {path}/{framework}")
             row["framework_properties"][framework] = {
@@ -175,7 +188,7 @@ def inventory(root: Path, version: str, commit: str, *, workers: int = 4) -> dic
     results.sort(key=lambda result: result[2]["project"])
     packages = sorted((row for row, _, _ in results if row), key=lambda row: row["id"].casefold())
     require(len({row["id"].casefold() for row in packages}) == len(packages), "Duplicate evaluated PackageId")
-    return {"version": version, "source_commit": commit, "repository_url": CORE_URL,
+    return {"mode": mode, "configuration": "Release", "version": version, "source_commit": commit, "repository_url": CORE_URL,
             "published": False, "packages": packages,
             "exclusions": sorted((row for _, row, _ in results if row), key=lambda row: row["project"]),
             "evaluations": [record for _, _, record in results], "external_package_exceptions": EXTERNAL_PACKAGES,
@@ -217,7 +230,7 @@ def read_staged_nuspecs(destination: Path, row: dict) -> None:
         row[hash_key] = hashlib.sha256(data).hexdigest()
 
 
-def stage_nuspecs(root: Path, row: dict, version: str, destination: Path) -> None:
+def stage_nuspecs(root: Path, row: dict, version: str, destination: Path, *, mode: str = "proof") -> None:
     destination.mkdir()
     # GenerateNuspec's condition is evaluated before its dependencies. Derive
     # the style through the SDK restore target before entering it; Pack itself
@@ -225,7 +238,7 @@ def stage_nuspecs(root: Path, row: dict, version: str, destination: Path) -> Non
     command = ["dotnet", "msbuild", str(root / row["project"]), "-nologo",
                "-target:_GetRestoreProjectStyle;GenerateNuspec",
                "-p:Configuration=Release", f"-p:Version={version}", f"-p:PackageVersion={version}",
-               "-p:ConsolidatedPackageProof=true", "-p:ContinuousIntegrationBuild=true", "-p:NoBuild=true",
+               *mode_properties(mode), "-p:ContinuousIntegrationBuild=true", "-p:NoBuild=true",
                "-p:ContinuePackingAfterGeneratingNuspec=false", f"-p:NuspecOutputPath={destination}",
                f"-p:PackageOutputPath={destination / 'forbidden-packages'}"]
     run(command, root, log=destination / "generate-nuspec.log")
@@ -238,10 +251,10 @@ def stage_sdk_metadata(root: Path, manifest: dict, output: Path, inspector: Path
     cache = {"archive_inspector": inspector, "source_commit": manifest["source_commit"]}
     for index, row in enumerate(manifest["packages"]):
         destination = staging / f"{index:03}-{row['id']}"
-        stage_nuspecs(root, row, manifest["version"], destination)
+        stage_nuspecs(root, row, manifest["version"], destination, mode=manifest.get("mode", "proof"))
         row["restore_assets"] = []
         for framework, properties in row["framework_properties"].items():
-            resolved = evaluate(root, root / row["project"], manifest["version"], True, framework, resolved=True)
+            resolved = evaluate(root, root / row["project"], manifest["version"], True, framework, resolved=True, mode=manifest.get("mode", "proof"))
             (destination / f"resolved.{framework}.json").write_text(json.dumps(resolved, indent=2) + "\n")
             after_restore = resolved["Properties"]
             require(after_restore["AssemblyName"] == properties["assembly_name"] and after_restore["PackageVersion"] == manifest["version"],
@@ -883,8 +896,8 @@ def provenance(root: Path, artifacts: Path, manifest: dict, output: Path, *, rem
                     pdb.write_bytes(symbols.read(assembly["pdb"]))
                     inspection = json.loads(run(["dotnet", str(executable), str(dll), str(pdb), "--inspect-documents"], root))
                     require(inspection["assembly_name"] == row["framework_properties"][assembly["framework"]]["assembly_name"], f"Packaged assembly identity mismatch: {row['id']}")
-                    require(inspection["assembly_version"] == "3.10.0.0", f"Packaged assembly was not compiled with proof version: {row['id']}")
-                    require(inspection["informational_version"] == f"{manifest['version']}+{manifest['source_commit']}", f"Assembly informational version does not identify exact proof head: {row['id']}")
+                    require(inspection["assembly_version"] == "3.10.0.0", f"Packaged assembly was not compiled with common release identity: {row['id']}")
+                    require(inspection["informational_version"] == f"{manifest['version']}+{manifest['source_commit']}", f"Assembly informational version does not identify exact source head: {row['id']}")
                     frame = verify_documents(root, row, assembly["framework"], inspection, manifest["source_commit"], remote, cache)
                     frame.update({key: inspection[key] for key in ("assembly_name", "assembly_version", "informational_version")})
                     frames.append(frame)
@@ -909,23 +922,28 @@ def require_empty_package_output(packages: Path) -> None:
             "Canonical packages output must be absent or an empty directory before proof; use an isolated worktree")
 
 
-def main() -> None:
+def main(*, mode: str = "proof") -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", required=True)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--inventory-only", action="store_true")
     parser.add_argument("--remote-sources", action="store_true", help="Fetch every tracked document from the exact pushed Core commit")
+    if mode == "candidate":
+        parser.add_argument("--baseline", type=Path, default=Path(__file__).with_name("consolidated-candidate-inventory-baseline.json"))
     args = parser.parse_args()
-    require(bool(PROOF_VERSION.fullmatch(args.version)), "Version must be 3.10.0-proof.<positive run>.<positive attempt>")
+    validate_mode(args.version, mode)
     root = Path(__file__).resolve().parents[2]
-    for name in ("IsPackable", "PackageVersion", "GeneratePackageOnBuild", "TargetFramework", "TargetFrameworks"):
+    for name in ("IsPackable", "PackageVersion", "GeneratePackageOnBuild", "TargetFramework", "TargetFrameworks", "Version", "Configuration", "ConsolidatedPackageProof", "ConsolidatedReleaseCandidate"):
         require(name not in os.environ, f"Proof refuses an inherited MSBuild override: {name}")
     output = args.output.resolve()
     require(not output.exists() and not output.is_relative_to(root), "Output must be a new directory outside the worktree")
     output.mkdir(parents=True)
     commit = clean_head(root)
-    manifest = inventory(root, args.version, commit)
+    manifest = inventory(root, args.version, commit, mode=mode)
     write_json(output / "inventory.json", manifest)
+    if mode == "candidate":
+        from prepare_consolidated_release_candidate import compare_inventory
+        compare_inventory(manifest, json.loads(args.baseline.read_text()), output / "inventory-diff.json")
     print(f"Evaluated {len(manifest['packages'])} packages and {len(manifest['exclusions'])} exclusions", flush=True)
     if args.inventory_only:
         require(clean_head(root) == commit, "Source changed during inventory evaluation")
@@ -935,7 +953,13 @@ def main() -> None:
     clientlibs = build_clientlibs(root, output)
     manifest["browser_assets"] = clientlibs["assets"]
     write_json(output / "studio-clientlibs.json", clientlibs)
-    environment = dict(os.environ, ConsolidatedPackageProof="true", ContinuousIntegrationBuild="true")
+    environment = dict(os.environ, ConsolidatedPackageProof=str(mode == "proof").lower(),
+                       ConsolidatedReleaseCandidate=str(mode == "candidate").lower(), ContinuousIntegrationBuild="true")
+    inputs = {"sdk": run(["dotnet", "--version"], root).strip(),
+              "node": run(["node", "--version"], root).strip(), "configuration": "Release",
+              "Version": args.version, "PackageVersion": args.version, "mode": mode}
+    manifest["build_inputs"] = inputs
+    write_json(output / "build-inputs.json", inputs)
     run([str(root / "build.sh"), "Compile+Pack", "--configuration", "Release", "--version", args.version], root,
         timeout=7200, log=output / "compile-pack.log", env=environment)
     artifacts = output / "artifacts"
@@ -947,9 +971,9 @@ def main() -> None:
     sources = provenance(root, artifacts, manifest, output, remote=args.remote_sources, inspector=inspector)
     write_json(output / "source-provenance.json", sources)
     from prove_consolidated_package_consumers import prove
-    consumers = prove(artifacts, manifest, output / "consumers")
+    consumers = prove(artifacts, manifest, output / "consumers") if mode == "proof" else {"status": "required_downstream_exact_archive"}
     require(clean_head(root) == commit, "Source changed during package proof")
-    receipt = {"result": "passed", "published": False, "source_commit": commit, "version": args.version,
+    receipt = {"result": "passed", "mode": mode, "build_inputs": inputs, "published": False, "source_commit": commit, "version": args.version,
                "package_count": len(manifest["packages"]), "exclusion_count": len(manifest["exclusions"]),
                "remote_sources_verified": args.remote_sources,
                "provenance": sources, "consumers": consumers,
@@ -958,7 +982,10 @@ def main() -> None:
     if not args.remote_sources:
         receipt["limits"].append("Tracked sources checked against exact local Git blobs; remote SourceLink fetch remains unverified.")
     write_json(output / "receipt.json", receipt)
-    print(f"Package proof passed: {output / 'receipt.json'}", flush=True)
+    if mode == "candidate":
+        from prepare_consolidated_release_candidate import seal
+        seal(output, commit)
+    print(f"Package {mode} passed: {output / 'receipt.json'}", flush=True)
 
 
 if __name__ == "__main__":
