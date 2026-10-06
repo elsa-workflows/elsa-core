@@ -450,7 +450,7 @@ def public_receipt(result: dict) -> dict:
             for phase, receipt in cell.get("phases", {}).items():
                 state = receipt["state"]
                 item["phases"][phase] = {
-                    "passed": receipt["passed"], "runtime": receipt["runtime"], "tenant_id": receipt["tenant_id"],
+                    "passed": receipt["passed"] and phase in cell.get("databases", {}), "runtime": receipt["runtime"], "tenant_id": receipt["tenant_id"],
                     "status": state["status"], "sub_status": state["sub_status"],
                     "state_bookmark_count": state["state_bookmark_count"], "stored_bookmark_count": state["stored_bookmark_count"],
                     "definition_json_sha256": state["definition_json_sha256"],
@@ -467,12 +467,81 @@ def public_receipt(result: dict) -> dict:
     return projected
 
 
+def stage_evidence(output: Path, result: dict) -> None:
+    """Retain original synthetic DB bytes plus explicitly projected execution logs."""
+    destination = output / "retained-evidence"
+    require(not destination.exists(), "Refusing to overwrite retained evidence")
+    destination.mkdir()
+    shutil.copy2(output / "public-upgrade-proof.json", destination / "public-upgrade-proof.json")
+    manifest = {"complete_matrix": result["complete_matrix"], "passed": result["passed"], "files": [], "cells": []}
+    for cell in result["cells"]:
+        identity = (cell["baseline"], cell["framework"])
+        require(identity in MATRIX, "Unknown cell cannot enter retained evidence")
+        relative = f"{identity[0]}-{identity[1]}"
+        source_dir = output / relative
+        require(not source_dir.is_symlink() and source_dir.resolve().is_relative_to(output.resolve()), "Retained cell escaped evidence directory")
+        target_dir = destination / relative
+        target_dir.mkdir()
+        files = [f"{context}.db{suffix}" for context in ("management", "runtime") for suffix in ("", "-wal")]
+        files += [f"baseline-{context}.snapshot.db" for context in ("management", "runtime")]
+        for name in files:
+            source = source_dir / name
+            if not source.exists() and not source.is_symlink():
+                continue
+            require(source.is_file() and not source.is_symlink() and source.resolve().is_relative_to(source_dir.resolve()), "Retained database escaped allowlist")
+            digest = sha256(source)
+            target = target_dir / name
+            shutil.copyfile(source, target)
+            require(sha256(target) == digest and sha256(source) == digest, "Synthetic database changed during retention")
+            manifest["files"].append({"file": f"{relative}/{name}", "sha256": digest, "bytes": target.stat().st_size})
+        diagnostic = {"baseline": identity[0], "framework": identity[1], "passed": cell["passed"], "commands": [], "phases": []}
+        allowed_logs = {source_dir / f"{phase}.log" for phase in ("suspend", "resume", "verify")}
+        allowed_logs |= {source_dir / label / f"{name}.log" for label in ("baseline", "candidate") for name in ("restore", "build")}
+        for command in cell.get("commands", []):
+            argv = command["command"]
+            kind = argv[1] if argv[1] in ("restore", "build") else argv[2]
+            require(kind in ("restore", "build", "suspend", "resume", "verify"), "Unknown command kind")
+            log = Path(command["log"])
+            # Build/restore records carry cwd paths in their logs. Permit only their exact two consumer locations.
+            require(log in allowed_logs and not log.is_symlink() and log.resolve().is_relative_to(source_dir.resolve()), "Command log escaped allowlist")
+            entry = {"kind": kind, "phase": kind if kind in ("suspend", "resume", "verify") else None,
+                     "exit_code": command["exit_code"], "timed_out": command["timed_out"],
+                     "failure_category": "command_failed" if command["exit_code"] != 0 or command["timed_out"] else None}
+            if log.is_file():
+                text = log.read_text(errors="replace")
+                entry.update(raw_log_sha256=sha256(log), raw_log_bytes=log.stat().st_size,
+                             diagnostic_codes=sorted(set(re.findall(r"\b(?:CS|MSB|NU|ASP)\d{3,5}\b", text)))[:30],
+                             ef_diagnostic_codes=sorted(set(re.findall(r"^(?:warn|fail): Microsoft\.EntityFrameworkCore\.[A-Za-z0-9.]+\[(\d+)\]", text, re.MULTILINE)))[:30],
+                             exception_types=sorted(set(re.findall(r"^(System\.[A-Za-z0-9_.]+Exception)(?::|$)", text, re.MULTILINE)))[:10])
+            diagnostic["commands"].append(entry)
+        for phase in ("suspend", "resume", "verify"):
+            path = source_dir / f"{phase}.json"
+            if not path.exists():
+                continue
+            require(not path.is_symlink() and path.resolve().is_relative_to(source_dir.resolve()), "Phase receipt escaped allowlist")
+            try:
+                receipt = json.loads(path.read_text())
+                valid_receipt = isinstance(receipt, dict) and receipt.get("phase") == phase
+            except json.JSONDecodeError:
+                receipt, valid_receipt = {}, False
+            diagnostic["phases"].append({"phase": phase, "runner_passed": receipt.get("passed") is True,
+                                         "validation_passed": phase in cell.get("databases", {}),
+                                         "failure_category": "receipt_validation_failed" if not valid_receipt else
+                                             (None if phase in cell.get("databases", {}) else "execution_or_validation_failed")})
+        if not cell["passed"]:
+            diagnostic["failure_category"] = "execution_or_validation_failed"
+        write_json(target_dir / "execution.json", diagnostic)
+        manifest["cells"].append({"baseline": identity[0], "framework": identity[1], "passed": cell["passed"], "execution_log": f"{relative}/execution.json"})
+    manifest["retention_complete"] = True
+    write_json(destination / "retention-manifest.json", manifest)
+
+
 def run(root: Path, archive: Path, output: Path, selected: list[tuple[str, str]]) -> dict:
     require(not output.exists(), "Refusing to reuse evidence/cache directory")
+    require(not output.resolve().is_relative_to(Path(__file__).resolve().parents[2]), "Consumers must be generated outside checkout")
     # Fail before restoring anything if the original package artifact is incomplete or altered.
     manifest, by_id, exceptions, exclusions = verify_artifact(root, archive)
     output.mkdir(parents=True)
-    require(not output.is_relative_to(Path(__file__).resolve().parents[2]), "Consumers must be generated outside checkout")
     result = {"passed": False, "complete_matrix": False, "published": False, "proof_run": PROOF_RUN, "proof_artifact": PROOF_ARTIFACT,
               "candidate_source": PROOF_SOURCE, "candidate_version": PROOF_VERSION, "manifest_sha256": sha256(root / "verified-artifacts.json"),
               "original_receipt_sha256": sha256(root / "receipt.json"), "fixture_sha256": sha256(FIXTURE), "cells": []}
@@ -504,6 +573,7 @@ def run(root: Path, archive: Path, output: Path, selected: list[tuple[str, str]]
     finally:
         write_json(output / "upgrade-proof.json", result)
         write_json(output / "public-upgrade-proof.json", public_receipt(result))
+        stage_evidence(output, result)
     return result
 
 

@@ -51,12 +51,11 @@ jobs:
           --proof-artifacts "$RUNNER_TEMP/verified-proof"
           --proof-archive "$RUNNER_TEMP/upgrade-input/proof.zip"
           --output "$RUNNER_TEMP/persisted-upgrade-proof"
-      - name: Retain allowlisted synthetic receipts
+      - name: Retain allowlisted synthetic databases and diagnostics
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: persisted-upgrade-proof-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            ${{ runner.temp }}/persisted-upgrade-proof/public-upgrade-proof.json
+          path: ${{ runner.temp }}/persisted-upgrade-proof/retained-evidence
           if-no-files-found: warn
           retention-days: 7

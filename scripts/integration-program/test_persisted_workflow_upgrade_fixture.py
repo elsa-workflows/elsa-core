@@ -69,7 +69,7 @@ class UpgradeContracts(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             database, snapshot = root / "state.db", root / "snapshot.db"
-            with sqlite3.connect(database) as writer:
+            with fixture.closing(sqlite3.connect(database)) as writer, writer:
                 writer.execute("PRAGMA journal_mode=WAL")
                 writer.execute('CREATE TABLE "__EFMigrationsHistory" (MigrationId TEXT, ProductVersion TEXT)')
                 writer.execute('INSERT INTO "__EFMigrationsHistory" VALUES ("migration-1", "version")')
@@ -135,6 +135,60 @@ class UpgradeContracts(unittest.TestCase):
         self.assertNotIn("properties", serialized)
         self.assertEqual(len(public["cells"]), 6)
         self.assertEqual(next(cell for cell in public["cells"] if cell["baseline"] == "3.8.4" and cell["framework"] == "net8.0")["result"], "failed")
+
+    def test_checkout_output_rejected_before_any_directory_creation(self):
+        output = Path(fixture.__file__).resolve().parents[2] / "forbidden-proof-output"
+        self.assertFalse(output.exists())
+        with patch.object(fixture, "verify_artifact") as verify, self.assertRaisesRegex(RuntimeError, "outside checkout"):
+            fixture.run(Path("/missing"), Path("/missing.zip"), output, [])
+        verify.assert_not_called()
+        self.assertFalse(output.exists())
+
+    def test_retention_preserves_failed_synthetic_database_and_sanitizes_logs(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            cell = root / "3.8.4-net8.0"
+            cell.mkdir()
+            (cell / "management.db").write_bytes(b"synthetic original database")
+            (cell / "suspend.log").write_text("System.InvalidOperationException: private-secret\nerror CS1234 /private/path\n")
+            (cell / "suspend.json").write_text(json.dumps({"phase": "suspend", "passed": False, "error": "secret stack"}))
+            (cell / "NuGet.Config").write_text("credential-secret")
+            (cell / "management.db-shm").write_text("excluded")
+            (root / "public-upgrade-proof.json").write_text('{"passed":false}')
+            result = {"passed": False, "complete_matrix": False, "cells": [{"baseline": "3.8.4", "framework": "net8.0", "passed": False,
+                       "commands": [{"command": ["dotnet", "/private/Consumer.dll", "suspend"], "log": str(cell / "suspend.log"), "exit_code": 1, "timed_out": False}]}]}
+            fixture.stage_evidence(root, result)
+            staged = root / "retained-evidence"
+            self.assertEqual((staged / "3.8.4-net8.0/management.db").read_bytes(), (cell / "management.db").read_bytes())
+            execution = json.loads((staged / "3.8.4-net8.0/execution.json").read_text())
+            self.assertEqual(execution["phases"], [{"phase": "suspend", "runner_passed": False, "validation_passed": False, "failure_category": "execution_or_validation_failed"}])
+            self.assertEqual(execution["commands"][0]["exit_code"], 1)
+            self.assertEqual(execution["commands"][0]["raw_log_sha256"], fixture.sha256(cell / "suspend.log"))
+            self.assertEqual(execution["commands"][0]["diagnostic_codes"], ["CS1234"])
+            serialized = json.dumps(execution)
+            self.assertNotIn("secret", serialized)
+            self.assertNotIn("/private", serialized)
+            self.assertFalse((staged / "3.8.4-net8.0/NuGet.Config").exists())
+            self.assertFalse((staged / "3.8.4-net8.0/suspend.log").exists())
+            self.assertFalse((staged / "3.8.4-net8.0/management.db-shm").exists())
+            self.assertFalse(json.loads((staged / "retention-manifest.json").read_text())["complete_matrix"])
+
+    def test_retention_rejects_database_symlink_and_outside_log(self):
+        for kind in ("database", "log"):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                cell = root / "3.8.4-net8.0"
+                cell.mkdir()
+                outside = root / "outside"
+                outside.write_text("secret")
+                (root / "public-upgrade-proof.json").write_text("{}")
+                record = {"baseline": "3.8.4", "framework": "net8.0", "passed": False, "commands": []}
+                if kind == "database":
+                    (cell / "management.db").symlink_to(outside)
+                else:
+                    record["commands"] = [{"command": ["dotnet", "restore"], "log": str(outside), "exit_code": 1, "timed_out": False}]
+                with self.assertRaisesRegex(RuntimeError, "allowlist"):
+                    fixture.stage_evidence(root, {"passed": False, "complete_matrix": False, "cells": [record]})
 
 
 if __name__ == "__main__":

@@ -37,7 +37,10 @@ var options = new JsonSerializerOptions { WriteIndented = true };
 string Get(string key) => spec[key]!.GetValue<string>();
 void Require(bool condition, string message)
 {
-    if (!condition) throw new InvalidOperationException(message);
+    if (!condition)
+    {
+        throw new InvalidOperationException(message);
+    }
 }
 JsonNode Json(object? value) => JsonSerializer.SerializeToNode(value)!;
 
@@ -128,7 +131,10 @@ try
                 Require(JsonNode.DeepEquals(Json(response.Output), spec["expected"]), "Response output value/type mismatch");
                 receipt["state"] = await ReadState(true, original);
             }
-            else receipt["state"] = receipt["before"]!.DeepClone();
+            else
+            {
+                receipt["state"] = receipt["before"]!.DeepClone();
+            }
         }
 
         async Task<JsonObject> ReadState(bool finished, JsonObject? original)
@@ -151,8 +157,10 @@ try
             var activities = graph["activities"]!.AsArray();
             Require(activities.Count == expectedActivities.Length, "Unexpected activity graph");
             for (var index = 0; index < activities.Count; index++)
+            {
                 Require(activities[index]!["id"]!.GetValue<string>() == expectedActivities[index].Item1 && activities[index]!["type"]!.GetValue<string>() == expectedActivities[index].Item2
                     && activities[index]!["version"]!.GetValue<int>() == 1, "Activity identity/version/order mismatch");
+            }
             var instance = await sp.GetRequiredService<IWorkflowInstanceStore>().FindAsync(new WorkflowInstanceFilter { Id = Get("instance_id") }, ct);
             Require(instance != null && instance.WorkflowState != null, "Persisted instance/state is missing");
             var state = instance!.WorkflowState ?? throw new InvalidOperationException("Loaded state is null");
@@ -199,16 +207,25 @@ try
                 result["bookmark"] = Json(bookmark);
                 result["stored_bookmark"] = Json(stored);
                 if (original != null)
+                {
                     Require(JsonNode.DeepEquals(result["bookmark"], original["bookmark"]) && JsonNode.DeepEquals(result["stored_bookmark"], original["stored_bookmark"]),
                         "Original bookmark payload/identity changed before resume");
+                }
             }
             if (original != null)
+            {
                 foreach (var key in new[] { "instance_id", "definition_id", "definition_version_id", "correlation_id", "definition_version", "definition_json_sha256", "input", "sentinel", "input_metadata", "output_metadata", "activity_graph" })
+                {
                     Require(JsonNode.DeepEquals(result[key], original[key]), "Original persisted field changed: " + key);
+                }
+            }
             return result;
         }
     }
-    finally { await tenants.DeactivateTenantsAsync(ct); }
+    finally
+    {
+        await tenants.DeactivateTenantsAsync(ct);
+    }
     receipt["assemblies"] = Json(AppDomain.CurrentDomain.GetAssemblies()
         .Where(x => x.GetName().Name!.StartsWith("Elsa", StringComparison.Ordinal) && !x.IsDynamic)
         .OrderBy(x => x.GetName().Name).Select(x => new
@@ -227,7 +244,10 @@ catch (Exception error)
     Console.Error.WriteLine(error);
     Environment.ExitCode = 1;
 }
-finally { File.WriteAllText(receiptPath, receipt.ToJsonString(options)); }
+finally
+{
+    File.WriteAllText(receiptPath, receipt.ToJsonString(options));
+}
 
 static async Task<JsonObject> Migrations(IServiceProvider services, CancellationToken ct)
 {
