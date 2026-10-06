@@ -112,6 +112,14 @@ resource being materialized is distinct from its bytes being requested by the
 browser. WASM-managed resources additionally require reviewed conversion and
 executed-byte evidence.
 
+Non-Server execution prepares one isolated, locked converter decoder and captures
+the actual client build's converter loads. Reused builds revalidate the original
+traces. The selected approved tuple drives package PE-to-WebCIL verification;
+static and managed resources share the browser response inventory without path
+collisions. See [converter selection](converter-selection.md). Successful
+conversion or resource delivery alone does not grant the remaining WASM host or
+workflow assertions.
+
 This fixture performs no package publication, deployment, publisher cutover or
 repository archival. It does not certify mixed-version pairs, npm distributions,
 production identity providers or every optional connector/provider.

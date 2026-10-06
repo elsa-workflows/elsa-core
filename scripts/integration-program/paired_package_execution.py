@@ -20,6 +20,7 @@ import consolidated_candidate_input as candidate
 import materialize_paired_package_hosts as hosts
 import paired_package_baseline_provenance as baseline
 import paired_package_baseline_resources as baseline_resources
+import paired_package_converter_selection as converter_selection
 import paired_package_provenance as provenance
 import paired_package_released_documents as documents
 import paired_package_wasm_resources as wasm_resources
@@ -180,9 +181,11 @@ def evidence_gaps(request) -> list[str]:
             missing.append("baseline_loaded_assemblies")
         if not callable(getattr(baseline_resources, "derive_baseline_resources", None)):
             missing.append("baseline_browser_resources")
-    # Backend metadata alone cannot attest browser-loaded WASM assemblies.
     if request.host != "server":
-        missing.append("wasm_runtime_and_converter")
+        if not callable(getattr(converter_selection, "prepare_decoder", None)):
+            missing.append("wasm_converter_selection")
+        if not callable(getattr(wasm_resources, "derive_candidate_wasm_resources", None)):
+            missing.append("wasm_package_resources")
     return missing
 
 
@@ -294,12 +297,25 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
         evidence["stage"] = "materialize"
         layout = hosts.materialize(request, group, nuget_config=config, packages_root=group / "packages", sdk=sdk)
         evidence["stage"] = "build"
-        evidence["commands"] = _command_receipts(hosts.build(layout), group)
+        build_options = {}
+        if host != "server":
+            evidence["stage"] = "converter_preparation"
+            build_options["converter_decoder"] = converter_selection.prepare_decoder(
+                private / "converter-decoder", sdk, hosts.isolated_environment(layout))
+        evidence["stage"] = "build"
+        commands = hosts.build(layout, **build_options)
+        evidence["commands"] = _command_receipts(commands, group)
+        selections = [command["converter_selection"] for command in commands if "converter_selection" in command]
+        require(len(selections) == (0 if host == "server" else 1), "Missing or ambiguous client converter selection")
+        inventory_options = {}
+        if selections:
+            evidence["converter_selection"] = selections[0]
+            inventory_options["converter"] = selections[0]["converter"]
         validate = _project_validator(layout, verified_root, manifest)
         evidence["stage"] = "project_provenance"
         evidence["projects"] = {name: validate(project) for name, project in layout.project_paths.items()}
         evidence["stage"] = "resource_provenance"
-        inventory = _resource_inventory(layout, verified_root, manifest_hash)
+        inventory = _resource_inventory(layout, verified_root, manifest_hash, **inventory_options)
         evidence["resource_inventory"] = inventory
         evidence["stage"] = "owned_runtime"
         if version in documents.TOOL_VERSIONS:

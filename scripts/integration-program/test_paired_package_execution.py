@@ -445,12 +445,43 @@ class ExecutionContracts(unittest.TestCase):
         self.assertEqual("browser_resources", self.receipt()["stage"])
 
     def test_unavailable_evidence_fails_before_materialize_or_build(self):
-        with patch.object(execution.hosts, "materialize") as materialize:
+        with patch.object(execution.hosts, "materialize") as materialize, \
+                patch.object(execution.converter_selection, "prepare_decoder", None):
             with self.assertRaises(ValueError):
                 self.execute(("3.10.0", "net10.0", "wasm"))
             materialize.assert_not_called()
         receipt = json.loads((self.root / "retained/cells/3.10.0-net10.0-wasm/execution.json").read_text())
-        self.assertEqual(["wasm_runtime_and_converter"], receipt["missing_evidence"])
+        self.assertEqual(["wasm_converter_selection"], receipt["missing_evidence"])
+
+    def test_converter_capture_failure_stops_before_host_start(self):
+        self.pipeline()
+        self.patch(execution.hosts, "isolated_environment", return_value={})
+        self.patch(execution.converter_selection, "prepare_decoder", return_value=self.root / "Decoder.dll")
+        build = self.patch(execution.hosts, "build", side_effect=ValueError("PRIVATE-CONVERTER-ERROR"))
+        with self.assertRaises(ValueError):
+            self.execute(("3.10.0", "net10.0", "wasm"))
+        self.assertEqual(self.root / "Decoder.dll", build.call_args.kwargs["converter_decoder"])
+        self.assertFalse(any(event[0] == "start" for event in self.events))
+        receipt = (self.root / "retained/cells/3.10.0-net10.0-wasm/execution.json").read_text()
+        self.assertEqual("build", json.loads(receipt)["stage"])
+        self.assertNotIn("PRIVATE", receipt)
+
+    def test_wasm_inventory_receives_only_the_actual_build_selection(self):
+        self.pipeline()
+        self.patch(execution.hosts, "isolated_environment", return_value={})
+        self.patch(execution.converter_selection, "prepare_decoder", return_value=self.root / "Decoder.dll")
+        selection = {"converter": {"task_sha256": "a" * 64}}
+        self.patch(execution.hosts, "build", return_value=[{"converter_selection": selection}])
+        self.patch(execution, "_command_receipts", return_value=[])
+        # Stop at the boundary after observing the selected build tuple; a mock
+        # cannot certify real WASM runtime/browser behavior.
+        inventory = self.patch(execution, "_resource_inventory", side_effect=ValueError("stop"))
+        with self.assertRaises(ValueError):
+            self.execute(("3.10.0", "net10.0", "wasm"))
+        self.assertEqual(selection["converter"], inventory.call_args.kwargs["converter"])
+        receipt = json.loads((self.root / "retained/cells/3.10.0-net10.0-wasm/execution.json").read_text())
+        self.assertEqual(selection, receipt["converter_selection"])
+        self.assertFalse(any(event[0] == "start" for event in self.events))
 
     def test_group_cache_is_distinct_across_frameworks(self):
         self.pipeline()
