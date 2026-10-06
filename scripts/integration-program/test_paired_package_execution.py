@@ -83,6 +83,36 @@ class ExecutionContracts(unittest.TestCase):
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
                 execution.selected_cells(invalid)
 
+    def test_production_feature_policy_keeps_secrets_mandatory_for_all_candidate_cells(self):
+        candidates, baselines = [], []
+        for key in execution.selected_cells(None):
+            request = execution.cell_request(key)
+            self.assertEqual(key, (request.version, request.framework, request.host))
+            self.assertEqual("full", request.permission_profile)
+            if request.version == "3.10.0":
+                candidates.append(key)
+                self.assertEqual(("workflow-contexts", "secrets"), request.backend_features)
+            else:
+                baselines.append(key)
+                self.assertEqual(("workflow-contexts",), request.backend_features)
+        self.assertEqual(12, len(candidates))
+        self.assertEqual(24, len(baselines))
+        with self.assertRaisesRegex(ValueError, "Invalid package browser cell"):
+            execution.cell_request(("unreviewed", "net10.0", "server"))
+
+    def test_requested_features_are_retained_even_when_evidence_preflight_fails(self):
+        self.patch(execution, "evidence_gaps", return_value=["unavailable_evidence"])
+        for version in execution.browser.VERSIONS:
+            with self.subTest(version=version), self.assertRaises(ValueError):
+                self.execute((version, "net10.0", "server"))
+            receipt = json.loads((self.root / "retained" / "cells" / f"{version}-net10.0-server" / "execution.json").read_text())
+            expected = ["workflow-contexts", "secrets"] if version == "3.10.0" else ["workflow-contexts"]
+            self.assertEqual(expected, receipt["requested_backend_features"])
+            self.assertEqual("full", receipt["permission_profile"])
+            self.assertEqual("candidate_representative_features" if version == "3.10.0" else
+                             "released_shell_editor_export_contexts_only", receipt["feature_policy"])
+            self.assertEqual("failed", receipt["result"])
+
     def test_valid_pipeline_verifies_before_start_and_retains_no_private_handle(self):
         self.pipeline()
         self.assertEqual("passed", self.execute()["result"])

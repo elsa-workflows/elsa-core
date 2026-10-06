@@ -39,6 +39,16 @@ def selected_cells(cell: str | None) -> list[tuple[str, str, str]]:
     return [key]
 
 
+def cell_request(key: tuple[str, str, str]) -> hosts.CellRequest:
+    require(key in browser.MATRIX, "Invalid package browser cell")
+    version, framework, host = key
+    # Released shell/editor/export smoke does not certify optional EF Secrets.
+    # Its published lifetime defect remains recorded; candidate coverage is full.
+    features = (("workflow-contexts", "secrets") if version == candidate.PRODUCER["version"]
+                else ("workflow-contexts",))
+    return hosts.CellRequest(host, framework, version, backend_features=features)
+
+
 def _write(path: Path, value: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     require(not path.exists() and not path.is_symlink(), "Refusing to overwrite execution evidence")
@@ -176,10 +186,14 @@ def _command_receipts(commands: list[dict], group: Path) -> list[dict]:
 def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, manifest: dict,
                  manifest_hash: str, sdk: str) -> dict:
     version, framework, host = key
-    request = hosts.CellRequest(host, framework, version)
+    request = cell_request(key)
     cell_root = retained / "cells" / f"{version}-{framework}-{host}"
     evidence = {"schema": 1, "version": version, "framework": framework, "host": host,
-                "execution_sdk": sdk, "result": "failed", "stage": "evidence_preflight"}
+                "execution_sdk": sdk, "result": "failed", "stage": "evidence_preflight",
+                "requested_backend_features": list(request.backend_features),
+                "permission_profile": request.permission_profile,
+                "feature_policy": ("candidate_representative_features" if version == candidate.PRODUCER["version"]
+                                   else "released_shell_editor_export_contexts_only")}
     original_browser = None
     try:
         evidence["missing_evidence"] = evidence_gaps(request)
