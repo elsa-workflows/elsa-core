@@ -12,6 +12,7 @@ on:
       - 'scripts/integration-program/run_stable_persisted_workflow_upgrade_fixture.py'
       - 'scripts/integration-program/test_stable_persisted_workflow_upgrade_fixture.py'
       - 'scripts/integration-program/prepare_consolidated_release_candidate.py'
+      - 'scripts/integration-program/consolidated_candidate_input.py'
       - 'scripts/integration-program/persisted-workflow-upgrade/**'
       - 'scripts/integration-program/prove_consolidated_package_consumers.py'
   workflow_dispatch:
