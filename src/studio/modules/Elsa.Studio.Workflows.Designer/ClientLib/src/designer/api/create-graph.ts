@@ -14,6 +14,7 @@ import {getActivityMeasurementScopeClass} from "./calculate-activity-size";
 import {arrangeSequenceGraph, moveSelectedSequenceNode, normalizeSequenceOrientation, withSuppressedGraphUpdated} from "./sequence-mode";
 import {applyDesignerThemeVariables, X6DesignerTheme} from "./apply-graph-theme";
 import {createDesignerGridOptions, resolveDesignerGridOptions} from "./grid-options";
+import {registerEdgeHoverTools} from "./edge-hover-tools";
 import {ActivityShape, FlowchartEdgeShape, getDesignerModePolicy, resolveDesignerMode} from './designer-mode';
 import {applyStateMachineEdgeAccessibility, applyStateMachineNodeAccessibility} from '../internal/state-machine-accessibility';
 
@@ -334,31 +335,7 @@ export async function createGraph(containerId: string, componentRef: DotNetCompo
         return false;
     });
 
-    graph.on("edge:mouseenter", ({cell}) => {
-        if (!modePolicy.allowsInteractiveEdges) {
-            return false;
-        }
-
-        cell.addTools([
-            {name: "vertices"},
-            {
-                name: "button-remove",
-                args: {distance: 20},
-            },
-        ]);
-        return false;
-    });
-
-    graph.on("edge:mouseleave", ({cell}) => {
-        if (!modePolicy.allowsInteractiveEdges) {
-            return false;
-        }
-
-        if (cell.hasTool("button-remove")) {
-            cell.removeTool("button-remove");
-        }
-        return false;
-    });
+    registerEdgeHoverTools(graph, modePolicy.allowsInteractiveEdges);
 
     graph.on('node:click', async args => {
         const {e, node} = args;
