@@ -199,6 +199,40 @@ class PackageProofTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "exact Git blob"):
                 proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, False, cache)
 
+    def test_external_embedded_sources_require_pinned_archive_and_restore_identity(self):
+        version = "0.0.1-preview.53"
+        identifier = "elsa.platform.packagemanifest.generator"
+        package = self.directory / "packages" / identifier / version
+        package.mkdir(parents=True)
+        archive = package / f"{identifier}.{version}.nupkg"
+        prefix = "contentFiles/cs/any/Elsa.Platform.PackageManifest.Generator.Hints/"
+        with zipfile.ZipFile(archive, "w") as contents:
+            for name in ("ManifestSettingAttribute", "A", "B", "C", "D", "E", "F", "G", "H"):
+                contents.writestr(prefix + name + ".cs", b"external")
+        pinned = hashlib.sha256(archive.read_bytes()).hexdigest()
+        assets = {"libraries": {f"Elsa.Platform.PackageManifest.Generator/{version}": {"type": "package"}},
+                  "packageFolders": {str(self.directory / "packages"): {}}}
+        encoded = __import__("json").dumps(assets).encode()
+        (self.directory / "project.assets.json").write_bytes(encoded)
+        self.row["restore_assets"] = [{"framework": "net8.0", "path": "project.assets.json", "sha256": hashlib.sha256(encoded).hexdigest()}]
+        checksum = hashlib.sha256(b"external").hexdigest()
+        document = {"path": f"/_1/{identifier}/{version}/{prefix}ManifestSettingAttribute.cs",
+                    "algorithm": "sha256", "checksum": checksum, "embedded_checksum": checksum}
+        with patch.dict(proof.GENERATOR_SOURCE_PINS, {version: pinned}):
+            result = proof.verify_external_document(self.directory, self.row, "net8.0", document, {})
+            self.assertEqual(pinned, result["archive_sha256"])
+            self.assertFalse(result["remote_fetched"])
+            document["embedded_checksum"] = None
+            with self.assertRaisesRegex(ValueError, "embedded bytes"):
+                proof.verify_external_document(self.directory, self.row, "net8.0", document, {})
+            document["embedded_checksum"] = checksum
+            archive.write_bytes(b"tampered cache")
+            with self.assertRaisesRegex(ValueError, "official feed pin"):
+                proof.verify_external_document(self.directory, self.row, "net8.0", document, {})
+        document["path"] = document["path"].replace(version, "0.0.1-preview.79")
+        with self.assertRaisesRegex(ValueError, "Unreviewed external"):
+            proof.verify_external_document(self.directory, self.row, "net8.0", document, {})
+
     def test_unmapped_and_wrong_repository_documents_fail(self):
         inspection = self.inspection("src/studio/example/Example.cs")
         inspection["source_link"]["documents"]["/_/*"] = f"https://raw.githubusercontent.com/elsa-workflows/elsa-studio/{COMMIT}/*"

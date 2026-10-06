@@ -25,3 +25,16 @@ Fresh-cache package-only consumers exercise representative Core, Extensions and 
 `inventory.json`, `verified-artifacts.json`, `source-provenance.json`, command logs, consumer evidence and `receipt.json` retain the result. A receipt is written only after all checks succeed and the source is still the same clean commit. No step has publisher credentials, pushes a package, deploys a host, disables a source publisher or changes package ownership. The normal production Packages workflow never opts in. npm package proof and live Slack credential certification remain separate work.
 
 The earlier bounded Slack proof [#8260](https://github.com/elsa-workflows/elsa-core/issues/8260) and Studio Core provenance proof [#8443](https://github.com/elsa-workflows/elsa-core/issues/8443) are completed prerequisites. Their individual scripts and historical package-scoped handoff records remain evidence for those bounded snapshots; the accepted lockstep ADR governs the full 3.10 publisher cutover.
+
+## Pinned external compiler content sources
+
+The real `Elsa.Common` ShellFeatures smoke artifact emitted seven embedded executable `Generator.Hints` documents from the manifest generator cache. These are external compiler content sources, not Core Git documents. The verifier requires their actual restored package identity, an exact pinned archive hash, the audited nine `contentFiles/cs/any/Elsa.Platform.PackageManifest.Generator.Hints/*.cs` payloads, and matching PDB and embedded checksums. It reports separate external coverage and never claims these files were fetched from Core SourceLink URLs. Other untracked/cache sources remain unsupported and fail.
+
+Both archives were independently downloaded on 2026-10-06 from the recorded [official Elsa feed](https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json) and matched the restore cache byte for byte:
+
+| Generator version | Official archive SHA-256 |
+| --- | --- |
+| [0.0.1-preview.50](https://f.feedz.io/elsa-workflows/elsa-3/nuget/v3/packages/elsa.platform.packagemanifest.generator/0.0.1-preview.50/elsa.platform.packagemanifest.generator.0.0.1-preview.50.nupkg) | `56310f3c6606c793bce875f0dee5746dc5f42721d0cbbfde5fa3c4b61e6f15aa` |
+| [0.0.1-preview.53](https://f.feedz.io/elsa-workflows/elsa-3/nuget/v3/packages/elsa.platform.packagemanifest.generator/0.0.1-preview.53/elsa.platform.packagemanifest.generator.0.0.1-preview.53.nupkg) | `ba9b6c28e11eec6f6c595ebf328da1b925dbee9ca2590aa5b6fa1ec4c2052780` |
+
+Changing these pins requires another archive/source audit. This allowance does not enable Feedz fallback for clean runtime consumers; compiler tooling is private and the consumer lane continues to use only the proof feed and NuGet.org.

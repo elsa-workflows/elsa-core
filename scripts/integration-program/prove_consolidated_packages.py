@@ -14,6 +14,7 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
+import signal
 import subprocess
 import tempfile
 import time
@@ -43,18 +44,35 @@ def require(condition: bool, message: str) -> None:
 
 def run(command: list[str], cwd: Path, *, timeout: int = 300, log: Path | None = None,
         env: dict | None = None) -> str:
+    def execute(stream=None):
+        process = subprocess.Popen(command, cwd=cwd, env=env, text=True,
+                                   stdout=stream if stream else subprocess.PIPE,
+                                   stderr=subprocess.STDOUT if stream else subprocess.PIPE,
+                                   start_new_session=os.name == "posix")
+        try:
+            stdout, stderr = process.communicate(timeout=timeout)
+        except BaseException:
+            if process.poll() is None:
+                if os.name == "posix":
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                else:
+                    process.kill()
+                process.communicate()
+            raise
+        require(process.returncode == 0,
+                f"Command failed ({process.returncode}): {command!r}\n" +
+                (f"See {log}" if stream else f"{stdout}\n{stderr}"))
+        return stdout or ""
+
     if log is None:
-        result = subprocess.run(command, cwd=cwd, env=env, text=True,
-                                capture_output=True, timeout=timeout)
-        output = result.stdout
-        require(result.returncode == 0, f"Command failed: {command!r}\n{output}\n{result.stderr}")
-        return output
+        return execute()
     with log.open("w") as stream:
         stream.write(json.dumps(command) + "\n")
         stream.flush()
-        result = subprocess.run(command, cwd=cwd, env=env, text=True,
-                                stdout=stream, stderr=subprocess.STDOUT, timeout=timeout)
-    require(result.returncode == 0, f"Command failed ({result.returncode}); see {log}")
+        execute(stream)
     return log.read_text()
 
 
@@ -380,6 +398,60 @@ def source_url(path: str, maps: dict[str, str]) -> str | None:
     return max(matches, default=(0, None))[1]
 
 
+# Independently downloaded from the recorded official Feedz source on 2026-10-06.
+# These pins authorize only the nine Generator.Hints content sources, not a
+# general exemption for untracked files or arbitrary NuGet compiler packages.
+GENERATOR_SOURCE_PINS = {
+    "0.0.1-preview.50": "56310f3c6606c793bce875f0dee5746dc5f42721d0cbbfde5fa3c4b61e6f15aa",
+    "0.0.1-preview.53": "ba9b6c28e11eec6f6c595ebf328da1b925dbee9ca2590aa5b6fa1ec4c2052780",
+}
+GENERATOR_FEED = "https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json"
+GENERATOR_SOURCE = re.compile(
+    r"^/_[0-9]+/elsa\.platform\.packagemanifest\.generator/([^/]+)/"
+    r"(contentFiles/cs/any/Elsa\.Platform\.PackageManifest\.Generator\.Hints/[A-Za-z]+\.cs)$")
+
+
+def verify_external_document(root: Path, row: dict, framework: str, document: dict, cache: dict) -> dict | None:
+    match = GENERATOR_SOURCE.fullmatch(document["path"])
+    if match is None:
+        return None
+    version, entry = match.groups()
+    require(version in GENERATOR_SOURCE_PINS, f"Unreviewed external source package version: {version}")
+    record = next((item for item in row["restore_assets"] if item["framework"] == framework), None)
+    require(record is not None, f"Missing restored dependency evidence for external source: {row['id']}")
+    assets_file = root / record["path"]
+    assets_bytes = assets_file.read_bytes()
+    require(hashlib.sha256(assets_bytes).hexdigest() == record["sha256"], "Restored dependency evidence changed")
+    assets = json.loads(assets_bytes)
+    key = f"Elsa.Platform.PackageManifest.Generator/{version}"
+    require(assets.get("libraries", {}).get(key, {}).get("type") == "package",
+            f"External PDB source package is not an actual restored dependency: {key}")
+    cache_key = ("external", version)
+    if cache_key not in cache:
+        candidates = [Path(folder) / "elsa.platform.packagemanifest.generator" / version /
+                      f"elsa.platform.packagemanifest.generator.{version}.nupkg"
+                      for folder in assets.get("packageFolders", {})]
+        candidates = [path for path in candidates if path.is_file() and not path.is_symlink()]
+        require(bool(candidates), f"Missing pinned external archive: {key}")
+        data = candidates[0].read_bytes()
+        require(hashlib.sha256(data).hexdigest() == GENERATOR_SOURCE_PINS[version],
+                f"External source archive differs from official feed pin: {key}")
+        with zipfile.ZipFile(candidates[0]) as archive:
+            names = archive_names(archive)
+            prefix = "contentFiles/cs/any/Elsa.Platform.PackageManifest.Generator.Hints/"
+            sources = {name: archive.read(name) for name in names if name.startswith(prefix) and name.endswith(".cs")}
+            require(len(sources) == 9 and all("/" not in name[len(prefix):] for name in sources),
+                    f"Pinned generator archive does not contain the audited nine hints: {key}")
+        cache[cache_key] = sources
+    require(entry in cache[cache_key], f"External document is absent from pinned content sources: {entry}")
+    checksum = hashlib.new(document["algorithm"], cache[cache_key][entry]).hexdigest()
+    require(checksum == document["checksum"] and document.get("embedded_checksum") == checksum,
+            f"External source document/embedded bytes differ from pinned archive: {entry}")
+    return {"path": document["path"], "algorithm": document["algorithm"], "checksum": checksum,
+            "external_package": key, "archive_entry": entry, "archive_sha256": GENERATOR_SOURCE_PINS[version],
+            "feed": GENERATOR_FEED, "embedded": True, "remote_fetched": False}
+
+
 def verify_documents(root: Path, row: dict, framework: str, inspection: dict,
                      commit: str, remote: bool, cache: dict | None = None) -> dict:
     cache = cache if cache is not None else {}
@@ -392,7 +464,7 @@ def verify_documents(root: Path, row: dict, framework: str, inspection: dict,
     require(bool(documents), f"Portable PDB has no source documents: {row['id']}/{framework}")
     seen = set()
     counts = {"tracked_documents": 0, "remote_documents": 0, "embedded_tracked_documents": 0,
-              "embedded_generated_documents": 0}
+              "embedded_generated_documents": 0, "embedded_external_documents": 0}
     records = []
     project_dir = PurePosixPath(row["project"]).parent.as_posix()
     for document in documents:
@@ -404,6 +476,11 @@ def verify_documents(root: Path, row: dict, framework: str, inspection: dict,
         require(algorithm in ("sha1", "sha256") and bool(re.fullmatch(r"[0-9a-f]+", checksum)), "Invalid document checksum")
         embedded = document.get("embedded_checksum")
         require(embedded is None or embedded == checksum, f"Embedded source checksum mismatch: {path}")
+        external = verify_external_document(root, row, framework, document, cache)
+        if external is not None:
+            counts["embedded_external_documents"] += 1
+            records.append(external)
+            continue
         url = source_url(path, maps)
         require(url is not None and url.startswith(prefix), f"Unmapped source document: {path}")
         relative = url[len(prefix):]
@@ -468,7 +545,9 @@ def provenance(root: Path, artifacts: Path, manifest: dict, output: Path, *, rem
                     require(inspection["assembly_name"] == row["framework_properties"][assembly["framework"]]["assembly_name"], f"Packaged assembly identity mismatch: {row['id']}")
                     require(inspection["assembly_version"] == "3.10.0.0", f"Packaged assembly was not compiled with proof version: {row['id']}")
                     require(inspection["informational_version"] == f"{manifest['version']}+{manifest['source_commit']}", f"Assembly informational version does not identify exact proof head: {row['id']}")
-                    frames.append(verify_documents(root, row, assembly["framework"], inspection, manifest["source_commit"], remote, cache))
+                    frame = verify_documents(root, row, assembly["framework"], inspection, manifest["source_commit"], remote, cache)
+                    frame.update({key: inspection[key] for key in ("assembly_name", "assembly_version", "informational_version")})
+                    frames.append(frame)
             results.append({"id": row["id"], "frameworks": frames})
     return results
 
