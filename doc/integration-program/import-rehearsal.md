@@ -1,6 +1,6 @@
-# Consolidation history rehearsal
+# Consolidation history rehearsal (historical evidence)
 
-The [history ADR](../adr/2026-09-23-preserve-upstream-history-during-consolidation.md) and `scripts/integration-program/rehearse-import.py` implement a disposable tree/history proof for #8213. The rehearsal does not migrate the live source tree or establish build compatibility.
+This page records the 2026-09-23 disposable rehearsal for #8213. It is not the landed import or a current source-layout/status ledger. The history-bearing import merged through [#8409](https://github.com/elsa-workflows/elsa-core/pull/8409) as `8b34ab1e71c22c853e1aa340774231c80e92e677`; [#8624](https://github.com/elsa-workflows/elsa-core/pull/8624) later reconciled release/source history at `6dbfc58624c28e147a90e2d2b0d1a610817012e2`. See the [history ADR](../adr/2026-09-23-preserve-upstream-history-during-consolidation.md) for the landed path map and the [solution-grouping guide](consolidation/product-solution-filters.md) for the current project grouping.
 
 ## Run
 
@@ -26,10 +26,10 @@ The output path must not exist and must be outside all source checkouts and Git 
 | Extensions | `33fa0bfd28c7585240e3d4f665058c067b17e287` | 1,665 |
 | Studio | `9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822` | 2,106 |
 
-The disposable tree has **9,604 files**, with exact blob/mode equality and no destination collision. `git merge-base --is-ancestor` passed for all three original tips; `git fsck --full --no-dangling` passed for the result and complete reachable history. The first local evidence commit was `9755bef905be5a9ba7af07c4b25676574e6ab6ca`; it is deliberately not pushed. Repeating the rehearsal changes this synthetic commit ID because its creation time changes. Source commit IDs and mapped blob IDs do not change.
+The disposable tree had **9,604 files**, with exact blob/mode equality and no destination collision. `git merge-base --is-ancestor` passed for all three rehearsal input tips; `git fsck --full --no-dangling` passed for the result and complete reachable history. The first local evidence commit was `9755bef905be5a9ba7af07c4b25676574e6ab6ca`; it was deliberately not pushed. Repeating the rehearsal changes this synthetic commit ID because its creation time changes. Source commit IDs and mapped blob IDs do not change. These file and pin counts describe that rehearsal only.
 
 The mapping regressions reject existing Core overwrites, file/directory collisions, two input paths collapsing to one output, and path escapes. They also check inactive workflow/build inputs, the five duplicate-package projects, and complete file/blob/mode retention. Both regular and optimized Python runs passed.
 
-No solution build, runtime descriptor comparison, package publication, backend/Studio debug session, canonical-source compatibility or cutover is claimed. Those gates remain in #8214, #8215 and #8259–#8260. In particular, retained `.source` assets require explicit integration or retirement, and the candidate Secrets source ownership must pass API/storage/UI compatibility review before the real import.
+The rehearsal itself did not build a solution, compare runtime descriptors, publish packages, debug the backend/Studio pair, establish canonical-source compatibility or perform cutover. Later evidence for those distinct scopes is recorded in the merged import/catch-up PRs and their linked receipts; the rehearsal's limitations must not be read as a current claim that the import is still pending. Retained `.source` assets and Secrets decisions are tracked separately in the [asset ledger and decision supplements](consolidation/legacy-asset-dispositions.md). The rehearsal does not grant publication, deprecation, publisher-cutover, or archival approval.
 
-The exact path-by-path proposal for all 163 retained `.source` assets is recorded in the [legacy asset disposition ledger](consolidation/legacy-asset-dispositions.md). It distinguishes candidate behavior in the disposable build patch from changes actually integrated into the history-bearing source tree.
+The original rehearsal-pinned path-by-path proposal for 163 retained `.source` assets is recorded in the [legacy asset disposition ledger](consolidation/legacy-asset-dispositions.md). That pre-supplement snapshot is preserved as history; do not read its earlier counts or proposal statuses as current missing-work totals. Later decisions and the live program record determine each asset's status.
