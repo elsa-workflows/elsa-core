@@ -56,7 +56,9 @@ builder.Services.AddElsa(elsa =>
         ef.UseSqlite($"Data Source={Path.Combine(runtimeRoot, "runtime.db")}")));
     elsa.UseWorkflowsApi();
     elsa.UseJavaScript();
+#if FIXTURE_BPMN
     elsa.UseBpmnInterchange();
+#endif
     if (contexts)
     {
         elsa.UseWorkflowContexts();

@@ -137,7 +137,8 @@ def _host_source(host: str, version: str) -> dict[str, Path]:
 
 def _project(host: str, request: CellRequest) -> tuple[str, str]:
     if host == "backend":
-        sdk, ids, platform = "Microsoft.NET.Sdk.Web", list(BACKEND_PACKAGES), []
+        sdk, ids, platform = "Microsoft.NET.Sdk.Web", [name for name in BACKEND_PACKAGES
+            if name != "Elsa.Bpmn.Interchange" or request.version != "3.8.4"], []
     else:
         original = ET.parse(_host_source(host, request.version)["source-project.xml"]).getroot()
         sdk = original.attrib["Sdk"]
@@ -156,6 +157,8 @@ def _project(host: str, request: CellRequest) -> tuple[str, str]:
         "BlazorWebAssemblyLoadAllGlobalizationData": "true",
     }.items():
         ET.SubElement(props, key).text = value
+    if host == "backend" and request.version in ("3.9.0", "3.10.0"):
+        ET.SubElement(props, "DefineConstants").text = "$(DefineConstants);FIXTURE_BPMN"
     group = ET.SubElement(root, "ItemGroup")
     for name in sorted(set(ids)):
         ET.SubElement(group, "PackageReference", {"Include": name, "Version": request.version})

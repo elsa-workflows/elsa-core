@@ -85,3 +85,32 @@ without `UseSecrets`; 3.8.4 has the same core composition. The reviewed baseline
 feature-absent policy is limited to #8643's required released smoke/export scope.
 All baseline builds, starts, browser smoke, exports and provenance checks still
 require actual evidence, and the optional Secrets failure remains a known limit.
+
+### Released 3.8.4 BPMN package availability
+
+The backend omits `Elsa.Bpmn.Interchange` only for 3.8.4. The primary
+[NuGet version index](https://api.nuget.org/v3-flatcontainer/elsa.bpmn.interchange/index.json)
+observed on 2026-10-06 lists `3.9.0` alone, with no `3.8.4`; the saved response
+`/tmp/elsa-bpmn-interchange-version-index.json` has SHA-256
+`7947195d7d34f80375220d8832e09e41c8918a73b14e189ccdb273ca5ed4b7a2`.
+The published Core 3.8.4
+[`src` tree](https://github.com/elsa-workflows/elsa-core/tree/33181ae3048f628f591a0155b5665a8e4d1bcea2/src)
+also contains no BPMN source paths.
+
+The preserved initial fixture attempt requested `Elsa.Bpmn.Interchange >= 3.8.4`.
+NuGet reported NU1601 and selected 3.9.0, which introduced fourteen 3.9.0 Elsa
+packages into the 3.8.4 backend closure. The strict prelaunch provenance check
+rejected that mixed release before runtime readiness. This was an incorrect
+fixture package selection, not an observed defect in published 3.8.4 runtime
+behavior. The failed diagnostic remains at
+`/tmp/elsa-8643-baseline-3.8-browser-1/diagnostic.json` (SHA-256
+`cd7b14e022f459146780de3a560e98396cb6e401d24ad6d2670613255d0740ba`),
+and the sanitized dependency-parent evidence remains at
+`/tmp/elsa-8643-baseline-3.8-mixed-dependency-parents.json` (SHA-256
+`627eda11bc5fb917623ef6f307f32ade1eef60a3e840efba29be04addce38979`).
+
+Only 3.9.0 and accepted 3.10.0 backend projects define `FIXTURE_BPMN`, which gates
+`UseBpmnInterchange`. Readiness requires both `Elsa.Bpmn` and
+`Elsa.BpmnInterchange` for those versions and forbids either for 3.8.4. The existing
+WorkflowContexts/Secrets feature flags and Studio BPMN designer composition are
+unchanged. No corrected 3.8.4 build/start/browser result is claimed by this change.

@@ -39,6 +39,15 @@ class HostMaterializationTests(unittest.TestCase):
                             xml = ET.parse(project).getroot()
                             self.assertEqual("false", xml.findtext("PropertyGroup/IsPackable"))
                             self.assertEqual(framework, xml.findtext("PropertyGroup/TargetFramework"))
+                            constants = xml.findtext("PropertyGroup/DefineConstants")
+                            if kind == "backend":
+                                package_ids = {item.attrib["Include"] for item in xml.findall(".//PackageReference")}
+                                self.assertEqual(version != "3.8.4", "Elsa.Bpmn.Interchange" in package_ids)
+                                self.assertEqual("$(DefineConstants);FIXTURE_BPMN" if version != "3.8.4" else None, constants)
+                                backend_code = (project.parent / "Program.cs").read_text()
+                                self.assertIn("#if FIXTURE_BPMN\n    elsa.UseBpmnInterchange();\n#endif", backend_code)
+                            else:
+                                self.assertIsNone(constants)
                             refs = xml.findall(".//ProjectReference")
                             self.assertEqual(1 if kind == "hosted-wasm" else 0, len(refs))
                             if refs:

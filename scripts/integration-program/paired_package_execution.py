@@ -93,6 +93,9 @@ def verify_runtime_readiness(value: dict, request: hosts.CellRequest) -> dict:
                 "Elsa.WorkflowsApi", "Elsa.EFCoreWorkflowDefinitionPersistence", "Elsa.EFCoreWorkflowInstancePersistence",
                 "Elsa.EFCoreWorkflowRuntimePersistence"}
     require(required <= set(features), "Missing required backend feature")
+    bpmn = {"Elsa.Bpmn", "Elsa.BpmnInterchange"}
+    require(not bpmn.intersection(features) if request.version == "3.8.4" else bpmn <= set(features),
+            "Runtime versioned BPMN registration differs")
     for name, flag, installed in (
         ("workflow-contexts", "workflow_contexts_enabled", {"Elsa.WorkflowContexts"}),
         ("secrets", "secrets_enabled", {"Elsa.Secrets", "Elsa.EFCoreSecretsPersistence"})):

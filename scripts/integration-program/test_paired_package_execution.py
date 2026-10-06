@@ -35,6 +35,8 @@ class ExecutionContracts(unittest.TestCase):
                     "Elsa.WorkflowsApi", "Elsa.EFCoreWorkflowDefinitionPersistence", "Elsa.EFCoreWorkflowInstancePersistence",
                     "Elsa.EFCoreWorkflowRuntimePersistence",
                     "Elsa.JavaScript"]
+        if request.version != "3.8.4":
+            features.extend(["Elsa.Bpmn", "Elsa.BpmnInterchange"])
         if "workflow-contexts" in request.backend_features:
             features.append("Elsa.WorkflowContexts")
         if "secrets" in request.backend_features:
@@ -159,6 +161,17 @@ class ExecutionContracts(unittest.TestCase):
                         self.assertEqual(sorted(value["features"]), actual["features"])
                         self.assertEqual(value["permission_grants"], actual["permission_grants"])
 
+    def test_versioned_bpmn_registration_must_match_available_backend_packages(self):
+        bpmn = {"Elsa.Bpmn", "Elsa.BpmnInterchange"}
+        for version in execution.browser.VERSIONS:
+            request = execution.cell_request((version, "net10.0", "server"))
+            original = self.readiness(request)
+            for name in sorted(bpmn):
+                changed = original | {"features": original["features"] + [name] if version == "3.8.4" else
+                                      [feature for feature in original["features"] if feature != name]}
+                with self.subTest(version=version, name=name), self.assertRaisesRegex(ValueError, "BPMN registration"):
+                    execution.verify_runtime_readiness(changed, request)
+
     def test_observed_39_readiness_shape_accepts_specific_definition_and_instance_persistence_features(self):
         # Sanitized actual fixture 117a68 metadata; original observation hash:
         # 25ca09d6715e1f4ce6ad8c8c57926fea1542b433809cfb9cdb9e385265182d5b.
@@ -188,6 +201,8 @@ class ExecutionContracts(unittest.TestCase):
             {"auth_mode": "Unauthenticated"}, {"features": [name for name in original["features"] if name != "Elsa.Secrets"]},
             {"features": [name for name in original["features"] if name != "Elsa.EFCoreSecretsPersistence"]},
             {"features": [name for name in original["features"] if name != "Elsa.WorkflowsApi"]},
+            {"features": [name for name in original["features"] if name != "Elsa.Bpmn"]},
+            {"features": [name for name in original["features"] if name != "Elsa.BpmnInterchange"]},
             {"features": original["features"] + ["/PRIVATE/PATH"]}, {"encryption_key": "PRIVATE-KEY"}]
         for index, mutation in enumerate(mutations):
             with self.subTest(mutation=list(mutation)):
