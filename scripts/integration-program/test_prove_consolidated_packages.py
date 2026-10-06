@@ -27,6 +27,7 @@ class PackageProofTests(unittest.TestCase):
             "framework_properties": {"net8.0": {"assembly_name": "Example", "include_build_output": True, "assets_file": "unused.json", "manifest_required": False, "manifest_path": ""}},
         }
         self.row["expected_dependency_groups"] = [{"framework": "net8.0", "dependencies": []}]
+        self.row["expected_symbol_dependency_groups"] = [{"framework": "net8.0", "dependencies": []}]
         self.manifest = {"version": VERSION, "source_commit": COMMIT, "packages": [self.row],
                          "exclusions": [{"id": "Elsa.Secrets.Models", "project": "retired.csproj"}],
                          "external_package_exceptions": proof.EXTERNAL_PACKAGES, "icon_sha256": hashlib.sha256(b"icon").hexdigest()}
@@ -129,6 +130,40 @@ class PackageProofTests(unittest.TestCase):
             archive.writestr("same", b"two")
         with zipfile.ZipFile(self.directory / "duplicate.zip") as archive, self.assertRaisesRegex(ValueError, "Duplicate"):
             proof.archive_names(archive)
+
+    def staged_nuspecs(self, destination):
+        document = ET.Element("package")
+        document.append(self.nuspec())
+        for suffix in (".nuspec", ".symbols.nuspec"):
+            (destination / (self.row["nupkg"].removesuffix(".nupkg") + suffix)).write_bytes(ET.tostring(document))
+
+    def test_sdk_metadata_stage_initializes_style_and_forbids_packages(self):
+        def sdk(command, cwd, **kwargs):
+            self.assertIn("-target:_GetRestoreProjectStyle;GenerateNuspec", command)
+            self.assertIn("-p:NoBuild=true", command)
+            self.assertIn("-p:ContinuePackingAfterGeneratingNuspec=false", command)
+            self.assertIn(f"-p:PackageVersion={VERSION}", command)
+            self.staged_nuspecs(Path(kwargs["log"]).parent)
+            return ""
+        destination = self.directory / "metadata"
+        with patch.object(proof, "run", side_effect=sdk):
+            proof.stage_nuspecs(ROOT, self.row, VERSION, destination)
+        self.assertIn("sdk_symbol_nuspec_sha256", self.row)
+        self.assertEqual(self.row["expected_dependency_groups"], self.row["expected_symbol_dependency_groups"])
+        (destination / self.row["snupkg"]).write_bytes(b"unexpected package")
+        with self.assertRaisesRegex(ValueError, "produced package output"):
+            proof.read_staged_nuspecs(destination, self.row)
+
+    def test_sdk_metadata_stage_rejects_missing_or_unexpected_pair(self):
+        self.staged_nuspecs(self.directory)
+        symbol = self.directory / (self.row["nupkg"].removesuffix(".nupkg") + ".symbols.nuspec")
+        symbol.unlink()
+        with self.assertRaisesRegex(ValueError, "nuspec pair mismatch"):
+            proof.read_staged_nuspecs(self.directory, self.row)
+        self.staged_nuspecs(self.directory)
+        (self.directory / "other.nuspec").write_bytes(b"unexpected")
+        with self.assertRaisesRegex(ValueError, "nuspec pair mismatch"):
+            proof.read_staged_nuspecs(self.directory, self.row)
 
     def test_built_browser_assets_must_be_packaged_with_exact_bytes(self):
         self.artifacts()

@@ -186,23 +186,48 @@ def dependency_groups(data: ET.Element) -> list[dict]:
     return sorted(groups, key=lambda group: group["framework"])
 
 
+def read_staged_nuspecs(destination: Path, row: dict) -> None:
+    main = row["nupkg"].removesuffix(".nupkg") + ".nuspec"
+    symbols = row["snupkg"].removesuffix(".snupkg") + ".symbols.nuspec" if row["snupkg"] else None
+    expected = {main} | ({symbols} if symbols else set())
+    actual = {path.name for path in destination.glob("*.nuspec")}
+    require(actual == expected, f"SDK staged nuspec pair mismatch: {row['id']}; expected={sorted(expected)}, actual={sorted(actual)}")
+    require(not any(destination.rglob("*.nupkg")) and not any(destination.rglob("*.snupkg")),
+            f"Metadata-only SDK stage produced package output: {row['id']}")
+    for name, groups_key, hash_key in (
+        (main, "expected_dependency_groups", "sdk_nuspec_sha256"),
+        (symbols, "expected_symbol_dependency_groups", "sdk_symbol_nuspec_sha256"),
+    ):
+        if name is None:
+            continue
+        path = destination / name
+        require(path.is_file() and not path.is_symlink(), f"Invalid staged nuspec: {path}")
+        data = path.read_bytes()
+        row[groups_key] = dependency_groups(parse_metadata(data))
+        row[hash_key] = hashlib.sha256(data).hexdigest()
+
+
+def stage_nuspecs(root: Path, row: dict, version: str, destination: Path) -> None:
+    destination.mkdir()
+    # GenerateNuspec's condition is evaluated before its dependencies. Derive
+    # the style through the SDK restore target before entering it; Pack itself
+    # enables package creation even when ContinuePacking... was passed false.
+    command = ["dotnet", "msbuild", str(root / row["project"]), "-nologo",
+               "-target:_GetRestoreProjectStyle;GenerateNuspec",
+               "-p:Configuration=Release", f"-p:Version={version}", f"-p:PackageVersion={version}",
+               "-p:ConsolidatedPackageProof=true", "-p:ContinuousIntegrationBuild=true", "-p:NoBuild=true",
+               "-p:ContinuePackingAfterGeneratingNuspec=false", f"-p:NuspecOutputPath={destination}",
+               f"-p:PackageOutputPath={destination / 'forbidden-packages'}"]
+    run(command, root, log=destination / "generate-nuspec.log")
+    read_staged_nuspecs(destination, row)
+
+
 def stage_sdk_metadata(root: Path, manifest: dict, output: Path) -> None:
     staging = output / "sdk-metadata"
     staging.mkdir()
     for index, row in enumerate(manifest["packages"]):
         destination = staging / f"{index:03}-{row['id']}"
-        destination.mkdir()
-        command = ["dotnet", "msbuild", str(root / row["project"]), "-nologo", "-target:GenerateNuspec",
-                   "-p:Configuration=Release", f"-p:Version={manifest['version']}",
-                   f"-p:PackageVersion={manifest['version']}", "-p:ConsolidatedPackageProof=true",
-                   "-p:ContinuousIntegrationBuild=true", "-p:NoBuild=true",
-                   "-p:ContinuePackingAfterGeneratingNuspec=false", f"-p:NuspecOutputPath={destination}"]
-        run(command, root, log=destination / "generate-nuspec.log")
-        nuspecs = list(destination.glob("*.nuspec"))
-        require(len(nuspecs) == 1, f"SDK must stage exactly one expected nuspec: {row['id']}")
-        data = nuspecs[0].read_bytes()
-        row["expected_dependency_groups"] = dependency_groups(parse_metadata(data))
-        row["sdk_nuspec_sha256"] = hashlib.sha256(data).hexdigest()
+        stage_nuspecs(root, row, manifest["version"], destination)
         row["restore_assets"] = []
         for framework, properties in row["framework_properties"].items():
             after_restore = evaluate(root, root / row["project"], manifest["version"], True, framework)
@@ -302,7 +327,7 @@ def parse_metadata(data: bytes) -> ET.Element:
     return result
 
 
-def verify_metadata(data: ET.Element, row: dict, manifest: dict) -> list[dict]:
+def verify_metadata(data: ET.Element, row: dict, manifest: dict, *, symbols: bool = False) -> list[dict]:
     require(data.findtext("id") == row["id"] and data.findtext("version") == manifest["version"],
             f"Artifact identity/version mismatch: {row['id']}")
     repository = data.find("repository")
@@ -313,7 +338,8 @@ def verify_metadata(data: ET.Element, row: dict, manifest: dict) -> list[dict]:
     produced = {package["id"].casefold() for package in manifest["packages"]}
     exceptions = {name.casefold() for name in manifest["external_package_exceptions"]}
     groups = dependency_groups(data)
-    require("expected_dependency_groups" in row and groups == row["expected_dependency_groups"],
+    groups_key = "expected_symbol_dependency_groups" if symbols else "expected_dependency_groups"
+    require(groups_key in row and groups == row[groups_key],
             f"SDK dependency metadata/archive mismatch: {row['id']}")
     for group in groups:
         require(group["framework"] in row["framework_properties"], f"Unsupported dependency framework: {group['framework']}")
@@ -374,7 +400,7 @@ def verify_artifacts(artifacts: Path, manifest: dict) -> dict:
                 row["snupkg_sha256"] = hashlib.sha256(symbol_path.read_bytes()).hexdigest()
                 with zipfile.ZipFile(symbol_path) as symbols:
                     symbol_names = archive_names(symbols)
-                    verify_metadata(metadata(symbols), row, manifest)
+                    verify_metadata(metadata(symbols), row, manifest, symbols=True)
                     expected_pdbs = {assembly["pdb"] for assembly in row["assemblies"]}
                     require({name for name in symbol_names if name.endswith(".pdb")} == expected_pdbs,
                             f"Symbol framework coverage mismatch: {row['id']}")
