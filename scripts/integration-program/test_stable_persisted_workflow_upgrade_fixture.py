@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import patch
 import zipfile
 
+import consolidated_candidate_input as candidate_input
 import prepare_consolidated_release_candidate as candidate
 import prove_consolidated_package_consumers as packages
 import run_persisted_workflow_upgrade_fixture as fixture
@@ -82,6 +83,25 @@ class StableAdapterContracts(unittest.TestCase):
         malformed["packages"].append({"id": "Elsa.Unused", "frameworks": []})
         with self.assertRaises(ValueError):
             packages._validated_manifest(malformed, fixture.REQUIRED)
+
+    def test_shared_candidate_verification_does_not_depend_on_sqlite_fixture(self):
+        with patch.object(fixture, "FIXTURE", self.root / "no-sqlite-program"):
+            provenance = candidate_input.verify_candidate_inputs(
+                self.archive, self.root / "artifact.json", self.root / "producer.json",
+                self.root / "retrieval.json", self.root / "extracted",
+                original_envelope=self.original, envelope_sha256=stable.ENVELOPE_SHA256,
+                archive_sha256=stable.ARCHIVE_SHA256, manifest_sha256=stable.MANIFEST_SHA256)
+        self.assertEqual(stable.PRODUCER, provenance["candidate_producer"])
+        self.assertEqual(stable.ENVELOPE_SHA256, provenance["original_envelope_sha256"])
+        self.assertNotIn("matrix_execution", provenance)
+        self.assertTrue((self.root / "extracted/verified-artifacts.json").is_file())
+
+    def test_reader_credentials_cannot_enter_consumer_verification(self):
+        for token in ("GH_TOKEN", "GITHUB_TOKEN", "ACTIONS_READ_TOKEN"):
+            with self.subTest(token=token), patch.dict(candidate.os.environ, {token: "synthetic-reader-token"}), \
+                    self.assertRaisesRegex(RuntimeError, "token must not enter"):
+                self.verify()
+            self.assertFalse((self.root / "extracted").exists())
 
     def test_mixed_target_identity_root_archive_manifest_and_package_bytes_fail(self):
         target = self.verify()
