@@ -6,4 +6,12 @@
            Code="ELSA0003"
            Text="ConsolidatedPackageProof requires PackageVersion 3.10.0-proof.&lt;positive run&gt;.&lt;positive attempt&gt;. Publication and publisher cutover remain separate approvals." />
   </Target>
+  <!-- Candidate preparation is distinct from proof and authorizes no publisher. -->
+  <Target Name="ValidateConsolidatedReleaseCandidate" BeforeTargets="Restore;PrepareForBuild;Pack;GenerateNuspec"
+          Condition="'$(ConsolidatedReleaseCandidate)' == 'true'">
+    <Error Condition="'$(ConsolidatedPackageProof)' == 'true'" Code="ELSA0004"
+           Text="ConsolidatedReleaseCandidate and ConsolidatedPackageProof are mutually exclusive." />
+    <Error Condition="'$(Version)' != '3.10.0' or '$(PackageVersion)' != '3.10.0' or '$(Configuration)' != 'Release'"
+           Code="ELSA0004" Text="ConsolidatedReleaseCandidate requires Release and Version=PackageVersion=3.10.0. This prepares unpublished candidate bytes only." />
+  </Target>
 </Project>

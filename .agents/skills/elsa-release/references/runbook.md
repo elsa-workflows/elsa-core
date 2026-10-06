@@ -324,3 +324,94 @@ python3 <skill>/scripts/release_train.py --state <run>/state.json record-announc
 The checkpoint validates receipt content and hashes, but does not replace the connector's live `get_post` verification. On an interrupted social publish, reconcile the recorded intent and current channel posts before sending anything again. Verify Discord with the bot API and LinkedIn/X with their connector. Queue status is only completion when the user requested scheduling. A legacy checkpoint reports `adopt-post-refresh`; adopt it explicitly, and use `--targets website` when only the website needs to be refreshed on an already completed release. Do not create a new publication or repost existing announcements for that follow-up.
 
 Finally rerun `status`, audit the exact release/version/source/workflow and feed evidence, verify all requested social results, save a concise completion record, stop any heartbeat, and report release/post URLs plus any material limitation. Complete a persistent goal only after this audit.
+
+## Consolidated 3.10.0 candidate preparation (nonpublishing)
+
+Use [consolidated-feedz-profile.json](consolidated-feedz-profile.json) for the
+single Core-owned lockstep candidate, including imported Extensions/Studio and
+Elsa.SamplePackage at **3.10.0**. Its fixed-package exceptions are empty.
+Feedz is the eventual 3.10 target. This profile prepares a candidate; it is not
+an ordinary release-train profile or publication approval. The existing
+[elsa-profile.json](elsa-profile.json) remains the four-repository 3.8/3.9
+maintenance procedure, including its legacy SamplePackage 1.0.1 exception.
+Templates remains a separate source/release stage outside Elsa.sln. npm
+ownership is **undecided** and no npm publication is part of this procedure.
+
+First review a coherent implementation head and evaluated inventory comparison.
+The dedicated `prepare-consolidated-release-candidate.yml` workflow runs only
+on its repository-write branch push or a manual dispatch of the exact reviewed
+ref. Review that workflow as trusted code before running it. PR-editable YAML
+and an `if` condition do not provide an immutable authorization boundary.
+The prepare and consumer jobs have contents-read and no actions-read permission;
+the separate actions-read retrieval job executes fixed requests without checkout.
+It supplies only original archive bytes, public artifact metadata and the
+independent envelope. The pinned download action selects the same-run transport
+artifact ID with `merge-multiple: true`, so inputs appear at the specified root.
+
+For inexpensive evaluation in a clean isolated committed checkout:
+
+```bash
+python3 scripts/integration-program/prepare_consolidated_release_candidate.py \
+  --version 3.10.0 --inventory-only --output /absolute/new/candidate-inventory
+```
+
+The canonical proof evaluator derives every package/exclusion from current
+Elsa.sln properties. It compares IDs, project paths and exclusion reasons with
+`consolidated-candidate-inventory-baseline.json`, derived from the accepted proof
+inventory. The 225 package/symbol pairs and 124 excluded projects (123 IDs) are
+baseline sanity evidence, never an allowlist. A difference emits
+`inventory-diff.json` and stops before building. Review and commit any justified
+baseline update; do not silently shrink it. The five retired Extensions Secrets
+IDs stay excluded. Default imported packability remains false, and
+ConsolidatedPackageProof retains its proof-only version rule. Candidate is an
+explicit mutually exclusive opt-in for Release and Version=PackageVersion=3.10.0
+at restore, compile and pack. A local candidate output is preparation evidence;
+only the exact-head hosted run supplies an immutable artifact identity.
+
+The producer verifies every nupkg/snupkg, dependency group, framework asset,
+assembly/source identity and built Studio asset using the shared proof pipeline.
+It seals every retained file in `preupload-manifest.json`, excluding that
+manifest from its own file list. The immutable artifact name binds source SHA,
+run ID and attempt. Retention is explicitly 30 days. After upload the no-checkout
+retrieval job writes a **separate post-upload envelope** in the run summary,
+recording artifact ID/name, source SHA/run/attempt, original archive digest/size,
+actual expiry, the UTC retrieval time and the producer's manifest hash. This envelope stays outside the
+original archive. Do not append it to the artifact, repack, relabel, or rebuild
+those bytes to hand them off.
+
+The downstream job binds the transferred envelope to the retrieval job output,
+checks the retrieval-time availability snapshot and expiry before execution, verifies the original archive digest/size and
+all manifest hashes/member safety **before extraction**, then restores/builds
+fresh PackageReference-only consumers on net8.0, net9.0 and net10.0. Parent
+props/targets/central configuration and SDK discovery are isolated. The standalone
+consumer disables the SDK's implicit library-packs source and legacy NuGet fallback
+folder; its strict effective-source/cache checks do not allow these caches.
+Receipts
+record resolved package assets, effective sources/cache, all loaded Elsa assembly
+identities/informational versions and DLL hashes against exact package assets.
+The Core/Slack/Studio feature handshake and actual WorkflowContexts HTTP loopback
+are representative checks, not a full behavior test of every package.
+
+Keep the original envelope, artifact link/ID, producer receipt and downstream
+receipt together in the review evidence. The retrieval job checks availability at
+its recorded retrieval time. Token-minimal consumers prove the exact transferred
+bytes with expiry checked before execution; they cannot observe deletion of the original artifact
+after retrieval. Before candidate approval or publication, independently re-read
+live original artifact metadata and recheck the exact artifact ID/name, archive
+digest/size, source SHA/run/attempt and expiry. A consumer receipt alone cannot
+satisfy that current availability check. If the artifact expires or disappears,
+it is no longer an approvable candidate. A replacement run creates a new
+identity and needs the full proof again. Candidate preparation is distinct from
+the unchanged earlier `3.10.0-proof.37410240989.1` archive and from future approved
+publication. The #8629 proof-version persisted matrix cannot certify different
+stable candidate bytes: applicable persisted compatibility checks must bind to
+these exact production bytes before publication.
+
+This task implements no publisher handoff. Ordinary approved Core publication
+selection remains unchanged, including its stable 3.10.0 Feedz dispatch. That
+workflow accepts no candidate opt-in, candidate artifact/run selector or candidate
+workflow ID. A future separately reviewed **publish-only** workflow must bind to
+the exact original candidate identity without restore/build/pack, after the
+remaining compatibility, publisher-cutover and release approvals. Candidate
+success does not imply release readiness, publication, source publisher cutover
+or completion of #8219/#8220.

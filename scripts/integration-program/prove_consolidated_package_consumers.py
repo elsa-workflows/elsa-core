@@ -14,6 +14,7 @@ import shutil
 import signal
 import subprocess
 import tempfile
+import zipfile
 from typing import Any
 from xml.etree import ElementTree
 
@@ -298,6 +299,8 @@ def _create_project(path: Path, version: str) -> None:
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
+    <DisableImplicitLibraryPacksFolder>true</DisableImplicitLibraryPacksFolder>
+    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
   </PropertyGroup>
   <ItemGroup>
 {package_references}
@@ -396,7 +399,7 @@ def _package_evidence(
         result.append(evidence)
 
     result.extend(
-        {
+        {**verify_external_cache_source(entry["id"], entry["version"], packages_root),
             "id": entry["id"],
             "version": entry["version"],
             "assets_type": "package",
@@ -406,6 +409,64 @@ def _package_evidence(
         for entry in restored["other"]
     )
     return sorted(result, key=lambda item: (item["id"].casefold(), item["version"]))
+
+
+def prepare_isolation(root: Path, sdk: str) -> dict[str, str]:
+    for name in ("Directory.Build.props", "Directory.Build.targets", "Directory.Packages.props"):
+        (root / name).write_text("<Project />\n")
+    (root / "global.json").write_text(json.dumps({"sdk": {"version": sdk, "rollForward": "disable"}}) + "\n")
+    return {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in
+            ("Directory.Build.props", "Directory.Build.targets", "Directory.Packages.props", "global.json")}
+
+
+def verify_restore_isolation(assets: dict, root: Path, cache: Path, artifacts: Path) -> None:
+    restore = assets["project"]["restore"]
+    if set(restore["sources"]) != {NUGET_ORG, str(artifacts.resolve())}:
+        raise RuntimeError("Effective restore sources leaked")
+    if {str(Path(path).resolve()) for path in assets["packageFolders"]} != {str(cache.resolve())}:
+        raise RuntimeError("Effective package cache/fallback folders leaked")
+    if restore.get("configFilePaths") != [str(root / "NuGet.Config")]:
+        raise RuntimeError("Parent NuGet config leaked")
+
+
+def verify_loaded_assemblies(result: dict, assets: dict, framework: str, root: Path,
+                             cache: Path, artifacts: Path, by_id: dict, version: str, source: str) -> list[dict]:
+    expected = {}
+    for key, library in assets["targets"][framework].items():
+        package_id, package_version = key.split("/")
+        for entry in library.get("runtime", {}):
+            if not entry.endswith(".dll") or not Path(entry).name.startswith("Elsa"):
+                continue
+            cached = cache / package_id.lower() / package_version / entry
+            if not cached.is_file() or cached.is_symlink():
+                raise RuntimeError("Runtime asset missing from fresh package cache")
+            digest = hashlib.sha256(cached.read_bytes()).hexdigest()
+            internal = package_id.casefold() in by_id
+            archive = artifacts / by_id[package_id.casefold()]["nupkg"] if internal else cache / package_id.lower() / package_version / f"{package_id.lower()}.{package_version}.nupkg"
+            with zipfile.ZipFile(archive) as package:
+                if hashlib.sha256(package.read(entry)).hexdigest() != digest:
+                    raise RuntimeError("Cached runtime DLL differs from exact package asset")
+            name = Path(entry).stem
+            if name in expected:
+                raise RuntimeError("Ambiguous restored runtime assembly identity")
+            expected[name] = {"sha256": digest, "internal": internal, "id": package_id, "version": package_version, "asset": entry}
+    loaded = result.get("loadedAssemblies", [])
+    if not loaded or len({row["name"] for row in loaded}) != len(loaded):
+        raise RuntimeError("Missing or duplicate loaded assembly identities")
+    if not set(REQUIRED_PACKAGES) <= {row["name"] for row in loaded}:
+        raise RuntimeError("Representative loaded assembly missing")
+    records = []
+    for row in loaded:
+        asset = expected.get(row["name"])
+        location = Path(row["location"])
+        if asset is None or row.get("sha256") != asset["sha256"] or not location.resolve().is_relative_to((root / "bin").resolve()):
+            raise RuntimeError("Loaded assembly differs from restored package asset")
+        if not row.get("fullName", "").startswith(row["name"] + ", Version=" + str(row.get("version")) + ",") or not row.get("informationalVersion"):
+            raise RuntimeError("Incomplete loaded assembly identity")
+        if asset["internal"] and (row["version"] != version.split("+", 1)[0].split("-", 1)[0] + ".0" or row["informationalVersion"] != f"{version}+{source}"):
+            raise RuntimeError("Loaded internal assembly release/source identity mismatch")
+        records.append({**row, "package_id": asset["id"], "package_version": asset["version"], "package_asset": asset["asset"]})
+    return records
 
 
 def prove(artifacts: Path, manifest: dict[str, Any], output: Path) -> dict[str, Any]:
@@ -434,7 +495,15 @@ def prove(artifacts: Path, manifest: dict[str, Any], output: Path) -> dict[str, 
     package_ids = [package["id"] for package in package_by_id.values()]
     consumers: list[dict[str, Any]] = []
     with tempfile.TemporaryDirectory(prefix="elsa-consolidated-consumer-") as temporary:
-        root = Path(temporary)
+        root = Path(temporary).resolve()
+        sdk = manifest.get("build_inputs", {}).get("sdk")
+        if not sdk:
+            installed = subprocess.check_output(["dotnet", "--list-sdks"], text=True)
+            sdks = [match.group(1) for line in installed.splitlines() if (match := re.match(r"(10\.[0-9]+\.[0-9]+) ", line))]
+            if not sdks:
+                raise RuntimeError("Representative consumers require an installed .NET 10 SDK")
+            sdk = max(sdks, key=lambda value: tuple(int(part) for part in value.split(".")))
+        isolation = prepare_isolation(root, sdk)
         project = root / "ConsolidatedPackageConsumer.csproj"
         _create_project(project, version)
         shutil.copy2(FIXTURE / "Program.cs", root / "Program.cs")
@@ -446,10 +515,14 @@ def prove(artifacts: Path, manifest: dict[str, Any], output: Path) -> dict[str, 
             encoding="utf-8",
         )
         inputs_path.mkdir()
+        for name in isolation:
+            shutil.copy2(root / name, inputs_path / name)
         shutil.copy2(project, inputs_path / project.name)
         shutil.copy2(config, inputs_path / config.name)
         shutil.copy2(FIXTURE / "Program.cs", inputs_path / "Program.cs")
         shutil.copy2(FIXTURE / "HttpProbe.cs", inputs_path / "HttpProbe.cs")
+        isolation.update({path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                          for path in inputs_path.iterdir() if path.is_file()})
 
         packages_root = root / "fresh-packages"
         if packages_root.exists() and any(packages_root.iterdir()):
@@ -470,7 +543,9 @@ def prove(artifacts: Path, manifest: dict[str, Any], output: Path) -> dict[str, 
         assets_path = root / "obj" / "project.assets.json"
         if not assets_path.is_file():
             raise RuntimeError("dotnet restore did not create project.assets.json")
-        assets = json.loads(assets_path.read_text(encoding="utf-8"))
+        assets_bytes = assets_path.read_bytes()
+        assets = json.loads(assets_bytes)
+        verify_restore_isolation(assets, root, packages_root, artifacts)
         restored = validate_project_assets(
             assets,
             FRAMEWORKS,
@@ -503,7 +578,7 @@ def prove(artifacts: Path, manifest: dict[str, Any], output: Path) -> dict[str, 
             version,
         )
         commands.append(_run_command(
-            ["dotnet", "build", str(project), "--no-restore", "--disable-build-servers", "--nologo", "--verbosity", "minimal"],
+            ["dotnet", "build", str(project), "--configuration", "Release", "--no-restore", "--disable-build-servers", "--nologo", "--verbosity", "minimal"],
             root, environment, output / BUILD_LOG, COMMAND_TIMEOUT_SECONDS,
         ))
 
@@ -511,7 +586,7 @@ def prove(artifacts: Path, manifest: dict[str, Any], output: Path) -> dict[str, 
         for framework in FRAMEWORKS:
             run_command = [
                 "dotnet", "run", "--project", str(project), "--no-build", "--no-restore",
-                "--framework", framework,
+                "--framework", framework, "--configuration", "Release",
             ]
             command_evidence = _run_command(
                 run_command,
@@ -539,7 +614,9 @@ def prove(artifacts: Path, manifest: dict[str, Any], output: Path) -> dict[str, 
                 actual_assemblies.get(package_id) != package_id for package_id in expected_assemblies
             ):
                 raise RuntimeError(f"Representative package assembly checks failed for {framework}")
-            framework_receipts.append({"framework": framework, "result": result, "command": command_evidence})
+            loaded = verify_loaded_assemblies(result, assets, framework, root, packages_root, artifacts,
+                                               package_by_id, version, source_commit)
+            framework_receipts.append({"framework": framework, "result": result, "loaded_assemblies": loaded, "command": command_evidence})
 
         consumers.append({
             "name": "consolidated-package-consumer",
@@ -557,6 +634,9 @@ def prove(artifacts: Path, manifest: dict[str, Any], output: Path) -> dict[str, 
         "consumers": consumers,
         "restored_packages": restored_package_evidence,
         "consumer_inputs": str(inputs_path.resolve()),
+        "isolation": isolation,
+        "sdk": sdk,
+        "assets_sha256": hashlib.sha256(assets_bytes).hexdigest(),
         "external_package_exceptions": [
             {
                 "id": item["id"],

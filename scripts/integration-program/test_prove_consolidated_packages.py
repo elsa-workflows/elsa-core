@@ -79,6 +79,31 @@ class PackageProofTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     proof.verify_artifacts(self.directory, self.manifest)
 
+    def test_stable_sample_rejects_legacy_version_and_internal_dependency_metadata(self):
+        self.row["id"] = "Elsa.SamplePackage"
+        self.manifest["version"] = "3.10.0"
+        proof.verify_metadata(self.nuspec(version="3.10.0"), self.row, self.manifest)
+        with self.assertRaisesRegex(ValueError, "identity/version"):
+            proof.verify_metadata(self.nuspec(version="1.0.1"), self.row, self.manifest)
+        stale = self.nuspec(version="3.10.0", dependency=("Elsa.SamplePackage", "1.0.1"))
+        self.row["expected_dependency_groups"] = proof.dependency_groups(stale)
+        with self.assertRaisesRegex(ValueError, "dependency"):
+            proof.verify_metadata(stale, self.row, self.manifest)
+        unexpected = self.nuspec(version="3.10.0")
+        unexpected.find("id").text = "Elsa.Unexpected"
+        with self.assertRaisesRegex(ValueError, "identity/version"):
+            proof.verify_metadata(unexpected, self.row, self.manifest)
+
+    def test_duplicate_evaluated_package_ids_fail_canonical_inventory(self):
+        properties = dict.fromkeys(proof.PROPERTIES, "")
+        properties.update(IsPackable="true", PackageId="Elsa.Duplicate", Version="3.10.0", PackageVersion="3.10.0",
+                          Configuration="Release", TargetFrameworks="net8.0", RepositoryUrl=proof.CORE_URL, PackageProjectUrl=proof.CORE_URL)
+        projects = [self.directory / "A.csproj", self.directory / "B.csproj"]
+        with patch.object(proof, "solution_projects", return_value=projects), \
+                patch.object(proof, "evaluate", return_value=properties), \
+                self.assertRaisesRegex(ValueError, "Duplicate evaluated PackageId"):
+            proof.inventory(self.directory, "3.10.0", COMMIT, mode="candidate")
+
     def test_dependency_closure_rejects_stale_excluded_and_unknown(self):
         for dependency in (("Elsa.Example", "3.8.4"), ("Elsa.Secrets.Models", VERSION), ("Elsa.Missing", VERSION)):
             with self.subTest(dependency=dependency), self.assertRaises(ValueError):
@@ -274,7 +299,7 @@ class PackageProofTests(unittest.TestCase):
         resolved = {"Properties": {"AssemblyName": "Example", "PackageVersion": VERSION,
                     "GenerateElsaPackageManifest": "false", "ElsaPackageManifestIncludeInPackage": "false",
                     "ElsaPackageManifestPackagePath": "", "ProjectAssetsFile": str(self.directory / "project.assets.json")}}
-        with patch.object(proof, "stage_nuspecs", side_effect=lambda root, row, version, destination: destination.mkdir()), \
+        with patch.object(proof, "stage_nuspecs", side_effect=lambda root, row, version, destination, **kwargs: destination.mkdir()), \
                 patch.object(proof, "evaluate", return_value=resolved), \
                 patch.object(proof, "capture_compiler_evidence", side_effect=ValueError("rejected generator")), \
                 self.assertRaisesRegex(ValueError, "rejected generator"):
@@ -338,6 +363,8 @@ class PackageProofTests(unittest.TestCase):
         produced = {self.row["nupkg"]: b"package", self.row["snupkg"]: b"symbols"}
 
         def pack(*args, **kwargs):
+            if args[0][0] in ("dotnet", "node"):
+                return "10.0.300"
             for name, data in produced.items():
                 (packages / name).write_bytes(data)
 
@@ -623,7 +650,7 @@ class PackageProofTests(unittest.TestCase):
                 document = ET.parse(ROOT / f"src/{subtree}/Directory.Build.{suffix}")
                 guards = document.findall("./PropertyGroup/IsPackable")
                 self.assertEqual(1, len(guards))
-                self.assertEqual("'$(ConsolidatedPackageProof)' != 'true'", guards[0].get("Condition"))
+                self.assertEqual("'$(ConsolidatedPackageProof)' != 'true' and '$(ConsolidatedReleaseCandidate)' != 'true'", guards[0].get("Condition"))
                 self.assertEqual("false", guards[0].text)
         for path in (ROOT / "src/extensions/secrets").rglob("*.csproj"):
             self.assertEqual("false", ET.parse(path).findtext("./PropertyGroup/IsPackable"))

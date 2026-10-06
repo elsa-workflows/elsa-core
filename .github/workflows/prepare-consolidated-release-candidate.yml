@@ -1,0 +1,194 @@
+name: Consolidated release candidate
+
+on:
+  # Repository-write events and trusted workflow review establish authority.
+  # Editable YAML is not an immutable security boundary.
+  push:
+    branches: ['codex/consolidated-release-candidate']
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  # Imports and contract tests must preserve the producer's clean checkout.
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  prepare:
+    permissions:
+      contents: read
+      actions: none
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    outputs:
+      artifact-id: ${{ steps.candidate.outputs.artifact-id }}
+      archive-digest: ${{ steps.candidate.outputs.artifact-digest }}
+      manifest-digest: ${{ steps.seal.outputs.manifest-digest }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.300
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Check candidate contracts before package preparation
+        run: |
+          python3 -m unittest discover -s scripts/integration-program -p 'test_prove_consolidated*.py'
+          python3 -m unittest discover -s scripts/integration-program -p 'test_prepare_consolidated_release_candidate.py'
+          python3 -m unittest discover -s scripts -p 'test_validate_packages_publication_selection.py'
+      - name: Prepare and verify whole stable candidate without publication
+        env:
+          CANDIDATE_SOURCE: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SOURCE"
+          python3 scripts/integration-program/prepare_consolidated_release_candidate.py \
+            --version 3.10.0 --output "$RUNNER_TEMP/consolidated-candidate" --remote-sources
+      - name: Bind pre-upload manifest
+        id: seal
+        run: |
+          set -euo pipefail
+          digest=$(sha256sum "$RUNNER_TEMP/consolidated-candidate/preupload-manifest.json" | cut -d ' ' -f 1)
+          echo "manifest-digest=$digest" >> "$GITHUB_OUTPUT"
+      - name: Retain immutable unpublished candidate for 30 days
+        id: candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: consolidated-candidate-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/consolidated-candidate
+          include-hidden-files: true
+          if-no-files-found: error
+          overwrite: false
+          retention-days: 30
+
+  retrieve:
+    needs: prepare
+    permissions:
+      actions: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      transport-id: ${{ steps.transport.outputs.artifact-id }}
+      envelope: ${{ steps.envelope.outputs.envelope }}
+    steps:
+      # No checkout: artifact-reading credentials execute only fixed requests
+      # and validation, never repository Python/package/consumer code.
+      - name: Retrieve exact original archive and write separate envelope
+        id: envelope
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ needs.prepare.outputs.artifact-id }}
+          ARCHIVE_DIGEST: ${{ needs.prepare.outputs.archive-digest }}
+          MANIFEST_DIGEST: ${{ needs.prepare.outputs.manifest-digest }}
+          SOURCE_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          [[ "$ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$RUN_ID" =~ ^[1-9][0-9]*$ && "$RUN_ATTEMPT" =~ ^[1-9][0-9]*$ ]]
+          [[ "$SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]
+          [[ "$ARCHIVE_DIGEST" =~ ^[a-f0-9]{64}$ && "$MANIFEST_DIGEST" =~ ^[a-f0-9]{64}$ ]]
+          input="$RUNNER_TEMP/candidate-input"
+          mkdir -p "$input"
+          gh api "repos/elsa-workflows/elsa-core/actions/runs/$RUN_ID" > "$input/run.json"
+          jq -e --arg sha "$SOURCE_SHA" --argjson attempt "$RUN_ATTEMPT" '
+            .head_sha == $sha and .run_attempt == $attempt and
+            (.event == "push" or .event == "workflow_dispatch") and
+            (.path == ".github/workflows/prepare-consolidated-release-candidate.yml")
+          ' "$input/run.json" > /dev/null
+          gh api "repos/elsa-workflows/elsa-core/actions/artifacts/$ARTIFACT_ID" > "$input/artifact.json"
+          jq -e --argjson id "$ARTIFACT_ID" --arg sha "$SOURCE_SHA" --argjson run "$RUN_ID" \
+            --arg name "consolidated-candidate-$SOURCE_SHA-$RUN_ID-$RUN_ATTEMPT" --arg digest "sha256:$ARCHIVE_DIGEST" '
+              .id == $id and .name == $name and .expired == false and
+              .workflow_run.id == $run and .workflow_run.head_sha == $sha and
+              .digest == $digest and (.expires_at | fromdateiso8601) > now
+          ' "$input/artifact.json" > /dev/null
+          gh api "repos/elsa-workflows/elsa-core/actions/artifacts/$ARTIFACT_ID/zip" > "$input/candidate.zip"
+          printf '%s  %s\n' "$ARCHIVE_DIGEST" "$input/candidate.zip" | sha256sum --check --status
+          test "$(stat --format=%s "$input/candidate.zip")" = "$(jq -r .size_in_bytes "$input/artifact.json")"
+          jq -c --arg source "$SOURCE_SHA" --argjson run "$RUN_ID" --argjson attempt "$RUN_ATTEMPT" \
+            --arg manifest "$MANIFEST_DIGEST" --arg observed "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '{schema:1,published:false,version:"3.10.0",
+              source_commit:$source,run_id:$run,run_attempt:$attempt,artifact_id:.id,artifact_name:.name,
+              archive_sha256:(.digest | ltrimstr("sha256:")),archive_size:.size_in_bytes,
+              expires_at:.expires_at,retention_days:30,retrieved_at:$observed,preupload_manifest_sha256:$manifest}' \
+            "$input/artifact.json" > "$input/envelope.json"
+          echo "envelope=$(cat "$input/envelope.json")" >> "$GITHUB_OUTPUT"
+          {
+            echo 'Unpublished candidate post-upload envelope (outside original archive)'
+            echo '```json'
+            cat "$input/envelope.json"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Transfer original bytes and independent metadata
+        id: transport
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: candidate-transport-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/candidate-input/candidate.zip
+            ${{ runner.temp }}/candidate-input/artifact.json
+            ${{ runner.temp }}/candidate-input/envelope.json
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+  consumers:
+    needs: retrieve
+    permissions:
+      contents: read
+      actions: none
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          artifact-ids: ${{ needs.retrieve.outputs.transport-id }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/candidate-input
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.300
+      - name: Verify envelope and original archive before clean consumers on all frameworks
+        env:
+          EXPECTED_ENVELOPE: ${{ needs.retrieve.outputs.envelope }}
+          SOURCE_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          test "$(cat "$RUNNER_TEMP/candidate-input/envelope.json")" = "$EXPECTED_ENVELOPE"
+          python3 scripts/integration-program/prepare_consolidated_release_candidate.py --consume \
+            --archive "$RUNNER_TEMP/candidate-input/candidate.zip" \
+            --metadata "$RUNNER_TEMP/candidate-input/artifact.json" \
+            --envelope "$RUNNER_TEMP/candidate-input/envelope.json" \
+            --source "$SOURCE_SHA" --run-id "$RUN_ID" --attempt "$RUN_ATTEMPT" \
+            --output "$RUNNER_TEMP/verified-candidate"
+      - name: Retain representative consumer evidence separately
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: candidate-consumers-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/candidate-consumers
+            ${{ runner.temp }}/candidate-consumer-receipt.json
+          if-no-files-found: warn
+          retention-days: 30

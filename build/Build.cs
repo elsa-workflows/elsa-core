@@ -41,6 +41,11 @@ partial class Build : NukeBuild, ITest, IPack
     bool IsConsolidatedPackageProof => string.Equals(
         Environment.GetEnvironmentVariable("ConsolidatedPackageProof"), "true", StringComparison.OrdinalIgnoreCase);
 
+    bool IsConsolidatedReleaseCandidate => string.Equals(
+        Environment.GetEnvironmentVariable("ConsolidatedReleaseCandidate"), "true", StringComparison.OrdinalIgnoreCase);
+
+    bool IsConsolidatedPackageBuild => IsConsolidatedPackageProof || IsConsolidatedReleaseCandidate;
+
     protected override void OnBuildInitialized()
     {
         VersionSuffix = !IsTaggedBuild
@@ -68,7 +73,8 @@ partial class Build : NukeBuild, ITest, IPack
 
     public Configure<DotNetRestoreSettings> RestoreSettings => _ => _
         .SetVerbosity(DotNetVerbosity.quiet)
-        .When(_ => IsConsolidatedPackageProof, settings => settings
+        .When(_ => IsConsolidatedPackageBuild, settings => settings
+            .SetProperty("Configuration", "Release")
             .SetProperty("Version", Version)
             .SetProperty("PackageVersion", Version));
 
@@ -77,13 +83,18 @@ partial class Build : NukeBuild, ITest, IPack
         // 0  Turns off emission of all warning messages
         // 1  Displays severe warning messages
         .SetWarningLevel(IsServerBuild ? 0 : 1)
-        .When(_ => IsConsolidatedPackageProof, settings => settings
+        .When(_ => IsConsolidatedPackageBuild, settings => settings
+            .SetProperty("Configuration", "Release")
             .SetProperty("Version", Version)
             .SetProperty("PackageVersion", Version)
             .SetProperty("EmbedAllSources", "true"));
 
     public Configure<DotNetPackSettings> PackSettings => settings =>
-        string.IsNullOrWhiteSpace(Version) ? settings : settings.SetVersion(Version);
+        (string.IsNullOrWhiteSpace(Version) ? settings : settings.SetVersion(Version))
+            .When(_ => IsConsolidatedPackageBuild, configured => configured
+                .SetProperty("Configuration", "Release")
+                .SetProperty("Version", Version)
+                .SetProperty("PackageVersion", Version));
 
     public IEnumerable<Project> TestProjects =>
         ((IHazSolution)this).Solution.AllProjects.Where(x => x.Name.EndsWith("Tests"));
