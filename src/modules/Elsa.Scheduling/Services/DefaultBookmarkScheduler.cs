@@ -10,6 +10,7 @@ namespace Elsa.Scheduling.Services;
 /// </summary>
 public class DefaultBookmarkScheduler : IBookmarkScheduler
 {
+    private const int MaxConcurrentSchedulingOperations = 16;
     private readonly IWorkflowScheduler _workflowScheduler;
 
     /// <summary>
@@ -28,58 +29,13 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
         var startAtBookmarks = bookmarkList.Filter(SchedulingStimulusNames.StartAt);
         var timerBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Timer);
         var cronBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Cron);
+        var schedules = delayBookmarks
+            .Select(bookmark => CreateScheduleAt(bookmark.Id, bookmark.WorkflowInstanceId, bookmark.GetPayload<DelayPayload>().ResumeAt))
+            .Concat(startAtBookmarks.Select(bookmark => CreateScheduleAt(bookmark.Id, bookmark.WorkflowInstanceId, bookmark.GetPayload<StartAtPayload>().ExecuteAt)))
+            .Concat(timerBookmarks.Select(bookmark => CreateScheduleAt(bookmark.Id, bookmark.WorkflowInstanceId, bookmark.GetPayload<TimerBookmarkPayload>().ResumeAt)))
+            .Concat(cronBookmarks.Select(bookmark => CreateCronSchedule(bookmark.Id, bookmark.WorkflowInstanceId, bookmark.GetPayload<CronBookmarkPayload>().CronExpression)));
 
-        // Schedule each Delay bookmark.
-        foreach (var bookmark in delayBookmarks)
-        {
-            var payload = bookmark.GetPayload<DelayPayload>();
-            var resumeAt = payload.ResumeAt;
-            var request = new ScheduleExistingWorkflowInstanceRequest
-            {
-                WorkflowInstanceId = bookmark.WorkflowInstanceId,
-                BookmarkId = bookmark.Id
-            };
-            await _workflowScheduler.ScheduleAtAsync(bookmark.Id, request, resumeAt, cancellationToken);
-        }
-
-        // Schedule each StartAt bookmark.
-        foreach (var bookmark in startAtBookmarks)
-        {
-            var payload = bookmark.GetPayload<StartAtPayload>();
-            var executeAt = payload.ExecuteAt;
-            var request = new ScheduleExistingWorkflowInstanceRequest
-            {
-                WorkflowInstanceId = bookmark.WorkflowInstanceId,
-                BookmarkId = bookmark.Id
-            };
-            await _workflowScheduler.ScheduleAtAsync(bookmark.Id, request, executeAt, cancellationToken);
-        }
-
-        // Schedule each Timer bookmark.
-        foreach (var bookmark in timerBookmarks)
-        {
-            var payload = bookmark.GetPayload<TimerBookmarkPayload>();
-            var resumeAt = payload.ResumeAt;
-            var request = new ScheduleExistingWorkflowInstanceRequest
-            {
-                WorkflowInstanceId = bookmark.WorkflowInstanceId,
-                BookmarkId = bookmark.Id
-            };
-            await _workflowScheduler.ScheduleAtAsync(bookmark.Id, request, resumeAt, cancellationToken);
-        }
-
-        // Schedule each Cron bookmark.
-        foreach (var bookmark in cronBookmarks)
-        {
-            var payload = bookmark.GetPayload<CronBookmarkPayload>();
-            var cronExpression = payload.CronExpression;
-            var request = new ScheduleExistingWorkflowInstanceRequest
-            {
-                WorkflowInstanceId = bookmark.WorkflowInstanceId,
-                BookmarkId = bookmark.Id
-            };
-            await _workflowScheduler.ScheduleCronAsync(bookmark.Id, request, cronExpression, cancellationToken);
-        }
+        await ScheduleAsync(schedules, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -90,58 +46,13 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
         var startAtBookmarks = bookmarkList.Filter(SchedulingStimulusNames.StartAt);
         var timerBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Timer);
         var cronBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Cron);
+        var schedules = delayBookmarks
+            .Select(bookmark => CreateScheduleAt(bookmark.Id, workflowInstanceId, bookmark.GetPayload<DelayPayload>().ResumeAt))
+            .Concat(startAtBookmarks.Select(bookmark => CreateScheduleAt(bookmark.Id, workflowInstanceId, bookmark.GetPayload<StartAtPayload>().ExecuteAt)))
+            .Concat(timerBookmarks.Select(bookmark => CreateScheduleAt(bookmark.Id, workflowInstanceId, bookmark.GetPayload<TimerBookmarkPayload>().ResumeAt)))
+            .Concat(cronBookmarks.Select(bookmark => CreateCronSchedule(bookmark.Id, workflowInstanceId, bookmark.GetPayload<CronBookmarkPayload>().CronExpression)));
 
-        // Schedule each Delay bookmark.
-        foreach (var bookmark in delayBookmarks)
-        {
-            var payload = bookmark.GetPayload<DelayPayload>();
-            var resumeAt = payload.ResumeAt;
-            var request = new ScheduleExistingWorkflowInstanceRequest
-            {
-                WorkflowInstanceId = workflowInstanceId,
-                BookmarkId = bookmark.Id
-            };
-            await _workflowScheduler.ScheduleAtAsync(bookmark.Id, request, resumeAt, cancellationToken);
-        }
-
-        // Schedule each StartAt bookmark.
-        foreach (var bookmark in startAtBookmarks)
-        {
-            var payload = bookmark.GetPayload<StartAtPayload>();
-            var executeAt = payload.ExecuteAt;
-            var request = new ScheduleExistingWorkflowInstanceRequest
-            {
-                WorkflowInstanceId = workflowInstanceId,
-                BookmarkId = bookmark.Id
-            };
-            await _workflowScheduler.ScheduleAtAsync(bookmark.Id, request, executeAt, cancellationToken);
-        }
-
-        // Schedule each Timer bookmark.
-        foreach (var bookmark in timerBookmarks)
-        {
-            var payload = bookmark.GetPayload<TimerBookmarkPayload>();
-            var resumeAt = payload.ResumeAt;
-            var request = new ScheduleExistingWorkflowInstanceRequest
-            {
-                WorkflowInstanceId = workflowInstanceId,
-                BookmarkId = bookmark.Id
-            };
-            await _workflowScheduler.ScheduleAtAsync(bookmark.Id, request, resumeAt, cancellationToken);
-        }
-
-        // Schedule each Cron bookmark.
-        foreach (var bookmark in cronBookmarks)
-        {
-            var payload = bookmark.GetPayload<CronBookmarkPayload>();
-            var cronExpression = payload.CronExpression;
-            var request = new ScheduleExistingWorkflowInstanceRequest
-            {
-                WorkflowInstanceId = workflowInstanceId,
-                BookmarkId = bookmark.Id
-            };
-            await _workflowScheduler.ScheduleCronAsync(bookmark.Id, request, cronExpression, cancellationToken);
-        }
+        await ScheduleAsync(schedules, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -171,4 +82,41 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
         foreach (var bookmark in bookmarksToUnSchedule)
             await _workflowScheduler.UnscheduleAsync(bookmark.Id, cancellationToken);
     }
+
+    private Task ScheduleAsync(IEnumerable<BookmarkSchedule> schedules, CancellationToken cancellationToken)
+    {
+        var options = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = MaxConcurrentSchedulingOperations,
+            CancellationToken = cancellationToken
+        };
+
+        return Parallel.ForEachAsync(schedules, options, ScheduleBookmarkAsync);
+    }
+
+    private async ValueTask ScheduleBookmarkAsync(BookmarkSchedule schedule, CancellationToken cancellationToken)
+    {
+        var request = new ScheduleExistingWorkflowInstanceRequest
+        {
+            WorkflowInstanceId = schedule.WorkflowInstanceId,
+            BookmarkId = schedule.BookmarkId
+        };
+
+        if (schedule.CronExpression != null)
+            await _workflowScheduler.ScheduleCronAsync(schedule.BookmarkId, request, schedule.CronExpression, cancellationToken);
+        else
+            await _workflowScheduler.ScheduleAtAsync(schedule.BookmarkId, request, schedule.ExecuteAt, cancellationToken);
+    }
+
+    private static BookmarkSchedule CreateScheduleAt(string bookmarkId, string workflowInstanceId, DateTimeOffset executeAt)
+    {
+        return new BookmarkSchedule(bookmarkId, workflowInstanceId, executeAt, null);
+    }
+
+    private static BookmarkSchedule CreateCronSchedule(string bookmarkId, string workflowInstanceId, string cronExpression)
+    {
+        return new BookmarkSchedule(bookmarkId, workflowInstanceId, default, cronExpression);
+    }
+
+    private readonly record struct BookmarkSchedule(string BookmarkId, string WorkflowInstanceId, DateTimeOffset ExecuteAt, string? CronExpression);
 }
