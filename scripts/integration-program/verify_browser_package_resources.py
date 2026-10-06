@@ -267,7 +267,8 @@ def verify_browser_resources(expected: list[dict], fetched: list[dict], *, requi
         require(path in materialized, "Browser requested unpaired package resource")
         asset = materialized[path]
         require(response["status"] == 200 and response["sha256"] == asset["sha256"] and
-                response["bytes"] == asset["bytes"] and response["content_type"] == asset["content_type"], "Browser response differs from verified materialized resource")
+                response["bytes"] == asset["bytes"] and response["content_type"] == asset["content_type"] and
+                response.get("owner") == asset["owner"] and response.get("requested") is True, "Browser response differs from verified materialized resource")
         require(asset["owner"] in ("package", "fixture", "platform"), "Unknown browser resource owner")
         requested.add(path)
     required = {path for path, asset in materialized.items() if asset.get("required", True)}

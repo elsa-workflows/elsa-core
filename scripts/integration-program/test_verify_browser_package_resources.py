@@ -80,17 +80,17 @@ class ResourceContracts(unittest.TestCase):
 
     def test_fetched_assets_are_distinct_from_materialized_and_fail_closed(self):
         asset = {"path": "/_content/Elsa.Studio.Workflows.Designer/designer.entry.js", "sha256": "a" * 64, "bytes": 123, "content_type": "text/javascript", "owner": "package"}
-        fetched = {**asset, "status": 200}
+        fetched = {**asset, "status": 200, "requested": True}
         self.assertEqual(1, resources.verify_browser_resources([asset], [fetched])["requested"])
         self.assertEqual(1, resources.verify_browser_resources([{**asset, "required": False}], [], require_all=False)["materialized"])
         with self.assertRaises(ValueError):
             resources.verify_browser_resources([asset], [])
         prefixed = {**asset, "path": "/compat" + asset["path"]}
-        self.assertEqual(1, resources.verify_browser_resources([prefixed], [{**prefixed, "status": 200}], route_prefix="/compat")["requested"])
+        self.assertEqual(1, resources.verify_browser_resources([prefixed], [{**prefixed, "status": 200, "requested": True}], route_prefix="/compat")["requested"])
         for path in (asset["path"] + "?token=private", "/_content/%2e%2e/private", "/_framework/../private"):
             with self.subTest(path=path), self.assertRaises(ValueError):
                 resources.verify_browser_resources([{**asset, "path": path}], [], require_all=False)
-        for key, value in (("sha256", "b" * 64), ("bytes", 124), ("status", 404), ("path", asset["path"] + "?token=private"), ("content_type", "text/html")):
+        for key, value in (("owner", "fixture"), ("requested", False), ("requested", None), ("sha256", "b" * 64), ("bytes", 124), ("status", 404), ("path", asset["path"] + "?token=private"), ("content_type", "text/html")):
             with self.subTest(key=key), self.assertRaises(ValueError):
                 resources.verify_browser_resources([asset], [{**fetched, key: value}])
 
