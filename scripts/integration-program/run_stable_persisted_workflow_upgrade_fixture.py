@@ -84,11 +84,13 @@ def main() -> None:
     checkout = fixture.packages.subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[2], text=True).strip()
     fixture.require(args.fixture_source == checkout, "Fixture source does not match exact checkout")
     validate_transport(args.inputs)
-    archive = args.inputs / "candidate.zip"
-    target = verify_target(archive, args.inputs / "artifact.json", args.inputs / "producer-run.json", args.inputs / "live-retrieval.json",
-                           args.candidate_artifacts, args.fixture_source, args.fixture_run, args.fixture_attempt)
+    inputs = args.inputs.resolve(strict=True)
+    archive = inputs / "candidate.zip"
+    artifacts, output = args.candidate_artifacts.resolve(), args.output.resolve()
+    target = verify_target(archive, inputs / "artifact.json", inputs / "producer-run.json", inputs / "live-retrieval.json",
+                           artifacts, args.fixture_source, args.fixture_run, args.fixture_attempt)
     selected = [tuple(args.cell.split("/"))] if args.cell else sorted(fixture.MATRIX)
-    fixture.run(args.candidate_artifacts, archive, args.output, selected, target=target)
+    fixture.run(artifacts, archive, output, selected, target=target)
 
 
 if __name__ == "__main__":

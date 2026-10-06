@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import tempfile
+import sys
 import unittest
 from unittest.mock import patch
 import zipfile
@@ -145,6 +146,66 @@ class StableAdapterContracts(unittest.TestCase):
         self.assertEqual({"not_run"}, {cell["result"] for cell in public["cells"]})
         self.assertNotIn("private", json.dumps(public))
         self.assertNotIn("proof_run", public)
+
+
+
+class StableCliContracts(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name).resolve()
+        self.real = self.root / "real"
+        inputs = self.real / "inputs"
+        inputs.mkdir(parents=True)
+        alias = self.root / "alias"
+        alias.symlink_to(self.real, target_is_directory=True)
+        for name in ("candidate.zip", "artifact.json", "producer-run.json", "live-retrieval.json"):
+            (inputs / name).write_bytes(b"transport")
+        self.source = "a" * 40
+        self.argv = ["stable", "--inputs", str(alias / "inputs"), "--candidate-artifacts", str(alias / "candidate"),
+                     "--output", str(alias / "evidence"), "--fixture-source", self.source, "--cell", "3.8.4/net8.0"]
+
+    def test_alias_parent_preserves_effective_config_and_failure_log_containment(self):
+        def execute(candidate_root, archive, output, selected, *, target):
+            output.mkdir()
+            cell = output / "3.8.4-net8.0"
+            project, cache = cell / "baseline", cell / "baseline-packages"
+            (project / "obj").mkdir(parents=True)
+            cache.mkdir()
+            assets = {"targets": {"net8.0": {}}, "project": {"restore": {"sources": {packages.NUGET_ORG: {}},
+                      "configFilePaths": [str((project / "NuGet.Config").resolve())]}},
+                      "packageFolders": {str(cache.resolve()): {}}}
+            fixture.write_json(project / "obj/project.assets.json", assets)
+            # Like NuGet, effective configuration uses the canonical path. The
+            # empty package graph deliberately reaches the next strict guard.
+            with self.assertRaisesRegex(RuntimeError, "Required fixture packages missing"):
+                fixture.package_provenance(project, cache, "net8.0", "3.8.4", candidate_root, {}, {}, set())
+            log = project / "restore.log"
+            log.write_text("safe diagnostic")
+            result = {"complete_matrix": False, "passed": False, "cells": [{"baseline": "3.8.4", "framework": "net8.0",
+                      "passed": False, "phases": {}, "commands": [{"command": ["dotnet", "restore"], "log": str(log.resolve()),
+                      "exit_code": 0, "timed_out": False}]}]}
+            fixture.write_json(output / "public-upgrade-proof.json", {})
+            fixture.stage_evidence(output, result)
+            retained = json.loads((output / "retained-evidence/retention-manifest.json").read_text())
+            self.assertTrue(retained["retention_complete"])
+
+        with patch.object(sys, "argv", self.argv), patch.object(packages.subprocess, "check_output", return_value=self.source + "\n"), \
+             patch.object(stable, "verify_target", return_value=object()) as verify, patch.object(fixture, "run", side_effect=execute):
+            stable.main()
+        arguments = verify.call_args.args
+        for path in arguments[:5]:
+            self.assertEqual(path, path.resolve())
+        self.assertEqual(self.real / "candidate", arguments[4])
+
+    def test_symlinked_transport_root_is_rejected_before_resolution(self):
+        linked = self.root / "linked-inputs"
+        linked.symlink_to(self.real / "inputs", target_is_directory=True)
+        self.argv[2] = str(linked)
+        with patch.object(sys, "argv", self.argv), patch.object(packages.subprocess, "check_output", return_value=self.source), \
+             patch.object(stable, "verify_target") as verify, self.assertRaisesRegex(RuntimeError, "transport layout"):
+            stable.main()
+        verify.assert_not_called()
 
 
 class StableWorkflowContracts(unittest.TestCase):
