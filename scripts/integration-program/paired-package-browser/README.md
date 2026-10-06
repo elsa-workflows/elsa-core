@@ -127,6 +127,24 @@ collisions. See [converter selection](converter-selection.md). Successful
 conversion or resource delivery alone does not grant the remaining WASM host or
 workflow assertions.
 
+Standalone WASM records the native page's login and activity-registry responses
+separately from the harness's backend API calls. Its `direct_backend` assertion
+requires distinct loopback origins, exact CORS origin responses, the controlled
+login, the matching bearer token on the later registry request, and the expected
+activity identities. Only bounded statuses, checks, count and a response-body
+hash enter receipts. Tokens, credentials and raw response bodies stay private.
+This observation does not grant `wasm_boot` or either other WASM host's assertions.
+
+On browser process timeout, the runner identifies and freezes the live launch
+root and its descendants, including descendants in separate sessions. Signals
+are guarded by process birth identity; TERM and KILL waits are bounded. Missing
+ownership or uncertain termination raises `BrowserCleanupUnverified`, and host
+cleanup cannot overwrite that uncertainty with a successful combined receipt.
+Historical descendants already reparented before ownership discovery cannot be
+safely recovered by this mechanism; it fails closed without guessing by process
+name. The helper supports macOS and Linux process identities; live lifecycle
+contracts must run on the actual target platform.
+
 This fixture performs no package publication, deployment, publisher cutover or
 repository archival. It does not certify mixed-version pairs, npm distributions,
 production identity providers or every optional connector/provider.

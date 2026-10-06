@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import paired_package_execution as execution
 from test_paired_package_released_documents import fixture_identity, write_released_fixture
-from test_paired_package_browser_matrix import bpmn_proof, clipboard_proof, reopen_row
+from test_paired_package_browser_matrix import bpmn_proof, clipboard_proof, direct_backend_proof, reopen_row
 
 
 class ReleasedInputsContracts(unittest.TestCase):
@@ -648,6 +648,8 @@ class ExecutionContracts(unittest.TestCase):
                     for version in execution.documents.TOOL_VERSIONS]
             else:
                 record["proof"] = {}
+            if key[2] == "wasm":
+                record["proof"]["direct_backend"] = direct_backend_proof()
             record["assertions"] = [{"name": name, "passed": True, "reason_category": None}
                                      for name in execution.browser.required_assertions(record)]
             return record

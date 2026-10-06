@@ -51,6 +51,12 @@ def clipboard_proof(instance_hash, value_hash, *, observed=True):
     return result
 
 
+def direct_backend_proof():
+    return {"checks": dict.fromkeys(matrix.DIRECT_BACKEND_CHECKS, True),
+            "login_status": 200, "descriptor_status": 200, "descriptor_count": 2,
+            "descriptor_body_sha256": "a" * 64}
+
+
 def assertion(record, name, passed):
     next(item for item in record["assertions"] if item["name"] == name)["passed"] = passed
 
@@ -79,6 +85,8 @@ class MatrixContracts(unittest.TestCase):
         self.handle = SimpleNamespace(studio_url="http://localhost:1", backend_url="http://localhost:2/elsa/api", username="private", password="private", safe_ids={})
         for cell in self.ledger["cells"]:
             cell.update(result="passed", browser_version="149.0.7827.55", resources=[], proof={}, failure_category=None, assertions=[{"name": name, "passed": True} for name in sorted(matrix.required_assertions(cell))])
+            if cell["host"] == "wasm":
+                cell["proof"]["direct_backend"] = direct_backend_proof()
             if cell["version"] == "3.10.0":
                 cell["proof"]["baseline_reopens"] = [reopen_row(version, cell["framework"], cell["host"]) for version in documents.TOOL_VERSIONS]
                 instance_hash, value_hash = sha256("matrix candidate instance"), sha256("matrix candidate sentinel")
@@ -155,22 +163,25 @@ class MatrixContracts(unittest.TestCase):
         partial["proof"]["baseline_reopens"][0]["checks"]["saved"] = False
         self.assertEqual(partial, matrix.validate_browser_receipt(partial, key))
 
+    def run_node_contract(self, script, expected_output, *, stdin=None):
+        result = subprocess.run(tsx_command(script), cwd=matrix.JOURNEY.parent, input=stdin,
+                                capture_output=True, text=True, timeout=60)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual(expected_output + "\n", result.stdout)
+
+    def test_node_direct_backend_contract_requires_native_auth_and_cors(self):
+        self.run_node_contract("direct-backend.contract.ts", "direct backend observer contracts passed")
+
     def test_node_independently_checks_bytes_and_actual_graph_semantics(self):
         with tempfile.TemporaryDirectory() as directory:
             inputs = matrix._released_inputs(("3.10.0", "net10.0", "server"), self.released_inputs(Path(directory)))
-            result = subprocess.run(tsx_command("native-import.contract.ts"),
-                                    cwd=matrix.JOURNEY.parent, input=json.dumps(inputs), capture_output=True, text=True, timeout=60)
-            self.assertEqual(0, result.returncode, result.stderr)
-            self.assertEqual("native import contracts passed\n", result.stdout)
+            self.run_node_contract("native-import.contract.ts", "native import contracts passed", stdin=json.dumps(inputs))
 
     def test_node_bpmn_contract_checks_the_tracked_fixture_and_semantic_mutations(self):
         tracked = matrix.BPMN_INPUT_PATH.read_bytes()
         self.assertEqual(matrix.BPMN_INPUT_BYTES, len(tracked))
         self.assertEqual(matrix.BPMN_INPUT_SHA256, hashlib.sha256(tracked).hexdigest())
-        result = subprocess.run(tsx_command("bpmn-roundtrip.contract.ts"),
-                                cwd=matrix.JOURNEY.parent, capture_output=True, text=True, timeout=60)
-        self.assertEqual(0, result.returncode, result.stderr)
-        self.assertEqual("BPMN roundtrip contracts passed\n", result.stdout)
+        self.run_node_contract("bpmn-roundtrip.contract.ts", "BPMN roundtrip contracts passed")
 
     def test_returned_reopen_proof_is_crossbound_to_each_supplied_source(self):
         key = ("3.10.0", "net10.0", "server")
