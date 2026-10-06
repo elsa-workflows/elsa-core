@@ -589,6 +589,12 @@ def write_json(path: Path, data: dict | list) -> None:
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
 
 
+def require_empty_package_output(packages: Path) -> None:
+    require(not packages.is_symlink(), "Canonical packages output must not be a symlink")
+    require(not packages.exists() or (packages.is_dir() and not any(packages.iterdir())),
+            "Canonical packages output must be absent or an empty directory before proof; use an isolated worktree")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", required=True)
@@ -611,7 +617,7 @@ def main() -> None:
         require(clean_head(root) == commit, "Source changed during inventory evaluation")
         return
     packages = root / "packages"
-    require(not packages.exists() or not any(packages.iterdir()), "Canonical packages output must be empty before proof; use an isolated worktree")
+    require_empty_package_output(packages)
     clientlibs = build_clientlibs(root, output)
     manifest["browser_assets"] = clientlibs["assets"]
     write_json(output / "studio-clientlibs.json", clientlibs)

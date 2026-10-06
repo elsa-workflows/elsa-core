@@ -279,6 +279,27 @@ class PackageProofTests(unittest.TestCase):
             self.assertIsNone(proof.PROOF_VERSION.fullmatch(version))
         self.assertIsNotNone(proof.PROOF_VERSION.fullmatch(VERSION))
 
+    def test_package_output_allows_only_absent_or_real_empty_directory(self):
+        for kind in ("absent", "empty", "nonempty", "file", "symlink", "dangling_symlink"):
+            with self.subTest(kind=kind):
+                packages = self.directory / kind
+                if kind in ("empty", "nonempty"):
+                    packages.mkdir()
+                    if kind == "nonempty":
+                        (packages / "existing.nupkg").write_bytes(b"existing")
+                elif kind == "file":
+                    packages.write_bytes(b"file")
+                elif kind in ("symlink", "dangling_symlink"):
+                    target = self.directory / f"{kind}-target"
+                    if kind == "symlink":
+                        target.mkdir()
+                    packages.symlink_to(target, target_is_directory=True)
+                if kind in ("absent", "empty"):
+                    proof.require_empty_package_output(packages)
+                else:
+                    with self.assertRaisesRegex(ValueError, "Canonical packages output"):
+                        proof.require_empty_package_output(packages)
+
     def test_import_guards_are_default_off_and_preserve_explicit_exclusions(self):
         for subtree in ("extensions", "studio"):
             for suffix in ("props", "targets"):
