@@ -66,6 +66,14 @@ def _decoder_dependencies(root: Path, output: Path | None) -> None:
     require(set(assets["targets"]) == {"net10.0"} and
             set(assets["targets"]["net10.0"]) == {name + "/" + entry["resolved"] for name, entry in lock.items()},
             "Decoder restored dependency graph differs from lock")
+    expected_libraries = {name + "/" + entry["resolved"]: name.lower() + "/" + entry["resolved"]
+                          for name, entry in lock.items()}
+    require(assets.get("packageFolders") == {str(root.resolve() / "packages"): {}} and
+            isinstance(assets.get("libraries"), dict) and set(assets["libraries"]) == set(expected_libraries) and
+            all(isinstance(assets["libraries"][name], dict) and
+                assets["libraries"][name].get("type") == "package" and
+                assets["libraries"][name].get("path") == path for name, path in expected_libraries.items()),
+            "Decoder restored package resolution differs from isolated cache")
     expected_runtime = {}
     for name, entry in lock.items():
         pin = pins[name]

@@ -174,7 +174,9 @@ class ConverterSelectionContracts(unittest.TestCase):
         (self.root / "packages.lock.json").write_text(json.dumps({"dependencies": {"net10.0": {
             name: {"resolved": version, "contentHash": lock_content}}}}))
         assets = self.root / "obj/project.assets.json"
-        assets.write_text(json.dumps({"targets": {"net10.0": {name + "/" + version: {
+        assets.write_text(json.dumps({"packageFolders": {str(self.root.resolve() / "packages"): {}},
+            "libraries": {name + "/" + version: {"type": "package", "path": "public.tool/1.0.0"}},
+            "targets": {"net10.0": {name + "/" + version: {
             "type": "package", **{kind: {member: {}} for kind, member in members.items()}}}}}))
         (self.root / "dependency-archives.json").write_text(json.dumps({"packages": {name: {
             "version": version, "sha256": selected.sha256(archive), "bytes": archive.stat().st_size,
@@ -230,6 +232,22 @@ class ConverterSelectionContracts(unittest.TestCase):
         fixture.assets.write_text(json.dumps(changed))
         with self.assertRaisesRegex(RuntimeError, "unreviewed asset kinds"):
             selected._decoder_dependencies(self.root, fixture.output)
+
+    def test_decoder_rejects_redirected_package_resolution_before_build(self):
+        fixture = self.decoder_fixture()
+        original = json.loads(fixture.assets.read_text())
+        mutations = [lambda a: a.update(packageFolders={"/unowned/cache": {}}),
+                     lambda a: a["packageFolders"].update({"/fallback/cache": {}}),
+                     lambda a: a["libraries"]["Public.Tool/1.0.0"].update(path="../outside"),
+                     lambda a: a["libraries"]["Public.Tool/1.0.0"].update(type="project"),
+                     lambda a: a["libraries"].pop("Public.Tool/1.0.0"),
+                     lambda a: a["libraries"].update({"Extra/1.0.0": {"type": "package", "path": "extra/1.0.0"}})]
+        for index, mutate in enumerate(mutations):
+            changed = copy.deepcopy(original)
+            mutate(changed)
+            fixture.assets.write_text(json.dumps(changed))
+            with self.subTest(mutation=index), self.assertRaisesRegex(RuntimeError, "package resolution"):
+                selected._decoder_dependencies(self.root, None)
 
     def test_decoder_runtime_closure_must_match_fixed_selected_members(self):
         fixture = self.decoder_fixture()
