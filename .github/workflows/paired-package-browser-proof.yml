@@ -14,6 +14,7 @@ on:
       - 'scripts/integration-program/materialize_paired_package_hosts.py'
       - 'scripts/integration-program/run_paired_package_browser_matrix.py'
       - 'scripts/integration-program/verify_browser_package_resources.py'
+      - 'scripts/integration-program/verify_paired_browser_retention.py'
       - 'scripts/integration-program/paired-package-browser/**'
       - 'test/studio/browser/PackageCompatibility/**'
   workflow_dispatch:
@@ -105,8 +106,8 @@ jobs:
       - name: Verify package and browser tooling contracts
         working-directory: scripts/integration-program
         run: |
-          python3 -m unittest test_materialize_paired_package_hosts test_paired_package_provenance test_paired_package_baseline_provenance test_paired_package_browser_matrix test_verify_browser_package_resources test_paired_package_browser_workflow
-          python3 -O -m unittest test_materialize_paired_package_hosts test_paired_package_provenance test_paired_package_baseline_provenance test_paired_package_browser_matrix test_verify_browser_package_resources test_paired_package_browser_workflow
+          python3 -m unittest test_materialize_paired_package_hosts test_paired_package_provenance test_paired_package_baseline_provenance test_paired_package_browser_matrix test_verify_browser_package_resources test_paired_package_browser_workflow test_verify_paired_browser_retention
+          python3 -O -m unittest test_materialize_paired_package_hosts test_paired_package_provenance test_paired_package_baseline_provenance test_paired_package_browser_matrix test_verify_browser_package_resources test_paired_package_browser_workflow test_verify_paired_browser_retention
       - name: Install the locked browser fixture
         working-directory: test/studio/browser/PackageCompatibility
         run: |
@@ -135,8 +136,19 @@ jobs:
               raise RuntimeError("Complete hosted browser acceptance receipt is required")
           check_matrix(ledger)
           PY
-      - name: Retain only allowlisted browser evidence
+      - name: Validate portable browser evidence inventory
+        id: retained
         if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/paired-package-browser-proof/retained-evidence"
+          if test -d "$evidence"; then
+            python3 scripts/integration-program/verify_paired_browser_retention.py "$evidence"
+            echo 'validated=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Retain only allowlisted browser evidence
+        if: always() && steps.retained.outputs.validated == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: paired-package-browser-proof-${{ github.run_id }}-${{ github.run_attempt }}
