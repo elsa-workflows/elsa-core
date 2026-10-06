@@ -59,6 +59,40 @@ class ReleasedInputsContracts(unittest.TestCase):
             execution.released_document_inputs(self.key, self.root, self.identity)
 
 
+class ResourceInventoryContracts(unittest.TestCase):
+    def test_client_inventory_uses_selected_client_manifest_and_keeps_both_authorities(self):
+        for version in ("3.9.0", "3.10.0"):
+            for host in ("wasm", "hosted-wasm", "custom-elements"):
+                prefix = "compat" if host == "hosted-wasm" else ""
+                layout = SimpleNamespace(request=execution.hosts.CellRequest(host, "net10.0", version, route_prefix=prefix),
+                    packages_root=Path("/owned/packages"),
+                    project_paths={name: Path("/owned") / name / (name + ".csproj") for name in execution.hosts.HOST_NAMES})
+                static = {"assets": [{"path": "/script.js"}], "static_asset_manifest_sha256": "a" * 64}
+                managed = {"assets": [{"path": "/managed.wasm"}], "static_asset_manifest_sha256": "b" * 64,
+                           "package_runtime_count": 1}
+                candidate = version == "3.10.0"
+                static_owner = execution.resources if candidate else execution.baseline_resources
+                static_name = "derive_candidate_resources" if candidate else "derive_baseline_resources"
+                managed_name = "derive_candidate_wasm_resources" if candidate else "derive_baseline_wasm_resources"
+                with self.subTest(version=version, host=host), patch.object(static_owner, static_name, return_value=static), \
+                        patch.object(execution.wasm_resources, managed_name, return_value=managed) as derive:
+                    converter = {"task_sha256": "c" * 64}
+                    result = execution._resource_inventory(layout, Path("/verified"), "d" * 64, converter=converter)
+                    self.assertEqual(static["assets"] + managed["assets"], result["assets"])
+                    self.assertEqual("a" * 64, result["static_asset_manifest_sha256"])
+                    self.assertEqual("b" * 64, result["managed_resources"]["static_asset_manifest_sha256"])
+                    client = layout.project_paths["wasm" if host == "hosted-wasm" else host]
+                    self.assertEqual(client, derive.call_args.args[1])
+                    self.assertEqual(client.parent / "obj/Release/net10.0/staticwebassets.build.json", derive.call_args.args[2])
+                    self.assertEqual(converter, derive.call_args.kwargs["converter"])
+                    self.assertEqual("/compat" if prefix else "", derive.call_args.kwargs["route_prefix"])
+                    with self.assertRaises(ValueError):
+                        execution._resource_inventory(layout, Path("/verified"), "d" * 64)
+                    managed["assets"] = static["assets"]
+                    with self.assertRaises(ValueError):
+                        execution._resource_inventory(layout, Path("/verified"), "d" * 64, converter=converter)
+
+
 class ExecutionContracts(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()

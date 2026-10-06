@@ -22,6 +22,7 @@ import paired_package_baseline_provenance as baseline
 import paired_package_baseline_resources as baseline_resources
 import paired_package_provenance as provenance
 import paired_package_released_documents as documents
+import paired_package_wasm_resources as wasm_resources
 import prove_consolidated_package_consumers as packages
 import run_paired_package_browser_matrix as browser
 import verify_browser_package_resources as resources
@@ -198,15 +199,31 @@ def _project_validator(layout, verified_root: Path, manifest: dict):
     return validate
 
 
-def _resource_inventory(layout, verified_root: Path, manifest_hash: str) -> dict:
+def _resource_inventory(layout, verified_root: Path, manifest_hash: str, *, converter: dict | None = None) -> dict:
     project = layout.project_paths[layout.request.host]
     build_manifest = project.parent / "obj" / "Release" / layout.request.framework / "staticwebassets.build.json"
     prefix = "/" + layout.request.route_prefix if layout.request.route_prefix else ""
     if layout.request.version == candidate.PRODUCER["version"]:
-        return resources.derive_candidate_resources(build_manifest, verified_root, layout.packages_root,
+        static = resources.derive_candidate_resources(build_manifest, verified_root, layout.packages_root,
                     verified_manifest_sha256=manifest_hash, route_prefix=prefix)
-    return baseline_resources.derive_baseline_resources(build_manifest, layout.packages_root, layout.request.version,
+    else:
+        static = baseline_resources.derive_baseline_resources(build_manifest, layout.packages_root, layout.request.version,
                                                         route_prefix=prefix)
+    if layout.request.host == "server":
+        require(converter is None, "Server cannot claim a WASM converter")
+        return static
+    require(isinstance(converter, dict) and converter, "Missing selected WASM converter evidence")
+    client = layout.project_paths["wasm" if layout.request.host == "hosted-wasm" else layout.request.host]
+    client_manifest = client.parent / "obj" / "Release" / layout.request.framework / "staticwebassets.build.json"
+    if layout.request.version == candidate.PRODUCER["version"]:
+        managed = wasm_resources.derive_candidate_wasm_resources(layout, client, client_manifest, verified_root,
+                    verified_manifest_sha256=manifest_hash, converter=converter, route_prefix=prefix)
+    else:
+        managed = wasm_resources.derive_baseline_wasm_resources(layout, client, client_manifest,
+                    converter=converter, route_prefix=prefix)
+    assets = static["assets"] + managed["assets"]
+    require(len({asset["path"] for asset in assets}) == len(assets), "Static and managed resource paths overlap")
+    return {**static, "assets": assets, "managed_resources": {name: value for name, value in managed.items() if name != "assets"}}
 
 
 def _command_receipts(commands: list[dict], group: Path) -> list[dict]:
