@@ -79,7 +79,8 @@ partial class Build : NukeBuild, ITest, IPack
         .SetWarningLevel(IsServerBuild ? 0 : 1)
         .When(_ => IsConsolidatedPackageProof, settings => settings
             .SetProperty("Version", Version)
-            .SetProperty("PackageVersion", Version));
+            .SetProperty("PackageVersion", Version)
+            .SetProperty("EmbedAllSources", "true"));
 
     public Configure<DotNetPackSettings> PackSettings => settings =>
         string.IsNullOrWhiteSpace(Version) ? settings : settings.SetVersion(Version);

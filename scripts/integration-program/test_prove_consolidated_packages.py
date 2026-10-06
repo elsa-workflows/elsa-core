@@ -1,4 +1,5 @@
 import hashlib
+import base64
 from pathlib import Path
 import subprocess
 import tempfile
@@ -194,6 +195,44 @@ class PackageProofTests(unittest.TestCase):
                 "documents": [{"path": f"/_/{relative}", "algorithm": "sha256",
                                "checksum": hashlib.sha256(source).hexdigest(), "embedded_checksum": embedded}]}
 
+    def compiler_fixture(self):
+        sdk = self.directory / "sdk/10.0.300"
+        compiler = sdk / "Roslyn/bincore/csc.dll"
+        compiler.parent.mkdir(parents=True, exist_ok=True)
+        compiler.write_bytes(b"compiler")
+        self.assets_fixture({"libraries": {}, "packageFolders": {str(self.directory / "nuget"): {}}})
+        evidence = {"sdk_version": sdk.name, "sdk_root": str(sdk),
+                    "compiler_sha256": hashlib.sha256(b"compiler").hexdigest(),
+                    "frameworks": [{"Identity": "Microsoft.NETCore.App", "TargetingPackName": "Microsoft.NETCore.App.Ref",
+                                    "TargetingPackVersion": "8.0.27", "TargetingPackPath": str(self.directory / "packs/Microsoft.NETCore.App.Ref/8.0.27")}],
+                    "tools": {}, "compile_inputs": []}
+        self.row["framework_properties"]["net8.0"]["compiler_evidence"] = evidence
+        return evidence
+
+    def assets_fixture(self, assets):
+        data = __import__("json").dumps(assets).encode()
+        path = self.directory / "project.assets.json"
+        path.write_bytes(data)
+        self.row["restore_assets"] = [{"framework": "net8.0", "path": str(path), "sha256": hashlib.sha256(data).hexdigest()}]
+
+    def refit_fixture(self):
+        evidence = self.compiler_fixture()
+        folder = self.directory / "nuget/refit/9.0.2"
+        folder.mkdir(parents=True, exist_ok=True)
+        entry = "analyzers/dotnet/cs/InterfaceStubGeneratorV2.dll"
+        tool = folder / entry
+        tool.parent.mkdir(parents=True, exist_ok=True)
+        tool.write_bytes(b"generator")
+        archive = folder / "refit.9.0.2.nupkg"
+        with zipfile.ZipFile(archive, "w") as contents:
+            contents.writestr(entry, b"generator")
+        assets = {"libraries": {"Refit/9.0.2": {"type": "package", "path": "refit/9.0.2",
+                    "sha512": base64.b64encode(hashlib.sha512(archive.read_bytes()).digest()).decode()}},
+                  "packageFolders": {str(self.directory / "nuget"): {}}}
+        self.assets_fixture(assets)
+        evidence["tools"]["refit"] = proof.package_tool(assets, "Refit", "9.0.2", entry)
+        return archive, tool
+
     def test_tracked_documents_are_checked_against_exact_blob(self):
         inspection = self.inspection("src/studio/example/Example.cs")
         with patch.object(proof.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, b"source")) as command:
@@ -205,6 +244,7 @@ class PackageProofTests(unittest.TestCase):
             proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, False)
 
     def test_embedded_sources_do_not_bypass_checksum_or_generated_policy(self):
+        self.compiler_fixture()
         tracked = self.inspection("src/studio/example/Example.cs")
         checksum = hashlib.sha256(b"source").hexdigest()
         generated = self.inspection("src/studio/example/obj/Release/net8.0/Example.AssemblyInfo.cs", embedded=checksum)
@@ -222,6 +262,134 @@ class PackageProofTests(unittest.TestCase):
         tracked["documents"][0]["embedded_checksum"] = "bad"
         with self.assertRaisesRegex(ValueError, "Embedded source checksum"):
             proof.verify_documents(ROOT, self.row, "net8.0", tracked, COMMIT, False)
+
+    def test_generated_families_are_owned_and_narrow(self):
+        prefix = "src/studio/example/obj/Release/net8.0/"
+        name = "InterfaceStubGeneratorV2/Refit.Generator.InterfaceStubGeneratorV2/Generated.g.cs"
+        self.assertEqual("refit", proof.generated_family(self.row, "net8.0", prefix + name))
+        self.assertEqual("refit", proof.generated_family(self.row, "net8.0", prefix + name.replace("Generated", "PreserveAttribute")))
+        for name in ("EmbeddedAttribute.cs", "ValidatableTypeAttribute.cs"):
+            self.assertEqual("razor", proof.generated_family(self.row, "net10.0", prefix.replace("net8.0", "net10.0") + name))
+            self.assertIsNone(proof.generated_family(self.row, "net8.0", prefix + name))
+        name = "InterfaceStubGeneratorV2/Refit.Generator.InterfaceStubGeneratorV2/Generated.g.cs"
+        for relative in (prefix + "UnknownGenerator/Generated.g.cs", prefix + name.replace("Generated.g.cs", "Arbitrary.cs"),
+                         prefix.replace("example/", "other/") + name, prefix.replace("net8.0", "net9.0") + name,
+                         prefix + "./" + name, prefix + name.replace("/", "//", 1), prefix + "../" + name):
+            with self.subTest(relative=relative):
+                self.assertIsNone(proof.generated_family(self.row, "net8.0", relative))
+
+    def test_generated_document_requires_embedding_and_actual_tool_identity(self):
+        self.refit_fixture()
+        checksum = hashlib.sha256(b"source").hexdigest()
+        tracked = self.inspection("src/studio/example/Example.cs")
+        generated = self.inspection("src/studio/example/obj/Release/net8.0/InterfaceStubGeneratorV2/Refit.Generator.InterfaceStubGeneratorV2/Generated.g.cs", embedded=checksum)
+        inspection = {**tracked, "documents": tracked["documents"] + generated["documents"]}
+        def blob(command, **kwargs):
+            tracked = command[-1].endswith(":src/studio/example/Example.cs")
+            return subprocess.CompletedProcess(command, 0 if tracked else 1, b"source" if tracked else b"")
+        with patch.object(proof.subprocess, "run", side_effect=blob):
+            result = proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, False)
+            self.assertEqual("Refit", result["documents"][1]["generator_identity"]["package_id"])
+            self.assertFalse(result["documents"][1]["remote_fetched"])
+            inspection["documents"][1]["embedded_checksum"] = None
+            with self.assertRaisesRegex(ValueError, "audited generated-source policy"):
+                proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, False)
+
+    def test_generator_identity_rejects_changed_restore_archive_tool_or_version(self):
+        for changed in ("assets", "archive", "tool", "version"):
+            with self.subTest(changed=changed):
+                archive, tool = self.refit_fixture()
+                if changed == "assets":
+                    (self.directory / "project.assets.json").write_bytes(b"changed")
+                elif changed == "archive":
+                    archive.write_bytes(b"changed")
+                elif changed == "tool":
+                    tool.write_bytes(b"changed")
+                else:
+                    self.row["framework_properties"]["net8.0"]["compiler_evidence"]["tools"]["refit"]["package_version"] = "0.0.0"
+                with self.assertRaises(ValueError):
+                    proof.verify_generator_identity(self.directory, self.row, "net8.0", "refit", {})
+
+    def test_signed_archive_requires_sdk_integrity_and_content_hash(self):
+        archive, _ = self.refit_fixture()
+        with zipfile.ZipFile(archive, "a") as contents:
+            contents.writestr(".signature.p7s", b"signature fixture")
+        assets = proof.restored_assets(self.directory, self.row, "net8.0")
+        declared = assets["libraries"]["Refit/9.0.2"]["sha512"]
+        result = {"signed": True, "content_hash": declared, "archive_sha256": hashlib.sha256(archive.read_bytes()).hexdigest()}
+        inspector = self.directory / "inspector.dll"
+        with patch.object(proof, "run", return_value=__import__("json").dumps(result)) as command:
+            _, record = proof.restored_archive(assets, "Refit", "9.0.2", cache={"archive_inspector": inspector})
+            self.assertEqual(declared, record["nuget_content_hash"])
+            self.assertIn("--inspect-archive", command.call_args.args[0])
+        for changed in ({**result, "signed": False}, {**result, "content_hash": "wrong"},
+                        {**result, "archive_sha256": "wrong"}):
+            with self.subTest(result=changed), patch.object(proof, "run", return_value=__import__("json").dumps(changed)):
+                with self.assertRaises(ValueError):
+                    proof.restored_archive(assets, "Refit", "9.0.2", cache={"archive_inspector": inspector})
+        with patch.object(proof, "run", side_effect=ValueError("NU3008")), self.assertRaisesRegex(ValueError, "NU3008"):
+            proof.restored_archive(assets, "Refit", "9.0.2", cache={"archive_inspector": inspector})
+        with self.assertRaisesRegex(ValueError, "requires SDK NuGet"):
+            proof.restored_archive(assets, "Refit", "9.0.2")
+
+    def test_sdk_generator_rejects_changed_compiler(self):
+        evidence = self.compiler_fixture()
+        proof.verify_generator_identity(self.directory, self.row, "net8.0", "sdk", {})
+        (Path(evidence["sdk_root"]) / "Roslyn/bincore/csc.dll").write_bytes(b"changed")
+        with self.assertRaisesRegex(ValueError, "Pinned SDK compiler"):
+            proof.verify_generator_identity(self.directory, self.row, "net8.0", "sdk", {})
+
+    def test_empty_pdb_is_only_allowed_for_verified_interface_only_dropins(self):
+        inspection = {"source_link": {"documents": {"/_/*": f"{proof.RAW_URL}{COMMIT}/*"}}, "documents": [],
+                      "executable_method_bodies": 0, "nonabstract_methods_without_body": 0, "native_or_external_methods": 0, "nonmodule_types": 0}
+        with self.assertRaisesRegex(ValueError, "no source documents"):
+            proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, True)
+        self.row.update(id="Elsa.DropIns.Core", project="src/extensions/dropins/Elsa.DropIns.Core/Elsa.DropIns.Core.csproj")
+        result = proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, True)
+        self.assertEqual("not_applicable_interface_only", result["document_coverage"])
+        self.assertEqual(0, result["tracked_documents"])
+        self.assertEqual(0, result["remote_documents"])
+        for key in ("executable_method_bodies", "nonabstract_methods_without_body", "native_or_external_methods"):
+            for count in (1, None, False):
+                with self.subTest(key=key, count=count), self.assertRaisesRegex(ValueError, "Interface-only source coverage"):
+                    proof.verify_documents(ROOT, self.row, "net8.0", {**inspection, key: count}, COMMIT, True)
+        inspection["source_link"]["documents"]["/_/*"] = f"{proof.RAW_URL}{'b' * 40}/*"
+        with self.assertRaisesRegex(ValueError, "exact Core head"):
+            proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, False)
+
+    def test_metadata_bundle_requires_exact_sdk_documents_and_no_implemented_methods(self):
+        self.refit_fixture()
+        self.row.update(id="Elsa.Studio", project="src/studio/bundles/Elsa.Studio/Elsa.Studio.csproj")
+        checksum = hashlib.sha256(b"source").hexdigest()
+        inspection = {"source_link": {"documents": {"/_/*": f"{proof.RAW_URL}{COMMIT}/*"}},
+                      "documents": [self.inspection(path, embedded=checksum)["documents"][0]
+                                    for path in sorted(proof.sdk_document_paths(self.row, "net8.0"))],
+                      "executable_method_bodies": 0, "nonabstract_methods_without_body": 0, "native_or_external_methods": 0, "nonmodule_types": 0}
+        with patch.object(proof.subprocess, "run", return_value=subprocess.CompletedProcess([], 1, b"")):
+            result = proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, True)
+            self.assertEqual("not_applicable_authored_code_metadata_bundle", result["document_coverage"])
+            self.assertEqual(3, result["embedded_generated_documents"])
+            self.assertEqual(0, result["tracked_documents"])
+            self.assertEqual(0, result["remote_documents"])
+            with self.assertRaisesRegex(ValueError, "No tracked source"):
+                proof.verify_documents(ROOT, {**self.row, "id": "Elsa.Other"}, "net8.0", inspection, COMMIT, False)
+            wrong_project = {**self.row, "project": "src/studio/other/Elsa.Studio.csproj"}
+            with self.assertRaisesRegex(ValueError, "Untracked source"):
+                proof.verify_documents(ROOT, wrong_project, "net8.0", inspection, COMMIT, False)
+            for key in ("executable_method_bodies", "nonabstract_methods_without_body", "native_or_external_methods"):
+                with self.subTest(key=key), self.assertRaisesRegex(ValueError, "Metadata-only Studio bundle"):
+                    proof.verify_documents(ROOT, self.row, "net8.0", {**inspection, key: 1}, COMMIT, False)
+            with self.assertRaisesRegex(ValueError, "exactly its three"):
+                proof.verify_documents(ROOT, self.row, "net8.0", {**inspection, "documents": inspection["documents"][:-1]}, COMMIT, False)
+            extra = self.inspection("src/studio/bundles/Elsa.Studio/obj/Release/net8.0/InterfaceStubGeneratorV2/Refit.Generator.InterfaceStubGeneratorV2/Generated.g.cs", embedded=checksum)
+            with self.assertRaisesRegex(ValueError, "exactly its three"):
+                proof.verify_documents(ROOT, self.row, "net8.0", {**inspection, "documents": inspection["documents"] + extra["documents"]}, COMMIT, False)
+            with self.assertRaisesRegex(ValueError, "no declared types"):
+                proof.verify_documents(ROOT, self.row, "net8.0", {**inspection, "nonmodule_types": 1}, COMMIT, False)
+            for path in ("src/studio/bundles/Elsa.Studio/Constants.cs", "src/common/Shared/LinkedConstants.cs"):
+                self.row["framework_properties"]["net8.0"]["compiler_evidence"]["compile_inputs"] = [{"path": path}]
+                with self.subTest(path=path), self.assertRaisesRegex(ValueError, "authored or unaudited Compile inputs"):
+                    proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, False)
 
     def test_byte_cache_keeps_each_document_checksum_check(self):
         inspection = self.inspection("src/studio/example/Example.cs")

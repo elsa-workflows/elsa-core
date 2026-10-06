@@ -7,6 +7,7 @@ IsPackable globally. The inventory comes from evaluated MSBuild properties.
 from __future__ import annotations
 
 import argparse
+import base64
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
 import json
@@ -34,6 +35,7 @@ PROPERTIES = (
     "TargetFramework", "IncludeBuildOutput", "IncludeSymbols", "SymbolPackageFormat",
     "IsTestProject", "IsTool", "BuildOutputTargetFolder", "GeneratePackageOnBuild",
     "RepositoryUrl", "PackageProjectUrl", "ProjectAssetsFile", "GenerateElsaPackageManifest", "ElsaPackageManifestIncludeInPackage", "ElsaPackageManifestPackagePath",
+    "NETCoreSdkVersion", "MSBuildToolsPath", "NetCoreRoot",
 )
 
 
@@ -88,15 +90,23 @@ def solution_projects(root: Path) -> list[Path]:
 
 
 def evaluate(root: Path, project: Path, version: str, proof: bool,
-             framework: str | None = None) -> dict[str, str]:
+             framework: str | None = None, *, resolved: bool = False) -> dict:
     command = ["dotnet", "msbuild", str(project), "-nologo", "-p:Configuration=Release",
                f"-p:Version={version}", f"-p:ConsolidatedPackageProof={str(proof).lower()}",
                "-getProperty:" + ",".join(PROPERTIES)]
     if framework:
         command.append(f"-p:TargetFramework={framework}")
+    if resolved:
+        sdk_names = ET.parse(project).getroot().get("Sdk", "").split(";")
+        targets = "ResolveReferences"
+        if "Microsoft.NET.Sdk.Razor" in sdk_names:
+            targets += ";_PrepareRazorSourceGenerators"
+        command.extend([f"-target:{targets}", "-p:BuildProjectReferences=false",
+                        "-getItem:Analyzer,ResolvedFrameworkReference,Compile"])
     raw = run(command, root)
     try:
-        return json.loads(raw)["Properties"]
+        data = json.loads(raw)
+        return data if resolved else data["Properties"]
     except (ValueError, KeyError) as error:
         raise ValueError(f"Non-JSON MSBuild evaluation for {project}: {raw}") from error
 
@@ -222,15 +232,17 @@ def stage_nuspecs(root: Path, row: dict, version: str, destination: Path) -> Non
     read_staged_nuspecs(destination, row)
 
 
-def stage_sdk_metadata(root: Path, manifest: dict, output: Path) -> None:
+def stage_sdk_metadata(root: Path, manifest: dict, output: Path, inspector: Path) -> None:
     staging = output / "sdk-metadata"
     staging.mkdir()
+    cache = {"archive_inspector": inspector, "source_commit": manifest["source_commit"]}
     for index, row in enumerate(manifest["packages"]):
         destination = staging / f"{index:03}-{row['id']}"
         stage_nuspecs(root, row, manifest["version"], destination)
         row["restore_assets"] = []
         for framework, properties in row["framework_properties"].items():
-            after_restore = evaluate(root, root / row["project"], manifest["version"], True, framework)
+            resolved = evaluate(root, root / row["project"], manifest["version"], True, framework, resolved=True)
+            after_restore = resolved["Properties"]
             require(after_restore["AssemblyName"] == properties["assembly_name"] and after_restore["PackageVersion"] == manifest["version"],
                     f"Restore changed package identity/version: {row['id']}/{framework}")
             properties["manifest_required"] = after_restore["GenerateElsaPackageManifest"].lower() == "true" and after_restore["ElsaPackageManifestIncludeInPackage"].lower() == "true"
@@ -239,6 +251,10 @@ def stage_sdk_metadata(root: Path, manifest: dict, output: Path) -> None:
             require(assets.is_relative_to(root) and assets.is_file(), f"Missing canonical restore assets: {assets}")
             row["restore_assets"].append({"framework": framework, "path": assets.relative_to(root).as_posix(),
                                           "sha256": hashlib.sha256(assets.read_bytes()).hexdigest()})
+            snapshot = destination / f"restore.{framework}.assets.json"
+            snapshot.write_bytes(assets.read_bytes())
+            row["restore_assets"][-1]["retained_path"] = snapshot.relative_to(output).as_posix()
+            properties["compiler_evidence"] = capture_compiler_evidence(root, row, framework, resolved, cache)
         if (index + 1) % 20 == 0 or index + 1 == len(manifest["packages"]):
             print(f"Staged SDK metadata for {index+1}/{len(manifest['packages'])} packages", flush=True)
 
@@ -448,6 +464,262 @@ GENERATOR_SOURCE = re.compile(
     r"(contentFiles/cs/any/Elsa\.Platform\.PackageManifest\.Generator\.Hints/[A-Za-z]+\.cs)$")
 
 
+GENERATOR_TOOLS = {
+    "refit": ("InterfaceStubGeneratorV2.dll", {"Refit"}),
+    "logging": ("Microsoft.Extensions.Logging.Generators.dll", {"Microsoft.Extensions.Logging.Abstractions"}),
+    "regex": ("System.Text.RegularExpressions.Generator.dll", {"Microsoft.NETCore.App.Ref"}),
+    "json": ("System.Text.Json.SourceGeneration.dll", {"System.Text.Json", "Microsoft.NETCore.App.Ref"}),
+    "razor": ("Microsoft.CodeAnalysis.Razor.Compiler.dll", set()),
+    "resx": ("Microsoft.CodeAnalysis.ResxSourceGenerator.CSharp.dll", {"Microsoft.CodeAnalysis.ResxSourceGenerator"}),
+    "polysharp": ("PolySharp.SourceGenerators.dll", {"PolySharp"}),
+}
+GENERATED_FAMILIES = (
+    (r"InterfaceStubGeneratorV2/Refit\.Generator\.InterfaceStubGeneratorV2/(Generated|PreserveAttribute|I[A-Za-z0-9_]+)\.g\.cs", "refit"),
+    (r"Microsoft\.Extensions\.Logging\.Generators/Microsoft\.Extensions\.Logging\.Generators\.LoggerMessageGenerator/LoggerMessage\.g\.cs", "logging"),
+    (r"System\.Text\.RegularExpressions\.Generator/System\.Text\.RegularExpressions\.Generator\.RegexGenerator/RegexGenerator\.g\.cs", "regex"),
+    (r"System\.Text\.Json\.SourceGeneration/System\.Text\.Json\.SourceGeneration\.JsonSourceGenerator/[A-Za-z_][A-Za-z0-9_.]*\.g\.cs", "json"),
+    (r"Microsoft\.CodeAnalysis\.Razor\.Compiler/Microsoft\.NET\.Sdk\.Razor\.SourceGenerators\.RazorSourceGenerator/[A-Za-z0-9_/-]+_razor\.g\.cs", "razor"),
+    (r"Microsoft\.CodeAnalysis\.ResxSourceGenerator\.CSharp/Microsoft\.CodeAnalysis\.ResxSourceGenerator\.CSharp\.CSharpResxGenerator/Translations\.Designer\.cs", "resx"),
+    (r"PolySharp\.SourceGenerators/PolySharp\.SourceGenerators\.PolyfillsGenerator/System\.Runtime\.CompilerServices\.OverloadResolutionPriorityAttribute\.g\.cs", "polysharp"),
+)
+PHYSICAL_GENERATORS = {
+    "grpc": ("Grpc.Tools", "build/_protobuf/netstandard1.3/Protobuf.MSBuild.dll"),
+    "protograin": ("Proto.Cluster.CodeGen", "tasks/net8.0/Proto.Cluster.CodeGen.dll"),
+    "swagger": ("FastEndpoints.Swagger", "build/FastEndpoints.Swagger.targets"),
+}
+PHYSICAL_GENERATED_PROJECTS = {
+    ("Elsa.Caching.Distributed.ProtoActor", "src/extensions/caching/Elsa.Caching.Distributed.ProtoActor/Elsa.Caching.Distributed.ProtoActor.csproj"):
+        ((r"Proto/LocalCacheMessages\.cs", "grpc"),),
+    ("Elsa.Workflows.Runtime.ProtoActor", "src/extensions/runtimes/Elsa.Workflows.Runtime.ProtoActor/Elsa.Workflows.Runtime.ProtoActor.csproj"):
+        ((r"Proto/(Shared|WorkflowInstanceMessages)\.cs", "grpc"),
+         (r"protopotato/WorkflowInstance-[0-9A-F]{32}\.cs", "protograin")),
+    ("Elsa.Api.Common", "src/common/Elsa.Api.Common/Elsa.Api.Common.csproj"):
+        ((r"SwaggerExportPathInitializer\.g\.cs", "swagger"),),
+}
+
+
+def restored_assets(root: Path, row: dict, framework: str) -> dict:
+    record = next((item for item in row["restore_assets"] if item["framework"] == framework), None)
+    require(record is not None, f"Missing restored dependency evidence: {row['id']}/{framework}")
+    data = (root / record["path"]).read_bytes()
+    require(hashlib.sha256(data).hexdigest() == record["sha256"], "Restored dependency evidence changed")
+    return json.loads(data)
+
+
+def restored_archive(assets: dict, identifier: str, version: str, *, targeting_pack: bool = False,
+                     cache: dict | None = None) -> tuple[Path, dict]:
+    key = f"{identifier}/{version}"
+    library = assets.get("libraries", {}).get(key, {})
+    if targeting_pack:
+        downloads = [item for frame in assets.get("project", {}).get("frameworks", {}).values()
+                     for item in frame.get("downloadDependencies", [])]
+        require(library.get("type") == "package" or any(item["name"] == identifier and
+                item["version"].replace(" ", "") == f"[{version},{version}]" for item in downloads),
+                f"Generator targeting pack is not restored at its resolved version: {key}")
+    else:
+        require(library.get("type") == "package" and bool(library.get("sha512")),
+                f"Generator is not an actual versioned restored dependency: {key}")
+    relative = library.get("path", f"{identifier.lower()}/{version.lower()}")
+    candidates = [Path(folder) / relative / f"{identifier.lower()}.{version.lower()}.nupkg"
+                  for folder in assets.get("packageFolders", {})]
+    candidates = [path for path in candidates if path.is_file() and not path.is_symlink()]
+    require(bool(candidates), f"Missing restored generator archive: {key}")
+    archive = candidates[0]
+    data = archive.read_bytes()
+    archive_hash = hashlib.sha256(data).hexdigest()
+    require(zipfile.is_zipfile(archive), f"Malformed restored generator archive: {key}")
+    with zipfile.ZipFile(archive) as contents:
+        signed = ".signature.p7s" in archive_names(contents)
+    content_hash = base64.b64encode(hashlib.sha512(data).digest()).decode()
+    if signed:
+        cache = cache if cache is not None else {}
+        hash_key = ("nuget_content_hash", str(archive), archive_hash)
+        if hash_key not in cache:
+            require("archive_inspector" in cache, "Signed generator archive requires SDK NuGet integrity inspector")
+            inspected = json.loads(run(["dotnet", str(cache["archive_inspector"]), "--inspect-archive", str(archive)], archive.parent))
+            require(inspected["signed"] is True and inspected["archive_sha256"] == archive_hash,
+                    "SDK archive inspection did not identify unchanged signed bytes")
+            cache[hash_key] = inspected["content_hash"]
+        content_hash = cache[hash_key]
+    expected = library.get("sha512")
+    if expected:
+        require(content_hash == expected,
+                f"Generator archive differs from restored dependency hash: {key}")
+    else:
+        # Framework download dependencies carry their hash beside the nupkg,
+        # while the immutable assets snapshot records the exact pack version.
+        expected = archive.with_suffix(archive.suffix + ".sha512").read_text().strip()
+        require(base64.b64encode(hashlib.sha512(data).digest()).decode() == expected,
+                f"Generator targeting archive hash differs: {key}")
+    return archive, {"package_id": identifier, "package_version": version,
+                     "archive_path": str(archive), "archive_sha256": archive_hash,
+                     "restore_sha512": expected, "nuget_content_hash": content_hash, "signed": signed}
+
+
+def package_tool(assets: dict, identifier: str, version: str, entry: str, *, targeting_pack: bool = False,
+                 cache: dict | None = None) -> dict:
+    archive, record = restored_archive(assets, identifier, version, targeting_pack=targeting_pack, cache=cache)
+    with zipfile.ZipFile(archive) as contents:
+        names = archive_names(contents)
+        require(entry in names, f"Missing audited generator content: {identifier}/{entry}")
+        data = contents.read(entry)
+        # Check the generator's supplied binaries/tasks, including the native
+        # protoc executables selected by Grpc.Tools on different platforms.
+        prefixes = ("analyzers/",) if entry.startswith("analyzers/") else (str(PurePosixPath(entry).parent) + "/",)
+        if identifier == "Grpc.Tools":
+            prefixes += ("tools/",)
+        checked = {}
+        for name in names:
+            if name.startswith(prefixes) and (name.endswith((".dll", ".exe", ".targets", ".props")) or PurePosixPath(name).name == "protoc"):
+                payload = contents.read(name)
+                extracted = archive.parent / name
+                require(extracted.is_file() and not extracted.is_symlink() and extracted.read_bytes() == payload,
+                        f"Extracted generator content differs from restored archive: {identifier}/{name}")
+                checked[name] = hashlib.sha256(payload).hexdigest()
+    tool = archive.parent / entry
+    require(tool.is_file() and not tool.is_symlink() and tool.read_bytes() == data,
+            f"Extracted generator content differs from restored archive: {identifier}/{entry}")
+    return {**record, "kind": "nuget", "archive_entry": entry, "tool_path": str(tool),
+            "content_sha256": hashlib.sha256(data).hexdigest(), "targeting_pack": targeting_pack,
+            "checked_archive_contents": checked}
+
+
+def capture_compiler_evidence(root: Path, row: dict, framework: str, resolved: dict, cache: dict | None = None) -> dict:
+    cache = cache if cache is not None else {}
+    properties = resolved["Properties"]
+    sdk = Path(properties["MSBuildToolsPath"]).resolve()
+    require(sdk.name == properties["NETCoreSdkVersion"], "SDK root does not match resolved SDK version")
+    assets = restored_assets(root, row, framework)
+    evidence = {"sdk_version": properties["NETCoreSdkVersion"], "sdk_root": str(sdk),
+                "frameworks": [{key: item[key] for key in ("Identity", "TargetingPackName", "TargetingPackVersion", "TargetingPackPath")}
+                               for item in resolved["Items"]["ResolvedFrameworkReference"]], "tools": {}}
+    compiler = sdk / "Roslyn/bincore/csc.dll"
+    require(compiler.is_file(), "Missing compiler in resolved SDK")
+    evidence["compiler_sha256"] = hashlib.sha256(compiler.read_bytes()).hexdigest()
+    evidence["compile_inputs"] = []
+    tracked_key = ("compile_input_paths", cache.get("source_commit", "HEAD"))
+    if tracked_key not in cache:
+        cache[tracked_key] = set(run(["git", "ls-tree", "-r", "--name-only", tracked_key[1]], root).splitlines())
+    for item in resolved["Items"]["Compile"]:
+        path = Path(item["FullPath"]).resolve()
+        relative = path.relative_to(root).as_posix() if path.is_relative_to(root) else str(path)
+        evidence["compile_inputs"].append({"path": relative, "tracked": relative in cache[tracked_key]})
+    for family, (filename, packages) in GENERATOR_TOOLS.items():
+        matches = [item for item in resolved["Items"]["Analyzer"] if Path(item["Identity"]).name == filename]
+        require(len(matches) <= 1, f"Ambiguous resolved generator: {row['id']}/{framework}/{family}")
+        if not matches:
+            continue
+        item = matches[0]
+        path = Path(item["Identity"]).resolve()
+        if family == "razor":
+            require(path.is_relative_to(sdk) and path.is_file(), "Razor generator is outside resolved SDK")
+            record = {"kind": "sdk", "tool_path": str(path), "sdk_version": evidence["sdk_version"],
+                      "content_sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+            targets = sdk / "Sdks/Microsoft.NET.Sdk.Razor/targets/Sdk.Razor.CurrentVersion.targets"
+            record["source_emitting_targets_path"] = str(targets)
+            record["source_emitting_targets_sha256"] = hashlib.sha256(targets.read_bytes()).hexdigest()
+        else:
+            identifier, version = item.get("NuGetPackageId"), item.get("NuGetPackageVersion")
+            # Installed SDK targeting packs need not be NuGet restore libraries.
+            pack = next((pack for pack in evidence["frameworks"]
+                         if path.is_relative_to(Path(pack["TargetingPackPath"]).resolve())), None)
+            if pack and not identifier:
+                identifier, version = pack["TargetingPackName"], pack["TargetingPackVersion"]
+            require(identifier in packages and bool(version), f"Unexpected resolved generator identity: {family}/{identifier}")
+            package_root = next((Path(folder) / identifier.lower() / version.lower() for folder in assets.get("packageFolders", {})
+                                 if path.is_relative_to(Path(folder).resolve())), None)
+            if package_root:
+                record = package_tool(assets, identifier, version, path.relative_to(package_root).as_posix(), targeting_pack=pack is not None, cache=cache)
+            else:
+                require(pack is not None and path.is_relative_to(Path(properties["NetCoreRoot"]).resolve() / "packs"),
+                        f"Generator is outside resolved SDK/targeting pack: {family}")
+                record = {"kind": "framework", "package_id": identifier, "package_version": version,
+                          "tool_path": str(path), "content_sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+        evidence["tools"][family] = record
+    for _, family in PHYSICAL_GENERATED_PROJECTS.get((row["id"], row["project"]), ()):
+        identifier, entry = PHYSICAL_GENERATORS[family]
+        versions = [key.split("/", 1)[1] for key in assets["libraries"] if key.split("/", 1)[0] == identifier]
+        # Swagger's target exists only in its newer package train.
+        if family == "swagger" and not versions:
+            continue
+        require(len(versions) == 1, f"Missing/ambiguous physical generator dependency: {identifier}")
+        archive, _ = restored_archive(assets, identifier, versions[0], cache=cache)
+        with zipfile.ZipFile(archive) as contents:
+            if family == "swagger" and entry not in contents.namelist():
+                continue
+        evidence["tools"][family] = package_tool(assets, identifier, versions[0], entry, cache=cache)
+    return evidence
+
+
+def verify_generator_identity(root: Path, row: dict, framework: str, family: str, cache: dict) -> dict:
+    key = ("generator", row["project"], framework, family)
+    if key in cache:
+        return cache[key]
+    evidence = row["framework_properties"][framework].get("compiler_evidence", {})
+    require(bool(evidence.get("sdk_version")) and bool(evidence.get("frameworks")), "Missing resolved SDK/framework evidence")
+    if family == "sdk":
+        sdk = Path(evidence["sdk_root"])
+        require(sdk.name == evidence["sdk_version"] and hashlib.sha256((sdk / "Roslyn/bincore/csc.dll").read_bytes()).hexdigest() == evidence["compiler_sha256"],
+                "Pinned SDK compiler content changed")
+        restored_assets(root, row, framework)
+        result = {"kind": "sdk", "sdk_version": evidence["sdk_version"], "compiler_sha256": evidence["compiler_sha256"],
+                  "frameworks": evidence["frameworks"]}
+    else:
+        record = evidence.get("tools", {}).get(family)
+        require(record is not None, f"Missing actual resolved generator evidence: {row['id']}/{framework}/{family}")
+        path = Path(record["tool_path"])
+        require(path.is_file() and not path.is_symlink() and hashlib.sha256(path.read_bytes()).hexdigest() == record["content_sha256"],
+                f"Resolved generator content changed: {family}")
+        if record["kind"] == "nuget":
+            assets = restored_assets(root, row, framework)
+            current = package_tool(assets, record["package_id"], record["package_version"], record["archive_entry"], targeting_pack=record["targeting_pack"], cache=cache)
+            require(current == record, f"Resolved generator archive/identity changed: {family}")
+        elif record["kind"] == "sdk":
+            require(record["sdk_version"] == evidence["sdk_version"] and path.is_relative_to(Path(evidence["sdk_root"])),
+                    "Generator does not belong to pinned SDK")
+            targets = Path(record["source_emitting_targets_path"])
+            require(targets.is_relative_to(Path(evidence["sdk_root"])) and hashlib.sha256(targets.read_bytes()).hexdigest() == record["source_emitting_targets_sha256"],
+                    "SDK source-emitting targets changed")
+        else:
+            require(record["kind"] == "framework" and any(pack["TargetingPackName"] == record["package_id"] and
+                    pack["TargetingPackVersion"] == record["package_version"] and path.is_relative_to(Path(pack["TargetingPackPath"]))
+                    for pack in evidence["frameworks"]), "Generator does not belong to resolved framework")
+        result = {key: value for key, value in record.items() if key != "tool_path"}
+    cache[key] = result
+    return result
+
+
+def sdk_document_paths(row: dict, framework: str) -> set[str]:
+    project = PurePosixPath(row["project"])
+    prefix = f"{project.parent}/obj/Release/{framework}/"
+    return {prefix + name for name in (f"{project.stem}.AssemblyInfo.cs", f"{project.stem}.GlobalUsings.g.cs",
+                                      f".NETCoreApp,Version=v{framework.removeprefix('net')}.AssemblyAttributes.cs")}
+
+
+def only_abstract_methods(inspection: dict) -> bool:
+    counts = [inspection.get(name) for name in
+              ("executable_method_bodies", "nonabstract_methods_without_body", "native_or_external_methods")]
+    return all(type(count) is int and count == 0 for count in counts)
+
+
+def generated_family(row: dict, framework: str, relative: str) -> str | None:
+    project = PurePosixPath(row["project"])
+    prefix = f"{project.parent}/obj/Release/{framework}/"
+    if not relative.startswith(prefix):
+        return None
+    name = relative[len(prefix):]
+    if any(part in ("", ".", "..") for part in name.split("/")):
+        return None
+    if relative in sdk_document_paths(row, framework):
+        return "sdk"
+    if framework == "net10.0" and name in ("EmbeddedAttribute.cs", "ValidatableTypeAttribute.cs"):
+        return "razor"
+    for pattern, family in GENERATED_FAMILIES + PHYSICAL_GENERATED_PROJECTS.get((row["id"], row["project"]), ()):
+        if re.fullmatch(pattern, name):
+            return family
+    return None
+
+
 def verify_external_document(root: Path, row: dict, framework: str, document: dict, cache: dict) -> dict | None:
     match = GENERATOR_SOURCE.fullmatch(document["path"])
     if match is None:
@@ -497,12 +769,17 @@ def verify_documents(root: Path, row: dict, framework: str, inspection: dict,
     require(all(isinstance(url, str) and url.startswith(prefix) for url in maps.values()),
             f"SourceLink map does not resolve to exact Core head: {row['id']}/{framework}")
     documents = inspection.get("documents", [])
-    require(bool(documents), f"Portable PDB has no source documents: {row['id']}/{framework}")
     seen = set()
     counts = {"tracked_documents": 0, "remote_documents": 0, "embedded_tracked_documents": 0,
               "embedded_generated_documents": 0, "embedded_external_documents": 0}
+    if not documents:
+        require((row["id"], row["project"]) == ("Elsa.DropIns.Core", "src/extensions/dropins/Elsa.DropIns.Core/Elsa.DropIns.Core.csproj"),
+                f"Portable PDB has no source documents: {row['id']}/{framework}")
+        require(only_abstract_methods(inspection),
+                "Interface-only source coverage exception requires zero executable, native or bodyless implemented methods")
+        return {"framework": framework, **counts, "document_coverage": "not_applicable_interface_only",
+                "documents": [], "executable_method_bodies": 0, "nonabstract_methods_without_body": 0, "native_or_external_methods": 0}
     records = []
-    project_dir = PurePosixPath(row["project"]).parent.as_posix()
     for document in documents:
         path = document["path"]
         require(path not in seen, f"Duplicate PDB document: {path}")
@@ -542,28 +819,42 @@ def verify_documents(root: Path, row: dict, framework: str, inspection: dict,
             records.append({"path": relative, "checksum": checksum, "algorithm": algorithm,
                             "embedded": embedded is not None, "remote_fetched": remote})
         else:
-            # Studio explicitly embeds SDK-generated top-level source files. No
-            # tracked source, arbitrary untracked file or other project is exempt.
-            generated_prefix = f"{project_dir}/obj/Release/{framework}/"
-            generated = relative.startswith(generated_prefix) and "/" not in relative[len(generated_prefix):]
-            generated = generated and (relative.endswith((".AssemblyInfo.cs", ".AssemblyAttributes.cs", ".GlobalUsings.g.cs")))
-            require(row["project"].startswith("src/studio/") and generated and embedded is not None,
+            family = generated_family(row, framework, relative)
+            require(family is not None and embedded is not None,
                     f"Untracked source document has no audited generated-source policy: {relative}")
+            identity = verify_generator_identity(root, row, framework, family, cache)
             counts["embedded_generated_documents"] += 1
             records.append({"path": relative, "checksum": checksum, "algorithm": algorithm,
-                            "embedded": True, "generated": True, "remote_fetched": False})
+                            "embedded": True, "generated": True, "remote_fetched": False,
+                            "generator_family": family, "generator_identity": identity,
+                            "evidence": "Embedded compiled bytes and declared generator identity; not independently regenerated"})
+    if counts["tracked_documents"] == 0 and (row["id"], row["project"]) == ("Elsa.Studio", "src/studio/bundles/Elsa.Studio/Elsa.Studio.csproj"):
+        compile_inputs = row["framework_properties"][framework].get("compiler_evidence", {}).get("compile_inputs")
+        require(isinstance(compile_inputs, list) and all(item["path"] in sdk_document_paths(row, framework) and item.get("tracked") is False for item in compile_inputs),
+                "Metadata-only Studio bundle has authored or unaudited Compile inputs")
+        require(only_abstract_methods(inspection) and {record["path"] for record in records} == sdk_document_paths(row, framework)
+                and type(inspection.get("nonmodule_types")) is int and inspection["nonmodule_types"] == 0
+                and all(record.get("generator_family") == "sdk" and record["embedded"] for record in records),
+                "Metadata-only Studio bundle requires no declared types or implemented methods and exactly its three embedded SDK documents")
+        return {"framework": framework, **counts, "document_coverage": "not_applicable_authored_code_metadata_bundle",
+                "documents": records, "executable_method_bodies": 0, "nonabstract_methods_without_body": 0, "native_or_external_methods": 0}
     require(counts["tracked_documents"] > 0, f"No tracked source covered: {row['id']}/{framework}")
     return {"framework": framework, **counts, "documents": records}
 
 
-def provenance(root: Path, artifacts: Path, manifest: dict, output: Path, *, remote: bool) -> list[dict]:
+def build_symbol_verifier(root: Path, output: Path) -> Path:
     helper = root / "scripts/integration-program/VerifyPackageSymbolPair/VerifyPackageSymbolPair.csproj"
     helper_out = output / "symbol-verifier"
     run(["dotnet", "build", str(helper), "--configuration", "Release", "--output", str(helper_out)],
         root, timeout=600, log=output / "symbol-verifier.log")
-    executable = helper_out / "VerifyPackageSymbolPair.dll"
+    return helper_out / "VerifyPackageSymbolPair.dll"
+
+
+def provenance(root: Path, artifacts: Path, manifest: dict, output: Path, *, remote: bool,
+               inspector: Path) -> list[dict]:
+    executable = inspector
     results = []
-    cache = {}
+    cache = {"archive_inspector": inspector}
     with tempfile.TemporaryDirectory(prefix="elsa-symbol-proof-") as temporary:
         temporary_path = Path(temporary)
         for row in manifest["packages"]:
@@ -634,12 +925,13 @@ def main() -> None:
     environment = dict(os.environ, ConsolidatedPackageProof="true", ContinuousIntegrationBuild="true")
     run([str(root / "build.sh"), "Compile+Pack", "--configuration", "Release", "--version", args.version], root,
         timeout=7200, log=output / "compile-pack.log", env=environment)
-    stage_sdk_metadata(root, manifest, output)
+    inspector = build_symbol_verifier(root, output)
+    stage_sdk_metadata(root, manifest, output, inspector)
     artifacts = output / "artifacts"
     shutil.copytree(packages, artifacts)
     manifest = verify_artifacts(artifacts, manifest)
     write_json(output / "verified-artifacts.json", manifest)
-    sources = provenance(root, artifacts, manifest, output, remote=args.remote_sources)
+    sources = provenance(root, artifacts, manifest, output, remote=args.remote_sources, inspector=inspector)
     write_json(output / "source-provenance.json", sources)
     from prove_consolidated_package_consumers import prove
     consumers = prove(artifacts, manifest, output / "consumers")

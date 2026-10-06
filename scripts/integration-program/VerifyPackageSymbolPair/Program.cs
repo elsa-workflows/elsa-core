@@ -3,10 +3,38 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using System.Text.Json;
+using NuGet.Packaging;
+using NuGet.Packaging.Signing;
+
+if (args.Length == 2 && args[0] == "--inspect-archive")
+{
+    using var package = new PackageArchiveReader(args[1]);
+    try
+    {
+        var signature = await package.GetPrimarySignatureAsync(CancellationToken.None);
+        if (signature is not null)
+        {
+            await package.ValidateIntegrityAsync(signature.SignatureContent, CancellationToken.None);
+        }
+
+        Console.WriteLine(JsonSerializer.Serialize(new
+        {
+            signed = signature is not null,
+            content_hash = package.GetContentHash(CancellationToken.None),
+            archive_sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(args[1]))).ToLowerInvariant()
+        }));
+    }
+    catch (SignatureException error)
+    {
+        Console.Error.WriteLine($"{error.Code}: {error.Message}");
+        Environment.ExitCode = 1;
+    }
+    return;
+}
 
 if (args.Length != 2 && (args.Length != 3 || args[2] != "--inspect-documents"))
 {
-    throw new ArgumentException("Usage: VerifyPackageSymbolPair <assembly.dll> <symbols.pdb> [--inspect-documents]");
+    throw new ArgumentException("Usage: VerifyPackageSymbolPair <assembly.dll> <symbols.pdb> [--inspect-documents] or --inspect-archive <package.nupkg>");
 }
 
 var assemblyPath = Path.GetFullPath(args[0]);
@@ -116,6 +144,16 @@ using (pdbReaderProvider)
         }).ToArray();
         var assemblyMetadata = reader.GetMetadataReader();
         var definition = assemblyMetadata.GetAssemblyDefinition();
+        var nonmoduleTypes = assemblyMetadata.TypeDefinitions.Select(assemblyMetadata.GetTypeDefinition)
+            .Count(type => assemblyMetadata.GetString(type.Name) != "<Module>");
+        var methods = assemblyMetadata.MethodDefinitions.Select(assemblyMetadata.GetMethodDefinition).ToArray();
+        var executableMethodBodies = methods.Count(method => method.RelativeVirtualAddress != 0);
+        var nonabstractMethodsWithoutBody = methods.Count(method => method.RelativeVirtualAddress == 0
+            && (method.Attributes & System.Reflection.MethodAttributes.Abstract) == 0);
+        var nativeOrExternalMethods = methods.Count(method =>
+            (method.Attributes & System.Reflection.MethodAttributes.PinvokeImpl) != 0
+            || (method.ImplAttributes & System.Reflection.MethodImplAttributes.CodeTypeMask) != System.Reflection.MethodImplAttributes.IL
+            || (method.ImplAttributes & (System.Reflection.MethodImplAttributes.InternalCall | System.Reflection.MethodImplAttributes.ForwardRef)) != 0);
         string? informationalVersion = null;
         foreach (var handle in definition.GetCustomAttributes())
         {
@@ -152,6 +190,10 @@ using (pdbReaderProvider)
             assembly_name = assemblyMetadata.GetString(definition.Name),
             assembly_version = definition.Version.ToString(),
             informational_version = informationalVersion,
+            executable_method_bodies = executableMethodBodies,
+            nonabstract_methods_without_body = nonabstractMethodsWithoutBody,
+            native_or_external_methods = nativeOrExternalMethods,
+            nonmodule_types = nonmoduleTypes,
             source_link = sourceLinks[0],
             documents
         }));
