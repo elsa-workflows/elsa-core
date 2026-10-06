@@ -18,6 +18,23 @@ MATRIX = {(version, framework, host) for version in VERSIONS for framework in FR
 BASELINE_ASSERTIONS = set(POLICY["baseline"])
 CANDIDATE_ASSERTIONS = BASELINE_ASSERTIONS | set(POLICY["candidate"])
 HOST_ASSERTIONS = {host: set(names) for host, names in POLICY["host_assertions"].items()}
+BPMN_INPUT_PATH = JOURNEY.with_name("paired-browser.bpmn")
+BPMN_INPUT_SHA256 = "b450b6fc6bee2a693b5dd6a4af60f02a220f1b89c9d5f2d35bf7fecc1289a1da"
+BPMN_INPUT_BYTES = 679
+BPMN_SEMANTIC_IDENTITY = (
+    "Definitions_paired_browser|paired-process|paired-start|paired-end|paired-flow|paired-start>paired-end"
+)
+BPMN_SEMANTIC_SHA256 = hashlib.sha256(BPMN_SEMANTIC_IDENTITY.encode("utf-8")).hexdigest()
+BPMN_ID_SHA256 = {
+    name: hashlib.sha256(value.encode("utf-8")).hexdigest()
+    for name, value in {
+        "process_id_sha256": "paired-process",
+        "start_id_sha256": "paired-start",
+        "end_id_sha256": "paired-end",
+        "flow_id_sha256": "paired-flow",
+    }.items()
+}
+BPMN_CHECKS = {"imported", "rendered", "selection_callback", "exported", "reimported", "semantic_preserved"}
 
 
 def require(condition: bool, message: str) -> None:
@@ -43,6 +60,7 @@ def new_ledger() -> dict:
 
 def check_cell(record: dict) -> None:
     key = identity(record)
+    validate_browser_receipt(record, key)
     assertions = record.get("assertions", [])
     names = [item["name"] for item in assertions]
     require(len(names) == len(set(names)) and set(names) == required_assertions(record), "Missing, extra or duplicated browser assertion")
@@ -60,6 +78,95 @@ def check_matrix(ledger: dict) -> None:
         check_cell(cell)
 
 
+def _require_sha256(value: object, message: str = "Unsafe browser proof hash") -> None:
+    require(isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None, message)
+
+
+def _validate_bpmn_source() -> None:
+    try:
+        info = BPMN_INPUT_PATH.lstat()
+        require(not BPMN_INPUT_PATH.is_symlink() and info.st_mode & 0o170000 == 0o100000,
+                "Tracked BPMN input is not a regular file")
+        raw = BPMN_INPUT_PATH.read_bytes()
+    except OSError:
+        raise ValueError("Tracked BPMN input is unavailable") from None
+    require(len(raw) == BPMN_INPUT_BYTES and hashlib.sha256(raw).hexdigest() == BPMN_INPUT_SHA256,
+            "Tracked BPMN input differs from the reviewed fixture")
+
+
+def _validate_bpmn_roundtrip(value: object, assertion_passed: bool) -> None:
+    required = {
+        "input_xml_sha256", "input_xml_bytes", "semantic_sha256", "process_id_sha256",
+        "start_id_sha256", "end_id_sha256", "flow_id_sha256", "checks",
+    }
+    optional = {"first_definition_id_sha256", "export_xml_sha256", "export_xml_bytes", "second_definition_id_sha256"}
+    require(isinstance(value, dict) and required <= set(value) <= required | optional,
+            "Unsafe BPMN roundtrip proof fields")
+    _validate_bpmn_source()
+    require(value["input_xml_sha256"] == BPMN_INPUT_SHA256 and value["input_xml_bytes"] == BPMN_INPUT_BYTES,
+            "BPMN proof is not bound to the tracked input")
+    require(type(value["input_xml_bytes"]) is int and 0 < value["input_xml_bytes"] <= 1024 * 1024,
+            "Invalid BPMN input size")
+    require(value["semantic_sha256"] == BPMN_SEMANTIC_SHA256, "BPMN semantic identity differs from the reviewed model")
+    for name, expected in BPMN_ID_SHA256.items():
+        require(value[name] == expected, "BPMN model identity differs from the reviewed model")
+    for name in ("input_xml_sha256", "semantic_sha256", *BPMN_ID_SHA256):
+        _require_sha256(value[name])
+
+    checks = value["checks"]
+    require(isinstance(checks, dict) and set(checks) == BPMN_CHECKS and
+            all(type(flag) is bool for flag in checks.values()), "Invalid BPMN roundtrip checks")
+    require(not checks["rendered"] or checks["imported"], "BPMN render proof precedes import")
+    require(not checks["selection_callback"] or checks["rendered"], "BPMN selection proof precedes render")
+    require(not checks["exported"] or checks["selection_callback"], "BPMN export proof precedes native selection")
+    require(not checks["reimported"] or checks["exported"], "BPMN reimport proof precedes export")
+    require(not checks["semantic_preserved"] or all(checks[name] for name in BPMN_CHECKS - {"semantic_preserved"}),
+            "BPMN semantic proof precedes a completed roundtrip")
+
+    has_first = "first_definition_id_sha256" in value
+    require(has_first == checks["imported"], "BPMN first definition identity does not match import observation")
+    if has_first:
+        _require_sha256(value["first_definition_id_sha256"])
+    has_export_hash = "export_xml_sha256" in value
+    has_export_size = "export_xml_bytes" in value
+    require(has_export_hash == checks["exported"] and has_export_size == checks["exported"],
+            "BPMN export evidence does not match the export observation")
+    if checks["exported"]:
+        _require_sha256(value["export_xml_sha256"])
+        require(type(value["export_xml_bytes"]) is int and 0 < value["export_xml_bytes"] <= 1024 * 1024,
+                "Invalid BPMN export size")
+    has_second = "second_definition_id_sha256" in value
+    require(has_second == checks["reimported"], "BPMN second definition identity does not match reimport observation")
+    if has_second:
+        _require_sha256(value["second_definition_id_sha256"])
+        require(value["second_definition_id_sha256"] != value["first_definition_id_sha256"],
+                "BPMN reimport reused the original definition identity")
+
+    complete = all(checks.values()) and has_first and has_export_hash and has_export_size and has_second
+    require(assertion_passed is complete, "BPMN assertion does not match the complete roundtrip proof")
+
+
+def _validate_clipboard(value: object, assertion_passed: bool, proof: dict) -> None:
+    required = {"instance_id_sha256", "expected_value_sha256", "native_copy_observed"}
+    allowed = required | {"actual_value_sha256"}
+    require(isinstance(value, dict) and required <= set(value) <= allowed, "Unsafe clipboard proof fields")
+    _require_sha256(value["instance_id_sha256"])
+    _require_sha256(value["expected_value_sha256"])
+    require(type(value["native_copy_observed"]) is bool, "Invalid clipboard observation flag")
+    if "actual_value_sha256" in value:
+        _require_sha256(value["actual_value_sha256"])
+    require({"instance_id_sha256", "value_sha256"} <= set(proof),
+            "Clipboard proof is missing its candidate execution binding")
+    require(value["instance_id_sha256"] == proof["instance_id_sha256"],
+            "Clipboard proof belongs to a different workflow instance")
+    require(value["expected_value_sha256"] == proof["value_sha256"],
+            "Clipboard proof uses a different synthetic value")
+    observed_match = value.get("native_copy_observed") is True and value.get("actual_value_sha256") == value["expected_value_sha256"]
+    require(not value["native_copy_observed"] or observed_match,
+            "Clipboard success is missing matching observed bytes")
+    require(assertion_passed is observed_match, "Clipboard assertion does not match the native copy proof")
+
+
 def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     """Allow only bounded, sanitized fields from the private child process."""
     allowed = {"host", "framework", "version", "result", "assertions", "resources", "proof", "browser_version", "failure_category"}
@@ -73,14 +180,30 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     for item in assertions:
         require(set(item) <= {"name", "passed", "reason_category"} and type(item.get("passed")) is bool and item.get("reason_category") in (None, "not_implemented"), "Unsafe browser assertion")
     proof = record.get("proof", {})
-    stages = {"backend_authenticated", "login_navigation", "login_form", "login_submitted", "workflow_list", "create_dialog_opened", "create_name_filled", "create_submitted", "workflow_created", "output_tab_opened", "output_dialog_opened", "output_type_selected", "output_declared", "activity_registry", "activity_inserted", "property_saved", "edit_reloaded", "workflow_published", "workflow_run", "released_export_menu_opened", "released_export_dialog_opened", "released_document_exported", "baseline_imported", "baseline_reloaded", "baseline_run"}
+    require(isinstance(proof, dict), "Invalid browser proof container")
+    assertions_by_name = {item["name"]: item["passed"] for item in assertions}
+    stages = {"backend_authenticated", "login_navigation", "login_form", "login_submitted", "workflow_list", "create_dialog_opened", "create_name_filled", "create_submitted", "workflow_created", "output_tab_opened", "output_dialog_opened", "output_type_selected", "output_declared", "activity_registry", "activity_inserted", "property_saved", "edit_reloaded", "workflow_published", "workflow_run", "released_export_menu_opened", "released_export_dialog_opened", "released_document_exported", "baseline_imported", "baseline_reloaded", "baseline_run", "bpmn_input_validated", "bpmn_imported", "bpmn_rendered", "bpmn_selected", "bpmn_exported", "bpmn_reimported", "clipboard_copied"}
     hashes = {"definition_id_sha256", "activity_id_sha256", "value_sha256", "synthetic_document_sha256", "instance_id_sha256", "released_document_sha256"}
     flags = {"login_failure_visible", "login_form_visible", "server_circuit_observed", "server_render_frames_observed", "elsa_identity_ui_visible", "expected_auth_provider_observed", "interactive_validation_observed", "private_input_values_retained", "initial_list_navigation_completed", "editor_ready_observed"}
     counts = {"create_name_label_count", "create_name_textbox_count"}
-    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens"}, "Unsafe browser proof field")
+    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens", "bpmn_roundtrip", "clipboard"}, "Unsafe browser proof field")
+    require("bpmn_roundtrip" not in proof or "bpmn_roundtrip" in assertions_by_name and record["version"] == "3.10.0",
+            "Unexpected BPMN roundtrip proof")
+    require("clipboard" not in proof or "clipboard" in assertions_by_name and record["version"] == "3.10.0",
+            "Unexpected clipboard proof")
+    require(not assertions_by_name.get("bpmn_roundtrip", False) or "bpmn_roundtrip" in proof,
+            "Missing BPMN roundtrip proof for passed assertion")
+    require(not assertions_by_name.get("clipboard", False) or "clipboard" in proof,
+            "Missing clipboard proof for passed assertion")
     for name, value in proof.items():
         if name == "baseline_reopens":
             _validate_reopens(value, key)
+            continue
+        if name == "bpmn_roundtrip":
+            _validate_bpmn_roundtrip(value, assertions_by_name["bpmn_roundtrip"])
+            continue
+        if name == "clipboard":
+            _validate_clipboard(value, assertions_by_name["clipboard"], proof)
             continue
         if name in counts:
             valid = type(value) is int and 0 <= value <= 100

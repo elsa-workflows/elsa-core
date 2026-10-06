@@ -1,7 +1,9 @@
 import copy
+from contextlib import contextmanager
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import tempfile
 import subprocess
 import unittest
@@ -21,6 +23,56 @@ def reopen_row(version, framework="net10.0", host="server"):
             "tool_version": documents.TOOL_VERSIONS[version], "checks": {name: True for name in matrix.REOPEN_CHECKS}}
 
 
+def sha256(value):
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def bpmn_proof(*, complete=True):
+    checks = {name: complete for name in matrix.BPMN_CHECKS}
+    result = {
+        "input_xml_sha256": matrix.BPMN_INPUT_SHA256,
+        "input_xml_bytes": matrix.BPMN_INPUT_BYTES,
+        "semantic_sha256": matrix.BPMN_SEMANTIC_SHA256,
+        **matrix.BPMN_ID_SHA256,
+        "checks": checks,
+    }
+    if complete:
+        result.update(first_definition_id_sha256=sha256("first definition"),
+                      export_xml_sha256=sha256("exported BPMN"), export_xml_bytes=679,
+                      second_definition_id_sha256=sha256("second definition"))
+    return result
+
+
+def clipboard_proof(instance_hash, value_hash, *, observed=True):
+    result = {"instance_id_sha256": instance_hash, "expected_value_sha256": value_hash,
+              "native_copy_observed": observed}
+    if observed:
+        result["actual_value_sha256"] = value_hash
+    return result
+
+
+def assertion(record, name, passed):
+    next(item for item in record["assertions"] if item["name"] == name)["passed"] = passed
+
+
+def tsx_command(script):
+    local = matrix.JOURNEY.parent / "node_modules/.bin/tsx"
+    executable = local if local.is_file() else shutil.which("tsx")
+    return [str(executable), script] if executable else ["npm", "exec", "--no", "--", "tsx", script]
+
+
+@contextmanager
+def tracked_bpmn_fixture():
+    with tempfile.TemporaryDirectory() as directory:
+        path = Path(directory) / "paired-browser.bpmn"
+        raw = b"test-only tracked BPMN bytes"
+        path.write_bytes(raw)
+        with patch.object(matrix, "BPMN_INPUT_PATH", path), \
+             patch.object(matrix, "BPMN_INPUT_SHA256", hashlib.sha256(raw).hexdigest()), \
+             patch.object(matrix, "BPMN_INPUT_BYTES", len(raw)):
+            yield
+
+
 class MatrixContracts(unittest.TestCase):
     def setUp(self):
         self.ledger = matrix.new_ledger()
@@ -29,6 +81,10 @@ class MatrixContracts(unittest.TestCase):
             cell.update(result="passed", browser_version="149.0.7827.55", resources=[], proof={}, failure_category=None, assertions=[{"name": name, "passed": True} for name in sorted(matrix.required_assertions(cell))])
             if cell["version"] == "3.10.0":
                 cell["proof"]["baseline_reopens"] = [reopen_row(version, cell["framework"], cell["host"]) for version in documents.TOOL_VERSIONS]
+                instance_hash, value_hash = sha256("matrix candidate instance"), sha256("matrix candidate sentinel")
+                cell["proof"].update(instance_id_sha256=instance_hash, value_sha256=value_hash,
+                                      bpmn_roundtrip=bpmn_proof(),
+                                      clipboard=clipboard_proof(instance_hash, value_hash))
 
     def released_inputs(self, root):
         inputs = []
@@ -102,10 +158,19 @@ class MatrixContracts(unittest.TestCase):
     def test_node_independently_checks_bytes_and_actual_graph_semantics(self):
         with tempfile.TemporaryDirectory() as directory:
             inputs = matrix._released_inputs(("3.10.0", "net10.0", "server"), self.released_inputs(Path(directory)))
-            result = subprocess.run(["npm", "exec", "--no", "--", "tsx", "native-import.contract.ts"],
+            result = subprocess.run(tsx_command("native-import.contract.ts"),
                                     cwd=matrix.JOURNEY.parent, input=json.dumps(inputs), capture_output=True, text=True, timeout=60)
             self.assertEqual(0, result.returncode, result.stderr)
             self.assertEqual("native import contracts passed\n", result.stdout)
+
+    def test_node_bpmn_contract_checks_the_tracked_fixture_and_semantic_mutations(self):
+        tracked = matrix.BPMN_INPUT_PATH.read_bytes()
+        self.assertEqual(matrix.BPMN_INPUT_BYTES, len(tracked))
+        self.assertEqual(matrix.BPMN_INPUT_SHA256, hashlib.sha256(tracked).hexdigest())
+        result = subprocess.run(tsx_command("bpmn-roundtrip.contract.ts"),
+                                cwd=matrix.JOURNEY.parent, capture_output=True, text=True, timeout=60)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual("BPMN roundtrip contracts passed\n", result.stdout)
 
     def test_returned_reopen_proof_is_crossbound_to_each_supplied_source(self):
         key = ("3.10.0", "net10.0", "server")
@@ -129,6 +194,162 @@ class MatrixContracts(unittest.TestCase):
                             matrix.run_browser(self.handle, dict(zip(("version", "framework", "host"), key)), [], released_document_inputs=inputs)
                     else:
                         self.assertEqual(record, matrix.run_browser(self.handle, dict(zip(("version", "framework", "host"), key)), [], released_document_inputs=inputs))
+
+    def test_bpmn_roundtrip_pass_requires_exact_tracked_input_and_complete_native_journey(self):
+        key = ("3.10.0", "net10.0", "server")
+        record = copy.deepcopy(next(cell for cell in self.ledger["cells"] if matrix.identity(cell) == key))
+        record["result"] = "incomplete"
+        assertion(record, "clipboard", False)
+        record["proof"].pop("clipboard")
+        with tracked_bpmn_fixture():
+            record["proof"]["bpmn_roundtrip"] = bpmn_proof()
+            self.assertEqual(record, matrix.validate_browser_receipt(record, key))
+
+    def test_bpmn_partial_failure_retains_only_safe_bounded_fields(self):
+        key = ("3.10.0", "net10.0", "server")
+        record = copy.deepcopy(next(cell for cell in self.ledger["cells"] if matrix.identity(cell) == key))
+        record["result"] = "incomplete"
+        assertion(record, "bpmn_roundtrip", False)
+        assertion(record, "clipboard", False)
+        record["proof"].pop("clipboard")
+        with tracked_bpmn_fixture():
+            record["proof"]["bpmn_roundtrip"] = bpmn_proof(complete=False)
+            sanitized = matrix.validate_browser_receipt(record, key)
+        self.assertEqual(record, sanitized)
+        self.assertNotIn("paired-process", json.dumps(sanitized))
+        self.assertNotIn("<definitions", json.dumps(sanitized).lower())
+
+    def test_bpmn_export_observation_survives_later_semantic_failure(self):
+        key = ("3.10.0", "net10.0", "server")
+        record = copy.deepcopy(next(cell for cell in self.ledger["cells"] if matrix.identity(cell) == key))
+        record["result"] = "incomplete"
+        assertion(record, "bpmn_roundtrip", False)
+        assertion(record, "clipboard", False)
+        record["proof"].pop("clipboard")
+        with tracked_bpmn_fixture():
+            proof = bpmn_proof(complete=False)
+            proof["checks"].update(imported=True, rendered=True, selection_callback=True, exported=True)
+            proof.update(first_definition_id_sha256=sha256("first definition"),
+                         export_xml_sha256=sha256("exported BPMN"), export_xml_bytes=679)
+            record["proof"]["bpmn_roundtrip"] = proof
+            self.assertEqual(record, matrix.validate_browser_receipt(record, key))
+
+    def test_bpmn_proof_rejects_unbound_or_inconsistent_shapes(self):
+        key = ("3.10.0", "net10.0", "server")
+        base = copy.deepcopy(next(cell for cell in self.ledger["cells"] if matrix.identity(cell) == key))
+        base["result"] = "incomplete"
+        assertion(base, "clipboard", False)
+        base["proof"].pop("clipboard")
+        mutations = [
+            lambda r: r["proof"].pop("bpmn_roundtrip"),
+            lambda r: r["proof"]["bpmn_roundtrip"].update(raw_xml="<definitions/>"),
+            lambda r: r["proof"]["bpmn_roundtrip"].update(input_xml_sha256="0" * 64),
+            lambda r: r["proof"]["bpmn_roundtrip"].update(input_xml_bytes=1024 * 1024 + 1),
+            lambda r: r["proof"]["bpmn_roundtrip"].update(input_xml_bytes=True),
+            lambda r: r["proof"]["bpmn_roundtrip"].update(semantic_sha256="0" * 64),
+            lambda r: r["proof"]["bpmn_roundtrip"].update(process_id_sha256="0" * 64),
+            lambda r: r["proof"]["bpmn_roundtrip"]["checks"].update(rendered=1),
+            lambda r: r["proof"]["bpmn_roundtrip"]["checks"].pop("selection_callback"),
+            lambda r: r["proof"]["bpmn_roundtrip"].pop("first_definition_id_sha256"),
+            lambda r: r["proof"]["bpmn_roundtrip"].update(second_definition_id_sha256=r["proof"]["bpmn_roundtrip"]["first_definition_id_sha256"]),
+            lambda r: r["proof"]["bpmn_roundtrip"]["checks"].update(reimported=False),
+            lambda r: r["proof"]["bpmn_roundtrip"]["checks"].update(semantic_preserved=False),
+            lambda r: assertion(r, "bpmn_roundtrip", False),
+            lambda r: r["proof"]["bpmn_roundtrip"].update(export_xml_bytes=1024 * 1024 + 1),
+        ]
+        with tracked_bpmn_fixture():
+            base["proof"]["bpmn_roundtrip"] = bpmn_proof()
+            for mutate in mutations:
+                changed = copy.deepcopy(base)
+                mutate(changed)
+                with self.subTest(mutate=mutate), self.assertRaises(ValueError):
+                    matrix.validate_browser_receipt(changed, key)
+                with self.subTest(check_cell=mutate), self.assertRaises(ValueError):
+                    matrix.check_cell(changed)
+
+    def test_bpmn_proof_rejects_changed_tracked_input_and_wrong_release_cell(self):
+        key = ("3.10.0", "net10.0", "server")
+        record = copy.deepcopy(next(cell for cell in self.ledger["cells"] if matrix.identity(cell) == key))
+        record["result"] = "incomplete"
+        assertion(record, "clipboard", False)
+        record["proof"].pop("clipboard")
+        with tracked_bpmn_fixture():
+            record["proof"]["bpmn_roundtrip"] = bpmn_proof()
+            matrix.BPMN_INPUT_PATH.write_bytes(b"changed tracked source")
+            with self.assertRaisesRegex(ValueError, "Tracked BPMN input"):
+                matrix.validate_browser_receipt(record, key)
+        baseline = copy.deepcopy(next(cell for cell in self.ledger["cells"] if matrix.identity(cell) == ("3.9.0", "net10.0", "server")))
+        with tracked_bpmn_fixture():
+            baseline["proof"]["bpmn_roundtrip"] = bpmn_proof()
+            with self.assertRaisesRegex(ValueError, "Unexpected BPMN"):
+                matrix.validate_browser_receipt(baseline, ("3.9.0", "net10.0", "server"))
+
+    def test_clipboard_pass_requires_native_copy_and_equal_hashes_bound_to_candidate(self):
+        key = ("3.10.0", "net10.0", "server")
+        record = copy.deepcopy(next(cell for cell in self.ledger["cells"] if matrix.identity(cell) == key))
+        record["result"] = "incomplete"
+        assertion(record, "bpmn_roundtrip", False)
+        record["proof"].pop("bpmn_roundtrip")
+        instance_hash, value_hash = sha256("original instance"), sha256("synthetic output")
+        record["proof"].update(instance_id_sha256=instance_hash, value_sha256=value_hash,
+                               clipboard={"instance_id_sha256": instance_hash,
+                                          "expected_value_sha256": value_hash,
+                                          "actual_value_sha256": value_hash,
+                                          "native_copy_observed": True})
+        self.assertEqual(record, matrix.validate_browser_receipt(record, key))
+
+    def test_clipboard_partial_failure_is_sanitized_and_never_promoted(self):
+        key = ("3.10.0", "net10.0", "server")
+        record = copy.deepcopy(next(cell for cell in self.ledger["cells"] if matrix.identity(cell) == key))
+        record["result"] = "incomplete"
+        assertion(record, "bpmn_roundtrip", False)
+        assertion(record, "clipboard", False)
+        record["proof"].pop("bpmn_roundtrip")
+        instance_hash, value_hash = sha256("instance"), sha256("expected")
+        record["proof"].update(instance_id_sha256=instance_hash, value_sha256=value_hash)
+        record["proof"]["clipboard"] = {"instance_id_sha256": instance_hash,
+                                          "expected_value_sha256": value_hash,
+                                          "native_copy_observed": False}
+        self.assertEqual(record, matrix.validate_browser_receipt(record, key))
+
+    def test_clipboard_proof_rejects_raw_fields_hash_mismatch_and_false_claims(self):
+        key = ("3.10.0", "net10.0", "server")
+        instance_hash, value_hash, actual_hash = sha256("instance"), sha256("expected"), sha256("actual")
+        base = copy.deepcopy(next(cell for cell in self.ledger["cells"] if matrix.identity(cell) == key))
+        base["result"] = "incomplete"
+        assertion(base, "bpmn_roundtrip", False)
+        base["proof"].pop("bpmn_roundtrip")
+        base["proof"].update(instance_id_sha256=instance_hash, value_sha256=value_hash,
+                              clipboard={"instance_id_sha256": instance_hash,
+                                         "expected_value_sha256": value_hash,
+                                         "actual_value_sha256": value_hash,
+                                         "native_copy_observed": True})
+        mutations = [
+            lambda r: r["proof"].pop("clipboard"),
+            lambda r: r["proof"]["clipboard"].update(raw_value="private"),
+            lambda r: r["proof"]["clipboard"].update(native_copy_observed=1),
+            lambda r: r["proof"]["clipboard"].pop("actual_value_sha256"),
+            lambda r: r["proof"]["clipboard"].update(actual_value_sha256=actual_hash),
+            lambda r: r["proof"]["clipboard"].update(instance_id_sha256="0" * 64),
+            lambda r: r["proof"]["clipboard"].update(expected_value_sha256="0" * 64),
+            lambda r: r["proof"].pop("instance_id_sha256"),
+            lambda r: r["proof"].pop("value_sha256"),
+            lambda r: assertion(r, "clipboard", False),
+            lambda r: r["proof"].update(instance_id_sha256="0" * 64),
+        ]
+        for mutate in mutations:
+            changed = copy.deepcopy(base)
+            mutate(changed)
+            with self.subTest(mutate=mutate), self.assertRaises(ValueError):
+                matrix.validate_browser_receipt(changed, key)
+            with self.subTest(check_cell=mutate), self.assertRaises(ValueError):
+                matrix.check_cell(changed)
+        partial = copy.deepcopy(base)
+        partial["result"] = "incomplete"
+        assertion(partial, "clipboard", False)
+        partial["proof"]["clipboard"]["native_copy_observed"] = False
+        partial["proof"]["clipboard"]["actual_value_sha256"] = actual_hash
+        self.assertEqual(partial, matrix.validate_browser_receipt(partial, key))
 
     def test_exact_complete_matrix_and_required_assertions(self):
         matrix.check_matrix(self.ledger)
