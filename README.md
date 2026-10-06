@@ -91,6 +91,7 @@ docker run \
 - [Default Admin User bootstrap (shell + legacy feature system)](src/modules/Elsa.Identity/README.md)
 - [Studio source and local development](doc/studio/README.md)
 - [Extensions source and package boundaries](doc/extensions/README.md)
+- [Consolidated 3.10 package proof and publication boundaries](doc/integration-program/consolidated-package-proof.md)
 
 ## Training
 

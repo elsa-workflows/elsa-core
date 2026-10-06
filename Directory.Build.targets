@@ -1,4 +1,5 @@
 <Project>
+  <Import Project="build/ConsolidatedPackageProof.targets" />
   <!-- Use project references instead of NuGet packages for local development -->
   <PropertyGroup>
     <UseProjectReferences>true</UseProjectReferences>

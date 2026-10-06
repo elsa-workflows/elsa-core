@@ -1,1 +1,1 @@
-<Project><PropertyGroup><UseProjectReferences>true</UseProjectReferences><IsPackable>false</IsPackable><GeneratePackageOnBuild>false</GeneratePackageOnBuild></PropertyGroup></Project>
+<Project><Import Project="../../build/ConsolidatedPackageProof.targets" /><PropertyGroup><UseProjectReferences>true</UseProjectReferences><IsPackable Condition="'$(ConsolidatedPackageProof)' != 'true'">false</IsPackable><GeneratePackageOnBuild>false</GeneratePackageOnBuild></PropertyGroup></Project>
