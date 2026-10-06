@@ -12,6 +12,10 @@ for (const length of ['', '-1', '1.5', 'NaN', String(bytes.length + 1), '9007199
   await assert.rejects(resourceBody(response(bytes, length), bytes.length));
 await assert.rejects(resourceBody(response(Buffer.from('different bytes')), bytes.length));
 await assert.rejects(resourceBody(response(bytes), 32 * 1024 * 1024 + 1));
+const compressed = { headers: () => ({ 'content-length': String(bytes.length + 33), 'content-encoding': 'gzip' }), body: async () => bytes };
+assert.deepEqual(await resourceBody(compressed, bytes.length), bytes);
+await assert.rejects(resourceBody({ ...compressed, body: async () => Buffer.alloc(bytes.length + 1) }, bytes.length));
+await assert.rejects(resourceBody({ ...compressed, headers: () => ({ 'content-length': String(32 * 1024 * 1024 + 1), 'content-encoding': 'gzip' }) }, bytes.length));
 
 const inputs = JSON.parse(readFileSync(0, 'utf8')) as Array<Parameters<typeof readReleasedInput>[0]>;
 for (const input of inputs) {

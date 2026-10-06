@@ -20,9 +20,15 @@ const hash = (data: Buffer | string): string => createHash('sha256').update(data
 export async function resourceBody(response: { headers(): Record<string, string>; body(): Promise<Buffer> }, expectedBytes: number): Promise<Buffer> {
   // The WASM dev server can stream a response without Content-Length. Its
   // optional transport length is distinct from the decoded package byte count.
-  const declared = response.headers()['content-length'];
+  const headers = response.headers();
+  const declared = headers['content-length'];
+  const encoded = headers['content-encoding'];
+  // Gzip with no compression expands the payload by framing bytes. Bound wire
+  // bytes separately; Playwright returns the decoded body checked below.
+  const wireLimit = encoded && encoded !== 'identity' ? 32 * 1024 * 1024 : expectedBytes;
   if (!Number.isSafeInteger(expectedBytes) || expectedBytes < 0 || expectedBytes > 32 * 1024 * 1024 ||
-      (declared !== undefined && (!/^[0-9]+$/.test(declared) || !Number.isSafeInteger(Number(declared)) || Number(declared) > expectedBytes)))
+      (encoded !== undefined && !['gzip', 'br', 'identity'].includes(encoded)) ||
+      (declared !== undefined && (!/^[0-9]+$/.test(declared) || !Number.isSafeInteger(Number(declared)) || Number(declared) > wireLimit)))
     throw new Error('resource_body_limit');
   const body = await response.body();
   if (body.length !== expectedBytes) throw new Error('resource_body_size');
