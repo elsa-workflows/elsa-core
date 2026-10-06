@@ -16,6 +16,7 @@ from test_paired_package_released_documents import fixture_identity, write_relea
 
 import run_paired_package_browser_matrix as matrix
 from test_paired_package_wasm_boot import boot_receipt_fixture
+from test_paired_package_browser_native_interop import json_proof, dom_proof
 
 
 def reopen_row(version, framework="net10.0", host="server"):
@@ -62,6 +63,25 @@ def assertion(record, name, passed):
     next(item for item in record["assertions"] if item["name"] == name)["passed"] = passed
 
 
+def attach_native_interop(record):
+    """Synthetic protocol fixture; no native browser acceptance is implied."""
+    proof = record["proof"]
+    if record["host"] not in matrix.NATIVE_JSON_HOSTS:
+        proof.pop("json_roundtrip", None)
+        proof.pop("dom_interop", None)
+        for name in ("json_roundtrip", "dom_interop"):
+            assertion(record, name, False)
+        record["result"] = "incomplete"
+        return
+    value = json_proof(execution_complete=True)
+    for name, parent in (("definition_id_sha256", "definition_id_sha256"),
+                         ("root_id_sha256", "root_id_sha256"), ("activity_id_sha256", "activity_id_sha256"),
+                         ("expected_value_sha256", "value_sha256"), ("instance_id_sha256", "instance_id_sha256")):
+        value[name] = proof.setdefault(parent, value[name])
+    value["actual_output_sha256"] = value["expected_value_sha256"]
+    proof.update(json_roundtrip=value, dom_interop=dom_proof(value))
+
+
 def tsx_command(script):
     local = matrix.JOURNEY.parent / "node_modules/.bin/tsx"
     executable = local if local.is_file() else shutil.which("tsx")
@@ -102,6 +122,7 @@ class MatrixContracts(unittest.TestCase):
                 cell["proof"].update(instance_id_sha256=instance_hash, value_sha256=value_hash,
                                       bpmn_roundtrip=bpmn_proof(),
                                       clipboard=clipboard_proof(instance_hash, value_hash))
+                attach_native_interop(cell)
 
     def released_inputs(self, root):
         inputs = []
@@ -177,6 +198,9 @@ class MatrixContracts(unittest.TestCase):
                                 capture_output=True, text=True, timeout=60)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(expected_output + "\n", result.stdout)
+
+    def test_node_json_roundtrip_checks_native_document_semantics(self):
+        self.run_node_contract("json-roundtrip.contract.ts", "JSON roundtrip contracts passed")
 
     def test_node_direct_backend_contract_requires_native_auth_and_cors(self):
         self.run_node_contract("direct-backend.contract.ts", "direct backend observer contracts passed")
@@ -328,6 +352,7 @@ class MatrixContracts(unittest.TestCase):
                                           "expected_value_sha256": value_hash,
                                           "actual_value_sha256": value_hash,
                                           "native_copy_observed": True})
+        attach_native_interop(record)
         self.assertEqual(record, matrix.validate_browser_receipt(record, key))
 
     def test_clipboard_partial_failure_is_sanitized_and_never_promoted(self):
@@ -342,6 +367,7 @@ class MatrixContracts(unittest.TestCase):
         record["proof"]["clipboard"] = {"instance_id_sha256": instance_hash,
                                           "expected_value_sha256": value_hash,
                                           "native_copy_observed": False}
+        attach_native_interop(record)
         self.assertEqual(record, matrix.validate_browser_receipt(record, key))
 
     def test_clipboard_proof_rejects_raw_fields_hash_mismatch_and_false_claims(self):
@@ -356,6 +382,7 @@ class MatrixContracts(unittest.TestCase):
                                          "expected_value_sha256": value_hash,
                                          "actual_value_sha256": value_hash,
                                          "native_copy_observed": True})
+        attach_native_interop(base)
         mutations = [
             lambda r: r["proof"].pop("clipboard"),
             lambda r: r["proof"]["clipboard"].update(raw_value="private"),
@@ -394,10 +421,13 @@ class MatrixContracts(unittest.TestCase):
             if cell["host"] == "wasm" and cell["framework"] in ("net8.0", "net9.0"):
                 self.assertEqual({"wasm_boot"}, failed)
                 pending += 1
+            elif cell["version"] == "3.10.0" and cell["host"] == "custom-elements":
+                self.assertEqual({"json_roundtrip", "dom_interop"}, failed)
+                pending += 1
             else:
                 self.assertFalse(failed)
                 matrix.check_cell(cell)
-        self.assertEqual(6, pending)
+        self.assertEqual(9, pending)
         for mutate in (lambda c: c.pop(), lambda c: c.append(copy.deepcopy(c[0]))):
             with self.subTest(mutate=mutate):
                 changed = copy.deepcopy(self.ledger)

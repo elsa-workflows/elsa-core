@@ -98,6 +98,16 @@ Both journeys must finish before `baseline_reopen` can pass; partial proof stays
 in the original browser receipt. A selected candidate-only development run
 without those source cells fails before building or starting hosts.
 
+Candidate full-shell JSON proof uses the native editor Export download and Import
+file chooser, then native save/reload and the same candidate's publish/run/output
+checks. Semantic hashes retain definition/root/activity identities, tenant scope,
+expressions, inputs, outputs, options, custom properties and other model fields;
+only known export/version metadata is excluded. The DOM proof requires the native
+Import action to open its real file chooser and complete import/save callbacks.
+Receipts contain hashes and bounded checks, never raw candidate documents. These
+protocols still require actual browser verification; they do not certify the
+separate CustomElements embedding journey.
+
 Private build logs, caches, credentials, runtime data and browser state remain
 under `private/` and are not uploaded. An inventory-approved file is not proof
 that its assertions passed; inspect the matrix and per-cell outcomes. Producer

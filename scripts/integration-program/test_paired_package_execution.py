@@ -10,7 +10,7 @@ from unittest.mock import patch
 import paired_package_execution as execution
 import paired_package_wasm_boot as boot
 from test_paired_package_released_documents import fixture_identity, write_released_fixture
-from test_paired_package_browser_matrix import bpmn_proof, clipboard_proof, direct_backend_proof, reopen_row
+from test_paired_package_browser_matrix import attach_native_interop, bpmn_proof, clipboard_proof, direct_backend_proof, reopen_row
 from test_paired_package_wasm_boot import boot_receipt_fixture
 
 
@@ -247,6 +247,7 @@ class ExecutionContracts(unittest.TestCase):
                        "browser_version": "149.0.7827.55",
                        "assertions": [{"name": name, "passed": True, "reason_category": None}
                                       for name in execution.browser.required_assertions(dict(zip(("version", "framework", "host"), self.key)))]}
+        attach_native_interop(self.record)
         self.layout = SimpleNamespace(request=execution.hosts.CellRequest("server", "net10.0", "3.10.0"),
                                       project_paths={"backend": self.root / "backend.csproj", "server": self.root / "server.csproj"})
 
@@ -677,6 +678,8 @@ class ExecutionContracts(unittest.TestCase):
                     record["result"] = "incomplete"
             record["assertions"] = [{"name": name, "passed": not (name == "wasm_boot" and key[2] == "wasm" and key[1] != "net10.0"), "reason_category": None}
                                      for name in execution.browser.required_assertions(record)]
+            if key[0] == "3.10.0":
+                attach_native_interop(record)
             return record
         self.patch(execution.browser, "prepare_candidate", side_effect=prepare)
         self.patch(execution.subprocess, "check_output", return_value="10.0.300\n")
@@ -691,10 +694,11 @@ class ExecutionContracts(unittest.TestCase):
                 ledger = json.loads((self.root / suffix / "retained-evidence/matrix.json").read_text())
                 self.assertEqual(execution.browser.MATRIX, {call.args[0] for call in cells.call_args_list})
                 pending = [cell for cell in ledger["cells"] if cell["result"] == "incomplete"]
-                self.assertEqual(6, len(pending))
+                self.assertEqual(9, len(pending))
                 self.assertFalse(any(cell["result"] == "not_run" for cell in ledger["cells"]))
-                self.assertTrue(all(cell["host"] == "wasm" and cell["framework"] in ("net8.0", "net9.0") for cell in pending))
-                self.assertEqual({"wasm_boot"}, {item["name"] for cell in ledger["cells"] for item in cell["assertions"] if not item["passed"]})
+                self.assertTrue(all((cell["host"] == "wasm" and cell["framework"] in ("net8.0", "net9.0")) or
+                                    (cell["version"] == "3.10.0" and cell["host"] == "custom-elements") for cell in pending))
+                self.assertEqual({"wasm_boot", "json_roundtrip", "dom_interop"}, {item["name"] for cell in ledger["cells"] for item in cell["assertions"] if not item["passed"]})
             else:
                 ledger = run()
             # complete_matrix currently certifies acceptance, not merely visiting each cell.
