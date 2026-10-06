@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import patch
 
 import paired_package_execution as execution
+from test_paired_package_released_documents import fixture_identity, write_released_fixture
 
 
 class ExecutionContracts(unittest.TestCase):
@@ -74,7 +75,7 @@ class ExecutionContracts(unittest.TestCase):
         self.patch(execution.hosts, "start_pair", side_effect=pair)
         self.patch(execution, "_json_request", side_effect=lambda *_args, **_kwargs:
                    self.events.append(("ready",)) or self.readiness())
-        def run_browser(_handle, request, _resources):
+        def run_browser(_handle, request, _resources, **_options):
             self.events.append(("browser",))
             record = copy.deepcopy(self.record)
             record.update(version=request.version, framework=request.framework, host=request.host)
@@ -87,7 +88,48 @@ class ExecutionContracts(unittest.TestCase):
 
     def execute(self, key=None):
         return execution.execute_cell(key or self.key, private=self.root / "private", retained=self.root / "retained",
-                  verified_root=self.root / "candidate", manifest={}, manifest_hash="a" * 64, sdk="10.0.300")
+                  verified_root=self.root / "candidate", manifest={}, manifest_hash="a" * 64, sdk="10.0.300",
+                  fixture_identity=fixture_identity())
+
+    def released_pipeline(self):
+        self.pipeline()
+        def download(_handle, request, _resources, *, released_document_output):
+            self.download, self.child = write_released_fixture(released_document_output,
+                (request.version, request.framework, request.host))
+            return self.child
+        self.patch(execution.browser, "run_browser", side_effect=download)
+        self.patch(execution, "_verify_loaded", return_value={"backend": {"package_assemblies": []}})
+        self.patch(execution.resources, "verify_browser_resources", return_value={"verified_assets": []})
+
+    def test_released_export_retains_exact_download_after_all_source_checks(self):
+        self.released_pipeline()
+        for version in ("3.8.4", "3.9.0"):
+            key = (version, "net10.0", "server")
+            self.assertEqual("passed", self.execute(key)["result"])
+            root = self.root / "retained/cells" / "-".join(key)
+            path = root / "released-document.json"
+            self.assertEqual(self.download, path.read_bytes())
+            self.assertEqual(0o600, path.stat().st_mode & 0o777)
+            self.assertEqual(self.child, json.loads((root / "browser.json").read_text()))
+            evidence = json.loads((root / "execution.json").read_text())
+            self.assertEqual(evidence["released_document"], execution.documents.bind_released_document(
+                path, key, self.child, evidence, fixture_identity()))
+
+    def test_failed_source_check_never_retains_export(self):
+        self.released_pipeline()
+        self.patch(execution.resources, "verify_browser_resources", side_effect=ValueError("rejected"))
+        with self.assertRaises(ValueError):
+            self.execute(("3.9.0", "net10.0", "server"))
+        self.assertFalse(list((self.root / "retained").rglob("released-document.json")))
+        self.assertTrue(list((self.root / "private").rglob("released-document.json")))
+
+    def test_missing_fixture_identity_never_promotes_export(self):
+        self.released_pipeline()
+        with self.assertRaises(ValueError):
+            execution.execute_cell(("3.9.0", "net10.0", "server"), private=self.root / "private",
+                retained=self.root / "retained", verified_root=self.root / "candidate", manifest={},
+                manifest_hash="a" * 64, sdk="10.0.300")
+        self.assertFalse(list((self.root / "retained").rglob("released-document.json")))
 
     def receipt(self):
         return json.loads((self.root / "retained/cells/3.10.0-net10.0-server/execution.json").read_text())
@@ -334,7 +376,7 @@ class ExecutionContracts(unittest.TestCase):
         def prepare(_inputs, destination, _retained, **_identity):
             destination.mkdir()
             (destination / "verified-artifacts.json").write_text("{}")
-            return {"verified_artifacts_sha256": "a" * 64}
+            return {"verified_artifacts_sha256": "a" * 64, "browser_execution": {}}
         def execute(key, **_kwargs):
             record = copy.deepcopy(self.record)
             record.update(zip(("version", "framework", "host"), key))

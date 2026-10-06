@@ -23,6 +23,45 @@ ACTIVITY_FIELDS = {"id", "nodeId", "name", "type", "version", "customProperties"
 TOOL_VERSIONS = {"3.8.4": "3.8.0.0", "3.9.0": "3.9.0.0"}
 
 
+def canonical_sha256(value: dict) -> str:
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
+
+
+def bind_released_document(path: Path, source_cell: tuple[str, str, str], browser_receipt: dict,
+                           execution: dict, fixture_identity: dict) -> dict:
+    """Bind a validated export to the independently checked execution and fixture.
+
+    This is a consistency check, not a replacement for executing the project,
+    runtime and resource verifiers. Retention repeats it before publishing bytes.
+    """
+    browser.require(isinstance(fixture_identity, dict) and set(fixture_identity) == {
+        "fixture_source_commit", "run_id", "run_attempt", "fixture_files_sha256"}, "Missing fixture execution identity")
+    browser.require(isinstance(fixture_identity["fixture_source_commit"], str)
+                    and re.fullmatch(r"[0-9a-f]{40}", fixture_identity["fixture_source_commit"]), "Invalid fixture source")
+    run, attempt = fixture_identity["run_id"], fixture_identity["run_attempt"]
+    browser.require((run is None and attempt is None) or
+                    (type(run) is int and run > 0 and type(attempt) is int and attempt > 0), "Invalid fixture run")
+    files = fixture_identity["fixture_files_sha256"]
+    browser.require(isinstance(files, dict) and 0 < len(files) <= 2048, "Missing fixture file identities")
+    for name, digest in files.items():
+        browser.require(isinstance(name, str) and not name.startswith("/") and ".." not in name.split("/")
+                        and re.fullmatch(r"[A-Za-z0-9_./-]+", name)
+                        and name.startswith(("scripts/integration-program/", "test/studio/browser/PackageCompatibility/"))
+                        and isinstance(digest, str) and re.fullmatch(r"[0-9a-f]{64}", digest), "Invalid fixture file identity")
+    browser.require(browser.identity(execution) == source_cell and execution.get("owned_process_cleanup") is True,
+                    "Released document requires matching cleaned-up execution")
+    for field in ("projects", "resource_inventory", "runtime_readiness", "loaded_assemblies", "browser_resources"):
+        browser.require(isinstance(execution.get(field), dict) and execution[field], "Missing source execution provenance")
+    # Control fields change only after combined assertions pass. Everything else
+    # (including actual package/runtime/resource records) is covered by the hash.
+    source = {key: value for key, value in execution.items()
+              if key not in {"stage", "result", "failure_category", "released_document"}}
+    return {"document": validate_released_document(path, source_cell, browser_receipt),
+            "fixture_identity_sha256": canonical_sha256(fixture_identity),
+            "source_evidence_sha256": canonical_sha256(source),
+            "browser_receipt_sha256": canonical_sha256(browser_receipt)}
+
+
 def _pairs(pairs):
     result = {}
     for key, value in pairs:

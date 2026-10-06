@@ -9,6 +9,55 @@ import paired_package_released_documents as documents
 import run_paired_package_browser_matrix as browser
 
 
+def released_document_fixture(cell):
+    document = {
+        "$schema": documents.SCHEMA, "id": "123456789abcdef0", "definitionId": "123456789abcdef1",
+        "name": "paired-browser-123456abcdef", "createdAt": "2026-10-06T19:46:35.851212+00:00",
+        "version": 1, "toolVersion": documents.TOOL_VERSIONS[cell[0]], "variables": [], "inputs": [], "outcomes": [],
+        "customProperties": {}, "isReadonly": False, "isSystem": False, "isLatest": True,
+        "isPublished": False, "options": {"autoUpdateConsumingWorkflows": False},
+        "outputs": [{"type": "String", "name": "sentinel", "displayName": "sentinel", "description": "", "category": "Primitives"}],
+        "root": {
+            "id": "123456789abcdef2", "nodeId": "Workflow1:123456789abcdef2", "name": "Flowchart1",
+            "type": "Elsa.Flowchart", "version": 1, "variables": [], "connections": [], "metadata": {},
+            "customProperties": {"notFoundConnections": [], "canStartWorkflow": False, "runAsynchronously": False},
+            "activities": [{
+                "id": "123456789abcde3", "nodeId": "Workflow1:123456789abcdef2:123456789abcde3",
+                "name": "SetOutput1", "type": "Elsa.SetOutput", "version": 1,
+                "customProperties": {"canStartWorkflow": False, "runAsynchronously": False},
+                "metadata": {"designer": {"position": {"x": -24.5, "y": -32}, "size": {"width": 174.15625, "height": 54}}},
+                "outputName": {"typeName": "String", "expression": {"type": "Literal", "value": "sentinel"}},
+                "outputValue": {"typeName": "Object", "expression": {"type": "Literal", "value": "synthetic-browser-value"}},
+            }],
+        },
+    }
+    receipt = dict(zip(("version", "framework", "host"), cell))
+    receipt.update(result="incomplete", browser_version="149.0.7827.55", resources=[], proof={},
+                        assertions=[{"name": name, "passed": name not in documents.PYTHON_ASSERTIONS}
+                                    for name in sorted(browser.required_assertions(receipt))])
+    return document, receipt
+
+
+def write_released_fixture(path, cell):
+    document, receipt = released_document_fixture(cell)
+    raw = json.dumps(document, separators=(",", ":")).encode()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(raw)
+    path.chmod(0o600)
+    receipt["proof"] = {
+        "last_completed_stage": "released_document_exported", "released_document_sha256": hashlib.sha256(raw).hexdigest(),
+        "definition_id_sha256": hashlib.sha256(document["definitionId"].encode()).hexdigest(),
+        "activity_id_sha256": hashlib.sha256(document["root"]["activities"][0]["id"].encode()).hexdigest(),
+        "value_sha256": hashlib.sha256(b"synthetic-browser-value").hexdigest(),
+    }
+    return raw, receipt
+
+
+def fixture_identity():
+    return {"fixture_source_commit": "a" * 40, "run_id": None, "run_attempt": None,
+            "fixture_files_sha256": {"scripts/integration-program/paired_package_execution.py": "b" * 64}}
+
+
 class ReleasedDocumentContracts(unittest.TestCase):
     def setUp(self):
         # Generated contract input, never a claim of a package-authored document.
@@ -16,31 +65,7 @@ class ReleasedDocumentContracts(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.path = Path(self.directory.name) / "document.json"
         self.cell = ("3.9.0", "net10.0", "server")
-        self.document = {
-            "$schema": documents.SCHEMA, "id": "123456789abcdef0", "definitionId": "123456789abcdef1",
-            "name": "paired-browser-123456abcdef", "createdAt": "2026-10-06T19:46:35.851212+00:00",
-            "version": 1, "toolVersion": "3.9.0.0", "variables": [], "inputs": [], "outcomes": [],
-            "customProperties": {}, "isReadonly": False, "isSystem": False, "isLatest": True,
-            "isPublished": False, "options": {"autoUpdateConsumingWorkflows": False},
-            "outputs": [{"type": "String", "name": "sentinel", "displayName": "sentinel", "description": "", "category": "Primitives"}],
-            "root": {
-                "id": "123456789abcdef2", "nodeId": "Workflow1:123456789abcdef2", "name": "Flowchart1",
-                "type": "Elsa.Flowchart", "version": 1, "variables": [], "connections": [], "metadata": {},
-                "customProperties": {"notFoundConnections": [], "canStartWorkflow": False, "runAsynchronously": False},
-                "activities": [{
-                    "id": "123456789abcde3", "nodeId": "Workflow1:123456789abcdef2:123456789abcde3",
-                    "name": "SetOutput1", "type": "Elsa.SetOutput", "version": 1,
-                    "customProperties": {"canStartWorkflow": False, "runAsynchronously": False},
-                    "metadata": {"designer": {"position": {"x": -24.5, "y": -32}, "size": {"width": 174.15625, "height": 54}}},
-                    "outputName": {"typeName": "String", "expression": {"type": "Literal", "value": "sentinel"}},
-                    "outputValue": {"typeName": "Object", "expression": {"type": "Literal", "value": "synthetic-browser-value"}},
-                }],
-            },
-        }
-        self.receipt = dict(zip(("version", "framework", "host"), self.cell))
-        self.receipt.update(result="incomplete", browser_version="149.0.7827.55", resources=[], proof={},
-                            assertions=[{"name": name, "passed": name not in documents.PYTHON_ASSERTIONS}
-                                        for name in sorted(browser.required_assertions(self.receipt))])
+        self.document, self.receipt = released_document_fixture(self.cell)
 
     def write(self, document=None, raw=None):
         document = self.document if document is None else document

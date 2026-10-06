@@ -8,6 +8,7 @@ import stat
 
 from paired_package_provenance import regular_file
 from run_paired_package_browser_matrix import MATRIX
+import paired_package_released_documents as documents
 
 
 def verify_retained_inventory(root: Path) -> list[str]:
@@ -17,6 +18,8 @@ def verify_retained_inventory(root: Path) -> list[str]:
     allowed = {"matrix.json", "inputs/original-envelope.json", "inputs/live-retrieval.json", "inputs/provenance.json"}
     for key in MATRIX:
         allowed.update(f"cells/{'-'.join(key)}/{name}.json" for name in ("execution", "browser"))
+        if key[0] in documents.TOOL_VERSIONS:
+            allowed.add(f"cells/{'-'.join(key)}/released-document.json")
     directories = {str(parent) for name in allowed for parent in Path(name).parents if str(parent) != "."}
     found = []
     for path in root.rglob("*"):
@@ -36,6 +39,24 @@ def verify_retained_inventory(root: Path) -> list[str]:
         if not isinstance(json.loads(path.read_text(encoding="utf-8")), dict):
             raise ValueError("Browser evidence must be a JSON object")
         found.append(name)
+    # A native document may be retained only with matching complete source
+    # evidence. Partial/failed cells remain useful but never publish a document.
+    for key in MATRIX:
+        cell = root / "cells" / "-".join(key)
+        path = cell / "released-document.json"
+        execution_path = cell / "execution.json"
+        execution = json.loads(execution_path.read_text()) if execution_path.is_file() else {}
+        binding = execution.get("released_document")
+        if not path.exists():
+            if execution.get("result") == "passed" and key[0] in documents.TOOL_VERSIONS:
+                raise ValueError("Passing released cell is missing its document")
+            continue
+        if execution.get("result") != "passed" or execution.get("stage") != "complete":
+            raise ValueError("Released document requires complete source evidence")
+        receipt = json.loads(regular_file(cell / "browser.json").read_text())
+        identity = json.loads(regular_file(root / "inputs/provenance.json").read_text()).get("browser_execution")
+        if binding != documents.bind_released_document(path, key, receipt, execution, identity):
+            raise ValueError("Released document source binding differs")
     return sorted(found)
 
 

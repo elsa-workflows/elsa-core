@@ -72,14 +72,23 @@ The retained directory permits only:
   `inputs/provenance.json`;
 - `matrix.json`;
 - `cells/VERSION-FRAMEWORK-HOST/execution.json` and `browser.json` for known
-  matrix identities.
+  matrix identities;
+- `cells/VERSION-FRAMEWORK-HOST/released-document.json` only for a passing
+  3.8.4 or 3.9.0 source cell, after strict synthetic-content validation and
+  binding to its fixture, browser, package, runtime and resource evidence.
 
 The original browser receipt is preserved unchanged. The combined matrix
-result adds only independently verified package/resource assertions after
+result adds independently verified package/resource and released-export assertions after
 owned-process cleanup; it cannot promote a failed browser result. Per-cell
 execution receipts record the stage and bounded failure category when execution
 stops. The pre-upload inventory guard rejects unexpected files, directories,
 links and non-object JSON payloads.
+
+Released documents retain the exact native download bytes. The inventory guard
+revalidates their shape and all source bindings before upload. A failed source
+cell leaves its download private. Studio 3.8.4 writes `toolVersion: 3.8.0.0`;
+this document marker is checked separately from installed package provenance.
+Retaining a released document does not prove the candidate can reopen it.
 
 Private build logs, caches, credentials, runtime data and browser state remain
 under `private/` and are not uploaded. An inventory-approved file is not proof

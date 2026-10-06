@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
+import os
 import json
 from pathlib import Path
 import re
@@ -19,6 +21,7 @@ import materialize_paired_package_hosts as hosts
 import paired_package_baseline_provenance as baseline
 import paired_package_baseline_resources as baseline_resources
 import paired_package_provenance as provenance
+import paired_package_released_documents as documents
 import prove_consolidated_package_consumers as packages
 import run_paired_package_browser_matrix as browser
 import verify_browser_package_resources as resources
@@ -224,7 +227,7 @@ def _command_receipts(commands: list[dict], group: Path) -> list[dict]:
 
 
 def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, manifest: dict,
-                 manifest_hash: str, sdk: str) -> dict:
+                 manifest_hash: str, sdk: str, fixture_identity: dict | None = None) -> dict:
     version, framework, host = key
     request = cell_request(key)
     cell_root = retained / "cells" / f"{version}-{framework}-{host}"
@@ -235,6 +238,7 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
                 "feature_policy": ("candidate_representative_features" if version == candidate.PRODUCER["version"]
                                    else "released_shell_editor_export_contexts_only")}
     original_browser = None
+    released_output = None
     try:
         evidence["missing_evidence"] = evidence_gaps(request)
         require(not evidence["missing_evidence"], "Required package browser evidence is unavailable")
@@ -254,13 +258,18 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
         inventory = _resource_inventory(layout, verified_root, manifest_hash)
         evidence["resource_inventory"] = inventory
         evidence["stage"] = "owned_runtime"
+        if version in documents.TOOL_VERSIONS:
+            document_root = private / "documents" / "-".join(key)
+            document_root.mkdir(parents=True, mode=0o700, exist_ok=False)
+            released_output = document_root / "released-document.json"
         runtime_failed = False
         with hosts.start_pair(layout, validate_project=validate) as handle:
             try:
                 evidence["stage"] = "runtime_readiness"
                 evidence["runtime_readiness"] = _observe_ready(handle, request)
                 evidence["stage"] = "browser_execution"
-                child = browser.run_browser(handle, request, inventory["assets"])
+                options = {"released_document_output": released_output} if released_output is not None else {}
+                child = browser.run_browser(handle, request, inventory["assets"], **options)
                 # Validate before any returned child data enters portable evidence.
                 original_browser = browser.validate_browser_receipt(child, key)
                 evidence["stage"] = "loaded_assemblies"
@@ -276,11 +285,16 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
         prefix = "/" + request.route_prefix if request.route_prefix else ""
         evidence["browser_resources"] = resources.verify_browser_resources(inventory["assets"], record["resources"],
                                                                            require_all=False, route_prefix=prefix)
+        if released_output is not None:
+            evidence["stage"] = "released_document"
+            evidence["released_document"] = documents.bind_released_document(
+                released_output, key, original_browser, evidence, fixture_identity)
         evidence["stage"] = "browser_contract"
         # Only these independently demonstrated Python-owned assertions may be
         # completed here; unimplemented UI assertions remain unchanged.
         for assertion in record["assertions"]:
-            if assertion["name"] in {"package_provenance", "browser_resources"}:
+            if assertion["name"] in {"package_provenance", "browser_resources"} or (
+                    assertion["name"] == "released_document" and released_output is not None):
                 assertion.update(passed=True, reason_category=None)
         # A child computes its result before Python-owned provenance checks. Its
         # original receipt stays immutable; only a complete, nonfailed combined
@@ -288,6 +302,15 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
         record["result"] = ("passed" if original_browser["result"] != "failed"
                             and all(item["passed"] is True for item in record["assertions"]) else "failed")
         browser.check_cell(record)
+        if released_output is not None:
+            # Preserve the exact validated download, never a reserialized workflow.
+            raw = provenance.regular_file(released_output).read_bytes()
+            require(hashlib.sha256(raw).hexdigest() == evidence["released_document"]["document"]["document_sha256"],
+                    "Released export changed before retention")
+            cell_root.mkdir(parents=True, exist_ok=True)
+            target = cell_root / "released-document.json"
+            with os.fdopen(os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "wb") as stream:
+                stream.write(raw)
         evidence.update(stage="complete", result="passed")
         return record
     except Exception:
@@ -320,7 +343,8 @@ def run(inputs: Path, candidate_artifacts: Path, output: Path, *, fixture_source
         sdk = subprocess.check_output(["dotnet", "--version"], cwd=browser.JOURNEY.parents[4], text=True).strip()
         require(re.fullmatch(r"10\.[0-9]+\.[0-9]+", sdk) is not None, "Unsupported execution SDK")
         return browser.run_matrix(lambda key: execute_cell(key, private=private, retained=retained,
-                 verified_root=verified_root, manifest=manifest, manifest_hash=original["verified_artifacts_sha256"], sdk=sdk),
+                 verified_root=verified_root, manifest=manifest, manifest_hash=original["verified_artifacts_sha256"], sdk=sdk,
+                 fixture_identity=original["browser_execution"]),
                  selected, matrix_path)
     except Exception:
         if not matrix_path.exists():
