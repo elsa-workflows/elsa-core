@@ -1,4 +1,4 @@
-import { chromium, expect, request, type Page, type APIRequestContext, type Locator, type Download } from '@playwright/test';
+import { chromium, expect as playwrightExpect, request, type Page, type APIRequestContext, type Locator, type Download } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { closeSync, lstatSync, openSync, readFileSync, readSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute } from 'node:path';
@@ -6,6 +6,9 @@ import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { bpmnSemanticIdentity, checkedXmlText, type XmlElement } from './bpmn-roundtrip.js';
 const policy = JSON.parse(readFileSync(new URL('./coverage-policy.json', import.meta.url), 'utf8'));
+// Locator actions and assertions share the same bounded readiness window,
+// including the native WASM bootstrap after a full page reload.
+const expect = playwrightExpect.configure({ timeout: 20_000 });
 
 type Cell = { host: 'server' | 'wasm' | 'hosted-wasm' | 'custom-elements'; framework: string; version: string; route_prefix?: string };
 type Resource = { path: string; sha256: string; bytes: number; content_type: string; owner: 'package' | 'fixture' | 'platform'; required?: boolean };
@@ -211,7 +214,9 @@ async function nativeClipboard(page: Page, instanceId: string, value: string, pr
   await expect(row).toHaveCount(1);
   await expect(row.locator('td').nth(1)).toHaveText(value);
   await row.hover();
-  const copy = row.getByRole('button');
+  // The value cell also contains a content-viewer action. Copy belongs to
+  // DataPanel's dedicated third cell.
+  const copy = row.locator('td').nth(2).getByRole('button');
   await expect(copy).toHaveCount(1); await expect(copy).toBeEnabled();
   await copy.click();
   await expect(page.getByText('sentinel copied', { exact: true })).toBeVisible();
