@@ -8,8 +8,10 @@ import unittest
 from unittest.mock import patch
 
 import paired_package_execution as execution
+import paired_package_wasm_boot as boot
 from test_paired_package_released_documents import fixture_identity, write_released_fixture
 from test_paired_package_browser_matrix import bpmn_proof, clipboard_proof, direct_backend_proof, reopen_row
+from test_paired_package_wasm_boot import boot_receipt_fixture
 
 
 class ReleasedInputsContracts(unittest.TestCase):
@@ -62,6 +64,11 @@ class ReleasedInputsContracts(unittest.TestCase):
 class ResourceInventoryContracts(unittest.TestCase):
     STYLESHEET = "/_content/Elsa.Studio.Workflows.Designer/designer.css"
 
+    def setUp(self):
+        _, expected, _ = boot_receipt_fixture()
+        # These tests supply fake build paths; actual bootstrap authority has its own contracts.
+        self.bootstrap = {"assets": [row for row in expected if row["owner"] == "platform"], "format": boot.POLICY["format"]}
+
     def test_client_inventory_uses_selected_client_manifest_and_keeps_both_authorities(self):
         for version in ("3.9.0", "3.10.0"):
             for host in ("wasm", "hosted-wasm", "custom-elements"):
@@ -80,12 +87,14 @@ class ResourceInventoryContracts(unittest.TestCase):
                 static_name = "derive_candidate_resources" if candidate else "derive_baseline_resources"
                 managed_name = "derive_candidate_wasm_resources" if candidate else "derive_baseline_wasm_resources"
                 with self.subTest(version=version, host=host), patch.object(static_owner, static_name, return_value=static), \
-                        patch.object(execution.wasm_resources, managed_name, return_value=managed) as derive:
+                        patch.object(execution.wasm_resources, managed_name, return_value=managed) as derive, \
+                        patch.object(boot, "derive_boot_resources", return_value=self.bootstrap) as derive_boot:
                     converter = {"task_sha256": "c" * 64}
                     result = execution._resource_inventory(layout, Path("/verified"), "d" * 64, converter=converter)
                     expected_static = copy.deepcopy(static["assets"])
                     next(asset for asset in expected_static if asset["path"].endswith(self.STYLESHEET))["required"] = False
-                    self.assertEqual(expected_static + managed["assets"], result["assets"])
+                    expected_boot = self.bootstrap["assets"] if host == "wasm" else []
+                    self.assertEqual(expected_static + managed["assets"] + expected_boot, result["assets"])
                     self.assertEqual("a" * 64, result["static_asset_manifest_sha256"])
                     self.assertEqual("b" * 64, result["managed_resources"]["static_asset_manifest_sha256"])
                     client = layout.project_paths["wasm" if host == "hosted-wasm" else host]
@@ -94,6 +103,12 @@ class ResourceInventoryContracts(unittest.TestCase):
                     self.assertEqual(converter, derive.call_args.kwargs["converter"])
                     self.assertEqual("/compat" if prefix else "", derive.call_args.kwargs["route_prefix"])
                     self.assertEqual(host, result["host_network_policy"]["host"])
+                    if host == "wasm":
+                        derive_boot.assert_called_once_with(layout, client, derive.call_args.args[2], managed)
+                        self.assertEqual({"format": boot.POLICY["format"]}, result["bootstrap_resources"])
+                    else:
+                        derive_boot.assert_not_called()
+                        self.assertNotIn("bootstrap_resources", result)
                     self.assertEqual(("/" + prefix if prefix else "") + self.STYLESHEET,
                                      result["host_network_policy"]["stylesheet"]["path"])
                     self.assertFalse(result["host_network_policy"]["stylesheet"]["required"])
@@ -143,7 +158,8 @@ class ResourceInventoryContracts(unittest.TestCase):
                     managed_name = "derive_candidate_wasm_resources" if candidate else "derive_baseline_wasm_resources"
                     original_flags = {asset["path"]: asset["required"] for asset in static["assets"]}
                     converter = {"task_sha256": "c" * 64}
-                    with patch.object(static_owner, static_name, return_value=static):
+                    with patch.object(static_owner, static_name, return_value=static), \
+                            patch.object(boot, "derive_boot_resources", return_value=self.bootstrap):
                         if host == "server":
                             result = execution._resource_inventory(layout, Path("/verified"), "d" * 64)
                         else:
@@ -156,6 +172,8 @@ class ResourceInventoryContracts(unittest.TestCase):
                     expected_flags[stylesheet_path] = host == "server"
                     expected_flags.update({asset["path"]: asset["required"] for asset in managed_assets}
                                           if host != "server" else {})
+                    if host == "wasm":
+                        expected_flags.update({asset["path"]: asset["required"] for asset in self.bootstrap["assets"]})
                     self.assertEqual(expected_flags,
                                      {asset["path"]: asset["required"] for asset in result["assets"]})
                     if version == "3.10.0":
@@ -635,7 +653,7 @@ class ExecutionContracts(unittest.TestCase):
         self.assertFalse((self.root / "retained/cells/3.10.0-net10.0-server/browser.json").exists())
         self.assertNotIn("PRIVATE", json.dumps(self.receipt()))
 
-    def test_run_invokes_all_36_and_development_selection_never_accepts(self):
+    def test_run_visits_all_36_but_pending_boot_proof_and_development_selection_never_accept(self):
         def prepare(_inputs, destination, _retained, **_identity):
             destination.mkdir()
             (destination / "verified-artifacts.json").write_text("{}")
@@ -650,17 +668,38 @@ class ExecutionContracts(unittest.TestCase):
                 record["proof"] = {}
             if key[2] == "wasm":
                 record["proof"]["direct_backend"] = direct_backend_proof()
-            record["assertions"] = [{"name": name, "passed": True, "reason_category": None}
+                if key[1] == "net10.0":
+                    boot_proof, _, observed = boot_receipt_fixture()
+                    record["proof"].update(wasm_boot=boot_proof, interactive_validation_observed=True)
+                    record["resources"] = observed
+                else:
+                    # Topology fakes cannot certify pending net8/net9 bootstrap formats.
+                    record["result"] = "incomplete"
+            record["assertions"] = [{"name": name, "passed": not (name == "wasm_boot" and key[2] == "wasm" and key[1] != "net10.0"), "reason_category": None}
                                      for name in execution.browser.required_assertions(record)]
             return record
         self.patch(execution.browser, "prepare_candidate", side_effect=prepare)
         self.patch(execution.subprocess, "check_output", return_value="10.0.300\n")
         cells = self.patch(execution, "execute_cell", side_effect=execute)
         for suffix, selected in (("full", None), ("development", ",".join(self.key))):
-            ledger = execution.run(self.root / "inputs", self.root / ("candidate-" + suffix), self.root / suffix,
-                                    fixture_source="a" * 40, cell=selected)
-            self.assertEqual(selected is None, ledger["passed"])
-            self.assertEqual(selected is None, ledger["complete_matrix"])
+            def run():
+                return execution.run(self.root / "inputs", self.root / ("candidate-" + suffix), self.root / suffix,
+                                     fixture_source="a" * 40, cell=selected)
+            if selected is None:
+                with self.assertRaisesRegex(ValueError, "Package browser matrix did not satisfy acceptance"):
+                    run()
+                ledger = json.loads((self.root / suffix / "retained-evidence/matrix.json").read_text())
+                self.assertEqual(execution.browser.MATRIX, {call.args[0] for call in cells.call_args_list})
+                pending = [cell for cell in ledger["cells"] if cell["result"] == "incomplete"]
+                self.assertEqual(6, len(pending))
+                self.assertFalse(any(cell["result"] == "not_run" for cell in ledger["cells"]))
+                self.assertTrue(all(cell["host"] == "wasm" and cell["framework"] in ("net8.0", "net9.0") for cell in pending))
+                self.assertEqual({"wasm_boot"}, {item["name"] for cell in ledger["cells"] for item in cell["assertions"] if not item["passed"]})
+            else:
+                ledger = run()
+            # complete_matrix currently certifies acceptance, not merely visiting each cell.
+            self.assertFalse(ledger["passed"])
+            self.assertFalse(ledger["complete_matrix"])
             self.assertEqual(36, len(ledger["cells"]))
         self.assertEqual(37, cells.call_count)
 

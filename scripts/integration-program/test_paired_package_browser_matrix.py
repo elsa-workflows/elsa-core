@@ -15,6 +15,7 @@ import paired_package_released_documents as documents
 from test_paired_package_released_documents import fixture_identity, write_released_fixture
 
 import run_paired_package_browser_matrix as matrix
+from test_paired_package_wasm_boot import boot_receipt_fixture
 
 
 def reopen_row(version, framework="net10.0", host="server"):
@@ -87,6 +88,14 @@ class MatrixContracts(unittest.TestCase):
             cell.update(result="passed", browser_version="149.0.7827.55", resources=[], proof={}, failure_category=None, assertions=[{"name": name, "passed": True} for name in sorted(matrix.required_assertions(cell))])
             if cell["host"] == "wasm":
                 cell["proof"]["direct_backend"] = direct_backend_proof()
+                if cell["framework"] == "net10.0":
+                    boot_proof, _, observed = boot_receipt_fixture()
+                    cell["proof"].update(wasm_boot=boot_proof, interactive_validation_observed=True)
+                    cell["resources"] = observed
+                else:
+                    # This synthetic topology records pending formats; it is not runtime proof.
+                    assertion(cell, "wasm_boot", False)
+                    cell["result"] = "incomplete"
             if cell["version"] == "3.10.0":
                 cell["proof"]["baseline_reopens"] = [reopen_row(version, cell["framework"], cell["host"]) for version in documents.TOOL_VERSIONS]
                 instance_hash, value_hash = sha256("matrix candidate instance"), sha256("matrix candidate sentinel")
@@ -171,6 +180,18 @@ class MatrixContracts(unittest.TestCase):
 
     def test_node_direct_backend_contract_requires_native_auth_and_cors(self):
         self.run_node_contract("direct-backend.contract.ts", "direct backend observer contracts passed")
+
+    def test_node_wasm_boot_contract_requires_original_bytes_and_executed_callback(self):
+        self.run_node_contract("wasm-boot.contract.ts", "WASM bootstrap parser and observer contracts passed")
+
+    def test_standalone_net10_boot_receipt_binds_original_requested_resource_metadata(self):
+        key = ("3.9.0", "net10.0", "wasm")
+        record = copy.deepcopy(next(cell for cell in self.ledger["cells"] if matrix.identity(cell) == key))
+        _, expected, _ = boot_receipt_fixture()
+        with patch.object(matrix, "_run_browser_process", return_value=SimpleNamespace(stdout=json.dumps(record), returncode=0)):
+            self.assertEqual(record, matrix.run_browser(self.handle, dict(zip(("version", "framework", "host"), key)), expected))
+            with self.assertRaisesRegex(ValueError, "original requested"):
+                matrix.run_browser(self.handle, dict(zip(("version", "framework", "host"), key)), [])
 
     def test_node_independently_checks_bytes_and_actual_graph_semantics(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -362,18 +383,37 @@ class MatrixContracts(unittest.TestCase):
         partial["proof"]["clipboard"]["actual_value_sha256"] = actual_hash
         self.assertEqual(partial, matrix.validate_browser_receipt(partial, key))
 
-    def test_exact_complete_matrix_and_required_assertions(self):
-        matrix.check_matrix(self.ledger)
+    def test_exact_matrix_topology_retains_pending_boot_without_claiming_acceptance(self):
+        with self.assertRaisesRegex(ValueError, "Required browser assertion failed"):
+            matrix.check_matrix(self.ledger)
         self.assertEqual(36, len(self.ledger["cells"]))
-        for mutate in (lambda c: c.pop(), lambda c: c.append(copy.deepcopy(c[0])),
-                       lambda c: c[0].update(result="not_run"), lambda c: c[0].update(result="skipped"),
-                       lambda c: c[0]["assertions"].pop(), lambda c: c[0]["assertions"].append(c[0]["assertions"][0]),
-                       lambda c: c[0]["assertions"][0].update(passed=False)):
+        pending = 0
+        for cell in self.ledger["cells"]:
+            matrix.validate_browser_receipt(cell, matrix.identity(cell))
+            failed = {item["name"] for item in cell["assertions"] if not item["passed"]}
+            if cell["host"] == "wasm" and cell["framework"] in ("net8.0", "net9.0"):
+                self.assertEqual({"wasm_boot"}, failed)
+                pending += 1
+            else:
+                self.assertFalse(failed)
+                matrix.check_cell(cell)
+        self.assertEqual(6, pending)
+        for mutate in (lambda c: c.pop(), lambda c: c.append(copy.deepcopy(c[0]))):
             with self.subTest(mutate=mutate):
                 changed = copy.deepcopy(self.ledger)
                 mutate(changed["cells"])
-                with self.assertRaises(ValueError):
+                with self.assertRaisesRegex(ValueError, "All 36 unique"):
                     matrix.check_matrix(changed)
+
+    def test_complete_known_net10_receipt_is_accepted_but_failed_cell_metadata_is_not(self):
+        base = next(cell for cell in self.ledger["cells"] if matrix.identity(cell) == ("3.9.0", "net10.0", "wasm"))
+        matrix.check_cell(base)
+        for mutate in (lambda c: c.update(result="not_run"), lambda c: c.update(result="skipped"),
+                       lambda c: c["assertions"].pop(), lambda c: c["assertions"].append(c["assertions"][0]),
+                       lambda c: c["assertions"][0].update(passed=False)):
+            changed = copy.deepcopy(base); mutate(changed)
+            with self.subTest(mutate=mutate), self.assertRaises(ValueError):
+                matrix.check_cell(changed)
 
     def test_filtered_and_failed_runs_retain_all_unexecuted_cells_without_acceptance(self):
         with tempfile.TemporaryDirectory() as directory:
