@@ -5,7 +5,10 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import stat
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -152,6 +155,28 @@ class CandidateArchiveTests(unittest.TestCase):
 
 
 class CandidateContractsTests(unittest.TestCase):
+    def test_workflow_python_imports_preserve_a_fresh_committed_checkout(self):
+        workflow = (ROOT / ".github/workflows/prepare-consolidated-release-candidate.yml").read_text()
+        self.assertRegex(workflow, r"(?m)^env:\n(?:  #[^\n]*\n)*  PYTHONDONTWRITEBYTECODE: '1'\n")
+        with tempfile.TemporaryDirectory() as temporary:
+            checkout = Path(temporary)
+            for name in ("prepare_consolidated_release_candidate.py", "prove_consolidated_packages.py",
+                         "prove_consolidated_package_consumers.py"):
+                shutil.copy2(ROOT / "scripts/integration-program" / name, checkout / name)
+            def execute(command, **kwargs):
+                return subprocess.run(command, cwd=checkout, check=True, capture_output=True, text=True, **kwargs)
+            execute(["git", "init", "--quiet"])
+            execute(["git", "add", "."])
+            execute(["git", "-c", "user.name=Candidate contract", "-c", "user.email=candidate@example.invalid",
+                     "commit", "--quiet", "-m", "Clean candidate checkout"])
+            # Use the workflow's environment, without the locally used Python -B flag.
+            execute([sys.executable, "-c", "from pathlib import Path; import prepare_consolidated_release_candidate; "
+                     "import prove_consolidated_package_consumers; import prove_consolidated_packages; "
+                     "prove_consolidated_packages.clean_head(Path.cwd())"],
+                    env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"})
+            self.assertEqual("", execute(["git", "status", "--porcelain"]).stdout)
+            self.assertFalse(list(checkout.rglob("__pycache__")))
+
     def test_candidate_and_proof_versions_are_distinct(self):
         packages.validate_mode("3.10.0", "candidate")
         packages.validate_mode("3.10.0-proof.1.1", "proof")

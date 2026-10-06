@@ -9,6 +9,10 @@ on:
 
 permissions: {}
 
+env:
+  # Imports and contract tests must preserve the producer's clean checkout.
+  PYTHONDONTWRITEBYTECODE: '1'
+
 jobs:
   prepare:
     permissions:
