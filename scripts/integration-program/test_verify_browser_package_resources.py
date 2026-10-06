@@ -132,6 +132,16 @@ class ResourceContracts(unittest.TestCase):
             resources.verify_webcil(pe, wasm, converter)
         with self.assertRaisesRegex(ValueError, "wrapper"):
             resources.verify_webcil(pe, wasm[:-1] + bytes([wasm[-1] ^ 1]), converter, _test_policy=policy)
+        # Overlong segment count plus one fewer padding byte keeps the same exact payload,
+        # alignment and outside-data hash, but the source converter cannot emit this encoding.
+        length, start = resources.leb(wasm, len(SDK10_PREFIX) + 1)
+        data = wasm[start:start + length]
+        size = data[2]
+        changed_data = b"\x82\x00\x01" + bytes([size - 1]) + data[3:3 + size - 1] + data[3 + size:]
+        changed = wasm[:start] + changed_data + wasm[start + length:]
+        self.assertEqual(len(wasm), len(changed))
+        with self.assertRaisesRegex(ValueError, "Noncanonical"):
+            resources.verify_webcil(pe, changed, converter, _test_policy=policy)
 
     def test_fetched_assets_are_distinct_from_materialized_and_fail_closed(self):
         asset = {"path": "/_content/Elsa.Studio.Workflows.Designer/designer.entry.js", "sha256": "a" * 64, "bytes": 123, "content_type": "text/javascript", "owner": "package"}

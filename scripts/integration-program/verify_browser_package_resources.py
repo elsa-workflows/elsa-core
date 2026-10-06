@@ -42,6 +42,7 @@ def leb(data: bytes, offset: int) -> tuple[int, int]:
         require(index < 4 or byte < 16, "Overflow WASM length")
         value |= (byte & 127) << (index * 7)
         if byte < 128:
+            require(index == 0 or byte != 0, "Noncanonical WASM length")
             return value, offset
     raise ValueError("Invalid WASM length")
 
