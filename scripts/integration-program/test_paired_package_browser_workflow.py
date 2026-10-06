@@ -13,12 +13,14 @@ class BrowserWorkflowBoundaryTests(unittest.TestCase):
         # Parse the deliberately restricted permission maps and reject extra keys,
         # aliases, scalar shortcuts, or duplicate permission blocks.
         def permissions(block):
+            self.assertEqual(len(re.findall(r"^    permissions:", block, re.M)), 1)
             matches = re.findall(r"^    permissions:\n((?:      [^\n]+\n)+)", block, re.M)
             self.assertEqual(len(matches), 1)
             pairs = [line.strip().split(": ", 1) for line in matches[0].splitlines()]
             self.assertTrue(all(len(pair) == 2 for pair in pairs))
             self.assertEqual(len({key for key, _ in pairs}), len(pairs))
             return dict(pairs)
+        self.assertEqual(len(re.findall(r"^permissions:", text, re.M)), 1)
         self.assertEqual(re.findall(r"^permissions: (.*)$", text, re.M), ["{}"])
         self.assertEqual(permissions(reader), {"actions": "read"})
         self.assertEqual(permissions(proof), {"contents": "read", "actions": "none"})
