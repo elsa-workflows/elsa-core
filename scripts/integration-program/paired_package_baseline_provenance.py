@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 from typing import Any, Mapping
 from xml.etree import ElementTree as ET
@@ -365,3 +365,190 @@ def validate_baseline_project(
         "packages": ledger,
         "fixture_edge_receipts": fixture_edges,
     }
+
+
+def verify_baseline_loaded_assemblies(
+    loaded: list[dict[str, Any]],
+    project: Path,
+    cache: Path,
+    tfm: str,
+    version: str,
+    *,
+    required_assemblies: tuple[str, ...],
+    policy: Path | Mapping[str, Any] = POLICY_PATH,
+) -> list[dict[str, Any]]:
+    """Bind loaded assemblies to the exact runtime members of a validated baseline restore.
+
+    The caller must explicitly exclude its fixture executable before passing rows.
+    Every supplied row must map to one unique restored package runtime asset; package
+    ownership comes from the exact source policy tuple, never an assembly-name prefix.
+    """
+    if (not isinstance(required_assemblies, tuple) or not required_assemblies or
+            any(not isinstance(name, str) or not name or name != name.strip() for name in required_assemblies) or
+            len({name.casefold() for name in required_assemblies}) != len(required_assemblies)):
+        raise ValueError("Required assembly names must be nonempty, unique and explicit")
+    if not isinstance(loaded, list) or not loaded:
+        raise RuntimeError("Missing loaded assemblies")
+
+    project = package_graph.regular_file(Path(project).absolute())
+    cache = Path(cache)
+    receipt = validate_baseline_project(project, cache, tfm, version, policy=policy)
+    assets_path = package_graph.regular_file(project.parent / "obj" / "project.assets.json")
+    raw_assets_sha256 = package_graph.sha256(assets_path)
+    assets, fixture_edges = package_graph.read_package_assets(project, tfm)
+    if (fixture_edges or raw_assets_sha256 != receipt["project_assets_sha256"] or
+            package_graph.sha256(assets_path) != raw_assets_sha256):
+        raise RuntimeError("Baseline project assets changed after package provenance validation")
+
+    packages_by_tuple = {}
+    for package in receipt["packages"]:
+        pair = (package["id"].casefold(), package["version"])
+        if pair in packages_by_tuple:
+            raise RuntimeError("Duplicate package tuple in validated baseline ledger")
+        packages_by_tuple[pair] = package
+
+    targets = assets.get("targets")
+    if not isinstance(targets, dict) or not targets or any(
+            target not in {tfm, tfm + "/browser-wasm"} for target in targets):
+        raise RuntimeError("Unexpected target frameworks in validated baseline assets")
+    expected_by_name: dict[str, dict[str, Any]] = {}
+    runtime_target = tfm + "/browser-wasm" if tfm + "/browser-wasm" in targets else tfm
+    libraries = targets.get(runtime_target)
+    if not isinstance(libraries, dict):
+        raise RuntimeError("Malformed package runtime target")
+    for identity, library in libraries.items():
+        if not isinstance(identity, str):
+            raise RuntimeError("Malformed package runtime identity")
+        package_id, separator, package_version = identity.partition("/")
+        if not separator or not package_id or not package_version or not isinstance(library, dict):
+            raise RuntimeError(f"Malformed package runtime identity: {identity}")
+        package = packages_by_tuple.get((package_id.casefold(), package_version))
+        if package is None or package["id"] != package_id:
+            raise RuntimeError(f"Runtime target is absent from the exact baseline package ledger: {identity}")
+        runtime = library.get("runtime", {})
+        if not isinstance(runtime, dict):
+            raise RuntimeError(f"Malformed runtime assets for {identity}")
+        for member in runtime:
+            if not isinstance(member, str):
+                raise RuntimeError(f"Malformed runtime asset path for {identity}")
+            if not member.casefold().endswith(".dll"):
+                continue
+            member_path = PurePosixPath(member)
+            if (not member or "\\" in member or member_path.is_absolute() or ".." in member_path.parts or
+                    member_path.as_posix() != member):
+                raise RuntimeError(f"Unsafe runtime asset path for {identity}: {member}")
+            name = member_path.stem
+            if not name:
+                raise RuntimeError(f"Invalid runtime assembly asset path: {member}")
+            key = name.casefold()
+            if key in expected_by_name:
+                raise RuntimeError(f"Ambiguous restored package runtime assembly identity: {name}")
+            expected_by_name[key] = {
+                "name": name,
+                "package": package,
+                "member": member,
+                "filename": member_path.name,
+            }
+
+    required_folded = {name.casefold() for name in required_assemblies}
+    if not required_folded <= set(expected_by_name):
+        raise RuntimeError("Required assembly is missing from restored package runtime assets")
+
+    loaded_by_name: dict[str, dict[str, Any]] = {}
+    for row in loaded:
+        if not isinstance(row, dict):
+            raise RuntimeError("Malformed loaded assembly record")
+        name = row.get("name")
+        if not isinstance(name, str) or not name or name != name.strip():
+            raise RuntimeError("Loaded assembly has an invalid identity")
+        key = name.casefold()
+        if key in loaded_by_name:
+            raise RuntimeError(f"Duplicate loaded assembly identity: {name}")
+        loaded_by_name[key] = row
+    if not required_folded <= set(loaded_by_name):
+        raise RuntimeError("Required loaded assembly is missing")
+
+    bin_root = project.parent / "bin"
+    if not bin_root.is_dir():
+        raise RuntimeError("Built assembly output directory is missing")
+    resolved_bin_root = bin_root.resolve(strict=True)
+    records = []
+    for key, row in loaded_by_name.items():
+        asset = expected_by_name.get(key)
+        if asset is None or row["name"] != asset["name"]:
+            raise RuntimeError(f"Loaded assembly has no unique restored package runtime asset: {row['name']}")
+        assembly_version = row.get("version")
+        full_name = row.get("fullName")
+        informational_version = row.get("informationalVersion")
+        digest = row.get("sha256")
+        location_text = row.get("location")
+        if (not isinstance(assembly_version, str) or not assembly_version or
+                not isinstance(full_name, str) or
+                not full_name.startswith(f"{row['name']}, Version={assembly_version},") or
+                not isinstance(informational_version, str) or not informational_version or
+                not isinstance(digest, str) or not HASH_PATTERN.fullmatch(digest) or
+                not isinstance(location_text, str) or not Path(location_text).is_absolute()):
+            raise RuntimeError(f"Incomplete loaded assembly identity: {row['name']}")
+        package = asset["package"]
+        if package["classification"] == "owned_elsa":
+            expected_assembly_version = package["version"] + ".0"
+            expected_informational_version = package["version"] + "+" + package["repository_commit"]
+            if (assembly_version != expected_assembly_version or
+                    informational_version != expected_informational_version):
+                raise RuntimeError(f"Loaded Elsa assembly release/source identity mismatch: {row['name']}")
+
+        location = Path(location_text)
+        if ".." in location.parts or location.name != asset["filename"]:
+            raise RuntimeError(f"Invalid loaded assembly path: {row['name']}")
+        built_path = package_graph.regular_file(location)
+        if not built_path.is_relative_to(resolved_bin_root):
+            raise RuntimeError(f"Loaded assembly escaped the isolated project bin directory: {row['name']}")
+        built_sha256 = package_graph.sha256(built_path)
+
+        package_id, package_version, member = package["id"], package["version"], asset["member"]
+        archive = _regular_cache_file(
+            cache / package_id.lower() / package_version / f"{package_id.lower()}.{package_version}.nupkg",
+            cache,
+            "baseline runtime package archive",
+        )
+        archive_sha256 = package_graph.sha256(archive)
+        if archive_sha256 != package["archive_sha256"]:
+            raise RuntimeError(f"Baseline archive changed after package provenance validation: {package_id}/{package_version}")
+        try:
+            with zipfile.ZipFile(archive) as package_zip:
+                members = safe_members(package_zip)
+                matches = [item for item in members if item.filename == member]
+                if len(matches) != 1:
+                    raise RuntimeError(f"Runtime member is missing or ambiguous in archive: {package_id}/{member}")
+                archive_bytes = package_zip.read(matches[0])
+        except (OSError, zipfile.BadZipFile, KeyError) as error:
+            raise RuntimeError(f"Invalid runtime package archive: {package_id}/{package_version}") from error
+        archive_member_sha256 = hashlib.sha256(archive_bytes).hexdigest()
+        cached_path = _regular_cache_file(
+            cache / package_id.lower() / package_version / member, cache, "cached runtime package DLL"
+        )
+        cached_sha256 = package_graph.sha256(cached_path)
+        if cached_sha256 != archive_member_sha256:
+            raise RuntimeError(f"NuGet cache runtime DLL differs from exact archive member: {package_id}/{member}")
+        if built_sha256 != archive_member_sha256 or digest != archive_member_sha256:
+            raise RuntimeError(f"Built assembly differs from exact package runtime asset: {row['name']}")
+
+        record = {
+            **row,
+            "package_id": package_id,
+            "package_version": package_version,
+            "package_classification": package["classification"],
+            "package_source": package["source"],
+            "package_target_framework": runtime_target,
+            "package_asset": member,
+            "archive_sha256": archive_sha256,
+            "archive_member_sha256": archive_member_sha256,
+            "cached_sha256": cached_sha256,
+            "built_sha256": built_sha256,
+        }
+        for source_key, output_key in (("owner", "package_owner"), ("repository_url", "repository_url"),
+                                       ("repository_commit", "repository_commit")):
+            if source_key in package:
+                record[output_key] = package[source_key]
+        records.append(record)
+    return records

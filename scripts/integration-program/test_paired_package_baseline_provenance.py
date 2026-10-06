@@ -56,7 +56,8 @@ class BaselinePackageProvenanceTests(unittest.TestCase):
         )
         return path
 
-    def write_archive(self, package_id: str, version: str, repository: dict | None) -> bytes:
+    def write_archive(self, package_id: str, version: str, repository: dict | None,
+                      runtime_files: dict[str, bytes] | None = None) -> bytes:
         cache_entry = self.cache / package_id.lower() / version
         cache_entry.mkdir(parents=True, exist_ok=True)
         repository_xml = ""
@@ -72,6 +73,8 @@ class BaselinePackageProvenanceTests(unittest.TestCase):
         archive_path = cache_entry / f"{package_id.lower()}.{version}.nupkg"
         with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as package:
             package.writestr(f"{package_id}.nuspec", nuspec)
+            for name, content in (runtime_files or {}).items():
+                package.writestr(name, content)
         content = archive_path.read_bytes()
         digest = base64.b64encode(hashlib.sha512(content).digest()).decode("ascii")
         archive_path.with_suffix(archive_path.suffix + ".sha512").write_text(digest, encoding="utf-8")
@@ -117,6 +120,151 @@ class BaselinePackageProvenanceTests(unittest.TestCase):
             policy=self.policy if policy is None else policy,
             fixture_project=fixture_project,
         )
+
+    def prepare_loaded_baseline(self):
+        specifications = (
+            ("Elsa", "elsa-core", "Elsa"),
+            ("Elsa.WorkflowContexts", "elsa-extensions", "Elsa.WorkflowContexts"),
+            ("Elsa.Studio", "elsa-studio", "Elsa.Studio"),
+        )
+        records, target, loaded = [], {}, []
+        for package_id, owner, assembly_name in specifications:
+            repository = {
+                "type": "git",
+                "url": baseline.REPOSITORIES[owner],
+                "commit": baseline.RELEASE_COMMITS[owner]["3.8.4"],
+            }
+            asset = f"lib/net8.0/{assembly_name}.dll"
+            content = f"binary bytes for {assembly_name}".encode()
+            record = {
+                "id": package_id,
+                "version": "3.8.4",
+                "owner": owner,
+                "repository": repository,
+                "archive_sha256": "0" * 64,
+            }
+            archive = self.write_archive(package_id, "3.8.4", repository, {asset: content})
+            record["archive_sha256"] = hashlib.sha256(archive).hexdigest()
+            records.append(record)
+            target[f"{package_id}/3.8.4"] = {"type": "package", "runtime": {asset: {}}}
+
+            cached = self.cache / package_id.lower() / "3.8.4" / asset
+            cached.parent.mkdir(parents=True, exist_ok=True)
+            cached.write_bytes(content)
+            location = self.project.parent / "bin" / "Release" / "net8.0" / f"{assembly_name}.dll"
+            location.parent.mkdir(parents=True, exist_ok=True)
+            location.write_bytes(content)
+            loaded.append({
+                "name": assembly_name,
+                "version": "3.8.4.0",
+                "fullName": f"{assembly_name}, Version=3.8.4.0, Culture=neutral, PublicKeyToken=null",
+                "informationalVersion": "3.8.4+" + repository["commit"],
+                "location": str(location),
+                "sha256": hashlib.sha256(content).hexdigest(),
+            })
+        self.policy["packages"] = records
+        self.write_restore(target)
+        return loaded, tuple(item[2] for item in specifications)
+
+    def test_loaded_assemblies_are_bound_to_exact_release_owned_archives(self):
+        loaded, required = self.prepare_loaded_baseline()
+
+        receipt = baseline.verify_baseline_loaded_assemblies(
+            loaded, self.project, self.cache, "net8.0", "3.8.4", required_assemblies=required,
+            policy=self.policy,
+        )
+
+        self.assertEqual(set(required), {item["name"] for item in receipt})
+        self.assertEqual(
+            {"elsa-core", "elsa-extensions", "elsa-studio"},
+            {item["package_owner"] for item in receipt},
+        )
+        for item in receipt:
+            self.assertEqual(item["repository_commit"], baseline.RELEASE_COMMITS[item["package_owner"]]["3.8.4"])
+            self.assertEqual(item["archive_member_sha256"], item["sha256"])
+            self.assertEqual(item["cached_sha256"], item["built_sha256"])
+            self.assertEqual("https://api.nuget.org/v3/index.json", item["package_source"])
+
+    def test_loaded_assembly_verifier_rejects_missing_duplicate_and_unmatched_names(self):
+        loaded, required = self.prepare_loaded_baseline()
+        verify = lambda rows, names=required: baseline.verify_baseline_loaded_assemblies(
+            rows, self.project, self.cache, "net8.0", "3.8.4", required_assemblies=names,
+            policy=self.policy,
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "missing"):
+            verify(loaded[:-1])
+        with self.assertRaisesRegex(RuntimeError, "(?i)duplicate"):
+            verify(loaded + [loaded[0]])
+        host_executable = dict(loaded[0], name="Elsa.Studio.Host", fullName="Elsa.Studio.Host, Version=1.0.0.0,")
+        with self.assertRaisesRegex(RuntimeError, "no unique restored package runtime asset"):
+            verify(loaded + [host_executable])
+
+    def test_loaded_assembly_verifier_rejects_cache_and_built_byte_mismatches(self):
+        loaded, required = self.prepare_loaded_baseline()
+        verify = lambda: baseline.verify_baseline_loaded_assemblies(
+            loaded, self.project, self.cache, "net8.0", "3.8.4", required_assemblies=required,
+            policy=self.policy,
+        )
+
+        cached = self.cache / "elsa" / "3.8.4" / "lib/net8.0/Elsa.dll"
+        cached.write_bytes(b"changed cache")
+        with self.assertRaisesRegex(RuntimeError, "cache runtime DLL differs"):
+            verify()
+
+        cached.write_bytes(b"binary bytes for Elsa")
+        output = Path(loaded[0]["location"])
+        output.write_bytes(b"changed output")
+        with self.assertRaisesRegex(RuntimeError, "(?i)built assembly differs"):
+            verify()
+
+    def test_loaded_assembly_verifier_rejects_release_version_and_source_mismatches(self):
+        loaded, required = self.prepare_loaded_baseline()
+        verify = lambda rows: baseline.verify_baseline_loaded_assemblies(
+            rows, self.project, self.cache, "net8.0", "3.8.4", required_assemblies=required,
+            policy=self.policy,
+        )
+
+        wrong_assembly_version = json.loads(json.dumps(loaded))
+        wrong_assembly_version[0]["version"] = "3.9.0.0"
+        wrong_assembly_version[0]["fullName"] = wrong_assembly_version[0]["fullName"].replace(
+            "Version=3.8.4.0", "Version=3.9.0.0"
+        )
+        with self.assertRaisesRegex(RuntimeError, "release/source identity mismatch"):
+            verify(wrong_assembly_version)
+
+        wrong_source = json.loads(json.dumps(loaded))
+        wrong_source[0]["informationalVersion"] = "3.8.4+" + "0" * 40
+        with self.assertRaisesRegex(RuntimeError, "release/source identity mismatch"):
+            verify(wrong_source)
+
+    def test_loaded_assembly_verifier_rejects_unsafe_assets_and_symlinked_outputs(self):
+        loaded, required = self.prepare_loaded_baseline()
+        assets_path = self.project.parent / "obj" / "project.assets.json"
+        assets = json.loads(assets_path.read_text(encoding="utf-8"))
+        assets["targets"]["net8.0"]["Elsa/3.8.4"]["runtime"] = {"../Elsa.dll": {}}
+        assets_path.write_text(json.dumps(assets), encoding="utf-8")
+        with self.assertRaisesRegex(RuntimeError, "Unsafe runtime asset path"):
+            baseline.verify_baseline_loaded_assemblies(
+                loaded, self.project, self.cache, "net8.0", "3.8.4", required_assemblies=required,
+                policy=self.policy,
+            )
+
+        self.write_restore({
+            "Elsa/3.8.4": {"type": "package", "runtime": {"lib/net8.0/Elsa.dll": {}}},
+            "Elsa.WorkflowContexts/3.8.4": {"type": "package", "runtime": {"lib/net8.0/Elsa.WorkflowContexts.dll": {}}},
+            "Elsa.Studio/3.8.4": {"type": "package", "runtime": {"lib/net8.0/Elsa.Studio.dll": {}}},
+        })
+        output = Path(loaded[0]["location"])
+        external = self.root / "outside.dll"
+        external.write_bytes(output.read_bytes())
+        output.unlink()
+        output.symlink_to(external)
+        with self.assertRaisesRegex(RuntimeError, "Symlink"):
+            baseline.verify_baseline_loaded_assemblies(
+                loaded, self.project, self.cache, "net8.0", "3.8.4", required_assemblies=required,
+                policy=self.policy,
+            )
 
     def test_returns_raw_assets_hash_full_package_hash_ledger_and_graph(self):
         assets_path = self.project.parent / "obj" / "project.assets.json"
