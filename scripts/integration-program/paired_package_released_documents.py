@@ -16,6 +16,11 @@ MAX_BYTES = 1024 * 1024
 SCHEMA = "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json"
 PYTHON_ASSERTIONS = {"package_provenance", "browser_resources", "released_document"}
 ACTIVITY_FIELDS = {"id", "nodeId", "name", "type", "version", "customProperties", "metadata"}
+# Actual native exports agree with each release's explicit Studio ToolVersion,
+# which is a format/tool marker distinct from the verified package version.
+# ToolVersion.cs at Studio 9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae (3.8.4)
+# and a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42 (3.9.0) declares these constants.
+TOOL_VERSIONS = {"3.8.4": "3.8.0.0", "3.9.0": "3.9.0.0"}
 
 
 def _pairs(pairs):
@@ -65,14 +70,15 @@ def _activity(value, fields, *, name, kind, parent):
 def validate_released_document(path: Path, source_cell: tuple[str, str, str], browser_receipt: dict) -> dict:
     """Return only a byte/identity binding, never modify or accept the retained matrix.
 
-    3.9's shape comes from an actual Server/net10 native export. A 3.8 variant
-    must be reviewed after its real export is observed. Fixture/package/loaded/
-    resource provenance and portable file retention remain the caller's gates.
+    Both released shapes come from actual Server/net10 native exports. The
+    3.8.4 packages emit toolVersion 3.8.0.0; that field never establishes the
+    installed package version. Fixture/package/loaded/resource provenance and
+    portable file retention remain the caller's gates.
     """
     browser.require(type(source_cell) is tuple and len(source_cell) == 3, "Invalid released source cell")
     version, framework, host = source_cell
     browser.identity({"version": version, "framework": framework, "host": host})
-    browser.require(version == "3.9.0", "Released document version has no observed shape")
+    browser.require(version in TOOL_VERSIONS, "Released document version has no observed shape")
     browser.validate_browser_receipt(browser_receipt, source_cell)
     browser.require(browser_receipt["result"] in {"passed", "incomplete"}, "Failed browser cannot author accepted released document")
     assertions = {item["name"]: item["passed"] for item in browser_receipt["assertions"]}
@@ -95,7 +101,7 @@ def validate_released_document(path: Path, source_cell: tuple[str, str, str], br
     document = _object(document, {"$schema", "id", "definitionId", "name", "createdAt", "version", "toolVersion",
                                   "variables", "inputs", "outputs", "outcomes", "customProperties", "isReadonly",
                                   "isSystem", "isLatest", "isPublished", "options", "root"})
-    browser.require(document["$schema"] == SCHEMA and document["toolVersion"] == version + ".0"
+    browser.require(document["$schema"] == SCHEMA and document["toolVersion"] == TOOL_VERSIONS[version]
                     and type(document["version"]) is int and document["version"] == 1, "Wrong released document schema/version")
     for field in ("id", "definitionId"):
         browser.require(isinstance(document[field], str) and re.fullmatch(r"[0-9a-f]{1,16}", document[field]), "Invalid synthetic workflow identity")

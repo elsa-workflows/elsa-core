@@ -142,10 +142,22 @@ class ReleasedDocumentContracts(unittest.TestCase):
             with self.subTest(path=path), self.assertRaises((ValueError, RuntimeError)):
                 documents.validate_released_document(path, self.cell, self.receipt)
 
-    def test_unobserved_38_shape_is_not_inferred(self):
-        self.write()
+    def test_observed_38_tool_marker_is_not_inferred_from_package_version(self):
         self.cell = ("3.8.4", "net10.0", "server")
         self.receipt["version"] = "3.8.4"
+        self.document["toolVersion"] = "3.8.0.0"
+        self.write()
+        self.assertEqual("3.8.0.0", self.validate()["tool_version"])
+        for marker in ("3.8.4.0", "3.9.0.0"):
+            self.document["toolVersion"] = marker
+            self.write()
+            with self.subTest(marker=marker), self.assertRaises(ValueError):
+                self.validate()
+
+    def test_candidate_cannot_author_a_released_document(self):
+        self.write()
+        self.cell = ("3.10.0", "net10.0", "server")
+        self.receipt["version"] = "3.10.0"
         with self.assertRaisesRegex(ValueError, "no observed shape"):
             self.validate()
 
