@@ -28,7 +28,7 @@ updates:
       - "src/studio/**"
   - package-ecosystem: "nuget"
     directories:
-      - "/src/extensions/**"
+      - "/src/extensions/**/Elsa.*"
     target-branch: "main"
     registries:
       - elsa-feedz-preview
@@ -46,7 +46,7 @@ updates:
       include: "scope"
   - package-ecosystem: "nuget"
     directories:
-      - "/src/studio/**"
+      - "/src/studio/**/Elsa.*"
     target-branch: "main"
     registries:
       - elsa-feedz-preview
