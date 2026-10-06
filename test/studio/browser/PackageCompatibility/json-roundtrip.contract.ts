@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { maxWorkflowJsonBytes, readWorkflowJsonExport, workflowDefinitionSchema, workflowSemanticIdentity } from './json-roundtrip.js';
 
 function definition() {
+  const inputs: Array<{ name: string }> = [];
   return {
     $schema: workflowDefinitionSchema,
     id: 'candidate-version-id',
@@ -13,7 +14,7 @@ function definition() {
     version: 1,
     toolVersion: '3.10.0.0',
     variables: [],
-    inputs: [],
+    inputs,
     outputs: [{ type: 'String', name: 'sentinel', displayName: 'sentinel', description: '', category: 'Primitives' }],
     outcomes: [],
     customProperties: { source: 'native-editor' },

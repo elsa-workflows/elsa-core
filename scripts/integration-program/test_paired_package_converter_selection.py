@@ -292,6 +292,13 @@ class ConverterSelectionContracts(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "source or built output changed"):
                 selected.prepare_decoder(root, "10.0.300", {})
 
+    def test_group_query_timeout_cannot_certify_quiescence(self):
+        with patch.object(selected.subprocess, "run", side_effect=subprocess.TimeoutExpired("ps", 2)) as query:
+            with self.assertRaises(subprocess.TimeoutExpired):
+                selected._wait_group_empty(123)
+            self.assertGreater(query.call_args.kwargs["timeout"], 0)
+            self.assertLessEqual(query.call_args.kwargs["timeout"], 2)
+
     def test_command_timeout_kills_owned_wrapper_children(self):
         pid_file = self.root / "child-pid"
         with self.assertRaises(subprocess.TimeoutExpired):

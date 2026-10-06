@@ -179,8 +179,8 @@ def prepare_decoder(root: Path, sdk: str, environment: dict[str, str]) -> Path:
     return regular_file(output / "Decoder.dll")
 
 
-def _group_members(pgid: int) -> list[int]:
-    result = subprocess.run(["ps", "-axo", "pid=,pgid=,stat="], capture_output=True, text=True, check=True)
+def _group_members(pgid: int, *, timeout: float = 2) -> list[int]:
+    result = subprocess.run(["ps", "-axo", "pid=,pgid=,stat="], capture_output=True, text=True, check=True, timeout=timeout)
     return [int(fields[0]) for line in result.stdout.splitlines() if len(fields := line.split()) == 3
             and int(fields[1]) == pgid and "Z" not in fields[2]]
 
@@ -194,11 +194,13 @@ def _terminate(pgid: int) -> None:
 
 def _wait_group_empty(pgid: int) -> bool:
     deadline = time.monotonic() + 10
-    while _group_members(pgid):
-        if time.monotonic() >= deadline:
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
             return False
-        time.sleep(0.1)
-    return True
+        if not _group_members(pgid, timeout=min(2, remaining)):
+            return True
+        time.sleep(min(0.1, remaining))
 
 
 def _owned_command(command: list[str], cwd: Path, environment: dict, log: Path, timeout: int) -> dict:
