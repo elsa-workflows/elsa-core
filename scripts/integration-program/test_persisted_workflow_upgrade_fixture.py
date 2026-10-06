@@ -190,6 +190,20 @@ class UpgradeContracts(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "allowlist"):
                     fixture.stage_evidence(root, {"passed": False, "complete_matrix": False, "cells": [record]})
 
+    def test_invalid_phase_receipt_is_retained_as_a_bounded_failure(self):
+        for text in ("broken", "[]", '{"phase":"wrong","passed":true}'):
+            with self.subTest(text=text), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                cell = root / "3.8.4-net8.0"
+                cell.mkdir()
+                (cell / "suspend.json").write_text(text)
+                (root / "public-upgrade-proof.json").write_text("{}")
+                fixture.stage_evidence(root, {"passed": False, "complete_matrix": False, "cells": [{"baseline": "3.8.4", "framework": "net8.0", "passed": False}]})
+                diagnostic = json.loads((root / "retained-evidence/3.8.4-net8.0/execution.json").read_text())
+                self.assertEqual(diagnostic["phases"][0]["phase"], "suspend")
+                self.assertFalse(diagnostic["phases"][0]["runner_passed"])
+                self.assertEqual(diagnostic["phases"][0]["failure_category"], "receipt_validation_failed")
+
 
 if __name__ == "__main__":
     unittest.main()
