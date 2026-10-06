@@ -1,8 +1,10 @@
 import copy
+import hashlib
 import json
 from pathlib import Path
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import consolidated_candidate_input as candidate
@@ -13,6 +15,7 @@ import run_paired_package_browser_matrix as matrix
 class MatrixContracts(unittest.TestCase):
     def setUp(self):
         self.ledger = matrix.new_ledger()
+        self.handle = SimpleNamespace(studio_url="http://localhost:1", backend_url="http://localhost:2/elsa/api", username="private", password="private", safe_ids={})
         for cell in self.ledger["cells"]:
             cell.update(result="passed", browser_version="149.0.7827.55", resources=[], proof={}, failure_category=None, assertions=[{"name": name, "passed": True} for name in sorted(matrix.required_assertions(cell))])
 
@@ -75,6 +78,67 @@ class MatrixContracts(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "ancestor"):
                 matrix._external_path(alias / "new-output")
             self.assertEqual(root.resolve() / "new-output", matrix._external_path(root / "new-output"))
+
+    def test_private_export_destination_rejected_before_browser_start(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            existing = root / "existing.json"
+            existing.write_text("untouched")
+            alias = root / "alias"
+            alias.symlink_to(root, target_is_directory=True)
+            leaf = root / "leaf.json"
+            leaf.symlink_to(existing)
+            cell = {"version": "3.9.0", "framework": "net10.0", "host": "server"}
+            for destination in (existing, leaf, alias / "new.json", root / "missing" / "new.json", matrix.JOURNEY.parent / "new.json"):
+                with self.subTest(destination=destination), patch.object(matrix.subprocess, "run") as run, self.assertRaises(ValueError):
+                    matrix.run_browser(self.handle, cell, [], released_document_output=destination)
+                run.assert_not_called()
+            self.assertEqual("untouched", existing.read_text())
+
+    def test_private_export_hash_binds_download_without_promoting_document_assertion(self):
+        cell = next(c for c in self.ledger["cells"] if matrix.identity(c) == ("3.9.0", "net10.0", "server"))
+        cell = copy.deepcopy(cell)
+        cell.update(result="incomplete")
+        for assertion in cell["assertions"]:
+            if assertion["name"] == "released_document":
+                assertion["passed"] = False
+        document = b'{"synthetic":true}'
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "workflow.json"
+            def child(*_args, **kwargs):
+                payload = json.loads(kwargs["input"])
+                output = Path(payload["released_document_output"])
+                with output.open("xb") as stream:
+                    stream.write(document)
+                output.chmod(0o600)
+                return SimpleNamespace(stdout=json.dumps(cell), returncode=0)
+            for digest in ("0" * 64, hashlib.sha256(document).hexdigest()):
+                cell["proof"] = {"released_document_sha256": digest, "last_completed_stage": "released_document_exported"}
+                with patch.object(matrix.subprocess, "run", side_effect=child):
+                    if digest == "0" * 64:
+                        with self.assertRaisesRegex(ValueError, "bytes differ"):
+                            matrix.run_browser(self.handle, cell, [], released_document_output=destination)
+                    else:
+                        receipt = matrix.run_browser(self.handle, cell, [], released_document_output=destination)
+                        self.assertFalse(next(a for a in receipt["assertions"] if a["name"] == "released_document")["passed"])
+                        self.assertNotIn(str(destination), json.dumps(receipt))
+                destination.unlink()
+
+    def test_private_export_rejects_oversize_permissions_and_missing_hash(self):
+        cell = copy.deepcopy(next(c for c in self.ledger["cells"] if matrix.identity(c) == ("3.9.0", "net10.0", "server")))
+        cell["result"] = "incomplete"
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "workflow.json"
+            for size, mode, include_hash in ((1024 * 1024 + 1, 0o600, True), (2, 0o644, True), (2, 0o600, False)):
+                document = b"x" * size
+                cell["proof"] = {"released_document_sha256": hashlib.sha256(document).hexdigest()} if include_hash else {}
+                def child(*_args, **_kwargs):
+                    destination.write_bytes(document)
+                    destination.chmod(mode)
+                    return SimpleNamespace(stdout=json.dumps(cell), returncode=0)
+                with self.subTest(size=size, mode=mode, include_hash=include_hash), patch.object(matrix.subprocess, "run", side_effect=child), self.assertRaises(ValueError):
+                    matrix.run_browser(self.handle, cell, [], released_document_output=destination)
+                destination.unlink()
 
 
 if __name__ == "__main__":

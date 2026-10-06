@@ -1,11 +1,12 @@
 import { chromium, expect, request, type Page, type APIRequestContext, type Locator } from '@playwright/test';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { dirname, isAbsolute } from 'node:path';
 const policy = JSON.parse(readFileSync(new URL('./coverage-policy.json', import.meta.url), 'utf8'));
 
 type Cell = { host: 'server' | 'wasm' | 'hosted-wasm' | 'custom-elements'; framework: string; version: string; route_prefix?: string };
 type Resource = { path: string; sha256: string; bytes: number; content_type: string; owner: 'package' | 'fixture' | 'platform'; required?: boolean };
-type PrivateInput = { request: Cell; studio_url: string; backend_url: string; username: string; password: string; safe_ids: Record<string, string>; resources: Resource[] };
+type PrivateInput = { request: Cell; studio_url: string; backend_url: string; username: string; password: string; safe_ids: Record<string, string>; resources: Resource[]; released_document_output?: string };
 type Assertion = { name: string; passed: boolean; reason_category: string | null };
 const baseline: string[] = policy.baseline;
 const candidate: string[] = policy.candidate;
@@ -202,7 +203,39 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   proof.activity_id_sha256 = hash(child.id);
   proof.value_sha256 = hash(sentinel);
   proof.synthetic_document_sha256 = hash(JSON.stringify(reloaded));
-  if (input.request.version !== '3.10.0') return;
+  if (input.request.version !== '3.10.0') {
+    if (input.released_document_output) {
+      // Export the real saved workflow through the native menu and download interop.
+      const menu = page.locator('.pane-left [role="toolbar"] .mud-menu-icon-button-activator');
+      await expect(menu).toHaveCount(1);
+      await menu.click();
+      await page.getByRole('menuitem', { name: 'Export', exact: true }).click();
+      const exportDialog = page.getByRole('dialog');
+      await expect(exportDialog).toBeVisible();
+      await expect(exportDialog.getByRole('checkbox', { name: 'Include referencing workflows', exact: true })).not.toBeChecked();
+      const downloadPending = page.waitForEvent('download');
+      await exportDialog.getByRole('button', { name: 'Export', exact: true }).click();
+      const download = await downloadPending;
+      const stream = await download.createReadStream();
+      if (!stream) throw new Error('released_document_download_missing');
+      const chunks: Buffer[] = [];
+      let bytes = 0;
+      for await (const chunk of stream) {
+        bytes += chunk.length;
+        if (bytes > 1024 * 1024) { stream.destroy(); throw new Error('released_document_limit'); }
+        chunks.push(Buffer.from(chunk));
+      }
+      if (!bytes || await download.failure()) throw new Error('released_document_download_failed');
+      const output = input.released_document_output;
+      if (!isAbsolute(output) || realpathSync(dirname(output)) !== dirname(output)) throw new Error('invalid_private_document_output');
+      const document = Buffer.concat(chunks);
+      writeFileSync(output, document, { flag: 'wx', mode: 0o600 });
+      proof.released_document_sha256 = hash(document);
+      proof.last_completed_stage = 'released_document_exported';
+      // Shape, package provenance and retained-byte validation belong to the parent verifier.
+    }
+    return;
+  }
   await toolbar(page, 'Publish workflow');
   await expect.poll(async () => (await getDefinition()).isPublished).toBe(true);
   proof.last_completed_stage = 'workflow_published';

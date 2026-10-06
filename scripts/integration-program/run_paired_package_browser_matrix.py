@@ -71,8 +71,8 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     for item in assertions:
         require(set(item) <= {"name", "passed", "reason_category"} and type(item.get("passed")) is bool and item.get("reason_category") in (None, "not_implemented"), "Unsafe browser assertion")
     proof = record.get("proof", {})
-    stages = {"backend_authenticated", "login_navigation", "login_form", "login_submitted", "workflow_list", "create_dialog_opened", "create_name_filled", "create_submitted", "workflow_created", "output_tab_opened", "output_dialog_opened", "output_type_selected", "output_declared", "activity_registry", "activity_inserted", "property_saved", "edit_reloaded", "workflow_published", "workflow_run"}
-    hashes = {"definition_id_sha256", "activity_id_sha256", "value_sha256", "synthetic_document_sha256", "instance_id_sha256"}
+    stages = {"backend_authenticated", "login_navigation", "login_form", "login_submitted", "workflow_list", "create_dialog_opened", "create_name_filled", "create_submitted", "workflow_created", "output_tab_opened", "output_dialog_opened", "output_type_selected", "output_declared", "activity_registry", "activity_inserted", "property_saved", "edit_reloaded", "workflow_published", "workflow_run", "released_document_exported"}
+    hashes = {"definition_id_sha256", "activity_id_sha256", "value_sha256", "synthetic_document_sha256", "instance_id_sha256", "released_document_sha256"}
     flags = {"login_failure_visible", "login_form_visible", "server_circuit_observed", "server_render_frames_observed", "elsa_identity_ui_visible", "expected_auth_provider_observed", "interactive_validation_observed", "private_input_values_retained", "initial_list_navigation_completed"}
     counts = {"create_name_label_count", "create_name_textbox_count"}
     require(set(proof) <= hashes | flags | counts | {"last_completed_stage"}, "Unsafe browser proof field")
@@ -172,13 +172,19 @@ def prepare_candidate(inputs: Path, destination: Path, retained: Path, *, fixtur
     return provenance
 
 
-def run_browser(handle, request, resources: list[dict], *, timeout: int = 240) -> dict:
+def run_browser(handle, request, resources: list[dict], *, timeout: int = 240,
+                released_document_output: Path | None = None) -> dict:
     """Credentials only enter the child through stdin; raw process errors are discarded."""
     cell = asdict(request) if is_dataclass(request) else dict(request)
     identity(cell)
     payload = {"request": cell, "studio_url": handle.studio_url, "backend_url": handle.backend_url,
                "username": handle.username, "password": handle.password,
                "safe_ids": handle.safe_ids, "resources": resources}
+    if released_document_output is not None:
+        require(cell["version"] in {"3.8.4", "3.9.0"}, "Only released cells may author released documents")
+        released_document_output = _external_path(released_document_output)
+        require(released_document_output.parent.is_dir() and not released_document_output.exists(), "Released document requires a fresh private output in an existing directory")
+        payload["released_document_output"] = str(released_document_output)
     try:
         completed = subprocess.run(["npm", "exec", "--no", "--", "tsx", str(JOURNEY)],
                                    cwd=JOURNEY.parent, input=json.dumps(payload), capture_output=True, text=True, timeout=timeout,
@@ -189,6 +195,16 @@ def run_browser(handle, request, resources: list[dict], *, timeout: int = 240) -
     require(isinstance(record, dict) and all(key in record for key in ("host", "framework", "version")) and identity(record) == identity(cell), "Browser process returned an invalid cell")
     record = validate_browser_receipt(record, identity(cell))
     require(completed.returncode == (1 if record["result"] == "failed" else 0), "Inconsistent browser exit status")
+    document_hash = record.get("proof", {}).get("released_document_sha256")
+    require(released_document_output is None or not released_document_output.exists() or document_hash is not None,
+            "Released download is missing its browser hash")
+    if document_hash is not None:
+        from paired_package_provenance import regular_file
+        require(released_document_output is not None, "Unrequested released document")
+        document = regular_file(released_document_output)
+        require(0 < document.stat().st_size <= 1024 * 1024 and document.stat().st_mode & 0o777 == 0o600,
+                "Invalid private released document size or permissions")
+        require(hashlib.sha256(document.read_bytes()).hexdigest() == document_hash, "Released document bytes differ from browser download")
     return record
 
 
