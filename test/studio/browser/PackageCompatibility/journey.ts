@@ -1,4 +1,4 @@
-import { chromium, expect, request, type Page, type APIRequestContext } from '@playwright/test';
+import { chromium, expect, request, type Page, type APIRequestContext, type Locator } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 const policy = JSON.parse(readFileSync(new URL('./coverage-policy.json', import.meta.url), 'utf8'));
@@ -41,6 +41,11 @@ async function toolbar(page: Page, title: string): Promise<void> {
     }
   }
   throw new Error('toolbar_control_unavailable');
+}
+
+function inputControl(page: Page, label: RegExp, scope: Page | Locator = page): Locator {
+  // Extended inputs render visible labels whose for IDs differ from their actual inputs.
+  return scope.locator('.mud-input-control').filter({ has: page.locator('label').filter({ hasText: label }) });
 }
 
 class Backend {
@@ -125,31 +130,53 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   const getDefinition = () => backend.get('/workflow-definitions/by-definition-id/' + encodeURIComponent(definitionId) + '?versionOptions=Latest');
   // A declared output is authored through the real package UI, not seeded via HTTP.
   await page.getByRole('tab', { name: /Input.*Output/i }).click();
+  proof.last_completed_stage = 'output_tab_opened';
   await page.getByRole('button', { name: 'Add output', exact: true }).click();
   dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  proof.last_completed_stage = 'output_dialog_opened';
+  // CodeBeam 9.1.0 renders a hidden input and toggles its visible MudInputControl.
+  // Its Type label is not associated with the hidden input, so use the actual labeled component.
+  const typeSelect = inputControl(page, /^Type$/, dialog);
+  await expect(typeSelect).toHaveCount(1);
+  // EditOutputDialog initializes Name and Type after its awaited descriptor reads.
+  await expect.poll(async () => (await typeSelect.locator('[tabindex="0"]').first().innerText()).trim(), { timeout: 20_000 }).not.toBe('');
   await dialog.getByLabel('Name', { exact: true }).fill('sentinel');
-  await dialog.getByLabel('Type', { exact: true }).click();
-  await page.getByText('String', { exact: true }).last().click();
+  await dialog.getByLabel('Display name', { exact: true }).fill('sentinel');
+  await typeSelect.click();
+  const stringType = page.getByRole('option', { name: 'String', exact: true });
+  await expect(stringType).toHaveCount(1);
+  await stringType.click();
+  proof.last_completed_stage = 'output_type_selected';
   await dialog.getByRole('button', { name: 'Ok', exact: true }).click();
   proof.last_completed_stage = 'output_declared';
-  const search = page.getByPlaceholder('Search', { exact: true });
+  // The supported native pickers expose Search as a placeholder (accordion) or label (tree).
+  const search = page.getByPlaceholder('Search', { exact: true }).or(page.getByLabel(/^Search(?:\.\.\.)?$/));
+  await expect(search).toHaveCount(1);
   await search.fill('Set output');
   const category = page.locator('.mud-expand-panel-header').filter({ hasText: 'Composition' });
   if (await category.count()) await category.click();
   const activity = page.locator('[draggable="true"]').filter({ hasText: /^Set output$/i });
   await expect(activity).toHaveCount(1);
+  await expect(activity).toBeVisible();
   passed('activity_registry');
   proof.last_completed_stage = 'activity_registry';
   const canvas = page.locator('.flowchart-diagram-designer-wrapper').first();
   await activity.dragTo(canvas, { targetPosition: { x: 260, y: 180 } });
   const node = page.locator('.x6-node').filter({ hasText: /Set output/i });
   await expect(node).toHaveCount(1);
-  await node.click();
+  // Native AddNewActivityAsync selects the dragged activity and opens its property editor.
+  await expect(node).toHaveClass(/x6-node-selected/);
   passed('editor_smoke');
   proof.last_completed_stage = 'activity_inserted';
-  await page.getByLabel('Output', { exact: true }).click();
-  await page.getByText('sentinel', { exact: true }).last().click();
-  const value = page.getByLabel(/^Output value$/i);
+  const output = inputControl(page, /^Output$/);
+  await expect(output).toHaveCount(1);
+  await output.click();
+  const outputOption = page.getByRole('option', { name: 'sentinel', exact: true });
+  await expect(outputOption).toHaveCount(1);
+  await outputOption.click();
+  const value = inputControl(page, /^Output Value$/i).locator('input[type="text"]');
+  await expect(value).toHaveCount(1);
   await value.fill(sentinel);
   await value.blur();
   await page.keyboard.press('ControlOrMeta+s');
