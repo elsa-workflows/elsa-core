@@ -6,7 +6,7 @@
 
 ## Context
 
-After the history import (#8286), Core, Extensions and Studio source live in one repository and one solution, `Elsa.sln`. Until now each repository published its own packages, and all three released in lockstep: every Core, Studio and Extensions package on NuGet is at 3.8.4. `main` is the 3.10 line, and 3.9 is a maintenance line.
+After the history-bearing import merged through [#8409](https://github.com/elsa-workflows/elsa-core/pull/8409) (story #8286), Core, Extensions and Studio source live in one repository and one solution, `Elsa.sln`. Until then each repository published its own packages, and all three released in lockstep: every Core, Studio and Extensions package on NuGet was at 3.8.4. `main` is the 3.10 line, and 3.9 is a maintenance line.
 
 The bounded release-unit ADR proposed a separate, monotonic version stream for each package ID, starting with `Elsa.Slack`. #8260 is proving that a connector can be packed and consumed on its own, using local artifacts only. That proof does not settle how the first consolidated release is versioned, or when the Extensions and Studio publishers stop.
 
@@ -30,5 +30,7 @@ Two publishers for one package ID and version line would let them race or overwr
 Consumers keep the rule they know: take the same version of every Elsa package. The first consolidated release has one version to allocate and one publisher to operate.
 
 Packing the whole solution also packs connectors that did not change. That is the cost the release-unit ADR set out to avoid, and it is accepted for 3.10.0. The per-package policy stays proposed, not rejected.
+
+This lockstep decision applies to the first consolidated 3.10 release. Later E3 independent connector release streams remain separate program scope under the [bounded connector release-unit ADR](2026-09-23-bounded-connector-release-unit.md). The npm publisher decision is also separate; this ADR does not choose or authorize an npm publisher.
 
 The cutover is a maintainer step at release time and is not automated here. Until it happens, no imported package can be published from elsa-core, even by an approved dispatch. Until then, a 3.8 or 3.9 fix for an Extensions or Studio package is released from its original repository, and has to be ported to `main` separately.
