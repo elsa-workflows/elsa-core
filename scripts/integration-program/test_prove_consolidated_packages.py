@@ -24,8 +24,9 @@ class PackageProofTests(unittest.TestCase):
             "frameworks": ["net8.0"], "assembly_name": "Example", "include_build_output": True,
             "include_symbols": True, "is_tool": False,
             "nupkg": f"Elsa.Example.{VERSION}.nupkg", "snupkg": f"Elsa.Example.{VERSION}.snupkg",
-            "framework_properties": {"net8.0": {"assembly_name": "Example", "include_build_output": True}},
+            "framework_properties": {"net8.0": {"assembly_name": "Example", "include_build_output": True, "assets_file": "unused.json", "manifest_required": False, "manifest_path": ""}},
         }
+        self.row["expected_dependency_groups"] = [{"framework": "net8.0", "dependencies": []}]
         self.manifest = {"version": VERSION, "source_commit": COMMIT, "packages": [self.row],
                          "exclusions": [{"id": "Elsa.Secrets.Models", "project": "retired.csproj"}],
                          "external_package_exceptions": proof.EXTERNAL_PACKAGES, "icon_sha256": hashlib.sha256(b"icon").hexdigest()}
@@ -79,9 +80,43 @@ class PackageProofTests(unittest.TestCase):
     def test_dependency_closure_rejects_stale_excluded_and_unknown(self):
         for dependency in (("Elsa.Example", "3.8.4"), ("Elsa.Secrets.Models", VERSION), ("Elsa.Missing", VERSION)):
             with self.subTest(dependency=dependency), self.assertRaises(ValueError):
-                proof.verify_metadata(self.nuspec(dependency=dependency), self.row, self.manifest)
+                data = self.nuspec(dependency=dependency)
+                self.row["expected_dependency_groups"] = proof.dependency_groups(data)
+                proof.verify_metadata(data, self.row, self.manifest)
         for dependency in (("Elsa.Example", VERSION), ("Elsa.Platform.PackageManifest", "0.0.1-preview.53"), ("Dapper", "2.1.66")):
-            proof.verify_metadata(self.nuspec(dependency=dependency), self.row, self.manifest)
+            data = self.nuspec(dependency=dependency)
+            self.row["expected_dependency_groups"] = proof.dependency_groups(data)
+            proof.verify_metadata(data, self.row, self.manifest)
+
+    def test_missing_dependency_group_dependency_and_extra_assembly_fail(self):
+        no_groups = self.nuspec()
+        no_groups.remove(no_groups.find("dependencies"))
+        with self.assertRaisesRegex(ValueError, "SDK dependency metadata/archive mismatch"):
+            proof.verify_metadata(no_groups, self.row, self.manifest)
+        wrong_group = self.nuspec()
+        wrong_group.find("dependencies/group").set("targetFramework", "net7.0")
+        with self.assertRaisesRegex(ValueError, "SDK dependency metadata/archive mismatch"):
+            proof.verify_metadata(wrong_group, self.row, self.manifest)
+        data = self.nuspec(dependency=("Dapper", "2.1.66"))
+        self.row["expected_dependency_groups"] = proof.dependency_groups(data)
+        with self.assertRaisesRegex(ValueError, "SDK dependency metadata/archive mismatch"):
+            proof.verify_metadata(self.nuspec(), self.row, self.manifest)
+        data = self.nuspec(dependency=("Dapper", "2.1.66"))
+        proof.verify_metadata(data, self.row, self.manifest)
+        self.artifacts(data)
+        with zipfile.ZipFile(self.directory / self.row["nupkg"], "a") as archive:
+            archive.writestr("lib/net7.0/Example.dll", b"unexpected framework")
+        with self.assertRaisesRegex(ValueError, "Assembly framework coverage"):
+            proof.verify_artifacts(self.directory, self.manifest)
+
+    def test_sdk_dependency_comparison_includes_asset_semantics(self):
+        data = self.nuspec(dependency=("Dapper", "2.1.66"))
+        data.find("dependencies/group/dependency").set("exclude", "Build,Analyzers")
+        self.row["expected_dependency_groups"] = proof.dependency_groups(data)
+        proof.verify_metadata(data, self.row, self.manifest)
+        data.find("dependencies/group/dependency").set("exclude", "Compile")
+        with self.assertRaisesRegex(ValueError, "SDK dependency metadata/archive mismatch"):
+            proof.verify_metadata(data, self.row, self.manifest)
 
     def test_duplicate_zip_entry_and_missing_framework_symbols_fail(self):
         self.artifacts()
@@ -94,6 +129,30 @@ class PackageProofTests(unittest.TestCase):
             archive.writestr("same", b"two")
         with zipfile.ZipFile(self.directory / "duplicate.zip") as archive, self.assertRaisesRegex(ValueError, "Duplicate"):
             proof.archive_names(archive)
+
+    def test_built_browser_assets_must_be_packaged_with_exact_bytes(self):
+        self.artifacts()
+        asset = {"id": self.row["id"], "package_path": "staticwebassets/example.js", "sha256": hashlib.sha256(b"built").hexdigest()}
+        with zipfile.ZipFile(self.directory / self.row["nupkg"]) as archive, self.assertRaisesRegex(ValueError, "Missing packaged browser"):
+            proof.verify_browser_assets(archive, self.row, [asset])
+        with zipfile.ZipFile(self.directory / self.row["nupkg"], "a") as archive:
+            archive.writestr(asset["package_path"], b"stale")
+        with zipfile.ZipFile(self.directory / self.row["nupkg"]) as archive, self.assertRaisesRegex(ValueError, "differs from built output"):
+            proof.verify_browser_assets(archive, self.row, [asset])
+
+    def test_generated_package_manifest_must_match_proof_id_version_and_frameworks(self):
+        self.artifacts()
+        self.row["framework_properties"]["net8.0"].update(manifest_required=True, manifest_path="elsa-package.json")
+        with zipfile.ZipFile(self.directory / self.row["nupkg"]) as archive, self.assertRaisesRegex(ValueError, "Missing generated"):
+            proof.verify_package_manifest(archive, self.row, VERSION)
+        for version, frameworks in (("1.0.0", ["net8.0"]), (VERSION, ["net7.0"])):
+            self.artifacts()
+            data = {"package": {"id": self.row["id"], "version": version},
+                    "extensions": {"targetFrameworks": frameworks, "repositoryUrl": proof.CORE_URL}}
+            with zipfile.ZipFile(self.directory / self.row["nupkg"], "a") as archive:
+                archive.writestr("elsa-package.json", __import__("json").dumps(data))
+            with zipfile.ZipFile(self.directory / self.row["nupkg"]) as archive, self.assertRaises(ValueError):
+                proof.verify_package_manifest(archive, self.row, VERSION)
 
     def inspection(self, relative, *, embedded=None, source=b"source"):
         return {"source_link": {"documents": {"/_/*": f"{proof.RAW_URL}{COMMIT}/*"}},

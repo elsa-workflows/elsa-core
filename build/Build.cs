@@ -38,6 +38,9 @@ partial class Build : NukeBuild, ITest, IPack
 
     [Parameter] bool AnalyseCode;
 
+    bool IsConsolidatedPackageProof => string.Equals(
+        Environment.GetEnvironmentVariable("ConsolidatedPackageProof"), "true", StringComparison.OrdinalIgnoreCase);
+
     protected override void OnBuildInitialized()
     {
         VersionSuffix = !IsTaggedBuild
@@ -64,13 +67,19 @@ partial class Build : NukeBuild, ITest, IPack
         });
 
     public Configure<DotNetRestoreSettings> RestoreSettings => _ => _
-        .SetVerbosity(DotNetVerbosity.quiet);
+        .SetVerbosity(DotNetVerbosity.quiet)
+        .When(_ => IsConsolidatedPackageProof, settings => settings
+            .SetProperty("Version", Version)
+            .SetProperty("PackageVersion", Version));
 
     public Configure<DotNetBuildSettings> CompileSettings => _ => _
         // ensure we don't generate too much output in CI run
         // 0  Turns off emission of all warning messages
         // 1  Displays severe warning messages
-        .SetWarningLevel(IsServerBuild ? 0 : 1);
+        .SetWarningLevel(IsServerBuild ? 0 : 1)
+        .When(_ => IsConsolidatedPackageProof, settings => settings
+            .SetProperty("Version", Version)
+            .SetProperty("PackageVersion", Version));
 
     public Configure<DotNetPackSettings> PackSettings => settings =>
         string.IsNullOrWhiteSpace(Version) ? settings : settings.SetVersion(Version);

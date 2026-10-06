@@ -32,7 +32,7 @@ PROPERTIES = (
     "IsPackable", "PackageId", "PackageVersion", "AssemblyName", "TargetFrameworks",
     "TargetFramework", "IncludeBuildOutput", "IncludeSymbols", "SymbolPackageFormat",
     "IsTestProject", "IsTool", "BuildOutputTargetFolder", "GeneratePackageOnBuild",
-    "RepositoryUrl", "PackageProjectUrl",
+    "RepositoryUrl", "PackageProjectUrl", "ProjectAssetsFile", "GenerateElsaPackageManifest", "ElsaPackageManifestIncludeInPackage", "ElsaPackageManifestPackagePath",
 )
 
 
@@ -127,6 +127,9 @@ def inventory(root: Path, version: str, commit: str, *, workers: int = 4) -> dic
             row["framework_properties"][framework] = {
                 "assembly_name": inner["AssemblyName"], "package_version": inner["PackageVersion"],
                 "include_build_output": inner["IncludeBuildOutput"].lower() != "false",
+                "assets_file": inner["ProjectAssetsFile"],
+                "manifest_required": inner["GenerateElsaPackageManifest"].lower() == "true" and inner["ElsaPackageManifestIncludeInPackage"].lower() == "true",
+                "manifest_path": inner["ElsaPackageManifestPackagePath"],
             }
         row["nupkg"] = f"{row['id']}.{version}.nupkg"
         row["snupkg"] = f"{row['id']}.{version}.snupkg" if row["include_symbols"] and row["include_build_output"] else None
@@ -151,6 +154,111 @@ def inventory(root: Path, version: str, commit: str, *, workers: int = 4) -> dic
             "icon_sha256": hashlib.sha256((root / "icon.png").read_bytes()).hexdigest()}
 
 
+def dependency_groups(data: ET.Element) -> list[dict]:
+    require(not data.findall("dependencies/dependency"), "Ungrouped dependencies are unsupported")
+    groups = []
+    for group in data.findall("dependencies/group"):
+        dependencies = [{"id": item.get("id", ""), "version": item.get("version", ""),
+                         "include": item.get("include", ""), "exclude": item.get("exclude", "")}
+                        for item in group.findall("dependency")]
+        require(len({item["id"].casefold() for item in dependencies}) == len(dependencies), "Duplicate package dependency")
+        groups.append({"framework": group.get("targetFramework", ""),
+                       "dependencies": sorted(dependencies, key=lambda item: item["id"].casefold())})
+    require(len({group["framework"] for group in groups}) == len(groups), "Duplicate dependency framework")
+    return sorted(groups, key=lambda group: group["framework"])
+
+
+def stage_sdk_metadata(root: Path, manifest: dict, output: Path) -> None:
+    staging = output / "sdk-metadata"
+    staging.mkdir()
+    for index, row in enumerate(manifest["packages"]):
+        destination = staging / f"{index:03}-{row['id']}"
+        destination.mkdir()
+        command = ["dotnet", "msbuild", str(root / row["project"]), "-nologo", "-target:GenerateNuspec",
+                   "-p:Configuration=Release", f"-p:Version={manifest['version']}",
+                   f"-p:PackageVersion={manifest['version']}", "-p:ConsolidatedPackageProof=true",
+                   "-p:ContinuousIntegrationBuild=true", "-p:NoBuild=true",
+                   "-p:ContinuePackingAfterGeneratingNuspec=false", f"-p:NuspecOutputPath={destination}"]
+        run(command, root, log=destination / "generate-nuspec.log")
+        nuspecs = list(destination.glob("*.nuspec"))
+        require(len(nuspecs) == 1, f"SDK must stage exactly one expected nuspec: {row['id']}")
+        data = nuspecs[0].read_bytes()
+        row["expected_dependency_groups"] = dependency_groups(parse_metadata(data))
+        row["sdk_nuspec_sha256"] = hashlib.sha256(data).hexdigest()
+        row["restore_assets"] = []
+        for framework, properties in row["framework_properties"].items():
+            after_restore = evaluate(root, root / row["project"], manifest["version"], True, framework)
+            require(after_restore["AssemblyName"] == properties["assembly_name"] and after_restore["PackageVersion"] == manifest["version"],
+                    f"Restore changed package identity/version: {row['id']}/{framework}")
+            properties["manifest_required"] = after_restore["GenerateElsaPackageManifest"].lower() == "true" and after_restore["ElsaPackageManifestIncludeInPackage"].lower() == "true"
+            properties["manifest_path"] = after_restore["ElsaPackageManifestPackagePath"]
+            assets = Path(after_restore["ProjectAssetsFile"])
+            require(assets.is_relative_to(root) and assets.is_file(), f"Missing canonical restore assets: {assets}")
+            row["restore_assets"].append({"framework": framework, "path": assets.relative_to(root).as_posix(),
+                                          "sha256": hashlib.sha256(assets.read_bytes()).hexdigest()})
+        if (index + 1) % 20 == 0 or index + 1 == len(manifest["packages"]):
+            print(f"Staged SDK metadata for {index+1}/{len(manifest['packages'])} packages", flush=True)
+
+
+CLIENTLIB_ASSETS = {
+    "Elsa.Studio.Workflows.Designer": (
+        "src/studio/modules/Elsa.Studio.Workflows.Designer",
+        ("designer.entry.js", "react-designer.entry.js", "designer.css")),
+    "Elsa.Studio.DomInterop": (
+        "src/studio/framework/Elsa.Studio.DomInterop",
+        ("dom.entry.js", "clipboard.entry.js", "files.entry.js")),
+}
+
+
+def build_clientlibs(root: Path, output: Path) -> dict:
+    script = root / "scripts/integration-program/build_studio_clientlibs.sh"
+    inputs = {script.relative_to(root).as_posix(), "Directory.Packages.props", "src/studio/Directory.Packages.props"}
+    for project, _ in CLIENTLIB_ASSETS.values():
+        tracked = run(["git", "ls-files", "--", f"{project}/ClientLib"], root).splitlines()
+        inputs.update(tracked)
+    inputs.update(run(["git", "ls-files", "--", "scripts/integration-program/consolidated-build/studio-clientlib-lockfiles"], root).splitlines())
+    input_hashes = {path: hashlib.sha256((root / path).read_bytes()).hexdigest() for path in sorted(inputs)}
+    run(["bash", str(script), str(root)], root, timeout=1200, log=output / "studio-clientlibs.log")
+    assets = []
+    for identifier, (project, files) in CLIENTLIB_ASSETS.items():
+        for name in files:
+            path = root / project / "wwwroot" / name
+            require(path.is_file() and not path.is_symlink() and path.stat().st_size > 0, f"Missing built browser asset: {path}")
+            assets.append({"id": identifier, "source_path": path.relative_to(root).as_posix(),
+                           "package_path": f"staticwebassets/{name}", "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
+    return {"inputs": input_hashes, "assets": assets, "published": False}
+
+
+def verify_browser_assets(archive: zipfile.ZipFile, row: dict, assets: list[dict]) -> list[dict]:
+    expected = [asset for asset in assets if asset["id"] == row["id"]]
+    names = archive_names(archive)
+    for asset in expected:
+        require(asset["package_path"] in names, f"Missing packaged browser bundle: {row['id']} {asset['package_path']}")
+        require(hashlib.sha256(archive.read(asset["package_path"])).hexdigest() == asset["sha256"],
+                f"Packaged browser bundle differs from built output: {asset['package_path']}")
+    return expected
+
+
+def verify_package_manifest(archive: zipfile.ZipFile, row: dict, version: str) -> dict | None:
+    required = any(properties["manifest_required"] for properties in row["framework_properties"].values())
+    paths = {properties["manifest_path"] for properties in row["framework_properties"].values() if properties["manifest_required"]}
+    require(len(paths) <= 1, f"Frameworks disagree on package manifest location: {row['id']}")
+    if not required:
+        require("elsa-package.json" not in archive_names(archive), f"Unexpected package manifest: {row['id']}")
+        return None
+    path = next(iter(paths))
+    require(path in archive_names(archive), f"Missing generated package manifest: {row['id']}")
+    data = json.loads(archive.read(path))
+    require(data.get("package", {}).get("id") == row["id"] and data.get("package", {}).get("version") == version,
+            f"Generated package manifest identity/version mismatch: {row['id']}")
+    require(set(data.get("extensions", {}).get("targetFrameworks", [])) == set(row["frameworks"]),
+            f"Generated package manifest framework mismatch: {row['id']}")
+    require(data.get("extensions", {}).get("repositoryUrl", "").rstrip("/") == CORE_URL,
+            f"Generated package manifest repository mismatch: {row['id']}")
+    return {"path": path, "sha256": hashlib.sha256(archive.read(path)).hexdigest(),
+            "id": row["id"], "version": version, "frameworks": row["frameworks"]}
+
+
 def archive_names(archive: zipfile.ZipFile) -> set[str]:
     names = archive.namelist()
     require(len({name.casefold() for name in names}) == len(names), "Duplicate ZIP entries")
@@ -164,7 +272,11 @@ def archive_names(archive: zipfile.ZipFile) -> set[str]:
 def metadata(archive: zipfile.ZipFile) -> ET.Element:
     files = [name for name in archive_names(archive) if name.casefold().endswith(".nuspec")]
     require(len(files) == 1, "Artifact must contain exactly one nuspec")
-    document = ET.fromstring(archive.read(files[0]))
+    return parse_metadata(archive.read(files[0]))
+
+
+def parse_metadata(data: bytes) -> ET.Element:
+    document = ET.fromstring(data)
     for element in document.iter():
         element.tag = element.tag.rsplit("}", 1)[-1]
     result = document.find("metadata")
@@ -182,11 +294,13 @@ def verify_metadata(data: ET.Element, row: dict, manifest: dict) -> list[dict]:
             f"Artifact repository metadata mismatch: {row['id']}")
     produced = {package["id"].casefold() for package in manifest["packages"]}
     exceptions = {name.casefold() for name in manifest["external_package_exceptions"]}
-    groups = []
-    for group in data.findall("dependencies/group"):
-        dependencies = []
-        for dependency in group.findall("dependency"):
-            identifier, version = dependency.get("id", ""), dependency.get("version", "")
+    groups = dependency_groups(data)
+    require("expected_dependency_groups" in row and groups == row["expected_dependency_groups"],
+            f"SDK dependency metadata/archive mismatch: {row['id']}")
+    for group in groups:
+        require(group["framework"] in row["framework_properties"], f"Unsupported dependency framework: {group['framework']}")
+        for dependency in group["dependencies"]:
+            identifier, version = dependency["id"], dependency["version"]
             require(bool(identifier) and bool(version), "Empty artifact dependency")
             if identifier.casefold() in produced:
                 require(version in (manifest["version"], f"[{manifest['version']}]", f"[{manifest['version']}, )",
@@ -195,9 +309,6 @@ def verify_metadata(data: ET.Element, row: dict, manifest: dict) -> list[dict]:
             elif identifier.casefold().startswith("elsa"):
                 require(identifier.casefold() in exceptions,
                         f"Unavailable or excluded internal dependency: {row['id']} -> {identifier}")
-            dependencies.append({"id": identifier, "version": version})
-        groups.append({"framework": group.get("targetFramework", ""), "dependencies": dependencies})
-    require(not data.findall("dependencies/dependency"), "Ungrouped dependencies require explicit supported handling")
     return groups
 
 
@@ -219,6 +330,8 @@ def verify_artifacts(artifacts: Path, manifest: dict) -> dict:
             names = archive_names(archive)
             nuspec = metadata(archive)
             row["dependency_groups"] = verify_metadata(nuspec, row, manifest)
+            row["browser_assets"] = verify_browser_assets(archive, row, manifest.get("browser_assets", []))
+            row["package_manifest"] = verify_package_manifest(archive, row, manifest["version"])
             require(nuspec.findtext("projectUrl", "").rstrip("/") == CORE_URL,
                     f"Noncanonical project URL: {row['id']}")
             icon = nuspec.findtext("icon")
@@ -352,6 +465,9 @@ def provenance(root: Path, artifacts: Path, manifest: dict, output: Path, *, rem
                     dll.write_bytes(package.read(assembly["assembly"]))
                     pdb.write_bytes(symbols.read(assembly["pdb"]))
                     inspection = json.loads(run(["dotnet", str(executable), str(dll), str(pdb), "--inspect-documents"], root))
+                    require(inspection["assembly_name"] == row["framework_properties"][assembly["framework"]]["assembly_name"], f"Packaged assembly identity mismatch: {row['id']}")
+                    require(inspection["assembly_version"] == "3.10.0.0", f"Packaged assembly was not compiled with proof version: {row['id']}")
+                    require(inspection["informational_version"] == f"{manifest['version']}+{manifest['source_commit']}", f"Assembly informational version does not identify exact proof head: {row['id']}")
                     frames.append(verify_documents(root, row, assembly["framework"], inspection, manifest["source_commit"], remote, cache))
             results.append({"id": row["id"], "frameworks": frames})
     return results
@@ -391,9 +507,13 @@ def main() -> None:
         return
     packages = root / "packages"
     require(not packages.exists() or not any(packages.iterdir()), "Canonical packages output must be empty before proof; use an isolated worktree")
+    clientlibs = build_clientlibs(root, output)
+    manifest["browser_assets"] = clientlibs["assets"]
+    write_json(output / "studio-clientlibs.json", clientlibs)
     environment = dict(os.environ, ConsolidatedPackageProof="true", ContinuousIntegrationBuild="true")
-    run([str(root / "build.sh"), "Compile+Pack", "--version", args.version], root,
+    run([str(root / "build.sh"), "Compile+Pack", "--configuration", "Release", "--version", args.version], root,
         timeout=7200, log=output / "compile-pack.log", env=environment)
+    stage_sdk_metadata(root, manifest, output)
     artifacts = output / "artifacts"
     shutil.copytree(packages, artifacts)
     manifest = verify_artifacts(artifacts, manifest)

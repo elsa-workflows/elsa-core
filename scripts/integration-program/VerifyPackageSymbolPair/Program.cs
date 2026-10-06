@@ -114,7 +114,47 @@ using (pdbReaderProvider)
                 embedded_checksum = embeddedChecksum
             };
         }).ToArray();
-        Console.WriteLine(JsonSerializer.Serialize(new { source_link = sourceLinks[0], documents }));
+        var assemblyMetadata = reader.GetMetadataReader();
+        var definition = assemblyMetadata.GetAssemblyDefinition();
+        string? informationalVersion = null;
+        foreach (var handle in definition.GetCustomAttributes())
+        {
+            var attribute = assemblyMetadata.GetCustomAttribute(handle);
+            if (attribute.Constructor.Kind != HandleKind.MemberReference)
+            {
+                continue;
+            }
+
+            var constructor = assemblyMetadata.GetMemberReference((MemberReferenceHandle)attribute.Constructor);
+            if (constructor.Parent.Kind != HandleKind.TypeReference)
+            {
+                continue;
+            }
+
+            var type = assemblyMetadata.GetTypeReference((TypeReferenceHandle)constructor.Parent);
+            if (assemblyMetadata.GetString(type.Namespace) != "System.Reflection"
+                || assemblyMetadata.GetString(type.Name) != "AssemblyInformationalVersionAttribute")
+            {
+                continue;
+            }
+
+            var value = assemblyMetadata.GetBlobReader(attribute.Value);
+            if (value.ReadUInt16() != 1 || informationalVersion is not null)
+            {
+                throw new InvalidDataException("Malformed or duplicate assembly informational version.");
+            }
+
+            informationalVersion = value.ReadSerializedString();
+        }
+
+        Console.WriteLine(JsonSerializer.Serialize(new
+        {
+            assembly_name = assemblyMetadata.GetString(definition.Name),
+            assembly_version = definition.Version.ToString(),
+            informational_version = informationalVersion,
+            source_link = sourceLinks[0],
+            documents
+        }));
     }
     else
     {

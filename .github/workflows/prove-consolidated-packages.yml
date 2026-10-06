@@ -8,6 +8,8 @@ on:
       - 'scripts/integration-program/test_prove_consolidated*.py'
       - 'scripts/integration-program/consolidated-package-consumer/**'
       - 'scripts/integration-program/VerifyPackageSymbolPair/**'
+      - 'scripts/integration-program/build_studio_clientlibs.sh'
+      - 'scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/**'
       - 'build/**'
       - 'src/**/*.csproj'
       - 'src/**/Directory.Build.*'
@@ -41,6 +43,9 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
       - name: Check proof guards and negative artifact fixtures
         run: python3 -m unittest discover -s scripts/integration-program -p 'test_prove_consolidated*.py'
       - name: Produce and verify exact-head packages without publication
