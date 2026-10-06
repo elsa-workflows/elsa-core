@@ -1,0 +1,4 @@
+{
+  "compilerOptions": {"module": "NodeNext", "moduleResolution": "NodeNext", "target": "ES2022", "strict": true, "skipLibCheck": true, "noEmit": true},
+  "include": ["*.ts"]
+}

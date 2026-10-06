@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "hosts": [
+    "server",
+    "wasm",
+    "hosted-wasm",
+    "custom-elements"
+  ],
+  "frameworks": [
+    "net8.0",
+    "net9.0",
+    "net10.0"
+  ],
+  "versions": [
+    "3.8.4",
+    "3.9.0",
+    "3.10.0"
+  ],
+  "baseline": [
+    "authentication",
+    "shell_or_embedding",
+    "activity_registry",
+    "editor_smoke",
+    "released_document",
+    "package_provenance",
+    "browser_resources",
+    "cleanup"
+  ],
+  "candidate": [
+    "x6_edit_save_reload",
+    "identity_preserved",
+    "publish_run",
+    "studio_terminal",
+    "backend_output",
+    "baseline_reopen",
+    "reactflow_edit_save",
+    "bpmn_roundtrip",
+    "dom_interop",
+    "json_roundtrip",
+    "clipboard",
+    "workflow_contexts",
+    "secrets",
+    "feature_absent_present",
+    "disconnected_denied"
+  ],
+  "host_assertions": {
+    "server": [
+      "server_circuit"
+    ],
+    "wasm": [
+      "wasm_boot",
+      "direct_backend"
+    ],
+    "hosted-wasm": [
+      "wasm_boot",
+      "root_delivery",
+      "prefixed_delivery"
+    ],
+    "custom-elements": [
+      "native_callbacks",
+      "instance_list_viewer"
+    ]
+  }
+}

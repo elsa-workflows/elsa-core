@@ -1,0 +1,15 @@
+{
+  "name": "elsa-package-compatibility",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "journey": "tsx journey.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@types/node": "26.4.1",
+    "tsx": "4.23.13",
+    "typescript": "5.9.3"
+  }
+}
