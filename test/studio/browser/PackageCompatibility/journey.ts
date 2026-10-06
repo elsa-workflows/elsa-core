@@ -213,9 +213,10 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
       const exportDialog = page.getByRole('dialog');
       await expect(exportDialog).toBeVisible();
       await expect(exportDialog.getByRole('checkbox', { name: 'Include referencing workflows', exact: true })).not.toBeChecked();
-      const downloadPending = page.waitForEvent('download');
-      await exportDialog.getByRole('button', { name: 'Export', exact: true }).click();
-      const download = await downloadPending;
+      const [download] = await Promise.all([
+        page.waitForEvent('download'),
+        exportDialog.getByRole('button', { name: 'Export', exact: true }).click()
+      ]);
       const stream = await download.createReadStream();
       if (!stream) throw new Error('released_document_download_missing');
       const chunks: Buffer[] = [];
