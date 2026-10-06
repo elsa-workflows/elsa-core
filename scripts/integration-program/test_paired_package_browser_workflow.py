@@ -27,6 +27,9 @@ class BrowserWorkflowBoundaryTests(unittest.TestCase):
         self.assertIn("merge-multiple: true", proof)
         self.assertIn("ref: ${{ github.sha }}", proof)
         self.assertIn("persist-credentials: false", proof)
+        self.assertIn("paired-package-browser-proof/retained-evidence/matrix.json", proof)
+        self.assertIn("check_matrix(ledger)", proof)
+        self.assertIn('ledger.get("development_only") is not False', proof)
         for forbidden in ("github-token:", "GH_TOKEN", "GITHUB_TOKEN", "ACTIONS_READ_TOKEN", "run-id:", "repository:", "--cell"):
             self.assertNotIn(forbidden, proof)
         for argument in ('--fixture-source "${{ github.sha }}"', '--fixture-run "${{ github.run_id }}"',

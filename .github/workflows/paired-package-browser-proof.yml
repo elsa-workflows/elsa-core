@@ -122,6 +122,19 @@ jobs:
           --fixture-source "${{ github.sha }}"
           --fixture-run "${{ github.run_id }}"
           --fixture-attempt "${{ github.run_attempt }}"
+      - name: Reject absent or incomplete browser matrix receipts
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          from pathlib import Path
+          sys.path.insert(0, "scripts/integration-program")
+          from run_paired_package_browser_matrix import check_matrix
+          path = Path(os.environ["RUNNER_TEMP"]) / "paired-package-browser-proof/retained-evidence/matrix.json"
+          ledger = json.loads(path.read_text())
+          if ledger.get("complete_matrix") is not True or ledger.get("passed") is not True or ledger.get("development_only") is not False:
+              raise RuntimeError("Complete hosted browser acceptance receipt is required")
+          check_matrix(ledger)
+          PY
       - name: Retain only allowlisted browser evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
