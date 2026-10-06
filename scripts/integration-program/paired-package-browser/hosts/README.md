@@ -1,0 +1,27 @@
+# Disposable host glue
+
+`source-glue.json` records immutable source paths and SHA-256 hashes. Where an
+upstream file contained trailing whitespace, `source_sha256` preserves its
+original digest and the declared fixture transform only trims that whitespace.
+`common`
+contains the accepted candidate's host entrypoints; the 3.9.0 entrypoints have
+the same startup composition. `3.8.4` overrides the release-specific project,
+startup and page files. Source project XML is input metadata, never a buildable
+Elsa library source dependency.
+
+The materializer replaces package-library project references with exact aligned
+NuGet references. It preserves each host's registration and delivery model,
+adds the paired WorkflowContexts module and fixture runtime assembly metadata,
+and selects the supported ElsaIdentity mode for local accounts. The only source
+edge is the hosted wrapper's disposable, nonpackable WASM client. Native wrapper
+code and original package assets are preserved; product defects must remain
+failed evidence.
+
+The Python owner creates separate mutable runtime state for every record and
+stops/reaps its own process groups on startup failure or browser exit. A private
+in-memory runtime handle is passed to the browser using stdin. Credentials,
+tokens, private process logs and data-protection keys are not portable receipts.
+Shared builds belong to one verified version/framework/SDK/config/cache group;
+every project's package provenance must be checked again before any listener.
+Server assembly metadata is anonymous on the owned loopback listener; it does
+not prove browser authentication. Backend metadata uses its normal bearer auth.

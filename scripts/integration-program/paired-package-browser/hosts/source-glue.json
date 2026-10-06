@@ -1,0 +1,299 @@
+{
+  "schema": 1,
+  "files": [
+    {
+      "file": "3.8.4/custom-elements/source-project.xml",
+      "sha256": "1b4b7ca5cce7f1a458c338fe8a8bacb07e95095a034708ceaca64dff4f4027de",
+      "repository": "elsa-workflows/elsa-studio",
+      "source_commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+      "source_path": "src/hosts/Elsa.Studio.Host.CustomElements/Elsa.Studio.Host.CustomElements.csproj",
+      "source_sha256": "d9bcf7b8179ded278a4775c8ef68dc075c4bafb27b7aebaad7828179c72b1a5f",
+      "fixture_transform": "trim trailing whitespace only"
+    },
+    {
+      "file": "3.8.4/custom-elements/Program.cs",
+      "sha256": "147a6ead8346c68a2a931c37f52fc7411f0e5f2392b361e676a72f08052fb470",
+      "repository": "elsa-workflows/elsa-studio",
+      "source_commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+      "source_path": "src/hosts/Elsa.Studio.Host.CustomElements/Program.cs",
+      "source_sha256": "20dfbd0ad39916f1eacee23fc3e8b2645b7532bbcd50dc7178925002f25e4f1f",
+      "fixture_transform": "trim trailing whitespace only"
+    },
+    {
+      "file": "3.8.4/hosted-wasm/source-project.xml",
+      "sha256": "25e8d0fe42745e66706258650b21d981d3c7d8de581668d3ce781f93f7c7ddf6",
+      "repository": "elsa-workflows/elsa-studio",
+      "source_commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+      "source_path": "src/hosts/Elsa.Studio.Host.HostedWasm/Elsa.Studio.Host.HostedWasm.csproj"
+    },
+    {
+      "file": "3.8.4/server/source-project.xml",
+      "sha256": "a00e0ddb37bd26d6ad248ba8eae31fd91d7fd7edfbb9d68abc1c7e1219571502",
+      "repository": "elsa-workflows/elsa-studio",
+      "source_commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+      "source_path": "src/hosts/Elsa.Studio.Host.Server/Elsa.Studio.Host.Server.csproj",
+      "source_sha256": "569a09e2d3a6cf8fa0cbced5b288d43bdb04fa2c8120a454a6ca06653d6afac7",
+      "fixture_transform": "trim trailing whitespace only"
+    },
+    {
+      "file": "3.8.4/server/Pages/_Host.cshtml",
+      "sha256": "4d6fae6771ee32b87446c10e067c082fa1b1f64f122dcc875a2855e16a92d817",
+      "repository": "elsa-workflows/elsa-studio",
+      "source_commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+      "source_path": "src/hosts/Elsa.Studio.Host.Server/Pages/_Host.cshtml",
+      "source_sha256": "b1e961d8113d0762ff09d6a9a8e78f3b8fc3d68e355b642d609cf4c0726474d8",
+      "fixture_transform": "trim trailing whitespace only"
+    },
+    {
+      "file": "3.8.4/server/Program.cs",
+      "sha256": "0539684384a73171bb096ab088fd69ec30fcbcbcbc814464260064bdcf747433",
+      "repository": "elsa-workflows/elsa-studio",
+      "source_commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+      "source_path": "src/hosts/Elsa.Studio.Host.Server/Program.cs"
+    },
+    {
+      "file": "3.8.4/server/StudioBrandingProvider.cs",
+      "sha256": "a7497b2deea9d44a353b8ebd164add91912237e625bc72c499d13d40c6ee94bd",
+      "repository": "elsa-workflows/elsa-studio",
+      "source_commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+      "source_path": "src/hosts/Elsa.Studio.Host.Server/StudioBrandingProvider.cs"
+    },
+    {
+      "file": "3.8.4/wasm/source-project.xml",
+      "sha256": "edc6117f151d835cbdd2f521b5717a9427c2e7b24ea0f6bec41bb9fdd997b42f",
+      "repository": "elsa-workflows/elsa-studio",
+      "source_commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+      "source_path": "src/hosts/Elsa.Studio.Host.Wasm/Elsa.Studio.Host.Wasm.csproj",
+      "source_sha256": "a88a365758844273939a43ada10d04a0babe31e4f40edc82ab78aabf89a53fa7",
+      "fixture_transform": "trim trailing whitespace only"
+    },
+    {
+      "file": "3.8.4/wasm/Program.cs",
+      "sha256": "d683c922ed6347624b738c2954ccb620b889ae8bf640080e8ef29797e12eb8e6",
+      "repository": "elsa-workflows/elsa-studio",
+      "source_commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+      "source_path": "src/hosts/Elsa.Studio.Host.Wasm/Program.cs"
+    },
+    {
+      "file": "3.8.4/wasm/wwwroot/index.html",
+      "sha256": "368af6fafd30b65af2c2b4cb7f0358862a735b711851a3d5c6316913c0f7887d",
+      "repository": "elsa-workflows/elsa-studio",
+      "source_commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+      "source_path": "src/hosts/Elsa.Studio.Host.Wasm/wwwroot/index.html"
+    },
+    {
+      "file": "common/custom-elements/Components/BackendComponentBase.cs",
+      "sha256": "2ad363cd7698989c242a4a42a08ca1fa20ef9e0c760f387a1f8def5cf763e3a3",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/Components/BackendComponentBase.cs",
+      "source_sha256": "37a5d590854025c5d2d7854ddc39cd843952df52d17e19189e42a36b7c29b6d2",
+      "fixture_transform": "trim trailing whitespace only"
+    },
+    {
+      "file": "common/custom-elements/Components/BackendProvider.razor",
+      "sha256": "29818e0d31a1ba58d4de0996de13af4a510ac1f6f1a126428f6869662341a48e",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/Components/BackendProvider.razor"
+    },
+    {
+      "file": "common/custom-elements/Components/ThemedComponentWrapper.razor",
+      "sha256": "3bcfde9c9a3a3db6232c76ac492dbc5a563f7bdb7b23329a4e8c42fc9f523c64",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/Components/ThemedComponentWrapper.razor"
+    },
+    {
+      "file": "common/custom-elements/Components/WorkflowDefinitionEditorWrapper.razor",
+      "sha256": "1b54ff6efb1f7d9c48bb0dcadb11c35ccb943b27f633714f0581df37661988b2",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/Components/WorkflowDefinitionEditorWrapper.razor"
+    },
+    {
+      "file": "common/custom-elements/Components/WorkflowDefinitionListWrapper.razor",
+      "sha256": "d92670d4b760080ec75e27ca4425ed3841c9d92db8026489d8f9eaeb6535d089",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/Components/WorkflowDefinitionListWrapper.razor"
+    },
+    {
+      "file": "common/custom-elements/Components/WorkflowInstanceListWrapper.razor",
+      "sha256": "1aee4628575987aa304a119f177bb2b3af2b6bfda0f65de77e20d758bb74bf53",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/Components/WorkflowInstanceListWrapper.razor"
+    },
+    {
+      "file": "common/custom-elements/Components/WorkflowInstanceViewerWrapper.razor",
+      "sha256": "e9be7dfcd2b992fea0eaa9fd832fb98d4c3052042c34ebf185ecf38420e090cc",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/Components/WorkflowInstanceViewerWrapper.razor"
+    },
+    {
+      "file": "common/custom-elements/source-project.xml",
+      "sha256": "215ed45b5ad2b73a9680da51eb0475f7c72a0b9b7c4039212631d7816f217512",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/Elsa.Studio.Host.CustomElements.csproj",
+      "source_sha256": "9fef10d67f14a52737600a1758b0e54c431faf16e068d1731a75f7f994804dae",
+      "fixture_transform": "trim trailing whitespace only"
+    },
+    {
+      "file": "common/custom-elements/HttpMessageHandlers/ApiKeyHttpMessageHandler.cs",
+      "sha256": "132e23e9d1c1c08759aef997c568d0f18be432c063a83d213a93c41a8c7667a8",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/HttpMessageHandlers/ApiKeyHttpMessageHandler.cs",
+      "source_sha256": "9b1d232e9f6c3135790fd41d9b0a0f131269a1e5f89ea04e12970912341d47a7",
+      "fixture_transform": "trim trailing whitespace only"
+    },
+    {
+      "file": "common/custom-elements/Program.cs",
+      "sha256": "b47f98e71c5d3535524856c6e7248421bf5d69b42cedd29b58b85119d327347f",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/Program.cs",
+      "source_sha256": "c0f08882493b4489776b66a96329e50bdc4374fa3d0dbc48f5ac11194ea02c98",
+      "fixture_transform": "trim trailing whitespace only"
+    },
+    {
+      "file": "common/custom-elements/Services/BackendService.cs",
+      "sha256": "c5a806a5cf515a5623155bd59908c159b7c243d372e75a81f20a71aacd60c0ed",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/Services/BackendService.cs"
+    },
+    {
+      "file": "common/custom-elements/Services/BackendServiceHttpConnectionOptionsConfigurator.cs",
+      "sha256": "eff3c8dfba224d5e7e986ef680c724233df0e233c208a47c748bd8047492fb89",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/Services/BackendServiceHttpConnectionOptionsConfigurator.cs"
+    },
+    {
+      "file": "common/custom-elements/Services/ComponentRemoteBackendAccessor.cs",
+      "sha256": "95fd35a9a09d3e005423f440d2203e2390c154f0d64a43cb7955c6f13e2e112c",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/Services/ComponentRemoteBackendAccessor.cs"
+    },
+    {
+      "file": "common/custom-elements/_Imports.razor",
+      "sha256": "8780a65a792df5a9c9e33ebf7b0c1ab91be9c993d269643ce698e79d0f632ee5",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/_Imports.razor"
+    },
+    {
+      "file": "common/custom-elements/wwwroot/index.html",
+      "sha256": "1320ade2387913b39bf2af8754aa920c789fa8e0e5f8eefb3a9b7064aa9576d9",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/wwwroot/index.html"
+    },
+    {
+      "file": "common/hosted-wasm/source-project.xml",
+      "sha256": "91d983c99dcfd25c5ec9e6976e3438547d0c743f129f26959da5f2a0ce41f575",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.HostedWasm/Elsa.Studio.Host.HostedWasm.csproj"
+    },
+    {
+      "file": "common/hosted-wasm/Middleware/WasmAssetsRewritingMiddleware.cs",
+      "sha256": "e8a5fdd7aef2a9f42e00d934f26703fc301b6c11a29330e65c6ab1b6b427e39f",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.HostedWasm/Middleware/WasmAssetsRewritingMiddleware.cs",
+      "source_sha256": "d4dc32055255eaefa8dba2a011f25a94d78be4ef2d3448d780a209ad9bf6db39",
+      "fixture_transform": "trim trailing whitespace only"
+    },
+    {
+      "file": "common/hosted-wasm/Pages/_Host.cshtml",
+      "sha256": "597b56daf75f68ed95ca9e31ae368a2fe111b33ebc305f425ded3cb73f76d708",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.HostedWasm/Pages/_Host.cshtml",
+      "source_sha256": "8ccbd3ec7db6adb983708758d00fafb11b0a2e88e68b95252e2dcf4eff49fbef",
+      "fixture_transform": "trim trailing whitespace only"
+    },
+    {
+      "file": "common/hosted-wasm/Program.cs",
+      "sha256": "f5468807427cca2f2071183eb75ad876f212cd4f4ef81df4598cd74e624e194f",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.HostedWasm/Program.cs"
+    },
+    {
+      "file": "common/server/source-project.xml",
+      "sha256": "f49e8635b3d5f4d2b360e2013c8a75859ce6a0121066531c0cc247e12963e23c",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.Server/Elsa.Studio.Host.Server.csproj",
+      "source_sha256": "90345574d80bb75317dfb509a929dc75dbcf6823ee1aa663e78bda573925e6ff",
+      "fixture_transform": "trim trailing whitespace only"
+    },
+    {
+      "file": "common/server/Pages/_Host.cshtml",
+      "sha256": "494741924c6d6f2e2a4f5e6bb6f8ca691f52ce404bed20e57c1af0d095425f62",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.Server/Pages/_Host.cshtml",
+      "source_sha256": "43bbccd5409bf435c6f01397b3dcba6fd1b24951e4a2d82a88a842b714aec82d",
+      "fixture_transform": "trim trailing whitespace only"
+    },
+    {
+      "file": "common/server/Program.cs",
+      "sha256": "2ca19be2f9e6200ec246cfb8fb4a6b84b57e787f204b6dfb49a3421f263fd08c",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.Server/Program.cs"
+    },
+    {
+      "file": "common/server/_Imports.razor",
+      "sha256": "c82c58cc5ab0750b6ca1006a2a51c773cf38d768c1f4727a09f187d823c9bdab",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.Server/_Imports.razor"
+    },
+    {
+      "file": "common/wasm/source-project.xml",
+      "sha256": "5498be606a98ad4c59d3800dcfead99941c02c38b62ccf0c17557b8338f44ab6",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.Wasm/Elsa.Studio.Host.Wasm.csproj",
+      "source_sha256": "9550e74e11f0c4d5771eb0c60ba023824d35604b53e755b4097e768ed5a405cb",
+      "fixture_transform": "trim trailing whitespace only"
+    },
+    {
+      "file": "common/wasm/Program.cs",
+      "sha256": "c3711a19f024360ee0c9a704b265a6017a7c7364cf510e8d2382c69bdaf74ee4",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.Wasm/Program.cs"
+    },
+    {
+      "file": "common/wasm/_Imports.razor",
+      "sha256": "4cdf1b3f9e2adce2931718a462ab29952eae6a09aeddb846f0c4cb2a770bfcfc",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.Wasm/_Imports.razor"
+    },
+    {
+      "file": "common/wasm/wwwroot/index.html",
+      "sha256": "691d0187d18b3b03237946b1920c1b2e3d4b985a9465c4bdc5eb5233b4f40956",
+      "repository": "elsa-workflows/elsa-core",
+      "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.Wasm/wwwroot/index.html"
+    },
+    {
+      "file": "3.9.0/wasm/wwwroot/index.html",
+      "sha256": "79ef0d6b5ed8d09d1c7e1d536b101f6ce94ce2c64b4a003524f601d9e96b6703",
+      "repository": "elsa-workflows/elsa-studio",
+      "source_commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+      "source_path": "src/hosts/Elsa.Studio.Host.Wasm/wwwroot/index.html"
+    }
+  ]
+}
