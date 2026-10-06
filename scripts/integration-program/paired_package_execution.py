@@ -6,6 +6,7 @@ Missing runtime/resource verifier seams fail before expensive host execution.
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 from pathlib import Path
 import re
@@ -16,6 +17,7 @@ from urllib.request import Request, urlopen
 import consolidated_candidate_input as candidate
 import materialize_paired_package_hosts as hosts
 import paired_package_baseline_provenance as baseline
+import paired_package_baseline_resources as baseline_resources
 import paired_package_provenance as provenance
 import prove_consolidated_package_consumers as packages
 import run_paired_package_browser_matrix as browser
@@ -32,7 +34,7 @@ def selected_cells(cell: str | None) -> list[tuple[str, str, str]]:
         # Share a build/cache only within one exact version/framework group.
         return [(version, framework, host) for version in browser.VERSIONS
                 for framework in browser.FRAMEWORKS for host in browser.HOSTS]
-    key = tuple(cell.split(","))
+    key = tuple(re.split(r"[,/]", cell))
     require(len(key) == 3 and key in browser.MATRIX, "Invalid development cell")
     return [key]
 
@@ -122,7 +124,7 @@ def evidence_gaps(request) -> list[str]:
     if request.version != candidate.PRODUCER["version"]:
         if not callable(getattr(baseline, "verify_baseline_loaded_assemblies", None)):
             missing.append("baseline_loaded_assemblies")
-        if not callable(getattr(resources, "derive_baseline_resources", None)):
+        if not callable(getattr(baseline_resources, "derive_baseline_resources", None)):
             missing.append("baseline_browser_resources")
     # Backend metadata alone cannot attest browser-loaded WASM assemblies.
     if request.host != "server":
@@ -150,14 +152,18 @@ def _resource_inventory(layout, verified_root: Path, manifest_hash: str) -> dict
     if layout.request.version == candidate.PRODUCER["version"]:
         return resources.derive_candidate_resources(build_manifest, verified_root, layout.packages_root,
                     verified_manifest_sha256=manifest_hash, route_prefix=prefix)
-    return resources.derive_baseline_resources(build_manifest, layout.packages_root, layout.request.version,
-                                               route_prefix=prefix)
+    return baseline_resources.derive_baseline_resources(build_manifest, layout.packages_root, layout.request.version,
+                                                        route_prefix=prefix)
 
 
 def _command_receipts(commands: list[dict], group: Path) -> list[dict]:
     records = []
     for command in commands:
         if command.get("stage") == "reuse_verified_build":
+            require(command.get("project") in {"backend", *hosts.HOST_NAMES}
+                    and isinstance(command.get("project_assets_sha256"), str)
+                    and re.fullmatch(r"[0-9a-f]{64}", command["project_assets_sha256"]),
+                    "Invalid reused project evidence")
             records.append({key: command[key] for key in ("stage", "project", "project_assets_sha256")})
         else:
             log = provenance.regular_file(Path(command["log"]).absolute())
@@ -174,7 +180,7 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
     cell_root = retained / "cells" / f"{version}-{framework}-{host}"
     evidence = {"schema": 1, "version": version, "framework": framework, "host": host,
                 "execution_sdk": sdk, "result": "failed", "stage": "evidence_preflight"}
-    record = None
+    original_browser = None
     try:
         evidence["missing_evidence"] = evidence_gaps(request)
         require(not evidence["missing_evidence"], "Required package browser evidence is unavailable")
@@ -199,7 +205,7 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
             try:
                 child = browser.run_browser(handle, request, inventory["assets"])
                 # Validate before any returned child data enters portable evidence.
-                record = browser.validate_browser_receipt(child, key)
+                original_browser = browser.validate_browser_receipt(child, key)
                 evidence["stage"] = "loaded_assemblies"
                 evidence["loaded_assemblies"] = _verify_loaded(layout, _observe_loaded(handle, layout), verified_root, manifest)
             except Exception:
@@ -208,14 +214,22 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
         # itself raises, no successful cleanup claim is retained.
         evidence["owned_process_cleanup"] = True
         require(not runtime_failed, "Owned runtime did not produce valid evidence")
+        record = copy.deepcopy(original_browser)
         evidence["stage"] = "browser_resources"
-        evidence["browser_resources"] = resources.verify_browser_resources(inventory["assets"], record["resources"], require_all=False)
+        prefix = "/" + request.route_prefix if request.route_prefix else ""
+        evidence["browser_resources"] = resources.verify_browser_resources(inventory["assets"], record["resources"],
+                                                                           require_all=False, route_prefix=prefix)
         evidence["stage"] = "browser_contract"
         # Only these independently demonstrated Python-owned assertions may be
         # completed here; unimplemented UI assertions remain unchanged.
         for assertion in record["assertions"]:
             if assertion["name"] in {"package_provenance", "browser_resources"}:
                 assertion.update(passed=True, reason_category=None)
+        # A child computes its result before Python-owned provenance checks. Its
+        # original receipt stays immutable; only a complete, nonfailed combined
+        # result can pass the matrix after the owned cleanup above.
+        record["result"] = ("passed" if original_browser["result"] != "failed"
+                            and all(item["passed"] is True for item in record["assertions"]) else "failed")
         browser.check_cell(record)
         evidence.update(stage="complete", result="passed")
         return record
@@ -224,8 +238,8 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
         raise ValueError("Package browser execution or evidence failed") from None
     finally:
         _write(cell_root / "execution.json", evidence)
-        if record is not None:
-            _write(cell_root / "browser.json", browser.validate_browser_receipt(record, key))
+        if original_browser is not None:
+            _write(cell_root / "browser.json", browser.validate_browser_receipt(original_browser, key))
 
 
 def run(inputs: Path, candidate_artifacts: Path, output: Path, *, fixture_source: str,
@@ -266,7 +280,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--fixture-source", required=True)
     parser.add_argument("--fixture-run", type=int)
     parser.add_argument("--fixture-attempt", type=int)
-    parser.add_argument("--cell", help="Development only: VERSION,FRAMEWORK,HOST; never full acceptance")
+    parser.add_argument("--cell", help="Development only: VERSION/FRAMEWORK/HOST (commas also accepted); never full acceptance")
     args = parser.parse_args(argv)
     try:
         ledger = run(args.inputs, args.candidate_artifacts, args.output, fixture_source=args.fixture_source,

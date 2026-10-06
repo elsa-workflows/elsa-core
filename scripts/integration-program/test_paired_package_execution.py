@@ -78,6 +78,7 @@ class ExecutionContracts(unittest.TestCase):
         self.assertEqual(36, len(selected))
         self.assertEqual(4, len([k for k in selected if k[:2] == selected[0][:2]]))
         self.assertEqual([self.key], execution.selected_cells(",".join(self.key)))
+        self.assertEqual([self.key], execution.selected_cells("/".join(self.key)))
         for invalid in ("", "3.10.0,net10.0,server,extra", "3.10.0,net10.0,unknown"):
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
                 execution.selected_cells(invalid)
@@ -113,6 +114,29 @@ class ExecutionContracts(unittest.TestCase):
         self.assertEqual("incomplete", record["result"])
         self.assertFalse(next(item for item in record["assertions"] if item["name"] == "x6_edit_save_reload")["passed"])
         self.assertEqual("browser_contract", self.receipt()["stage"])
+        self.assertEqual("failed", self.receipt()["result"])
+
+    def test_verified_python_assertions_complete_cell_without_mutating_child_receipt(self):
+        self.pipeline()
+        self.record["result"] = "incomplete"
+        for assertion in self.record["assertions"]:
+            if assertion["name"] in {"package_provenance", "browser_resources"}:
+                assertion.update(passed=False, reason_category="not_implemented")
+        original = copy.deepcopy(self.record)
+        combined = self.execute()
+        self.assertEqual("passed", combined["result"])
+        execution.browser.check_cell(combined)
+        retained = json.loads((self.root / "retained/cells/3.10.0-net10.0-server/browser.json").read_text())
+        self.assertEqual(original, retained)
+        self.assertEqual(original, self.record)
+        self.assertTrue(self.receipt()["owned_process_cleanup"])
+
+    def test_failed_child_cannot_be_promoted_even_with_all_true_assertions(self):
+        self.pipeline()
+        self.record["result"] = "failed"
+        self.record["failure_category"] = "browser_execution_or_validation_failed"
+        with self.assertRaises(ValueError):
+            self.execute()
         self.assertEqual("failed", self.receipt()["result"])
 
     def test_loaded_evidence_failure_still_stops_owned_pair(self):
@@ -214,6 +238,11 @@ class ExecutionContracts(unittest.TestCase):
         receipt = execution._command_receipts([{"command": ["PRIVATE-ARGV"], "exit_code": 0, "log": str(log)}], group)
         self.assertNotIn("PRIVATE", json.dumps(receipt))
         self.assertNotIn(str(self.root), json.dumps(receipt))
+        reuse = {"stage": "reuse_verified_build", "project": "server", "project_assets_sha256": "a" * 64}
+        self.assertEqual([reuse], execution._command_receipts([reuse], group))
+        for mutation in ({"project": str(self.root / "server.csproj")}, {"project_assets_sha256": "PRIVATE"}):
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                execution._command_receipts([{**reuse, **mutation}], group)
 
 
 if __name__ == "__main__":
