@@ -80,28 +80,25 @@ class Backend {
 async function fullShell(page: Page, input: PrivateInput, backend: Backend, passed: (name: string) => void, proof: Record<string, unknown>): Promise<void> {
   await page.goto(input.studio_url + '/login');
   proof.last_completed_stage = 'login_navigation';
-  if (input.request.version !== '3.8.4') {
-    await expect(page.getByText('Elsa account', { exact: true })).toBeVisible();
-    proof.expected_auth_provider_observed = true;
-  }
-  const username = page.getByLabel(input.request.version === '3.8.4' ? 'Username' : 'User name', { exact: true });
+  // All three reviewed host compositions select ElsaIdentity, including released 3.8.4.
+  await expect(page.getByText('Elsa account', { exact: true })).toBeVisible();
+  proof.expected_auth_provider_observed = true;
+  const username = page.getByLabel('User name', { exact: true });
   await expect(username).toBeVisible();
-  if (input.request.version !== '3.8.4') {
-    const signIn = page.getByRole('button', { name: 'Sign in', exact: true });
-    await expect(username).toBeEmpty();
-    await expect(page.getByLabel('Password', { exact: true })).toBeEmpty();
-    let interactive = false;
-    for (let attempt = 0; attempt < 3 && !interactive; attempt++) {
-      await signIn.click(); // Empty required fields cannot send a credentials request.
-      try {
-        await expect(username).toHaveAttribute('aria-invalid', 'true', { timeout: 1500 });
-        await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute('aria-invalid', 'true', { timeout: 1500 });
-        interactive = true;
-      } catch { /* A prerender click has no live form effect; retry the empty validation only. */ }
-    }
-    if (!interactive) throw new Error('interactive_form_validation_missing');
-    proof.interactive_validation_observed = true;
+  const signIn = page.getByRole('button', { name: 'Sign in', exact: true });
+  await expect(username).toBeEmpty();
+  await expect(page.getByLabel('Password', { exact: true })).toBeEmpty();
+  let interactive = false;
+  for (let attempt = 0; attempt < 3 && !interactive; attempt++) {
+    await signIn.click(); // Empty required fields cannot send a credentials request.
+    try {
+      await expect(username).toHaveAttribute('aria-invalid', 'true', { timeout: 1500 });
+      await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute('aria-invalid', 'true', { timeout: 1500 });
+      interactive = true;
+    } catch { /* A prerender click has no live form effect; retry the empty validation only. */ }
   }
+  if (!interactive) throw new Error('interactive_form_validation_missing');
+  proof.interactive_validation_observed = true;
   await username.fill(input.username);
   await page.getByLabel('Password', { exact: true }).fill(input.password);
   await page.getByLabel('Password', { exact: true }).blur();
@@ -109,7 +106,7 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   await expect(page.getByLabel('Password', { exact: true })).toHaveValue(input.password);
   proof.private_input_values_retained = true;
   proof.last_completed_stage = 'login_form';
-  await page.getByRole('button', { name: input.request.version === '3.8.4' ? 'Login' : 'Sign in', exact: true }).click();
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   proof.last_completed_stage = 'login_submitted';
   await expect(page).not.toHaveURL(/\/login(?:$|[?#])/);
   passed('authentication');
