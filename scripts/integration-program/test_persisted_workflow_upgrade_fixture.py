@@ -1,6 +1,7 @@
 import copy
 import json
 from pathlib import Path
+import re
 import sqlite3
 import tempfile
 import unittest
@@ -203,6 +204,68 @@ class UpgradeContracts(unittest.TestCase):
                 self.assertEqual(diagnostic["phases"][0]["phase"], "suspend")
                 self.assertFalse(diagnostic["phases"][0]["runner_passed"])
                 self.assertEqual(diagnostic["phases"][0]["failure_category"], "receipt_validation_failed")
+
+
+class WorkflowBoundaryTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        root = Path(__file__).resolve().parents[2]
+        cls.workflow = (root / ".github/workflows/persisted-workflow-upgrade-proof.yml").read_text()
+        cls.triggers, jobs = cls.workflow.split("\njobs:\n", 1)
+        cls.retrieve, cls.proof = jobs.split("\n  proof:\n", 1)
+
+    def test_only_repository_write_push_and_manual_triggers_with_no_default_permissions(self):
+        self.assertNotIn("pull_request", self.workflow)
+        self.assertIn("  push:\n", self.triggers)
+        self.assertIn("  workflow_dispatch:\n", self.triggers)
+        branches = self.triggers.split("    branches:\n", 1)[1].split("    paths:\n", 1)[0]
+        self.assertEqual(re.findall(r"^      - '([^']+)'$", branches, re.MULTILINE), ["codex/**", "main"])
+        self.assertIn("\npermissions: {}\n", self.triggers)
+
+    def test_retrieval_token_has_no_checkout_or_repository_execution(self):
+        self.assertIn("    permissions:\n      actions: read\n", self.retrieve)
+        self.assertNotIn("contents:", self.retrieve)
+        for forbidden in ("checkout@", "scripts/", "working-directory:", "uses: ./", "github.event."):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.retrieve)
+        self.assertNotRegex(self.retrieve, r"\b(?:python3?|node|source|eval)\s")
+        self.assertEqual(self.workflow.count("GH_TOKEN:"), 1)
+        self.assertEqual(self.workflow.count("${{ github.token }}"), 1)
+        self.assertNotIn("secrets.", self.workflow)
+
+    def test_trusted_retrieval_identity_matches_runner_without_importing_it(self):
+        for endpoint in (f"gh api repos/elsa-workflows/elsa-core/actions/artifacts/{fixture.PROOF_ARTIFACT} >",
+                         f"gh api repos/elsa-workflows/elsa-core/actions/artifacts/{fixture.PROOF_ARTIFACT}/zip >",
+                         f".id == {fixture.PROOF_ARTIFACT}", f".workflow_run.id == {fixture.PROOF_RUN}",
+                         f'.name == "consolidated-proof-{fixture.PROOF_RUN}-1"',
+                         f'.workflow_run.head_sha == "{fixture.PROOF_SOURCE}"',
+                         f"'{fixture.PROOF_ARCHIVE_SHA256}'", ".expired == false", "sha256sum --check --status"):
+            with self.subTest(endpoint=endpoint):
+                self.assertIn(endpoint, self.retrieve)
+
+    def test_bridge_transfers_only_two_original_files_by_immutable_same_run_id(self):
+        files = re.search(r"          path: \|\n((?:            .*\n)+)", self.retrieve).group(1).splitlines()
+        self.assertEqual([path.strip() for path in files], ["${{ runner.temp }}/upgrade-input/proof.zip",
+                                                          "${{ runner.temp }}/upgrade-input/artifact.json"])
+        self.assertIn("input-artifact-id: ${{ steps.transfer.outputs.artifact-id }}", self.retrieve)
+        self.assertIn("if-no-files-found: error", self.retrieve)
+        self.assertIn("retention-days: 1", self.retrieve)
+        self.assertIn("needs: retrieve", self.proof)
+        self.assertIn("artifact-ids: ${{ needs.retrieve.outputs.input-artifact-id }}", self.proof)
+        self.assertIn("actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093", self.proof)
+        self.assertNotIn("github-token:", self.proof)
+        self.assertNotIn("run-id:", self.proof)
+        self.assertNotIn("repository:", self.proof)
+
+    def test_fixture_job_checks_exact_head_without_artifact_read_permission_or_token(self):
+        self.assertIn("    permissions:\n      contents: read\n      actions: none\n", self.proof)
+        self.assertIn("ref: ${{ github.sha }}", self.proof)
+        self.assertIn("persist-credentials: false", self.proof)
+        for forbidden in ("GH_TOKEN", "github.token", "actions: read", "gh api"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.proof)
+        self.assertIn("--extract-only --artifact-metadata", self.proof)
+        self.assertIn('--proof-archive "$RUNNER_TEMP/upgrade-input/proof.zip"', self.proof)
 
 
 if __name__ == "__main__":
