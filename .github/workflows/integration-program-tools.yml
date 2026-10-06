@@ -10,10 +10,12 @@ on:
       - 'src/extensions/**/*.csproj'
       - 'src/studio/**/*.csproj'
       - 'scripts/integration-program/**'
+      - 'test/studio/browser/PackageCompatibility/**'
       - 'samples/extensions/workbench/**'
       - 'doc/integration-program/verify-hierarchy.py'
       - 'doc/integration-program/hierarchy.json'
       - '.github/workflows/integration-program-tools.yml'
+      - '.github/workflows/paired-package-browser-proof.yml'
   workflow_dispatch:
 
 permissions:

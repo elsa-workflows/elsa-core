@@ -1,0 +1,132 @@
+name: Paired package browser proof
+
+on:
+  push:
+    branches:
+      - 'codex/**'
+      - 'main'
+    paths:
+      - '.github/workflows/paired-package-browser-proof.yml'
+      - 'scripts/integration-program/consolidated_candidate_input.py'
+      - 'scripts/integration-program/prepare_consolidated_release_candidate.py'
+      - 'scripts/integration-program/prove_consolidated_package_consumers.py'
+      - 'scripts/integration-program/paired_package_*.py'
+      - 'scripts/integration-program/materialize_paired_package_hosts.py'
+      - 'scripts/integration-program/run_paired_package_browser_matrix.py'
+      - 'scripts/integration-program/verify_browser_package_resources.py'
+      - 'scripts/integration-program/paired-package-browser/**'
+      - 'test/studio/browser/PackageCompatibility/**'
+  workflow_dispatch:
+
+concurrency:
+  group: paired-package-browser-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  retrieve:
+    permissions:
+      actions: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      input-artifact-id: ${{ steps.transfer.outputs.artifact-id }}
+    steps:
+      # Repository-write push/manual authority is the trust boundary. This job
+      # never checks out or executes repository code with the artifact token.
+      - name: Retrieve original verified unpublished artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/browser-input"
+          gh api repos/elsa-workflows/elsa-core/actions/artifacts/11412848210 > "$RUNNER_TEMP/browser-input/artifact.json"
+          gh api repos/elsa-workflows/elsa-core/actions/runs/37456860080/attempts/1 > "$RUNNER_TEMP/browser-input/producer-run.json"
+          jq -e '.id == 37456860080 and .run_attempt == 1 and
+            .head_sha == "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205" and .conclusion == "success" and
+            (.event == "push" or .event == "workflow_dispatch") and
+            .path == ".github/workflows/prepare-consolidated-release-candidate.yml"' "$RUNNER_TEMP/browser-input/producer-run.json" > /dev/null
+          jq -e '.id == 11412848210 and
+            .name == "consolidated-candidate-ba5b348aa2414fdf7c19d9d8806e87b7c91a4205-37456860080-1" and
+            .expired == false and .expires_at == "2026-11-05T12:13:30Z" and
+            .digest == "sha256:ace85260c3389916fe3dcd7ee9cd5b766e4030dd6cee13c7f89285ada79c944f" and
+            .size_in_bytes == 92659861 and .workflow_run.id == 37456860080 and
+            .workflow_run.head_sha == "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205"' "$RUNNER_TEMP/browser-input/artifact.json" > /dev/null
+          test "$(date -u -d '2026-11-05T12:13:30Z' +%s)" -gt "$(date -u +%s)"
+          gh api repos/elsa-workflows/elsa-core/actions/artifacts/11412848210/zip > "$RUNNER_TEMP/browser-input/candidate.zip"
+          test "$(stat -c %s "$RUNNER_TEMP/browser-input/candidate.zip")" -eq 92659861
+          printf '%s  %s\n' \
+            'ace85260c3389916fe3dcd7ee9cd5b766e4030dd6cee13c7f89285ada79c944f' \
+            "$RUNNER_TEMP/browser-input/candidate.zip" | sha256sum --check --status
+          jq -nc --arg observed "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{schema:1,artifact_id:11412848210,archive_sha256:"ace85260c3389916fe3dcd7ee9cd5b766e4030dd6cee13c7f89285ada79c944f",retrieved_at:$observed}' \
+            > "$RUNNER_TEMP/browser-input/live-retrieval.json"
+      - name: Transfer only the verified original inputs
+        id: transfer
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: paired-package-browser-input-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/browser-input/candidate.zip
+            ${{ runner.temp }}/browser-input/producer-run.json
+            ${{ runner.temp }}/browser-input/live-retrieval.json
+            ${{ runner.temp }}/browser-input/artifact.json
+          if-no-files-found: error
+          retention-days: 1
+
+  proof:
+    needs: retrieve
+    permissions:
+      contents: read
+      actions: none
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          artifact-ids: ${{ needs.retrieve.outputs.input-artifact-id }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/browser-input
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.300
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.23.3'
+      - name: Verify package and browser tooling contracts
+        working-directory: scripts/integration-program
+        run: |
+          python3 -m unittest test_materialize_paired_package_hosts test_paired_package_provenance test_paired_package_baseline_provenance test_paired_package_browser_matrix test_verify_browser_package_resources test_paired_package_browser_workflow
+          python3 -O -m unittest test_materialize_paired_package_hosts test_paired_package_provenance test_paired_package_baseline_provenance test_paired_package_browser_matrix test_verify_browser_package_resources test_paired_package_browser_workflow
+      - name: Install the locked browser fixture
+        working-directory: test/studio/browser/PackageCompatibility
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run typecheck
+          npm exec --no -- playwright install --with-deps chromium
+      - name: Verify original bytes and execute all 36 paired package browser records
+        run: >-
+          python3 scripts/integration-program/run_paired_package_browser_matrix.py
+          --inputs "$RUNNER_TEMP/browser-input"
+          --candidate-artifacts "$RUNNER_TEMP/verified-browser-candidate"
+          --output "$RUNNER_TEMP/paired-package-browser-proof"
+          --fixture-source "${{ github.sha }}"
+          --fixture-run "${{ github.run_id }}"
+          --fixture-attempt "${{ github.run_attempt }}"
+      - name: Retain only allowlisted browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: paired-package-browser-proof-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/paired-package-browser-proof/retained-evidence
+          if-no-files-found: warn
+          retention-days: 7
