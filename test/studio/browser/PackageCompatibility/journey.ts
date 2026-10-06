@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { bpmnSemanticIdentity, checkedXmlText, type XmlElement } from './bpmn-roundtrip.js';
 import { DirectBackendObserver } from './direct-backend.js';
+import { WasmBootObserver, type ObservedBootResource } from './wasm-boot.js';
 const policy = JSON.parse(readFileSync(new URL('./coverage-policy.json', import.meta.url), 'utf8'));
 // Locator actions and assertions share the same bounded readiness window,
 // including the native WASM bootstrap after a full page reload.
@@ -564,13 +565,14 @@ async function main(): Promise<void> {
   };
   const directBackend = input.request.host === 'wasm'
     ? new DirectBackendObserver(input.studio_url, input.backend_url, input.username, input.password) : undefined;
+  const wasmBoot = input.request.host === 'wasm' ? new WasmBootObserver(input.resources, input.request.framework) : undefined;
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ serviceWorkers: 'block' });
   if (input.request.version === '3.10.0' && input.request.host === 'server')
     await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(input.studio_url).origin });
   const page = await context.newPage();
   page.setDefaultTimeout(20_000);
-  const resources: Array<Record<string, unknown>> = [];
+  const resources: ObservedBootResource[] = [];
   const pending: Promise<void>[] = [];
   const expected = new Map(input.resources.map(asset => [asset.path, asset]));
   let failed = false;
@@ -597,7 +599,9 @@ async function main(): Promise<void> {
     pending.push((async () => {
       const headers = response.headers();
       const body = await resourceBody(response, asset.bytes);
-      resources.push({ path: url.pathname, status: response.status(), content_type: headers['content-type']?.split(';')[0], sha256: hash(body), bytes: body.length, owner: asset.owner, requested: true });
+      const resource = { path: url.pathname, status: response.status(), content_type: headers['content-type']?.split(';')[0] ?? '', sha256: hash(body), bytes: body.length, owner: asset.owner, requested: true };
+      resources.push(resource);
+      wasmBoot?.observe(resource, body);
     })().catch(() => { failed = true; }));
   };
   page.on('response', observeResponse);
@@ -624,6 +628,11 @@ async function main(): Promise<void> {
     // Freeze the observation window, then settle all native response bodies before relating tokens.
     page.off('response', observeResponse);
     await Promise.all(pending);
+    if (wasmBoot) {
+      const bootProof = wasmBoot.proof(resources, proof.interactive_validation_observed === true);
+      proof.wasm_boot = bootProof;
+      if (Object.values(bootProof.checks).every(Boolean)) passed('wasm_boot');
+    }
     if (directBackend) {
       const directProof = directBackend.proof();
       proof.direct_backend = directProof;

@@ -229,6 +229,12 @@ def _resource_inventory(layout, verified_root: Path, manifest_hash: str, *, conv
         require(len({asset["path"] for asset in assets}) == len(assets), "Static and managed resource paths overlap")
         inventory = {**static, "assets": assets,
                      "managed_resources": {name: value for name, value in managed.items() if name != "assets"}}
+        if layout.request.host == "wasm":
+            import paired_package_wasm_boot as wasm_boot
+            bootstrap = wasm_boot.derive_boot_resources(layout, client, client_manifest, managed)
+            assets.extend(bootstrap["assets"])
+            require(len({asset["path"] for asset in assets}) == len(assets), "Bootstrap and original resource paths overlap")
+            inventory["bootstrap_resources"] = {name: value for name, value in bootstrap.items() if name != "assets"}
 
     # The six paths remain mandatory package materializations and retain their sealed
     # archive checks. This separate host policy only changes whether the standalone

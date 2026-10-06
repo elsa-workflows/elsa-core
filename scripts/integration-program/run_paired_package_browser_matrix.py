@@ -228,7 +228,11 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     hashes = {"definition_id_sha256", "activity_id_sha256", "value_sha256", "synthetic_document_sha256", "instance_id_sha256", "released_document_sha256"}
     flags = {"login_failure_visible", "login_form_visible", "server_circuit_observed", "server_render_frames_observed", "elsa_identity_ui_visible", "expected_auth_provider_observed", "interactive_validation_observed", "private_input_values_retained", "initial_list_navigation_completed", "editor_ready_observed"}
     counts = {"create_name_label_count", "create_name_textbox_count"}
-    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens", "bpmn_roundtrip", "clipboard", "direct_backend"}, "Unsafe browser proof field")
+    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens", "bpmn_roundtrip", "clipboard", "direct_backend", "wasm_boot"}, "Unsafe browser proof field")
+    require("wasm_boot" not in proof or record["host"] == "wasm" and record["framework"] == "net10.0",
+            "Unexpected standalone WASM boot proof")
+    require(not assertions_by_name.get("wasm_boot", False) or record["host"] != "wasm" or "wasm_boot" in proof,
+            "Missing standalone WASM boot proof for passed assertion")
     require("direct_backend" not in proof or record["host"] == "wasm", "Unexpected direct backend proof")
     require(not assertions_by_name.get("direct_backend", False) or "direct_backend" in proof,
             "Missing direct backend proof for passed assertion")
@@ -241,6 +245,11 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     require(not assertions_by_name.get("clipboard", False) or "clipboard" in proof,
             "Missing clipboard proof for passed assertion")
     for name, value in proof.items():
+        if name == "wasm_boot":
+            from paired_package_wasm_boot import validate_boot_receipt
+            validate_boot_receipt(value, assertions_by_name["wasm_boot"], record.get("resources", []),
+                                  proof.get("interactive_validation_observed") is True)
+            continue
         if name == "direct_backend":
             _validate_direct_backend(value, assertions_by_name["direct_backend"])
             continue
@@ -608,6 +617,9 @@ def run_browser(handle, request, resources: list[dict], *, timeout: int = 240,
         raise ValueError("Browser process failed to return a safe receipt") from None
     require(isinstance(record, dict) and all(key in record for key in ("host", "framework", "version")) and identity(record) == identity(cell), "Browser process returned an invalid cell")
     record = validate_browser_receipt(record, identity(cell))
+    if cell["host"] == "wasm":
+        from paired_package_wasm_boot import validate_boot_request_binding
+        validate_boot_request_binding(record, resources, cell["framework"])
     reopens = record.get("proof", {}).get("baseline_reopens", [])
     require(not reopens or released_document_inputs is not None, "Unrequested released reopen proof")
     expected_sources = {item["binding"]["document"]["source_cell"]["version"]: item for item in payload.get("released_document_inputs", [])}
