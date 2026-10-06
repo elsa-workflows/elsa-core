@@ -1,9 +1,10 @@
-import { chromium, expect, request, type Page, type APIRequestContext, type Locator } from '@playwright/test';
+import { chromium, expect, request, type Page, type APIRequestContext, type Locator, type Download } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { closeSync, lstatSync, openSync, readFileSync, readSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
+import { bpmnSemanticIdentity, checkedXmlText, type XmlElement } from './bpmn-roundtrip.js';
 const policy = JSON.parse(readFileSync(new URL('./coverage-policy.json', import.meta.url), 'utf8'));
 
 type Cell = { host: 'server' | 'wasm' | 'hosted-wasm' | 'custom-elements'; framework: string; version: string; route_prefix?: string };
@@ -81,6 +82,127 @@ async function visibleReleasedActivity(page: Page, document: any): Promise<void>
   await expect(inputControl(page, /^Output Value$/i).locator('input[type="text"]')).toHaveValue(child.outputValue.expression.value);
 }
 
+async function definitionsList(page: Page, input: PrivateInput): Promise<void> {
+  await page.goto(input.studio_url + '/workflows/definitions');
+  await page.waitForURL(url => url.pathname.endsWith('/workflows/definitions') && url.searchParams.get('page') === '1' && url.searchParams.get('pageSize') === '10');
+}
+
+async function nativeImportChooser(page: Page, label: 'Import' | 'Import BPMN') {
+  const group = page.locator('.definitions-table .mud-button-group-root').filter({ has: page.getByRole('button', { name: 'Create workflow', exact: true }) });
+  await expect(group).toHaveCount(1);
+  await group.locator('.mud-menu-icon-button-activator').click();
+  const item = page.locator('.mud-menu-item:visible').filter({ hasText: new RegExp('^' + label + '$') });
+  await expect(item).toHaveCount(1);
+  const [chooser] = await Promise.all([page.waitForEvent('filechooser'), item.click()]);
+  return chooser;
+}
+
+async function downloadedBytes(download: Download): Promise<Buffer> {
+  const stream = await download.createReadStream();
+  if (!stream) throw new Error('native_download_missing');
+  const chunks: Buffer[] = [];
+  let bytes = 0;
+  for await (const chunk of stream) {
+    bytes += chunk.length;
+    if (bytes > 1024 * 1024) { stream.destroy(); throw new Error('native_download_limit'); }
+    chunks.push(Buffer.from(chunk));
+  }
+  if (!bytes || await download.failure()) throw new Error('native_download_failed');
+  return Buffer.concat(chunks);
+}
+
+async function bpmnTree(page: Page, raw: Buffer): Promise<XmlElement> {
+  const text = checkedXmlText(raw);
+  return page.evaluate(xml => {
+    const document = new DOMParser().parseFromString(xml, 'application/xml');
+    if (document.querySelector('parsererror') || !document.documentElement) throw new Error('bpmn_xml_parse');
+    const read = (element: Element): XmlElement => ({
+      namespace: element.namespaceURI, name: element.localName,
+      attributes: Object.fromEntries([...element.attributes].filter(attribute => attribute.namespaceURI !== 'http://www.w3.org/2000/xmlns/').map(attribute => {
+        if (attribute.namespaceURI) throw new Error('bpmn_foreign_attribute');
+        return [attribute.localName, attribute.value];
+      })),
+      text: [...element.childNodes].filter(node => node.nodeType === Node.TEXT_NODE || node.nodeType === Node.CDATA_SECTION_NODE).map(node => node.textContent ?? '').join('').trim(),
+      children: [...element.children].map(read)
+    });
+    return read(document.documentElement);
+  }, text);
+}
+
+async function nativeBpmnRoundtrip(page: Page, input: PrivateInput, backend: Backend, proof: Record<string, unknown>): Promise<void> {
+  const raw = readFileSync(new URL('./paired-browser.bpmn', import.meta.url));
+  const semantic = bpmnSemanticIdentity(await bpmnTree(page, raw));
+  const checks = { imported: false, rendered: false, selection_callback: false, exported: false, reimported: false, semantic_preserved: false };
+  const record: Record<string, unknown> = { input_xml_sha256: hash(raw), input_xml_bytes: raw.length, semantic_sha256: hash(semantic),
+    process_id_sha256: hash('paired-process'), start_id_sha256: hash('paired-start'), end_id_sha256: hash('paired-end'), flow_id_sha256: hash('paired-flow'), checks };
+  proof.bpmn_roundtrip = record; proof.last_completed_stage = 'bpmn_input_validated';
+  const importFile = async (buffer: Buffer): Promise<string> => {
+    await definitionsList(page, input);
+    const chooser = await nativeImportChooser(page, 'Import BPMN');
+    await chooser.setFiles({ name: 'paired-browser.bpmn', mimeType: 'application/xml', buffer });
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText('No findings. This document reads without loss.', { exact: true })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Import', exact: true }).click();
+    await expect(page).toHaveURL(/\/workflows\/definitions\/[^/]+\/edit/);
+    const id = new URL(page.url()).pathname.split('/').at(-2)!;
+    const definition = await backend.get('/workflow-definitions/by-definition-id/' + encodeURIComponent(id) + '?versionOptions=Latest');
+    if (definition.definitionId !== id || definition.root?.type !== 'Elsa.BpmnProcess' ||
+        typeof definition.customProperties?.['Bpmn:SourceXml'] !== 'string' ||
+        bpmnSemanticIdentity(await bpmnTree(page, Buffer.from(definition.customProperties['Bpmn:SourceXml']))) !== semantic)
+      throw new Error('bpmn_backend_graph_mismatch');
+    return id;
+  };
+  const renderAndSelect = async (): Promise<void> => {
+    const start = page.locator('.x6-node[data-cell-id="paired-start"]');
+    const end = page.locator('.x6-node[data-cell-id="paired-end"]');
+    await expect(start).toBeVisible(); await expect(end).toBeVisible();
+    await expect(page.locator('.x6-node')).toHaveCount(2);
+    await expect(page.locator('.x6-edge[data-cell-id="paired-flow"]')).toHaveCount(1);
+    checks.rendered = true; proof.last_completed_stage = 'bpmn_rendered';
+    await start.click();
+    // X6 node:selected -> .NET ElementSelected -> performed-by panel is a real native callback.
+    await expect(page.getByTestId('bpmn-performed-by')).toBeVisible();
+    await expect(page.getByTestId('bpmn-no-work')).toContainText("'Paired start' performs no work");
+    checks.selection_callback = true; proof.last_completed_stage = 'bpmn_selected';
+  };
+  const first = await importFile(raw);
+  record.first_definition_id_sha256 = hash(first); checks.imported = true; proof.last_completed_stage = 'bpmn_imported';
+  await renderAndSelect();
+  await toolbar(page, 'Export as BPMN 2.0 XML');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("The exported file contains this workflow's binding configuration and expressions.", { exact: true })).toBeVisible();
+  const [download] = await Promise.all([page.waitForEvent('download'), dialog.getByRole('button', { name: 'Export', exact: true }).click()]);
+  const exported = await downloadedBytes(download);
+  record.export_xml_sha256 = hash(exported); record.export_xml_bytes = exported.length;
+  checks.exported = true; proof.last_completed_stage = 'bpmn_exported';
+  if (bpmnSemanticIdentity(await bpmnTree(page, exported)) !== semantic) throw new Error('bpmn_export_semantic_mismatch');
+  const second = await importFile(exported);
+  if (second === first) throw new Error('bpmn_reimport_identity_reused');
+  record.second_definition_id_sha256 = hash(second); checks.reimported = true; proof.last_completed_stage = 'bpmn_reimported';
+  await renderAndSelect();
+  checks.semantic_preserved = true;
+}
+
+async function nativeClipboard(page: Page, instanceId: string, value: string, proof: Record<string, unknown>): Promise<void> {
+  const record: Record<string, unknown> = { instance_id_sha256: hash(instanceId), expected_value_sha256: hash(value), native_copy_observed: false };
+  proof.clipboard = record;
+  await page.getByRole('tab', { name: 'Input/output', exact: true }).click();
+  const row = page.locator('tr.hover-row').filter({ has: page.locator('td').filter({ hasText: /^sentinel$/ }) });
+  await expect(row).toHaveCount(1);
+  await expect(row.locator('td').nth(1)).toHaveText(value);
+  await row.hover();
+  const copy = row.getByRole('button');
+  await expect(copy).toHaveCount(1); await expect(copy).toBeEnabled();
+  await copy.click();
+  await expect(page.getByText('sentinel copied', { exact: true })).toBeVisible();
+  const actual = await page.evaluate(() => navigator.clipboard.readText());
+  if (actual.length > 1024 || actual !== value) throw new Error('native_clipboard_value_mismatch');
+  record.actual_value_sha256 = hash(actual); record.native_copy_observed = true;
+  proof.last_completed_stage = 'clipboard_copied';
+}
+
 async function reopenReleased(page: Page, input: PrivateInput, backend: Backend, proof: Record<string, unknown>): Promise<void> {
   const entries = input.released_document_inputs!;
   const reopens: Array<Record<string, any>> = [];
@@ -93,14 +215,8 @@ async function reopenReleased(page: Page, input: PrivateInput, backend: Backend,
       activity_id_sha256: hash(child.id), value_sha256: hash(child.outputValue.expression.value), tool_version: document.toolVersion, checks };
     reopens.push(row); // Preserve the actual partial journey if a later stage fails.
     proof.baseline_reopens = reopens;
-    await page.goto(input.studio_url + '/workflows/definitions');
-    await page.waitForURL(url => url.pathname.endsWith('/workflows/definitions') && url.searchParams.get('page') === '1' && url.searchParams.get('pageSize') === '10');
-    const group = page.locator('.definitions-table .mud-button-group-root').filter({ has: page.getByRole('button', { name: 'Create workflow', exact: true }) });
-    await expect(group).toHaveCount(1);
-    await group.locator('.mud-menu-icon-button-activator').click();
-    const importItem = page.locator('.mud-menu-item:visible').filter({ hasText: /^Import$/ });
-    await expect(importItem).toHaveCount(1);
-    const [chooser] = await Promise.all([page.waitForEvent('filechooser'), importItem.click()]);
+    await definitionsList(page, input);
+    const chooser = await nativeImportChooser(page, 'Import');
     // Upload the original buffer through the native picker; no workflow is authored via HTTP.
     await chooser.setFiles({ name: 'released-' + entry.binding.document.source_cell.version + '.json', mimeType: 'application/json', buffer: raw });
     const get = () => backend.get('/workflow-definitions/by-definition-id/' + encodeURIComponent(document.definitionId) + '?versionOptions=Latest');
@@ -350,19 +466,9 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
         page.waitForEvent('download'),
         exportDialog.getByRole('button', { name: 'Export', exact: true }).click()
       ]);
-      const stream = await download.createReadStream();
-      if (!stream) throw new Error('released_document_download_missing');
-      const chunks: Buffer[] = [];
-      let bytes = 0;
-      for await (const chunk of stream) {
-        bytes += chunk.length;
-        if (bytes > 1024 * 1024) { stream.destroy(); throw new Error('released_document_limit'); }
-        chunks.push(Buffer.from(chunk));
-      }
-      if (!bytes || await download.failure()) throw new Error('released_document_download_failed');
+      const document = await downloadedBytes(download);
       const output = input.released_document_output;
       if (!isAbsolute(output) || realpathSync(dirname(output)) !== dirname(output)) throw new Error('invalid_private_document_output');
-      const document = Buffer.concat(chunks);
       writeFileSync(output, document, { flag: 'wx', mode: 0o600 });
       proof.released_document_sha256 = hash(document);
       proof.last_completed_stage = 'released_document_exported';
@@ -388,6 +494,15 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   if (input.released_document_inputs) {
     await reopenReleased(page, input, backend, proof);
     passed('baseline_reopen');
+  }
+  if (input.request.host === 'server') {
+    // Keep the first new slice scoped to the reviewed default X6 Server composition.
+    await page.goto(input.studio_url + '/workflows/instances/' + encodeURIComponent(instanceId) + '/view');
+    await expect(page.getByText('Finished', { exact: true }).first()).toBeVisible();
+    await nativeClipboard(page, instanceId, sentinel, proof);
+    passed('clipboard');
+    await nativeBpmnRoundtrip(page, input, backend, proof);
+    passed('bpmn_roundtrip');
   }
 }
 
@@ -420,6 +535,8 @@ async function main(): Promise<void> {
   };
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ serviceWorkers: 'block' });
+  if (input.request.version === '3.10.0' && input.request.host === 'server')
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(input.studio_url).origin });
   const page = await context.newPage();
   page.setDefaultTimeout(20_000);
   const resources: Array<Record<string, unknown>> = [];
