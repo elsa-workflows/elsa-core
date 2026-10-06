@@ -5,7 +5,7 @@ using JetBrains.Annotations;
 namespace Elsa.Secrets.Management.Tasks;
 
 [UsedImplicitly]
-[SingleNodeTask]
+[SingleNodeTask(SingleNodeTaskScope.Host)]
 public class UpdateExpiredSecretsRecurringTask(IExpiredSecretsUpdater expiredSecretsUpdater) : RecurringTask
 {
     public override async Task ExecuteAsync(CancellationToken stoppingToken)

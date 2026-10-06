@@ -6,6 +6,7 @@ using Elsa.Persistence.EFCore.EntityHandlers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Persistence.EFCore;
@@ -68,6 +69,7 @@ public abstract class PersistenceFeatureBase<TFeature, TDbContext>(IModule modul
 
     protected virtual void ConfigureMigrations()
     {
+        Services.TryAddSingleton<MigratedDatabaseRegistry>();
         Services.AddStartupTask<RunMigrationsStartupTask<TDbContext>>();
     }
 
