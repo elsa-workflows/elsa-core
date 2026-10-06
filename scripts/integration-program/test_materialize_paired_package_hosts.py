@@ -1,10 +1,12 @@
+import base64
 import json
+import os
 from pathlib import Path
 import tempfile
 import subprocess
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from xml.etree import ElementTree as ET
 
 import materialize_paired_package_hosts as hosts
@@ -85,6 +87,66 @@ class HostMaterializationTests(unittest.TestCase):
             values = dict(host="server", framework="net10.0", version="3.10.0") | change
             with self.subTest(change=change), self.assertRaises(RuntimeError):
                 hosts.CellRequest(**values)
+
+    def test_targeted_denials_retain_versioned_editor_and_other_feature_grants(self):
+        for version in hosts.VERSIONS:
+            legacy = version == "3.8.4"
+            editor = {"read:workflow-definitions", "write:workflow-definitions", "publish:workflow-definitions", "exec:workflow-definitions"} if legacy else {
+                "workflows/definitions:view", "workflows/definitions:write", "workflows/definitions:publish", "workflows/definitions:execute"}
+            for profile in hosts.PERMISSION_PROFILES:
+                with self.subTest(version=version, profile=profile):
+                    request = hosts.CellRequest("server", "net10.0", version, permission_profile=profile)
+                    grants = hosts.permission_grants(request)
+                    # Feature presence changes registration, not the caller's profile.
+                    self.assertEqual(grants, hosts.permission_grants(hosts.CellRequest(
+                        "server", "net10.0", version, backend_features=(), permission_profile=profile)))
+                    self.assertEqual(len(grants), len(set(grants)))
+                    if profile == "full":
+                        self.assertEqual(("*",), grants)
+                    elif profile == "denied":
+                        self.assertEqual(("read:workflow-definitions", "read:workflow-instances", "read:activity-descriptors",
+                                          "read:workflow-context-provider-descriptors"), grants)
+                    else:
+                        self.assertTrue(editor <= set(grants))
+                        self.assertFalse(any("*" in grant for grant in grants))
+                        self.assertEqual(profile != "deny-workflow-contexts", "read:workflow-context-provider-descriptors" in grants)
+                        secret_grants = {grant for grant in grants if "secrets" in grant}
+                        self.assertEqual(set() if profile == "deny-secrets" else
+                                         ({"read:secrets", "write:secrets", "delete:secrets", "test:secrets", "use:secrets", "export:secrets", "import:secrets"}
+                                          if legacy else {"secrets:view", "secrets:write", "secrets:delete", "secrets:test"}), secret_grants)
+
+    def test_fresh_encryption_key_and_exact_grants_enter_only_owned_backend_environment(self):
+        keys = set()
+        ambient = {"fixture__secretsencryptionkey": "ambient-key", "Fixture:PermissionGrants": '["*"]',
+                   "Fixture__PermissionProfile": "full"}
+        for host in hosts.HOST_NAMES:
+            with self.subTest(host=host), patch.dict(os.environ, ambient):
+                layout = self.materialize(host, permission_profile="deny-secrets")
+                self.prepare_restored_assets(layout)
+                launches = []
+
+                def launch(command, **kwargs):
+                    launches.append((command, kwargs["env"].copy()))
+                    return Mock(pid=12345, poll=Mock(return_value=0), wait=Mock(return_value=0))
+
+                with patch.object(hosts.subprocess, "Popen", side_effect=launch), patch.object(hosts, "_wait_ready"):
+                    with hosts.start_pair(layout, validate_project=lambda project: {
+                        "project_assets_sha256": hosts.sha256(project.parent / "obj" / "project.assets.json")}) as handle:
+                        backend = launches[0][1]
+                        encoded_key = backend["Fixture__SecretsEncryptionKey"]
+                        self.assertEqual(32, len(base64.b64decode(encoded_key, validate=True)))
+                        self.assertNotIn(encoded_key, keys)
+                        keys.add(encoded_key)
+                        self.assertEqual(list(hosts.permission_grants(layout.request)), json.loads(backend["Fixture__PermissionGrants"]))
+                        self.assertEqual("deny-secrets", backend["Fixture__PermissionProfile"])
+                        self.assertFalse(any(key in launches[1][1] for key in ("Fixture__SecretsEncryptionKey", "Fixture__PermissionGrants")))
+                        for command, env in launches:
+                            self.assertFalse(any(key in env for key in ambient if key != "Fixture__PermissionProfile"))
+                            self.assertNotIn(encoded_key, " ".join(command))
+                        self.assertNotIn(encoded_key, repr(handle))
+                        self.assertFalse(any(encoded_key.encode() in path.read_bytes()
+                                             for path in layout.group_root.rglob("*") if path.is_file()))
+        self.assertEqual(len(hosts.HOST_NAMES), len(keys))
 
     def test_no_listener_starts_without_asset_bound_provenance(self):
         layout = self.materialize()

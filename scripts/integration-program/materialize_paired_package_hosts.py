@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+import base64
 import hashlib
 import json
 import os
@@ -33,6 +34,24 @@ VERSIONS = ("3.8.4", "3.9.0", "3.10.0")
 PLATFORM_VERSIONS = {"net8.0": "8.0.24", "net9.0": "9.0.13", "net10.0": "10.0.3"}
 BACKEND_PACKAGES = ("Elsa", "Elsa.Identity", "Elsa.Workflows.Api", "Elsa.Expressions.JavaScript", "Elsa.Persistence.EFCore.Sqlite", "Elsa.Bpmn.Interchange",
                     "Elsa.WorkflowContexts", "Elsa.Secrets", "Elsa.Secrets.Persistence.EFCore.Sqlite")
+PERMISSION_PROFILES = ("full", "denied", "deny-secrets", "deny-workflow-contexts")
+DENIED_PERMISSIONS = ("read:workflow-definitions", "read:workflow-instances", "read:activity-descriptors",
+                      "read:workflow-context-provider-descriptors")
+LEGACY_EDITOR_PERMISSIONS = (
+    "read:workflow-definitions", "write:workflow-definitions", "publish:workflow-definitions",
+    "retract:workflow-definitions", "exec:workflow-definitions", "read:workflow-instances",
+    "read:activity-execution", "read:activity-descriptors", "read:activity-descriptors-options",
+    "read:expression-descriptors", "read:storage-drivers", "read:variable-descriptors",
+    "read:commit-strategies", "read:incident-strategies", "read:log-persistence-strategies",
+    "read:workflow-activation-strategies", "read:output-converters", "read:installed-features")
+EDITOR_PERMISSIONS = (
+    "workflows/definitions:view", "workflows/definitions:write", "workflows/definitions:publish",
+    "workflows/definitions:retract", "workflows/definitions:execute", "workflows/instances:view",
+    "workflows/activity-executions:view", "workflows/descriptors/activities:view",
+    "workflows/descriptors/expressions:view", "workflows/descriptors/storage-drivers:view",
+    "workflows/descriptors/variables:view", "workflows/descriptors/commit-strategies:view",
+    "workflows/descriptors/incident-strategies:view", "workflows/descriptors/log-persistence-strategies:view",
+    "workflows/descriptors/activation-strategies:view", "system/features:view")
 
 
 def require(condition: bool, message: str) -> None:
@@ -58,7 +77,7 @@ class CellRequest:
                 "Unknown host/framework/version cell")
         require(type(self.backend_features) is tuple and len(set(self.backend_features)) == len(self.backend_features)
                 and set(self.backend_features) <= {"workflow-contexts", "secrets"}, "Unknown or duplicate backend feature")
-        require(self.permission_profile in ("full", "denied"), "Unknown permission profile")
+        require(self.permission_profile in PERMISSION_PROFILES, "Unknown permission profile")
         require(self.route_prefix == "" or (self.host == "hosted-wasm" and
                 re.fullmatch(r"[a-z][a-z0-9-]{0,31}", self.route_prefix) is not None), "Unsafe hosted route prefix")
 
@@ -83,6 +102,22 @@ class RuntimeHandle:
     password: str = field(repr=False)
     safe_ids: dict[str, str] = field(default_factory=dict)
     process_ids: tuple[int, ...] = ()
+
+
+def permission_grants(request: CellRequest) -> tuple[str, ...]:
+    """Published 3.8.4 vocabulary differs from the 3.9/3.10 resource catalog."""
+    if request.permission_profile == "full":
+        return ("*",)
+    if request.permission_profile == "denied":
+        return DENIED_PERMISSIONS
+    legacy = request.version == "3.8.4"
+    grants = list(LEGACY_EDITOR_PERMISSIONS if legacy else EDITOR_PERMISSIONS)
+    if request.permission_profile != "deny-workflow-contexts":
+        grants.append("read:workflow-context-provider-descriptors")
+    if request.permission_profile != "deny-secrets":
+        grants.extend(("read:secrets", "write:secrets", "delete:secrets", "test:secrets", "use:secrets", "export:secrets", "import:secrets")
+                      if legacy else ("secrets:view", "secrets:write", "secrets:delete", "secrets:test"))
+    return tuple(grants)
 
 
 def _host_source(host: str, version: str) -> dict[str, Path]:
@@ -211,7 +246,7 @@ def isolated_environment(layout: CellLayout) -> dict[str, str]:
     require(not any(os.environ.get(name) for name in ("GH_TOKEN", "GITHUB_TOKEN", "ACTIONS_READ_TOKEN")), "Token entered host execution")
     env = os.environ.copy()
     for key in tuple(env):
-        if key.upper().startswith(("NUGET_", "MSBUILD", "DOTNET_")):
+        if key.upper().startswith(("NUGET_", "MSBUILD", "DOTNET_")) or key.casefold().startswith(("fixture__", "fixture:")):
             del env[key]
     env.update(NUGET_PACKAGES=str(layout.packages_root), DOTNET_CLI_HOME=str(layout.group_root / "dotnet-home"),
                NUGET_HTTP_CACHE_PATH=str(layout.group_root / "http-cache"), NUGET_PLUGINS_CACHE_PATH=str(layout.group_root / "plugins-cache"),
@@ -317,6 +352,9 @@ def start_pair(layout: CellLayout, *, validate_project: Callable[[Path], dict],
                Identity__Tokens__SigningKey=secrets.token_urlsafe(48), Backend__Url=backend_origin + "/elsa/api",
                Authentication__Provider="ElsaIdentity", Localization__DefaultCulture="en-US",
                Hosting__ApiUrl=backend_origin + "/elsa/api")
+    # This key and the exact grant array enter only the owned backend process.
+    backend_env = env | {"Fixture__SecretsEncryptionKey": base64.b64encode(secrets.token_bytes(32)).decode("ascii"),
+                         "Fixture__PermissionGrants": json.dumps(permission_grants(layout.request))}
     client = "wasm" if layout.request.host == "hosted-wasm" else layout.request.host
     public_config = None
     if client in ("wasm", "custom-elements"):
@@ -338,7 +376,8 @@ def start_pair(layout: CellLayout, *, validate_project: Callable[[Path], dict],
                 command = ["dotnet", "run", "--project", str(project), "--no-build", "--no-restore", "--configuration", "Release", "--urls", origin]
             else:
                 command = ["dotnet", str(project.parent / "bin" / "Release" / layout.request.framework / (project.stem + ".dll")), "--urls", origin]
-            process = subprocess.Popen(command, cwd=project.parent, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+            process = subprocess.Popen(command, cwd=project.parent, env=backend_env if host == "backend" else env,
+                                       stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
             processes.append(process)
             _wait_ready(process, origin + ready, timeout_seconds)
         def expire() -> None:
