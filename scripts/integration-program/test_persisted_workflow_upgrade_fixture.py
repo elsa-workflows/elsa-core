@@ -257,6 +257,14 @@ class WorkflowBoundaryTests(unittest.TestCase):
         self.assertNotIn("run-id:", self.proof)
         self.assertNotIn("repository:", self.proof)
 
+    def test_single_transfer_download_places_original_files_at_extractor_root(self):
+        download = self.proof.split("      - uses: actions/checkout@", 1)[0]
+        self.assertIn("artifact-ids: ${{ needs.retrieve.outputs.input-artifact-id }}", download)
+        self.assertIn("merge-multiple: true", download)
+        self.assertIn("path: ${{ runner.temp }}/upgrade-input", download)
+        self.assertIn('--artifact-metadata "$RUNNER_TEMP/upgrade-input/artifact.json"', self.proof)
+        self.assertIn('--proof-archive "$RUNNER_TEMP/upgrade-input/proof.zip"', self.proof)
+
     def test_fixture_job_checks_exact_head_without_artifact_read_permission_or_token(self):
         self.assertIn("    permissions:\n      contents: read\n      actions: none\n", self.proof)
         self.assertIn("ref: ${{ github.sha }}", self.proof)
