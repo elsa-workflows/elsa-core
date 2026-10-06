@@ -35,7 +35,7 @@ PROPERTIES = (
     "TargetFramework", "IncludeBuildOutput", "IncludeSymbols", "SymbolPackageFormat",
     "IsTestProject", "IsTool", "BuildOutputTargetFolder", "GeneratePackageOnBuild",
     "RepositoryUrl", "PackageProjectUrl", "ProjectAssetsFile", "GenerateElsaPackageManifest", "ElsaPackageManifestIncludeInPackage", "ElsaPackageManifestPackagePath",
-    "NETCoreSdkVersion", "MSBuildToolsPath", "NetCoreRoot",
+    "NETCoreSdkVersion", "MSBuildToolsPath", "NetCoreRoot", "RuntimeIdentifier",
 )
 
 
@@ -242,6 +242,7 @@ def stage_sdk_metadata(root: Path, manifest: dict, output: Path, inspector: Path
         row["restore_assets"] = []
         for framework, properties in row["framework_properties"].items():
             resolved = evaluate(root, root / row["project"], manifest["version"], True, framework, resolved=True)
+            (destination / f"resolved.{framework}.json").write_text(json.dumps(resolved, indent=2) + "\n")
             after_restore = resolved["Properties"]
             require(after_restore["AssemblyName"] == properties["assembly_name"] and after_restore["PackageVersion"] == manifest["version"],
                     f"Restore changed package identity/version: {row['id']}/{framework}")
@@ -466,7 +467,7 @@ GENERATOR_SOURCE = re.compile(
 
 GENERATOR_TOOLS = {
     "refit": ("InterfaceStubGeneratorV2.dll", {"Refit"}),
-    "logging": ("Microsoft.Extensions.Logging.Generators.dll", {"Microsoft.Extensions.Logging.Abstractions"}),
+    "logging": ("Microsoft.Extensions.Logging.Generators.dll", {"Microsoft.Extensions.Logging.Abstractions", "Microsoft.AspNetCore.App.Ref"}),
     "regex": ("System.Text.RegularExpressions.Generator.dll", {"Microsoft.NETCore.App.Ref"}),
     "json": ("System.Text.Json.SourceGeneration.dll", {"System.Text.Json", "Microsoft.NETCore.App.Ref"}),
     "razor": ("Microsoft.CodeAnalysis.Razor.Compiler.dll", set()),
@@ -626,6 +627,12 @@ def capture_compiler_evidence(root: Path, row: dict, framework: str, resolved: d
             if pack and not identifier:
                 identifier, version = pack["TargetingPackName"], pack["TargetingPackVersion"]
             require(identifier in packages and bool(version), f"Unexpected resolved generator identity: {family}/{identifier}")
+            if pack is not None or identifier in {"Microsoft.NETCore.App.Ref", "Microsoft.AspNetCore.App.Ref"}:
+                require(pack is not None and identifier == pack["TargetingPackName"] and version == pack["TargetingPackVersion"],
+                        f"Generator identity differs from resolved targeting pack: {family}/{identifier}/{version}")
+                relative = path.relative_to(Path(pack["TargetingPackPath"]).resolve()).as_posix()
+                require(re.fullmatch(r"analyzers/dotnet/(?:roslyn[0-9]+\.[0-9]+/)?cs/" + re.escape(filename), relative) is not None,
+                        f"Generator is outside resolved targeting pack analyzer path: {family}/{relative}")
             package_root = next((Path(folder) / identifier.lower() / version.lower() for folder in assets.get("packageFolders", {})
                                  if path.is_relative_to(Path(folder).resolve())), None)
             if package_root:
@@ -638,7 +645,13 @@ def capture_compiler_evidence(root: Path, row: dict, framework: str, resolved: d
         evidence["tools"][family] = record
     for _, family in PHYSICAL_GENERATED_PROJECTS.get((row["id"], row["project"]), ()):
         identifier, entry = PHYSICAL_GENERATORS[family]
-        versions = [key.split("/", 1)[1] for key in assets["libraries"] if key.split("/", 1)[0] == identifier]
+        require("RuntimeIdentifier" in properties, "Missing resolved RuntimeIdentifier for physical generator target selection")
+        target_key = framework + (f"/{properties['RuntimeIdentifier']}" if properties["RuntimeIdentifier"] else "")
+        target = assets.get("targets", {}).get(target_key)
+        require(isinstance(target, dict), f"Missing exact restored generator target: {target_key}")
+        selected = {key: item for key, item in target.items() if key.split("/", 1)[0] == identifier}
+        require(all(item.get("type") == "package" for item in selected.values()), f"Selected generator is not a restored package: {identifier}/{target_key}")
+        versions = [key.split("/", 1)[1] for key in selected]
         # Swagger's target exists only in its newer package train.
         if family == "swagger" and not versions:
             continue
@@ -682,7 +695,7 @@ def verify_generator_identity(root: Path, row: dict, framework: str, family: str
                     "SDK source-emitting targets changed")
         else:
             require(record["kind"] == "framework" and any(pack["TargetingPackName"] == record["package_id"] and
-                    pack["TargetingPackVersion"] == record["package_version"] and path.is_relative_to(Path(pack["TargetingPackPath"]))
+                    pack["TargetingPackVersion"] == record["package_version"] and path.is_relative_to(Path(pack["TargetingPackPath"]).resolve())
                     for pack in evidence["frameworks"]), "Generator does not belong to resolved framework")
         result = {key: value for key, value in record.items() if key != "tool_path"}
     cache[key] = result
@@ -925,10 +938,10 @@ def main() -> None:
     environment = dict(os.environ, ConsolidatedPackageProof="true", ContinuousIntegrationBuild="true")
     run([str(root / "build.sh"), "Compile+Pack", "--configuration", "Release", "--version", args.version], root,
         timeout=7200, log=output / "compile-pack.log", env=environment)
-    inspector = build_symbol_verifier(root, output)
-    stage_sdk_metadata(root, manifest, output, inspector)
     artifacts = output / "artifacts"
     shutil.copytree(packages, artifacts)
+    inspector = build_symbol_verifier(root, output)
+    stage_sdk_metadata(root, manifest, output, inspector)
     manifest = verify_artifacts(artifacts, manifest)
     write_json(output / "verified-artifacts.json", manifest)
     sources = provenance(root, artifacts, manifest, output, remote=args.remote_sources, inspector=inspector)

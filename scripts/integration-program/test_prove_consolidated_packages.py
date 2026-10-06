@@ -233,6 +233,130 @@ class PackageProofTests(unittest.TestCase):
         evidence["tools"]["refit"] = proof.package_tool(assets, "Refit", "9.0.2", entry)
         return archive, tool
 
+    def framework_logging_fixture(self):
+        evidence = self.compiler_fixture()
+        pack = {"Identity": "Microsoft.AspNetCore.App", "TargetingPackName": "Microsoft.AspNetCore.App.Ref",
+                "TargetingPackVersion": "8.0.27", "TargetingPackPath": str(self.directory / "packs/Microsoft.AspNetCore.App.Ref/8.0.27")}
+        tool = Path(pack["TargetingPackPath"]) / "analyzers/dotnet/roslyn4.4/cs/Microsoft.Extensions.Logging.Generators.dll"
+        tool.parent.mkdir(parents=True)
+        tool.write_bytes(b"framework generator")
+        return {"Properties": {"MSBuildToolsPath": evidence["sdk_root"], "NETCoreSdkVersion": evidence["sdk_version"],
+                               "NetCoreRoot": str(self.directory), "RuntimeIdentifier": ""},
+                "Items": {"ResolvedFrameworkReference": [pack], "Analyzer": [{"Identity": str(tool)}], "Compile": []}}
+
+    def test_framework_logging_requires_exact_resolved_pack_identity_and_path(self):
+        resolved = self.framework_logging_fixture()
+        cache = {("compile_input_paths", "HEAD"): set()}
+        for metadata in ({}, {"NuGetPackageId": "Microsoft.AspNetCore.App.Ref", "NuGetPackageVersion": "8.0.27"}):
+            resolved["Items"]["Analyzer"][0].update(metadata)
+            evidence = proof.capture_compiler_evidence(self.directory, self.row, "net8.0", resolved, cache)
+            self.row["framework_properties"]["net8.0"]["compiler_evidence"] = evidence
+            self.assertEqual("Microsoft.AspNetCore.App.Ref", evidence["tools"]["logging"]["package_id"])
+            proof.verify_generator_identity(self.directory, self.row, "net8.0", "logging", {})
+        analyzer = resolved["Items"]["Analyzer"][0]
+        for changes in ({"NuGetPackageId": "Wrong.App.Ref"}, {"NuGetPackageVersion": "8.0.99"},
+                        {"NuGetPackageId": "Microsoft.Extensions.Logging.Abstractions"},
+                        {"Identity": str(self.directory / "outside/Microsoft.Extensions.Logging.Generators.dll")},
+                        {"Identity": str(Path(resolved["Items"]["ResolvedFrameworkReference"][0]["TargetingPackPath"]) / "ref/Microsoft.Extensions.Logging.Generators.dll")}):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                proof.capture_compiler_evidence(self.directory, self.row, "net8.0",
+                    {**resolved, "Items": {**resolved["Items"], "Analyzer": [{**analyzer, **changes}]}}, cache)
+        pack = resolved["Items"]["ResolvedFrameworkReference"][0]
+        for changes in ({"TargetingPackName": "Microsoft.NETCore.App.Ref"}, {"TargetingPackVersion": "8.0.99"}):
+            with self.subTest(pack=changes), self.assertRaisesRegex(ValueError, "differs from resolved targeting pack"):
+                proof.capture_compiler_evidence(self.directory, self.row, "net8.0",
+                    {**resolved, "Items": {**resolved["Items"], "ResolvedFrameworkReference": [{**pack, **changes}]}}, cache)
+
+    def test_failed_generator_capture_retains_resolved_msbuild_response(self):
+        self.compiler_fixture()
+        output = self.directory / "evidence"
+        output.mkdir()
+        resolved = {"Properties": {"AssemblyName": "Example", "PackageVersion": VERSION,
+                    "GenerateElsaPackageManifest": "false", "ElsaPackageManifestIncludeInPackage": "false",
+                    "ElsaPackageManifestPackagePath": "", "ProjectAssetsFile": str(self.directory / "project.assets.json")}}
+        with patch.object(proof, "stage_nuspecs", side_effect=lambda root, row, version, destination: destination.mkdir()), \
+                patch.object(proof, "evaluate", return_value=resolved), \
+                patch.object(proof, "capture_compiler_evidence", side_effect=ValueError("rejected generator")), \
+                self.assertRaisesRegex(ValueError, "rejected generator"):
+            proof.stage_sdk_metadata(self.directory, self.manifest, output, self.directory / "helper.dll")
+        retained = output / "sdk-metadata/000-Elsa.Example/resolved.net8.0.json"
+        self.assertEqual(resolved, __import__("json").loads(retained.read_text()))
+        self.assertTrue(retained.with_name("restore.net8.0.assets.json").is_file())
+
+    def test_physical_generator_uses_exact_framework_and_runtime_target(self):
+        resolved = self.framework_logging_fixture()
+        resolved["Items"]["Analyzer"] = []
+        self.row.update(id="Elsa.Api.Common", project="src/common/Elsa.Api.Common/Elsa.Api.Common.csproj")
+        identifier = "FastEndpoints.Swagger"
+        entry = proof.PHYSICAL_GENERATORS["swagger"][1]
+        libraries = {}
+        for version in ("7.1.1", "8.2.0"):
+            folder = self.directory / "nuget" / identifier.lower() / version
+            tool = folder / entry
+            tool.parent.mkdir(parents=True)
+            tool.write_bytes(version.encode())
+            archive = folder / f"{identifier.lower()}.{version}.nupkg"
+            with zipfile.ZipFile(archive, "w") as contents:
+                contents.writestr(entry, version.encode())
+            libraries[f"{identifier}/{version}"] = {"type": "package", "sha512": base64.b64encode(hashlib.sha512(archive.read_bytes()).digest()).decode()}
+        assets = {"libraries": libraries, "packageFolders": {str(self.directory / "nuget"): {}},
+                  "targets": {"net8.0": {f"{identifier}/7.1.1": {"type": "package"}},
+                              "net10.0": {f"{identifier}/8.2.0": {"type": "package"}},
+                              "net8.0/linux-x64": {f"{identifier}/8.2.0": {"type": "package"}}}}
+        self.assets_fixture(assets)
+        self.row["restore_assets"].append({**self.row["restore_assets"][0], "framework": "net10.0"})
+        cache = {("compile_input_paths", "HEAD"): set()}
+        for framework, rid, version in (("net8.0", "", "7.1.1"), ("net10.0", "", "8.2.0"), ("net8.0", "linux-x64", "8.2.0")):
+            resolved["Properties"]["RuntimeIdentifier"] = rid
+            result = proof.capture_compiler_evidence(self.directory, self.row, framework, resolved, cache)
+            self.assertEqual(version, result["tools"]["swagger"]["package_version"])
+        resolved["Properties"]["RuntimeIdentifier"] = "unrestored-rid"
+        with self.assertRaisesRegex(ValueError, "Missing exact restored generator target"):
+            proof.capture_compiler_evidence(self.directory, self.row, "net8.0", resolved, cache)
+        resolved["Properties"]["RuntimeIdentifier"] = ""
+        assets["targets"]["net8.0"][f"{identifier}/8.2.0"] = {"type": "package"}
+        self.assets_fixture(assets)
+        with self.assertRaisesRegex(ValueError, "ambiguous physical generator"):
+            proof.capture_compiler_evidence(self.directory, self.row, "net8.0", resolved, cache)
+        assets["targets"]["net8.0"] = {f"{identifier}/7.1.1": {"type": "project"}}
+        self.assets_fixture(assets)
+        with self.assertRaisesRegex(ValueError, "not a restored package"):
+            proof.capture_compiler_evidence(self.directory, self.row, "net8.0", resolved, cache)
+        assets["targets"]["net8.0"] = {f"{identifier}/9.9.9": {"type": "package"}}
+        self.assets_fixture(assets)
+        with self.assertRaisesRegex(ValueError, "not an actual versioned restored dependency"):
+            proof.capture_compiler_evidence(self.directory, self.row, "net8.0", resolved, cache)
+        del resolved["Properties"]["RuntimeIdentifier"]
+        with self.assertRaisesRegex(ValueError, "Missing resolved RuntimeIdentifier"):
+            proof.capture_compiler_evidence(self.directory, self.row, "net8.0", resolved, cache)
+
+    def test_staging_failure_keeps_package_bytes_without_acceptance_receipt(self):
+        root = self.directory / "checkout"
+        packages = root / "packages"
+        packages.mkdir(parents=True)
+        output = self.directory / "evidence"
+        produced = {self.row["nupkg"]: b"package", self.row["snupkg"]: b"symbols"}
+
+        def pack(*args, **kwargs):
+            for name, data in produced.items():
+                (packages / name).write_bytes(data)
+
+        with patch.object(proof, "__file__", str(root / "scripts/integration-program/prove.py")), \
+                patch("sys.argv", ["prove", "--version", VERSION, "--output", str(output)]), \
+                patch.object(proof, "clean_head", return_value=COMMIT), \
+                patch.object(proof, "inventory", return_value=self.manifest), \
+                patch.object(proof, "build_clientlibs", return_value={"assets": []}), \
+                patch.object(proof, "run", side_effect=pack), \
+                patch.object(proof, "build_symbol_verifier", return_value=self.directory / "helper.dll"), \
+                patch.object(proof, "stage_sdk_metadata", side_effect=ValueError("staging failed")), \
+                patch.object(proof, "verify_artifacts") as verify, \
+                self.assertRaisesRegex(ValueError, "staging failed"):
+            proof.main()
+        for name, data in produced.items():
+            self.assertEqual(data, (output / "artifacts" / name).read_bytes())
+        self.assertFalse((output / "receipt.json").exists())
+        verify.assert_not_called()
+
     def test_tracked_documents_are_checked_against_exact_blob(self):
         inspection = self.inspection("src/studio/example/Example.cs")
         with patch.object(proof.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, b"source")) as command:
