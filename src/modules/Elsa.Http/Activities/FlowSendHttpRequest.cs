@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
 using Elsa.Workflows;
+using Elsa.Workflows.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Models;
@@ -12,6 +13,7 @@ namespace Elsa.Http;
 /// Send an HTTP request.
 /// </summary>
 [Activity("Elsa", "HTTP", "Send an HTTP request.", DisplayName = "HTTP Request (flow)", Kind = ActivityKind.Task)]
+[FlowNode("Done", "Unmatched status code", "Failed to connect", "Timeout")]
 public class FlowSendHttpRequest : SendHttpRequestBase, IActivityPropertyDefaultValueProvider
 {
     /// <inheritdoc />
