@@ -102,6 +102,10 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   passed('authentication');
   await page.goto(input.studio_url + '/workflows/definitions');
   await expect(page.getByRole('button', { name: 'Create workflow', exact: true })).toBeVisible();
+  // ServerReload normalizes paging after both awaited definition-list reads.
+  // Opening a dialog before this navigation completes can close it mid-initialization.
+  await page.waitForURL(url => url.pathname.endsWith('/workflows/definitions') && url.searchParams.get('page') === '1' && url.searchParams.get('pageSize') === '10');
+  proof.initial_list_navigation_completed = true;
   passed('shell_or_embedding');
   const name = input.safe_ids.definition_name ?? 'package-browser-workflow';
   const sentinel = input.safe_ids.activity_value ?? 'package-browser-output';
