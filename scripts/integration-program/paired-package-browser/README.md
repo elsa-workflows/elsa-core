@@ -135,6 +135,19 @@ activity identities. Only bounded statuses, checks, count and a response-body
 hash enter receipts. Tokens, credentials and raw response bodies stay private.
 This observation does not grant `wasm_boot` or either other WASM host's assertions.
 
+Standalone `wasm_boot` currently recognizes only the observed SDK 10.0.300 /
+net10.0 embedded configuration format. It binds five platform bootstrap assets
+(the Blazor loader, configuration loader, native/runtime JavaScript and native
+WASM) to the owned static manifest and matching source copies. This platform
+source authority is distinct from sealed Elsa package provenance. Every original
+Elsa/fixture managed resource remains bound to its existing verified inventory;
+the managed count is derived, never assumed. Passing requires observed response
+bytes and content types, matching embedded configuration, and an executed native
+managed form-validation callback. Parsing a manifest or downloading assemblies
+alone cannot pass. Unknown net8/net9 formats remain pending implementation and
+fail closed; this bounded proof does not certify HostedWASM, CustomElements,
+ICU/globalization or all platform assemblies.
+
 On browser process timeout, the runner identifies and freezes the live launch
 root and its descendants, including descendants in separate sessions. Signals
 are guarded by process birth identity; TERM and KILL waits are bounded. Missing

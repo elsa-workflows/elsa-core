@@ -25,3 +25,11 @@ Shared builds belong to one verified version/framework/SDK/config/cache group;
 every project's package provenance must be checked again before any listener.
 Server assembly metadata is anonymous on the owned loopback listener; it does
 not prove browser authentication. Backend metadata uses its normal bearer auth.
+
+Candidate host requests may select `designer_mode="react-flow"`; the default is
+`"x6"`. Released requests reject ReactFlow. Both candidate modes use the same
+materialized source and verified build. Runtime configuration selects the public
+`DesignerOptions.UseReactFlow` option: server options use the owned environment,
+and native clients receive the matching public configuration value. Ambient
+DesignerOptions overrides are removed. Selecting a mode is host setup, not proof
+that its native editor callback or save journey passed.
