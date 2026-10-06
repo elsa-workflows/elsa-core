@@ -189,7 +189,7 @@ def verify_browser_resources(expected: list[dict], fetched: list[dict], *, requi
                 ".." not in path.split("/") and "%" not in path and "\\" not in path, "Unsafe browser resource path")
     for asset in expected:
         safe_path(asset["path"])
-        require(asset.get("owner") in ("package", "fixture") and
+        require(asset.get("owner") in ("package", "fixture", "platform") and
                 isinstance(asset.get("bytes"), int) and 0 < asset["bytes"] <= 32 * 1024 * 1024 and
                 isinstance(asset.get("sha256"), str) and re.fullmatch("[0-9a-f]{64}", asset["sha256"]) and
                 asset.get("content_type") in ("text/javascript", "application/javascript", "application/wasm", "text/css"), "Invalid materialized resource manifest")
@@ -203,7 +203,7 @@ def verify_browser_resources(expected: list[dict], fetched: list[dict], *, requi
         asset = materialized[path]
         require(response["status"] == 200 and response["sha256"] == asset["sha256"] and
                 response["bytes"] == asset["bytes"] and response["content_type"] == asset["content_type"], "Browser response differs from verified materialized resource")
-        require(asset["owner"] in ("package", "fixture"), "Unknown browser resource owner")
+        require(asset["owner"] in ("package", "fixture", "platform"), "Unknown browser resource owner")
         requested.add(path)
     require(not require_all or requested == set(materialized), "Missing browser-requested assets")
     return {"materialized": len(materialized), "requested": len(requested), "not_requested": sorted(set(materialized) - requested)}

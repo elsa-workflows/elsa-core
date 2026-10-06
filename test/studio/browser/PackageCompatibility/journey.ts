@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 const policy = JSON.parse(readFileSync(new URL('./coverage-policy.json', import.meta.url), 'utf8'));
 
 type Cell = { host: 'server' | 'wasm' | 'hosted-wasm' | 'custom-elements'; framework: string; version: string; route_prefix?: string };
-type Resource = { path: string; sha256: string; bytes: number; content_type: string; owner: 'package' | 'fixture' };
+type Resource = { path: string; sha256: string; bytes: number; content_type: string; owner: 'package' | 'fixture' | 'platform' };
 type PrivateInput = { request: Cell; studio_url: string; backend_url: string; username: string; password: string; safe_ids: Record<string, string>; resources: Resource[] };
 type Assertion = { name: string; passed: boolean; reason_category: string | null };
 const baseline: string[] = policy.baseline;
@@ -67,6 +67,10 @@ class Backend {
 async function fullShell(page: Page, input: PrivateInput, backend: Backend, passed: (name: string) => void, proof: Record<string, unknown>, circuitFrames: () => number): Promise<void> {
   await page.goto(input.studio_url + '/login');
   proof.last_completed_stage = 'login_navigation';
+  if (input.request.version !== '3.8.4') {
+    await expect(page.getByText('Elsa account', { exact: true })).toBeVisible();
+    proof.expected_auth_provider_observed = true;
+  }
   const username = page.getByLabel(input.request.version === '3.8.4' ? 'Username' : 'User name', { exact: true });
   await expect(username).toBeVisible();
   if (input.request.host === 'server') await expect.poll(circuitFrames).toBeGreaterThanOrEqual(2);
@@ -85,8 +89,13 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   proof.last_completed_stage = 'workflow_list';
   await page.getByRole('button', { name: 'Create workflow', exact: true }).click();
   let dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  proof.last_completed_stage = 'create_dialog_opened';
   await dialog.getByLabel('Name', { exact: true }).fill(name);
+  await dialog.getByLabel('Name', { exact: true }).blur();
+  proof.last_completed_stage = 'create_name_filled';
   await dialog.getByRole('button', { name: 'Ok', exact: true }).click();
+  proof.last_completed_stage = 'create_submitted';
   await expect(page).toHaveURL(/\/workflows\/definitions\/[^/]+\/edit/);
   proof.last_completed_stage = 'workflow_created';
   const definitionId = new URL(page.url()).pathname.split('/').at(-2)!;
@@ -221,6 +230,8 @@ async function main(): Promise<void> {
     proof.login_form_visible = await page.getByLabel(/^User ?name$/i).isVisible().catch(() => false);
     proof.server_circuit_observed = serverCircuit;
     proof.server_render_frames_observed = serverFrames >= 2;
+    proof.create_name_label_count = await page.getByRole('dialog').getByLabel('Name', { exact: true }).count();
+    proof.create_name_textbox_count = await page.getByRole('dialog').getByRole('textbox', { name: /^Name(?:\s|$)/ }).count();
     proof.elsa_identity_ui_visible = await page.getByText('Elsa account', { exact: true }).isVisible().catch(() => false);
   } finally {
     await Promise.all(pending);

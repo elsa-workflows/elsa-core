@@ -71,16 +71,25 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     for item in assertions:
         require(set(item) <= {"name", "passed", "reason_category"} and type(item.get("passed")) is bool and item.get("reason_category") in (None, "not_implemented"), "Unsafe browser assertion")
     proof = record.get("proof", {})
-    stages = {"backend_authenticated", "login_navigation", "login_form", "login_submitted", "workflow_list", "workflow_created", "output_declared", "activity_registry", "activity_inserted", "property_saved", "edit_reloaded", "workflow_run"}
+    stages = {"backend_authenticated", "login_navigation", "login_form", "login_submitted", "workflow_list", "create_dialog_opened", "create_name_filled", "create_submitted", "workflow_created", "output_declared", "activity_registry", "activity_inserted", "property_saved", "edit_reloaded", "workflow_run"}
     hashes = {"definition_id_sha256", "activity_id_sha256", "value_sha256", "synthetic_document_sha256", "instance_id_sha256"}
-    flags = {"login_failure_visible", "login_form_visible", "server_circuit_observed", "server_render_frames_observed", "elsa_identity_ui_visible"}
-    require(set(proof) <= hashes | flags | {"last_completed_stage"}, "Unsafe browser proof field")
+    flags = {"login_failure_visible", "login_form_visible", "server_circuit_observed", "server_render_frames_observed", "elsa_identity_ui_visible", "expected_auth_provider_observed"}
+    counts = {"create_name_label_count", "create_name_textbox_count"}
+    require(set(proof) <= hashes | flags | counts | {"last_completed_stage"}, "Unsafe browser proof field")
     for name, value in proof.items():
-        require(type(value) is bool if name in flags else value in stages if name == "last_completed_stage" else isinstance(value, str) and re.fullmatch("[0-9a-f]{64}", value), "Unsafe browser proof value")
+        if name in counts:
+            valid = type(value) is int and 0 <= value <= 100
+        elif name in flags:
+            valid = type(value) is bool
+        elif name == "last_completed_stage":
+            valid = value in stages
+        else:
+            valid = isinstance(value, str) and re.fullmatch("[0-9a-f]{64}", value)
+        require(valid, "Unsafe browser proof value")
     for resource in record.get("resources", []):
         require(set(resource) == {"path", "status", "content_type", "sha256", "bytes", "owner", "requested"}, "Unsafe resource receipt fields")
         require(isinstance(resource["path"], str) and re.fullmatch(r"/[A-Za-z0-9_./-]+", resource["path"]) and ".." not in resource["path"].split("/"), "Unsafe resource receipt path")
-        require(resource["owner"] in ("package", "fixture") and resource["requested"] is True and type(resource["status"]) is int and 100 <= resource["status"] <= 599 and type(resource["bytes"]) is int and 0 <= resource["bytes"] <= 32 * 1024 * 1024, "Unsafe resource receipt metadata")
+        require(resource["owner"] in ("package", "fixture", "platform") and resource["requested"] is True and type(resource["status"]) is int and 100 <= resource["status"] <= 599 and type(resource["bytes"]) is int and 0 <= resource["bytes"] <= 32 * 1024 * 1024, "Unsafe resource receipt metadata")
         require(isinstance(resource["sha256"], str) and re.fullmatch("[0-9a-f]{64}", resource["sha256"]) and resource["content_type"] in ("text/javascript", "application/javascript", "application/wasm", "text/css"), "Unsafe resource receipt content metadata")
     return record
 
