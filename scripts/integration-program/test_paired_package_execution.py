@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import paired_package_execution as execution
 from test_paired_package_released_documents import fixture_identity, write_released_fixture
-from test_paired_package_browser_matrix import reopen_row
+from test_paired_package_browser_matrix import bpmn_proof, clipboard_proof, reopen_row
 
 
 class ReleasedInputsContracts(unittest.TestCase):
@@ -102,7 +102,9 @@ class ExecutionContracts(unittest.TestCase):
         self.events = []
         self.record = {"version": self.key[0], "framework": self.key[1], "host": self.key[2],
                        "result": "passed", "resources": [],
-                       "proof": {"baseline_reopens": [reopen_row(version) for version in execution.documents.TOOL_VERSIONS]},
+                       "proof": {"baseline_reopens": [reopen_row(version) for version in execution.documents.TOOL_VERSIONS],
+                                 "instance_id_sha256": "a" * 64, "value_sha256": "b" * 64,
+                                 "bpmn_roundtrip": bpmn_proof(), "clipboard": clipboard_proof("a" * 64, "b" * 64)},
                        "browser_version": "149.0.7827.55",
                        "assertions": [{"name": name, "passed": True, "reason_category": None}
                                       for name in execution.browser.required_assertions(dict(zip(("version", "framework", "host"), self.key)))]}
@@ -508,8 +510,11 @@ class ExecutionContracts(unittest.TestCase):
         def execute(key, **_kwargs):
             record = copy.deepcopy(self.record)
             record.update(zip(("version", "framework", "host"), key))
-            record["proof"] = ({"baseline_reopens": [reopen_row(version, key[1], key[2])
-                                for version in execution.documents.TOOL_VERSIONS]} if key[0] == "3.10.0" else {})
+            if key[0] == "3.10.0":
+                record["proof"]["baseline_reopens"] = [reopen_row(version, key[1], key[2])
+                    for version in execution.documents.TOOL_VERSIONS]
+            else:
+                record["proof"] = {}
             record["assertions"] = [{"name": name, "passed": True, "reason_category": None}
                                      for name in execution.browser.required_assertions(record)]
             return record

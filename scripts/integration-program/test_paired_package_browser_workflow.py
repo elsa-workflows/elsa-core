@@ -43,6 +43,7 @@ class BrowserWorkflowBoundaryTests(unittest.TestCase):
         self.assertIn("persist-credentials: false", proof)
         # Python transport contracts execute the locked Node parser contracts.
         self.assertLess(proof.index("npm ci --ignore-scripts"), proof.index("python3 -m unittest"))
+        self.assertEqual(2, proof.count("test_paired_package_converter_selection"))
         self.assertIn("paired-package-browser-proof/retained-evidence/matrix.json", proof)
         self.assertIn("check_matrix(ledger)", proof)
         self.assertIn('ledger.get("development_only") is not False', proof)
