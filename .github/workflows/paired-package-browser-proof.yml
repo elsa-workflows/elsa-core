@@ -106,8 +106,8 @@ jobs:
       - name: Verify package and browser tooling contracts
         working-directory: scripts/integration-program
         run: |
-          python3 -m unittest test_materialize_paired_package_hosts test_paired_package_provenance test_paired_package_baseline_provenance test_paired_package_browser_matrix test_verify_browser_package_resources test_paired_package_browser_workflow test_verify_paired_browser_retention
-          python3 -O -m unittest test_materialize_paired_package_hosts test_paired_package_provenance test_paired_package_baseline_provenance test_paired_package_browser_matrix test_verify_browser_package_resources test_paired_package_browser_workflow test_verify_paired_browser_retention
+          python3 -m unittest test_materialize_paired_package_hosts test_paired_package_provenance test_paired_package_baseline_provenance test_paired_package_baseline_resources test_paired_package_execution test_paired_package_browser_matrix test_verify_browser_package_resources test_paired_package_browser_workflow test_verify_paired_browser_retention
+          python3 -O -m unittest test_materialize_paired_package_hosts test_paired_package_provenance test_paired_package_baseline_provenance test_paired_package_baseline_resources test_paired_package_execution test_paired_package_browser_matrix test_verify_browser_package_resources test_paired_package_browser_workflow test_verify_paired_browser_retention
       - name: Install the locked browser fixture
         working-directory: test/studio/browser/PackageCompatibility
         run: |
