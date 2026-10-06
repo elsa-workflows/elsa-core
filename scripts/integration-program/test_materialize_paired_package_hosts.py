@@ -97,6 +97,76 @@ class HostMaterializationTests(unittest.TestCase):
             with self.subTest(change=change), self.assertRaises(RuntimeError):
                 hosts.CellRequest(**values)
 
+    def test_designer_mode_defaults_to_x6_and_opt_in_is_candidate_only(self):
+        for version in hosts.VERSIONS:
+            self.assertEqual("x6", hosts.CellRequest("server", "net10.0", version).designer_mode)
+        # Appending the mode keeps every earlier positional argument's meaning.
+        request = hosts.CellRequest("hosted-wasm", "net10.0", "3.10.0", ("workflow-contexts",), "deny-secrets", "fixture", "react-flow")
+        self.assertEqual(("react-flow", "fixture", "deny-secrets", ("workflow-contexts",)),
+                         (request.designer_mode, request.route_prefix, request.permission_profile, request.backend_features))
+        for version, mode in (("3.8.4", "react-flow"), ("3.9.0", "react-flow"),
+                              ("3.10.0", "ReactFlow"), ("3.10.0", True), ("3.10.0", "")):
+            with self.subTest(version=version, mode=mode), self.assertRaisesRegex(RuntimeError, "designer mode"):
+                hosts.CellRequest("server", "net10.0", version, designer_mode=mode)
+
+    def test_candidate_modes_share_exact_build_inputs_and_only_candidate_clients_bind_options(self):
+        binding = 'Configure<Elsa.Studio.Workflows.Designer.Options.DesignerOptions>(configuration.GetSection("DesignerOptions"));'
+        for host in hosts.HOST_NAMES:
+            with self.subTest(host=host):
+                x6 = self.materialize(host)
+                react = self.materialize(host, designer_mode="react-flow")
+                self.assertEqual(x6.project_paths, react.project_paths)
+                self.assertEqual(x6.input_hashes, react.input_hashes)
+                client = "wasm" if host == "hosted-wasm" else host
+                code = (react.project_paths[client].parent / "Program.cs").read_text()
+                self.assertEqual(client in ("wasm", "custom-elements"), binding in code)
+                if client == "server":
+                    self.assertIn('Configure<DesignerOptions>(configuration.GetSection("DesignerOptions"));', code)
+                for version in ("3.8.4", "3.9.0"):
+                    released = self.materialize(host, version)
+                    code = (released.project_paths[client].parent / "Program.cs").read_text()
+                    self.assertNotIn(binding, code)
+
+    def test_owned_designer_configuration_is_exact_public_and_restored_for_every_host(self):
+        ambient = {"DesignerOptions__UseReactFlow": "ambient", "designeroptions:UseReactFlow": "ambient",
+                   "DESIGNEROPTIONS__UnreviewedOption": "ambient"}
+        cases = [("3.10.0", mode) for mode in hosts.DESIGNER_MODES] + [(version, "x6") for version in ("3.8.4", "3.9.0")]
+        for host in hosts.HOST_NAMES:
+            for version, mode in cases:
+                with self.subTest(host=host, version=version, mode=mode), patch.dict(os.environ, ambient):
+                    layout = self.materialize(host, version, designer_mode=mode,
+                                              route_prefix="fixture" if host == "hosted-wasm" else "")
+                    self.prepare_restored_assets(layout)
+                    launches, public = [], []
+                    client = "wasm" if host == "hosted-wasm" else host
+                    config = layout.project_paths[client].parent / "wwwroot/appsettings.json" if client != "server" else None
+
+                    def launch(command, **kwargs):
+                        launches.append(kwargs["env"].copy())
+                        if config is not None:
+                            public.append(json.loads(config.read_text()))
+                        return Mock(pid=12345, poll=Mock(return_value=0), wait=Mock(return_value=0))
+
+                    with patch.object(hosts.subprocess, "Popen", side_effect=launch), patch.object(hosts, "_wait_ready"), \
+                            patch.object(hosts, "_free_port", side_effect=(10001, 10002)):
+                        with hosts.start_pair(layout, validate_project=lambda project: {
+                            "project_assets_sha256": hosts.sha256(project.parent / "obj/project.assets.json")}) as handle:
+                            self.assertEqual(mode, handle.request.designer_mode)
+                            self.assertNotIn("DesignerOptions__UseReactFlow", launches[0])
+                            self.assertEqual(str(mode == "react-flow").lower() if version == "3.10.0" else None,
+                                             launches[1].get("DesignerOptions__UseReactFlow"))
+                            for environment in launches:
+                                self.assertNotIn("designeroptions:UseReactFlow", environment)
+                                self.assertNotIn("DESIGNEROPTIONS__UnreviewedOption", environment)
+                            for settings in public:
+                                self.assertEqual({"UseReactFlow": mode == "react-flow"} if version == "3.10.0" else None,
+                                                 settings.get("DesignerOptions"))
+                                self.assertEqual(handle.backend_url, settings["Backend"]["Url"])
+                                self.assertNotIn(handle.password, json.dumps(settings))
+                    if config is not None:
+                        self.assertEqual(b'{}\n', config.read_bytes())
+                        self.assertEqual(layout.input_hashes[str(config.relative_to(layout.group_root))], hosts.sha256(config))
+
     def test_targeted_denials_retain_versioned_editor_and_other_feature_grants(self):
         for version in hosts.VERSIONS:
             legacy = version == "3.8.4"

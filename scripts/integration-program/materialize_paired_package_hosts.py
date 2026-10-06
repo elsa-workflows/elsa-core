@@ -35,6 +35,7 @@ PLATFORM_VERSIONS = {"net8.0": "8.0.24", "net9.0": "9.0.13", "net10.0": "10.0.3"
 BACKEND_PACKAGES = ("Elsa", "Elsa.Identity", "Elsa.Workflows.Api", "Elsa.Expressions.JavaScript", "Elsa.Persistence.EFCore.Sqlite", "Elsa.Bpmn.Interchange",
                     "Elsa.WorkflowContexts", "Elsa.Secrets", "Elsa.Secrets.Persistence.EFCore.Sqlite")
 PERMISSION_PROFILES = ("full", "denied", "deny-secrets", "deny-workflow-contexts")
+DESIGNER_MODES = ("x6", "react-flow")
 DENIED_PERMISSIONS = ("read:workflow-definitions", "read:workflow-instances", "read:activity-descriptors",
                       "read:workflow-context-provider-descriptors")
 LEGACY_EDITOR_PERMISSIONS = (
@@ -65,12 +66,15 @@ def sha256(path: Path) -> str:
 
 @dataclass(frozen=True)
 class CellRequest:
+    """A matrix cell with runtime variants; candidate designer mode adds no matrix identity."""
+
     host: str
     framework: str
     version: str
     backend_features: tuple[str, ...] = ("workflow-contexts", "secrets")
     permission_profile: str = "full"
     route_prefix: str = ""
+    designer_mode: str = "x6"
 
     def __post_init__(self) -> None:
         require(self.host in HOST_NAMES and self.framework in packages.FRAMEWORKS and self.version in VERSIONS,
@@ -78,6 +82,9 @@ class CellRequest:
         require(type(self.backend_features) is tuple and len(set(self.backend_features)) == len(self.backend_features)
                 and set(self.backend_features) <= {"workflow-contexts", "secrets"}, "Unknown or duplicate backend feature")
         require(self.permission_profile in PERMISSION_PROFILES, "Unknown permission profile")
+        require(self.designer_mode in DESIGNER_MODES and
+                (self.designer_mode == "x6" or self.version == "3.10.0"),
+                "Unknown or noncandidate designer mode")
         require(self.route_prefix == "" or (self.host == "hosted-wasm" and
                 re.fullmatch(r"[a-z][a-z0-9-]{0,31}", self.route_prefix) is not None), "Unsafe hosted route prefix")
 
@@ -211,7 +218,13 @@ def materialize(request: CellRequest, group_root: Path, *, nuget_config: str,
                 code = expected["Program.cs"].decode("utf-8-sig")
                 code = "using Elsa.Studio.WorkflowContexts.Extensions;\n" + code
                 receiver = "services" if host == "wasm" else "builder.Services"
-                code = code.replace("// Build the application.", f"{receiver}.AddWorkflowContextsModule();\n\n// Build the application.")
+                registrations = [f"{receiver}.AddWorkflowContextsModule();"]
+                if request.version == "3.10.0" and host in ("wasm", "custom-elements"):
+                    # The accepted candidate exposes this public option; released host glue stays unchanged.
+                    # Both modes use the same built fixture and select only through owned runtime configuration.
+                    registrations.append(f'{receiver}.Configure<Elsa.Studio.Workflows.Designer.Options.DesignerOptions>(configuration.GetSection("DesignerOptions"));')
+                require(code.count("// Build the application.") == 1, "Missing or ambiguous host registration boundary")
+                code = code.replace("// Build the application.", "\n".join(registrations) + "\n\n// Build the application.")
                 if host == "server":
                     code = code.replace('app.MapControllers();', 'app.MapControllers();\napp.MapGet("/_fixture/assemblies", () => RuntimeEvidence.LoadedAssemblies());')
                 expected["Program.cs"] = code.encode()
@@ -249,7 +262,7 @@ def isolated_environment(layout: CellLayout) -> dict[str, str]:
     require(not any(os.environ.get(name) for name in ("GH_TOKEN", "GITHUB_TOKEN", "ACTIONS_READ_TOKEN")), "Token entered host execution")
     env = os.environ.copy()
     for key in tuple(env):
-        if key.upper().startswith(("NUGET_", "MSBUILD", "DOTNET_")) or key.casefold().startswith(("fixture__", "fixture:")):
+        if key.upper().startswith(("NUGET_", "MSBUILD", "DOTNET_")) or key.casefold().startswith(("fixture__", "fixture:", "designeroptions__", "designeroptions:")):
             del env[key]
     env.update(NUGET_PACKAGES=str(layout.packages_root), DOTNET_CLI_HOME=str(layout.group_root / "dotnet-home"),
                NUGET_HTTP_CACHE_PATH=str(layout.group_root / "http-cache"), NUGET_PLUGINS_CACHE_PATH=str(layout.group_root / "plugins-cache"),
@@ -369,14 +382,19 @@ def start_pair(layout: CellLayout, *, validate_project: Callable[[Path], dict],
     # This key and the exact grant array enter only the owned backend process.
     backend_env = env | {"Fixture__SecretsEncryptionKey": base64.b64encode(secrets.token_bytes(32)).decode("ascii"),
                          "Fixture__PermissionGrants": json.dumps(permission_grants(layout.request))}
+    if layout.request.version == "3.10.0":
+        env["DesignerOptions__UseReactFlow"] = str(layout.request.designer_mode == "react-flow").lower()
     client = "wasm" if layout.request.host == "hosted-wasm" else layout.request.host
     public_config = None
     if client in ("wasm", "custom-elements"):
         public_config = layout.project_paths[client].parent / "wwwroot" / "appsettings.json"
         require(not public_config.is_symlink(), "Symlinked client runtime config")
-        public_config.write_text(json.dumps({"Backend": {"Url": backend_origin + "/elsa/api"},
-                                           "Authentication": {"Provider": "ElsaIdentity"},
-                                           "Localization": {"DefaultCulture": "en-US", "SupportedCultures": ["en-US"]}}) + "\n")
+        settings = {"Backend": {"Url": backend_origin + "/elsa/api"},
+                    "Authentication": {"Provider": "ElsaIdentity"},
+                    "Localization": {"DefaultCulture": "en-US", "SupportedCultures": ["en-US"]}}
+        if layout.request.version == "3.10.0":
+            settings["DesignerOptions"] = {"UseReactFlow": layout.request.designer_mode == "react-flow"}
+        public_config.write_text(json.dumps(settings) + "\n")
     processes, logs, lifetime = [], [], None
     try:
         for host, origin, ready in (("backend", backend_origin, "/_fixture/ready"),
