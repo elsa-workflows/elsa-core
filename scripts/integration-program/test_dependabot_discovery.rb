@@ -60,7 +60,7 @@ class DependabotDiscoveryTests < Minitest::Test
         "Selectors should reach every project directory without scanning empty source directories"
     end
 
-    solution = File.read(File.join(REPOSITORY_ROOT, "Elsa.sln")).scan(/"([^"\n]+\.csproj)"/).flatten.map { |path| path.tr("\\", "/") }
+    solution = File.read(File.join(REPOSITORY_ROOT, "Elsa.sln"), encoding: "UTF-8").scan(/"([^"\n]+\.csproj)"/).flatten.map { |path| path.tr("\\", "/") }
     assert_equal [LEGACY_CORE_PROJECT], (projects - solution).sort,
       "Reconcile new non-solution projects explicitly; do not silently omit them from discovery"
   end

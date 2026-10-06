@@ -8,10 +8,27 @@ The active configuration and ledger cover exactly the relocated policy paths; th
 
 ## Post-landing verification (2026-09-29)
 
-After #8409 landed on `main` (`8b34ab1e`), Dependabot ran every entry. The two product jobs succeeded, and both use the `elsa-feedz-preview` registry and its `FEEDZ_API_KEY` credential:
+After #8409 landed on `main` (`8b34ab1e`), Dependabot ran every entry. The two product jobs returned green Actions status, with the `elsa-feedz-preview` registry and its `FEEDZ_API_KEY` credential configured:
 - `nuget in /src/extensions`: [run 36503465765](https://github.com/elsa-workflows/elsa-core/actions/runs/36503465765)
 - `nuget in /src/studio`: [run 36503465892](https://github.com/elsa-workflows/elsa-core/actions/runs/36503465892)
 
-That confirms the secret is available to Dependabot and that it accepts the product entries. Both ledger rows are therefore represented by the root `.github/dependabot.yml`.
+Both ledger rows are represented by the root `.github/dependabot.yml`. The green job statuses with empty product discovery do not establish that the secret was exercised or that credential/feed resolution and product central-version evaluation succeeded. Those acceptance gates remain open under Task #8636.
 
 The same run exposed a separate, older gap in the Core root entry. `nuget in /.` ([run 36503466268](https://github.com/elsa-workflows/elsa-core/actions/runs/36503466268)) failed with `private_source_authentication_failure`: the root `NuGet.Config` lists the Elsa preview and Loom Feedz sources, but the root entry declared no registry, so Dependabot's proxy refused both hosts ("egress not allowlisted"). The root entry now declares `elsa-feedz-preview` and a token-less `valence-loom-feedz` registry. The Loom feed is public.
+
+## Recursive discovery correction (2026-10-06)
+
+[PR #8640](https://github.com/elsa-workflows/elsa-core/pull/8640) corrects the
+product selectors to `/src/extensions/**/Elsa.*` and `/src/studio/**/Elsa.*`
+after hosted runs missed nested project manifests. The two ledger rows pin the
+current root configuration blob and cite this PR as their active update. Their
+original disposition PR, merge commit, source blobs, modes and archived receipt
+pins remain historical evidence. The pinned E96 receipt audit still compares
+the same 163 source assets and validates the current ledger separately.
+
+The earlier green Actions statuses remain historical run evidence. Empty
+product discovery establishes no credential/feed or central-version acceptance.
+The [recursive discovery correction](dependabot-recursive-discovery.md)
+records tracked-project coverage and the remaining hosted project evaluation,
+product central-version and feed-resolution gates under Task #8636. Those gates
+remain open.
