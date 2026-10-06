@@ -217,6 +217,7 @@ def verify_external_cache_source(
 
 def _validated_manifest(
     manifest: dict[str, Any],
+    required_packages: tuple[str, ...] = REQUIRED_PACKAGES,
 ) -> tuple[str, str, dict[str, dict[str, Any]], dict[str, str], set[str]]:
     version = manifest.get("version")
     source_commit = manifest.get("source_commit")
@@ -252,7 +253,7 @@ def _validated_manifest(
             raise ValueError(f"Duplicate manifest package id {package_id}")
         package_by_id[folded_id] = package
 
-    missing = [package_id for package_id in REQUIRED_PACKAGES if package_id.casefold() not in package_by_id]
+    missing = [package_id for package_id in required_packages if package_id.casefold() not in package_by_id]
     if missing:
         raise ValueError(f"Manifest is missing required representative packages: {missing}")
 
@@ -264,7 +265,7 @@ def _validated_manifest(
         if not isinstance(item, dict) or not isinstance(item.get("id"), str) or not item["id"].strip():
             raise ValueError("Every manifest exclusion requires an id")
         excluded_ids.add(item["id"].casefold())
-    if excluded_ids & {package_id.casefold() for package_id in REQUIRED_PACKAGES}:
+    if excluded_ids & {package_id.casefold() for package_id in required_packages}:
         raise ValueError("A required representative package is declared excluded")
 
     external_exceptions = manifest.get("external_package_exceptions")
@@ -280,7 +281,7 @@ def _validated_manifest(
     if excluded_ids & set(package_by_id):
         raise ValueError("A manifest package cannot also be declared excluded")
 
-    for package_id in REQUIRED_PACKAGES:
+    for package_id in required_packages:
         package = package_by_id[package_id.casefold()]
         if not set(FRAMEWORKS).issubset(package["frameworks"]):
             raise ValueError(f"Required representative package {package_id} does not support all {FRAMEWORKS}")
