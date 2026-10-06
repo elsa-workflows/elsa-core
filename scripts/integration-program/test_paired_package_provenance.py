@@ -1,4 +1,6 @@
 import json
+import base64
+import hashlib
 from pathlib import Path
 import tempfile
 import unittest
@@ -94,6 +96,24 @@ class PackageGraphTests(unittest.TestCase):
         real.rename(path)
         with self.assertRaisesRegex(RuntimeError, "framework"):
             provenance.read_package_assets(self.project, "net9.0")
+
+    def test_public_archive_binds_actual_bytes_sidecar_and_origin(self):
+        directory = self.root / "example" / "1.0.0"
+        directory.mkdir(parents=True)
+        archive = directory / "example.1.0.0.nupkg"
+        archive.write_bytes(b"synthetic archive")
+        sidecar = directory / "example.1.0.0.nupkg.sha512"
+        sidecar.write_text(base64.b64encode(hashlib.sha512(archive.read_bytes()).digest()).decode())
+        metadata = directory / ".nupkg.metadata"
+        metadata.write_text(json.dumps({"source": provenance.packages.NUGET_ORG}))
+        receipt = provenance.public_archive_evidence("Example", "1.0.0", self.root)
+        self.assertEqual(provenance.sha256(archive), receipt["sha256"])
+        archive.write_bytes(b"changed bytes")
+        with self.assertRaisesRegex(RuntimeError, "sidecar"):
+            provenance.public_archive_evidence("Example", "1.0.0", self.root)
+        metadata.write_text(json.dumps({"source": "https://unreviewed.example/feed"}))
+        with self.assertRaisesRegex(RuntimeError, "nuget.org"):
+            provenance.public_archive_evidence("Example", "1.0.0", self.root)
 
 
 if __name__ == "__main__":
