@@ -57,7 +57,9 @@ class BaselinePackageProvenanceTests(unittest.TestCase):
         return path
 
     def write_archive(self, package_id: str, version: str, repository: dict | None,
-                      runtime_files: dict[str, bytes] | None = None) -> bytes:
+                      runtime_files: dict[str, bytes] | None = None, *,
+                      metadata_content_hash: str | None = None,
+                      signature: bytes | None = None) -> bytes:
         cache_entry = self.cache / package_id.lower() / version
         cache_entry.mkdir(parents=True, exist_ok=True)
         repository_xml = ""
@@ -75,11 +77,14 @@ class BaselinePackageProvenanceTests(unittest.TestCase):
             package.writestr(f"{package_id}.nuspec", nuspec)
             for name, content in (runtime_files or {}).items():
                 package.writestr(name, content)
+            if signature is not None:
+                package.writestr(".signature.p7s", signature)
         content = archive_path.read_bytes()
         digest = base64.b64encode(hashlib.sha512(content).digest()).decode("ascii")
+        content_hash = metadata_content_hash or digest
         archive_path.with_suffix(archive_path.suffix + ".sha512").write_text(digest, encoding="utf-8")
         (cache_entry / ".nupkg.metadata").write_text(
-            json.dumps({"version": 2, "contentHash": digest, "source": baseline.NUGET_ORG}),
+            json.dumps({"version": 2, "contentHash": content_hash, "source": baseline.NUGET_ORG}),
             encoding="utf-8",
         )
         return content
@@ -95,9 +100,21 @@ class BaselinePackageProvenanceTests(unittest.TestCase):
         )
         assets_path = project_root / "obj" / "project.assets.json"
         assets_path.parent.mkdir(parents=True, exist_ok=True)
+        resolved_libraries = copy.deepcopy(libraries or {})
+        for key, library in target.items():
+            if library.get("type") != "package":
+                continue
+            package_id, separator, version = key.partition("/")
+            if not separator:
+                continue
+            metadata_path = self.cache / package_id.lower() / version / ".nupkg.metadata"
+            if metadata_path.is_file():
+                resolved_libraries.setdefault(key, {"type": "package"}).setdefault(
+                    "sha512", json.loads(metadata_path.read_text(encoding="utf-8")).get("contentHash")
+                )
         assets = {
             "targets": {"net8.0": target},
-            "libraries": libraries or {key: {"type": "package"} for key in target},
+            "libraries": resolved_libraries or {key: {"type": "package"} for key in target},
             "project": {
                 "restore": {
                     "sources": {baseline.NUGET_ORG: {}},
@@ -284,7 +301,7 @@ class BaselinePackageProvenanceTests(unittest.TestCase):
 
     def test_tracked_policy_keeps_verified_sources_and_missing_tuples_separate(self):
         tracked = baseline._read_policy(baseline.POLICY_PATH)
-        self.assertEqual(145, len(tracked["packages"]))
+        self.assertEqual(150, len(tracked["packages"]))
         self.assertEqual([], tracked["missing_provenance"])
         self.assertEqual(
             {"elsa-core", "elsa-studio", "elsa-extensions"},
@@ -304,6 +321,60 @@ class BaselinePackageProvenanceTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "SHA-512 sidecar"):
             self.verify()
 
+    def test_signed_package_uses_raw_archive_sidecar_and_unsigned_restore_content_hash(self):
+        unsigned_content_hash = base64.b64encode(hashlib.sha512(b"NuGet unsigned package content").digest()).decode("ascii")
+        self.elsa_bytes = self.write_archive(
+            "Elsa", "3.8.4", self.elsa_nuspec_repository,
+            metadata_content_hash=unsigned_content_hash, signature=b"fixture signature bytes",
+        )
+        raw_archive_sha512 = base64.b64encode(hashlib.sha512(self.elsa_bytes).digest()).decode("ascii")
+        self.record["archive_sha256"] = hashlib.sha256(self.elsa_bytes).hexdigest()
+        self.write_restore({
+            "Elsa/3.8.4": {"type": "package"},
+            "Newtonsoft.Json/13.0.3": {"type": "package"},
+        })
+
+        receipt = self.verify()
+        elsa = next(package for package in receipt["packages"] if package["id"] == "Elsa")
+        self.assertNotEqual(raw_archive_sha512, unsigned_content_hash)
+        self.assertEqual(hashlib.sha512(self.elsa_bytes).hexdigest(), elsa["archive_sha512"])
+        self.assertEqual(unsigned_content_hash, elsa["nuget_content_hash"])
+        self.assertEqual(unsigned_content_hash, elsa["restore_library_sha512"])
+
+    def test_rejects_malformed_or_restore_mismatched_unsigned_content_hash(self):
+        metadata = self.cache / "elsa" / "3.8.4" / ".nupkg.metadata"
+        value = json.loads(metadata.read_text(encoding="utf-8"))
+        value["contentHash"] = "not-base64"
+        metadata.write_text(json.dumps(value), encoding="utf-8")
+        with self.assertRaisesRegex(RuntimeError, "canonical SHA-512 base64"):
+            self.verify()
+
+        self.write_archive("Elsa", "3.8.4", self.elsa_nuspec_repository)
+        self.record["archive_sha256"] = hashlib.sha256(
+            (self.cache / "elsa" / "3.8.4" / "elsa.3.8.4.nupkg").read_bytes()
+        ).hexdigest()
+        assets_path = self.write_restore({
+            "Elsa/3.8.4": {"type": "package"},
+            "Newtonsoft.Json/13.0.3": {"type": "package"},
+        })
+        assets = json.loads(assets_path.read_text(encoding="utf-8"))
+        assets["libraries"]["Elsa/3.8.4"]["sha512"] = base64.b64encode(b"x" * 64).decode("ascii")
+        assets_path.write_text(json.dumps(assets), encoding="utf-8")
+        with self.assertRaisesRegex(RuntimeError, "differs from the restored library SHA-512"):
+            self.verify()
+
+    def test_requires_a_restore_library_sha512_for_each_cached_package(self):
+        assets_path = self.write_restore({
+            "Elsa/3.8.4": {"type": "package"},
+            "Newtonsoft.Json/13.0.3": {"type": "package"},
+        })
+        assets = json.loads(assets_path.read_text(encoding="utf-8"))
+        del assets["libraries"]["Elsa/3.8.4"]["sha512"]
+        assets_path.write_text(json.dumps(assets), encoding="utf-8")
+
+        with self.assertRaisesRegex(RuntimeError, "restore library is missing its SHA-512"):
+            self.verify()
+
     def test_rejects_package_cache_that_was_not_actually_restored_from_nuget_org(self):
         metadata = self.cache / "elsa" / "3.8.4" / ".nupkg.metadata"
         value = json.loads(metadata.read_text(encoding="utf-8"))
@@ -316,6 +387,10 @@ class BaselinePackageProvenanceTests(unittest.TestCase):
         bad_repository = dict(self.elsa_nuspec_repository, commit="0" * 40)
         self.elsa_bytes = self.write_archive("Elsa", "3.8.4", bad_repository)
         self.record["archive_sha256"] = hashlib.sha256(self.elsa_bytes).hexdigest()
+        self.write_restore({
+            "Elsa/3.8.4": {"type": "package"},
+            "Newtonsoft.Json/13.0.3": {"type": "package"},
+        })
         with self.assertRaisesRegex(RuntimeError, "source ownership"):
             self.verify()
 

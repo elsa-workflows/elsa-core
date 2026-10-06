@@ -1,6 +1,8 @@
 """Validate the exact NuGet provenance of a released Elsa package baseline."""
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
@@ -227,7 +229,30 @@ def _read_package_nuspec(archive: Path, package_id: str, version: str) -> dict[s
     return actual_repository
 
 
-def _cache_package(cache: Path, package_id: str, version: str) -> tuple[Path, str, str]:
+def _decode_sha512(value: Any, label: str, package_id: str, version: str) -> bytes:
+    if not isinstance(value, str):
+        raise RuntimeError(f"{label} is not a SHA-512 base64 string: {package_id}/{version}")
+    try:
+        decoded = base64.b64decode(value, validate=True)
+    except (binascii.Error, ValueError) as error:
+        raise RuntimeError(f"{label} is not canonical SHA-512 base64: {package_id}/{version}") from error
+    if len(decoded) != hashlib.sha512().digest_size or base64.b64encode(decoded).decode("ascii") != value:
+        raise RuntimeError(f"{label} is not canonical SHA-512 base64: {package_id}/{version}")
+    return decoded
+
+
+def _cache_package(
+    cache: Path,
+    package_id: str,
+    version: str,
+    *,
+    expected_content_hash: str | None = None,
+) -> tuple[Path, str, str]:
+    """Verify archive bytes separately from NuGet's signature-excluded content hash.
+
+    The sidecar hashes the complete .nupkg. NuGet metadata and restore assets carry
+    the package content hash, which can differ for signed archives.
+    """
     cache_entry = cache / package_id.lower() / version
     archive_path = _regular_cache_file(
         cache_entry / f"{package_id.lower()}.{version}.nupkg", cache, "cached package archive"
@@ -240,11 +265,34 @@ def _cache_package(cache: Path, package_id: str, version: str) -> tuple[Path, st
     expected_sidecar = package_consumer.base64_sha512(content)
     if sidecar_path.read_text(encoding="utf-8").strip() != expected_sidecar:
         raise RuntimeError(f"NuGet SHA-512 sidecar does not match the cached archive: {package_id}/{version}")
-    package_consumer.verify_external_cache_source(package_id, version, cache)
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-    if not isinstance(metadata, dict) or metadata.get("contentHash") != expected_sidecar:
-        raise RuntimeError(f"Cached package content hash is not bound to its NuGet SHA-512 sidecar: {package_id}/{version}")
+    if not isinstance(metadata, dict):
+        raise RuntimeError(f"NuGet cache metadata is malformed: {package_id}/{version}")
+    package_consumer.verify_external_cache_source(package_id, version, cache)
+    metadata_content_hash = metadata.get("contentHash")
+    metadata_content_digest = _decode_sha512(metadata_content_hash, "NuGet unsigned contentHash", package_id, version)
+    if expected_content_hash is not None:
+        restored_content_digest = _decode_sha512(expected_content_hash, "Restore library SHA-512", package_id, version)
+        if metadata_content_digest != restored_content_digest:
+            raise RuntimeError(f"NuGet contentHash differs from the restored library SHA-512: {package_id}/{version}")
     return archive_path, sha256, sha512
+
+
+def _restore_library_sha512(package_assets: dict[str, Any], package_id: str, version: str) -> str:
+    libraries = package_assets.get("libraries")
+    if not isinstance(libraries, dict):
+        raise RuntimeError("Baseline restore is missing its package library ledger")
+    identity = f"{package_id}/{version}"
+    matches = [
+        record for key, record in libraries.items()
+        if isinstance(key, str) and key.casefold() == identity.casefold()
+    ]
+    if len(matches) != 1 or not isinstance(matches[0], dict) or matches[0].get("type") != "package":
+        raise RuntimeError(f"Baseline restore has no unique package library record: {identity}")
+    sha512 = matches[0].get("sha512")
+    if not isinstance(sha512, str):
+        raise RuntimeError(f"Baseline restore library is missing its SHA-512: {identity}")
+    return sha512
 
 
 def validate_baseline_project(
@@ -327,7 +375,10 @@ def validate_baseline_project(
         record = policy_records.get(pair)
         if record is not None and package_id != record["id"]:
             raise RuntimeError(f"Restored package ID casing differs from exact policy ID: {package_id}/{package_version}")
-        archive_path, sha256, sha512 = _cache_package(cache, package_id, package_version)
+        restore_sha512 = _restore_library_sha512(package_assets, package_id, package_version)
+        archive_path, sha256, sha512 = _cache_package(
+            cache, package_id, package_version, expected_content_hash=restore_sha512
+        )
         nuspec = _read_package_nuspec(archive_path, package_id, package_version)
         entry: dict[str, Any] = {
             "id": package_id,
@@ -337,6 +388,8 @@ def validate_baseline_project(
             "source": NUGET_ORG,
             "archive_sha256": sha256,
             "archive_sha512": sha512,
+            "nuget_content_hash": restore_sha512,
+            "restore_library_sha512": restore_sha512,
         }
         if record is not None:
             if sha256 != record["archive_sha256"]:
