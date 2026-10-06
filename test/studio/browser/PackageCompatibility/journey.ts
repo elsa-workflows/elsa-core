@@ -64,7 +64,7 @@ class Backend {
   async dispose(): Promise<void> { await this.api.dispose(); }
 }
 
-async function fullShell(page: Page, input: PrivateInput, backend: Backend, passed: (name: string) => void, proof: Record<string, unknown>, circuitFrames: () => number): Promise<void> {
+async function fullShell(page: Page, input: PrivateInput, backend: Backend, passed: (name: string) => void, proof: Record<string, unknown>): Promise<void> {
   await page.goto(input.studio_url + '/login');
   proof.last_completed_stage = 'login_navigation';
   if (input.request.version !== '3.8.4') {
@@ -73,9 +73,28 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   }
   const username = page.getByLabel(input.request.version === '3.8.4' ? 'Username' : 'User name', { exact: true });
   await expect(username).toBeVisible();
-  if (input.request.host === 'server') await expect.poll(circuitFrames).toBeGreaterThanOrEqual(2);
+  if (input.request.version !== '3.8.4') {
+    const signIn = page.getByRole('button', { name: 'Sign in', exact: true });
+    await expect(username).toBeEmpty();
+    await expect(page.getByLabel('Password', { exact: true })).toBeEmpty();
+    let interactive = false;
+    for (let attempt = 0; attempt < 3 && !interactive; attempt++) {
+      await signIn.click(); // Empty required fields cannot send a credentials request.
+      try {
+        await expect(username).toHaveAttribute('aria-invalid', 'true', { timeout: 1500 });
+        await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute('aria-invalid', 'true', { timeout: 1500 });
+        interactive = true;
+      } catch { /* A prerender click has no live form effect; retry the empty validation only. */ }
+    }
+    if (!interactive) throw new Error('interactive_form_validation_missing');
+    proof.interactive_validation_observed = true;
+  }
   await username.fill(input.username);
   await page.getByLabel('Password', { exact: true }).fill(input.password);
+  await page.getByLabel('Password', { exact: true }).blur();
+  await expect(username).toHaveValue(input.username);
+  await expect(page.getByLabel('Password', { exact: true })).toHaveValue(input.password);
+  proof.private_input_values_retained = true;
   proof.last_completed_stage = 'login_form';
   await page.getByRole('button', { name: input.request.version === '3.8.4' ? 'Login' : 'Sign in', exact: true }).click();
   proof.last_completed_stage = 'login_submitted';
@@ -219,7 +238,7 @@ async function main(): Promise<void> {
     backend = await Backend.login(input.backend_url, input);
     proof.last_completed_stage = 'backend_authenticated';
     if (input.request.host === 'custom-elements') throw new Error('native_embedding_journey_pending');
-    await fullShell(page, input, backend, passed, proof, () => serverFrames);
+    await fullShell(page, input, backend, passed, proof);
     if (input.request.host === 'server') {
       if (!serverCircuit) throw new Error('server_circuit_missing');
       passed('server_circuit');
