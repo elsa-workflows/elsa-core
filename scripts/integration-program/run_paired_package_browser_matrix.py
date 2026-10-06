@@ -172,6 +172,43 @@ def _validate_clipboard(value: object, assertion_passed: bool, proof: dict) -> N
     require(assertion_passed is observed_match, "Clipboard assertion does not match the native copy proof")
 
 
+DIRECT_BACKEND_CHECKS = {"distinct_origins", "login_request", "login_cors", "login_authenticated",
+                         "descriptor_request", "descriptor_cors", "bearer_matches_login",
+                         "login_precedes_descriptor", "activity_identity"}
+
+
+def _validate_direct_backend(value: object, assertion_passed: bool) -> None:
+    optional = {"login_status", "descriptor_status", "descriptor_count", "descriptor_body_sha256"}
+    require(isinstance(value, dict) and {"checks"} <= set(value) <= {"checks"} | optional,
+            "Unsafe direct backend proof fields")
+    checks = value["checks"]
+    require(isinstance(checks, dict) and set(checks) == DIRECT_BACKEND_CHECKS and
+            all(type(flag) is bool for flag in checks.values()), "Invalid direct backend checks")
+    for name in ("login_status", "descriptor_status"):
+        require(name not in value or type(value[name]) is int and 100 <= value[name] <= 599,
+                "Invalid direct backend status")
+    require("descriptor_count" not in value or type(value["descriptor_count"]) is int and
+            0 < value["descriptor_count"] <= 10_000, "Invalid direct backend descriptor count")
+    if "descriptor_body_sha256" in value:
+        _require_sha256(value["descriptor_body_sha256"], "Invalid direct backend descriptor hash")
+        require("descriptor_status" in value, "Descriptor hash has no observed response")
+    require("descriptor_count" not in value or value.get("descriptor_status") == 200 and
+            "descriptor_body_sha256" in value, "Descriptor count has no successful response body")
+    require(not any(checks[name] for name in ("login_request", "login_cors", "login_authenticated")) or
+            "login_status" in value, "Missing observed browser login status")
+    require(not checks["login_authenticated"] or value.get("login_status") == 200,
+            "Browser login did not authenticate")
+    require(not any(checks[name] for name in ("descriptor_request", "descriptor_cors", "bearer_matches_login",
+                                           "login_precedes_descriptor", "activity_identity")) or
+            {"login_status", "descriptor_status"} <= set(value), "Missing observed browser request statuses")
+    require(not checks["bearer_matches_login"] or checks["login_authenticated"],
+            "Browser bearer is not bound to authenticated login")
+    require(not checks["activity_identity"] or value.get("descriptor_status") == 200 and
+            {"descriptor_count", "descriptor_body_sha256"} <= set(value) and value["descriptor_count"] >= 2,
+            "Activity identity is missing its successful descriptor response")
+    require(assertion_passed is all(checks.values()), "Direct backend assertion differs from observed proof")
+
+
 def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     """Allow only bounded, sanitized fields from the private child process."""
     allowed = {"host", "framework", "version", "result", "assertions", "resources", "proof", "browser_version", "failure_category"}
@@ -191,7 +228,10 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     hashes = {"definition_id_sha256", "activity_id_sha256", "value_sha256", "synthetic_document_sha256", "instance_id_sha256", "released_document_sha256"}
     flags = {"login_failure_visible", "login_form_visible", "server_circuit_observed", "server_render_frames_observed", "elsa_identity_ui_visible", "expected_auth_provider_observed", "interactive_validation_observed", "private_input_values_retained", "initial_list_navigation_completed", "editor_ready_observed"}
     counts = {"create_name_label_count", "create_name_textbox_count"}
-    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens", "bpmn_roundtrip", "clipboard"}, "Unsafe browser proof field")
+    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens", "bpmn_roundtrip", "clipboard", "direct_backend"}, "Unsafe browser proof field")
+    require("direct_backend" not in proof or record["host"] == "wasm", "Unexpected direct backend proof")
+    require(not assertions_by_name.get("direct_backend", False) or "direct_backend" in proof,
+            "Missing direct backend proof for passed assertion")
     require("bpmn_roundtrip" not in proof or "bpmn_roundtrip" in assertions_by_name and record["version"] == "3.10.0",
             "Unexpected BPMN roundtrip proof")
     require("clipboard" not in proof or "clipboard" in assertions_by_name and record["version"] == "3.10.0",
@@ -201,6 +241,9 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     require(not assertions_by_name.get("clipboard", False) or "clipboard" in proof,
             "Missing clipboard proof for passed assertion")
     for name, value in proof.items():
+        if name == "direct_backend":
+            _validate_direct_backend(value, assertions_by_name["direct_backend"])
+            continue
         if name == "baseline_reopens":
             _validate_reopens(value, key)
             continue

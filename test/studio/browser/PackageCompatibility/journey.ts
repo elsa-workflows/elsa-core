@@ -1,10 +1,11 @@
-import { chromium, expect as playwrightExpect, request, type Page, type APIRequestContext, type Locator, type Download } from '@playwright/test';
+import { chromium, expect as playwrightExpect, request, type Page, type APIRequestContext, type Locator, type Download, type Response } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { closeSync, lstatSync, openSync, readFileSync, readSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { bpmnSemanticIdentity, checkedXmlText, type XmlElement } from './bpmn-roundtrip.js';
+import { DirectBackendObserver } from './direct-backend.js';
 const policy = JSON.parse(readFileSync(new URL('./coverage-policy.json', import.meta.url), 'utf8'));
 // Locator actions and assertions share the same bounded readiness window,
 // including the native WASM bootstrap after a full page reload.
@@ -561,6 +562,8 @@ async function main(): Promise<void> {
     if (!assertion || assertion.passed) throw new Error('duplicate_or_unknown_assertion');
     assertion.passed = true; assertion.reason_category = null;
   };
+  const directBackend = input.request.host === 'wasm'
+    ? new DirectBackendObserver(input.studio_url, input.backend_url, input.username, input.password) : undefined;
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ serviceWorkers: 'block' });
   if (input.request.version === '3.10.0' && input.request.host === 'server')
@@ -581,7 +584,9 @@ async function main(): Promise<void> {
     }
   });
   const proof: Record<string, unknown> = {};
-  page.on('response', response => {
+  const observeResponse = (response: Response) => {
+    if (directBackend)
+      pending.push(directBackend.observe(response, response.request().frame() === page.mainFrame()));
     const url = new URL(response.url());
     const asset = expected.get(url.pathname);
     if (!asset || url.origin !== new URL(input.studio_url).origin) return;
@@ -590,7 +595,8 @@ async function main(): Promise<void> {
       const body = await resourceBody(response, asset.bytes);
       resources.push({ path: url.pathname, status: response.status(), content_type: headers['content-type']?.split(';')[0], sha256: hash(body), bytes: body.length, owner: asset.owner, requested: true });
     })().catch(() => { failed = true; }));
-  });
+  };
+  page.on('response', observeResponse);
   let backend: Backend | undefined;
   try {
     backend = await Backend.login(input.backend_url, input);
@@ -611,7 +617,14 @@ async function main(): Promise<void> {
     proof.create_name_textbox_count = await page.getByRole('dialog').getByRole('textbox', { name: /^Name(?:\s|$)/ }).count();
     proof.elsa_identity_ui_visible = await page.getByText('Elsa account', { exact: true }).isVisible().catch(() => false);
   } finally {
+    // Freeze the observation window, then settle all native response bodies before relating tokens.
+    page.off('response', observeResponse);
     await Promise.all(pending);
+    if (directBackend) {
+      const directProof = directBackend.proof();
+      proof.direct_backend = directProof;
+      if (Object.values(directProof.checks).every(Boolean)) passed('direct_backend');
+    }
     await backend?.dispose();
     await context.close(); await browser.close();
     passed('cleanup');
