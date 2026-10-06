@@ -9,9 +9,8 @@ namespace Elsa.Persistence.Dapper.UnitTests;
 
 /// <summary>
 /// Captured from the query builder on this branch before QuoteIdentifier was wired through
-/// ParameterizedQueryBuilderExtensions. SQLite and SQL Server (the only non-PG dialects
-/// in this repo; MySQL/Oracle use the same unquoted SqlDialectBase path) must stay
-/// byte-identical to these strings.
+/// ParameterizedQueryBuilderExtensions. The expected SQL preserves each dialect's contract,
+/// including intentional query-builder changes such as SQLite instant comparisons.
 /// </summary>
 public sealed class NonPgQuerySqlSnapshotTests
 {
@@ -118,6 +117,11 @@ public sealed class NonPgQuerySqlSnapshotTests
             .StartsWith("Name", true, "pre")
             .Sql.ToString());
 
+        yield return ("less-than", new ParameterizedQuery(dialect)
+            .From("WorkflowInstances")
+            .LessThan("UpdatedAt", DateTimeOffset.UnixEpoch)
+            .Sql.ToString());
+
         var inner = new ParameterizedQuery(dialect)
             .From("WorkflowInstances", "Id")
             .Is("DefinitionId", "def-1")
@@ -185,13 +189,19 @@ public sealed class NonPgQuerySqlSnapshotTests
             "and (Name like @SearchTermLike or Id like @SearchTerm or DefinitionId like @SearchTerm or DefinitionVersionId like @SearchTerm or CorrelationId like @SearchTerm)"),
         ["starts-with"] = Join(
             "select * from WorkflowInstances where 1=1",
-            "and Name like @SearchTermLike"),
+            "and Name like @NameStartsWith"),
+        ["less-than"] = Join(
+            "select * from WorkflowInstances where 1=1",
+            "and UpdatedAt < @UpdatedAt"),
         ["count"] = Join("select COUNT(*) from WorkflowDefinitions where 1=1"),
         ["count-distinct"] = Join("select COUNT(distinct DefinitionId) from WorkflowDefinitions where 1=1"),
     };
 
     private static readonly IReadOnlyDictionary<string, string> SqliteExpected = Merge(SharedExpected, new Dictionary<string, string>
     {
+        ["less-than"] = Join(
+            "select * from WorkflowInstances where 1=1",
+            "and julianday(UpdatedAt) < julianday(@UpdatedAt)"),
         ["paged-delete"] = Join(
             "delete from WorkflowInstances where 1=1",
             "and Id in (",

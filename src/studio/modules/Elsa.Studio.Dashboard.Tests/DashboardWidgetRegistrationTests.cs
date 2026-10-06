@@ -1,3 +1,5 @@
+using Elsa.Api.Client.Resources.Features.Models;
+using Elsa.Studio.Services;
 using Elsa.Studio.Attributes;
 using Elsa.Studio.Authorization;
 using Elsa.Studio.Contracts;
@@ -199,6 +201,39 @@ public class DashboardWidgetRegistrationTests
         AssertRemoteFeatureName<Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard.Feature>("Elsa.Diagnostics.OpenTelemetry.ShellFeatures.OpenTelemetry");
     }
 
+    [Fact]
+    public async Task DefaultFeatureService_RegistersWidgetsWhenStaticCatalogAdvertisesShortNames()
+    {
+        var services = new ServiceCollection();
+
+        services
+            .AddDashboardModule()
+            .AddWorkflowsDashboardModule()
+            .AddStructuredLogsDashboardModule()
+            .AddConsoleLogsDashboardModule()
+            .AddOpenTelemetryDashboardModule();
+
+        using var serviceProvider = services.BuildServiceProvider();
+        var features = serviceProvider.GetRequiredService<IEnumerable<IFeature>>().Where(x => x.GetType().Namespace?.EndsWith(".Dashboard", StringComparison.Ordinal) == true).ToList();
+        var registry = serviceProvider.GetRequiredService<IDashboardWidgetRegistry>();
+        var featureService = new DefaultFeatureService(
+            features,
+            new CatalogRemoteFeatureProvider(
+                new FeatureDescriptor { FullName = "Elsa.WorkflowRuntimeDashboard" },
+                new FeatureDescriptor { FullName = "Elsa.StructuredLogsDashboard" },
+                new FeatureDescriptor { FullName = "Elsa.ConsoleLogsDashboard" },
+                new FeatureDescriptor { FullName = "Elsa.OpenTelemetry" }));
+
+        await featureService.InitializeFeaturesAsync();
+
+        var descriptors = registry.List();
+
+        AssertDescriptor<DashboardWorkflowMetricsWidget>(descriptors, "dashboard.workflow.metrics", DashboardWidgetZones.Metrics, 100, "WorkflowInstances");
+        AssertDescriptor<StructuredLogsDashboardWidget>(descriptors, "diagnostics.structured-logs", DashboardWidgetZones.DiagnosticsStatus, 100, "Diagnostics.StructuredLogs");
+        AssertDescriptor<ConsoleLogsDashboardWidget>(descriptors, "diagnostics.console-logs", DashboardWidgetZones.DiagnosticsStatus, 200, "Diagnostics.ConsoleLogs");
+        AssertDescriptor<OpenTelemetryDashboardWidget>(descriptors, "diagnostics.open-telemetry", DashboardWidgetZones.DiagnosticsStatus, 300, "OpenTelemetry.StorageDiagnostics");
+    }
+
     private sealed class TestWidget : IComponent
     {
         public void Attach(RenderHandle renderHandle)
@@ -228,6 +263,15 @@ public class DashboardWidgetRegistrationTests
         var attribute = typeof(TFeature).GetCustomAttributes(typeof(RemoteFeatureAttribute), false).OfType<RemoteFeatureAttribute>().Single();
 
         Assert.Equal(expectedName, attribute.Name);
+    }
+
+    private sealed class CatalogRemoteFeatureProvider(params FeatureDescriptor[] features) : IRemoteFeatureProvider
+    {
+        public Task<bool> IsEnabledAsync(string featureName, CancellationToken cancellationToken = default) =>
+            Task.FromResult(features.Any(feature => string.Equals(feature.FullName, featureName, StringComparison.Ordinal)));
+
+        public Task<IEnumerable<FeatureDescriptor>> ListAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<IEnumerable<FeatureDescriptor>>(features);
     }
 
     private static string ReadRepositoryFile(params string[] pathSegments)

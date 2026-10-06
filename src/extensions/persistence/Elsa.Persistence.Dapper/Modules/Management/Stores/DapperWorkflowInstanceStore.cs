@@ -219,6 +219,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
             .In(nameof(WorkflowInstance.Status), filter.WorkflowStatuses?.Select(x => x.ToString()))
             .In(nameof(WorkflowInstance.SubStatus), filter.WorkflowSubStatuses?.Select(x => x.ToString()))
             .Is(nameof(WorkflowInstance.IsExecuting), filter.IsExecuting)
+            .LessThan(nameof(WorkflowInstance.UpdatedAt), filter.BeforeLastUpdated)
             .AndWorkflowInstanceSearchTerm(filter.SearchTerm);
     }
 

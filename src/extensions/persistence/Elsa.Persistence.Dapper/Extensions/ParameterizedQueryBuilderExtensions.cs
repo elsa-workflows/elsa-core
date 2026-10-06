@@ -3,8 +3,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
-using Elsa.Persistence.Dapper.Models;
 using Elsa.Extensions;
+using Elsa.Persistence.Dapper.Dialects;
+using Elsa.Persistence.Dapper.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Persistence.Dapper.Extensions;
@@ -15,6 +16,8 @@ namespace Elsa.Persistence.Dapper.Extensions;
 [PublicAPI]
 public static class ParameterizedQueryBuilderExtensions
 {
+    private const char LikeEscapeCharacter = '!';
+
     /// <summary>
     /// Begins a SELECT FROM query.
     /// </summary>
@@ -155,6 +158,17 @@ public static class ParameterizedQueryBuilderExtensions
     }
 
     /// <summary>
+    /// Matches a default-tenant stamp: <c>NULL</c> or empty string.
+    /// Legacy rows may use either; <see cref="Elsa.Common.Multitenancy.Tenant.DefaultTenantId"/> is <c>''</c>.
+    /// </summary>
+    public static ParameterizedQuery IsNullOrEmpty(this ParameterizedQuery query, string field)
+    {
+        var ident = query.QuoteIdent(field);
+        query.Sql.AppendLine($"and ({ident} is null or {ident} = '')");
+        return query;
+    }
+
+    /// <summary>
     /// Appends an IS NOT NULL clause to the query.
     /// </summary>
     /// <param name="query">The query.</param>
@@ -162,6 +176,32 @@ public static class ParameterizedQueryBuilderExtensions
     public static ParameterizedQuery IsNotNull(this ParameterizedQuery query, string field)
     {
         query.Sql.AppendLine(query.Dialect.IsNotNull(field));
+        return query;
+    }
+
+    /// <summary>
+    /// Appends an AND clause matching values strictly less than the specified value, if the value is not null.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="field">The field.</param>
+    /// <param name="value">The value.</param>
+    public static ParameterizedQuery LessThan(this ParameterizedQuery query, string field, object? value)
+    {
+        if (value == null) return query;
+
+        var identifier = query.QuoteIdent(field);
+        if (query.Dialect is SqliteDialect && value is DateTimeOffset)
+        {
+            // SQLite date functions compare at millisecond precision. Keep this exclusive so a precision tie waits for the next scan.
+            query.Sql.AppendLine($"and julianday({identifier}) < julianday(@{field})");
+        }
+        else
+        {
+            query.Sql.AppendLine($"and {identifier} < @{field}");
+        }
+
+        query.Parameters.Add($"@{field}", value);
+
         return query;
     }
 
@@ -241,9 +281,26 @@ public static class ParameterizedQueryBuilderExtensions
         if (!startsWith || value == null || string.IsNullOrWhiteSpace(value))
             return query;
 
-        var searchTermLike = $"{value}%";
-        query.Sql.AppendLine($"and {query.QuoteIdent(field)} like @SearchTermLike");
-        query.Parameters.Add($"@{field}", searchTermLike);
+        var parameterName = $"@{field}StartsWith";
+        var isSqlServer = query.Dialect is SqlServerDialect;
+        // PostgreSQL treats backslash as LIKE's default escape, so use our explicit escape for literal paths.
+        var needsEscaping = value.IndexOfAny(['%', '_', LikeEscapeCharacter]) >= 0 ||
+                            value.Contains('\\') ||
+                            (isSqlServer && value.Contains('['));
+        var escapeClause = needsEscaping ? $" escape '{LikeEscapeCharacter}'" : string.Empty;
+        var escapedValue = value
+            .Replace("!", "!!")
+            .Replace("%", "!%")
+            .Replace("_", "!_");
+
+        // SQL Server also treats '[' as a LIKE pattern character; the other supported dialects do not.
+        if (isSqlServer)
+        {
+            escapedValue = escapedValue.Replace("[", "![");
+        }
+
+        query.Sql.AppendLine($"and {query.QuoteIdent(field)} like {parameterName}{escapeClause}");
+        query.Parameters.Add(parameterName, $"{escapedValue}%");
 
         return query;
     }
