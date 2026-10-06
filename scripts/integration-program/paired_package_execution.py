@@ -357,6 +357,7 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
             document_root.mkdir(parents=True, mode=0o700, exist_ok=False)
             released_output = document_root / "released-document.json"
         runtime_failed = False
+        browser_cleanup_verified = True
         with hosts.start_pair(layout, validate_project=validate) as handle:
             try:
                 evidence["stage"] = "runtime_readiness"
@@ -370,11 +371,14 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
                 original_browser = browser.validate_browser_receipt(child, key)
                 evidence["stage"] = "loaded_assemblies"
                 evidence["loaded_assemblies"] = _verify_loaded(layout, _observe_loaded(handle, layout), verified_root, manifest)
+            except browser.BrowserCleanupUnverified:
+                runtime_failed = True
+                browser_cleanup_verified = False
             except Exception:
                 runtime_failed = True
-        # Reaching this line proves the context's cleanup completed. If cleanup
-        # itself raises, no successful cleanup claim is retained.
-        evidence["owned_process_cleanup"] = True
+        # Host context cleanup does not establish browser descendant cleanup.
+        # If either is uncertain, never retain a successful combined claim.
+        evidence["owned_process_cleanup"] = browser_cleanup_verified
         require(not runtime_failed, "Owned runtime did not produce valid evidence")
         record = copy.deepcopy(original_browser)
         evidence["stage"] = "browser_resources"

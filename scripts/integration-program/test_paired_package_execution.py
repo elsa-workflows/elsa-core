@@ -545,6 +545,18 @@ class ExecutionContracts(unittest.TestCase):
         self.assertTrue(self.receipt()["owned_process_cleanup"])
         self.assertNotIn("PRIVATE", json.dumps(self.receipt()))
 
+    def test_unverified_browser_cleanup_is_not_overwritten_by_successful_host_cleanup(self):
+        run_browser = self.pipeline()
+        run_browser.side_effect = execution.browser.BrowserCleanupUnverified("PRIVATE-CLEANUP-ERROR")
+        with self.assertRaises(ValueError):
+            self.execute()
+        receipt = self.receipt()
+        self.assertEqual("stop", self.events[-1][0])
+        self.assertFalse(receipt["owned_process_cleanup"])
+        self.assertEqual("failed", receipt["result"])
+        self.assertEqual("browser_execution", receipt["stage"])
+        self.assertNotIn("PRIVATE", json.dumps(receipt))
+
     def test_cleanup_failure_never_claims_successful_owned_cleanup(self):
         self.pipeline()
         @contextmanager
