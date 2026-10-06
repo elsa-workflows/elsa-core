@@ -71,16 +71,23 @@ class ConsolidatedPackageConsumerTests(unittest.TestCase):
                              "informationalVersion": "3.10.0+" + "a" * 40, "location": str(root / "bin/Release/net8.0" / (package_id + ".dll")),
                              "sha256": hashlib.sha256(content).hexdigest()})
             assets = {"targets": {"net8.0": target}}
-            def check(result):
-                return proof.verify_loaded_assemblies(result, assets, "net8.0", root, cache, artifacts, by_id, "3.10.0", "a" * 40)
+            def check(result, **requirements):
+                return proof.verify_loaded_assemblies(result, assets, "net8.0", root, cache, artifacts, by_id, "3.10.0", "a" * 40, **requirements)
             checked = check({"loadedAssemblies": rows})
             self.assertEqual(set(proof.REQUIRED_PACKAGES), {row["package_id"] for row in checked})
+            required = (rows[0]["name"],)
+            checked = check({"loadedAssemblies": rows[:1]}, required_assemblies=required)
+            self.assertEqual(list(required), [row["name"] for row in checked])
             for key, value in (("sha256", "0" * 64), ("version", "3.8.4.0"), ("informationalVersion", "3.10.0+" + "b" * 40),
                                ("location", "/source/bin/Elsa.dll"), ("fullName", "incomplete")):
                 changed = copy.deepcopy(rows)
                 changed[0][key] = value
                 with self.subTest(key=key), self.assertRaises(RuntimeError):
                     check({"loadedAssemblies": changed})
+                with self.subTest(key=key, composition="explicit"), self.assertRaises(RuntimeError):
+                    check({"loadedAssemblies": changed[:1]}, required_assemblies=required)
+            with self.assertRaisesRegex(RuntimeError, "missing"):
+                check({"loadedAssemblies": rows[:1]}, required_assemblies=(rows[1]["name"],))
             with self.assertRaisesRegex(RuntimeError, "missing"):
                 check({"loadedAssemblies": rows[:-1]})
             with self.assertRaisesRegex(RuntimeError, "duplicate"):
@@ -88,6 +95,13 @@ class ConsolidatedPackageConsumerTests(unittest.TestCase):
             cached.write_bytes(b"cache corruption")
             with self.assertRaisesRegex(RuntimeError, "exact package asset"):
                 check({"loadedAssemblies": rows})
+
+    def test_required_assembly_set_cannot_disable_composition_evidence(self):
+        for required in ((), [], "Elsa", ("",), (" Elsa",), (None,), ("Elsa", "Elsa")):
+            with self.subTest(required=required), self.assertRaisesRegex(ValueError, "Required assembly"):
+                proof.verify_loaded_assemblies({}, {}, "net8.0", Path("/fixture"), Path("/cache"),
+                                               Path("/artifacts"), {}, "3.10.0", "a" * 40,
+                                               required_assemblies=required)
 
     def test_source_mapping_routes_only_manifest_ids_to_the_local_feed(self):
         config = ElementTree.fromstring(

@@ -431,7 +431,12 @@ def verify_restore_isolation(assets: dict, root: Path, cache: Path, artifacts: P
 
 
 def verify_loaded_assemblies(result: dict, assets: dict, framework: str, root: Path,
-                             cache: Path, artifacts: Path, by_id: dict, version: str, source: str) -> list[dict]:
+                             cache: Path, artifacts: Path, by_id: dict, version: str, source: str,
+                             *, required_assemblies: tuple[str, ...] | list[str] = REQUIRED_PACKAGES) -> list[dict]:
+    if (not isinstance(required_assemblies, (tuple, list)) or not required_assemblies or
+            any(not isinstance(name, str) or not name or name != name.strip() for name in required_assemblies) or
+            len(set(required_assemblies)) != len(required_assemblies)):
+        raise ValueError("Required assembly names must be nonempty, unique and explicit")
     expected = {}
     for key, library in assets["targets"][framework].items():
         package_id, package_version = key.split("/")
@@ -454,7 +459,7 @@ def verify_loaded_assemblies(result: dict, assets: dict, framework: str, root: P
     loaded = result.get("loadedAssemblies", [])
     if not loaded or len({row["name"] for row in loaded}) != len(loaded):
         raise RuntimeError("Missing or duplicate loaded assembly identities")
-    if not set(REQUIRED_PACKAGES) <= {row["name"] for row in loaded}:
+    if not set(required_assemblies) <= {row["name"] for row in loaded}:
         raise RuntimeError("Representative loaded assembly missing")
     records = []
     for row in loaded:
