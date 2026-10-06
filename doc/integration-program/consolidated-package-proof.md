@@ -28,7 +28,9 @@ The earlier bounded Slack proof [#8260](https://github.com/elsa-workflows/elsa-c
 
 ## Pinned external compiler content sources
 
-The real `Elsa.Common` ShellFeatures smoke artifact emitted seven embedded executable `Generator.Hints` documents from the manifest generator cache. These are external compiler content sources, not Core Git documents. The verifier requires their actual restored package identity, an exact pinned archive hash, the audited nine `contentFiles/cs/any/Elsa.Platform.PackageManifest.Generator.Hints/*.cs` payloads, and matching PDB and embedded checksums. It reports separate external coverage and never claims these files were fetched from Core SourceLink URLs. Other untracked/cache sources remain unsupported and fail.
+The real `Elsa.Common` ShellFeatures smoke artifact emitted seven embedded executable `Generator.Hints` documents from the manifest generator cache. These are external compiler content sources, not Core Git documents. The verifier requires their actual restored package identity, an exact pinned archive hash, the exact audited source entries for that version, and matching PDB and embedded checksums. It reports separate external coverage and never claims these files were fetched from Core SourceLink URLs. Other untracked/cache sources remain unsupported and fail.
+
+Both versions contain these eight flat entries under `contentFiles/cs/any/Elsa.Platform.PackageManifest.Generator.Hints/`: `ElsaRuntimeKinds.cs`, `ManifestExtensionAttribute.cs`, `ManifestIgnoreAttribute.cs`, `ManifestInfrastructureAttribute.cs`, `ManifestRuntimeKindAttribute.cs`, `ManifestSettingAttribute.cs`, `ManifestUIOptionAttribute.cs`, and `ManifestUIOptionsProviderAttribute.cs`. Version `.53` adds `ManifestFeatureCategoryAttribute.cs`; version `.50` does not contain it. The verifier compares complete version-specific entry sets, rejecting missing, extra, or renamed content sources.
 
 Both archives were independently downloaded on 2026-10-06 from the recorded [official Elsa feed](https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json) and matched the restore cache byte for byte:
 

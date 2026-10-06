@@ -425,11 +425,22 @@ def source_url(path: str, maps: dict[str, str]) -> str | None:
 
 
 # Independently downloaded from the recorded official Feedz source on 2026-10-06.
-# These pins authorize only the nine Generator.Hints content sources, not a
+# These pins authorize only the version-specific Generator.Hints sources, not a
 # general exemption for untracked files or arbitrary NuGet compiler packages.
 GENERATOR_SOURCE_PINS = {
     "0.0.1-preview.50": "56310f3c6606c793bce875f0dee5746dc5f42721d0cbbfde5fa3c4b61e6f15aa",
     "0.0.1-preview.53": "ba9b6c28e11eec6f6c595ebf328da1b925dbee9ca2590aa5b6fa1ec4c2052780",
+}
+GENERATOR_HINTS_PREFIX = "contentFiles/cs/any/Elsa.Platform.PackageManifest.Generator.Hints/"
+GENERATOR_HINTS_50 = frozenset({
+    "ElsaRuntimeKinds.cs", "ManifestExtensionAttribute.cs", "ManifestIgnoreAttribute.cs",
+    "ManifestInfrastructureAttribute.cs", "ManifestRuntimeKindAttribute.cs", "ManifestSettingAttribute.cs",
+    "ManifestUIOptionAttribute.cs", "ManifestUIOptionsProviderAttribute.cs",
+})
+GENERATOR_SOURCE_ENTRIES = {
+    "0.0.1-preview.50": frozenset(GENERATOR_HINTS_PREFIX + name for name in GENERATOR_HINTS_50),
+    "0.0.1-preview.53": frozenset(GENERATOR_HINTS_PREFIX + name
+                                for name in GENERATOR_HINTS_50 | {"ManifestFeatureCategoryAttribute.cs"}),
 }
 GENERATOR_FEED = "https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json"
 GENERATOR_SOURCE = re.compile(
@@ -464,10 +475,9 @@ def verify_external_document(root: Path, row: dict, framework: str, document: di
                 f"External source archive differs from official feed pin: {key}")
         with zipfile.ZipFile(candidates[0]) as archive:
             names = archive_names(archive)
-            prefix = "contentFiles/cs/any/Elsa.Platform.PackageManifest.Generator.Hints/"
-            sources = {name: archive.read(name) for name in names if name.startswith(prefix) and name.endswith(".cs")}
-            require(len(sources) == 9 and all("/" not in name[len(prefix):] for name in sources),
-                    f"Pinned generator archive does not contain the audited nine hints: {key}")
+            sources = {name: archive.read(name) for name in names if name.startswith("contentFiles/") and name.endswith(".cs")}
+            require(sources.keys() == GENERATOR_SOURCE_ENTRIES[version],
+                    f"Pinned generator archive does not contain the exact audited source entries: {key}")
         cache[cache_key] = sources
     require(entry in cache[cache_key], f"External document is absent from pinned content sources: {entry}")
     checksum = hashlib.new(document["algorithm"], cache[cache_key][entry]).hexdigest()

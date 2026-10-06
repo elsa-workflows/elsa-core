@@ -234,16 +234,14 @@ class PackageProofTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "exact Git blob"):
                 proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, False, cache)
 
-    def test_external_embedded_sources_require_pinned_archive_and_restore_identity(self):
-        version = "0.0.1-preview.53"
+    def external_source_fixture(self, version, entries=None):
         identifier = "elsa.platform.packagemanifest.generator"
         package = self.directory / "packages" / identifier / version
-        package.mkdir(parents=True)
+        package.mkdir(parents=True, exist_ok=True)
         archive = package / f"{identifier}.{version}.nupkg"
-        prefix = "contentFiles/cs/any/Elsa.Platform.PackageManifest.Generator.Hints/"
         with zipfile.ZipFile(archive, "w") as contents:
-            for name in ("ManifestSettingAttribute", "A", "B", "C", "D", "E", "F", "G", "H"):
-                contents.writestr(prefix + name + ".cs", b"external")
+            for entry in sorted(entries if entries is not None else proof.GENERATOR_SOURCE_ENTRIES[version]):
+                contents.writestr(entry, b"external")
         pinned = hashlib.sha256(archive.read_bytes()).hexdigest()
         assets = {"libraries": {f"Elsa.Platform.PackageManifest.Generator/{version}": {"type": "package"}},
                   "packageFolders": {str(self.directory / "packages"): {}}}
@@ -251,22 +249,49 @@ class PackageProofTests(unittest.TestCase):
         (self.directory / "project.assets.json").write_bytes(encoded)
         self.row["restore_assets"] = [{"framework": "net8.0", "path": "project.assets.json", "sha256": hashlib.sha256(encoded).hexdigest()}]
         checksum = hashlib.sha256(b"external").hexdigest()
-        document = {"path": f"/_1/{identifier}/{version}/{prefix}ManifestSettingAttribute.cs",
+        document = {"path": f"/_1/{identifier}/{version}/{proof.GENERATOR_HINTS_PREFIX}ManifestSettingAttribute.cs",
                     "algorithm": "sha256", "checksum": checksum, "embedded_checksum": checksum}
-        with patch.dict(proof.GENERATOR_SOURCE_PINS, {version: pinned}):
-            result = proof.verify_external_document(self.directory, self.row, "net8.0", document, {})
-            self.assertEqual(pinned, result["archive_sha256"])
-            self.assertFalse(result["remote_fetched"])
-            document["embedded_checksum"] = None
-            with self.assertRaisesRegex(ValueError, "embedded bytes"):
-                proof.verify_external_document(self.directory, self.row, "net8.0", document, {})
-            document["embedded_checksum"] = checksum
-            archive.write_bytes(b"tampered cache")
-            with self.assertRaisesRegex(ValueError, "official feed pin"):
-                proof.verify_external_document(self.directory, self.row, "net8.0", document, {})
-        document["path"] = document["path"].replace(version, "0.0.1-preview.79")
-        with self.assertRaisesRegex(ValueError, "Unreviewed external"):
-            proof.verify_external_document(self.directory, self.row, "net8.0", document, {})
+        return archive, pinned, document
+
+    def test_external_embedded_sources_require_pinned_archive_and_restore_identity(self):
+        for version in proof.GENERATOR_SOURCE_ENTRIES:
+            with self.subTest(version=version):
+                archive, pinned, document = self.external_source_fixture(version)
+                with patch.dict(proof.GENERATOR_SOURCE_PINS, {version: pinned}):
+                    result = proof.verify_external_document(self.directory, self.row, "net8.0", document, {})
+                    self.assertEqual(pinned, result["archive_sha256"])
+                    self.assertFalse(result["remote_fetched"])
+                    document["embedded_checksum"] = None
+                    with self.assertRaisesRegex(ValueError, "embedded bytes"):
+                        proof.verify_external_document(self.directory, self.row, "net8.0", document, {})
+                    document["embedded_checksum"] = document["checksum"]
+                    archive.write_bytes(b"tampered cache")
+                    with self.assertRaisesRegex(ValueError, "official feed pin"):
+                        proof.verify_external_document(self.directory, self.row, "net8.0", document, {})
+                document["path"] = document["path"].replace(version, "0.0.1-preview.79")
+                with self.assertRaisesRegex(ValueError, "Unreviewed external"):
+                    proof.verify_external_document(self.directory, self.row, "net8.0", document, {})
+
+    def test_external_archives_require_exact_version_specific_entries(self):
+        for version, expected in proof.GENERATOR_SOURCE_ENTRIES.items():
+            removed = sorted(expected)[0]
+            unexpected = proof.GENERATOR_HINTS_PREFIX + "UnexpectedAttribute.cs"
+            for entries in (expected - {removed}, expected | {unexpected}, expected - {removed} | {unexpected}):
+                with self.subTest(version=version, entries=sorted(entries)):
+                    _, pinned, document = self.external_source_fixture(version, entries)
+                    with patch.dict(proof.GENERATOR_SOURCE_PINS, {version: pinned}):
+                        with self.assertRaisesRegex(ValueError, "exact audited source entries"):
+                            proof.verify_external_document(self.directory, self.row, "net8.0", document, {})
+
+    def test_generator_audit_distinguishes_version_specific_sources(self):
+        common = {"ElsaRuntimeKinds.cs", "ManifestExtensionAttribute.cs", "ManifestIgnoreAttribute.cs",
+                  "ManifestInfrastructureAttribute.cs", "ManifestRuntimeKindAttribute.cs", "ManifestSettingAttribute.cs",
+                  "ManifestUIOptionAttribute.cs", "ManifestUIOptionsProviderAttribute.cs"}
+        for version, names in (("0.0.1-preview.50", common),
+                               ("0.0.1-preview.53", common | {"ManifestFeatureCategoryAttribute.cs"})):
+            with self.subTest(version=version):
+                self.assertEqual({proof.GENERATOR_HINTS_PREFIX + name for name in names},
+                                 proof.GENERATOR_SOURCE_ENTRIES[version])
 
     def test_unmapped_and_wrong_repository_documents_fail(self):
         inspection = self.inspection("src/studio/example/Example.cs")
