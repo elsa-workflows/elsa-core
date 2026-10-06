@@ -1,0 +1,9 @@
+<Project>
+  <!-- This opt-in produces local proof artifacts, never a stable/preview release. -->
+  <Target Name="ValidateConsolidatedPackageProofVersion" BeforeTargets="Pack;GenerateNuspec"
+          Condition="'$(ConsolidatedPackageProof)' == 'true'">
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(PackageVersion)', '^3\.10\.0-proof\.[1-9][0-9]*\.[1-9][0-9]*$'))"
+           Code="ELSA0003"
+           Text="ConsolidatedPackageProof requires PackageVersion 3.10.0-proof.&lt;positive run&gt;.&lt;positive attempt&gt;. Publication and publisher cutover remain separate approvals." />
+  </Target>
+</Project>

@@ -3,8 +3,8 @@
         <Authors>Elsa Workflows Community</Authors>
         <Copyright>2025</Copyright>
 
-        <PackageProjectUrl>https://github.com/elsa-workflows/elsa-extensions</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/elsa-workflows/elsa-extensions</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
 
         <LangVersion>latest</LangVersion>
@@ -50,7 +50,7 @@
   </PropertyGroup>
 
   <ItemGroup Label="Files">
-    <None Include="..\..\..\..\icon.png" Pack="true" PackagePath="\" />
+    <None Include="$(MSBuildThisFileDirectory)../../icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -65,4 +65,4 @@
     <Compile Include="$(MSBuildThisFileDirectory)PackageManifestHints.cs" Link="PackageManifestHints.cs" />
   </ItemGroup>
 
-<PropertyGroup><UseProjectReferences>true</UseProjectReferences><IsPackable>false</IsPackable></PropertyGroup></Project>
+<PropertyGroup><UseProjectReferences>true</UseProjectReferences><IsPackable Condition="'$(ConsolidatedPackageProof)' != 'true'">false</IsPackable></PropertyGroup></Project>
