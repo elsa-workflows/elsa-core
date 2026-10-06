@@ -5,6 +5,7 @@ import copy
 import base64
 import hashlib
 import json
+import re
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
@@ -95,7 +96,8 @@ def read_package_assets(project: Path, tfm: str, *, fixture_project: Path | None
 def public_archive_evidence(package_id: str, version: str, cache: Path) -> dict:
     """Bind the actual selected public dependency bytes, not just its exception ID."""
     require(packages.PACKAGE_ID_PATTERN.fullmatch(package_id) is not None
-            and packages.VERSION_PATTERN.fullmatch(version) is not None, "Unsafe dependency identity")
+            and re.fullmatch(r"[0-9]+(?:\.[0-9]+){2,3}(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?", version) is not None,
+            "Unsafe dependency identity")
     directory = cache / package_id.lower() / version
     regular_file(directory / ".nupkg.metadata")
     packages.verify_external_cache_source(package_id, version, cache)

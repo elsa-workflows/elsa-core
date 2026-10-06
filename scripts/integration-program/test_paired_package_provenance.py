@@ -115,6 +115,18 @@ class PackageGraphTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "nuget.org"):
             provenance.public_archive_evidence("Example", "1.0.0", self.root)
 
+    def test_public_four_part_nuget_version_is_valid_but_paths_are_not(self):
+        directory = self.root / "sourcegear.sqlite3" / "3.50.4.5"
+        directory.mkdir(parents=True)
+        content = b"synthetic four-part NuGet archive"
+        (directory / "sourcegear.sqlite3.3.50.4.5.nupkg").write_bytes(content)
+        (directory / "sourcegear.sqlite3.3.50.4.5.nupkg.sha512").write_text(base64.b64encode(hashlib.sha512(content).digest()).decode())
+        (directory / ".nupkg.metadata").write_text(json.dumps({"source": provenance.packages.NUGET_ORG}))
+        self.assertEqual(hashlib.sha256(content).hexdigest(), provenance.public_archive_evidence("SourceGear.sqlite3", "3.50.4.5", self.root)["sha256"])
+        for invalid in ("../3.50.4.5", "3.50.4.5/extra", "*", ""):
+            with self.subTest(version=invalid), self.assertRaisesRegex(RuntimeError, "Unsafe"):
+                provenance.public_archive_evidence("SourceGear.sqlite3", invalid, self.root)
+
 
 if __name__ == "__main__":
     unittest.main()
