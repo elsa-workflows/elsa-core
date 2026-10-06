@@ -58,7 +58,7 @@ def _files(root: Path) -> dict[str, str]:
             for path in sorted(root.rglob("*")) if path.is_file() or path.is_symlink()}
 
 
-def _decoder_dependencies(root: Path, output: Path) -> None:
+def _decoder_dependencies(root: Path, output: Path | None) -> None:
     lock = json.loads(regular_file(root / "packages.lock.json").read_text())["dependencies"]["net10.0"]
     pins = json.loads(regular_file(root / "dependency-archives.json").read_text())["packages"]
     require(set(lock) == set(pins), "Decoder dependency inventory differs from reviewed archives")
@@ -66,6 +66,7 @@ def _decoder_dependencies(root: Path, output: Path) -> None:
     require(set(assets["targets"]) == {"net10.0"} and
             set(assets["targets"]["net10.0"]) == {name + "/" + entry["resolved"] for name, entry in lock.items()},
             "Decoder restored dependency graph differs from lock")
+    expected_runtime = {}
     for name, entry in lock.items():
         pin = pins[name]
         package = root / "packages" / name.lower() / entry["resolved"]
@@ -78,15 +79,40 @@ def _decoder_dependencies(root: Path, output: Path) -> None:
                 "Decoder NuGet content hash differs from locked restore")
         library = assets["targets"]["net10.0"][name + "/" + entry["resolved"]]
         require(library.get("type") == "package", "Decoder dependency uses source fallback")
+        require(set(library) <= {"type", "dependencies", "compile", "runtime", "build"},
+                "Decoder dependency contains unreviewed asset kinds")
+        selected = pin.get("selected_assets")
+        require(isinstance(selected, dict) and set(selected) == {"compile", "runtime", "build"} and
+                all(isinstance(members, list) and all(isinstance(member, str) for member in members) and
+                    members == sorted(set(members)) for members in selected.values()),
+                "Decoder selected dependency inventory is not pinned")
+        require(all(isinstance(library.get(kind, {}), dict) and
+                    sorted(library.get(kind, {})) == members for kind, members in selected.items()),
+                "Decoder selected dependency inventory differs from reviewed assets")
+        runtime = {member for member in selected["runtime"] if not member.endswith("/_._")}
+        if runtime:
+            expected_runtime[name + "/" + entry["resolved"]] = runtime
         with ZipFile(archive) as zipped:
             safe_members(zipped)
-            for member in library.get("runtime", {}):
-                if member.endswith("/_._"):
-                    continue
-                body = zipped.read(member)
-                require(regular_file(package / member).read_bytes() == body and
-                        regular_file(output / Path(member).name).read_bytes() == body,
-                        "Decoder loaded runtime dependency differs from reviewed archive member")
+            for kind, members in selected.items():
+                for member in members:
+                    body = zipped.read(member)
+                    require(regular_file(package / member).read_bytes() == body,
+                            "Decoder selected dependency differs from reviewed archive member")
+                    if output is not None and kind == "runtime" and not member.endswith("/_._"):
+                        require(regular_file(output / Path(member).name).read_bytes() == body,
+                                "Decoder loaded runtime dependency differs from reviewed archive member")
+    if output is not None:
+        deps = json.loads(regular_file(output / "Decoder.deps.json").read_text())
+        target_name = ".NETCoreApp,Version=v10.0"
+        require(deps.get("runtimeTarget", {}).get("name") == target_name and
+                set(deps.get("targets", {})) == {target_name}, "Decoder runtime target differs")
+        target = deps["targets"][target_name]
+        expected_runtime["Decoder/1.0.0"] = {"Decoder.dll"}
+        require(set(target) == set(expected_runtime) and all(
+            isinstance(value, dict) and set(value) <= {"dependencies", "runtime"} and
+            isinstance(value.get("runtime"), dict) and set(value["runtime"]) == expected_runtime[name]
+            for name, value in target.items()), "Decoder runtime closure differs from reviewed assets")
 
 
 def prepare_decoder(root: Path, sdk: str, environment: dict[str, str]) -> Path:
@@ -110,6 +136,7 @@ def prepare_decoder(root: Path, sdk: str, environment: dict[str, str]) -> Path:
     if stamp.exists():
         previous = json.loads(regular_file(stamp).read_text())
         require(previous.get("inputs") == expected and previous.get("outputs") == _files(output)
+                and previous.get("restored_assets_sha256") == sha256(regular_file(root / "obj/project.assets.json"))
                 and all(sha256(regular_file(root / name)) == digest for name, digest in expected.items() if name != "sdk"),
                 "Decoder source or built output changed")
         _decoder_dependencies(root, output)
@@ -129,12 +156,18 @@ def prepare_decoder(root: Path, sdk: str, environment: dict[str, str]) -> Path:
     for phase, args in (("restore", ["restore", "--locked-mode", "--configfile", "NuGet.Config"]),
                         ("build", ["build", "--no-restore", "--configuration", "Release", "-p:UseSharedCompilation=false"])):
         log = root / (phase + "-private.log")
-        packages._run_command(["dotnet", *args, "--disable-build-servers", "--nologo",
+        _owned_command(["dotnet", *args, "--disable-build-servers", "--nologo",
                                "-p:ImportDirectoryBuildProps=false", "-p:ImportDirectoryBuildTargets=false",
                                "-p:ImportDirectoryPackagesProps=false"], root, env, log, 180)
-        log.chmod(0o600)
+        if phase == "restore":
+            # Verify compiler and imported build inputs before the decoder build consumes them.
+            _decoder_dependencies(root, None)
+            restored_assets_sha256 = sha256(regular_file(root / "obj/project.assets.json"))
+    require(sha256(regular_file(root / "obj/project.assets.json")) == restored_assets_sha256,
+            "Decoder restored assets changed during build")
     _decoder_dependencies(root, output)
-    _write_private(stamp, {"schema": 1, "inputs": expected, "outputs": _files(output)})
+    _write_private(stamp, {"schema": 2, "inputs": expected, "outputs": _files(output),
+                           "restored_assets_sha256": restored_assets_sha256})
     return regular_file(output / "Decoder.dll")
 
 

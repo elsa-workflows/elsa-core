@@ -151,43 +151,128 @@ class ConverterSelectionContracts(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "Unexpected"):
             selected._trace_inventory(traces)
 
-    def test_decoder_dependencies_bind_lock_signed_archive_and_runtime_output(self):
+    def decoder_fixture(self):
         name, version = "Public.Tool", "1.0.0"
         package = self.root / "packages/public.tool" / version
         package.mkdir(parents=True)
         output = self.root / "bin"
         output.mkdir()
         (self.root / "obj").mkdir()
-        member = "lib/net10.0/Public.Tool.dll"
-        cached = package / member
-        cached.parent.mkdir(parents=True)
-        cached.write_bytes(b"public-managed-tool")
-        runtime = output / "Public.Tool.dll"
-        runtime.write_bytes(cached.read_bytes())
+        members = {"compile": "ref/net10.0/Public.Tool.dll", "runtime": "lib/net10.0/Public.Tool.dll",
+                   "build": "build/Public.Tool.props"}
+        bodies = {"compile": b"public-reference-tool", "runtime": b"public-managed-tool", "build": b"<Project />"}
         archive = package / "public.tool.1.0.0.nupkg"
         with ZipFile(archive, "w") as zipped:
-            zipped.writestr(member, cached.read_bytes())
+            for kind, member in members.items():
+                target = package / member
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(bodies[kind])
+                zipped.writestr(member, bodies[kind])
+        (output / "Public.Tool.dll").write_bytes(bodies["runtime"])
         lock_content = "NuGet-content-hash-is-not-the-full-signed-archive-hash"
         (package / ".nupkg.metadata").write_text(json.dumps({"contentHash": lock_content}))
         (self.root / "packages.lock.json").write_text(json.dumps({"dependencies": {"net10.0": {
             name: {"resolved": version, "contentHash": lock_content}}}}))
-        (self.root / "obj/project.assets.json").write_text(json.dumps({"targets": {"net10.0": {
-            name + "/" + version: {"type": "package", "runtime": {member: {}}}}}}))
+        assets = self.root / "obj/project.assets.json"
+        assets.write_text(json.dumps({"targets": {"net10.0": {name + "/" + version: {
+            "type": "package", **{kind: {member: {}} for kind, member in members.items()}}}}}))
         (self.root / "dependency-archives.json").write_text(json.dumps({"packages": {name: {
             "version": version, "sha256": selected.sha256(archive), "bytes": archive.stat().st_size,
-            "sha512": base64.b64encode(hashlib.sha512(archive.read_bytes()).digest()).decode()}}}))
-        selected._decoder_dependencies(self.root, output)
+            "sha512": base64.b64encode(hashlib.sha512(archive.read_bytes()).digest()).decode(),
+            "selected_assets": {kind: [member] for kind, member in members.items()}}}}))
+        deps = output / "Decoder.deps.json"
+        deps.write_text(json.dumps({"runtimeTarget": {"name": ".NETCoreApp,Version=v10.0"}, "targets": {
+            ".NETCoreApp,Version=v10.0": {"Decoder/1.0.0": {"runtime": {"Decoder.dll": {}}},
+                                       name + "/" + version: {"runtime": {members["runtime"]: {}}}}}}))
+        return SimpleNamespace(package=package, output=output, archive=archive, members=members,
+                               assets=assets, deps=deps, lock_content=lock_content)
+
+    def test_decoder_dependencies_bind_lock_signed_archive_and_runtime_output(self):
+        fixture = self.decoder_fixture()
+        selected._decoder_dependencies(self.root, None)
+        selected._decoder_dependencies(self.root, fixture.output)
+        runtime = fixture.output / "Public.Tool.dll"
+        original = runtime.read_bytes()
         runtime.write_bytes(b"different-runtime")
         with self.assertRaisesRegex(RuntimeError, "runtime dependency"):
-            selected._decoder_dependencies(self.root, output)
-        runtime.write_bytes(cached.read_bytes())
-        (package / ".nupkg.metadata").write_text('{"contentHash":"different"}')
+            selected._decoder_dependencies(self.root, fixture.output)
+        runtime.write_bytes(original)
+        metadata = fixture.package / ".nupkg.metadata"
+        metadata.write_text('{"contentHash":"different"}')
         with self.assertRaisesRegex(RuntimeError, "content hash"):
-            selected._decoder_dependencies(self.root, output)
-        (package / ".nupkg.metadata").write_text(json.dumps({"contentHash": lock_content}))
-        archive.write_bytes(archive.read_bytes() + b"changed-signed-archive")
+            selected._decoder_dependencies(self.root, fixture.output)
+        metadata.write_text(json.dumps({"contentHash": fixture.lock_content}))
+        fixture.archive.write_bytes(fixture.archive.read_bytes() + b"changed-signed-archive")
         with self.assertRaisesRegex(RuntimeError, "signed archive"):
-            selected._decoder_dependencies(self.root, output)
+            selected._decoder_dependencies(self.root, fixture.output)
+
+    def test_decoder_checks_distinct_compiler_and_build_inputs_before_build(self):
+        fixture = self.decoder_fixture()
+        for kind in ("compile", "build"):
+            target = fixture.package / fixture.members[kind]
+            original = target.read_bytes()
+            target.write_bytes(b"changed-input")
+            with self.subTest(kind=kind), self.assertRaisesRegex(RuntimeError, "selected dependency"):
+                selected._decoder_dependencies(self.root, None)
+            target.write_bytes(original)
+
+    def test_decoder_rejects_removed_or_added_selected_assets(self):
+        fixture = self.decoder_fixture()
+        original = json.loads(fixture.assets.read_text())
+        for kind in ("compile", "runtime", "build"):
+            changed = copy.deepcopy(original)
+            changed["targets"]["net10.0"]["Public.Tool/1.0.0"][kind] = {}
+            fixture.assets.write_text(json.dumps(changed))
+            with self.subTest(kind=kind), self.assertRaisesRegex(RuntimeError, "selected dependency inventory"):
+                selected._decoder_dependencies(self.root, fixture.output)
+        changed = copy.deepcopy(original)
+        changed["targets"]["net10.0"]["Public.Tool/1.0.0"]["native"] = {}
+        fixture.assets.write_text(json.dumps(changed))
+        with self.assertRaisesRegex(RuntimeError, "unreviewed asset kinds"):
+            selected._decoder_dependencies(self.root, fixture.output)
+
+    def test_decoder_runtime_closure_must_match_fixed_selected_members(self):
+        fixture = self.decoder_fixture()
+        original = json.loads(fixture.deps.read_text())
+        for mutation in ("remove-package", "remove-member", "extra-package"):
+            changed = copy.deepcopy(original)
+            target = changed["targets"][".NETCoreApp,Version=v10.0"]
+            if mutation == "remove-package":
+                target.pop("Public.Tool/1.0.0")
+            elif mutation == "remove-member":
+                target["Public.Tool/1.0.0"]["runtime"] = {}
+            else:
+                target["Unexpected/1.0.0"] = {"runtime": {"Unexpected.dll": {}}}
+            fixture.deps.write_text(json.dumps(changed))
+            with self.subTest(mutation=mutation), self.assertRaisesRegex(RuntimeError, "runtime closure"):
+                selected._decoder_dependencies(self.root, fixture.output)
+
+    def test_decoder_prepares_owned_commands_and_binds_reused_restore_metadata(self):
+        fixture = self.root / "source"
+        fixture.mkdir()
+        (fixture / "Decoder.csproj").write_text("<Project />")
+        events = []
+        def command(argv, root, environment, log, timeout):
+            phase = argv[1]
+            events.append(phase)
+            log.write_text("private command output")
+            if phase == "restore":
+                (root / "obj").mkdir()
+                (root / "obj/project.assets.json").write_text("{}")
+            else:
+                output = root / "bin/Release/net10.0"
+                output.mkdir(parents=True)
+                (output / "Decoder.dll").write_bytes(b"synthetic decoder")
+        root = self.root / "decoder"
+        with patch.object(selected, "FIXTURE", fixture), patch.object(selected, "_owned_command", side_effect=command), \
+             patch.object(selected, "_decoder_dependencies", side_effect=lambda _root, output: events.append("cache" if output is None else "output")):
+            decoder = selected.prepare_decoder(root, "10.0.300", {})
+            self.assertEqual(["restore", "cache", "build", "output"], events)
+            self.assertEqual(decoder, selected.prepare_decoder(root, "10.0.300", {}))
+            self.assertEqual("output", events[-1])
+            (root / "obj/project.assets.json").write_text('{"changed":true}')
+            with self.assertRaisesRegex(RuntimeError, "source or built output changed"):
+                selected.prepare_decoder(root, "10.0.300", {})
 
     def test_command_timeout_kills_owned_wrapper_children(self):
         pid_file = self.root / "child-pid"
@@ -225,7 +310,7 @@ class ConverterSelectionContracts(unittest.TestCase):
     def test_decoder_preparation_rejects_repository_or_fixture_cache_roots(self):
         for root, environment in ((Path(selected.__file__).parent / "unowned-tool", {}),
                                   (self.cache / "tool", {"NUGET_PACKAGES": str(self.cache)})):
-            with self.subTest(root=root), patch.object(selected.packages, "_run_command") as run:
+            with self.subTest(root=root), patch.object(selected, "_owned_command") as run:
                 with self.assertRaisesRegex(RuntimeError, "repository|fixture package cache"):
                     selected.prepare_decoder(root, "10.0.300", environment)
                 run.assert_not_called()

@@ -28,11 +28,15 @@ The decoder uses TraceEvent **3.2.8**, with a complete locked dependency graph.
 `dependency-archives.json` independently pins the full signed archives against
 official NuGet catalog SHA512/size records. NuGet lock `contentHash` has different
 semantics: it is checked against restored metadata, never mislabeled as the hash
-of full signed archive bytes. Selected managed runtime dependencies must match
-both original archive members and decoder output copies. Source/build/output
-hashes and these dependency checks bind decoder reuse; no ambient tool executable
+of full signed archive bytes. The reviewed inventory pins every selected compile,
+runtime and build member. Restored cache bytes must match the original archive
+members before compilation; runtime copies and the generated dependency closure
+are checked after compilation. Source/build/output hashes and the unchanged
+restored-assets hash bind decoder reuse. Decoder stamps use schema 2; older
+preparations require a fresh private decoder directory. No ambient tool executable
 is trusted. All preparation commands use normal `dotnet`, including the machine's
-build-slot wrapper, and are bounded to 180 seconds each.
+build-slot wrapper, are bounded to 180 seconds each, and must leave their owned
+process group quiescent.
 
 Client build capture requires POSIX process groups, no inherited EventPipe
 configuration, disabled build servers/node reuse and shared compilation disabled.

@@ -3,6 +3,15 @@
     "Microsoft.Diagnostics.NETCore.Client": {
       "bytes": 163679,
       "catalog": "https://api.nuget.org/v3/catalog0/data/2024.02.06.03.03.24/microsoft.diagnostics.netcore.client.0.2.510501.json",
+      "selected_assets": {
+        "build": [],
+        "compile": [
+          "lib/net6.0/Microsoft.Diagnostics.NETCore.Client.dll"
+        ],
+        "runtime": [
+          "lib/net6.0/Microsoft.Diagnostics.NETCore.Client.dll"
+        ]
+      },
       "sha256": "bda612812a323c7d1727e09566af97952c8bd6d2606799045ca330631fb523dc",
       "sha512": "gbZWvs9SVPM+P7/9oNzssmgX2VZntsXsXB78bwZD5tDQ5cawEUY2V4XC6KotYLbpuV/+jmoOvgwvTO8Ur5nvjw==",
       "version": "0.2.510501"
@@ -10,6 +19,23 @@
     "Microsoft.Diagnostics.Tracing.TraceEvent": {
       "bytes": 5492238,
       "catalog": "https://api.nuget.org/v3/catalog0/data/2026.09.28.21.49.10/microsoft.diagnostics.tracing.traceevent.3.2.8.json",
+      "selected_assets": {
+        "build": [
+          "buildTransitive/Microsoft.Diagnostics.Tracing.TraceEvent.props"
+        ],
+        "compile": [
+          "lib/netstandard2.0/Dia2Lib.dll",
+          "lib/netstandard2.0/Microsoft.Diagnostics.FastSerialization.dll",
+          "lib/netstandard2.0/Microsoft.Diagnostics.Tracing.TraceEvent.dll",
+          "lib/netstandard2.0/TraceReloggerLib.dll"
+        ],
+        "runtime": [
+          "lib/netstandard2.0/Dia2Lib.dll",
+          "lib/netstandard2.0/Microsoft.Diagnostics.FastSerialization.dll",
+          "lib/netstandard2.0/Microsoft.Diagnostics.Tracing.TraceEvent.dll",
+          "lib/netstandard2.0/TraceReloggerLib.dll"
+        ]
+      },
       "sha256": "37284f885e75326bbd1858bf19f20c9da2818fec7a3bd49803209209be5fd38d",
       "sha512": "wJQC1t8VI/5BuUjeBpEt0G/qUm/aBYm+gi3IwvuUuiOBvES/yKS6mM82fS62/1ewkp8gwuqx5sfTcCfHOsi0LA==",
       "version": "3.2.8"
@@ -17,6 +43,17 @@
     "Microsoft.Extensions.DependencyInjection": {
       "bytes": 208004,
       "catalog": "https://api.nuget.org/v3/catalog0/data/2021.11.08.06.39.47/microsoft.extensions.dependencyinjection.6.0.0.json",
+      "selected_assets": {
+        "build": [
+          "buildTransitive/netcoreapp3.1/_._"
+        ],
+        "compile": [
+          "lib/net6.0/Microsoft.Extensions.DependencyInjection.dll"
+        ],
+        "runtime": [
+          "lib/net6.0/Microsoft.Extensions.DependencyInjection.dll"
+        ]
+      },
       "sha256": "819b8c6ae9cc255cafbdea6eccda1d18f45ce9ea8a1fffdb92cdfde7b75890f2",
       "sha512": "wl7voCCnhdhgj4xbwbfUeao/m7MpWqxBoba4FEDujC1obyirX3yb2MdiFSrYlXzHG3q/p9S2yFWSv8J+UVWSig==",
       "version": "6.0.0"
@@ -24,6 +61,17 @@
     "Microsoft.Extensions.DependencyInjection.Abstractions": {
       "bytes": 149541,
       "catalog": "https://api.nuget.org/v3/catalog0/data/2021.11.08.06.39.47/microsoft.extensions.dependencyinjection.abstractions.6.0.0.json",
+      "selected_assets": {
+        "build": [
+          "buildTransitive/netcoreapp3.1/_._"
+        ],
+        "compile": [
+          "lib/net6.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll"
+        ],
+        "runtime": [
+          "lib/net6.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll"
+        ]
+      },
       "sha256": "49991ed2334a22a26fbee91db5af8c808946b2b3f611d3e4912f257cb83b26ee",
       "sha512": "AVo5KjYsgbNRQ7GcXaTqwJKMwvLhMymrLpRaFaXJ3qB3zWawxGfHXy3+b5DD4L8uzcBZ11CWusObQValP5l70g==",
       "version": "6.0.0"
@@ -31,6 +79,15 @@
     "Microsoft.Extensions.Logging": {
       "bytes": 111767,
       "catalog": "https://api.nuget.org/v3/catalog0/data/2021.11.08.06.31.41/microsoft.extensions.logging.6.0.0.json",
+      "selected_assets": {
+        "build": [],
+        "compile": [
+          "lib/netstandard2.1/Microsoft.Extensions.Logging.dll"
+        ],
+        "runtime": [
+          "lib/netstandard2.1/Microsoft.Extensions.Logging.dll"
+        ]
+      },
       "sha256": "f16b1929119f5d6e4cb1790c98d55feac96b930f9c474d3973390e3f6294a939",
       "sha512": "9d7FkKNTt/uzX9p5nAg9wHhXxw+g1G2uwOAMSVCo1l9CxvOZqGcG4tl+5R+1BCvifzVjdnOiR53E9iNZDVlzEQ==",
       "version": "6.0.0"
@@ -38,6 +95,17 @@
     "Microsoft.Extensions.Logging.Abstractions": {
       "bytes": 458701,
       "catalog": "https://api.nuget.org/v3/catalog0/data/2021.11.08.06.31.41/microsoft.extensions.logging.abstractions.6.0.0.json",
+      "selected_assets": {
+        "build": [
+          "buildTransitive/netcoreapp3.1/_._"
+        ],
+        "compile": [
+          "lib/net6.0/Microsoft.Extensions.Logging.Abstractions.dll"
+        ],
+        "runtime": [
+          "lib/net6.0/Microsoft.Extensions.Logging.Abstractions.dll"
+        ]
+      },
       "sha256": "40da9c437c7e30e2bb9576d6902cd23966bfd90c9835b74cfce1046d6375e52c",
       "sha512": "v7G0uYJCEEgD0aZaGgUdC45IH7yYf6L0tYphCrRZtNJOh1PFFcMqN23SxoBNHOLTliS5cqgcaOkkgZWOGoox3w==",
       "version": "6.0.0"
@@ -45,6 +113,15 @@
     "Microsoft.Extensions.Options": {
       "bytes": 140038,
       "catalog": "https://api.nuget.org/v3/catalog0/data/2021.11.08.06.39.16/microsoft.extensions.options.6.0.0.json",
+      "selected_assets": {
+        "build": [],
+        "compile": [
+          "lib/netstandard2.1/Microsoft.Extensions.Options.dll"
+        ],
+        "runtime": [
+          "lib/netstandard2.1/Microsoft.Extensions.Options.dll"
+        ]
+      },
       "sha256": "0f19c48068825e992bc459315ed397ab06a202da088c0f1549258272c5b41701",
       "sha512": "PDRFK6wCGTJksFY2VLpSgqdLA+3itnWtJfqF69kVvcyoVxWBU+tKSgJAZetOnXvB670jSFSTzYlcTQSaukpd0g==",
       "version": "6.0.0"
@@ -52,6 +129,17 @@
     "Microsoft.Extensions.Primitives": {
       "bytes": 144250,
       "catalog": "https://api.nuget.org/v3/catalog0/data/2021.11.08.06.34.46/microsoft.extensions.primitives.6.0.0.json",
+      "selected_assets": {
+        "build": [
+          "buildTransitive/netcoreapp3.1/_._"
+        ],
+        "compile": [
+          "lib/net6.0/Microsoft.Extensions.Primitives.dll"
+        ],
+        "runtime": [
+          "lib/net6.0/Microsoft.Extensions.Primitives.dll"
+        ]
+      },
       "sha256": "020bf2b2cce9435d40893049164bd2cbc267c085938f5e4f7de93b4fb4e151ce",
       "sha512": "CyaX81VXrv8HhLEK5qTq/XYBv3BhIe1lhKYYeexuSUUU7Ho+DaCqa6qZ8/cW9pAw7HxMgvZXyN/brLY3usRUfw==",
       "version": "6.0.0"
@@ -59,10 +147,19 @@
     "System.Reflection.TypeExtensions": {
       "bytes": 249287,
       "catalog": "https://api.nuget.org/v3/catalog0/data/2026.04.10.00.14.45/system.reflection.typeextensions.4.7.0.json",
+      "selected_assets": {
+        "build": [],
+        "compile": [
+          "ref/netcoreapp2.0/_._"
+        ],
+        "runtime": [
+          "lib/netcoreapp2.0/_._"
+        ]
+      },
       "sha256": "184b42197c2d3a79187a3495f937e5f83ab21aae634d4695c8bf5e32ea4c1c13",
       "sha512": "Q/fczHO357fqTntQPZBSwhstHCcZFvgqOwBnkO+lhMyS2pYBDtXyfRQblK3SYXN8GXHOEJzjNM5Tr12zp73c6A==",
       "version": "4.7.0"
     }
   },
-  "schema": 1
+  "schema": 2
 }
