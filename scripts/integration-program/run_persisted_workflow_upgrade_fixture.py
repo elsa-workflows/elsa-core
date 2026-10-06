@@ -524,7 +524,7 @@ def stage_evidence(output: Path, result: dict) -> None:
                 valid_receipt = isinstance(receipt, dict) and receipt.get("phase") == phase
                 if not isinstance(receipt, dict):
                     receipt = {}
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, UnicodeDecodeError):
                 receipt, valid_receipt = {}, False
             diagnostic["phases"].append({"phase": phase, "runner_passed": valid_receipt and receipt.get("passed") is True,
                                          "validation_passed": phase in cell.get("databases", {}),
