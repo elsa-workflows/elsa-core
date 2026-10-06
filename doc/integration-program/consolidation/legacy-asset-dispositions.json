@@ -121,19 +121,19 @@
       "category": "dependency_update_policy",
       "owning_workstream": "Central dependency maintenance",
       "proposed_disposition": "Merge product-specific package ecosystems and directories into the root Dependabot configuration; avoid duplicate root configurations.",
-      "evidence_or_gate": "PR #8495 merged the product policies into the root .github/dependabot.yml. After #8409 landed, the /src/extensions Dependabot job succeeded with the elsa-feedz-preview registry and FEEDZ_API_KEY (run 36503465765), closing the credential review gate. #8544 added the Feedz registries the Core root entry lacked.",
+      "evidence_or_gate": "PR #8495 merged the product policies into the root .github/dependabot.yml, and #8544 added the Feedz registries the Core root entry lacked. The earlier /src/extensions run 36503465765 returned green Actions status, but empty product discovery does not establish credential/feed resolution or product central-version acceptance. PR #8640 corrects recursive product project-directory discovery and pins the current active configuration; hosted project evaluation, product central versions and feed acceptance remain pending under Task #8636.",
       "status": "represented_in_core",
       "completion": {
         "decision_path": "doc/integration-program/consolidation/legacy-dependabot-disposition.md",
         "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8495",
         "merge_commit": "dd3903fab232f8cf3255e8b4f0a953e2a081c3c9",
         "active_path": ".github/dependabot.yml",
-        "active_blob": "2e77df9b3b283049c11409ff193a35cda7320238",
+        "active_blob": "7971b16b5b839323ef24761c6d2a2fa9ced13df2",
         "active_mode": "100644",
         "representation": "expanded",
         "active_update": {
-          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8544",
-          "reason": "Declared the Feedz registries for the Core root entry after the first post-import Dependabot run showed the root scan could not reach them."
+          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8640",
+          "reason": "Corrected recursive product selectors to /src/extensions/**/Elsa.* and /src/studio/**/Elsa.* after hosted discovery missed nested projects. Tracked-project selector coverage is verified locally; hosted project evaluation, central versions and feed acceptance remain pending under Task #8636."
         }
       }
     },
@@ -2190,19 +2190,19 @@
       "category": "dependency_update_policy",
       "owning_workstream": "Central dependency maintenance",
       "proposed_disposition": "Merge product-specific package ecosystems and directories into the root Dependabot configuration; avoid duplicate root configurations.",
-      "evidence_or_gate": "PR #8495 merged the product policies into the root .github/dependabot.yml. After #8409 landed, the /src/studio Dependabot job succeeded with the elsa-feedz-preview registry and FEEDZ_API_KEY (run 36503465892), closing the credential review gate. #8544 added the Feedz registries the Core root entry lacked.",
+      "evidence_or_gate": "PR #8495 merged the product policies into the root .github/dependabot.yml, and #8544 added the Feedz registries the Core root entry lacked. The earlier /src/studio run 36503465892 returned green Actions status, but empty product discovery does not establish credential/feed resolution or product central-version acceptance. PR #8640 corrects recursive product project-directory discovery and pins the current active configuration; hosted project evaluation, product central versions and feed acceptance remain pending under Task #8636.",
       "status": "represented_in_core",
       "completion": {
         "decision_path": "doc/integration-program/consolidation/legacy-dependabot-disposition.md",
         "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8495",
         "merge_commit": "dd3903fab232f8cf3255e8b4f0a953e2a081c3c9",
         "active_path": ".github/dependabot.yml",
-        "active_blob": "2e77df9b3b283049c11409ff193a35cda7320238",
+        "active_blob": "7971b16b5b839323ef24761c6d2a2fa9ced13df2",
         "active_mode": "100644",
         "representation": "expanded",
         "active_update": {
-          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8544",
-          "reason": "Declared the Feedz registries for the Core root entry after the first post-import Dependabot run showed the root scan could not reach them."
+          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8640",
+          "reason": "Corrected recursive product selectors to /src/extensions/**/Elsa.* and /src/studio/**/Elsa.* after hosted discovery missed nested projects. Tracked-project selector coverage is verified locally; hosted project evaluation, central versions and feed acceptance remain pending under Task #8636."
         }
       }
     },

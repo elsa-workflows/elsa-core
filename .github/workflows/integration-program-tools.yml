@@ -6,6 +6,9 @@ on:
       - 'Elsa.sln'
       - 'Elsa.Extensions.slnf'
       - 'Elsa.Studio.slnf'
+      - '.github/dependabot.yml'
+      - 'src/extensions/**/*.csproj'
+      - 'src/studio/**/*.csproj'
       - 'scripts/integration-program/**'
       - 'samples/extensions/workbench/**'
       - 'doc/integration-program/verify-hierarchy.py'
@@ -24,6 +27,11 @@ jobs:
         with:
           # The bridge verifies an older pinned Core commit with git cat-file and git diff.
           fetch-depth: 0
+      - name: Verify Dependabot project discovery coverage
+        # Ubuntu's Ruby includes Minitest as a bundled gem; retain a pinned fallback.
+        run: |
+          ruby -e 'require "minitest"' || gem install --user-install --no-document minitest --version 5.16.3
+          ruby scripts/integration-program/test_dependabot_discovery.rb
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
