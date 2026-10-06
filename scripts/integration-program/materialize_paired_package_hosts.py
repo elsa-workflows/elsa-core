@@ -8,7 +8,7 @@ RuntimeHandle is private in-memory data; never put its credentials in receipts o
 from __future__ import annotations
 
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 import base64
 import hashlib
 import json
@@ -27,6 +27,7 @@ from urllib.request import urlopen
 from xml.etree import ElementTree as ET
 
 import prove_consolidated_package_consumers as packages
+import run_paired_package_browser_matrix as browser_processes
 
 FIXTURE = Path(__file__).resolve().parent / "paired-package-browser"
 HOST_NAMES = {"server": "Server", "wasm": "Wasm", "hosted-wasm": "HostedWasm", "custom-elements": "CustomElements"}
@@ -356,6 +357,38 @@ def start_pair(layout: CellLayout, *, validate_project: Callable[[Path], dict],
                timeout_seconds: float = 90, lifetime_seconds: float = 360) -> Iterator[RuntimeHandle]:
     require(callable(validate_project) and 0 < timeout_seconds <= 300, "Missing project verifier or invalid startup bound")
     require(os.name == "posix" and 0 < lifetime_seconds <= 600, "Invalid owned process lifetime/platform")
+    _validate_launch(layout, validate_project)
+    backend_origin, studio_origin, password, env, backend_env = _runtime_environment(layout)
+    public_config = _public_configuration(layout, env, backend_origin)
+    processes, logs, lifetime = [], [], None
+    try:
+        for host, origin, ready in (("backend", backend_origin, "/_fixture/ready"),
+                                    (layout.request.host, studio_origin, "/")):
+            log_path = layout.runtime_root / f"{host}-private.log"
+            process, log = _launch_host(layout, host, origin, backend_env if host == "backend" else env, log_path)
+            processes.append(process)
+            logs.append(log)
+            _wait_ready(process, origin + ready, timeout_seconds)
+        def expire() -> None:
+            for process in processes:
+                _kill_process(process)
+        lifetime = threading.Timer(lifetime_seconds, expire)
+        lifetime.daemon = True
+        lifetime.start()
+        yield _runtime_handle(layout, studio_origin, backend_origin, password, processes)
+    finally:
+        if lifetime is not None:
+            lifetime.cancel()
+        try:
+            _stop_all(processes)
+        finally:
+            for log in logs:
+                log.close()
+            if public_config is not None:
+                public_config.write_bytes(b'{}\n')
+
+
+def _validate_launch(layout: CellLayout, validate_project: Callable[[Path], dict]) -> None:
     for relative, digest in layout.input_hashes.items():
         path = layout.group_root / relative
         require(path.is_file() and not path.is_symlink() and path.resolve().is_relative_to(layout.group_root)
@@ -366,6 +399,9 @@ def start_pair(layout: CellLayout, *, validate_project: Callable[[Path], dict],
         evidence = validate_project(project)
         assets = project.parent / "obj" / "project.assets.json"
         require(evidence.get("project_assets_sha256") == sha256(assets), "Project provenance not bound to restored assets")
+
+
+def _runtime_environment(layout: CellLayout):
     backend_origin = f"http://127.0.0.1:{_free_port()}"
     studio_origin = f"http://127.0.0.1:{_free_port()}"
     require(backend_origin != studio_origin, "Backend and Studio origins collided")
@@ -382,6 +418,10 @@ def start_pair(layout: CellLayout, *, validate_project: Callable[[Path], dict],
     # This key and the exact grant array enter only the owned backend process.
     backend_env = env | {"Fixture__SecretsEncryptionKey": base64.b64encode(secrets.token_bytes(32)).decode("ascii"),
                          "Fixture__PermissionGrants": json.dumps(permission_grants(layout.request))}
+    return backend_origin, studio_origin, password, env, backend_env
+
+
+def _public_configuration(layout: CellLayout, env: dict, backend_origin: str) -> Path | None:
     if layout.request.version == "3.10.0":
         env["DesignerOptions__UseReactFlow"] = str(layout.request.designer_mode == "react-flow").lower()
     client = "wasm" if layout.request.host == "hosted-wasm" else layout.request.host
@@ -395,52 +435,222 @@ def start_pair(layout: CellLayout, *, validate_project: Callable[[Path], dict],
         if layout.request.version == "3.10.0":
             settings["DesignerOptions"] = {"UseReactFlow": layout.request.designer_mode == "react-flow"}
         public_config.write_text(json.dumps(settings) + "\n")
-    processes, logs, lifetime = [], [], None
+    return public_config
+
+
+def _launch_host(layout: CellLayout, host: str, origin: str, env: dict, log_path: Path):
+    project = layout.project_paths[host]
+    descriptor = os.open(log_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    log = os.fdopen(descriptor, "wb")
     try:
-        for host, origin, ready in (("backend", backend_origin, "/_fixture/ready"),
-                                    (layout.request.host, studio_origin, "/")):
-            project = layout.project_paths[host]
-            log_path = layout.runtime_root / f"{host}-private.log"
-            log = log_path.open("xb")
-            log_path.chmod(0o600)
-            logs.append(log)
-            if host in ("wasm", "custom-elements"):
-                command = ["dotnet", "run", "--project", str(project), "--no-build", "--no-restore", "--configuration", "Release", "--urls", origin]
-            else:
-                command = ["dotnet", str(project.parent / "bin" / "Release" / layout.request.framework / (project.stem + ".dll")), "--urls", origin]
-            process = subprocess.Popen(command, cwd=project.parent, env=backend_env if host == "backend" else env,
-                                       stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-            processes.append(process)
-            _wait_ready(process, origin + ready, timeout_seconds)
-        def expire() -> None:
-            for process in processes:
-                if process.poll() is None:
-                    try:
-                        os.killpg(process.pid, signal.SIGKILL)
-                    except ProcessLookupError:
-                        pass
-        lifetime = threading.Timer(lifetime_seconds, expire)
-        lifetime.daemon = True
-        lifetime.start()
-        prefix = f"/{layout.request.route_prefix}/" if layout.request.route_prefix else "/"
-        yield RuntimeHandle(layout.request, studio_origin + prefix, backend_origin + "/elsa/api", "paired-browser", password,
-                            {"definition_name": "paired-browser-" + secrets.token_hex(6), "activity_value": "synthetic-browser-value"},
-                            tuple(process.pid for process in processes))
-    finally:
-        if lifetime is not None:
-            lifetime.cancel()
-        for process in reversed(processes):
+        if host in ("wasm", "custom-elements"):
+            command = ["dotnet", "run", "--project", str(project), "--no-build", "--no-restore", "--configuration", "Release", "--urls", origin]
+        else:
+            command = ["dotnet", str(project.parent / "bin" / "Release" / layout.request.framework / (project.stem + ".dll")), "--urls", origin]
+        return subprocess.Popen(command, cwd=project.parent, env=env, stdout=log,
+                                stderr=subprocess.STDOUT, start_new_session=True), log
+    except BaseException:
+        log.close()
+        raise
+
+
+def _kill_process(process) -> None:
+    if process.poll() is None:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+
+
+def _stop_process(process) -> None:
+    if process.poll() is None:
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+            process.wait(timeout=10)
+        except (ProcessLookupError, subprocess.TimeoutExpired):
+            _kill_process(process)
+            process.wait(timeout=10)
+    else:
+        process.wait(timeout=10)
+
+
+def _stop_all(processes, *, stop=None) -> None:
+    error = None
+    for process in reversed(tuple(processes)):
+        try:
+            (stop or _stop_process)(process)
+        except BaseException as failure:
+            error = failure
+        else:
+            processes.remove(process)
+    if error is not None:
+        raise error
+
+
+def _runtime_handle(layout, studio_origin, backend_origin, password, processes, safe_ids=None):
+    prefix = f"/{layout.request.route_prefix}/" if layout.request.route_prefix else "/"
+    return RuntimeHandle(layout.request, studio_origin + prefix, backend_origin + "/elsa/api", "paired-browser", password,
+                         dict(safe_ids) if safe_ids is not None else {"definition_name": "paired-browser-" + secrets.token_hex(6), "activity_value": "synthetic-browser-value"},
+                         tuple(process.pid for process in processes))
+
+
+def _build_identity(layout: CellLayout) -> dict:
+    """Bind the existing build stamps to actual files, then freeze them across phases."""
+    identity = {}
+    for host, project in layout.project_paths.items():
+        stamp = project.parent / "build-reuse.json"
+        output = project.parent / "bin" / "Release" / layout.request.framework
+        assets = project.parent / "obj" / "project.assets.json"
+        for path in (stamp, assets, output):
+            require(path.exists() and path.resolve().is_relative_to(layout.group_root) and
+                    not any(parent.is_symlink() for parent in (path, *path.parents)), "Unsafe phase build path")
+        previous = json.loads(stamp.read_text())
+        require(previous.get("schema") == 1, "Missing verified phase build stamp")
+        inputs = {name: digest for name, digest in layout.input_hashes.items()
+                  if name.startswith(str(project.parent.relative_to(layout.group_root)) + "/")}
+        paths = list(output.rglob("*"))
+        require(not any(path.is_symlink() for path in paths), "Symlinked phase build output")
+        outputs = {str(path.relative_to(output)): sha256(path) for path in paths if path.is_file()}
+        require(outputs and previous.get("inputs") == inputs and previous.get("assets") == sha256(assets)
+                and previous.get("outputs") == outputs, "Phase build identity differs from verified build")
+        identity[host] = {"stamp": sha256(stamp), "assets": sha256(assets), "outputs": outputs}
+    return identity
+
+
+class _DesignerPhases:
+    """Private process owner; callers retain only sanitized observations, never this object."""
+
+    def __init__(self, layout, validate_project, timeout_seconds, lifetime_seconds):
+        self.layout = replace(layout, input_hashes=dict(layout.input_hashes), project_paths=dict(layout.project_paths))
+        require(layout.runtime_root.is_dir() and layout.runtime_root.resolve() == layout.runtime_root and
+                layout.runtime_root.is_relative_to(layout.group_root), "Unsafe private designer runtime root")
+        self.validate_project = validate_project
+        self.timeout_seconds = timeout_seconds
+        _validate_launch(self.layout, validate_project)
+        self.build_identity = _build_identity(self.layout)
+        self.backend_origin, self.studio_origin, self.password, self.env, self.backend_env = _runtime_environment(self.layout)
+        self.safe_ids = {"definition_name": "paired-browser-" + secrets.token_hex(6), "activity_value": "synthetic-browser-value"}
+        self.processes, self.logs, self.births = [], [], {}
+        self.lock = threading.RLock()
+        self.expired = threading.Event()
+        self.closed = False
+        self.cleanup_failed = False
+        self.active = False
+        self.completed = 0
+        self.timer = threading.Timer(lifetime_seconds, self._expire)
+        self.timer.daemon = True
+        self.public_config = None
+        self.deadline = None
+
+    def _stop_owned(self, process):
+        started = self.births.get(process.pid)
+        if started is None:
+            # Popen owns the direct child, but no descendants can be certified.
             if process.poll() is None:
-                try:
-                    os.killpg(process.pid, signal.SIGTERM)
-                    process.wait(timeout=10)
-                except (ProcessLookupError, subprocess.TimeoutExpired):
-                    if process.poll() is None:
-                        os.killpg(process.pid, signal.SIGKILL)
-                    process.wait(timeout=10)
-            else:
-                process.wait(timeout=10)
-        for log in logs:
-            log.close()
-        if public_config is not None:
-            public_config.write_bytes(b'{}\n')
+                process.kill()
+            process.wait(timeout=10)
+            raise RuntimeError("Designer descendant ownership unavailable")
+        browser_processes._cleanup_browser_process(process, started)
+        # Read-only group check after birth-guarded descendant cleanup. Never
+        # signal a PGID after its root/descendant ownership has disappeared.
+        import paired_package_converter_selection as converters
+        require(converters._wait_group_empty(process.pid), "Designer group cleanup unverified")
+
+    def _expire(self):
+        with self.lock:
+            self.expired.set()
+            try:
+                _stop_all(self.processes, stop=self._stop_owned)
+            except BaseException:
+                self.cleanup_failed = True
+
+    def _launch(self, layout, host, origin, env, log_name, ready):
+        with self.lock:
+            require(not self.expired.is_set() and not self.closed and time.monotonic() < self.deadline,
+                    "Designer phase owner expired or closed")
+            process, log = _launch_host(layout, host, origin, env, layout.runtime_root / log_name)
+            self.processes.append(process)
+            self.logs.append(log)
+            info = browser_processes._browser_process_info(process.pid)
+            require(info is not None and not info[2], "Designer process birth identity unavailable")
+            self.births[process.pid] = info[1]
+        _wait_ready(process, origin + ready, self.timeout_seconds)
+        return process
+
+    def _healthy(self):
+        require(not self.closed and not self.cleanup_failed and not self.expired.is_set() and time.monotonic() < self.deadline and self.backend.poll() is None,
+                "Designer phase backend exited or owner expired")
+
+    @contextmanager
+    def phase(self, designer_mode: str) -> Iterator[RuntimeHandle]:
+        try:
+            self._healthy()
+            require(not self.active and self.completed < 2 and designer_mode == DESIGNER_MODES[self.completed],
+                    "Designer phases must run X6 then React exactly once")
+            self.active = True
+            layout = replace(self.layout, request=replace(self.layout.request, designer_mode=designer_mode))
+            _validate_launch(layout, self.validate_project)
+            require(_build_identity(layout) == self.build_identity, "Verified build changed between designer phases")
+            env = dict(self.env)
+            self.public_config = _public_configuration(layout, env, self.backend_origin)
+            studio = self._launch(layout, layout.request.host, self.studio_origin, env,
+                                  f"{layout.request.host}-{designer_mode}-private.log", "/")
+            self._healthy()
+            try:
+                yield _runtime_handle(layout, self.studio_origin, self.backend_origin, self.password,
+                                      [self.backend, studio], self.safe_ids)
+                self._healthy()
+                require(studio.poll() is None, "Designer phase Studio exited")
+            finally:
+                with self.lock:
+                    if studio in self.processes:
+                        self._stop_owned(studio)
+                        self.processes.remove(studio)
+                if self.public_config is not None:
+                    self.public_config.write_bytes(b'{}\n')
+                    self.public_config = None
+            self.completed += 1
+            self.active = False
+        except BaseException:
+            self.close()
+            raise
+
+    def close(self):
+        with self.lock:
+            self.closed = True
+        self.timer.cancel()
+        try:
+            with self.lock:
+                _stop_all(self.processes, stop=self._stop_owned)
+            require(not self.cleanup_failed, "Designer watchdog cleanup unverified")
+        finally:
+            for log in self.logs:
+                log.close()
+            if self.public_config is not None:
+                self.public_config.write_bytes(b'{}\n')
+                self.public_config = None
+
+
+@contextmanager
+def start_designer_phases(layout: CellLayout, *, validate_project: Callable[[Path], dict],
+                          timeout_seconds: float = 90, lifetime_seconds: float = 600) -> Iterator[_DesignerPhases]:
+    """Run candidate X6 then React against one live backend and unchanged build.
+
+    Each ``with owner.phase(mode)`` supplies private RuntimeHandle data for a fresh
+    browser session. It reaps Studio before the next phase; the backend, database,
+    keys, credentials and CORS origins survive until the outer context exits.
+    No browser proof or portable receipt is produced by this lifecycle helper.
+    """
+    require(layout.request.version == "3.10.0" and layout.request.designer_mode == "x6" and
+            layout.request.host in ("server", "wasm", "hosted-wasm"), "Unsupported designer phase cell")
+    require(callable(validate_project) and 0 < timeout_seconds <= 300 and os.name == "posix" and
+            0 < lifetime_seconds <= 600, "Invalid designer phase verifier or lifetime")
+    owner = _DesignerPhases(layout, validate_project, timeout_seconds, lifetime_seconds)
+    try:
+        owner.deadline = time.monotonic() + lifetime_seconds
+        owner.timer.start()
+        owner.backend = owner._launch(layout, "backend", owner.backend_origin, owner.backend_env,
+                                      "backend-designer-phases-private.log", "/_fixture/ready")
+        yield owner
+    finally:
+        owner.close()
