@@ -257,7 +257,11 @@ def isolated_environment(layout: CellLayout) -> dict[str, str]:
     return env
 
 
-def build(layout: CellLayout) -> list[dict]:
+def build(layout: CellLayout, *, converter_decoder: Path | None = None) -> list[dict]:
+    clients = {host for host in layout.project_paths if host in ("wasm", "custom-elements")}
+    require(not clients or converter_decoder is not None, "WASM build requires an explicitly prepared converter decoder")
+    if clients:
+        import paired_package_converter_selection as converters
     commands = []
     env = isolated_environment(layout)
     sdk_log = layout.group_root / "logs" / "execution-sdk.log"
@@ -274,13 +278,20 @@ def build(layout: CellLayout) -> list[dict]:
             previous = json.loads(stamp.read_text())
             actual_output = {str(path.relative_to(output)): sha256(path) for path in output.rglob("*") if path.is_file()}
             if previous.get("inputs") == input_hashes and assets_path.is_file() and previous.get("assets") == sha256(assets_path) and actual_output and previous.get("outputs") == actual_output:
-                commands.append({"stage": "reuse_verified_build", "project": host, "project_assets_sha256": sha256(assets_path)})
+                record = {"stage": "reuse_verified_build", "project": host, "project_assets_sha256": sha256(assets_path)}
+                if host in clients:
+                    record["converter_selection"] = converters.verify_reused_selection(layout, project, converter_decoder, env)
+                commands.append(record)
                 continue
         # Hosted wrapper builds its already-reviewed fixture client edge.
         for phase, args in (("restore", ["restore", project.name, "--configfile", "NuGet.Config", "--packages", str(layout.packages_root), "--force-evaluate", "--no-cache"]),
                             ("build", ["build", project.name, "--no-restore", "--configuration", "Release", "-p:UseSharedCompilation=false"])):
             log = layout.group_root / "logs" / f"{host}-{phase}.log"
-            commands.append(packages._run_command(["dotnet", *args, "--nologo"], project.parent, env, log, 1200))
+            command = ["dotnet", *args, "--nologo"]
+            if host in clients and phase == "build":
+                commands.append(converters.capture_build(layout, project, command, env, log, converter_decoder))
+            else:
+                commands.append(packages._run_command(command, project.parent, env, log, 1200))
         stamp.write_text(json.dumps({"schema": 1, "inputs": input_hashes, "assets": sha256(assets_path),
                                     "outputs": {str(path.relative_to(output)): sha256(path)
                                                 for path in output.rglob("*") if path.is_file()}}, sort_keys=True) + "\n")
