@@ -134,6 +134,11 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   proof.last_completed_stage = 'workflow_created';
   const definitionId = new URL(page.url()).pathname.split('/').at(-2)!;
   const getDefinition = () => backend.get('/workflow-definitions/by-definition-id/' + encodeURIComponent(definitionId) + '?versionOptions=Latest');
+  // The route changes before the asynchronous editor/designer initialization completes.
+  // Require the actual X6 graph and this workflow's populated metadata before changing tabs.
+  await expect(page.locator('.flowchart-diagram-designer-wrapper .x6-graph-svg')).toBeVisible();
+  await expect(page.getByLabel('Name', { exact: true })).toHaveValue(name);
+  proof.editor_ready_observed = true;
   // A declared output is authored through the real package UI, not seeded via HTTP.
   await page.getByRole('tab', { name: /Input.*Output/i }).click();
   proof.last_completed_stage = 'output_tab_opened';
@@ -206,7 +211,9 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   if (input.request.version !== '3.10.0') {
     if (input.released_document_output) {
       // Export the real saved workflow through the native menu and download interop.
-      const menu = page.locator('.pane-left [role="toolbar"] .mud-menu-icon-button-activator');
+      // WorkflowEditor places its JSON-file menu beside the hidden native upload wrapper;
+      // the designer toolbar also has an unrelated canvas-export menu.
+      const menu = page.locator('#workflow-file-upload-button-wrapper + .mud-button-group-root .mud-menu-icon-button-activator');
       await expect(menu).toHaveCount(1);
       await menu.click();
       await page.getByRole('menuitem', { name: 'Export', exact: true }).click();
