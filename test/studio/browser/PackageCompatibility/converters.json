@@ -1,4 +1,12 @@
 {
   "schema": 1,
-  "converters": {}
+  "converters": {
+    "dc7516b7299f29586384e546d3fa059cfe5e014258928e91f9d78359fab2f5a0": {
+      "sdk_version": "10.0.300",
+      "source_sha256": "82566f1e4da9177357d04e129bead7d352028c514d236f591d7c1a1c698ac15c",
+      "implementation_sha256": "3ad18f76f32f509b801df768457d65d86d534fbdd02247a07ac093795a920bd3",
+      "wrapper_sha256": "186b1bbdf5c3b1c0dbee30c4359348f1ad3e347264c33cf1d3718f312dcaee54",
+      "review": "webcil-converter-review.md"
+    }
+  }
 }
