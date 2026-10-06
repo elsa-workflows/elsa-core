@@ -1603,6 +1603,61 @@
         "url": "https://github.com/elsa-workflows/elsa-core"
       },
       "version": "3.9.0"
+    },
+    {
+      "id": "Elsa.Bpmn",
+      "version": "3.9.0",
+      "owner": "elsa-core",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core",
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702"
+      },
+      "archive_sha256": "211a69f38100b58de26c4605d0e0f9b595939b85a0a1a92f13da04ac7c21a7a7"
+    },
+    {
+      "id": "Elsa.Bpmn.Interchange",
+      "version": "3.9.0",
+      "owner": "elsa-core",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core",
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702"
+      },
+      "archive_sha256": "061ed85f66ff99fb9d3519560bfe92e1c8288686fdc08cc1a875cda00d6f84ad"
+    },
+    {
+      "id": "Elsa.SasTokens",
+      "version": "3.9.0",
+      "owner": "elsa-core",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core",
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702"
+      },
+      "archive_sha256": "5fde91f43ee23f8587e9b66144cdf2822fcb19cf7c5cf6835d0ab097a96ff177"
+    },
+    {
+      "id": "Elsa.Scheduling",
+      "version": "3.9.0",
+      "owner": "elsa-core",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core",
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702"
+      },
+      "archive_sha256": "43634920c384c12404d51418fc6f6a0bd4114eddcee78b40c7eaa4e1f62d9ade"
+    },
+    {
+      "id": "Elsa.Workflows.Api",
+      "version": "3.9.0",
+      "owner": "elsa-core",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core",
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702"
+      },
+      "archive_sha256": "4296d7063943ec68598e63ddadec7e48a5cacf32bd05fcdb75c6d63efff54147"
     }
   ],
   "platform_exceptions": [
