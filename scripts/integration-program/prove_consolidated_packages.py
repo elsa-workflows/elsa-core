@@ -7,7 +7,7 @@ IsPackable globally. The inventory comes from evaluated MSBuild properties.
 from __future__ import annotations
 
 import argparse
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
 import json
 import os
@@ -16,6 +16,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import time
 import urllib.request
 import xml.etree.ElementTree as ET
 import zipfile
@@ -132,8 +133,15 @@ def inventory(root: Path, version: str, commit: str, *, workers: int = 4) -> dic
         require(not row["snupkg"] or row["symbol_format"] == "snupkg", f"Unsupported symbol format: {path}")
         return row, None, record
 
+    started = time.monotonic()
+    results = []
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        results = list(pool.map(inspect, projects))
+        futures = [pool.submit(inspect, project) for project in projects]
+        for future in as_completed(futures):
+            results.append(future.result())
+            if len(results) % 20 == 0 or len(results) == len(projects):
+                print(f"Evaluated {len(results)}/{len(projects)} projects in {time.monotonic()-started:.1f}s", flush=True)
+    results.sort(key=lambda result: result[2]["project"])
     packages = sorted((row for row, _, _ in results if row), key=lambda row: row["id"].casefold())
     require(len({row["id"].casefold() for row in packages}) == len(packages), "Duplicate evaluated PackageId")
     return {"version": version, "source_commit": commit, "repository_url": CORE_URL,
@@ -145,7 +153,7 @@ def inventory(root: Path, version: str, commit: str, *, workers: int = 4) -> dic
 
 def archive_names(archive: zipfile.ZipFile) -> set[str]:
     names = archive.namelist()
-    require(len(set(names)) == len(names), "Duplicate ZIP entries")
+    require(len({name.casefold() for name in names}) == len(names), "Duplicate ZIP entries")
     for name in names:
         path = PurePosixPath(name)
         require(not path.is_absolute() and ".." not in path.parts and "\\" not in name,
@@ -154,7 +162,7 @@ def archive_names(archive: zipfile.ZipFile) -> set[str]:
 
 
 def metadata(archive: zipfile.ZipFile) -> ET.Element:
-    files = [name for name in archive_names(archive) if name.endswith(".nuspec")]
+    files = [name for name in archive_names(archive) if name.casefold().endswith(".nuspec")]
     require(len(files) == 1, "Artifact must contain exactly one nuspec")
     document = ET.fromstring(archive.read(files[0]))
     for element in document.iter():
@@ -226,6 +234,10 @@ def verify_artifacts(artifacts: Path, manifest: dict) -> dict:
                 require(assembly in names, f"Missing framework assembly: {row['id']} {assembly}")
                 row["assemblies"].append({"framework": framework, "assembly": assembly,
                                           "pdb": f"{base}/{properties['assembly_name']}.pdb"})
+            expected_dlls = {assembly["assembly"] for assembly in row["assemblies"]}
+            own_names = {properties["assembly_name"] + ".dll" for properties in row["framework_properties"].values()}
+            actual_dlls = {name for name in names if PurePosixPath(name).name in own_names}
+            require(actual_dlls == expected_dlls, f"Assembly framework coverage mismatch: {row['id']}")
             if row["snupkg"]:
                 symbol_path = artifacts / row["snupkg"]
                 row["snupkg_sha256"] = hashlib.sha256(symbol_path.read_bytes()).hexdigest()
@@ -375,6 +387,7 @@ def main() -> None:
     write_json(output / "inventory.json", manifest)
     print(f"Evaluated {len(manifest['packages'])} packages and {len(manifest['exclusions'])} exclusions", flush=True)
     if args.inventory_only:
+        require(clean_head(root) == commit, "Source changed during inventory evaluation")
         return
     packages = root / "packages"
     require(not packages.exists() or not any(packages.iterdir()), "Canonical packages output must be empty before proof; use an isolated worktree")

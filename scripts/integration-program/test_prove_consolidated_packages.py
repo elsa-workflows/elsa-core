@@ -1,6 +1,4 @@
 import hashlib
-import importlib.util
-import json
 from pathlib import Path
 import subprocess
 import tempfile
@@ -130,6 +128,17 @@ class PackageProofTests(unittest.TestCase):
         tracked["documents"][0]["embedded_checksum"] = "bad"
         with self.assertRaisesRegex(ValueError, "Embedded source checksum"):
             proof.verify_documents(ROOT, self.row, "net8.0", tracked, COMMIT, False)
+
+    def test_byte_cache_keeps_each_document_checksum_check(self):
+        inspection = self.inspection("src/studio/example/Example.cs")
+        cache = {}
+        with patch.object(proof.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, b"source")) as command:
+            for _ in range(2):
+                proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, False, cache)
+            self.assertEqual(1, command.call_count)
+            inspection["documents"][0]["checksum"] = hashlib.sha256(b"different").hexdigest()
+            with self.assertRaisesRegex(ValueError, "exact Git blob"):
+                proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, False, cache)
 
     def test_unmapped_and_wrong_repository_documents_fail(self):
         inspection = self.inspection("src/studio/example/Example.cs")

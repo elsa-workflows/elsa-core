@@ -2,6 +2,8 @@
 
 [Issue #8626](https://github.com/elsa-workflows/elsa-core/issues/8626) prepares the first consolidated 3.10 package set. It follows the [accepted lockstep and publisher-cutover decision](../adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md). This is a nonpublishing proof; package-feed publication and live source-publisher cutover require their separate manual approval.
 
+Automatic proof runs cover tooling and package/build configuration changes. Source-changing release candidates require an explicit exact-head proof run before release; the expensive rehearsal is not a runtime behavior test for every source edit.
+
 Normal builds retain imported Extensions and Studio `IsPackable=false`. The explicit `ConsolidatedPackageProof=true` MSBuild property skips only those subtree-wide assignments. Project-specific exclusions remain active, including the five retired Extensions Secrets projects and the unfinished Connections lifecycle packages. It never sets `IsPackable=true` globally. The proof validates a `3.10.0-proof.<positive run>.<positive attempt>` version before packing; stable and preview release versions are rejected.
 
 Run from a clean, committed, isolated Core checkout with the required SDKs and runtimes installed:
