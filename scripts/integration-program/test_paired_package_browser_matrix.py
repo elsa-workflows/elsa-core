@@ -188,7 +188,7 @@ class MatrixContracts(unittest.TestCase):
                 changed = copy.deepcopy(record)
                 if field:
                     changed["proof"]["baseline_reopens"][0][field] = "0" * 64
-                with self.subTest(field=field), patch.object(matrix.subprocess, "run", return_value=SimpleNamespace(stdout=json.dumps(changed), returncode=0)):
+                with self.subTest(field=field), patch.object(matrix, "_run_browser_process", return_value=SimpleNamespace(stdout=json.dumps(changed), returncode=0)):
                     if field:
                         with self.assertRaisesRegex(ValueError, "supplied bytes/source"):
                             matrix.run_browser(self.handle, dict(zip(("version", "framework", "host"), key)), [], released_document_inputs=inputs)
@@ -446,7 +446,7 @@ class MatrixContracts(unittest.TestCase):
                 return SimpleNamespace(stdout=json.dumps(cell), returncode=0)
             for digest in ("0" * 64, hashlib.sha256(document).hexdigest()):
                 cell["proof"] = {"released_document_sha256": digest, "last_completed_stage": "released_document_exported"}
-                with patch.object(matrix.subprocess, "run", side_effect=child):
+                with patch.object(matrix, "_run_browser_process", side_effect=child):
                     if digest == "0" * 64:
                         with self.assertRaisesRegex(ValueError, "bytes differ"):
                             matrix.run_browser(self.handle, cell, [], released_document_output=destination)
@@ -468,7 +468,7 @@ class MatrixContracts(unittest.TestCase):
                     destination.write_bytes(document)
                     destination.chmod(mode)
                     return SimpleNamespace(stdout=json.dumps(cell), returncode=0)
-                with self.subTest(size=size, mode=mode, include_hash=include_hash), patch.object(matrix.subprocess, "run", side_effect=child), self.assertRaises(ValueError):
+                with self.subTest(size=size, mode=mode, include_hash=include_hash), patch.object(matrix, "_run_browser_process", side_effect=child), self.assertRaises(ValueError):
                     matrix.run_browser(self.handle, cell, [], released_document_output=destination)
                 destination.unlink()
 

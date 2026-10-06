@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import asdict, is_dataclass
+import ctypes
+import errno
 import hashlib
 import json
 import os
 import re
+import signal
 from pathlib import Path
 import subprocess
+import sys
+import time
 from typing import Callable
 
 JOURNEY = Path(__file__).resolve().parents[2] / "test/studio/browser/PackageCompatibility/journey.ts"
@@ -379,6 +384,163 @@ def prepare_candidate(inputs: Path, destination: Path, retained: Path, *, fixtur
     return provenance
 
 
+class BrowserCleanupUnverified(ValueError):
+    """Sanitized failure: the caller must not claim that owned cleanup passed."""
+
+
+def _browser_process_info(pid: int) -> tuple[int, object, bool, bool] | None:
+    """Read parent, birth identity, zombie/stopped state without command lines/environment."""
+    if sys.platform == "darwin":
+        # sys/proc_info.h: PROC_PIDTBSDINFO (3), including microsecond birth time.
+        class BsdInfo(ctypes.Structure):
+            _fields_ = [("header", ctypes.c_uint32 * 12), ("names", ctypes.c_char * 48),
+                        ("tail", ctypes.c_uint32 * 6), ("started", ctypes.c_uint64 * 2)]
+        library = ctypes.CDLL("/usr/lib/libproc.dylib", use_errno=True)
+        info = BsdInfo()
+        size = library.proc_pidinfo(pid, 3, 0, ctypes.byref(info), ctypes.sizeof(info))
+        if size == 0 and ctypes.get_errno() == errno.ESRCH:
+            return None
+        if size != ctypes.sizeof(info):
+            raise OSError("Process identity unavailable")
+        return info.header[4], tuple(info.started), info.header[1] == 5, info.header[1] == 4  # SZOMB/SSTOP
+    if sys.platform.startswith("linux"):
+        try:
+            raw = Path(f"/proc/{pid}/stat").read_text()
+        except FileNotFoundError:
+            return None
+        # comm may contain spaces/parentheses; fields after its closing ')' begin at field 3.
+        fields = raw[raw.rfind(")") + 2:].split()
+        return int(fields[1]), int(fields[19]), fields[0] == "Z", fields[0] in {"T", "t"}
+    raise OSError("Browser cleanup requires macOS or Linux process identities")
+
+
+def _signal_browser_process(pid: int, started: object, sig: int) -> bool:
+    current = _browser_process_info(pid)
+    if current is None or current[1] != started or current[2]:
+        return False
+    try:
+        os.kill(pid, sig)
+    except ProcessLookupError:
+        return False
+    return True
+
+
+def _cleanup_browser_process(process: subprocess.Popen, started: object) -> None:
+    """Freeze and identify descendants before parents exit, including new sessions.
+
+    Check birth identity before each signal; never infer ownership from executable names.
+    An already-exited root cannot establish ownership of reparented descendants.
+    """
+    owned = {process.pid: started}
+    uncertain = False
+
+    def discover() -> bool:
+        table = subprocess.run(["ps", "-axo", "pid=,ppid="], stdout=subprocess.PIPE,
+                               stderr=subprocess.DEVNULL, text=True, timeout=2, check=True)
+        parents = {int(pid): int(parent) for pid, parent in (line.split() for line in table.stdout.splitlines())}
+        added = False
+        pending = set(parents) - set(owned)
+        while pending:
+            children = {pid for pid in pending if parents[pid] in owned}
+            if not children:
+                break
+            for pid in children:
+                pending.remove(pid)
+                parent = _browser_process_info(parents[pid])
+                info = _browser_process_info(pid)
+                if parent is None or parent[1] != owned[parents[pid]] or info is None:
+                    raise OSError("Browser ancestry disappeared during cleanup")
+                if info[0] != parents[pid]:
+                    raise OSError("Browser ancestry changed during cleanup")
+                owned[pid] = info[1]
+                _signal_browser_process(pid, info[1], signal.SIGSTOP)
+                added = True
+        return added
+
+    def wait_state(seconds: float, *, frozen: bool = False) -> bool:
+        deadline = time.monotonic() + seconds
+        while True:
+            ready = True
+            for pid, stamp in owned.items():
+                info = _browser_process_info(pid)
+                if info is not None and info[1] == stamp and not info[2] and not (frozen and info[3]):
+                    ready = False
+            if ready or time.monotonic() >= deadline:
+                return ready
+            time.sleep(0.1)
+
+    try:
+        if not _signal_browser_process(process.pid, started, signal.SIGSTOP):
+            raise OSError("Browser root exited before descendant ownership was established")
+        if not wait_state(2, frozen=True):
+            raise OSError("Browser root did not stop")
+        # A stable snapshot after every discovered process stops bounds further forks.
+        for _ in range(3):
+            added = discover()
+            if not wait_state(2, frozen=True):
+                raise OSError("Browser descendants did not stop")
+            if not added:
+                break
+        else:
+            raise OSError("Browser process ancestry did not stabilize")
+    except (OSError, subprocess.SubprocessError, ValueError):
+        uncertain = True
+    finally:
+        # Attempt resume even on discovery failure; report signal/identity failures as unverified.
+        for pid, stamp in reversed(tuple(owned.items())):
+            for sig in (signal.SIGTERM, signal.SIGCONT):
+                try:
+                    _signal_browser_process(pid, stamp, sig)
+                except OSError:
+                    uncertain = True
+    try:
+        exited = wait_state(2)
+    except OSError:
+        uncertain, exited = True, False
+    if not exited:
+        for pid, stamp in reversed(tuple(owned.items())):
+            try:
+                _signal_browser_process(pid, stamp, signal.SIGKILL)
+            except OSError:
+                uncertain = True
+    try:
+        if not wait_state(2):
+            uncertain = True
+        process.wait(timeout=2)
+    except (OSError, subprocess.SubprocessError):
+        uncertain = True
+    if uncertain:
+        raise BrowserCleanupUnverified("Browser process cleanup could not be verified") from None
+
+
+def _run_browser_process(command: list[str], *, cwd: Path, input: str, env: dict, timeout: int) -> subprocess.CompletedProcess:
+    require(os.name == "posix", "Browser process cleanup requires POSIX")
+    process = subprocess.Popen(command, cwd=cwd, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, text=True, start_new_session=True)
+    info = None
+    try:
+        info = _browser_process_info(process.pid)
+        if info is None:
+            raise OSError("Browser root identity unavailable")
+        stdout, stderr = process.communicate(input=input, timeout=timeout)
+        return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+    except BaseException:
+        if info is not None:
+            _cleanup_browser_process(process, info[1])
+        else:
+            # Popen still owns this unreaped child; no descendant ownership is established.
+            try:
+                process.kill()
+                process.wait(timeout=2)
+            finally:
+                raise BrowserCleanupUnverified("Browser process cleanup could not be verified") from None
+        raise
+    finally:
+        for stream in (process.stdin, process.stdout, process.stderr):
+            if stream is not None:
+                stream.close()
+
+
 def run_browser(handle, request, resources: list[dict], *, timeout: int = 240,
                 released_document_output: Path | None = None, released_document_inputs: list[dict] | None = None) -> dict:
     """Credentials only enter the child through stdin; raw process errors are discarded."""
@@ -395,8 +557,8 @@ def run_browser(handle, request, resources: list[dict], *, timeout: int = 240,
         require(released_document_output.parent.is_dir() and not released_document_output.exists(), "Released document requires a fresh private output in an existing directory")
         payload["released_document_output"] = str(released_document_output)
     try:
-        completed = subprocess.run(["npm", "exec", "--no", "--", "tsx", str(JOURNEY)],
-                                   cwd=JOURNEY.parent, input=json.dumps(payload), capture_output=True, text=True, timeout=timeout,
+        completed = _run_browser_process(["npm", "exec", "--no", "--", "tsx", str(JOURNEY)],
+                                   cwd=JOURNEY.parent, input=json.dumps(payload), timeout=timeout,
                                    env={key: value for key, value in os.environ.items() if key in {"PATH", "HOME", "TMPDIR", "SystemRoot"}})
         record = json.loads(completed.stdout)
     except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError):
