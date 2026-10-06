@@ -98,6 +98,7 @@ public class DispatchWorkflow : Activity<object>
         else
         {
             // Otherwise, we can complete immediately.
+            context.SetResult(instanceId);
             await context.CompleteActivityAsync();
         }
     }
