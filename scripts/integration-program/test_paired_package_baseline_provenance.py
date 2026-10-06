@@ -136,8 +136,8 @@ class BaselinePackageProvenanceTests(unittest.TestCase):
 
     def test_tracked_policy_keeps_verified_sources_and_missing_tuples_separate(self):
         tracked = baseline._read_policy(baseline.POLICY_PATH)
-        self.assertEqual(71, len(tracked["packages"]))
-        self.assertEqual(53, len(tracked["missing_provenance"]))
+        self.assertEqual(145, len(tracked["packages"]))
+        self.assertEqual([], tracked["missing_provenance"])
         self.assertEqual(
             {"elsa-core", "elsa-studio", "elsa-extensions"},
             {record["owner"] for record in tracked["packages"]},

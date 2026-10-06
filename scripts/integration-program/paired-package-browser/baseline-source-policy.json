@@ -1,5 +1,5 @@
 {
-  "description": "Pinned source ownership and archive digests for package-only Elsa 3.8.4 and 3.9.0 baselines. A missing_provenance tuple is intentionally never approved.",
+  "description": "Pinned source ownership and archive digests for package-only Elsa 3.8.4 and 3.9.0 baselines. All 145 declared closure tuples are archive-verified; actual restore-selected closure and Platform tuples require separate verification.",
   "excluded_elsa_ids": [
     "Elsa.Secrets.Api",
     "Elsa.Secrets.Core",
@@ -7,273 +7,7 @@
     "Elsa.Secrets.Models",
     "Elsa.Secrets.Scripting"
   ],
-  "missing_provenance": [
-    {
-      "id": "Elsa.Api.Client",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Api.Client",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Api.Common",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Api.Common",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Expressions",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Expressions",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Expressions.JavaScript",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Expressions.JavaScript",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Persistence.EFCore",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Persistence.EFCore",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Secrets.Persistence.EFCore",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Secrets.Persistence.EFCore",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Studio.AI",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Studio.AI",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Studio.ActivityPortProviders",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Studio.ActivityPortProviders",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Studio.Authentication.ElsaIdentity",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Studio.Authentication.ElsaIdentity",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Studio.Authentication.OpenIdConnect",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Studio.Authentication.OpenIdConnect",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Studio.Dashboard",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Studio.Dashboard",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Studio.Diagnostics.ConsoleLogs",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Studio.Diagnostics.ConsoleLogs",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Studio.Diagnostics.OpenTelemetry",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Studio.Diagnostics.OpenTelemetry",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Studio.Diagnostics.StructuredLogs",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Studio.Diagnostics.StructuredLogs",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Studio.Diagnostics.StructuredLogs.Dashboard",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Studio.Diagnostics.StructuredLogs.Dashboard",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Studio.ExternalAuthentication",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Studio.ExternalAuthentication",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Studio.Security",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Studio.Security",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Studio.Settings",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Studio.Settings",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Studio.UIHints",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Studio.UIHints",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Studio.Workflows.Core",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Studio.Workflows.Core",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Studio.Workflows.Dashboard",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Studio.Workflows.Dashboard",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Tenants",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Workflows.Core",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Workflows.Core",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Workflows.Management",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Workflows.Management",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    },
-    {
-      "id": "Elsa.Workflows.Runtime",
-      "status": "missing_provenance",
-      "version": "3.8.4"
-    },
-    {
-      "id": "Elsa.Workflows.Runtime",
-      "status": "missing_provenance",
-      "version": "3.9.0"
-    }
-  ],
+  "missing_provenance": [],
   "packages": [
     {
       "archive_sha256": "97464a118f4f526ce2aa23ac1dc141ae1d5a4792735151273f0bf245c2ef5694",
@@ -1053,6 +787,820 @@
         "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
         "type": "git",
         "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "1de250df79ee88caa6cabe13b92686b969f5408bb29338745bcf2100018188b7",
+      "id": "Elsa.Api.Client",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "ce0bb3e657e56b04da2797786f8682494f548332263c1987bae10be8c12e6663",
+      "id": "Elsa.Api.Client",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "772004eac34b2452ee6198bfffa95ac11ed5c2c63f98441b48f73e9c769d4b58",
+      "id": "Elsa.Api.Common",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "e17c102450ab6409a752e9a33efd811e7bb40e2231151c2cb884803d381b71f6",
+      "id": "Elsa.Api.Common",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "d2848b09470a7b257c307ba2e6c27da72403ec5dc19f8eb0520e47b3a5b16861",
+      "id": "Elsa.Expressions",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "569df0c5e3a457a746236bf6ba94ba3ef068adc26cba8f5ade2c7e284dfcb94a",
+      "id": "Elsa.Expressions",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "9fcaf9a9ca2572834c5d4ff666d4abff65254b55b5c82c696353a340797b42a1",
+      "id": "Elsa.Expressions.JavaScript",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "4e6aa5ac831e9850c2ac57c2773d7676a446b893b5769e20118a038421f4c1f0",
+      "id": "Elsa.Expressions.JavaScript",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "df8a7a9b545595ff80634343694f72c0080590c9f070a3d9376bbb89ae5e34a2",
+      "id": "Elsa.Persistence.EFCore",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "449e0b23beaeb25de8fd570b6c7a3cc730736e2f9618a12080b026fdccc7fb23",
+      "id": "Elsa.Persistence.EFCore",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "929ffb03d5aabd6f03911412ecf9416f01f070fd0c91dd9b6f55a60e93f412f7",
+      "id": "Elsa.Secrets.Persistence.EFCore",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "a8c2a8034df7f7ff9d63197fbe19ce7b08acd816971f74eaa878cb16adc39978",
+      "id": "Elsa.Secrets.Persistence.EFCore",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "67eac6c14bb2688e1c03b77331295516471091488b1ac348785838810e6abf06",
+      "id": "Elsa.Studio.ActivityPortProviders",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "acb426315dcd6940044cb8809b9b3c55ceb2f99a592949d636f81177186a0fca",
+      "id": "Elsa.Studio.ActivityPortProviders",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "7586ea9fc04d4b6827b39a0056187815ee2238d3637d252ac884e6c81f49e1f4",
+      "id": "Elsa.Studio.AI",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "496579cab41bd9796f1af29320f2497187498838d78bbf3f4ceb8912528ec0f6",
+      "id": "Elsa.Studio.AI",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "34a459a2dd3a00549fc17fa80ee734d24ddf165ec11e107e520e29a69ccddad6",
+      "id": "Elsa.Studio.Authentication.ElsaIdentity",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "c4b5b3c39bc13e8d58a4c0e4b93f1f8a09eaf36184986360f17b428ac882f2ea",
+      "id": "Elsa.Studio.Authentication.ElsaIdentity",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "fcd7c37c55178f43cc99ada8f05412adb31a13012fe12a8a6c398e504cd0b189",
+      "id": "Elsa.Studio.Authentication.OpenIdConnect",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "40c8e4724f417aeb6020d3418bbfb472b45aa7108b5ebd9a28bcca3c76225ccb",
+      "id": "Elsa.Studio.Authentication.OpenIdConnect",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "2480b7f96c6fd96d06d65bbdc5bb99e74a2a76119508a19e99b6375f4005aad7",
+      "id": "Elsa.Studio.Dashboard",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "a51aa6b7ac9a9d25e32fc9f69bbf2e42a42a5c3b8e9885a05031815611d3e9d7",
+      "id": "Elsa.Studio.Dashboard",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "cc368d2816c277d2e6eb9ee5f73c911d61311cceb9babf469782c494fe6f8d01",
+      "id": "Elsa.Studio.Diagnostics.ConsoleLogs",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "73c7a7fc5e8feebecb478271fac338df2fe1cd8dcfbbd07b91cfedac31a5e324",
+      "id": "Elsa.Studio.Diagnostics.ConsoleLogs",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "f27af82843be545bb42fac8d5d91586086fba6de9ea9fd006814aa5d2f3ec536",
+      "id": "Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "01c470c18bfd4f110da31cab939161e92fd6dccd26863f39901e460b715f308d",
+      "id": "Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "56d8936f925dff8a2695a415ea2d7527564fcf70e9078ac65292e3e8fb024333",
+      "id": "Elsa.Studio.Diagnostics.OpenTelemetry",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "db4919aa594ae49dd39df5045b826338b369f73d1e3c1339e862d083701b9537",
+      "id": "Elsa.Studio.Diagnostics.OpenTelemetry",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "90dfc41d9c362490b70a2c8d4b3de930363b1dfb1a573dcf3eb7ae4af4cde516",
+      "id": "Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "7d858b393deedd01a256f88bdd9a214e8a1a1ad26a27d17426868c910dca566a",
+      "id": "Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "97f3b1f6226eee9e6753a3f7e4e294656e6b8ee2a7d0e87b48c694abc854f275",
+      "id": "Elsa.Studio.Diagnostics.StructuredLogs",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "024f2222326a5209bb7f8d5c4dd91b24d382274ab95abb77305a057649764692",
+      "id": "Elsa.Studio.Diagnostics.StructuredLogs",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "946a2aa8f4e35d0a3ee65b4a880972f8da9b40d04e7f6cc98f2dafccb471b5ec",
+      "id": "Elsa.Studio.Diagnostics.StructuredLogs.Dashboard",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "f30fc8140837d20eac479625059237f4665dcf7023ddfbf1e00b0167f2a28850",
+      "id": "Elsa.Studio.Diagnostics.StructuredLogs.Dashboard",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "ae466f20d55a1b5183a38ed78cdadf7855cb40efa79ee3c3343eb2c817cfcfce",
+      "id": "Elsa.Studio.ExternalAuthentication",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "c7176fd7cfe31e31902698c20f887ba91e76f5fe161589e79569c65f5bc3f51a",
+      "id": "Elsa.Studio.ExternalAuthentication",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "42991ebf764298b06b23c88f7619ab6b3a5fbd4483ca81ea07e20ed120ed1c49",
+      "id": "Elsa.Studio.Security",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "1908cd1b24c8bf227edd7faee9c01ca528cc0b1574793b62534845269e285fd7",
+      "id": "Elsa.Studio.Security",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "71f4d0b09fda7c26dd37a17d1e02a6a3dfe80ea7b3e43d421676aba06b5ae229",
+      "id": "Elsa.Studio.Settings",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "d3b060572aefe61ffb7ae467abfa58222283f042bde329bdef8d4eafb9fc09d3",
+      "id": "Elsa.Studio.Settings",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "d44b384716a58bd5af797bb6b75ae48ecff581fa877359c067e6dffbdfeed6b0",
+      "id": "Elsa.Studio.UIHints",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "c2c3c457490f3369453f471d9ad56b2a8d994dd09e40d4de1a1df230d5fe6d6a",
+      "id": "Elsa.Studio.UIHints",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "0c87c78bf0299858ce6f2ec31ef64a1add82ce0a96fdb298cf71522971a83aed",
+      "id": "Elsa.Studio.Workflows.Core",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "c019b9cd552e80ed84315b9ee471d3be0526b2ce3cffbfd16e6ee4416a1598ae",
+      "id": "Elsa.Studio.Workflows.Core",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "791a028d6237cea383b1568b1149c2fa712c1d72754579cfb29bfef856f69299",
+      "id": "Elsa.Studio.Workflows.Dashboard",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "3b747340672317633d985656ab9e66980369a3f9fc02f0436e8a51d423357b2d",
+      "id": "Elsa.Studio.Workflows.Dashboard",
+      "owner": "elsa-studio",
+      "repository": {
+        "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-studio"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "d10ec2025ab31e722777564926a3187bf89e0d9ac926f11d31b8f2300df4aeb7",
+      "id": "Elsa.Tenants",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "6c6b4a7a860017c81c59ed248d05da65646aa25c52b0cc484e5189e2c6df6502",
+      "id": "Elsa.Workflows.Core",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "8671c690897fa3a717a52be67c8658938624ee8d429d059311923cc18e8fa84a",
+      "id": "Elsa.Workflows.Core",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "bbb64d793ad58f2150900e4b04b79bf870ebca2c3d69261c703c3fe6545ea6bf",
+      "id": "Elsa.Workflows.Management",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "1bd7df1c9e09bbc664f7509abe1df12256e703c07ef79997c199e781a36b6b27",
+      "id": "Elsa.Workflows.Management",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "be8781497a46bd4d02713119d2c81cafc28deafc43e6b395e64a35273fd4557d",
+      "id": "Elsa.Workflows.Runtime",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "4f63cd277ec004143ed8c7d117a25b0ec8315cbe241df5c8a8fe6aa38acabc3d",
+      "id": "Elsa.Workflows.Runtime",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "fa9691c518d0577ff31a3671d0cb895436c8b16e8507eecd5cd795579366e7f6",
+      "id": "Elsa.Alterations",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "d33abc51a167cb90c7a7d4c00123669f14c38e371646f0ac2d2f839cccfd74e6",
+      "id": "Elsa.Alterations",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "2d2d22d4c6992ab141d178ad5d193b85bcfa0c52065f32acd27ed9af3bda7204",
+      "id": "Elsa.Caching",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "5995ff1a534975c39f8e7805f6a87743dbd84b1345a6f24cb92dcea7c96edf48",
+      "id": "Elsa.Caching",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "b8c52477fd1337ea4c0c549ba4a94649ac2d55c3e4bf38e835fcdb646c57ec44",
+      "id": "Elsa.Common",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "302d8bee0ee816048a60fc9473b09ed08465d5f5b33bb75964200b05e36f1397",
+      "id": "Elsa.Common",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "0104a4137e104c9e18f5cfacd93be66b6628229de32ba3c8ffb667773fd5bc1a",
+      "id": "Elsa.Features",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "1fc4bd6e94d87a5c7f725f8d41d8cbb54bcd17a599bea7b60d00f8c738aac763",
+      "id": "Elsa.Features",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "5964044ddeae598d33e4bb828bdde61d125e536c6596efddbc1bd74c22a57453",
+      "id": "Elsa.Identity",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "89ad0185bd67429710d12f98d8817576ccb08ccca2f72d70161a1df6aa991996",
+      "id": "Elsa.Identity",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "02b70315389f685f853909a0597b843a9e99b1b155c31f1a85511d3c1afcf4d2",
+      "id": "Elsa.KeyValues",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "1b1e35a81fa5921fed896a765ec08ad2be1537c17ea6476f6cd16d51173124af",
+      "id": "Elsa.KeyValues",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "57b197c2354699253efa23137a525d9acf26e62e759f04c66e910fecbd9172f8",
+      "id": "Elsa.Labels",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "67512233049e3eecd169653d4154d598581f535c24d3e25c5d3dd95ae7191b76",
+      "id": "Elsa.Labels",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "92d160a256ec7dab88af80738daf546a3eeac76d3578d263a9fb358e9df2bfd0",
+      "id": "Elsa.Persistence.EFCore.Common",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "ff8e0c3d5b91ef653caa82905f3bf54ac2a3f3f827769a4eb6db1b8a894cc140",
+      "id": "Elsa.Persistence.EFCore.Common",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "fe8b17d7541922dfd55154ee1f850f5dd7ee7719cb5dd8f9cbbd4eb451d534ce",
+      "id": "Elsa.Tenants",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "51c0131e97ebc9383274ee00411f57f33bab74e84d9f21073d4b6a4f14df4dc7",
+      "id": "Elsa.Alterations.Core",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "e006314081bc482062923abc7d30b257f7064d1246a8d4cf0104df870ec5b8c1",
+      "id": "Elsa.Alterations.Core",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.9.0"
+    },
+    {
+      "archive_sha256": "622ae9cf0220951b3404e20173de52428934f8778e60241d6e4272b17c130054",
+      "id": "Elsa.Mediator",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
+      },
+      "version": "3.8.4"
+    },
+    {
+      "archive_sha256": "75c4091c5bc88f4a1f7db816f092c9633b42b4a2661fae1f9641085b0d3f7378",
+      "id": "Elsa.Mediator",
+      "owner": "elsa-core",
+      "repository": {
+        "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+        "type": "git",
+        "url": "https://github.com/elsa-workflows/elsa-core"
       },
       "version": "3.9.0"
     }
