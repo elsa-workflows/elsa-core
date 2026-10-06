@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from contextlib import closing
+from dataclasses import dataclass
 import hashlib
 import json
 import os
@@ -81,8 +82,8 @@ def extract_archive(archive: Path, destination: Path) -> None:
                     shutil.copyfileobj(source, target)
 
 
-def verify_archive(root: Path, archive: Path) -> None:
-    require(sha256(archive) == PROOF_ARCHIVE_SHA256, "Original proof archive digest mismatch")
+def verify_archive(root: Path, archive: Path, expected_sha256: str | None = None) -> None:
+    require(sha256(archive) == (PROOF_ARCHIVE_SHA256 if expected_sha256 is None else expected_sha256), "Original proof archive digest mismatch")
     with zipfile.ZipFile(archive) as package:
         expected = set()
         for member in safe_members(package):
@@ -96,6 +97,15 @@ def verify_archive(root: Path, archive: Path) -> None:
         require({str(path.relative_to(root)) for path in root.rglob("*") if path.is_file()} == expected, "Unexpected extracted evidence files")
 
 
+def verify_package_artifacts(root: Path, by_id: dict) -> None:
+    for entry in by_id.values():
+        for filename_key, digest_key in (("nupkg", "nupkg_sha256"), ("snupkg", "snupkg_sha256")):
+            name = entry.get(filename_key)
+            require(isinstance(name, str) and Path(name).name == name, "Unsafe artifact filename")
+            artifact = root / "artifacts" / name
+            require(artifact.is_file() and sha256(artifact) == entry.get(digest_key), f"Missing/tampered verified artifact {name}")
+
+
 def verify_artifact(root: Path, archive: Path) -> tuple[dict, dict, dict, set]:
     verify_archive(root, archive)
     manifest = json.loads((root / "verified-artifacts.json").read_text())
@@ -105,17 +115,54 @@ def verify_artifact(root: Path, archive: Path) -> tuple[dict, dict, dict, set]:
     require(len(by_id) == 225 and len(manifest["exclusions"]) == 124, "Pinned proof inventory is incomplete")
     for package_id in REQUIRED:
         require(package_id.casefold() in by_id, f"Missing required artifact {package_id}")
-    for entry in by_id.values():
-        for filename_key, digest_key in (("nupkg", "nupkg_sha256"), ("snupkg", "snupkg_sha256")):
-            name = entry.get(filename_key)
-            require(isinstance(name, str) and Path(name).name == name, "Unsafe artifact filename")
-            artifact = root / "artifacts" / name
-            require(artifact.is_file() and sha256(artifact) == entry.get(digest_key), f"Missing/tampered verified artifact {name}")
+    verify_package_artifacts(root, by_id)
     proof = json.loads((root / "receipt.json").read_text())
     require(proof.get("result") == "passed" and proof.get("published") is False and
             proof.get("remote_sources_verified") is True and proof.get("version") == version and proof.get("source_commit") == source,
             "Original package proof did not pass for the pinned source/version")
     return manifest, by_id, exceptions, exclusions
+
+
+@dataclass(frozen=True)
+class ValidatedTarget:
+    """Verified package inputs bound to their archive and producer identity."""
+    root: Path
+    archive_sha256: str
+    manifest_file: str
+    manifest_sha256: str
+    producer: dict
+    receipt_fields: dict
+    retained_inputs: tuple[tuple[str, Path, str], ...] = ()
+
+    def verify(self, root: Path, archive: Path) -> tuple[dict, dict, dict, set]:
+        require(root.resolve() == self.root.resolve() and sha256(archive) == self.archive_sha256,
+                "Validated target root/archive mismatch")
+        if not self.retained_inputs:
+            require(self.producer == {"version": PROOF_VERSION, "source_commit": PROOF_SOURCE, "run_id": PROOF_RUN, "run_attempt": 1, "artifact_id": PROOF_ARTIFACT}, "Mixed proof target identity")
+            require(sha256(root / self.manifest_file) == self.manifest_sha256, "Validated target manifest mismatch")
+            return verify_artifact(root, archive)
+        verify_archive(root, archive, self.archive_sha256)
+        manifest_path = root / self.manifest_file
+        require(sha256(manifest_path) == self.manifest_sha256, "Validated target manifest mismatch")
+        manifest = json.loads(manifest_path.read_text())
+        version, source, by_id, exceptions, exclusions = packages._validated_manifest(manifest, REQUIRED)
+        require(manifest.get("published") is False and version == self.producer["version"] and
+                source == self.producer["source_commit"], "Validated target producer/manifest mismatch")
+        for field in ("run_id", "run_attempt", "artifact_id"):
+            require(field not in manifest or manifest[field] == self.producer[field], "Validated target producer/manifest mismatch")
+        original = next((path for name, path, _ in self.retained_inputs if name == "original-envelope.json"), None)
+        require(original is not None, "Validated target requires original producer envelope")
+        envelope = json.loads(original.read_text())
+        require(all(envelope.get(key) == value for key, value in self.producer.items()) and
+                envelope.get("archive_sha256") == self.archive_sha256 and
+                envelope.get("preupload_manifest_sha256") == sha256(root / "preupload-manifest.json"), "Validated target producer/envelope mismatch")
+        producer_manifest = json.loads((root / "preupload-manifest.json").read_text())
+        require(all(producer_manifest.get(key) == self.producer[key] for key in ("version", "source_commit", "run_id", "run_attempt")) and
+                self.receipt_fields.get("candidate_producer") == self.producer, "Validated target producer receipt/manifest mismatch")
+        verify_package_artifacts(root, by_id)
+        for _, path, digest in self.retained_inputs:
+            require(path.is_file() and not path.is_symlink() and sha256(path) == digest, "Validated target retrieval evidence changed")
+        return manifest, by_id, exceptions, exclusions
 
 
 def spec_for(baseline: str, tfm: str, cell: Path) -> dict:
@@ -270,15 +317,17 @@ def corroborate(databases: dict, state: dict, spec: dict, finished: bool) -> Non
         check_typed_values(persisted.get("output", {}), spec["expected"])
 
 
-def package_provenance(project: Path, cache: Path, tfm: str, version: str, root: Path, by_id: dict, exceptions: dict, exclusions: set) -> dict:
+def package_provenance(project: Path, cache: Path, tfm: str, version: str, root: Path, by_id: dict, exceptions: dict, exclusions: set, target: ValidatedTarget | None = None) -> dict:
+    require(target is not None or version in BASELINES, "Unknown baseline package identity")
+    require(target is None or version == target.producer["version"], "Candidate version differs from validated target")
     assets_path = project / "obj" / "project.assets.json"
     assets = json.loads(assets_path.read_text())
     restore = assets["project"]["restore"]
-    expected_sources = {packages.NUGET_ORG} | ({str((root / "artifacts").resolve())} if version == PROOF_VERSION else set())
+    expected_sources = {packages.NUGET_ORG} | ({str((root / "artifacts").resolve())} if target is not None else set())
     require(set(restore["sources"]) == expected_sources, "Effective restore sources leaked")
     require({str(Path(path).resolve()) for path in assets["packageFolders"]} == {str(cache.resolve())}, "Effective package cache/fallback folders leaked")
     require(restore.get("configFilePaths") == [str(project / "NuGet.Config")], "Parent NuGet config leaked")
-    if version == PROOF_VERSION:
+    if target is not None:
         restored = packages.validate_project_assets(assets, [tfm], set(by_id), version, set(exceptions), exclusions)
         evidence = packages._package_evidence(root / "artifacts", cache, by_id, restored, exceptions, version)
         for item in evidence:
@@ -289,7 +338,7 @@ def package_provenance(project: Path, cache: Path, tfm: str, version: str, root:
                 item["sha256"] = sha256(archive)
                 item["sha512"] = hashlib.sha512(archive.read_bytes()).hexdigest()
             else:
-                item["repository_commit"] = PROOF_SOURCE
+                item["repository_commit"] = target.producer["source_commit"]
     else:
         target = assets.get("targets", {}).get(tfm)
         require(target is not None and set(assets["targets"]) == {tfm}, "Unexpected baseline targets")
@@ -376,7 +425,7 @@ def prepare_project(project: Path, cache: Path, version: str, tfm: str, config: 
         record_command(command, project, environment, project / log, 1200, commands)
 
 
-def run_cell(baseline: str, tfm: str, cell: Path, root: Path, by_id: dict, exceptions: dict, exclusions: set, sdk: str) -> dict:
+def run_cell(baseline: str, tfm: str, cell: Path, root: Path, by_id: dict, exceptions: dict, exclusions: set, sdk: str, target: ValidatedTarget) -> dict:
     cell.mkdir()
     spec = spec_for(baseline, tfm, cell)
     write_json(cell / "spec.json", spec)
@@ -385,11 +434,11 @@ def run_cell(baseline: str, tfm: str, cell: Path, root: Path, by_id: dict, excep
     environment.update(DOTNET_CLI_TELEMETRY_OPTOUT="1", DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER="1", MSBUILDDISABLENODEREUSE="1")
     public = '<configuration><packageSources><clear/><add key="nuget.org" value="https://api.nuget.org/v3/index.json"/></packageSources><packageSourceMapping><packageSource key="nuget.org"><package pattern="*"/></packageSource></packageSourceMapping></configuration>'
     try:
-        for label, version, config in (("baseline", baseline, public), ("candidate", PROOF_VERSION, packages.render_nuget_config(root / "artifacts", [x["id"] for x in by_id.values()], exceptions))):
+        for label, version, config in (("baseline", baseline, public), ("candidate", target.producer["version"], packages.render_nuget_config(root / "artifacts", [x["id"] for x in by_id.values()], exceptions))):
             project, cache = cell / label, cell / f"{label}-packages"
             env = dict(environment, NUGET_PACKAGES=str(cache))
             prepare_project(project, cache, version, tfm, config, env, sdk, result["commands"])
-            result["provenance"][label] = package_provenance(project, cache, tfm, version, root, by_id, exceptions, exclusions)
+            result["provenance"][label] = package_provenance(project, cache, tfm, version, root, by_id, exceptions, exclusions, target if label == "candidate" else None)
             for phase in (["suspend"] if label == "baseline" else ["resume", "verify"]):
                 log = cell / f"{phase}.log"
                 record_command(["dotnet", str(project / "bin" / "Release" / tfm / "Consumer.dll"), phase, str(cell / "spec.json"), str(cell / f"{phase}.json")], project, env, log, 240, result["commands"])
@@ -431,7 +480,11 @@ def check_matrix(cells: list[dict]) -> None:
 
 def public_receipt(result: dict) -> dict:
     """Allowlist portable proof evidence: no paths, raw rows, properties or errors."""
-    projected = {key: result[key] for key in ("passed", "complete_matrix", "published", "proof_run", "proof_artifact", "candidate_source", "candidate_version", "manifest_sha256", "original_receipt_sha256", "fixture_sha256", "archive_sha256")}
+    projected = {key: result[key] for key in ("passed", "complete_matrix", "published", "candidate_source", "candidate_version", "manifest_sha256", "fixture_sha256", "archive_sha256")}
+    projected.update({key: result[key] for key in ("proof_run", "proof_artifact", "original_receipt_sha256", "candidate_producer", "matrix_execution", "original_envelope_sha256", "live_retrieval_sha256", "preupload_manifest_sha256") if key in result})
+    if "candidate_producer" in projected:
+        projected["candidate_producer"] = {key: projected["candidate_producer"][key] for key in ("version", "source_commit", "run_id", "run_attempt", "artifact_id")}
+        projected["matrix_execution"] = {key: projected["matrix_execution"][key] for key in ("fixture_source_commit", "run_id", "run_attempt")}
     projected["sdk"] = result.get("sdk")
     projected["cells"] = []
     actual = {(cell["baseline"], cell["framework"]): cell for cell in result["cells"]}
@@ -474,6 +527,14 @@ def stage_evidence(output: Path, result: dict) -> None:
     destination.mkdir()
     shutil.copy2(output / "public-upgrade-proof.json", destination / "public-upgrade-proof.json")
     manifest = {"complete_matrix": result["complete_matrix"], "passed": result["passed"], "files": [], "cells": []}
+    for name, hash_key in (("original-envelope.json", "original_envelope_sha256"), ("live-retrieval.json", "live_retrieval_sha256")):
+        if hash_key not in result:
+            continue
+        source = output / name
+        require(source.is_file() and not source.is_symlink() and sha256(source) == result[hash_key], "Retained retrieval evidence changed")
+        shutil.copyfile(source, destination / name)
+        manifest["files"].append({"file": name, "sha256": result[hash_key], "bytes": source.stat().st_size})
+
     for cell in result["cells"]:
         identity = (cell["baseline"], cell["framework"])
         require(identity in MATRIX, "Unknown cell cannot enter retained evidence")
@@ -538,16 +599,24 @@ def stage_evidence(output: Path, result: dict) -> None:
     write_json(destination / "retention-manifest.json", manifest)
 
 
-def run(root: Path, archive: Path, output: Path, selected: list[tuple[str, str]]) -> dict:
+def run(root: Path, archive: Path, output: Path, selected: list[tuple[str, str]], *, target: ValidatedTarget | None = None) -> dict:
     require(not output.exists(), "Refusing to reuse evidence/cache directory")
     require(not output.resolve().is_relative_to(Path(__file__).resolve().parents[2]), "Consumers must be generated outside checkout")
     # Fail before restoring anything if the original package artifact is incomplete or altered.
-    manifest, by_id, exceptions, exclusions = verify_artifact(root, archive)
+    if target is None:
+        target = ValidatedTarget(root, PROOF_ARCHIVE_SHA256, "verified-artifacts.json", sha256(root / "verified-artifacts.json"),
+                                 {"version": PROOF_VERSION, "source_commit": PROOF_SOURCE, "run_id": PROOF_RUN, "run_attempt": 1, "artifact_id": PROOF_ARTIFACT},
+                                 {"proof_run": PROOF_RUN, "proof_artifact": PROOF_ARTIFACT, "original_receipt_sha256": sha256(root / "receipt.json")})
+    manifest, by_id, exceptions, exclusions = target.verify(root, archive)
     output.mkdir(parents=True)
-    result = {"passed": False, "complete_matrix": False, "published": False, "proof_run": PROOF_RUN, "proof_artifact": PROOF_ARTIFACT,
-              "candidate_source": PROOF_SOURCE, "candidate_version": PROOF_VERSION, "manifest_sha256": sha256(root / "verified-artifacts.json"),
-              "original_receipt_sha256": sha256(root / "receipt.json"), "fixture_sha256": sha256(FIXTURE), "cells": []}
+    result = {**target.receipt_fields, "passed": False, "complete_matrix": False, "published": False,
+              "candidate_source": target.producer["source_commit"], "candidate_version": target.producer["version"],
+              "manifest_sha256": target.manifest_sha256,
+              "fixture_sha256": sha256(FIXTURE), "cells": []}
     result["archive_sha256"] = sha256(archive)
+    for name, path, _ in target.retained_inputs:
+        require(name in ("original-envelope.json", "live-retrieval.json"), "Unknown retained target input")
+        shutil.copyfile(path, output / name)
     try:
         packages._run_command(["dotnet", "--info"], output, dict(os.environ), output / "sdk-info.log", 60)
         packages._run_command(["dotnet", "--list-sdks"], output, dict(os.environ), output / "sdk-list.log", 60)
@@ -559,7 +628,7 @@ def run(root: Path, archive: Path, output: Path, selected: list[tuple[str, str]]
             print(f"Starting {baseline}/{tfm}", flush=True)
             cell_path = output / f"{baseline}-{tfm}"
             try:
-                run_cell(baseline, tfm, cell_path, root, by_id, exceptions, exclusions, sdk)
+                run_cell(baseline, tfm, cell_path, root, by_id, exceptions, exclusions, sdk, target)
             finally:
                 if (cell_path / "cell.json").is_file():
                     result["cells"].append(json.loads((cell_path / "cell.json").read_text()))
