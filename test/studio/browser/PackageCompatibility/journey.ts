@@ -137,16 +137,21 @@ async function bpmnTree(page: Page, raw: Buffer): Promise<XmlElement> {
   return page.evaluate(xml => {
     const document = new DOMParser().parseFromString(xml, 'application/xml');
     if (document.querySelector('parsererror') || !document.documentElement) throw new Error('bpmn_xml_parse');
-    const read = (element: Element): XmlElement => ({
-      namespace: element.namespaceURI, name: element.localName,
-      attributes: Object.fromEntries([...element.attributes].filter(attribute => attribute.namespaceURI !== 'http://www.w3.org/2000/xmlns/').map(attribute => {
-        if (attribute.namespaceURI) throw new Error('bpmn_foreign_attribute');
-        return [attribute.localName, attribute.value];
-      })),
-      text: [...element.childNodes].filter(node => node.nodeType === Node.TEXT_NODE || node.nodeType === Node.CDATA_SECTION_NODE).map(node => node.textContent ?? '').join('').trim(),
-      children: [...element.children].map(read)
-    });
-    return read(document.documentElement);
+    // Object methods survive tsx serialization without an out-of-scope __name helper.
+    const reader = {
+      read(element: Element): XmlElement {
+        return {
+          namespace: element.namespaceURI, name: element.localName,
+          attributes: Object.fromEntries([...element.attributes].filter(attribute => attribute.namespaceURI !== 'http://www.w3.org/2000/xmlns/').map(attribute => {
+            if (attribute.namespaceURI) throw new Error('bpmn_foreign_attribute');
+            return [attribute.localName, attribute.value];
+          })),
+          text: [...element.childNodes].filter(node => node.nodeType === Node.TEXT_NODE || node.nodeType === Node.CDATA_SECTION_NODE).map(node => node.textContent ?? '').join('').trim(),
+          children: [...element.children].map(child => reader.read(child))
+        };
+      }
+    };
+    return reader.read(document.documentElement);
   }, text);
 }
 
