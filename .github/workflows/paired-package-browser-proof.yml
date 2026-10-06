@@ -103,16 +103,19 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22.23.3'
-      - name: Verify package and browser tooling contracts
-        working-directory: scripts/integration-program
-        run: |
-          python3 -m unittest test_materialize_paired_package_hosts test_paired_package_provenance test_paired_package_baseline_provenance test_paired_package_baseline_resources test_paired_package_wasm_resources test_paired_package_released_documents test_paired_package_execution test_paired_package_browser_matrix test_verify_browser_package_resources test_paired_package_browser_workflow test_verify_paired_browser_retention
-          python3 -O -m unittest test_materialize_paired_package_hosts test_paired_package_provenance test_paired_package_baseline_provenance test_paired_package_baseline_resources test_paired_package_wasm_resources test_paired_package_released_documents test_paired_package_execution test_paired_package_browser_matrix test_verify_browser_package_resources test_paired_package_browser_workflow test_verify_paired_browser_retention
       - name: Install the locked browser fixture
         working-directory: test/studio/browser/PackageCompatibility
         run: |
           npm ci --ignore-scripts --no-audit --no-fund
           npm run typecheck
+      - name: Verify package and browser tooling contracts
+        working-directory: scripts/integration-program
+        run: |
+          python3 -m unittest test_materialize_paired_package_hosts test_paired_package_provenance test_paired_package_baseline_provenance test_paired_package_baseline_resources test_paired_package_wasm_resources test_paired_package_released_documents test_paired_package_execution test_paired_package_browser_matrix test_verify_browser_package_resources test_paired_package_browser_workflow test_verify_paired_browser_retention
+          python3 -O -m unittest test_materialize_paired_package_hosts test_paired_package_provenance test_paired_package_baseline_provenance test_paired_package_baseline_resources test_paired_package_wasm_resources test_paired_package_released_documents test_paired_package_execution test_paired_package_browser_matrix test_verify_browser_package_resources test_paired_package_browser_workflow test_verify_paired_browser_retention
+      - name: Install Chromium for the browser journeys
+        working-directory: test/studio/browser/PackageCompatibility
+        run: |
           npm exec --no -- playwright install --with-deps chromium
       - name: Verify original bytes and execute all 36 paired package browser records
         run: >-

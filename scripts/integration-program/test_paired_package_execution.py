@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 import paired_package_execution as execution
 from test_paired_package_released_documents import fixture_identity, write_released_fixture
+from test_paired_package_browser_matrix import reopen_row
 
 
 class ReleasedInputsContracts(unittest.TestCase):
@@ -66,7 +67,9 @@ class ExecutionContracts(unittest.TestCase):
         self.key = ("3.10.0", "net10.0", "server")
         self.events = []
         self.record = {"version": self.key[0], "framework": self.key[1], "host": self.key[2],
-                       "result": "passed", "resources": [], "proof": {}, "browser_version": "149.0.7827.55",
+                       "result": "passed", "resources": [],
+                       "proof": {"baseline_reopens": [reopen_row(version) for version in execution.documents.TOOL_VERSIONS]},
+                       "browser_version": "149.0.7827.55",
                        "assertions": [{"name": name, "passed": True, "reason_category": None}
                                       for name in execution.browser.required_assertions(dict(zip(("version", "framework", "host"), self.key)))]}
         self.layout = SimpleNamespace(request=execution.hosts.CellRequest("server", "net10.0", "3.10.0"),
@@ -127,6 +130,8 @@ class ExecutionContracts(unittest.TestCase):
             self.events.append(("browser",))
             record = copy.deepcopy(self.record)
             record.update(version=request.version, framework=request.framework, host=request.host)
+            for row in record["proof"]["baseline_reopens"]:
+                row["source_cell"].update(framework=request.framework, host=request.host)
             return record
         browser = self.patch(execution.browser, "run_browser", side_effect=run_browser)
         self.patch(execution, "_observe_loaded", side_effect=lambda *_: self.events.append(("observe",)) or {})
@@ -438,6 +443,8 @@ class ExecutionContracts(unittest.TestCase):
         def execute(key, **_kwargs):
             record = copy.deepcopy(self.record)
             record.update(zip(("version", "framework", "host"), key))
+            record["proof"] = ({"baseline_reopens": [reopen_row(version, key[1], key[2])
+                                for version in execution.documents.TOOL_VERSIONS]} if key[0] == "3.10.0" else {})
             record["assertions"] = [{"name": name, "passed": True, "reason_category": None}
                                      for name in execution.browser.required_assertions(record)]
             return record

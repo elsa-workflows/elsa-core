@@ -90,6 +90,14 @@ cell leaves its download private. Studio 3.8.4 writes `toolVersion: 3.8.0.0`;
 this document marker is checked separately from installed package provenance.
 Retaining a released document does not prove the candidate can reopen it.
 
+Candidate cells require the completed 3.8.4 and 3.9.0 source cells for the same
+host and framework. Their bytes and source bindings are checked again before
+native definitions-list import. Each reopen proof records import, visible
+activity/value, save, reload, publish, Studio terminal state and backend output.
+Both journeys must finish before `baseline_reopen` can pass; partial proof stays
+in the original browser receipt. A selected candidate-only development run
+without those source cells fails before building or starting hosts.
+
 Private build logs, caches, credentials, runtime data and browser state remain
 under `private/` and are not uploaded. An inventory-approved file is not proof
 that its assertions passed; inspect the matrix and per-cell outcomes. Producer
