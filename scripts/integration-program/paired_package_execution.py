@@ -71,6 +71,43 @@ def _json_request(url: str, *, data: dict | None = None, token: str | None = Non
     return json.loads(body)
 
 
+def verify_runtime_readiness(value: dict, request: hosts.CellRequest) -> dict:
+    require(isinstance(value, dict) and set(value) == {
+        "schema", "framework", "runtime", "auth_mode", "permission_profile", "permission_grants",
+        "workflow_contexts_enabled", "secrets_enabled", "features"}, "Invalid runtime readiness fields")
+    require(type(value["schema"]) is int and value["schema"] == 1, "Invalid runtime readiness schema")
+    framework = request.framework.removeprefix("net")
+    require(value["framework"] == ".NETCoreApp,Version=v" + framework, "Runtime target framework differs")
+    require(isinstance(value["runtime"], str)
+            and re.fullmatch(r"\.NET " + re.escape(framework) + r"\.[0-9]{1,6}", value["runtime"]) is not None,
+            "Invalid actual runtime identity")
+    require(value["auth_mode"] == "ElsaIdentity" and value["permission_profile"] == request.permission_profile,
+            "Runtime authentication/profile differs")
+    require(type(value["permission_grants"]) is list
+            and value["permission_grants"] == list(hosts.permission_grants(request)), "Runtime permission grants differ")
+    features = value["features"]
+    require(type(features) is list and 0 < len(features) <= 256
+            and all(isinstance(name, str) and re.fullmatch(r"Elsa\.[A-Za-z0-9_.]{1,120}", name) for name in features)
+            and len(features) == len(set(features)), "Invalid actual installed features")
+    required = {"Elsa.Identity", "Elsa.DefaultAuthentication", "Elsa.WorkflowManagement", "Elsa.WorkflowRuntime",
+                "Elsa.WorkflowsApi", "Elsa.EFCoreWorkflowDefinitionPersistence", "Elsa.EFCoreWorkflowInstancePersistence",
+                "Elsa.EFCoreWorkflowRuntimePersistence"}
+    require(required <= set(features), "Missing required backend feature")
+    for name, flag, installed in (
+        ("workflow-contexts", "workflow_contexts_enabled", {"Elsa.WorkflowContexts"}),
+        ("secrets", "secrets_enabled", {"Elsa.Secrets", "Elsa.EFCoreSecretsPersistence"})):
+        enabled = name in request.backend_features
+        require(type(value[flag]) is bool and value[flag] is enabled, "Runtime feature configuration differs")
+        require(installed <= set(features) if enabled else not installed.intersection(features),
+                "Runtime optional feature registration differs")
+    return {**value, "permission_grants": list(value["permission_grants"]), "features": sorted(features)}
+
+
+def _observe_ready(handle, request: hosts.CellRequest) -> dict:
+    origin = handle.backend_url.removesuffix("/elsa/api")
+    return verify_runtime_readiness(_json_request(origin + "/_fixture/ready"), request)
+
+
 def _observe_loaded(handle, layout) -> dict[str, list[dict]]:
     # This private API login supplies only metadata transport; the browser must
     # independently demonstrate the normal Studio sign-in journey.
@@ -217,6 +254,9 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
         runtime_failed = False
         with hosts.start_pair(layout, validate_project=validate) as handle:
             try:
+                evidence["stage"] = "runtime_readiness"
+                evidence["runtime_readiness"] = _observe_ready(handle, request)
+                evidence["stage"] = "browser_execution"
                 child = browser.run_browser(handle, request, inventory["assets"])
                 # Validate before any returned child data enters portable evidence.
                 original_browser = browser.validate_browser_receipt(child, key)

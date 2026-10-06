@@ -29,6 +29,22 @@ class ExecutionContracts(unittest.TestCase):
         self.addCleanup(context.stop)
         return context.start()
 
+    def readiness(self, request=None):
+        request = request or self.layout.request
+        features = ["Elsa.Identity", "Elsa.DefaultAuthentication", "Elsa.WorkflowManagement", "Elsa.WorkflowRuntime",
+                    "Elsa.WorkflowsApi", "Elsa.EFCoreWorkflowDefinitionPersistence", "Elsa.EFCoreWorkflowInstancePersistence",
+                    "Elsa.EFCoreWorkflowRuntimePersistence",
+                    "Elsa.JavaScript"]
+        if "workflow-contexts" in request.backend_features:
+            features.append("Elsa.WorkflowContexts")
+        if "secrets" in request.backend_features:
+            features.extend(["Elsa.Secrets", "Elsa.EFCoreSecretsPersistence"])
+        return {"schema": 1, "framework": ".NETCoreApp,Version=v" + request.framework.removeprefix("net"),
+                "runtime": ".NET " + request.framework.removeprefix("net") + ".8", "auth_mode": "ElsaIdentity",
+                "permission_profile": request.permission_profile, "permission_grants": list(execution.hosts.permission_grants(request)),
+                "workflow_contexts_enabled": "workflow-contexts" in request.backend_features,
+                "secrets_enabled": "secrets" in request.backend_features, "features": features}
+
     def pipeline(self):
         def materialize(request, group, **kwargs):
             self.events.append(("materialize", group, kwargs["packages_root"]))
@@ -43,7 +59,7 @@ class ExecutionContracts(unittest.TestCase):
             for project in layout.project_paths.values():
                 validate_project(project)
             try:
-                yield SimpleNamespace(password="PRIVATE-MUST-NOT-BE-RETAINED")
+                yield SimpleNamespace(password="PRIVATE-MUST-NOT-BE-RETAINED", backend_url="http://127.0.0.1:4000/elsa/api")
             finally:
                 self.events.append(("stop",))
         self.patch(execution, "evidence_gaps", return_value=[])
@@ -54,6 +70,8 @@ class ExecutionContracts(unittest.TestCase):
         self.patch(execution, "_project_validator", return_value=validate)
         self.patch(execution, "_resource_inventory", side_effect=lambda *_: self.events.append(("resources",)) or {"assets": []})
         self.patch(execution.hosts, "start_pair", side_effect=pair)
+        self.patch(execution, "_json_request", side_effect=lambda *_args, **_kwargs:
+                   self.events.append(("ready",)) or self.readiness())
         def run_browser(_handle, request, _resources):
             self.events.append(("browser",))
             record = copy.deepcopy(self.record)
@@ -118,11 +136,82 @@ class ExecutionContracts(unittest.TestCase):
         self.assertEqual("passed", self.execute()["result"])
         stages = [event[0] for event in self.events]
         self.assertLess(stages.index("validate"), stages.index("start"))
+        self.assertLess(stages.index("start"), stages.index("ready"))
+        self.assertLess(stages.index("ready"), stages.index("browser"))
         self.assertLess(stages.index("loaded"), stages.index("stop"))
         self.assertLess(stages.index("stop"), stages.index("resource_check"))
         self.assertTrue(self.receipt()["owned_process_cleanup"])
+        self.assertEqual(sorted(self.readiness()["features"]), self.receipt()["runtime_readiness"]["features"])
         for path in (self.root / "retained").rglob("*.json"):
             self.assertNotIn("PRIVATE", path.read_text())
+
+    def test_readiness_validates_profiles_features_and_frameworks_without_pinning_entire_catalog(self):
+        for version in execution.browser.VERSIONS:
+            for framework in execution.browser.FRAMEWORKS:
+                for profile in execution.hosts.PERMISSION_PROFILES:
+                    with self.subTest(version=version, framework=framework, profile=profile):
+                        request = execution.hosts.CellRequest("server", framework, version,
+                            backend_features=execution.cell_request((version, framework, "server")).backend_features,
+                            permission_profile=profile)
+                        value = self.readiness(request)
+                        value["features"].append("Elsa.OtherInstalledFeature")
+                        actual = execution.verify_runtime_readiness(value, request)
+                        self.assertEqual(sorted(value["features"]), actual["features"])
+                        self.assertEqual(value["permission_grants"], actual["permission_grants"])
+
+    def test_observed_39_readiness_shape_accepts_specific_definition_and_instance_persistence_features(self):
+        # Sanitized actual fixture 117a68 metadata; original observation hash:
+        # 25ca09d6715e1f4ce6ad8c8c57926fea1542b433809cfb9cdb9e385265182d5b.
+        observed = {"schema": 1, "framework": ".NETCoreApp,Version=v10.0", "runtime": ".NET 10.0.8",
+                    "auth_mode": "ElsaIdentity", "permission_profile": "full", "permission_grants": ["*"],
+                    "workflow_contexts_enabled": True, "secrets_enabled": False,
+                    "features": ["Elsa." + name for name in (
+                        "Mediator SystemClock Expressions DefaultFormatters Multitenancy CommitStrategies Workflows Flowchart "
+                        "WorkflowRuntime DefaultWorkflowRuntime StringCompression MemoryCache WorkflowDefinitions WorkflowInstances "
+                        "WorkflowManagement Elsa App Identity DefaultAuthentication WorkflowManagementPersistence "
+                        "EFCoreWorkflowDefinitionPersistence EFCoreWorkflowInstancePersistence EFCoreWorkflowRuntimePersistence "
+                        "KeyValue WorkflowsApi SasTokens JavaScript BpmnInterchange Bpmn WorkflowContexts WorkflowContextsJavaScript").split()]}
+        request = execution.cell_request(("3.9.0", "net10.0", "server"))
+        actual = execution.verify_runtime_readiness(observed, request)
+        self.assertEqual(sorted(observed["features"]), actual["features"])
+        self.assertFalse(actual["secrets_enabled"])
+        self.assertNotIn("Elsa.Secrets", actual["features"])
+        self.assertNotIn("Elsa.EFCoreWorkflowManagementPersistence", actual["features"])
+
+    def test_runtime_mismatches_fail_before_browser_and_still_clean_up_without_retaining_raw_response(self):
+        child = self.pipeline()
+        original = self.readiness()
+        mutations = [
+            {"permission_profile": "denied"}, {"permission_grants": ["*"] + ["PRIVATE-GRANT"]},
+            {"permission_grants": []}, {"workflow_contexts_enabled": False}, {"secrets_enabled": False},
+            {"framework": ".NETCoreApp,Version=v9.0"}, {"runtime": "PRIVATE-RUNTIME"}, {"schema": True},
+            {"auth_mode": "Unauthenticated"}, {"features": [name for name in original["features"] if name != "Elsa.Secrets"]},
+            {"features": [name for name in original["features"] if name != "Elsa.EFCoreSecretsPersistence"]},
+            {"features": [name for name in original["features"] if name != "Elsa.WorkflowsApi"]},
+            {"features": original["features"] + ["/PRIVATE/PATH"]}, {"encryption_key": "PRIVATE-KEY"}]
+        for index, mutation in enumerate(mutations):
+            with self.subTest(mutation=list(mutation)):
+                self.patch(execution, "_json_request", return_value=original | mutation)
+                retained = self.root / f"failure-{index}"
+                with self.assertRaises(ValueError):
+                    execution.execute_cell(self.key, private=self.root / "private", retained=retained,
+                        verified_root=self.root / "candidate", manifest={}, manifest_hash="a" * 64, sdk="10.0.300")
+                receipt = json.loads((retained / "cells/3.10.0-net10.0-server/execution.json").read_text())
+                self.assertEqual("runtime_readiness", receipt["stage"])
+                self.assertTrue(receipt["owned_process_cleanup"])
+                self.assertNotIn("runtime_readiness", receipt)
+                self.assertNotIn("PRIVATE", json.dumps(receipt))
+        child.assert_not_called()
+
+    def test_unrequested_optional_features_and_absent_registration_are_rejected(self):
+        baseline = execution.cell_request(("3.9.0", "net10.0", "server"))
+        original = self.readiness(baseline)
+        for mutation in ({"secrets_enabled": True}, {"secrets_enabled": 0},
+                         {"features": original["features"] + ["Elsa.Secrets"]},
+                         {"features": original["features"] + ["Elsa.EFCoreSecretsPersistence"]},
+                         {"features": [name for name in original["features"] if name != "Elsa.WorkflowContexts"]}):
+            with self.subTest(mutation=list(mutation)), self.assertRaises(ValueError):
+                execution.verify_runtime_readiness(original | mutation, baseline)
 
     def test_browser_exception_stops_pair_and_does_not_retain_raw_error(self):
         child = self.pipeline()
