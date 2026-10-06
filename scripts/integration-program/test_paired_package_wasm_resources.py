@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 from zipfile import ZipFile
 
+import materialize_paired_package_hosts as hosts
 import paired_package_wasm_resources as wasm
 import paired_package_provenance as provenance
 import verify_browser_package_resources as resources
@@ -29,7 +30,7 @@ class WasmInventoryContracts(unittest.TestCase):
         self.project.write_text('<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly"><PropertyGroup>'
                                 f'<TargetFramework>{framework}</TargetFramework><IsPackable>false</IsPackable>'
                                 '</PropertyGroup></Project>')
-        self.layout = SimpleNamespace(request=SimpleNamespace(framework=framework, version="3.10.0", route_prefix=""),
+        self.layout = SimpleNamespace(request=hosts.CellRequest("wasm", framework, "3.10.0"),
                                       project_paths={"wasm": self.project}, packages_root=self.root / "cache")
         self.owned, target, libraries, self.archives = {}, {}, {}, {}
         self.rows = []
@@ -83,15 +84,14 @@ class WasmInventoryContracts(unittest.TestCase):
     def derive(self, *, policy=True):
         return wasm._derive(self.layout, self.project, self.manifest, self.owned, self.receipt,
                             lambda package: (self.archives[package["id"]], provenance.sha256(self.archives[package["id"]])),
-                            converter=self.converter, route_prefix=self.layout.request.route_prefix,
+                            converter=self.converter, route_prefix="/" + self.layout.request.route_prefix if self.layout.request.route_prefix else "",
                             _test_policy=self.policy if policy else None)
 
     def test_package_and_fixture_bijection_all_frameworks_and_browser_contract(self):
         for framework in ("net8.0", "net9.0", "net10.0"):
             with self.subTest(framework=framework):
-                if framework != "net10.0":
-                    self.prepare(framework)
-                self.layout.request.route_prefix = "/compat"
+                self.prepare(framework)
+                self.layout.request = hosts.CellRequest("hosted-wasm", framework, "3.10.0", route_prefix="compat")
                 result = self.derive()
                 self.assertEqual(4, result["package_runtime_count"])
                 self.assertEqual(5, len(result["assets"]))
@@ -100,6 +100,15 @@ class WasmInventoryContracts(unittest.TestCase):
                 fetched = [{**x, "status": 200, "requested": True} for x in result["assets"]]
                 self.assertEqual(5, resources.verify_browser_resources(result["assets"], fetched, route_prefix="/compat")["requested"])
                 self.assertTrue(all(x["original_pe_sha256"] == resources.sha256(self.pe) for x in result["conversions"]))
+
+    def test_real_hosted_request_rejects_bare_missing_or_other_resource_prefix(self):
+        self.layout.request = hosts.CellRequest("hosted-wasm", "net10.0", "3.10.0", route_prefix="compat")
+        self.assertTrue(all(x["path"].startswith("/compat/_framework/") for x in self.derive()["assets"]))
+        for prefix in ("compat", "", "/other", "/compat/nested"):
+            with self.subTest(prefix=prefix), self.assertRaisesRegex(ValueError, "prefix differs"):
+                wasm._derive(self.layout, self.project, self.manifest, self.owned, self.receipt,
+                             lambda package: (self.archives[package["id"]], provenance.sha256(self.archives[package["id"]])),
+                             converter=self.converter, route_prefix=prefix, _test_policy=self.policy)
 
     def test_nonmandatory_runtime_is_bound_and_thirdparty_scope_is_explicit(self):
         self.rows.append(self.row("System.SomeRuntime", "net10.0"))

@@ -48,7 +48,8 @@ def _derive(layout, project: Path, build_manifest: Path, owned: dict, package_re
     """Internal mapper; archive authority is established by the public wrappers."""
     project = _owned_project(layout, project)
     framework = layout.request.framework
-    require(route_prefix == layout.request.route_prefix and
+    expected_prefix = "/" + layout.request.route_prefix if layout.request.route_prefix else ""
+    require(route_prefix == expected_prefix and
             (not route_prefix or re.fullmatch(r"/[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*", route_prefix)),
             "WASM resource prefix differs from owned request")
     assets_path = provenance.regular_file(project.parent / "obj" / "project.assets.json")
