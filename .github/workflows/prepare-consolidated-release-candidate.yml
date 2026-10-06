@@ -115,10 +115,10 @@ jobs:
           printf '%s  %s\n' "$ARCHIVE_DIGEST" "$input/candidate.zip" | sha256sum --check --status
           test "$(stat --format=%s "$input/candidate.zip")" = "$(jq -r .size_in_bytes "$input/artifact.json")"
           jq -c --arg source "$SOURCE_SHA" --argjson run "$RUN_ID" --argjson attempt "$RUN_ATTEMPT" \
-            --arg manifest "$MANIFEST_DIGEST" '{schema:1,published:false,version:"3.10.0",
+            --arg manifest "$MANIFEST_DIGEST" --arg observed "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '{schema:1,published:false,version:"3.10.0",
               source_commit:$source,run_id:$run,run_attempt:$attempt,artifact_id:.id,artifact_name:.name,
               archive_sha256:(.digest | ltrimstr("sha256:")),archive_size:.size_in_bytes,
-              expires_at:.expires_at,retention_days:30,preupload_manifest_sha256:$manifest}' \
+              expires_at:.expires_at,retention_days:30,retrieved_at:$observed,preupload_manifest_sha256:$manifest}' \
             "$input/artifact.json" > "$input/envelope.json"
           echo "envelope=$(cat "$input/envelope.json")" >> "$GITHUB_OUTPUT"
           {

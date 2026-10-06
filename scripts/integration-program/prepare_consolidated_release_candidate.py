@@ -81,6 +81,8 @@ def validate_envelope(envelope: dict, metadata: dict, *, source: str, run_id: in
                      "Candidate artifact ID/name/source mismatch or missing artifact")
     packages.require(metadata.get("expired") is False and envelope.get("expires_at") == metadata.get("expires_at"),
                      "Candidate artifact is missing or expired")
+    observed = datetime.fromisoformat(envelope["retrieved_at"].replace("Z", "+00:00"))
+    packages.require(observed.tzinfo is not None and observed <= datetime.now(timezone.utc), "Invalid retrieval snapshot timestamp")
     expiry = datetime.fromisoformat(envelope["expires_at"].replace("Z", "+00:00"))
     packages.require(expiry.tzinfo is not None and expiry > datetime.now(timezone.utc), "Candidate artifact expired")
     packages.require(envelope.get("retention_days") == 30, "Candidate retention must be 30 days")
@@ -170,8 +172,12 @@ def main() -> None:
     result = prove(args.output / "artifacts", manifest, args.output.parent / "candidate-consumers")
     packages.write_json(args.output.parent / "candidate-consumer-receipt.json", {"result": "passed", "published": False,
                         "envelope": envelope, "consumers": result,
+                        "availability": {"scope": "retrieval_time_snapshot", "observed_at": envelope["retrieved_at"],
+                                         "consumer_scope": "exact_transferred_original_bytes_with_expiry_checked_before_execution"},
                         "limits": ["Representative consumers only; persisted compatibility against these exact stable bytes remains required.",
-                                   "Earlier proof bytes and future approved publication are separate identities and gates."]})
+                                   "Earlier proof bytes and future approved publication are separate identities and gates.",
+                                   "Original artifact availability is a retrieval-time snapshot; deletion after retrieval is not observed by token-minimal consumers.",
+                                   "Before approval or publication, recheck live original artifact ID, digest, source SHA, run identity and expiry; deleted or expired artifacts invalidate approval."]})
 
 
 if __name__ == "__main__":

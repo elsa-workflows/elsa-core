@@ -35,6 +35,7 @@ class CandidateArchiveTests(unittest.TestCase):
         self.make_archive()
         self.envelope = {"schema": 1, "published": False, "version": "3.10.0", "source_commit": SOURCE,
                          "run_id": 42, "run_attempt": 2, "artifact_id": 123,
+                         "retrieved_at": datetime.now(timezone.utc).isoformat(),
                          "artifact_name": f"consolidated-candidate-{SOURCE}-42-2", "retention_days": 30,
                          "expires_at": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
                          "preupload_manifest_sha256": candidate.file_sha256(self.output / candidate.MANIFEST)}
@@ -72,6 +73,12 @@ class CandidateArchiveTests(unittest.TestCase):
         self.assertFalse(any(key in manifest for key in ("artifact_id", "archive_sha256", "archive_size", "expires_at")))
         with self.assertRaisesRegex(ValueError, "reseal"):
             candidate.seal(self.output, SOURCE)
+
+    def test_future_or_timezone_free_retrieval_snapshot_fails(self):
+        for value in ((datetime.now(timezone.utc) + timedelta(minutes=1)).isoformat(), "2026-10-06T12:00:00"):
+            self.envelope["retrieved_at"] = value
+            with self.subTest(value=value):
+                self.assert_rejected_before_extraction("retrieval snapshot")
 
     def test_original_archive_corruption_and_size_fail(self):
         self.archive.write_bytes(self.archive.read_bytes() + b"changed")
@@ -192,6 +199,7 @@ class CandidateContractsTests(unittest.TestCase):
             candidate.compare_inventory(manifest, baseline, output)
             self.assertFalse(any(delta["added"] or delta["removed"] for delta in json.loads(output.read_text())["changes"].values()))
             for category, change in (("packages", lambda data: data["packages"].pop()),
+                                     ("packages", lambda data: data["packages"][0].update(id="Elsa.Unexpected")),
                                      ("exclusions", lambda data: data["exclusions"][0].update(reason="new reason"))):
                 changed = copy.deepcopy(manifest)
                 change(changed)
@@ -225,6 +233,11 @@ class CandidateContractsTests(unittest.TestCase):
         self.assertIn("retention-days: 30", workflow)
         self.assertIn('>> "$GITHUB_STEP_SUMMARY"', workflow)
         self.assertIn("EXPECTED_ENVELOPE: ${{ needs.retrieve.outputs.envelope }}", workflow)
+        self.assertIn("retrieved_at:$observed", workflow)
+        runner = (ROOT / "scripts/integration-program/prepare_consolidated_release_candidate.py").read_text()
+        self.assertIn('"scope": "retrieval_time_snapshot"', runner)
+        self.assertIn("deletion after retrieval is not observed", runner)
+        self.assertIn("Before approval or publication, recheck live original artifact ID", runner)
 
     def test_candidate_profile_is_core_owned_feedz_only_and_maintenance_is_preserved(self):
         references = ROOT / ".agents/skills/elsa-release/references"

@@ -79,6 +79,31 @@ class PackageProofTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     proof.verify_artifacts(self.directory, self.manifest)
 
+    def test_stable_sample_rejects_legacy_version_and_internal_dependency_metadata(self):
+        self.row["id"] = "Elsa.SamplePackage"
+        self.manifest["version"] = "3.10.0"
+        proof.verify_metadata(self.nuspec(version="3.10.0"), self.row, self.manifest)
+        with self.assertRaisesRegex(ValueError, "identity/version"):
+            proof.verify_metadata(self.nuspec(version="1.0.1"), self.row, self.manifest)
+        stale = self.nuspec(version="3.10.0", dependency=("Elsa.SamplePackage", "1.0.1"))
+        self.row["expected_dependency_groups"] = proof.dependency_groups(stale)
+        with self.assertRaisesRegex(ValueError, "dependency"):
+            proof.verify_metadata(stale, self.row, self.manifest)
+        unexpected = self.nuspec(version="3.10.0")
+        unexpected.find("id").text = "Elsa.Unexpected"
+        with self.assertRaisesRegex(ValueError, "identity/version"):
+            proof.verify_metadata(unexpected, self.row, self.manifest)
+
+    def test_duplicate_evaluated_package_ids_fail_canonical_inventory(self):
+        properties = dict.fromkeys(proof.PROPERTIES, "")
+        properties.update(IsPackable="true", PackageId="Elsa.Duplicate", Version="3.10.0", PackageVersion="3.10.0",
+                          Configuration="Release", TargetFrameworks="net8.0", RepositoryUrl=proof.CORE_URL, PackageProjectUrl=proof.CORE_URL)
+        projects = [self.directory / "A.csproj", self.directory / "B.csproj"]
+        with patch.object(proof, "solution_projects", return_value=projects), \
+                patch.object(proof, "evaluate", return_value=properties), \
+                self.assertRaisesRegex(ValueError, "Duplicate evaluated PackageId"):
+            proof.inventory(self.directory, "3.10.0", COMMIT, mode="candidate")
+
     def test_dependency_closure_rejects_stale_excluded_and_unknown(self):
         for dependency in (("Elsa.Example", "3.8.4"), ("Elsa.Secrets.Models", VERSION), ("Elsa.Missing", VERSION)):
             with self.subTest(dependency=dependency), self.assertRaises(ValueError):

@@ -310,7 +310,11 @@
         "active_path": "src/extensions/Directory.Build.props",
         "active_blob": "22f4a350e200119f6d99dd77bc951e6cb156f8e5",
         "active_mode": "100644",
-        "representation": "expanded"
+        "representation": "expanded",
+        "active_update": {
+          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8635",
+          "reason": "Task #8631 adds the distinct nonpublishing ConsolidatedReleaseCandidate opt-in for stable 3.10.0 Release preparation. The scoped imported guards remain false by default, preserve local project exclusions, and share validation imported by the active root target. All four scoped guard files and this retained mapping are accounted for in publisher-ci-and-build-configuration-dispositions.md; original source/completion provenance is preserved. This is not publisher cutover."
+        }
       }
     },
     {
@@ -332,7 +336,11 @@
         "active_path": "Directory.Build.targets",
         "active_blob": "2a61364c98e134dfbbf6ba8c5d6498f0bffcb81b",
         "active_mode": "100644",
-        "representation": "expanded"
+        "representation": "expanded",
+        "active_update": {
+          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8635",
+          "reason": "Task #8631 adds the distinct nonpublishing ConsolidatedReleaseCandidate opt-in for stable 3.10.0 Release preparation. The scoped imported guards remain false by default, preserve local project exclusions, and share validation imported by the active root target. All four scoped guard files and this retained mapping are accounted for in publisher-ci-and-build-configuration-dispositions.md; original source/completion provenance is preserved. This is not publisher cutover."
+        }
       }
     },
     {
@@ -3295,7 +3303,11 @@
         "active_path": "src/studio/Directory.Build.props",
         "active_blob": "7e69b18f079fd9fe76d57ec3f4f0c5bfd158bd78",
         "active_mode": "100644",
-        "representation": "expanded"
+        "representation": "expanded",
+        "active_update": {
+          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8635",
+          "reason": "Task #8631 adds the distinct nonpublishing ConsolidatedReleaseCandidate opt-in for stable 3.10.0 Release preparation. The scoped imported guards remain false by default, preserve local project exclusions, and share validation imported by the active root target. All four scoped guard files and this retained mapping are accounted for in publisher-ci-and-build-configuration-dispositions.md; original source/completion provenance is preserved. This is not publisher cutover."
+        }
       }
     },
     {

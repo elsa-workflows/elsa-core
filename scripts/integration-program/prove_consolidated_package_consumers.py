@@ -299,6 +299,8 @@ def _create_project(path: Path, version: str) -> None:
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
+    <DisableImplicitLibraryPacksFolder>true</DisableImplicitLibraryPacksFolder>
+    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
   </PropertyGroup>
   <ItemGroup>
 {package_references}
@@ -519,6 +521,8 @@ def prove(artifacts: Path, manifest: dict[str, Any], output: Path) -> dict[str, 
         shutil.copy2(config, inputs_path / config.name)
         shutil.copy2(FIXTURE / "Program.cs", inputs_path / "Program.cs")
         shutil.copy2(FIXTURE / "HttpProbe.cs", inputs_path / "HttpProbe.cs")
+        isolation.update({path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                          for path in inputs_path.iterdir() if path.is_file()})
 
         packages_root = root / "fresh-packages"
         if packages_root.exists() and any(packages_root.iterdir()):

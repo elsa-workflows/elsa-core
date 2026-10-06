@@ -375,22 +375,31 @@ manifest from its own file list. The immutable artifact name binds source SHA,
 run ID and attempt. Retention is explicitly 30 days. After upload the no-checkout
 retrieval job writes a **separate post-upload envelope** in the run summary,
 recording artifact ID/name, source SHA/run/attempt, original archive digest/size,
-actual expiry and the producer's manifest hash. This envelope stays outside the
+actual expiry, the UTC retrieval time and the producer's manifest hash. This envelope stays outside the
 original archive. Do not append it to the artifact, repack, relabel, or rebuild
 those bytes to hand them off.
 
 The downstream job binds the transferred envelope to the retrieval job output,
-checks live availability/expiry, verifies the original archive digest/size and
+checks the retrieval-time availability snapshot and expiry before execution, verifies the original archive digest/size and
 all manifest hashes/member safety **before extraction**, then restores/builds
 fresh PackageReference-only consumers on net8.0, net9.0 and net10.0. Parent
-props/targets/central configuration and SDK discovery are isolated. Receipts
+props/targets/central configuration and SDK discovery are isolated. The standalone
+consumer disables the SDK's implicit library-packs source and legacy NuGet fallback
+folder; its strict effective-source/cache checks do not allow these caches.
+Receipts
 record resolved package assets, effective sources/cache, all loaded Elsa assembly
 identities/informational versions and DLL hashes against exact package assets.
 The Core/Slack/Studio feature handshake and actual WorkflowContexts HTTP loopback
 are representative checks, not a full behavior test of every package.
 
 Keep the original envelope, artifact link/ID, producer receipt and downstream
-receipt together in the review evidence. If the artifact expires or disappears,
+receipt together in the review evidence. The retrieval job checks availability at
+its recorded retrieval time. Token-minimal consumers prove the exact transferred
+bytes with expiry checked before execution; they cannot observe deletion of the original artifact
+after retrieval. Before candidate approval or publication, independently re-read
+live original artifact metadata and recheck the exact artifact ID/name, archive
+digest/size, source SHA/run/attempt and expiry. A consumer receipt alone cannot
+satisfy that current availability check. If the artifact expires or disappears,
 it is no longer an approvable candidate. A replacement run creates a new
 identity and needs the full proof again. Candidate preparation is distinct from
 the unchanged earlier `3.10.0-proof.37410240989.1` archive and from future approved

@@ -26,6 +26,14 @@ class ConsolidatedPackageConsumerTests(unittest.TestCase):
                 self.assertEqual(hashlib.sha256((root / name).read_bytes()).hexdigest(), hashes[name])
             self.assertEqual({"sdk": {"version": "10.0.300", "rollForward": "disable"}}, json.loads((root / "global.json").read_text()))
 
+    def test_consumer_project_disables_sdk_implicit_sources_and_fallback(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary) / "Consumer.csproj"
+            proof._create_project(project, "3.10.0")
+            properties = ElementTree.parse(project).find("PropertyGroup")
+            self.assertEqual("true", properties.findtext("DisableImplicitLibraryPacksFolder"))
+            self.assertEqual("true", properties.findtext("DisableImplicitNuGetFallbackFolder"))
+
     def test_effective_config_sources_cache_and_fallback_are_verified(self):
         root = Path("/tmp/isolated-consumer").resolve()
         cache = root / "fresh-packages"
@@ -34,6 +42,7 @@ class ConsolidatedPackageConsumerTests(unittest.TestCase):
                   "configFilePaths": [str(root / "NuGet.Config")]}}, "packageFolders": {str(cache): {}}}
         proof.verify_restore_isolation(assets, root, cache, artifacts)
         for alter, message in ((lambda data: data["project"]["restore"]["sources"].update({"/parent-feed": {}}), "sources"),
+                               (lambda data: data["project"]["restore"]["sources"].update({"/usr/local/share/dotnet/library-packs": {}}), "sources"),
                                (lambda data: data["project"]["restore"].update(configFilePaths=["/parent/NuGet.Config"]), "config"),
                                (lambda data: data["packageFolders"].update({"/fallback": {}}), "fallback")):
             changed = copy.deepcopy(assets)

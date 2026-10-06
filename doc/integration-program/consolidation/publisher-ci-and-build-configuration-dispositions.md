@@ -39,6 +39,37 @@ imported product as well as Core. The pinned `.source` copies stay as provenance
 
 Both scoped `Directory.Build.props` files, and the matching `Directory.Build.targets`, end with the import's publication guard (`UseProjectReferences=true`, `IsPackable=false`). Lifting that guard is the 3.10.0 cutover change. Because these rows pin the reviewed blobs, that change must record an `active_update` for them.
 
+### Nonpublishing candidate guard update (#8631)
+
+[PR #8635](https://github.com/elsa-workflows/elsa-core/pull/8635) adds the distinct
+`ConsolidatedReleaseCandidate` opt-in to both `Directory.Build.props` and
+`Directory.Build.targets` in **each** of `src/extensions` and `src/studio`.
+These four guard files keep `IsPackable=false` unless the explicit proof or
+candidate mode is selected. They never globally force `IsPackable=true` and
+preserve project-specific exclusions, including the five retired Secrets IDs.
+The shared imported validation requires candidate Release configuration and
+Version=PackageVersion=3.10.0, and rejects simultaneous proof/candidate modes.
+The proof-only version rule remains unchanged. This conditional candidate mode
+is preparation only; the ordinary publication boundary and publisher cutover
+remain separate approvals.
+
+The ledger records `active_update` on the represented Extensions and Studio
+`Directory.Build.props` rows and the original Extensions `Directory.Build.targets`
+row. That last row continues to map to active **root** `Directory.Build.targets`,
+whose shared validation import supplies the candidate guard; its active-path
+mapping is not rewritten to the scoped file. The Extensions scoped targets and
+Studio scoped targets are both covered by this decision. There is no retained
+Studio `Directory.Build.targets` source row, so none is invented. Every original
+repository/path, source commit/blob/mode and completion PR/merge/blob/mode remains
+intact. Only the separate active-update PR/reason is added.
+
+The candidate uses the evaluated whole-solution inventory, with an explicit
+ID/project/exclusion-reason comparison against the unchanged accepted proof
+inventory. The dedicated workflow and consolidated Feedz candidate runbook
+prepare new unpublished stable bytes; neither changes original-repository
+3.8/3.9 maintenance, Templates scope, npm ownership or ordinary approved Core
+publication selection.
+
 Package-mode restores (`UseProjectReferences=false`) for connectors other than Slack remain part of the per-package
 release policy the ADR defers. The lockstep 3.10.0 pack uses project references, so it does not depend on them.
 
