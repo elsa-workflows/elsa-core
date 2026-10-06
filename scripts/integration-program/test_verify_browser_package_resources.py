@@ -11,6 +11,14 @@ import unittest
 
 import verify_browser_package_resources as resources
 
+# Exact prefix/suffix from the official 10.0.8 wrapper source pinned in the verifier.
+SDK10_PREFIX = bytes.fromhex(
+    "0061736d01000000010a0260017f0060027f7f000212010677656263696c066d656d6f7279020001"
+    "0303020001060b027f0041000b7f0041000b0741040d77656263696c56657273696f6e03000a7765"
+    "6263696c53697a6503010d67657457656263696c53697a6500001067657457656263696c5061796c6f"
+    "616400010c01020a1b020c00200041004104fc0800000b0c00200041002001fc0801000b")
+SDK10_SUFFIX = bytes.fromhex("001b046e616d650214020001000764657374507472010200016401016e")
+
 
 def encoded(value):
     result = bytearray()
@@ -24,7 +32,7 @@ def section(kind, content):
     return bytes([kind]) + encoded(len(content)) + content
 
 
-def binary_fixture():
+def binary_fixture(*, size_global=False, official_wrapper=False):
     pe = bytearray(608)
     pe[:2] = b"MZ"
     struct.pack_into("<I", pe, 60, 128)
@@ -42,17 +50,25 @@ def binary_fixture():
     struct.pack_into("<I", expected, 40, 114)
     payload = b"WbIL" + struct.pack("<HHHHIIII", 0, 0, 1, 0, 0x1000, 16, 0x1010, 28)
     payload += struct.pack("<IIII", 96, 0x1000, 96, 44) + expected
-    exports = b"\x03"
-    for name, kind, index in (("webcilVersion", 3, 0), ("getWebcilSize", 0, 0), ("getWebcilPayload", 0, 1)):
+    exported = [("webcilVersion", 3, 0), ("getWebcilSize", 0, 0), ("getWebcilPayload", 0, 1)]
+    globals = b"\x01\x7f\x00\x41\x00\x0b"
+    if size_global:
+        globals = b"\x02" + globals[1:] * 2
+        exported.insert(1, ("webcilSize", 3, 1))
+    exports = encoded(len(exported))
+    for name, kind, index in exported:
         exports += encoded(len(name)) + name.encode() + bytes([kind, index])
-    prefix = b"\0asm\x01\0\0\0" + section(6, b"\x01\x7f\x00\x41\x00\x0b") + section(7, exports)
+    prefix = b"\0asm\x01\0\0\0" + section(6, globals) + section(7, exports)
+    suffix = b""
+    if official_wrapper:
+        prefix, suffix = SDK10_PREFIX, SDK10_SUFFIX
     for padding in range(4):
         data = b"\x02\x01" + encoded(4 + padding) + struct.pack("<I", len(payload)) + bytes(padding) + b"\x01" + encoded(len(payload)) + payload
-        wrapped = prefix + section(11, data)
-        if (len(wrapped) - len(payload)) % 4 == 0:
+        wrapped = prefix + section(11, data) + suffix
+        if (len(wrapped) - len(payload) - len(suffix)) % 4 == 0:
             break
     converter = {"sdk_version": "10.0.401", "task_sha256": "a" * 64, "source_sha256": "b" * 64, "implementation_sha256": "c" * 64}
-    policy = {converter["task_sha256"]: {"sdk_version": converter["sdk_version"], "source_sha256": converter["source_sha256"], "implementation_sha256": converter["implementation_sha256"], "wrapper_sha256": resources.sha256(prefix)}}
+    policy = {converter["task_sha256"]: {"sdk_version": converter["sdk_version"], "source_sha256": converter["source_sha256"], "implementation_sha256": converter["implementation_sha256"], "wrapper_sha256": resources.sha256(prefix + suffix)}}
     return bytes(pe), wrapped, converter, policy
 
 
@@ -77,6 +93,45 @@ class ResourceContracts(unittest.TestCase):
             resources.verify_webcil(pe, wasm, {**converter, "sdk_version": "8.0.100"}, _test_policy=policy)
         with self.assertRaises(ValueError):
             resources.webcil_payload(wasm + section(11, b"\x00"))
+
+    def test_size_global_variant_keeps_exact_globals_exports_and_payload_guards(self):
+        pe, wasm, converter, policy = binary_fixture(size_global=True)
+        receipt = resources.verify_webcil(pe, wasm, converter, _test_policy=policy)
+        self.assertEqual(1, len(receipt["sections"]))
+        self.assertEqual(114, receipt["debug_fixups"][0]["pointer_to_raw_data"])
+        with self.assertRaisesRegex(ValueError, "Unreviewed"):
+            resources.verify_webcil(pe, wasm, converter)
+        # The new global remains immutable i32 zero, and webcilSize must export global index1.
+        global_start = wasm.index(b"\x02\x7f\x00\x41\x00\x0b")
+        export_index = wasm.index(b"webcilSize") + len(b"webcilSize") + 1
+        payload_start = len(wasm) - len(resources.webcil_payload(wasm))
+        for offset in (global_start, global_start + 6, global_start + 7, global_start + 9, export_index,
+                       payload_start + 28, payload_start + 44, payload_start + 139):
+            changed = bytearray(wasm)
+            changed[offset] ^= 1
+            with self.subTest(offset=offset), self.assertRaises(ValueError):
+                # Parser negatives cannot rely only on the independent wrapper hash check.
+                resources.webcil_payload(changed) if offset < payload_start else resources.verify_webcil(pe, changed, converter, _test_policy=policy)
+        legacy_globals = b"\x01\x7f\x00\x41\x00\x0b"
+        new_globals = b"\x02" + legacy_globals[1:] * 2
+        with self.assertRaisesRegex(ValueError, "exports"):
+            resources.webcil_payload(wasm.replace(section(6, new_globals), section(6, legacy_globals), 1))
+        _, legacy_wasm, _, _ = binary_fixture()
+        with self.assertRaisesRegex(ValueError, "exports"):
+            resources.webcil_payload(legacy_wasm.replace(section(6, legacy_globals), section(6, new_globals), 1))
+        for malformed in (wasm + section(11, b"\x00"), wasm + section(6, new_globals)):
+            with self.subTest(malformed=malformed[-8:]), self.assertRaises(ValueError):
+                resources.webcil_payload(malformed)
+
+    def test_official_wrapper_prefix_suffix_and_source_hash(self):
+        self.assertEqual("186b1bbdf5c3b1c0dbee30c4359348f1ad3e347264c33cf1d3718f312dcaee54",
+                         resources.sha256(SDK10_PREFIX + SDK10_SUFFIX))
+        pe, wasm, converter, policy = binary_fixture(official_wrapper=True)
+        self.assertEqual(1, len(resources.verify_webcil(pe, wasm, converter, _test_policy=policy)["sections"]))
+        with self.assertRaisesRegex(ValueError, "Unreviewed"):
+            resources.verify_webcil(pe, wasm, converter)
+        with self.assertRaisesRegex(ValueError, "wrapper"):
+            resources.verify_webcil(pe, wasm[:-1] + bytes([wasm[-1] ^ 1]), converter, _test_policy=policy)
 
     def test_fetched_assets_are_distinct_from_materialized_and_fail_closed(self):
         asset = {"path": "/_content/Elsa.Studio.Workflows.Designer/designer.entry.js", "sha256": "a" * 64, "bytes": 123, "content_type": "text/javascript", "owner": "package"}

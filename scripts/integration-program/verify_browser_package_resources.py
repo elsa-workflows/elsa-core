@@ -62,7 +62,16 @@ def webcil_payload(wasm: bytes) -> bytes:
             sections[kind] = (start, wasm[start:end])
         offset = end
     require(6 in sections and 7 in sections and 11 in sections, "Missing WebCIL wrapper section")
-    require(sections[6][1] == b"\x01\x7f\x00\x41\x00\x0b", "Unsupported WebCIL wrapper version")
+    # The reviewed 10.0.8 source adds only the immutable, zero-initialized webcilSize global.
+    # Keep each exact global layout paired with its corresponding export index inventory.
+    # https://github.com/dotnet/dotnet/blob/94ea82652cdd4e0f8046b5bd5becbd11461482ca/src/runtime/src/tasks/Microsoft.NET.WebAssembly.Webcil/WebcilWasmWrapper.cs
+    legacy_globals = b"\x01\x7f\x00\x41\x00\x0b"
+    wrapper_exports = {
+        legacy_globals: {"webcilVersion": (3, 0), "getWebcilSize": (0, 0), "getWebcilPayload": (0, 1)},
+        b"\x02" + legacy_globals[1:] * 2: {"webcilVersion": (3, 0), "webcilSize": (3, 1), "getWebcilSize": (0, 0), "getWebcilPayload": (0, 1)},
+    }
+    expected_exports = wrapper_exports.get(bytes(sections[6][1]))
+    require(expected_exports is not None, "Unsupported WebCIL wrapper version")
     exports = sections[7][1]
     count, pos = leb(exports, 0)
     names = {}
@@ -75,7 +84,7 @@ def webcil_payload(wasm: bytes) -> bytes:
         index, pos = leb(exports, pos + 1)
         require(name not in names, "Duplicate wrapper export")
         names[name] = (kind, index)
-    require(pos == len(exports) and names == {"webcilVersion": (3, 0), "getWebcilSize": (0, 0), "getWebcilPayload": (0, 1)}, "Unexpected WebCIL wrapper exports")
+    require(pos == len(exports) and names == expected_exports, "Unexpected WebCIL wrapper exports")
     start, data = sections[11]
     count, pos = leb(data, 0)
     require(count == 2, "WebCIL must have exactly two data segments")
