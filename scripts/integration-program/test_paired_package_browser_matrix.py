@@ -2,10 +2,10 @@ import copy
 from contextlib import contextmanager
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import tempfile
-import subprocess
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -194,8 +194,8 @@ class MatrixContracts(unittest.TestCase):
         self.assertEqual(partial, matrix.validate_browser_receipt(partial, key))
 
     def run_node_contract(self, script, expected_output, *, stdin=None):
-        result = subprocess.run(tsx_command(script), cwd=matrix.JOURNEY.parent, input=stdin,
-                                capture_output=True, text=True, timeout=60)
+        result = matrix._run_browser_process(tsx_command(script), cwd=matrix.JOURNEY.parent,
+                                             input=stdin or "", env=os.environ.copy(), timeout=60)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(expected_output + "\n", result.stdout)
 
