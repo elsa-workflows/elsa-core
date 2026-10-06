@@ -11,6 +11,53 @@ import paired_package_execution as execution
 from test_paired_package_released_documents import fixture_identity, write_released_fixture
 
 
+class ReleasedInputsContracts(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name).resolve()
+        self.key = ("3.10.0", "net10.0", "server")
+        self.identity = fixture_identity()
+        for version in ("3.8.4", "3.9.0"):
+            cell = (version, *self.key[1:])
+            directory = self.root / "cells" / "-".join(cell)
+            path = directory / "released-document.json"
+            _, child = write_released_fixture(path, cell)
+            evidence = dict(zip(("version", "framework", "host"), cell))
+            evidence.update(result="passed", stage="complete", owned_process_cleanup=True,
+                projects={"backend": {}}, resource_inventory={"assets": []}, runtime_readiness={"runtime": ".NET 10.0.8"},
+                loaded_assemblies={"backend": []}, browser_resources={"requested": []})
+            evidence["released_document"] = execution.documents.bind_released_document(path, cell, child, evidence, self.identity)
+            (directory / "execution.json").write_text(json.dumps(evidence))
+            (directory / "browser.json").write_text(json.dumps(child))
+
+    def test_returns_only_matching_pair_with_exact_source_bindings(self):
+        inputs = execution.released_document_inputs(self.key, self.root, self.identity)
+        self.assertEqual(["3.8.4", "3.9.0"], [item["binding"]["document"]["source_cell"]["version"] for item in inputs])
+        self.assertTrue(all(Path(item["private_path"]).is_file() for item in inputs))
+        for key in (("3.10.0", "net9.0", "server"), ("3.10.0", "net10.0", "wasm"), ("3.9.0", "net10.0", "server")):
+            with self.subTest(key=key), self.assertRaises((ValueError, RuntimeError, OSError)):
+                execution.released_document_inputs(key, self.root, self.identity)
+
+    def test_changed_fixture_child_source_or_missing_document_rejects(self):
+        with self.assertRaises(ValueError):
+            execution.released_document_inputs(self.key, self.root, {**self.identity, "fixture_source_commit": "c" * 40})
+        directory = self.root / "cells/3.8.4-net10.0-server"
+        for name, field, value in (("execution", "result", "failed"), ("execution", "projects", {"changed": []}),
+                                   ("browser", "browser_version", "150.0")):
+            path = directory / (name + ".json")
+            raw = path.read_bytes()
+            changed = json.loads(raw)
+            changed[field] = value
+            path.write_text(json.dumps(changed))
+            with self.subTest(name=name, field=field), self.assertRaises(ValueError):
+                execution.released_document_inputs(self.key, self.root, self.identity)
+            path.write_bytes(raw)
+        (directory / "released-document.json").unlink()
+        with self.assertRaises((ValueError, RuntimeError, OSError)):
+            execution.released_document_inputs(self.key, self.root, self.identity)
+
+
 class ExecutionContracts(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
@@ -66,6 +113,7 @@ class ExecutionContracts(unittest.TestCase):
             finally:
                 self.events.append(("stop",))
         self.patch(execution, "evidence_gaps", return_value=[])
+        self.patch(execution, "released_document_inputs", return_value=[])
         self.patch(execution.packages, "_validated_manifest", return_value=("3.10.0", "b" * 40, {"elsa": {"id": "Elsa"}}, {}, []))
         self.patch(execution.packages, "render_nuget_config", return_value="<configuration />")
         self.patch(execution.hosts, "materialize", side_effect=materialize)
@@ -130,6 +178,16 @@ class ExecutionContracts(unittest.TestCase):
                 retained=self.root / "retained", verified_root=self.root / "candidate", manifest={},
                 manifest_hash="a" * 64, sdk="10.0.300")
         self.assertFalse(list((self.root / "retained").rglob("released-document.json")))
+
+    def test_missing_released_inputs_fail_before_candidate_build_or_runtime(self):
+        run_browser = self.pipeline()
+        self.patch(execution, "released_document_inputs", side_effect=ValueError("Missing source evidence"))
+        with self.assertRaises(ValueError):
+            self.execute()
+        self.assertEqual([], self.events)
+        run_browser.assert_not_called()
+        self.assertEqual("released_inputs", self.receipt()["stage"])
+        self.assertEqual("failed", self.receipt()["result"])
 
     def receipt(self):
         return json.loads((self.root / "retained/cells/3.10.0-net10.0-server/execution.json").read_text())

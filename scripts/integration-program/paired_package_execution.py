@@ -226,6 +226,28 @@ def _command_receipts(commands: list[dict], group: Path) -> list[dict]:
     return records
 
 
+def released_document_inputs(key, retained: Path, fixture_identity: dict) -> list[dict]:
+    """Resolve only the two completed baseline cells matching this candidate."""
+    require(key in browser.MATRIX and key[0] == candidate.PRODUCER["version"], "Released inputs require a candidate cell")
+    result = []
+    for version in documents.TOOL_VERSIONS:
+        source_cell = (version, key[1], key[2])
+        cell = browser._external_path(retained) / "cells" / "-".join(source_cell)
+        receipts = {}
+        for name in ("execution", "browser"):
+            path = provenance.regular_file(cell / (name + ".json"))
+            require(0 < path.stat().st_size <= 8 * 1024 * 1024, "Unbounded released source receipt")
+            receipts[name] = json.loads(path.read_text(encoding="utf-8"))
+            require(isinstance(receipts[name], dict), "Invalid released source receipt")
+        evidence = receipts["execution"]
+        require(evidence.get("result") == "passed" and evidence.get("stage") == "complete", "Released source cell did not pass")
+        path = cell / "released-document.json"
+        binding = documents.bind_released_document(path, source_cell, receipts["browser"], evidence, fixture_identity)
+        require(binding == evidence.get("released_document"), "Released source evidence changed")
+        result.append({"private_path": str(path), "binding": binding})
+    return result
+
+
 def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, manifest: dict,
                  manifest_hash: str, sdk: str, fixture_identity: dict | None = None) -> dict:
     version, framework, host = key
@@ -242,6 +264,11 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
     try:
         evidence["missing_evidence"] = evidence_gaps(request)
         require(not evidence["missing_evidence"], "Required package browser evidence is unavailable")
+        inputs = None
+        if version == candidate.PRODUCER["version"]:
+            evidence["stage"] = "released_inputs"
+            inputs = released_document_inputs(key, retained, fixture_identity)
+            evidence["released_document_inputs"] = [item["binding"] for item in inputs]
         _, _, by_id, exceptions, _ = packages._validated_manifest(manifest)
         config = (packages.render_nuget_config(verified_root / "artifacts", [row["id"] for row in by_id.values()], exceptions)
                   if version == candidate.PRODUCER["version"] else
@@ -269,6 +296,8 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
                 evidence["runtime_readiness"] = _observe_ready(handle, request)
                 evidence["stage"] = "browser_execution"
                 options = {"released_document_output": released_output} if released_output is not None else {}
+                if inputs is not None:
+                    options["released_document_inputs"] = inputs
                 child = browser.run_browser(handle, request, inventory["assets"], **options)
                 # Validate before any returned child data enters portable evidence.
                 original_browser = browser.validate_browser_receipt(child, key)
