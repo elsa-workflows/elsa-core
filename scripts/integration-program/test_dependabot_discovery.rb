@@ -105,8 +105,9 @@ class DependabotDiscoveryTests < Minitest::Test
 
   def discovered_projects(patterns, native: true)
     Dir.chdir(@workspace) do
-      # Dependabot FileFetcherCommand.files_from_multidirectories at updater
-      # 9c06d60057ba9e7e79210e6618f932a28cf6a158 uses this exact glob operation.
+      # Model the hosted NuGet PathHelper matcher first. The optional Ruby branch
+      # corroborates it with FileFetcherCommand.files_from_multidirectories at
+      # updater 9c06d60057ba9e7e79210e6618f932a28cf6a158.
       directories = patterns.flat_map do |pattern|
         if native
           native_matching_directories(pattern)

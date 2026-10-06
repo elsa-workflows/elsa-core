@@ -37,11 +37,19 @@ Directory counts exclude local build output and count normalized paths once.
 The broader `/**/*` alternative selects 627 Extensions and 522 Studio directories,
 of which 550 and 450 have no project manifests. Matching the actual project
 directories avoids that extra empty discovery work without omitting a project.
-The standard-library Ruby regression can be run with:
+The Ruby regression uses the Minitest bundled gem and can be run with:
 
 ```sh
 ruby scripts/integration-program/test_dependabot_discovery.rb
 ```
+
+The existing [Integration program tools workflow](../../../.github/workflows/integration-program-tools.yml)
+runs it immediately after checkout. Dependabot configuration and product
+`.csproj` changes trigger that workflow, including added or moved projects.
+The current [Ubuntu runner image](https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md)
+provides Ruby 3.2.3, whose [bundled gems](https://github.com/ruby/ruby/blob/v3_2_3/gems/bundled_gems)
+include Minitest 5.16.3. The step checks that Minitest loads and installs that
+pinned gem in the user directory only if it is missing.
 
 It models the native NuGet pattern algorithm and corroborates it with Ruby globbing,
 reproduces the terminal-glob miss, checks a deeper synthetic project, reconciles
