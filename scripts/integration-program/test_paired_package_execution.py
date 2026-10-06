@@ -60,6 +60,8 @@ class ReleasedInputsContracts(unittest.TestCase):
 
 
 class ResourceInventoryContracts(unittest.TestCase):
+    STYLESHEET = "/_content/Elsa.Studio.Workflows.Designer/designer.css"
+
     def test_client_inventory_uses_selected_client_manifest_and_keeps_both_authorities(self):
         for version in ("3.9.0", "3.10.0"):
             for host in ("wasm", "hosted-wasm", "custom-elements"):
@@ -67,7 +69,10 @@ class ResourceInventoryContracts(unittest.TestCase):
                 layout = SimpleNamespace(request=execution.hosts.CellRequest(host, "net10.0", version, route_prefix=prefix),
                     packages_root=Path("/owned/packages"),
                     project_paths={name: Path("/owned") / name / (name + ".csproj") for name in execution.hosts.HOST_NAMES})
-                static = {"assets": [{"path": "/script.js"}], "static_asset_manifest_sha256": "a" * 64}
+                static = {"assets": [{"path": "/script.js", "owner": "package", "required": True},
+                                      {"path": ("/" + prefix if prefix else "") + self.STYLESHEET,
+                                       "owner": "package", "required": True}],
+                          "static_asset_manifest_sha256": "a" * 64}
                 managed = {"assets": [{"path": "/managed.wasm"}], "static_asset_manifest_sha256": "b" * 64,
                            "package_runtime_count": 1}
                 candidate = version == "3.10.0"
@@ -78,7 +83,9 @@ class ResourceInventoryContracts(unittest.TestCase):
                         patch.object(execution.wasm_resources, managed_name, return_value=managed) as derive:
                     converter = {"task_sha256": "c" * 64}
                     result = execution._resource_inventory(layout, Path("/verified"), "d" * 64, converter=converter)
-                    self.assertEqual(static["assets"] + managed["assets"], result["assets"])
+                    expected_static = copy.deepcopy(static["assets"])
+                    next(asset for asset in expected_static if asset["path"].endswith(self.STYLESHEET))["required"] = False
+                    self.assertEqual(expected_static + managed["assets"], result["assets"])
                     self.assertEqual("a" * 64, result["static_asset_manifest_sha256"])
                     self.assertEqual("b" * 64, result["managed_resources"]["static_asset_manifest_sha256"])
                     client = layout.project_paths["wasm" if host == "hosted-wasm" else host]
@@ -86,11 +93,125 @@ class ResourceInventoryContracts(unittest.TestCase):
                     self.assertEqual(client.parent / "obj/Release/net10.0/staticwebassets.build.json", derive.call_args.args[2])
                     self.assertEqual(converter, derive.call_args.kwargs["converter"])
                     self.assertEqual("/compat" if prefix else "", derive.call_args.kwargs["route_prefix"])
+                    self.assertEqual(host, result["host_network_policy"]["host"])
+                    self.assertEqual(("/" + prefix if prefix else "") + self.STYLESHEET,
+                                     result["host_network_policy"]["stylesheet"]["path"])
+                    self.assertFalse(result["host_network_policy"]["stylesheet"]["required"])
                     with self.assertRaises(ValueError):
                         execution._resource_inventory(layout, Path("/verified"), "d" * 64)
                     managed["assets"] = static["assets"]
                     with self.assertRaises(ValueError):
                         execution._resource_inventory(layout, Path("/verified"), "d" * 64, converter=converter)
+
+    def test_host_policy_changes_only_standalone_stylesheet_request_requirement(self):
+        policy = json.loads(execution.resources.CONVERTER_POLICY.with_name("coverage-policy.json").read_text())
+        package_assets = policy["required_browser_assets"]
+        stylesheet = self.STYLESHEET
+        baseline_requests = {
+            "/_content/Elsa.Studio.Workflows.Designer/designer.entry.js",
+            stylesheet,
+            "/_content/Elsa.Studio.DomInterop/dom.entry.js",
+        }
+        for version in ("3.9.0", "3.10.0"):
+            for host in execution.browser.HOSTS:
+                with self.subTest(version=version, host=host):
+                    prefix = "compat" if host == "hosted-wasm" else ""
+                    route_prefix = "/" + prefix if prefix else ""
+                    layout = SimpleNamespace(
+                        request=execution.hosts.CellRequest(host, "net10.0", version, route_prefix=prefix),
+                        packages_root=Path("/owned/packages"),
+                        project_paths={name: Path("/owned") / name / (name + ".csproj")
+                                       for name in execution.hosts.HOST_NAMES})
+                    initially_required = set(package_assets if version == "3.10.0" else baseline_requests)
+                    extra_path = route_prefix + "/_content/Elsa.Studio.Shell/shell.js"
+                    static = {
+                        "assets": [
+                            {"path": route_prefix + path, "owner": "package", "required": path in initially_required}
+                            for path in package_assets
+                        ] + [{"path": extra_path, "owner": "package", "required": False}],
+                        "static_asset_manifest_sha256": "a" * 64,
+                    }
+                    managed_assets = [
+                        {"path": "/_framework/managed-one.wasm", "owner": "package", "required": True},
+                        {"path": "/_framework/managed-two.wasm", "owner": "package", "required": False},
+                    ]
+                    managed = {"assets": managed_assets, "static_asset_manifest_sha256": "b" * 64,
+                               "package_runtime_count": 2}
+                    candidate = version == "3.10.0"
+                    static_owner = execution.resources if candidate else execution.baseline_resources
+                    static_name = "derive_candidate_resources" if candidate else "derive_baseline_resources"
+                    managed_name = "derive_candidate_wasm_resources" if candidate else "derive_baseline_wasm_resources"
+                    original_flags = {asset["path"]: asset["required"] for asset in static["assets"]}
+                    converter = {"task_sha256": "c" * 64}
+                    with patch.object(static_owner, static_name, return_value=static):
+                        if host == "server":
+                            result = execution._resource_inventory(layout, Path("/verified"), "d" * 64)
+                        else:
+                            with patch.object(execution.wasm_resources, managed_name, return_value=managed):
+                                result = execution._resource_inventory(layout, Path("/verified"), "d" * 64,
+                                                                       converter=converter)
+
+                    expected_flags = dict(original_flags)
+                    stylesheet_path = route_prefix + stylesheet
+                    expected_flags[stylesheet_path] = host == "server"
+                    expected_flags.update({asset["path"]: asset["required"] for asset in managed_assets}
+                                          if host != "server" else {})
+                    self.assertEqual(expected_flags,
+                                     {asset["path"]: asset["required"] for asset in result["assets"]})
+                    if version == "3.10.0":
+                        self.assertTrue(all(expected_flags[route_prefix + path]
+                                            for path in package_assets if path != stylesheet))
+                    else:
+                        self.assertTrue(expected_flags[route_prefix + "/_content/Elsa.Studio.Workflows.Designer/designer.entry.js"])
+                        self.assertTrue(expected_flags[route_prefix + "/_content/Elsa.Studio.DomInterop/dom.entry.js"])
+                    network_policy = result["host_network_policy"]
+                    self.assertEqual(host, network_policy["host"])
+                    self.assertEqual(stylesheet_path, network_policy["stylesheet"]["path"])
+                    self.assertEqual(host == "server", network_policy["stylesheet"]["required"])
+                    self.assertEqual(["server"], network_policy["stylesheet"]["required_hosts"])
+                    self.assertRegex(network_policy["coverage_policy_sha256"], r"^[0-9a-f]{64}$")
+
+    def test_standalone_stylesheet_remains_mandatory_materialization(self):
+        policy = json.loads(execution.resources.CONVERTER_POLICY.with_name("coverage-policy.json").read_text())
+        required = policy["required_browser_assets"]
+        self.assertEqual(6, len(required))
+        self.assertIn(self.STYLESHEET, required)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            cache = root / "cache"
+            build_manifest = root / "build.json"
+            contents = {}
+            rows = []
+            package_ids = sorted({path.split("/")[2] for path in required})
+            for path in required:
+                package_id = path.split("/")[2]
+                relative = path.removeprefix("/_content/" + package_id + "/")
+                member = "staticwebassets/" + relative
+                identity = cache / package_id.lower() / "3.10.0" / member
+                identity.parent.mkdir(parents=True, exist_ok=True)
+                content = relative.encode()
+                identity.write_bytes(content)
+                contents[(package_id, member)] = content
+                rows.append({"SourceId": package_id, "SourceType": "Package", "BasePath": "_content/" + package_id,
+                             "RelativePath": relative, "Identity": str(identity), "AssetRole": "Primary",
+                             "FileLength": len(content)})
+            build_manifest.write_text(json.dumps({"Assets": rows}))
+            by_id = {package_id.casefold(): {"id": package_id} for package_id in package_ids}
+            mandatory_calls = []
+
+            def package_member(package, member, mandatory):
+                mandatory_calls.append((package["id"], member, mandatory))
+                return contents[(package["id"], member)]
+
+            execution.resources._derive_package_resources(build_manifest, cache, "3.10.0", by_id, package_member,
+                                                            route_prefix="")
+            stylesheet_member = "staticwebassets/designer.css"
+            self.assertIn(("Elsa.Studio.Workflows.Designer", stylesheet_member, True), mandatory_calls)
+            without_stylesheet = [row for row in rows if row["RelativePath"] != "designer.css"]
+            build_manifest.write_text(json.dumps({"Assets": without_stylesheet}))
+            with self.assertRaisesRegex(ValueError, "Missing mandatory materialized"):
+                execution.resources._derive_package_resources(build_manifest, cache, "3.10.0", by_id, package_member,
+                                                                route_prefix="")
 
 
 class ExecutionContracts(unittest.TestCase):

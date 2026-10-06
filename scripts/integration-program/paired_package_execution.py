@@ -214,19 +214,53 @@ def _resource_inventory(layout, verified_root: Path, manifest_hash: str, *, conv
                                                         route_prefix=prefix)
     if layout.request.host == "server":
         require(converter is None, "Server cannot claim a WASM converter")
-        return static
-    require(isinstance(converter, dict) and converter, "Missing selected WASM converter evidence")
-    client = layout.project_paths["wasm" if layout.request.host == "hosted-wasm" else layout.request.host]
-    client_manifest = client.parent / "obj" / "Release" / layout.request.framework / "staticwebassets.build.json"
-    if layout.request.version == candidate.PRODUCER["version"]:
-        managed = wasm_resources.derive_candidate_wasm_resources(layout, client, client_manifest, verified_root,
-                    verified_manifest_sha256=manifest_hash, converter=converter, route_prefix=prefix)
+        inventory = static
     else:
-        managed = wasm_resources.derive_baseline_wasm_resources(layout, client, client_manifest,
-                    converter=converter, route_prefix=prefix)
-    assets = static["assets"] + managed["assets"]
-    require(len({asset["path"] for asset in assets}) == len(assets), "Static and managed resource paths overlap")
-    return {**static, "assets": assets, "managed_resources": {name: value for name, value in managed.items() if name != "assets"}}
+        require(isinstance(converter, dict) and converter, "Missing selected WASM converter evidence")
+        client = layout.project_paths["wasm" if layout.request.host == "hosted-wasm" else layout.request.host]
+        client_manifest = client.parent / "obj" / "Release" / layout.request.framework / "staticwebassets.build.json"
+        if layout.request.version == candidate.PRODUCER["version"]:
+            managed = wasm_resources.derive_candidate_wasm_resources(layout, client, client_manifest, verified_root,
+                        verified_manifest_sha256=manifest_hash, converter=converter, route_prefix=prefix)
+        else:
+            managed = wasm_resources.derive_baseline_wasm_resources(layout, client, client_manifest,
+                        converter=converter, route_prefix=prefix)
+        assets = static["assets"] + managed["assets"]
+        require(len({asset["path"] for asset in assets}) == len(assets), "Static and managed resource paths overlap")
+        inventory = {**static, "assets": assets,
+                     "managed_resources": {name: value for name, value in managed.items() if name != "assets"}}
+
+    # The six paths remain mandatory package materializations and retain their sealed
+    # archive checks. This separate host policy only changes whether the standalone
+    # stylesheet must be requested over HTTP; it does not relax any other resource.
+    policy_path = resources.CONVERTER_POLICY.with_name("coverage-policy.json")
+    policy_bytes = policy_path.read_bytes()
+    policy = json.loads(policy_bytes)
+    stylesheet = "/_content/Elsa.Studio.Workflows.Designer/designer.css"
+    overrides = policy.get("host_network_request_overrides")
+    require(isinstance(policy.get("required_browser_assets"), list)
+            and stylesheet in policy["required_browser_assets"],
+            "Designer stylesheet must remain a mandatory package materialization")
+    require(isinstance(overrides, dict) and set(overrides) == {stylesheet},
+            "Invalid host-specific browser request policy")
+    host_overrides = overrides[stylesheet]
+    require(isinstance(host_overrides, dict) and set(host_overrides) == set(browser.HOSTS)
+            and all(type(value) is bool for value in host_overrides.values()),
+            "Incomplete host-specific browser request policy")
+    required_request = host_overrides[layout.request.host]
+    stylesheet_path = prefix + stylesheet
+    stylesheet_assets = [asset for asset in inventory["assets"] if asset.get("path") == stylesheet_path]
+    require(len(stylesheet_assets) == 1 and stylesheet_assets[0].get("owner") == "package"
+            and stylesheet_assets[0].get("required") is True,
+            "Designer stylesheet is missing from the verified package inventory")
+    stylesheet_assets[0]["required"] = required_request
+    inventory["host_network_policy"] = {
+        "coverage_policy_sha256": resources.sha256(policy_bytes),
+        "host": layout.request.host,
+        "stylesheet": {"path": stylesheet_path, "required": required_request,
+                       "required_hosts": sorted(host for host, required in host_overrides.items() if required)},
+    }
+    return inventory
 
 
 def _command_receipts(commands: list[dict], group: Path) -> list[dict]:

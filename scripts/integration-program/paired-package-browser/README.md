@@ -104,12 +104,19 @@ that its assertions passed; inspect the matrix and per-cell outcomes. Producer
 identity, fixture commit/run, package ownership and actual browser execution
 remain separate evidence.
 
-The six Designer/DomInterop assets must exist and match original package bytes.
-Candidate journeys must request all six. Baseline default-editor smoke requires
-the designer entrypoint, designer stylesheet and DOM entrypoint; it does not
-claim the candidate's clipboard, file or ReactFlow interaction coverage. A
-resource being materialized is distinct from its bytes being requested by the
-browser. WASM-managed resources additionally require reviewed conversion and
+All six Designer/DomInterop assets must be materialized and match the original
+package bytes, including the standalone `designer.css` file. Network requests
+are a separate, host-specific check: the Server host requires the standalone
+stylesheet request because its pinned host template links that file. The pinned
+WASM, hosted-WASM and CustomElements host templates do not link it; their
+designer bundle imports CSS through `style-loader`. Those hosts still require
+the designer bundle and the other applicable package assets to be requested
+with exact served bytes. Released baseline smoke continues to require the
+designer entrypoint and DOM entrypoint on every host, plus the standalone
+stylesheet request on Server. An optional standalone request never makes the
+stylesheet optional as a package materialization or sealed-byte check.
+
+WASM-managed resources additionally require reviewed conversion and
 executed-byte evidence.
 
 Non-Server execution prepares one isolated, locked converter decoder and captures

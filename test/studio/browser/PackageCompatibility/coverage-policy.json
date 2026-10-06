@@ -69,6 +69,14 @@
     "/_content/Elsa.Studio.DomInterop/dom.entry.js",
     "/_content/Elsa.Studio.DomInterop/files.entry.js"
   ],
+  "host_network_request_overrides": {
+    "/_content/Elsa.Studio.Workflows.Designer/designer.css": {
+      "server": true,
+      "wasm": false,
+      "hosted-wasm": false,
+      "custom-elements": false
+    }
+  },
   "resource_content_types": {
     ".js": "text/javascript",
     ".css": "text/css",
