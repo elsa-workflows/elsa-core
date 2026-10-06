@@ -17,6 +17,18 @@ const candidate: string[] = policy.candidate;
 const hostAssertions: Record<Cell['host'], string[]> = policy.host_assertions;
 const hash = (data: Buffer | string): string => createHash('sha256').update(data).digest('hex');
 
+export async function resourceBody(response: { headers(): Record<string, string>; body(): Promise<Buffer> }, expectedBytes: number): Promise<Buffer> {
+  // The WASM dev server can stream a response without Content-Length. Its
+  // optional transport length is distinct from the decoded package byte count.
+  const declared = response.headers()['content-length'];
+  if (!Number.isSafeInteger(expectedBytes) || expectedBytes < 0 || expectedBytes > 32 * 1024 * 1024 ||
+      (declared !== undefined && (!/^[0-9]+$/.test(declared) || !Number.isSafeInteger(Number(declared)) || Number(declared) > expectedBytes)))
+    throw new Error('resource_body_limit');
+  const body = await response.body();
+  if (body.length !== expectedBytes) throw new Error('resource_body_size');
+  return body;
+}
+
 export function readReleasedInput(input: ReleasedInput): { raw: Buffer; document: any } {
   const path = input.private_path;
   if (!isAbsolute(path) || realpathSync(path) !== path || lstatSync(path).isSymbolicLink() ||
@@ -559,10 +571,7 @@ async function main(): Promise<void> {
     if (!asset || url.origin !== new URL(input.studio_url).origin) return;
     pending.push((async () => {
       const headers = response.headers();
-      const declared = Number(headers['content-length']);
-      if (!Number.isFinite(declared) || declared > asset.bytes || asset.bytes > 32 * 1024 * 1024) throw new Error('resource_body_limit');
-      const body = await response.body();
-      if (body.length !== asset.bytes) throw new Error('resource_body_size');
+      const body = await resourceBody(response, asset.bytes);
       resources.push({ path: url.pathname, status: response.status(), content_type: headers['content-type']?.split(';')[0], sha256: hash(body), bytes: body.length, owner: asset.owner, requested: true });
     })().catch(() => { failed = true; }));
   });

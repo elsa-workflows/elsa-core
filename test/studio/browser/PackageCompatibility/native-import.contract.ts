@@ -2,7 +2,16 @@
 import assert from 'node:assert/strict';
 import { chmodSync, readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { checkReleasedDefinition, readReleasedInput } from './journey.js';
+import { checkReleasedDefinition, readReleasedInput, resourceBody } from './journey.js';
+
+const response = (body: Buffer, length?: string) => ({ headers: (): Record<string, string> => length === undefined ? {} : { 'content-length': length }, body: async () => body });
+const bytes = Buffer.from('observed decoded package bytes');
+for (const length of [undefined, String(bytes.length), '12'])
+  assert.deepEqual(await resourceBody(response(bytes, length), bytes.length), bytes);
+for (const length of ['', '-1', '1.5', 'NaN', String(bytes.length + 1), '9007199254740992'])
+  await assert.rejects(resourceBody(response(bytes, length), bytes.length));
+await assert.rejects(resourceBody(response(Buffer.from('different bytes')), bytes.length));
+await assert.rejects(resourceBody(response(bytes), 32 * 1024 * 1024 + 1));
 
 const inputs = JSON.parse(readFileSync(0, 'utf8')) as Array<Parameters<typeof readReleasedInput>[0]>;
 for (const input of inputs) {
