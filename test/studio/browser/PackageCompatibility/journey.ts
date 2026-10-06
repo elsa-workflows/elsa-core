@@ -585,8 +585,12 @@ async function main(): Promise<void> {
   });
   const proof: Record<string, unknown> = {};
   const observeResponse = (response: Response) => {
-    if (directBackend)
-      pending.push(directBackend.observe(response, response.request().frame() === page.mainFrame()));
+    if (directBackend) {
+      let fromMainFrame = false;
+      try { fromMainFrame = response.request().frame() === page.mainFrame(); }
+      catch { /* Requests without a frame cannot prove the native UI's backend path. */ }
+      pending.push(directBackend.observe(response, fromMainFrame));
+    }
     const url = new URL(response.url());
     const asset = expected.get(url.pathname);
     if (!asset || url.origin !== new URL(input.studio_url).origin) return;
