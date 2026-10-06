@@ -216,9 +216,14 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
       const menu = page.locator('#workflow-file-upload-button-wrapper + .mud-button-group-root .mud-menu-icon-button-activator');
       await expect(menu).toHaveCount(1);
       await menu.click();
-      await page.getByRole('menuitem', { name: 'Export', exact: true }).click();
+      proof.last_completed_stage = 'released_export_menu_opened';
+      // MudBlazor9 renders a native div.mud-menu-item without a menuitem role.
+      const exportItem = page.locator('.mud-menu-item:visible').filter({ hasText: /^Export$/ });
+      await expect(exportItem).toHaveCount(1);
+      await exportItem.click();
       const exportDialog = page.getByRole('dialog');
       await expect(exportDialog).toBeVisible();
+      proof.last_completed_stage = 'released_export_dialog_opened';
       await expect(exportDialog.getByRole('checkbox', { name: 'Include referencing workflows', exact: true })).not.toBeChecked();
       const [download] = await Promise.all([
         page.waitForEvent('download'),
