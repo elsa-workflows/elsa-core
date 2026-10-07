@@ -613,6 +613,7 @@ def run_verified(root, provenance, inspector, *, mode, transport=None, authorize
         symbol_rows = {row["key"]: row for row in ledger["before"]["symbols"]}
         by_package = {row["id"]: row for row in ledger["associations"]}
         manifest_rows = {row["id"]: row for row in manifest["packages"]}
+        uploaded_symbol_keys = set()
         for operation in ledger["operations"]:
             row, kind = manifest_rows[operation["id"]], operation["kind"]
             if kind == "nupkg" and package_rows[row["id"]]["classification"] == "matching":
@@ -622,6 +623,18 @@ def run_verified(root, provenance, inspector, *, mode, transport=None, authorize
             if kind == "snupkg" and not symbols:
                 operation["state"] = "assembly_free_archive_unverified"
                 continue
+            if kind == "snupkg":
+                # An accepted archive is not PDB content proof. Re-read overlap
+                # before another original archive can repeat those keys; stale
+                # preflight absence must never cause an avoidable duplicate PUT.
+                overlap = uploaded_symbol_keys.intersection(item["key"] for item in symbols)
+                if overlap:
+                    readback = observe_symbols(reader, {item: expected[item] for item in sorted(overlap)}, inspector)
+                    operation["overlap_readback"] = readback
+                    symbol_rows.update({item["key"]: item for item in readback})
+                    if not all(item["classification"] == "matching" for item in readback):
+                        operation["failure_category"] = "symbol_overlap_unverified"
+                        raise ExecutorError("symbol_overlap_unverified")
             if kind == "snupkg" and all(symbol_rows[item["key"]]["classification"] == "matching" for item in symbols):
                 operation["state"] = "pdbs_already_matching_archive_unverified"
                 continue
@@ -638,6 +651,8 @@ def run_verified(root, provenance, inspector, *, mode, transport=None, authorize
                 operation.update(status=response.status, finished_at=now())
                 require(response.complete is True and response.failure_category is None and type(response.status) is int and response.status in {201, 202}, "upload_acceptance_unknown")
                 operation["state"] = "accepted_pending_readback"
+                if kind == "snupkg":
+                    uploaded_symbol_keys.update(item["key"] for item in symbols)
                 if checkpoint is not None:
                     checkpoint(ledger)
             except BaseException:

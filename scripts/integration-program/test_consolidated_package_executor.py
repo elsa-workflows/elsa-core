@@ -4,6 +4,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import io
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -47,6 +48,23 @@ class FakeInspector:
                 "source_link": {"documents": {"/_/*": f"{executor.packages.RAW_URL}{recovery.SOURCE}/*"}},
                 "documents": [{"path": "/_/source.cs", "algorithm": "sha256", "checksum": "b"*64,
                                "embedded_checksum": "b"*64}]}}
+
+
+class DuplicateRejectingSymbols(executor.SimulatedTransport):
+    """A fake service that rejects an original archive containing any known key."""
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.attempts = []
+
+    def put(self, kind, data, key):
+        self.attempts.append({"kind": kind, "archive_sha256": executor.sha(data)})
+        if kind == "snupkg":
+            with zipfile.ZipFile(io.BytesIO(data)) as archive:
+                members = {archive.read(name) for name in archive.namelist() if name.endswith(".pdb")}
+            keys = {name for name, item in self.expected.items() if item["pdb"] in members}
+            if keys.intersection(self.symbols):
+                return recovery.ReadResult(409, b"private-duplicate-response", True)
+        return super().put(kind, data, key)
 
 
 class FullInventoryTests(unittest.TestCase):
@@ -332,6 +350,118 @@ class FullInventoryTests(unittest.TestCase):
             self.assertEqual(len(expected), 224)
         finally:
             path.write_bytes(original)
+
+    def overlapping_inventory(self, *, mixed=False):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)/"verified"
+        shutil.copytree(self.root, root)
+        manifest = copy.deepcopy(self.manifest)
+        first, second = manifest["packages"][:2]
+        with zipfile.ZipFile(root/"artifacts"/first["snupkg"]) as archive:
+            shared = archive.read(first["assemblies"][0]["pdb"])
+        path = root/"artifacts"/second["snupkg"]
+        with zipfile.ZipFile(path) as archive:
+            members = {name: archive.read(name) for name in archive.namelist()}
+        unique = members[second["assemblies"][0]["pdb"]]
+        members[second["assemblies"][0]["pdb"]] = shared
+        if mixed:
+            frame = copy.deepcopy(second["assemblies"][0])
+            frame.update(framework="net9.0", assembly="lib/net9.0/Synthetic.dll", pdb="lib/net9.0/Synthetic.pdb")
+            second["assemblies"].append(frame)
+            second["framework_properties"]["net9.0"] = copy.deepcopy(second["framework_properties"]["net8.0"])
+            members[frame["pdb"]] = unique
+            nupkg = root/"artifacts"/second["nupkg"]
+            with zipfile.ZipFile(nupkg) as archive:
+                assembly_members = {name: archive.read(name) for name in archive.namelist()}
+            assembly_members[frame["assembly"]] = assembly_members[second["assemblies"][0]["assembly"]]
+            with zipfile.ZipFile(nupkg, "w") as archive:
+                for name, data in assembly_members.items():
+                    archive.writestr(name, data)
+            proof = json.loads((root/"receipt.json").read_text())
+            source = next(row for row in proof["provenance"] if row["id"] == second["id"])
+            source["frameworks"].append({**copy.deepcopy(source["frameworks"][0]), "framework": "net9.0"})
+            (root/"receipt.json").write_text(json.dumps(proof))
+        with zipfile.ZipFile(path, "w") as archive:
+            for name, data in members.items():
+                archive.writestr(name, data)
+        preupload = json.loads((root/"preupload-manifest.json").read_text())
+        for kind in ("nupkg", "snupkg"):
+            path = root/"artifacts"/second[kind]
+            second[kind+"_sha256"] = executor.sha(path.read_bytes())
+            pin = next(row for row in preupload["files"] if row["path"] == "artifacts/"+second[kind])
+            pin.update(sha256=second[kind+"_sha256"], size=path.stat().st_size)
+        (root/"preupload-manifest.json").write_text(json.dumps(preupload))
+        (root/"verified-artifacts.json").write_text(json.dumps(manifest))
+        _, expected = executor.associations(root, manifest, self.inspector)
+        feed = DuplicateRejectingSymbols(root, manifest, expected)
+        return root, provenance(root), manifest, feed
+
+    def publish_overlap(self, root, original_provenance, feed):
+        return executor.run_verified(root, original_provenance, self.inspector, mode="publish", transport=feed,
+            authorize=lambda: {"scope": "simulation_only"}, credential=lambda: "synthetic")
+
+    def test_shared_missing_keys_skip_second_archive_only_after_actual_pdb_readback(self):
+        root, original_provenance, manifest, feed = self.overlapping_inventory()
+        result = self.publish_overlap(root, original_provenance, feed)
+        self.assertTrue(result["content_verified"])
+        self.assertEqual(len(result["operations"]), 450)
+        self.assertEqual(len(result["associations"]), 225)
+        self.assertEqual(sum(len(row["associations"]) for row in result["associations"]), 225)
+        self.assertEqual(len(feed.attempts), 449)
+        operation = result["operations"][3]
+        self.assertEqual(operation["archive_sha256"], manifest["packages"][1]["snupkg_sha256"])
+        self.assertEqual(operation["state"], "pdbs_already_matching_archive_unverified")
+        self.assertIsNone(operation["status"])
+        self.assertEqual([row["classification"] for row in operation["overlap_readback"]], ["matching"])
+        self.assertEqual(len(result["after"]["symbols"]), 224)
+        self.assertFalse(result["remote_snupkg_archive_verified"])
+        self.assertFalse(result["publication_ready"])
+
+    def test_missing_delayed_conflicting_or_unreadable_overlap_stops_before_duplicate_put(self):
+        responses = (recovery.ReadResult(404, b"", True), recovery.ReadResult(200, b"wrong-PDB", True),
+                     recovery.ReadResult(403, b"private-response", True), recovery.ReadResult(429, b"", True),
+                     recovery.ReadResult(200, b"", False, "incomplete_response"), recovery.ReadResult(None, b"", False, "timeout"))
+        for response in responses:
+            with self.subTest(status=response.status):
+                root, original_provenance, _, feed = self.overlapping_inventory()
+                get = feed.get
+                def unreadable(url, **kwargs):
+                    if url.startswith(executor.SYMBOL_PUBLISH+"/") and feed.symbols:
+                        return response
+                    return get(url, **kwargs)
+                with patch.object(feed, "get", side_effect=unreadable):
+                    result = self.publish_overlap(root, original_provenance, feed)
+                self.assertEqual(result["failure_category"], "symbol_overlap_unverified")
+                self.assertEqual(len(feed.attempts), 3)
+                self.assertEqual(result["operations"][3]["state"], "not_attempted")
+                self.assertEqual(result["operations"][3]["failure_category"], "symbol_overlap_unverified")
+                self.assertFalse(result["content_verified"])
+                self.assertNotIn("private-response", json.dumps(result))
+
+    def test_mixed_shared_and_new_keys_preserve_original_archive_and_stop_on_provider_409(self):
+        root, original_provenance, manifest, feed = self.overlapping_inventory(mixed=True)
+        result = self.publish_overlap(root, original_provenance, feed)
+        self.assertEqual(result["failure_category"], "upload_acceptance_unknown")
+        self.assertEqual(len(feed.attempts), 4)
+        self.assertEqual(feed.attempts[-1], {"kind": "snupkg", "archive_sha256": manifest["packages"][1]["snupkg_sha256"]})
+        self.assertEqual([row["classification"] for row in result["operations"][3]["overlap_readback"]], ["matching"])
+        self.assertEqual(result["operations"][3]["status"], 409)
+        self.assertEqual(result["operations"][4]["state"], "not_attempted")
+        self.assertNotIn("private-duplicate-response", json.dumps(result))
+
+    def test_uncertain_symbol_upload_never_reaches_overlap_or_retry(self):
+        root, original_provenance, _, feed = self.overlapping_inventory()
+        put = feed.put
+        def interrupted(kind, data, key):
+            response = put(kind, data, key)
+            return recovery.ReadResult(None, b"", False, "timeout") if kind == "snupkg" else response
+        with patch.object(feed, "put", side_effect=interrupted):
+            result = self.publish_overlap(root, original_provenance, feed)
+        self.assertEqual(result["failure_category"], "upload_acceptance_unknown")
+        self.assertEqual(len(feed.attempts), 2)
+        self.assertNotIn("overlap_readback", result["operations"][3])
+        self.assertEqual(result["operations"][2]["state"], "not_attempted")
 
     def test_assembly_free_accounting_does_not_drop_pair(self):
         manifest = copy.deepcopy(self.manifest)
