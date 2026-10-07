@@ -44,6 +44,10 @@ class BrowserWorkflowBoundaryTests(unittest.TestCase):
         # Python transport contracts execute the locked Node parser contracts.
         self.assertLess(proof.index("npm ci --ignore-scripts"), proof.index("python3 -m unittest"))
         self.assertEqual(2, proof.count("test_paired_package_converter_selection"))
+        chromium = proof.split("- name: Install Chromium for the browser journeys", 1)[1].split("\n      - ", 1)[0]
+        self.assertEqual(["10"], re.findall(r"^        timeout-minutes: (\d+)$", chromium, re.M))
+        self.assertNotIn("continue-on-error", chromium)
+        self.assertIn("npm exec --no -- playwright install --with-deps chromium", chromium)
         self.assertIn("paired-package-browser-proof/retained-evidence/matrix.json", proof)
         self.assertIn("check_matrix(ledger)", proof)
         self.assertIn('ledger.get("development_only") is not False', proof)

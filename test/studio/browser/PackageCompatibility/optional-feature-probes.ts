@@ -65,6 +65,44 @@ export class NativeCircuitObservation {
   }
 }
 
+type RequestBoundary = Readonly<{ after_action: boolean; after_disconnect_ack: boolean }>;
+const maxProbeRequests = 64;
+
+/** Request identity and start-time boundaries survive delayed response/failure/body events. */
+export class NativeRequestOrigins {
+  private entries = new WeakMap<object, { boundary: RequestBoundary; completed: boolean }>();
+  private starts = 0;
+  private pendingRequests = 0;
+  private invalid = false;
+  private stopped = false;
+
+  started(request: object, boundary: RequestBoundary): void {
+    if (this.stopped) return;
+    if (this.entries.has(request) || this.starts >= maxProbeRequests) { this.invalid = true; return; }
+    this.starts++;
+    this.pendingRequests++;
+    this.entries.set(request, { boundary: Object.freeze({ after_action: boundary.after_action,
+      after_disconnect_ack: boundary.after_disconnect_ack }), completed: false });
+  }
+
+  completed(request: object): RequestBoundary | undefined {
+    if (this.stopped) return;
+    const entry = this.entries.get(request);
+    if (!entry || entry.completed) { this.invalid = true; return; }
+    entry.completed = true;
+    this.pendingRequests--;
+    return entry.boundary;
+  }
+
+  invalidate(): void { if (!this.stopped) this.invalid = true; }
+  failed(): boolean { return this.invalid; }
+  stop(): void {
+    if (this.pendingRequests > 0) this.invalid = true;
+    this.stopped = true;
+    this.entries = new WeakMap();
+  }
+}
+
 export function optionalFeatureProfile(scenario: OptionalFeatureScenario): { backend_features: string[]; permission_profile: string } {
   if (!optionalFeatureScenarios.includes(scenario)) throw new Error('invalid_optional_feature_scenario');
   return { backend_features: scenario === 'without-secrets' ? ['workflow-contexts'] :
@@ -125,7 +163,8 @@ export async function runOptionalFeatureProbe(page: Page, input: ProbeInput, ada
       { child_ready: false, parent_acknowledged: false, native_action_after_ack: false } : null, failure_category: null };
   let active = true, overflow = false;
   const circuit = new NativeCircuitObservation();
-  const pending: Promise<void>[] = [];
+  const origins = new NativeRequestOrigins();
+  const pending = new Set<Promise<void>>();
   // Only actual pageerror events increment this count; navigation/socket close events do not.
   const errors = () => { if (active) { if (receipt.ui.page_error_count < 64) receipt.ui.page_error_count++; else overflow = true; } };
   const closed = () => { if (active) receipt.ui.page_closed = true; };
@@ -141,36 +180,52 @@ export async function runOptionalFeatureProbe(page: Page, input: ProbeInput, ada
       }
     } catch { /* An unrelated or malformed socket cannot establish a Studio circuit. */ }
   };
+  const targetOf = (value: Request, responseUrl?: string): Endpoint | undefined => {
+    let target: Endpoint | undefined;
+    try {
+      target = endpoint(responseUrl ?? value.url(), backend, value.method());
+      if (target && value.frame() === page.mainFrame()) return target;
+    } catch { if (target) origins.invalidate(); }
+  };
+  const requestStarted = (value: Request) => {
+    if (!active || input.cell.host === 'server' || !targetOf(value)) return;
+    origins.started(value, { after_action: receipt.checks.native_action,
+      after_disconnect_ack: receipt.disconnect?.parent_acknowledged === true });
+  };
   const response = (value: Response) => {
     if (!active || input.cell.host === 'server') return;
-    let target: Endpoint | undefined;
-    try { if (value.request().frame() !== page.mainFrame()) return; target = endpoint(value.url(), backend, value.request().method()); } catch { return; }
+    let request: Request, target: Endpoint | undefined;
+    try { request = value.request(); target = targetOf(request, value.url()); }
+    catch { origins.invalidate(); return; }
     if (!target) return;
-    if (receipt.requests.length >= 64) { overflow = true; return; }
+    const boundary = origins.completed(request);
+    if (!boundary) return;
+    if (receipt.requests.length >= maxProbeRequests) { overflow = true; return; }
     const row: ProbeRequest = { endpoint: target, method: target === 'secrets-picker' ? 'POST' : 'GET', source: 'browser-native',
-      status: value.status(), transport_failed: false, after_action: receipt.checks.native_action,
-      after_disconnect_ack: receipt.disconnect?.parent_acknowledged === true, body: null };
+      status: value.status(), transport_failed: false, ...boundary, body: null };
     receipt.requests.push(row);
     const read = (async () => {
       try {
         const length = value.headers()['content-length'];
         if (length !== undefined && (!/^\d+$/.test(length) || Number(length) > 65536)) { overflow = true; return; }
         const bytes = await value.body();
+        if (!active) return;
         if (bytes.length > 65536) { overflow = true; return; }
-        if (active) row.body = classifyOptionalFeatureBody(target!, bytes);
+        row.body = classifyOptionalFeatureBody(target, bytes);
       } catch { /* Preserve actual response status; unreadable bodies cannot prove payload absence. */ }
     })();
-    pending.push(read);
+    pending.add(read);
+    void read.then(() => pending.delete(read), () => pending.delete(read));
   };
   const requestFailed = (value: Request) => {
     if (!active || input.cell.host === 'server') return;
-    let target: Endpoint | undefined;
-    try { if (value.frame() !== page.mainFrame()) return; target = endpoint(value.url(), backend, value.method()); } catch { return; }
+    const target = targetOf(value);
     if (!target) return;
-    if (receipt.requests.length >= 64) { overflow = true; return; }
+    const boundary = origins.completed(value);
+    if (!boundary) return;
+    if (receipt.requests.length >= maxProbeRequests) { overflow = true; return; }
     receipt.requests.push({ endpoint: target, method: target === 'secrets-picker' ? 'POST' : 'GET', source: 'browser-native',
-      status: null, transport_failed: true, after_action: receipt.checks.native_action,
-      after_disconnect_ack: receipt.disconnect?.parent_acknowledged === true, body: null });
+      status: null, transport_failed: true, ...boundary, body: null });
   };
   const editor = page.locator('.flowchart-diagram-designer-wrapper .x6-graph-svg');
   const guidance = page.getByText(forbidden, { exact: true });
@@ -185,7 +240,7 @@ export async function runOptionalFeatureProbe(page: Page, input: ProbeInput, ada
     receipt.ui.editor_visible = await visible(editor);
   };
   page.on('pageerror', errors); page.on('close', closed); page.on('websocket', websocket);
-  page.on('response', response); page.on('requestfailed', requestFailed);
+  page.on('request', requestStarted); page.on('response', response); page.on('requestfailed', requestFailed);
   const beginAction = async () => {
     await adapter.beforeNativeAction?.();
     receipt.checks.native_action = true;
@@ -263,11 +318,12 @@ export async function runOptionalFeatureProbe(page: Page, input: ProbeInput, ada
       receipt.failure_category = null;
     }
   } finally {
-    page.off('response', response); page.off('requestfailed', requestFailed);
+    page.off('request', requestStarted); page.off('response', response); page.off('requestfailed', requestFailed);
+    origins.stop();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const drained = await Promise.race([Promise.all(pending).then(() => true), new Promise<false>(resolve => { timer = setTimeout(() => resolve(false), 5000); })]);
     if (timer !== undefined) clearTimeout(timer);
-    if (!drained || overflow) { receipt.failure_category = 'probe_execution_failed'; receipt.checks.observation_completed = false; }
+    if (!drained || overflow || origins.failed()) { receipt.failure_category = 'probe_execution_failed'; receipt.checks.observation_completed = false; }
     active = false;
     page.off('pageerror', errors); page.off('close', closed); page.off('websocket', websocket);
     for (const [socket, socketClosed] of sockets) socket.off('close', socketClosed);
