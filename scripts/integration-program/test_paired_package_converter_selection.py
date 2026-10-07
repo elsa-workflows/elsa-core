@@ -71,6 +71,19 @@ class ConverterSelectionContracts(unittest.TestCase):
         self.decoded["records"].append(probe)
         self.assertEqual(receipt, self.verify())
 
+    def test_binding_diagnostic_distinguishes_requestor_and_policy_rejection(self):
+        for mutated, sdk, expected in ((True, "10.0.300", "binding_requestors"),
+                                      (False, "10.0.401", "binding_policy")):
+            decoded = copy.deepcopy(self.decoded)
+            if mutated:
+                decoded["records"][0]["requestor"] = "PRIVATE-UNKNOWN-ASSEMBLY"
+            operations = []
+            with self.subTest(expected=expected), self.assertRaises(RuntimeError):
+                selected.verify_decoded(decoded, self.inventory, self.cache, sdk,
+                    lambda component, phase: operations.append((component, phase)))
+            self.assertEqual(("converter", expected), operations[-1])
+            self.assertNotIn("PRIVATE", json.dumps(operations))
+
     def test_incomplete_changed_lost_or_duplicate_trace_inventory_fails(self):
         for field, value in (("parser_completed", False), ("events_lost", 1), ("events_lost", False),
                              ("sha256", "2" * 64), ("file", "other.nettrace")):

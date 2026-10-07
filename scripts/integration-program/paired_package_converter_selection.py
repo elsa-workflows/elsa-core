@@ -239,8 +239,10 @@ def _trace_inventory(directory: Path) -> list[dict]:
     return records
 
 
-def verify_decoded(decoded: dict, inventory: list[dict], package_cache: Path, sdk: str) -> dict:
+def verify_decoded(decoded: dict, inventory: list[dict], package_cache: Path, sdk: str,
+                   report_operation: Callable[[str, str], None] = lambda _component, _phase: None) -> dict:
     """Pure selection check plus exact archive/cache binding; raw paths never returned."""
+    report_operation("converter", "binding_traces")
     require(decoded.get("schema") == 1 and isinstance(decoded.get("traces"), list)
             and isinstance(decoded.get("records"), list), "Malformed converter decoder output")
     by_name = {row["file"]: row for row in inventory}
@@ -254,6 +256,7 @@ def verify_decoded(decoded: dict, inventory: list[dict], package_cache: Path, sd
                 "Converter trace is incomplete, changed or lost events")
     successes = {TASK: [], IMPLEMENTATION: []}
     owners = set()
+    report_operation("converter", "binding_events")
     for row in decoded["records"]:
         trace = row.get("trace")
         require(trace in by_name and row.get("trace_sha256") == by_name[trace]["sha256"]
@@ -271,21 +274,27 @@ def verify_decoded(decoded: dict, inventory: list[dict], package_cache: Path, sd
                 "Successful converter identity differs")
         successes[name].append(row)
         owners.add((trace, row["pid"]))
+    report_operation("converter", "binding_owners")
     require(len(owners) == 1 and all(successes.values()), "Missing, split or multiple converter owners")
     selected = {}
+    report_operation("converter", "binding_identities")
     for name, rows in successes.items():
         identities = {(row["result"], row.get("path"), row["context"]) for row in rows}
         require(len(identities) == 1, "Conflicting successful converter identities/paths/contexts")
         selected[name] = rows[0]
     task, implementation = selected[TASK], selected[IMPLEMENTATION]
+    report_operation("converter", "binding_contexts")
     require(task["context"] == implementation["context"], "Converter task/implementation contexts differ")
     edge = lambda row: row["requestor"] == task["result"] and row["requestor_context"] == task["context"]
+    report_operation("converter", "binding_task_edge")
     require(any(edge(row) for row in successes[IMPLEMENTATION]), "No actual task to converter bind was observed")
+    report_operation("converter", "binding_requestors")
     for name, rows in successes.items():
         for row in rows:
             core_path_load = row["requestor"] == CORELIB and row["requestor_context"] == "Default" and row.get("requested_path") == row.get("path")
             require(core_path_load or (name == IMPLEMENTATION and edge(row) and not row.get("requested_path")),
                     "Unreviewed converter requestor binding")
+    report_operation("converter", "binding_archive")
     archive = regular_file(package_cache.absolute() / PACK_ID / PACK_VERSION / f"{PACK_ID}.{PACK_VERSION}.nupkg")
     root = archive.parent
     require(sha256(archive) == ARCHIVE_SHA256, "Selected converter archive is not reviewed")
@@ -295,12 +304,15 @@ def verify_decoded(decoded: dict, inventory: list[dict], package_cache: Path, sd
         for name, row in selected.items():
             member = "tools/net10.0/" + name + ".dll"
             expected = root / member
+            report_operation("converter", "binding_paths")
             require(isinstance(row.get("path"), str) and Path(row["path"]).is_absolute()
                     and ".." not in Path(row["path"]).parts and regular_file(Path(row["path"])) == expected,
                     "Actual converter load escaped reviewed isolated package path")
+            report_operation("converter", "binding_bytes")
             require(sum(entry.filename == member for entry in members) == 1
                     and regular_file(expected).read_bytes() == zipped.read(member), "Loaded converter differs from original archive member")
             hashes[name] = sha256(expected)
+    report_operation("converter", "binding_policy")
     require(sha256(archive) == ARCHIVE_SHA256, "Converter archive changed during verification")
     policy = json.loads(resources.CONVERTER_POLICY.read_text())["converters"]
     pin = policy.get(hashes[TASK], {})
@@ -329,7 +341,7 @@ def _decode(decoder: Path, capture: Path, inventory: list[dict], package_cache: 
     report_operation("converter", "decode_parse")
     decoded = json.loads(output.read_text())
     report_operation("converter", "binding_validation")
-    result = verify_decoded(decoded, inventory, package_cache, sdk)
+    result = verify_decoded(decoded, inventory, package_cache, sdk, report_operation)
     report_operation("converter", "trace_revalidation")
     require(_trace_inventory(capture / "traces") == inventory, "Converter traces changed during decode")
     result["decoder"] = {"assembly_sha256": sha256(decoder),

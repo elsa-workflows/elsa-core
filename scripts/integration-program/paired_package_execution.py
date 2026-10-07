@@ -352,7 +352,10 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
             require(component in {"sdk", "backend", "converter", *hosts.HOST_NAMES} and phase in {
                 "probe", "reuse_validation", "restore", "build", "decoder_validation", "build_command",
                 "trace_inventory", "decode_command", "decode_parse", "binding_validation",
-                "trace_revalidation", "selection_write"}, "Invalid build operation diagnostic")
+                "trace_revalidation", "selection_write", "binding_traces", "binding_events",
+                "binding_owners", "binding_identities", "binding_contexts", "binding_task_edge",
+                "binding_requestors", "binding_archive", "binding_paths", "binding_bytes", "binding_policy"},
+                "Invalid build operation diagnostic")
             evidence["last_build_operation"] = {"component": component, "phase": phase}
         commands = hosts.build(layout, report_operation=report_operation, **build_options)
         evidence["commands"] = _command_receipts(commands, group)
