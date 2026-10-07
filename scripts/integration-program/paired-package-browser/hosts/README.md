@@ -4,7 +4,7 @@
 upstream file contained trailing whitespace, `source_sha256` preserves its
 original digest and the declared fixture transform records the whitespace trim.
 Other explicit consumer-host transforms include the CustomElements EventCallback
-bridge and empty embedding mount; they do not modify packaged Elsa libraries.
+bridge, feature initialization and empty embedding mount; they do not modify packaged Elsa libraries.
 `common`
 contains the accepted candidate's host entrypoints; the 3.9.0 entrypoints have
 the same startup composition. `3.8.4` overrides the release-specific project,
@@ -19,6 +19,23 @@ edge is the hosted wrapper's disposable, nonpackable WASM client. Host glue chan
 are recorded separately from original package assets; a corrected consumer host
 does not establish that an unchanged upstream host worked. Product defects must
 remain failed evidence.
+
+The native CustomElements wrappers synchronously apply their public backend and
+authentication properties through `BackendComponentBase.OnInitialized` before
+rendering `ThemedComponentWrapper`. Its asynchronous initialization then awaits
+the package `IFeatureService.InitializeFeaturesAsync` API before rendering child
+content. This supplies the feature-registration step normally owned by the full
+shell's `MainLayout`, without adding shell navigation to the embedding page.
+One initialization task is cached by the actual scoped feature-service identity,
+so concurrent native roots and remounts share registration. This uses the common
+3.8.4/3.9.0/3.10.0 API; the 3.8.4 interface has no `IsInitialized` property.
+Initializer failures propagate and never mark the child ready. A fresh service
+scope/browser runtime is required for another endpoint or permission/feature
+profile, including retry after an initializer failure; feature registries and
+catalog caching are not reset by this host glue. The standalone `BackendProvider`
+still only applies backend configuration. Pure materialization contracts bind
+these fixture bytes to their declared source transform; C# compilation and actual
+feature/browser behavior remain separate required evidence.
 
 The Python owner creates separate mutable runtime state for every record and
 stops/reaps its own process groups on startup failure or browser exit. A private

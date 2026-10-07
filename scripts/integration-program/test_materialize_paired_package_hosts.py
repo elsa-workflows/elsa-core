@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -67,6 +68,40 @@ class HostMaterializationTests(unittest.TestCase):
                     refs = {p.attrib["Include"] for p in ET.parse(project).findall(".//PackageReference")}
                     self.assertEqual(version != "3.8.4", "Elsa.Studio.UserTasks" in refs)
                     self.assertEqual(version != "3.8.4", "AddUserTasksModule" in code)
+
+    def test_custom_feature_host_transform_is_source_bound_for_every_aligned_version(self):
+        relative = "common/custom-elements/Components/ThemedComponentWrapper.razor"
+        entries = {entry["file"]: entry for entry in json.loads((hosts.FIXTURE / "hosts/source-glue.json").read_text())["files"]}
+        entry = entries[relative]
+        original = "3bcfde9c9a3a3db6232c76ac492dbc5a563f7bdb7b23329a4e8c42fc9f523c64"
+        self.assertEqual(original, entry["source_sha256"])
+        self.assertEqual("ba5b348aa2414fdf7c19d9d8806e87b7c91a4205", entry["source_commit"])
+        self.assertIn("feature initialization", entry["fixture_transform"])
+        expected = (hosts.FIXTURE / "hosts" / relative).read_bytes()
+        source = Path(__file__).resolve().parents[2] / entry["source_path"]
+        self.assertEqual(source.read_bytes(), expected)
+        self.assertNotEqual(original, entry["sha256"])
+        for version in hosts.VERSIONS:
+            with self.subTest(version=version):
+                layout = self.materialize("custom-elements", version)
+                root = layout.project_paths["custom-elements"].parent
+                themed = root / "Components/ThemedComponentWrapper.razor"
+                self.assertEqual(expected, themed.read_bytes())
+                self.assertEqual(entry["sha256"], layout.input_hashes[str(themed.relative_to(layout.group_root))])
+                provider = root / "Components/BackendProvider.razor"
+                provider_entry = entries["common/custom-elements/Components/BackendProvider.razor"]
+                self.assertEqual(provider_entry["sha256"], hashlib.sha256(provider.read_bytes()).hexdigest())
+                self.assertNotIn("fixture_transform", provider_entry)
+
+    def test_custom_feature_host_transform_rejects_unbound_fixture_bytes(self):
+        fixture = self.root / "changed-fixture"
+        relative = Path("common/custom-elements/Components/ThemedComponentWrapper.razor")
+        themed = fixture / "hosts" / relative
+        themed.parent.mkdir(parents=True)
+        themed.write_bytes((hosts.FIXTURE / "hosts" / relative).read_bytes() + b"\n@ChildContent\n")
+        (fixture / "hosts/source-glue.json").write_bytes((hosts.FIXTURE / "hosts/source-glue.json").read_bytes())
+        with patch.object(hosts, "FIXTURE", fixture), self.assertRaisesRegex(RuntimeError, "Pinned host source glue changed"):
+            hosts._host_source("custom-elements", "3.10.0")
 
     def test_group_reuse_has_fresh_runtime_and_rejects_identity_changes(self):
         first, second = self.materialize(), self.materialize()

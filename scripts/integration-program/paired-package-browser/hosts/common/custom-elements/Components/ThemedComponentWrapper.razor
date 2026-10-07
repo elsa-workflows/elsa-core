@@ -1,18 +1,40 @@
+@using System.Runtime.CompilerServices
 @using Elsa.Studio.Contracts
 @inherits BackendComponentBase
 @inject IThemeService ThemeService
+@inject IFeatureService FeatureService
 
 <MudThemeProvider IsDarkMode="false" Theme="@ThemeService.CurrentTheme"/>
 <MudPopoverProvider/>
 <MudDialogProvider/>
 <MudSnackbarProvider/>
-@ChildContent
+@if (_featuresInitialized)
+{
+    @ChildContent
+}
 
 @code
 {
+    // A scoped feature service is shared by the native roots. Share its task so
+    // concurrent elements and remounts cannot register the same widgets twice.
+    // The released 3.8.4 interface does not expose IsInitialized.
+    private static readonly ConditionalWeakTable<IFeatureService, Lazy<Task>> FeatureInitializations = new();
+    private bool _featuresInitialized;
+
     /// <summary>
     /// The component to render.
     /// </summary>
     [Parameter]
     public RenderFragment ChildContent { get; set; } = default!;
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        // The enclosing native wrapper configures BackendService synchronously
+        // in BackendComponentBase.OnInitialized before rendering this component.
+        // Its endpoint and authentication are therefore available to feature discovery.
+        await FeatureInitializations.GetValue(FeatureService,
+            service => new Lazy<Task>(() => service.InitializeFeaturesAsync())).Value;
+        _featuresInitialized = true;
+    }
 }

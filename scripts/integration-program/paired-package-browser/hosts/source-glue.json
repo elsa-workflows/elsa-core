@@ -99,10 +99,12 @@
     },
     {
       "file": "common/custom-elements/Components/ThemedComponentWrapper.razor",
-      "sha256": "3bcfde9c9a3a3db6232c76ac492dbc5a563f7bdb7b23329a4e8c42fc9f523c64",
+      "sha256": "f3ba6c28ba39ccbe2ecf550056ef79b71b562a940dd3ed134e1fb91d79a49a6d",
       "repository": "elsa-workflows/elsa-core",
       "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
-      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/Components/ThemedComponentWrapper.razor"
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/Components/ThemedComponentWrapper.razor",
+      "source_sha256": "3bcfde9c9a3a3db6232c76ac492dbc5a563f7bdb7b23329a4e8c42fc9f523c64",
+      "fixture_transform": "Await shared package feature initialization after native backend configuration and gate child content until success; mirrors the corrected nonpackable consumer host"
     },
     {
       "file": "common/custom-elements/Components/WorkflowDefinitionEditorWrapper.razor",
