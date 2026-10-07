@@ -251,13 +251,18 @@ class BrowserRetentionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             verify_retained_inventory(self.root)
 
-    def test_prefixed_hosted_phase_requires_the_same_safe_inventory_prefix(self):
-        name, _, _, evidence, _ = self.react(prefix="compat")
-        self.assertIn(name + "/react-phase.json", verify_retained_inventory(self.root))
+    def test_prefixed_hosted_react_validator_requires_the_same_safe_inventory_prefix(self):
+        # The standalone React phase supports prefixes; full Hosted acceptance
+        # separately requires both delivery paths from a canonical root cell.
+        from dataclasses import asdict, replace
+        request, original, assets, phase = phase_fixture("hosted-wasm")
+        for asset in assets + phase["resources"]:
+            asset["path"] = "/compat" + asset["path"]
+        request = replace(request, route_prefix="compat")
+        react_phase.validate_react_phase_receipt(phase, request, original, assets)
         for prefix in ("", "wrong", "../private", "/private", None):
-            self.write(name + "/execution.json", dict(evidence, route_prefix=prefix))
             with self.subTest(prefix=prefix), self.assertRaises(ValueError):
-                verify_retained_inventory(self.root)
+                react_phase.validate_react_phase_receipt(phase, dict(asdict(request), route_prefix=prefix), original, assets)
 
     def test_missing_or_unsupported_react_phase_fails_closed(self):
         name, _, _, _, _ = self.react()

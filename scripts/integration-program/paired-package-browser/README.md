@@ -98,12 +98,14 @@ The retained directory permits only:
   matrix identities;
 - `cells/3.10.0-FRAMEWORK-HOST/react-phase.json` for each candidate host,
   bound to the exact unchanged X6 browser receipt;
+- `cells/VERSION-FRAMEWORK-hosted-wasm/hosted-delivery.json` for the separate
+  root and `/compat` native delivery checks, bound to the original resource inventory;
 - `cells/VERSION-FRAMEWORK-HOST/released-document.json` only for a passing
   3.8.4 or 3.9.0 source cell, after strict synthetic-content validation and
   binding to its fixture, browser, package, runtime and resource evidence.
 
 The original browser receipt is preserved unchanged. The combined matrix
-result adds independently verified package/resource, React-phase and released-export assertions after
+result adds independently verified package/resource, Hosted-delivery, React-phase and released-export assertions after
 owned-process cleanup; it cannot promote a failed browser result. Per-cell
 execution receipts record the stage and bounded failure category when execution
 stops. The pre-upload inventory guard rejects unexpected files, directories,
@@ -241,6 +243,19 @@ managed form-validation callback. Parsing a manifest or downloading assemblies
 alone cannot pass. Net8/net9 bind the separate JSON configuration and loader as
 six platform assets. Unknown formats fail closed; this bounded proof does not certify HostedWASM, CustomElements,
 ICU/globalization or all platform assemblies.
+
+Hosted delivery has its own phase and receipt. It opens `/login` and
+`/compat/login` in fresh browser contexts against the same owned wrapper and
+verified WASM client build. Each attempt observes the actual navigation response,
+base href, platform and managed response bytes, boot configuration, and native
+empty-login form validation. The prefixed attempt accepts only canonical resource
+paths or their exact `/compat` aliases; normalization never creates package
+authority. Parent validation rebinds every observation and configuration hash to
+the original inventory, and retention binds the exact child receipt bytes to the
+combined assertions. Both deliveries remain mandatory. UI failure still allows
+the other attempt; uncertain cleanup stops further work. Source routing defects
+are retained as failures, not corrected by the observer. Native acceptance is
+established only by a complete hosted run, not these tooling contracts.
 
 On browser process timeout, the runner identifies and freezes the live launch
 root and its descendants, including descendants in separate sessions. Signals

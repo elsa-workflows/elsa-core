@@ -386,7 +386,7 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     counts = {"create_name_label_count", "create_name_textbox_count"}
     stages.add("workflow_contexts_reloaded")
     stages.add("secrets_reloaded")
-    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens", "bpmn_roundtrip", "clipboard", "direct_backend", "wasm_boot", "json_roundtrip", "dom_interop", "reactflow", "embedding", "workflow_contexts", "secrets", "resource_failures"}, "Unsafe browser proof field")
+    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens", "bpmn_roundtrip", "clipboard", "direct_backend", "wasm_boot", "hosted_delivery", "json_roundtrip", "dom_interop", "reactflow", "embedding", "workflow_contexts", "secrets", "resource_failures"}, "Unsafe browser proof field")
     from paired_package_embedding import validate_embedding
     validate_embedding(proof.get("embedding"), assertions_by_name, proof, key)
     require("reactflow" not in proof or record["version"] == "3.10.0" and record["host"] in REACT_PHASE_HOSTS,
@@ -397,6 +397,9 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
             "Unexpected standalone WASM boot proof")
     require(not assertions_by_name.get("wasm_boot", False) or record["host"] != "wasm" or "wasm_boot" in proof,
             "Missing standalone WASM boot proof for passed assertion")
+    from paired_package_hosted_delivery import ASSERTIONS as HOSTED_ASSERTIONS, validate_summary
+    require(record["host"] != "hosted-wasm" or not any(assertions_by_name.get(name) for name in HOSTED_ASSERTIONS)
+            or "hosted_delivery" in proof, "Missing independent Hosted delivery proof")
     require("direct_backend" not in proof or record["host"] == "wasm", "Unexpected direct backend proof")
     require(not assertions_by_name.get("direct_backend", False) or "direct_backend" in proof,
             "Missing direct backend proof for passed assertion")
@@ -417,6 +420,9 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     require(not assertions_by_name.get("dom_interop", False) or "dom_interop" in proof,
             "Missing native DOM proof for passed assertion")
     for name, value in proof.items():
+        if name == "hosted_delivery":
+            validate_summary(value, assertions_by_name, key)
+            continue
         if name == "resource_failures":
             require(record["result"] == "failed" and isinstance(value, list) and 1 <= len(value) <= 32,
                     "Resource failure diagnostics require a failed bounded receipt")
@@ -964,6 +970,8 @@ def run_browser(handle, request, resources: list[dict], *, timeout: int = 240,
     require("reactflow" not in record.get("proof", {})
             and not any(item["name"] == "reactflow_edit_save" and item["passed"] for item in record["assertions"]),
             "X6 browser child cannot supply the independent React phase proof")
+    require("hosted_delivery" not in record.get("proof", {}),
+            "X6 browser child cannot supply the independent Hosted delivery proof")
     if cell["host"] == "wasm":
         from paired_package_wasm_boot import validate_boot_request_binding
         validate_boot_request_binding(record, resources, cell["framework"])

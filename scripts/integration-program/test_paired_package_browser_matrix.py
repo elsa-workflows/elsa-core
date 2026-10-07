@@ -139,6 +139,9 @@ class MatrixContracts(unittest.TestCase):
         self.handle = SimpleNamespace(studio_url="http://localhost:1", backend_url="http://localhost:2/elsa/api", username="private", password="private", safe_ids={})
         for cell in self.ledger["cells"]:
             cell.update(result="passed", browser_version="149.0.7827.55", resources=[], proof={}, failure_category=None, assertions=[{"name": name, "passed": True} for name in sorted(matrix.required_assertions(cell))])
+            if cell["host"] == "hosted-wasm":
+                cell["proof"]["hosted_delivery"] = {"phase_receipt_sha256": "e" * 64,
+                    "checks": dict.fromkeys(("wasm_boot", "root_delivery", "prefixed_delivery"), True)}
             if cell["host"] == "wasm":
                 cell["proof"]["direct_backend"] = direct_backend_proof()
                 # Source-derived synthetic protocol fixtures, never runtime proof.
@@ -310,6 +313,9 @@ process.stdout.write('private control roundtrip complete\\n');
 
     def test_node_wasm_boot_contract_requires_original_bytes_and_executed_callback(self):
         self.run_node_contract("wasm-boot.contract.ts", "WASM bootstrap parser and observer contracts passed")
+
+    def test_node_hosted_delivery_contract_binds_native_routes_and_boot(self):
+        self.run_node_contract("hosted-delivery.contract.ts", "Hosted delivery observer contracts passed")
 
     def test_node_custom_elements_contract_requires_native_auth_and_bound_callbacks(self):
         self.run_node_contract("custom-elements.contract.ts", "CustomElements callback contracts passed")

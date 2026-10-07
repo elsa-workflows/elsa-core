@@ -25,6 +25,7 @@ import paired_package_converter_selection as converter_selection
 import paired_package_provenance as provenance
 import paired_package_provenance_diagnostics as provenance_diagnostics
 import paired_package_runtime_diagnostics as runtime_diagnostics
+import paired_package_hosted_delivery as hosted_delivery
 import paired_package_optional_execution as optional_execution
 import paired_package_optional_features as optional_features
 import paired_package_released_documents as documents
@@ -293,7 +294,7 @@ def _resource_inventory(layout, verified_root: Path, manifest_hash: str, *, conv
             return client, client_manifest, managed, inventory
 
         client, client_manifest, managed, inventory = bounded("managed", derive_managed_inventory)
-        if layout.request.host == "wasm":
+        if layout.request.host == "wasm" or layout.request.host == "hosted-wasm" and not layout.request.route_prefix:
             def derive_bootstrap_inventory():
                 import paired_package_wasm_boot as wasm_boot
                 bootstrap = wasm_boot.derive_boot_resources(layout, client, client_manifest, managed)
@@ -396,6 +397,7 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
                                    else "released_shell_editor_export_contexts_only")}
     original_browser = None
     react_receipt = None
+    hosted_receipt = None
     cleanup_categories = set()
     released_output = None
     startup_pending = False
@@ -474,6 +476,12 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
                 try:
                     evidence["stage"] = "runtime_readiness"
                     evidence["runtime_readiness"] = _observe_ready(handle, request)
+                    if host == "hosted-wasm":
+                        evidence["stage"] = "hosted_delivery"
+                        hosted_receipt = hosted_delivery.run_delivery(handle, request, inventory["assets"])
+                        evidence["hosted_delivery"] = hosted_delivery.summarize(hosted_receipt)
+                        if not hosted_receipt["cleanup_verified"]:
+                            raise browser.BrowserCleanupUnverified(categories={"descendant_stop"})
                     evidence["stage"] = "browser_execution"
                     options = {"released_document_output": released_output} if released_output is not None else {}
                     if inputs is not None:
@@ -528,6 +536,8 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
         evidence["owned_process_cleanup"] = browser_cleanup_verified
         require(not runtime_failed, "Owned runtime did not produce valid evidence")
         record = copy.deepcopy(original_browser)
+        if hosted_receipt is not None:
+            record.setdefault("proof", {})["hosted_delivery"] = evidence["hosted_delivery"]
         if react_receipt is not None:
             record["resources"].extend(copy.deepcopy(react_receipt["resources"]))
             record.setdefault("proof", {})["reactflow"] = evidence["react_phase"]
@@ -543,6 +553,9 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
         # Only these independently demonstrated Python-owned assertions may be
         # completed here; unimplemented UI assertions remain unchanged.
         for assertion in record["assertions"]:
+            if host == "hosted-wasm" and assertion["name"] in hosted_delivery.ASSERTIONS:
+                passed = evidence["hosted_delivery"]["checks"][assertion["name"]]
+                assertion.update(passed=passed, reason_category=None if passed else "not_implemented")
             if assertion["name"] in {"package_provenance", "browser_resources"} or (
                     assertion["name"] == "released_document" and released_output is not None):
                 assertion.update(passed=True, reason_category=None)
@@ -588,6 +601,9 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
         if react_receipt is not None:
             _write(cell_root / "react-phase.json", react_phase.validate_react_phase_receipt(
                 react_receipt, request, original_browser, evidence["resource_inventory"]["assets"]))
+        if hosted_receipt is not None:
+            _write(cell_root / "hosted-delivery.json", hosted_delivery.validate_receipt(
+                hosted_receipt, request, evidence["resource_inventory"]["assets"]))
 
 
 def select_execution_sdk(private: Path) -> str:

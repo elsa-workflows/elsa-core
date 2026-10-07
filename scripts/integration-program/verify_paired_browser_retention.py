@@ -13,8 +13,42 @@ import paired_package_released_documents as documents
 import paired_package_react_phase as react_phase
 import paired_package_provenance_diagnostics as provenance_diagnostics
 import paired_package_runtime_diagnostics as runtime_diagnostics
+import paired_package_hosted_delivery as hosted_delivery
 from paired_package_secrets_endpoints import validate_secrets_endpoint_evidence
 from verify_browser_package_resources import verify_browser_resources
+
+
+def _verify_hosted_delivery(root, key, execution, matrix):
+    path = root / "cells" / "-".join(key) / "hosted-delivery.json"
+    rows = [row for row in matrix.get("cells", []) if isinstance(row, dict) and
+            tuple(row.get(name) for name in ("version", "framework", "host")) == key]
+    if len(rows) > 1:
+        raise ValueError("Duplicate Hosted matrix cell")
+    combined = rows[0] if rows else {}
+    claim = combined.get("proof", {}).get("hosted_delivery")
+    asserted = any(row.get("name") in hosted_delivery.ASSERTIONS and row.get("passed") is True
+                   for row in combined.get("assertions", []))
+    if not path.exists():
+        if claim is not None or asserted or "hosted_delivery" in execution or execution.get("result") == "passed":
+            raise ValueError("Hosted execution is missing native root/prefix delivery")
+        return
+    if tuple(execution.get(name) for name in ("version", "framework", "host")) != key:
+        raise ValueError("Hosted phase execution identity differs")
+    receipt = json.loads(regular_file(path).read_text())
+    request = dict(zip(("version", "framework", "host"), key), route_prefix=execution.get("route_prefix", ""))
+    hosted_delivery.validate_receipt(receipt, request, execution.get("resource_inventory", {}).get("assets"))
+    summary = hosted_delivery.summarize(receipt)
+    if (hashlib.sha256(path.read_bytes()).hexdigest() != summary["phase_receipt_sha256"] or
+            execution.get("hosted_delivery") != summary):
+        raise ValueError("Hosted retained bytes or execution binding differ")
+    if claim is not None or asserted or execution.get("result") == "passed":
+        assertions = {row["name"]: row["passed"] for row in combined.get("assertions", [])}
+        hosted_delivery.validate_summary(claim, assertions, key)
+        if claim != summary:
+            raise ValueError("Hosted matrix claim differs from native phase")
+    if execution.get("result") == "passed" and (receipt["result"] != "passed" or
+            execution.get("owned_process_cleanup") is not True or execution.get("stage") != "complete"):
+        raise ValueError("Passing Hosted execution lacks complete delivery/cleanup")
 
 
 def _verify_optional_profiles(root, key, execution):
@@ -83,11 +117,14 @@ def _verify_react_phase(root, key, execution, matrix):
                 execution.get("result") != "passed" or execution.get("stage") != "complete" or
                 execution.get("owned_process_cleanup") is not True or "react_loaded_assemblies" not in execution):
             raise ValueError("React matrix claim lacks complete matching execution")
-        if {name: value for name, value in combined["proof"].items() if name != "reactflow"} != original["proof"]:
+        parent_phases = {"reactflow"} | ({"hosted_delivery"} if key[2] == "hosted-wasm" else set())
+        if {name: value for name, value in combined["proof"].items() if name not in parent_phases} != original["proof"]:
             raise ValueError("Combined React evidence changed the original browser proof")
         original_assertions = {item["name"]: item["passed"] for item in original["assertions"]}
+        phase_assertions = {"package_provenance", "browser_resources", "reactflow_edit_save"} | (
+            hosted_delivery.ASSERTIONS if key[2] == "hosted-wasm" else set())
         if any(item["passed"] != original_assertions[item["name"]] for item in combined["assertions"]
-               if item["name"] not in {"package_provenance", "browser_resources", "reactflow_edit_save"}):
+               if item["name"] not in phase_assertions):
             raise ValueError("Combined React evidence changed an unverified browser assertion")
         prefix = "/" + request["route_prefix"] if request["route_prefix"] else ""
         verified = verify_browser_resources(inventory, combined["resources"], require_all=False, route_prefix=prefix)
@@ -106,6 +143,8 @@ def verify_retained_inventory(root: Path) -> list[str]:
             allowed.add(f"cells/{'-'.join(key)}/released-document.json")
         if key[0] == "3.10.0" and key[2] in REACT_PHASE_HOSTS:
             allowed.add(f"cells/{'-'.join(key)}/react-phase.json")
+        if key[2] == "hosted-wasm":
+            allowed.add(f"cells/{'-'.join(key)}/hosted-delivery.json")
     directories = {str(parent) for name in allowed for parent in Path(name).parents if str(parent) != "."}
     found = []
     for path in root.rglob("*"):
@@ -134,6 +173,10 @@ def verify_retained_inventory(root: Path) -> list[str]:
         execution_path = cell / "execution.json"
         execution = json.loads(execution_path.read_text()) if execution_path.is_file() else {}
         runtime_diagnostics.validate_evidence(execution, key)
+        if key[2] == "hosted-wasm":
+            _verify_hosted_delivery(root, key, execution, matrix)
+        elif "hosted_delivery" in execution:
+            raise ValueError("Non-Hosted execution claimed Hosted delivery")
         if "project_provenance_failure" in execution:
             provenance_diagnostics.validate_failure_evidence(
                 execution["project_provenance_failure"],

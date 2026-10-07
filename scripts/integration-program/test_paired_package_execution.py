@@ -190,8 +190,7 @@ class ResourceInventoryContracts(unittest.TestCase):
 
     def test_client_inventory_uses_selected_client_manifest_and_keeps_both_authorities(self):
         for version in ("3.9.0", "3.10.0"):
-            for host in ("wasm", "hosted-wasm", "custom-elements"):
-                prefix = "compat" if host == "hosted-wasm" else ""
+            for host, prefix in (("wasm", ""), ("hosted-wasm", ""), ("hosted-wasm", "compat"), ("custom-elements", "")):
                 layout = SimpleNamespace(request=execution.hosts.CellRequest(host, "net10.0", version, route_prefix=prefix),
                     packages_root=Path("/owned/packages"),
                     project_paths={name: Path("/owned") / name / (name + ".csproj") for name in execution.hosts.HOST_NAMES})
@@ -215,7 +214,7 @@ class ResourceInventoryContracts(unittest.TestCase):
                         self.assertIs(layout, static_derive.call_args.kwargs["hosted_layout"])
                     expected_static = copy.deepcopy(static["assets"])
                     next(asset for asset in expected_static if asset["path"].endswith(self.STYLESHEET))["required"] = False
-                    expected_boot = self.bootstrap["assets"] if host == "wasm" else []
+                    expected_boot = self.bootstrap["assets"] if host in {"wasm", "hosted-wasm"} and not prefix else []
                     self.assertEqual(expected_static + managed["assets"] + expected_boot, result["assets"])
                     self.assertEqual("a" * 64, result["static_asset_manifest_sha256"])
                     self.assertEqual("b" * 64, result["managed_resources"]["static_asset_manifest_sha256"])
@@ -225,7 +224,7 @@ class ResourceInventoryContracts(unittest.TestCase):
                     self.assertEqual(converter, derive.call_args.kwargs["converter"])
                     self.assertEqual("/compat" if prefix else "", derive.call_args.kwargs["route_prefix"])
                     self.assertEqual(host, result["host_network_policy"]["host"])
-                    if host == "wasm":
+                    if host in {"wasm", "hosted-wasm"} and not prefix:
                         derive_boot.assert_called_once_with(layout, client, derive.call_args.args[2], managed)
                         self.assertEqual({"format": boot.POLICY["format"]}, result["bootstrap_resources"])
                     else:
@@ -475,6 +474,30 @@ class ExecutionContracts(unittest.TestCase):
         retained = json.loads((self.root / "retained/cells/3.10.0-net10.0-server/execution.json").read_text())
         self.assertEqual("failed", retained["result"])
         self.assertEqual("optional_feature_probes", retained["stage"])
+
+    def test_hosted_phase_is_independent_retained_and_owns_only_host_assertions(self):
+        from test_paired_package_hosted_delivery import fixture
+        self.pipeline()
+        request, assets, phase = fixture()
+        self.assets.extend(assets)
+        previous = {row["name"]: row for row in self.record["assertions"]}
+        self.record["assertions"] = [previous.get(name, {"name": name, "passed": False, "reason_category": "not_implemented"})
+            for name in execution.browser.required_assertions({"host": request.host, "framework": request.framework, "version": request.version})]
+        self.patch(execution.hosts, "isolated_environment", return_value={})
+        self.patch(execution.converter_selection, "prepare_decoder", return_value=self.root / "Decoder.dll")
+        self.patch(execution.hosts, "build", return_value=[{"converter_selection": {"converter": {"selected": True}}}])
+        self.patch(execution, "_command_receipts", return_value=[])
+        native = self.patch(execution.hosted_delivery, "run_delivery", return_value=phase)
+        key = (request.version, request.framework, request.host)
+        record = self.execute(key)
+        native.assert_called_once()
+        root = self.root / "retained/cells" / "-".join(key)
+        original = json.loads((root / "browser.json").read_text())
+        self.assertNotIn("hosted_delivery", original["proof"])
+        self.assertFalse(any(row["passed"] for row in original["assertions"]
+                             if row["name"] in execution.hosted_delivery.ASSERTIONS))
+        self.assertEqual(phase, json.loads((root / "hosted-delivery.json").read_text()))
+        self.assertEqual(execution.hosted_delivery.summarize(phase), record["proof"]["hosted_delivery"])
 
     def execute(self, key=None):
         return execution.execute_cell(key or self.key, private=self.root / "private", retained=self.root / "retained",
@@ -1045,6 +1068,9 @@ class ExecutionContracts(unittest.TestCase):
                     for version in execution.documents.TOOL_VERSIONS]
             else:
                 record["proof"] = {}
+            if key[2] == "hosted-wasm":
+                record["proof"]["hosted_delivery"] = {"phase_receipt_sha256": "e" * 64,
+                    "checks": dict.fromkeys(execution.hosted_delivery.ASSERTIONS, True)}
             if key[2] == "wasm":
                 record["proof"]["direct_backend"] = direct_backend_proof()
                 boot_proof, _, observed = boot_receipt_fixture(key[1])
