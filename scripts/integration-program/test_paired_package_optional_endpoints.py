@@ -28,6 +28,7 @@ def observation(sequence: int, endpoint_id: str, *, status: int = 200, body_byte
     body_hash = hashlib.sha256(b"").hexdigest() if body_bytes == 0 else "c" * 64
     return {
         "sequence": sequence,
+        "endpoint": endpoint_id,
         "route": route,
         "verb": verb,
         "handler_type": handler_type,
@@ -79,11 +80,15 @@ class OptionalEndpointSnapshotContracts(unittest.TestCase):
         before = snapshot(old)
         after = snapshot(old, observation(2, "secrets-descriptors", status=403))
         rows = endpoints.derive_backend_native_rows(before, after, assembly_inventory(), scenario="deny-secrets")
-        self.assertEqual([{
-            "endpoint": "secrets-descriptors", "method": "GET", "source": "backend-native", "status": 403,
-            "transport_failed": False, "after_action": True, "after_disconnect_ack": False,
-            "body": {"bytes": 0, "sha256": endpoints.EMPTY_BODY_SHA256, "sensitive_items_present": False},
-        }], rows)
+        self.assertEqual([
+            {"endpoint": "workflow-context-descriptors", "method": "GET", "source": "backend-native",
+             "status": 200, "transport_failed": False, "after_action": False,
+             "after_disconnect_ack": False,
+             "body": {"bytes": 0, "sha256": endpoints.EMPTY_BODY_SHA256, "sensitive_items_present": False}},
+            {"endpoint": "secrets-descriptors", "method": "GET", "source": "backend-native", "status": 403,
+             "transport_failed": False, "after_action": True, "after_disconnect_ack": False,
+             "body": {"bytes": 0, "sha256": endpoints.EMPTY_BODY_SHA256, "sensitive_items_present": False}},
+        ], rows)
         self.assertEqual(rows, optional_features._requests(rows, "backend-native", "deny-secrets"))
 
     def test_snapshots_reject_pending_truncated_gapped_or_unbounded_cursors(self):
@@ -106,6 +111,7 @@ class OptionalEndpointSnapshotContracts(unittest.TestCase):
         mutations = [
             lambda row: row.update(route="/elsa/api/secrets/other"),
             lambda row: row.update(route=["/elsa/api/secrets/descriptors"]),
+            lambda row: row.update(endpoint="workflow-context-descriptors"),
             lambda row: row.update(verb="DELETE"),
             lambda row: row.update(handler_type="Fixture.FakeEndpoint"),
             lambda row: row.update(handler_assembly_name="Elsa.Unrelated"),
@@ -150,6 +156,10 @@ class OptionalEndpointSnapshotContracts(unittest.TestCase):
         empty_wrong_hash["body"]["sha256"] = "d" * 64
         with self.assertRaises(ValueError):
             endpoints.validate_optional_endpoint_snapshot(snapshot(empty_wrong_hash), assembly_inventory())
+        nonempty_empty_hash = observation(1, "secrets-descriptors", body_bytes=10)
+        nonempty_empty_hash["body"]["sha256"] = endpoints.EMPTY_BODY_SHA256
+        with self.assertRaises(ValueError):
+            endpoints.validate_optional_endpoint_snapshot(snapshot(nonempty_empty_hash), assembly_inventory())
         incomplete_with_hash = observation(1, "secrets-descriptors", complete=False)
         incomplete_with_hash["body"]["sha256"] = "d" * 64
         with self.assertRaises(ValueError):
@@ -165,12 +175,12 @@ class OptionalEndpointSnapshotContracts(unittest.TestCase):
         self.assertIsNone(derived[0]["body"])
         self.assertEqual(200, derived[0]["status"])
 
-    def test_action_delta_rejects_cursor_rollback_mutated_prefix_and_pending_boundaries(self):
+    def test_action_boundary_marks_only_new_entries_and_rejects_changed_prefix_or_pending(self):
         prior = observation(1, "workflow-context-descriptors")
         before = snapshot(prior)
         valid_after = snapshot(prior, observation(2, "secrets-descriptors"))
-        self.assertEqual(1, len(endpoints.derive_backend_native_rows(
-            before, valid_after, assembly_inventory(), scenario="deny-secrets")))
+        rows = endpoints.derive_backend_native_rows(before, valid_after, assembly_inventory(), scenario="deny-secrets")
+        self.assertEqual([False, True], [row["after_action"] for row in rows])
         changed_prefix = snapshot(dict(prior, status_code=500), observation(2, "secrets-descriptors"))
         for after in (snapshot(), changed_prefix, snapshot(prior, pending=1)):
             with self.subTest(after=after), self.assertRaises(ValueError):
@@ -189,8 +199,18 @@ class OptionalEndpointSnapshotContracts(unittest.TestCase):
         self.assertTrue(row["after_disconnect_ack"])
         self.assertFalse(row["transport_failed"])
         self.assertEqual(403, row["status"])
-        self.assertEqual([], endpoints.derive_backend_native_rows(after, after, assembly_inventory(),
-                                                                   scenario="disconnect", after_disconnect_ack=True))
+        same_cut = endpoints.derive_backend_native_rows(after, after, assembly_inventory(),
+                                                        scenario="disconnect", after_disconnect_ack=True)
+        self.assertEqual(1, len(same_cut))
+        self.assertFalse(same_cut[0]["after_action"])
+        self.assertFalse(same_cut[0]["after_disconnect_ack"])
+        earlier_context = observation(1, "workflow-context-descriptors")
+        later_secret = observation(2, "secrets-descriptors")
+        rows = endpoints.derive_backend_native_rows(snapshot(earlier_context),
+                                                    snapshot(earlier_context, later_secret), assembly_inventory(),
+                                                    scenario="disconnect", after_disconnect_ack=True)
+        self.assertEqual([False, True], [row["after_action"] for row in rows])
+        self.assertEqual([False, True], [row["after_disconnect_ack"] for row in rows])
 
 
 if __name__ == "__main__":

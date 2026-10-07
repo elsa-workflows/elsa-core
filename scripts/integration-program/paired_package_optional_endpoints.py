@@ -15,6 +15,7 @@ SNAPSHOT_PATH = "/_fixture/optional-endpoints"
 SNAPSHOT_FIELDS = {"schema", "cursor", "truncated", "pending", "observations"}
 OBSERVATION_FIELDS = {
     "sequence",
+    "endpoint",
     "route",
     "verb",
     "handler_type",
@@ -111,7 +112,8 @@ def validate_optional_endpoint_snapshot(document: object, backend_package_assemb
         expected = EXPECTED_ENDPOINTS.get(route_key)
         require(expected is not None, "Unexpected optional endpoint route")
         endpoint, handler_type, assembly_name = expected
-        require(item["handler_type"] == handler_type and item["handler_assembly_name"] == assembly_name,
+        require(item["endpoint"] == endpoint and item["handler_type"] == handler_type and
+                item["handler_assembly_name"] == assembly_name,
                 "Optional endpoint handler identity differs")
         full_name, digest = item["handler_assembly_full_name"], item["handler_assembly_sha256"]
         require(isinstance(full_name, str) and 0 < len(full_name) <= 512 and _sha256(digest),
@@ -140,13 +142,15 @@ def validate_optional_endpoint_snapshot(document: object, backend_package_assemb
                 require(body_hash == EMPTY_BODY_SHA256 and sensitive is False,
                         "Empty optional endpoint response proof differs")
             else:
-                require(sensitive is None, "Non-empty optional endpoint response claimed empty content")
+                require(body_hash != EMPTY_BODY_SHA256 and sensitive is None,
+                        "Non-empty optional endpoint response claimed empty content")
         else:
             require(body_hash is None and sensitive is None and failure == "response_body_unobserved",
                     "Incomplete optional endpoint response lacks its fixed failure category")
 
         safe_observations.append({
             "sequence": expected_sequence,
+            "endpoint": endpoint,
             "route": route_key[1],
             "verb": route_key[0],
             "handler_type": handler_type,
@@ -166,7 +170,7 @@ def validate_optional_endpoint_snapshot(document: object, backend_package_assemb
 def derive_backend_native_rows(before_snapshot: object, after_snapshot: object,
                                backend_package_assemblies: object, *, scenario: str,
                                after_disconnect_ack: bool = False) -> list[dict]:
-    """Derive only completed backend-native requests between two action cuts."""
+    """Return the after-cut request ledger, marking entries after the before cursor."""
     from paired_package_optional_features import SCENARIOS
 
     require(isinstance(scenario, str) and scenario in SCENARIOS,
@@ -183,16 +187,16 @@ def derive_backend_native_rows(before_snapshot: object, after_snapshot: object,
 
     return [
         {
-            "endpoint": EXPECTED_ENDPOINTS[(row["verb"], row["route"])][0],
+            "endpoint": row["endpoint"],
             "method": row["verb"],
             "source": "backend-native",
             "status": row["status_code"],
             "transport_failed": False,
-            "after_action": True,
-            "after_disconnect_ack": after_disconnect_ack,
+            "after_action": row["sequence"] > before["cursor"],
+            "after_disconnect_ack": row["sequence"] > before["cursor"] and after_disconnect_ack,
             "body": ({"bytes": row["body"]["bytes"], "sha256": row["body"]["sha256"],
                       "sensitive_items_present": row["body"]["sensitive_items_present"]}
                      if row["body"]["complete"] and row["body"]["bytes"] <= MAX_RESPONSE_BYTES else None),
         }
-        for row in after["observations"][old_count:]
+        for row in after["observations"]
     ]
