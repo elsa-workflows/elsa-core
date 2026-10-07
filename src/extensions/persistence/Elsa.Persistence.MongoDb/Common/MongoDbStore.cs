@@ -245,6 +245,24 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     }
 
     /// <summary>
+    /// Finds a document through a caller-owned MongoDB session with the same tenant visibility as ordinary reads.
+    /// </summary>
+    /// <param name="session">The session that owns the transaction or snapshot.</param>
+    /// <param name="query">The query to apply after tenant visibility is enforced.</param>
+    /// <param name="tenantAgnostic">Whether to include results across tenants.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The first matching document, if any.</returns>
+    public async Task<TDocument?> FindAsync(
+        IClientSessionHandle session,
+        Func<IQueryable<TDocument>, IQueryable<TDocument>> query,
+        bool tenantAgnostic = false,
+        CancellationToken cancellationToken = default)
+    {
+        var queryable = ApplyTenantVisibility(collection.AsQueryable(session), tenantAgnostic, includeTenantAgnostic: true);
+        return await query(queryable).FirstOrDefaultAsync(cancellationToken);
+    }
+
+    /// <summary>
     /// Finds a list of documents matching the specified predicate
     /// </summary>
     public async Task<IEnumerable<TDocument>> FindManyAsync(Expression<Func<TDocument, bool>> predicate, CancellationToken cancellationToken = default)
@@ -461,10 +479,15 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
 
     private IQueryable<TDocument> GetQueryableCollection(bool tenantAgnostic = false, bool includeTenantAgnostic = true)
     {
-        var queryable = collection.AsQueryable();
+        return ApplyTenantVisibility(collection.AsQueryable(), tenantAgnostic, includeTenantAgnostic);
+    }
 
+    private IQueryable<TDocument> ApplyTenantVisibility(IQueryable<TDocument> queryable, bool tenantAgnostic, bool includeTenantAgnostic)
+    {
         if (tenantAgnostic)
+        {
             return queryable;
+        }
 
         if (typeof(Entity).IsAssignableFrom(typeof(TDocument)))
         {
