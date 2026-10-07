@@ -68,7 +68,7 @@ class ExecutionCycleProofTests(unittest.TestCase):
             with self.subTest(path=path), self.assertRaises(ValueError):
                 proof.tracked_input(self.root, path)
 
-    def test_full_closure_requires_all_nine_builds_and_four_test_runs(self):
+    def test_full_closure_requires_all_twelve_builds_and_five_test_runs(self):
         checkout = self.root / "repo"
         checkout.mkdir()
         input_file = self.root / "input"
@@ -88,9 +88,13 @@ class ExecutionCycleProofTests(unittest.TestCase):
             result = proof.run(checkout, self.root / "evidence", "exact-head")
         self.assertTrue(result["verificationComplete"])
         self.assertFalse(result["publicationPerformed"])
-        self.assertEqual(4, len(result["testBuilds"]))
-        self.assertEqual(9, len(result["builds"]))
-        self.assertEqual(4, len(result["tests"]))
+        self.assertEqual(5, len(result["testBuilds"]))
+        self.assertEqual(12, len(result["builds"]))
+        self.assertEqual(5, len(result["tests"]))
+        self.assertEqual(3, sum("Elsa.Workflows.Runtime.ProtoActor.csproj" in row["project"]
+                                for row in result["builds"]))
+        self.assertEqual(1, sum("Elsa.Workflows.Runtime.ProtoActor.UnitTests.csproj" in row["project"]
+                                for row in result["tests"]))
         self.assertEqual(2, clean.call_count)
         self.assertEqual(1, sum("--filter" in command for command in commands))
         self.assertTrue(all("--no-build" in command and "--no-restore" in command
@@ -106,10 +110,10 @@ class ExecutionCycleProofTests(unittest.TestCase):
                 patch.object(proof, "execute", return_value={"exitCode": 1, "status": "failed"}) as execute:
             result = proof.run(checkout, self.root / "evidence", "exact-head")
         self.assertFalse(result["verificationComplete"])
-        self.assertEqual(4, len(result["testBuilds"]))
+        self.assertEqual(5, len(result["testBuilds"]))
         self.assertEqual([], result["builds"])
         self.assertEqual([], result["tests"])
-        self.assertEqual(4, execute.call_count)
+        self.assertEqual(5, execute.call_count)
 
     def test_failed_test_stops_before_later_tests_and_broader_builds(self):
         checkout = self.root / "repo"
@@ -125,7 +129,7 @@ class ExecutionCycleProofTests(unittest.TestCase):
         self.assertFalse(result["verificationComplete"])
         self.assertEqual([], result["builds"])
         self.assertEqual(1, len(result["tests"]))
-        self.assertEqual(5, execute.call_count)
+        self.assertEqual(6, execute.call_count)
 
 
 if __name__ == "__main__":
