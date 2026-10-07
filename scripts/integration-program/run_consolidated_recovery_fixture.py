@@ -20,7 +20,7 @@ class SimulatedAcceptanceInterrupted(Exception):
 class SimulatedFeed:
     """One in-memory feed model shared by contracts and full-inventory rehearsal."""
 
-    base = "https://f.feedz.io/elsa-workflows/elsa-3/nuget/v3-flatcontainer/"
+    base = "https://f.feedz.io/elsa-workflows/elsa-3/nuget/v3/packages/"
 
     def __init__(self, root: Path, outcome: int = 404):
         self.root, self.outcome = root, outcome
@@ -28,7 +28,7 @@ class SimulatedFeed:
         self.accepted, self.visible = {}, set()
         self.simulated_acceptance_calls = 0
         self.index = recovery.ReadResult(200, json.dumps({"version": "3.0.0", "resources": [
-            {"@type": "PackageBaseAddress/3.0.0", "@id": self.base}]}).encode(), True)
+            {"@type": "PackageBaseAddress/3.0.0", "@id": self.base.rstrip("/")}]}).encode(), True)
         self.packages = {path.name.lower(): path for path in (root / "artifacts").glob("*.nupkg")}
 
     def simulate_accept(self, package_id: str, data: bytes, *, visible=True, interrupt=False):

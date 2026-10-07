@@ -149,6 +149,13 @@ class RecoveryContracts(unittest.TestCase):
         self.assertEqual(result["counts"]["unverifiable"], 225)
         self.assertEqual({row["failure_category"] for row in result["packages"]}, {"local_input_invalid"})
 
+    def test_feedz_package_base_without_trailing_slash_preserves_the_full_path(self):
+        for base in (self.feed.base, self.feed.base.rstrip("/")):
+            with self.subTest(base=base):
+                response = recovery.ReadResult(200, json.dumps({"version": "3.0.0", "resources": [
+                    {"@type": "PackageBaseAddress/3.0.0", "@id": base}]}).encode(), True)
+                self.assertEqual(self.feed.base, recovery._package_base(response))
+
     def test_changed_manifest_duplicate_and_subset_rejected_before_get(self):
         path = self.root / "verified-artifacts.json"
         for rows in (self.manifest["packages"][:-1], [self.manifest["packages"][0]] * 225):

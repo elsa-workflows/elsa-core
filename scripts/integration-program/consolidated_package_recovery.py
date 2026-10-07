@@ -278,9 +278,11 @@ def _package_base(result):
         if len(candidates) != 1 or not isinstance(candidates[0], str):
             raise ValueError()
         base = candidates[0]
-        if not base.endswith("/") or not _intended_url(base):
+        if not _intended_url(base):
             raise ValueError()
-        return base
+        # Feedz advertises its package base without a trailing slash. Append the
+        # package-relative path without replacing the final base path segment.
+        return base if base.endswith("/") else base + "/"
     except (ValueError, TypeError, KeyError, AttributeError, UnicodeError, RecursionError):
         raise RecoveryError("malformed_index") from None
 
