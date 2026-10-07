@@ -65,6 +65,13 @@ sources and archive hashes must match the original candidate or the reviewed
 release source policy. Nonpackable fixture executables are built from recorded
 host glue; Elsa libraries cannot fall back to source project references. The
 hosted WASM wrapper has one explicit nonpackable client-fixture edge.
+The materializer restores and builds that client first, then uses
+`--no-dependencies` for the wrapper's restore and build. This preserves the
+client's project-local NuGet configuration identity and verified build output;
+it does not relax the source-edge or package provenance checks. See the .NET
+[restore](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-restore)
+and [build](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-build)
+option documentation.
 
 ## Reading evidence
 

@@ -288,6 +288,7 @@ def build(layout: CellLayout, *, converter_decoder: Path | None = None,
     if clients:
         import paired_package_converter_selection as converters
     commands = []
+    completed_projects = set()
     env = isolated_environment(layout)
     sdk_log = layout.group_root / "logs" / "execution-sdk.log"
     first_project = next(iter(layout.project_paths.values()))
@@ -309,12 +310,16 @@ def build(layout: CellLayout, *, converter_decoder: Path | None = None,
                 if host in clients:
                     record["converter_selection"] = converters.verify_reused_selection(layout, project, converter_decoder, env)
                 commands.append(record)
+                completed_projects.add(host)
                 continue
-        # Hosted wrapper builds its already-reviewed fixture client edge.
+        # The owned client is restored/built first. A recursive wrapper restore
+        # would replace its project-local config provenance with the wrapper's.
+        if host == "hosted-wasm":
+            require("wasm" in completed_projects, "Hosted wrapper requires its completed client build")
         for phase, args in (("restore", ["restore", project.name, "--configfile", "NuGet.Config", "--packages", str(layout.packages_root), "--force-evaluate", "--no-cache"]),
                             ("build", ["build", project.name, "--no-restore", "--configuration", "Release", "-p:UseSharedCompilation=false"])):
             log = layout.group_root / "logs" / f"{host}-{phase}.log"
-            command = ["dotnet", *args, "--nologo"]
+            command = ["dotnet", *args, *(["--no-dependencies"] if host == "hosted-wasm" else []), "--nologo"]
             report_operation(host, phase)
             if host in clients and phase == "build":
                 commands.append(converters.capture_build(layout, project, command, env, log, converter_decoder,
@@ -324,6 +329,7 @@ def build(layout: CellLayout, *, converter_decoder: Path | None = None,
         stamp.write_text(json.dumps({"schema": 1, "inputs": input_hashes, "assets": sha256(assets_path),
                                     "outputs": {str(path.relative_to(output)): sha256(path)
                                                 for path in output.rglob("*") if path.is_file()}}, sort_keys=True) + "\n")
+        completed_projects.add(host)
     return commands
 
 

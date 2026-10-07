@@ -383,11 +383,7 @@ class HostMaterializationTests(unittest.TestCase):
                 # Restoring the placeholder makes shared input/build hashes stable.
                 self.assertEqual(layout.input_hashes[str(config.relative_to(layout.group_root))], hosts.sha256(config))
 
-    def test_build_reuse_rejects_modified_asset_or_output_hash(self):
-        layout = self.materialize()
-        env = {}
-        called = []
-
+    def fake_build_runner(self, layout, called):
         def run(command, cwd, environment, log, timeout):
             called.append(command)
             log.parent.mkdir(parents=True, exist_ok=True)
@@ -395,11 +391,22 @@ class HostMaterializationTests(unittest.TestCase):
             if command == ["dotnet", "--version"]:
                 return {"command": command, "exit_code": 0}
             (cwd / "obj").mkdir(exist_ok=True)
-            (cwd / "obj" / "project.assets.json").write_text("{}")
+            if command[1] == "restore":
+                assets = json.dumps({"configFilePaths": [str(cwd / "NuGet.Config")]})
+                (cwd / "obj/project.assets.json").write_text(assets)
+                if cwd.name == "hosted-wasm" and "--no-dependencies" not in command:
+                    # Model the observed recursive restore changing the child's config identity.
+                    (layout.project_paths["wasm"].parent / "obj/project.assets.json").write_text(assets)
             output = cwd / "bin" / "Release" / layout.request.framework
             output.mkdir(parents=True, exist_ok=True)
             (output / "fixture.dll").write_bytes(b"reviewed-output")
             return {"command": command, "exit_code": 0}
+        return run
+
+    def test_build_reuse_rejects_modified_asset_or_output_hash(self):
+        layout = self.materialize()
+        env, called = {}, []
+        run = self.fake_build_runner(layout, called)
 
         with patch.object(hosts, "isolated_environment", return_value=env), patch.object(hosts.packages, "_run_command", side_effect=run):
             hosts.build(layout)
@@ -416,6 +423,29 @@ class HostMaterializationTests(unittest.TestCase):
             called.clear()
             hosts.build(layout)
             self.assertEqual(3, len(called))
+
+    def test_hosted_wrapper_preserves_completed_client_restore_and_output(self):
+        import paired_package_converter_selection as converters
+        for version in hosts.VERSIONS:
+            with self.subTest(version=version):
+                layout = self.materialize("hosted-wasm", version)
+                called = []
+                run = self.fake_build_runner(layout, called)
+                def capture(_layout, project, command, env, log, _decoder, **_options):
+                    return run(command, project.parent, env, log, 1200)
+                with patch.object(hosts, "isolated_environment", return_value={}), \
+                        patch.object(hosts.packages, "_run_command", side_effect=run), \
+                        patch.object(converters, "capture_build", side_effect=capture):
+                    hosts.build(layout, converter_decoder=self.root / "synthetic-decoder")
+                client, wrapper = layout.project_paths["wasm"], layout.project_paths["hosted-wasm"]
+                self.assertEqual([str(client.parent / "NuGet.Config")],
+                    json.loads((client.parent / "obj/project.assets.json").read_text())["configFilePaths"])
+                wrapper_commands = [command for command in called if len(command) > 2 and command[2] == wrapper.name]
+                self.assertEqual(["restore", "build"], [command[1] for command in wrapper_commands])
+                self.assertTrue(all("--no-dependencies" in command for command in wrapper_commands))
+                client_build = next(command for command in called if len(command) > 2 and command[1:3] == ["build", client.name])
+                self.assertLess(called.index(client_build), called.index(wrapper_commands[0]))
+                self.assertEqual(set(layout.project_paths), set(hosts._build_identity(layout)))
 
     def test_credentials_are_not_in_repr_or_materialized_inputs(self):
         layout = self.materialize()
