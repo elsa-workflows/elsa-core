@@ -355,6 +355,7 @@ try {
             await move(850, 480);
             await page.evaluate(options => window.hoverFixture.reset(true, options), {target, omitTarget});
             // Approach A from above so no destination edge/node entry can precede A's real entry.
+            await move(850, -20);
             await move(320, -20);
             await hover('edge-a');
             subcheck = 'source-entry-delivered';
