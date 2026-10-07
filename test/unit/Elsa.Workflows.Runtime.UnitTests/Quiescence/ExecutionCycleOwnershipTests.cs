@@ -110,9 +110,13 @@ public class ExecutionCycleOwnershipTests : IAsyncLifetime
         {
             handle = Assert.Single(_registry.ListActiveCycles());
             if (failure is "pipeline" or "cancellation")
+            {
                 throw original;
+            }
             if (failure == "checkpoint")
+            {
                 await context.CommitAsync();
+            }
         });
         var runner = CreateRunner(pipeline, commit, extractor, notifications);
 
@@ -258,9 +262,13 @@ public class ExecutionCycleOwnershipTests : IAsyncLifetime
         await AssertTrailingWriteAsync(async () =>
         {
             if (cancel)
+            {
                 await host.CancelWorkflowAsync();
+            }
             else
+            {
                 await host.RunWorkflowAsync();
+            }
         }, save);
     }
 
@@ -307,7 +315,9 @@ public class ExecutionCycleOwnershipTests : IAsyncLifetime
             Started.SetResult(Assert.Single(registry.ListActiveCycles()));
             await Continue.Task;
             if (Failure != null)
+            {
                 throw Failure;
+            }
             return instance;
         }
     }

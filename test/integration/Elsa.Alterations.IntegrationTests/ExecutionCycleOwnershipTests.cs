@@ -46,7 +46,9 @@ public class ExecutionCycleOwnershipTests(ITestOutputHelper output)
             started.SetResult(Assert.Single(registry.ListActiveCycles()));
             await continueImport.Task;
             if (failure != null)
+            {
                 throw failure;
+            }
         });
         var commit = new CapturingCommit(services.GetRequiredService<ICommitStateHandler>(), registry);
         var runner = new DefaultAlterationRunner(runtime, services.GetRequiredService<IWorkflowExecutionPipeline>(),

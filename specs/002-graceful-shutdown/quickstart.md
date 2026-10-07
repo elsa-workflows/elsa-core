@@ -156,9 +156,10 @@ That is the entire integration. The runtime handles:
 
 A tracked execution attempt spans the workflow pipeline and every later awaited write owned by the caller.
 WorkflowRunner holds ownership through state extraction, notifications and final commit. Alterations retain it
-through ImportStateAsync; cancellation through LocalWorkflowClient's save; the obsolete WorkflowHost through
-its trailing persistence. ActivityTestRunner releases ownership when its operation finishes without requiring
-a final commit. Intermediate workflow/activity/explicit checkpoints preserve the same handle. Success,
+through ImportStateAsync; cancellation through LocalWorkflowClient's save; the obsolete WorkflowHost and
+ProtoActor's workflow actor retain it through their trailing Run/Cancel saves. ActivityTestRunner releases
+ownership when its operation finishes without requiring a final commit. Intermediate workflow/activity/explicit
+checkpoints preserve the same handle. Success,
 suspension, handled faults and failures all release tracking when the owning operation unwinds; disposal does
 not prove persistence succeeded. Requesting cancellation alone does not release the handle.
 

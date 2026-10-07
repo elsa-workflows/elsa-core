@@ -50,11 +50,17 @@ public class WorkflowExecutionScopeTests : IAsyncLifetime
         var resource = new TrackedResource();
         using var owner = WorkflowExecutionScope.Begin(_context.Id);
         using (WorkflowExecutionScope.Begin(_context.Id))
-        using (var contextScope = WorkflowExecutionScope.Begin(_context))
-            contextScope.GetOrAddResource("test", () => resource);
+        {
+            using (var contextScope = WorkflowExecutionScope.Begin(_context))
+            {
+                contextScope.GetOrAddResource("test", () => resource);
+            }
+        }
         Assert.Equal(0, resource.DisposeCount);
         using (var restored = WorkflowExecutionScope.Begin(_context))
+        {
             Assert.Same(resource, restored.GetOrAddResource("test", () => new TrackedResource()));
+        }
         Assert.Equal(0, resource.DisposeCount);
         owner.Dispose();
         Assert.Equal(1, resource.DisposeCount);
@@ -68,9 +74,13 @@ public class WorkflowExecutionScopeTests : IAsyncLifetime
         var other = await WorkflowExecutionContext.CreateAsync(_context.ServiceProvider, _context.WorkflowGraph, _context.Id);
         using var bridge = WorkflowExecutionScope.Begin(_context.Id);
         using (var first = WorkflowExecutionScope.Begin(_context))
+        {
             first.GetOrAddResource("test", () => firstResource);
+        }
         using (var second = WorkflowExecutionScope.Begin(other))
+        {
             second.GetOrAddResource("test", () => secondResource);
+        }
 
         Assert.Equal(0, firstResource.DisposeCount);
         Assert.Equal(1, secondResource.DisposeCount);
@@ -83,7 +93,9 @@ public class WorkflowExecutionScopeTests : IAsyncLifetime
     {
         var firstResource = new TrackedResource();
         using (var first = WorkflowExecutionScope.Begin(_context))
+        {
             first.GetOrAddResource("test", () => firstResource);
+        }
         var secondResource = new TrackedResource();
         using (var second = WorkflowExecutionScope.Begin(_context))
         {
@@ -110,7 +122,9 @@ public class WorkflowExecutionScopeTests : IAsyncLifetime
             using var childOwner = WorkflowExecutionScope.Begin(child);
             Assert.Same(resource, childOwner.GetOrAddResource("test", () => resource));
             if (Interlocked.Increment(ref started) == resources.Length)
+            {
                 childrenReady.SetResult();
+            }
             await releaseChildren.Task;
         })).ToArray();
 
