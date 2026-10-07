@@ -669,3 +669,58 @@ def start_designer_phases(layout: CellLayout, *, validate_project: Callable[[Pat
         yield owner
     finally:
         owner.close()
+
+
+class _OptionalFeatureRuntime:
+    """Private one-shot backend stop capability, bound to captured process objects."""
+
+    def __init__(self, owner, studio, handle):
+        self.owner, self.studio, self.handle = owner, studio, handle
+        self.disconnected = False
+
+    def check_live_studio(self):
+        owner = self.owner
+        require(not owner.closed and not owner.cleanup_failed and not owner.expired.is_set()
+                and time.monotonic() < owner.deadline and self.studio.poll() is None,
+                "Optional feature Studio exited or owner expired")
+        if not self.disconnected:
+            owner._healthy()
+
+    def disconnect_backend(self) -> dict:
+        # The parent calls this only after its private browser readiness handshake.
+        # The watchdog and final cleanup share this lock and the same ownership set.
+        with self.owner.lock:
+            require(not self.disconnected, "Optional backend disconnect is one-shot")
+            self.check_live_studio()
+            backend = self.owner.backend
+            self.owner._stop_owned(backend)
+            require(backend.poll() is not None, "Owned backend stop was not observed")
+            self.owner.processes.remove(backend)
+            self.disconnected = True
+            self.check_live_studio()
+            return {"owned_backend_stopped": True, "studio_alive_after_stop": True}
+
+
+@contextmanager
+def start_optional_feature_probe(layout: CellLayout, *, validate_project: Callable[[Path], dict],
+                                 timeout_seconds: float = 90, lifetime_seconds: float = 360):
+    """Reuse a verified candidate build with fresh private state for one probe.
+
+    The existing owner supplies birth-guarded launch, watchdog and cleanup. This
+    scope never enters its two-designer sequence: a deliberate backend stop is
+    valid here, while remaining a failure in a normal designer phase.
+    """
+    require(layout.runtime_root.is_dir() and not any(layout.runtime_root.iterdir()),
+            "Optional feature probe requires a fresh empty runtime root")
+    with start_designer_phases(layout, validate_project=validate_project,
+                               timeout_seconds=timeout_seconds, lifetime_seconds=lifetime_seconds) as owner:
+        env = dict(owner.env)
+        owner.public_config = _public_configuration(layout, env, owner.backend_origin)
+        studio = owner._launch(layout, layout.request.host, owner.studio_origin, env,
+                               layout.request.host + "-optional-private.log", "/")
+        handle = _runtime_handle(layout, owner.studio_origin, owner.backend_origin, owner.password,
+                                 [owner.backend, studio], owner.safe_ids)
+        probe = _OptionalFeatureRuntime(owner, studio, handle)
+        probe.check_live_studio()
+        yield probe
+        probe.check_live_studio()

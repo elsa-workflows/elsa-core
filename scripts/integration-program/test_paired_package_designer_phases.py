@@ -183,6 +183,55 @@ class DesignerPhasesTests(unittest.TestCase):
                     self.assertEqual(b'{}\n', config.read_bytes())
         self.assert_clean()
 
+    def test_optional_probe_stops_only_captured_backend_and_rejects_second_stop(self):
+        for host in hosts.HOST_NAMES:
+            with self.subTest(host=host):
+                layout = self.layout(host)
+                with hosts.start_optional_feature_probe(layout, validate_project=self.validate) as probe:
+                    backend, studio = self.processes[-2:]
+                    self.assertEqual((backend.pid, studio.pid), probe.handle.process_ids)
+                    self.assertEqual({"owned_backend_stopped": True, "studio_alive_after_stop": True},
+                                     probe.disconnect_backend())
+                    self.assertFalse(backend.group_alive)
+                    self.assertIsNone(studio.poll())
+                    before = list(self.events)
+                    with self.assertRaises(RuntimeError):
+                        probe.disconnect_backend()
+                    self.assertEqual(before, self.events)
+                    self.reused_pids.add(backend.pid)
+                    # Final cleanup must not signal the stopped/reused backend.
+                self.assertFalse(any(event[0] == "signal" and event[1] == backend.pid
+                                     for event in self.events[len(before):]))
+        self.assert_clean()
+
+    def test_optional_probe_preserves_missing_stop_or_studio_failure(self):
+        for failure in ("expiry", "studio", "backend-birth"):
+            with self.subTest(failure=failure), self.assertRaises(RuntimeError):
+                with hosts.start_optional_feature_probe(self.layout(), validate_project=self.validate) as probe:
+                    backend, studio = self.processes[-2:]
+                    if failure == "expiry":
+                        self.timers[-1].callback()
+                    elif failure == "studio":
+                        studio.returncode = 1
+                    else:
+                        self.reused_pids.add(backend.pid)
+                    before = len(self.events)
+                    probe.disconnect_backend()
+            if failure == "backend-birth":
+                self.assertFalse(any(event[0] == "signal" and event[1] == backend.pid
+                                     for event in self.events[before:]))
+
+    def test_optional_probe_without_disconnect_cleans_both_and_refuses_reused_state(self):
+        layout = self.layout("wasm")
+        with hosts.start_optional_feature_probe(layout, validate_project=self.validate) as probe:
+            self.assertFalse(probe.disconnected)
+        self.assert_clean()
+        self.assertEqual(b'{}\n', (layout.project_paths["wasm"].parent / "wwwroot/appsettings.json").read_bytes())
+        before = len(self.calls)
+        with self.assertRaises(RuntimeError), hosts.start_optional_feature_probe(layout, validate_project=self.validate):
+            pass
+        self.assertEqual(before, len(self.calls))
+
     def test_rejects_unsupported_cells_and_invalid_bounds_before_launch(self):
         layout = self.layout()
         variants = [replace(layout, request=replace(layout.request, version="3.9.0")),

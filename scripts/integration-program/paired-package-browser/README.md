@@ -211,6 +211,31 @@ safely recovered by this mechanism; it fails closed without guessing by process
 name. The helper supports macOS and Linux process identities; live lifecycle
 contracts must run on the actual target platform.
 
+### Imported module pair coverage
+
+This reconciliation describes this fixture and its retained evidence. Package
+provenance and consumer builds establish package availability; they do not prove
+that every registered Studio module works with its backend. The candidate source
+remains `ba5b348aa2414fdf7c19d9d8806e87b7c91a4205` throughout these checks.
+
+| Surface | Composition and evidence boundary |
+| --- | --- |
+| Identity, shell and Workflows | The backend enables local Elsa Identity, workflow management/runtime with SQLite, Workflows API and JavaScript. Native sign-in, registry and editor journeys are required by the matrix. Released cells do not certify candidate behavior; full candidate acceptance remains pending until every required record passes. Production identity providers are outside this fixture. |
+| WorkflowContexts and Secrets | These are the representative optional pairs. Native metadata/reference journeys, canonical Secrets endpoint ownership, and separate absent, denied and disconnected probes are required. Implemented probes alone are not runtime proof, and these representatives do not certify every provider. |
+| Weaver, Alterations, OpenTelemetry, Console Logs, Structured Logs and User Tasks | Common Studio host glue registers these modules, but this backend composition does not enable their corresponding features. Their runtime interactions are not certified here. Package/build visibility is separate evidence. |
+| External Authentication | Studio management registration remains feature-gated; the fixture selects Elsa Identity and does not enable an external broker backend. It does not certify broker sign-in or management. |
+| Environments, Labels and HTTP Webhooks | Environments registration is commented out, and Labels and HTTP Webhooks are not registered in this composition. This fixture supplies no paired runtime proof for them. |
+| Settings, Security, Localization and Translations | These Studio surfaces are registered. No independent Core module pairing is asserted merely from their names. Resource-byte verification, including localization assets, establishes delivery integrity rather than every UI behavior. |
+
+Composition sources are [common Server registration](hosts/common/server/Program.cs)
+and the [owned backend](Backend/Program.cs). The [program inventory](../../../doc/integration-program/inventory/README.md)
+defines pairing by API, protocol or package-graph dependence. The accepted package
+consumer work in [#8635](https://github.com/elsa-workflows/elsa-core/issues/8635)
+and bounded SQLite/default-tenant upgrade work in
+[#8219](https://github.com/elsa-workflows/elsa-core/issues/8219)
+remain separate from the paired browser acceptance tracked in
+[#8643](https://github.com/elsa-workflows/elsa-core/issues/8643).
+
 This fixture performs no package publication, deployment, publisher cutover or
 repository archival. It does not certify mixed-version pairs, npm distributions,
 production identity providers or every optional connector/provider.
