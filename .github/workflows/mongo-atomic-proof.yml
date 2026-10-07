@@ -1,0 +1,62 @@
+name: Mongo atomic-update proof
+
+on:
+  pull_request:
+    paths:
+      - 'src/extensions/persistence/Elsa.Persistence.MongoDb/**'
+      - 'test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/**'
+      - 'test/integration/Elsa.Bpmn.Interchange.IntegrationTests/**'
+      - 'src/extensions/Directory.Packages.props'
+      - 'test/extensions/Directory.Packages.props'
+      - 'scripts/integration-program/run_mongo_atomic_proof.py'
+      - 'scripts/integration-program/test_mongo_atomic_proof.py'
+      - 'scripts/integration-program/run_execution_cycle_proof.py'
+      - '.github/workflows/mongo-atomic-proof.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mongo-atomic-proof-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mongo-atomic-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+      - name: Verify evidence policy
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s scripts/integration-program -p test_mongo_atomic_proof.py
+          PYTHONDONTWRITEBYTECODE=1 python -O -m unittest discover -s scripts/integration-program -p test_mongo_atomic_proof.py
+      - name: Prove baseline regressions and corrected Mongo behavior
+        env:
+          EXPECTED_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python scripts/integration-program/run_mongo_atomic_proof.py \
+            --expected-head "$EXPECTED_HEAD" --output "$RUNNER_TEMP/mongo-atomic-proof"
+      - name: Retain sanitized evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mongo-atomic-proof-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/mongo-atomic-proof/receipt.json
+          if-no-files-found: error
+          retention-days: 14
