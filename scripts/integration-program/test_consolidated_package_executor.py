@@ -18,7 +18,7 @@ import zipfile
 import consolidated_package_executor as executor
 import consolidated_package_recovery as recovery
 import test_consolidated_package_recovery as recovery_fixtures
-from test_consolidated_candidate_clock import AFTER_EXPIRY, candidate_clock
+from test_consolidated_candidate_clock import AFTER_EXPIRY, candidate_clock, install_candidate_clock
 from test_consolidated_package_recovery import package_bytes, provenance
 
 
@@ -109,7 +109,7 @@ class FullInventoryTests(unittest.TestCase):
             cls.provenance = provenance(cls.root)
 
     def setUp(self):
-        self.enterContext(candidate_clock(executor, recovery, recovery_fixtures))
+        install_candidate_clock(self, executor, recovery, recovery_fixtures)
         self.inspector = FakeInspector()
         self.associations, self.expected = executor.associations(self.root, self.manifest, self.inspector)
         self.feed = executor.SimulatedTransport(self.root, self.manifest, self.expected)

@@ -23,6 +23,12 @@ def candidate_clock(*modules, at=SYNTHETIC_NOW):
         yield
 
 
+def install_candidate_clock(test, *modules, at=SYNTHETIC_NOW):
+    stack = ExitStack()
+    test.addCleanup(stack.close)
+    stack.enter_context(candidate_clock(*modules, at=at))
+
+
 class CandidateClockContracts(unittest.TestCase):
     def test_success_fixtures_survive_future_wall_clock_and_restore_it(self):
         import test_consolidated_package_executor as execution
@@ -32,6 +38,7 @@ class CandidateClockContracts(unittest.TestCase):
         modules = (execution.executor, execution.recovery, execution.recovery_fixtures,
                    approvals.summary, approvals, stable.candidate_input, stable.candidate, stable)
         with candidate_clock(*modules, at=AFTER_EXPIRY), \
+                patch.object(unittest.TestCase, "enterContext", side_effect=AssertionError("Requires Python 3.11"), create=True), \
                 patch.object(execution.executor, "bounded_child", side_effect=AssertionError("Unexpected external action")):
             future_clock = execution.executor.datetime
             suite = unittest.TestSuite([

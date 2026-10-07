@@ -15,14 +15,14 @@ import prepare_consolidated_release_candidate as candidate
 import prove_consolidated_package_consumers as packages
 import run_persisted_workflow_upgrade_fixture as fixture
 import run_stable_persisted_workflow_upgrade_fixture as stable
-from test_consolidated_candidate_clock import AFTER_EXPIRY, candidate_clock
+from test_consolidated_candidate_clock import AFTER_EXPIRY, candidate_clock, install_candidate_clock
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 class StableAdapterContracts(unittest.TestCase):
     def setUp(self):
-        self.enterContext(candidate_clock(candidate, candidate_input, sys.modules[__name__]))
+        install_candidate_clock(self, candidate, candidate_input, sys.modules[__name__])
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)

@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import consolidated_executor_approval_summary as summary
 import test_consolidated_package_executor as fixtures
-from test_consolidated_candidate_clock import AFTER_EXPIRY, candidate_clock
+from test_consolidated_candidate_clock import AFTER_EXPIRY, candidate_clock, install_candidate_clock
 
 executor = summary.executor
 
@@ -30,7 +30,7 @@ class SummaryTests(unittest.TestCase):
             fixture.doCleanups()
 
     def setUp(self):
-        self.enterContext(candidate_clock(summary, executor.recovery, sys.modules[__name__]))
+        install_candidate_clock(self, summary, executor.recovery, sys.modules[__name__])
         self.context = {"GITHUB_ACTIONS": "true", "GITHUB_REPOSITORY": executor.REPOSITORY,
                         "GITHUB_REF": "refs/heads/main", "GITHUB_EVENT_NAME": "workflow_dispatch",
                         "GITHUB_SHA": "a"*40, "GITHUB_RUN_ID": "99", "GITHUB_RUN_ATTEMPT": "1"}
