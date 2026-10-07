@@ -4,6 +4,7 @@ import { closeSync, lstatSync, openSync, readFileSync, readSync, realpathSync, w
 import { dirname, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
+import { checkReactDefinition, reactAfterValue, reactBundlePath, reactChecks, type ReactHashes } from './react-phase.js';
 import { bpmnSemanticIdentity, checkedXmlText, type XmlElement } from './bpmn-roundtrip.js';
 import { readWorkflowJsonExport, workflowSemanticIdentity } from './json-roundtrip.js';
 import { DirectBackendObserver } from './direct-backend.js';
@@ -13,10 +14,10 @@ const policy = JSON.parse(readFileSync(new URL('./coverage-policy.json', import.
 // including the native WASM bootstrap after a full page reload.
 const expect = playwrightExpect.configure({ timeout: 20_000 });
 
-type Cell = { host: 'server' | 'wasm' | 'hosted-wasm' | 'custom-elements'; framework: string; version: string; route_prefix?: string };
+type Cell = { host: 'server' | 'wasm' | 'hosted-wasm' | 'custom-elements'; framework: string; version: string; route_prefix?: string; designer_mode?: 'x6' | 'react-flow' };
 type Resource = { path: string; sha256: string; bytes: number; content_type: string; owner: 'package' | 'fixture' | 'platform'; required?: boolean };
 type ReleasedInput = { private_path: string; binding: { document: { source_cell: Cell; document_sha256: string; bytes: number; tool_version: string; definition_id_sha256: string; activity_id_sha256: string; value_sha256: string }; fixture_identity_sha256: string; source_evidence_sha256: string; browser_receipt_sha256: string }; source_binding_sha256: string; root_id_sha256: string };
-type PrivateInput = { request: Cell; studio_url: string; backend_url: string; username: string; password: string; safe_ids: Record<string, string>; resources: Resource[]; released_document_output?: string; released_document_inputs?: ReleasedInput[] };
+type PrivateInput = { request: Cell; studio_url: string; backend_url: string; username: string; password: string; safe_ids: Record<string, string>; resources: Resource[]; released_document_output?: string; released_document_inputs?: ReleasedInput[]; phase?: 'react-flow'; react_phase?: { source_browser_sha256: string; expected_hashes: ReactHashes } };
 type Assertion = { name: string; passed: boolean; reason_category: string | null };
 const baseline: string[] = policy.baseline;
 const candidate: string[] = policy.candidate;
@@ -490,7 +491,7 @@ class Backend {
   async dispose(): Promise<void> { await this.api.dispose(); }
 }
 
-async function fullShell(page: Page, input: PrivateInput, backend: Backend, passed: (name: string) => void, proof: Record<string, unknown>): Promise<void> {
+async function authenticateShell(page: Page, input: PrivateInput, proof: Record<string, unknown>): Promise<void> {
   await page.goto(input.studio_url + '/login');
   proof.last_completed_stage = 'login_navigation';
   // All three reviewed host compositions select ElsaIdentity, including released 3.8.4.
@@ -522,6 +523,10 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   proof.last_completed_stage = 'login_submitted';
   await expect(page).not.toHaveURL(/\/login(?:$|[?#])/);
+}
+
+async function fullShell(page: Page, input: PrivateInput, backend: Backend, passed: (name: string) => void, proof: Record<string, unknown>): Promise<void> {
+  await authenticateShell(page, input, proof);
   passed('authentication');
   await page.goto(input.studio_url + '/workflows/definitions');
   await expect(page.getByRole('button', { name: 'Create workflow', exact: true })).toBeVisible();
@@ -682,6 +687,120 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   }
 }
 
+function observePackageResponse(response: Response, input: PrivateInput, expected: Map<string, Resource>,
+  resources: ObservedBootResource[], pending: Promise<void>[],
+  observed: (resource: { record: ObservedBootResource; body: Buffer }) => void, failed: () => void): void {
+  const url = new URL(response.url());
+  const asset = expected.get(url.pathname);
+  if (!asset || url.origin !== new URL(input.studio_url).origin) return;
+  pending.push((async () => {
+    const headers = response.headers();
+    const body = await resourceBody(response, asset.bytes);
+    const record = { path: url.pathname, status: response.status(), content_type: headers['content-type']?.split(';')[0] ?? '', sha256: hash(body), bytes: body.length, owner: asset.owner, requested: true as const };
+    resources.push(record);
+    observed({ record, body });
+  })().catch(failed));
+}
+
+async function reactPhase(input: PrivateInput): Promise<void> {
+  const source = input.react_phase;
+  if (input.request.version !== '3.10.0' || input.request.designer_mode !== 'react-flow' ||
+      !['server', 'wasm', 'hosted-wasm'].includes(input.request.host) || !source ||
+      !/^[0-9a-f]{64}$/.test(source.source_browser_sha256) ||
+      Object.keys(source.expected_hashes).sort().join(',') !== 'activity_id_sha256,before_value_sha256,definition_id_sha256,root_id_sha256' ||
+      !Object.values(source.expected_hashes).every(value => /^[0-9a-f]{64}$/.test(value)) ||
+      !/^paired-browser-[0-9a-f]{12}$/.test(input.safe_ids.definition_name) ||
+      source.expected_hashes.before_value_sha256 !== hash(input.safe_ids.activity_value) || input.safe_ids.activity_value === reactAfterValue)
+    throw new Error('invalid_private_react_phase');
+  const cell = { version: input.request.version, framework: input.request.framework, host: input.request.host };
+  const checks: Record<(typeof reactChecks)[number], boolean> = Object.fromEntries(reactChecks.map(name => [name, false])) as any;
+  const hashes: Record<string, string> = {};
+  const resources: ObservedBootResource[] = [], pending: Promise<void>[] = [];
+  const expected = new Map(input.resources.map(asset => [asset.path, asset]));
+  const prefix = input.request.route_prefix ? '/' + input.request.route_prefix : '';
+  const bundle = expected.get(prefix + reactBundlePath);
+  if (!bundle || bundle.owner !== 'package') throw new Error('missing_private_react_bundle');
+  let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
+  let context: Awaited<ReturnType<NonNullable<typeof browser>['newContext']>> | undefined;
+  let page: Page | undefined;
+  let backend: Backend | undefined;
+  let failed = false;
+  let browserVersion: string | null = null;
+  const observe = (response: Response) => observePackageResponse(response, input, expected, resources, pending, () => {}, () => { failed = true; });
+  try {
+    browser = await chromium.launch({ headless: true });
+    browserVersion = browser.version();
+    context = await browser.newContext({ serviceWorkers: 'block' });
+    page = await context.newPage();
+    page.setDefaultTimeout(20_000);
+    page.on('response', observe);
+    backend = await Backend.login(input.backend_url, input);
+    await authenticateShell(page, input, {});
+    checks.authentication = true;
+    await definitionsList(page, input);
+    const row = page.locator('.definitions-table tr').filter({ has: page.getByText(input.safe_ids.definition_name, { exact: true }) });
+    await expect(row).toHaveCount(1);
+    // WorkflowDefinitionList.OnRowClick opens the exact row through EditAsync.
+    await row.click();
+    await expect(page).toHaveURL(/\/workflows\/definitions\/[^/]+\/edit/);
+    const definitionId = new URL(page.url()).pathname.split('/').at(-2)!;
+    if (hash(definitionId) !== source.expected_hashes.definition_id_sha256) throw new Error('react_list_identity_mismatch');
+    const getDefinition = () => backend!.get('/workflow-definitions/by-definition-id/' + encodeURIComponent(definitionId) + '?versionOptions=Latest');
+    const original = checkReactDefinition(await getDefinition(), source.expected_hashes, false);
+    if ((await getDefinition()).name !== input.safe_ids.definition_name) throw new Error('react_list_name_mismatch');
+    Object.assign(hashes, source.expected_hashes);
+    checks.source_binding = true;
+    const mounted = async () => {
+      await expect(page!.locator('.elsa-react-flowchart-designer .graph-container')).toBeVisible();
+      await expect(page!.locator('.flowchart-diagram-designer-wrapper .x6-graph-svg')).toHaveCount(0);
+      await expect(page!.getByLabel('Name', { exact: true })).toHaveValue(input.safe_ids.definition_name);
+    };
+    await mounted();
+    checks.react_mount = true;
+    const select = async (value: string) => {
+      const node = page!.locator('.elsa-react-flowchart-designer elsa-activity-wrapper[activity-id="' + original.activityId + '"]');
+      await expect(node).toHaveCount(1); await node.click();
+      await expect(inputControl(page!, /^Output$/).locator('[tabindex="0"]').first()).toContainText('sentinel');
+      const control = inputControl(page!, /^Output Value$/i).locator('input[type="text"]');
+      await expect(control).toHaveCount(1); await expect(control).toHaveValue(value);
+      return control;
+    };
+    const control = await select(original.value);
+    checks.selection_callback = true;
+    await control.fill(reactAfterValue); await control.blur();
+    await expect(control).toHaveValue(reactAfterValue);
+    hashes.after_value_sha256 = hash(await control.inputValue());
+    checks.property_edit = true;
+    await page.keyboard.press('ControlOrMeta+s');
+    await expect.poll(async () => {
+      try { checkReactDefinition(await getDefinition(), source.expected_hashes, true); return true; }
+      catch { return false; }
+    }).toBe(true);
+    checks.saved = true;
+    await page.reload();
+    await mounted();
+    await select(reactAfterValue);
+    checkReactDefinition(await getDefinition(), source.expected_hashes, true);
+    checks.reloaded = true;
+    checks.identity_preserved = true;
+  } catch { failed = true; }
+  finally {
+    page?.off('response', observe);
+    await Promise.all(pending);
+    checks.react_bundle = resources.some(record => record.path === bundle.path && record.status === 200 && record.requested === true &&
+      record.owner === bundle.owner && record.sha256 === bundle.sha256 && record.bytes === bundle.bytes && record.content_type === bundle.content_type);
+    let cleanupFailed = false;
+    for (const close of [() => backend?.dispose(), () => context?.close(), () => browser?.close()]) {
+      try { await close(); } catch { cleanupFailed = true; failed = true; }
+    }
+    checks.cleanup = browserVersion !== null && !cleanupFailed;
+  }
+  const complete = !failed && Object.values(checks).every(Boolean);
+  process.stdout.write(JSON.stringify({ schema: 1, cell, mode: 'react-flow', result: complete ? 'passed' : 'failed', browser_version: browserVersion,
+    source_browser_sha256: source.source_browser_sha256, checks, hashes, resources, failure_category: complete ? null : 'browser_execution_or_validation_failed' }));
+  process.exitCode = complete ? 0 : 1;
+}
+
 async function main(): Promise<void> {
   const parts: Buffer[] = [];
   let length = 0;
@@ -694,6 +813,8 @@ async function main(): Promise<void> {
   input.studio_url = loopback(input.studio_url); input.backend_url = loopback(input.backend_url);
   if (!hostAssertions[input.request.host] || !['3.8.4', '3.9.0', '3.10.0'].includes(input.request.version) || !['net8.0', 'net9.0', 'net10.0'].includes(input.request.framework))
     throw new Error('invalid_cell');
+  if (input.phase === 'react-flow') { await reactPhase(input); return; }
+  if (input.phase !== undefined || input.request.designer_mode === 'react-flow') throw new Error('unsupported_browser_phase');
   if (input.released_document_inputs) {
     const entries = input.released_document_inputs;
     if (input.request.version !== '3.10.0' || !Array.isArray(entries) || entries.length !== 2 ||
@@ -739,16 +860,7 @@ async function main(): Promise<void> {
       catch { /* Requests without a frame cannot prove the native UI's backend path. */ }
       pending.push(directBackend.observe(response, fromMainFrame));
     }
-    const url = new URL(response.url());
-    const asset = expected.get(url.pathname);
-    if (!asset || url.origin !== new URL(input.studio_url).origin) return;
-    pending.push((async () => {
-      const headers = response.headers();
-      const body = await resourceBody(response, asset.bytes);
-      const resource = { path: url.pathname, status: response.status(), content_type: headers['content-type']?.split(';')[0] ?? '', sha256: hash(body), bytes: body.length, owner: asset.owner, requested: true };
-      resources.push(resource);
-      wasmBoot?.observe(resource, body);
-    })().catch(() => { failed = true; }));
+    observePackageResponse(response, input, expected, resources, pending, resource => wasmBoot?.observe(resource.record, resource.body), () => { failed = true; });
   };
   page.on('response', observeResponse);
   let backend: Backend | undefined;
