@@ -594,7 +594,7 @@ async function nativeWorkflowContexts(page: Page, input: PrivateInput, backend: 
   // This is a read-only backend inventory, not observation of a browser request.
   // Server-rendered Studio obtains its descriptors on the server circuit.
   const inventory = await backend.get('/workflow-contexts/provider-descriptors');
-  const descriptors = inventory.items;
+  const descriptors: unknown = inventory.items;
   const inventoryJson = JSON.stringify(inventory);
   if (!Array.isArray(descriptors) || descriptors.length < 1 || descriptors.length > 100 ||
       inventory.count !== descriptors.length || Buffer.byteLength(inventoryJson) > 1024 * 1024 ||

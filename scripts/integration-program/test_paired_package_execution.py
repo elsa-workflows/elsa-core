@@ -14,6 +14,7 @@ from test_paired_package_react_phase import phase_fixture
 from test_paired_package_released_documents import fixture_identity, write_released_fixture
 from test_paired_package_browser_matrix import attach_embedding, attach_native_interop, attach_react_phase, bpmn_proof, clipboard_proof, direct_backend_proof, reopen_row
 from test_paired_package_wasm_boot import boot_receipt_fixture
+from test_paired_package_workflow_contexts import contexts_proof
 
 
 class ExecutionSdkContracts(unittest.TestCase):
@@ -278,7 +279,8 @@ class ExecutionContracts(unittest.TestCase):
         self.events = []
         self.record = {"version": self.key[0], "framework": self.key[1], "host": self.key[2],
                        "result": "passed", "resources": [],
-                       "proof": {"baseline_reopens": [reopen_row(version) for version in execution.documents.TOOL_VERSIONS],
+                       "proof": {"workflow_contexts": contexts_proof(),
+                                 "baseline_reopens": [reopen_row(version) for version in execution.documents.TOOL_VERSIONS],
                                  "instance_id_sha256": "a" * 64, "value_sha256": "b" * 64,
                                  "bpmn_roundtrip": bpmn_proof(), "clipboard": clipboard_proof("a" * 64, "b" * 64)},
                        "browser_version": "149.0.7827.55",
