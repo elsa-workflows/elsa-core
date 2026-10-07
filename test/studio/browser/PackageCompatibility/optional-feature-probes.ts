@@ -35,6 +35,34 @@ export type OptionalFeatureReceipt = {
   failure_category: 'probe_execution_failed' | null;
 };
 
+/** Ignore retired navigation sockets; retain loss of the current circuit during the probe action. */
+export class NativeCircuitObservation {
+  private current?: object;
+  private currentClosed = false;
+  private actionStarted = false;
+  private lostDuringAction = false;
+
+  connected(socket: object): void {
+    this.current = socket;
+    this.currentClosed = false;
+  }
+
+  disconnected(socket: object): void {
+    if (socket !== this.current) return;
+    this.currentClosed = true;
+    if (this.actionStarted) this.lostDuringAction = true;
+  }
+
+  beginAction(): void {
+    this.actionStarted = true;
+    if (this.currentClosed) this.lostDuringAction = true;
+  }
+
+  closed(): boolean | null {
+    return this.current === undefined ? null : this.currentClosed || this.lostDuringAction;
+  }
+}
+
 export function optionalFeatureProfile(scenario: OptionalFeatureScenario): { backend_features: string[]; permission_profile: string } {
   if (!optionalFeatureScenarios.includes(scenario)) throw new Error('invalid_optional_feature_scenario');
   return { backend_features: scenario === 'without-secrets' ? ['workflow-contexts'] :
@@ -93,19 +121,21 @@ export async function runOptionalFeatureProbe(page: Page, input: ProbeInput, ada
     hashes: {}, ui: { ...Object.fromEntries(uiFlags.map(name => [name, null])) as Record<typeof uiFlags[number], null>,
       page_closed: false, page_error_count: 0 }, requests: [], disconnect: input.scenario === 'disconnect' ?
       { child_ready: false, parent_acknowledged: false, native_action_after_ack: false } : null, failure_category: null };
-  let active = true, overflow = false, circuitObserved = false, circuitClosed = false;
+  let active = true, overflow = false;
+  const circuit = new NativeCircuitObservation();
   const pending: Promise<void>[] = [];
+  // Only actual pageerror events increment this count; navigation/socket close events do not.
   const errors = () => { if (active) { if (receipt.ui.page_error_count < 64) receipt.ui.page_error_count++; else overflow = true; } };
   const closed = () => { if (active) receipt.ui.page_closed = true; };
-  const socketClosed = () => { if (active) circuitClosed = true; };
-  const sockets: WebSocket[] = [];
+  const sockets = new Map<WebSocket, () => void>();
   const websocket = (socket: WebSocket) => {
     try {
       const url = new URL(socket.url());
       if (input.cell.host === 'server' && url.origin.replace(/^ws/, 'http') === new URL(page.url()).origin && url.pathname.endsWith('/_blazor')) {
-        circuitObserved = true;
+        circuit.connected(socket);
+        const socketClosed = () => { if (active) circuit.disconnected(socket); };
         socket.on('close', socketClosed);
-        sockets.push(socket);
+        sockets.set(socket, socketClosed);
       }
     } catch { /* An unrelated or malformed socket cannot establish a Studio circuit. */ }
   };
@@ -146,7 +176,7 @@ export async function runOptionalFeatureProbe(page: Page, input: ProbeInput, ada
   const visible = async (locator: Locator) => (await locator.count()) > 0 && await locator.first().isVisible();
   const snapshot = async () => {
     receipt.ui.page_closed = page.isClosed();
-    receipt.ui.server_circuit_closed = input.cell.host === 'server' && circuitObserved ? circuitClosed : null;
+    receipt.ui.server_circuit_closed = input.cell.host === 'server' ? circuit.closed() : null;
     if (page.isClosed()) return;
     receipt.ui.authorization_guidance_visible = await visible(guidance);
     receipt.ui.error_visible = await visible(error);
@@ -154,18 +184,19 @@ export async function runOptionalFeatureProbe(page: Page, input: ProbeInput, ada
   };
   page.on('pageerror', errors); page.on('close', closed); page.on('websocket', websocket);
   page.on('response', response); page.on('requestfailed', requestFailed);
+  const beginAction = () => { receipt.checks.native_action = true; circuit.beginAction(); };
   try {
     await adapter.authenticateAndList();
     receipt.checks.authenticated = true;
     if (input.cell.host !== 'custom-elements') receipt.ui.secret_navigation_visible = await visible(page.getByRole('link', { name: 'Secrets', exact: true }));
     // Candidate Properties is the initial tab; contexts may fail during editor entry itself.
-    if (input.scenario === 'deny-workflow-contexts') receipt.checks.native_action = true;
+    if (input.scenario === 'deny-workflow-contexts') beginAction();
     const id = await adapter.createWorkflow(input.definition_name + '-' + input.scenario);
     if (typeof id !== 'string' || !/^[0-9a-f]{1,64}$/.test(id)) throw new Error('invalid_optional_feature_workflow');
     receipt.hashes.probe_definition_id_sha256 = hash(id);
     receipt.checks.native_workflow_created = true;
     if (input.scenario === 'deny-workflow-contexts') {
-      await expect.poll(async () => page.isClosed() || receipt.ui.page_error_count > 0 || circuitClosed || await visible(guidance) || await visible(error)).toBe(true);
+      await expect.poll(async () => page.isClosed() || receipt.ui.page_error_count > 0 || circuit.closed() === true || await visible(guidance) || await visible(error)).toBe(true);
       if (!page.isClosed()) {
         receipt.ui.context_heading_visible = await visible(page.getByText('Workflow Context', { exact: true }));
         receipt.ui.synthetic_checkbox_visible = await visible(page.getByRole('checkbox', { name: 'Synthetic', exact: true }));
@@ -192,7 +223,7 @@ export async function runOptionalFeatureProbe(page: Page, input: ProbeInput, ada
         await adapter.disconnect();
         receipt.disconnect.parent_acknowledged = true;
       }
-      receipt.checks.native_action = true;
+      beginAction();
       if (secretPresent) {
         if (receipt.disconnect) receipt.disconnect.native_action_after_ack = true;
         await secret.click();
@@ -217,7 +248,7 @@ export async function runOptionalFeatureProbe(page: Page, input: ProbeInput, ada
     // An adapter may observe an editor failure before returning its definition ID.
     // Retain the native denial outcome; it is assessed as a defect, never silently passed.
     if (input.scenario === 'deny-workflow-contexts' && receipt.checks.authenticated && receipt.checks.native_action &&
-        (receipt.ui.error_visible || receipt.ui.page_closed || receipt.ui.page_error_count > 0 || circuitClosed)) {
+        (receipt.ui.error_visible || receipt.ui.page_closed || receipt.ui.page_error_count > 0 || circuit.closed() === true)) {
       if (!page.isClosed()) {
         receipt.ui.context_heading_visible = await visible(page.getByText('Workflow Context', { exact: true })).catch(() => null);
         receipt.ui.synthetic_checkbox_visible = await visible(page.getByRole('checkbox', { name: 'Synthetic', exact: true })).catch(() => null);
@@ -233,7 +264,7 @@ export async function runOptionalFeatureProbe(page: Page, input: ProbeInput, ada
     if (!drained || overflow) { receipt.failure_category = 'probe_execution_failed'; receipt.checks.observation_completed = false; }
     active = false;
     page.off('pageerror', errors); page.off('close', closed); page.off('websocket', websocket);
-    for (const socket of sockets) socket.off('close', socketClosed);
+    for (const [socket, socketClosed] of sockets) socket.off('close', socketClosed);
   }
   return receipt;
 }
