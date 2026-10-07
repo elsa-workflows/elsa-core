@@ -320,13 +320,14 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
 
     private static FilterDefinition<WorkflowDefinition> CreateExactSnapshotFilter(BsonDocument snapshot)
     {
-        var expression = new BsonDocument("$expr", new BsonDocument("$eq", new BsonArray
+        var filter = new BsonDocument("_id", snapshot["_id"]);
+        filter.Add("$expr", new BsonDocument("$eq", new BsonArray
         {
             "$$ROOT",
             new BsonDocument("$literal", snapshot)
         }));
 
-        return new BsonDocumentFilterDefinition<WorkflowDefinition>(expression);
+        return new BsonDocumentFilterDefinition<WorkflowDefinition>(filter);
     }
 
     private static bool IsKnownAbortedConflict(MongoException exception) =>

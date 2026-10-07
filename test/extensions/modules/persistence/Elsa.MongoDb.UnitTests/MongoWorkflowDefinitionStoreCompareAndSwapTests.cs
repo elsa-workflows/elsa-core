@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.Json;
 using Elsa.Common.Models;
@@ -11,6 +12,7 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Clusters;
 using MongoDB.Driver.Core.Connections;
+using MongoDB.Driver.Core.Events;
 using MongoDB.Driver.Core.Servers;
 using Testcontainers.MongoDb;
 
@@ -51,6 +53,7 @@ public sealed class MongoReplicaSetFixture : IAsyncLifetime
 public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposable
 {
     private readonly TestTenantAccessor _tenantAccessor = new();
+    private readonly ConcurrentQueue<BsonDocument> _updateCommands = new();
     private readonly MongoClient _client;
     private readonly IMongoCollection<WorkflowDefinition> _collection;
     private readonly MongoWorkflowDefinitionStore _store;
@@ -59,6 +62,13 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
     {
         var settings = MongoClientSettings.FromConnectionString(fixture.ConnectionString);
         settings.ReadPreference = ReadPreference.Nearest;
+        settings.ClusterConfigurator = cluster => cluster.Subscribe<CommandStartedEvent>(command =>
+        {
+            if (command.CommandName == "update")
+            {
+                _updateCommands.Enqueue(command.Command.DeepClone().AsBsonDocument);
+            }
+        });
         _client = new MongoClient(settings);
         var database = _client.GetDatabase($"elsa-cas-{Guid.NewGuid():N}");
         _collection = database.GetCollection<WorkflowDefinition>("workflow_definitions");
@@ -160,6 +170,8 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
     {
         using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
         await _collection.InsertOneAsync(Definition("latest", tenantId: "tenant-a"));
+        var snapshot = await _collection.Database.GetCollection<BsonDocument>("workflow_definitions")
+            .Find(x => x["_id"] == "latest").SingleAsync();
         var matchCalls = 0;
         var updateCalls = 0;
 
@@ -180,6 +192,7 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
         Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, result.Outcome);
         Assert.Equal(1, matchCalls);
         Assert.Equal(1, updateCalls);
+        AssertAtomicWriteFilter(snapshot);
         var stored = await _collection.Find(x => x.Id == "latest").SingleAsync();
         Assert.Equal("updated", stored.StringData);
         Assert.Equal("tenant-a", stored.TenantId);
@@ -414,11 +427,16 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
         await _collection.InsertOneAsync(published);
         var rawCollection = _collection.Database.GetCollection<BsonDocument>("workflow_definitions");
         var originalPublishedDocument = await rawCollection.Find(x => x["_id"] == "published").SingleAsync();
+        var matchCalls = 0;
         var updateCalls = 0;
 
         var result = await _store.TryUpdateLatestAsync(
             LatestFilter("definition"),
-            _ => true,
+            _ =>
+            {
+                matchCalls++;
+                return true;
+            },
             current =>
             {
                 updateCalls++;
@@ -433,7 +451,9 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
             });
 
         Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, result.Outcome);
+        Assert.Equal(1, matchCalls);
         Assert.Equal(1, updateCalls);
+        AssertAtomicWriteFilter(originalPublishedDocument);
         var storedPublished = await _collection.Find(x => x.Id == "published").SingleAsync();
         var storedPublishedDocument = await rawCollection.Find(x => x["_id"] == "published").SingleAsync();
         var expectedPublishedDocument = originalPublishedDocument.DeepClone().AsBsonDocument;
@@ -565,6 +585,24 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
         Assert.Equal("definition", stored.DefinitionId);
         Assert.Equal("initial graph", stored.StringData);
         Assert.Equal("tenant-a", stored.TenantId);
+    }
+
+    private void AssertAtomicWriteFilter(BsonDocument snapshot)
+    {
+        var command = Assert.Single(_updateCommands);
+        var update = Assert.Single(command["updates"].AsBsonArray).AsBsonDocument;
+        var expectedFilter = new BsonDocument
+        {
+            ["_id"] = snapshot["_id"],
+            ["$expr"] = new BsonDocument("$eq", new BsonArray
+            {
+                "$$ROOT",
+                new BsonDocument("$literal", snapshot)
+            })
+        };
+
+        Assert.Equal(expectedFilter, update["q"].AsBsonDocument);
+        Assert.Equal(new BsonDocument("locale", "simple"), update["collation"].AsBsonDocument);
     }
 
     private static WorkflowDefinitionFilter LatestFilter(string definitionId) => new()
