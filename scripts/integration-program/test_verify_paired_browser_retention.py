@@ -12,6 +12,7 @@ from test_paired_package_react_phase import phase_fixture
 from test_paired_package_browser_matrix import attach_embedding, attach_native_interop, bpmn_proof, clipboard_proof, reopen_row
 from test_paired_package_released_documents import fixture_identity, write_released_fixture
 from test_paired_package_workflow_contexts import contexts_proof
+from test_paired_package_browser_secrets_endpoint import assembly_inventory, valid_observations
 
 
 class BrowserRetentionTests(unittest.TestCase):
@@ -58,6 +59,8 @@ class BrowserRetentionTests(unittest.TestCase):
         for assertion in combined["assertions"]:
             assertion.update(passed=True, reason_category=None)
         evidence = dict(zip(("version", "framework", "host"), key), result="passed" if passed else "failed",
+                        secrets_endpoint_ownership={"schema": 1, "truncated": False, "observations": valid_observations()},
+                        loaded_assemblies={"backend": {"package_assemblies": assembly_inventory()}},
                         route_prefix=prefix,
                         stage="complete" if passed else "browser_contract", owned_process_cleanup=True,
                         resource_inventory={"assets": assets}, react_phase=summary, react_runtime_continuity=True,
@@ -76,6 +79,8 @@ class BrowserRetentionTests(unittest.TestCase):
         self.assertEqual(phase["resources"], combined["resources"])
         self.assertNotIn("reactflow", original["proof"])
         mutations = [
+            (name + "/execution.json", dict(evidence, secrets_endpoint_ownership=None)),
+            (name + "/execution.json", dict(evidence, loaded_assemblies={})),
             (name + "/execution.json", dict(evidence, owned_process_cleanup=False)),
             (name + "/execution.json", dict(evidence, react_phase={})),
             (name + "/execution.json", dict(evidence, browser_resources={})),

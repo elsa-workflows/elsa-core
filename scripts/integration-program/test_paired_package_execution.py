@@ -15,6 +15,24 @@ from test_paired_package_released_documents import fixture_identity, write_relea
 from test_paired_package_browser_matrix import attach_embedding, attach_native_interop, attach_react_phase, bpmn_proof, clipboard_proof, direct_backend_proof, reopen_row
 from test_paired_package_wasm_boot import boot_receipt_fixture
 from test_paired_package_workflow_contexts import contexts_proof
+from test_paired_package_browser_secrets_endpoint import assembly_inventory, valid_observations
+
+
+class SecretsOwnershipTransportContracts(unittest.TestCase):
+    def test_metadata_snapshot_is_authenticated_and_bound_to_verified_package_assemblies(self):
+        handle = SimpleNamespace(backend_url="http://127.0.0.1:4567/elsa/api", username="private-user", password="PRIVATE-PASSWORD")
+        snapshot = {"schema": 1, "truncated": False, "observations": valid_observations()}
+        verified = {"backend": {"package_assemblies": assembly_inventory()}}
+        with patch.object(execution, "_json_request", side_effect=[
+                {"isAuthenticated": True, "accessToken": "PRIVATE-TOKEN"}, snapshot]) as request:
+            self.assertEqual(snapshot, execution._observe_secrets_ownership(handle, verified))
+        self.assertEqual("http://127.0.0.1:4567/_fixture/secrets-endpoints", request.call_args.args[0])
+        self.assertEqual({"token": "PRIVATE-TOKEN"}, request.call_args.kwargs)
+        self.assertNotIn("PRIVATE", json.dumps(snapshot))
+        verified["backend"]["package_assemblies"][0]["sha256"] = "b" * 64
+        with patch.object(execution, "_metadata_token", return_value="PRIVATE-TOKEN"), \
+                patch.object(execution, "_json_request", return_value=snapshot), self.assertRaises(ValueError):
+            execution._observe_secrets_ownership(handle, verified)
 
 
 class ExecutionSdkContracts(unittest.TestCase):
@@ -375,6 +393,8 @@ class ExecutionContracts(unittest.TestCase):
         self.react_browser = self.patch(execution.react_phase, "run_react_phase", side_effect=run_react)
         self.patch(execution, "_observe_loaded", side_effect=lambda *_: self.events.append(("observe",)) or {})
         self.patch(execution, "_verify_loaded", side_effect=lambda *_: self.events.append(("loaded",)) or {})
+        self.ownership = self.patch(execution, "_observe_secrets_ownership", return_value={
+            "schema": 1, "truncated": False, "observations": valid_observations()})
         self.patch(execution.resources, "verify_browser_resources", side_effect=lambda *_args, **_kw: self.events.append(("resource_check",)) or {})
         return browser
 
@@ -702,6 +722,17 @@ class ExecutionContracts(unittest.TestCase):
         self.assertEqual("stop", self.events[-1][0])
         self.assertEqual("loaded_assemblies", self.receipt()["stage"])
         self.assertTrue(self.receipt()["owned_process_cleanup"])
+        self.assertNotIn("PRIVATE", json.dumps(self.receipt()))
+
+    def test_native_secrets_claim_requires_verified_endpoint_ownership_before_react(self):
+        self.pipeline()
+        self.ownership.side_effect = ValueError("PRIVATE-UNBOUND-HANDLER")
+        with self.assertRaises(ValueError):
+            self.execute()
+        self.assertEqual("secrets_endpoint_ownership", self.receipt()["stage"])
+        self.assertEqual("failed", self.receipt()["result"])
+        self.react_browser.assert_not_called()
+        self.assertEqual("stop", self.events[-1][0])
         self.assertNotIn("PRIVATE", json.dumps(self.receipt()))
 
     def test_unverified_browser_cleanup_is_not_overwritten_by_successful_host_cleanup(self):

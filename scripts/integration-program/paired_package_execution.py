@@ -25,6 +25,7 @@ import paired_package_converter_selection as converter_selection
 import paired_package_provenance as provenance
 import paired_package_released_documents as documents
 import paired_package_react_phase as react_phase
+import paired_package_secrets_endpoints as secrets_endpoints
 import paired_package_wasm_resources as wasm_resources
 import prove_consolidated_package_consumers as packages
 import run_paired_package_browser_matrix as browser
@@ -118,15 +119,20 @@ def _observe_ready(handle, request: hosts.CellRequest) -> dict:
     return verify_runtime_readiness(_json_request(origin + "/_fixture/ready"), request)
 
 
-def _observe_loaded(handle, layout) -> dict[str, list[dict]]:
+def _metadata_token(handle) -> str:
     # This private API login supplies only metadata transport; the browser must
     # independently demonstrate the normal Studio sign-in journey.
     login = _json_request(handle.backend_url + "/identity/login",
                           data={"username": handle.username, "password": handle.password})
     require(login.get("isAuthenticated") is True and isinstance(login.get("accessToken"), str),
             "Runtime metadata authentication failed")
+    return login["accessToken"]
+
+
+def _observe_loaded(handle, layout) -> dict[str, list[dict]]:
+    token = _metadata_token(handle)
     origin = handle.backend_url.removesuffix("/elsa/api")
-    result = {"backend": _json_request(origin + "/_fixture/assemblies", token=login["accessToken"])}
+    result = {"backend": _json_request(origin + "/_fixture/assemblies", token=token)}
     if layout.request.host == "server":
         result["server"] = _json_request(handle.studio_url.rstrip("/") + "/_fixture/assemblies")
     for rows in result.values():
@@ -136,6 +142,14 @@ def _observe_loaded(handle, layout) -> dict[str, list[dict]]:
                 "name", "fullName", "version", "informationalVersion", "location", "sha256"},
                 "Invalid runtime metadata fields")
     return result
+
+
+def _observe_secrets_ownership(handle, verified_assemblies: dict) -> dict:
+    origin = handle.backend_url.removesuffix("/elsa/api")
+    observation = _json_request(origin + "/_fixture/secrets-endpoints", token=_metadata_token(handle))
+    secrets_endpoints.validate_secrets_endpoint_evidence(
+        observation, verified_assemblies["backend"]["package_assemblies"])
+    return observation
 
 
 def _verify_loaded(layout, observations: dict, verified_root: Path, manifest: dict) -> dict:
@@ -396,6 +410,10 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
                     original_browser = browser.validate_browser_receipt(child, key)
                     evidence["stage"] = "loaded_assemblies"
                     evidence["loaded_assemblies"] = _verify_loaded(layout, _observe_loaded(handle, layout), verified_root, manifest)
+                    if version == candidate.PRODUCER["version"] and any(
+                            item["name"] == "secrets" and item["passed"] is True for item in original_browser["assertions"]):
+                        evidence["stage"] = "secrets_endpoint_ownership"
+                        evidence["secrets_endpoint_ownership"] = _observe_secrets_ownership(handle, evidence["loaded_assemblies"])
                     if owner:
                         evidence["stage"] = "react_source_binding"
                         # Fail before launching a second Studio if X6 did not
