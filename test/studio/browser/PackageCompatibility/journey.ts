@@ -1244,9 +1244,12 @@ async function hostedDeliveryPhase(input: PrivateInput): Promise<void> {
         navigation = true;
       } catch { /* Preserve native document/resource evidence and attempt the second delivery. */ }
       finally {
-        page?.off('pageerror', failed);
-        try { if (raw) { await raw.stop(); stopped = true; } } catch { cleanupFailed = true; }
-        observer?.finishObservations(stopped);
+        try { if (raw) { await raw.stop(); stopped = true; } }
+        catch { cleanupFailed = true; }
+        finally {
+          page?.off('pageerror', failed);
+          observer?.finishObservations(stopped);
+        }
         try { if (context) { await context.close(); contextClosed = true; } } catch { cleanupFailed = true; }
         if (!contextClosed) cleanupFailed = true;
         if (observer) deliveries[index] = observer.proof(document, interactive, navigation, stopped && contextClosed);
