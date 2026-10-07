@@ -73,6 +73,14 @@ it does not relax the source-edge or package provenance checks. See the .NET
 and [build](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-build)
 option documentation.
 
+Inherited client assets in the wrapper's static manifest have separate fixture
+authority: approved project/input bytes, matching client manifest metadata and
+exact completed-build hashes. The client's generated scoped CSS bundle is pinned
+when the standalone client first builds, including explicit absence when the SDK
+has no scoped CSS inputs. Hosted reuse and later phases require the same state;
+they cannot force a second converter capture over existing WebCIL output. This
+fixture authority does not replace any mandatory package asset or managed-byte proof.
+
 ## Reading evidence
 
 `retained-evidence/matrix.json` always accounts for all 36 identities. Overall
@@ -157,6 +165,9 @@ action. Credentials remain on stdin, and socket messages are never retained as
 portable proof. The Node loader runs in the process that inherits the descriptor.
 Socket, parser and transport contracts do not establish feature acceptance; the
 parent must bind the resulting native observations and verify final cleanup.
+Browser-native traffic records action and disconnect boundaries when each matching
+request starts. A delayed response or failure retains those original flags; its
+completion time cannot turn pre-action traffic into proof of a later native action.
 
 Each of the twelve candidate cells must complete all five separate profiles:
 without Secrets, without WorkflowContexts, denied Secrets, denied WorkflowContexts,
@@ -262,7 +273,7 @@ remains `ba5b348aa2414fdf7c19d9d8806e87b7c91a4205` throughout these checks.
 | Settings, Security, Localization and Translations | These Studio surfaces are registered. No independent Core module pairing is asserted merely from their names. Resource-byte verification, including localization assets, establishes delivery integrity rather than every UI behavior. |
 
 Composition sources are [common Server registration](hosts/common/server/Program.cs)
-and the [owned backend](Backend/Program.cs). The [program inventory](../../../doc/integration-program/inventory/README.md)
+and the [owned backend](backend/Program.cs). The [program inventory](../../../doc/integration-program/inventory/README.md)
 defines pairing by API, protocol or package-graph dependence. The accepted package
 consumer work in [#8635](https://github.com/elsa-workflows/elsa-core/issues/8635)
 and bounded SQLite/default-tenant upgrade work in

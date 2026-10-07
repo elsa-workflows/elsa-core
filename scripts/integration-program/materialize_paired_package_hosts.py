@@ -281,16 +281,16 @@ def isolated_environment(layout: CellLayout) -> dict[str, str]:
     return env
 
 
-def _generated_static_assets(layout: CellLayout, host: str, project: Path, *, required: bool = True) -> dict | None:
-    """Pin the one Hosted client bundle which is generated outside bin output."""
-    if layout.request.host != "hosted-wasm" or host != "wasm":
+def _generated_static_assets(layout: CellLayout, host: str, project: Path) -> dict:
+    """Pin the shared WASM client's generated bundle, or its verified absence."""
+    if host != "wasm":
         return {}
     path = project.parent / "obj/Release" / layout.request.framework / "scopedcss/bundle/Elsa.Studio.Host.Wasm.styles.css"
     require(not any(part.is_symlink() for part in (path, *path.parents)), "Symlinked generated fixture asset")
-    if not path.is_file() and not required:
-        return None
-    require(path.is_file(), "Missing generated fixture asset after build")
-    return {path.relative_to(project.parent).as_posix(): sha256(path)}
+    require(not path.exists() or path.is_file(), "Generated fixture asset is not a regular file")
+    # The SDK emits this bundle only when it has scoped CSS inputs. Record the
+    # same authority during standalone build so Hosted can reuse its converter proof.
+    return {path.relative_to(project.parent).as_posix(): sha256(path)} if path.is_file() else {}
 
 
 def build(layout: CellLayout, *, converter_decoder: Path | None = None,
@@ -317,8 +317,8 @@ def build(layout: CellLayout, *, converter_decoder: Path | None = None,
         if stamp.is_file() and not stamp.is_symlink():
             previous = json.loads(stamp.read_text())
             actual_output = {str(path.relative_to(output)): sha256(path) for path in output.rglob("*") if path.is_file()}
-            generated = _generated_static_assets(layout, host, project, required=False)
-            generated_verified = generated is not None and (not generated or previous.get("generated_static_assets") == generated)
+            generated = _generated_static_assets(layout, host, project)
+            generated_verified = host != "wasm" or previous.get("generated_static_assets") == generated
             if previous.get("inputs") == input_hashes and assets_path.is_file() and previous.get("assets") == sha256(assets_path) and actual_output and previous.get("outputs") == actual_output and generated_verified:
                 record = {"stage": "reuse_verified_build", "project": host, "project_assets_sha256": sha256(assets_path)}
                 if host in clients:
@@ -550,7 +550,7 @@ def _build_identity(layout: CellLayout) -> dict:
         generated = _generated_static_assets(layout, host, project)
         require(outputs and previous.get("inputs") == inputs and previous.get("assets") == sha256(assets)
                 and previous.get("outputs") == outputs and
-                (not generated or previous.get("generated_static_assets") == generated), "Phase build identity differs from verified build")
+                (host != "wasm" or previous.get("generated_static_assets") == generated), "Phase build identity differs from verified build")
         identity[host] = {"stamp": sha256(stamp), "assets": sha256(assets), "outputs": outputs,
                           "generated_static_assets": generated}
     return identity

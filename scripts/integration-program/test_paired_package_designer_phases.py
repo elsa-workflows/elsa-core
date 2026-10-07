@@ -288,18 +288,27 @@ class DesignerPhasesTests(unittest.TestCase):
                         pass
                 self.assert_clean()
 
-    def test_changed_hosted_bundle_or_bundle_and_stamp_blocks_second_phase(self):
-        for rewrite_stamp in (False, True):
-            with self.subTest(rewrite_stamp=rewrite_stamp):
+    def test_hosted_bundle_change_addition_or_removal_blocks_second_phase(self):
+        for mutation, rewrite_stamp in ((change, rewrite) for change in ("changed", "added", "removed")
+                                        for rewrite in (False, True)):
+            with self.subTest(mutation=mutation, rewrite_stamp=rewrite_stamp):
                 layout = self.layout("hosted-wasm")
                 project = layout.project_paths["wasm"]
                 bundle = project.parent / "obj/Release/net10.0/scopedcss/bundle/Elsa.Studio.Host.Wasm.styles.css"
+                stamp = project.parent / "build-reuse.json"
+                if mutation == "added":
+                    bundle.unlink()
+                    data = json.loads(stamp.read_text())
+                    data["generated_static_assets"] = {}
+                    stamp.write_text(json.dumps(data))
                 with hosts.start_designer_phases(layout, validate_project=self.validate) as owner:
                     with owner.phase("x6"):
                         pass
-                    bundle.write_bytes(b"changed-generated-bundle")
+                    if mutation == "removed":
+                        bundle.unlink()
+                    else:
+                        bundle.write_bytes(b"changed-generated-bundle")
                     if rewrite_stamp:
-                        stamp = project.parent / "build-reuse.json"
                         data = json.loads(stamp.read_text())
                         data["generated_static_assets"] = hosts._generated_static_assets(layout, "wasm", project)
                         stamp.write_text(json.dumps(data))

@@ -383,7 +383,7 @@ class HostMaterializationTests(unittest.TestCase):
                 # Restoring the placeholder makes shared input/build hashes stable.
                 self.assertEqual(layout.input_hashes[str(config.relative_to(layout.group_root))], hosts.sha256(config))
 
-    def fake_build_runner(self, layout, called):
+    def fake_build_runner(self, layout, called, *, generated_bundle=True):
         def run(command, cwd, environment, log, timeout):
             called.append(command)
             log.parent.mkdir(parents=True, exist_ok=True)
@@ -400,12 +400,43 @@ class HostMaterializationTests(unittest.TestCase):
             output = cwd / "bin" / "Release" / layout.request.framework
             output.mkdir(parents=True, exist_ok=True)
             (output / "fixture.dll").write_bytes(b"reviewed-output")
-            if command[1] == "build" and cwd.name == "wasm" and layout.request.host == "hosted-wasm":
+            if command[1] == "build" and cwd.name == "wasm" and generated_bundle:
                 bundle = cwd / "obj/Release" / layout.request.framework / "scopedcss/bundle/Elsa.Studio.Host.Wasm.styles.css"
                 bundle.parent.mkdir(parents=True, exist_ok=True)
                 bundle.write_bytes(b"reviewed-generated-bundle")
             return {"command": command, "exit_code": 0}
         return run
+
+    def test_standalone_client_reuses_its_original_converter_build_in_hosted_wrapper(self):
+        import paired_package_converter_selection as converters
+        for version in hosts.VERSIONS:
+            for generated_bundle in (False, True):
+                with self.subTest(version=version, generated_bundle=generated_bundle):
+                    self.root = Path(self.temporary.name) / version / str(generated_bundle)
+                    standalone = self.materialize("wasm", version, "net8.0")
+                    called = []
+                    run = self.fake_build_runner(standalone, called, generated_bundle=generated_bundle)
+                    def capture(layout, project, command, env, log, _decoder, **_options):
+                        webcil = project.parent / "obj/Release" / layout.request.framework / "webcil"
+                        self.assertFalse(webcil.exists(), "Existing converter output cannot be rebuilt as a fresh capture")
+                        result = run(command, project.parent, env, log, 1200)
+                        webcil.mkdir(parents=True)
+                        return result
+                    with patch.object(hosts, "isolated_environment", return_value={}), \
+                            patch.object(hosts.packages, "_run_command", side_effect=run), \
+                            patch.object(converters, "capture_build", side_effect=capture) as captured, \
+                            patch.object(converters, "verify_reused_selection", return_value={}) as reused:
+                        hosts.build(standalone, converter_decoder=self.root / "synthetic-decoder")
+                        hosted = self.materialize("hosted-wasm", version, "net8.0")
+                        called.clear()
+                        records = hosts.build(hosted, converter_decoder=self.root / "synthetic-decoder")
+                    self.assertEqual(1, captured.call_count)
+                    self.assertEqual(1, reused.call_count)
+                    self.assertEqual({"backend", "wasm"}, {record["project"] for record in records
+                        if record.get("stage") == "reuse_verified_build"})
+                    self.assertTrue(all(command[2] == hosted.project_paths["hosted-wasm"].name
+                        for command in called if len(command) > 2))
+                    self.assertEqual(set(hosted.project_paths), set(hosts._build_identity(hosted)))
 
     def test_build_reuse_rejects_modified_asset_or_output_hash(self):
         layout = self.materialize()
