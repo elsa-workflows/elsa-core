@@ -50,6 +50,11 @@ jobs:
           python doc/integration-program/verify-hierarchy.py
           python -m unittest discover -s scripts/integration-program -p 'test_*.py'
           python -O -m unittest discover -s scripts/integration-program -p 'test_*.py'
+      - name: Preserve maintenance package verification and recovery contracts
+        working-directory: .agents/skills/elsa-release/tests
+        run: |
+          python -m unittest test_verify_packages test_release_train
+          python -O -m unittest test_verify_packages test_release_train
       - name: Verify activity contract comparison guards
         run: |
           python -m unittest discover -s scripts/integration-program/activity-compatibility -p 'test_*.py'

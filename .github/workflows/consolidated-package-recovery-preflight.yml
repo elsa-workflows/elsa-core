@@ -1,0 +1,108 @@
+name: Consolidated package recovery preflight
+
+on:
+  push:
+    branches: ['codex/consolidated-recovery-preflight']
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  retrieve:
+    permissions:
+      actions: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      input-artifact-id: ${{ steps.transfer.outputs.artifact-id }}
+    steps:
+      # Repository-write push/manual authority is the trust boundary. This job
+      # never checks out or executes repository code with the artifact token.
+      - name: Retrieve original verified unpublished artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/recovery-input"
+          gh api repos/elsa-workflows/elsa-core/actions/artifacts/11412848210 > "$RUNNER_TEMP/recovery-input/artifact.json"
+          gh api repos/elsa-workflows/elsa-core/actions/runs/37456860080/attempts/1 > "$RUNNER_TEMP/recovery-input/producer-run.json"
+          jq -e '.id == 37456860080 and .run_attempt == 1 and
+            .head_sha == "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205" and .conclusion == "success" and
+            (.event == "push" or .event == "workflow_dispatch") and
+            .path == ".github/workflows/prepare-consolidated-release-candidate.yml"' "$RUNNER_TEMP/recovery-input/producer-run.json" > /dev/null
+          jq -e '.id == 11412848210 and
+            .name == "consolidated-candidate-ba5b348aa2414fdf7c19d9d8806e87b7c91a4205-37456860080-1" and
+            .expired == false and .expires_at == "2026-11-05T12:13:30Z" and
+            .digest == "sha256:ace85260c3389916fe3dcd7ee9cd5b766e4030dd6cee13c7f89285ada79c944f" and
+            .size_in_bytes == 92659861 and .workflow_run.id == 37456860080 and
+            .workflow_run.head_sha == "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205"' "$RUNNER_TEMP/recovery-input/artifact.json" > /dev/null
+          test "$(date -u -d '2026-11-05T12:13:30Z' +%s)" -gt "$(date -u +%s)"
+          gh api repos/elsa-workflows/elsa-core/actions/artifacts/11412848210/zip > "$RUNNER_TEMP/recovery-input/candidate.zip"
+          test "$(stat -c %s "$RUNNER_TEMP/recovery-input/candidate.zip")" -eq 92659861
+          printf '%s  %s\n' \
+            'ace85260c3389916fe3dcd7ee9cd5b766e4030dd6cee13c7f89285ada79c944f' \
+            "$RUNNER_TEMP/recovery-input/candidate.zip" | sha256sum --check --status
+          jq -nc --arg observed "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{schema:1,artifact_id:11412848210,archive_sha256:"ace85260c3389916fe3dcd7ee9cd5b766e4030dd6cee13c7f89285ada79c944f",retrieved_at:$observed}' \
+            > "$RUNNER_TEMP/recovery-input/live-retrieval.json"
+      - name: Transfer only the verified original inputs
+        id: transfer
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: consolidated-recovery-input-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/recovery-input/candidate.zip
+            ${{ runner.temp }}/recovery-input/producer-run.json
+            ${{ runner.temp }}/recovery-input/live-retrieval.json
+            ${{ runner.temp }}/recovery-input/artifact.json
+          if-no-files-found: error
+          retention-days: 1
+
+  proof:
+    needs: retrieve
+    permissions:
+      contents: read
+      actions: none
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          artifact-ids: ${{ needs.retrieve.outputs.input-artifact-id }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/recovery-input
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Verify cheap recovery contracts in both Python modes
+        working-directory: scripts/integration-program
+        run: |
+          python -m unittest test_consolidated_recovery_inputs test_consolidated_package_recovery test_stable_persisted_workflow_upgrade_fixture
+          python -O -m unittest test_consolidated_recovery_inputs test_consolidated_package_recovery test_stable_persisted_workflow_upgrade_fixture
+      - name: Preserve maintenance verification and recovery policy
+        working-directory: .agents/skills/elsa-release/tests
+        run: |
+          python -m unittest test_verify_packages test_release_train
+          python -O -m unittest test_verify_packages test_release_train
+      - name: Rehearse all 225 original package pairs with a simulated feed
+        run: >-
+          python scripts/integration-program/run_consolidated_recovery_fixture.py
+          --inputs "$RUNNER_TEMP/recovery-input"
+          --verified-root "$RUNNER_TEMP/recovery-candidate"
+          --output "$RUNNER_TEMP/recovery-evidence/simulation.json"
+          --planner-source "${{ github.sha }}"
+          --planner-run "${{ github.run_id }}"
+          --planner-attempt "${{ github.run_attempt }}"
+      - name: Retain the portable simulation ledger
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: consolidated-recovery-preflight-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/recovery-evidence/simulation.json
+          if-no-files-found: warn
+          retention-days: 30
