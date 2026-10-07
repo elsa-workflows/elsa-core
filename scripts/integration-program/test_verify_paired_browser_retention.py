@@ -11,6 +11,7 @@ from verify_browser_package_resources import verify_browser_resources
 from test_paired_package_react_phase import phase_fixture
 from test_paired_package_browser_matrix import attach_embedding, attach_native_interop, bpmn_proof, clipboard_proof, reopen_row
 from test_paired_package_released_documents import fixture_identity, write_released_fixture
+from test_paired_package_workflow_contexts import contexts_proof
 
 
 class BrowserRetentionTests(unittest.TestCase):
@@ -38,6 +39,7 @@ class BrowserRetentionTests(unittest.TestCase):
         for assertion in original["assertions"]:
             assertion.update(passed=assertion["name"] != "reactflow_edit_save", reason_category=None)
         original["proof"].update(instance_id_sha256="a" * 64,
+            workflow_contexts=contexts_proof(),
             baseline_reopens=[reopen_row(version, request.framework, request.host) for version in documents.TOOL_VERSIONS],
             bpmn_roundtrip=bpmn_proof(), clipboard=clipboard_proof("a" * 64, original["proof"]["value_sha256"]))
         attach_native_interop(original)

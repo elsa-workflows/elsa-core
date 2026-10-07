@@ -18,6 +18,7 @@ from test_paired_package_released_documents import fixture_identity, write_relea
 import run_paired_package_browser_matrix as matrix
 from test_paired_package_wasm_boot import boot_receipt_fixture
 from test_paired_package_browser_native_interop import json_proof, dom_proof
+from test_paired_package_workflow_contexts import contexts_proof
 
 
 def reopen_row(version, framework="net10.0", host="server"):
@@ -150,6 +151,7 @@ class MatrixContracts(unittest.TestCase):
                                       bpmn_roundtrip=bpmn_proof(),
                                       clipboard=clipboard_proof(instance_hash, value_hash))
                 attach_native_interop(cell)
+                cell["proof"]["workflow_contexts"] = contexts_proof()
             attach_embedding(cell)
             if cell["version"] == "3.10.0":
                 attach_react_phase(cell)

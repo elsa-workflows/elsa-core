@@ -566,6 +566,94 @@ async function authenticateShell(page: Page, input: PrivateInput, proof: Record<
   await expect(page).not.toHaveURL(/\/login(?:$|[?#])/);
 }
 
+async function createNativeWorkflow(page: Page, name: string, onStage?: (stage: string) => void): Promise<string> {
+  await page.getByRole('button', { name: 'Create workflow', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  onStage?.('create_dialog_opened');
+  await dialog.getByLabel('Name', { exact: true }).fill(name);
+  await dialog.getByLabel('Name', { exact: true }).blur();
+  onStage?.('create_name_filled');
+  await dialog.getByRole('button', { name: 'Ok', exact: true }).click();
+  onStage?.('create_submitted');
+  const definitionId = await editedDefinition(page);
+  onStage?.('workflow_created');
+  return definitionId;
+}
+
+async function nativeWorkflowContexts(page: Page, input: PrivateInput, backend: Backend,
+  proof: Record<string, unknown>, passed: (name: string) => void): Promise<void> {
+  const propertyKey = 'Elsa:WorkflowContextProviderTypes';
+  const record: Record<string, any> = {
+    checks: {
+      backend_readonly_inventory: false, native_created: false, native_unchecked: false,
+      native_checked: false, saved: false, reloaded: false
+    }
+  };
+  proof.workflow_contexts = record;
+  // This is a read-only backend inventory, not observation of a browser request.
+  // Server-rendered Studio obtains its descriptors on the server circuit.
+  const inventory = await backend.get('/workflow-contexts/provider-descriptors');
+  const descriptors = inventory.items;
+  const inventoryJson = JSON.stringify(inventory);
+  if (!Array.isArray(descriptors) || descriptors.length < 1 || descriptors.length > 100 ||
+      inventory.count !== descriptors.length || Buffer.byteLength(inventoryJson) > 1024 * 1024 ||
+      descriptors.some(item => typeof item?.name !== 'string' || typeof item?.type !== 'string' ||
+        item.name.length < 1 || item.name.length > 256 || item.type.length < 1 || item.type.length > 4096))
+    throw new Error('workflow_context_inventory_invalid');
+  const matches = descriptors.filter(item => item.name === 'Synthetic');
+  if (matches.length !== 1) throw new Error('workflow_context_descriptor_unbound');
+  const descriptor = matches[0];
+  Object.assign(record, {
+    backend_readonly_inventory_sha256: hash(inventoryJson), descriptor_count: descriptors.length,
+    descriptor_name_sha256: hash(descriptor.name), descriptor_type_sha256: hash(descriptor.type),
+    custom_property_key_sha256: hash(propertyKey)
+  });
+  record.checks.backend_readonly_inventory = true;
+
+  // A separate native-created probe leaves the canonical JSON/React graph untouched.
+  const name = (input.safe_ids.definition_name ?? 'package-browser-workflow') + '-contexts';
+  const definitionId = await createNativeWorkflow(page, name);
+  record.probe_definition_id_sha256 = hash(definitionId);
+  record.checks.native_created = true;
+  const getDefinition = () => backend.get('/workflow-definitions/by-definition-id/' + encodeURIComponent(definitionId) + '?versionOptions=Latest');
+  await expect(page.locator('.flowchart-diagram-designer-wrapper .x6-graph-svg')).toBeVisible();
+  await expect(page.getByLabel('Name', { exact: true })).toHaveValue(name);
+  await page.getByRole('tab', { name: 'Properties', exact: true }).click();
+  const checkbox = page.getByRole('checkbox', { name: 'Synthetic', exact: true });
+  await expect(checkbox).toHaveCount(1);
+  await expect(checkbox).toBeVisible();
+  await expect(checkbox).not.toBeChecked();
+  record.checks.native_unchecked = true;
+  await checkbox.check();
+  await expect(checkbox).toBeChecked();
+  record.checks.native_checked = true;
+  await page.keyboard.press('ControlOrMeta+s');
+  const hasBoundProvider = (definition: any) => definition.definitionId === definitionId &&
+    isDeepStrictEqual(definition.customProperties?.[propertyKey], [descriptor.type]);
+  await expect.poll(async () => hasBoundProvider(await getDefinition())).toBe(true);
+  const saved = await getDefinition();
+  if (!hasBoundProvider(saved)) throw new Error('workflow_context_saved_binding_mismatch');
+  record.saved_definition_id_sha256 = hash(saved.definitionId);
+  record.saved_provider_type_sha256 = hash(saved.customProperties[propertyKey][0]);
+  record.checks.saved = true;
+  await reloadEditor(page);
+  await expect(page.getByLabel('Name', { exact: true })).toHaveValue(name);
+  await page.getByRole('tab', { name: 'Properties', exact: true }).click();
+  await expect(checkbox).toHaveCount(1);
+  await expect(checkbox).toBeVisible();
+  await expect(checkbox).toBeChecked();
+  const reloaded = await getDefinition();
+  if (!hasBoundProvider(reloaded)) throw new Error('workflow_context_reloaded_binding_mismatch');
+  record.reloaded_definition_id_sha256 = hash(reloaded.definitionId);
+  record.reloaded_provider_type_sha256 = hash(reloaded.customProperties[propertyKey][0]);
+  record.checks.reloaded = true;
+  proof.last_completed_stage = 'workflow_contexts_reloaded';
+  passed('workflow_contexts');
+  await definitionsList(page, input);
+  await expect(page.getByRole('button', { name: 'Create workflow', exact: true })).toBeVisible();
+}
+
 async function fullShell(page: Page, input: PrivateInput, backend: Backend, passed: (name: string) => void, proof: Record<string, unknown>): Promise<void> {
   const embedding = embeddings.get(page);
   if (embedding) await embedding.initialize();
@@ -575,20 +663,11 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   if (embedding) passed('authentication');
   proof.initial_list_navigation_completed = true;
   passed('shell_or_embedding');
+  if (input.request.version === '3.10.0') await nativeWorkflowContexts(page, input, backend, proof, passed);
   const name = input.safe_ids.definition_name ?? 'package-browser-workflow';
   const sentinel = input.safe_ids.activity_value ?? 'package-browser-output';
   proof.last_completed_stage = 'workflow_list';
-  await page.getByRole('button', { name: 'Create workflow', exact: true }).click();
-  let dialog = page.getByRole('dialog');
-  await expect(dialog).toBeVisible();
-  proof.last_completed_stage = 'create_dialog_opened';
-  await dialog.getByLabel('Name', { exact: true }).fill(name);
-  await dialog.getByLabel('Name', { exact: true }).blur();
-  proof.last_completed_stage = 'create_name_filled';
-  await dialog.getByRole('button', { name: 'Ok', exact: true }).click();
-  proof.last_completed_stage = 'create_submitted';
-  const definitionId = await editedDefinition(page);
-  proof.last_completed_stage = 'workflow_created';
+  const definitionId = await createNativeWorkflow(page, name, stage => { proof.last_completed_stage = stage; });
   const getDefinition = () => backend.get('/workflow-definitions/by-definition-id/' + encodeURIComponent(definitionId) + '?versionOptions=Latest');
   // The route changes before the asynchronous editor/designer initialization completes.
   // Require the actual X6 graph and this workflow's populated metadata before changing tabs.
@@ -599,7 +678,7 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   await page.getByRole('tab', { name: /Input.*Output/i }).click();
   proof.last_completed_stage = 'output_tab_opened';
   await page.getByRole('button', { name: 'Add output', exact: true }).click();
-  dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   proof.last_completed_stage = 'output_dialog_opened';
   // CodeBeam 9.1.0 renders a hidden input and toggles its visible MudInputControl.

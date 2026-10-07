@@ -375,11 +375,14 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     proof = record.get("proof", {})
     require(isinstance(proof, dict), "Invalid browser proof container")
     assertions_by_name = {item["name"]: item["passed"] for item in assertions}
+    from paired_package_workflow_contexts import validate_workflow_contexts
+    validate_workflow_contexts(proof.get("workflow_contexts"), assertions_by_name.get("workflow_contexts", False), proof, key)
     stages = {"backend_authenticated", "login_navigation", "login_form", "login_submitted", "workflow_list", "create_dialog_opened", "create_name_filled", "create_submitted", "workflow_created", "output_tab_opened", "output_dialog_opened", "output_type_selected", "output_declared", "activity_registry", "activity_inserted", "property_saved", "edit_reloaded", "workflow_published", "workflow_run", "released_export_menu_opened", "released_export_dialog_opened", "released_document_exported", "candidate_export_menu_opened", "candidate_export_dialog_opened", "candidate_json_exported", "candidate_import_menu_opened", "candidate_import_chooser_observed", "candidate_json_imported", "candidate_json_saved", "candidate_json_reloaded", "baseline_imported", "baseline_reloaded", "baseline_run", "bpmn_input_validated", "bpmn_imported", "bpmn_rendered", "bpmn_selected", "bpmn_exported", "bpmn_reimported", "clipboard_copied"}
     hashes = {"definition_id_sha256", "root_id_sha256", "activity_id_sha256", "value_sha256", "synthetic_document_sha256", "instance_id_sha256", "released_document_sha256"}
     flags = {"login_failure_visible", "login_form_visible", "server_circuit_observed", "server_render_frames_observed", "elsa_identity_ui_visible", "expected_auth_provider_observed", "interactive_validation_observed", "private_input_values_retained", "initial_list_navigation_completed", "editor_ready_observed"}
     counts = {"create_name_label_count", "create_name_textbox_count"}
-    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens", "bpmn_roundtrip", "clipboard", "direct_backend", "wasm_boot", "json_roundtrip", "dom_interop", "reactflow", "embedding"}, "Unsafe browser proof field")
+    stages.add("workflow_contexts_reloaded")
+    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens", "bpmn_roundtrip", "clipboard", "direct_backend", "wasm_boot", "json_roundtrip", "dom_interop", "reactflow", "embedding", "workflow_contexts"}, "Unsafe browser proof field")
     from paired_package_embedding import validate_embedding
     validate_embedding(proof.get("embedding"), assertions_by_name, proof, key)
     require("reactflow" not in proof or record["version"] == "3.10.0" and record["host"] in REACT_PHASE_HOSTS,
@@ -410,7 +413,7 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     require(not assertions_by_name.get("dom_interop", False) or "dom_interop" in proof,
             "Missing native DOM proof for passed assertion")
     for name, value in proof.items():
-        if name == "embedding":
+        if name in {"embedding", "workflow_contexts"}:
             continue  # Validated with its host assertions and parent identity above.
         if name == "reactflow":
             from paired_package_react_phase import validate_react_phase_summary
