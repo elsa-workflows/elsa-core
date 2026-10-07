@@ -34,6 +34,32 @@ class BrowserRetentionTests(unittest.TestCase):
         self.write("cells/3.10.0-net10.0-hosted-wasm/browser.json")
         self.assertEqual(len(verify_retained_inventory(self.root)), 3)
 
+    def test_failed_project_provenance_retains_only_bounded_diagnostic(self):
+        cell = "cells/3.8.4-net8.0-hosted-wasm/execution.json"
+        execution = {
+            "host": "hosted-wasm",
+            "stage": "project_provenance",
+            "result": "failed",
+            "failure_category": "execution_or_evidence_failed",
+            "project_provenance_failure": {
+                "project": "hosted-wasm",
+                "code": "fixture_reference_path_mismatch",
+            },
+        }
+        path = self.write(cell, execution)
+        self.assertIn(cell, verify_retained_inventory(self.root))
+
+        for diagnostic in (
+            {**execution["project_provenance_failure"], "message": "private path"},
+            {**execution["project_provenance_failure"], "code": "private path"},
+            {**execution["project_provenance_failure"], "project": "server"},
+        ):
+            with self.subTest(diagnostic=diagnostic):
+                changed = {**execution, "project_provenance_failure": diagnostic}
+                path.write_text(json.dumps(changed))
+                with self.assertRaises(ValueError):
+                    verify_retained_inventory(self.root)
+
     def react(self, *, passed=True, prefix="", host="server"):
         request, original, assets, phase = phase_fixture("hosted-wasm" if prefix else host)
         key = (request.version, request.framework, request.host)

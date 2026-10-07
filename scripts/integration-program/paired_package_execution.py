@@ -23,6 +23,7 @@ import paired_package_baseline_provenance as baseline
 import paired_package_baseline_resources as baseline_resources
 import paired_package_converter_selection as converter_selection
 import paired_package_provenance as provenance
+import paired_package_provenance_diagnostics as provenance_diagnostics
 import paired_package_released_documents as documents
 import paired_package_react_phase as react_phase
 import paired_package_secrets_endpoints as secrets_endpoints
@@ -379,7 +380,8 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
         if selections:
             evidence["converter_selection"] = selections[0]
             inventory_options["converter"] = selections[0]["converter"]
-        validate = _project_validator(layout, verified_root, manifest)
+        validate = provenance_diagnostics.wrap_project_validator(
+            layout.project_paths, _project_validator(layout, verified_root, manifest), evidence)
         evidence["stage"] = "project_provenance"
         evidence["projects"] = {name: validate(project) for name, project in layout.project_paths.items()}
         evidence["stage"] = "resource_provenance"
