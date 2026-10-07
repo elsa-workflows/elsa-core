@@ -797,8 +797,14 @@ class ExecutionContracts(unittest.TestCase):
                                      for name in execution.browser.required_assertions(record)]
             if key[0] == "3.10.0":
                 attach_native_interop(record)
-                attach_react_phase(record)
             attach_embedding(record)
+            if key[0] == "3.10.0":
+                attach_react_phase(record)
+                if key[2] == "custom-elements":
+                    # Deliberate incomplete native proof must block overall acceptance.
+                    record["proof"].pop("reactflow")
+                    next(a for a in record["assertions"] if a["name"] == "reactflow_edit_save")["passed"] = False
+                    record["result"] = "incomplete"
             return record
         self.patch(execution.browser, "prepare_candidate", side_effect=prepare)
         self.patch(execution.subprocess, "check_output", return_value="10.0.300\n")

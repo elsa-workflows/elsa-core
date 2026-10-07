@@ -111,7 +111,7 @@ class DesignerPhasesTests(unittest.TestCase):
             project.write_text("<Project>" + reference + "</Project>")
             paths[name] = project
             inputs[str(project.relative_to(group))] = hosts.sha256(project)
-            if name == "wasm":
+            if name in ("wasm", "custom-elements"):
                 config = project.parent / "wwwroot" / "appsettings.json"
                 config.parent.mkdir()
                 config.write_bytes(b'{}\n')
@@ -142,7 +142,7 @@ class DesignerPhasesTests(unittest.TestCase):
         self.assertTrue(all(timer.cancelled for timer in self.timers))
 
     def test_supported_hosts_share_backend_state_and_reap_studio_between_phases(self):
-        for host in ("server", "wasm", "hosted-wasm"):
+        for host in hosts.HOST_NAMES:
             with self.subTest(host=host):
                 layout = self.layout(host)
                 offset = len(self.calls)
@@ -152,7 +152,8 @@ class DesignerPhasesTests(unittest.TestCase):
                         self.assertNotIn(first.password, repr(first))
                         first_studio = first.process_ids[1]
                         if host != "server":
-                            config = layout.project_paths["wasm"].parent / "wwwroot" / "appsettings.json"
+                            client = "wasm" if host == "hosted-wasm" else host
+                            config = layout.project_paths[client].parent / "wwwroot" / "appsettings.json"
                             self.assertFalse(json.loads(config.read_text())["DesignerOptions"]["UseReactFlow"])
                     self.assertIsNone(owner.backend.poll())
                     self.assertFalse(next(process for process in self.processes if process.pid == first_studio).group_alive)
@@ -185,7 +186,6 @@ class DesignerPhasesTests(unittest.TestCase):
     def test_rejects_unsupported_cells_and_invalid_bounds_before_launch(self):
         layout = self.layout()
         variants = [replace(layout, request=replace(layout.request, version="3.9.0")),
-                    replace(layout, request=replace(layout.request, host="custom-elements")),
                     replace(layout, request=replace(layout.request, designer_mode="react-flow"))]
         for invalid in variants:
             with self.assertRaises(RuntimeError), hosts.start_designer_phases(invalid, validate_project=self.validate):

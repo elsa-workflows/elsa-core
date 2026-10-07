@@ -45,8 +45,8 @@ JSON_ROUNDTRIP_CHECKS = {
     "semantic_preserved", "published", "terminal", "output", "studio_terminal",
 }
 DOM_INTEROP_CHECKS = {"import_menu_clicked", "filechooser_observed", "import_succeeded", "save_callback_observed"}
-REACT_PHASE_HOSTS = {"server", "wasm", "hosted-wasm"}
-NATIVE_JSON_HOSTS = REACT_PHASE_HOSTS | {"custom-elements"}
+REACT_PHASE_HOSTS = {"server", "wasm", "hosted-wasm", "custom-elements"}
+NATIVE_JSON_HOSTS = set(REACT_PHASE_HOSTS)
 
 
 def require(condition: bool, message: str) -> None:

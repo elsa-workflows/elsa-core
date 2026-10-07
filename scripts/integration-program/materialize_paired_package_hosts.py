@@ -642,7 +642,7 @@ def start_designer_phases(layout: CellLayout, *, validate_project: Callable[[Pat
     No browser proof or portable receipt is produced by this lifecycle helper.
     """
     require(layout.request.version == "3.10.0" and layout.request.designer_mode == "x6" and
-            layout.request.host in ("server", "wasm", "hosted-wasm"), "Unsupported designer phase cell")
+            layout.request.host in HOST_NAMES, "Unsupported designer phase cell")
     require(callable(validate_project) and 0 < timeout_seconds <= 300 and os.name == "posix" and
             0 < lifetime_seconds <= 600, "Invalid designer phase verifier or lifetime")
     owner = _DesignerPhases(layout, validate_project, timeout_seconds, lifetime_seconds)

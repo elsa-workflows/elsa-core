@@ -73,8 +73,8 @@ The retained directory permits only:
 - `matrix.json`;
 - `cells/VERSION-FRAMEWORK-HOST/execution.json` and `browser.json` for known
   matrix identities;
-- `cells/3.10.0-FRAMEWORK-HOST/react-phase.json` only for Server, standalone
-  WASM and hosted WASM, bound to the exact unchanged X6 browser receipt;
+- `cells/3.10.0-FRAMEWORK-HOST/react-phase.json` for each candidate host,
+  bound to the exact unchanged X6 browser receipt;
 - `cells/VERSION-FRAMEWORK-HOST/released-document.json` only for a passing
   3.8.4 or 3.9.0 source cell, after strict synthetic-content validation and
   binding to its fixture, browser, package, runtime and resource evidence.
@@ -116,7 +116,7 @@ preserving its existing .NET Func parameters; the fixture records this host-glue
 transformation explicitly. This is not evidence that the unchanged pinned host
 already exposed those events. Package and archive bytes remain original.
 
-Candidate full-shell execution keeps one backend alive while running X6 and then
+Candidate execution keeps one backend alive while running X6 and then
 React in separate Studio processes and fresh browser contexts. The second phase
 requires X6 authentication, identity, edit/save/reload and cleanup evidence first.
 It finds the same synthetic workflow through the native definitions list, selects
@@ -132,7 +132,10 @@ The combined matrix verifies both phases' resources against the same inventory;
 receipts to execution and matrix summaries, including the original workflow
 identities and the changed value. Partial failed phases may be retained but cannot
 pass the matrix. These protocol checks do not substitute for actual browser runs;
-CustomElements React coverage remains required and pending.
+CustomElements uses the native embedding consumer in the second phase and requires
+complete original embedding callbacks and instance-viewer evidence before starting.
+Its React activity callback must identify the same X6 activity. Actual composed
+browser coverage for all hosts remains required and pending.
 
 Private build logs, caches, credentials, runtime data and browser state remain
 under `private/` and are not uploaded. An inventory-approved file is not proof

@@ -9,7 +9,7 @@ import paired_package_released_documents as documents
 import paired_package_react_phase as react_phase
 from verify_browser_package_resources import verify_browser_resources
 from test_paired_package_react_phase import phase_fixture
-from test_paired_package_browser_matrix import attach_native_interop, bpmn_proof, clipboard_proof, reopen_row
+from test_paired_package_browser_matrix import attach_embedding, attach_native_interop, bpmn_proof, clipboard_proof, reopen_row
 from test_paired_package_released_documents import fixture_identity, write_released_fixture
 
 
@@ -31,8 +31,8 @@ class BrowserRetentionTests(unittest.TestCase):
         self.write("cells/3.10.0-net10.0-hosted-wasm/browser.json")
         self.assertEqual(len(verify_retained_inventory(self.root)), 3)
 
-    def react(self, *, passed=True, prefix=""):
-        request, original, assets, phase = phase_fixture("hosted-wasm" if prefix else "server")
+    def react(self, *, passed=True, prefix="", host="server"):
+        request, original, assets, phase = phase_fixture("hosted-wasm" if prefix else host)
         key = (request.version, request.framework, request.host)
         name = "cells/" + "-".join(key)
         for assertion in original["assertions"]:
@@ -41,6 +41,7 @@ class BrowserRetentionTests(unittest.TestCase):
             baseline_reopens=[reopen_row(version, request.framework, request.host) for version in documents.TOOL_VERSIONS],
             bpmn_roundtrip=bpmn_proof(), clipboard=clipboard_proof("a" * 64, original["proof"]["value_sha256"]))
         attach_native_interop(original)
+        attach_embedding(original)
         phase["source_browser_sha256"] = react_phase.browser_receipt_sha256(original)
         if prefix:
             for asset in assets + phase["resources"]:
@@ -100,6 +101,14 @@ class BrowserRetentionTests(unittest.TestCase):
         name, _, _, _, _ = self.react(passed=False)
         self.assertIn(name + "/react-phase.json", verify_retained_inventory(self.root))
 
+    def test_custom_react_retention_binds_original_native_embedding(self):
+        name, original, _, _, _ = self.react(host="custom-elements")
+        self.assertIn(name + "/react-phase.json", verify_retained_inventory(self.root))
+        original["proof"]["embedding"]["instance_id_sha256"] = "f" * 64
+        self.write(name + "/browser.json", original)
+        with self.assertRaises(ValueError):
+            verify_retained_inventory(self.root)
+
     def test_prefixed_hosted_phase_requires_the_same_safe_inventory_prefix(self):
         name, _, _, evidence, _ = self.react(prefix="compat")
         self.assertIn(name + "/react-phase.json", verify_retained_inventory(self.root))
@@ -113,7 +122,7 @@ class BrowserRetentionTests(unittest.TestCase):
         (self.root / name / "react-phase.json").unlink()
         with self.assertRaisesRegex(ValueError, "missing its React phase"):
             verify_retained_inventory(self.root)
-        for cell in ("3.9.0-net10.0-server", "3.10.0-net10.0-custom-elements"):
+        for cell in ("3.9.0-net10.0-server", "3.9.0-net10.0-custom-elements"):
             path = self.write("cells/" + cell + "/react-phase.json")
             with self.subTest(cell=cell), self.assertRaisesRegex(ValueError, "Unexpected browser evidence file"):
                 verify_retained_inventory(self.root)

@@ -47,6 +47,14 @@ jobs:
         run: |
           echo 'PyYAML==6.0.3 --hash=sha256:ba1cc08a7ccde2d2ec775841541641e4548226580ab850948cbfda66a1befcdc' > "$RUNNER_TEMP/gate-requirements.txt"
           python3 -m pip install --only-binary :all: --require-hashes -r "$RUNNER_TEMP/gate-requirements.txt"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.23.3'
+      - name: Install and typecheck the locked browser contract tooling
+        working-directory: test/studio/browser/PackageCompatibility
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run typecheck
       - name: Verify program graph, import safety and history preservation
         run: |
           python doc/integration-program/verify-hierarchy.py

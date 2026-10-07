@@ -150,8 +150,9 @@ class MatrixContracts(unittest.TestCase):
                                       bpmn_roundtrip=bpmn_proof(),
                                       clipboard=clipboard_proof(instance_hash, value_hash))
                 attach_native_interop(cell)
-                attach_react_phase(cell)
             attach_embedding(cell)
+            if cell["version"] == "3.10.0":
+                attach_react_phase(cell)
 
     def released_inputs(self, root):
         inputs = []
@@ -481,21 +482,20 @@ class MatrixContracts(unittest.TestCase):
         partial["proof"]["clipboard"]["actual_value_sha256"] = actual_hash
         self.assertEqual(partial, matrix.validate_browser_receipt(partial, key))
 
-    def test_exact_matrix_topology_retains_pending_custom_react_without_claiming_acceptance(self):
-        with self.assertRaisesRegex(ValueError, "Required browser assertion failed"):
-            matrix.check_matrix(self.ledger)
+    def test_exact_matrix_topology_accepts_complete_synthetic_protocol_only(self):
+        # These generated records exercise protocol shape, never actual runtime acceptance.
+        matrix.check_matrix(self.ledger)
         self.assertEqual(36, len(self.ledger["cells"]))
-        pending = 0
         for cell in self.ledger["cells"]:
             matrix.validate_browser_receipt(cell, matrix.identity(cell))
-            failed = {item["name"] for item in cell["assertions"] if not item["passed"]}
-            if cell["version"] == "3.10.0" and cell["host"] == "custom-elements":
-                self.assertEqual({"reactflow_edit_save"}, failed)
-                pending += 1
-            else:
-                self.assertFalse(failed)
-                matrix.check_cell(cell)
-        self.assertEqual(3, pending)
+            matrix.check_cell(cell)
+        incomplete = copy.deepcopy(self.ledger)
+        custom = next(cell for cell in incomplete["cells"] if cell["version"] == "3.10.0" and cell["host"] == "custom-elements")
+        custom["result"] = "incomplete"
+        custom["proof"].pop("reactflow")
+        assertion(custom, "reactflow_edit_save", False)
+        with self.assertRaisesRegex(ValueError, "Required browser assertion failed"):
+            matrix.check_matrix(incomplete)
         for mutate in (lambda c: c.pop(), lambda c: c.append(copy.deepcopy(c[0]))):
             with self.subTest(mutate=mutate):
                 changed = copy.deepcopy(self.ledger)

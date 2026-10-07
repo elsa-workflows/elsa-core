@@ -2,7 +2,9 @@
 
 `source-glue.json` records immutable source paths and SHA-256 hashes. Where an
 upstream file contained trailing whitespace, `source_sha256` preserves its
-original digest and the declared fixture transform only trims that whitespace.
+original digest and the declared fixture transform records the whitespace trim.
+Other explicit consumer-host transforms include the CustomElements EventCallback
+bridge and empty embedding mount; they do not modify packaged Elsa libraries.
 `common`
 contains the accepted candidate's host entrypoints; the 3.9.0 entrypoints have
 the same startup composition. `3.8.4` overrides the release-specific project,
@@ -13,9 +15,10 @@ The materializer replaces package-library project references with exact aligned
 NuGet references. It preserves each host's registration and delivery model,
 adds the paired WorkflowContexts module and fixture runtime assembly metadata,
 and selects the supported ElsaIdentity mode for local accounts. The only source
-edge is the hosted wrapper's disposable, nonpackable WASM client. Native wrapper
-code and original package assets are preserved; product defects must remain
-failed evidence.
+edge is the hosted wrapper's disposable, nonpackable WASM client. Host glue changes
+are recorded separately from original package assets; a corrected consumer host
+does not establish that an unchanged upstream host worked. Product defects must
+remain failed evidence.
 
 The Python owner creates separate mutable runtime state for every record and
 stops/reaps its own process groups on startup failure or browser exit. A private
@@ -42,7 +45,7 @@ and synthetic identifiers. The caller must create a fresh browser context for
 each phase and separately bind their receipts. The owner checks process birth
 identities and descendant cleanup before admitting the next phase; uncertain
 ownership or cleanup prevents continuation. Its lifetime includes startup and is
-bounded to 600 seconds. This API supports the three full-shell host layouts;
-CustomElements remains separate. Candidate full-shell execution uses this owner
+bounded to 600 seconds. This API supports all four host layouts, including the
+native CustomElements embedding. Candidate execution uses this owner
 for the original X6 journey followed by a separate React edit/save/reload browser
 phase. Actual browser verification of the composed journey remains pending.
