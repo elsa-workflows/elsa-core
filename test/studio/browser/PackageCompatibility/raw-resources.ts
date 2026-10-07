@@ -35,6 +35,9 @@ class Capture implements RawResourceObserver {
   private enabled = false;
   private requiresContextCleanup = false;
   private cleanupFailed = false;
+  private activeBodies = 0;
+  private activeBytes = 0;
+  private capturedResponses = 0;
   private stopping?: Promise<void>;
   private readonly pending = new Set<Promise<void>>();
   private readonly cancelTimers = new Set<() => void>();
@@ -59,7 +62,7 @@ class Capture implements RawResourceObserver {
     this.origin = studio.origin;
     const patterns: Array<{ urlPattern: string; requestStage: 'Response' }> = [];
     for (const [path, asset] of this.assets) {
-      if (path !== asset.path || !/^\/[A-Za-z0-9_./-]+$/.test(path) || path.split('/').includes('..') ||
+      if (path !== asset.path || path.length > 2048 || !/^\/[A-Za-z0-9_./-]+$/.test(path) || path.split('/').includes('..') ||
           !Number.isSafeInteger(asset.bytes) || asset.bytes < 0 || asset.bytes > maximumBytes ||
           !/^[0-9a-f]{64}$/.test(asset.sha256) || !['package', 'fixture', 'platform'].includes(asset.owner) ||
           !/^[a-z0-9.+-]+\/[a-z0-9.+-]+$/.test(asset.content_type)) throw new Error('raw_resources_setup_failed');
@@ -95,7 +98,10 @@ class Capture implements RawResourceObserver {
   }
 
   private readonly onPaused = (event: PausedResource): void => {
-    if (this.closed) return;
+    if (this.closed || this.requiresContextCleanup) return;
+    // Even continuation commands need a bound. An event flood is left to the
+    // caller's owned context close, never converted into successful evidence.
+    if (this.pending.size >= 512) { this.requiresContextCleanup = true; return; }
     const capture = this.accepting;
     const task = this.handle(event, capture).catch(() => { this.cleanupFailed = true; });
     this.pending.add(task);
@@ -114,16 +120,22 @@ class Capture implements RawResourceObserver {
     let contentType = '';
     let bodyPending = false;
     let continued = false;
+    let reserved = false;
     const status = Number.isInteger(event.responseStatusCode) && event.responseStatusCode! >= 100 && event.responseStatusCode! <= 599
       ? event.responseStatusCode! : null;
     try {
       const url = new URL(event.request.url);
       asset = url.origin === this.origin ? this.assets.get(url.pathname) : undefined;
       if (!capture || !asset) return;
+      if (++this.capturedResponses > 2048 || this.activeBodies >= 128 || this.activeBytes + asset.bytes > 128 * 1024 * 1024)
+        throw new Error('resource_body_limit');
       if (url.username || url.password || url.hash || url.search.length > 2048 || status !== 200 || event.responseErrorReason)
         throw new Error('response_read_failed');
+      const headers = event.responseHeaders ?? [];
+      if (headers.length > 128 || headers.reduce((size, item) => size + item.name.length + item.value.length, 0) > 64 * 1024)
+        throw new Error('resource_body_limit');
       const header = (name: string): string | undefined => {
-        const entries = (event.responseHeaders ?? []).filter(item => item.name.toLowerCase() === name);
+        const entries = headers.filter(item => item.name.toLowerCase() === name);
         if (entries.length > 1) throw new Error('resource_body_limit');
         return entries[0]?.value;
       };
@@ -135,6 +147,7 @@ class Capture implements RawResourceObserver {
         throw new Error('resource_body_limit');
       contentType = header('content-type')?.split(';')[0].trim().toLowerCase() ?? '';
       if (contentType !== asset.content_type) throw new Error('response_read_failed');
+      this.activeBodies++; this.activeBytes += asset.bytes; reserved = true;
       const operation = this.session.send('Fetch.getResponseBody', { requestId: event.requestId });
       bodyPending = true;
       const reading = operation.then(
@@ -167,6 +180,7 @@ class Capture implements RawResourceObserver {
         try { await this.command('Fetch.continueResponse', { requestId: event.requestId }); continued = true; }
         catch { this.cleanupFailed = true; if (asset) this.report(asset.path, status, 'response_read_failed'); }
       }
+      if (reserved) { this.activeBodies--; this.activeBytes -= asset!.bytes; }
     }
     if (asset && body && continued && !this.closed) {
       try {

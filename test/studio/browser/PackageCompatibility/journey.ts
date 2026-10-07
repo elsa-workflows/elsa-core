@@ -10,6 +10,7 @@ import { bpmnSemanticIdentity, checkedXmlText, type XmlElement } from './bpmn-ro
 import { readWorkflowJsonExport, workflowSemanticIdentity } from './json-roundtrip.js';
 import { DirectBackendObserver } from './direct-backend.js';
 import { WasmBootObserver, type ObservedBootResource } from './wasm-boot.js';
+import { startRawResources, type ResourceFailure } from './raw-resources.js';
 const policy = JSON.parse(readFileSync(new URL('./coverage-policy.json', import.meta.url), 'utf8'));
 // Locator actions and assertions share the same bounded readiness window,
 // including the native WASM bootstrap after a full page reload.
@@ -20,30 +21,11 @@ type Resource = { path: string; sha256: string; bytes: number; content_type: str
 type ReleasedInput = { private_path: string; binding: { document: { source_cell: Cell; document_sha256: string; bytes: number; tool_version: string; definition_id_sha256: string; activity_id_sha256: string; value_sha256: string }; fixture_identity_sha256: string; source_evidence_sha256: string; browser_receipt_sha256: string }; source_binding_sha256: string; root_id_sha256: string };
 type PrivateInput = { request: Cell; studio_url: string; backend_url: string; username: string; password: string; safe_ids: Record<string, string>; resources: Resource[]; released_document_output?: string; released_document_inputs?: ReleasedInput[]; phase?: 'react-flow'; react_phase?: { source_browser_sha256: string; expected_hashes: ReactHashes } };
 type Assertion = { name: string; passed: boolean; reason_category: string | null };
-type ResourceFailure = { path_sha256: string; status: number; phase: 'body' | 'observation'; reason: 'resource_body_limit' | 'resource_body_size' | 'response_read_failed' | 'resource_observation_failed' };
 const baseline: string[] = policy.baseline;
 const candidate: string[] = policy.candidate;
 const hostAssertions: Record<Cell['host'], string[]> = policy.host_assertions;
 const hash = (data: Buffer | string): string => createHash('sha256').update(data).digest('hex');
 const embeddings = new WeakMap<Page, NativeCustomElements>();
-
-export async function resourceBody(response: { headers(): Record<string, string>; body(): Promise<Buffer> }, expectedBytes: number): Promise<Buffer> {
-  // The WASM dev server can stream a response without Content-Length. Its
-  // optional transport length is distinct from the decoded package byte count.
-  const headers = response.headers();
-  const declared = headers['content-length'];
-  const encoded = headers['content-encoding'];
-  // Gzip with no compression expands the payload by framing bytes. Bound wire
-  // bytes separately; Playwright returns the decoded body checked below.
-  const wireLimit = encoded && encoded !== 'identity' ? 32 * 1024 * 1024 : expectedBytes;
-  if (!Number.isSafeInteger(expectedBytes) || expectedBytes < 0 || expectedBytes > 32 * 1024 * 1024 ||
-      (encoded !== undefined && !['gzip', 'br', 'identity'].includes(encoded)) ||
-      (declared !== undefined && (!/^[0-9]+$/.test(declared) || !Number.isSafeInteger(Number(declared)) || Number(declared) > wireLimit)))
-    throw new Error('resource_body_limit');
-  const body = await response.body();
-  if (body.length !== expectedBytes) throw new Error('resource_body_size');
-  return body;
-}
 
 export function readReleasedInput(input: ReleasedInput): { raw: Buffer; document: any } {
   const path = input.private_path;
@@ -750,12 +732,12 @@ async function nativeSecrets(page: Page, input: PrivateInput, backend: Backend,
   record.checks.native_selected = true;
 
   const checkedBinding = (definition: any): { rootId: string; activityId: string; referenceHash: string } => {
-    if (definition.definitionId !== definitionId || typeof definition.root?.id !== 'string' ||
+    if (definition.definitionId !== definitionId || typeof definition.root?.id !== 'string' || !definition.root.id.trim() ||
         !Array.isArray(definition.root.activities) || definition.root.activities.length !== 1 ||
         JSON.stringify(definition).includes(secretValue)) throw new Error('native_secret_workflow_invalid');
     const activity = definition.root.activities[0];
     const input = activity.outputValue;
-    if (activity.type !== 'Elsa.SetOutput' || typeof activity.id !== 'string' ||
+    if (activity.type !== 'Elsa.SetOutput' || typeof activity.id !== 'string' || !activity.id.trim() ||
         input?.expression?.type !== 'Secret' || input.typeName !== 'Object')
       throw new Error('native_secret_expression_invalid');
     const actual = typeof input.expression.value === 'string' ? JSON.parse(input.expression.value) : input.expression.value;
@@ -1012,27 +994,6 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   }
 }
 
-function observePackageResponse(response: Response, input: PrivateInput, expected: Map<string, Resource>,
-  resources: ObservedBootResource[], pending: Promise<void>[],
-  observed: (resource: { record: ObservedBootResource; body: Buffer }) => void, failed: (failure: ResourceFailure) => void): void {
-  const url = new URL(response.url());
-  const asset = expected.get(url.pathname);
-  if (!asset || url.origin !== new URL(input.studio_url).origin) return;
-  let phase: ResourceFailure['phase'] = 'body';
-  pending.push((async () => {
-    const headers = response.headers();
-    const body = await resourceBody(response, asset.bytes);
-    const record = { path: url.pathname, status: response.status(), content_type: headers['content-type']?.split(';')[0] ?? '', sha256: hash(body), bytes: body.length, owner: asset.owner, requested: true as const };
-    resources.push(record);
-    phase = 'observation';
-    observed({ record, body });
-  })().catch(error => {
-    const reason: ResourceFailure['reason'] = phase === 'observation' ? 'resource_observation_failed' :
-      error instanceof Error && (error.message === 'resource_body_limit' || error.message === 'resource_body_size') ? error.message : 'response_read_failed';
-    failed({ path_sha256: hash(url.pathname), status: response.status(), phase, reason });
-  }));
-}
-
 async function reactPhase(input: PrivateInput): Promise<void> {
   const source = input.react_phase;
   if (input.request.version !== '3.10.0' || input.request.designer_mode !== 'react-flow' ||
@@ -1058,9 +1019,9 @@ async function reactPhase(input: PrivateInput): Promise<void> {
   let embedding: NativeCustomElements | undefined;
   let failed = false;
   let browserVersion: string | null = null;
+  let rawResources: Awaited<ReturnType<typeof startRawResources>> | undefined;
   const observe = (response: Response) => {
     if (embedding) pending.push(embedding.observeResponse(response));
-    observePackageResponse(response, input, expected, resources, pending, () => {}, () => { failed = true; });
   };
   try {
     browser = await chromium.launch({ headless: true });
@@ -1069,6 +1030,8 @@ async function reactPhase(input: PrivateInput): Promise<void> {
     page = await context.newPage();
     page.setDefaultTimeout(20_000);
     page.on('response', observe);
+    rawResources = await startRawResources(await context.newCDPSession(page), input.studio_url, expected,
+      ({ record }) => { resources.push(record); }, () => { failed = true; });
     backend = await Backend.login(input.backend_url, input);
     if (input.request.host === 'custom-elements') {
       embedding = backend.embedding(page, input);
@@ -1132,6 +1095,7 @@ async function reactPhase(input: PrivateInput): Promise<void> {
   } catch { failed = true; }
   finally {
     page?.off('response', observe);
+    try { await rawResources?.stop(); } catch { failed = true; }
     await Promise.all(pending);
     checks.react_bundle = resources.some(record => record.path === bundle.path && record.status === 200 && record.requested === true &&
       record.owner === bundle.owner && record.sha256 === bundle.sha256 && record.bytes === bundle.bytes && record.content_type === bundle.content_type);
@@ -1209,15 +1173,17 @@ async function main(): Promise<void> {
     }
     const embedding = embeddings.get(page);
     if (embedding) pending.push(embedding.observeResponse(response));
-    observePackageResponse(response, input, expected, resources, pending, resource => wasmBoot?.observe(resource.record, resource.body), failure => {
-      failed = true;
-      if (resourceFailures.length < 32) resourceFailures.push(failure);
-      proof.resource_failures = resourceFailures;
-    });
   };
   page.on('response', observeResponse);
   let backend: Backend | undefined;
+  let rawResources: Awaited<ReturnType<typeof startRawResources>> | undefined;
   try {
+    rawResources = await startRawResources(await context.newCDPSession(page), input.studio_url, expected,
+      ({ record, body }) => { resources.push(record); wasmBoot?.observe(record, body); }, failure => {
+        failed = true;
+        if (resourceFailures.length < 32) resourceFailures.push(failure);
+        proof.resource_failures = resourceFailures;
+      });
     backend = await Backend.login(input.backend_url, input);
     proof.last_completed_stage = 'backend_authenticated';
     if (input.request.host === 'custom-elements') {
@@ -1242,6 +1208,7 @@ async function main(): Promise<void> {
   } finally {
     // Freeze the observation window, then settle all native response bodies before relating tokens.
     page.off('response', observeResponse);
+    try { await rawResources?.stop(); } catch { failed = true; }
     await Promise.all(pending);
     if (wasmBoot) {
       const bootProof = wasmBoot.proof(resources, proof.interactive_validation_observed === true);

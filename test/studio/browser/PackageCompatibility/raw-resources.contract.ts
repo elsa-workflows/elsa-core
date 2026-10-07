@@ -105,6 +105,8 @@ const invalid: Array<[Mutation, ResourceFailure['reason']]> = [
   [(_, event) => { event.responseHeaders!.push({ name: 'Content-Encoding', value: 'deflate' }); }, 'resource_body_limit'],
   [(_, event) => { event.responseHeaders!.push({ name: 'content-length', value: '149' }); }, 'resource_body_limit'],
   [(_, event) => { event.responseHeaders![0].value = 'text/html'; }, 'response_read_failed'],
+  [(_, event) => { event.responseHeaders!.push(...Array.from({ length: 129 }, () => ({ name: 'x-header', value: '' }))); }, 'resource_body_limit'],
+  [(_, event) => { event.responseHeaders!.push({ name: 'x-header', value: 'x'.repeat(65537) }); }, 'resource_body_limit'],
   [(value, _) => { value.session.errors.add('Fetch.getResponseBody'); }, 'response_read_failed'],
 ];
 for (const [mutate, reason] of invalid) {
@@ -230,6 +232,50 @@ for (const method of ['Network.setCacheDisabled', 'Fetch.enable'] as const) {
   const count = value.session.calls.length;
   reading.resolve(value.session.body); value.session.emit(paused('after-timeout')); await tick();
   assert.equal(value.session.calls.length, count);
+  assert.equal(value.observations.length, 0);
+  assert.equal(value.session.listeners.size, 0);
+}
+
+{
+  const value = await fixture(), reading = deferred<any>();
+  value.session.hook = method => method === 'Fetch.getResponseBody' ? reading.promise : undefined;
+  for (let i = 0; i < 129; i++) value.session.emit(paused('concurrent-' + i));
+  await tick();
+  assert.equal(value.session.calls.filter(call => call.method === 'Fetch.getResponseBody').length, 128);
+  assert.equal(value.failures[0].reason, 'resource_body_limit');
+  assert.equal(value.session.calls.at(-1)?.method, 'Fetch.continueResponse');
+  reading.resolve(value.session.body); await value.observer.stop();
+  assert.equal(value.observations.length, 128);
+}
+{
+  const session = new FakeSession(), reading = deferred<any>(), failures: ResourceFailure[] = [];
+  const asset: RawResourceAsset = { path, bytes: 32 * 1024 * 1024, sha256: hash(original), content_type: 'text/javascript', owner: 'package' };
+  session.hook = method => method === 'Fetch.getResponseBody' ? reading.promise : undefined;
+  const observer = await startRawResources(session, studio, new Map([[path, asset]]), () => assert.fail('Unverified bytes'), failure => failures.push(failure));
+  for (let i = 0; i < 5; i++) {
+    const event = paused('aggregate-' + i); event.responseHeaders![1].value = String(asset.bytes); session.emit(event);
+  }
+  await tick();
+  assert.equal(session.calls.filter(call => call.method === 'Fetch.getResponseBody').length, 4);
+  assert.equal(failures[0].reason, 'resource_body_limit');
+  reading.reject(new Error('synthetic read failure')); await observer.stop();
+  noOverrides(session);
+}
+{
+  const value = await fixture();
+  for (let i = 0; i < 2049; i++) { value.session.emit(paused('repeated-' + i)); await tick(); }
+  assert.equal(value.observations.length, 2048);
+  assert.equal(value.failures.length, 1);
+  assert.equal(value.failures[0].reason, 'resource_body_limit');
+  await value.observer.stop(); noOverrides(value.session);
+}
+{
+  const value = await fixture(original, { stopTimeoutMs: 5 }), holding = deferred<any>();
+  value.session.hook = method => ['Fetch.getResponseBody', 'Fetch.continueResponse'].includes(method) ? holding.promise : undefined;
+  for (let i = 0; i < 1024; i++) value.session.emit(paused('flood-' + i));
+  assert.equal(value.session.calls.length, 514); // Two setup calls, at most 512 tracked requests.
+  await assert.rejects(value.observer.stop(), /raw_resources_cleanup_failed/);
+  holding.resolve(value.session.body); await tick();
   assert.equal(value.observations.length, 0);
   assert.equal(value.session.listeners.size, 0);
 }

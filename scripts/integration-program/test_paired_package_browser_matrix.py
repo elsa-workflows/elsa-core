@@ -240,8 +240,11 @@ class MatrixContracts(unittest.TestCase):
         failure = {"path_sha256": "a" * 64, "status": 200, "phase": "body", "reason": "response_read_failed"}
         record["proof"]["resource_failures"] = [failure]
         self.assertEqual(record, matrix.validate_browser_receipt(record, key))
+        no_response = copy.deepcopy(record)
+        no_response["proof"]["resource_failures"][0]["status"] = None
+        self.assertEqual(no_response, matrix.validate_browser_receipt(no_response, key))
         for mutation in ({"path": "PRIVATE"}, {"reason": "PRIVATE"}, {"path_sha256": "PRIVATE"},
-                         {"status": True}, {"phase": "observation"}):
+                         {"status": True}, {"status": 0}, {"status": "200"}, {"phase": "observation"}):
             changed = copy.deepcopy(record)
             changed["proof"]["resource_failures"][0].update(mutation)
             with self.subTest(mutation=mutation), self.assertRaises(ValueError):
@@ -252,6 +255,9 @@ class MatrixContracts(unittest.TestCase):
             changed["proof"]["resource_failures"] = failures
             with self.subTest(result=result, count=len(failures)), self.assertRaises(ValueError):
                 matrix.validate_browser_receipt(changed, key)
+
+    def test_node_raw_resources_preserve_original_response_entities(self):
+        self.run_node_contract("raw-resources.contract.ts", "raw resource response contracts passed")
 
     def test_node_json_roundtrip_checks_native_document_semantics(self):
         self.run_node_contract("json-roundtrip.contract.ts", "JSON roundtrip contracts passed")

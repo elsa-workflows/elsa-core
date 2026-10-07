@@ -49,6 +49,8 @@ def validate_secrets(value, assertion_passed, proof, key):
             else:
                 require(isinstance(value[field], str) and re.fullmatch(r"[0-9a-f]{64}", value[field]) is not None,
                         "Unsafe Secrets hash")
+                if field.endswith("_id_sha256"):
+                    require(value[field] != hashlib.sha256(b"").hexdigest(), "Empty Secrets graph identity")
     if checks["backend_readonly_inventory"]:
         for field, expected in (("descriptor_type_sha256", "text"), ("descriptor_store_sha256", "encrypted")):
             require(value[field] == hashlib.sha256(expected.encode()).hexdigest(),

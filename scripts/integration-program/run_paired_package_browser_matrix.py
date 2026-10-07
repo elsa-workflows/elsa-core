@@ -423,7 +423,7 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
                 require(isinstance(failure, dict) and set(failure) == {"path_sha256", "status", "phase", "reason"},
                         "Unsafe resource failure fields")
                 _require_sha256(failure["path_sha256"])
-                require(type(failure["status"]) is int and 100 <= failure["status"] <= 599,
+                require(failure["status"] is None or type(failure["status"]) is int and 100 <= failure["status"] <= 599,
                         "Invalid failed resource response status")
                 require((failure["phase"] == "body" and failure["reason"] in {
                             "resource_body_limit", "resource_body_size", "response_read_failed"}) or

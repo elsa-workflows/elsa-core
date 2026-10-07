@@ -127,6 +127,16 @@ class SecretsProofContracts(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     self.validate(value)
 
+    def test_matching_empty_graph_id_hashes_cannot_prove_identity(self):
+        for fields in (("root_id_sha256", "reloaded_root_id_sha256"),
+                       ("activity_id_sha256", "reloaded_activity_id_sha256"),
+                       ("probe_definition_id_sha256", "saved_definition_id_sha256", "reloaded_definition_id_sha256")):
+            with self.subTest(fields=fields):
+                value = self.record()
+                value["proof"]["secrets"].update(dict.fromkeys(fields, sha("")))
+                with self.assertRaisesRegex(ValueError, "Empty Secrets graph identity"):
+                    self.validate(value)
+
     def test_completed_receipt_cannot_be_downgraded_to_failed_assertion(self):
         value = self.record()
         assertion(value, "secrets", False)
