@@ -93,6 +93,24 @@ class BrowserRetentionTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     verify_retained_inventory(self.root)
 
+    def test_runtime_startup_diagnostic_is_strictly_bound_before_retention(self):
+        from test_paired_package_runtime_diagnostics import failed_evidence
+        cell = "cells/3.8.4-net8.0-hosted-wasm/execution.json"
+        evidence = failed_evidence()
+        evidence["last_startup_operation"]["http_status"] = 500
+        path = self.write(cell, evidence)
+        self.assertIn(cell, verify_retained_inventory(self.root))
+        invalid = copy.deepcopy(evidence)
+        invalid["last_startup_operation"]["http_status"] = True
+        path.write_text(json.dumps(invalid))
+        with self.assertRaises(ValueError):
+            verify_retained_inventory(self.root)
+        invalid = copy.deepcopy(evidence)
+        invalid["runtime_startup_failure"]["private_error"] = "PRIVATE"
+        path.write_text(json.dumps(invalid))
+        with self.assertRaises(ValueError):
+            verify_retained_inventory(self.root)
+
     def react(self, *, passed=True, prefix="", host="server"):
         request, original, assets, phase = phase_fixture("hosted-wasm" if prefix else host)
         key = (request.version, request.framework, request.host)

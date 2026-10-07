@@ -410,7 +410,7 @@ class ExecutionContracts(unittest.TestCase):
             self.events.append(("validate", project))
             return {"project_assets_sha256": "a" * 64}
         @contextmanager
-        def pair(layout, *, validate_project):
+        def pair(layout, *, validate_project, **_diagnostics):
             self.events.append(("start",))
             for project in layout.project_paths.values():
                 validate_project(project)
@@ -531,8 +531,8 @@ class ExecutionContracts(unittest.TestCase):
         self.assertEqual("released_inputs", self.receipt()["stage"])
         self.assertEqual("failed", self.receipt()["result"])
 
-    def receipt(self):
-        return json.loads((self.root / "retained/cells/3.10.0-net10.0-server/execution.json").read_text())
+    def receipt(self, key=None):
+        return json.loads((self.root / "retained/cells" / "-".join(key or self.key) / "execution.json").read_text())
 
     def test_full_selection_has_36_and_four_hosts_share_only_version_framework(self):
         selected = execution.selected_cells(None)
@@ -835,6 +835,84 @@ class ExecutionContracts(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.execute()
         self.assertNotIn("owned_process_cleanup", self.receipt())
+        self.assertNotIn("PRIVATE", json.dumps(self.receipt()))
+
+    def test_pre_yield_startup_failure_retains_only_safe_phase_code_and_actual_status(self):
+        self.key = ("3.8.4", "net10.0", "server")
+        self.pipeline()
+        @contextmanager
+        def startup(_layout, *, report_startup, report_readiness_status, **_kwargs):
+            report_startup("pair", "validation")
+            report_startup("backend", "launch")
+            report_startup("backend", "readiness")
+            report_readiness_status("backend", 500)
+            raise RuntimeError("Owned host readiness timed out")
+            yield
+        self.patch(execution.hosts, "start_pair", side_effect=startup)
+        with self.assertRaises(ValueError):
+            self.execute()
+        receipt = self.receipt()
+        self.assertEqual("owned_runtime", receipt["stage"])
+        self.assertEqual({"component": "backend", "phase": "readiness", "http_status": 500},
+                         receipt["last_startup_operation"])
+        self.assertEqual({"code": "startup_readiness_timeout"}, receipt["runtime_startup_failure"])
+        execution.runtime_diagnostics.validate_evidence(receipt)
+        self.assertNotIn("PRIVATE", json.dumps(receipt))
+        self.assertFalse(any(event[0] == "browser" for event in self.events))
+
+    def test_repeated_project_validation_can_record_both_safe_failure_boundaries(self):
+        self.key = ("3.8.4", "net10.0", "server")
+        self.pipeline()
+        count = 0
+        def validate(_project):
+            nonlocal count
+            count += 1
+            if count > len(self.layout.project_paths):
+                raise ValueError("Materialized framework mismatch")
+            return {"project_assets_sha256": "a" * 64}
+        self.patch(execution, "_project_validator", return_value=validate)
+        @contextmanager
+        def startup(layout, *, validate_project, report_startup, **_kwargs):
+            report_startup("pair", "validation")
+            validate_project(layout.project_paths["backend"])
+            yield
+        self.patch(execution.hosts, "start_pair", side_effect=startup)
+        with self.assertRaises(ValueError):
+            self.execute()
+        receipt = self.receipt()
+        self.assertEqual("project_provenance", receipt["stage"])
+        self.assertEqual({"code": "unknown"}, receipt["runtime_startup_failure"])
+        self.assertEqual({"project": "backend", "code": "project_framework_mismatch"},
+                         receipt["project_provenance_failure"])
+        execution.runtime_diagnostics.validate_evidence(receipt)
+
+    def test_post_yield_cleanup_error_is_never_classified_as_startup_failure(self):
+        self.key = ("3.8.4", "net10.0", "server")
+        self.pipeline()
+        @contextmanager
+        def cleanup(_layout, *, report_startup, **_kwargs):
+            report_startup("server", "readiness")
+            yield SimpleNamespace()
+            raise RuntimeError("Owned host readiness timed out")
+        self.patch(execution.hosts, "start_pair", side_effect=cleanup)
+        with self.assertRaises(ValueError):
+            self.execute()
+        self.assertNotIn("runtime_startup_failure", self.receipt())
+        self.assertEqual({"component": "server", "phase": "readiness"},
+                         self.receipt()["last_startup_operation"])
+
+    def test_untrusted_startup_callback_fields_never_enter_receipt(self):
+        self.key = ("3.8.4", "net10.0", "server")
+        self.pipeline()
+        @contextmanager
+        def startup(_layout, *, report_startup, **_kwargs):
+            report_startup("PRIVATE-PATH", "PRIVATE-ERROR")
+            yield
+        self.patch(execution.hosts, "start_pair", side_effect=startup)
+        with self.assertRaises(ValueError):
+            self.execute()
+        self.assertNotIn("last_startup_operation", self.receipt())
+        self.assertNotIn("runtime_startup_failure", self.receipt())
         self.assertNotIn("PRIVATE", json.dumps(self.receipt()))
 
     def test_host_cleanup_diagnostics_survive_the_outer_owner_boundary(self):

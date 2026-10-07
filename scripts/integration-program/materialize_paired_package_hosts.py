@@ -22,7 +22,7 @@ import subprocess
 import threading
 import time
 from typing import Callable, Iterator
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 from xml.etree import ElementTree as ET
 
@@ -354,14 +354,23 @@ def _free_port() -> int:
         return listener.getsockname()[1]
 
 
-def _wait_ready(process: subprocess.Popen, url: str, timeout: float) -> None:
+def _wait_ready(process: subprocess.Popen, url: str, timeout: float, *,
+                report_status: Callable[[int], None] | None = None) -> None:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         require(process.poll() is None, "Owned host exited before readiness; inspect private process log")
         try:
             with urlopen(url, timeout=2) as response:
+                if report_status is not None:
+                    report_status(response.status)
                 if response.status == 200:
                     return
+        except HTTPError as error:
+            try:
+                if report_status is not None:
+                    report_status(error.code)
+            finally:
+                error.close()
         except (URLError, TimeoutError):
             pass
         time.sleep(0.2)
@@ -390,10 +399,16 @@ def _validate_fixture_edges(layout: CellLayout, host: str, project: Path) -> Non
 
 @contextmanager
 def start_pair(layout: CellLayout, *, validate_project: Callable[[Path], dict],
-               timeout_seconds: float = 90, lifetime_seconds: float = 360) -> Iterator[RuntimeHandle]:
+               timeout_seconds: float = 90, lifetime_seconds: float = 360,
+               report_startup: Callable[[str, str], None] | None = None,
+               report_readiness_status: Callable[[str, int], None] | None = None) -> Iterator[RuntimeHandle]:
+    if report_startup is not None:
+        report_startup("pair", "validation")
     require(callable(validate_project) and 0 < timeout_seconds <= 300, "Missing project verifier or invalid startup bound")
     require(os.name == "posix" and 0 < lifetime_seconds <= 600, "Invalid owned process lifetime/platform")
     _validate_launch(layout, validate_project)
+    if report_startup is not None:
+        report_startup("pair", "configuration")
     backend_origin, studio_origin, password, env, backend_env = _runtime_environment(layout)
     public_config = _public_configuration(layout, env, backend_origin)
     processes, logs, lifetime = [], [], None
@@ -401,10 +416,18 @@ def start_pair(layout: CellLayout, *, validate_project: Callable[[Path], dict],
         for host, origin, ready in (("backend", backend_origin, "/_fixture/ready"),
                                     (layout.request.host, studio_origin, "/")):
             log_path = layout.runtime_root / f"{host}-private.log"
+            if report_startup is not None:
+                report_startup(host, "launch")
             process, log = _launch_host(layout, host, origin, backend_env if host == "backend" else env, log_path)
             processes.append(process)
             logs.append(log)
-            _wait_ready(process, origin + ready, timeout_seconds)
+            if report_startup is not None:
+                report_startup(host, "readiness")
+            if report_readiness_status is None:
+                _wait_ready(process, origin + ready, timeout_seconds)
+            else:
+                _wait_ready(process, origin + ready, timeout_seconds,
+                            report_status=lambda status: report_readiness_status(host, status))
         def expire() -> None:
             for process in processes:
                 _kill_process(process)

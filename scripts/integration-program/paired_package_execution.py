@@ -24,6 +24,7 @@ import paired_package_baseline_resources as baseline_resources
 import paired_package_converter_selection as converter_selection
 import paired_package_provenance as provenance
 import paired_package_provenance_diagnostics as provenance_diagnostics
+import paired_package_runtime_diagnostics as runtime_diagnostics
 import paired_package_optional_execution as optional_execution
 import paired_package_optional_features as optional_features
 import paired_package_released_documents as documents
@@ -397,6 +398,7 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
     react_receipt = None
     cleanup_categories = set()
     released_output = None
+    startup_pending = False
     try:
         evidence["missing_evidence"] = evidence_gaps(request)
         require(not evidence["missing_evidence"], "Required package browser evidence is unavailable")
@@ -460,8 +462,15 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
         with ExitStack() as runtime:
             owner = (runtime.enter_context(hosts.start_designer_phases(layout, validate_project=validate))
                      if dual_designer else None)
-            primary = owner.phase("x6") if owner else hosts.start_pair(layout, validate_project=validate)
+            primary = owner.phase("x6") if owner else hosts.start_pair(
+                layout, validate_project=validate,
+                report_startup=lambda component, phase: runtime_diagnostics.report_operation(
+                    evidence, host, component, phase),
+                report_readiness_status=lambda component, status: runtime_diagnostics.report_status(
+                    evidence, host, component, status))
+            startup_pending = owner is None
             with primary as handle:
+                startup_pending = False
                 try:
                     evidence["stage"] = "runtime_readiness"
                     evidence["runtime_readiness"] = _observe_ready(handle, request)
@@ -561,6 +570,8 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
         evidence.update(stage="complete", result="passed")
         return record
     except Exception as failure:
+        if startup_pending and "last_startup_operation" in evidence:
+            evidence["runtime_startup_failure"] = runtime_diagnostics.failure_receipt(failure)
         if isinstance(failure, converter_selection.ConverterArchiveRejected):
             evidence["converter_archive_rejection"] = failure.evidence
         if isinstance(failure, browser.BrowserCleanupUnverified):
