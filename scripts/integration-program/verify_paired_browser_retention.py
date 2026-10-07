@@ -16,6 +16,31 @@ from paired_package_secrets_endpoints import validate_secrets_endpoint_evidence
 from verify_browser_package_resources import verify_browser_resources
 
 
+def _verify_optional_profiles(root, key, execution):
+    import paired_package_execution as runner
+    import paired_package_optional_execution as optional
+    from paired_package_optional_features import SCENARIOS
+
+    profiles = execution.get("optional_feature_probes")
+    if profiles is None:
+        if execution.get("result") == "passed":
+            raise ValueError("Passing candidate lacks required optional profiles")
+        return
+    if not isinstance(profiles, dict) or not set(profiles) <= set(SCENARIOS):
+        raise ValueError("Invalid retained optional profile inventory")
+    request = runner.cell_request(key)
+    original = json.loads(regular_file(root / "cells" / "-".join(key) / "browser.json").read_text())
+    canonical_hash = original.get("proof", {}).get("definition_id_sha256")
+    assemblies = execution.get("loaded_assemblies", {}).get("backend", {}).get("package_assemblies", [])
+    for scenario, record in profiles.items():
+        optional.validate_optional_execution(record, request, scenario,
+            canonical_definition_id_sha256=canonical_hash, canonical_assemblies=assemblies,
+            validate_ready=runner.verify_runtime_readiness)
+    if execution.get("result") == "passed" and (set(profiles) != set(SCENARIOS) or
+            any(record["result"] != "passed" for record in profiles.values())):
+        raise ValueError("Passing candidate has incomplete or failed optional profiles")
+
+
 def _verify_react_phase(root, key, execution, matrix):
     cell = root / "cells" / "-".join(key)
     path = cell / "react-phase.json"
@@ -126,6 +151,10 @@ def verify_retained_inventory(root: Path) -> list[str]:
                 validate_secrets_endpoint_evidence(ownership, assemblies)
         if key[0] == "3.10.0" and key[2] in REACT_PHASE_HOSTS:
             _verify_react_phase(root, key, execution, matrix)
+        if key[0] == "3.10.0":
+            _verify_optional_profiles(root, key, execution)
+        elif "optional_feature_probes" in execution:
+            raise ValueError("Released cell claimed candidate optional profiles")
         binding = execution.get("released_document")
         if not path.exists():
             if execution.get("result") == "passed" and key[0] in documents.TOOL_VERSIONS:

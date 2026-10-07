@@ -19,6 +19,49 @@ from test_paired_package_secrets import secrets_proof
 from test_paired_package_browser_secrets_endpoint import assembly_inventory, valid_observations
 
 
+class OptionalProfileBatchContracts(unittest.TestCase):
+    def test_all_profiles_are_required_and_complete_defects_do_not_skip_later_profiles(self):
+        from test_paired_package_optional_execution import complete_record, assembly_inventory as owners
+        request = execution.hosts.CellRequest("wasm", "net8.0", "3.10.0")
+        for recovered in (False, True):
+            evidence = {"loaded_assemblies": {"backend": {"package_assemblies": owners()}},
+                        "owned_process_cleanup": True}
+            def profile(_layout, scenario, **kwargs):
+                return complete_record(scenario, canonicalhash="f" * 64,
+                                       hypothetical_context_recovery=recovered and scenario == "deny-workflow-contexts")
+            with patch.object(execution.optional_execution, "run_optional_profile", side_effect=profile) as run:
+                arguments = (SimpleNamespace(request=request), lambda _: {}, evidence,
+                             {"proof": {"definition_id_sha256": "f" * 64}}, Path("unused"), {})
+                if recovered:
+                    execution._run_optional_profiles(*arguments)
+                else:
+                    with self.assertRaisesRegex(ValueError, "did not pass"):
+                        execution._run_optional_profiles(*arguments)
+                self.assertEqual(list(execution.optional_features.SCENARIOS), [call.args[1] for call in run.call_args_list])
+                self.assertEqual(set(execution.optional_features.SCENARIOS), set(evidence["optional_feature_probes"]))
+
+    def test_uncertain_cleanup_stops_batch_and_invalid_observation_is_not_retained(self):
+        from test_paired_package_optional_execution import complete_record, assembly_inventory as owners
+        request = execution.hosts.CellRequest("wasm", "net8.0", "3.10.0")
+        for unsafe in (False, True):
+            evidence = {"loaded_assemblies": {"backend": {"package_assemblies": owners()}},
+                        "owned_process_cleanup": True}
+            record = complete_record("without-secrets", canonicalhash="f" * 64)
+            record.pop("assessment")
+            record.update(stage="owned_cleanup", result="failed", failure_category="optional_execution_failed",
+                          owned_process_cleanup=False)
+            if unsafe:
+                record["private_error"] = "private"
+            with patch.object(execution.optional_execution, "run_optional_profile", return_value=record) as run:
+                with self.assertRaises(ValueError):
+                    execution._run_optional_profiles(SimpleNamespace(request=request), lambda _: {}, evidence,
+                        {"proof": {"definition_id_sha256": "f" * 64}}, Path("unused"), {})
+            run.assert_called_once()
+            self.assertEqual({} if unsafe else {"without-secrets": record}, evidence["optional_feature_probes"])
+            if not unsafe:
+                self.assertFalse(evidence["owned_process_cleanup"])
+
+
 class SecretsOwnershipTransportContracts(unittest.TestCase):
     def test_metadata_snapshot_is_authenticated_and_bound_to_verified_package_assemblies(self):
         handle = SimpleNamespace(backend_url="http://127.0.0.1:4567/elsa/api", username="private-user", password="PRIVATE-PASSWORD")
@@ -417,7 +460,18 @@ class ExecutionContracts(unittest.TestCase):
         self.ownership = self.patch(execution, "_observe_secrets_ownership", return_value={
             "schema": 1, "truncated": False, "observations": valid_observations()})
         self.patch(execution.resources, "verify_browser_resources", side_effect=lambda *_args, **_kw: self.events.append(("resource_check",)) or {})
+        self.optional_profiles = self.patch(execution, "_run_optional_profiles")
         return browser
+
+    def test_candidate_requires_optional_profile_acceptance_after_main_journey(self):
+        self.pipeline()
+        self.optional_profiles.side_effect = ValueError("Required optional feature profiles did not pass")
+        with self.assertRaisesRegex(ValueError, "Package browser execution"):
+            self.execute()
+        self.optional_profiles.assert_called_once()
+        retained = json.loads((self.root / "retained/cells/3.10.0-net10.0-server/execution.json").read_text())
+        self.assertEqual("failed", retained["result"])
+        self.assertEqual("optional_feature_probes", retained["stage"])
 
     def execute(self, key=None):
         return execution.execute_cell(key or self.key, private=self.root / "private", retained=self.root / "retained",

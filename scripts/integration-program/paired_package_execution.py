@@ -24,6 +24,8 @@ import paired_package_baseline_resources as baseline_resources
 import paired_package_converter_selection as converter_selection
 import paired_package_provenance as provenance
 import paired_package_provenance_diagnostics as provenance_diagnostics
+import paired_package_optional_execution as optional_execution
+import paired_package_optional_features as optional_features
 import paired_package_released_documents as documents
 import paired_package_react_phase as react_phase
 import paired_package_secrets_endpoints as secrets_endpoints
@@ -151,6 +153,37 @@ def _observe_secrets_ownership(handle, verified_assemblies: dict) -> dict:
     secrets_endpoints.validate_secrets_endpoint_evidence(
         observation, verified_assemblies["backend"]["package_assemblies"])
     return observation
+
+
+def _run_optional_profiles(layout, validate, evidence, original_browser, verified_root, manifest):
+    from paired_package_optional_endpoints import SNAPSHOT_PATH
+
+    canonical_hash = original_browser["proof"]["definition_id_sha256"]
+    canonical_assemblies = evidence["loaded_assemblies"]["backend"]["package_assemblies"]
+    profiles = evidence["optional_feature_probes"] = {}
+
+    def observe_endpoints(handle):
+        return _json_request(handle.backend_url.removesuffix("/elsa/api") + SNAPSHOT_PATH,
+                             token=_metadata_token(handle))
+
+    for scenario in optional_features.SCENARIOS:
+        record = optional_execution.run_optional_profile(layout, scenario, validate_project=validate,
+            observe_ready=_observe_ready,
+            observe_assemblies=lambda handle, variant: _verify_loaded(
+                variant, _observe_loaded(handle, variant), verified_root, manifest),
+            observe_endpoints=observe_endpoints, canonical_definition_id_sha256=canonical_hash)
+        optional_execution.validate_optional_execution(record, layout.request, scenario,
+            canonical_definition_id_sha256=canonical_hash, canonical_assemblies=canonical_assemblies,
+            validate_ready=verify_runtime_readiness)
+        profiles[scenario] = record
+        # A complete defect observation may continue to the next fresh profile.
+        # Uncertain process cleanup prevents another runtime from being launched.
+        if not record["owned_process_cleanup"]:
+            evidence["owned_process_cleanup"] = False
+            raise ValueError("Optional profile cleanup was not verified")
+    require(set(profiles) == set(optional_features.SCENARIOS)
+            and all(row["result"] == "passed" for row in profiles.values()),
+            "Required optional feature profiles did not pass")
 
 
 def _verify_loaded(layout, observations: dict, verified_root: Path, manifest: dict) -> dict:
@@ -512,6 +545,9 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
         record["result"] = ("passed" if original_browser["result"] != "failed"
                             and all(item["passed"] is True for item in record["assertions"]) else "failed")
         browser.check_cell(record)
+        if version == candidate.PRODUCER["version"]:
+            evidence["stage"] = "optional_feature_probes"
+            _run_optional_profiles(layout, validate, evidence, original_browser, verified_root, manifest)
         if released_output is not None:
             # Preserve the exact validated download, never a reserialized workflow.
             raw = provenance.regular_file(released_output).read_bytes()

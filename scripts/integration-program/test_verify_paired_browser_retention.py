@@ -13,7 +13,9 @@ from test_paired_package_browser_matrix import attach_embedding, attach_native_i
 from test_paired_package_released_documents import fixture_identity, write_released_fixture
 from test_paired_package_workflow_contexts import contexts_proof
 from test_paired_package_secrets import secrets_proof
-from test_paired_package_browser_secrets_endpoint import assembly_inventory, valid_observations
+from test_paired_package_browser_secrets_endpoint import valid_observations
+from test_paired_package_optional_execution import complete_record, assembly_inventory as optional_assemblies
+from paired_package_optional_features import SCENARIOS
 
 
 class BrowserRetentionTests(unittest.TestCase):
@@ -118,12 +120,18 @@ class BrowserRetentionTests(unittest.TestCase):
             assertion.update(passed=True, reason_category=None)
         evidence = dict(zip(("version", "framework", "host"), key), result="passed" if passed else "failed",
                         secrets_endpoint_ownership={"schema": 1, "truncated": False, "observations": valid_observations()},
-                        loaded_assemblies={"backend": {"package_assemblies": assembly_inventory()}},
+                        loaded_assemblies={"backend": {"package_assemblies": optional_assemblies()}},
                         route_prefix=prefix,
                         stage="complete" if passed else "browser_contract", owned_process_cleanup=True,
                         resource_inventory={"assets": assets}, react_phase=summary, react_runtime_continuity=True,
                         react_loaded_assemblies={}, browser_resources=verify_browser_resources(
                             assets, combined["resources"], route_prefix="/" + prefix if prefix else ""))
+        if passed:
+            evidence["optional_feature_probes"] = {
+                scenario: complete_record(scenario, request.host, request.framework,
+                    original["proof"]["definition_id_sha256"],
+                    hypothetical_context_recovery=scenario == "deny-workflow-contexts")
+                for scenario in SCENARIOS}
         for filename, record in (("browser", original), ("react-phase", phase), ("execution", evidence)):
             path = self.write(name + "/" + filename + ".json", record)
             path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
@@ -165,6 +173,42 @@ class BrowserRetentionTests(unittest.TestCase):
     def test_failed_react_phase_retains_safe_partial_evidence_without_a_matrix_claim(self):
         name, _, _, _, _ = self.react(passed=False)
         self.assertIn(name + "/react-phase.json", verify_retained_inventory(self.root))
+
+    def test_optional_profiles_cannot_be_missing_failed_or_detached_from_runtime_bytes(self):
+        name, original, _, evidence, _ = self.react()
+        mutations = []
+        missing = copy.deepcopy(evidence)
+        missing.pop("optional_feature_probes")
+        mutations.append(missing)
+        incomplete = copy.deepcopy(evidence)
+        incomplete["optional_feature_probes"].pop("disconnect")
+        mutations.append(incomplete)
+        defect = copy.deepcopy(evidence)
+        defect["optional_feature_probes"]["deny-workflow-contexts"] = complete_record(
+            "deny-workflow-contexts", "server", "net10.0", original["proof"]["definition_id_sha256"])
+        mutations.append(defect)
+        changed = copy.deepcopy(evidence)
+        changed["optional_feature_probes"]["deny-secrets"]["endpoint_assemblies"][0]["sha256"] = "e" * 64
+        mutations.append(changed)
+        for index, value in enumerate(mutations):
+            self.write(name + "/execution.json", value)
+            with self.subTest(mutation=index), self.assertRaises(ValueError):
+                verify_retained_inventory(self.root)
+
+    def test_safe_optional_defect_is_retained_without_program_acceptance(self):
+        name, original, _, evidence, _ = self.react(passed=False)
+        evidence["optional_feature_probes"] = {"deny-workflow-contexts": complete_record(
+            "deny-workflow-contexts", "server", "net10.0", original["proof"]["definition_id_sha256"])}
+        self.write(name + "/execution.json", evidence)
+        self.assertIn(name + "/execution.json", verify_retained_inventory(self.root))
+
+    def test_optional_canonical_workflow_cannot_be_changed_in_retained_browser_receipt(self):
+        name, original, _, _, _ = self.react(host="server")
+        changed = copy.deepcopy(original)
+        changed["proof"]["definition_id_sha256"] = "f" * 64
+        self.write(name + "/browser.json", changed)
+        with self.assertRaises(ValueError):
+            verify_retained_inventory(self.root)
 
     def test_custom_react_retention_binds_original_native_embedding(self):
         name, original, _, _, _ = self.react(host="custom-elements")

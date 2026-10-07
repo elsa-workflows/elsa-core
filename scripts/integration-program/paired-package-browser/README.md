@@ -158,6 +158,16 @@ portable proof. The Node loader runs in the process that inherits the descriptor
 Socket, parser and transport contracts do not establish feature acceptance; the
 parent must bind the resulting native observations and verify final cleanup.
 
+Each of the twelve candidate cells must complete all five separate profiles:
+without Secrets, without WorkflowContexts, denied Secrets, denied WorkflowContexts,
+and a parent-owned backend disconnect. Thus full coverage requires sixty optional
+observations in addition to the original 36-cell matrix. The parent retains each
+profile's actual readiness, endpoint owners, browser observation and cleanup in
+`execution.json`; the upload guard recomputes acceptance. A complete observation
+of a defect stays failed. Uncertain cleanup prevents the next runtime from starting.
+Server snapshots bind request-entry cursors to canonical package handlers and
+passively measured response bodies; disconnect uses only its pre-stop snapshot.
+
 `react-phase.json` holds bounded checks, hashes and its own resource observations.
 The combined matrix verifies both phases' resources against the same inventory;
 `browser.json` stays unchanged. The upload guard binds the exact bytes of both
