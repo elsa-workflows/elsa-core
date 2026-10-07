@@ -88,12 +88,15 @@ class ExecutionCycleProofTests(unittest.TestCase):
             result = proof.run(checkout, self.root / "evidence", "exact-head")
         self.assertTrue(result["verificationComplete"])
         self.assertFalse(result["publicationPerformed"])
+        self.assertEqual(4, len(result["testBuilds"]))
         self.assertEqual(9, len(result["builds"]))
         self.assertEqual(4, len(result["tests"]))
         self.assertEqual(2, clean.call_count)
         self.assertEqual(1, sum("--filter" in command for command in commands))
+        self.assertTrue(all("--no-build" in command and "--no-restore" in command
+                            for command in commands if command[1] == "test"))
 
-    def test_failed_test_stops_before_broader_builds_and_retains_incomplete_receipt(self):
+    def test_all_fixture_errors_collected_before_any_execution_or_broader_builds(self):
         checkout = self.root / "repo"
         checkout.mkdir()
         input_file = self.root / "input"
@@ -103,8 +106,26 @@ class ExecutionCycleProofTests(unittest.TestCase):
                 patch.object(proof, "execute", return_value={"exitCode": 1, "status": "failed"}) as execute:
             result = proof.run(checkout, self.root / "evidence", "exact-head")
         self.assertFalse(result["verificationComplete"])
+        self.assertEqual(4, len(result["testBuilds"]))
         self.assertEqual([], result["builds"])
-        self.assertEqual(1, execute.call_count)
+        self.assertEqual([], result["tests"])
+        self.assertEqual(4, execute.call_count)
+
+    def test_failed_test_stops_before_later_tests_and_broader_builds(self):
+        checkout = self.root / "repo"
+        checkout.mkdir()
+        input_file = self.root / "input"
+        input_file.write_text("tracked input")
+        with patch.object(proof, "assert_clean_source"), \
+                patch.object(proof, "tracked_input", return_value=input_file), \
+                patch.object(proof, "execute", side_effect=lambda command, root, log:
+                             {"exitCode": 1, "status": "failed"} if command[1] == "test"
+                             else {"exitCode": 0, "status": "passed"}) as execute:
+            result = proof.run(checkout, self.root / "evidence", "exact-head")
+        self.assertFalse(result["verificationComplete"])
+        self.assertEqual([], result["builds"])
+        self.assertEqual(1, len(result["tests"]))
+        self.assertEqual(5, execute.call_count)
 
 
 if __name__ == "__main__":

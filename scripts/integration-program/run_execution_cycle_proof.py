@@ -118,7 +118,7 @@ def run(root: Path, output: Path, head: str) -> dict:
     output.mkdir(parents=True, exist_ok=True)
     receipt = {"schemaVersion": 1, "sourceRevision": head, "inputSha256": hashes,
                "publicationPerformed": False, "verificationComplete": False,
-               "builds": [], "tests": []}
+               "testBuilds": [], "builds": [], "tests": []}
 
     def save() -> None:
         (output / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
@@ -126,9 +126,21 @@ def run(root: Path, output: Path, head: str) -> dict:
     save()
     properties = ["-m:1", "-p:UseProjectReferences=true", "-p:IsPackable=false",
                   "-p:GeneratePackageOnBuild=false", "-p:CollectCoverage=false"]
+    # Compile each affected fixture once before execution. Collect all fixture errors in one pass;
+    # none of the tests or broader framework builds may run if a fixture does not compile.
+    for index, (project, _) in enumerate(TEST_PROJECTS):
+        row = {"project": project, "framework": "net10.0"}
+        row.update(execute(["dotnet", "build", project, "-c", "Release", "-f", "net10.0",
+                            *properties], root, output / f"test-build-{index}.log"))
+        receipt["testBuilds"].append(row)
+        save()
+        print(f"Compile fixture {project}: {row['status']}", flush=True)
+    if any(row["status"] != "passed" for row in receipt["testBuilds"]):
+        return receipt
     for index, (project, test_filter) in enumerate(TEST_PROJECTS):
         trx = output / f"tests-{index}.trx"
         command = ["dotnet", "test", project, "-c", "Release", "-f", "net10.0", *properties,
+                   "--no-build", "--no-restore",
                    "--logger", f"trx;LogFileName={trx.name}", "--results-directory", str(output)]
         if test_filter:
             command.extend(["--filter", test_filter])
