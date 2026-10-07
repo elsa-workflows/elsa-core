@@ -11,6 +11,7 @@ import { readWorkflowJsonExport, workflowSemanticIdentity } from './json-roundtr
 import { DirectBackendObserver } from './direct-backend.js';
 import { WasmBootObserver, type ObservedBootResource } from './wasm-boot.js';
 import { startRawResources, type ResourceFailure } from './raw-resources.js';
+import { HostedDeliveryObserver, emptyHostedDocument, failedHostedDelivery, hostedBaseHash, hostedDocumentResponse, hostedEntryPath, type HostedDelivery, type HostedRoutePrefix } from './hosted-delivery.js';
 import { optionalFeatureProfile, runOptionalFeatureProbe, type OptionalFeatureReceipt, type OptionalFeatureScenario } from './optional-feature-probes.js';
 import { openProbeControl, type ProbeControl, type ProbeControlDescriptor } from './private-probe-control.js';
 const policy = JSON.parse(readFileSync(new URL('./coverage-policy.json', import.meta.url), 'utf8'));
@@ -21,7 +22,7 @@ const expect = playwrightExpect.configure({ timeout: 20_000 });
 type Cell = { host: 'server' | 'wasm' | 'hosted-wasm' | 'custom-elements'; framework: string; version: string; route_prefix?: string; designer_mode?: 'x6' | 'react-flow'; backend_features?: string[]; permission_profile?: string };
 type Resource = { path: string; sha256: string; bytes: number; content_type: string; owner: 'package' | 'fixture' | 'platform'; required?: boolean };
 type ReleasedInput = { private_path: string; binding: { document: { source_cell: Cell; document_sha256: string; bytes: number; tool_version: string; definition_id_sha256: string; activity_id_sha256: string; value_sha256: string }; fixture_identity_sha256: string; source_evidence_sha256: string; browser_receipt_sha256: string }; source_binding_sha256: string; root_id_sha256: string };
-type PrivateInput = { request: Cell; studio_url: string; backend_url: string; username: string; password: string; safe_ids: Record<string, string>; resources: Resource[]; released_document_output?: string; released_document_inputs?: ReleasedInput[]; phase?: 'react-flow' | 'optional-feature-probe'; react_phase?: { source_browser_sha256: string; expected_hashes: ReactHashes }; optional_probe?: { scenario: OptionalFeatureScenario; control: ProbeControlDescriptor } };
+type PrivateInput = { request: Cell; studio_url: string; backend_url: string; username: string; password: string; safe_ids: Record<string, string>; resources: Resource[]; released_document_output?: string; released_document_inputs?: ReleasedInput[]; phase?: 'react-flow' | 'optional-feature-probe' | 'hosted-delivery'; react_phase?: { source_browser_sha256: string; expected_hashes: ReactHashes }; optional_probe?: { scenario: OptionalFeatureScenario; control: ProbeControlDescriptor } };
 type Assertion = { name: string; passed: boolean; reason_category: string | null };
 const baseline: string[] = policy.baseline;
 const candidate: string[] = policy.candidate;
@@ -517,12 +518,7 @@ class Backend {
   async dispose(): Promise<void> { await this.api.dispose(); }
 }
 
-async function authenticateShell(page: Page, input: PrivateInput, proof: Record<string, unknown>): Promise<void> {
-  await page.goto(input.studio_url + '/login');
-  proof.last_completed_stage = 'login_navigation';
-  // All three reviewed host compositions select ElsaIdentity, including released 3.8.4.
-  await expect(page.getByText('Elsa account', { exact: true })).toBeVisible();
-  proof.expected_auth_provider_observed = true;
+async function validateEmptyLoginForm(page: Page): Promise<void> {
   const username = page.getByLabel('User name', { exact: true });
   await expect(username).toBeVisible();
   const signIn = page.getByRole('button', { name: 'Sign in', exact: true });
@@ -538,7 +534,17 @@ async function authenticateShell(page: Page, input: PrivateInput, proof: Record<
     } catch { /* A prerender click has no live form effect; retry the empty validation only. */ }
   }
   if (!interactive) throw new Error('interactive_form_validation_missing');
+}
+
+async function authenticateShell(page: Page, input: PrivateInput, proof: Record<string, unknown>): Promise<void> {
+  await page.goto(input.studio_url + '/login');
+  proof.last_completed_stage = 'login_navigation';
+  // All three reviewed host compositions select ElsaIdentity, including released 3.8.4.
+  await expect(page.getByText('Elsa account', { exact: true })).toBeVisible();
+  proof.expected_auth_provider_observed = true;
+  await validateEmptyLoginForm(page);
   proof.interactive_validation_observed = true;
+  const username = page.getByLabel('User name', { exact: true });
   await username.fill(input.username);
   await page.getByLabel('Password', { exact: true }).fill(input.password);
   await page.getByLabel('Password', { exact: true }).blur();
@@ -1196,6 +1202,68 @@ async function optionalFeaturePhase(input: PrivateInput): Promise<void> {
   process.exitCode = failed || !cleanupVerified ? 1 : 0;
 }
 
+async function hostedDeliveryPhase(input: PrivateInput): Promise<void> {
+  const deliveries: HostedDelivery[] = [failedHostedDelivery(''), failedHostedDelivery('compat')];
+  let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
+  let browserVersion: string | null = null;
+  let cleanupFailed = false;
+  try {
+    if (input.request.host !== 'hosted-wasm' || input.request.route_prefix || input.optional_probe !== undefined ||
+        input.react_phase !== undefined || input.released_document_output !== undefined || input.released_document_inputs !== undefined ||
+        input.request.designer_mode === 'react-flow' || new URL(input.studio_url).pathname !== '/')
+      throw new Error('invalid_hosted_delivery_input');
+    browser = await chromium.launch({ headless: true });
+    browserVersion = browser.version();
+    for (const [index, prefix] of (['', 'compat'] as HostedRoutePrefix[]).entries()) {
+      let context: Awaited<ReturnType<NonNullable<typeof browser>['newContext']>> | undefined;
+      let page: Page | undefined;
+      let raw: Awaited<ReturnType<typeof startRawResources>> | undefined;
+      let observer: HostedDeliveryObserver | undefined;
+      let document = emptyHostedDocument();
+      let interactive = false, navigation = false, stopped = false, contextClosed = false;
+      const failed = () => observer?.failObservations();
+      try {
+        observer = new HostedDeliveryObserver(input.resources, input.request.framework, prefix);
+        context = await browser.newContext({ serviceWorkers: 'block' });
+        page = await context.newPage();
+        page.setDefaultTimeout(20_000);
+        page.on('pageerror', failed);
+        const nativePage = page, nativeObserver = observer;
+        raw = await startRawResources(await context.newCDPSession(page), input.studio_url, observer.expectedResources(),
+          observation => nativeObserver.observe(observation), failed);
+        const response = await page.goto(new URL(hostedEntryPath(prefix), input.studio_url).href, { timeout: 20_000 });
+        if (response) document = hostedDocumentResponse(new URL(input.studio_url).origin, prefix, {
+          url: response.url(), main_frame_navigation: response.request().isNavigationRequest() && response.frame() === nativePage.mainFrame(),
+          status: response.status(), content_type: response.headers()['content-type']
+        });
+        if (await page.locator('base').count() === 1)
+          document.base_href_sha256 = hostedBaseHash(await page.locator('base').getAttribute('href'));
+        await expect(page.getByText('Elsa account', { exact: true })).toBeVisible();
+        await validateEmptyLoginForm(page);
+        interactive = true;
+        navigation = true;
+      } catch { /* Preserve native document/resource evidence and attempt the second delivery. */ }
+      finally {
+        page?.off('pageerror', failed);
+        try { if (raw) { await raw.stop(); stopped = true; } } catch { cleanupFailed = true; }
+        observer?.finishObservations(stopped);
+        try { if (context) { await context.close(); contextClosed = true; } } catch { cleanupFailed = true; }
+        if (!contextClosed) cleanupFailed = true;
+        if (observer) deliveries[index] = observer.proof(document, interactive, navigation, stopped && contextClosed);
+      }
+    }
+  } catch { /* Missing setup or proof leaves both fixed deliveries failed. */ }
+  finally {
+    try { if (browser) await browser.close(); } catch { cleanupFailed = true; }
+  }
+  const cleanupVerified = browserVersion !== null && !cleanupFailed;
+  const complete = cleanupVerified && deliveries.every(delivery => delivery.result === 'passed');
+  process.stdout.write(JSON.stringify({ schema: 1, phase: 'hosted-delivery', host: input.request.host,
+    framework: input.request.framework, version: input.request.version, deliveries, browser_version: browserVersion,
+    cleanup_verified: cleanupVerified, result: complete ? 'passed' : 'failed', reason_category: complete ? null : 'delivery_failed' }));
+  process.exitCode = complete ? 0 : 1;
+}
+
 async function main(): Promise<void> {
   const parts: Buffer[] = [];
   let length = 0;
@@ -1208,6 +1276,7 @@ async function main(): Promise<void> {
   input.studio_url = loopback(input.studio_url); input.backend_url = loopback(input.backend_url);
   if (!hostAssertions[input.request.host] || !['3.8.4', '3.9.0', '3.10.0'].includes(input.request.version) || !['net8.0', 'net9.0', 'net10.0'].includes(input.request.framework))
     throw new Error('invalid_cell');
+  if (input.phase === 'hosted-delivery') { await hostedDeliveryPhase(input); return; }
   if (input.phase === 'optional-feature-probe') { await optionalFeaturePhase(input); return; }
   if (input.optional_probe !== undefined) throw new Error('unexpected_optional_probe');
   if (input.phase === 'react-flow') { await reactPhase(input); return; }
