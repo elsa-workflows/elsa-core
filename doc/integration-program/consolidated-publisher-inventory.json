@@ -1,0 +1,953 @@
+{
+  "schema_version": 1,
+  "review": {
+    "reviewed_at": "2026-10-07T10:06:38.669095+00:00",
+    "valid_until": "2026-10-08T10:06:38.669095+00:00",
+    "scope": "Lead-reviewed package publisher workflow identities on main, the Core program branch, and source 3.8/3.9 maintenance branches. Other workflow IDs and all live refs are inventory observations, not proof of publisher containment. See consolidated-publisher-handoff.md.",
+    "unresolved_paths": [
+      "Historical tag/rerun and nonselected branch workflow bodies are not proven contained.",
+      "Platform-managed and other inventoried workflows have unverified credential authority.",
+      "Repository/org Feedz credentials remain available; replacement environment credentials and maintenance/npm paths are not configured.",
+      "Indirect build/reusable actions and external action revisions require final release review."
+    ]
+  },
+  "repositories": [
+    {
+      "repository": "elsa-workflows/elsa-core",
+      "workflows": [
+        {
+          "id": 9049471,
+          "path": ".github/workflows/publish-latest-dashboard-docker.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 9072109,
+          "path": ".github/workflows/publish-latest-dashboard-and-server-docker.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 9072110,
+          "path": ".github/workflows/publish-latest-server-docker.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 44262630,
+          "path": ".github/workflows/packages.yml",
+          "identity_kind": "repository",
+          "role": "publisher",
+          "trigger_paths": [
+            "push",
+            "release",
+            "workflow_dispatch",
+            "rerun"
+          ],
+          "historical_behavior": "main uses dispatch-only opt-in publishing; maintenance workflow revisions still publish automatically on push/release. Historical tag/rerun authority is not contained.",
+          "observed_refs": [
+            {
+              "ref": "heads/codex/elsa-integration-program",
+              "blob_sha": "cb7c4c4776910af8a45753779b9db92fb3bf3f62"
+            },
+            {
+              "ref": "heads/main",
+              "blob_sha": "cb7c4c4776910af8a45753779b9db92fb3bf3f62"
+            },
+            {
+              "ref": "heads/release/3.8.1",
+              "blob_sha": "9e8825e5d187f71e83e558c52a268b9495b53d35"
+            },
+            {
+              "ref": "heads/release/3.8.2",
+              "blob_sha": "9e8825e5d187f71e83e558c52a268b9495b53d35"
+            },
+            {
+              "ref": "heads/release/3.8.4",
+              "blob_sha": "9e8825e5d187f71e83e558c52a268b9495b53d35"
+            },
+            {
+              "ref": "heads/release/3.9.0",
+              "blob_sha": "ef9be78c4ef6bbec357017dad5274c72aebef6cd"
+            }
+          ],
+          "source_ref": "b38e7523f79297076e51701fd951c426145aa99c",
+          "source_blob_sha": "cb7c4c4776910af8a45753779b9db92fb3bf3f62"
+        },
+        {
+          "id": 48109397,
+          "path": ".github/workflows/publish-latest-elsa.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 83098004,
+          "path": ".github/workflows/pr.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 93206676,
+          "path": ".github/workflows/bounty.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 127514166,
+          "path": ".github/workflows/stale.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 133166513,
+          "path": "dynamic/dependabot/dependabot-updates",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 138544363,
+          "path": "dynamic/github-code-scanning/codeql",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 164007596,
+          "path": "dynamic/copilot-swe-agent/copilot",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 172901242,
+          "path": ".github/workflows/copilot-setup-steps.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 202836797,
+          "path": "dynamic/copilot-pull-request-reviewer/copilot-pull-request-reviewer",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 206004507,
+          "path": ".github/workflows/docker-ca.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 267766487,
+          "path": ".github/workflows/greploop.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 278348773,
+          "path": ".github/workflows/update-wiki.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 281170042,
+          "path": "dynamic/agents/copilot-pull-request-reviewer",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 341705951,
+          "path": ".github/workflows/adr-toc.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 343341329,
+          "path": "dynamic/github-code-quality/codeql",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 365297174,
+          "path": ".github/workflows/integration-program-tools.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 365394886,
+          "path": ".github/workflows/package-impact-closure.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 365563992,
+          "path": ".github/workflows/secrets-api-studio-contract.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 365927558,
+          "path": ".github/workflows/studio-clientlib-build.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 366913919,
+          "path": ".github/workflows/release-elsa-slack.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 366969518,
+          "path": ".github/workflows/prove-studio-package-provenance.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 367224299,
+          "path": ".github/workflows/current-import-impact.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 367454166,
+          "path": ".github/workflows/validate-packages-gates.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 368043731,
+          "path": ".github/workflows/dapper-provider-tests.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 369761289,
+          "path": ".github/workflows/solution-groups.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 375962954,
+          "path": ".github/workflows/prove-consolidated-packages.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 376075182,
+          "path": ".github/workflows/persisted-workflow-upgrade-proof.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 376331552,
+          "path": ".github/workflows/prepare-consolidated-release-candidate.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 376629398,
+          "path": ".github/workflows/stable-persisted-workflow-upgrade-proof.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 376989167,
+          "path": ".github/workflows/paired-package-browser-proof.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 377239236,
+          "path": ".github/workflows/consolidated-package-recovery-preflight.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 264829356,
+          "path": ".github/workflows/claude-code-review.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 264829387,
+          "path": ".github/workflows/claude.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        }
+      ],
+      "refs": [
+        {
+          "ref": "heads/codex/elsa-integration-program",
+          "expected_sha": "e5b47b0d1c782d59009548cc5f17b9b0e374dd87"
+        },
+        {
+          "ref": "heads/main",
+          "expected_sha": "b38e7523f79297076e51701fd951c426145aa99c"
+        },
+        {
+          "ref": "heads/release/3.8.1",
+          "expected_sha": "249d0f077f8a0b5e6cb1a42b02b49f2f636b5ab5"
+        },
+        {
+          "ref": "heads/release/3.8.2",
+          "expected_sha": "33181ae3048f628f591a0155b5665a8e4d1bcea2"
+        },
+        {
+          "ref": "heads/release/3.8.4",
+          "expected_sha": "33181ae3048f628f591a0155b5665a8e4d1bcea2"
+        },
+        {
+          "ref": "heads/release/3.9.0",
+          "expected_sha": "5d3582b6309a2fd8ea33ebdb8c39fb040bfdc514"
+        },
+        {
+          "ref": "tags/3.9.0",
+          "expected_sha": "6436609a1a3874d3fea7ccf690897792f5a1f702"
+        },
+        {
+          "ref": "tags/3.8.4",
+          "expected_sha": "33181ae3048f628f591a0155b5665a8e4d1bcea2"
+        }
+      ],
+      "source_files": [
+        {
+          "path": ".github/actions/push-nuget-packages/action.yml",
+          "ref": "b38e7523f79297076e51701fd951c426145aa99c",
+          "blob_sha": "b306ab1f33a19642a14874050fc9177a0821f870",
+          "purpose": "Current packages workflow composite push action; blind duplicate retry is not accepted candidate recovery.",
+          "observed_refs": [
+            {
+              "ref": "heads/main",
+              "blob_sha": "b306ab1f33a19642a14874050fc9177a0821f870"
+            },
+            {
+              "ref": "heads/codex/elsa-integration-program",
+              "blob_sha": "b306ab1f33a19642a14874050fc9177a0821f870"
+            }
+          ]
+        },
+        {
+          "path": "scripts/validate_packages_publication_selection.py",
+          "ref": "b38e7523f79297076e51701fd951c426145aa99c",
+          "blob_sha": "a7e4a1dc810d93b0acdcd7aea974458b9a226af5",
+          "purpose": "Current Core dispatch selection guard, not a protected environment.",
+          "observed_refs": [
+            {
+              "ref": "heads/main",
+              "blob_sha": "a7e4a1dc810d93b0acdcd7aea974458b9a226af5"
+            },
+            {
+              "ref": "heads/codex/elsa-integration-program",
+              "blob_sha": "a7e4a1dc810d93b0acdcd7aea974458b9a226af5"
+            }
+          ]
+        }
+      ],
+      "required_environments": [
+        {
+          "name": "elsa-3-10-feedz",
+          "required_reviewers": true,
+          "prevent_self_review": true,
+          "prevent_admin_bypass": true,
+          "required_branch_policy": true
+        }
+      ],
+      "credential_names": [
+        "FEEDZ_API_KEY",
+        "FEEDZ_API_KEY_BASE64",
+        "FEEDS_IO_PAT",
+        "FEEDZ_IO_NPM"
+      ]
+    },
+    {
+      "repository": "elsa-workflows/elsa-studio",
+      "workflows": [
+        {
+          "id": 164180889,
+          "path": ".github/workflows/copilot-setup-steps.yml.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 64253637,
+          "path": ".github/workflows/packages.yml",
+          "identity_kind": "repository",
+          "role": "publisher",
+          "trigger_paths": [
+            "push",
+            "release",
+            "workflow_dispatch",
+            "rerun"
+          ],
+          "historical_behavior": "main and maintenance revisions publish to Feedz on push/release. Historical tag/rerun authority is not contained; Studio maintenance also permits explicit version dispatches.",
+          "observed_refs": [
+            {
+              "ref": "heads/main",
+              "blob_sha": "169022ee5831fad2b61714807ef4498342b36074"
+            },
+            {
+              "ref": "heads/release/3.8.1",
+              "blob_sha": "336d1f0ccda1152645331adb30940bf80f3c2d1a"
+            },
+            {
+              "ref": "heads/release/3.8.2",
+              "blob_sha": "336d1f0ccda1152645331adb30940bf80f3c2d1a"
+            },
+            {
+              "ref": "heads/release/3.8.4",
+              "blob_sha": "336d1f0ccda1152645331adb30940bf80f3c2d1a"
+            },
+            {
+              "ref": "heads/release/3.9.0",
+              "blob_sha": "24bc4df9c60c0a750b97383fcbddbc4b9c810e9c"
+            }
+          ],
+          "source_ref": "3d028a4e9a3267b291f3d43d8064b5c81a6f2759",
+          "source_blob_sha": "169022ee5831fad2b61714807ef4498342b36074"
+        },
+        {
+          "id": 86534173,
+          "path": ".github/workflows/pr.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 278251758,
+          "path": "dynamic/agents/copilot-pull-request-reviewer",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 203756911,
+          "path": "dynamic/copilot-pull-request-reviewer/copilot-pull-request-reviewer",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 163968855,
+          "path": "dynamic/copilot-swe-agent/copilot",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 138514493,
+          "path": "dynamic/dependabot/dependabot-updates",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 347111941,
+          "path": "dynamic/github-code-quality/codeql",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 138515541,
+          "path": "dynamic/github-code-scanning/codeql",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        }
+      ],
+      "refs": [
+        {
+          "ref": "heads/main",
+          "expected_sha": "3d028a4e9a3267b291f3d43d8064b5c81a6f2759"
+        },
+        {
+          "ref": "heads/release/3.8.1",
+          "expected_sha": "99de962e49f7793011196667659ac0cdb8df3fb7"
+        },
+        {
+          "ref": "heads/release/3.8.2",
+          "expected_sha": "1c72dc02c837919059b60efe5df2ed57ff2db2d9"
+        },
+        {
+          "ref": "heads/release/3.8.4",
+          "expected_sha": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae"
+        },
+        {
+          "ref": "heads/release/3.9.0",
+          "expected_sha": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42"
+        },
+        {
+          "ref": "tags/3.9.0",
+          "expected_sha": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42"
+        },
+        {
+          "ref": "tags/3.8.4",
+          "expected_sha": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae"
+        }
+      ],
+      "source_files": [],
+      "required_environments": [
+        {
+          "name": "elsa-3-maintenance-feedz",
+          "required_reviewers": true,
+          "prevent_self_review": true,
+          "prevent_admin_bypass": true,
+          "required_branch_policy": true
+        }
+      ],
+      "credential_names": [
+        "FEEDZ_API_KEY",
+        "FEEDZ_API_KEY_BASE64"
+      ]
+    },
+    {
+      "repository": "elsa-workflows/elsa-extensions",
+      "workflows": [
+        {
+          "id": 164180935,
+          "path": ".github/workflows/copilot-setup-steps.yml.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 145888102,
+          "path": ".github/workflows/packages.yml",
+          "identity_kind": "repository",
+          "role": "publisher",
+          "trigger_paths": [
+            "push",
+            "release",
+            "workflow_dispatch",
+            "rerun"
+          ],
+          "historical_behavior": "main and maintenance revisions publish to Feedz on push/release. Historical tag/rerun authority is not contained; Studio maintenance also permits explicit version dispatches.",
+          "observed_refs": [
+            {
+              "ref": "heads/main",
+              "blob_sha": "4763f3a806985edb0f5e690b048094fb77e192a9"
+            },
+            {
+              "ref": "heads/release/3.8.1",
+              "blob_sha": "d103321434de117dab20ec0b497007a14fc204a4"
+            },
+            {
+              "ref": "heads/release/3.8.2",
+              "blob_sha": "d103321434de117dab20ec0b497007a14fc204a4"
+            },
+            {
+              "ref": "heads/release/3.8.4",
+              "blob_sha": "d103321434de117dab20ec0b497007a14fc204a4"
+            },
+            {
+              "ref": "heads/release/3.9.0",
+              "blob_sha": "b51de385b4b80ed2c32e54c0da6b1a179a6ea364"
+            }
+          ],
+          "source_ref": "e189390b3ea10b730c4d66bf40e357f7621374ab",
+          "source_blob_sha": "4763f3a806985edb0f5e690b048094fb77e192a9"
+        },
+        {
+          "id": 159906604,
+          "path": ".github/workflows/pr.yml",
+          "identity_kind": "unresolved",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 288833902,
+          "path": "dynamic/agents/copilot-pull-request-reviewer",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 212144005,
+          "path": "dynamic/copilot-pull-request-reviewer/copilot-pull-request-reviewer",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 163934200,
+          "path": "dynamic/copilot-swe-agent/copilot",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 172615699,
+          "path": "dynamic/dependabot/dependabot-updates",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 172337629,
+          "path": "dynamic/dependency-graph/auto-submission",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 345456810,
+          "path": "dynamic/github-code-quality/codeql",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        },
+        {
+          "id": 145945698,
+          "path": "dynamic/github-code-scanning/codeql",
+          "identity_kind": "platform-managed",
+          "role": "unknown",
+          "trigger_paths": [
+            "other",
+            "rerun"
+          ],
+          "historical_behavior": "Workflow identity observed in the Actions API; source, inherited credentials and historical execution authority remain unverified.",
+          "observed_refs": []
+        }
+      ],
+      "refs": [
+        {
+          "ref": "heads/main",
+          "expected_sha": "e189390b3ea10b730c4d66bf40e357f7621374ab"
+        },
+        {
+          "ref": "heads/release/3.8.1",
+          "expected_sha": "0619be93b67dbfd933e148663eeffb657e52f69c"
+        },
+        {
+          "ref": "heads/release/3.8.2",
+          "expected_sha": "e7d05ef930dfde2aa85bf9dcaf841e5a6ede0a1e"
+        },
+        {
+          "ref": "heads/release/3.8.4",
+          "expected_sha": "154ba15fb4da85b4bebecfbe43639579cbda1d0d"
+        },
+        {
+          "ref": "heads/release/3.9.0",
+          "expected_sha": "89d4eb9b739ae135604aac2a1de18653a289bdb0"
+        },
+        {
+          "ref": "tags/3.9.0",
+          "expected_sha": "89d4eb9b739ae135604aac2a1de18653a289bdb0"
+        },
+        {
+          "ref": "tags/3.8.4",
+          "expected_sha": "154ba15fb4da85b4bebecfbe43639579cbda1d0d"
+        }
+      ],
+      "source_files": [],
+      "required_environments": [
+        {
+          "name": "elsa-3-maintenance-feedz",
+          "required_reviewers": true,
+          "prevent_self_review": true,
+          "prevent_admin_bypass": true,
+          "required_branch_policy": true
+        }
+      ],
+      "credential_names": [
+        "FEEDZ_API_KEY",
+        "FEEDZ_API_KEY_BASE64"
+      ]
+    }
+  ]
+}
