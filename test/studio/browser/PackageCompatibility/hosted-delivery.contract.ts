@@ -136,7 +136,7 @@ for (const framework of ['net8.0', 'net9.0', 'net10.0']) {
   const { resources, bodies } = fixture('net8.0');
   const template = resources.at(-1)!, body = bodies.get(template.path)!;
   const expanded = [...resources];
-  while (expanded.length < 1025) expanded.push({ ...template, path: '/_content/Elsa.Studio.Test/extra-' + expanded.length + '.js' });
+  while (expanded.length < 1024) expanded.push({ ...template, path: '/_content/Elsa.Studio.Test/extra-' + expanded.length + '.js' });
   const observer = new HostedDeliveryObserver(expanded, 'net8.0', 'compat');
   for (const row of expanded) {
     const bytes = bodies.get(row.path) ?? body;
@@ -146,9 +146,12 @@ for (const framework of ['net8.0', 'net9.0', 'net10.0']) {
   observer.finishObservations(true);
   const proof = observer.proof(document('compat'), true, true, true);
   assert.equal(proof.resources.length, 2048);
-  assert.equal(proof.checks.observations, false);
-  assert.equal(proof.result, 'failed');
-  assert.throws(() => new HostedDeliveryObserver(Array.from({ length: 2049 }, () => template), 'net8.0', ''));
+  assert.equal(proof.checks.observations, true);
+  assert.equal(proof.result, 'passed');
+  assert.throws(() => new HostedDeliveryObserver([...expanded, { ...template, path: '/_content/Elsa.Studio.Test/over-cap.js' }], 'net8.0', ''));
+  assert.throws(() => new HostedDeliveryObserver(resources.map(row => ({ ...row, bytes: 0 })), 'net8.0', ''));
+  assert.throws(() => new HostedDeliveryObserver(resources.map(row => ({ ...row, path: '/other' + row.path })), 'net8.0', ''));
+  assert.throws(() => new HostedDeliveryObserver(resources.map(row => ({ ...row, path: '/root-file.js' })), 'net8.0', ''));
   const interrupted = new HostedDeliveryObserver(resources, 'net8.0', '');
   resources.forEach(row => interrupted.observe(observed(row, bodies.get(row.path)!)));
   interrupted.failObservations();

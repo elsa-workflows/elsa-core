@@ -1254,6 +1254,7 @@ async function hostedDeliveryPhase(input: PrivateInput): Promise<void> {
         if (!contextClosed) cleanupFailed = true;
         if (observer) deliveries[index] = observer.proof(document, interactive, navigation, stopped && contextClosed);
       }
+      if (cleanupFailed) break;
     }
   } catch { /* Missing setup or proof leaves both fixed deliveries failed. */ }
   finally {

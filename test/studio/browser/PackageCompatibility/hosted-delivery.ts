@@ -60,11 +60,11 @@ export class HostedDeliveryObserver {
   private observationsCompleted = false;
 
   constructor(resources: HostedResource[], framework: string, private readonly prefix: HostedRoutePrefix) {
-    require((prefix === '' || prefix === 'compat') && Array.isArray(resources) && resources.length > 0 && resources.length <= 2048);
+    require((prefix === '' || prefix === 'compat') && Array.isArray(resources) && resources.length > 0 && resources.length <= 1024);
     for (const resource of resources) {
-      require(/^\/[A-Za-z0-9_./-]+$/.test(resource.path) && resource.path.length <= 2048 &&
+      require(/^\/_(framework|content)\/[A-Za-z0-9_./-]+$/.test(resource.path) && resource.path.length <= 2048 &&
         !resource.path.split('/').includes('..') && !resource.path.startsWith('/compat/') && !this.canonical.has(resource.path) &&
-        /^[a-f0-9]{64}$/.test(resource.sha256) && Number.isSafeInteger(resource.bytes) && resource.bytes >= 0 && resource.bytes <= 32 * 1024 * 1024 &&
+        /^[a-f0-9]{64}$/.test(resource.sha256) && Number.isSafeInteger(resource.bytes) && resource.bytes > 0 && resource.bytes <= 32 * 1024 * 1024 &&
         ['package', 'platform', 'fixture'].includes(resource.owner) && /^[a-z0-9.+-]+\/[a-z0-9.+-]+$/.test(resource.content_type));
       const canonical = { ...resource };
       this.canonical.set(resource.path, canonical);
