@@ -281,6 +281,18 @@ def isolated_environment(layout: CellLayout) -> dict[str, str]:
     return env
 
 
+def _generated_static_assets(layout: CellLayout, host: str, project: Path, *, required: bool = True) -> dict | None:
+    """Pin the one Hosted client bundle which is generated outside bin output."""
+    if layout.request.host != "hosted-wasm" or host != "wasm":
+        return {}
+    path = project.parent / "obj/Release" / layout.request.framework / "scopedcss/bundle/Elsa.Studio.Host.Wasm.styles.css"
+    require(not any(part.is_symlink() for part in (path, *path.parents)), "Symlinked generated fixture asset")
+    if not path.is_file() and not required:
+        return None
+    require(path.is_file(), "Missing generated fixture asset after build")
+    return {path.relative_to(project.parent).as_posix(): sha256(path)}
+
+
 def build(layout: CellLayout, *, converter_decoder: Path | None = None,
           report_operation: Callable[[str, str], None] = lambda _component, _phase: None) -> list[dict]:
     clients = {host for host in layout.project_paths if host in ("wasm", "custom-elements")}
@@ -305,7 +317,9 @@ def build(layout: CellLayout, *, converter_decoder: Path | None = None,
         if stamp.is_file() and not stamp.is_symlink():
             previous = json.loads(stamp.read_text())
             actual_output = {str(path.relative_to(output)): sha256(path) for path in output.rglob("*") if path.is_file()}
-            if previous.get("inputs") == input_hashes and assets_path.is_file() and previous.get("assets") == sha256(assets_path) and actual_output and previous.get("outputs") == actual_output:
+            generated = _generated_static_assets(layout, host, project, required=False)
+            generated_verified = generated is not None and (not generated or previous.get("generated_static_assets") == generated)
+            if previous.get("inputs") == input_hashes and assets_path.is_file() and previous.get("assets") == sha256(assets_path) and actual_output and previous.get("outputs") == actual_output and generated_verified:
                 record = {"stage": "reuse_verified_build", "project": host, "project_assets_sha256": sha256(assets_path)}
                 if host in clients:
                     record["converter_selection"] = converters.verify_reused_selection(layout, project, converter_decoder, env)
@@ -327,6 +341,7 @@ def build(layout: CellLayout, *, converter_decoder: Path | None = None,
             else:
                 commands.append(packages._run_command(command, project.parent, env, log, 1200))
         stamp.write_text(json.dumps({"schema": 1, "inputs": input_hashes, "assets": sha256(assets_path),
+                                    "generated_static_assets": _generated_static_assets(layout, host, project),
                                     "outputs": {str(path.relative_to(output)): sha256(path)
                                                 for path in output.rglob("*") if path.is_file()}}, sort_keys=True) + "\n")
         completed_projects.add(host)
@@ -532,9 +547,12 @@ def _build_identity(layout: CellLayout) -> dict:
         paths = list(output.rglob("*"))
         require(not any(path.is_symlink() for path in paths), "Symlinked phase build output")
         outputs = {str(path.relative_to(output)): sha256(path) for path in paths if path.is_file()}
+        generated = _generated_static_assets(layout, host, project)
         require(outputs and previous.get("inputs") == inputs and previous.get("assets") == sha256(assets)
-                and previous.get("outputs") == outputs, "Phase build identity differs from verified build")
-        identity[host] = {"stamp": sha256(stamp), "assets": sha256(assets), "outputs": outputs}
+                and previous.get("outputs") == outputs and
+                (not generated or previous.get("generated_static_assets") == generated), "Phase build identity differs from verified build")
+        identity[host] = {"stamp": sha256(stamp), "assets": sha256(assets), "outputs": outputs,
+                          "generated_static_assets": generated}
     return identity
 
 

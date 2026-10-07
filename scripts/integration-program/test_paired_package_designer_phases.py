@@ -124,11 +124,16 @@ class DesignerPhasesTests(unittest.TestCase):
             output = project.parent / "bin" / "Release" / "net10.0"
             output.mkdir(parents=True)
             (output / (project.stem + ".dll")).write_bytes(b"synthetic-built-output")
+            if host == "hosted-wasm" and name == "wasm":
+                bundle = obj / "Release/net10.0/scopedcss/bundle/Elsa.Studio.Host.Wasm.styles.css"
+                bundle.parent.mkdir(parents=True)
+                bundle.write_bytes(b"synthetic-generated-bundle")
         layout = hosts.CellLayout(hosts.CellRequest(host, "net10.0", "3.10.0"), group, paths, runtime, group / "packages", "10.0.300", inputs)
-        for project in paths.values():
+        for name, project in paths.items():
             output = project.parent / "bin" / "Release" / "net10.0"
             stamp = {"schema": 1, "inputs": {key: digest for key, digest in inputs.items() if key.startswith(project.parent.name + "/")},
                      "assets": hosts.sha256(project.parent / "obj" / "project.assets.json"),
+                     "generated_static_assets": hosts._generated_static_assets(layout, name, project),
                      "outputs": {path.name: hosts.sha256(path) for path in output.iterdir()}}
             (project.parent / "build-reuse.json").write_text(json.dumps(stamp))
         return layout
@@ -279,6 +284,25 @@ class DesignerPhasesTests(unittest.TestCase):
                             data = json.loads(stamp.read_text())
                             data["outputs"][target.name] = hosts.sha256(target)
                             stamp.write_text(json.dumps(data))
+                    with self.assertRaises(RuntimeError), owner.phase("react-flow"):
+                        pass
+                self.assert_clean()
+
+    def test_changed_hosted_bundle_or_bundle_and_stamp_blocks_second_phase(self):
+        for rewrite_stamp in (False, True):
+            with self.subTest(rewrite_stamp=rewrite_stamp):
+                layout = self.layout("hosted-wasm")
+                project = layout.project_paths["wasm"]
+                bundle = project.parent / "obj/Release/net10.0/scopedcss/bundle/Elsa.Studio.Host.Wasm.styles.css"
+                with hosts.start_designer_phases(layout, validate_project=self.validate) as owner:
+                    with owner.phase("x6"):
+                        pass
+                    bundle.write_bytes(b"changed-generated-bundle")
+                    if rewrite_stamp:
+                        stamp = project.parent / "build-reuse.json"
+                        data = json.loads(stamp.read_text())
+                        data["generated_static_assets"] = hosts._generated_static_assets(layout, "wasm", project)
+                        stamp.write_text(json.dumps(data))
                     with self.assertRaises(RuntimeError), owner.phase("react-flow"):
                         pass
                 self.assert_clean()

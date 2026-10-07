@@ -194,12 +194,16 @@ def verify_webcil(pe: bytes, wasm: bytes, converter: dict, *, _test_policy: dict
 
 
 def _derive_package_resources(build_manifest: Path, cache: Path, version: str, by_id: dict,
-                              package_member, *, route_prefix: str) -> dict:
+                              package_member, *, route_prefix: str, hosted_layout=None) -> dict:
     """Shared build/cache/member checks; wrappers own the immutable archive authority."""
     import paired_package_provenance as provenance
     build_manifest = provenance.regular_file(build_manifest.absolute())
     build = json.loads(build_manifest.read_text())
     require(isinstance(build.get("Assets"), list), "Missing actual static asset inventory")
+    inherited = None
+    if hosted_layout is not None:
+        from paired_package_hosted_assets import HostedClientAssets
+        inherited = HostedClientAssets(hosted_layout, build_manifest, build, version)
     policy = json.loads(CONVERTER_POLICY.with_name("coverage-policy.json").read_text())
     require(not route_prefix or re.fullmatch(r"/[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*", route_prefix), "Unsafe route prefix")
     mandatory = {route_prefix + path for path in policy["required_browser_assets"]}
@@ -211,6 +215,9 @@ def _derive_package_resources(build_manifest: Path, cache: Path, version: str, b
         if package_id == build.get("Source") and asset.get("SourceType") in ("Discovered", "Computed"):
             nonpackage.append({"source_id": package_id, "source_type": asset["SourceType"],
                                "relative_path_sha256": sha256(asset["RelativePath"].encode())})
+            continue
+        if inherited is not None and package_id == "Elsa.Studio.Host.Wasm" and asset.get("SourceType") == "Project":
+            nonpackage.append(inherited.receipt(asset))
             continue
         require(asset.get("SourceType") == "Package" and package_id.casefold() in by_id, "Unowned Elsa source browser asset")
         package = by_id[package_id.casefold()]
@@ -234,13 +241,15 @@ def _derive_package_resources(build_manifest: Path, cache: Path, version: str, b
                        "content_type": RESOURCE_CONTENT_TYPES[extension],
                        "owner": "package", "required": path in mandatory})
     require(mandatory <= paths, "Missing mandatory materialized Designer/DomInterop assets")
+    if inherited is not None:
+        inherited.verify_unchanged()
     return {"assets": sorted(assets, key=lambda item: item["path"]),
             "nonpackage_build_assets": nonpackage,
             "static_asset_manifest_sha256": sha256(build_manifest.read_bytes())}
 
 
 def derive_candidate_resources(build_manifest: Path, verified_root: Path, cache: Path, *,
-                               verified_manifest_sha256: str, route_prefix: str = "") -> dict:
+                               verified_manifest_sha256: str, route_prefix: str = "", hosted_layout=None) -> dict:
     """Bind actual build assets to the sealed original packages, never a caller approval map."""
     import consolidated_candidate_input as candidate
     import paired_package_provenance as provenance
@@ -264,7 +273,8 @@ def derive_candidate_resources(build_manifest: Path, verified_root: Path, cache:
                 pins = [item for item in package["browser_assets"] if item["package_path"] == member]
                 require(len(pins) == 1 and pins[0]["sha256"] == sha256(original), "Required browser asset lacks original sealed member pin")
             return original
-        receipt = _derive_package_resources(build_manifest, cache, version, by_id, package_member, route_prefix=route_prefix)
+        receipt = _derive_package_resources(build_manifest, cache, version, by_id, package_member,
+                                            route_prefix=route_prefix, hosted_layout=hosted_layout)
     return {**receipt, "verified_artifacts_sha256": verified_manifest_sha256,
             "candidate_producer": dict(candidate.PRODUCER)}
 

@@ -19,7 +19,7 @@ BASELINE_REQUESTED_ASSETS = {
 
 
 def derive_baseline_resources(build_manifest: Path, cache: Path, version: str, *,
-                              policy=baseline.POLICY_PATH, route_prefix: str = "") -> dict:
+                              policy=baseline.POLICY_PATH, route_prefix: str = "", hosted_layout=None) -> dict:
     selected = baseline._read_policy(policy)
     require(version in baseline.RELEASE_COMMITS["elsa-core"], "Unsupported baseline version")
     by_id = {record["id"].casefold(): record for record in selected["packages"] if record["version"] == version}
@@ -44,7 +44,7 @@ def derive_baseline_resources(build_manifest: Path, cache: Path, version: str, *
             return archives[package_id].read(member)
 
         receipt = _derive_package_resources(build_manifest, cache, version, by_id, package_member,
-                                             route_prefix=route_prefix)
+                                             route_prefix=route_prefix, hosted_layout=hosted_layout)
     required = {route_prefix + path for path in BASELINE_REQUESTED_ASSETS}
     for asset in receipt["assets"]:
         asset["required"] = asset["path"] in required

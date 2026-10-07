@@ -400,6 +400,10 @@ class HostMaterializationTests(unittest.TestCase):
             output = cwd / "bin" / "Release" / layout.request.framework
             output.mkdir(parents=True, exist_ok=True)
             (output / "fixture.dll").write_bytes(b"reviewed-output")
+            if command[1] == "build" and cwd.name == "wasm" and layout.request.host == "hosted-wasm":
+                bundle = cwd / "obj/Release" / layout.request.framework / "scopedcss/bundle/Elsa.Studio.Host.Wasm.styles.css"
+                bundle.parent.mkdir(parents=True, exist_ok=True)
+                bundle.write_bytes(b"reviewed-generated-bundle")
             return {"command": command, "exit_code": 0}
         return run
 
@@ -446,6 +450,44 @@ class HostMaterializationTests(unittest.TestCase):
                 client_build = next(command for command in called if len(command) > 2 and command[1:3] == ["build", client.name])
                 self.assertLess(called.index(client_build), called.index(wrapper_commands[0]))
                 self.assertEqual(set(layout.project_paths), set(hosts._build_identity(layout)))
+
+    def test_hosted_generated_bundle_requires_build_pin_and_rebuilds_stale_or_changed_output(self):
+        import paired_package_converter_selection as converters
+        layout = self.materialize("hosted-wasm")
+        called = []
+        run = self.fake_build_runner(layout, called)
+        def capture(_layout, project, command, env, log, _decoder, **_options):
+            return run(command, project.parent, env, log, 1200)
+        client = layout.project_paths["wasm"]
+        stamp = client.parent / "build-reuse.json"
+        bundle = client.parent / "obj/Release" / layout.request.framework / "scopedcss/bundle/Elsa.Studio.Host.Wasm.styles.css"
+        with patch.object(hosts, "isolated_environment", return_value={}), \
+                patch.object(hosts.packages, "_run_command", side_effect=run), \
+                patch.object(converters, "capture_build", side_effect=capture), \
+                patch.object(converters, "verify_reused_selection", return_value={}):
+            hosts.build(layout, converter_decoder=self.root / "synthetic-decoder")
+            recorded = json.loads(stamp.read_text())["generated_static_assets"]
+            self.assertEqual({bundle.relative_to(client.parent).as_posix(): hosts.sha256(bundle)}, recorded)
+            called.clear()
+            hosts.build(layout, converter_decoder=self.root / "synthetic-decoder")
+            self.assertEqual([["dotnet", "--version"]], called)
+            for mutation in ("missing-pin", "changed-body", "missing-body"):
+                with self.subTest(mutation=mutation):
+                    if mutation == "missing-pin":
+                        previous = json.loads(stamp.read_text())
+                        del previous["generated_static_assets"]
+                        stamp.write_text(json.dumps(previous))
+                    elif mutation == "changed-body":
+                        bundle.write_bytes(b"changed outside bin")
+                    else:
+                        bundle.unlink()
+                    with self.assertRaises(RuntimeError):
+                        hosts._build_identity(layout)
+                    called.clear()
+                    hosts.build(layout, converter_decoder=self.root / "synthetic-decoder")
+                    self.assertEqual(["restore", "build"], [command[1] for command in called if len(command) > 2])
+                    self.assertTrue(all(command[2] == client.name for command in called if len(command) > 2))
+                    self.assertEqual(set(layout.project_paths), set(hosts._build_identity(layout)))
 
     def test_credentials_are_not_in_repr_or_materialized_inputs(self):
         layout = self.materialize()
