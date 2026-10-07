@@ -101,9 +101,19 @@ describe('registerEdgeHoverTools', () => {
     });
 
     it('registers nothing when edges are not interactive', () => {
-        const readOnly = new FakeGraph();
-        registerEdgeHoverTools(readOnly, false);
+        const nonInteractive = new FakeGraph();
+        registerEdgeHoverTools(nonInteractive, false);
 
-        expect(readOnly.listens('edge:mouseenter')).toBe(false);
+        const events = [
+            'edge:mouseenter',
+            'edge:mouseleave',
+            'node:mouseenter',
+            'blank:mouseover',
+            'graph:mouseleave',
+            'edge:removed',
+        ];
+
+        for (const event of events)
+            expect(nonInteractive.listens(event)).toBe(false);
     });
 });

@@ -335,7 +335,7 @@ export async function createGraph(containerId: string, componentRef: DotNetCompo
         return false;
     });
 
-    registerEdgeHoverTools(graph, modePolicy.allowsInteractiveEdges);
+    registerEdgeHoverTools(graph, !readOnly && modePolicy.allowsInteractiveEdges);
 
     graph.on('node:click', async args => {
         const {e, node} = args;
