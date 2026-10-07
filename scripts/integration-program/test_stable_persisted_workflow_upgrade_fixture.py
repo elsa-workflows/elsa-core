@@ -15,12 +15,14 @@ import prepare_consolidated_release_candidate as candidate
 import prove_consolidated_package_consumers as packages
 import run_persisted_workflow_upgrade_fixture as fixture
 import run_stable_persisted_workflow_upgrade_fixture as stable
+from test_consolidated_candidate_clock import AFTER_EXPIRY, candidate_clock
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 class StableAdapterContracts(unittest.TestCase):
     def setUp(self):
+        self.enterContext(candidate_clock(candidate, candidate_input, sys.modules[__name__]))
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
@@ -95,6 +97,12 @@ class StableAdapterContracts(unittest.TestCase):
         self.assertEqual(stable.ENVELOPE_SHA256, provenance["original_envelope_sha256"])
         self.assertNotIn("matrix_execution", provenance)
         self.assertTrue((self.root / "extracted/verified-artifacts.json").is_file())
+
+    def test_historical_expiry_blocks_under_future_clock_before_extraction(self):
+        with candidate_clock(candidate, candidate_input, at=AFTER_EXPIRY), \
+                self.assertRaisesRegex(ValueError, "Candidate artifact expired"):
+            self.verify()
+        self.assertFalse((self.root / "extracted").exists())
 
     def test_reader_credentials_cannot_enter_consumer_verification(self):
         for token in ("GH_TOKEN", "GITHUB_TOKEN", "ACTIONS_READ_TOKEN"):

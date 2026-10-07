@@ -17,6 +17,8 @@ import zipfile
 
 import consolidated_package_executor as executor
 import consolidated_package_recovery as recovery
+import test_consolidated_package_recovery as recovery_fixtures
+from test_consolidated_candidate_clock import AFTER_EXPIRY, candidate_clock
 from test_consolidated_package_recovery import package_bytes, provenance
 
 
@@ -103,9 +105,11 @@ class FullInventoryTests(unittest.TestCase):
         (cls.root / "verified-artifacts.json").write_text(json.dumps(cls.manifest))
         (cls.root / "preupload-manifest.json").write_text(json.dumps({"files": files}))
         (cls.root / "receipt.json").write_text(json.dumps({"provenance": sources}))
-        cls.provenance = provenance(cls.root)
+        with candidate_clock(recovery_fixtures):
+            cls.provenance = provenance(cls.root)
 
     def setUp(self):
+        self.enterContext(candidate_clock(executor, recovery, recovery_fixtures))
         self.inspector = FakeInspector()
         self.associations, self.expected = executor.associations(self.root, self.manifest, self.inspector)
         self.feed = executor.SimulatedTransport(self.root, self.manifest, self.expected)
@@ -294,6 +298,11 @@ class FullInventoryTests(unittest.TestCase):
 
     def test_expiry_blocks_before_network(self):
         with patch.object(executor, "EXPIRY", "2000-01-01T00:00:00Z"), patch.object(self.feed, "get") as get:
+            self.assertEqual(self.run_executor()["failure_category"], "candidate_expired")
+        get.assert_not_called()
+
+    def test_historical_expiry_blocks_under_future_clock_before_network(self):
+        with candidate_clock(executor, at=AFTER_EXPIRY), patch.object(self.feed, "get") as get:
             self.assertEqual(self.run_executor()["failure_category"], "candidate_expired")
         get.assert_not_called()
 

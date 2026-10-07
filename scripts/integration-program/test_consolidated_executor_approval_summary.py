@@ -6,11 +6,13 @@ import json
 import os
 from pathlib import Path
 import tempfile
+import sys
 import unittest
 from unittest.mock import patch
 
 import consolidated_executor_approval_summary as summary
 import test_consolidated_package_executor as fixtures
+from test_consolidated_candidate_clock import AFTER_EXPIRY, candidate_clock
 
 executor = summary.executor
 
@@ -21,10 +23,14 @@ class SummaryTests(unittest.TestCase):
         fixtures.FullInventoryTests.setUpClass()
         cls.addClassCleanup(fixtures.FullInventoryTests.doClassCleanups)
         fixture = fixtures.FullInventoryTests()
-        fixture.setUp()
-        cls.original = fixture.run_executor(mode="verify")
+        try:
+            fixture.setUp()
+            cls.original = fixture.run_executor(mode="verify")
+        finally:
+            fixture.doCleanups()
 
     def setUp(self):
+        self.enterContext(candidate_clock(summary, executor.recovery, sys.modules[__name__]))
         self.context = {"GITHUB_ACTIONS": "true", "GITHUB_REPOSITORY": executor.REPOSITORY,
                         "GITHUB_REF": "refs/heads/main", "GITHUB_EVENT_NAME": "workflow_dispatch",
                         "GITHUB_SHA": "a"*40, "GITHUB_RUN_ID": "99", "GITHUB_RUN_ATTEMPT": "1"}
@@ -163,6 +169,12 @@ class SummaryTests(unittest.TestCase):
         self.verification["finished_at"] = self.verification["started_at"]
         self.verification["pending_gates"] = []
         with self.assertRaisesRegex(summary.SummaryError, "pending_gates_invalid"):
+            self.render()
+
+    def test_post_expiry_scheduling_remains_rejected(self):
+        self.admission["admission"]["observed_at"] = AFTER_EXPIRY.isoformat()
+        with candidate_clock(summary, executor.recovery, at=AFTER_EXPIRY), \
+                self.assertRaisesRegex(summary.SummaryError, "receipt_timing_invalid"):
             self.render()
 
     def test_cli_hashes_exact_inputs_and_emits_no_untrusted_fields(self):
