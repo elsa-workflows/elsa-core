@@ -262,6 +262,36 @@ class MatrixContracts(unittest.TestCase):
     def test_node_optional_features_classify_only_known_response_shapes(self):
         self.run_node_contract("optional-feature-probes.contract.ts", "optional feature response contracts passed")
 
+    def test_node_optional_control_rejects_ambiguous_acknowledgements(self):
+        self.run_node_contract("private-probe-control.contract.ts", "private optional probe control contracts passed")
+
+    def test_node_optional_control_inherits_real_socket_and_orders_parent_callbacks(self):
+        from paired_package_optional_control import OptionalProbeControl
+        script = """
+import { readFileSync } from 'node:fs';
+import { openProbeControl } from './private-probe-control.ts';
+const descriptor = JSON.parse(readFileSync(0, 'utf8'));
+const control = openProbeControl(descriptor, true);
+await control.disconnectReady();
+await control.beginNativeAction();
+control.close();
+process.stdout.write('private control roundtrip complete\\n');
+"""
+        events = []
+        control = OptionalProbeControl("disconnect", events.append, timeout=60)
+        try:
+            descriptor = control.descriptor()
+            result = matrix._run_browser_process(
+                ["node", "--import", "tsx", "--input-type=module", "-e", script],
+                cwd=matrix.JOURNEY.parent, input=json.dumps(descriptor), env=os.environ.copy(),
+                timeout=60, pass_fds=(descriptor["fd"],), control=control.session)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("private control roundtrip complete\n", result.stdout)
+            self.assertTrue(control.complete)
+            self.assertEqual(["disconnect-ready", "begin-native-action"], events)
+        finally:
+            control.close()
+
     def test_node_json_roundtrip_checks_native_document_semantics(self):
         self.run_node_contract("json-roundtrip.contract.ts", "JSON roundtrip contracts passed")
 

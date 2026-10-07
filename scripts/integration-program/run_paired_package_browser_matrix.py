@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, is_dataclass
+from contextlib import nullcontext
 import ctypes
 import errno
 import hashlib
@@ -904,16 +905,20 @@ def _cleanup_browser_process(process: subprocess.Popen, started: object) -> None
         raise BrowserCleanupUnverified(categories=failures) from None
 
 
-def _run_browser_process(command: list[str], *, cwd: Path, input: str, env: dict, timeout: int) -> subprocess.CompletedProcess:
+def _run_browser_process(command: list[str], *, cwd: Path, input: str, env: dict, timeout: int,
+                         pass_fds: tuple[int, ...] = (), control=None) -> subprocess.CompletedProcess:
     require(os.name == "posix", "Browser process cleanup requires POSIX")
     process = subprocess.Popen(command, cwd=cwd, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, text=True, start_new_session=True)
+                               stderr=subprocess.PIPE, text=True, start_new_session=True, pass_fds=pass_fds)
     info = None
     try:
         info = _browser_process_info(process.pid)
         if info is None:
             raise OSError("Browser root identity unavailable")
-        stdout, stderr = process.communicate(input=input, timeout=timeout)
+        # Control runs beside communicate so stdin and both output pipes remain
+        # drained while a native action waits for its parent acknowledgement.
+        with control(process) if control is not None else nullcontext():
+            stdout, stderr = process.communicate(input=input, timeout=timeout)
         return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
     except BaseException:
         if info is not None:

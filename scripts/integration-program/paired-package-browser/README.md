@@ -150,6 +150,14 @@ cleanup cannot establish a successful disconnect. Browser readiness and the
 post-stop native action still need independent evidence from the probe transport.
 The lifecycle contracts alone do not supply that browser evidence.
 
+The optional browser phase uses a private inherited Unix socket for its ordered
+action boundary and disconnect acknowledgement. The parent finishes its bounded
+observation or owned stop before acknowledging; the child then performs the native
+action. Credentials remain on stdin, and socket messages are never retained as
+portable proof. The Node loader runs in the process that inherits the descriptor.
+Socket, parser and transport contracts do not establish feature acceptance; the
+parent must bind the resulting native observations and verify final cleanup.
+
 `react-phase.json` holds bounded checks, hashes and its own resource observations.
 The combined matrix verifies both phases' resources against the same inventory;
 `browser.json` stays unchanged. The upload guard binds the exact bytes of both
