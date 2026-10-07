@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import io
 import json
@@ -69,7 +70,9 @@ def _remote_mutation(data: bytes, *, duplicate: bool = False) -> bytes:
     output = io.BytesIO()
     with zipfile.ZipFile(io.BytesIO(data)) as source, zipfile.ZipFile(output, "w") as target:
         for info in source.infolist():
-            target.writestr(info, source.read(info))
+            # ZipFile.writestr mutates ZipInfo offsets/flags. Preserve the source
+            # metadata so subsequent reads still address the original archive.
+            target.writestr(copy.copy(info), source.read(info))
         if duplicate:
             nuspec = next(info for info in source.infolist() if info.filename.endswith(".nuspec"))
             target.writestr(nuspec.filename.upper(), source.read(nuspec))

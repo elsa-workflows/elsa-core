@@ -82,8 +82,8 @@ jobs:
       - name: Verify cheap recovery contracts in both Python modes
         working-directory: scripts/integration-program
         run: |
-          python -m unittest test_consolidated_recovery_inputs test_consolidated_package_recovery test_stable_persisted_workflow_upgrade_fixture
-          python -O -m unittest test_consolidated_recovery_inputs test_consolidated_package_recovery test_stable_persisted_workflow_upgrade_fixture
+          python -m unittest test_consolidated_recovery_inputs test_consolidated_package_recovery test_run_consolidated_recovery_fixture test_stable_persisted_workflow_upgrade_fixture
+          python -O -m unittest test_consolidated_recovery_inputs test_consolidated_package_recovery test_run_consolidated_recovery_fixture test_stable_persisted_workflow_upgrade_fixture
       - name: Preserve maintenance verification and recovery policy
         working-directory: .agents/skills/elsa-release/tests
         run: |
