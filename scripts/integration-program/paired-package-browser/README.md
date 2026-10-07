@@ -134,6 +134,15 @@ Read-only backend observations verify the before/after values. The second browse
 must request the exact original React bundle bytes. No HTTP write substitutes for
 the native editor callbacks.
 
+Optional-feature probes use separate empty private runtime roots with fresh
+databases, credentials and keys, while reusing the verified build. Their process
+owner provides a one-shot backend disconnect bound to captured process objects
+and birth identities. It verifies Studio remains alive after the stop and shares
+the watchdog/cleanup lock; an expired owner, early process exit or uncertain
+cleanup cannot establish a successful disconnect. Browser readiness and the
+post-stop native action still need independent evidence from the probe transport.
+The lifecycle contracts alone do not supply that browser evidence.
+
 `react-phase.json` holds bounded checks, hashes and its own resource observations.
 The combined matrix verifies both phases' resources against the same inventory;
 `browser.json` stays unchanged. The upload guard binds the exact bytes of both
