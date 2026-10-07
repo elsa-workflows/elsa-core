@@ -5,7 +5,7 @@ import { dirname, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { NativeCustomElements, bindNativeCallback } from './custom-elements.js';
-import { checkReactDefinition, reactAfterValue, reactBundlePath, reactChecks, type ReactHashes } from './react-phase.js';
+import { checkReactActivityCallback, checkReactDefinition, reactAfterValue, reactBundlePath, reactChecks, type ReactHashes } from './react-phase.js';
 import { bpmnSemanticIdentity, checkedXmlText, type XmlElement } from './bpmn-roundtrip.js';
 import { readWorkflowJsonExport, workflowSemanticIdentity } from './json-roundtrip.js';
 import { DirectBackendObserver } from './direct-backend.js';
@@ -779,7 +779,7 @@ function observePackageResponse(response: Response, input: PrivateInput, expecte
 async function reactPhase(input: PrivateInput): Promise<void> {
   const source = input.react_phase;
   if (input.request.version !== '3.10.0' || input.request.designer_mode !== 'react-flow' ||
-      !['server', 'wasm', 'hosted-wasm'].includes(input.request.host) || !source ||
+      !['server', 'wasm', 'hosted-wasm', 'custom-elements'].includes(input.request.host) || !source ||
       !/^[0-9a-f]{64}$/.test(source.source_browser_sha256) ||
       Object.keys(source.expected_hashes).sort().join(',') !== 'activity_id_sha256,before_value_sha256,definition_id_sha256,root_id_sha256' ||
       !Object.values(source.expected_hashes).every(value => /^[0-9a-f]{64}$/.test(value)) ||
@@ -798,9 +798,13 @@ async function reactPhase(input: PrivateInput): Promise<void> {
   let context: Awaited<ReturnType<NonNullable<typeof browser>['newContext']>> | undefined;
   let page: Page | undefined;
   let backend: Backend | undefined;
+  let embedding: NativeCustomElements | undefined;
   let failed = false;
   let browserVersion: string | null = null;
-  const observe = (response: Response) => observePackageResponse(response, input, expected, resources, pending, () => {}, () => { failed = true; });
+  const observe = (response: Response) => {
+    if (embedding) pending.push(embedding.observeResponse(response));
+    observePackageResponse(response, input, expected, resources, pending, () => {}, () => { failed = true; });
+  };
   try {
     browser = await chromium.launch({ headless: true });
     browserVersion = browser.version();
@@ -809,15 +813,23 @@ async function reactPhase(input: PrivateInput): Promise<void> {
     page.setDefaultTimeout(20_000);
     page.on('response', observe);
     backend = await Backend.login(input.backend_url, input);
-    await authenticateShell(page, input, {});
-    checks.authentication = true;
-    await definitionsList(page, input);
+    if (input.request.host === 'custom-elements') {
+      embedding = backend.embedding(page, input);
+      embeddings.set(page, embedding);
+      await embedding.initialize();
+      await definitionsList(page, input);
+      // The adapter requires a real frame-owned bearer-authenticated GET200.
+      checks.authentication = embedding.proof.checks.backend_configured && embedding.proof.checks.native_authentication;
+    } else {
+      await authenticateShell(page, input, {});
+      checks.authentication = true;
+      await definitionsList(page, input);
+    }
     const row = page.locator('.definitions-table tr').filter({ has: page.getByText(input.safe_ids.definition_name, { exact: true }) });
     await expect(row).toHaveCount(1);
     // WorkflowDefinitionList.OnRowClick opens the exact row through EditAsync.
     await row.click();
-    await expect(page).toHaveURL(/\/workflows\/definitions\/[^/]+\/edit/);
-    const definitionId = new URL(page.url()).pathname.split('/').at(-2)!;
+    const definitionId = await editedDefinition(page);
     if (hash(definitionId) !== source.expected_hashes.definition_id_sha256) throw new Error('react_list_identity_mismatch');
     const getDefinition = () => backend!.get('/workflow-definitions/by-definition-id/' + encodeURIComponent(definitionId) + '?versionOptions=Latest');
     const original = checkReactDefinition(await getDefinition(), source.expected_hashes, false);
@@ -833,7 +845,10 @@ async function reactPhase(input: PrivateInput): Promise<void> {
     checks.react_mount = true;
     const select = async (value: string) => {
       const node = page!.locator('.elsa-react-flowchart-designer elsa-activity-wrapper[activity-id="' + original.activityId + '"]');
-      await expect(node).toHaveCount(1); await node.click();
+      await expect(node).toHaveCount(1);
+      embedding?.forgetCallback('activity');
+      await node.click();
+      if (embedding) checkReactActivityCallback((await embedding.callback('activity')).id, source.expected_hashes);
       await expect(inputControl(page!, /^Output$/).locator('[tabindex="0"]').first()).toContainText('sentinel');
       const control = inputControl(page!, /^Output Value$/i).locator('input[type="text"]');
       await expect(control).toHaveCount(1); await expect(control).toHaveValue(value);
@@ -851,7 +866,7 @@ async function reactPhase(input: PrivateInput): Promise<void> {
       catch { return false; }
     }).toBe(true);
     checks.saved = true;
-    await page.reload();
+    await reloadEditor(page);
     await mounted();
     await select(reactAfterValue);
     checkReactDefinition(await getDefinition(), source.expected_hashes, true);

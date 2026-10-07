@@ -26,6 +26,7 @@ FIELDS = {"schema", "cell", "mode", "result", "browser_version", "source_browser
           "hashes", "resources", "failure_category"}
 SUMMARY_FIELDS = {"source_browser_sha256", "phase_receipt_sha256", "checks", "hashes"}
 FAILURE = "browser_execution_or_validation_failed"
+HOSTS = {"server", "wasm", "hosted-wasm", "custom-elements"}
 REACT_PATH = "/_content/Elsa.Studio.Workflows.Designer/react-designer.entry.js"
 
 
@@ -47,7 +48,7 @@ def browser_receipt_sha256(record: dict) -> str:
 def _cell(request):
     request = asdict(request) if is_dataclass(request) else dict(request)
     key = browser.identity(request)
-    require(key in browser.MATRIX and key[0] == "3.10.0" and key[2] in {"server", "wasm", "hosted-wasm"}
+    require(key in browser.MATRIX and key[0] == "3.10.0" and key[2] in HOSTS
             and request.get("designer_mode", "x6") in {"x6", "react-flow"}, "Unsupported React phase request")
     prefix = request.get("route_prefix", "")
     require(prefix == "" or key[2] == "hosted-wasm" and isinstance(prefix, str) and
@@ -61,6 +62,9 @@ def _source(original, key):
     assertions = {item["name"]: item["passed"] for item in original["assertions"]}
     require(original["result"] in {"passed", "incomplete"} and all(assertions.get(name) is True for name in
             ("authentication", "x6_edit_save_reload", "identity_preserved", "cleanup")), "Original X6 phase is not eligible")
+    if key[2] == "custom-elements":
+        require(all(assertions.get(name) is True for name in ("native_callbacks", "instance_list_viewer")),
+                "Original CustomElements phase lacks complete native embedding behavior")
     proof = original.get("proof", {})
     require(not assertions.get("reactflow_edit_save", False) and "reactflow" not in proof,
             "Original child already claims a React phase")
@@ -149,12 +153,16 @@ def summarize_react_phase(receipt):
 
 
 def validate_react_phase_summary(value, assertion_passed, parent_proof, key):
-    require(key in browser.MATRIX and key[0] == "3.10.0" and key[2] in {"server", "wasm", "hosted-wasm"},
+    require(key in browser.MATRIX and key[0] == "3.10.0" and key[2] in HOSTS,
             "Unexpected React phase cell")
     require(isinstance(value, dict) and set(value) == SUMMARY_FIELDS and type(assertion_passed) is bool,
             "Unsafe React phase summary")
     _sha(value["source_browser_sha256"])
     _sha(value["phase_receipt_sha256"])
+    if key[2] == "custom-elements":
+        from paired_package_embedding import validate_embedding
+        validate_embedding(parent_proof.get("embedding"),
+                           {"authentication": True, "native_callbacks": True, "instance_list_viewer": True}, parent_proof, key)
     expected = {}
     for name, parent in BEFORE_HASHES.items():
         _sha(parent_proof.get(parent))

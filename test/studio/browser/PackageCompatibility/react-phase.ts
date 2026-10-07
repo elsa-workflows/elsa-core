@@ -19,3 +19,9 @@ export function checkReactDefinition(document: any, expected: ReactHashes, chang
     throw new Error('react_workflow_binding_mismatch');
   return { definitionId: identity.definitionId, rootId: identity.rootId, activityId: identity.activityIds[0], value: identity.outputValue };
 }
+
+/** A native embedding callback must name the exact activity bound by the X6 child. */
+export function checkReactActivityCallback(value: unknown, expected: ReactHashes): void {
+  if (typeof value !== 'string' || !/^[0-9a-f]{1,16}$/.test(value) || reactHash(value) !== expected.activity_id_sha256)
+    throw new Error('react_native_activity_callback_mismatch');
+}

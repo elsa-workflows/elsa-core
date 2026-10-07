@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { checkReactDefinition, reactAfterValue, reactChecks, reactHash, type ReactHashes } from './react-phase.js';
+import { checkReactActivityCallback, checkReactDefinition, reactAfterValue, reactChecks, reactHash, type ReactHashes } from './react-phase.js';
 
 const document = {
   definitionId: 'abc', name: 'paired-browser-012345abcdef', outputs: [{ name: 'sentinel' }],
@@ -35,4 +35,8 @@ for (const mutate of [
 for (const name of Object.keys(expected) as (keyof ReactHashes)[])
   assert.throws(() => checkReactDefinition(document, { ...expected, [name]: reactHash('wrong') }, false));
 assert.throws(() => checkReactDefinition(changed, { ...expected, before_value_sha256: reactHash(reactAfterValue) }, true));
+checkReactActivityCallback('123', expected);
+for (const value of [null, undefined, '', '999', '123/private', '123'.repeat(8), { id: '123' }])
+  assert.throws(() => checkReactActivityCallback(value, expected));
+assert.throws(() => checkReactActivityCallback('123', { ...expected, activity_id_sha256: reactHash('999') }));
 console.log('React phase contracts passed');

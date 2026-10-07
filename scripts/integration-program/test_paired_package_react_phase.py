@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 
 import materialize_paired_package_hosts as hosts
+import paired_package_embedding as embedding
 import paired_package_react_phase as react
 import run_paired_package_browser_matrix as browser
 
@@ -26,6 +27,16 @@ def phase_fixture(host="server", framework="net10.0"):
                            "activity_id_sha256": hashed("123"), "value_sha256": hashed("synthetic-browser-value")},
                     assertions=[{"name": name, "passed": name in passed, "reason_category": None if name in passed else "not_implemented"}
                                 for name in sorted(browser.required_assertions(cell))])
+    if host == "custom-elements":
+        original["proof"]["instance_id_sha256"] = hashed("456")
+        original["proof"]["embedding"] = {
+            "checks": dict.fromkeys(embedding.CHECKS, True),
+            **{name: original["proof"][name] for name in embedding.PARENT_BINDINGS},
+            "version_id_sha256": hashed("789"),
+        }
+        for assertion in original["assertions"]:
+            if assertion["name"] in {"native_callbacks", "instance_list_viewer"}:
+                assertion.update(passed=True, reason_category=None)
     raw = b"sealed-react-bundle"
     assets = [{"path": react.REACT_PATH, "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw),
                "content_type": "text/javascript", "owner": "package", "required": True}]
@@ -55,7 +66,7 @@ class ReactPhaseContracts(unittest.TestCase):
         self.assertIn("React phase contracts passed", completed.stdout)
 
     def test_all_supported_cells_bind_original_and_exact_bundle(self):
-        for host in ("server", "wasm", "hosted-wasm"):
+        for host in ("server", "wasm", "hosted-wasm", "custom-elements"):
             for framework in browser.FRAMEWORKS:
                 with self.subTest(host=host, framework=framework):
                     request, original, assets, record = phase_fixture(host, framework)
@@ -86,14 +97,78 @@ class ReactPhaseContracts(unittest.TestCase):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 react.source_bindings(self.request, original)
 
-    def test_wrong_cell_mode_baseline_and_custom_embedding_are_rejected(self):
-        for request in (dict(asdict(self.request), designer_mode="unknown"), replace(self.request, host="custom-elements"), replace(self.request, version="3.9.0", designer_mode="x6")):
+    def test_wrong_cell_mode_and_baseline_are_rejected(self):
+        for request in (dict(asdict(self.request), designer_mode="unknown"), replace(self.request, version="3.9.0", designer_mode="x6")):
             with self.subTest(request=request), self.assertRaises(ValueError):
                 react.source_bindings(request, self.original)
         record = copy.deepcopy(self.record)
         record["cell"]["host"] = "wasm"
         with self.assertRaises(ValueError):
             self.validate(record)
+
+    def test_custom_embedding_requires_complete_original_native_callbacks_and_instance_viewer(self):
+        request, original, assets, record = phase_fixture("custom-elements")
+        self.validate(record, request=request, original=original, assets=assets)
+        for prefix in (2, 5, 6, 7):
+            with self.subTest(prefix=prefix):
+                partial = copy.deepcopy(original)
+                native = partial["proof"]["embedding"]
+                native["checks"] = {name: index < prefix for index, name in enumerate(embedding.CHECKS)}
+                for name, check in embedding.HASH_CHECKS.items():
+                    if not native["checks"][check]:
+                        native.pop(name, None)
+                for assertion in partial["assertions"]:
+                    if assertion["name"] == "native_callbacks":
+                        assertion["passed"] = prefix >= 6
+                    if assertion["name"] == "instance_list_viewer":
+                        assertion["passed"] = False
+                with self.assertRaisesRegex(ValueError, "lacks complete native embedding"):
+                    react.source_bindings(request, partial)
+
+    def test_custom_phase_revalidates_exact_source_bundle_and_identity_guards(self):
+        request, original, assets, record = phase_fixture("custom-elements")
+        before = copy.deepcopy(original)
+        for mutate in (
+            lambda value: value.update(source_browser_sha256="0" * 64),
+            lambda value: value["hashes"].update(definition_id_sha256=hashed("wrong")),
+            lambda value: value["hashes"].update(activity_id_sha256=hashed("wrong")),
+            lambda value: value["hashes"].update(root_id_sha256=hashed("wrong")),
+            lambda value: value["hashes"].update(after_value_sha256=hashed("wrong")),
+            lambda value: value["resources"][0].update(owner="fixture"),
+            lambda value: value["resources"][0].update(requested=False),
+        ):
+            with self.subTest(mutation=mutate):
+                changed = copy.deepcopy(record)
+                mutate(changed)
+                with self.assertRaises(ValueError):
+                    self.validate(changed, request=request, original=original, assets=assets)
+        self.assertEqual(before, original)
+
+    def test_custom_summary_requires_complete_crossbound_original_embedding(self):
+        request, original, assets, record = phase_fixture("custom-elements")
+        summary = react.summarize_react_phase(self.validate(record, request=request, original=original, assets=assets))
+        key = browser.identity(asdict(request))
+        react.validate_react_phase_summary(summary, True, original["proof"], key)
+        for name in ("embedding", "definition_id_sha256", "activity_id_sha256", "instance_id_sha256"):
+            with self.subTest(field=name):
+                proof = copy.deepcopy(original["proof"])
+                proof.pop(name)
+                with self.assertRaises(ValueError):
+                    react.validate_react_phase_summary(summary, True, proof, key)
+
+    def test_custom_private_transport_accepts_original_x6_request_and_fresh_react_handle(self):
+        request, original, assets, record = phase_fixture("custom-elements")
+        handle = SimpleNamespace(**vars(self.handle))
+        handle.request = request
+        original_request = replace(request, designer_mode="x6")
+        before = copy.deepcopy(original)
+        with patch.object(browser, "_run_browser_process", return_value=SimpleNamespace(stdout=json.dumps(record), returncode=0)) as child:
+            self.assertEqual(record, react.run_react_phase(handle, original_request, assets, original))
+        payload = json.loads(child.call_args.kwargs["input"])
+        self.assertEqual("custom-elements", payload["request"]["host"])
+        self.assertEqual("react-flow", payload["request"]["designer_mode"])
+        self.assertEqual(react.browser_receipt_sha256(original), payload["react_phase"]["source_browser_sha256"])
+        self.assertEqual(before, original)
 
     def test_failed_partial_and_unlaunched_receipts_are_retained_without_pass(self):
         record = copy.deepcopy(self.record)
