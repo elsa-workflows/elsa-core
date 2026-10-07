@@ -1,6 +1,19 @@
 # MongoDB atomic workflow updates in consolidated source
 
-Program #8194, story #8286, task #8294. This is a narrow integration patch for the disposable source-consolidation rehearsal. It is not an upstream import, release package, or published artifact. Apply it only after #8291's reviewed preparation, against the Core, Extensions, and Studio source pins recorded in the receipt.
+Program #8194, story #8286, task #8294. The checked-in patch and receipt below describe the disposable source-consolidation rehearsal. They are historical evidence, not verification of the final imported source. Apply that patch only against the rehearsal source pins recorded in the receipt.
+
+## Imported source correction
+
+The imported Mongo provider now incorporates the reviewed transaction approach directly. It retains the later tenant-owned upsert and default-tenant normalization changes, tenant-aware summary queries, strict tenant-scoped updates/deletes, and serializer fixes. Session reads share the ordinary read visibility predicate, including visible `*` rows; atomic writes retain the selected row's owner even when the callback supplies another tenant. New draft rows are always marked latest.
+
+The existing compare-and-swap test class uses a shared MongoDB `7.0.24` replica set (`rs1`) and isolated databases. It covers the reviewed cases plus the existing missing/false-match/no-longer-latest outcomes, graph/name races, a `CustomProperties` race omitted by the old guard, default and shared tenant ownership, and explicit standalone rejection. The conflict-code classifier checks are unit checks; the concurrent-writer case exercises a real database write conflict. The standalone case expects an unsupported-transaction error before callbacks or mutation; there is no weaker fallback.
+
+The two baseline regression probes compile using the pre-correction public API and are self-contained in `test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs`:
+
+- `TryUpdateLatestAsync_WhenUnlistedMetadataChangesAfterRead_ReturnsConflictAndKeepsConcurrentMetadata` must fail on the old source with `Atomic metadata guard must reject a stale full-document snapshot.`
+- `TryUpdateLatestAsync_WhenDraftInsertFails_RollsBackLatestUnmark` must fail on the old source with `Failed draft insertion must leave prior latest unchanged.`
+
+Current-head verification requires hosted builds of the imported Mongo provider on `net8.0`, `net9.0`, and `net10.0`, the complete imported Mongo test project on `net10.0`, and the BPMN consumer compare-and-swap tests. Baseline regression failures must come from the named assertions, not compilation, Docker startup, or driver failures. The historical receipt below does not satisfy these gates; current-head hosted verification is recorded separately.
 
 ## Behavior
 

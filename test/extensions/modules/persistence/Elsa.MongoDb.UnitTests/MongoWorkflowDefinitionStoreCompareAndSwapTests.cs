@@ -5,239 +5,587 @@ using Elsa.Persistence.MongoDb.Modules.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
+using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.Core.Clusters;
+using MongoDB.Driver.Core.Connections;
+using MongoDB.Driver.Core.Servers;
 using Testcontainers.MongoDb;
 
 namespace Elsa.MongoDb.UnitTests;
 
-/// <summary>
-/// <see cref="MongoWorkflowDefinitionStore.TryUpdateLatestAsync"/> is the compare-and-swap the BPMN document
-/// PUT uses: load, match, apply, a snapshot-filtered write. Lost match is Conflict, not an overwrite.
-/// </summary>
-public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IAsyncLifetime
+[CollectionDefinition(nameof(MongoReplicaSetCollection), DisableParallelization = true)]
+public sealed class MongoReplicaSetCollection : ICollectionFixture<MongoReplicaSetFixture>
 {
-    private readonly MongoDbContainer _container = new MongoDbBuilder().WithImage("mongo:7.0.24").Build();
-    private readonly TestTenantAccessor _tenantAccessor = new();
-    private MongoClient? _client;
-    private IMongoCollection<WorkflowDefinition> _collection = null!;
-    private MongoWorkflowDefinitionStore _store = null!;
+}
+
+public sealed class MongoReplicaSetFixture : IAsyncLifetime
+{
+    private readonly MongoDbContainer _container = new MongoDbBuilder()
+        .WithImage("mongo:7.0.24")
+        .WithReplicaSet("rs1")
+        .Build();
+
+    public string ConnectionString => _container.GetConnectionString();
 
     public async Task InitializeAsync()
     {
         try
         {
             await _container.StartAsync();
-
-            _client = new MongoClient(_container.GetConnectionString());
-            var database = _client.GetDatabase($"elsa-definitions-{Guid.NewGuid():N}");
-            _collection = database.GetCollection<WorkflowDefinition>("workflow_definitions");
-            var mongoDbStore = new MongoDbStore<WorkflowDefinition>(_collection, _tenantAccessor);
-            _store = new MongoWorkflowDefinitionStore(mongoDbStore);
         }
         catch
         {
-            await DisposeAsync();
+            await _container.DisposeAsync();
             throw;
         }
     }
 
-    public async Task DisposeAsync()
+    public async Task DisposeAsync() => await _container.DisposeAsync();
+}
+
+[Collection(nameof(MongoReplicaSetCollection))]
+public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposable
+{
+    private readonly TestTenantAccessor _tenantAccessor = new();
+    private readonly MongoClient _client;
+    private readonly IMongoCollection<WorkflowDefinition> _collection;
+    private readonly MongoWorkflowDefinitionStore _store;
+
+    public MongoWorkflowDefinitionStoreCompareAndSwapTests(MongoReplicaSetFixture fixture)
     {
-        try
-        {
-            _client?.Dispose();
-        }
-        finally
-        {
-            await _container.DisposeAsync();
-        }
+        var settings = MongoClientSettings.FromConnectionString(fixture.ConnectionString);
+        settings.ReadPreference = ReadPreference.Nearest;
+        _client = new MongoClient(settings);
+        var database = _client.GetDatabase($"elsa-cas-{Guid.NewGuid():N}");
+        _collection = database.GetCollection<WorkflowDefinition>("workflow_definitions");
+        var genericStore = new MongoDbStore<WorkflowDefinition>(_collection, _tenantAccessor);
+        _store = new MongoWorkflowDefinitionStore(genericStore);
+        _collection.Indexes.CreateOne(
+            new CreateIndexModel<WorkflowDefinition>(
+                Builders<WorkflowDefinition>.IndexKeys.Ascending(x => x.DefinitionId).Ascending(x => x.Version),
+                new CreateIndexOptions { Unique = true }));
     }
 
-    [Fact(DisplayName = "A missing definition is NotFound")]
+    public void Dispose() => _client.Dispose();
+
+    [Fact]
     public async Task TryUpdateLatestAsync_WhenNothingMatchesTheFilter_ReturnsNotFound()
     {
-        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var callbackCalls = 0;
 
         var result = await _store.TryUpdateLatestAsync(
-            LatestOf("missing"),
-            _ => true,
-            current => current);
+            LatestFilter("missing"),
+            _ =>
+            {
+                callbackCalls++;
+                return true;
+            },
+            current =>
+            {
+                callbackCalls++;
+                return current;
+            });
 
         Assert.Equal(WorkflowDefinitionUpdateOutcome.NotFound, result.Outcome);
         Assert.Null(result.Definition);
+        Assert.Equal(0, callbackCalls);
     }
 
-    [Fact(DisplayName = "A match that fails is Conflict and the stored row is unchanged")]
+    [Fact]
     public async Task TryUpdateLatestAsync_WhenTheRowDoesNotMatch_ReturnsConflictAndWritesNothing()
     {
-        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
-        await _store.SaveAsync(Definition("def-1", "id-1", name: "Original", stringData: "graph-v2"));
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        await _collection.InsertOneAsync(Definition("latest", "tenant-a"));
+        var updateCalls = 0;
 
         var result = await _store.TryUpdateLatestAsync(
-            LatestOf("def-1"),
-            loaded => loaded.StringData == "graph-v1",
-            loaded =>
+            LatestFilter("definition"),
+            _ => false,
+            current =>
             {
-                var next = loaded.ShallowClone();
-                next.StringData = "should-not-be-saved";
-                return next;
+                updateCalls++;
+                current.StringData = "should not be saved";
+                return current;
             });
 
         Assert.Equal(WorkflowDefinitionUpdateOutcome.Conflict, result.Outcome);
         Assert.Null(result.Definition);
-
-        var stored = await _store.FindAsync(LatestOf("def-1"));
-        Assert.Equal("graph-v2", stored!.StringData);
-        Assert.Equal("Original", stored.Name);
+        Assert.Equal(0, updateCalls);
+        var stored = await _collection.Find(x => x.Id == "latest").SingleAsync();
+        Assert.Equal("initial graph", stored.StringData);
     }
 
-    [Fact(DisplayName = "A loaded row that is no longer IsLatest is Conflict and writes nothing")]
+    [Fact]
     public async Task TryUpdateLatestAsync_WhenTheLoadedRowIsNoLongerLatest_ReturnsConflictAndWritesNothing()
     {
-        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
-        var published = Definition("def-1", "id-1", name: "Published", stringData: "graph-v1");
-        published.IsPublished = true;
-        await _store.SaveAsync(published);
-
-        var winner = await _store.TryUpdateLatestAsync(
-            LatestOf("def-1"),
-            _ => true,
-            loaded =>
-            {
-                var draft = loaded.ShallowClone();
-                draft.Id = "id-2";
-                draft.Version = loaded.Version + 1;
-                draft.IsPublished = false;
-                draft.StringData = "winner-draft";
-                return draft;
-            });
-
-        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, winner.Outcome);
-
-        var loser = await _store.TryUpdateLatestAsync(
-            new WorkflowDefinitionFilter { Id = published.Id },
-            _ => true,
-            loaded =>
-            {
-                var draft = loaded.ShallowClone();
-                draft.Id = "id-3";
-                draft.Version = loaded.Version + 1;
-                draft.IsPublished = false;
-                draft.StringData = "should-not-be-saved";
-                return draft;
-            });
-
-        Assert.Equal(WorkflowDefinitionUpdateOutcome.Conflict, loser.Outcome);
-        Assert.Null(loser.Definition);
-
-        var stored = await _store.FindAsync(LatestOf("def-1"));
-        Assert.Equal("id-2", stored!.Id);
-        Assert.Equal("winner-draft", stored.StringData);
-    }
-
-    [Fact(DisplayName = "A matching latest row is updated and the callback sees that just-loaded row")]
-    public async Task TryUpdateLatestAsync_WhenTheRowMatches_SavesTheUpdateBuiltFromTheLoadedRow()
-    {
-        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
-        await _store.SaveAsync(Definition("def-1", "id-1", name: "Original", stringData: "graph-v1"));
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var previous = Definition("previous", "tenant-a");
+        previous.IsLatest = false;
+        await _collection.InsertOneAsync(previous);
+        var latest = Definition("latest", "tenant-a");
+        latest.Version = 2;
+        await _collection.InsertOneAsync(latest);
+        var callbackCalls = 0;
 
         var result = await _store.TryUpdateLatestAsync(
-            LatestOf("def-1"),
-            loaded => loaded.StringData == "graph-v1",
-            loaded =>
+            new WorkflowDefinitionFilter { Id = previous.Id },
+            _ =>
             {
-                var next = loaded.ShallowClone();
-                next.StringData = "graph-v2";
-                next.Name = loaded.Name + "-kept";
-                return next;
-            });
-
-        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, result.Outcome);
-        Assert.Equal("graph-v2", result.Definition!.StringData);
-        Assert.Equal("Original-kept", result.Definition.Name);
-
-        var stored = await _store.FindAsync(LatestOf("def-1"));
-        Assert.Equal("graph-v2", stored!.StringData);
-        Assert.Equal("Original-kept", stored.Name);
-        Assert.Equal("id-1", stored.Id);
-    }
-
-    [Fact(DisplayName = "A new draft from a published version unmarks the old latest")]
-    public async Task TryUpdateLatestAsync_WhenANewDraftIsCreated_UnmarksThePreviousLatest()
-    {
-        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
-        var published = Definition("def-1", "id-1", name: "Published", stringData: "graph-v1");
-        published.IsPublished = true;
-        await _store.SaveAsync(published);
-
-        var result = await _store.TryUpdateLatestAsync(
-            LatestOf("def-1"),
-            _ => true,
-            loaded =>
+                callbackCalls++;
+                return true;
+            },
+            current =>
             {
-                var draft = loaded.ShallowClone();
-                draft.Id = "id-2";
-                draft.Version = loaded.Version + 1;
-                draft.IsPublished = false;
-                draft.StringData = "draft-graph";
-                return draft;
-            });
-
-        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, result.Outcome);
-        Assert.Equal("id-2", result.Definition!.Id);
-
-        var latest = await _store.FindAsync(LatestOf("def-1"));
-        Assert.Equal("id-2", latest!.Id);
-        Assert.True(latest.IsLatest);
-
-        var versions = (await _store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = "def-1" })).ToList();
-        Assert.Equal(2, versions.Count);
-        Assert.Equal(1, versions.Count(x => x.IsLatest));
-        Assert.False(versions.Single(x => x.Id == "id-1").IsLatest);
-    }
-
-    [Fact(DisplayName = "A row that changed after load is Conflict and the stored graph stays")]
-    public async Task TryUpdateLatestAsync_WhenTheRowChangedAfterLoad_ReturnsConflictAndWritesNothing()
-    {
-        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
-        await _store.SaveAsync(Definition("def-1", "id-1", name: "Original", stringData: "graph-v1"));
-
-        var result = await _store.TryUpdateLatestAsync(
-            LatestOf("def-1"),
-            loaded => loaded.StringData == "graph-v1",
-            loaded =>
-            {
-                _collection.UpdateOne(
-                    Builders<WorkflowDefinition>.Filter.Eq(x => x.Id, loaded.Id),
-                    Builders<WorkflowDefinition>.Update.Set(x => x.StringData, "concurrent-write"));
-
-                var next = loaded.ShallowClone();
-                next.StringData = "stale-overwrite";
-                return next;
+                callbackCalls++;
+                current.StringData = "should not be saved";
+                return current;
             });
 
         Assert.Equal(WorkflowDefinitionUpdateOutcome.Conflict, result.Outcome);
         Assert.Null(result.Definition);
-
-        var stored = await _store.FindAsync(LatestOf("def-1"));
-        Assert.Equal("concurrent-write", stored!.StringData);
-        Assert.Equal("Original", stored.Name);
+        Assert.Equal(0, callbackCalls);
+        var stored = await _collection.Find(x => x.Id == "previous").SingleAsync();
+        Assert.Equal("initial graph", stored.StringData);
+        Assert.False(stored.IsLatest);
+        Assert.Equal("latest", (await _store.FindAsync(LatestFilter("definition")))!.Id);
     }
 
-    private static WorkflowDefinitionFilter LatestOf(string definitionId) =>
-        new() { DefinitionId = definitionId, VersionOptions = VersionOptions.Latest };
+    [Fact]
+    public async Task TryUpdateLatestAsync_WhenSnapshotMatches_UpdatesOnceUsingPrimaryTransaction()
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        await _collection.InsertOneAsync(Definition("latest", tenantId: "tenant-a"));
+        var matchCalls = 0;
+        var updateCalls = 0;
 
-    private static WorkflowDefinition Definition(string definitionId, string id, string name, string stringData) =>
-        new()
+        var result = await _store.TryUpdateLatestAsync(
+            LatestFilter("definition"),
+            current =>
+            {
+                matchCalls++;
+                return current.Name == "initial";
+            },
+            current =>
+            {
+                updateCalls++;
+                current.StringData = "updated";
+                return current;
+            });
+
+        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, result.Outcome);
+        Assert.Equal(1, matchCalls);
+        Assert.Equal(1, updateCalls);
+        var stored = await _collection.Find(x => x.Id == "latest").SingleAsync();
+        Assert.Equal("updated", stored.StringData);
+        Assert.Equal("tenant-a", stored.TenantId);
+    }
+
+    [Fact]
+    public async Task TryUpdateLatestAsync_WhenTwoWritersReadTheSameSnapshot_OnlyOneWins()
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        await _collection.InsertOneAsync(Definition("latest", tenantId: "tenant-a"));
+        using var start = new ManualResetEventSlim();
+        using var bothMatched = new Barrier(2);
+        var matchCalls = 0;
+        var updateCalls = 0;
+
+        var attempts = Enumerable.Range(1, 2).Select(writer => Task.Run(async () =>
         {
-            Id = id,
-            DefinitionId = definitionId,
-            Name = name,
-            StringData = stringData,
-            Version = 1,
-            IsLatest = true,
-            MaterializerName = "Json"
-        };
+            Assert.True(start.Wait(TimeSpan.FromSeconds(10)));
+            return await _store.TryUpdateLatestAsync(
+                LatestFilter("definition"),
+                current =>
+                {
+                    Interlocked.Increment(ref matchCalls);
+                    return bothMatched.SignalAndWait(TimeSpan.FromSeconds(15)) && current.StringData == "initial graph";
+                },
+                current =>
+                {
+                    Interlocked.Increment(ref updateCalls);
+                    current.StringData = $"writer-{writer}";
+                    return current;
+                });
+        })).ToArray();
+
+        start.Set();
+        var results = await Task.WhenAll(attempts).WaitAsync(TimeSpan.FromSeconds(30));
+
+        Assert.Equal(2, matchCalls);
+        Assert.Equal(2, updateCalls);
+        Assert.Single(results, result => result.Outcome == WorkflowDefinitionUpdateOutcome.Updated);
+        Assert.Single(results, result => result.Outcome == WorkflowDefinitionUpdateOutcome.Conflict);
+        var stored = await _collection.Find(x => x.Id == "latest").SingleAsync();
+        Assert.Contains(stored.StringData, new[] { "writer-1", "writer-2" });
+        Assert.Equal("tenant-a", stored.TenantId);
+    }
+
+    [Fact]
+    public async Task TryUpdateLatestAsync_WhenUnlistedMetadataChangesAfterRead_ReturnsConflictAndKeepsConcurrentMetadata()
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        await _collection.InsertOneAsync(Definition("latest", tenantId: "tenant-a"));
+        var matchesCalls = 0;
+        var updateCalls = 0;
+
+        var result = await _store.TryUpdateLatestAsync(
+            LatestFilter("definition"),
+            current =>
+            {
+                matchesCalls++;
+                // CustomProperties was omitted from the original partial snapshot guard.
+                _collection.UpdateOne(
+                    x => x.Id == current.Id,
+                    Builders<WorkflowDefinition>.Update.Set(x => x.CustomProperties, new Dictionary<string, object> { ["owner"] = "concurrent writer" }));
+                return true;
+            },
+            current =>
+            {
+                updateCalls++;
+                current.StringData = "stale graph";
+                return current;
+            });
+
+        Assert.True(
+            result.Outcome == WorkflowDefinitionUpdateOutcome.Conflict,
+            "Atomic metadata guard must reject a stale full-document snapshot.");
+        Assert.Equal(1, matchesCalls);
+        Assert.Equal(1, updateCalls);
+        var stored = await _collection.Find(x => x.Id == "latest").SingleAsync();
+        Assert.Equal("concurrent writer", stored.CustomProperties["owner"]);
+        Assert.Equal("initial graph", stored.StringData);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TryUpdateLatestAsync_WhenGraphOrNameChangesAfterRead_ReturnsConflictAndKeepsConcurrentWrite(bool changeName)
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        await _collection.InsertOneAsync(Definition("latest", "tenant-a"));
+
+        var result = await _store.TryUpdateLatestAsync(
+            LatestFilter("definition"),
+            _ => true,
+            current =>
+            {
+                var concurrentUpdate = changeName
+                    ? Builders<WorkflowDefinition>.Update.Set(x => x.Name, "concurrent name")
+                    : Builders<WorkflowDefinition>.Update.Set(x => x.StringData, "concurrent graph");
+                _collection.UpdateOne(x => x.Id == current.Id, concurrentUpdate);
+                current.StringData = "stale graph";
+                return current;
+            });
+
+        Assert.Equal(WorkflowDefinitionUpdateOutcome.Conflict, result.Outcome);
+        Assert.Null(result.Definition);
+        var stored = await _collection.Find(x => x.Id == "latest").SingleAsync();
+        Assert.Equal(changeName ? "concurrent name" : "initial", stored.Name);
+        Assert.Equal(changeName ? "initial graph" : "concurrent graph", stored.StringData);
+    }
+
+    [Theory]
+    [InlineData(112, true)]
+    [InlineData(91, false)]
+    public void TryUpdateLatestAsync_ClassifiesOnlyWriteConflictCodeAsAbortedConflict(int code, bool expected)
+    {
+        var exception = CommandException(code);
+        exception.AddErrorLabel("TransientTransactionError");
+        var classifier = typeof(MongoWorkflowDefinitionStore).GetMethod(
+            "IsKnownAbortedConflict",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+        Assert.NotNull(classifier);
+        var actual = (bool)classifier.Invoke(null, [exception])!;
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TryUpdateLatestAsync_WhenCallbackThrowsTransientMongoError_PropagatesAndLeavesDocumentUnchanged(bool throwFromUpdate)
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        await _collection.InsertOneAsync(Definition("latest", tenantId: "tenant-a"));
+        // Code 112 from a user callback must propagate, even though a driver write conflict is a Conflict result.
+        var callbackException = CommandException(112);
+        callbackException.AddErrorLabel("TransientTransactionError");
+        var matchCalls = 0;
+        var updateCalls = 0;
+
+        var actual = await Assert.ThrowsAsync<MongoCommandException>(() => _store.TryUpdateLatestAsync(
+            LatestFilter("definition"),
+            current =>
+            {
+                matchCalls++;
+                if (!throwFromUpdate)
+                {
+                    throw callbackException;
+                }
+
+                return true;
+            },
+            current =>
+            {
+                updateCalls++;
+                if (throwFromUpdate)
+                {
+                    throw callbackException;
+                }
+
+                return current;
+            }));
+
+        Assert.Same(callbackException, actual);
+        Assert.Equal(1, matchCalls);
+        Assert.Equal(throwFromUpdate ? 1 : 0, updateCalls);
+        var stored = await _collection.Find(x => x.Id == "latest").SingleAsync();
+        Assert.Equal("initial graph", stored.StringData);
+        Assert.Equal("tenant-a", stored.TenantId);
+    }
+
+    [Theory]
+    [InlineData("tenant-a")]
+    [InlineData(null)]
+    public async Task TryUpdateLatestAsync_WhenTenantIsNotVisible_ReturnsNotFound_AndTenantAgnosticMutationPreservesOwner(string? owner)
+    {
+        await _collection.InsertOneAsync(Definition("latest", owner));
+        using var tenantB = _tenantAccessor.PushContext(new Tenant { Id = "tenant-b" });
+        var hidden = await _store.TryUpdateLatestAsync(
+            LatestFilter("definition"),
+            _ => true,
+            current => current);
+
+        Assert.Equal(WorkflowDefinitionUpdateOutcome.NotFound, hidden.Outcome);
+
+        var sharedFilter = LatestFilter("definition");
+        sharedFilter.TenantAgnostic = true;
+        var visible = await _store.TryUpdateLatestAsync(
+            sharedFilter,
+            _ => true,
+            current =>
+            {
+                current.Name = "updated across tenants";
+                current.TenantId = "tenant-b";
+                return current;
+            });
+
+        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, visible.Outcome);
+        var stored = await _collection.Find(x => x.Id == "latest").SingleAsync();
+        Assert.Equal(owner, stored.TenantId);
+        Assert.Equal("updated across tenants", stored.Name);
+    }
+
+    [Fact]
+    public async Task TryUpdateLatestAsync_WhenSharedRowIsVisible_PreservesSharedOwner()
+    {
+        await _collection.InsertOneAsync(Definition("latest", Tenant.AgnosticTenantId));
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+
+        var result = await _store.TryUpdateLatestAsync(
+            LatestFilter("definition"),
+            _ => true,
+            current =>
+            {
+                current.TenantId = "tenant-a";
+                current.StringData = "updated shared graph";
+                return current;
+            });
+
+        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, result.Outcome);
+        Assert.Equal(Tenant.AgnosticTenantId, result.Definition!.TenantId);
+        var stored = await _collection.Find(x => x.Id == "latest").SingleAsync();
+        Assert.Equal(Tenant.AgnosticTenantId, stored.TenantId);
+        Assert.Equal("updated shared graph", stored.StringData);
+    }
+
+    [Fact]
+    public async Task TryUpdateLatestAsync_WhenPublishedVersionCreatesDraft_UpdatesBothRowsAndPreservesTenant()
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var published = Definition("published", tenantId: "tenant-a");
+        published.IsPublished = true;
+        await _collection.InsertOneAsync(published);
+        var rawCollection = _collection.Database.GetCollection<BsonDocument>("workflow_definitions");
+        var originalPublishedDocument = await rawCollection.Find(x => x["_id"] == "published").SingleAsync();
+        var updateCalls = 0;
+
+        var result = await _store.TryUpdateLatestAsync(
+            LatestFilter("definition"),
+            _ => true,
+            current =>
+            {
+                updateCalls++;
+                var draft = current.ShallowClone();
+                draft.Id = "new-draft";
+                draft.Version = 2;
+                // A new draft is always latest, even if the callback returns it unmarked.
+                draft.IsLatest = false;
+                draft.IsPublished = false;
+                draft.TenantId = "tenant-b";
+                return draft;
+            });
+
+        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, result.Outcome);
+        Assert.Equal(1, updateCalls);
+        var storedPublished = await _collection.Find(x => x.Id == "published").SingleAsync();
+        var storedPublishedDocument = await rawCollection.Find(x => x["_id"] == "published").SingleAsync();
+        var expectedPublishedDocument = originalPublishedDocument.DeepClone().AsBsonDocument;
+        expectedPublishedDocument["IsLatest"] = false;
+        var storedDraft = await _collection.Find(x => x.Id == "new-draft").SingleAsync();
+        Assert.Equal(expectedPublishedDocument, storedPublishedDocument);
+        Assert.False(storedPublished.IsLatest);
+        Assert.True(storedPublished.IsPublished);
+        Assert.True(storedDraft.IsLatest);
+        Assert.False(storedDraft.IsPublished);
+        Assert.Equal(2, storedDraft.Version);
+        Assert.Equal("tenant-a", storedDraft.TenantId);
+    }
+
+    [Fact]
+    public async Task TryUpdateLatestAsync_WhenPublishedVersionHasUnknownBsonField_RejectsWithoutMutation()
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var published = Definition("published", tenantId: "tenant-a");
+        published.IsPublished = true;
+        var rawCollection = _collection.Database.GetCollection<BsonDocument>("workflow_definitions");
+        var publishedDocument = published.ToBsonDocument();
+        publishedDocument["LegacyExtra"] = new BsonDocument("source", "older Elsa process");
+        await rawCollection.InsertOneAsync(publishedDocument);
+
+        await Assert.ThrowsAsync<FormatException>(() => _store.TryUpdateLatestAsync(
+            LatestFilter("definition"),
+            _ => true,
+            current =>
+            {
+                var draft = current.ShallowClone();
+                draft.Id = "new-draft";
+                draft.Version = 2;
+                draft.IsLatest = true;
+                draft.IsPublished = false;
+                return draft;
+            }));
+
+        var stored = await rawCollection.Find(x => x["_id"] == "published").SingleAsync();
+        Assert.Equal(publishedDocument, stored);
+        Assert.False(await rawCollection.Find(x => x["_id"] == "new-draft").AnyAsync());
+    }
+
+    [Fact]
+    public async Task TryUpdateLatestAsync_WhenDraftInsertFails_RollsBackLatestUnmark()
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var published = Definition("published", tenantId: "tenant-a");
+        published.IsPublished = true;
+        await _collection.InsertOneAsync(published);
+        var conflictingVersion = Definition("existing-version-2", tenantId: "tenant-a");
+        conflictingVersion.Version = 2;
+        conflictingVersion.IsLatest = false;
+        await _collection.InsertOneAsync(conflictingVersion);
+        var updateCalls = 0;
+
+        await Assert.ThrowsAsync<MongoWriteException>(() => _store.TryUpdateLatestAsync(
+            LatestFilter("definition"),
+            _ => true,
+            current =>
+            {
+                updateCalls++;
+                var draft = current.ShallowClone();
+                draft.Id = "new-draft";
+                draft.Version = 2;
+                draft.IsPublished = false;
+                draft.IsLatest = true;
+                return draft;
+            }));
+
+        Assert.Equal(1, updateCalls);
+        var storedPublished = await _collection.Find(x => x.Id == "published").SingleAsync();
+        Assert.True(storedPublished.IsLatest, "Failed draft insertion must leave prior latest unchanged.");
+        Assert.True(storedPublished.IsPublished);
+        Assert.False(await _collection.Find(x => x.Id == "new-draft").AnyAsync());
+    }
+
+    [Fact]
+    public async Task TryUpdateLatestAsync_WhenServerIsStandalone_FailsWithoutMutationOrCallbacks()
+    {
+        await using var container = new MongoDbBuilder().WithImage("mongo:7.0.24").Build();
+        await container.StartAsync();
+        using var client = new MongoClient(container.GetConnectionString());
+        var collection = client.GetDatabase($"elsa-cas-{Guid.NewGuid():N}").GetCollection<WorkflowDefinition>("workflow_definitions");
+        var store = new MongoWorkflowDefinitionStore(new MongoDbStore<WorkflowDefinition>(collection, _tenantAccessor));
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        await collection.InsertOneAsync(Definition("latest", "tenant-a"));
+        var callbackCalls = 0;
+
+        var error = await Assert.ThrowsAsync<MongoCommandException>(() => store.TryUpdateLatestAsync(
+            LatestFilter("definition"),
+            _ =>
+            {
+                callbackCalls++;
+                return true;
+            },
+            current =>
+            {
+                callbackCalls++;
+                current.StringData = "should not be saved";
+                return current;
+            }));
+
+        Assert.Equal(20, error.Code); // IllegalOperation: transaction numbers require a replica set or mongos.
+        Assert.Equal(0, callbackCalls);
+        var stored = await collection.Find(x => x.Id == "latest").SingleAsync();
+        Assert.Equal("initial graph", stored.StringData);
+        Assert.True(stored.IsLatest);
+    }
+
+    [Fact]
+    public async Task TryUpdateLatestAsync_CannotChangeLogicalDefinitionId()
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        await _collection.InsertOneAsync(Definition("latest", tenantId: "tenant-a"));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _store.TryUpdateLatestAsync(
+            LatestFilter("definition"),
+            _ => true,
+            current =>
+            {
+                var next = current.ShallowClone();
+                next.DefinitionId = "another-definition";
+                return next;
+            }));
+
+        var stored = await _collection.Find(x => x.Id == "latest").SingleAsync();
+        Assert.Equal("definition", stored.DefinitionId);
+        Assert.Equal("initial graph", stored.StringData);
+        Assert.Equal("tenant-a", stored.TenantId);
+    }
+
+    private static WorkflowDefinitionFilter LatestFilter(string definitionId) => new()
+    {
+        DefinitionId = definitionId,
+        VersionOptions = VersionOptions.Latest
+    };
+
+    private static MongoCommandException CommandException(int code) => new(
+        new ConnectionId(new ServerId(new ClusterId(), new System.Net.DnsEndPoint("localhost", 27017)), 1),
+        "Synthetic Mongo command failure",
+        new BsonDocument("find", "workflow_definitions"),
+        new BsonDocument { ["ok"] = 0, ["code"] = code, ["errmsg"] = "Synthetic failure" });
+
+    private static WorkflowDefinition Definition(string id, string? tenantId) => new()
+    {
+        Id = id,
+        DefinitionId = "definition",
+        TenantId = tenantId,
+        Name = "initial",
+        Version = 1,
+        IsLatest = true,
+        MaterializerName = "test",
+        StringData = "initial graph"
+    };
 
     private sealed class TestTenantAccessor : ITenantAccessor
     {
