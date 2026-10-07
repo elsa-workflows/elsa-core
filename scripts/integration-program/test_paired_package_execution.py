@@ -126,6 +126,25 @@ class ResourceInventoryContracts(unittest.TestCase):
         # These tests supply fake build paths; actual bootstrap authority has its own contracts.
         self.bootstrap = {"assets": [row for row in expected if row["owner"] == "platform"], "format": boot.POLICY["format"]}
 
+    def test_resource_failure_records_only_the_static_boundary_and_rethrows(self):
+        layout = SimpleNamespace(
+            request=execution.hosts.CellRequest("hosted-wasm", "net8.0", "3.8.4", route_prefix="compat"),
+            packages_root=Path("/owned/packages"),
+            project_paths={name: Path("/owned") / name / (name + ".csproj")
+                           for name in execution.hosts.HOST_NAMES},
+        )
+        evidence = {"stage": "resource_provenance"}
+        failure = RuntimeError("Baseline browser archive differs from approved source digest")
+        with patch.object(execution.baseline_resources, "derive_baseline_resources", side_effect=failure):
+            with self.assertRaises(RuntimeError) as raised:
+                execution._resource_inventory(layout, Path("/verified"), "d" * 64,
+                                              converter={"selected": True}, diagnostics=evidence)
+
+        self.assertIs(raised.exception, failure)
+        self.assertEqual({"stage": "static", "code": "static_archive_digest_mismatch"},
+                         evidence["resource_provenance_failure"])
+        self.assertNotIn(str(failure), json.dumps(evidence))
+
     def test_client_inventory_uses_selected_client_manifest_and_keeps_both_authorities(self):
         for version in ("3.9.0", "3.10.0"):
             for host in ("wasm", "hosted-wasm", "custom-elements"):
@@ -372,7 +391,8 @@ class ExecutionContracts(unittest.TestCase):
         self.patch(execution.hosts, "materialize", side_effect=materialize)
         self.patch(execution.hosts, "build", side_effect=lambda _, **_options: self.events.append(("build",)) or [])
         self.patch(execution, "_project_validator", return_value=validate)
-        self.patch(execution, "_resource_inventory", side_effect=lambda *_: self.events.append(("resources",)) or {"assets": self.assets})
+        self.patch(execution, "_resource_inventory",
+                   side_effect=lambda *_args, **_kwargs: self.events.append(("resources",)) or {"assets": self.assets})
         self.patch(execution.hosts, "start_pair", side_effect=pair)
         self.patch(execution, "_json_request", side_effect=lambda *_args, **_kwargs:
                    self.events.append(("ready",)) or self.readiness())

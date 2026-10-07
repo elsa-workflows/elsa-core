@@ -60,6 +60,37 @@ class BrowserRetentionTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     verify_retained_inventory(self.root)
 
+    def test_failed_resource_provenance_retains_only_bounded_diagnostic(self):
+        cell = "cells/3.8.4-net8.0-hosted-wasm/execution.json"
+        execution = {
+            "host": "hosted-wasm",
+            "stage": "resource_provenance",
+            "result": "failed",
+            "failure_category": "execution_or_evidence_failed",
+            "resource_provenance_failure": {
+                "stage": "static",
+                "code": "static_archive_digest_mismatch",
+            },
+        }
+        path = self.write(cell, execution)
+        self.assertIn(cell, verify_retained_inventory(self.root))
+
+        invalid = [
+            {**execution["resource_provenance_failure"], "message": "private cache path"},
+            {**execution["resource_provenance_failure"], "code": "private cache path"},
+            {**execution["resource_provenance_failure"], "stage": "private path"},
+        ]
+        for diagnostic in invalid:
+            with self.subTest(diagnostic=diagnostic):
+                path.write_text(json.dumps({**execution, "resource_provenance_failure": diagnostic}))
+                with self.assertRaises(ValueError):
+                    verify_retained_inventory(self.root)
+        for changes in ({"stage": "complete"}, {"result": "passed"}, {"host": "backend"}):
+            with self.subTest(changes=changes):
+                path.write_text(json.dumps({**execution, **changes}))
+                with self.assertRaises(ValueError):
+                    verify_retained_inventory(self.root)
+
     def react(self, *, passed=True, prefix="", host="server"):
         request, original, assets, phase = phase_fixture("hosted-wasm" if prefix else host)
         key = (request.version, request.framework, request.host)

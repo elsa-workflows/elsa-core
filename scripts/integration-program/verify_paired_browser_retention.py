@@ -112,6 +112,11 @@ def verify_retained_inventory(root: Path) -> list[str]:
                 execution["project_provenance_failure"],
                 host=execution.get("host"), stage=execution.get("stage"), result=execution.get("result"),
                 failure_category=execution.get("failure_category"))
+        if "resource_provenance_failure" in execution:
+            provenance_diagnostics.validate_resource_failure_evidence(
+                execution["resource_provenance_failure"],
+                host=execution.get("host"), stage=execution.get("stage"), result=execution.get("result"),
+                failure_category=execution.get("failure_category"))
         if key[0] == "3.10.0":
             ownership = execution.get("secrets_endpoint_ownership")
             if ownership is None and execution.get("result") == "passed":

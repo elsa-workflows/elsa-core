@@ -219,40 +219,62 @@ def _project_validator(layout, verified_root: Path, manifest: dict):
     return validate
 
 
-def _resource_inventory(layout, verified_root: Path, manifest_hash: str, *, converter: dict | None = None) -> dict:
+def _resource_inventory(layout, verified_root: Path, manifest_hash: str, *, converter: dict | None = None,
+                       diagnostics: dict | None = None) -> dict:
+    def bounded(stage: str, operation):
+        if diagnostics is None:
+            return operation()
+        return provenance_diagnostics.run_resource_boundary(stage, operation, diagnostics)
+
     project = layout.project_paths[layout.request.host]
     build_manifest = project.parent / "obj" / "Release" / layout.request.framework / "staticwebassets.build.json"
     prefix = "/" + layout.request.route_prefix if layout.request.route_prefix else ""
     if layout.request.version == candidate.PRODUCER["version"]:
-        static = resources.derive_candidate_resources(build_manifest, verified_root, layout.packages_root,
-                    verified_manifest_sha256=manifest_hash, route_prefix=prefix)
+        static = bounded("static", lambda: resources.derive_candidate_resources(
+            build_manifest, verified_root, layout.packages_root,
+            verified_manifest_sha256=manifest_hash, route_prefix=prefix))
     else:
-        static = baseline_resources.derive_baseline_resources(build_manifest, layout.packages_root, layout.request.version,
-                                                        route_prefix=prefix)
+        static = bounded("static", lambda: baseline_resources.derive_baseline_resources(
+            build_manifest, layout.packages_root, layout.request.version, route_prefix=prefix))
     if layout.request.host == "server":
         require(converter is None, "Server cannot claim a WASM converter")
         inventory = static
     else:
-        require(isinstance(converter, dict) and converter, "Missing selected WASM converter evidence")
-        client = layout.project_paths["wasm" if layout.request.host == "hosted-wasm" else layout.request.host]
-        client_manifest = client.parent / "obj" / "Release" / layout.request.framework / "staticwebassets.build.json"
-        if layout.request.version == candidate.PRODUCER["version"]:
-            managed = wasm_resources.derive_candidate_wasm_resources(layout, client, client_manifest, verified_root,
-                        verified_manifest_sha256=manifest_hash, converter=converter, route_prefix=prefix)
-        else:
-            managed = wasm_resources.derive_baseline_wasm_resources(layout, client, client_manifest,
-                        converter=converter, route_prefix=prefix)
-        assets = static["assets"] + managed["assets"]
-        require(len({asset["path"] for asset in assets}) == len(assets), "Static and managed resource paths overlap")
-        inventory = {**static, "assets": assets,
-                     "managed_resources": {name: value for name, value in managed.items() if name != "assets"}}
+        def derive_managed_inventory():
+            require(isinstance(converter, dict) and converter, "Missing selected WASM converter evidence")
+            client = layout.project_paths["wasm" if layout.request.host == "hosted-wasm" else layout.request.host]
+            client_manifest = client.parent / "obj" / "Release" / layout.request.framework / "staticwebassets.build.json"
+            if layout.request.version == candidate.PRODUCER["version"]:
+                managed = wasm_resources.derive_candidate_wasm_resources(
+                    layout, client, client_manifest, verified_root,
+                    verified_manifest_sha256=manifest_hash, converter=converter, route_prefix=prefix)
+            else:
+                managed = wasm_resources.derive_baseline_wasm_resources(
+                    layout, client, client_manifest, converter=converter, route_prefix=prefix)
+            assets = static["assets"] + managed["assets"]
+            require(len({asset["path"] for asset in assets}) == len(assets), "Static and managed resource paths overlap")
+            inventory = {**static, "assets": assets,
+                         "managed_resources": {name: value for name, value in managed.items() if name != "assets"}}
+            return client, client_manifest, managed, inventory
+
+        client, client_manifest, managed, inventory = bounded("managed", derive_managed_inventory)
         if layout.request.host == "wasm":
-            import paired_package_wasm_boot as wasm_boot
-            bootstrap = wasm_boot.derive_boot_resources(layout, client, client_manifest, managed)
-            assets.extend(bootstrap["assets"])
-            require(len({asset["path"] for asset in assets}) == len(assets), "Bootstrap and original resource paths overlap")
+            def derive_bootstrap_inventory():
+                import paired_package_wasm_boot as wasm_boot
+                bootstrap = wasm_boot.derive_boot_resources(layout, client, client_manifest, managed)
+                inventory["assets"].extend(bootstrap["assets"])
+                require(len({asset["path"] for asset in inventory["assets"]}) == len(inventory["assets"]),
+                        "Bootstrap and original resource paths overlap")
+                return bootstrap
+
+            bootstrap = bounded("bootstrap", derive_bootstrap_inventory)
             inventory["bootstrap_resources"] = {name: value for name, value in bootstrap.items() if name != "assets"}
 
+    inventory = bounded("host_policy", lambda: _apply_host_network_policy(layout, inventory, prefix))
+    return inventory
+
+
+def _apply_host_network_policy(layout, inventory: dict, prefix: str) -> dict:
     # The six paths remain mandatory package materializations and retain their sealed
     # archive checks. This separate host policy only changes whether the standalone
     # stylesheet must be requested over HTTP; it does not relax any other resource.
@@ -385,7 +407,13 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
         evidence["stage"] = "project_provenance"
         evidence["projects"] = {name: validate(project) for name, project in layout.project_paths.items()}
         evidence["stage"] = "resource_provenance"
-        inventory = _resource_inventory(layout, verified_root, manifest_hash, **inventory_options)
+        try:
+            inventory = _resource_inventory(layout, verified_root, manifest_hash,
+                                            diagnostics=evidence, **inventory_options)
+        except Exception as failure:
+            evidence.setdefault("resource_provenance_failure",
+                               provenance_diagnostics.resource_failure_receipt("unknown", failure))
+            raise
         evidence["resource_inventory"] = inventory
         evidence["stage"] = "owned_runtime"
         if version in documents.TOOL_VERSIONS:

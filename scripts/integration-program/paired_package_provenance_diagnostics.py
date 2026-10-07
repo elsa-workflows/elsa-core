@@ -15,6 +15,19 @@ PROJECTS_BY_HOST = {
 }
 UNKNOWN = "unknown"
 
+RESOURCE_STAGES = frozenset({"static", "managed", "bootstrap", "host_policy", UNKNOWN})
+RESOURCE_HOSTS = frozenset({"server", "wasm", "hosted-wasm", "custom-elements"})
+RESOURCE_MESSAGE_CODES = {
+    "Missing actual static asset inventory": "static_asset_inventory_missing",
+    "Baseline browser archive differs from approved source digest": "static_archive_digest_mismatch",
+    "Baseline browser archive source identity differs": "static_archive_identity_mismatch",
+    "Missing mandatory package runtime subset": "managed_runtime_subset_missing",
+    "WASM manifests changed during derivation": "managed_manifest_changed",
+    "Unreviewed standalone WASM bootstrap framework/SDK/host": "bootstrap_cell_mismatch",
+    "Invalid host-specific browser request policy": "host_policy_invalid",
+}
+RESOURCE_CODES = frozenset(RESOURCE_MESSAGE_CODES.values()) | {UNKNOWN}
+
 # Only exact, stable validator messages are classified. Any changed, dynamic or
 # otherwise unrecognized message becomes `unknown`; raw text never enters a receipt.
 MESSAGE_CODES = {
@@ -119,3 +132,34 @@ def validate_failure_evidence(value: Any, *, host: Any, stage: Any, result: Any,
     project = value["project"]
     if project != UNKNOWN and project not in PROJECTS_BY_HOST[host]:
         raise ValueError("Project provenance diagnostic is outside its host")
+
+
+def resource_failure_receipt(stage: str, error: BaseException) -> dict[str, str]:
+    """Return only a resource boundary enum and exact-message code."""
+    selected_stage = stage if isinstance(stage, str) and stage in RESOURCE_STAGES else UNKNOWN
+    code = UNKNOWN
+    if type(error) in (ValueError, RuntimeError) and len(error.args) == 1 and isinstance(error.args[0], str):
+        code = RESOURCE_MESSAGE_CODES.get(error.args[0], UNKNOWN)
+    return {"stage": selected_stage, "code": code}
+
+
+def run_resource_boundary(stage: str, operation: Callable[[], Any], evidence: dict[str, Any]) -> Any:
+    """Record a safe boundary code and re-raise the original failure unchanged."""
+    try:
+        return operation()
+    except Exception as error:
+        evidence.setdefault("resource_provenance_failure", resource_failure_receipt(stage, error))
+        raise
+
+
+def validate_resource_failure_evidence(
+    value: Any, *, host: Any, stage: Any, result: Any, failure_category: Any,
+) -> None:
+    """Reject raw or unbound resource diagnostics in retained execution receipts."""
+    if (not isinstance(value, dict) or set(value) != {"stage", "code"}
+            or not isinstance(value.get("stage"), str) or value["stage"] not in RESOURCE_STAGES
+            or not isinstance(value.get("code"), str) or value["code"] not in RESOURCE_CODES
+            or not isinstance(host, str) or host not in RESOURCE_HOSTS
+            or stage != "resource_provenance" or result != "failed"
+            or failure_category != "execution_or_evidence_failed"):
+        raise ValueError("Invalid retained resource provenance diagnostic")
