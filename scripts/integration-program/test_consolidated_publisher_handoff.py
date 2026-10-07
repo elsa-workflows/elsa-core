@@ -1,11 +1,13 @@
 import copy
 from datetime import datetime, timedelta, timezone
 import json
+import os
 import io
 from contextlib import redirect_stdout
 from pathlib import Path
 import subprocess
 import sys
+import time
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -44,6 +46,7 @@ def inventory():
 def run(run_id=123, *, status="queued", workflow_id=1):
     return {"id": run_id, "run_attempt": 1, "workflow_id": workflow_id,
             "path": ".github/workflows/publish.yml", "head_sha": SHA, "head_branch": "main",
+            "head_repository": {"id": 42, "full_name": REPOSITORIES[0]},
             "event": "workflow_dispatch", "status": status,
             "created_at": "2026-10-07T10:00:00Z", "updated_at": "2026-10-07T10:01:00Z"}
 
@@ -557,6 +560,76 @@ class PreflightTests(unittest.TestCase):
             self.assertEqual(40, len(result["implementation"]["git_head"]))
             self.assertEqual(64, len(result["implementation"]["script_sha256"]))
 
+    def test_wait_timer_values_are_retained_in_minutes(self):
+        self.api.environment["protection_rules"].extend(
+            {"type": "wait_timer", "wait_timer": value} for value in (0, 30, 43_200))
+        result = self.observe()
+        self.assertTrue(result["observation_complete"])
+        self.assertEqual([0, 30, 43_200], result["repositories"][0]["environments"][0]["wait_timers_minutes"])
+
+    def test_invalid_wait_timers_cannot_produce_complete_protection_evidence(self):
+        for value in (None, True, -1, 43_201, 3.5, "30", []):
+            with self.subTest(value=value):
+                self.api = FakeApi()
+                self.api.environment["protection_rules"].append({"type": "wait_timer", "wait_timer": value})
+                result = self.observe()
+                self.assertFalse(result["observation_complete"])
+                self.assertIn("invalid_environment_wait_timer", self.codes(result))
+                self.assert_closed(result)
+
+    def test_protected_branch_metadata_still_requires_reviewed_ref_scope(self):
+        result = self.observe()
+        self.assertTrue(result["observation_complete"])
+        self.assertIn("environment_ref_scope_requires_review", self.codes(result, "authority_gaps"))
+        self.assertFalse(result["publication_ready"])
+
+    def test_wildcard_branch_policy_is_recorded_without_certifying_ref_scope(self):
+        self.api.environment["deployment_branch_policy"] = {"protected_branches": False, "custom_branch_policies": True}
+        for repository in REPOSITORIES:
+            self.api.overrides[f"repos/{repository}/environments/feedz-publish/deployment-branch-policies"] = {
+                "total_count": 1, "branch_policies": [{"id": 101, "type": "branch", "name": "*"}]}
+        result = self.observe()
+        self.assertTrue(result["observation_complete"])
+        self.assertEqual("*", result["repositories"][0]["environments"][0]["selected_branch_policies"][0]["name"])
+        self.assertIn("environment_ref_scope_requires_review", self.codes(result, "authority_gaps"))
+        self.assertFalse(result["publication_ready"])
+
+    def test_fork_main_head_repository_is_retained_without_private_metadata(self):
+        self.api.runs["queued"] = [run()]
+        self.api.runs["queued"][0]["head_repository"] = {
+            "id": 555, "full_name": "contributor/elsa-fork", "private": True,
+            "clone_url": "PRIVATE_TOKEN /Users/private/worktree"}
+        result = self.observe()
+        self.assertTrue(result["observation_complete"])
+        observed = result["repositories"][0]["runs_after"][0]
+        self.assertEqual("main", observed["head_branch"])
+        self.assertEqual({"id": 555, "full_name": "contributor/elsa-fork"}, observed["head_repository"])
+        self.assertNotIn("PRIVATE_TOKEN", json.dumps(result))
+        self.assertNotIn("clone_url", json.dumps(result))
+
+    def test_missing_deleted_or_invalid_head_repository_remains_unknown(self):
+        for head in (None, {}, {"id": True, "full_name": "someone/fork"},
+                     {"id": 9, "full_name": "/Users/private/worktree"},
+                     {"id": 9, "full_name": "someone/../private"}):
+            with self.subTest(head=head):
+                self.api = FakeApi()
+                self.api.runs["queued"] = [{**run(), "head_repository": head}]
+                result = self.observe()
+                self.assertFalse(result["observation_complete"])
+                self.assertIn("unknown_run_head_repository", self.codes(result))
+                self.assertIsNone(result["repositories"][0]["runs_after"][0]["head_repository"])
+                self.assertNotIn("/Users/private", json.dumps(result))
+                self.assert_closed(result)
+
+    def test_head_repository_change_during_job_readback_is_drift(self):
+        self.api.runs["queued"] = [run()]
+        changed = run()
+        changed["head_repository"] = {"id": 555, "full_name": "contributor/elsa-fork"}
+        self.api.overrides[f"repos/{REPOSITORIES[0]}/actions/runs/123"] = changed
+        result = self.observe()
+        self.assertIn("run_changed_during_job_observation", self.codes(result))
+        self.assert_closed(result)
+
 
 class PaginationTests(unittest.TestCase):
     def setUp(self):
@@ -590,55 +663,113 @@ class PaginationTests(unittest.TestCase):
 
 
 class TransportTests(unittest.TestCase):
-    def test_uses_only_explicit_get_without_credentials_in_arguments(self):
-        def execute(command, **kwargs):
-            self.assertEqual(["gh", "api", "--method", "GET", f"repos/{REPOSITORIES[0]}/actions/workflows"], command)
-            self.assertIs(kwargs["stderr"], subprocess.DEVNULL)
-            kwargs["stdout"].write(b'{"total_count":0,"workflows":[]}')
-            return subprocess.CompletedProcess(command, 0)
-        with patch("consolidated_publisher_handoff.subprocess.run", side_effect=execute):
-            result = GhApi().get(f"repos/{REPOSITORIES[0]}/actions/workflows")
-        self.assertEqual([], result["workflows"])
+    def setUp(self):
+        self.children = []
+        self.addCleanup(self.cleanup_children)
+        self.endpoint = f"repos/{REPOSITORIES[0]}/actions/workflows"
 
-    def test_transport_errors_are_fixed_codes(self):
-        for error, code in ((OSError("PRIVATE_TOKEN /Users/private"), "transport_unavailable"),
-                            (subprocess.TimeoutExpired("PRIVATE_TOKEN /Users/private", 2), "transport_timeout")):
-            with self.subTest(code=code), patch("consolidated_publisher_handoff.subprocess.run", side_effect=error):
-                with self.assertRaisesRegex(ObservationError, f"^{code}$"):
-                    GhApi().get(f"repos/{REPOSITORIES[0]}/actions/workflows")
+    def cleanup_children(self):
+        for child in self.children:
+            if child.poll() is None:
+                child.kill()
+                child.wait()
+            if child.stdout and not child.stdout.closed:
+                child.stdout.close()
+
+    def child_factory(self, script):
+        # These are real bounded subprocesses. The transport still builds the
+        # production gh GET argv; only the executable is substituted here.
+        popen = subprocess.Popen
+        def execute(command, **kwargs):
+            self.assertEqual(["gh", "api", "--method", "GET", self.endpoint], command)
+            self.assertIs(kwargs["stdout"], subprocess.PIPE)
+            self.assertIs(kwargs["stderr"], subprocess.DEVNULL)
+            self.assertIs(kwargs["stdin"], subprocess.DEVNULL)
+            self.assertTrue(kwargs["start_new_session"])
+            child = popen([sys.executable, "-c", script], **kwargs)
+            self.children.append(child)
+            return child
+        return execute
+
+    def assert_children_stopped(self):
+        for child in self.children:
+            self.assertIsNotNone(child.poll())
+            self.assertTrue(child.stdout.closed)
+
+    def test_uses_only_explicit_get_without_credentials_in_arguments(self):
+        with patch("consolidated_publisher_handoff.subprocess.Popen", side_effect=self.child_factory(
+                "print(\'{\"total_count\":0,\"workflows\":[]}\')")):
+            result = GhApi().get(self.endpoint)
+        self.assertEqual([], result["workflows"])
+        self.assert_children_stopped()
+
+    def test_transport_unavailable_is_fixed_code(self):
+        with patch("consolidated_publisher_handoff.subprocess.Popen", side_effect=OSError("PRIVATE_TOKEN /Users/private")):
+            with self.assertRaisesRegex(ObservationError, "^transport_unavailable$"):
+                GhApi().get(self.endpoint)
 
     def test_invalid_json_response_limit_and_http_failure_are_fixed_codes(self):
         for body, returncode, expected in ((b'PRIVATE_TOKEN', 0, 'invalid_json'), (b'"too large"', 0, 'response_limit'),
-                                            (b'PRIVATE_TOKEN /Users/private', 1, 'transport_failed')):
+                                           (b'PRIVATE_TOKEN /Users/private', 1, 'transport_failed')):
             with self.subTest(expected=expected):
-                def execute(command, **kwargs):
-                    kwargs['stdout'].write(body)
-                    return subprocess.CompletedProcess(command, returncode)
-                with patch("consolidated_publisher_handoff.subprocess.run", side_effect=execute):
+                script = f"import os; os.write(1, {body!r}); raise SystemExit({returncode})"
+                with patch("consolidated_publisher_handoff.subprocess.Popen", side_effect=self.child_factory(script)):
                     with self.assertRaisesRegex(ObservationError, f"^{expected}$"):
-                        GhApi(max_response_bytes=5 if expected == 'response_limit' else 100).get(
-                            f"repos/{REPOSITORIES[0]}/actions/workflows")
+                        GhApi(max_response_bytes=5 if expected == 'response_limit' else 100).get(self.endpoint)
+                self.assert_children_stopped()
 
-    def test_total_deadline_caps_each_timeout_and_stops_further_gets(self):
-        def execute(command, **kwargs):
-            self.assertLessEqual(kwargs["timeout"], 0.75)
-            kwargs["stdout"].write(b'{}')
-            return subprocess.CompletedProcess(command, 0)
-        with patch("consolidated_publisher_handoff.time.monotonic", side_effect=[0, 0.25, 1.01]), \
-                patch("consolidated_publisher_handoff.subprocess.run", side_effect=execute) as execute_mock:
-            transport = GhApi(max_duration_seconds=1, timeout_seconds=20)
-            self.assertEqual({}, transport.get(f"repos/{REPOSITORIES[0]}/actions/workflows"))
+    def test_oversized_real_child_is_stopped_at_read_cap_without_disk_spool(self):
+        script = "import os\nwhile True: os.write(1, b'x' * 4096)"
+        real_read = os.read
+        consumed = []
+        def read(descriptor, count):
+            result = real_read(descriptor, count)
+            consumed.append(len(result))
+            return result
+        started = time.monotonic()
+        with patch("consolidated_publisher_handoff.subprocess.Popen", side_effect=self.child_factory(script)), \
+                patch("consolidated_publisher_handoff.os.read", side_effect=read):
+            with self.assertRaisesRegex(ObservationError, "^response_limit$"):
+                GhApi(max_response_bytes=256, timeout_seconds=5).get(self.endpoint)
+        self.assertLessEqual(sum(consumed), 257)
+        self.assertLess(time.monotonic() - started, 2)
+        self.assertEqual(1, len(self.children))
+        self.assert_children_stopped()
+
+    def test_exact_response_cap_succeeds_without_truncation(self):
+        script = "import os; os.write(1, b'{}')"
+        with patch("consolidated_publisher_handoff.subprocess.Popen", side_effect=self.child_factory(script)):
+            self.assertEqual({}, GhApi(max_response_bytes=2).get(self.endpoint))
+        self.assert_children_stopped()
+
+    def test_total_deadline_stops_real_child_and_further_gets(self):
+        started = time.monotonic()
+        with patch("consolidated_publisher_handoff.subprocess.Popen", side_effect=self.child_factory(
+                "import time; time.sleep(5)")) as execute:
+            transport = GhApi(max_duration_seconds=0.15, timeout_seconds=20)
+            with self.assertRaisesRegex(ObservationError, "^transport_timeout$"):
+                transport.get(self.endpoint)
             with self.assertRaisesRegex(ObservationError, "^observation_window_exceeded$"):
-                transport.get(f"repos/{REPOSITORIES[0]}/actions/workflows")
-            self.assertEqual(1, execute_mock.call_count)
+                transport.get(self.endpoint)
+            self.assertEqual(1, execute.call_count)
             self.assertEqual(1, transport.request_count)
+        self.assertLess(time.monotonic() - started, 1.5)
+        self.assert_children_stopped()
+
+    def test_request_timeout_stops_child_even_after_stdout_closed(self):
+        started = time.monotonic()
+        with patch("consolidated_publisher_handoff.subprocess.Popen", side_effect=self.child_factory(
+                "import os,time; os.close(1); time.sleep(5)")):
+            with self.assertRaisesRegex(ObservationError, "^transport_timeout$"):
+                GhApi(max_duration_seconds=5, timeout_seconds=0.15).get(self.endpoint)
+        self.assertLess(time.monotonic() - started, 1.5)
+        self.assert_children_stopped()
 
     def test_request_budget_deadline_and_untrusted_endpoints_fail_before_execution(self):
-        cases = [(GhApi(max_requests=0), f"repos/{REPOSITORIES[0]}/actions/workflows"),
-                 (GhApi(max_duration_seconds=-1), f"repos/{REPOSITORIES[0]}/actions/workflows"),
+        cases = [(GhApi(max_requests=0), self.endpoint), (GhApi(max_duration_seconds=-1), self.endpoint),
                  (GhApi(), "https://malicious.test/token"), (GhApi(), "repos/elsewhere/repo/actions/runs"),
                  (GhApi(), "repos/elsa-workflows/elsa-core/../../private")]
-        with patch("consolidated_publisher_handoff.subprocess.run") as execute:
+        with patch("consolidated_publisher_handoff.subprocess.Popen") as execute:
             for transport, endpoint in cases:
                 with self.subTest(endpoint=endpoint), self.assertRaises(ObservationError):
                     transport.get(endpoint)

@@ -14,8 +14,9 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import re
+import selectors
+import signal
 import subprocess
-import tempfile
 import time
 from typing import Any
 from urllib.parse import quote, urlencode
@@ -27,6 +28,7 @@ SHA = re.compile(r"[0-9a-f]{40}\Z")
 NAME = re.compile(r"[A-Za-z0-9_.-]{1,200}\Z")
 REF = re.compile(r"[A-Za-z0-9_./+@#=,()%-]{1,250}\Z")
 BRANCH_POLICY = re.compile(r"[A-Za-z0-9_./+@#=,()%*?\[\]-]{1,250}\Z")
+HEAD_REPOSITORY = re.compile(r"[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9_.-]{1,100}\Z")
 SECRET_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,255}\Z")
 PENDING_GATES = [
     "protected-artifact-only-core-executor", "reviewed-source-publisher-containment",
@@ -190,15 +192,10 @@ class GhApi:
         require(remaining > 0, "observation_window_exceeded")
         self.request_count += 1
         try:
-            with tempfile.TemporaryFile() as output:
-                process = subprocess.run(
-                    ["gh", "api", "--method", "GET", endpoint], stdout=output,
-                    stderr=subprocess.DEVNULL, timeout=min(self.timeout_seconds, remaining), check=False,
-                )
-                require(process.returncode == 0, "transport_failed")
-                output.seek(0)
-                body = output.read(self.max_response_bytes + 1)
-                require(len(body) <= self.max_response_bytes, "response_limit")
+            body = self.read_response(
+                ["gh", "api", "--method", "GET", endpoint],
+                min(self.deadline, time.monotonic() + self.timeout_seconds),
+            )
         except subprocess.TimeoutExpired:
             raise ObservationError("transport_timeout") from None
         except OSError:
@@ -207,6 +204,49 @@ class GhApi:
             return json.loads(body)
         except (ValueError, UnicodeDecodeError, RecursionError):
             raise ObservationError("invalid_json") from None
+
+    def read_response(self, command: list[str], deadline: float) -> bytes:
+        # POSIX pipes provide bounded backpressure. Read only the allowed body
+        # plus one sentinel byte, and stop the child while it is still running.
+        # A separate session lets cleanup also stop a credential-helper child
+        # that inherits stdout; no background reader or disk spool survives.
+        require(os.name == "posix", "unsupported_transport_platform")
+        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                              stdin=subprocess.DEVNULL, start_new_session=True) as process:
+            complete = False
+            try:
+                require(process.stdout is not None, "transport_unavailable")
+                body = bytearray()
+                descriptor = process.stdout.fileno()
+                os.set_blocking(descriptor, False)
+                with selectors.DefaultSelector() as selector:
+                    selector.register(descriptor, selectors.EVENT_READ)
+                    while True:
+                        remaining = deadline - time.monotonic()
+                        require(remaining > 0, "transport_timeout")
+                        require(bool(selector.select(remaining)), "transport_timeout")
+                        try:
+                            chunk = os.read(descriptor, min(65_536, self.max_response_bytes + 1 - len(body)))
+                        except BlockingIOError:
+                            continue
+                        if not chunk:
+                            break
+                        body.extend(chunk)
+                        require(len(body) <= self.max_response_bytes, "response_limit")
+                remaining = deadline - time.monotonic()
+                require(remaining > 0, "transport_timeout")
+                require(process.wait(timeout=remaining) == 0, "transport_failed")
+                complete = True
+                return bytes(body)
+            finally:
+                if not complete:
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    except OSError:
+                        process.kill()
+                    process.wait()
 
 
 class Collector:
@@ -371,6 +411,8 @@ class Collector:
                 return [self.run(item, workflow_ids, expected_state=state) for item in rows]
             rows = self.attempt(repository, f"runs-{phase}-{state}", observe, [])
             for row in rows:
+                if row["head_repository"] is None:
+                    self.problem(repository, f"runs-{phase}-{state}", "unknown_run_head_repository")
                 if row["id"] in seen:
                     self.problem(repository, f"runs-{phase}", "run_moved_between_status_pages")
                 seen.add(row["id"])
@@ -388,8 +430,16 @@ class Collector:
         require(isinstance(event, str) and NAME.fullmatch(event) is not None, "invalid_run_event")
         path = source_path(item.get("path"))
         require(path == workflow_ids[workflow_id], "unknown_run_workflow_path")
+        raw_repository = item.get("head_repository")
+        head_repository = None
+        if (isinstance(raw_repository, dict) and type(raw_repository.get("id")) is int
+                and raw_repository["id"] > 0 and isinstance(raw_repository.get("full_name"), str)
+                and HEAD_REPOSITORY.fullmatch(raw_repository["full_name"]) is not None
+                and ".." not in raw_repository["full_name"]):
+            head_repository = {"id": raw_repository["id"], "full_name": raw_repository["full_name"]}
         return {"id": identifier(item.get("id")), "run_attempt": identifier(item.get("run_attempt")),
                 "workflow_id": workflow_id, "path": path, "head_sha": digest(item.get("head_sha")),
+                "head_repository": head_repository,
                 "head_branch": None if item.get("head_branch") is None else safe_text(item["head_branch"], REF),
                 "event": event, "status": state, "created_at": iso(timestamp(item.get("created_at"))),
                 "updated_at": iso(timestamp(item.get("updated_at")))}
@@ -411,6 +461,7 @@ class Collector:
                                  "head_sha": digest(item.get("head_sha"))})
                     require(jobs[-1]["head_sha"] == run["head_sha"], "job_head_changed")
                 current = self.run(self.transport.get(f"repos/{repository}/actions/runs/{run['id']}"), workflow_ids)
+                require(current["head_repository"] is not None, "unknown_run_head_repository")
                 require(current == run, "run_changed_during_job_observation")
                 return jobs
             result.extend(self.attempt(repository, "run-jobs", observe, []))
@@ -452,12 +503,17 @@ class Collector:
                 require(row.get("id") == environment_id, "environment_identity_changed")
                 rules = response.get("protection_rules")
                 require(isinstance(rules, list), "unknown_environment_protections")
-                reviewers, prevent_self_review = [], None
+                reviewers, prevent_self_review, wait_timers = [], None, []
                 for rule in rules:
                     require(isinstance(rule, dict), "unknown_environment_protections")
                     kind = rule.get("type")
                     require(kind in {"required_reviewers", "wait_timer", "branch_policy"},
                             "unknown_environment_protection_rule")
+                    if kind == "wait_timer":
+                        wait_timer = rule.get("wait_timer")
+                        require(type(wait_timer) is int and 0 <= wait_timer <= 43_200,
+                                "invalid_environment_wait_timer")
+                        wait_timers.append(wait_timer)
                     if kind == "required_reviewers":
                         require(isinstance(rule.get("reviewers"), list)
                                 and type(rule.get("prevent_self_review")) is bool, "unknown_environment_reviewers")
@@ -491,6 +547,7 @@ class Collector:
                                       f"repos/{repository}/environments/{quote(name, safe='')}/secrets")
                 return {"id": environment_id, "name": name, "reviewers": reviewers,
                         "prevent_self_review": prevent_self_review, "can_admins_bypass": bypass,
+                        "wait_timers_minutes": wait_timers,
                         "deployment_branch_policy": branch_policy, "selected_branch_policies": selected,
                         "secrets": secrets, "approval_observed": False}
             observed = self.attempt(repository, "environment-metadata", observe)
@@ -498,6 +555,8 @@ class Collector:
                 continue
             result.append(observed)
             required = requirements.get(observed["name"])
+            if required and required["required_branch_policy"] and observed["deployment_branch_policy"] is not None:
+                self.gap(repository, "environment-protections", "environment_ref_scope_requires_review")
             if required and ((required["required_reviewers"] and not observed["reviewers"])
                     or (required["prevent_self_review"] and observed["prevent_self_review"] is not True)
                     or (required["prevent_admin_bypass"] and observed["can_admins_bypass"] is not False)
