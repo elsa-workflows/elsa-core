@@ -224,7 +224,7 @@ class NativeInteropProofContracts(unittest.TestCase):
                 self.assertTrue(dom["checks"]["filechooser_observed"])
                 self.assertFalse(next(a for a in record["assertions"] if a["name"] == "dom_interop")["passed"])
 
-    def test_native_json_proofs_cannot_be_attached_to_custom_elements_cell(self):
+    def test_custom_native_json_proof_remains_bound_to_its_own_workflow(self):
         record = receipt("custom-elements")
         value = json_proof()
         record["proof"].update(
@@ -232,7 +232,9 @@ class NativeInteropProofContracts(unittest.TestCase):
             activity_id_sha256=value["activity_id_sha256"], value_sha256=value["expected_value_sha256"],
             json_roundtrip=value,
         )
-        with self.assertRaisesRegex(ValueError, "Unexpected native JSON roundtrip"):
+        self.assertEqual(record, matrix.validate_browser_receipt(record, matrix.identity(record)))
+        record["proof"]["json_roundtrip"]["activity_id_sha256"] = "f" * 64
+        with self.assertRaisesRegex(ValueError, "different candidate workflow"):
             matrix.validate_browser_receipt(record, matrix.identity(record))
 
 

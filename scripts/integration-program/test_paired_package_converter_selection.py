@@ -310,17 +310,34 @@ class ConverterSelectionContracts(unittest.TestCase):
         self.assertTrue(not result.stdout.strip() or "Z" in result.stdout)
         self.assertEqual(0o600, (self.root / "command-private.log").stat().st_mode & 0o777)
 
-    def test_capture_rejects_stale_intermediates_before_build(self):
+    def capture_fixture(self):
         project = self.root / "Wasm.csproj"
         project.write_text("<Project />")
         layout = SimpleNamespace(project_paths={"wasm": project}, group_root=self.root,
                                  packages_root=self.cache, sdk="10.0.300", request=SimpleNamespace(framework="net10.0"))
-        (self.root / "obj/Release/net10.0/webcil").mkdir(parents=True)
         env = {"DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER": "1", "MSBUILDDISABLENODEREUSE": "1"}
-        with patch.object(selected, "prepare_decoder", return_value=project), patch.object(selected, "_owned_command") as run:
+        command = ["dotnet", "build", project.name, "--no-restore", "-p:UseSharedCompilation=false"]
+        return layout, project, command, env
+
+    def test_capture_rejects_stale_intermediates_before_build(self):
+        layout, project, command, env = self.capture_fixture()
+        (self.root / "obj/Release/net10.0/webcil").mkdir(parents=True)
+        with patch.object(selected, "prepare_decoder", return_value=project) as prepare, patch.object(selected, "_owned_command") as run:
             with self.assertRaisesRegex(RuntimeError, "fresh reviewed build"):
-                selected.capture_build(layout, project, ["dotnet", "build", project.name, "--no-restore", "-p:UseSharedCompilation=false"],
-                                       env, self.root / "build.log", project)
+                selected.capture_build(layout, project, command, env, self.root / "build.log", project)
+            run.assert_not_called()
+            prepare.assert_not_called()
+            self.assertEqual([], list(self.root.glob("converter-capture-*")))
+
+    def test_capture_rechecks_cold_conversion_after_decoder_preparation(self):
+        layout, project, command, env = self.capture_fixture()
+        decoder = self.root / "decoder/bin/Release/net10.0/Decoder.dll"
+        def prepare(*_):
+            (self.root / "obj/Release/net10.0/webcil").mkdir(parents=True)
+            return decoder
+        with patch.object(selected, "prepare_decoder", side_effect=prepare), patch.object(selected, "_owned_command") as run:
+            with self.assertRaisesRegex(RuntimeError, "fresh reviewed build"):
+                selected.capture_build(layout, project, command, env, self.root / "build.log", decoder)
             run.assert_not_called()
 
     def test_nonserver_materializer_requires_selection_before_sdk_command(self):

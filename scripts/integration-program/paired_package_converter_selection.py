@@ -346,6 +346,9 @@ def capture_build(layout, project: Path, command: list[str], environment: dict, 
     require(not any("EVENTPIPE" in key.upper() for key in environment)
             and environment.get("DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER") == "1"
             and environment.get("MSBUILDDISABLENODEREUSE") == "1", "Unreviewed build tracing/server environment")
+    # Reject stale conversion before preparing tools or creating capture output.
+    webcil = project.parent / "obj" / "Release" / layout.request.framework / "webcil"
+    require(not webcil.exists(), "Existing WebCIL intermediates require a fresh reviewed build group")
     decoder = prepare_decoder(decoder.parents[3], layout.sdk, environment)
     capture = _private_directory(layout.group_root / ("converter-capture-" + secrets.token_hex(8)))
     _private_directory(capture / "traces")
@@ -354,7 +357,6 @@ def capture_build(layout, project: Path, command: list[str], environment: dict, 
     build_command = command + ["--disable-build-servers"]
     # Cold conversion is required when no verified build is reused. Timestamp
     # skips must not masquerade as observing the current converter implementation.
-    webcil = project.parent / "obj" / "Release" / layout.request.framework / "webcil"
     require(not webcil.exists(), "Existing WebCIL intermediates require a fresh reviewed build group")
     result = _owned_command(build_command, project.parent, env, log_path, timeout_seconds)
     inventory = _trace_inventory(capture / "traces")
