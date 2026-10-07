@@ -16,6 +16,41 @@ from test_paired_package_browser_matrix import attach_embedding, attach_native_i
 from test_paired_package_wasm_boot import boot_receipt_fixture
 
 
+class ExecutionSdkContracts(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name).resolve()
+
+    def test_probe_uses_private_exact_policy_pin_instead_of_ambient_latest_sdk(self):
+        def probe(command, **options):
+            self.assertEqual(["dotnet", "--version"], command)
+            self.assertEqual(self.root / "execution-sdk", options["cwd"])
+            self.assertEqual(60, options["timeout"])
+            pin = json.loads((options["cwd"] / "global.json").read_text())
+            self.assertEqual({"sdk": {"version": "10.0.300", "rollForward": "disable"}}, pin)
+            return "10.0.300\n"
+        with patch.object(execution.subprocess, "check_output", side_effect=probe) as command:
+            self.assertEqual("10.0.300", execution.select_execution_sdk(self.root))
+        command.assert_called_once()
+
+    def test_unreviewed_actual_sdk_is_rejected(self):
+        with patch.object(execution.subprocess, "check_output", return_value="10.0.401\n"), \
+                self.assertRaisesRegex(ValueError, "differs from reviewed"):
+            execution.select_execution_sdk(self.root)
+
+    def test_ambiguous_sdk_policy_fails_before_command_or_pin_creation(self):
+        policy = self.root / "policy.json"
+        policy.write_text(json.dumps({"converters": {
+            "a": {"sdk_version": "10.0.300"}, "b": {"sdk_version": "10.0.401"}}}))
+        with patch.object(execution.resources, "CONVERTER_POLICY", policy), \
+                patch.object(execution.subprocess, "check_output") as command, \
+                self.assertRaisesRegex(ValueError, "one reviewed"):
+            execution.select_execution_sdk(self.root)
+        command.assert_not_called()
+        self.assertFalse((self.root / "execution-sdk").exists())
+
+
 class ReleasedInputsContracts(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()

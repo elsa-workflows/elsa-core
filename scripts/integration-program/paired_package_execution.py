@@ -483,6 +483,23 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
                 react_receipt, request, original_browser, evidence["resource_inventory"]["assets"]))
 
 
+def select_execution_sdk(private: Path) -> str:
+    """Pin the reviewed converter SDK independently of the source checkout SDK."""
+    policy = json.loads(resources.CONVERTER_POLICY.read_text(encoding="utf-8"))
+    sdks = {entry["sdk_version"] for entry in policy["converters"].values()}
+    require(len(sdks) == 1, "Browser execution requires one reviewed converter SDK")
+    sdk = next(iter(sdks))
+    require(isinstance(sdk, str) and re.fullmatch(r"10\.[0-9]+\.[0-9]+", sdk) is not None,
+            "Unsupported reviewed execution SDK")
+    root = private / "execution-sdk"
+    root.mkdir(mode=0o700, exist_ok=False)
+    _write(root / "global.json", {"sdk": {"version": sdk, "rollForward": "disable"}})
+    actual = subprocess.check_output(["dotnet", "--version"], cwd=root, text=True,
+                                     stderr=subprocess.PIPE, timeout=60).strip()
+    require(actual == sdk, "Actual execution SDK differs from reviewed converter SDK")
+    return sdk
+
+
 def run(inputs: Path, candidate_artifacts: Path, output: Path, *, fixture_source: str,
         fixture_run: int | None = None, fixture_attempt: int | None = None, cell: str | None = None) -> dict:
     selected = selected_cells(cell)
@@ -501,8 +518,7 @@ def run(inputs: Path, candidate_artifacts: Path, output: Path, *, fixture_source
                           fixture_source=fixture_source, fixture_run=fixture_run, fixture_attempt=fixture_attempt)
         verified_root = artifacts_path
         manifest = json.loads((verified_root / "verified-artifacts.json").read_text())
-        sdk = subprocess.check_output(["dotnet", "--version"], cwd=browser.JOURNEY.parents[4], text=True).strip()
-        require(re.fullmatch(r"10\.[0-9]+\.[0-9]+", sdk) is not None, "Unsupported execution SDK")
+        sdk = select_execution_sdk(private)
         return browser.run_matrix(lambda key: execute_cell(key, private=private, retained=retained,
                  verified_root=verified_root, manifest=manifest, manifest_hash=original["verified_artifacts_sha256"], sdk=sdk,
                  fixture_identity=original["browser_execution"]),

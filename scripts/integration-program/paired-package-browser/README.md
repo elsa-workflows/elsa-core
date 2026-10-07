@@ -34,9 +34,11 @@ npm --prefix test/studio/browser/PackageCompatibility run typecheck
 npm exec --prefix test/studio/browser/PackageCompatibility --no -- playwright install chromium
 ```
 
-The hosted workflow selects .NET SDK 10.0.300 with the .NET 8 and 9 runtimes and
-Node 22.23.3. Local execution records the selected .NET 10 SDK and pins it in
-each disposable host group. Use fresh output and candidate-extraction paths
+The hosted workflow installs .NET SDK 10.0.300 with the .NET 8 and 9 runtimes and
+Node 22.23.3. Both hosted and local execution select the sole reviewed SDK from
+the converter policy using a private `global.json` with roll-forward disabled,
+verify the actual SDK, and pin it in each disposable host group. A newer ambient
+SDK cannot silently replace the reviewed converter SDK. Use fresh output and candidate-extraction paths
 outside the checkout:
 
 ```sh
