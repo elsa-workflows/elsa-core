@@ -44,6 +44,36 @@ endpoint or unauthenticated production endpoint is added. The exact existing
 picker/descriptors API and versioned reference shape must be observed before a
 journey claims successful secret selection or execution.
 
+### Passive optional endpoint observations
+
+Authenticated `GET /_fixture/optional-endpoints` returns
+`{schema:1,cursor,truncated,pending,observations}`. Its three fixed targets are
+Secrets descriptors, Secrets picker and WorkflowContexts provider descriptors.
+Each incoming matching request reserves a monotonically increasing `sequence`;
+the final row appears only in `OnCompleted`, with actual status and the loaded
+handler assembly's name, full name and SHA-256. A parent action boundary requires
+`pending == 0` and `truncated == false`. At most 64 rows are retained; overflow
+sets `truncated` and continues advancing the cursor. The existing positive
+`/_fixture/secrets-endpoints` projection remains separate and Secrets-only.
+
+The passive body feature forwards the original Stream, PipeWriter and lifecycle
+operations. It retains no response copy, text, headers, query, exception text or
+sendfile path. Incremental `body.bytes` and `body.sha256` describe entity bytes
+observed at the application's write boundary, not compressed network frames or
+proof that the client received every byte. `body.complete` is false after a
+failed or canceled write, abort, observed feature replacement, or SendFileAsync,
+whose bytes are forwarded without reading the file. Such rows have null hash
+and null `sensitive_items_present`; their failure is `response_body_unobserved`
+unless canonical endpoint identity already failed. Complete nonempty bodies
+also have unknown sensitivity. Only an observed, completed zero-byte body has
+`sensitive_items_present:false`, bound to SHA-256 of the empty byte sequence.
+
+Parent code independently binds handler ownership, cursor windows and native UI
+actions. This snapshot alone cannot certify optional feature acceptance or
+observe a request that never reached the backend. Python source contracts guard
+the observer's shape and forwarding paths; compilation and real ASP.NET response
+behavior require the hosted package fixture run.
+
 ## Released baseline feature boundary
 
 The production execution policy uses WorkflowContexts without Secrets registration
