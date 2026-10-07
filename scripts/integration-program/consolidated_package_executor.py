@@ -557,8 +557,11 @@ def feed_resources(transport):
     return sha(result.body)
 
 
-def reconcile(root, provenance, expected, inspector, transport, index_hash):
+def reconcile(root, provenance, expected, inspector, transport, index_hash, *, observation_mode):
     result = recovery.plan_recovery(root, provenance, transport=transport)
+    # The shared planner sees an injected reader in both cases. Only this caller
+    # knows whether it constructed the production HTTP reader or received a fake.
+    result["observation_mode"] = observation_mode
     symbols = observe_symbols(transport, expected, inspector)
     consistent = result["feed_observation"]["archive_sha256"] == index_hash
     return {"packages": result, "symbols": symbols, "feed_index_consistent": consistent,
@@ -594,7 +597,8 @@ def run_verified(root, provenance, inspector, *, mode, transport=None, authorize
         if isinstance(reader, HttpTransport):
             reader.deadline = min(reader.deadline, inspector.deadline)
         ledger["feed_index_sha256"] = feed_resources(reader)
-        ledger["before"] = reconcile(root, provenance, expected, inspector, reader, ledger["feed_index_sha256"])
+        ledger["before"] = reconcile(root, provenance, expected, inspector, reader, ledger["feed_index_sha256"],
+                                     observation_mode=ledger["scope"])
         if checkpoint is not None:
             checkpoint(ledger)
         require(not ledger["before"]["blocked"], "reconciliation_blocked")
@@ -658,7 +662,8 @@ def run_verified(root, provenance, inspector, *, mode, transport=None, authorize
             except BaseException:
                 operation["failure_category"] = "upload_acceptance_unknown"
                 raise ExecutorError("upload_acceptance_unknown") from None
-        ledger["after"] = reconcile(root, provenance, expected, inspector, reader, ledger["feed_index_sha256"])
+        ledger["after"] = reconcile(root, provenance, expected, inspector, reader, ledger["feed_index_sha256"],
+                                    observation_mode=ledger["scope"])
         ledger["content_verified"] = ledger["after"]["content_verified"]
         require(ledger["content_verified"], "readback_incomplete")
         ledger.update(result="content_verified", failure_category=None)

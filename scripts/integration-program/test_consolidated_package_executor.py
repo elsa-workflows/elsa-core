@@ -130,6 +130,9 @@ class FullInventoryTests(unittest.TestCase):
         self.assertEqual(len(self.feed.calls), 450)
         self.assertFalse(result["publication_ready"])
         self.assertFalse(result["remote_snupkg_archive_verified"])
+        self.assertEqual(result["scope"], "injected_simulation")
+        for phase in ("before", "after"):
+            self.assertEqual(result[phase]["packages"]["observation_mode"], "injected_simulation")
         self.assertNotIn("private-synthetic-key", json.dumps(result))
         self.assertTrue(self.run_executor()["content_verified"])
         self.assertEqual(len(self.feed.calls), 450)
@@ -139,6 +142,18 @@ class FullInventoryTests(unittest.TestCase):
         self.assertEqual(result["result"], "verified")
         self.assertFalse(result["content_verified"])
         self.assertFalse(result["publication_performed"])
+        self.assertEqual(self.feed.calls, [])
+
+    def test_default_reader_preserves_production_observation_provenance(self):
+        with patch.object(executor.HttpTransport, "get", side_effect=self.feed.get) as reader, \
+                patch.object(self.inspector, "deadline", time.monotonic() + 300, create=True):
+            result = executor.run_verified(self.root, self.provenance, self.inspector, mode="verify")
+        self.assertEqual(result["result"], "verified")
+        self.assertEqual(result["scope"], "production")
+        self.assertEqual(result["before"]["packages"]["observation_mode"], "production")
+        self.assertEqual(reader.call_count, 452)  # Two index reads, all packages, all PDBs.
+        self.assertFalse(result["publication_performed"])
+        self.assertFalse(result["upload_attempted"])
         self.assertEqual(self.feed.calls, [])
 
     def test_package_present_symbol_missing_and_arbitrary_partial(self):
