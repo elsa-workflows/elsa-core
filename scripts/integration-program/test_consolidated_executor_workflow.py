@@ -34,6 +34,9 @@ class ExecutorWorkflowTests(unittest.TestCase):
                 "branch_policies": [{"id": 321, "type": "branch", "name": "main"}],
                 "operational_packet_sha256": "b" * 64,
                 "native_approval_verified": native,
+                "credential_provenance_verified": native,
+                "credential_isolation": ("both_names_environment_only_metadata_observed" if native
+                                         else "pending_authenticated_execution_check"),
             },
         }
 
@@ -60,7 +63,8 @@ class ExecutorWorkflowTests(unittest.TestCase):
             "environment_name": "unprotected", "environment_id": None,
             "reviewer_ids": [], "branch_policies": [{"id": 321, "type": "branch", "name": "*"}],
             "operational_packet_sha256": "unknown", "status": "failed",
-            "native_approval_verified": "false",
+            "native_approval_verified": "false", "credential_provenance_verified": True,
+            "credential_isolation": "unverified",
         }
         for key, value in bad_values.items():
             with self.subTest(key=key):
@@ -88,6 +92,10 @@ class ExecutorWorkflowTests(unittest.TestCase):
         credential_index = next(i for i, step in enumerate(steps)
                                 if "ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY" in step.get("env", {}))
         recheck = steps[credential_index - 1]
+        self.assertEqual(set(recheck["env"]), {"ELSA_CONSOLIDATED_METADATA_READ_TOKEN"})
+        self.assertEqual(set(steps[credential_index]["env"]), {
+            "ELSA_CONSOLIDATED_METADATA_READ_TOKEN", "ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY"})
+        self.assertNotIn("GH_TOKEN", WORKFLOW.read_text())
         self.assertIn("--phase publish", recheck["run"])
         self.assertIn("--arg result native_approval_verified", recheck["run"])
         self.assertIn("ELSA_ADMISSION_RECEIPT_FILTER", recheck["run"])

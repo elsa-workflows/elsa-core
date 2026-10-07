@@ -37,6 +37,10 @@ env:
       .type == "branch" and .name == "main" and (.id | type == "number" and . > 0))
     and (.admission.operational_packet_sha256 | type == "string" and test("^[a-f0-9]{64}$"))
     and .admission.native_approval_verified == $native
+    and .admission.credential_provenance_verified == $native
+    and .admission.credential_isolation ==
+      (if $native then "both_names_environment_only_metadata_observed"
+       else "pending_authenticated_execution_check" end)
 
 jobs:
   retrieve:
@@ -116,7 +120,7 @@ jobs:
     needs: [retrieve, verify]
     permissions:
       contents: read
-      actions: read
+      actions: none
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -138,8 +142,6 @@ jobs:
           python-version: '3.12'
       - name: Require the exact pre-existing protected environment before scheduling publication
         id: admission
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/executor-admission"
@@ -167,7 +169,7 @@ jobs:
     environment: elsa-3-10-feedz
     permissions:
       contents: read
-      actions: read
+      actions: none
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -190,9 +192,9 @@ jobs:
         run: >-
           dotnet build scripts/integration-program/VerifyPackageSymbolPair/VerifyPackageSymbolPair.csproj
           --configuration Release --output "$RUNNER_TEMP/symbol-inspector"
-      - name: Recheck protected admission before exposing the dedicated credential
+      - name: Recheck protected admission with metadata-only authority before exposing the publisher credential
         env:
-          GH_TOKEN: ${{ github.token }}
+          ELSA_CONSOLIDATED_METADATA_READ_TOKEN: ${{ secrets.ELSA_CONSOLIDATED_METADATA_READ_TOKEN }}
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/executor-publication"
@@ -203,7 +205,7 @@ jobs:
             "$ELSA_ADMISSION_RECEIPT_FILTER" "$RUNNER_TEMP/executor-publication/admission.json" > /dev/null 2>&1
       - name: Publish and verify only the admitted original bytes
         env:
-          GH_TOKEN: ${{ github.token }}
+          ELSA_CONSOLIDATED_METADATA_READ_TOKEN: ${{ secrets.ELSA_CONSOLIDATED_METADATA_READ_TOKEN }}
           ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY: ${{ secrets.ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY }}
         run: >-
           python scripts/integration-program/consolidated_package_executor.py publish
