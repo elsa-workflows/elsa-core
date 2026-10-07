@@ -9,6 +9,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Middleware.Workflows;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
@@ -35,14 +36,22 @@ public class ExecutionCycleOwnershipTests : IAsyncLifetime
     [InlineData(WorkflowSubStatus.Finished)]
     [InlineData(WorkflowSubStatus.Suspended)]
     [InlineData(WorkflowSubStatus.Faulted)]
-    public async Task RunnerTracksThroughCustomFinalCommit(WorkflowSubStatus subStatus)
+    public async Task RunnerTracksCustomFinalCommitForExtractedStatuses(WorkflowSubStatus subStatus)
     {
         var finalWrite = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var writing = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         ExecutionCycleHandle? handle = null;
+        // This is ownership coverage for the state passed to a custom final commit. The extractor supplies
+        // the statuses; the test does not simulate real suspension or handled-fault activity execution.
+        var extractedState = State();
+        extractedState.SubStatus = subStatus;
+        extractedState.Status = subStatus == WorkflowSubStatus.Suspended ? WorkflowStatus.Running : WorkflowStatus.Finished;
+        var extractor = Substitute.For<IWorkflowStateExtractor>();
+        extractor.Extract(_context).Returns(extractedState);
         var commit = Substitute.For<ICommitStateHandler>();
-        commit.CommitAsync(_context, Arg.Any<WorkflowState>(), Arg.Any<CancellationToken>()).Returns(_ =>
+        commit.CommitAsync(_context, Arg.Any<WorkflowState>(), Arg.Any<CancellationToken>()).Returns(call =>
         {
+            Assert.Same(extractedState, call.Arg<WorkflowState>());
             Assert.Same(handle, Assert.Single(_registry.ListActiveCycles()));
             writing.SetResult();
             return finalWrite.Task;
@@ -50,9 +59,8 @@ public class ExecutionCycleOwnershipTests : IAsyncLifetime
         var runner = CreateRunner(new TrackingPipeline(_registry, context =>
         {
             handle = Assert.Single(_registry.ListActiveCycles());
-            context.TransitionTo(subStatus);
             return ValueTask.CompletedTask;
-        }), commit);
+        }), commit, extractor);
 
         var run = runner.RunAsync(_context);
         try
