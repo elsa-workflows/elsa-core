@@ -38,7 +38,10 @@ The hosted workflow installs .NET SDK 10.0.300 with the .NET 8 and 9 runtimes an
 Node 22.23.3. Both hosted and local execution select the sole reviewed SDK from
 the converter policy using a private `global.json` with roll-forward disabled,
 verify the actual SDK, and pin it in each disposable host group. A newer ambient
-SDK cannot silently replace the reviewed converter SDK. Execution receipts record
+SDK cannot silently replace the reviewed converter SDK. Client projects also pin
+the reviewed WebAssembly pack before framework-reference resolution so SDK
+defaults cannot select a different pack version. Actual trace, archive, and loaded
+assembly checks remain mandatory. Execution receipts record
 the last started build operation using fixed component and phase names; these
 locate failures without retaining exception text, command arguments, or logs.
 Use fresh output and candidate-extraction paths

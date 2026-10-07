@@ -40,6 +40,16 @@ class HostMaterializationTests(unittest.TestCase):
                             xml = ET.parse(project).getroot()
                             self.assertEqual("false", xml.findtext("PropertyGroup/IsPackable"))
                             self.assertEqual(framework, xml.findtext("PropertyGroup/TargetFramework"))
+                            converter_pin = xml.find("Target[@Name='PinReviewedWebAssemblyConverterPack']")
+                            if kind in ("wasm", "custom-elements"):
+                                from paired_package_converter_selection import PACK_VERSION
+                                self.assertIsNotNone(converter_pin)
+                                self.assertEqual("ProcessFrameworkReferences", converter_pin.attrib["BeforeTargets"])
+                                self.assertEqual({"Update": "Microsoft.NET.Sdk.WebAssembly.Pack",
+                                    "WebAssemblySdkPackVersion": PACK_VERSION},
+                                    converter_pin.find("ItemGroup/KnownWebAssemblySdkPack").attrib)
+                            else:
+                                self.assertIsNone(converter_pin)
                             constants = xml.findtext("PropertyGroup/DefineConstants")
                             if kind == "backend":
                                 package_ids = {item.attrib["Include"] for item in xml.findall(".//PackageReference")}

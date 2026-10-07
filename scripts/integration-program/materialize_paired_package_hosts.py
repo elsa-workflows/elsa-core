@@ -175,6 +175,16 @@ def _project(host: str, request: CellRequest) -> tuple[str, str]:
     if host == "hosted-wasm":
         # The sole permitted source edge is disposable, nonpackable host glue.
         ET.SubElement(group, "ProjectReference", {"Include": "../wasm/Elsa.Studio.Host.Wasm.csproj"})
+    if host in ("wasm", "custom-elements"):
+        from paired_package_converter_selection import PACK_VERSION
+        # Installed SDK servicing can change the default converter pack. Pin
+        # the reviewed build tool before framework-reference resolution; the
+        # existing runtime trace and archive checks still verify actual use.
+        target = ET.SubElement(root, "Target", {
+            "Name": "PinReviewedWebAssemblyConverterPack", "BeforeTargets": "ProcessFrameworkReferences"})
+        tools = ET.SubElement(target, "ItemGroup")
+        ET.SubElement(tools, "KnownWebAssemblySdkPack", {
+            "Update": "Microsoft.NET.Sdk.WebAssembly.Pack", "WebAssemblySdkPackVersion": PACK_VERSION})
     name = "PairedBackend.csproj" if host == "backend" else f"Elsa.Studio.Host.{HOST_NAMES[host]}.csproj"
     ET.indent(root)
     return name, ET.tostring(root, encoding="unicode") + "\n"
