@@ -219,7 +219,7 @@ class WorkflowBoundaryTests(unittest.TestCase):
         self.assertIn("  push:\n", self.triggers)
         self.assertIn("  workflow_dispatch:\n", self.triggers)
         branches = self.triggers.split("    branches:\n", 1)[1].split("    paths:\n", 1)[0]
-        self.assertEqual(re.findall(r"^      - '([^']+)'$", branches, re.MULTILINE), ["codex/**", "main"])
+        self.assertEqual(re.findall(r"^      - '([^']+)'$", branches, re.MULTILINE), ["codex/**"])
         self.assertIn("\npermissions: {}\n", self.triggers)
 
     def test_retrieval_token_has_no_checkout_or_repository_execution(self):

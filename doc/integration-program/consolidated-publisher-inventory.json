@@ -781,7 +781,7 @@
             "workflow_dispatch",
             "rerun"
           ],
-          "historical_behavior": "main and maintenance revisions publish to Feedz on push/release. Historical tag/rerun authority is not contained; Studio maintenance also permits explicit version dispatches.",
+          "historical_behavior": "main and maintenance revisions publish to Feedz on push/release; release events derive package versions from the tag. Historical tag/rerun authority is not contained.",
           "observed_refs": [
             {
               "ref": "heads/main",

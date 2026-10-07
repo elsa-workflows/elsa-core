@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - 'codex/**'
-      - 'main'
     paths:
       - '.github/workflows/stable-persisted-workflow-upgrade-proof.yml'
       - 'scripts/integration-program/run_persisted_workflow_upgrade_fixture.py'

@@ -234,6 +234,8 @@ class StableWorkflowContracts(unittest.TestCase):
         retrieve, execution = text.split("  proof:\n", 1)
         self.assertNotIn("pull_request", text)
         self.assertIn("workflow_dispatch:", text)
+        branches = text.split("    branches:\n", 1)[1].split("    paths:\n", 1)[0]
+        self.assertEqual(branches.splitlines(), ["      - 'codex/**'"])
         for forbidden in ("actions/checkout", "scripts/", "python", "node", "secrets."):
             self.assertNotIn(forbidden, retrieve.split("  retrieve:\n", 1)[1])
         for value in (str(stable.ARTIFACT), str(stable.RUN), stable.SOURCE, stable.ARCHIVE_SHA256):
