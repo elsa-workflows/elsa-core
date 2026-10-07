@@ -188,7 +188,7 @@ class HttpTransport:
         allowed = (url == recovery.FEED_INDEX or recovery._intended_url(url)
                    or url in {PACKAGE_PUBLISH, SYMBOL_PUBLISH}
                    or (url.startswith(SYMBOL_PUBLISH + "/") and KEY.fullmatch(url[len(SYMBOL_PUBLISH)+1:]))
-                   or re.fullmatch(r"https://api.github.com/repos/elsa-workflows/elsa-core/[A-Za-z0-9_./?=&%-]+", url))
+                   or re.fullmatch(r"https://api\.github\.com/repos/elsa-workflows/elsa-core/[A-Za-z0-9_./?=&%-]+", url))
         require(allowed and ".." not in url and len(data) <= MAX_BYTES, "unsafe_request")
         require(method != "PUT" or url in {PACKAGE_PUBLISH, SYMBOL_PUBLISH}, "unsafe_upload")
         require(self.request_count < self.max_requests, "request_limit")

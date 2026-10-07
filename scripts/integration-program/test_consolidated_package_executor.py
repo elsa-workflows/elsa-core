@@ -716,6 +716,29 @@ class AdmissionTests(unittest.TestCase):
             executor.paged(self.api, "metadata", "rows")
 
 
+class HttpTransportUrlTests(unittest.TestCase):
+    def test_mutated_github_hostnames_rejected_before_child(self):
+        reader = executor.HttpTransport()
+        with patch.object(executor, "bounded_child", side_effect=AssertionError("Unsafe hostname reached child")) as child:
+            for hostname in ("apiXgithub.com", "api.githubXcom", "apiXgithubXcom"):
+                with self.subTest(hostname=hostname), self.assertRaisesRegex(executor.ExecutorError, "^unsafe_request$"):
+                    reader.get(f"https://{hostname}/repos/elsa-workflows/elsa-core/actions/artifacts/1")
+            child.assert_not_called()
+        self.assertEqual(reader.request_count, 0)
+
+    def test_exact_github_hostname_reaches_bounded_child(self):
+        reader = executor.HttpTransport()
+        url = "https://api.github.com/repos/elsa-workflows/elsa-core/actions/artifacts?per_page=100&page=1"
+        response = b'{"status":200,"complete":true,"failure_category":null,"body":""}'
+        with patch.object(executor, "bounded_child", return_value=response) as child:
+            result = reader.get(url)
+        child.assert_called_once()
+        self.assertEqual(json.loads(child.call_args.args[1])["url"], url)
+        self.assertTrue(result.complete)
+        self.assertEqual(result.status, 200)
+        self.assertEqual(reader.request_count, 1)
+
+
 class LoopbackTests(unittest.TestCase):
     def setUp(self):
         self.received = []
