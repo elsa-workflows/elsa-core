@@ -1,5 +1,5 @@
 import { chromium, expect as playwrightExpect, request, type Page, type APIRequestContext, type Locator, type Download, type Response } from '@playwright/test';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { closeSync, lstatSync, openSync, readFileSync, readSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -582,6 +582,220 @@ async function createNativeWorkflow(page: Page, name: string, onStage?: (stage: 
   return definitionId;
 }
 
+async function addNativeSetOutput(page: Page, onStage?: (stage: string) => void, passed?: (name: string) => void): Promise<Locator> {
+  // A declared output is authored through the real package UI, not seeded via HTTP.
+  await page.getByRole('tab', { name: /Input.*Output/i }).click();
+  onStage?.('output_tab_opened');
+  await page.getByRole('button', { name: 'Add output', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  onStage?.('output_dialog_opened');
+  // CodeBeam 9.1.0 renders a hidden input and toggles its visible MudInputControl.
+  // Its Type label is not associated with the hidden input, so use the actual labeled component.
+  const typeSelect = inputControl(page, /^Type$/, dialog);
+  await expect(typeSelect).toHaveCount(1);
+  // EditOutputDialog initializes Name and Type after its awaited descriptor reads.
+  await expect.poll(async () => (await typeSelect.locator('[tabindex="0"]').first().innerText()).trim(), { timeout: 20_000 }).not.toBe('');
+  await dialog.getByLabel('Name', { exact: true }).fill('sentinel');
+  await dialog.getByLabel('Display name', { exact: true }).fill('sentinel');
+  await typeSelect.click();
+  const stringType = page.getByRole('option', { name: 'String', exact: true });
+  await expect(stringType).toHaveCount(1);
+  await stringType.click();
+  onStage?.('output_type_selected');
+  await dialog.getByRole('button', { name: 'Ok', exact: true }).click();
+  onStage?.('output_declared');
+  // The supported native pickers expose Search as a placeholder (accordion) or label (tree).
+  const search = page.getByPlaceholder('Search', { exact: true }).or(page.getByLabel(/^Search(?:\.\.\.)?$/));
+  await expect(search).toHaveCount(1);
+  await search.fill('Set output');
+  const category = page.locator('.mud-expand-panel-header').filter({ hasText: 'Composition' });
+  if (await category.count()) await category.click();
+  const activity = page.locator('[draggable="true"]').filter({ hasText: /^Set output$/i });
+  await expect(activity).toHaveCount(1);
+  await expect(activity).toBeVisible();
+  passed?.('activity_registry');
+  onStage?.('activity_registry');
+  const canvas = page.locator('.flowchart-diagram-designer-wrapper').first();
+  await activity.dragTo(canvas, { targetPosition: { x: 260, y: 180 } });
+  const node = page.locator('.x6-node').filter({ hasText: /Set output/i });
+  await expect(node).toHaveCount(1);
+  // Native AddNewActivityAsync selects the dragged activity and opens its property editor.
+  await expect(node).toHaveClass(/x6-node-selected/);
+  passed?.('editor_smoke');
+  onStage?.('activity_inserted');
+  const output = inputControl(page, /^Output$/);
+  await expect(output).toHaveCount(1);
+  await output.click();
+  const outputOption = page.getByRole('option', { name: 'sentinel', exact: true });
+  await expect(outputOption).toHaveCount(1);
+  await outputOption.click();
+  return node;
+}
+
+async function nativeSecrets(page: Page, input: PrivateInput, backend: Backend,
+  proof: Record<string, unknown>, passed: (name: string) => void): Promise<void> {
+  const record: Record<string, any> = {
+    checks: {
+      backend_readonly_inventory: false, native_created: false, native_picker: false,
+      native_create_dialog: false, native_secret_created: false, native_selected: false,
+      saved: false, reloaded: false
+    }
+  };
+  proof.secrets = record;
+  // Inventory and metadata reads below are direct read-only checks. Server Studio
+  // invokes ISecretsApi on its circuit; these reads do not observe that traffic.
+  const inventory = await backend.get('/secrets/descriptors');
+  const inventoryJson = JSON.stringify(inventory);
+  if (!Array.isArray(inventory.types) || !Array.isArray(inventory.stores) ||
+      inventory.types.length < 1 || inventory.types.length > 100 ||
+      inventory.stores.length < 1 || inventory.stores.length > 100 ||
+      Buffer.byteLength(inventoryJson) > 1024 * 1024)
+    throw new Error('secrets_inventory_invalid');
+  const types = inventory.types.filter((item: any) => item.name === 'text');
+  const stores = inventory.stores.filter((item: any) => item.name === 'encrypted');
+  if (types.length !== 1 || stores.length !== 1 || stores[0].isReadOnly !== false ||
+      !Array.isArray(types[0].supportedStoreNames) || !types[0].supportedStoreNames.includes('encrypted') ||
+      [types[0], stores[0]].some(item => typeof item.displayName !== 'string' ||
+        item.displayName.length < 1 || item.displayName.length > 256))
+    throw new Error('secrets_descriptors_unbound');
+  Object.assign(record, {
+    backend_readonly_inventory_sha256: hash(inventoryJson),
+    type_count: inventory.types.length, store_count: inventory.stores.length,
+    descriptor_type_sha256: hash('text'), descriptor_store_sha256: hash('encrypted')
+  });
+  record.checks.backend_readonly_inventory = true;
+
+  const name = (input.safe_ids.definition_name ?? 'package-browser-workflow') + '-secrets';
+  const definitionId = await createNativeWorkflow(page, name);
+  const secretName = 'native-probe-' + hash(definitionId).slice(0, 16);
+  const displayName = 'Synthetic native secret ' + hash(definitionId).slice(0, 12);
+  const reference = { name: secretName, typeName: 'text', scope: 'package-browser-probe' };
+  const referenceHash = hash(JSON.stringify(reference));
+  const selectedLabel = displayName + ' (' + secretName + ')';
+  // An ephemeral synthetic payload is retained only in this private process.
+  // Neither payload nor payload hash is written into portable evidence.
+  const secretValue = 'synthetic-private-' + randomBytes(32).toString('hex');
+  Object.assign(record, {
+    probe_definition_id_sha256: hash(definitionId),
+    secret_name_sha256: hash(secretName), reference_type_sha256: hash(reference.typeName),
+    reference_scope_sha256: hash(reference.scope), expected_reference_sha256: referenceHash,
+    expected_selected_label_sha256: hash(selectedLabel)
+  });
+  record.checks.native_created = true;
+  const getDefinition = () => backend.get('/workflow-definitions/by-definition-id/' + encodeURIComponent(definitionId) + '?versionOptions=Latest');
+  await expect(page.locator('.flowchart-diagram-designer-wrapper .x6-graph-svg')).toBeVisible();
+  await expect(page.getByLabel('Name', { exact: true })).toHaveValue(name);
+  await addNativeSetOutput(page);
+  // ExpressionInput's direct flex-none sibling owns the native syntax menu.
+  const expressionRow = inputControl(page, /^Output Value$/i).locator(
+    'xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " mud-stack ")][div[contains(concat(" ", normalize-space(@class), " "), " flex-none ")]][1]');
+  const syntaxMenu = expressionRow.locator('.flex-none.pt-1 .mud-menu button').first();
+  await expect(expressionRow).toHaveCount(1);
+  await syntaxMenu.click();
+  const secretSyntax = page.locator('.studio-expression-input-menu-item:visible').filter({ hasText: /^Secret$/ });
+  await expect(secretSyntax).toHaveCount(1);
+  await secretSyntax.click();
+  const picker = inputControl(page, /^Output Value$/i);
+  const selected = picker.locator('[tabindex="0"]').first();
+  await expect(picker).toHaveCount(1);
+  await expect(selected).toBeVisible();
+  record.checks.native_picker = true;
+  // SecretPicker declares this tooltip on its inline-create icon. Observe the
+  // actual tooltip before clicking rather than inventing an accessible name.
+  const create = picker.locator('xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " mud-stack ")][1]').locator('.mud-tooltip-root button');
+  await expect(create).toHaveCount(1);
+  await create.hover();
+  await expect(page.locator('.mud-tooltip').filter({ hasText: /^Create secret$/ })).toBeVisible();
+  await create.click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText('Create Secret', { exact: true })).toBeVisible();
+  record.checks.native_create_dialog = true;
+  await dialog.getByLabel('Technical name', { exact: true }).fill(secretName);
+  await dialog.getByLabel('Display name', { exact: true }).fill(displayName);
+  // Choose descriptor-backed names explicitly, irrespective of descriptor order.
+  for (const [label, descriptor] of [['Type', types[0]], ['Store', stores[0]]] as const) {
+    const control = inputControl(page, new RegExp('^' + label + '$'), dialog);
+    await expect(control).toHaveCount(1);
+    await control.click();
+    const option = page.getByRole('option', { name: descriptor.displayName, exact: true });
+    await expect(option).toHaveCount(1);
+    await option.click();
+  }
+  await dialog.getByLabel('Scope', { exact: true }).fill(reference.scope);
+  const value = dialog.getByLabel('Value', { exact: true });
+  await expect(value).toHaveAttribute('type', 'password');
+  await value.fill(secretValue);
+  await value.blur();
+  await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(selected).toHaveText(selectedLabel);
+  const created = await backend.get('/secrets/' + encodeURIComponent(secretName));
+  if (created.name !== reference.name || created.typeName !== reference.typeName ||
+      created.scope !== reference.scope || created.storeName !== 'encrypted' ||
+      created.displayName !== displayName || 'value' in created || 'payload' in created ||
+      JSON.stringify(created).includes(secretValue))
+    throw new Error('native_secret_metadata_mismatch');
+  record.backend_readonly_created_metadata_sha256 = hash(JSON.stringify(created));
+  record.checks.native_secret_created = true;
+  // Select the created item through the actual picker as well as proving the
+  // inline-create callback's automatic selection above.
+  await picker.click();
+  const option = page.getByRole('option', { name: selectedLabel, exact: true });
+  await expect(option).toHaveCount(1);
+  await option.click();
+  await expect(selected).toHaveText(selectedLabel);
+  record.selected_label_sha256 = hash((await selected.innerText()).trim());
+  record.checks.native_selected = true;
+
+  const checkedBinding = (definition: any): { rootId: string; activityId: string; referenceHash: string } => {
+    if (definition.definitionId !== definitionId || typeof definition.root?.id !== 'string' ||
+        !Array.isArray(definition.root.activities) || definition.root.activities.length !== 1 ||
+        JSON.stringify(definition).includes(secretValue)) throw new Error('native_secret_workflow_invalid');
+    const activity = definition.root.activities[0];
+    const input = activity.outputValue;
+    if (activity.type !== 'Elsa.SetOutput' || typeof activity.id !== 'string' ||
+        input?.expression?.type !== 'Secret' || input.typeName !== 'Object')
+      throw new Error('native_secret_expression_invalid');
+    const actual = typeof input.expression.value === 'string' ? JSON.parse(input.expression.value) : input.expression.value;
+    if (!isDeepStrictEqual(actual, reference)) throw new Error('native_secret_reference_mismatch');
+    return { rootId: definition.root.id, activityId: activity.id, referenceHash: hash(JSON.stringify(reference)) };
+  };
+  await page.keyboard.press('ControlOrMeta+s');
+  await expect.poll(async () => {
+    try { checkedBinding(await getDefinition()); return true; } catch { return false; }
+  }).toBe(true);
+  const saved = await getDefinition();
+  const savedBinding = checkedBinding(saved);
+  Object.assign(record, {
+    saved_definition_id_sha256: hash(saved.definitionId), root_id_sha256: hash(savedBinding.rootId),
+    activity_id_sha256: hash(savedBinding.activityId), saved_reference_sha256: savedBinding.referenceHash
+  });
+  record.checks.saved = true;
+  await reloadEditor(page);
+  await expect(page.getByLabel('Name', { exact: true })).toHaveValue(name);
+  const node = page.locator('elsa-activity-wrapper[activity-id="' + savedBinding.activityId + '"]');
+  await expect(node).toHaveCount(1);
+  await node.click();
+  await expect(selected).toHaveText(selectedLabel);
+  const reloaded = await getDefinition();
+  const reloadedBinding = checkedBinding(reloaded);
+  if (!isDeepStrictEqual(reloadedBinding, savedBinding)) throw new Error('native_secret_reloaded_identity_changed');
+  Object.assign(record, {
+    reloaded_definition_id_sha256: hash(reloaded.definitionId),
+    reloaded_root_id_sha256: hash(reloadedBinding.rootId),
+    reloaded_activity_id_sha256: hash(reloadedBinding.activityId),
+    reloaded_reference_sha256: reloadedBinding.referenceHash,
+    reloaded_selected_label_sha256: hash((await selected.innerText()).trim())
+  });
+  record.checks.reloaded = true;
+  proof.last_completed_stage = 'secrets_reloaded';
+  passed('secrets');
+  await definitionsList(page, input);
+  await expect(page.getByRole('button', { name: 'Create workflow', exact: true })).toBeVisible();
+}
+
 async function nativeWorkflowContexts(page: Page, input: PrivateInput, backend: Backend,
   proof: Record<string, unknown>, passed: (name: string) => void): Promise<void> {
   const propertyKey = 'Elsa:WorkflowContextProviderTypes';
@@ -664,7 +878,10 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   if (embedding) passed('authentication');
   proof.initial_list_navigation_completed = true;
   passed('shell_or_embedding');
-  if (input.request.version === '3.10.0') await nativeWorkflowContexts(page, input, backend, proof, passed);
+  if (input.request.version === '3.10.0') {
+    await nativeWorkflowContexts(page, input, backend, proof, passed);
+    await nativeSecrets(page, input, backend, proof, passed);
+  }
   const name = input.safe_ids.definition_name ?? 'package-browser-workflow';
   const sentinel = input.safe_ids.activity_value ?? 'package-browser-output';
   proof.last_completed_stage = 'workflow_list';
@@ -675,53 +892,7 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   await expect(page.locator('.flowchart-diagram-designer-wrapper .x6-graph-svg')).toBeVisible();
   await expect(page.getByLabel('Name', { exact: true })).toHaveValue(name);
   proof.editor_ready_observed = true;
-  // A declared output is authored through the real package UI, not seeded via HTTP.
-  await page.getByRole('tab', { name: /Input.*Output/i }).click();
-  proof.last_completed_stage = 'output_tab_opened';
-  await page.getByRole('button', { name: 'Add output', exact: true }).click();
-  const dialog = page.getByRole('dialog');
-  await expect(dialog).toBeVisible();
-  proof.last_completed_stage = 'output_dialog_opened';
-  // CodeBeam 9.1.0 renders a hidden input and toggles its visible MudInputControl.
-  // Its Type label is not associated with the hidden input, so use the actual labeled component.
-  const typeSelect = inputControl(page, /^Type$/, dialog);
-  await expect(typeSelect).toHaveCount(1);
-  // EditOutputDialog initializes Name and Type after its awaited descriptor reads.
-  await expect.poll(async () => (await typeSelect.locator('[tabindex="0"]').first().innerText()).trim(), { timeout: 20_000 }).not.toBe('');
-  await dialog.getByLabel('Name', { exact: true }).fill('sentinel');
-  await dialog.getByLabel('Display name', { exact: true }).fill('sentinel');
-  await typeSelect.click();
-  const stringType = page.getByRole('option', { name: 'String', exact: true });
-  await expect(stringType).toHaveCount(1);
-  await stringType.click();
-  proof.last_completed_stage = 'output_type_selected';
-  await dialog.getByRole('button', { name: 'Ok', exact: true }).click();
-  proof.last_completed_stage = 'output_declared';
-  // The supported native pickers expose Search as a placeholder (accordion) or label (tree).
-  const search = page.getByPlaceholder('Search', { exact: true }).or(page.getByLabel(/^Search(?:\.\.\.)?$/));
-  await expect(search).toHaveCount(1);
-  await search.fill('Set output');
-  const category = page.locator('.mud-expand-panel-header').filter({ hasText: 'Composition' });
-  if (await category.count()) await category.click();
-  const activity = page.locator('[draggable="true"]').filter({ hasText: /^Set output$/i });
-  await expect(activity).toHaveCount(1);
-  await expect(activity).toBeVisible();
-  passed('activity_registry');
-  proof.last_completed_stage = 'activity_registry';
-  const canvas = page.locator('.flowchart-diagram-designer-wrapper').first();
-  await activity.dragTo(canvas, { targetPosition: { x: 260, y: 180 } });
-  const node = page.locator('.x6-node').filter({ hasText: /Set output/i });
-  await expect(node).toHaveCount(1);
-  // Native AddNewActivityAsync selects the dragged activity and opens its property editor.
-  await expect(node).toHaveClass(/x6-node-selected/);
-  passed('editor_smoke');
-  proof.last_completed_stage = 'activity_inserted';
-  const output = inputControl(page, /^Output$/);
-  await expect(output).toHaveCount(1);
-  await output.click();
-  const outputOption = page.getByRole('option', { name: 'sentinel', exact: true });
-  await expect(outputOption).toHaveCount(1);
-  await outputOption.click();
+  const node = await addNativeSetOutput(page, stage => { proof.last_completed_stage = stage; }, passed);
   const value = inputControl(page, /^Output Value$/i).locator('input[type="text"]');
   await expect(value).toHaveCount(1);
   await value.fill(sentinel);
