@@ -12,8 +12,12 @@ import materialize_paired_package_hosts as hosts
 import paired_package_runtime_diagnostics as diagnostics
 
 
+CELL = ("3.8.4", "net8.0", "hosted-wasm")
+
+
 def failed_evidence(component="hosted-wasm", phase="readiness", code="startup_readiness_timeout"):
-    return {"host": "hosted-wasm", "stage": "owned_runtime", "result": "failed",
+    return {"version": CELL[0], "framework": CELL[1], "host": CELL[2],
+            "stage": "owned_runtime", "result": "failed",
             "failure_category": "execution_or_evidence_failed",
             "last_startup_operation": {"component": component, "phase": phase},
             "runtime_startup_failure": {"code": code}}
@@ -47,7 +51,7 @@ class RuntimeDiagnosticContracts(unittest.TestCase):
     def test_retention_rejects_raw_unbound_and_invalid_status_diagnostics(self):
         valid = failed_evidence()
         valid["last_startup_operation"]["http_status"] = 500
-        diagnostics.validate_evidence(valid)
+        diagnostics.validate_evidence(valid, CELL)
         variants = []
         def altered(section, key, value):
             row = copy.deepcopy(valid)
@@ -66,25 +70,42 @@ class RuntimeDiagnosticContracts(unittest.TestCase):
         variants.append({key: value for key, value in valid.items() if key != "last_startup_operation"})
         for row in variants:
             with self.subTest(row=row), self.assertRaises(ValueError):
-                diagnostics.validate_evidence(row)
+                diagnostics.validate_evidence(row, CELL)
         for status in (100, 200, 599):
             row = copy.deepcopy(valid)
             row["last_startup_operation"]["http_status"] = status
-            diagnostics.validate_evidence(row)
+            diagnostics.validate_evidence(row, CELL)
+
+    def test_identity_is_bound_to_the_expected_matrix_cell(self):
+        original = failed_evidence()
+        diagnostics.validate_evidence(original, CELL)
+        variants = [
+            {**original, "version": "3.9.0"},
+            {**original, "framework": "net9.0"},
+            {**original, "version": "3.9.0", "framework": "net9.0", "host": "server",
+             "last_startup_operation": {"component": "server", "phase": "readiness"}},
+        ]
+        for field in ("version", "framework", "host"):
+            variants.append({key: value for key, value in original.items() if key != field})
+        for row in variants:
+            with self.subTest(row=row), self.assertRaisesRegex(ValueError, "matrix cell"):
+                diagnostics.validate_evidence(row, CELL)
+        # Old receipts have no startup fields and retain their prior contract.
+        diagnostics.validate_evidence({}, CELL)
 
     def test_validation_failure_and_later_success_have_distinct_shapes(self):
         row = failed_evidence("pair", "validation", "startup_input_changed")
         row["stage"] = "project_provenance"
-        diagnostics.validate_evidence(row)
+        diagnostics.validate_evidence(row, CELL)
         later = failed_evidence()
         later.pop("runtime_startup_failure")
         later.update(stage="complete", result="passed")
         later.pop("failure_category")
-        diagnostics.validate_evidence(later)
+        diagnostics.validate_evidence(later, CELL)
         for code in ("startup_config_symlink", "startup_host_exited"):
             row["runtime_startup_failure"]["code"] = code
             with self.assertRaises(ValueError):
-                diagnostics.validate_evidence(row)
+                diagnostics.validate_evidence(row, CELL)
 
 
 class SyntheticStartupContracts(unittest.TestCase):

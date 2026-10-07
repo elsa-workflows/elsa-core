@@ -856,7 +856,7 @@ class ExecutionContracts(unittest.TestCase):
         self.assertEqual({"component": "backend", "phase": "readiness", "http_status": 500},
                          receipt["last_startup_operation"])
         self.assertEqual({"code": "startup_readiness_timeout"}, receipt["runtime_startup_failure"])
-        execution.runtime_diagnostics.validate_evidence(receipt)
+        execution.runtime_diagnostics.validate_evidence(receipt, self.key)
         self.assertNotIn("PRIVATE", json.dumps(receipt))
         self.assertFalse(any(event[0] == "browser" for event in self.events))
 
@@ -884,7 +884,7 @@ class ExecutionContracts(unittest.TestCase):
         self.assertEqual({"code": "unknown"}, receipt["runtime_startup_failure"])
         self.assertEqual({"project": "backend", "code": "project_framework_mismatch"},
                          receipt["project_provenance_failure"])
-        execution.runtime_diagnostics.validate_evidence(receipt)
+        execution.runtime_diagnostics.validate_evidence(receipt, self.key)
 
     def test_post_yield_cleanup_error_is_never_classified_as_startup_failure(self):
         self.key = ("3.8.4", "net10.0", "server")

@@ -111,6 +111,21 @@ class BrowserRetentionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             verify_retained_inventory(self.root)
 
+    def test_runtime_diagnostic_cannot_relabel_its_retained_cell(self):
+        from test_paired_package_runtime_diagnostics import failed_evidence
+        cell = "cells/3.8.4-net8.0-hosted-wasm/execution.json"
+        original = failed_evidence()
+        path = self.write(cell, original)
+        self.assertIn(cell, verify_retained_inventory(self.root))
+        for changes in (
+                {"version": "3.9.0"}, {"framework": "net9.0"},
+                {"version": "3.9.0", "framework": "net9.0", "host": "server",
+                 "last_startup_operation": {"component": "server", "phase": "readiness"}}):
+            with self.subTest(changes=changes):
+                path.write_text(json.dumps({**original, **changes}))
+                with self.assertRaisesRegex(ValueError, "matrix cell"):
+                    verify_retained_inventory(self.root)
+
     def react(self, *, passed=True, prefix="", host="server"):
         request, original, assets, phase = phase_fixture("hosted-wasm" if prefix else host)
         key = (request.version, request.framework, request.host)

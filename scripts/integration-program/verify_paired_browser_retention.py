@@ -133,7 +133,7 @@ def verify_retained_inventory(root: Path) -> list[str]:
         path = cell / "released-document.json"
         execution_path = cell / "execution.json"
         execution = json.loads(execution_path.read_text()) if execution_path.is_file() else {}
-        runtime_diagnostics.validate_evidence(execution)
+        runtime_diagnostics.validate_evidence(execution, key)
         if "project_provenance_failure" in execution:
             provenance_diagnostics.validate_failure_evidence(
                 execution["project_provenance_failure"],

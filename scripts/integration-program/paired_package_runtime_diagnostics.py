@@ -64,12 +64,16 @@ def failure_receipt(error: BaseException) -> dict[str, str]:
     return {"code": code}
 
 
-def validate_evidence(evidence) -> None:
+def validate_evidence(evidence, expected_key: tuple[str, str, str]) -> None:
     operation = evidence.get("last_startup_operation")
     failure = evidence.get("runtime_startup_failure")
     if "last_startup_operation" not in evidence and "runtime_startup_failure" not in evidence:
         return
-    validate_operation(operation, evidence.get("host"))
+    if (type(expected_key) is not tuple or len(expected_key) != 3
+            or not all(isinstance(item, str) for item in expected_key)
+            or tuple(evidence.get(field) for field in ("version", "framework", "host")) != expected_key):
+        raise ValueError("Runtime startup diagnostic differs from its matrix cell")
+    validate_operation(operation, expected_key[2])
     if not isinstance(evidence.get("stage"), str) or evidence["stage"] not in {
             "owned_runtime", "project_provenance", "runtime_readiness", "browser_execution",
             "loaded_assemblies", "secrets_endpoint_ownership", "react_source_binding", "react_runtime",
