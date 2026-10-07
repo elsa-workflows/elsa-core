@@ -382,7 +382,7 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     flags = {"login_failure_visible", "login_form_visible", "server_circuit_observed", "server_render_frames_observed", "elsa_identity_ui_visible", "expected_auth_provider_observed", "interactive_validation_observed", "private_input_values_retained", "initial_list_navigation_completed", "editor_ready_observed"}
     counts = {"create_name_label_count", "create_name_textbox_count"}
     stages.add("workflow_contexts_reloaded")
-    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens", "bpmn_roundtrip", "clipboard", "direct_backend", "wasm_boot", "json_roundtrip", "dom_interop", "reactflow", "embedding", "workflow_contexts"}, "Unsafe browser proof field")
+    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens", "bpmn_roundtrip", "clipboard", "direct_backend", "wasm_boot", "json_roundtrip", "dom_interop", "reactflow", "embedding", "workflow_contexts", "resource_failures"}, "Unsafe browser proof field")
     from paired_package_embedding import validate_embedding
     validate_embedding(proof.get("embedding"), assertions_by_name, proof, key)
     require("reactflow" not in proof or record["version"] == "3.10.0" and record["host"] in REACT_PHASE_HOSTS,
@@ -413,6 +413,20 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     require(not assertions_by_name.get("dom_interop", False) or "dom_interop" in proof,
             "Missing native DOM proof for passed assertion")
     for name, value in proof.items():
+        if name == "resource_failures":
+            require(record["result"] == "failed" and isinstance(value, list) and 1 <= len(value) <= 32,
+                    "Resource failure diagnostics require a failed bounded receipt")
+            for failure in value:
+                require(isinstance(failure, dict) and set(failure) == {"path_sha256", "status", "phase", "reason"},
+                        "Unsafe resource failure fields")
+                _require_sha256(failure["path_sha256"])
+                require(type(failure["status"]) is int and 100 <= failure["status"] <= 599,
+                        "Invalid failed resource response status")
+                require((failure["phase"] == "body" and failure["reason"] in {
+                            "resource_body_limit", "resource_body_size", "response_read_failed"}) or
+                        (failure["phase"] == "observation" and failure["reason"] == "resource_observation_failed"),
+                        "Invalid resource failure category")
+            continue
         if name in {"embedding", "workflow_contexts"}:
             continue  # Validated with its host assertions and parent identity above.
         if name == "reactflow":

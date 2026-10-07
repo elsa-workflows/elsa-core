@@ -20,6 +20,7 @@ type Resource = { path: string; sha256: string; bytes: number; content_type: str
 type ReleasedInput = { private_path: string; binding: { document: { source_cell: Cell; document_sha256: string; bytes: number; tool_version: string; definition_id_sha256: string; activity_id_sha256: string; value_sha256: string }; fixture_identity_sha256: string; source_evidence_sha256: string; browser_receipt_sha256: string }; source_binding_sha256: string; root_id_sha256: string };
 type PrivateInput = { request: Cell; studio_url: string; backend_url: string; username: string; password: string; safe_ids: Record<string, string>; resources: Resource[]; released_document_output?: string; released_document_inputs?: ReleasedInput[]; phase?: 'react-flow'; react_phase?: { source_browser_sha256: string; expected_hashes: ReactHashes } };
 type Assertion = { name: string; passed: boolean; reason_category: string | null };
+type ResourceFailure = { path_sha256: string; status: number; phase: 'body' | 'observation'; reason: 'resource_body_limit' | 'resource_body_size' | 'response_read_failed' | 'resource_observation_failed' };
 const baseline: string[] = policy.baseline;
 const candidate: string[] = policy.candidate;
 const hostAssertions: Record<Cell['host'], string[]> = policy.host_assertions;
@@ -842,17 +843,23 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
 
 function observePackageResponse(response: Response, input: PrivateInput, expected: Map<string, Resource>,
   resources: ObservedBootResource[], pending: Promise<void>[],
-  observed: (resource: { record: ObservedBootResource; body: Buffer }) => void, failed: () => void): void {
+  observed: (resource: { record: ObservedBootResource; body: Buffer }) => void, failed: (failure: ResourceFailure) => void): void {
   const url = new URL(response.url());
   const asset = expected.get(url.pathname);
   if (!asset || url.origin !== new URL(input.studio_url).origin) return;
+  let phase: ResourceFailure['phase'] = 'body';
   pending.push((async () => {
     const headers = response.headers();
     const body = await resourceBody(response, asset.bytes);
     const record = { path: url.pathname, status: response.status(), content_type: headers['content-type']?.split(';')[0] ?? '', sha256: hash(body), bytes: body.length, owner: asset.owner, requested: true as const };
     resources.push(record);
+    phase = 'observation';
     observed({ record, body });
-  })().catch(failed));
+  })().catch(error => {
+    const reason: ResourceFailure['reason'] = phase === 'observation' ? 'resource_observation_failed' :
+      error instanceof Error && (error.message === 'resource_body_limit' || error.message === 'resource_body_size') ? error.message : 'response_read_failed';
+    failed({ path_sha256: hash(url.pathname), status: response.status(), phase, reason });
+  }));
 }
 
 async function reactPhase(input: PrivateInput): Promise<void> {
@@ -1021,6 +1028,7 @@ async function main(): Promise<void> {
     }
   });
   const proof: Record<string, unknown> = {};
+  const resourceFailures: ResourceFailure[] = [];
   const observeResponse = (response: Response) => {
     if (directBackend) {
       let fromMainFrame = false;
@@ -1030,7 +1038,11 @@ async function main(): Promise<void> {
     }
     const embedding = embeddings.get(page);
     if (embedding) pending.push(embedding.observeResponse(response));
-    observePackageResponse(response, input, expected, resources, pending, resource => wasmBoot?.observe(resource.record, resource.body), () => { failed = true; });
+    observePackageResponse(response, input, expected, resources, pending, resource => wasmBoot?.observe(resource.record, resource.body), failure => {
+      failed = true;
+      if (resourceFailures.length < 32) resourceFailures.push(failure);
+      proof.resource_failures = resourceFailures;
+    });
   };
   page.on('response', observeResponse);
   let backend: Backend | undefined;
