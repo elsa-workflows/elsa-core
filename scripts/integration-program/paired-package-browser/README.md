@@ -107,8 +107,14 @@ expressions, inputs, outputs, options, custom properties and other model fields;
 only API navigation links and known export/version metadata are excluded. The DOM proof requires the native
 Import action to open its real file chooser and complete import/save callbacks.
 Receipts contain hashes and bounded checks, never raw candidate documents. These
-protocols still require actual browser verification; they do not certify the
-separate CustomElements embedding journey.
+protocols still require actual browser verification. The CustomElements adapter
+uses the same native editor actions through registered definition-list, editor,
+instance-list and viewer elements. Its separate embedding receipt binds native
+authentication and callback identities to the workflow read from the backend.
+The nonpackable consumer host adds JavaScript-compatible EventCallbacks while
+preserving its existing .NET Func parameters; the fixture records this host-glue
+transformation explicitly. This is not evidence that the unchanged pinned host
+already exposed those events. Package and archive bytes remain original.
 
 Candidate full-shell execution keeps one backend alive while running X6 and then
 React in separate Studio processes and fresh browser contexts. The second phase
@@ -165,8 +171,10 @@ activity identities. Only bounded statuses, checks, count and a response-body
 hash enter receipts. Tokens, credentials and raw response bodies stay private.
 This observation does not grant `wasm_boot` or either other WASM host's assertions.
 
-Standalone `wasm_boot` currently recognizes only the observed SDK 10.0.300 /
-net10.0 embedded configuration format. It binds five platform bootstrap assets
+Standalone `wasm_boot` recognizes the observed SDK 10.0.300 /
+net10.0 embedded configuration format and source-derived net8/net9 JSON formats.
+The latter require the selected WebAssembly task package 10.0.8; actual net8/net9
+build manifests and browser callbacks remain pending verification. Net10 binds five platform bootstrap assets
 (the Blazor loader, configuration loader, native/runtime JavaScript and native
 WASM) to the owned static manifest and matching source copies. This platform
 source authority is distinct from sealed Elsa package provenance. Every original
@@ -174,8 +182,8 @@ Elsa/fixture managed resource remains bound to its existing verified inventory;
 the managed count is derived, never assumed. Passing requires observed response
 bytes and content types, matching embedded configuration, and an executed native
 managed form-validation callback. Parsing a manifest or downloading assemblies
-alone cannot pass. Unknown net8/net9 formats remain pending implementation and
-fail closed; this bounded proof does not certify HostedWASM, CustomElements,
+alone cannot pass. Net8/net9 bind the separate JSON configuration and loader as
+six platform assets. Unknown formats fail closed; this bounded proof does not certify HostedWASM, CustomElements,
 ICU/globalization or all platform assemblies.
 
 On browser process timeout, the runner identifies and freezes the live launch
@@ -183,6 +191,10 @@ root and its descendants, including descendants in separate sessions. Signals
 are guarded by process birth identity; TERM and KILL waits are bounded. Missing
 ownership or uncertain termination raises `BrowserCleanupUnverified`, and host
 cleanup cannot overwrite that uncertainty with a successful combined receipt.
+Receipts retain only bounded cleanup failure categories, never raw process errors.
+On macOS, child discovery uses bounded native PID inventories and confirms stopped
+parents before traversal. Its inventory deadline is cooperative and cannot
+interrupt a native call already blocked in the kernel.
 Historical descendants already reparented before ownership discovery cannot be
 safely recovered by this mechanism; it fails closed without guessing by process
 name. The helper supports macOS and Linux process identities; live lifecycle

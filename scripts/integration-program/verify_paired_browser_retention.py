@@ -8,7 +8,7 @@ from pathlib import Path
 import stat
 
 from paired_package_provenance import regular_file
-from run_paired_package_browser_matrix import MATRIX, NATIVE_JSON_HOSTS, check_cell
+from run_paired_package_browser_matrix import MATRIX, REACT_PHASE_HOSTS, check_cell
 import paired_package_released_documents as documents
 import paired_package_react_phase as react_phase
 from verify_browser_package_resources import verify_browser_resources
@@ -76,7 +76,7 @@ def verify_retained_inventory(root: Path) -> list[str]:
         allowed.update(f"cells/{'-'.join(key)}/{name}.json" for name in ("execution", "browser"))
         if key[0] in documents.TOOL_VERSIONS:
             allowed.add(f"cells/{'-'.join(key)}/released-document.json")
-        if key[0] == "3.10.0" and key[2] in NATIVE_JSON_HOSTS:
+        if key[0] == "3.10.0" and key[2] in REACT_PHASE_HOSTS:
             allowed.add(f"cells/{'-'.join(key)}/react-phase.json")
     directories = {str(parent) for name in allowed for parent in Path(name).parents if str(parent) != "."}
     found = []
@@ -105,7 +105,7 @@ def verify_retained_inventory(root: Path) -> list[str]:
         path = cell / "released-document.json"
         execution_path = cell / "execution.json"
         execution = json.loads(execution_path.read_text()) if execution_path.is_file() else {}
-        if key[0] == "3.10.0" and key[2] in NATIVE_JSON_HOSTS:
+        if key[0] == "3.10.0" and key[2] in REACT_PHASE_HOSTS:
             _verify_react_phase(root, key, execution, matrix)
         binding = execution.get("released_document")
         if not path.exists():

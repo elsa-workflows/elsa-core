@@ -12,7 +12,7 @@ import paired_package_execution as execution
 import paired_package_wasm_boot as boot
 from test_paired_package_react_phase import phase_fixture
 from test_paired_package_released_documents import fixture_identity, write_released_fixture
-from test_paired_package_browser_matrix import attach_native_interop, attach_react_phase, bpmn_proof, clipboard_proof, direct_backend_proof, reopen_row
+from test_paired_package_browser_matrix import attach_embedding, attach_native_interop, attach_react_phase, bpmn_proof, clipboard_proof, direct_backend_proof, reopen_row
 from test_paired_package_wasm_boot import boot_receipt_fixture
 
 
@@ -600,10 +600,11 @@ class ExecutionContracts(unittest.TestCase):
 
     def test_react_cleanup_uncertainty_cannot_be_overwritten_by_host_cleanup(self):
         self.pipeline()
-        self.react_browser.side_effect = execution.browser.BrowserCleanupUnverified("PRIVATE")
+        self.react_browser.side_effect = execution.browser.BrowserCleanupUnverified("PRIVATE", categories={"inventory"})
         with self.assertRaises(ValueError):
             self.execute()
         self.assertFalse(self.receipt()["owned_process_cleanup"])
+        self.assertEqual(["inventory"], self.receipt()["cleanup_failure_categories"])
         self.assertEqual("react_browser_execution", self.receipt()["stage"])
         self.assertNotIn("PRIVATE", json.dumps(self.receipt()))
         self.assertEqual(self.record, json.loads((self.root / "retained/cells/3.10.0-net10.0-server/browser.json").read_text()))
@@ -690,6 +691,19 @@ class ExecutionContracts(unittest.TestCase):
         self.assertNotIn("owned_process_cleanup", self.receipt())
         self.assertNotIn("PRIVATE", json.dumps(self.receipt()))
 
+    def test_host_cleanup_diagnostics_survive_the_outer_owner_boundary(self):
+        self.pipeline()
+        @contextmanager
+        def broken_owner(*_args, **_kwargs):
+            raise execution.browser.BrowserCleanupUnverified("PRIVATE", categories={"exit", "reap"})
+            yield
+        self.designer_owner.side_effect = broken_owner
+        with self.assertRaises(ValueError):
+            self.execute()
+        self.assertFalse(self.receipt()["owned_process_cleanup"])
+        self.assertEqual(["exit", "reap"], self.receipt()["cleanup_failure_categories"])
+        self.assertNotIn("PRIVATE", json.dumps(self.receipt()))
+
     def test_resource_failure_retains_safe_browser_without_granting_assertions(self):
         self.pipeline()
         next(item for item in self.record["assertions"] if item["name"] == "browser_resources").update(passed=False, reason_category="not_implemented")
@@ -760,7 +774,7 @@ class ExecutionContracts(unittest.TestCase):
         self.assertFalse((self.root / "retained/cells/3.10.0-net10.0-server/browser.json").exists())
         self.assertNotIn("PRIVATE", json.dumps(self.receipt()))
 
-    def test_run_visits_all_36_but_pending_boot_proof_and_development_selection_never_accept(self):
+    def test_run_visits_all_36_but_pending_proof_and_development_selection_never_accept(self):
         def prepare(_inputs, destination, _retained, **_identity):
             destination.mkdir()
             (destination / "verified-artifacts.json").write_text("{}")
@@ -776,18 +790,15 @@ class ExecutionContracts(unittest.TestCase):
                 record["proof"] = {}
             if key[2] == "wasm":
                 record["proof"]["direct_backend"] = direct_backend_proof()
-                if key[1] == "net10.0":
-                    boot_proof, _, observed = boot_receipt_fixture()
-                    record["proof"].update(wasm_boot=boot_proof, interactive_validation_observed=True)
-                    record["resources"] = observed
-                else:
-                    # Topology fakes cannot certify pending net8/net9 bootstrap formats.
-                    record["result"] = "incomplete"
-            record["assertions"] = [{"name": name, "passed": not (name == "wasm_boot" and key[2] == "wasm" and key[1] != "net10.0"), "reason_category": None}
+                boot_proof, _, observed = boot_receipt_fixture(key[1])
+                record["proof"].update(wasm_boot=boot_proof, interactive_validation_observed=True)
+                record["resources"] = observed
+            record["assertions"] = [{"name": name, "passed": True, "reason_category": None}
                                      for name in execution.browser.required_assertions(record)]
             if key[0] == "3.10.0":
                 attach_native_interop(record)
                 attach_react_phase(record)
+            attach_embedding(record)
             return record
         self.patch(execution.browser, "prepare_candidate", side_effect=prepare)
         self.patch(execution.subprocess, "check_output", return_value="10.0.300\n")
@@ -802,11 +813,10 @@ class ExecutionContracts(unittest.TestCase):
                 ledger = json.loads((self.root / suffix / "retained-evidence/matrix.json").read_text())
                 self.assertEqual(execution.browser.MATRIX, {call.args[0] for call in cells.call_args_list})
                 pending = [cell for cell in ledger["cells"] if cell["result"] == "incomplete"]
-                self.assertEqual(9, len(pending))
+                self.assertEqual(3, len(pending))
                 self.assertFalse(any(cell["result"] == "not_run" for cell in ledger["cells"]))
-                self.assertTrue(all((cell["host"] == "wasm" and cell["framework"] in ("net8.0", "net9.0")) or
-                                    (cell["version"] == "3.10.0" and cell["host"] == "custom-elements") for cell in pending))
-                self.assertEqual({"wasm_boot", "json_roundtrip", "dom_interop", "reactflow_edit_save"}, {item["name"] for cell in ledger["cells"] for item in cell["assertions"] if not item["passed"]})
+                self.assertTrue(all(cell["version"] == "3.10.0" and cell["host"] == "custom-elements" for cell in pending))
+                self.assertEqual({"reactflow_edit_save"}, {item["name"] for cell in ledger["cells"] for item in cell["assertions"] if not item["passed"]})
             else:
                 ledger = run()
             # complete_matrix currently certifies acceptance, not merely visiting each cell.

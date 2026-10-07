@@ -85,7 +85,7 @@ def attach_native_interop(record):
 
 def attach_react_phase(record):
     """Synthetic combined evidence only; an X6 child never owns this summary."""
-    if record["host"] not in matrix.NATIVE_JSON_HOSTS:
+    if record["host"] not in matrix.REACT_PHASE_HOSTS:
         assertion(record, "reactflow_edit_save", False)
         record["result"] = "incomplete"
         return
@@ -100,6 +100,17 @@ def attach_react_phase(record):
         "hashes": {name: source["proof"][parent] for name, parent in react_phase.BEFORE_HASHES.items()} |
                   {"after_value_sha256": react_phase.AFTER_VALUE_SHA256},
     }
+
+
+def attach_embedding(record):
+    """Synthetic callback receipts, never browser acceptance."""
+    if record["host"] != "custom-elements":
+        return
+    from paired_package_embedding import CHECKS
+    fields = ("definition_id_sha256", "activity_id_sha256", "instance_id_sha256")
+    values = {name: record["proof"].setdefault(name, sha256(name)) for name in fields}
+    record["proof"]["embedding"] = {"checks": dict.fromkeys(CHECKS, True),
+        **values, "version_id_sha256": sha256("version")}
 
 
 def tsx_command(script):
@@ -128,14 +139,10 @@ class MatrixContracts(unittest.TestCase):
             cell.update(result="passed", browser_version="149.0.7827.55", resources=[], proof={}, failure_category=None, assertions=[{"name": name, "passed": True} for name in sorted(matrix.required_assertions(cell))])
             if cell["host"] == "wasm":
                 cell["proof"]["direct_backend"] = direct_backend_proof()
-                if cell["framework"] == "net10.0":
-                    boot_proof, _, observed = boot_receipt_fixture()
-                    cell["proof"].update(wasm_boot=boot_proof, interactive_validation_observed=True)
-                    cell["resources"] = observed
-                else:
-                    # This synthetic topology records pending formats; it is not runtime proof.
-                    assertion(cell, "wasm_boot", False)
-                    cell["result"] = "incomplete"
+                # Source-derived synthetic protocol fixtures, never runtime proof.
+                boot_proof, _, observed = boot_receipt_fixture(cell["framework"])
+                cell["proof"].update(wasm_boot=boot_proof, interactive_validation_observed=True)
+                cell["resources"] = observed
             if cell["version"] == "3.10.0":
                 cell["proof"]["baseline_reopens"] = [reopen_row(version, cell["framework"], cell["host"]) for version in documents.TOOL_VERSIONS]
                 instance_hash, value_hash = sha256("matrix candidate instance"), sha256("matrix candidate sentinel")
@@ -144,6 +151,7 @@ class MatrixContracts(unittest.TestCase):
                                       clipboard=clipboard_proof(instance_hash, value_hash))
                 attach_native_interop(cell)
                 attach_react_phase(cell)
+            attach_embedding(cell)
 
     def released_inputs(self, root):
         inputs = []
@@ -238,6 +246,32 @@ class MatrixContracts(unittest.TestCase):
 
     def test_node_wasm_boot_contract_requires_original_bytes_and_executed_callback(self):
         self.run_node_contract("wasm-boot.contract.ts", "WASM bootstrap parser and observer contracts passed")
+
+    def test_node_custom_elements_contract_requires_native_auth_and_bound_callbacks(self):
+        self.run_node_contract("custom-elements.contract.ts", "CustomElements callback contracts passed")
+
+    def test_embedding_claims_are_validated_at_browser_receipt_boundary(self):
+        for version in matrix.VERSIONS:
+            key = (version, "net10.0", "custom-elements")
+            base = next(cell for cell in self.ledger["cells"] if matrix.identity(cell) == key)
+            for mutate in (lambda p: p.pop("embedding"),
+                           lambda p: p["embedding"].update(instance_id_sha256="f" * 64),
+                           lambda p: p["embedding"]["checks"].update(native_authentication=False)):
+                changed = copy.deepcopy(base)
+                mutate(changed["proof"])
+                with self.subTest(version=version, mutation=mutate), self.assertRaises(ValueError):
+                    matrix.validate_browser_receipt(changed, key)
+
+    def test_standalone_boot_format_cannot_cross_framework_receipt_boundary(self):
+        for framework in matrix.FRAMEWORKS:
+            key = ("3.9.0", framework, "wasm")
+            base = next(cell for cell in self.ledger["cells"] if matrix.identity(cell) == key)
+            matrix.validate_browser_receipt(base, key)
+            for other in set(matrix.FRAMEWORKS) - {framework}:
+                changed = copy.deepcopy(base)
+                changed["proof"]["wasm_boot"] = boot_receipt_fixture(other)[0]
+                with self.subTest(framework=framework, other=other), self.assertRaises(ValueError):
+                    matrix.validate_browser_receipt(changed, key)
 
     def test_standalone_net10_boot_receipt_binds_original_requested_resource_metadata(self):
         key = ("3.9.0", "net10.0", "wasm")
@@ -447,7 +481,7 @@ class MatrixContracts(unittest.TestCase):
         partial["proof"]["clipboard"]["actual_value_sha256"] = actual_hash
         self.assertEqual(partial, matrix.validate_browser_receipt(partial, key))
 
-    def test_exact_matrix_topology_retains_pending_boot_without_claiming_acceptance(self):
+    def test_exact_matrix_topology_retains_pending_custom_react_without_claiming_acceptance(self):
         with self.assertRaisesRegex(ValueError, "Required browser assertion failed"):
             matrix.check_matrix(self.ledger)
         self.assertEqual(36, len(self.ledger["cells"]))
@@ -455,16 +489,13 @@ class MatrixContracts(unittest.TestCase):
         for cell in self.ledger["cells"]:
             matrix.validate_browser_receipt(cell, matrix.identity(cell))
             failed = {item["name"] for item in cell["assertions"] if not item["passed"]}
-            if cell["host"] == "wasm" and cell["framework"] in ("net8.0", "net9.0"):
-                self.assertEqual({"wasm_boot"}, failed)
-                pending += 1
-            elif cell["version"] == "3.10.0" and cell["host"] == "custom-elements":
-                self.assertEqual({"json_roundtrip", "dom_interop", "reactflow_edit_save"}, failed)
+            if cell["version"] == "3.10.0" and cell["host"] == "custom-elements":
+                self.assertEqual({"reactflow_edit_save"}, failed)
                 pending += 1
             else:
                 self.assertFalse(failed)
                 matrix.check_cell(cell)
-        self.assertEqual(9, pending)
+        self.assertEqual(3, pending)
         for mutate in (lambda c: c.pop(), lambda c: c.append(copy.deepcopy(c[0]))):
             with self.subTest(mutate=mutate):
                 changed = copy.deepcopy(self.ledger)

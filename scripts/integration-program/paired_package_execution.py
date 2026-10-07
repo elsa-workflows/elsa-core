@@ -324,6 +324,7 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
                                    else "released_shell_editor_export_contexts_only")}
     original_browser = None
     react_receipt = None
+    cleanup_categories = set()
     released_output = None
     try:
         evidence["missing_evidence"] = evidence_gaps(request)
@@ -368,7 +369,7 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
             released_output = document_root / "released-document.json"
         runtime_failed = False
         browser_cleanup_verified = True
-        dual_designer = version == candidate.PRODUCER["version"] and host in browser.NATIVE_JSON_HOSTS
+        dual_designer = version == candidate.PRODUCER["version"] and host in browser.REACT_PHASE_HOSTS
         with ExitStack() as runtime:
             owner = (runtime.enter_context(hosts.start_designer_phases(layout, validate_project=validate))
                      if dual_designer else None)
@@ -391,9 +392,10 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
                         # Fail before launching a second Studio if X6 did not
                         # establish the workflow and cleanup required by React.
                         react_phase.source_bindings(request, original_browser)
-                except browser.BrowserCleanupUnverified:
+                except browser.BrowserCleanupUnverified as failure:
                     runtime_failed = True
                     browser_cleanup_verified = False
+                    cleanup_categories.update(failure.categories)
                 except Exception:
                     runtime_failed = True
             if owner and not runtime_failed:
@@ -415,9 +417,10 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
                         evidence["stage"] = "react_loaded_assemblies"
                         evidence["react_loaded_assemblies"] = _verify_loaded(
                             layout, _observe_loaded(react_handle, layout), verified_root, manifest)
-                    except browser.BrowserCleanupUnverified:
+                    except browser.BrowserCleanupUnverified as failure:
                         runtime_failed = True
                         browser_cleanup_verified = False
+                        cleanup_categories.update(failure.categories)
                     except Exception:
                         runtime_failed = True
         # Host context cleanup does not establish browser descendant cleanup.
@@ -463,10 +466,15 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
                 stream.write(raw)
         evidence.update(stage="complete", result="passed")
         return record
-    except Exception:
+    except Exception as failure:
+        if isinstance(failure, browser.BrowserCleanupUnverified):
+            cleanup_categories.update(failure.categories)
         evidence["failure_category"] = "execution_or_evidence_failed"
         raise ValueError("Package browser execution or evidence failed") from None
     finally:
+        if cleanup_categories:
+            evidence["owned_process_cleanup"] = False
+            evidence["cleanup_failure_categories"] = sorted(cleanup_categories)
         _write(cell_root / "execution.json", evidence)
         if original_browser is not None:
             _write(cell_root / "browser.json", browser.validate_browser_receipt(original_browser, key))

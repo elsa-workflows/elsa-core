@@ -4,9 +4,9 @@
 
 <ThemedComponentWrapper>
     <WorkflowDefinitionEditor DefinitionId="@DefinitionId"
-                              WorkflowDefinitionExecuted="WorkflowDefinitionExecuted"
-                              WorkflowDefinitionVersionSelected="WorkflowDefinitionVersionSelected"
-                              ActivitySelected="ActivitySelected"/>
+                              WorkflowDefinitionExecuted="@(WorkflowDefinitionExecuted is null && !DefinitionExecuted.HasDelegate ? null : value => InvokeCallbacksAsync(WorkflowDefinitionExecuted, DefinitionExecuted, value))"
+                              WorkflowDefinitionVersionSelected="@(value => InvokeCallbacksAsync(WorkflowDefinitionVersionSelected, DefinitionVersionSelected, value))"
+                              ActivitySelected="@(value => InvokeCallbacksAsync(ActivitySelected, ActivitySelectionChanged, value))"/>
 </ThemedComponentWrapper>
 
 @code
@@ -34,6 +34,25 @@
 
     /// Gets or sets the event triggered when an activity is selected.
     [Parameter] public Func<JsonObject, Task>? ActivitySelected { get; set; }
+
+    /// <summary>Notifies a JavaScript custom-element consumer when a workflow instance starts.</summary>
+    [Parameter] public EventCallback<string> DefinitionExecuted { get; set; }
+
+    /// <summary>Notifies a JavaScript custom-element consumer when the selected definition version changes.</summary>
+    [Parameter] public EventCallback<WorkflowDefinition> DefinitionVersionSelected { get; set; }
+
+    /// <summary>Notifies a JavaScript custom-element consumer when an activity is selected.</summary>
+    [Parameter] public EventCallback<JsonObject> ActivitySelectionChanged { get; set; }
+
+    private static async Task InvokeCallbacksAsync<T>(Func<T, Task>? callback, EventCallback<T> eventCallback, T value)
+    {
+        if (callback is not null)
+        {
+            await callback(value);
+        }
+
+        await eventCallback.InvokeAsync(value);
+    }
 
     /// Gets the currently selected activity ID.
     public string? SelectedActivityId => WorkflowDefinitionEditor.SelectedActivityId;

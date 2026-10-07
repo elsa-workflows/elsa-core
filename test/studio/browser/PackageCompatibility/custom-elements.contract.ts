@@ -54,3 +54,5 @@ for (const change of [{ nativeFrame: false }, { configured: false }, { status: 4
   { authorization: null }, { authorization: 'Bearer wrong' }, { url: backend + '/workflow-definitions-foreign' },
   { url: 'http://127.0.0.1:54321/elsa/api/workflow-definitions' }, { url: backend + '/identity/login' }])
   assert.equal(nativeAuthenticationRequest({ ...observation, ...change }, backend, token), false);
+
+console.log("CustomElements callback contracts passed");

@@ -45,7 +45,8 @@ JSON_ROUNDTRIP_CHECKS = {
     "semantic_preserved", "published", "terminal", "output", "studio_terminal",
 }
 DOM_INTEROP_CHECKS = {"import_menu_clicked", "filechooser_observed", "import_succeeded", "save_callback_observed"}
-NATIVE_JSON_HOSTS = {"server", "wasm", "hosted-wasm"}
+REACT_PHASE_HOSTS = {"server", "wasm", "hosted-wasm"}
+NATIVE_JSON_HOSTS = REACT_PHASE_HOSTS | {"custom-elements"}
 
 
 def require(condition: bool, message: str) -> None:
@@ -378,12 +379,14 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     hashes = {"definition_id_sha256", "root_id_sha256", "activity_id_sha256", "value_sha256", "synthetic_document_sha256", "instance_id_sha256", "released_document_sha256"}
     flags = {"login_failure_visible", "login_form_visible", "server_circuit_observed", "server_render_frames_observed", "elsa_identity_ui_visible", "expected_auth_provider_observed", "interactive_validation_observed", "private_input_values_retained", "initial_list_navigation_completed", "editor_ready_observed"}
     counts = {"create_name_label_count", "create_name_textbox_count"}
-    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens", "bpmn_roundtrip", "clipboard", "direct_backend", "wasm_boot", "json_roundtrip", "dom_interop", "reactflow"}, "Unsafe browser proof field")
-    require("reactflow" not in proof or record["version"] == "3.10.0" and record["host"] in NATIVE_JSON_HOSTS,
+    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens", "bpmn_roundtrip", "clipboard", "direct_backend", "wasm_boot", "json_roundtrip", "dom_interop", "reactflow", "embedding"}, "Unsafe browser proof field")
+    from paired_package_embedding import validate_embedding
+    validate_embedding(proof.get("embedding"), assertions_by_name, proof, key)
+    require("reactflow" not in proof or record["version"] == "3.10.0" and record["host"] in REACT_PHASE_HOSTS,
             "Unexpected React phase proof")
     require(not assertions_by_name.get("reactflow_edit_save", False) or "reactflow" in proof,
             "Missing independent React phase proof for passed assertion")
-    require("wasm_boot" not in proof or record["host"] == "wasm" and record["framework"] == "net10.0",
+    require("wasm_boot" not in proof or record["host"] == "wasm" and record["framework"] in FRAMEWORKS,
             "Unexpected standalone WASM boot proof")
     require(not assertions_by_name.get("wasm_boot", False) or record["host"] != "wasm" or "wasm_boot" in proof,
             "Missing standalone WASM boot proof for passed assertion")
@@ -407,6 +410,8 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     require(not assertions_by_name.get("dom_interop", False) or "dom_interop" in proof,
             "Missing native DOM proof for passed assertion")
     for name, value in proof.items():
+        if name == "embedding":
+            continue  # Validated with its host assertions and parent identity above.
         if name == "reactflow":
             from paired_package_react_phase import validate_react_phase_summary
             validate_react_phase_summary(value, assertions_by_name["reactflow_edit_save"], proof, key)
@@ -414,7 +419,7 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
         if name == "wasm_boot":
             from paired_package_wasm_boot import validate_boot_receipt
             validate_boot_receipt(value, assertions_by_name["wasm_boot"], record.get("resources", []),
-                                  proof.get("interactive_validation_observed") is True)
+                                  proof.get("interactive_validation_observed") is True, record["framework"])
             continue
         if name == "direct_backend":
             _validate_direct_backend(value, assertions_by_name["direct_backend"])
@@ -611,6 +616,14 @@ def prepare_candidate(inputs: Path, destination: Path, retained: Path, *, fixtur
 class BrowserCleanupUnverified(ValueError):
     """Sanitized failure: the caller must not claim that owned cleanup passed."""
 
+    CATEGORIES = frozenset({"root_identity", "root_stop", "inventory", "descendant_stop",
+                            "ancestry_stability", "signal", "exit", "reap", "unknown"})
+
+    def __init__(self, message: str = "Browser process cleanup could not be verified", *, categories=()):
+        super().__init__(message)
+        require(set(categories) <= self.CATEGORIES, "Unsafe cleanup failure category")
+        self.categories = tuple(sorted(set(categories) or {"unknown"}))
+
 
 def _browser_process_info(pid: int) -> tuple[int, object, bool, bool] | None:
     """Read parent, birth identity, zombie/stopped state without command lines/environment."""
@@ -619,10 +632,18 @@ def _browser_process_info(pid: int) -> tuple[int, object, bool, bool] | None:
         class BsdInfo(ctypes.Structure):
             _fields_ = [("header", ctypes.c_uint32 * 12), ("names", ctypes.c_char * 48),
                         ("tail", ctypes.c_uint32 * 6), ("started", ctypes.c_uint64 * 2)]
-        library = ctypes.CDLL("/usr/lib/libproc.dylib", use_errno=True)
-        info = BsdInfo()
-        size = library.proc_pidinfo(pid, 3, 0, ctypes.byref(info), ctypes.sizeof(info))
-        if size == 0 and ctypes.get_errno() == errno.ESRCH:
+        try:
+            library = ctypes.CDLL("/usr/lib/libproc.dylib", use_errno=True)
+            query = library.proc_pidinfo
+            query.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_uint64, ctypes.c_void_p, ctypes.c_int]
+            query.restype = ctypes.c_int
+            info = BsdInfo()
+            ctypes.set_errno(0)
+            size = query(pid, 3, 0, ctypes.byref(info), ctypes.sizeof(info))
+            error = ctypes.get_errno()
+        except Exception:
+            raise OSError("Process identity unavailable") from None
+        if size == 0 and error == errno.ESRCH:
             return None
         if size != ctypes.sizeof(info):
             raise OSError("Process identity unavailable")
@@ -633,8 +654,11 @@ def _browser_process_info(pid: int) -> tuple[int, object, bool, bool] | None:
         except FileNotFoundError:
             return None
         # comm may contain spaces/parentheses; fields after its closing ')' begin at field 3.
-        fields = raw[raw.rfind(")") + 2:].split()
-        return int(fields[1]), int(fields[19]), fields[0] == "Z", fields[0] in {"T", "t"}
+        try:
+            fields = raw[raw.rfind(")") + 2:].split()
+            return int(fields[1]), int(fields[19]), fields[0] == "Z", fields[0] in {"T", "t"}
+        except (IndexError, ValueError):
+            raise OSError("Process identity unavailable") from None
     raise OSError("Browser cleanup requires macOS or Linux process identities")
 
 
@@ -649,6 +673,45 @@ def _signal_browser_process(pid: int, started: object, sig: int) -> bool:
     return True
 
 
+_MAX_OWNED_BROWSER_PROCESSES = 4096
+_BROWSER_PROCESS_INVENTORY_TIMEOUT_SECONDS = 10
+_BROWSER_PROCESS_STOP_TIMEOUT_SECONDS = 2
+
+
+def _darwin_child_pids(parent: int) -> list[int]:
+    """Bounded direct-child snapshots; exact-fit arrays may be truncated.
+
+    Apple's libproc proc_listchildpids returns a PID count, not bytes, and
+    maps syscall errors to zero. Clear errno to distinguish an empty result.
+    No null-buffer probe: its size estimate includes the entire process list.
+    See apple-oss-distributions/xnu, libsyscall/wrappers/libproc/libproc.c.
+    """
+    try:
+        library = ctypes.CDLL("/usr/lib/libproc.dylib", use_errno=True)
+        query = library.proc_listchildpids
+        query.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+        query.restype = ctypes.c_int
+    except Exception:
+        raise OSError("Native process inventory unavailable") from None
+    for capacity in (64, 256, 1024, 4096):
+        values = (ctypes.c_int * capacity)()
+        try:
+            ctypes.set_errno(0)
+            count = query(parent, values, ctypes.sizeof(values))
+            error = ctypes.get_errno()
+        except Exception:
+            raise OSError("Native process inventory unavailable") from None
+        if count < 0 or count > capacity or error:
+            raise OSError("Native process inventory unavailable")
+        if count == capacity:
+            continue
+        children = list(values[:count])
+        if any(pid <= 0 or pid == parent for pid in children) or len(set(children)) != len(children):
+            raise OSError("Invalid native process inventory")
+        return children
+    raise OSError("Native process inventory may be truncated")
+
+
 def _cleanup_browser_process(process: subprocess.Popen, started: object) -> None:
     """Freeze and identify descendants before parents exit, including new sessions.
 
@@ -656,9 +719,88 @@ def _cleanup_browser_process(process: subprocess.Popen, started: object) -> None
     An already-exited root cannot establish ownership of reparented descendants.
     """
     owned = {process.pid: started}
-    uncertain = False
+    failures = set()
+    stage = "root_identity"
+    inventory_deadline = None
+
+    def check_inventory_deadline() -> None:
+        if inventory_deadline is not None and time.monotonic() >= inventory_deadline:
+            raise OSError("Browser process inventory exceeded its time bound")
+
+    def wait_until_stopped(pid: int, stamp: object, deadline: float) -> bool:
+        while True:
+            info = _browser_process_info(pid)
+            if info is None or info[1] != stamp or info[2]:
+                raise OSError("Browser descendant identity changed before stopping")
+            if info[3]:
+                return True
+            check_inventory_deadline()
+            if time.monotonic() >= deadline:
+                return False
+            time.sleep(0.1)
+
+    def claim(pid: int, parent_pid: int) -> bool:
+        nonlocal stage
+        parent = _browser_process_info(parent_pid)
+        info = _browser_process_info(pid)
+        if parent is None or parent[1] != owned[parent_pid] or info is None:
+            raise OSError("Browser ancestry disappeared during cleanup")
+        if info[0] != parent_pid:
+            raise OSError("Browser ancestry changed during cleanup")
+        if pid in owned:
+            if info[1] != owned[pid]:
+                raise OSError("Browser descendant identity changed")
+            return False
+        owned[pid] = info[1]
+        previous_stage = stage
+        stage = "descendant_stop"
+        if not _signal_browser_process(pid, info[1], signal.SIGSTOP):
+            raise OSError("Browser descendant exited before stopping")
+        if sys.platform == "darwin" and not wait_until_stopped(
+                pid, info[1], time.monotonic() + _BROWSER_PROCESS_STOP_TIMEOUT_SECONDS):
+            raise OSError("Browser descendant did not stop")
+        stage = previous_stage
+        return True
 
     def discover() -> bool:
+        nonlocal inventory_deadline, stage
+        if sys.platform == "darwin":
+            if inventory_deadline is None:
+                inventory_deadline = time.monotonic() + _BROWSER_PROCESS_INVENTORY_TIMEOUT_SECONDS
+            added = False
+            pending = list(owned)
+            for parent_pid in pending:
+                check_inventory_deadline()
+                parent = _browser_process_info(parent_pid)
+                if parent is None or parent[1] != owned[parent_pid] or parent[2]:
+                    raise OSError("Browser parent identity unavailable during discovery")
+                if not parent[3]:
+                    previous_stage = stage
+                    stage = "descendant_stop"
+                    if not _signal_browser_process(parent_pid, owned[parent_pid], signal.SIGSTOP):
+                        raise OSError("Browser parent exited before stopping")
+                    if not wait_until_stopped(parent_pid, owned[parent_pid],
+                                              time.monotonic() + _BROWSER_PROCESS_STOP_TIMEOUT_SECONDS):
+                        raise OSError("Browser parent did not stop")
+                    stage = previous_stage
+                    parent = _browser_process_info(parent_pid)
+                    if parent is None or parent[1] != owned[parent_pid] or parent[2] or not parent[3]:
+                        raise OSError("Browser parent identity unavailable during discovery")
+                stage = "inventory"
+                children = _darwin_child_pids(parent_pid)
+                check_inventory_deadline()
+                after = _browser_process_info(parent_pid)
+                if after is None or after[1] != owned[parent_pid] or after[2] or not after[3]:
+                    raise OSError("Browser parent changed during discovery")
+                for pid in children:
+                    check_inventory_deadline()
+                    if pid not in owned and len(owned) >= _MAX_OWNED_BROWSER_PROCESSES:
+                        raise OSError("Browser descendants exceeded inventory bound")
+                    if claim(pid, parent_pid):
+                        pending.append(pid)
+                        added = True
+                    check_inventory_deadline()
+            return added
         table = subprocess.run(["ps", "-axo", "pid=,ppid="], stdout=subprocess.PIPE,
                                stderr=subprocess.DEVNULL, text=True, timeout=2, check=True)
         parents = {int(pid): int(parent) for pid, parent in (line.split() for line in table.stdout.splitlines())}
@@ -670,15 +812,7 @@ def _cleanup_browser_process(process: subprocess.Popen, started: object) -> None
                 break
             for pid in children:
                 pending.remove(pid)
-                parent = _browser_process_info(parents[pid])
-                info = _browser_process_info(pid)
-                if parent is None or parent[1] != owned[parents[pid]] or info is None:
-                    raise OSError("Browser ancestry disappeared during cleanup")
-                if info[0] != parents[pid]:
-                    raise OSError("Browser ancestry changed during cleanup")
-                owned[pid] = info[1]
-                _signal_browser_process(pid, info[1], signal.SIGSTOP)
-                added = True
+                added = claim(pid, parents[pid]) or added
         return added
 
     def wait_state(seconds: float, *, frozen: bool = False) -> bool:
@@ -687,6 +821,8 @@ def _cleanup_browser_process(process: subprocess.Popen, started: object) -> None
             ready = True
             for pid, stamp in owned.items():
                 info = _browser_process_info(pid)
+                if frozen and (info is None or info[1] != stamp or info[2]):
+                    raise OSError("Browser ownership disappeared before inventory completed")
                 if info is not None and info[1] == stamp and not info[2] and not (frozen and info[3]):
                     ready = False
             if ready or time.monotonic() >= deadline:
@@ -694,21 +830,28 @@ def _cleanup_browser_process(process: subprocess.Popen, started: object) -> None
             time.sleep(0.1)
 
     try:
+        root_info = _browser_process_info(process.pid)
+        if root_info is None or root_info[1] != started or root_info[2]:
+            raise OSError("Browser root identity unavailable")
+        stage = "root_stop"
         if not _signal_browser_process(process.pid, started, signal.SIGSTOP):
             raise OSError("Browser root exited before descendant ownership was established")
         if not wait_state(2, frozen=True):
             raise OSError("Browser root did not stop")
         # A stable snapshot after every discovered process stops bounds further forks.
         for _ in range(3):
+            stage = "inventory"
             added = discover()
+            stage = "descendant_stop"
             if not wait_state(2, frozen=True):
                 raise OSError("Browser descendants did not stop")
             if not added:
                 break
         else:
+            stage = "ancestry_stability"
             raise OSError("Browser process ancestry did not stabilize")
     except (OSError, subprocess.SubprocessError, ValueError):
-        uncertain = True
+        failures.add(stage)
     finally:
         # Attempt resume even on discovery failure; report signal/identity failures as unverified.
         for pid, stamp in reversed(tuple(owned.items())):
@@ -716,25 +859,29 @@ def _cleanup_browser_process(process: subprocess.Popen, started: object) -> None
                 try:
                     _signal_browser_process(pid, stamp, sig)
                 except OSError:
-                    uncertain = True
+                    failures.add("signal")
     try:
         exited = wait_state(2)
     except OSError:
-        uncertain, exited = True, False
+        failures.add("exit")
+        exited = False
     if not exited:
         for pid, stamp in reversed(tuple(owned.items())):
             try:
                 _signal_browser_process(pid, stamp, signal.SIGKILL)
             except OSError:
-                uncertain = True
+                failures.add("signal")
     try:
         if not wait_state(2):
-            uncertain = True
+            failures.add("exit")
+    except OSError:
+        failures.add("exit")
+    try:
         process.wait(timeout=2)
     except (OSError, subprocess.SubprocessError):
-        uncertain = True
-    if uncertain:
-        raise BrowserCleanupUnverified("Browser process cleanup could not be verified") from None
+        failures.add("reap")
+    if failures:
+        raise BrowserCleanupUnverified(categories=failures) from None
 
 
 def _run_browser_process(command: list[str], *, cwd: Path, input: str, env: dict, timeout: int) -> subprocess.CompletedProcess:
@@ -757,7 +904,7 @@ def _run_browser_process(command: list[str], *, cwd: Path, input: str, env: dict
                 process.kill()
                 process.wait(timeout=2)
             finally:
-                raise BrowserCleanupUnverified("Browser process cleanup could not be verified") from None
+                raise BrowserCleanupUnverified(categories={"root_identity"}) from None
         raise
     finally:
         for stream in (process.stdin, process.stdout, process.stderr):

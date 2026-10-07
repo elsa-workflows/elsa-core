@@ -106,10 +106,12 @@
     },
     {
       "file": "common/custom-elements/Components/WorkflowDefinitionEditorWrapper.razor",
-      "sha256": "1b54ff6efb1f7d9c48bb0dcadb11c35ccb943b27f633714f0581df37661988b2",
+      "sha256": "aa28fa7ec07f40e5ee38a93b9ace01189082421ec1eadb3716d2bc6d17bcb620",
       "repository": "elsa-workflows/elsa-core",
       "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
-      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/Components/WorkflowDefinitionEditorWrapper.razor"
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/Components/WorkflowDefinitionEditorWrapper.razor",
+      "source_sha256": "1b54ff6efb1f7d9c48bb0dcadb11c35ccb943b27f633714f0581df37661988b2",
+      "fixture_transform": "Add JavaScript EventCallback notifications while preserving existing .NET Func callbacks; mirrors the corrected nonpackable consumer host"
     },
     {
       "file": "common/custom-elements/Components/WorkflowDefinitionListWrapper.razor",
@@ -189,10 +191,12 @@
     },
     {
       "file": "common/custom-elements/wwwroot/index.html",
-      "sha256": "1320ade2387913b39bf2af8754aa920c789fa8e0e5f8eefb3a9b7064aa9576d9",
+      "sha256": "6e3e7157e8967698fb8743780ff816c6db7cf8430aaf632abd9efbaabb414803",
       "repository": "elsa-workflows/elsa-core",
       "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
-      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/wwwroot/index.html"
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.CustomElements/wwwroot/index.html",
+      "source_sha256": "1320ade2387913b39bf2af8754aa920c789fa8e0e5f8eefb3a9b7064aa9576d9",
+      "fixture_transform": "Replace the unregistered placeholder element with an empty native custom-element mount point; all editor mutations remain native callbacks"
     },
     {
       "file": "common/hosted-wasm/source-project.xml",
