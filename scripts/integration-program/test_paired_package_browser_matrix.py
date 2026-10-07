@@ -259,6 +259,9 @@ class MatrixContracts(unittest.TestCase):
     def test_node_raw_resources_preserve_original_response_entities(self):
         self.run_node_contract("raw-resources.contract.ts", "raw resource response contracts passed")
 
+    def test_node_optional_features_classify_only_known_response_shapes(self):
+        self.run_node_contract("optional-feature-probes.contract.ts", "optional feature response contracts passed")
+
     def test_node_json_roundtrip_checks_native_document_semantics(self):
         self.run_node_contract("json-roundtrip.contract.ts", "JSON roundtrip contracts passed")
 

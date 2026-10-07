@@ -96,17 +96,13 @@ def wrap_project_validator(
         except Exception as error:
             evidence["project_provenance_failure"] = failure_receipt(project_name, error)
             raise
-        try:
-            result = validate_project_with_diagnostic(project_name, project_path, validator, evidence)
-        except Exception:
-            raise
+        result = validate_project_with_diagnostic(project_name, project_path, validator, evidence)
+        # Only restore the surrounding stage after successful validation.
+        if previous_stage is None:
+            evidence.pop("stage", None)
         else:
-            # Only restore the surrounding stage after successful validation.
-            if previous_stage is None:
-                evidence.pop("stage", None)
-            else:
-                evidence["stage"] = previous_stage
-            return result
+            evidence["stage"] = previous_stage
+        return result
 
     return validate
 
