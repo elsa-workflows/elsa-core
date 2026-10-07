@@ -4,6 +4,11 @@ on:
   push:
     branches: ['codex/consolidated-recovery-preflight']
   workflow_dispatch:
+  workflow_call:
+    outputs:
+      input-artifact-id:
+        description: Same-run transfer of the pinned original archive and fresh retrieval metadata
+        value: ${{ jobs.retrieve.outputs.input-artifact-id }}
 
 permissions: {}
 

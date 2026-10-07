@@ -1,0 +1,225 @@
+name: Consolidated original candidate executor
+
+on:
+  push:
+    branches: ['codex/consolidated-original-executor']
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Verification is nonpublishing; publish also requires reviewed configuration and native environment approval
+        type: choice
+        required: true
+        default: verify
+        options:
+          - verify
+          - publish
+
+permissions: {}
+
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+  # A positive receipt is checked for producer/consumer consistency only.
+  # It does not replace native approval or the executor's fresh policy checks.
+  ELSA_ADMISSION_RECEIPT_FILTER: |
+    .schema == 1 and .result == $result
+    and .publication_performed == false and .publication_ready == false
+    and .admission.status == $result
+    and .admission.repository == "elsa-workflows/elsa-core"
+    and .admission.ref == "refs/heads/main"
+    and .admission.source_commit == $source
+    and .admission.run_id == $run and .admission.run_attempt == 1
+    and .admission.environment_name == "elsa-3-10-feedz"
+    and (.admission.environment_id | type == "number" and . > 0)
+    and (.admission.reviewer_ids | type == "array" and length > 0)
+    and all(.admission.reviewer_ids[]; type == "number" and . > 0)
+    and (.admission.branch_policies | type == "array" and length == 1)
+    and all(.admission.branch_policies[];
+      .type == "branch" and .name == "main" and (.id | type == "number" and . > 0))
+    and (.admission.operational_packet_sha256 | type == "string" and test("^[a-f0-9]{64}$"))
+    and .admission.native_approval_verified == $native
+
+jobs:
+  retrieve:
+    # Reuse fixed, checkout-free retrieval with the artifact-reading token.
+    # No publisher secret is passed to this reusable workflow.
+    permissions:
+      actions: read
+      contents: read
+    uses: ./.github/workflows/consolidated-package-recovery-preflight.yml
+
+  verify:
+    needs: retrieve
+    permissions:
+      contents: read
+      actions: none
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          artifact-ids: ${{ needs.retrieve.outputs.input-artifact-id }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/executor-input
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '10.0.300'
+      - name: Check executor contracts normally and with optimized Python
+        working-directory: scripts/integration-program
+        run: |
+          python -m unittest test_consolidated_package_executor
+          python -O -m unittest test_consolidated_package_executor
+      - name: Compile only the symbol inspection helper
+        run: >-
+          dotnet build scripts/integration-program/VerifyPackageSymbolPair/VerifyPackageSymbolPair.csproj
+          --configuration Release --output "$RUNNER_TEMP/symbol-inspector"
+      - name: Exercise the full original candidate through simulated publication and recovery
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/executor-evidence"
+          python scripts/integration-program/consolidated_package_executor.py rehearse \
+            --inputs "$RUNNER_TEMP/executor-input" \
+            --verified-root "$RUNNER_TEMP/executor-rehearsal" \
+            --inspector "$RUNNER_TEMP/symbol-inspector/VerifyPackageSymbolPair.dll" \
+            --output "$RUNNER_TEMP/executor-evidence/rehearsal.json" \
+            --executor-source "$GITHUB_SHA" \
+            --executor-run "$GITHUB_RUN_ID" \
+            --executor-attempt "$GITHUB_RUN_ATTEMPT"
+      - name: Verify all original package and symbol associations with anonymous read-only reconciliation
+        run: >-
+          python scripts/integration-program/consolidated_package_executor.py verify
+          --inputs "$RUNNER_TEMP/executor-input"
+          --verified-root "$RUNNER_TEMP/executor-readback"
+          --inspector "$RUNNER_TEMP/symbol-inspector/VerifyPackageSymbolPair.dll"
+          --output "$RUNNER_TEMP/executor-evidence/verification.json"
+          --executor-source "$GITHUB_SHA"
+          --executor-run "$GITHUB_RUN_ID"
+          --executor-attempt "$GITHUB_RUN_ATTEMPT"
+      - name: Retain nonpublishing verification and recovery evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: consolidated-executor-verification-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/executor-evidence
+          if-no-files-found: warn
+          overwrite: false
+          retention-days: 30
+
+  admit:
+    if: github.event_name == 'workflow_dispatch' && inputs.operation == 'publish'
+    needs: [retrieve, verify]
+    permissions:
+      contents: read
+      actions: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      admitted: ${{ steps.admission.outputs.admitted }}
+    steps:
+      - name: Reject publication from any repository or ref other than reviewed Core main
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = 'elsa-workflows/elsa-core'
+          test "$GITHUB_REF" = 'refs/heads/main'
+          test "$GITHUB_REF_TYPE" = 'branch'
+          test "$GITHUB_RUN_ATTEMPT" = '1'
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Require the exact pre-existing protected environment before scheduling publication
+        id: admission
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/executor-admission"
+          python scripts/integration-program/consolidated_package_executor.py admit --phase schedule \
+            --output "$RUNNER_TEMP/executor-admission/admission.json"
+          jq -e --arg result eligible_for_native_approval --argjson native false \
+            --arg source "$GITHUB_SHA" --argjson run "$GITHUB_RUN_ID" \
+            "$ELSA_ADMISSION_RECEIPT_FILTER" "$RUNNER_TEMP/executor-admission/admission.json" > /dev/null 2>&1
+          echo 'admitted=true' >> "$GITHUB_OUTPUT"
+      - name: Retain admission evidence including blocked admission
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: consolidated-executor-admission-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/executor-admission
+          if-no-files-found: warn
+          overwrite: false
+          retention-days: 30
+
+  publish:
+    # This scheduling result is not publication authority: the fixed native
+    # environment gate and fresh executor admission must both pass in this run.
+    if: github.event_name == 'workflow_dispatch' && inputs.operation == 'publish' && github.repository == 'elsa-workflows/elsa-core' && github.ref == 'refs/heads/main' && needs.admit.outputs.admitted == 'true'
+    needs: [retrieve, verify, admit]
+    environment: elsa-3-10-feedz
+    permissions:
+      contents: read
+      actions: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          artifact-ids: ${{ needs.retrieve.outputs.input-artifact-id }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/executor-input
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '10.0.300'
+      - name: Compile only the symbol inspection helper without publisher credentials
+        run: >-
+          dotnet build scripts/integration-program/VerifyPackageSymbolPair/VerifyPackageSymbolPair.csproj
+          --configuration Release --output "$RUNNER_TEMP/symbol-inspector"
+      - name: Recheck protected admission before exposing the dedicated credential
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/executor-publication"
+          python scripts/integration-program/consolidated_package_executor.py admit --phase publish \
+            --output "$RUNNER_TEMP/executor-publication/admission.json"
+          jq -e --arg result native_approval_verified --argjson native true \
+            --arg source "$GITHUB_SHA" --argjson run "$GITHUB_RUN_ID" \
+            "$ELSA_ADMISSION_RECEIPT_FILTER" "$RUNNER_TEMP/executor-publication/admission.json" > /dev/null 2>&1
+      - name: Publish and verify only the admitted original bytes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY: ${{ secrets.ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY }}
+        run: >-
+          python scripts/integration-program/consolidated_package_executor.py publish
+          --inputs "$RUNNER_TEMP/executor-input"
+          --verified-root "$RUNNER_TEMP/executor-publish"
+          --inspector "$RUNNER_TEMP/symbol-inspector/VerifyPackageSymbolPair.dll"
+          --output "$RUNNER_TEMP/executor-publication/publication.json"
+          --executor-source "$GITHUB_SHA"
+          --executor-run "$GITHUB_RUN_ID"
+          --executor-attempt "$GITHUB_RUN_ATTEMPT"
+      - name: Retain immutable execution and recovery evidence even after interruption or failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: consolidated-executor-publication-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/executor-publication
+          if-no-files-found: warn
+          overwrite: false
+          retention-days: 30
