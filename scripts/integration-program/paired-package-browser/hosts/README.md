@@ -20,6 +20,14 @@ are recorded separately from original package assets; a corrected consumer host
 does not establish that an unchanged upstream host worked. Product defects must
 remain failed evidence.
 
+The Hosted wrapper registers the package's scoped default `IBrandingProvider`
+for its server-rendered Razor page. The original host omitted that registration;
+services registered inside its referenced WASM client do not populate the wrapper's
+service container. The same correction is applied to Core's nonpackable Hosted
+host, and the fixture transform preserves the original source hash. Package bytes
+are unchanged. This is a corrected host composition, not acceptance of the original
+host without that registration.
+
 The native CustomElements wrappers synchronously apply their public backend and
 authentication properties through `BackendComponentBase.OnInitialized` before
 rendering `ThemedComponentWrapper`. Its asynchronous initialization then awaits

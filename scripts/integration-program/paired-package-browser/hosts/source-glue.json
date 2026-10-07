@@ -227,10 +227,12 @@
     },
     {
       "file": "common/hosted-wasm/Program.cs",
-      "sha256": "f5468807427cca2f2071183eb75ad876f212cd4f4ef81df4598cd74e624e194f",
+      "sha256": "de38a609724df98ffa9653b0750d5e963bb3f0196eaaad7c90afc9137f97446c",
       "repository": "elsa-workflows/elsa-core",
       "source_commit": "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205",
-      "source_path": "src/studio/hosts/Elsa.Studio.Host.HostedWasm/Program.cs"
+      "source_path": "src/studio/hosts/Elsa.Studio.Host.HostedWasm/Program.cs",
+      "source_sha256": "f5468807427cca2f2071183eb75ad876f212cd4f4ef81df4598cd74e624e194f",
+      "fixture_transform": "register the default branding provider required by the Hosted Razor page"
     },
     {
       "file": "common/server/source-project.xml",

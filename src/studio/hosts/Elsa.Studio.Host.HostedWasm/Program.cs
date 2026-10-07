@@ -1,3 +1,4 @@
+using Elsa.Studio.Branding;
 using Elsa.Studio.Host.HostedWasm.Middleware;
 using Microsoft.AspNetCore.StaticFiles;
 
@@ -6,6 +7,7 @@ builder.WebHost.UseStaticWebAssets();
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+builder.Services.AddScoped<IBrandingProvider, DefaultBrandingProvider>();
 builder.Services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
 var app = builder.Build();
