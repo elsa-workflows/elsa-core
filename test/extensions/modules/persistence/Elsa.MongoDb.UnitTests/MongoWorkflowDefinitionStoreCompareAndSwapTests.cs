@@ -524,7 +524,7 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
         await collection.InsertOneAsync(Definition("latest", "tenant-a"));
         var callbackCalls = 0;
 
-        var error = await Assert.ThrowsAsync<MongoCommandException>(() => store.TryUpdateLatestAsync(
+        var error = await Assert.ThrowsAsync<NotSupportedException>(() => store.TryUpdateLatestAsync(
             LatestFilter("definition"),
             _ =>
             {
@@ -538,7 +538,7 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
                 return current;
             }));
 
-        Assert.Equal(20, error.Code); // IllegalOperation: transaction numbers require a replica set or mongos.
+        Assert.Equal("Standalone servers do not support transactions.", error.Message);
         Assert.Equal(0, callbackCalls);
         var stored = await collection.Find(x => x.Id == "latest").SingleAsync();
         Assert.Equal("initial graph", stored.StringData);

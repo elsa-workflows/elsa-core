@@ -10,6 +10,8 @@ The existing compare-and-swap test class uses a shared MongoDB `7.0.24` replica 
 
 The fixture checks the running server's `hello.setName` is `rs1`; the standalone case checks that `setName` is absent. When `ELSA_MONGO_PROOF_DIRECTORY` is set, it also inspects each running container by ID and atomically writes a small JSON file containing its immutable image ID, actual replica-set name, and mode. This capture uses Docker's CLI without a shell and excludes raw inspect output and diagnostics. Leave the variable unset for ordinary test runs; hosted proof uses separate directories for baseline and candidate receipts.
 
+For the pinned MongoDB.Driver `3.9.0`, the standalone test establishes the client's topology by inserting its seed row first. The driver's transaction-start guard then throws `NotSupportedException` with `Standalone servers do not support transactions.` before callbacks or transaction commands; the test asserts that exact rejection and verifies the row remains unchanged.
+
 The two baseline regression probes compile using the pre-correction public API and are self-contained in `test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs`:
 
 - `TryUpdateLatestAsync_WhenUnlistedMetadataChangesAfterRead_ReturnsConflictAndKeepsConcurrentMetadata` must fail on the old source with `Atomic metadata guard must reject a stale full-document snapshot.`
