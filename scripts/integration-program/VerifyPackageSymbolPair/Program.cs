@@ -32,9 +32,9 @@ if (args.Length == 2 && args[0] == "--inspect-archive")
     return;
 }
 
-if (args.Length != 2 && (args.Length != 3 || args[2] != "--inspect-documents"))
+if (args.Length != 2 && (args.Length != 3 || args[2] != "--inspect-documents" && args[2] != "--inspect-symbols"))
 {
-    throw new ArgumentException("Usage: VerifyPackageSymbolPair <assembly.dll> <symbols.pdb> [--inspect-documents] or --inspect-archive <package.nupkg>");
+    throw new ArgumentException("Usage: VerifyPackageSymbolPair <assembly.dll> <symbols.pdb> [--inspect-documents|--inspect-symbols] or --inspect-archive <package.nupkg>");
 }
 
 var assemblyPath = Path.GetFullPath(args[0]);
@@ -185,7 +185,7 @@ using (pdbReaderProvider)
             informationalVersion = value.ReadSerializedString();
         }
 
-        Console.WriteLine(JsonSerializer.Serialize(new
+        var inspection = new
         {
             assembly_name = assemblyMetadata.GetString(definition.Name),
             assembly_version = definition.Version.ToString(),
@@ -196,10 +196,134 @@ using (pdbReaderProvider)
             nonmodule_types = nonmoduleTypes,
             source_link = sourceLinks[0],
             documents
-        }));
+        };
+        Console.WriteLine(args[2] == "--inspect-symbols"
+            ? JsonSerializer.Serialize(new { schema = 1, symbol = InspectSymbols(reader, metadata, symbolsPath), details = inspection })
+            : JsonSerializer.Serialize(inspection));
     }
     else
     {
         Console.WriteLine("Verified matching external Portable PDB for packaged assembly.");
     }
+}
+
+
+// The Portable PDB key and checksum follow dotnet/symstore and the PE-COFF
+// Portable PDB checksum specification. The checksum zeroes the 20-byte #Pdb ID;
+// it is deliberately distinct from the unchanged archive member's raw hash.
+static object InspectSymbols(PEReader reader, MetadataReader metadata, string symbolsPath)
+{
+    var entries = reader.ReadDebugDirectory();
+    var codeViews = entries.Where(entry => entry.Type == DebugDirectoryEntryType.CodeView).ToArray();
+    var checksums = entries.Where(entry => entry.Type == DebugDirectoryEntryType.PdbChecksum).ToArray();
+    if (codeViews.Length != 1 || !codeViews[0].IsPortableCodeView || checksums.Length != 1)
+    {
+        throw new InvalidDataException("Exactly one Portable CodeView and PDB checksum are required.");
+    }
+
+    var codeView = reader.ReadCodeViewDebugDirectoryData(codeViews[0]);
+    var checksum = reader.ReadPdbChecksumDebugDirectoryData(checksums[0]);
+    var id = metadata.DebugMetadataHeader?.Id.ToArray();
+    if (id is null || id.Length != 20 || codeView.Age != 1)
+    {
+        throw new InvalidDataException("Invalid Portable PDB identity.");
+    }
+
+    var guid = new Guid(id.AsSpan(0, 16));
+    var stamp = System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(id.AsSpan(16, 4));
+    if (guid != codeView.Guid || stamp != codeViews[0].Stamp)
+    {
+        throw new InvalidDataException("Portable PDB GUID/stamp differs from the assembly.");
+    }
+
+    var file = new FileInfo(symbolsPath);
+    if (file.Length <= 0 || file.Length > 32 * 1024 * 1024)
+    {
+        throw new InvalidDataException("Portable PDB exceeds the inspection bound.");
+    }
+
+    var bytes = File.ReadAllBytes(symbolsPath);
+    var originalHash = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+    using var stream = new MemoryStream(bytes, writable: false);
+    using var binary = new BinaryReader(stream);
+    if (binary.ReadUInt32() != 0x424a5342)
+    {
+        throw new InvalidDataException("Portable PDB metadata signature is invalid.");
+    }
+
+    stream.Position = 12;
+    var versionLength = binary.ReadUInt32();
+    if (versionLength > bytes.Length - 16)
+    {
+        throw new InvalidDataException("Portable PDB version header is invalid.");
+    }
+
+    stream.Position = (16L + versionLength + 3) & ~3L;
+    binary.ReadUInt16();
+    var count = binary.ReadUInt16();
+    if (count == 0 || count > 64)
+    {
+        throw new InvalidDataException("Portable PDB stream count is invalid.");
+    }
+
+    int? idOffset = null;
+    for (var index = 0; index < count; index++)
+    {
+        var offset = binary.ReadUInt32();
+        var size = binary.ReadUInt32();
+        var name = new List<byte>();
+        byte next;
+        while ((next = binary.ReadByte()) != 0)
+        {
+            if (name.Count >= 32)
+            {
+                throw new InvalidDataException("Portable PDB stream name is invalid.");
+            }
+            name.Add(next);
+        }
+        stream.Position = (stream.Position + 3) & ~3L;
+        if (offset > bytes.Length || size > bytes.Length - offset)
+        {
+            throw new InvalidDataException("Portable PDB stream is outside the file.");
+        }
+        if (System.Text.Encoding.ASCII.GetString(name.ToArray()) == "#Pdb")
+        {
+            if (idOffset is not null || size < 20)
+            {
+                throw new InvalidDataException("Portable PDB identity stream is invalid.");
+            }
+            idOffset = checked((int)offset);
+        }
+    }
+
+    if (idOffset is null || !bytes.AsSpan(idOffset.Value, 20).SequenceEqual(id))
+    {
+        throw new InvalidDataException("Portable PDB identity stream differs from metadata.");
+    }
+
+    Array.Clear(bytes, idOffset.Value, 20);
+    var normalizedHash = checksum.AlgorithmName switch
+    {
+        "SHA256" => SHA256.HashData(bytes),
+        "SHA1" => SHA1.HashData(bytes),
+        _ => throw new InvalidDataException("Unsupported Portable PDB checksum algorithm.")
+    };
+    if (!normalizedHash.AsSpan().SequenceEqual(checksum.Checksum.AsSpan()))
+    {
+        throw new InvalidDataException("Portable PDB checksum differs from the assembly.");
+    }
+
+    var nameLower = Path.GetFileName(symbolsPath).ToLowerInvariant();
+    return new
+    {
+        key = $"{nameLower}/{guid:N}FFFFFFFF/{nameLower}",
+        pdb_name = nameLower,
+        guid = guid.ToString("D"),
+        stamp,
+        checksum_algorithm = checksum.AlgorithmName,
+        declared_checksum = Convert.ToHexString(checksum.Checksum.AsSpan()).ToLowerInvariant(),
+        normalized_checksum = Convert.ToHexString(normalizedHash).ToLowerInvariant(),
+        pdb_sha256 = originalHash,
+        pdb_size = bytes.Length
+    };
 }

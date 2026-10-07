@@ -150,8 +150,9 @@ def _validate_planner_identity(planner_source: str, planner_run: int | None,
              "Planner run and attempt must be supplied together as positive integers")
     root = Path(__file__).resolve().parents[2]
     try:
-        head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
-    except (OSError, subprocess.CalledProcessError) as error:
+        head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True,
+                                       env={"PATH": os.environ.get("PATH", os.defpath)}, timeout=10).strip()
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
         raise ValueError("Cannot resolve planner checkout HEAD") from error
     _require(head == planner_source, "Planner source does not match the exact checkout HEAD")
     return {"source_commit": planner_source, "run_id": planner_run, "run_attempt": planner_attempt}

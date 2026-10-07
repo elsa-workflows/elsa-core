@@ -238,6 +238,15 @@ class RecoveryInputTests(unittest.TestCase):
             "live_retrieval_sha256": sha256(retrieval_path.read_bytes()),
         }
 
+    def test_planner_identity_git_child_receives_no_credentials(self):
+        environment = {"PATH": "/usr/bin:/bin", "ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY": "synthetic-publisher",
+                       "ELSA_CONSOLIDATED_METADATA_READ_TOKEN": "synthetic-metadata", "GH_TOKEN": "synthetic-artifact"}
+        with patch.dict(os.environ, environment, clear=True), \
+                patch.object(recovery.subprocess, "check_output", return_value="a" * 40) as child:
+            recovery._validate_planner_identity("a" * 40, 99, 1)
+        self.assertEqual(child.call_args.kwargs["env"], {"PATH": "/usr/bin:/bin"})
+        self.assertEqual(child.call_args.kwargs["timeout"], 10)
+
     def run_prepare(self, **kwargs):
         planner_source = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
         return recovery.prepare_recovery_inputs(self.inputs, self.destination,
