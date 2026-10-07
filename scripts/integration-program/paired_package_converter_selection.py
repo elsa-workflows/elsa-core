@@ -37,6 +37,16 @@ sha256 = provenance.sha256
 regular_file = provenance.regular_file
 
 
+class ConverterArchiveRejected(RuntimeError):
+    def __init__(self, archive_sha256: str | None, observed_pack_version: str | None):
+        require(archive_sha256 is None or re.fullmatch(r"[0-9a-f]{64}", archive_sha256) is not None,
+                "Invalid rejected archive hash")
+        require(observed_pack_version is None or re.fullmatch(r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,5}", observed_pack_version) is not None,
+                "Invalid rejected converter version")
+        self.evidence = {"expected_path_archive_sha256": archive_sha256, "observed_pack_version": observed_pack_version}
+        super().__init__("Selected converter archive is unavailable or not reviewed")
+
+
 def _write_private(path: Path, value: dict) -> None:
     with path.open("x", encoding="utf-8") as target:
         path.chmod(0o600)
@@ -295,9 +305,25 @@ def verify_decoded(decoded: dict, inventory: list[dict], package_cache: Path, sd
             require(core_path_load or (name == IMPLEMENTATION and edge(row) and not row.get("requested_path")),
                     "Unreviewed converter requestor binding")
     report_operation("converter", "binding_archive")
-    archive = regular_file(package_cache.absolute() / PACK_ID / PACK_VERSION / f"{PACK_ID}.{PACK_VERSION}.nupkg")
+    archive_path = package_cache.absolute() / PACK_ID / PACK_VERSION / f"{PACK_ID}.{PACK_VERSION}.nupkg"
+    observed_version = None
+    task_path = task.get("path")
+    if isinstance(task_path, str):
+        try:
+            relative = Path(task_path).relative_to(package_cache.absolute())
+            if len(relative.parts) == 5 and relative.parts[0] == PACK_ID and re.fullmatch(
+                    r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,5}", relative.parts[1]):
+                observed_version = relative.parts[1]
+        except ValueError:
+            pass
+    try:
+        archive = regular_file(archive_path)
+        archive_hash = sha256(archive)
+    except (OSError, RuntimeError):
+        raise ConverterArchiveRejected(None, observed_version) from None
+    if archive_hash != ARCHIVE_SHA256:
+        raise ConverterArchiveRejected(archive_hash, observed_version)
     root = archive.parent
-    require(sha256(archive) == ARCHIVE_SHA256, "Selected converter archive is not reviewed")
     hashes = {}
     with ZipFile(archive) as zipped:
         members = safe_members(zipped)

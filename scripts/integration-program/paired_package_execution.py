@@ -476,6 +476,8 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
         evidence.update(stage="complete", result="passed")
         return record
     except Exception as failure:
+        if isinstance(failure, converter_selection.ConverterArchiveRejected):
+            evidence["converter_archive_rejection"] = failure.evidence
         if isinstance(failure, browser.BrowserCleanupUnverified):
             cleanup_categories.update(failure.categories)
         evidence["failure_category"] = "execution_or_evidence_failed"

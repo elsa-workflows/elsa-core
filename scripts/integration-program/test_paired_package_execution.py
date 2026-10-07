@@ -808,6 +808,15 @@ class ExecutionContracts(unittest.TestCase):
         self.assertNotIn("PRIVATE", json.dumps(self.receipt()))
         self.assertFalse(any(event[0] == "start" for event in self.events))
 
+    def test_archive_rejection_preserves_only_bounded_digest_and_version(self):
+        self.pipeline()
+        failure = execution.converter_selection.ConverterArchiveRejected(None, "10.0.8")
+        self.patch(execution.hosts, "build", side_effect=failure)
+        with self.assertRaises(ValueError):
+            self.execute()
+        self.assertEqual(failure.evidence, self.receipt()["converter_archive_rejection"])
+        self.assertEqual("failed", self.receipt()["result"])
+
     def test_untrusted_build_operation_fields_never_enter_receipt(self):
         self.pipeline()
         def fail(_layout, *, report_operation, **_options):

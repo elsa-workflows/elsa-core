@@ -84,6 +84,22 @@ class ConverterSelectionContracts(unittest.TestCase):
             self.assertEqual(("converter", expected), operations[-1])
             self.assertNotIn("PRIVATE", json.dumps(operations))
 
+    def test_missing_or_changed_archive_exposes_only_digest_and_version(self):
+        self.archive.unlink()
+        with self.assertRaises(selected.ConverterArchiveRejected) as failure:
+            self.verify()
+        self.assertEqual({"expected_path_archive_sha256": None, "observed_pack_version": selected.PACK_VERSION},
+                         failure.exception.evidence)
+        self.archive.write_bytes(b"PRIVATE-UNREVIEWED-ARCHIVE")
+        with self.assertRaises(selected.ConverterArchiveRejected) as failure:
+            self.verify()
+        self.assertEqual(selected.sha256(self.archive), failure.exception.evidence["expected_path_archive_sha256"])
+        self.assertNotIn("PRIVATE", json.dumps(failure.exception.evidence))
+        self.assertNotIn(str(self.root), json.dumps(failure.exception.evidence))
+        for digest, version in (("PRIVATE", "10.0.8"), (None, "PRIVATE")):
+            with self.assertRaises(RuntimeError):
+                selected.ConverterArchiveRejected(digest, version)
+
     def test_incomplete_changed_lost_or_duplicate_trace_inventory_fails(self):
         for field, value in (("parser_completed", False), ("events_lost", 1), ("events_lost", False),
                              ("sha256", "2" * 64), ("file", "other.nettrace")):
