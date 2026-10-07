@@ -4,6 +4,7 @@ import { closeSync, lstatSync, openSync, readFileSync, readSync, realpathSync, w
 import { dirname, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
+import { NativeCustomElements, bindNativeCallback } from './custom-elements.js';
 import { checkReactDefinition, reactAfterValue, reactBundlePath, reactChecks, type ReactHashes } from './react-phase.js';
 import { bpmnSemanticIdentity, checkedXmlText, type XmlElement } from './bpmn-roundtrip.js';
 import { readWorkflowJsonExport, workflowSemanticIdentity } from './json-roundtrip.js';
@@ -23,6 +24,7 @@ const baseline: string[] = policy.baseline;
 const candidate: string[] = policy.candidate;
 const hostAssertions: Record<Cell['host'], string[]> = policy.host_assertions;
 const hash = (data: Buffer | string): string => createHash('sha256').update(data).digest('hex');
+const embeddings = new WeakMap<Page, NativeCustomElements>();
 
 export async function resourceBody(response: { headers(): Record<string, string>; body(): Promise<Buffer> }, expectedBytes: number): Promise<Buffer> {
   // The WASM dev server can stream a response without Content-Length. Its
@@ -108,6 +110,8 @@ async function visibleReleasedActivity(page: Page, document: any): Promise<void>
 }
 
 async function definitionsList(page: Page, input: PrivateInput): Promise<void> {
+  const embedding = embeddings.get(page);
+  if (embedding) { await embedding.definitions(); return; }
   await page.goto(input.studio_url + '/workflows/definitions');
   await page.waitForURL(url => url.pathname.endsWith('/workflows/definitions') && url.searchParams.get('page') === '1' && url.searchParams.get('pageSize') === '10');
 }
@@ -268,7 +272,7 @@ async function nativeJsonRoundtrip(
   passed('dom_interop');
   proof.last_completed_stage = 'candidate_json_saved';
 
-  await page.reload();
+  await reloadEditor(page);
   await visibleReleasedActivity(page, checkedExport.document);
   const reloaded = await getDefinition();
   const reloadedIdentity = workflowSemanticIdentity(reloaded);
@@ -318,8 +322,7 @@ async function nativeBpmnRoundtrip(page: Page, input: PrivateInput, backend: Bac
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText('No findings. This document reads without loss.', { exact: true })).toBeVisible();
     await dialog.getByRole('button', { name: 'Import', exact: true }).click();
-    await expect(page).toHaveURL(/\/workflows\/definitions\/[^/]+\/edit/);
-    const id = new URL(page.url()).pathname.split('/').at(-2)!;
+    const id = await editedDefinition(page);
     const definition = await backend.get('/workflow-definitions/by-definition-id/' + encodeURIComponent(id) + '?versionOptions=Latest');
     if (definition.definitionId !== id || definition.root?.type !== 'Elsa.BpmnProcess' ||
         typeof definition.customProperties?.['Bpmn:SourceXml'] !== 'string' ||
@@ -402,20 +405,19 @@ async function reopenReleased(page: Page, input: PrivateInput, backend: Backend,
     const tableRow = page.locator('.definitions-table tbody tr').filter({ has: page.getByText(document.definitionId, { exact: true }) });
     await expect(tableRow).toHaveCount(1);
     await tableRow.getByText(document.name, { exact: true }).click();
-    await expect(page).toHaveURL(new RegExp('/workflows/definitions/' + document.definitionId + '/edit'));
+    await editedDefinition(page, document.definitionId);
     await visibleReleasedActivity(page, document);
     checks.visible = true;
     await page.keyboard.press('ControlOrMeta+s');
     await expect(page.getByText('Workflow saved', { exact: true })).toBeVisible();
     checkReleasedDefinition(await get(), document); checks.saved = true;
-    await page.reload();
+    await reloadEditor(page);
     await visibleReleasedActivity(page, document);
     checkReleasedDefinition(await get(), document); checks.reloaded = true; proof.last_completed_stage = 'baseline_reloaded';
     await toolbar(page, 'Publish workflow');
     await expect.poll(async () => (await get()).isPublished).toBe(true); checks.published = true;
     await toolbar(page, 'Run Workflow');
-    await expect(page).toHaveURL(/\/workflows\/instances\/[^/]+\/view/);
-    const instanceId = new URL(page.url()).pathname.split('/').at(-2)!;
+    const instanceId = await executedInstance(page);
     row.instance_id_sha256 = hash(instanceId);
     await expect.poll(async () => (await backend.get('/workflow-instances/' + instanceId)).status).toBe('Finished');
     const instance = await backend.get('/workflow-instances/' + instanceId);
@@ -424,6 +426,42 @@ async function reopenReleased(page: Page, input: PrivateInput, backend: Backend,
     await expect(page.getByText('Finished', { exact: true }).first()).toBeVisible(); checks.studio_terminal = true;
     proof.last_completed_stage = 'baseline_run';
   }
+}
+
+async function completeEmbeddingCallbacks(embedding: NativeCustomElements, instance: any, definitionId: string, instanceId: string,
+  passed: (name: string) => void): Promise<void> {
+  if (instance.id !== instanceId || instance.definitionId !== definitionId) throw new Error('native_executed_instance_mismatch');
+  bindNativeCallback('execution', { id: instanceId }, { id: instance.id }, embedding.proof);
+  if (Object.entries(embedding.proof.checks).filter(([key]) => !['instance_list_callback', 'instance_viewer'].includes(key)).every(([, value]) => value))
+    passed('native_callbacks');
+  await embedding.instanceList(instanceId);
+  passed('instance_list_viewer');
+}
+
+async function editedDefinition(page: Page, expectedId?: string): Promise<string> {
+  const embedding = embeddings.get(page);
+  if (embedding) return embedding.editedDefinition(expectedId);
+  await expect(page).toHaveURL(/\/workflows\/definitions\/[^/]+\/edit/);
+  const id = new URL(page.url()).pathname.split('/').at(-2)!;
+  if (expectedId !== undefined && id !== expectedId) throw new Error('editor_navigation_identity_mismatch');
+  return id;
+}
+
+async function reloadEditor(page: Page): Promise<void> {
+  const embedding = embeddings.get(page);
+  if (embedding) await embedding.reloadEditor();
+  else await page.reload();
+}
+
+async function executedInstance(page: Page): Promise<string> {
+  const embedding = embeddings.get(page);
+  if (embedding) {
+    const id = await embedding.runInstance();
+    await embedding.viewer(id);
+    return id;
+  }
+  await expect(page).toHaveURL(/\/workflows\/instances\/[^/]+\/view/);
+  return new URL(page.url()).pathname.split('/').at(-2)!;
 }
 
 function loopback(value: string): string {
@@ -488,6 +526,9 @@ class Backend {
       throw new Error('backend_read_failed');
     return response.json();
   }
+  embedding(page: Page, input: PrivateInput): NativeCustomElements {
+    return new NativeCustomElements(page, input.studio_url, this.base, this.token);
+  }
   async dispose(): Promise<void> { await this.api.dispose(); }
 }
 
@@ -526,13 +567,12 @@ async function authenticateShell(page: Page, input: PrivateInput, proof: Record<
 }
 
 async function fullShell(page: Page, input: PrivateInput, backend: Backend, passed: (name: string) => void, proof: Record<string, unknown>): Promise<void> {
-  await authenticateShell(page, input, proof);
-  passed('authentication');
-  await page.goto(input.studio_url + '/workflows/definitions');
+  const embedding = embeddings.get(page);
+  if (embedding) await embedding.initialize();
+  else { await authenticateShell(page, input, proof); passed('authentication'); }
+  await definitionsList(page, input);
   await expect(page.getByRole('button', { name: 'Create workflow', exact: true })).toBeVisible();
-  // ServerReload normalizes paging after both awaited definition-list reads.
-  // Opening a dialog before this navigation completes can close it mid-initialization.
-  await page.waitForURL(url => url.pathname.endsWith('/workflows/definitions') && url.searchParams.get('page') === '1' && url.searchParams.get('pageSize') === '10');
+  if (embedding) passed('authentication');
   proof.initial_list_navigation_completed = true;
   passed('shell_or_embedding');
   const name = input.safe_ids.definition_name ?? 'package-browser-workflow';
@@ -547,9 +587,8 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   proof.last_completed_stage = 'create_name_filled';
   await dialog.getByRole('button', { name: 'Ok', exact: true }).click();
   proof.last_completed_stage = 'create_submitted';
-  await expect(page).toHaveURL(/\/workflows\/definitions\/[^/]+\/edit/);
+  const definitionId = await editedDefinition(page);
   proof.last_completed_stage = 'workflow_created';
-  const definitionId = new URL(page.url()).pathname.split('/').at(-2)!;
   const getDefinition = () => backend.get('/workflow-definitions/by-definition-id/' + encodeURIComponent(definitionId) + '?versionOptions=Latest');
   // The route changes before the asynchronous editor/designer initialization completes.
   // Require the actual X6 graph and this workflow's populated metadata before changing tabs.
@@ -613,7 +652,25 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   const child = before.root.activities.find((a: any) => a.type === 'Elsa.SetOutput');
   if (!child || typeof child.id !== 'string') throw new Error('saved_activity_identity_missing');
   proof.last_completed_stage = 'property_saved';
-  await page.reload();
+  if (embedding) {
+    if (before.definitionId !== definitionId) throw new Error('native_created_definition_mismatch');
+    bindNativeCallback('definition', { id: definitionId }, { id: before.definitionId }, embedding.proof);
+    // Native selection -> package ActivitySelected -> host EventCallback -> browser consumer.
+    await page.locator('.flowchart-diagram-designer-wrapper .x6-graph-svg').click({ position: { x: 10, y: 10 } });
+    await expect(node).not.toHaveClass(/x6-node-selected/);
+    embedding.forgetCallback('activity');
+    await page.locator('elsa-activity-wrapper[activity-id="' + child.id + '"]').click();
+    bindNativeCallback('activity', await embedding.callback('activity'), { id: child.id }, embedding.proof);
+    // VersionHistoryTab's row click calls Workspace.DisplayWorkflowDefinitionVersionAsync.
+    await page.getByRole('tab', { name: 'Version history', exact: true }).click();
+    const versions = page.locator('.mud-table').filter({ has: page.getByRole('columnheader', { name: 'Published', exact: true }) });
+    const version = versions.locator('tbody tr').filter({ has: page.getByRole('cell', { name: String(before.version), exact: true }) });
+    await expect(version).toHaveCount(1);
+    embedding.forgetCallback('version');
+    await version.getByRole('cell', { name: String(before.version), exact: true }).click();
+    bindNativeCallback('version', await embedding.callback('version'), { id: before.id, definitionId }, embedding.proof);
+  }
+  await reloadEditor(page);
   await expect(page.locator('.x6-node').filter({ hasText: /Set output/i })).toHaveCount(1);
   const reloaded = await getDefinition();
   const after = reloaded.root.activities.find((a: any) => a.id === child.id);
@@ -626,6 +683,21 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   proof.value_sha256 = hash(sentinel);
   proof.synthetic_document_sha256 = hash(JSON.stringify(reloaded));
   if (input.request.version !== '3.10.0') {
+    if (embedding) {
+      // The native Run action explicitly executes VersionOptions.Latest, so the
+      // baseline can prove execution without publishing its exported document.
+      await toolbar(page, 'Run Workflow');
+      const instanceId = await executedInstance(page);
+      proof.instance_id_sha256 = hash(instanceId);
+      await expect.poll(async () => (await backend.get('/workflow-instances/' + instanceId)).status).toBe('Finished');
+      const instance = await backend.get('/workflow-instances/' + instanceId);
+      if (instance.workflowState?.output?.sentinel !== sentinel) throw new Error('backend_output_mismatch');
+      await expect(page.getByText('Finished', { exact: true }).first()).toBeVisible();
+      await completeEmbeddingCallbacks(embedding, instance, definitionId, instanceId, passed);
+      await embedding.mount('definition-editor', definitionId);
+      await expect(page.locator('.flowchart-diagram-designer-wrapper .x6-graph-svg')).toBeVisible();
+      await expect(page.getByLabel('Name', { exact: true })).toHaveValue(name);
+    }
     if (input.released_document_output) {
       // Export the real saved workflow through the native menu and download interop.
       const document = await nativeWorkflowExport(page, stage => {
@@ -641,8 +713,10 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
     return;
   }
 
-  proof.root_id_sha256 = hash(workflowSemanticIdentity(reloaded).rootId);
-  await nativeJsonRoundtrip(page, getDefinition, reloaded, sentinel, proof, passed);
+  if (input.request.version === '3.10.0') {
+    proof.root_id_sha256 = hash(workflowSemanticIdentity(reloaded).rootId);
+    await nativeJsonRoundtrip(page, getDefinition, reloaded, sentinel, proof, passed);
+  }
 
   await toolbar(page, 'Publish workflow');
   await expect.poll(async () => (await getDefinition()).isPublished).toBe(true);
@@ -650,11 +724,10 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
   const jsonRoundtrip = proof.json_roundtrip as Record<string, any>;
   if (jsonRoundtrip) jsonRoundtrip.checks.published = true;
   await toolbar(page, 'Run Workflow');
-  await expect(page).toHaveURL(/\/workflows\/instances\/[^/]+\/view/);
+  const instanceId = await executedInstance(page);
   proof.last_completed_stage = 'workflow_run';
-  const instanceId = new URL(page.url()).pathname.split('/').at(-2)!;
   proof.instance_id_sha256 = hash(instanceId);
-  passed('publish_run');
+  if (input.request.version === '3.10.0') passed('publish_run');
   await expect.poll(async () => (await backend.get('/workflow-instances/' + instanceId)).status).toBe('Finished');
   if (jsonRoundtrip) {
     jsonRoundtrip.checks.terminal = true;
@@ -666,19 +739,20 @@ async function fullShell(page: Page, input: PrivateInput, backend: Backend, pass
     jsonRoundtrip.actual_output_sha256 = hash(actualOutput);
   if (actualOutput !== sentinel) throw new Error('backend_output_mismatch');
   if (jsonRoundtrip) jsonRoundtrip.checks.output = true;
-  passed('backend_output');
+  if (input.request.version === '3.10.0') passed('backend_output');
   await expect(page.getByText('Finished', { exact: true }).first()).toBeVisible();
-  passed('studio_terminal');
+  if (input.request.version === '3.10.0') passed('studio_terminal');
   if (jsonRoundtrip) jsonRoundtrip.checks.studio_terminal = true;
   if (jsonRoundtrip && Object.values(jsonRoundtrip.checks).every(value => value === true))
     passed('json_roundtrip');
+  if (embedding) await completeEmbeddingCallbacks(embedding, instance, definitionId, instanceId, passed);
   if (input.released_document_inputs) {
     await reopenReleased(page, input, backend, proof);
     passed('baseline_reopen');
   }
-  if (input.request.host === 'server') {
-    // Keep the first new slice scoped to the reviewed default X6 Server composition.
-    await page.goto(input.studio_url + '/workflows/instances/' + encodeURIComponent(instanceId) + '/view');
+  if (input.request.version === '3.10.0' && (input.request.host === 'server' || embedding)) {
+    if (embedding) await embedding.viewer(instanceId);
+    else await page.goto(input.studio_url + '/workflows/instances/' + encodeURIComponent(instanceId) + '/view');
     await expect(page.getByText('Finished', { exact: true }).first()).toBeVisible();
     await nativeClipboard(page, instanceId, sentinel, proof);
     passed('clipboard');
@@ -835,7 +909,7 @@ async function main(): Promise<void> {
   const wasmBoot = input.request.host === 'wasm' ? new WasmBootObserver(input.resources, input.request.framework) : undefined;
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ serviceWorkers: 'block' });
-  if (input.request.version === '3.10.0' && input.request.host === 'server')
+  if (input.request.version === '3.10.0' && ['server', 'custom-elements'].includes(input.request.host))
     await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(input.studio_url).origin });
   const page = await context.newPage();
   page.setDefaultTimeout(20_000);
@@ -860,6 +934,8 @@ async function main(): Promise<void> {
       catch { /* Requests without a frame cannot prove the native UI's backend path. */ }
       pending.push(directBackend.observe(response, fromMainFrame));
     }
+    const embedding = embeddings.get(page);
+    if (embedding) pending.push(embedding.observeResponse(response));
     observePackageResponse(response, input, expected, resources, pending, resource => wasmBoot?.observe(resource.record, resource.body), () => { failed = true; });
   };
   page.on('response', observeResponse);
@@ -867,7 +943,11 @@ async function main(): Promise<void> {
   try {
     backend = await Backend.login(input.backend_url, input);
     proof.last_completed_stage = 'backend_authenticated';
-    if (input.request.host === 'custom-elements') throw new Error('native_embedding_journey_pending');
+    if (input.request.host === 'custom-elements') {
+      const embedding = backend.embedding(page, input);
+      embeddings.set(page, embedding);
+      proof.embedding = embedding.proof;
+    }
     await fullShell(page, input, backend, passed, proof);
     if (input.request.host === 'server') {
       if (!serverCircuit) throw new Error('server_circuit_missing');
