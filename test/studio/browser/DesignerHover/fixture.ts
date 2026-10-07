@@ -6,10 +6,14 @@ import {registerEdgeHoverTools} from '../../../../src/studio/modules/Elsa.Studio
 const container = document.getElementById('graph')!;
 let graph: Graph;
 let events: Record<string, number>;
+let pointerInside = false;
+let observationController: AbortController;
 
 function reset(enabled: boolean) {
+    observationController?.abort();
     graph?.dispose();
     events = {};
+    pointerInside = container.matches(':hover');
     graph = new Graph({
         container,
         width: 800,
@@ -19,11 +23,21 @@ function reset(enabled: boolean) {
         background: {color: '#fafafa'},
     });
     registerEdgeHoverTools(graph, enabled);
-    for (const event of ['edge:mouseenter', 'node:mouseenter', 'blank:mouseover', 'graph:mouseleave'] as const) {
+    for (const event of ['edge:mouseenter', 'edge:mouseleave', 'node:mouseenter', 'blank:mouseover', 'graph:mouseleave'] as const) {
         graph.on(event, (args: {edge?: {id: string}}) => {
             const key = args.edge ? `${event}:${args.edge.id}` : event;
             events[key] = (events[key] ?? 0) + 1;
         });
+    }
+    // X6 emulates leave from mouseout and can retain a descendant edge as its event target.
+    // Observe the actual container boundary independently; never manufacture a graph event.
+    observationController = new AbortController();
+    for (const event of ['mouseenter', 'mouseleave'] as const) {
+        container.addEventListener(event, () => {
+            pointerInside = event === 'mouseenter';
+            const key = `container:${event}`;
+            events[key] = (events[key] ?? 0) + 1;
+        }, {signal: observationController.signal});
     }
     graph.addNode({id: 'node', x: 700, y: 90, width: 80, height: 60, label: 'Node'});
     graph.addEdge({id: 'edge-a', source: {x: 100, y: 120}, target: {x: 660, y: 120}});
@@ -34,6 +48,7 @@ function reset(enabled: boolean) {
 function snapshot() {
     return {
         events: {...events},
+        pointerInside,
         edges: ['edge-a', 'edge-b'].map(id => {
             const edge = graph.getCellById(id);
             const items = edge?.getTools()?.items ?? [];
@@ -50,4 +65,7 @@ function snapshot() {
 
 reset(true);
 Object.assign(window, {hoverFixture: {reset, snapshot}});
-window.addEventListener('pagehide', () => graph.dispose(), {once: true});
+window.addEventListener('pagehide', () => {
+    observationController.abort();
+    graph.dispose();
+}, {once: true});

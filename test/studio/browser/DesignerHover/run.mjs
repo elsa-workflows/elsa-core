@@ -29,7 +29,7 @@ const receipt = {
     dependencies: null,
     browser: null,
     bundle_sha256: null,
-    assertions: assertions.map(name => ({name, passed: false, reason_category: 'not_run'})),
+    assertions: assertions.map(name => ({name, passed: false, reason_category: 'not_run', observation: null})),
     events: null,
     browser_errors: 0,
     blocked_requests: 0,
@@ -158,7 +158,9 @@ try {
     await page.waitForFunction(() => Boolean(window.hoverFixture));
     const snapshot = () => page.evaluate(() => window.hoverFixture.snapshot());
     const eventCount = async name => (await snapshot()).events[name] ?? 0;
+    let subcheck = 'action';
     const move = async (x, y) => {
+        subcheck = 'pointer-move';
         const box = await page.locator('#graph').boundingBox();
         expect(box).not.toBeNull();
         await page.mouse.move(box.x + x, box.y + y, {steps: 8});
@@ -169,8 +171,11 @@ try {
     const tool = (id, name) => page.locator(`.x6-cell-tools[data-cell-id="${id}"] [data-tool-name="${name}"]`);
     const allButtons = page.locator('.x6-cell-tools [data-tool-name="button-remove"]');
     const checkEdge = async (id, buttons, vertices = 1) => {
+        subcheck = 'rendered-edge-buttons';
         await expect(tool(id, 'button-remove')).toHaveCount(buttons);
+        subcheck = 'rendered-edge-vertices';
         await expect(tool(id, 'vertices')).toHaveCount(vertices);
+        subcheck = 'model-edge-tools';
         await expect.poll(async () => {
             const edge = (await snapshot()).edges.find(edge => edge.id === id);
             return {buttons: edge.buttons, vertices: edge.vertices};
@@ -179,17 +184,60 @@ try {
     const hover = async id => {
         await move(...edgePoint(id));
         await checkEdge(id, 1);
+        subcheck = 'single-remove-button';
         await expect(allButtons).toHaveCount(1);
+    };
+    const observation = async () => {
+        const state = await snapshot();
+        const [a, b] = state.edges;
+        return {
+            subcheck,
+            pointer_inside: state.pointerInside,
+            edge_a_exists: a.exists,
+            edge_b_exists: b.exists,
+            model_a_buttons: a.buttons,
+            model_b_buttons: b.buttons,
+            model_a_vertices: a.vertices,
+            model_b_vertices: b.vertices,
+            rendered_buttons: await allButtons.count(),
+            rendered_a_buttons: await tool('edge-a', 'button-remove').count(),
+            rendered_b_buttons: await tool('edge-b', 'button-remove').count(),
+            rendered_a_vertices: await tool('edge-a', 'vertices').count(),
+            rendered_b_vertices: await tool('edge-b', 'vertices').count(),
+            native_container_enters: state.events['container:mouseenter'] ?? 0,
+            native_container_leaves: state.events['container:mouseleave'] ?? 0,
+            x6_a_enters: state.events['edge:mouseenter:edge-a'] ?? 0,
+            x6_b_enters: state.events['edge:mouseenter:edge-b'] ?? 0,
+            x6_a_leaves: state.events['edge:mouseleave:edge-a'] ?? 0,
+            x6_b_leaves: state.events['edge:mouseleave:edge-b'] ?? 0,
+            x6_graph_leaves: state.events['graph:mouseleave'] ?? 0,
+            x6_node_enters: state.events['node:mouseenter'] ?? 0,
+            x6_blank_overs: state.events['blank:mouseover'] ?? 0,
+        };
     };
     const run = async (name, action) => {
         stage = name;
+        subcheck = 'action';
         const result = receipt.assertions.find(result => result.name === name);
         result.reason_category = 'assertion_failed';
-        await action();
-        expect(receipt.browser_errors).toBe(0);
-        expect(receipt.blocked_requests).toBe(0);
-        result.passed = true;
-        result.reason_category = null;
+        try {
+            await action();
+            subcheck = 'browser-errors';
+            expect(receipt.browser_errors).toBe(0);
+            subcheck = 'external-requests';
+            expect(receipt.blocked_requests).toBe(0);
+            result.passed = true;
+            result.reason_category = null;
+            subcheck = 'completed';
+        } finally {
+            try {
+                result.observation = await observation();
+            } catch {
+                result.passed = false;
+                result.reason_category = 'observation_failed';
+                throw new Error('observation_failed');
+            }
+        }
     };
 
     await run('real-x6-rendered', async () => {
@@ -213,15 +261,21 @@ try {
     for (const [name, point, event] of [
         ['node-clears-hover', [740, 120], 'node:mouseenter'],
         ['blank-clears-hover', [400, 390], 'blank:mouseover'],
-        ['outside-clears-hover', [850, 240], 'graph:mouseleave'],
+        ['outside-clears-hover', [850, 240], 'container:mouseleave'],
     ]) {
         await run(name, async () => {
             await hover('edge-b');
             const before = await eventCount(event);
             await move(...point);
+            subcheck = 'all-remove-buttons-cleared';
             await expect(allButtons).toHaveCount(0);
             await checkEdge('edge-b', 0);
+            subcheck = name === 'outside-clears-hover' ? 'native-container-leave' : 'native-event-count';
             expect(await eventCount(event)).toBeGreaterThan(before);
+            if (name === 'outside-clears-hover') {
+                subcheck = 'pointer-outside-container';
+                expect((await snapshot()).pointerInside).toBe(false);
+            }
         });
     }
     await run('remove-tool-entry', async () => {
@@ -262,6 +316,12 @@ try {
         expect(state.edges.every(edge => edge.exists)).toBe(true);
         expect(await eventCount('edge:mouseenter:edge-a')).toBeGreaterThanOrEqual(3);
         expect(await eventCount('edge:mouseenter:edge-b')).toBeGreaterThanOrEqual(3);
+        const leavesBefore = await eventCount('container:mouseleave');
+        await move(850, 240);
+        subcheck = 'native-listener-cleanup';
+        // The previous graph's native listeners must have been aborted during reset.
+        expect(await eventCount('container:mouseleave')).toBe(leavesBefore + 1);
+        expect((await snapshot()).pointerInside).toBe(false);
     });
     receipt.events = {interactive: interactiveEvents, noninteractive: (await snapshot()).events};
     expect(interrupted).toBe(false);
