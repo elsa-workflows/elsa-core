@@ -38,7 +38,10 @@ The hosted workflow installs .NET SDK 10.0.300 with the .NET 8 and 9 runtimes an
 Node 22.23.3. Both hosted and local execution select the sole reviewed SDK from
 the converter policy using a private `global.json` with roll-forward disabled,
 verify the actual SDK, and pin it in each disposable host group. A newer ambient
-SDK cannot silently replace the reviewed converter SDK. Use fresh output and candidate-extraction paths
+SDK cannot silently replace the reviewed converter SDK. Execution receipts record
+the last started build operation using fixed component and phase names; these
+locate failures without retaining exception text, command arguments, or logs.
+Use fresh output and candidate-extraction paths
 outside the checkout:
 
 ```sh

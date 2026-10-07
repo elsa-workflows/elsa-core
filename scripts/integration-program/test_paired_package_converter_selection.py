@@ -340,6 +340,22 @@ class ConverterSelectionContracts(unittest.TestCase):
                 selected.capture_build(layout, project, command, env, self.root / "build.log", decoder)
             run.assert_not_called()
 
+    def test_capture_reports_trace_failure_after_completed_owned_build(self):
+        layout, project, command, env = self.capture_fixture()
+        decoder = self.root / "decoder/bin/Release/net10.0/Decoder.dll"
+        operations = []
+        with patch.object(selected, "prepare_decoder", return_value=decoder), \
+                patch.object(selected, "_owned_command", return_value={}) as build, \
+                patch.object(selected, "_trace_inventory", side_effect=ValueError("PRIVATE-TRACE")), \
+                patch.object(selected, "_decode") as decode:
+            with self.assertRaisesRegex(ValueError, "PRIVATE-TRACE"):
+                selected.capture_build(layout, project, command, env, self.root / "build.log", decoder,
+                    report_operation=lambda component, phase: operations.append((component, phase)))
+        build.assert_called_once()
+        decode.assert_not_called()
+        self.assertEqual([("converter", phase) for phase in
+                          ("decoder_validation", "build_command", "trace_inventory")], operations)
+
     def test_nonserver_materializer_requires_selection_before_sdk_command(self):
         request = hosts.CellRequest("wasm", "net10.0", "3.10.0")
         layout = hosts.materialize(request, self.root / "group", nuget_config="<configuration />",
@@ -392,7 +408,7 @@ class ConverterSelectionContracts(unittest.TestCase):
                 output.mkdir(parents=True, exist_ok=True)
                 (output / "fixture.dll").write_bytes(b"test-output")
             return {"command": command, "exit_code": 0, "log": str(log)}
-        def capture(actual_layout, project, command, env, log, actual_decoder):
+        def capture(actual_layout, project, command, env, log, actual_decoder, **_options):
             self.assertIs(layout, actual_layout)
             self.assertEqual(decoder, actual_decoder)
             self.assertEqual(layout.project_paths["wasm"], project)

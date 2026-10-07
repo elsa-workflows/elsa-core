@@ -271,7 +271,8 @@ def isolated_environment(layout: CellLayout) -> dict[str, str]:
     return env
 
 
-def build(layout: CellLayout, *, converter_decoder: Path | None = None) -> list[dict]:
+def build(layout: CellLayout, *, converter_decoder: Path | None = None,
+          report_operation: Callable[[str, str], None] = lambda _component, _phase: None) -> list[dict]:
     clients = {host for host in layout.project_paths if host in ("wasm", "custom-elements")}
     require(not clients or converter_decoder is not None, "WASM build requires an explicitly prepared converter decoder")
     if clients:
@@ -280,9 +281,11 @@ def build(layout: CellLayout, *, converter_decoder: Path | None = None) -> list[
     env = isolated_environment(layout)
     sdk_log = layout.group_root / "logs" / "execution-sdk.log"
     first_project = next(iter(layout.project_paths.values()))
+    report_operation("sdk", "probe")
     commands.append(packages._run_command(["dotnet", "--version"], first_project.parent, env, sdk_log, 60))
     require(sdk_log.read_text().strip() == layout.sdk, "Actual execution SDK differs from group pin")
     for host, project in layout.project_paths.items():
+        report_operation(host, "reuse_validation")
         stamp = project.parent / "build-reuse.json"
         input_hashes = {name: digest for name, digest in layout.input_hashes.items()
                         if name.startswith(str(project.parent.relative_to(layout.group_root)) + "/")}
@@ -302,8 +305,10 @@ def build(layout: CellLayout, *, converter_decoder: Path | None = None) -> list[
                             ("build", ["build", project.name, "--no-restore", "--configuration", "Release", "-p:UseSharedCompilation=false"])):
             log = layout.group_root / "logs" / f"{host}-{phase}.log"
             command = ["dotnet", *args, "--nologo"]
+            report_operation(host, phase)
             if host in clients and phase == "build":
-                commands.append(converters.capture_build(layout, project, command, env, log, converter_decoder))
+                commands.append(converters.capture_build(layout, project, command, env, log, converter_decoder,
+                                                         report_operation=report_operation))
             else:
                 commands.append(packages._run_command(command, project.parent, env, log, 1200))
         stamp.write_text(json.dumps({"schema": 1, "inputs": input_hashes, "assets": sha256(assets_path),

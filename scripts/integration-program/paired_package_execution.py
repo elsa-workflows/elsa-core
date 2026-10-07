@@ -348,7 +348,13 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
             build_options["converter_decoder"] = converter_selection.prepare_decoder(
                 private / "converter-decoder", sdk, hosts.isolated_environment(layout))
         evidence["stage"] = "build"
-        commands = hosts.build(layout, **build_options)
+        def report_operation(component: str, phase: str) -> None:
+            require(component in {"sdk", "backend", "converter", *hosts.HOST_NAMES} and phase in {
+                "probe", "reuse_validation", "restore", "build", "decoder_validation", "build_command",
+                "trace_inventory", "decode_command", "decode_parse", "binding_validation",
+                "trace_revalidation", "selection_write"}, "Invalid build operation diagnostic")
+            evidence["last_build_operation"] = {"component": component, "phase": phase}
+        commands = hosts.build(layout, report_operation=report_operation, **build_options)
         evidence["commands"] = _command_receipts(commands, group)
         selections = [command["converter_selection"] for command in commands if "converter_selection" in command]
         require(len(selections) == (0 if host == "server" else 1), "Missing or ambiguous client converter selection")

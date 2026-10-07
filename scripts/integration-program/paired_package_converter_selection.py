@@ -16,6 +16,7 @@ import secrets
 import signal
 import subprocess
 import time
+from typing import Callable
 from zipfile import ZipFile
 
 import paired_package_provenance as provenance
@@ -314,15 +315,22 @@ def verify_decoded(decoded: dict, inventory: list[dict], package_cache: Path, sd
             "context_scope": "reported_target_bind_context"}
 
 
-def _decode(decoder: Path, capture: Path, inventory: list[dict], package_cache: Path, sdk: str, environment: dict) -> dict:
+def _decode(decoder: Path, capture: Path, inventory: list[dict], package_cache: Path, sdk: str, environment: dict,
+            report_operation: Callable[[str, str], None] = lambda _component, _phase: None) -> dict:
     # prepare_decoder verifies the reusable binary against its source/build hashes.
+    report_operation("converter", "decoder_validation")
     decoder = prepare_decoder(decoder.parents[3], sdk, environment)
     output = capture / ("decoded-" + secrets.token_hex(8) + "-private.json")
     env = {key: value for key, value in environment.items() if "EVENTPIPE" not in key.upper()}
     command = ["dotnet", str(decoder), *(str(capture / "traces" / row["file"]) for row in inventory)]
+    report_operation("converter", "decode_command")
     _owned_command(command, capture, env, output, 120)
     require(output.stat().st_size <= 4 * 1024 * 1024, "Converter decoder output exceeded bound")
-    result = verify_decoded(json.loads(output.read_text()), inventory, package_cache, sdk)
+    report_operation("converter", "decode_parse")
+    decoded = json.loads(output.read_text())
+    report_operation("converter", "binding_validation")
+    result = verify_decoded(decoded, inventory, package_cache, sdk)
+    report_operation("converter", "trace_revalidation")
     require(_trace_inventory(capture / "traces") == inventory, "Converter traces changed during decode")
     result["decoder"] = {"assembly_sha256": sha256(decoder),
                          "source_files_sha256": {path.name: sha256(regular_file(path)) for path in FIXTURE.iterdir()}}
@@ -331,7 +339,8 @@ def _decode(decoder: Path, capture: Path, inventory: list[dict], package_cache: 
 
 
 def capture_build(layout, project: Path, command: list[str], environment: dict, log_path: Path,
-                  decoder: Path, timeout_seconds: int = 1200) -> dict:
+                  decoder: Path, timeout_seconds: int = 1200, *,
+                  report_operation: Callable[[str, str], None] = lambda _component, _phase: None) -> dict:
     """Build through the normal slot wrapper and return command + portable selection.
 
     The decoder is prepared explicitly once by the run owner, not via an ambient
@@ -349,6 +358,7 @@ def capture_build(layout, project: Path, command: list[str], environment: dict, 
     # Reject stale conversion before preparing tools or creating capture output.
     webcil = project.parent / "obj" / "Release" / layout.request.framework / "webcil"
     require(not webcil.exists(), "Existing WebCIL intermediates require a fresh reviewed build group")
+    report_operation("converter", "decoder_validation")
     decoder = prepare_decoder(decoder.parents[3], layout.sdk, environment)
     capture = _private_directory(layout.group_root / ("converter-capture-" + secrets.token_hex(8)))
     _private_directory(capture / "traces")
@@ -358,9 +368,12 @@ def capture_build(layout, project: Path, command: list[str], environment: dict, 
     # Cold conversion is required when no verified build is reused. Timestamp
     # skips must not masquerade as observing the current converter implementation.
     require(not webcil.exists(), "Existing WebCIL intermediates require a fresh reviewed build group")
+    report_operation("converter", "build_command")
     result = _owned_command(build_command, project.parent, env, log_path, timeout_seconds)
+    report_operation("converter", "trace_inventory")
     inventory = _trace_inventory(capture / "traces")
-    selection = _decode(decoder, capture, inventory, layout.packages_root, layout.sdk, environment)
+    selection = _decode(decoder, capture, inventory, layout.packages_root, layout.sdk, environment, report_operation)
+    report_operation("converter", "selection_write")
     _write_private(capture / "selection.json", selection)
     marker = project.parent / "converter-selection-private.json"
     require(not marker.exists() and not marker.is_symlink(), "Refusing to replace converter selection")

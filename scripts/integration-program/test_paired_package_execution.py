@@ -349,7 +349,7 @@ class ExecutionContracts(unittest.TestCase):
         self.patch(execution.packages, "_validated_manifest", return_value=("3.10.0", "b" * 40, {"elsa": {"id": "Elsa"}}, {}, []))
         self.patch(execution.packages, "render_nuget_config", return_value="<configuration />")
         self.patch(execution.hosts, "materialize", side_effect=materialize)
-        self.patch(execution.hosts, "build", side_effect=lambda _: self.events.append(("build",)) or [])
+        self.patch(execution.hosts, "build", side_effect=lambda _, **_options: self.events.append(("build",)) or [])
         self.patch(execution, "_project_validator", return_value=validate)
         self.patch(execution, "_resource_inventory", side_effect=lambda *_: self.events.append(("resources",)) or {"assets": self.assets})
         self.patch(execution.hosts, "start_pair", side_effect=pair)
@@ -791,6 +791,30 @@ class ExecutionContracts(unittest.TestCase):
         receipt = json.loads((self.root / "retained/cells/3.10.0-net10.0-wasm/execution.json").read_text())
         self.assertEqual(selection, receipt["converter_selection"])
         self.assertFalse(any(event[0] == "start" for event in self.events))
+
+    def test_failed_build_retains_only_last_trusted_operation(self):
+        self.pipeline()
+        def fail(_layout, *, report_operation, **_options):
+            report_operation("backend", "restore")
+            report_operation("converter", "binding_validation")
+            raise ValueError("PRIVATE-PATH-TOKEN-LOG")
+        self.patch(execution.hosts, "build", side_effect=fail)
+        with self.assertRaises(ValueError):
+            self.execute()
+        self.assertEqual({"component": "converter", "phase": "binding_validation"},
+                         self.receipt()["last_build_operation"])
+        self.assertNotIn("PRIVATE", json.dumps(self.receipt()))
+        self.assertFalse(any(event[0] == "start" for event in self.events))
+
+    def test_untrusted_build_operation_fields_never_enter_receipt(self):
+        self.pipeline()
+        def fail(_layout, *, report_operation, **_options):
+            report_operation("PRIVATE-PATH", "PRIVATE-LOG")
+        self.patch(execution.hosts, "build", side_effect=fail)
+        with self.assertRaises(ValueError):
+            self.execute()
+        self.assertNotIn("last_build_operation", self.receipt())
+        self.assertNotIn("PRIVATE", json.dumps(self.receipt()))
 
     def test_group_cache_is_distinct_across_frameworks(self):
         self.pipeline()
