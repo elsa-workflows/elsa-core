@@ -15,6 +15,7 @@ from test_paired_package_released_documents import fixture_identity, write_relea
 from test_paired_package_browser_matrix import attach_embedding, attach_native_interop, attach_react_phase, bpmn_proof, clipboard_proof, direct_backend_proof, reopen_row
 from test_paired_package_wasm_boot import boot_receipt_fixture
 from test_paired_package_workflow_contexts import contexts_proof
+from test_paired_package_secrets import secrets_proof
 from test_paired_package_browser_secrets_endpoint import assembly_inventory, valid_observations
 
 
@@ -297,7 +298,7 @@ class ExecutionContracts(unittest.TestCase):
         self.events = []
         self.record = {"version": self.key[0], "framework": self.key[1], "host": self.key[2],
                        "result": "passed", "resources": [],
-                       "proof": {"workflow_contexts": contexts_proof(),
+                       "proof": {"workflow_contexts": contexts_proof(), "secrets": secrets_proof(),
                                  "baseline_reopens": [reopen_row(version) for version in execution.documents.TOOL_VERSIONS],
                                  "instance_id_sha256": "a" * 64, "value_sha256": "b" * 64,
                                  "bpmn_roundtrip": bpmn_proof(), "clipboard": clipboard_proof("a" * 64, "b" * 64)},
