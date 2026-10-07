@@ -73,12 +73,14 @@ The retained directory permits only:
 - `matrix.json`;
 - `cells/VERSION-FRAMEWORK-HOST/execution.json` and `browser.json` for known
   matrix identities;
+- `cells/3.10.0-FRAMEWORK-HOST/react-phase.json` only for Server, standalone
+  WASM and hosted WASM, bound to the exact unchanged X6 browser receipt;
 - `cells/VERSION-FRAMEWORK-HOST/released-document.json` only for a passing
   3.8.4 or 3.9.0 source cell, after strict synthetic-content validation and
   binding to its fixture, browser, package, runtime and resource evidence.
 
 The original browser receipt is preserved unchanged. The combined matrix
-result adds independently verified package/resource and released-export assertions after
+result adds independently verified package/resource, React-phase and released-export assertions after
 owned-process cleanup; it cannot promote a failed browser result. Per-cell
 execution receipts record the stage and bounded failure category when execution
 stops. The pre-upload inventory guard rejects unexpected files, directories,
@@ -107,6 +109,24 @@ Import action to open its real file chooser and complete import/save callbacks.
 Receipts contain hashes and bounded checks, never raw candidate documents. These
 protocols still require actual browser verification; they do not certify the
 separate CustomElements embedding journey.
+
+Candidate full-shell execution keeps one backend alive while running X6 and then
+React in separate Studio processes and fresh browser contexts. The second phase
+requires X6 authentication, identity, edit/save/reload and cleanup evidence first.
+It finds the same synthetic workflow through the native definitions list, selects
+the activity in React, changes its literal through the native property editor,
+saves and reloads it, and confirms the original definition/root/activity identities.
+Read-only backend observations verify the before/after values. The second browser
+must request the exact original React bundle bytes. No HTTP write substitutes for
+the native editor callbacks.
+
+`react-phase.json` holds bounded checks, hashes and its own resource observations.
+The combined matrix verifies both phases' resources against the same inventory;
+`browser.json` stays unchanged. The upload guard binds the exact bytes of both
+receipts to execution and matrix summaries, including the original workflow
+identities and the changed value. Partial failed phases may be retained but cannot
+pass the matrix. These protocol checks do not substitute for actual browser runs;
+CustomElements React coverage remains required and pending.
 
 Private build logs, caches, credentials, runtime data and browser state remain
 under `private/` and are not uploaded. An inventory-approved file is not proof

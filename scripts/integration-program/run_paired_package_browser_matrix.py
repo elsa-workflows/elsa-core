@@ -378,7 +378,11 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     hashes = {"definition_id_sha256", "root_id_sha256", "activity_id_sha256", "value_sha256", "synthetic_document_sha256", "instance_id_sha256", "released_document_sha256"}
     flags = {"login_failure_visible", "login_form_visible", "server_circuit_observed", "server_render_frames_observed", "elsa_identity_ui_visible", "expected_auth_provider_observed", "interactive_validation_observed", "private_input_values_retained", "initial_list_navigation_completed", "editor_ready_observed"}
     counts = {"create_name_label_count", "create_name_textbox_count"}
-    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens", "bpmn_roundtrip", "clipboard", "direct_backend", "wasm_boot", "json_roundtrip", "dom_interop"}, "Unsafe browser proof field")
+    require(set(proof) <= hashes | flags | counts | {"last_completed_stage", "baseline_reopens", "bpmn_roundtrip", "clipboard", "direct_backend", "wasm_boot", "json_roundtrip", "dom_interop", "reactflow"}, "Unsafe browser proof field")
+    require("reactflow" not in proof or record["version"] == "3.10.0" and record["host"] in NATIVE_JSON_HOSTS,
+            "Unexpected React phase proof")
+    require(not assertions_by_name.get("reactflow_edit_save", False) or "reactflow" in proof,
+            "Missing independent React phase proof for passed assertion")
     require("wasm_boot" not in proof or record["host"] == "wasm" and record["framework"] == "net10.0",
             "Unexpected standalone WASM boot proof")
     require(not assertions_by_name.get("wasm_boot", False) or record["host"] != "wasm" or "wasm_boot" in proof,
@@ -403,6 +407,10 @@ def validate_browser_receipt(record: dict, key: tuple[str, str, str]) -> dict:
     require(not assertions_by_name.get("dom_interop", False) or "dom_interop" in proof,
             "Missing native DOM proof for passed assertion")
     for name, value in proof.items():
+        if name == "reactflow":
+            from paired_package_react_phase import validate_react_phase_summary
+            validate_react_phase_summary(value, assertions_by_name["reactflow_edit_save"], proof, key)
+            continue
         if name == "wasm_boot":
             from paired_package_wasm_boot import validate_boot_receipt
             validate_boot_receipt(value, assertions_by_name["wasm_boot"], record.get("resources", []),
@@ -781,6 +789,9 @@ def run_browser(handle, request, resources: list[dict], *, timeout: int = 240,
         raise ValueError("Browser process failed to return a safe receipt") from None
     require(isinstance(record, dict) and all(key in record for key in ("host", "framework", "version")) and identity(record) == identity(cell), "Browser process returned an invalid cell")
     record = validate_browser_receipt(record, identity(cell))
+    require("reactflow" not in record.get("proof", {})
+            and not any(item["name"] == "reactflow_edit_save" and item["passed"] for item in record["assertions"]),
+            "X6 browser child cannot supply the independent React phase proof")
     if cell["host"] == "wasm":
         from paired_package_wasm_boot import validate_boot_request_binding
         validate_boot_request_binding(record, resources, cell["framework"])

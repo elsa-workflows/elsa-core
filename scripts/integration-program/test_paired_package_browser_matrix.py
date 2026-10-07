@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 import consolidated_candidate_input as candidate
 import paired_package_released_documents as documents
+import paired_package_react_phase as react_phase
 from test_paired_package_released_documents import fixture_identity, write_released_fixture
 
 import run_paired_package_browser_matrix as matrix
@@ -82,6 +83,25 @@ def attach_native_interop(record):
     proof.update(json_roundtrip=value, dom_interop=dom_proof(value))
 
 
+def attach_react_phase(record):
+    """Synthetic combined evidence only; an X6 child never owns this summary."""
+    if record["host"] not in matrix.NATIVE_JSON_HOSTS:
+        assertion(record, "reactflow_edit_save", False)
+        record["result"] = "incomplete"
+        return
+    source = copy.deepcopy(record)
+    source["proof"].pop("reactflow", None)
+    assertion(source, "reactflow_edit_save", False)
+    source["result"] = "incomplete"
+    record["proof"]["reactflow"] = {
+        "source_browser_sha256": react_phase.browser_receipt_sha256(source),
+        "phase_receipt_sha256": "c" * 64,
+        "checks": dict.fromkeys(react_phase.CHECKS, True),
+        "hashes": {name: source["proof"][parent] for name, parent in react_phase.BEFORE_HASHES.items()} |
+                  {"after_value_sha256": react_phase.AFTER_VALUE_SHA256},
+    }
+
+
 def tsx_command(script):
     local = matrix.JOURNEY.parent / "node_modules/.bin/tsx"
     executable = local if local.is_file() else shutil.which("tsx")
@@ -123,6 +143,7 @@ class MatrixContracts(unittest.TestCase):
                                       bpmn_roundtrip=bpmn_proof(),
                                       clipboard=clipboard_proof(instance_hash, value_hash))
                 attach_native_interop(cell)
+                attach_react_phase(cell)
 
     def released_inputs(self, root):
         inputs = []
@@ -202,6 +223,16 @@ class MatrixContracts(unittest.TestCase):
     def test_node_json_roundtrip_checks_native_document_semantics(self):
         self.run_node_contract("json-roundtrip.contract.ts", "JSON roundtrip contracts passed")
 
+    def test_original_child_cannot_supply_combined_react_claim(self):
+        key = ("3.10.0", "net10.0", "server")
+        record = copy.deepcopy(next(cell for cell in self.ledger["cells"] if matrix.identity(cell) == key))
+        with patch.object(matrix, "_run_browser_process", return_value=SimpleNamespace(stdout=json.dumps(record), returncode=0)):
+            with self.assertRaisesRegex(ValueError, "X6 browser child"):
+                matrix.run_browser(self.handle, dict(zip(("version", "framework", "host"), key)), [])
+        record["proof"].pop("reactflow")
+        with self.assertRaisesRegex(ValueError, "Missing independent React"):
+            matrix.validate_browser_receipt(record, key)
+
     def test_node_direct_backend_contract_requires_native_auth_and_cors(self):
         self.run_node_contract("direct-backend.contract.ts", "direct backend observer contracts passed")
 
@@ -234,6 +265,9 @@ class MatrixContracts(unittest.TestCase):
             inputs = self.released_inputs(Path(directory))
             payload = matrix._released_inputs(key, inputs)
             record = copy.deepcopy(next(cell for cell in self.ledger["cells"] if matrix.identity(cell) == key))
+            record["proof"].pop("reactflow")
+            assertion(record, "reactflow_edit_save", False)
+            record["result"] = "incomplete"
             rows = record["proof"]["baseline_reopens"]
             for row, item in zip(rows, payload):
                 document = item["binding"]["document"]
@@ -353,6 +387,7 @@ class MatrixContracts(unittest.TestCase):
                                           "actual_value_sha256": value_hash,
                                           "native_copy_observed": True})
         attach_native_interop(record)
+        attach_react_phase(record)
         self.assertEqual(record, matrix.validate_browser_receipt(record, key))
 
     def test_clipboard_partial_failure_is_sanitized_and_never_promoted(self):
@@ -368,6 +403,7 @@ class MatrixContracts(unittest.TestCase):
                                           "expected_value_sha256": value_hash,
                                           "native_copy_observed": False}
         attach_native_interop(record)
+        attach_react_phase(record)
         self.assertEqual(record, matrix.validate_browser_receipt(record, key))
 
     def test_clipboard_proof_rejects_raw_fields_hash_mismatch_and_false_claims(self):
@@ -383,6 +419,7 @@ class MatrixContracts(unittest.TestCase):
                                          "actual_value_sha256": value_hash,
                                          "native_copy_observed": True})
         attach_native_interop(base)
+        attach_react_phase(base)
         mutations = [
             lambda r: r["proof"].pop("clipboard"),
             lambda r: r["proof"]["clipboard"].update(raw_value="private"),
@@ -422,7 +459,7 @@ class MatrixContracts(unittest.TestCase):
                 self.assertEqual({"wasm_boot"}, failed)
                 pending += 1
             elif cell["version"] == "3.10.0" and cell["host"] == "custom-elements":
-                self.assertEqual({"json_roundtrip", "dom_interop"}, failed)
+                self.assertEqual({"json_roundtrip", "dom_interop", "reactflow_edit_save"}, failed)
                 pending += 1
             else:
                 self.assertFalse(failed)

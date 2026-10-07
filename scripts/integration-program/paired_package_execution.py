@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+from contextlib import ExitStack
 import hashlib
 import os
 import json
@@ -23,6 +24,7 @@ import paired_package_baseline_resources as baseline_resources
 import paired_package_converter_selection as converter_selection
 import paired_package_provenance as provenance
 import paired_package_released_documents as documents
+import paired_package_react_phase as react_phase
 import paired_package_wasm_resources as wasm_resources
 import prove_consolidated_package_consumers as packages
 import run_paired_package_browser_matrix as browser
@@ -314,12 +316,14 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
     request = cell_request(key)
     cell_root = retained / "cells" / f"{version}-{framework}-{host}"
     evidence = {"schema": 1, "version": version, "framework": framework, "host": host,
+                "route_prefix": request.route_prefix,
                 "execution_sdk": sdk, "result": "failed", "stage": "evidence_preflight",
                 "requested_backend_features": list(request.backend_features),
                 "permission_profile": request.permission_profile,
                 "feature_policy": ("candidate_representative_features" if version == candidate.PRODUCER["version"]
                                    else "released_shell_editor_export_contexts_only")}
     original_browser = None
+    react_receipt = None
     released_output = None
     try:
         evidence["missing_evidence"] = evidence_gaps(request)
@@ -364,29 +368,66 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
             released_output = document_root / "released-document.json"
         runtime_failed = False
         browser_cleanup_verified = True
-        with hosts.start_pair(layout, validate_project=validate) as handle:
-            try:
-                evidence["stage"] = "runtime_readiness"
-                evidence["runtime_readiness"] = _observe_ready(handle, request)
-                evidence["stage"] = "browser_execution"
-                options = {"released_document_output": released_output} if released_output is not None else {}
-                if inputs is not None:
-                    options["released_document_inputs"] = inputs
-                child = browser.run_browser(handle, request, inventory["assets"], **options)
-                # Validate before any returned child data enters portable evidence.
-                original_browser = browser.validate_browser_receipt(child, key)
-                evidence["stage"] = "loaded_assemblies"
-                evidence["loaded_assemblies"] = _verify_loaded(layout, _observe_loaded(handle, layout), verified_root, manifest)
-            except browser.BrowserCleanupUnverified:
-                runtime_failed = True
-                browser_cleanup_verified = False
-            except Exception:
-                runtime_failed = True
+        dual_designer = version == candidate.PRODUCER["version"] and host in browser.NATIVE_JSON_HOSTS
+        with ExitStack() as runtime:
+            owner = (runtime.enter_context(hosts.start_designer_phases(layout, validate_project=validate))
+                     if dual_designer else None)
+            primary = owner.phase("x6") if owner else hosts.start_pair(layout, validate_project=validate)
+            with primary as handle:
+                try:
+                    evidence["stage"] = "runtime_readiness"
+                    evidence["runtime_readiness"] = _observe_ready(handle, request)
+                    evidence["stage"] = "browser_execution"
+                    options = {"released_document_output": released_output} if released_output is not None else {}
+                    if inputs is not None:
+                        options["released_document_inputs"] = inputs
+                    child = browser.run_browser(handle, request, inventory["assets"], **options)
+                    # Validate before any returned child data enters portable evidence.
+                    original_browser = browser.validate_browser_receipt(child, key)
+                    evidence["stage"] = "loaded_assemblies"
+                    evidence["loaded_assemblies"] = _verify_loaded(layout, _observe_loaded(handle, layout), verified_root, manifest)
+                    if owner:
+                        evidence["stage"] = "react_source_binding"
+                        # Fail before launching a second Studio if X6 did not
+                        # establish the workflow and cleanup required by React.
+                        react_phase.source_bindings(request, original_browser)
+                except browser.BrowserCleanupUnverified:
+                    runtime_failed = True
+                    browser_cleanup_verified = False
+                except Exception:
+                    runtime_failed = True
+            if owner and not runtime_failed:
+                evidence["stage"] = "react_runtime"
+                with owner.phase("react-flow") as react_handle:
+                    try:
+                        require(handle.process_ids and react_handle.process_ids
+                                and handle.process_ids[0] == react_handle.process_ids[0]
+                                and all(getattr(handle, name) == getattr(react_handle, name) for name in
+                                        ("studio_url", "backend_url", "username", "password", "safe_ids")),
+                                "Designer phase runtime continuity differs")
+                        readiness = _observe_ready(react_handle, request)
+                        require(readiness == evidence["runtime_readiness"], "Designer phase backend readiness changed")
+                        evidence["react_runtime_continuity"] = True
+                        evidence["stage"] = "react_browser_execution"
+                        child = react_phase.run_react_phase(react_handle, request, inventory["assets"], original_browser)
+                        react_receipt = react_phase.validate_react_phase_receipt(child, request, original_browser, inventory["assets"])
+                        evidence["react_phase"] = react_phase.summarize_react_phase(react_receipt)
+                        evidence["stage"] = "react_loaded_assemblies"
+                        evidence["react_loaded_assemblies"] = _verify_loaded(
+                            layout, _observe_loaded(react_handle, layout), verified_root, manifest)
+                    except browser.BrowserCleanupUnverified:
+                        runtime_failed = True
+                        browser_cleanup_verified = False
+                    except Exception:
+                        runtime_failed = True
         # Host context cleanup does not establish browser descendant cleanup.
         # If either is uncertain, never retain a successful combined claim.
         evidence["owned_process_cleanup"] = browser_cleanup_verified
         require(not runtime_failed, "Owned runtime did not produce valid evidence")
         record = copy.deepcopy(original_browser)
+        if react_receipt is not None:
+            record["resources"].extend(copy.deepcopy(react_receipt["resources"]))
+            record.setdefault("proof", {})["reactflow"] = evidence["react_phase"]
         evidence["stage"] = "browser_resources"
         prefix = "/" + request.route_prefix if request.route_prefix else ""
         evidence["browser_resources"] = resources.verify_browser_resources(inventory["assets"], record["resources"],
@@ -402,6 +443,9 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
             if assertion["name"] in {"package_provenance", "browser_resources"} or (
                     assertion["name"] == "released_document" and released_output is not None):
                 assertion.update(passed=True, reason_category=None)
+            if assertion["name"] == "reactflow_edit_save" and react_receipt is not None:
+                passed = react_receipt["result"] == "passed"
+                assertion.update(passed=passed, reason_category=None if passed else "not_implemented")
         # A child computes its result before Python-owned provenance checks. Its
         # original receipt stays immutable; only a complete, nonfailed combined
         # result can pass the matrix after the owned cleanup above.
@@ -426,6 +470,9 @@ def execute_cell(key, *, private: Path, retained: Path, verified_root: Path, man
         _write(cell_root / "execution.json", evidence)
         if original_browser is not None:
             _write(cell_root / "browser.json", browser.validate_browser_receipt(original_browser, key))
+        if react_receipt is not None:
+            _write(cell_root / "react-phase.json", react_phase.validate_react_phase_receipt(
+                react_receipt, request, original_browser, evidence["resource_inventory"]["assets"]))
 
 
 def run(inputs: Path, candidate_artifacts: Path, output: Path, *, fixture_source: str,

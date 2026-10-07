@@ -43,5 +43,6 @@ each phase and separately bind their receipts. The owner checks process birth
 identities and descendant cleanup before admitting the next phase; uncertain
 ownership or cleanup prevents continuation. Its lifetime includes startup and is
 bounded to 600 seconds. This API supports the three full-shell host layouts;
-CustomElements remains separate. The execution/receipt composition and real
-React edit/save journey are still pending integration and runtime verification.
+CustomElements remains separate. Candidate full-shell execution uses this owner
+for the original X6 journey followed by a separate React edit/save/reload browser
+phase. Actual browser verification of the composed journey remains pending.

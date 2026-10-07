@@ -1,5 +1,6 @@
 import copy
 from contextlib import contextmanager
+from dataclasses import replace
 import json
 from pathlib import Path
 import tempfile
@@ -9,8 +10,9 @@ from unittest.mock import patch
 
 import paired_package_execution as execution
 import paired_package_wasm_boot as boot
+from test_paired_package_react_phase import phase_fixture
 from test_paired_package_released_documents import fixture_identity, write_released_fixture
-from test_paired_package_browser_matrix import attach_native_interop, bpmn_proof, clipboard_proof, direct_backend_proof, reopen_row
+from test_paired_package_browser_matrix import attach_native_interop, attach_react_phase, bpmn_proof, clipboard_proof, direct_backend_proof, reopen_row
 from test_paired_package_wasm_boot import boot_receipt_fixture
 
 
@@ -248,6 +250,10 @@ class ExecutionContracts(unittest.TestCase):
                        "assertions": [{"name": name, "passed": True, "reason_category": None}
                                       for name in execution.browser.required_assertions(dict(zip(("version", "framework", "host"), self.key)))]}
         attach_native_interop(self.record)
+        self.record["result"] = "incomplete"
+        next(item for item in self.record["assertions"] if item["name"] == "reactflow_edit_save").update(
+            passed=False, reason_category="not_implemented")
+        _, _, self.assets, _ = phase_fixture()
         self.layout = SimpleNamespace(request=execution.hosts.CellRequest("server", "net10.0", "3.10.0"),
                                       project_paths={"backend": self.root / "backend.csproj", "server": self.root / "server.csproj"})
 
@@ -288,9 +294,21 @@ class ExecutionContracts(unittest.TestCase):
             for project in layout.project_paths.values():
                 validate_project(project)
             try:
-                yield SimpleNamespace(password="PRIVATE-MUST-NOT-BE-RETAINED", backend_url="http://127.0.0.1:4000/elsa/api")
+                yield SimpleNamespace(request=layout.request, password="PRIVATE-MUST-NOT-BE-RETAINED",
+                    backend_url="http://127.0.0.1:4000/elsa/api", studio_url="http://127.0.0.1:4001/",
+                    username="private-user", safe_ids={"definition_name": "private-name"}, process_ids=(42, 43))
             finally:
                 self.events.append(("stop",))
+        @contextmanager
+        def phases(layout, **options):
+            @contextmanager
+            def phase(mode):
+                self.events.append(("phase", mode))
+                with execution.hosts.start_pair(layout, **options) as handle:
+                    handle.request = replace(layout.request, designer_mode=mode)
+                    yield handle
+            yield SimpleNamespace(phase=phase)
+        self.designer_owner = self.patch(execution.hosts, "start_designer_phases", side_effect=phases)
         self.patch(execution, "evidence_gaps", return_value=[])
         self.patch(execution, "released_document_inputs", return_value=[])
         self.patch(execution.packages, "_validated_manifest", return_value=("3.10.0", "b" * 40, {"elsa": {"id": "Elsa"}}, {}, []))
@@ -298,7 +316,7 @@ class ExecutionContracts(unittest.TestCase):
         self.patch(execution.hosts, "materialize", side_effect=materialize)
         self.patch(execution.hosts, "build", side_effect=lambda _: self.events.append(("build",)) or [])
         self.patch(execution, "_project_validator", return_value=validate)
-        self.patch(execution, "_resource_inventory", side_effect=lambda *_: self.events.append(("resources",)) or {"assets": []})
+        self.patch(execution, "_resource_inventory", side_effect=lambda *_: self.events.append(("resources",)) or {"assets": self.assets})
         self.patch(execution.hosts, "start_pair", side_effect=pair)
         self.patch(execution, "_json_request", side_effect=lambda *_args, **_kwargs:
                    self.events.append(("ready",)) or self.readiness())
@@ -310,6 +328,14 @@ class ExecutionContracts(unittest.TestCase):
                 row["source_cell"].update(framework=request.framework, host=request.host)
             return record
         browser = self.patch(execution.browser, "run_browser", side_effect=run_browser)
+        def run_react(_handle, request, _assets, original):
+            self.events.append(("react_browser",))
+            _, _, _, receipt = phase_fixture(request.host, request.framework)
+            receipt["source_browser_sha256"] = execution.react_phase.browser_receipt_sha256(original)
+            receipt["hashes"].update({name: original["proof"][parent]
+                                     for name, parent in execution.react_phase.BEFORE_HASHES.items()})
+            return receipt
+        self.react_browser = self.patch(execution.react_phase, "run_react_phase", side_effect=run_react)
         self.patch(execution, "_observe_loaded", side_effect=lambda *_: self.events.append(("observe",)) or {})
         self.patch(execution, "_verify_loaded", side_effect=lambda *_: self.events.append(("loaded",)) or {})
         self.patch(execution.resources, "verify_browser_resources", side_effect=lambda *_args, **_kw: self.events.append(("resource_check",)) or {})
@@ -528,7 +554,8 @@ class ExecutionContracts(unittest.TestCase):
         record = json.loads((self.root / "retained/cells/3.10.0-net10.0-server/browser.json").read_text())
         self.assertEqual("incomplete", record["result"])
         self.assertFalse(next(item for item in record["assertions"] if item["name"] == "x6_edit_save_reload")["passed"])
-        self.assertEqual("browser_contract", self.receipt()["stage"])
+        self.assertEqual("react_source_binding", self.receipt()["stage"])
+        self.react_browser.assert_not_called()
         self.assertEqual("failed", self.receipt()["result"])
 
     def test_verified_python_assertions_complete_cell_without_mutating_child_receipt(self):
@@ -545,6 +572,81 @@ class ExecutionContracts(unittest.TestCase):
         self.assertEqual(original, retained)
         self.assertEqual(original, self.record)
         self.assertTrue(self.receipt()["owned_process_cleanup"])
+        cell = self.root / "retained/cells/3.10.0-net10.0-server"
+        self.assertEqual((json.dumps(original, indent=2, sort_keys=True) + "\n").encode(),
+                         (cell / "browser.json").read_bytes())
+        phase = json.loads((cell / "react-phase.json").read_text())
+        self.assertEqual(execution.react_phase.browser_receipt_sha256(original), phase["source_browser_sha256"])
+        self.assertEqual(original["resources"] + phase["resources"], combined["resources"])
+        self.assertEqual(self.receipt()["react_phase"], combined["proof"]["reactflow"])
+        self.assertEqual([("phase", "x6"), ("phase", "react-flow")],
+                         [event for event in self.events if event[0] == "phase"])
+
+    def test_react_failure_retains_original_but_never_promotes_combined_claim(self):
+        self.pipeline()
+        successful = self.react_browser.side_effect
+        def failed(*args):
+            phase = successful(*args)
+            phase.update(result="failed", failure_category=execution.react_phase.FAILURE)
+            phase["checks"]["identity_preserved"] = False
+            return phase
+        self.react_browser.side_effect = failed
+        with self.assertRaises(ValueError):
+            self.execute()
+        cell = self.root / "retained/cells/3.10.0-net10.0-server"
+        self.assertEqual(self.record, json.loads((cell / "browser.json").read_text()))
+        self.assertEqual("failed", json.loads((cell / "react-phase.json").read_text())["result"])
+        self.assertEqual("failed", self.receipt()["result"])
+
+    def test_react_cleanup_uncertainty_cannot_be_overwritten_by_host_cleanup(self):
+        self.pipeline()
+        self.react_browser.side_effect = execution.browser.BrowserCleanupUnverified("PRIVATE")
+        with self.assertRaises(ValueError):
+            self.execute()
+        self.assertFalse(self.receipt()["owned_process_cleanup"])
+        self.assertEqual("react_browser_execution", self.receipt()["stage"])
+        self.assertNotIn("PRIVATE", json.dumps(self.receipt()))
+        self.assertEqual(self.record, json.loads((self.root / "retained/cells/3.10.0-net10.0-server/browser.json").read_text()))
+
+    def test_react_readiness_change_stops_before_second_browser(self):
+        self.pipeline()
+        self.patch(execution, "_observe_ready", side_effect=[self.readiness(), {**self.readiness(), "runtime": ".NET 10.0.9"}])
+        with self.assertRaises(ValueError):
+            self.execute()
+        self.react_browser.assert_not_called()
+        self.assertEqual("react_runtime", self.receipt()["stage"])
+        self.assertNotIn("react_runtime_continuity", self.receipt())
+
+    def test_changed_backend_identity_prevents_react_browser_and_retains_no_private_values(self):
+        self.pipeline()
+        original_owner = self.designer_owner.side_effect
+        @contextmanager
+        def changed_owner(*args, **options):
+            with original_owner(*args, **options) as owner:
+                @contextmanager
+                def phase(mode):
+                    with owner.phase(mode) as handle:
+                        if mode == "react-flow":
+                            handle.process_ids = (99, 100)
+                            handle.password = "PRIVATE-CHANGED"
+                        yield handle
+                yield SimpleNamespace(phase=phase)
+        self.designer_owner.side_effect = changed_owner
+        with self.assertRaises(ValueError):
+            self.execute()
+        self.react_browser.assert_not_called()
+        self.assertNotIn("PRIVATE", json.dumps(self.receipt()))
+        self.assertNotIn("react_runtime_continuity", self.receipt())
+
+    def test_invalid_react_private_fields_are_not_retained(self):
+        self.pipeline()
+        successful = self.react_browser.side_effect
+        self.react_browser.side_effect = lambda *args: dict(successful(*args), password="PRIVATE")
+        with self.assertRaises(ValueError):
+            self.execute()
+        self.assertNotIn("react_phase", self.receipt())
+        self.assertFalse((self.root / "retained/cells/3.10.0-net10.0-server/react-phase.json").exists())
+        self.assertNotIn("PRIVATE", json.dumps(self.receipt()))
 
     def test_failed_child_cannot_be_promoted_even_with_all_true_assertions(self):
         self.pipeline()
@@ -591,7 +693,11 @@ class ExecutionContracts(unittest.TestCase):
     def test_resource_failure_retains_safe_browser_without_granting_assertions(self):
         self.pipeline()
         next(item for item in self.record["assertions"] if item["name"] == "browser_resources").update(passed=False, reason_category="not_implemented")
-        self.patch(execution.resources, "verify_browser_resources", side_effect=RuntimeError("PRIVATE-RESOURCE-PATH"))
+        def reject_observed(_assets, observed, **_options):
+            if observed:
+                raise RuntimeError("PRIVATE-RESOURCE-PATH")
+            return {}
+        self.patch(execution.resources, "verify_browser_resources", side_effect=reject_observed)
         with self.assertRaises(ValueError):
             self.execute()
         record = json.loads((self.root / "retained/cells/3.10.0-net10.0-server/browser.json").read_text())
@@ -661,6 +767,7 @@ class ExecutionContracts(unittest.TestCase):
             return {"verified_artifacts_sha256": "a" * 64, "browser_execution": {}}
         def execute(key, **_kwargs):
             record = copy.deepcopy(self.record)
+            record["result"] = "passed"
             record.update(zip(("version", "framework", "host"), key))
             if key[0] == "3.10.0":
                 record["proof"]["baseline_reopens"] = [reopen_row(version, key[1], key[2])
@@ -680,6 +787,7 @@ class ExecutionContracts(unittest.TestCase):
                                      for name in execution.browser.required_assertions(record)]
             if key[0] == "3.10.0":
                 attach_native_interop(record)
+                attach_react_phase(record)
             return record
         self.patch(execution.browser, "prepare_candidate", side_effect=prepare)
         self.patch(execution.subprocess, "check_output", return_value="10.0.300\n")
@@ -698,7 +806,7 @@ class ExecutionContracts(unittest.TestCase):
                 self.assertFalse(any(cell["result"] == "not_run" for cell in ledger["cells"]))
                 self.assertTrue(all((cell["host"] == "wasm" and cell["framework"] in ("net8.0", "net9.0")) or
                                     (cell["version"] == "3.10.0" and cell["host"] == "custom-elements") for cell in pending))
-                self.assertEqual({"wasm_boot", "json_roundtrip", "dom_interop"}, {item["name"] for cell in ledger["cells"] for item in cell["assertions"] if not item["passed"]})
+                self.assertEqual({"wasm_boot", "json_roundtrip", "dom_interop", "reactflow_edit_save"}, {item["name"] for cell in ledger["cells"] for item in cell["assertions"] if not item["passed"]})
             else:
                 ledger = run()
             # complete_matrix currently certifies acceptance, not merely visiting each cell.
