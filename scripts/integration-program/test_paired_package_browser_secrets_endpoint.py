@@ -2,25 +2,10 @@
 from __future__ import annotations
 
 import copy
-import re
 import unittest
 
 
-EXPECTED = {
-    ("GET", "/elsa/api/secrets/descriptors"): "Elsa.Secrets.Endpoints.Secrets.Descriptors.Endpoint",
-    ("POST", "/elsa/api/secrets/picker"): "Elsa.Secrets.Endpoints.Secrets.Picker.Endpoint",
-}
-OBSERVATION_FIELDS = {
-    "route",
-    "verb",
-    "handler_type",
-    "handler_assembly_name",
-    "handler_assembly_full_name",
-    "handler_assembly_sha256",
-    "status_code",
-    "failure_category",
-}
-
+from paired_package_secrets_endpoints import EXPECTED, validate_secrets_endpoint_evidence
 
 def assembly_inventory() -> list[dict]:
     return [
@@ -52,54 +37,21 @@ def valid_observations() -> list[dict]:
     ]
 
 
-def validate_secrets_endpoint_evidence(document: dict, assemblies: list[dict]) -> None:
-    if not isinstance(document, dict) or set(document) != {"schema", "truncated", "observations"}:
-        raise ValueError("Unexpected Secrets endpoint evidence envelope")
-    if type(document["schema"]) is not int or document["schema"] != 1 or document["truncated"] is not False:
-        raise ValueError("Incomplete Secrets endpoint evidence")
-    observations = document["observations"]
-    if not isinstance(observations, list):
-        raise ValueError("Invalid Secrets endpoint observations")
-
-    seen: set[tuple[str, str]] = set()
-    for item in observations:
-        if not isinstance(item, dict) or set(item) != OBSERVATION_FIELDS:
-            raise ValueError("Unexpected Secrets endpoint observation fields")
-        if item["failure_category"] is not None:
-            raise ValueError("Secrets endpoint metadata could not be bound")
-        if not isinstance(item["verb"], str) or not isinstance(item["route"], str):
-            raise ValueError("Invalid Secrets endpoint route identity")
-        route_key = (item["verb"], item["route"])
-        expected_handler = EXPECTED.get(route_key)
-        if expected_handler is None or item["handler_type"] != expected_handler:
-            raise ValueError("Unexpected Secrets endpoint owner")
-        if type(item["status_code"]) is not int or not 200 <= item["status_code"] < 300:
-            raise ValueError("Secrets endpoint did not complete successfully")
-        assembly_name = item["handler_assembly_name"]
-        assembly_full_name = item["handler_assembly_full_name"]
-        assembly_sha256 = item["handler_assembly_sha256"]
-        if (
-            not isinstance(assembly_name, str)
-            or not isinstance(assembly_full_name, str)
-            or not isinstance(assembly_sha256, str)
-            or not re.fullmatch(r"[0-9a-f]{64}", assembly_sha256)
-        ):
-            raise ValueError("Invalid Secrets handler assembly hash")
-        matches = [
-            assembly for assembly in assemblies
-            if assembly.get("name") == assembly_name
-            and assembly.get("fullName") == assembly_full_name
-            and assembly.get("sha256") == assembly_sha256
-        ]
-        if len(matches) != 1:
-            raise ValueError("Secrets handler assembly is not bound to loaded assembly inventory")
-        seen.add(route_key)
-
-    if seen != set(EXPECTED):
-        raise ValueError("Missing required Secrets endpoint observation")
-
-
 class SecretsEndpointEvidenceContracts(unittest.TestCase):
+    def test_rejects_noncanonical_loaded_assembly_and_unbounded_snapshot(self):
+        inventory = assembly_inventory()
+        inventory[0]["name"] = "Elsa.Unrelated"
+        rows = valid_observations()
+        for row in rows:
+            row["handler_assembly_name"] = "Elsa.Unrelated"
+        with self.assertRaises(ValueError):
+            validate_secrets_endpoint_evidence(
+                {"schema": 1, "truncated": False, "observations": rows}, inventory)
+        with self.assertRaises(ValueError):
+            validate_secrets_endpoint_evidence(
+                {"schema": 1, "truncated": False, "observations": valid_observations() * 33},
+                assembly_inventory())
+
     def test_both_native_routes_bind_to_loaded_handler_assembly_and_success_status(self):
         validate_secrets_endpoint_evidence(
             {"schema": 1, "truncated": False, "observations": valid_observations()},

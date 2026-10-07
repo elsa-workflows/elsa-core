@@ -191,11 +191,11 @@ static class SecretsEndpointObservationFactory
         }
 
         var assembly = RuntimeEvidence.GetLoadedElsaAssemblyIdentity(definition!.EndpointType.Assembly);
-        if (assembly is null)
+        if (assembly is null || assembly.Name != "Elsa.Secrets")
         {
             return new SecretsEndpointObservation(
                 target.RequestPath, target.Verb, null, null, null, null, null,
-                "handler_assembly_not_in_loaded_inventory");
+                "handler_assembly_not_canonical");
         }
 
         return new SecretsEndpointObservation(
