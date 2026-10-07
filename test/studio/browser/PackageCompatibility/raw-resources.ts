@@ -14,7 +14,7 @@ export type PausedResource = {
   requestId: string; request: { url: string }; responseStatusCode?: number;
   responseErrorReason?: string; responseHeaders?: Array<{ name: string; value: string }>;
 };
-type Command = 'Network.setCacheDisabled' | 'Fetch.enable' | 'Fetch.getResponseBody' | 'Fetch.continueResponse' | 'Fetch.disable';
+type Command = 'Network.enable' | 'Network.setCacheDisabled' | 'Fetch.enable' | 'Fetch.getResponseBody' | 'Fetch.continueResponse' | 'Fetch.disable';
 // A dedicated Playwright CDPSession satisfies this interface. Contracts inject a
 // fake transport; the module never creates requests or fulfills responses.
 export interface RawResourceSession {
@@ -71,6 +71,9 @@ class Capture implements RawResourceObserver {
       for (const suffix of ['', '\\?*']) patterns.push({ urlPattern: this.origin + path + suffix, requestStage: 'Response' });
     }
     this.session.on('Fetch.requestPaused', this.onPaused);
+    // This dedicated session must activate its own Network agent before its
+    // cache policy can participate in native request preparation.
+    await this.command('Network.enable');
     await this.command('Network.setCacheDisabled', { cacheDisabled: true });
     this.accepting = true;
     await this.command('Fetch.enable', { patterns });

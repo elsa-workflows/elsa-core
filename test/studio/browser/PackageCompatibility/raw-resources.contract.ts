@@ -58,7 +58,7 @@ async function fixture(body = original, options: RawResourceOptions = {}, sessio
   return { asset, session, observations, failures, observer };
 }
 function noOverrides(session: FakeSession): void {
-  const allowed = new Set(['Network.setCacheDisabled', 'Fetch.enable', 'Fetch.getResponseBody', 'Fetch.continueResponse', 'Fetch.disable', 'detach']);
+  const allowed = new Set(['Network.enable', 'Network.setCacheDisabled', 'Fetch.enable', 'Fetch.getResponseBody', 'Fetch.continueResponse', 'Fetch.disable', 'detach']);
   for (const call of session.calls) {
     assert(allowed.has(call.method));
     if (call.method === 'Fetch.continueResponse') assert.deepEqual(call.parameters, { requestId: call.parameters.requestId });
@@ -67,7 +67,8 @@ function noOverrides(session: FakeSession): void {
 
 {
   const value = await fixture();
-  assert.deepEqual(value.session.calls.slice(0, 2), [
+  assert.deepEqual(value.session.calls.slice(0, 3), [
+    { method: 'Network.enable', parameters: undefined },
     { method: 'Network.setCacheDisabled', parameters: { cacheDisabled: true } },
     { method: 'Fetch.enable', parameters: { patterns: [
       { urlPattern: studio + path, requestStage: 'Response' },
@@ -209,7 +210,7 @@ for (const method of ['Fetch.disable', 'detach']) {
   await assert.rejects(value.observer.stop(), /raw_resources_cleanup_failed/);
   assert.equal(value.session.listeners.size, 0);
 }
-for (const method of ['Network.setCacheDisabled', 'Fetch.enable'] as const) {
+for (const method of ['Network.enable', 'Network.setCacheDisabled', 'Fetch.enable'] as const) {
   const session = new FakeSession(); session.errors.add(method);
   await assert.rejects(fixture(original, {}, session), /raw_resources_setup_failed/);
   assert.equal(session.listeners.size, 0);
@@ -273,7 +274,7 @@ for (const method of ['Network.setCacheDisabled', 'Fetch.enable'] as const) {
   const value = await fixture(original, { stopTimeoutMs: 5 }), holding = deferred<any>();
   value.session.hook = method => ['Fetch.getResponseBody', 'Fetch.continueResponse'].includes(method) ? holding.promise : undefined;
   for (let i = 0; i < 1024; i++) value.session.emit(paused('flood-' + i));
-  assert.equal(value.session.calls.length, 514); // Two setup calls, at most 512 tracked requests.
+  assert.equal(value.session.calls.length, 515); // Three setup calls, at most 512 tracked requests.
   await assert.rejects(value.observer.stop(), /raw_resources_cleanup_failed/);
   holding.resolve(value.session.body); await tick();
   assert.equal(value.observations.length, 0);
