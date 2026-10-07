@@ -1,4 +1,5 @@
 using Elsa.Testing.Shared;
+using Elsa.Workflows.Activities;
 
 namespace Elsa.Workflows.Core.UnitTests.Services;
 
@@ -6,7 +7,7 @@ public class WorkflowExecutionScopeTests : IAsyncLifetime
 {
     private WorkflowExecutionContext _context = null!;
 
-    public async Task InitializeAsync() => _context = (await new ActivityTestFixture(new TestActivity()).BuildAsync()).WorkflowExecutionContext;
+    public async Task InitializeAsync() => _context = (await new ActivityTestFixture(new WriteLine("test")).BuildAsync()).WorkflowExecutionContext;
     public async Task DisposeAsync() => await ((IAsyncDisposable)_context.ServiceProvider).DisposeAsync();
 
     [Fact]

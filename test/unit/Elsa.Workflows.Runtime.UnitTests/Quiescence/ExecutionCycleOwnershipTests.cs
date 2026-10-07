@@ -25,7 +25,7 @@ namespace Elsa.Workflows.Runtime.UnitTests.Quiescence;
 public class ExecutionCycleOwnershipTests : IAsyncLifetime
 {
     private readonly ExecutionCycleRegistry _registry = new(Substitute.For<IIngressSourceRegistry>(), Substitute.For<ISystemClock>());
-    private readonly TestActivity _activity = new();
+    private readonly WriteLine _activity = new("test");
     private WorkflowExecutionContext _context = null!;
 
     public async Task InitializeAsync() => _context = (await new ActivityTestFixture(_activity).ConfigureServices(services => services.AddSingleton<IExecutionCycleRegistry>(_registry)).BuildAsync()).WorkflowExecutionContext;
