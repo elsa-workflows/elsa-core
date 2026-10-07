@@ -183,6 +183,41 @@ class BootstrapInventoryContracts(BootstrapFixture):
         self.layout.sdk = "10.0.999"
         with self.assertRaisesRegex(ValueError, "Unreviewed"):
             self.derive()
+        self.layout.sdk = boot.boot_policy("net10.0")["sdk_version"]
+        self.layout.request = hosts.CellRequest("server", "net10.0", "3.10.0")
+        with self.assertRaisesRegex(ValueError, "Unreviewed"):
+            self.derive()
+
+    def test_hosted_bootstrap_uses_only_the_exact_owned_wasm_client(self):
+        for framework in ("net8.0", "net9.0", "net10.0"):
+            with self.subTest(framework=framework):
+                self.prepare(framework)
+                standalone = self.derive()
+                wrapper = self.root / "projects/hosted-wasm/Elsa.Studio.Host.HostedWasm.csproj"
+                wrapper.parent.mkdir(parents=True)
+                wrapper.write_text('<Project Sdk="Microsoft.NET.Sdk.Web" />')
+                wrapper_manifest = wrapper.parent / f"obj/Release/{framework}/staticwebassets.build.json"
+                wrapper_manifest.parent.mkdir(parents=True)
+                wrapper_manifest.write_text(self.manifest.read_text())
+                other_client = self.root / "projects/custom-elements/Elsa.Studio.Host.CustomElements.csproj"
+                other_client.parent.mkdir(parents=True)
+                other_client.write_text('<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly" />')
+                self.layout.project_paths = {"wasm": self.project, "hosted-wasm": wrapper,
+                                             "custom-elements": other_client}
+                self.layout.request = hosts.CellRequest("hosted-wasm", framework, "3.10.0")
+
+                # Hosted serves the original WASM client's verified boot files.
+                self.assertEqual(standalone, self.derive())
+                with self.assertRaisesRegex(ValueError, "exact Release manifest"):
+                    boot.derive_boot_resources(self.layout, self.project, wrapper_manifest, self.managed)
+                with self.assertRaises(ValueError):
+                    boot.derive_boot_resources(self.layout, wrapper, wrapper_manifest, self.managed)
+                with self.assertRaisesRegex(ValueError, "exact owned WASM client"):
+                    boot.derive_boot_resources(self.layout, other_client, self.manifest, self.managed)
+
+                self.layout.request = hosts.CellRequest("hosted-wasm", framework, "3.10.0", route_prefix="tenant")
+                with self.assertRaisesRegex(ValueError, "Unreviewed"):
+                    self.derive()
 
     def test_manifest_source_metadata_and_delivery_mutations_reject(self):
         mutations = [lambda: self.rows[0].update(SourceType="Package"), lambda: self.rows[0].update(AssetKind="Build"),

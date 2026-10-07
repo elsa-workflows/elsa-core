@@ -196,10 +196,13 @@ def _source(role: dict, assets: dict, layout, project: Path, policy: dict = POLI
 def derive_boot_resources(layout, project: Path, build_manifest: Path, managed: dict) -> dict:
     framework = layout.request.framework
     policy = boot_policy(framework)
-    require(layout.request.host == "wasm" and layout.request.framework == policy["framework"] and
-            layout.sdk == policy["sdk_version"] and not layout.request.route_prefix,
+    require(layout.request.host in ("wasm", "hosted-wasm") and layout.request.framework == policy["framework"] and
+            layout.sdk == policy["sdk_version"] and layout.request.route_prefix == "",
             "Unreviewed standalone WASM bootstrap framework/SDK/host")
     project = managed_resources._owned_project(layout, project)
+    wasm_project = layout.project_paths.get("wasm")
+    require(wasm_project is not None and project == provenance.regular_file(Path(wasm_project).absolute()),
+            "Bootstrap requires the exact owned WASM client project")
     require(project.stem == policy["main_assembly"], "Unexpected standalone WASM entry assembly")
     expected_manifest = project.parent / "obj/Release" / policy["framework"] / "staticwebassets.build.json"
     require(provenance.regular_file(build_manifest.absolute()) == expected_manifest.resolve(), "Bootstrap requires the exact Release manifest")
