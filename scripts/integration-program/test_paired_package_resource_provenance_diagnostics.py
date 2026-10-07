@@ -29,7 +29,10 @@ class ResourceProvenanceDiagnosticsTests(unittest.TestCase):
             ("Missing package proof input", "static_input_missing"),
             ("Unowned Elsa source browser asset", "static_source_unowned"),
             ("Missing mandatory materialized Designer/DomInterop assets", "static_mandatory_assets_missing"),
-            ("Materialized browser asset differs from sealed package member", "static_member_bytes_mismatch")):
+            ("Materialized browser asset differs from sealed package member", "static_member_bytes_mismatch"),
+            ("Inherited client asset paths differ", "fixture_path_mismatch"),
+            ("Inherited fixture lacks completed client build", "fixture_build_incomplete"),
+            ("Inherited client asset bytes differ", "fixture_bytes_mismatch")):
             with self.subTest(code=code):
                 self.assertEqual({"stage": "static", "code": code},
                                  diagnostics.resource_failure_receipt("static", ValueError(message)))

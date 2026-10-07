@@ -205,11 +205,14 @@ class ResourceInventoryContracts(unittest.TestCase):
                 static_owner = execution.resources if candidate else execution.baseline_resources
                 static_name = "derive_candidate_resources" if candidate else "derive_baseline_resources"
                 managed_name = "derive_candidate_wasm_resources" if candidate else "derive_baseline_wasm_resources"
-                with self.subTest(version=version, host=host), patch.object(static_owner, static_name, return_value=static), \
+                with self.subTest(version=version, host=host), patch.object(static_owner, static_name, return_value=static) as static_derive, \
                         patch.object(execution.wasm_resources, managed_name, return_value=managed) as derive, \
                         patch.object(boot, "derive_boot_resources", return_value=self.bootstrap) as derive_boot:
                     converter = {"task_sha256": "c" * 64}
                     result = execution._resource_inventory(layout, Path("/verified"), "d" * 64, converter=converter)
+                    self.assertEqual(host == "hosted-wasm", "hosted_layout" in static_derive.call_args.kwargs)
+                    if host == "hosted-wasm":
+                        self.assertIs(layout, static_derive.call_args.kwargs["hosted_layout"])
                     expected_static = copy.deepcopy(static["assets"])
                     next(asset for asset in expected_static if asset["path"].endswith(self.STYLESHEET))["required"] = False
                     expected_boot = self.bootstrap["assets"] if host == "wasm" else []

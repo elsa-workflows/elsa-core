@@ -262,13 +262,14 @@ def _resource_inventory(layout, verified_root: Path, manifest_hash: str, *, conv
     project = layout.project_paths[layout.request.host]
     build_manifest = project.parent / "obj" / "Release" / layout.request.framework / "staticwebassets.build.json"
     prefix = "/" + layout.request.route_prefix if layout.request.route_prefix else ""
+    static_options = {"hosted_layout": layout} if layout.request.host == "hosted-wasm" else {}
     if layout.request.version == candidate.PRODUCER["version"]:
         static = bounded("static", lambda: resources.derive_candidate_resources(
             build_manifest, verified_root, layout.packages_root,
-            verified_manifest_sha256=manifest_hash, route_prefix=prefix))
+            verified_manifest_sha256=manifest_hash, route_prefix=prefix, **static_options))
     else:
         static = bounded("static", lambda: baseline_resources.derive_baseline_resources(
-            build_manifest, layout.packages_root, layout.request.version, route_prefix=prefix))
+            build_manifest, layout.packages_root, layout.request.version, route_prefix=prefix, **static_options))
     if layout.request.host == "server":
         require(converter is None, "Server cannot claim a WASM converter")
         inventory = static
