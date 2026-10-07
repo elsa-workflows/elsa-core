@@ -86,6 +86,13 @@ jobs:
         run: >-
           dotnet build scripts/integration-program/VerifyPackageSymbolPair/VerifyPackageSymbolPair.csproj
           --configuration Release --output "$RUNNER_TEMP/symbol-inspector"
+      - name: Exercise real compiler-produced Portable PDB inspection and rejection
+        working-directory: scripts/integration-program
+        env:
+          ELSA_SYMBOL_INSPECTOR_DLL: ${{ runner.temp }}/symbol-inspector/VerifyPackageSymbolPair.dll
+        run: |
+          python -m unittest test_verify_package_symbol_pair
+          python -O -m unittest test_verify_package_symbol_pair
       - name: Exercise the full original candidate through simulated publication and recovery
         run: |
           set -euo pipefail

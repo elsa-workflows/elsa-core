@@ -45,6 +45,14 @@ jobs:
         run: |
           echo 'PyYAML==6.0.3 --hash=sha256:ba1cc08a7ccde2d2ec775841541641e4548226580ab850948cbfda66a1befcdc' > "$RUNNER_TEMP/gate-requirements.txt"
           python3 -m pip install --only-binary :all: --require-hashes -r "$RUNNER_TEMP/gate-requirements.txt"
+      - name: Verify the real symbol inspector against compiler-produced DLL and PDB fixtures
+        env:
+          ELSA_SYMBOL_INSPECTOR_DLL: ${{ runner.temp }}/symbol-inspector-fixture/VerifyPackageSymbolPair.dll
+        run: |
+          dotnet build scripts/integration-program/VerifyPackageSymbolPair/VerifyPackageSymbolPair.csproj \
+            --configuration Release --output "$RUNNER_TEMP/symbol-inspector-fixture"
+          python -m unittest discover -s scripts/integration-program -p test_verify_package_symbol_pair.py
+          python -O -m unittest discover -s scripts/integration-program -p test_verify_package_symbol_pair.py
       - name: Verify program graph, import safety and history preservation
         run: |
           python doc/integration-program/verify-hierarchy.py
