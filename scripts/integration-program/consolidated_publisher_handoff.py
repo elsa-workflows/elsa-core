@@ -580,6 +580,8 @@ def preflight(inventory: Any, transport: Any, *, now: Any = utc_now,
             "runs_before": collector.runs(entry, "before"), "environments": collector.environments(entry),
             "repository_secrets": collector.secrets(repository, "repository-secret-names",
                                                     f"repos/{repository}/actions/secrets"),
+            "available_organization_secrets": collector.secrets(repository, "available-organization-secret-names",
+                                                    f"repos/{repository}/actions/organization-secrets"),
         }
     result["organization_secrets"] = collector.org_secrets()
     for entry in entries:
@@ -601,22 +603,29 @@ def preflight(inventory: Any, transport: Any, *, now: Any = utc_now,
                                           for item in collector.diagnostics)
             org_metadata_known = not any(item["scope"] == "organization-secret-names"
                                          for item in collector.diagnostics)
+            available_metadata_known = not any(item["repository"] == repository
+                and item["scope"] == "available-organization-secret-names" for item in collector.diagnostics)
+            available = (any(item["name"] == name for item in observation["available_organization_secrets"])
+                         if available_metadata_known else None)
             repo_present = any(item["name"] == name for item in observation["repository_secrets"]) if repo_metadata_known else None
             org_matches = [item for item in result["organization_secrets"] if item["name"] == name]
             environment_names = [environment["name"] for environment in observation["environments"]
                                  if any(item["name"] == name for item in environment["secrets"])]
             observation.setdefault("credential_boundaries", []).append({
                 "name": name, "repository_name_present": repo_present,
-                "organization_name_present": bool(org_matches) if org_metadata_known else None, "environment_names": environment_names,
+                "organization_name_present": True if available else bool(org_matches) if org_metadata_known else None,
+                "organization_available_to_repository": available,
+                "environment_names": environment_names,
                 "environment_metadata_complete": not any(item["repository"] == repository and item["scope"] in {
                     "environments", "environment-metadata", "environment-secret-names"} for item in collector.diagnostics),
                 "organization_access": [
                     "included" if item["visibility"] == "all" or repository in item["selected_repositories"]
                     else "unknown-repository-visibility" if item["visibility"] == "private" else "excluded"
                     for item in org_matches],
-                "repository_or_org_fallback_possible": True if repo_present or any(
+                "repository_or_org_fallback_possible": True if repo_present or available or any(
                     item["visibility"] in {"all", "private"} or repository in item["selected_repositories"]
-                    for item in org_matches) else False if repo_metadata_known and org_metadata_known else None,
+                    for item in org_matches) else False if repo_metadata_known and org_metadata_known
+                        and available_metadata_known else None,
                 "encoded_credential_scope": "unknown", "credential_permissions": "unknown",
             })
             boundary = observation["credential_boundaries"][-1]

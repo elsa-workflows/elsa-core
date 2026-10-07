@@ -64,6 +64,7 @@ class FakeApi:
         self.environment = environment()
         self.repo_secrets = []
         self.org_secrets = []
+        self.available_org_secrets = []
         self.environment_secrets = [{"name": "FEEDZ_API_KEY"}, {"name": "FEEDZ_BASE64_TOKEN"}]
         self.overrides = {}
         self.counts = {}
@@ -114,6 +115,8 @@ class FakeApi:
             return self.page(params, "repositories", self.selected_repositories)
         if path.endswith("/actions/secrets"):
             return self.page(params, "secrets", self.repo_secrets)
+        if path.endswith("/actions/organization-secrets"):
+            return self.page(params, "secrets", self.available_org_secrets)
         raise AssertionError(f"Unmapped fixture route: {endpoint}")
 
     @staticmethod
@@ -345,6 +348,30 @@ class PreflightTests(unittest.TestCase):
         boundary = next(item for item in result["repositories"][0]["credential_boundaries"] if item["name"] == "FEEDZ_API_KEY")
         self.assertEqual(["unknown-repository-visibility"], boundary["organization_access"])
         self.assertTrue(boundary["repository_or_org_fallback_possible"])
+
+    def test_repository_org_availability_survives_unavailable_organization_policy(self):
+        self.api.available_org_secrets = [{"name": "FEEDZ_BASE64_TOKEN"}, {"name": "UNRELATED_SECRET"}]
+        self.api.overrides["orgs/elsa-workflows/actions/secrets"] = ObservationError("transport_failed")
+        result = self.observe(page_size=1)
+        self.assertFalse(result["observation_complete"])
+        for observation in result["repositories"]:
+            boundary = next(item for item in observation["credential_boundaries"]
+                            if item["name"] == "FEEDZ_BASE64_TOKEN")
+            self.assertIs(boundary["organization_available_to_repository"], True)
+            self.assertIs(boundary["organization_name_present"], True)
+            self.assertIs(boundary["repository_or_org_fallback_possible"], True)
+            self.assertEqual("unknown", boundary["credential_permissions"])
+            self.assertEqual([], boundary["organization_access"])
+        self.assertNotIn("UNRELATED_SECRET", json.dumps(result))
+        self.assert_closed(result)
+
+    def test_unavailable_repository_org_metadata_is_not_absence(self):
+        self.api.overrides[f"repos/{REPOSITORIES[0]}/actions/organization-secrets"] = ObservationError("transport_failed")
+        result = self.observe()
+        boundary = result["repositories"][0]["credential_boundaries"][0]
+        self.assertIsNone(boundary["organization_available_to_repository"])
+        self.assertIsNone(boundary["repository_or_org_fallback_possible"])
+        self.assert_closed(result)
 
     def test_failed_secret_metadata_is_not_an_absent_credential_claim(self):
         self.api.overrides[f"repos/{REPOSITORIES[0]}/actions/secrets"] = ObservationError("transport_failed")
