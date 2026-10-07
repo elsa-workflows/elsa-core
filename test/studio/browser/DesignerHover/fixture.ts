@@ -6,14 +6,14 @@ import {registerEdgeHoverTools} from '../../../../src/studio/modules/Elsa.Studio
 const container = document.getElementById('graph')!;
 let graph: Graph;
 let events: Record<string, number>;
-let pointerInside = false;
+let lastTrustedPointer: {x: number; y: number} | null = null;
 let observationController: AbortController;
 
 function reset(enabled: boolean) {
     observationController?.abort();
     graph?.dispose();
     events = {};
-    pointerInside = container.matches(':hover');
+    lastTrustedPointer = null;
     graph = new Graph({
         container,
         width: 800,
@@ -29,16 +29,24 @@ function reset(enabled: boolean) {
             events[key] = (events[key] ?? 0) + 1;
         });
     }
-    // X6 emulates leave from mouseout and can retain a descendant edge as its event target.
-    // Observe the actual container boundary independently; never manufacture a graph event.
+    // X6 handles mouse/touch events. Observe untouched trusted pointer events at the actual root
+    // in capture phase, independently of its emulated mouseenter/leave and descendant events.
     observationController = new AbortController();
-    for (const event of ['mouseenter', 'mouseleave'] as const) {
-        container.addEventListener(event, () => {
-            pointerInside = event === 'mouseenter';
-            const key = `container:${event}`;
-            events[key] = (events[key] ?? 0) + 1;
-        }, {signal: observationController.signal});
-    }
+    const observeBoundary = (observed: PointerEvent) => {
+        if (!observed.isTrusted || observed.target !== container || observed.pointerType !== 'mouse') {
+            return;
+        }
+        const key = `container:${observed.type}`;
+        events[key] = (events[key] ?? 0) + 1;
+    };
+    const observationOptions = {capture: true, signal: observationController.signal};
+    container.addEventListener('pointerenter', observeBoundary, observationOptions);
+    container.addEventListener('pointerleave', observeBoundary, observationOptions);
+    document.addEventListener('pointermove', observed => {
+        if (observed.isTrusted && observed.pointerType === 'mouse') {
+            lastTrustedPointer = {x: observed.clientX, y: observed.clientY};
+        }
+    }, observationOptions);
     graph.addNode({id: 'node', x: 700, y: 90, width: 80, height: 60, label: 'Node'});
     graph.addEdge({id: 'edge-a', source: {x: 100, y: 120}, target: {x: 660, y: 120}});
     // B reaches the boundary, allowing a direct edge-to-outside transition without crossing blank canvas.
@@ -46,9 +54,16 @@ function reset(enabled: boolean) {
 }
 
 function snapshot() {
+    const rect = container.getBoundingClientRect();
+    const point = lastTrustedPointer;
+    const hit = point ? document.elementFromPoint(point.x, point.y) : null;
     return {
         events: {...events},
-        pointerInside,
+        pointerInside: container.matches(':hover'),
+        bounds: {width: rect.width, height: rect.height},
+        trustedPointerSeen: point !== null,
+        trustedPointerInsideRect: point !== null && point.x >= rect.left && point.x < rect.right && point.y >= rect.top && point.y < rect.bottom,
+        trustedPointerHitsGraph: hit !== null && container.contains(hit),
         edges: ['edge-a', 'edge-b'].map(id => {
             const edge = graph.getCellById(id);
             const items = edge?.getTools()?.items ?? [];

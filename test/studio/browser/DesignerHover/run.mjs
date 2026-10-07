@@ -193,6 +193,11 @@ try {
         return {
             subcheck,
             pointer_inside: state.pointerInside,
+            graph_width: state.bounds.width,
+            graph_height: state.bounds.height,
+            trusted_pointer_seen: state.trustedPointerSeen,
+            trusted_pointer_inside_rect: state.trustedPointerInsideRect,
+            trusted_pointer_hits_graph: state.trustedPointerHitsGraph,
             edge_a_exists: a.exists,
             edge_b_exists: b.exists,
             model_a_buttons: a.buttons,
@@ -204,8 +209,8 @@ try {
             rendered_b_buttons: await tool('edge-b', 'button-remove').count(),
             rendered_a_vertices: await tool('edge-a', 'vertices').count(),
             rendered_b_vertices: await tool('edge-b', 'vertices').count(),
-            native_container_enters: state.events['container:mouseenter'] ?? 0,
-            native_container_leaves: state.events['container:mouseleave'] ?? 0,
+            native_container_enters: state.events['container:pointerenter'] ?? 0,
+            native_container_leaves: state.events['container:pointerleave'] ?? 0,
             x6_a_enters: state.events['edge:mouseenter:edge-a'] ?? 0,
             x6_b_enters: state.events['edge:mouseenter:edge-b'] ?? 0,
             x6_a_leaves: state.events['edge:mouseleave:edge-a'] ?? 0,
@@ -244,6 +249,7 @@ try {
         await expect(page.locator('#graph .x6-graph-svg')).toBeVisible();
         await expect(page.locator('#graph .x6-edge')).toHaveCount(2);
         expect((await snapshot()).edges.every(edge => edge.exists)).toBe(true);
+        expect((await snapshot()).bounds).toEqual({width: 800, height: 440});
     });
     await run('repeated-edge-hover', async () => {
         for (let repetition = 0; repetition < 5; repetition += 1) {
@@ -261,7 +267,7 @@ try {
     for (const [name, point, event] of [
         ['node-clears-hover', [740, 120], 'node:mouseenter'],
         ['blank-clears-hover', [400, 390], 'blank:mouseover'],
-        ['outside-clears-hover', [850, 240], 'container:mouseleave'],
+        ['outside-clears-hover', [850, 240], 'container:pointerleave'],
     ]) {
         await run(name, async () => {
             await hover('edge-b');
@@ -270,12 +276,17 @@ try {
             subcheck = 'all-remove-buttons-cleared';
             await expect(allButtons).toHaveCount(0);
             await checkEdge('edge-b', 0);
+            if (name === 'outside-clears-hover') {
+                subcheck = 'outside-geometry';
+                const state = await snapshot();
+                expect(state.bounds).toEqual({width: 800, height: 440});
+                expect(state.trustedPointerSeen).toBe(true);
+                expect(state.trustedPointerInsideRect).toBe(false);
+                expect(state.trustedPointerHitsGraph).toBe(false);
+                expect(state.pointerInside).toBe(false);
+            }
             subcheck = name === 'outside-clears-hover' ? 'native-container-leave' : 'native-event-count';
             expect(await eventCount(event)).toBeGreaterThan(before);
-            if (name === 'outside-clears-hover') {
-                subcheck = 'pointer-outside-container';
-                expect((await snapshot()).pointerInside).toBe(false);
-            }
         });
     }
     await run('remove-tool-entry', async () => {
@@ -316,11 +327,11 @@ try {
         expect(state.edges.every(edge => edge.exists)).toBe(true);
         expect(await eventCount('edge:mouseenter:edge-a')).toBeGreaterThanOrEqual(3);
         expect(await eventCount('edge:mouseenter:edge-b')).toBeGreaterThanOrEqual(3);
-        const leavesBefore = await eventCount('container:mouseleave');
+        const leavesBefore = await eventCount('container:pointerleave');
         await move(850, 240);
         subcheck = 'native-listener-cleanup';
         // The previous graph's native listeners must have been aborted during reset.
-        expect(await eventCount('container:mouseleave')).toBe(leavesBefore + 1);
+        expect(await eventCount('container:pointerleave')).toBe(leavesBefore + 1);
         expect((await snapshot()).pointerInside).toBe(false);
     });
     receipt.events = {interactive: interactiveEvents, noninteractive: (await snapshot()).events};
