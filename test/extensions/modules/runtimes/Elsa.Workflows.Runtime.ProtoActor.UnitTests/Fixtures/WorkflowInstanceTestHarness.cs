@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Proto;
 using Proto.Cluster;
+using Empty = Google.Protobuf.WellKnownTypes.Empty;
 using ProtoActorMappers = Elsa.Workflows.Runtime.ProtoActor.Mappers.Mappers;
 using ProtoImportWorkflowStateRequest = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.ImportWorkflowStateRequest;
 using ProtoRunWorkflowInstanceRequest = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.RunWorkflowInstanceRequest;
@@ -24,6 +25,7 @@ internal sealed class WorkflowInstanceTestHarness : IAsyncDisposable
     public const string DefinitionVersionId = "definition-version";
     private const string InstanceId = "instance";
     private const int RunMethodIndex = 1;
+    private const int CancelMethodIndex = 4;
     private const int ImportStateMethodIndex = 7;
 
     private readonly ActorSystem _actorSystem = new();
@@ -31,12 +33,12 @@ internal sealed class WorkflowInstanceTestHarness : IAsyncDisposable
     private readonly PID _workflowInstanceActor;
     private readonly Mock<IWorkflowStateSerializer> _workflowStateSerializer = new();
 
-    public WorkflowInstanceTestHarness()
+    public WorkflowInstanceTestHarness(IServiceScopeFactory? executionScopeFactory = null)
     {
         WorkflowGraph = CreateWorkflowGraph(DefinitionVersionId, 1);
         WorkflowDefinitionService
             .Setup(x => x.FindWorkflowGraphAsync(It.IsAny<WorkflowDefinitionHandle>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(WorkflowGraph);
+            .ReturnsAsync(() => WorkflowGraph);
         WorkflowInstanceManager
             .Setup(x => x.SaveAsync(It.IsAny<WorkflowState>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((WorkflowState state, CancellationToken _) => CreateWorkflowInstance(state));
@@ -51,7 +53,9 @@ internal sealed class WorkflowInstanceTestHarness : IAsyncDisposable
         services.AddSingleton(WorkflowDefinitionService.Object);
         _serviceProvider = services.BuildServiceProvider();
 
-        var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
+        var scopeFactory = executionScopeFactory == null
+            ? _serviceProvider.GetRequiredService<IServiceScopeFactory>()
+            : new ActorScopeFactory(executionScopeFactory, this);
         var mappers = CreateMappers();
         var props = Props.FromProducer(() => new ProtoWorkflowInstanceActor(
             (context, _) => new WorkflowInstanceActorImplementation(context, scopeFactory, mappers)));
@@ -63,7 +67,7 @@ internal sealed class WorkflowInstanceTestHarness : IAsyncDisposable
     public Mock<IWorkflowRunner> WorkflowRunner { get; } = new();
     public Mock<IWorkflowInstanceManager> WorkflowInstanceManager { get; } = new();
     public Mock<IWorkflowDefinitionService> WorkflowDefinitionService { get; } = new();
-    public WorkflowGraph WorkflowGraph { get; }
+    public WorkflowGraph WorkflowGraph { get; set; }
 
     public static WorkflowState CreateState(string definitionVersionId = DefinitionVersionId, int definitionVersion = 1) => new()
     {
@@ -106,6 +110,8 @@ internal sealed class WorkflowInstanceTestHarness : IAsyncDisposable
         new ProtoRunWorkflowInstanceRequest { ActivityHandle = new() },
         cancellationToken);
 
+    public Task<object> CancelAsync(CancellationToken cancellationToken) => RequestAsync(CancelMethodIndex, new Empty(), cancellationToken);
+
     public async ValueTask DisposeAsync()
     {
         await _actorSystem.Root.PoisonAsync(_workflowInstanceActor);
@@ -120,7 +126,7 @@ internal sealed class WorkflowInstanceTestHarness : IAsyncDisposable
         return await future.GetTask(cancellationToken);
     }
 
-    private static WorkflowInstanceEntity CreateWorkflowInstance(WorkflowState state) => new()
+    public static WorkflowInstanceEntity CreateWorkflowInstance(WorkflowState state) => new()
     {
         Id = state.Id,
         DefinitionId = state.DefinitionId,
@@ -130,6 +136,27 @@ internal sealed class WorkflowInstanceTestHarness : IAsyncDisposable
         Status = state.Status,
         SubStatus = state.SubStatus
     };
+
+    // Override only services resolved by the actor itself. The real runner/canceler resolve their dependencies
+    // from the inner scope, so their commits use the real manager and cannot trip the actor's trailing-save gate.
+    private sealed class ActorScopeFactory(IServiceScopeFactory inner, WorkflowInstanceTestHarness harness) : IServiceScopeFactory
+    {
+        public IServiceScope CreateScope() => new ActorScope(inner.CreateAsyncScope(), harness);
+    }
+
+    private sealed class ActorScope(AsyncServiceScope inner, WorkflowInstanceTestHarness harness) : IServiceScope, IAsyncDisposable, IServiceProvider
+    {
+        public IServiceProvider ServiceProvider => this;
+
+        public object? GetService(Type serviceType) => serviceType == typeof(IWorkflowInstanceManager)
+            ? harness.WorkflowInstanceManager.Object
+            : serviceType == typeof(IWorkflowDefinitionService)
+                ? harness.WorkflowDefinitionService.Object
+                : inner.ServiceProvider.GetService(serviceType);
+
+        public void Dispose() => inner.Dispose();
+        public ValueTask DisposeAsync() => inner.DisposeAsync();
+    }
 
     private ProtoActorMappers CreateMappers()
     {

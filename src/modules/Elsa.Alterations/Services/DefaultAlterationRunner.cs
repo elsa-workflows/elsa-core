@@ -65,6 +65,7 @@ public class DefaultAlterationRunner(
 
         // Create workflow execution context.
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(serviceProvider, workflowGraph, workflowState, cancellationToken: cancellationToken);
+        using var executionScope = WorkflowExecutionScope.Begin(workflowExecutionContext);
         workflowExecutionContext.TransientProperties.Add(RunAlterationsMiddleware.AlterationsPropertyKey, alterations);
         workflowExecutionContext.TransientProperties.Add(RunAlterationsMiddleware.AlterationsLogPropertyKey, log);
 

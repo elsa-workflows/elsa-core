@@ -18,6 +18,7 @@ public class WorkflowCanceler(
     public async Task<WorkflowState> CancelWorkflowAsync(WorkflowGraph workflowGraph, WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(serviceProvider, workflowGraph, workflowState, cancellationToken: cancellationToken);
+        using var executionScope = WorkflowExecutionScope.Begin(workflowExecutionContext);
         await CancelWorkflowAsync(workflowExecutionContext, cancellationToken);
         return workflowStateExtractor.Extract(workflowExecutionContext);
     }
@@ -25,6 +26,7 @@ public class WorkflowCanceler(
     /// <inheritdoc />
     public async Task CancelWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default)
     {
+        using var executionScope = WorkflowExecutionScope.Begin(workflowExecutionContext);
         await mediator.SendAsync(new WorkflowCancelling(workflowExecutionContext.Id), cancellationToken);
         var pipelineBuilder = new WorkflowExecutionPipelineBuilder(serviceProvider);
         workflowExecutionPipeline.ConfigurePipelineBuilder(pipelineBuilder);

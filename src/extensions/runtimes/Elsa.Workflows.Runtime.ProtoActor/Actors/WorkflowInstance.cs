@@ -160,6 +160,7 @@ internal class WorkflowInstance(
     public override async Task Cancel()
     {
         await EnsureStateAsync();
+        using var executionScope = WorkflowExecutionScope.Begin(WorkflowState.Id);
         _linkedTokenSource.Cancel();
         await using var scope = scopeFactory.CreateAsyncScope();
         var serviceProvider = scope.ServiceProvider;
@@ -244,6 +245,7 @@ internal class WorkflowInstance(
     private async Task<RunWorkflowResult> RunInternalAsync(RunWorkflowOptions runWorkflowOptions)
     {
         await EnsureStateAsync();
+        using var executionScope = WorkflowExecutionScope.Begin(WorkflowState.Id);
         runWorkflowOptions.WorkflowInstanceId = _workflowInstanceId;
 
         await using var scope = scopeFactory.CreateAsyncScope();

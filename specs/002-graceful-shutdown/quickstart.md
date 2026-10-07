@@ -152,6 +152,44 @@ That is the entire integration. The runtime handles:
 
 ---
 
+## Execution ownership for module authors
+
+A tracked execution attempt spans the workflow pipeline and every later awaited write owned by the caller.
+WorkflowRunner holds ownership through state extraction, notifications and final commit. Alterations retain it
+through ImportStateAsync; cancellation through LocalWorkflowClient's save; the obsolete WorkflowHost and
+ProtoActor's workflow actor retain it through their trailing Run/Cancel saves. ActivityTestRunner releases
+ownership when its operation finishes without requiring a final commit. Intermediate workflow/activity/explicit
+checkpoints preserve the same handle. Success,
+suspension, handled faults and failures all release tracking when the owning operation unwinds; disposal does
+not prove persistence succeeded. Requesting cancellation alone does not release the handle.
+
+Custom code invoking a workflow pipeline directly must make its complete boundary explicit:
+
+```csharp
+using var execution = WorkflowExecutionScope.Begin(context);
+await pipeline.ExecuteAsync(context);
+await commitStateHandler.CommitAsync(context);
+await SaveAdditionalStateAsync(context); // Any write belonging to this attempt must be awaited here.
+```
+
+Without an explicit scope, the tracking middleware owns only its pipeline invocation and releases its handle
+when that invocation returns or throws. A later commit cannot extend that boundary retroactively. The retained
+ExecutionCycleAwareCommitStateHandler decorator forwards commits for compatibility; it does not determine
+finality. Custom commit handlers work within the same explicit ownership boundary.
+
+Nested ownership of the same context reuses the outer handle. Each distinct child context gets its own handle,
+even if its instance ID matches the parent's. A caller that does not yet have a context can narrowly wrap a
+runner/canceler and its known trailing writes with WorkflowExecutionScope.Begin(instanceId); the first matching
+context binds that scope. Nested unbound scopes for that ID share ownership. Once bound, another context owns
+its own attempt. Await child operations before disposing their owner. Concurrent use of the same context and
+detached work are unsupported; an ambient scope inherited after it has been disposed is never reused.
+
+Graceful drain therefore waits through the complete owned boundary. Force drain retains its bounded wait for
+handle disposal before forensic persistence. This ordering does not guarantee an uncooperative write completes
+within the settle timeout and does not change cancellation semantics or tenant restoration (tracked separately).
+
+---
+
 ## Further reading
 
 - [`plan.md`](./plan.md) — implementation plan and constitution alignment.
