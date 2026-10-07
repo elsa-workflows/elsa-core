@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Text.Json;
 using Elsa.Common.Models;
 using Elsa.Common.Multitenancy;
 using Elsa.Persistence.MongoDb.Common;
@@ -33,6 +35,7 @@ public sealed class MongoReplicaSetFixture : IAsyncLifetime
         try
         {
             await _container.StartAsync();
+            await MongoContainerProof.VerifyAndCaptureAsync(_container, "rs1");
         }
         catch
         {
@@ -513,6 +516,7 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
     {
         await using var container = new MongoDbBuilder().WithImage("mongo:7.0.24").Build();
         await container.StartAsync();
+        await MongoContainerProof.VerifyAndCaptureAsync(container, expectedReplicaSet: null);
         using var client = new MongoClient(container.GetConnectionString());
         var collection = client.GetDatabase($"elsa-cas-{Guid.NewGuid():N}").GetCollection<WorkflowDefinition>("workflow_definitions");
         var store = new MongoWorkflowDefinitionStore(new MongoDbStore<WorkflowDefinition>(collection, _tenantAccessor));
@@ -602,6 +606,83 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
         private sealed class Restore(Action restore) : IDisposable
         {
             public void Dispose() => restore();
+        }
+    }
+}
+
+internal static class MongoContainerProof
+{
+    public static async Task VerifyAndCaptureAsync(MongoDbContainer container, string? expectedReplicaSet)
+    {
+        using var client = new MongoClient(container.GetConnectionString());
+        var hello = await client.GetDatabase("admin").RunCommandAsync<BsonDocument>(new BsonDocument("hello", 1));
+        string? replicaSet = null;
+
+        if (expectedReplicaSet is null)
+        {
+            Assert.False(hello.Contains("setName"));
+        }
+        else
+        {
+            replicaSet = hello["setName"].AsString;
+            Assert.Equal(expectedReplicaSet, replicaSet);
+        }
+
+        var directory = Environment.GetEnvironmentVariable("ELSA_MONGO_PROOF_DIRECTORY");
+
+        if (string.IsNullOrWhiteSpace(directory))
+        {
+            return;
+        }
+
+        using var process = new Process
+        {
+            StartInfo = new ProcessStartInfo("docker")
+            {
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            }
+        };
+        foreach (var argument in new[] { "inspect", "--type", "container", "--format", "{{.Image}}", container.Id })
+        {
+            process.StartInfo.ArgumentList.Add(argument);
+        }
+
+        Assert.True(process.Start(), "Container image inspection could not start.");
+        var output = process.StandardOutput.ReadToEndAsync();
+        var error = process.StandardError.ReadToEndAsync();
+
+        try
+        {
+            await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        }
+        catch (TimeoutException)
+        {
+            process.Kill(entireProcessTree: true);
+            await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(10));
+            throw;
+        }
+
+        var imageId = (await output).Trim();
+        await error; // Drain stderr without publishing raw Docker diagnostics.
+        Assert.True(process.ExitCode == 0, "Container image inspection failed.");
+        Assert.Matches("^sha256:[0-9a-f]{64}$", imageId);
+
+        Directory.CreateDirectory(directory);
+        var mode = expectedReplicaSet is null ? "standalone" : "replica-set";
+        var path = Path.Combine(directory, $"mongo-{mode}-{Guid.NewGuid():N}.json");
+        var temporaryPath = path + ".tmp";
+
+        try
+        {
+            await File.WriteAllTextAsync(temporaryPath, JsonSerializer.Serialize(new { imageId, replicaSet, mode }));
+            File.Move(temporaryPath, path);
+        }
+        finally
+        {
+            File.Delete(temporaryPath);
         }
     }
 }

@@ -8,6 +8,8 @@ The imported Mongo provider now incorporates the reviewed transaction approach d
 
 The existing compare-and-swap test class uses a shared MongoDB `7.0.24` replica set (`rs1`) and isolated databases. It covers the reviewed cases plus the existing missing/false-match/no-longer-latest outcomes, graph/name races, a `CustomProperties` race omitted by the old guard, default and shared tenant ownership, and explicit standalone rejection. The conflict-code classifier checks are unit checks; the concurrent-writer case exercises a real database write conflict. The standalone case expects an unsupported-transaction error before callbacks or mutation; there is no weaker fallback.
 
+The fixture checks the running server's `hello.setName` is `rs1`; the standalone case checks that `setName` is absent. When `ELSA_MONGO_PROOF_DIRECTORY` is set, it also inspects each running container by ID and atomically writes a small JSON file containing its immutable image ID, actual replica-set name, and mode. This capture uses Docker's CLI without a shell and excludes raw inspect output and diagnostics. Leave the variable unset for ordinary test runs; hosted proof uses separate directories for baseline and candidate receipts.
+
 The two baseline regression probes compile using the pre-correction public API and are self-contained in `test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs`:
 
 - `TryUpdateLatestAsync_WhenUnlistedMetadataChangesAfterRead_ReturnsConflictAndKeepsConcurrentMetadata` must fail on the old source with `Atomic metadata guard must reject a stale full-document snapshot.`
