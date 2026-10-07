@@ -24,6 +24,18 @@ class ResourceProvenanceDiagnosticsTests(unittest.TestCase):
         self.assertEqual({"stage": "bootstrap", "code": "unknown"}, diagnostics.resource_failure_receipt(
             "bootstrap", OSError("private path")))
 
+    def test_static_manifest_ownership_and_bytes_failures_have_safe_distinct_codes(self):
+        for message, code in (
+            ("Missing package proof input", "static_input_missing"),
+            ("Unowned Elsa source browser asset", "static_source_unowned"),
+            ("Missing mandatory materialized Designer/DomInterop assets", "static_mandatory_assets_missing"),
+            ("Materialized browser asset differs from sealed package member", "static_member_bytes_mismatch")):
+            with self.subTest(code=code):
+                self.assertEqual({"stage": "static", "code": code},
+                                 diagnostics.resource_failure_receipt("static", ValueError(message)))
+                self.assertEqual("unknown", diagnostics.resource_failure_receipt(
+                    "static", ValueError(message + " /private/path"))["code"])
+
     def test_boundary_preserves_original_exception_and_inner_stage(self):
         evidence = {"stage": "resource_provenance"}
         expected = RuntimeError("Baseline browser archive differs from approved source digest")
