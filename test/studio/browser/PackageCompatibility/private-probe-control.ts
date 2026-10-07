@@ -38,10 +38,13 @@ export class ProbeControl {
     // Exactly one line: no unsolicited second acknowledgement or trailing bytes.
     if (newline === 0 || newline !== this.buffer.length - 1) { this.fail(); return; }
     try {
-      const ack = JSON.parse(new TextDecoder('utf8', { fatal: true }).decode(this.buffer.subarray(0, newline)));
+      const line = new TextDecoder('utf8', { fatal: true }).decode(this.buffer.subarray(0, newline));
+      const ack = JSON.parse(line);
+      const expected = { schema: 1, nonce: this.nonce, seq: this.index + 1, event: this.pending.event, ack: true };
       if (!ack || typeof ack !== 'object' || Array.isArray(ack) ||
           Object.keys(ack).sort().join(',') !== 'ack,event,nonce,schema,seq' || ack.schema !== 1 || ack.ack !== true ||
-          ack.nonce !== this.nonce || ack.seq !== this.index + 1 || ack.event !== this.pending.event) throw failure();
+          ack.nonce !== this.nonce || ack.seq !== this.index + 1 || ack.event !== this.pending.event ||
+          line !== JSON.stringify(expected)) throw failure();
       const pending = this.pending;
       clearTimeout(pending.timer);
       this.pending = undefined;

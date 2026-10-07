@@ -46,6 +46,16 @@ for (const update of [{ nonce: 'b'.repeat(64) }, { seq: 2 }, { event: 'disconnec
   await assert.rejects(done, /private_probe_control_failed/);
   assert.throws(() => control.close(), /private_probe_control_failed/);
 }
+const canonicalAck = JSON.stringify({ schema: 1, nonce, seq: 1, event: 'begin-native-action', ack: true });
+for (const line of [canonicalAck.replace('"ack":true', '"ack":true,"ack":true'),
+  canonicalAck.replace('"schema":1', '"schema":1,"schema":1'),
+  canonicalAck.replace('"nonce":', '"nonce":"' + nonce + '","nonce":'),
+  ' ' + canonicalAck, canonicalAck + '\r', canonicalAck.replace('"schema":1,', '"schema":1, ')]) {
+  const { channel, control } = create();
+  const done = control.beginNativeAction(); channel.emit('data', Buffer.from(line + '\n'));
+  await assert.rejects(done, /private_probe_control_failed/);
+  assert.throws(() => control.close(), /private_probe_control_failed/);
+}
 for (const event of ['end', 'close', 'error']) {
   const { channel, control } = create();
   const done = control.beginNativeAction(); channel.emit(event);
