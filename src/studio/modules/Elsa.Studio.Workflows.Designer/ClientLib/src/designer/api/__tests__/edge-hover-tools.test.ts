@@ -74,6 +74,15 @@ describe('registerEdgeHoverTools', () => {
         expect(removeButtons(second)).toBe(1);
     });
 
+    it('ignores a stale leave event from the previous edge', () => {
+        graph.emit('edge:mouseenter', {edge: first});
+        graph.emit('edge:mouseenter', {edge: second});
+        graph.emit('edge:mouseleave', {edge: first});
+
+        expect(removeButtons(first)).toBe(0);
+        expect(removeButtons(second)).toBe(1);
+    });
+
     it.each(['node:mouseenter', 'blank:mouseover', 'graph:mouseleave'])(
         'removes the button on %s when edge:mouseleave never fired',
         event => {

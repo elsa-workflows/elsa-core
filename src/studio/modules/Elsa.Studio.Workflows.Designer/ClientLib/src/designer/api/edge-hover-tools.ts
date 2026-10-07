@@ -38,7 +38,11 @@ export function registerEdgeHoverTools(graph: EdgeHoverEvents, enabled: boolean)
         hovered = edge;
     });
 
-    graph.on('edge:mouseleave', hideRemoveButton);
+    graph.on('edge:mouseleave', ({edge}) => {
+        // A late leave from an older edge must not clear the current edge's button.
+        if (hovered === edge)
+            hideRemoveButton();
+    });
     graph.on('node:mouseenter', hideRemoveButton);
     // `blank:mousemove` fires only while a button is held; hovering empty canvas raises `blank:mouseover`.
     graph.on('blank:mouseover', hideRemoveButton);
