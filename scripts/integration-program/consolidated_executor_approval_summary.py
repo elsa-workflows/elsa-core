@@ -110,7 +110,8 @@ def render_summary(admission, verification, *, artifact_id, artifact_digest, adm
             "verifier_identity_invalid")
     observed = verification["before"]
     package_proof = observed["packages"]
-    require(observed.get("blocked") is False and package_proof.get("original_provenance") == provenance
+    require(observed.get("blocked") is False and observed.get("feed_index_consistent") is True
+            and package_proof.get("original_provenance") == provenance
             and package_proof.get("feed") == recovery.FEED_INDEX and package_proof.get("publication_performed") is False
             and package_proof.get("publication_ready") is False and package_proof.get("remote_symbols_verified") is False
             and package_proof.get("access_mode") == "anonymous" and package_proof.get("absence_scope") == "declared_access_visibility_only"
@@ -119,7 +120,7 @@ def render_summary(admission, verification, *, artifact_id, artifact_digest, adm
             and digest(package_proof.get("exclusions_sha256")), "package_observation_invalid")
     feed = package_proof["feed_observation"]
     require(feed.get("status") == 200 and feed.get("complete") is True and feed.get("failure_category") is None
-            and digest(feed.get("archive_sha256")), "feed_observation_invalid")
+            and feed.get("archive_sha256") == verification["feed_index_sha256"], "feed_observation_invalid")
     packages = package_proof["packages"]
     require(isinstance(packages, list) and len(packages) == 225 and {row["id"] for row in packages} == package_ids,
             "package_coverage_invalid")

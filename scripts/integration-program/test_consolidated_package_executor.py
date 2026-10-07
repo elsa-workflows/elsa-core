@@ -183,6 +183,44 @@ class FullInventoryTests(unittest.TestCase):
             self.assertFalse(result["publication_performed"])
             self.assertEqual(self.feed.calls, [])
 
+    def test_changed_or_duplicate_package_base_blocks_before_upload(self):
+        original = json.loads(self.feed.index)
+        for value in ("https://f.feedz.io/elsa-workflows/elsa-3/nuget/another-tree", None):
+            index = copy.deepcopy(original)
+            if value is None:
+                index["resources"].append(copy.deepcopy(index["resources"][0]))
+            else:
+                index["resources"][0]["@id"] = value
+            self.feed.index = json.dumps(index).encode()
+            result = self.run_executor(authorize=lambda: self.fail("changed index requested authority"))
+            self.assertEqual(result["failure_category"], "feed_resource_mismatch")
+            self.assertEqual(self.feed.calls, [])
+
+    def test_index_drift_blocks_admission_and_final_content_acceptance(self):
+        original_get = self.feed.get
+        changed = json.loads(self.feed.index)
+        changed["comment"] = "changed snapshot"
+        for change_after in (1, 2):
+            index_reads = 0
+            def get(url, **kwargs):
+                nonlocal index_reads
+                if url == recovery.FEED_INDEX:
+                    index_reads += 1
+                    if index_reads > change_after:
+                        return recovery.ReadResult(200, json.dumps(changed).encode(), True)
+                return original_get(url, **kwargs)
+            self.feed.accepted.clear()
+            self.feed.symbols.clear()
+            self.feed.calls.clear()
+            with patch.object(self.feed, "get", side_effect=get):
+                result = self.run_executor()
+            self.assertEqual(result["result"], "failed")
+            self.assertFalse(result["content_verified"])
+            observed = result["before"] if change_after == 1 else result["after"]
+            self.assertFalse(observed["feed_index_consistent"])
+            self.assertTrue(observed["blocked"])
+            self.assertEqual(len(self.feed.calls), 0 if change_after == 1 else 450)
+
     def test_authority_failure_never_uses_key(self):
         def blocked():
             raise executor.ExecutorError("operational_policy_unconfigured")

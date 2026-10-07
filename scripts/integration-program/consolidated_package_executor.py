@@ -36,6 +36,7 @@ ENVIRONMENT = "elsa-3-10-feedz"
 PUBLISH_SECRET = "ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY"
 METADATA_SECRET = "ELSA_CONSOLIDATED_METADATA_READ_TOKEN"
 METADATA_PATH = re.compile(r"repos/elsa-workflows/elsa-core/(?:actions/(?:secrets|organization-secrets)|environments/elsa-3-10-feedz/secrets)\?per_page=100&page=[1-9][0-9]*\Z")
+PACKAGE_BASE = "https://f.feedz.io/elsa-workflows/elsa-3/nuget/v3/packages"
 PACKAGE_PUBLISH = "https://f.feedz.io/elsa-workflows/elsa-3/nuget"
 SYMBOL_PUBLISH = "https://f.feedz.io/elsa-workflows/elsa-3/symbols"
 EXPIRY = "2026-11-05T12:13:30Z"
@@ -550,17 +551,19 @@ def feed_resources(transport):
     require(result.complete and result.status == 200 and not result.failure_category, "feed_index_unavailable")
     value = recovery._json(result.body)
     require(value.get("version") == "3.0.0", "feed_index_invalid")
-    for kind, expected in (("PackagePublish/2.0.0", PACKAGE_PUBLISH), ("SymbolPackagePublish/4.9.0", SYMBOL_PUBLISH)):
+    for kind, expected in (("PackageBaseAddress/3.0.0", PACKAGE_BASE), ("PackagePublish/2.0.0", PACKAGE_PUBLISH),
+                           ("SymbolPackagePublish/4.9.0", SYMBOL_PUBLISH)):
         require([row.get("@id") for row in value["resources"] if row.get("@type") == kind] == [expected], "feed_resource_mismatch")
     return sha(result.body)
 
 
-def reconcile(root, provenance, expected, inspector, transport):
+def reconcile(root, provenance, expected, inspector, transport, index_hash):
     result = recovery.plan_recovery(root, provenance, transport=transport)
     symbols = observe_symbols(transport, expected, inspector)
-    return {"packages": result, "symbols": symbols,
-            "blocked": result["reconciliation_blocked"] or any(row["classification"] in {"conflicting", "unverifiable"} for row in symbols),
-            "content_verified": result["content_converged"] and all(row["classification"] == "matching" for row in symbols)}
+    consistent = result["feed_observation"]["archive_sha256"] == index_hash
+    return {"packages": result, "symbols": symbols, "feed_index_consistent": consistent,
+            "blocked": not consistent or result["reconciliation_blocked"] or any(row["classification"] in {"conflicting", "unverifiable"} for row in symbols),
+            "content_verified": consistent and result["content_converged"] and all(row["classification"] == "matching" for row in symbols)}
 
 
 def run_verified(root, provenance, inspector, *, mode, transport=None, authorize=None, credential=None, checkpoint=None):
@@ -591,7 +594,7 @@ def run_verified(root, provenance, inspector, *, mode, transport=None, authorize
         if isinstance(reader, HttpTransport):
             reader.deadline = min(reader.deadline, inspector.deadline)
         ledger["feed_index_sha256"] = feed_resources(reader)
-        ledger["before"] = reconcile(root, provenance, expected, inspector, reader)
+        ledger["before"] = reconcile(root, provenance, expected, inspector, reader, ledger["feed_index_sha256"])
         if checkpoint is not None:
             checkpoint(ledger)
         require(not ledger["before"]["blocked"], "reconciliation_blocked")
@@ -640,7 +643,7 @@ def run_verified(root, provenance, inspector, *, mode, transport=None, authorize
             except BaseException:
                 operation["failure_category"] = "upload_acceptance_unknown"
                 raise ExecutorError("upload_acceptance_unknown") from None
-        ledger["after"] = reconcile(root, provenance, expected, inspector, reader)
+        ledger["after"] = reconcile(root, provenance, expected, inspector, reader, ledger["feed_index_sha256"])
         ledger["content_verified"] = ledger["after"]["content_verified"]
         require(ledger["content_verified"], "readback_incomplete")
         ledger.update(result="content_verified", failure_category=None)
