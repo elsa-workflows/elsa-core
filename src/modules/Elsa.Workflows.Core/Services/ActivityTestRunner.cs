@@ -18,6 +18,7 @@ public class ActivityTestRunner(
     {
         var id = identityGenerator.GenerateId();
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(serviceProvider, workflowGraph, id, cancellationToken);
+        using var executionScope = WorkflowExecutionScope.Begin(workflowExecutionContext);
         var variableTestValues = GetVariableTestValues(workflowGraph);
 
         foreach (var variable in workflowGraph.Workflow.Variables)

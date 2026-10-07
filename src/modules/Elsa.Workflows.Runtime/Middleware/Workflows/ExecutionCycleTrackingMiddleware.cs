@@ -3,68 +3,37 @@ using Elsa.Workflows.Pipelines.WorkflowExecution;
 namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 
 /// <summary>
-/// Registers an <see cref="ExecutionCycleHandle"/> in <see cref="IExecutionCycleRegistry"/> for the duration of a
-/// single workflow execution cycle — the slice of execution between the pipeline entry and the next persistence
-/// boundary. The drain orchestrator counts these handles and, on deadline breach, force-cancels each one and marks
-/// still-Running instances <see cref="WorkflowSubStatus.Interrupted"/> (Finished/Cancelled rows stay as they are).
+/// Registers one execution-cycle handle with the explicitly owning <see cref="WorkflowExecutionScope"/>.
+/// The owner releases it after all awaited execution and persistence unwind, including on failure.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Ingress source attribution: when a dispatcher knows which <see cref="IIngressSource"/> initiated the call, it sets
-/// <see cref="WorkflowExecutionContext.TransientProperties"/>[<see cref="IngressSourceNameKey"/>] before invoking the pipeline.
-/// The middleware reads it and forwards the name to <see cref="IExecutionCycleRegistry.BeginCycle"/>, which uses it to detect the
-/// FR-018 invariant violation (a source that reports <see cref="IngressSourceState.Paused"/> but initiates a cycle anyway).
-/// </para>
+/// Direct pipeline callers without an explicit scope are tracked only until the pipeline returns.
+/// They must create a scope around the pipeline and any subsequent awaited writes to extend that boundary.
 /// </remarks>
 public class ExecutionCycleTrackingMiddleware(WorkflowMiddlewareDelegate next, IExecutionCycleRegistry cycleRegistry) : WorkflowExecutionMiddleware(next)
 {
     /// <summary>
-    /// <see cref="WorkflowExecutionContext.TransientProperties"/> key used to convey the originating
-    /// <see cref="IIngressSource.Name"/> from the dispatcher into the pipeline.
+    /// Transient property conveying the originating <see cref="IIngressSource.Name"/> from the dispatcher.
     /// </summary>
     public const string IngressSourceNameKey = "Elsa.Workflows.Runtime.IngressSourceName";
 
     /// <summary>
-    /// <see cref="WorkflowExecutionContext.TransientProperties"/> key under which the active
-    /// <see cref="ExecutionCycleHandle"/> is stored for the duration of the workflow execution.
-    /// <see cref="Services.ExecutionCycleAwareCommitStateHandler"/> retrieves and disposes the handle AFTER the
-    /// runner's terminal commit has persisted the workflow state, so the drain orchestrator's force-cancel path
-    /// (which awaits <c>handle.Disposed</c>) sees the runner's commit land BEFORE its own
-    /// <see cref="WorkflowSubStatus.Interrupted"/> write — eliminating the runner-clobber race.
+    /// Transient property holding the attempt's handle. Checkpoints never dispose it. The owning scope
+    /// retires this entry and releases the handle after the last awaited write, so force drain can await
+    /// <see cref="ExecutionCycleHandle.Disposed"/> before its forensic write.
     /// </summary>
     public const string ExecutionCycleHandleKey = "Elsa.Workflows.Runtime.ExecutionCycleHandle";
 
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
-        var ingressSourceName = context.TransientProperties.TryGetValue(IngressSourceNameKey, out var raw) ? raw as string : null;
-
-        // The cancelCallback bridges the ExecutionCycleHandle's cancellation to the workflow execution itself: when
-        // the drain orchestrator calls handle.Cancel() on deadline breach, WorkflowExecutionContext.Cancel() runs
-        // synchronously, which fires the registered cancellation callback inside the context (transitioning the
-        // workflow to Cancelled and clearing its schedule). The runner stops scheduling new activities; the
-        // orchestrator awaits handle.Disposed (set by the ExecutionCycleAwareCommitStateHandler decorator AFTER
-        // commit) and then overwrites the sub-status with Interrupted.
-        var handle = cycleRegistry.BeginCycle(
-            context.Id,
-            ingressSourceName,
-            context.CancellationToken,
-            cancelCallback: context.Cancel);
-        context.TransientProperties[ExecutionCycleHandleKey] = handle;
-
-        try
+        using var executionScope = WorkflowExecutionScope.Begin(context);
+        executionScope.GetOrAddResource(ExecutionCycleHandleKey, () =>
         {
-            await Next(context);
-        }
-        catch
-        {
-            // Exception path only: WorkflowRunner won't reach commitStateHandler.CommitAsync, so the
-            // ExecutionCycleAwareCommitStateHandler decorator never runs and the handle would leak. On the success
-            // path we deliberately DO NOT dispose here — the runner commits AFTER pipeline.ExecuteAsync returns
-            // (WorkflowRunner.cs:235), and the decorator must dispose AFTER that commit lands. Disposing here on
-            // success would reintroduce the runner-clobber race: the drain orchestrator's wait on handle.Disposed
-            // would complete before state was persisted.
-            handle.Dispose();
-            throw;
-        }
+            var ingressSourceName = context.TransientProperties.TryGetValue(IngressSourceNameKey, out var raw) ? raw as string : null;
+            // Keep the existing cancellation bridge. Cancellation requests do not release ownership;
+            // drain still waits for the owner to unwind before writing Interrupted.
+            return cycleRegistry.BeginCycle(context.Id, ingressSourceName, context.CancellationToken, cancelCallback: context.Cancel);
+        });
+        await Next(context);
     }
 }

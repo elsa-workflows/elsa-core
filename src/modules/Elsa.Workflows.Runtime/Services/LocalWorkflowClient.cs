@@ -147,6 +147,7 @@ public class LocalWorkflowClient(
     {
         if (workflowInstance.Status != WorkflowStatus.Running) return;
         var workflowGraph = await GetWorkflowGraphAsync(workflowInstance, cancellationToken);
+        using var executionScope = WorkflowExecutionScope.Begin(workflowInstance.Id);
         var workflowState = await workflowCanceler.CancelWorkflowAsync(workflowGraph, workflowInstance.WorkflowState, cancellationToken);
         await workflowInstanceManager.SaveAsync(workflowState, cancellationToken);
     }
