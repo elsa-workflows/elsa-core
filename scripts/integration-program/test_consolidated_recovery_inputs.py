@@ -247,9 +247,6 @@ class RecoveryInputTests(unittest.TestCase):
         (self.content / "verified-artifacts.json").write_bytes(json_bytes(self.manifest))
         self.rewrite_outer_archive()
         self.patch_constants()
-        self.verify_patch.stop()
-        self.verify_patch = patch.object(candidate_input, "verify_candidate_inputs", side_effect=self.fake_verify)
-        self.verify_patch.start()
 
     def test_valid_inputs_recheck_all_225_pairs_and_emit_bound_provenance(self):
         root, provenance = self.run_prepare(planner_run=99, planner_attempt=2)
