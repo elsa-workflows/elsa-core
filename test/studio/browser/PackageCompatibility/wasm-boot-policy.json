@@ -6,35 +6,316 @@
   "main_assembly": "Elsa.Studio.Host.Wasm",
   "maximum_boot_bytes": 1048576,
   "maximum_managed_resources": 512,
-  "checks": ["platform_resources", "configuration", "managed_resources", "managed_callback"],
-  "configuration_fields": ["mainAssemblyName", "applicationEnvironment", "resources", "appsettings", "debugLevel", "extensions", "globalizationMode", "runtimeConfig"],
-  "resource_groups": ["assembly", "coreAssembly", "hash", "icu", "jsModuleNative", "jsModuleRuntime", "libraryInitializers", "modulesAfterRuntimeReady", "pdb", "satelliteResources", "wasmNative"],
-  "mandatory_managed": ["Elsa.Studio.Core", "Elsa.Studio.Core.BlazorWasm", "Elsa.Studio.Workflows"],
+  "checks": [
+    "platform_resources",
+    "configuration",
+    "managed_resources",
+    "managed_callback"
+  ],
+  "configuration_fields": [
+    "mainAssemblyName",
+    "applicationEnvironment",
+    "resources",
+    "appsettings",
+    "debugLevel",
+    "extensions",
+    "globalizationMode",
+    "runtimeConfig"
+  ],
+  "resource_groups": [
+    "assembly",
+    "coreAssembly",
+    "hash",
+    "icu",
+    "jsModuleNative",
+    "jsModuleRuntime",
+    "libraryInitializers",
+    "modulesAfterRuntimeReady",
+    "pdb",
+    "satelliteResources",
+    "wasmNative"
+  ],
+  "mandatory_managed": [
+    "Elsa.Studio.Core",
+    "Elsa.Studio.Core.BlazorWasm",
+    "Elsa.Studio.Workflows"
+  ],
   "platform": [
     {
-      "role": "blazor", "relative": "_framework/blazor.webassembly.js", "served": "blazor.webassembly.js",
-      "trait": "boot", "kind": "All", "content_type": "text/javascript",
-      "source_package": "Microsoft.AspNetCore.Components.WebAssembly", "source_member": "build/net10.0/blazor.webassembly.js"
+      "role": "blazor",
+      "relative": "_framework/blazor.webassembly.js",
+      "served": "blazor.webassembly.js",
+      "trait": "boot",
+      "kind": "All",
+      "content_type": "text/javascript",
+      "source_package": "Microsoft.AspNetCore.Components.WebAssembly",
+      "source_member": "build/net10.0/blazor.webassembly.js"
     },
     {
-      "role": "manifest", "relative": "_framework/dotnet#[.{fingerprint}]?.js", "served": "dotnet.js",
-      "trait": "manifest", "kind": "Build", "content_type": "text/javascript",
+      "role": "manifest",
+      "relative": "_framework/dotnet#[.{fingerprint}]?.js",
+      "served": "dotnet.js",
+      "trait": "manifest",
+      "kind": "Build",
+      "content_type": "text/javascript",
       "source_member": "obj/Release/net10.0/dotnet.js"
     },
     {
-      "role": "native_wasm", "relative": "_framework/dotnet.native#[.{fingerprint}]!.wasm", "served": "dotnet.native.{fingerprint}.wasm",
-      "trait": "native", "kind": "Build", "content_type": "application/wasm", "group": "wasmNative",
-      "source_package": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm", "source_member": "runtimes/browser-wasm/native/dotnet.native.wasm"
+      "role": "native_wasm",
+      "relative": "_framework/dotnet.native#[.{fingerprint}]!.wasm",
+      "served": "dotnet.native.{fingerprint}.wasm",
+      "trait": "native",
+      "kind": "Build",
+      "content_type": "application/wasm",
+      "group": "wasmNative",
+      "source_package": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm",
+      "source_member": "runtimes/browser-wasm/native/dotnet.native.wasm"
     },
     {
-      "role": "native_js", "relative": "_framework/dotnet.native#[.{fingerprint}]!.js", "served": "dotnet.native.{fingerprint}.js",
-      "trait": "native", "kind": "Build", "content_type": "text/javascript", "group": "jsModuleNative",
-      "source_package": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm", "source_member": "runtimes/browser-wasm/native/dotnet.native.js"
+      "role": "native_js",
+      "relative": "_framework/dotnet.native#[.{fingerprint}]!.js",
+      "served": "dotnet.native.{fingerprint}.js",
+      "trait": "native",
+      "kind": "Build",
+      "content_type": "text/javascript",
+      "group": "jsModuleNative",
+      "source_package": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm",
+      "source_member": "runtimes/browser-wasm/native/dotnet.native.js"
     },
     {
-      "role": "runtime_js", "relative": "_framework/dotnet.runtime#[.{fingerprint}]!.js", "served": "dotnet.runtime.{fingerprint}.js",
-      "trait": "native", "kind": "Build", "content_type": "text/javascript", "group": "jsModuleRuntime",
-      "source_package": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm", "source_member": "runtimes/browser-wasm/native/dotnet.runtime.js"
+      "role": "runtime_js",
+      "relative": "_framework/dotnet.runtime#[.{fingerprint}]!.js",
+      "served": "dotnet.runtime.{fingerprint}.js",
+      "trait": "native",
+      "kind": "Build",
+      "content_type": "text/javascript",
+      "group": "jsModuleRuntime",
+      "source_package": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm",
+      "source_member": "runtimes/browser-wasm/native/dotnet.runtime.js"
     }
-  ]
+  ],
+  "source_authority": {
+    "runtime_repository": "https://github.com/dotnet/dotnet",
+    "runtime_commit": "94ea82652cdd4e0f8046b5bd5becbd11461482ca",
+    "runtime_source_prefix": "src/runtime/src/tasks/Microsoft.NET.Sdk.WebAssembly.Pack.Tasks/",
+    "sources": {
+      "GenerateWasmBootJson.cs": "67f45a8f5ee14f72e6f410177ad8fac0510d95a8cc3256267e81516ebbc2baa8",
+      "BootJsonData.cs": "ab1122ef7ab5250c89f74a48be78de83ffa3678939d3032f1445707a4e801c16",
+      "BootJsonBuilderHelper.cs": "b0c04f3e4597357f746376ff4e45808eb05adc2dcb7d3cac197a7ea06f5e71b9",
+      "AssetsComputingHelper.cs": "01ee44540eff2d82e752fb87ace4b5e993179802853d7f088908f196ef6b75b8"
+    },
+    "sdk_commit": "caa81fa4971f74880cdab61990cb1b11420939ec",
+    "sdk_version": "10.0.300"
+  },
+  "json_formats": {
+    "net8.0": {
+      "format": "net8-boot-json-v1",
+      "framework": "net8.0",
+      "configuration_fields": [
+        "mainAssemblyName",
+        "resources",
+        "debugLevel",
+        "globalizationMode"
+      ],
+      "optional_configuration_fields": [
+        "cacheBootResources",
+        "linkerEnabled",
+        "appsettings",
+        "extensions",
+        "runtimeOptions",
+        "environmentVariables",
+        "diagnosticTracing"
+      ],
+      "resource_groups": [
+        "hash",
+        "assembly",
+        "coreAssembly",
+        "wasmNative",
+        "jsModuleNative",
+        "jsModuleRuntime"
+      ],
+      "optional_resource_groups": [
+        "icu",
+        "pdb",
+        "corePdb",
+        "satelliteResources",
+        "libraryInitializers",
+        "modulesAfterConfigLoaded",
+        "modulesAfterRuntimeReady"
+      ],
+      "platform": [
+        {
+          "role": "blazor",
+          "relative": "_framework/blazor.webassembly.js",
+          "served": "blazor.webassembly.js",
+          "trait": "boot",
+          "kind": "All",
+          "content_type": "text/javascript",
+          "source_package": "Microsoft.AspNetCore.Components.WebAssembly",
+          "source_member": "build/net8.0/blazor.webassembly.js"
+        },
+        {
+          "role": "manifest",
+          "relative": "_framework/blazor.boot.json",
+          "served": "blazor.boot.json",
+          "trait": "manifest",
+          "kind": "Build",
+          "content_type": "application/json",
+          "source_member": "obj/Release/net8.0/blazor.boot.json"
+        },
+        {
+          "role": "loader",
+          "relative": "_framework/dotnet.js",
+          "served": "dotnet.js",
+          "trait": "native",
+          "kind": "Build",
+          "content_type": "text/javascript",
+          "source_package": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm",
+          "source_member": "runtimes/browser-wasm/native/dotnet.js"
+        },
+        {
+          "role": "native_wasm",
+          "relative": "_framework/dotnet.native.wasm",
+          "served": "dotnet.native.wasm",
+          "trait": "native",
+          "kind": "Build",
+          "content_type": "application/wasm",
+          "group": "wasmNative",
+          "source_package": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm",
+          "source_member": "runtimes/browser-wasm/native/dotnet.native.wasm",
+          "virtual": "dotnet.native.wasm"
+        },
+        {
+          "role": "native_js",
+          "relative": "_framework/dotnet.native.js",
+          "served": "dotnet.native.js",
+          "trait": "native",
+          "kind": "Build",
+          "content_type": "text/javascript",
+          "group": "jsModuleNative",
+          "source_package": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm",
+          "source_member": "runtimes/browser-wasm/native/dotnet.native.js",
+          "virtual": "dotnet.native.js"
+        },
+        {
+          "role": "runtime_js",
+          "relative": "_framework/dotnet.runtime.js",
+          "served": "dotnet.runtime.js",
+          "trait": "native",
+          "kind": "Build",
+          "content_type": "text/javascript",
+          "group": "jsModuleRuntime",
+          "source_package": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm",
+          "source_member": "runtimes/browser-wasm/native/dotnet.runtime.js",
+          "virtual": "dotnet.runtime.js"
+        }
+      ],
+      "sdk_pack_version": "10.0.8"
+    },
+    "net9.0": {
+      "format": "net9-boot-json-v1",
+      "framework": "net9.0",
+      "configuration_fields": [
+        "mainAssemblyName",
+        "resources",
+        "debugLevel",
+        "globalizationMode"
+      ],
+      "optional_configuration_fields": [
+        "cacheBootResources",
+        "linkerEnabled",
+        "appsettings",
+        "extensions",
+        "runtimeOptions",
+        "environmentVariables",
+        "diagnosticTracing"
+      ],
+      "resource_groups": [
+        "hash",
+        "assembly",
+        "coreAssembly",
+        "wasmNative",
+        "jsModuleNative",
+        "jsModuleRuntime",
+        "fingerprinting"
+      ],
+      "optional_resource_groups": [
+        "icu",
+        "pdb",
+        "corePdb",
+        "satelliteResources",
+        "libraryInitializers",
+        "modulesAfterConfigLoaded",
+        "modulesAfterRuntimeReady"
+      ],
+      "platform": [
+        {
+          "role": "blazor",
+          "relative": "_framework/blazor.webassembly.js",
+          "served": "blazor.webassembly.js",
+          "trait": "boot",
+          "kind": "All",
+          "content_type": "text/javascript",
+          "source_package": "Microsoft.AspNetCore.Components.WebAssembly",
+          "source_member": "build/net9.0/blazor.webassembly.js"
+        },
+        {
+          "role": "manifest",
+          "relative": "_framework/blazor.boot#[.{fingerprint}]?.json",
+          "served": "blazor.boot.json",
+          "trait": "manifest",
+          "kind": "Build",
+          "content_type": "application/json",
+          "source_member": "obj/Release/net9.0/blazor.boot.json"
+        },
+        {
+          "role": "loader",
+          "relative": "_framework/dotnet#[.{fingerprint}]?.js",
+          "served": "dotnet.js",
+          "trait": "native",
+          "kind": "Build",
+          "content_type": "text/javascript",
+          "source_package": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm",
+          "source_member": "runtimes/browser-wasm/native/dotnet.js"
+        },
+        {
+          "role": "native_wasm",
+          "relative": "_framework/dotnet.native#[.{fingerprint}]!.wasm",
+          "served": "dotnet.native.{fingerprint}.wasm",
+          "trait": "native",
+          "kind": "Build",
+          "content_type": "application/wasm",
+          "group": "wasmNative",
+          "source_package": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm",
+          "source_member": "runtimes/browser-wasm/native/dotnet.native.wasm",
+          "virtual": "dotnet.native.wasm"
+        },
+        {
+          "role": "native_js",
+          "relative": "_framework/dotnet.native#[.{fingerprint}]!.js",
+          "served": "dotnet.native.{fingerprint}.js",
+          "trait": "native",
+          "kind": "Build",
+          "content_type": "text/javascript",
+          "group": "jsModuleNative",
+          "source_package": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm",
+          "source_member": "runtimes/browser-wasm/native/dotnet.native.js",
+          "virtual": "dotnet.native.js"
+        },
+        {
+          "role": "runtime_js",
+          "relative": "_framework/dotnet.runtime#[.{fingerprint}]!.js",
+          "served": "dotnet.runtime.{fingerprint}.js",
+          "trait": "native",
+          "kind": "Build",
+          "content_type": "text/javascript",
+          "group": "jsModuleRuntime",
+          "source_package": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm",
+          "source_member": "runtimes/browser-wasm/native/dotnet.runtime.js",
+          "virtual": "dotnet.runtime.js"
+        }
+      ],
+      "sdk_pack_version": "10.0.8"
+    }
+  }
 }

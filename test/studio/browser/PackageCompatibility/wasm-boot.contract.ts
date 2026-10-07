@@ -1,7 +1,7 @@
 // Synthetic parser/observer contracts only; no downloads, runtime or browser proof.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { parseWasmBootstrap, platformRole, WasmBootObserver, wasmBootPolicy, type ObservedBootResource } from './wasm-boot.js';
+import { bootPolicy, parseWasmBootstrap, platformRole, WasmBootObserver, wasmBootPolicy, type ObservedBootResource } from './wasm-boot.js';
 
 type Resource = ConstructorParameters<typeof WasmBootObserver>[0][number];
 const hash = (body: Buffer | string) => createHash('sha256').update(body).digest('hex');
@@ -90,4 +90,65 @@ for (const raw of [Buffer.from('{}'), Buffer.from('runtime.withConfig(/*json-sta
   Buffer.from(body.toString().replace('/*json-start*/', '/*unknown-start*/'))])
   assert.throws(() => parseWasmBootstrap(raw, platformBindings, managedBindings));
 assert.equal('__bootstrapMustNotExecute' in globalThis, false);
+// Source-derived JSON fixtures remain synthetic; they are not observed runtime proof.
+for (const framework of ['net8.0', 'net9.0']) {
+  const policy = bootPolicy(framework);
+  const platform: Resource[] = policy.platform.map(role => ({
+    path: '/_framework/' + role.served.replace('{fingerprint}', 'a'.repeat(10)), sha256: hash(role.role), bytes: role.role.length,
+    content_type: role.content_type, owner: 'platform'
+  }));
+  const managed: Resource[] = [...policy.mandatory_managed, policy.main_assembly, 'Elsa.Studio.Optional'].map(name => ({
+    path: '/_framework/' + name + (framework === 'net8.0' ? '' : '.' + 'b'.repeat(10)) + '.wasm', sha256: hash(name), bytes: name.length,
+    content_type: 'application/wasm', owner: name === policy.main_assembly ? 'fixture' : 'package'
+  }));
+  const config: any = { mainAssemblyName: policy.main_assembly, debugLevel: 0, globalizationMode: 'sharded', resources: {
+    hash: sri('c'.repeat(64)), assembly: Object.fromEntries(managed.map(row => [row.path.slice('/_framework/'.length), sri(row.sha256)])),
+    coreAssembly: {}
+  } };
+  if (framework === 'net9.0') config.resources.fingerprinting = Object.fromEntries(managed.map(row => [
+    row.path.slice('/_framework/'.length), row.path.slice('/_framework/'.length).replace(/\.[a-z0-9]{10}\.wasm$/, '.wasm')
+  ]));
+  for (const role of policy.platform) {
+    if (!role.group) continue;
+    const row = platform.find(row => platformRole(row.path, framework) === role.role)!;
+    const name = row.path.slice('/_framework/'.length);
+    config.resources[role.group] = { [name]: sri(row.sha256) };
+    if (framework === 'net9.0') config.resources.fingerprinting[name] = role.virtual;
+  }
+  const body = Buffer.from(JSON.stringify(config));
+  const manifest = platform.find(row => platformRole(row.path, framework) === 'manifest')!;
+  manifest.sha256 = hash(body); manifest.bytes = body.length;
+  const platformBindings = platform.map(row => ({ role: platformRole(row.path, framework)!, path: row.path, sha256: row.sha256 }));
+  const managedBindings = managed.map(row => ({ path: row.path, sha256: row.sha256, owner: row.owner === 'fixture' ? 'fixture' as const : 'package' as const }));
+  manifest.boot_configuration_sha256 = parseWasmBootstrap(body, platformBindings, managedBindings, framework);
+  assert.equal(manifest.boot_configuration_sha256, hash(body));
+  const expected = platform.concat(managed);
+  const observed: ObservedBootResource[] = expected.map(({ boot_configuration_sha256: _, ...row }) => ({ ...row, status: 200, requested: true }));
+  const observer = new WasmBootObserver(expected, framework);
+  observer.observe(observed.find(row => platformRole(row.path, framework) === 'manifest')!, body);
+  assert.equal(complete(observer.proof(observed, true)), true);
+  assert.equal(observer.proof(observed, true).format, policy.format);
+  assert.equal(complete(observer.proof(observed, false)), false);
+  assert.equal(complete(new WasmBootObserver(expected, framework).proof(observed, true)), false);
+  for (const row of expected) assert.equal(complete(observer.proof(observed.filter(item => item.path !== row.path), true)), false);
+  for (const wrong of ['net10.0', framework === 'net8.0' ? 'net9.0' : 'net8.0', 'net11.0'])
+    assert.throws(() => parseWasmBootstrap(body, platformBindings, managedBindings, wrong));
+  const mutations: Array<(value: any) => void> = [
+    value => { value.extra = true; }, value => { value.mainAssemblyName = 'Other.Host'; },
+    value => { value.debugLevel = true; }, value => { value.resources.assembly = []; },
+    value => { delete value.resources.assembly[managed[0].path.slice('/_framework/'.length)]; },
+    value => { value.resources.assembly['Elsa.Unknown.wasm'] = sri('0'.repeat(64)); },
+    value => { value.resources.wasmNative[Object.keys(value.resources.wasmNative)[0]] = sri('0'.repeat(64)); }
+  ];
+  if (framework === 'net9.0') mutations.push(
+    value => { delete value.resources.fingerprinting; },
+    value => { value.resources.fingerprinting[managed[0].path.slice('/_framework/'.length)] = 'Other.wasm'; },
+    value => { value.resources.fingerprinting[Object.keys(value.resources.wasmNative)[0]] = 'other.wasm'; }
+  );
+  else mutations.push(value => { value.resources.fingerprinting = {}; });
+  for (const mutate of mutations) {
+    const changed = structuredClone(config); mutate(changed);
+    assert.throws(() => parseWasmBootstrap(Buffer.from(JSON.stringify(changed)), platformBindings, managedBindings, framework));
+  }
+}
 process.stdout.write('WASM bootstrap parser and observer contracts passed\n');

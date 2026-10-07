@@ -61,12 +61,12 @@ class WasmInventoryContracts(unittest.TestCase):
 
     def row(self, name, framework):
         fingerprint = "0hfatihs5g"
-        served = self.project.parent / "bin/Release" / framework / "wwwroot/_framework" / f"{name}.{fingerprint}.wasm"
+        served = self.project.parent / "bin/Release" / framework / "wwwroot/_framework" / (f"{name}.wasm" if framework == "net8.0" else f"{name}.{fingerprint}.wasm")
         generated = self.project.parent / "obj/Release" / framework / "webcil" / f"{name}.wasm"
         for path in (served, generated):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(self.body)
-        return {"RelativePath": f"_framework/{name}#[.{{fingerprint}}]!.wasm", "Fingerprint": fingerprint,
+        return {"RelativePath": (f"_framework/{name}.wasm" if framework == "net8.0" else f"_framework/{name}#[.{{fingerprint}}]!.wasm"), "Fingerprint": fingerprint,
                 "Identity": str(served), "OriginalItemSpec": str(generated), "ContentRoot": str(served.parent.parent),
                 "SourceId": self.project.stem, "SourceType": "Computed", "BasePath": "/", "AssetKind": "Build",
                 "AssetMode": "All", "AssetRole": "Primary", "AssetTraitName": "WasmResource", "AssetTraitValue": "runtime",
@@ -109,6 +109,27 @@ class WasmInventoryContracts(unittest.TestCase):
                 wasm._derive(self.layout, self.project, self.manifest, self.owned, self.receipt,
                              lambda package: (self.archives[package["id"]], provenance.sha256(self.archives[package["id"]])),
                              converter=self.converter, route_prefix=prefix, _test_policy=self.policy)
+
+    def test_source_selected_net8_plain_names_do_not_relax_net9_or_net10(self):
+        for framework in ("net8.0", "net9.0", "net10.0"):
+            self.prepare(framework)
+            with self.subTest(framework=framework):
+                result = self.derive()
+                self.assertTrue(all(row["path"].endswith(".wasm") for row in result["assets"]))
+                self.assertEqual(framework != "net8.0", any(".0hfatihs5g.wasm" in row["path"] for row in result["assets"]))
+                generated = Path(self.rows[0]["OriginalItemSpec"])
+                raw = generated.read_bytes(); generated.write_bytes(raw + b"changed")
+                with self.assertRaisesRegex(ValueError, "Generated/served"):
+                    self.derive()
+                generated.write_bytes(raw)
+                original = self.rows[0]["RelativePath"]
+                name = next(iter(sorted(wasm.MANDATORY_ASSEMBLIES | {"Elsa.Studio.Optional"})))
+                self.rows[0]["RelativePath"] = (f"_framework/{name}#[.{{fingerprint}}]!.wasm" if framework == "net8.0"
+                                               else f"_framework/{name}.wasm")
+                self.write_manifest()
+                with self.assertRaisesRegex(ValueError, "filename schema"):
+                    self.derive()
+                self.rows[0]["RelativePath"] = original
 
     def test_nonmandatory_runtime_is_bound_and_thirdparty_scope_is_explicit(self):
         self.rows.append(self.row("System.SomeRuntime", "net10.0"))

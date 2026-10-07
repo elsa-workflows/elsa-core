@@ -17,53 +17,74 @@ def sri(digest):
     return "sha256-" + base64.b64encode(bytes.fromhex(digest)).decode("ascii")
 
 
-def fixture_resources():
+def fixture_resources(framework="net10.0"):
+    policy = boot.boot_policy(framework)
     platform = [{"path": "/_framework/" + role["served"].replace("{fingerprint}", "a" * 10),
                  "sha256": resources.sha256(role["role"].encode()), "bytes": 8,
                  "content_type": role["content_type"], "owner": "platform", "required": True}
-                for role in boot.POLICY["platform"]]
-    managed = [{"path": "/_framework/" + name + "." + "b" * 10 + ".wasm", "sha256": resources.sha256(name.encode()),
-                "bytes": 8, "content_type": "application/wasm", "owner": "fixture" if name == boot.POLICY["main_assembly"] else "package",
+                for role in policy["platform"]]
+    managed = [{"path": "/_framework/" + name + ("" if framework == "net8.0" else "." + "b" * 10) + ".wasm", "sha256": resources.sha256(name.encode()),
+                "bytes": 8, "content_type": "application/wasm", "owner": "fixture" if name == policy["main_assembly"] else "package",
                 "required": name != "Elsa.Studio.Optional"}
-               for name in boot.POLICY["mandatory_managed"] + [boot.POLICY["main_assembly"], "Elsa.Studio.Optional"]]
+               for name in policy["mandatory_managed"] + [policy["main_assembly"], "Elsa.Studio.Optional"]]
     return platform, managed
 
 
-def fixture_configuration(platform, managed):
-    config = dict.fromkeys(boot.POLICY["configuration_fields"])
-    config["mainAssemblyName"] = boot.POLICY["main_assembly"]
-    listed = dict.fromkeys(boot.POLICY["resource_groups"])
+def fixture_configuration(platform, managed, framework="net10.0"):
+    policy = boot.boot_policy(framework)
+    config = dict.fromkeys(policy["configuration_fields"])
+    config["mainAssemblyName"] = policy["main_assembly"]
+    listed = dict.fromkeys(policy["resource_groups"])
     config["resources"] = listed
     listed["assembly"] = [{"name": row["path"].removeprefix("/_framework/"),
-                           "virtualPath": boot.MANAGED_PATH.fullmatch(row["path"])[1] + ".wasm",
+                           "virtualPath": boot.managed_path(framework).fullmatch(row["path"])[1] + ".wasm",
                            "hash": sri(row["sha256"]), "cache": "force-cache"} for row in managed]
     listed["coreAssembly"] = [{"name": "System.Core.aaaaaaaaaa.wasm", "virtualPath": "System.Core.wasm",
                                "hash": sri("c" * 64), "cache": "force-cache"}]
-    for role in boot.POLICY["platform"]:
+    for role in policy["platform"]:
         if "group" in role:
-            resource = next(row for row in platform if boot.platform_role(row["path"]) == role["role"])
+            resource = next(row for row in platform if boot.platform_role(row["path"], framework) == role["role"])
             row = {"name": resource["path"].removeprefix("/_framework/")}
             if role["group"] == "wasmNative":
                 row.update(hash=sri(resource["sha256"]), cache="force-cache")
             listed[role["group"]] = [row]
+    if framework != "net10.0":
+        config.update(debugLevel=0, globalizationMode="sharded")
+        listed["hash"] = sri("d" * 64)
+        listed["assembly"] = {row["name"]: row["hash"] for row in listed["assembly"]}
+        listed["coreAssembly"] = {} if framework == "net8.0" else {row["name"]: row["hash"] for row in listed["coreAssembly"]}
+        for role in policy["platform"]:
+            if "group" in role:
+                resource = next(row for row in platform if boot.platform_role(row["path"], framework) == role["role"])
+                listed[role["group"]] = {resource["path"].removeprefix("/_framework/"): sri(resource["sha256"])}
+        if framework == "net9.0":
+            listed["fingerprinting"] = {row["path"].removeprefix("/_framework/"):
+                boot.managed_path(framework).fullmatch(row["path"])[1] + ".wasm" for row in managed}
+            listed["fingerprinting"].update({row["path"].removeprefix("/_framework/"): role["virtual"]
+                for role in policy["platform"] if "group" in role for row in platform
+                if boot.platform_role(row["path"], framework) == role["role"]})
+            listed["fingerprinting"]["System.Core.aaaaaaaaaa.wasm"] = "System.Core.wasm"
     return config
 
 
-def script(config):
+def script(config, framework="net10.0"):
+    if framework != "net10.0":
+        return json.dumps(config).encode()
     # Literal JS outside the JSON is intentionally never evaluated by either parser.
     return b'globalThis.__bootstrapMustNotExecute = true;runtime.withConfig(/*json-start*/' + json.dumps(config).encode() + b'/*json-end*/);'
 
 
-def boot_receipt_fixture():
-    """Reusable net10 fake for receipt-shape tests only; never runtime evidence."""
-    platform, managed = fixture_resources()
-    body = script(fixture_configuration(platform, managed))
-    manifest = next(row for row in platform if boot.platform_role(row["path"]) == "manifest")
+def boot_receipt_fixture(framework="net10.0"):
+    """Reusable format-selected fake for receipt-shape tests only; never runtime evidence."""
+    policy = boot.boot_policy(framework)
+    platform, managed = fixture_resources(framework)
+    body = script(fixture_configuration(platform, managed, framework), framework)
+    manifest = next(row for row in platform if boot.platform_role(row["path"], framework) == "manifest")
     manifest.update(sha256=resources.sha256(body), bytes=len(body))
-    configuration = boot.parse_boot_configuration(body, platform, managed)
+    configuration = boot.parse_boot_configuration(body, platform, managed, framework)
     manifest["boot_configuration_sha256"] = configuration["configuration_sha256"]
-    proof = {"format": boot.POLICY["format"], "checks": dict.fromkeys(boot.CHECKS, True),
-             "platform_bindings": [{"role": boot.platform_role(row["path"]), "path": row["path"], "sha256": row["sha256"]} for row in platform],
+    proof = {"format": policy["format"], "checks": dict.fromkeys(boot.CHECKS, True),
+             "platform_bindings": [{"role": boot.platform_role(row["path"], framework), "path": row["path"], "sha256": row["sha256"]} for row in platform],
              "managed_bindings": [{key: row[key] for key in ("path", "sha256", "owner")} for row in managed],
              "bootstrap_sha256": manifest["sha256"], "configuration_sha256": configuration["configuration_sha256"]}
     expected = platform + managed
@@ -73,42 +94,50 @@ def boot_receipt_fixture():
 
 
 class BootstrapFixture(unittest.TestCase):
+    framework = "net10.0"
     def setUp(self):
+        self.prepare(self.framework)
+
+    def prepare(self, framework):
+        policy = boot.boot_policy(framework)
+        major = framework.removeprefix("net").split(".")[0]
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         self.project = self.root / "projects/wasm/Elsa.Studio.Host.Wasm.csproj"
         self.project.parent.mkdir(parents=True)
         self.project.write_text('<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly" />')
-        self.layout = SimpleNamespace(request=hosts.CellRequest("wasm", "net10.0", "3.10.0"),
-                                      sdk=boot.POLICY["sdk_version"], project_paths={"wasm": self.project}, packages_root=self.root / "packages")
+        self.layout = SimpleNamespace(request=hosts.CellRequest("wasm", framework, "3.10.0"),
+                                      sdk=policy["sdk_version"], project_paths={"wasm": self.project}, packages_root=self.root / "packages")
         self.asset_file = self.project.parent / "obj/project.assets.json"
         self.asset_file.parent.mkdir()
-        self.assets = {"libraries": {"Microsoft.AspNetCore.Components.WebAssembly/10.0.3":
-                       {"type": "package", "path": "microsoft.aspnetcore.components.webassembly/10.0.3"}},
-                       "project": {"frameworks": {"net10.0": {"downloadDependencies": [
-                       {"name": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm", "version": "[10.0.8, 10.0.8]"}]}}}}
+        self.assets = {"libraries": {f"Microsoft.AspNetCore.Components.WebAssembly/{major}.0.3":
+                       {"type": "package", "path": f"microsoft.aspnetcore.components.webassembly/{major}.0.3"}},
+                       "project": {"frameworks": {framework: {"downloadDependencies": [
+                       {"name": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm", "version": f"[{major}.0.8, {major}.0.8]"}]}}}}
+        if framework != "net10.0":
+            self.assets["libraries"]["Microsoft.NET.Sdk.WebAssembly.Pack/10.0.8"] = {"type": "package", "path": "microsoft.net.sdk.webassembly.pack/10.0.8"}
         self.asset_file.write_text(json.dumps(self.assets))
-        self.platform, self.managed_assets = fixture_resources()
-        self.config = fixture_configuration(self.platform, self.managed_assets)
+        self.platform, self.managed_assets = fixture_resources(framework)
+        self.config = fixture_configuration(self.platform, self.managed_assets, framework)
         self.rows, self.endpoints = [], []
-        self.manifest = self.project.parent / "obj/Release/net10.0/staticwebassets.build.json"
+        self.manifest = self.project.parent / f"obj/Release/{framework}/staticwebassets.build.json"
         self.manifest.parent.mkdir(parents=True)
-        for role in boot.POLICY["platform"]:
-            resource = next(row for row in self.platform if boot.platform_role(row["path"]) == role["role"])
-            body = script(self.config) if role["role"] == "manifest" else role["role"].encode()
-            output = self.project.parent / "bin/Release/net10.0/wwwroot" / resource["path"].removeprefix("/")
+        for role in policy["platform"]:
+            resource = next(row for row in self.platform if boot.platform_role(row["path"], framework) == role["role"])
+            body = script(self.config, framework) if role["role"] == "manifest" else role["role"].encode()
+            output = self.project.parent / f"bin/Release/{framework}/wwwroot" / resource["path"].removeprefix("/")
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_bytes(body)
             resource.update(sha256=resources.sha256(body), bytes=len(body))
         # Native integrity in the embedded JSON refers to its actual source-copy bytes.
-        self.config = fixture_configuration(self.platform, self.managed_assets)
-        for role in boot.POLICY["platform"]:
-            resource = next(row for row in self.platform if boot.platform_role(row["path"]) == role["role"])
-            output = self.project.parent / "bin/Release/net10.0/wwwroot" / resource["path"].removeprefix("/")
+        self.config = fixture_configuration(self.platform, self.managed_assets, framework)
+        for role in policy["platform"]:
+            resource = next(row for row in self.platform if boot.platform_role(row["path"], framework) == role["role"])
+            output = self.project.parent / f"bin/Release/{framework}/wwwroot" / resource["path"].removeprefix("/")
             if role["role"] == "manifest":
-                output.write_bytes(script(self.config))
-            source, _ = boot._source(role, self.assets, self.layout, self.project)
+                output.write_bytes(script(self.config, framework))
+            source, _ = boot._source(role, self.assets, self.layout, self.project, policy)
             source.parent.mkdir(parents=True, exist_ok=True)
             source.write_bytes(output.read_bytes())
             digest = resources.sha256(output.read_bytes())
@@ -145,9 +174,9 @@ class BootstrapInventoryContracts(BootstrapFixture):
         self.assertEqual({"generated", "platform-cache"}, {row["source"]["kind"] for row in result["bindings"]})
         self.assertNotIn(str(self.root), json.dumps(result))
 
-    def test_only_observed_framework_sdk_and_standalone_composition_are_accepted(self):
-        for framework in ("net8.0", "net9.0"):
-            self.layout.request = hosts.CellRequest("wasm", framework, "3.10.0")
+    def test_only_selected_framework_sdk_and_standalone_composition_are_accepted(self):
+        for framework in ("net7.0", "net11.0"):
+            self.layout.request = SimpleNamespace(host="wasm", framework=framework, route_prefix="")
             with self.subTest(framework=framework), self.assertRaisesRegex(ValueError, "Unreviewed"):
                 self.derive()
         self.layout.request = hosts.CellRequest("wasm", "net10.0", "3.10.0")
@@ -193,7 +222,76 @@ class BootstrapInventoryContracts(BootstrapFixture):
         self.assertEqual(self.managed["static_asset_manifest_sha256"], result["bootstrap_resources"]["static_asset_manifest_sha256"])
 
 
+class JsonBootstrapInventoryContracts(BootstrapFixture):
+    def test_synthetic_json_inventories_preserve_source_manifest_and_managed_bindings(self):
+        for framework in ("net8.0", "net9.0"):
+            self.prepare(framework)
+            with self.subTest(framework=framework):
+                original = copy.deepcopy(self.managed)
+                result = self.derive()
+                self.assertEqual(original, self.managed)
+                self.assertEqual(boot.boot_policy(framework)["format"], result["format"])
+                self.assertEqual(6, len(result["assets"]))
+                self.assertTrue(all(row["owner"] == "platform" for row in result["assets"]))
+                manifest = next(row for row in result["assets"] if boot.platform_role(row["path"], framework) == "manifest")
+                self.assertEqual("application/json", manifest["content_type"])
+                self.assertEqual(manifest["sha256"], manifest["boot_configuration_sha256"])
+                self.assertEqual({"generated", "platform-cache"}, {row["source"]["kind"] for row in result["bindings"]})
+                self.assertTrue(all(row["source"].get("version", "").startswith(framework[3:-2] + ".0.")
+                                    for row in result["bindings"] if row["source"]["kind"] == "platform-cache"))
+                source = Path(self.rows[2]["OriginalItemSpec"])
+                raw = source.read_bytes(); source.write_bytes(raw + b"changed")
+                with self.assertRaises(ValueError):
+                    self.derive()
+                source.write_bytes(raw)
+                original_assets = copy.deepcopy(self.assets)
+                self.assets["libraries"]["Microsoft.NET.Sdk.WebAssembly.Pack/10.0.8"]["path"] = "other/10.0.8"
+                self.asset_file.write_text(json.dumps(self.assets))
+                self.managed["project_assets_sha256"] = resources.sha256(self.asset_file.read_bytes())
+                with self.assertRaisesRegex(ValueError, "SDK task package/source"):
+                    self.derive()
+                self.assets = original_assets
+                self.asset_file.write_text(json.dumps(self.assets))
+                self.managed["project_assets_sha256"] = resources.sha256(self.asset_file.read_bytes())
+                self.endpoints[1]["ResponseHeaders"][0]["Value"] = "text/javascript"
+                self.write_manifest()
+                with self.assertRaises(ValueError):
+                    self.derive()
+
+
 class BootstrapParserContracts(unittest.TestCase):
+    def test_source_selected_json_formats_bind_every_original_resource(self):
+        for framework in ("net8.0", "net9.0"):
+            with self.subTest(framework=framework):
+                platform, managed = fixture_resources(framework)
+                config = fixture_configuration(platform, managed, framework)
+                raw = script(config, framework)
+                result = boot.parse_boot_configuration(raw, platform, managed, framework)
+                self.assertEqual(boot.boot_policy(framework)["format"], result["format"])
+                self.assertEqual(resources.sha256(raw), result["configuration_sha256"])
+                self.assertEqual(len(managed), result["managed_count"])
+                mutations = [lambda c: c.update(extra=True), lambda c: c.update(mainAssemblyName="Other.Host"),
+                             lambda c: c.update(debugLevel=True), lambda c: c["resources"].update(unknown={}),
+                             lambda c: c["resources"]["assembly"].pop(next(iter(c["resources"]["assembly"]))),
+                             lambda c: c["resources"]["assembly"].update({"Elsa.Unknown.wasm": sri("0" * 64)}),
+                             lambda c: c["resources"]["wasmNative"].update({next(iter(c["resources"]["wasmNative"])): sri("0" * 64)}),
+                             lambda c: c["resources"].update(assembly=[])]
+                if framework == "net9.0":
+                    mutations += [lambda c: c["resources"].pop("fingerprinting"),
+                                  lambda c: c["resources"]["fingerprinting"].update({next(iter(c["resources"]["assembly"])): "Other.wasm"}),
+                                  lambda c: c["resources"]["fingerprinting"].update({next(iter(c["resources"]["wasmNative"])): "other.wasm"})]
+                else:
+                    mutations += [lambda c: c["resources"].update(fingerprinting={})]
+                for index, mutate in enumerate(mutations):
+                    changed = copy.deepcopy(config); mutate(changed)
+                    with self.subTest(mutation=index), self.assertRaises(ValueError):
+                        boot.parse_boot_configuration(script(changed, framework), platform, managed, framework)
+                for wrong in ("net10.0", "net9.0" if framework == "net8.0" else "net8.0", "net11.0"):
+                    with self.subTest(wrong_framework=wrong), self.assertRaises(ValueError):
+                        boot.parse_boot_configuration(raw, platform, managed, wrong)
+                with self.assertRaises(ValueError):
+                    boot.parse_boot_configuration(raw.replace(b'"mainAssemblyName":', b'"mainAssemblyName": null, "mainAssemblyName":'), platform, managed, framework)
+
     def test_parse_only_known_embedded_json_and_original_resource_bindings(self):
         platform, managed = fixture_resources()
         config = fixture_configuration(platform, managed)
@@ -231,6 +329,28 @@ class BootstrapReceiptContracts(unittest.TestCase):
         self.proof["checks"]["platform_resources"] = self.proof["checks"]["managed_resources"] = False
         self.proof["checks"]["configuration"] = False
         self.validate(passed=False, callback=False, observed=[])
+
+    def test_json_receipts_are_selected_by_framework_not_relabelled_net10_proof(self):
+        for framework in ("net8.0", "net9.0"):
+            proof, expected, observed = boot_receipt_fixture(framework)
+            record = {"host": "wasm", "framework": framework, "proof": {"wasm_boot": proof}, "resources": observed}
+            with self.subTest(framework=framework):
+                boot.validate_boot_receipt(proof, True, observed, True, framework)
+                boot.validate_boot_request_binding(record, expected, framework)
+                with self.assertRaises(ValueError):
+                    boot.validate_boot_receipt(proof, True, observed, False, framework)
+                with self.assertRaises(ValueError):
+                    boot.validate_boot_receipt(proof, True, observed, True)
+                changed = copy.deepcopy(proof); changed["format"] = boot.POLICY["format"]
+                with self.assertRaises(ValueError):
+                    boot.validate_boot_receipt(changed, True, observed, True, framework)
+                changed = copy.deepcopy(record); changed["proof"]["wasm_boot"]["managed_bindings"].pop()
+                with self.assertRaises(ValueError):
+                    boot.validate_boot_request_binding(changed, expected, framework)
+                manifest = next(row for row in expected if boot.platform_role(row["path"], framework) == "manifest")
+                manifest["boot_configuration_sha256"] = "0" * 64
+                with self.assertRaises(ValueError):
+                    boot.validate_boot_request_binding(record, expected, framework)
 
     def test_proof_fields_roles_owners_hashes_and_assertion_consistency_are_strict(self):
         mutations = [lambda p: p.update(raw_script="private"), lambda p: p.update(format="invented"),
@@ -280,7 +400,7 @@ class BootstrapReceiptContracts(unittest.TestCase):
         boot.validate_boot_request_binding(record, self.expected, "net10.0")
         for framework in ("net8.0", "net9.0"):
             changed = copy.deepcopy(record); changed["framework"] = framework
-            with self.subTest(framework=framework), self.assertRaisesRegex(ValueError, "Unexpected standalone"):
+            with self.subTest(framework=framework), self.assertRaises(ValueError):
                 matrix.validate_browser_receipt(changed, matrix.identity(changed))
         for mutate in (lambda r: r["proof"].pop("wasm_boot"),
                        lambda r: r["proof"].update(interactive_validation_observed=False)):

@@ -1,9 +1,11 @@
-"""Selected standalone bootstrap closure observed in SDK 10.0.300/net10.0 builds.
+"""Selected standalone bootstrap closure for SDK 10.0.300.
 
 Platform authority is the owned static manifest, restored platform source copies
-and generated dotnet.js. It is not sealed Elsa package archive provenance. The
+and generated boot configuration. It is not sealed Elsa package archive provenance. The
 existing managed mapper retains that separate authority. This closure excludes
 ICU/globalization and other platform assemblies; unknown formats fail closed.
+The net10 format was observed in builds; net8/9 selectors are source-grounded
+contracts whose actual build and browser verification remains pending.
 """
 from __future__ import annotations
 
@@ -21,6 +23,17 @@ POLICY = json.loads(POLICY_PATH.read_text(encoding="utf-8"))
 CHECKS = frozenset(POLICY["checks"])
 require = resources.require
 MANAGED_PATH = re.compile(r"/_framework/(Elsa\.[A-Za-z0-9_.-]+)\.([a-z0-9]{10})\.wasm")
+
+
+def boot_policy(framework: str) -> dict:
+    require(framework == POLICY["framework"] or framework in POLICY["json_formats"],
+            "Unreviewed standalone WASM bootstrap framework")
+    return POLICY if framework == POLICY["framework"] else {**POLICY, **POLICY["json_formats"][framework]}
+
+
+def managed_path(framework: str):
+    boot_policy(framework)
+    return re.compile(r"/_framework/(Elsa\.[A-Za-z0-9_.-]+)\.wasm") if framework == "net8.0" else MANAGED_PATH
 
 
 def _read(path: Path, limit: int) -> bytes:
@@ -51,37 +64,63 @@ def _sri(digest: str) -> str:
     return "sha256-" + base64.b64encode(bytes.fromhex(digest)).decode("ascii")
 
 
-def platform_role(path: str) -> str | None:
-    for role in POLICY["platform"]:
+def platform_role(path: str, framework: str = "net10.0") -> str | None:
+    for role in boot_policy(framework)["platform"]:
         pattern = re.escape("/_framework/" + role["served"]).replace(re.escape("{fingerprint}"), "[a-z0-9]{10}")
         if re.fullmatch(pattern, path):
             return role["role"]
     return None
 
 
-def parse_boot_configuration(body: bytes, platform: list[dict], managed: list[dict]) -> dict:
-    require(0 < len(body) <= POLICY["maximum_boot_bytes"], "Bootstrap script exceeds its byte bound")
+def parse_boot_configuration(body: bytes, platform: list[dict], managed: list[dict], framework: str = "net10.0") -> dict:
+    policy = boot_policy(framework)
+    require(0 < len(body) <= policy["maximum_boot_bytes"], "Bootstrap script exceeds its byte bound")
     start, end = b"/*json-start*/", b"/*json-end*/"
-    require(body.count(start) == body.count(end) == 1, "Unreviewed embedded bootstrap format")
-    left, right = body.index(start), body.index(end)
-    require(left < right and re.search(rb"\.withConfig\(\s*$", body[:left]) and
-            body[right + len(end):].startswith(b");"), "Unreviewed embedded bootstrap boundary")
-    raw = body[left + len(start):right]
+    if framework == "net10.0":
+        require(body.count(start) == body.count(end) == 1, "Unreviewed embedded bootstrap format")
+        left, right = body.index(start), body.index(end)
+        require(left < right and re.search(rb"\.withConfig\(\s*$", body[:left]) and
+                body[right + len(end):].startswith(b");"), "Unreviewed embedded bootstrap boundary")
+        raw = body[left + len(start):right]
+    else:
+        raw = body
     config = _json(raw)
-    require(isinstance(config, dict) and set(config) == set(POLICY["configuration_fields"]) and
-            config["mainAssemblyName"] == POLICY["main_assembly"], "Unreviewed bootstrap configuration")
+    required = set(policy["configuration_fields"])
+    allowed = required | set(policy.get("optional_configuration_fields", []) if framework != "net10.0" else [])
+    require(isinstance(config, dict) and required <= set(config) <= allowed and
+            config["mainAssemblyName"] == policy["main_assembly"], "Unreviewed bootstrap configuration")
+    if framework != "net10.0":
+        require(type(config["debugLevel"]) is int and config["debugLevel"] in {-1, 0} and
+                config["globalizationMode"] in {"sharded", "all", "invariant", "custom", "hybrid"} and
+                all(type(config[field]) is bool for field in ("cacheBootResources", "linkerEnabled") if field in config),
+                "Unreviewed Release bootstrap configuration values")
     listed = config["resources"]
-    require(isinstance(listed, dict) and set(listed) == set(POLICY["resource_groups"]),
+    required = set(policy["resource_groups"])
+    allowed = required | set(policy.get("optional_resource_groups", []) if framework != "net10.0" else [])
+    require(isinstance(listed, dict) and required <= set(listed) <= allowed,
             "Unreviewed bootstrap resource schema")
-    by_role = {platform_role(row["path"]): row for row in platform}
-    require(len(platform) == len(by_role) == len(POLICY["platform"]) and None not in by_role,
+    fingerprints = listed.get("fingerprinting", {})
+    if framework != "net10.0":
+        require(isinstance(fingerprints, dict) and len(fingerprints) <= 4096 and all(
+            isinstance(name, str) and re.fullmatch(r"[A-Za-z0-9_.-]+", name) and
+            isinstance(virtual, str) and re.fullmatch(r"[A-Za-z0-9_.-]+", virtual)
+            for name, virtual in fingerprints.items()), "Unreviewed bootstrap fingerprint map")
+    by_role = {platform_role(row["path"], framework): row for row in platform}
+    require(len(platform) == len(by_role) == len(policy["platform"]) and None not in by_role,
             "Missing or duplicate platform bootstrap bindings")
-    for role in POLICY["platform"]:
+    for role in policy["platform"]:
         group = role.get("group")
         if not group:
             continue
         rows = listed[group]
         expected = by_role[role["role"]]
+        if framework != "net10.0":
+            name = expected["path"].removeprefix("/_framework/")
+            require(isinstance(rows, dict) and rows == {name: _sri(expected["sha256"])},
+                    "Native bootstrap integrity differs from manifest binding")
+            require(framework != "net9.0" or fingerprints.get(name) == role["virtual"],
+                    "Native bootstrap fingerprint differs from source identity")
+            continue
         require(isinstance(rows, list) and len(rows) == 1 and isinstance(rows[0], dict), "Unreviewed native bootstrap group")
         row = rows[0]
         fields = {"name", "hash", "cache"} if group == "wasmNative" else {"name"}
@@ -93,7 +132,13 @@ def parse_boot_configuration(body: bytes, platform: list[dict], managed: list[di
     indexed, virtual_paths = {}, set()
     for group in ("assembly", "coreAssembly"):
         rows = listed[group]
-        require(isinstance(rows, list) and 0 < len(rows) <= 1024, "Unreviewed managed bootstrap group")
+        if framework != "net10.0":
+            require(isinstance(rows, dict) and len(rows) <= 1024 and (rows or group == "coreAssembly"),
+                    "Unreviewed managed bootstrap group")
+            rows = [{"name": name, "virtualPath": fingerprints.get(name, name), "hash": digest, "cache": "force-cache"}
+                    for name, digest in rows.items()]
+        else:
+            require(isinstance(rows, list) and 0 < len(rows) <= 1024, "Unreviewed managed bootstrap group")
         for row in rows:
             require(isinstance(row, dict) and set(row) == {"virtualPath", "name", "hash", "cache"} and
                     isinstance(row["name"], str) and re.fullmatch(r"[A-Za-z0-9_.-]+\.wasm", row["name"]) and
@@ -103,13 +148,13 @@ def parse_boot_configuration(body: bytes, platform: list[dict], managed: list[di
                     "Invalid or duplicate managed bootstrap resource")
             indexed[row["name"].casefold()] = row
             virtual_paths.add(row["virtualPath"].casefold())
-    require(0 < len(managed) <= POLICY["maximum_managed_resources"], "Missing managed bootstrap bindings")
+    require(0 < len(managed) <= policy["maximum_managed_resources"], "Missing managed bootstrap bindings")
     expected_names, assemblies = set(), set()
     for asset in managed:
-        match = MANAGED_PATH.fullmatch(asset["path"])
+        match = managed_path(framework).fullmatch(asset["path"])
         require(match and asset["owner"] in ("package", "fixture"), "Invalid managed bootstrap binding")
         assembly = match[1]
-        require((asset["owner"] == "fixture") == (assembly == POLICY["main_assembly"]), "Managed bootstrap owner differs")
+        require((asset["owner"] == "fixture") == (assembly == policy["main_assembly"]), "Managed bootstrap owner differs")
         name = asset["path"].removeprefix("/_framework/")
         require(name.casefold() not in expected_names and name.casefold() in indexed, "Missing managed bootstrap resource")
         row = indexed[name.casefold()]
@@ -117,14 +162,15 @@ def parse_boot_configuration(body: bytes, platform: list[dict], managed: list[di
                 "Managed bootstrap differs from original package/fixture binding")
         expected_names.add(name.casefold())
         assemblies.add(assembly)
-    require(set(POLICY["mandatory_managed"]) | {POLICY["main_assembly"]} <= assemblies,
+    require(set(policy["mandatory_managed"]) | {policy["main_assembly"]} <= assemblies,
             "Missing mandatory managed bootstrap subset")
     require({name for name in indexed if name.startswith("elsa.")} == expected_names,
             "Unbound Elsa assembly in bootstrap configuration")
-    return {"format": POLICY["format"], "configuration_sha256": resources.sha256(raw), "managed_count": len(managed)}
+    return {"format": policy["format"], "configuration_sha256": resources.sha256(raw), "managed_count": len(managed)}
 
 
-def _source(role: dict, assets: dict, layout, project: Path) -> tuple[Path, dict]:
+def _source(role: dict, assets: dict, layout, project: Path, policy: dict = POLICY) -> tuple[Path, dict]:
+    major = policy["framework"].removeprefix("net").split(".")[0]
     package_id = role.get("source_package")
     if not package_id:
         return project.parent / role["source_member"], {"kind": "generated", "member": role["source_member"]}
@@ -136,24 +182,26 @@ def _source(role: dict, assets: dict, layout, project: Path) -> tuple[Path, dict
         require(row.get("type") == "package" and row.get("path") == package_id.lower() + "/" + version,
                 "Restored bootstrap platform package path differs")
     else:
-        rows = [row for row in assets["project"]["frameworks"][POLICY["framework"]]["downloadDependencies"]
+        rows = [row for row in assets["project"]["frameworks"][policy["framework"]]["downloadDependencies"]
                 if row.get("name") == package_id]
         require(len(rows) == 1, "Missing selected bootstrap runtime pack")
-        version_range = re.fullmatch(r"\[(10\.0\.[0-9]{1,6}), \1\]", rows[0].get("version", ""))
+        version_range = re.fullmatch(rf"\[({major}\.0\.[0-9]{{1,6}}), \1\]", rows[0].get("version", ""))
         require(version_range is not None, "Bootstrap runtime pack version is not exact")
         version = version_range[1]
-    require(re.fullmatch(r"10\.0\.[0-9]{1,6}", version), "Unreviewed platform bootstrap version")
+    require(re.fullmatch(rf"{major}\.0\.[0-9]{{1,6}}", version), "Unreviewed platform bootstrap version")
     path = layout.packages_root / package_id.lower() / version / role["source_member"]
     return path, {"kind": "platform-cache", "package_id": package_id, "version": version, "member": role["source_member"]}
 
 
 def derive_boot_resources(layout, project: Path, build_manifest: Path, managed: dict) -> dict:
-    require(layout.request.host == "wasm" and layout.request.framework == POLICY["framework"] and
-            layout.sdk == POLICY["sdk_version"] and not layout.request.route_prefix,
+    framework = layout.request.framework
+    policy = boot_policy(framework)
+    require(layout.request.host == "wasm" and layout.request.framework == policy["framework"] and
+            layout.sdk == policy["sdk_version"] and not layout.request.route_prefix,
             "Unreviewed standalone WASM bootstrap framework/SDK/host")
     project = managed_resources._owned_project(layout, project)
-    require(project.stem == POLICY["main_assembly"], "Unexpected standalone WASM entry assembly")
-    expected_manifest = project.parent / "obj/Release" / POLICY["framework"] / "staticwebassets.build.json"
+    require(project.stem == policy["main_assembly"], "Unexpected standalone WASM entry assembly")
+    expected_manifest = project.parent / "obj/Release" / policy["framework"] / "staticwebassets.build.json"
     require(provenance.regular_file(build_manifest.absolute()) == expected_manifest.resolve(), "Bootstrap requires the exact Release manifest")
     raw = _read(build_manifest, 16 * 1024 * 1024)
     manifest_hash = resources.sha256(raw)
@@ -162,12 +210,19 @@ def derive_boot_resources(layout, project: Path, build_manifest: Path, managed: 
     asset_raw = _read(asset_file, 16 * 1024 * 1024)
     require(resources.sha256(asset_raw) == managed["project_assets_sha256"], "Bootstrap project assets changed after managed verification")
     assets, build = _json(asset_raw), _json(raw)
+    if framework != "net10.0":
+        sdk_package = "Microsoft.NET.Sdk.WebAssembly.Pack"
+        selected = [(key, row) for key, row in assets["libraries"].items() if key.startswith(sdk_package + "/")]
+        require(len(selected) == 1 and selected[0][0] == sdk_package + "/" + policy["sdk_pack_version"] and
+                selected[0][1].get("type") == "package" and
+                selected[0][1].get("path") == sdk_package.lower() + "/" + policy["sdk_pack_version"],
+                "Unreviewed bootstrap SDK task package/source")
     require(type(build.get("Version")) is int and build["Version"] == 1 and build.get("Source") == project.stem and
             build.get("Mode") == "Root" and build.get("ManifestType") == "Build" and build.get("BasePath") == "/" and
             isinstance(build.get("Assets"), list) and isinstance(build.get("Endpoints"), list), "Unreviewed bootstrap build manifest")
-    output_root = project.parent / "bin/Release" / POLICY["framework"] / "wwwroot"
+    output_root = project.parent / "bin/Release" / policy["framework"] / "wwwroot"
     bindings, platform, manifest_body = [], [], None
-    for role in POLICY["platform"]:
+    for role in policy["platform"]:
         rows = [row for row in build["Assets"] if row.get("RelativePath") == role["relative"] and row.get("AssetRole") == "Primary"]
         require(len(rows) == 1, "Missing or duplicate bootstrap platform asset")
         row = rows[0]
@@ -184,11 +239,11 @@ def derive_boot_resources(layout, project: Path, build_manifest: Path, managed: 
                 Path(row["ContentRoot"]).is_absolute() and ".." not in Path(row["ContentRoot"]).parts and
                 provenance.regular_file(Path(row["ContentRoot"]) / "_framework" / filename) == output.resolve(),
                 "Bootstrap platform output escaped the owned build")
-        body = _read(output, POLICY["maximum_boot_bytes"] if role["role"] == "manifest" else 32 * 1024 * 1024)
+        body = _read(output, policy["maximum_boot_bytes"] if role["role"] == "manifest" else 32 * 1024 * 1024)
         digest = resources.sha256(body)
         require(type(row.get("FileLength")) is int and row["FileLength"] == len(body) and row.get("Integrity") == _sri(digest)[7:],
                 "Bootstrap platform length/integrity differs")
-        source, source_binding = _source(role, assets, layout, project)
+        source, source_binding = _source(role, assets, layout, project, policy)
         spec = Path(row["OriginalItemSpec"])
         require(".." not in spec.parts and (spec.is_absolute() or spec.as_posix() == role["source_member"]) and
                 provenance.regular_file(spec if spec.is_absolute() else project.parent / spec) == provenance.regular_file(source) and
@@ -207,8 +262,8 @@ def derive_boot_resources(layout, project: Path, build_manifest: Path, managed: 
         bindings.append({"role": role["role"], **resource, "source": {**source_binding, "sha256": digest}})
         if role["role"] == "manifest":
             manifest_body = body
-    configuration = parse_boot_configuration(manifest_body, platform, managed["assets"])
-    next(asset for asset in platform if platform_role(asset["path"]) == "manifest")["boot_configuration_sha256"] = configuration["configuration_sha256"]
+    configuration = parse_boot_configuration(manifest_body, platform, managed["assets"], framework)
+    next(asset for asset in platform if platform_role(asset["path"], framework) == "manifest")["boot_configuration_sha256"] = configuration["configuration_sha256"]
     require(provenance.sha256(build_manifest) == manifest_hash and provenance.sha256(asset_file) == resources.sha256(asset_raw),
             "Bootstrap manifests changed during derivation")
     return {"assets": platform, "bindings": bindings, **configuration, "sdk_version": layout.sdk,
@@ -216,38 +271,39 @@ def derive_boot_resources(layout, project: Path, build_manifest: Path, managed: 
             "policy_sha256": provenance.sha256(POLICY_PATH)}
 
 
-def validate_boot_receipt(value: object, assertion_passed: bool, observed: list[dict], managed_callback: bool) -> None:
+def validate_boot_receipt(value: object, assertion_passed: bool, observed: list[dict], managed_callback: bool, framework: str = "net10.0") -> None:
+    policy = boot_policy(framework)
     required = {"format", "checks", "platform_bindings", "managed_bindings"}
     optional = {"bootstrap_sha256", "configuration_sha256"}
     require(isinstance(value, dict) and required <= set(value) <= required | optional and
-            value["format"] == POLICY["format"], "Unsafe WASM boot proof fields/format")
+            value["format"] == policy["format"], "Unsafe WASM boot proof fields/format")
     checks = value["checks"]
     require(isinstance(checks, dict) and set(checks) == CHECKS and all(type(flag) is bool for flag in checks.values()),
             "Invalid WASM boot checks")
     platform, managed = value["platform_bindings"], value["managed_bindings"]
-    require(isinstance(platform, list) and len(platform) == len(POLICY["platform"]) and
-            isinstance(managed, list) and 0 < len(managed) <= POLICY["maximum_managed_resources"],
+    require(isinstance(platform, list) and len(platform) == len(policy["platform"]) and
+            isinstance(managed, list) and 0 < len(managed) <= policy["maximum_managed_resources"],
             "Missing or oversized WASM boot bindings")
     roles, paths, assemblies = {}, set(), set()
     for binding in platform:
         require(isinstance(binding, dict) and set(binding) == {"role", "path", "sha256"} and
-                isinstance(binding["path"], str) and platform_role(binding["path"]) == binding["role"] and
+                isinstance(binding["path"], str) and platform_role(binding["path"], framework) == binding["role"] and
                 binding["role"] not in roles, "Invalid or duplicated platform bootstrap binding")
         _sri(binding["sha256"])
         roles[binding["role"]] = binding
-    require(set(roles) == {role["role"] for role in POLICY["platform"]}, "Missing platform bootstrap role")
+    require(set(roles) == {role["role"] for role in policy["platform"]}, "Missing platform bootstrap role")
     for binding in managed:
         require(isinstance(binding, dict) and set(binding) == {"path", "sha256", "owner"} and
                 isinstance(binding["path"], str), "Unsafe managed bootstrap binding")
-        match = MANAGED_PATH.fullmatch(binding["path"])
+        match = managed_path(framework).fullmatch(binding["path"])
         require(match and binding["owner"] in ("package", "fixture") and
-                (binding["owner"] == "fixture") == (match[1] == POLICY["main_assembly"]) and
+                (binding["owner"] == "fixture") == (match[1] == policy["main_assembly"]) and
                 binding["path"].casefold() not in paths and match[1] not in assemblies,
                 "Invalid or duplicated managed bootstrap binding")
         _sri(binding["sha256"])
         paths.add(binding["path"].casefold())
         assemblies.add(match[1])
-    require(set(POLICY["mandatory_managed"]) | {POLICY["main_assembly"]} <= assemblies,
+    require(set(policy["mandatory_managed"]) | {policy["main_assembly"]} <= assemblies,
             "Missing original managed/fixture bootstrap subset")
     for field in optional & set(value):
         _sri(value[field])
@@ -257,12 +313,12 @@ def validate_boot_receipt(value: object, assertion_passed: bool, observed: list[
                    row.get("owner") == owner and row.get("status") == 200 and row.get("requested") is True and
                    row.get("content_type") == content_type for row in observed)
 
-    platform_matched = all(matched(roles[role["role"]], "platform", role["content_type"]) for role in POLICY["platform"])
+    platform_matched = all(matched(roles[role["role"]], "platform", role["content_type"]) for role in policy["platform"])
     managed_matched = all(matched(binding, binding["owner"], "application/wasm") for binding in managed)
     require(checks["platform_resources"] is platform_matched, "WASM boot platform assertion differs from observed resources")
     require(not checks["configuration"] or optional <= set(value) and
             value["bootstrap_sha256"] == roles["manifest"]["sha256"] and
-            matched(roles["manifest"], "platform", "text/javascript"), "Missing observed bootstrap configuration binding")
+            matched(roles["manifest"], "platform", next(role["content_type"] for role in policy["platform"] if role["role"] == "manifest")), "Missing observed bootstrap configuration binding")
     require(checks["managed_resources"] is (managed_matched and checks["configuration"]),
             "WASM boot managed assertion differs from observed original bindings")
     require(checks["managed_callback"] is managed_callback, "WASM boot callback differs from executed native form validation")
@@ -271,19 +327,21 @@ def validate_boot_receipt(value: object, assertion_passed: bool, observed: list[
 
 def validate_boot_request_binding(record: dict, expected_resources: list[dict], framework: str) -> None:
     """Bind the browser claim to original verified input, not a receipt-selected resource set."""
+    policy = boot_policy(framework)
     proof = record.get("proof", {}).get("wasm_boot")
     if proof is None:
         return
-    require(record["host"] == "wasm" and framework == record["framework"] == POLICY["framework"],
+    require(record["host"] == "wasm" and framework == record["framework"] == policy["framework"],
             "WASM boot proof differs from requested framework/host")
+    require(proof.get("format") == policy["format"], "WASM boot format differs from requested framework")
     platform = [row for row in expected_resources if row["owner"] == "platform"]
     managed = [row for row in expected_resources if row["owner"] != "platform" and row["path"].startswith("/_framework/")]
-    expected_platform = [{"role": platform_role(row["path"]), "path": row["path"], "sha256": row["sha256"]} for row in platform]
+    expected_platform = [{"role": platform_role(row["path"], framework), "path": row["path"], "sha256": row["sha256"]} for row in platform]
     expected_managed = [{"path": row["path"], "sha256": row["sha256"], "owner": row["owner"]} for row in managed]
     require(sorted(proof["platform_bindings"], key=lambda row: row["path"]) == sorted(expected_platform, key=lambda row: row["path"]) and
             sorted(proof["managed_bindings"], key=lambda row: row["path"]) == sorted(expected_managed, key=lambda row: row["path"]),
             "WASM boot bindings differ from original requested resources")
-    manifests = [row for row in platform if platform_role(row["path"]) == "manifest"]
+    manifests = [row for row in platform if platform_role(row["path"], framework) == "manifest"]
     require(len(manifests) == 1, "Missing requested bootstrap manifest resource")
     manifest = manifests[0]
     _sri(manifest.get("boot_configuration_sha256"))

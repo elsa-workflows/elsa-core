@@ -2,9 +2,10 @@
 
 The mandatory subset is not a complete loaded-library claim. Every owned package
 runtime DLL is mapped; actual browser requests must still be verified separately.
-Only the observed fingerprint-template manifest shape is accepted. Fingerprint
-mapping is checked, not the SDK's fingerprint generation algorithm. Other TFM
-manifest shapes fail closed pending observation. Production converter approval
+SDK 10.0.300 defaults to plain net8 filenames and required fingerprints for
+net9/10 (WasmFingerprintAssets in Microsoft.NET.Sdk.WebAssembly.Browser.targets).
+These source-grounded selectors do not certify actual cross-TFM builds. Fingerprint
+mapping is checked, not the SDK's fingerprint generation algorithm. Production converter approval
 remains exclusively in verify_browser_package_resources' tracked policy.
 """
 from __future__ import annotations
@@ -98,7 +99,9 @@ def _derive(layout, project: Path, build_manifest: Path, owned: dict, package_re
             continue
         relative = row.get("RelativePath")
         require(isinstance(relative, str), "Missing runtime resource path")
-        match = re.fullmatch(r"_framework/([A-Za-z0-9_.-]+)#\[\.\{fingerprint\}\]!\.wasm", relative)
+        pattern = (r"_framework/([A-Za-z0-9_.-]+)\.wasm" if framework == "net8.0" else
+                   r"_framework/([A-Za-z0-9_.-]+)#\[\.\{fingerprint\}\]!\.wasm")
+        match = re.fullmatch(pattern, relative)
         require(match is not None, "Unreviewed runtime resource filename schema")
         name = match[1]
         require(name.casefold() not in mapped_folded, "Duplicate runtime WASM manifest record")
@@ -118,7 +121,8 @@ def _derive(layout, project: Path, build_manifest: Path, owned: dict, package_re
                 and not row.get("RelatedAsset"), "WASM resource source/runtime mapping differs")
         fingerprint = row.get("Fingerprint")
         require(isinstance(fingerprint, str) and re.fullmatch(r"[a-z0-9]{10}", fingerprint), "Unsafe WASM fingerprint")
-        output = project.parent / "bin" / "Release" / framework / "wwwroot" / "_framework" / f"{name}.{fingerprint}.wasm"
+        filename = f"{name}.wasm" if framework == "net8.0" else f"{name}.{fingerprint}.wasm"
+        output = project.parent / "bin" / "Release" / framework / "wwwroot" / "_framework" / filename
         generated = project.parent / "obj" / "Release" / framework / "webcil" / f"{name}.wasm"
         for field, expected in (("Identity", output), ("OriginalItemSpec", generated)):
             value = row.get(field)
@@ -154,7 +158,7 @@ def _derive(layout, project: Path, build_manifest: Path, owned: dict, package_re
             owner, binding = "package", {"package_id": package["id"], "version": package["version"],
                                          "archive_sha256": digest, "package_member": member}
         conversion = resources.verify_webcil(pe, body, converter, _test_policy=_test_policy)
-        path = route_prefix + f"/_framework/{name}.{fingerprint}.wasm"
+        path = route_prefix + "/_framework/" + filename
         records.append({"path": path, "sha256": resources.sha256(body), "bytes": len(body),
                         "content_type": "application/wasm", "owner": owner,
                         "required": name in MANDATORY_ASSEMBLIES or owner == "fixture"})
