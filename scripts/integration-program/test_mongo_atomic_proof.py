@@ -58,12 +58,18 @@ class MongoAtomicProofTests(unittest.TestCase):
                 proof.baseline_summary(trx, 1)
 
     def test_missing_or_duplicate_candidate_cases_cannot_pass(self):
-        cases = [{"method": proof.PREFIX + name, "outcome": "Passed", "caseSha256": str(index)}
-                 for name, count in proof.MONGO_CASES.items() for index in range(count)]
-        proof.require_case_coverage({"cases": cases}, proof.PREFIX, proof.MONGO_CASES)
-        for invalid in (cases[:-1], cases + [cases[0]]):
-            with self.assertRaises(ValueError):
-                proof.require_case_coverage({"cases": invalid}, proof.PREFIX, proof.MONGO_CASES)
+        for prefix, expected in ((proof.PREFIX, proof.MONGO_CASES), (proof.BPMN_PREFIX, proof.BPMN_CASES)):
+            with self.subTest(prefix=prefix):
+                cases = [{"method": prefix + name, "outcome": "Passed", "caseSha256": str(index)}
+                         for name, count in expected.items() for index in range(count)]
+                proof.require_case_coverage({"cases": cases}, prefix, expected)
+                for invalid in (cases[:-1], cases + [cases[0]]):
+                    with self.assertRaises(ValueError):
+                        proof.require_case_coverage({"cases": invalid}, prefix, expected)
+
+    def test_bpmn_manifest_includes_all_four_sqlite_theory_cases(self):
+        self.assertEqual(4, proof.BPMN_CASES["SqliteDocumentPut_PreservesTheConcurrentWinner"])
+        self.assertEqual(10, sum(proof.BPMN_CASES.values()))
 
     def identity(self, label, modes, image_id="sha256:" + "a" * 64):
         directory = self.directory / "service-identity" / label

@@ -55,11 +55,14 @@ BPMN_CASES = {
     "ImportDocumentAsync_WhenDraftSavingHandlerEditsDraft_PersistsAllHandlerEdits": 1,
     "ImportDocumentAsync_WhenDraftSavingHandlerRejects_DoesNotPersist": 1,
     "ImportDocumentAsync_WhenLatestIsPublished_ReusesTheAnnouncedDraftIdentity": 1,
+    "SqliteDocumentPut_PreservesTheConcurrentWinner": 4,
 }
 PROPERTIES = ["-m:1", "-p:UseProjectReferences=true", "-p:IsPackable=false",
               "-p:GeneratePackageOnBuild=false", "-p:CollectCoverage=false"]
 TESTS = ((MONGO_TEST, None), (BPMN_TEST, "FullyQualifiedName~BpmnDocumentPutCompareAndSwapTests"))
 INPUTS = (MONGO, MONGO_TEST, BPMN_TEST, FIXTURE,
+          "test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Scenarios/Interchange/BpmnDocumentPutCompareAndSwapTests.cs",
+          "test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Scenarios/Interchange/BpmnDocumentPutSqliteTests.cs",
           "src/extensions/persistence/Elsa.Persistence.MongoDb/Common/MongoDbStore.cs",
           "src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs",
           "src/extensions/Directory.Packages.props", "test/extensions/Directory.Packages.props",

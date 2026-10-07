@@ -17,7 +17,7 @@ The two baseline regression probes compile using the pre-correction public API a
 - `TryUpdateLatestAsync_WhenUnlistedMetadataChangesAfterRead_ReturnsConflictAndKeepsConcurrentMetadata` must fail on the old source with `Atomic metadata guard must reject a stale full-document snapshot.`
 - `TryUpdateLatestAsync_WhenDraftInsertFails_RollsBackLatestUnmark` must fail on the old source with `Failed draft insertion must leave prior latest unchanged.`
 
-Current-head verification requires hosted builds of the imported Mongo provider on `net8.0`, `net9.0`, and `net10.0`, the complete imported Mongo test project on `net10.0`, and the BPMN consumer compare-and-swap tests. Baseline regression failures must come from the named assertions, not compilation, Docker startup, or driver failures. The historical receipt below does not satisfy these gates; current-head hosted verification is recorded separately.
+Current-head verification requires hosted builds of the imported Mongo provider on `net8.0`, `net9.0`, and `net10.0`, the complete imported Mongo test project on `net10.0`, and all ten BPMN consumer compare-and-swap cases: six service contracts and four SQLite concurrent-winner theory cases in the partial class. The SQLite cases are consumer evidence, not Mongo provider evidence. Baseline regression failures must come from the named assertions, not compilation, Docker startup, or driver failures. The historical receipt below does not satisfy these gates; current-head hosted verification is recorded separately.
 
 ## Behavior
 
