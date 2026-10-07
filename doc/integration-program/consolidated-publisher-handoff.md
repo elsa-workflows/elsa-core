@@ -4,7 +4,7 @@ This is the preparation packet for #8647 under #8220 and program #8194. It chang
 
 ## Run the read-only observation
 
-From a reviewed checkout with Python and an authenticated GitHub CLI:
+From a reviewed checkout on macOS or Linux with Python and an authenticated GitHub CLI (the bounded transport uses POSIX pipes):
 
 ```sh
 python3 scripts/integration-program/consolidated_publisher_handoff.py \
