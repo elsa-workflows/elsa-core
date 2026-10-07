@@ -16,6 +16,8 @@ export type NativeProbeAdapter = {
   addSetOutput(): Promise<unknown>;
   openOutputSyntaxMenu(): Promise<void>;
   inputControl(label: RegExp): Locator;
+  /** Parent observes its native-traffic boundary before allowing the actual UI action. */
+  beforeNativeAction?(): Promise<void>;
   /** Resolves only after the parent validates readiness, stops its owned backend and acknowledges. */
   disconnect?(): Promise<void>;
 };
@@ -184,13 +186,17 @@ export async function runOptionalFeatureProbe(page: Page, input: ProbeInput, ada
   };
   page.on('pageerror', errors); page.on('close', closed); page.on('websocket', websocket);
   page.on('response', response); page.on('requestfailed', requestFailed);
-  const beginAction = () => { receipt.checks.native_action = true; circuit.beginAction(); };
+  const beginAction = async () => {
+    await adapter.beforeNativeAction?.();
+    receipt.checks.native_action = true;
+    circuit.beginAction();
+  };
   try {
     await adapter.authenticateAndList();
     receipt.checks.authenticated = true;
     if (input.cell.host !== 'custom-elements') receipt.ui.secret_navigation_visible = await visible(page.getByRole('link', { name: 'Secrets', exact: true }));
     // Candidate Properties is the initial tab; contexts may fail during editor entry itself.
-    if (input.scenario === 'deny-workflow-contexts') beginAction();
+    if (input.scenario === 'deny-workflow-contexts') await beginAction();
     const id = await adapter.createWorkflow(input.definition_name + '-' + input.scenario);
     if (typeof id !== 'string' || !/^[0-9a-f]{1,64}$/.test(id)) throw new Error('invalid_optional_feature_workflow');
     receipt.hashes.probe_definition_id_sha256 = hash(id);
@@ -223,7 +229,7 @@ export async function runOptionalFeatureProbe(page: Page, input: ProbeInput, ada
         await adapter.disconnect();
         receipt.disconnect.parent_acknowledged = true;
       }
-      beginAction();
+      await beginAction();
       if (secretPresent) {
         if (receipt.disconnect) receipt.disconnect.native_action_after_ack = true;
         await secret.click();

@@ -11,15 +11,17 @@ import { readWorkflowJsonExport, workflowSemanticIdentity } from './json-roundtr
 import { DirectBackendObserver } from './direct-backend.js';
 import { WasmBootObserver, type ObservedBootResource } from './wasm-boot.js';
 import { startRawResources, type ResourceFailure } from './raw-resources.js';
+import { optionalFeatureProfile, runOptionalFeatureProbe, type OptionalFeatureReceipt, type OptionalFeatureScenario } from './optional-feature-probes.js';
+import { openProbeControl, type ProbeControl, type ProbeControlDescriptor } from './private-probe-control.js';
 const policy = JSON.parse(readFileSync(new URL('./coverage-policy.json', import.meta.url), 'utf8'));
 // Locator actions and assertions share the same bounded readiness window,
 // including the native WASM bootstrap after a full page reload.
 const expect = playwrightExpect.configure({ timeout: 20_000 });
 
-type Cell = { host: 'server' | 'wasm' | 'hosted-wasm' | 'custom-elements'; framework: string; version: string; route_prefix?: string; designer_mode?: 'x6' | 'react-flow' };
+type Cell = { host: 'server' | 'wasm' | 'hosted-wasm' | 'custom-elements'; framework: string; version: string; route_prefix?: string; designer_mode?: 'x6' | 'react-flow'; backend_features?: string[]; permission_profile?: string };
 type Resource = { path: string; sha256: string; bytes: number; content_type: string; owner: 'package' | 'fixture' | 'platform'; required?: boolean };
 type ReleasedInput = { private_path: string; binding: { document: { source_cell: Cell; document_sha256: string; bytes: number; tool_version: string; definition_id_sha256: string; activity_id_sha256: string; value_sha256: string }; fixture_identity_sha256: string; source_evidence_sha256: string; browser_receipt_sha256: string }; source_binding_sha256: string; root_id_sha256: string };
-type PrivateInput = { request: Cell; studio_url: string; backend_url: string; username: string; password: string; safe_ids: Record<string, string>; resources: Resource[]; released_document_output?: string; released_document_inputs?: ReleasedInput[]; phase?: 'react-flow'; react_phase?: { source_browser_sha256: string; expected_hashes: ReactHashes } };
+type PrivateInput = { request: Cell; studio_url: string; backend_url: string; username: string; password: string; safe_ids: Record<string, string>; resources: Resource[]; released_document_output?: string; released_document_inputs?: ReleasedInput[]; phase?: 'react-flow' | 'optional-feature-probe'; react_phase?: { source_browser_sha256: string; expected_hashes: ReactHashes }; optional_probe?: { scenario: OptionalFeatureScenario; control: ProbeControlDescriptor } };
 type Assertion = { name: string; passed: boolean; reason_category: string | null };
 const baseline: string[] = policy.baseline;
 const candidate: string[] = policy.candidate;
@@ -615,6 +617,14 @@ async function addNativeSetOutput(page: Page, onStage?: (stage: string) => void,
   return node;
 }
 
+async function openNativeOutputSyntaxMenu(page: Page): Promise<void> {
+  // ExpressionInput's direct flex-none sibling owns the native syntax menu.
+  const row = inputControl(page, /^Output Value$/i).locator(
+    'xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " mud-stack ")][div[contains(concat(" ", normalize-space(@class), " "), " flex-none ")]][1]');
+  await expect(row).toHaveCount(1);
+  await row.locator('.flex-none.pt-1 .mud-menu button').first().click();
+}
+
 async function nativeSecrets(page: Page, input: PrivateInput, backend: Backend,
   proof: Record<string, unknown>, passed: (name: string) => void): Promise<void> {
   const record: Record<string, any> = {
@@ -669,12 +679,7 @@ async function nativeSecrets(page: Page, input: PrivateInput, backend: Backend,
   await expect(page.locator('.flowchart-diagram-designer-wrapper .x6-graph-svg')).toBeVisible();
   await expect(page.getByLabel('Name', { exact: true })).toHaveValue(name);
   await addNativeSetOutput(page);
-  // ExpressionInput's direct flex-none sibling owns the native syntax menu.
-  const expressionRow = inputControl(page, /^Output Value$/i).locator(
-    'xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " mud-stack ")][div[contains(concat(" ", normalize-space(@class), " "), " flex-none ")]][1]');
-  const syntaxMenu = expressionRow.locator('.flex-none.pt-1 .mud-menu button').first();
-  await expect(expressionRow).toHaveCount(1);
-  await syntaxMenu.click();
+  await openNativeOutputSyntaxMenu(page);
   const secretSyntax = page.locator('.studio-expression-input-menu-item:visible').filter({ hasText: /^Secret$/ });
   await expect(secretSyntax).toHaveCount(1);
   await secretSyntax.click();
@@ -1111,6 +1116,86 @@ async function reactPhase(input: PrivateInput): Promise<void> {
   process.exitCode = complete ? 0 : 1;
 }
 
+async function optionalFeaturePhase(input: PrivateInput): Promise<void> {
+  const cell = { version: input.request.version, framework: input.request.framework, host: input.request.host };
+  let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
+  let context: Awaited<ReturnType<NonNullable<typeof browser>['newContext']>> | undefined;
+  let page: Page | undefined;
+  let backend: Backend | undefined;
+  let embedding: NativeCustomElements | undefined;
+  let control: ProbeControl | undefined;
+  let probe: OptionalFeatureReceipt | null = null;
+  let browserVersion: string | null = null;
+  let browserAliveAfterStop: boolean | null = null;
+  let failed = false, cleanupFailed = false;
+  const pending: Promise<void>[] = [];
+  const observe = (response: Response) => {
+    if (embedding) pending.push(embedding.observeResponse(response).catch(() => { failed = true; }));
+  };
+  try {
+    const optional = input.optional_probe;
+    if (!optional) throw new Error('invalid_private_optional_probe');
+    // Open first so any subsequent validation/setup failure still closes the inherited socket.
+    control = openProbeControl(optional.control, optional.scenario === 'disconnect');
+    if (Object.keys(optional).sort().join(',') !== 'control,scenario') throw new Error('invalid_private_optional_probe');
+    const profile = optionalFeatureProfile(optional.scenario);
+    if (cell.version !== '3.10.0' || input.request.designer_mode === 'react-flow' || input.react_phase !== undefined ||
+        input.released_document_output !== undefined || input.released_document_inputs !== undefined ||
+        JSON.stringify(input.request.backend_features) !== JSON.stringify(profile.backend_features) ||
+        input.request.permission_profile !== profile.permission_profile || !/^paired-browser-[0-9a-f]{12}$/.test(input.safe_ids.definition_name))
+      throw new Error('invalid_private_optional_probe');
+    browser = await chromium.launch({ headless: true });
+    browserVersion = browser.version();
+    context = await browser.newContext({ serviceWorkers: 'block' });
+    page = await context.newPage();
+    page.setDefaultTimeout(20_000);
+    page.on('response', observe);
+    // This private authentication prepares the supported embedding parameters;
+    // it is never recorded as native optional-feature traffic.
+    if (cell.host === 'custom-elements') {
+      backend = await Backend.login(input.backend_url, input);
+      embedding = backend.embedding(page, input);
+      embeddings.set(page, embedding);
+    }
+    const nativePage = page;
+    probe = await runOptionalFeatureProbe(nativePage, { cell, scenario: optional.scenario, ...profile,
+      definition_name: input.safe_ids.definition_name, backend_url: input.backend_url }, {
+      authenticateAndList: async () => {
+        if (embedding) await embedding.initialize();
+        else await authenticateShell(nativePage, input, {});
+        await definitionsList(nativePage, input);
+        await expect(nativePage.getByRole('button', { name: 'Create workflow', exact: true })).toBeVisible();
+      },
+      createWorkflow: name => createNativeWorkflow(nativePage, name),
+      addSetOutput: () => addNativeSetOutput(nativePage),
+      openOutputSyntaxMenu: () => openNativeOutputSyntaxMenu(nativePage),
+      inputControl: label => inputControl(nativePage, label),
+      beforeNativeAction: () => control!.beginNativeAction(),
+      disconnect: optional.scenario === 'disconnect' ? async () => {
+        await control!.disconnectReady();
+        browserAliveAfterStop = browser!.isConnected() && !nativePage.isClosed();
+        if (!browserAliveAfterStop) throw new Error('optional_probe_browser_disconnected');
+      } : undefined,
+    });
+    failed = failed || probe.failure_category !== null || !probe.checks.observation_completed;
+  } catch { failed = true; }
+  finally {
+    page?.off('response', observe);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const drained = await Promise.race([Promise.all(pending).then(() => true), new Promise<false>(resolve => { timer = setTimeout(() => resolve(false), 5000); })]);
+    if (timer !== undefined) clearTimeout(timer);
+    if (!drained) { failed = true; cleanupFailed = true; }
+    for (const close of [() => control?.close(), () => backend?.dispose(), () => context?.close(), () => browser?.close()]) {
+      try { await close(); } catch { failed = true; cleanupFailed = true; }
+    }
+  }
+  const cleanupVerified = browserVersion !== null && !cleanupFailed;
+  process.stdout.write(JSON.stringify({ schema: 1, phase: 'optional-feature-probe', cell, probe, browser_version: browserVersion,
+    cleanup_verified: cleanupVerified, browser_alive_after_stop: browserAliveAfterStop,
+    failure_category: failed || !cleanupVerified ? 'optional_probe_execution_failed' : null }));
+  process.exitCode = failed || !cleanupVerified ? 1 : 0;
+}
+
 async function main(): Promise<void> {
   const parts: Buffer[] = [];
   let length = 0;
@@ -1123,6 +1208,8 @@ async function main(): Promise<void> {
   input.studio_url = loopback(input.studio_url); input.backend_url = loopback(input.backend_url);
   if (!hostAssertions[input.request.host] || !['3.8.4', '3.9.0', '3.10.0'].includes(input.request.version) || !['net8.0', 'net9.0', 'net10.0'].includes(input.request.framework))
     throw new Error('invalid_cell');
+  if (input.phase === 'optional-feature-probe') { await optionalFeaturePhase(input); return; }
+  if (input.optional_probe !== undefined) throw new Error('unexpected_optional_probe');
   if (input.phase === 'react-flow') { await reactPhase(input); return; }
   if (input.phase !== undefined || input.request.designer_mode === 'react-flow') throw new Error('unsupported_browser_phase');
   if (input.released_document_inputs) {
