@@ -369,7 +369,7 @@ class AdmissionTests(unittest.TestCase):
         def git(command, **kwargs):
             return subprocess.CompletedProcess(command, 0, stdout=(b"a"*40+b"\n") if command[1] == "rev-parse" else b"", stderr=b"")
         self.git = patch.object(executor.subprocess, "run", side_effect=git)
-        self.git.start()
+        self.git_calls = self.git.start()
         self.addCleanup(self.git.stop)
 
     def admit(self, *, publish=True):
@@ -381,6 +381,14 @@ class AdmissionTests(unittest.TestCase):
             with self.assertRaisesRegex(executor.ExecutorError, "operational_policy_unconfigured"):
                 executor.check_admission(api=self.api)
         self.assertEqual(self.api.calls, [])
+
+    def test_admission_git_children_receive_no_credentials(self):
+        self.context.update({executor.PUBLISH_SECRET: "synthetic-publisher", executor.METADATA_SECRET: "synthetic-reader",
+                             "GH_TOKEN": "synthetic-artifact", "PATH": "/usr/bin:/bin"})
+        self.admit()
+        self.assertEqual(self.git_calls.call_count, 2)
+        for call in self.git_calls.call_args_list:
+            self.assertEqual(call.kwargs["env"], {"PATH": "/usr/bin:/bin"})
 
     def test_native_approval_and_exact_preexisting_policy(self):
         receipt = self.admit()

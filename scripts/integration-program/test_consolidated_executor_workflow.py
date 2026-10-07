@@ -88,6 +88,19 @@ class ExecutorWorkflowTests(unittest.TestCase):
         self.assertIn("--phase schedule", schedule["run"])
         self.assertLess(schedule["run"].index("jq -e"), schedule["run"].index("admitted=true"))
         self.assertIn("ELSA_ADMISSION_RECEIPT_FILTER", schedule["run"])
+        self.assertIn("needs.verify.result == 'success'", self.jobs["admit"]["if"])
+        self.assertLess(schedule["run"].index("consolidated_executor_approval_summary.py"),
+                        schedule["run"].index("admitted=true"))
+        self.assertIn('>> "$GITHUB_STEP_SUMMARY"', schedule["run"])
+        self.assertEqual(schedule["env"]["ELSA_VERIFICATION_ARTIFACT_ID"],
+                         "${{ needs.verify.outputs.evidence-artifact-id }}")
+        self.assertEqual(schedule["env"]["ELSA_VERIFICATION_ARTIFACT_DIGEST"],
+                         "${{ needs.verify.outputs.evidence-artifact-digest }}")
+        self.assertEqual(self.jobs["verify"]["outputs"]["evidence-artifact-id"],
+                         "${{ steps.evidence.outputs.artifact-id }}")
+        transfer = next(step for step in self.jobs["admit"]["steps"]
+                        if step.get("with", {}).get("path", "").endswith("/executor-verified-evidence"))
+        self.assertEqual(transfer["with"]["artifact-ids"], "${{ needs.verify.outputs.evidence-artifact-id }}")
         steps = self.jobs["publish"]["steps"]
         credential_index = next(i for i, step in enumerate(steps)
                                 if "ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY" in step.get("env", {}))

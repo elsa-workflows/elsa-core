@@ -301,8 +301,9 @@ def check_admission(*, publish=False, api=None):
             and context.get("GITHUB_WORKFLOW_SHA") == source, "runtime_ref_mismatch")
     require(not publish or context.get("GITHUB_JOB") == "publish", "runtime_job_mismatch")
     root = Path(__file__).resolve().parents[2]
-    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, timeout=10)
-    dirty = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"], cwd=root, capture_output=True, timeout=10)
+    git_environment = {"PATH": os.environ.get("PATH", os.defpath)}
+    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, timeout=10, env=git_environment)
+    dirty = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"], cwd=root, capture_output=True, timeout=10, env=git_environment)
     require(head.returncode == dirty.returncode == 0 and head.stdout.decode().strip() == source
             and dirty.stdout == b"", "executor_source_mismatch")
     api = api or GitHubApi()
