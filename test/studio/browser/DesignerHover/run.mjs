@@ -20,6 +20,13 @@ const assertions = [
     'node-clears-hover', 'blank-clears-hover', 'outside-clears-hover',
     'remove-tool-entry', 'remove-tool-click', 'noninteractive-no-tools',
 ];
+const supplemental = [
+    {name: 'isolated-edge-target-clears-old-button', target: 'edge', omitTarget: false},
+    {name: 'isolated-node-target-clears-old-button', target: 'node', omitTarget: false},
+    {name: 'omitted-edge-target-rejected', target: 'edge', omitTarget: true},
+    {name: 'omitted-node-target-rejected', target: 'node', omitTarget: true},
+];
+const resultRecords = names => names.map(name => ({name, passed: false, reason_category: 'not_run', observation: null}));
 const receipt = {
     schema: 1,
     kind: 'designer-hover-source-browser',
@@ -29,7 +36,9 @@ const receipt = {
     dependencies: null,
     browser: null,
     bundle_sha256: null,
-    assertions: assertions.map(name => ({name, passed: false, reason_category: 'not_run', observation: null})),
+    assertions: resultRecords(assertions),
+    supplemental_assertions: resultRecords(supplemental.map(probe => probe.name))
+        .map(result => ({...result, mode: 'dropped-notification-fault-injection'})),
     events: null,
     browser_errors: 0,
     blocked_requests: 0,
@@ -218,12 +227,15 @@ try {
             x6_graph_leaves: state.events['graph:mouseleave'] ?? 0,
             x6_node_enters: state.events['node:mouseenter'] ?? 0,
             x6_blank_overs: state.events['blank:mouseover'] ?? 0,
+            fault_injection: state.probe ? {...state.probe,
+                old_a_clear_predicate: state.probe.target_entry === null ? null
+                    : state.probe.target_entry.after.model_buttons === 0 && state.probe.target_entry.after.rendered_buttons === 0} : null,
         };
     };
-    const run = async (name, action) => {
+    const run = async (name, action, results = receipt.assertions) => {
         stage = name;
         subcheck = 'action';
-        const result = receipt.assertions.find(result => result.name === name);
+        const result = results.find(result => result.name === name);
         result.reason_category = 'assertion_failed';
         try {
             await action();
@@ -335,8 +347,57 @@ try {
         expect((await snapshot()).pointerInside).toBe(false);
     });
     receipt.events = {interactive: interactiveEvents, noninteractive: (await snapshot()).events};
+
+    // These supplemental cases explicitly drop the helper's earlier leave/blank callbacks. They
+    // isolate target fallback handling without claiming an unmodified natural event sequence.
+    for (const {name, target, omitTarget} of supplemental) {
+        await run(name, async () => {
+            await move(850, 480);
+            await page.evaluate(options => window.hoverFixture.reset(true, options), {target, omitTarget});
+            // Approach A from above so no destination edge/node entry can precede A's real entry.
+            await move(320, -20);
+            await hover('edge-a');
+            subcheck = 'source-entry-delivered';
+            const source = (await snapshot()).probe;
+            expect(source.target_callbacks).toBe(0);
+            expect(source.a_event_index).toBeGreaterThanOrEqual(0);
+
+            await move(...(target === 'edge' ? edgePoint('edge-b') : [740, 120]));
+            subcheck = 'real-destination-entry';
+            const state = (await snapshot()).probe;
+            expect(state.order_overflow).toBe(false);
+            expect(state.target_callbacks).toBe(1);
+            expect(state.target_entry).not.toBeNull();
+            const entry = state.target_entry;
+            const targetEvent = target === 'edge' ? 'edge:mouseenter:edge-b' : 'node:mouseenter';
+            expect(state.event_order[state.a_event_index]).toBe('edge:mouseenter:edge-a');
+            expect(state.event_order[entry.event_index]).toBe(targetEvent);
+            expect(entry.event_index).toBeGreaterThan(state.a_event_index);
+            expect(await eventCount(targetEvent)).toBe(1);
+            subcheck = 'earlier-callbacks-filtered';
+            const earlierEvents = state.event_order.slice(state.a_event_index + 1, entry.event_index);
+            expect(earlierEvents).toContain('edge:mouseleave:edge-a');
+            expect(earlierEvents).toContain('blank:mouseover');
+            expect(entry.suppressed_edge_leaves).toBeGreaterThan(0);
+            expect(entry.suppressed_blank_overs).toBeGreaterThan(0);
+            subcheck = 'old-button-present-before-destination';
+            expect(entry.before).toEqual({model_buttons: 1, rendered_buttons: 1, model_vertices: 1, rendered_vertices: 1});
+            expect(entry.delivered).toBe(!omitTarget);
+            subcheck = omitTarget ? 'omitted-target-clear-predicate-rejected' : 'delivered-target-clear-predicate';
+            const oldButtonCleared = entry.after.model_buttons === 0 && entry.after.rendered_buttons === 0;
+            // The negative control must fail this exact old-A-clear predicate, not a B-tool or setup guard.
+            expect(oldButtonCleared).toBe(!omitTarget);
+            expect(entry.after.model_vertices).toBe(1);
+            expect(entry.after.rendered_vertices).toBe(1);
+            await checkEdge('edge-a', omitTarget ? 1 : 0);
+            if (!omitTarget) {
+                await checkEdge('edge-b', target === 'edge' ? 1 : 0, target === 'edge' ? 1 : 0);
+                await expect(allButtons).toHaveCount(target === 'edge' ? 1 : 0);
+            }
+        }, receipt.supplemental_assertions);
+    }
     expect(interrupted).toBe(false);
-    receipt.passed = receipt.assertions.every(result => result.passed);
+    receipt.passed = [...receipt.assertions, ...receipt.supplemental_assertions].every(result => result.passed);
 } catch {
     receipt.failure_category = interrupted ? 'interrupted' : stage;
 } finally {
