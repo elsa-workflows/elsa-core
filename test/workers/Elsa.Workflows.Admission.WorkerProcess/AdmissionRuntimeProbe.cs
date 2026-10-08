@@ -14,7 +14,8 @@ namespace Elsa.Workflows.Admission.WorkerProcess;
 
 /// <summary>Trusted, fixed fixture instrumentation. Gates never convey a capability or context.</summary>
 public sealed class AdmissionRuntimeProbe(string connectionString) : IAdmissionExecutionObserver,
-    INotificationHandler<WorkflowExecuting>, INotificationHandler<WorkflowStarted>, INotificationHandler<WorkflowInstanceSaved>, INotificationHandler<WorkflowCancelling>
+    INotificationHandler<WorkflowExecuting>, INotificationHandler<WorkflowStarted>, INotificationHandler<WorkflowInstanceSaved>, INotificationHandler<WorkflowCancelling>,
+    INotificationHandler<WorkflowDefinitionRetracting>, INotificationHandler<WorkflowDefinitionPublished>
 {
     public string Outcome { get; set; } = "completed";
     public Func<string, Task>? Boundary { get; set; }
@@ -24,6 +25,7 @@ public sealed class AdmissionRuntimeProbe(string connectionString) : IAdmissionE
     public bool EnableVariable { get; set; }
     public bool FailSavedNotification { get; set; }
     public bool FailRetract { get; set; }
+    public bool FailPublication { get; set; }
     private readonly ConcurrentDictionary<string, int> _counts = new(StringComparer.Ordinal);
     public int Count(string key) => _counts.GetValueOrDefault(key);
 
@@ -72,6 +74,23 @@ public sealed class AdmissionRuntimeProbe(string connectionString) : IAdmissionE
     }
     public Task HandleAsync(WorkflowStarted notification, CancellationToken cancellationToken) => IncrementAsync("workflowStarted");
     public Task HandleAsync(WorkflowCancelling notification, CancellationToken cancellationToken) => IncrementAsync("workflowCancelling");
+    public async Task HandleAsync(WorkflowDefinitionRetracting notification, CancellationToken cancellationToken)
+    {
+        await IncrementAsync("definitionRetracting");
+        await ReachAsync("DefinitionRetracting");
+        if (FailRetract)
+        {
+            throw new IOException("fixture_retract_outcome_unknown");
+        }
+    }
+    public async Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken)
+    {
+        await IncrementAsync("definitionPublished");
+        if (FailPublication)
+        {
+            throw new IOException("fixture_publication_outcome_unknown");
+        }
+    }
     public async Task HandleAsync(WorkflowInstanceSaved notification, CancellationToken cancellationToken)
     {
         await IncrementAsync("savedNotifications");
