@@ -77,6 +77,7 @@ public sealed class AdmissionHostConfiguration
         services.GetRequiredService<AdmissionExecutionComposition>().Validate(services);
         if (_registrations == null || services.GetRequiredService<IWorkflowRuntime>().GetType() != typeof(AdmissionWorkflowRuntime) ||
             services.GetRequiredService<IWorkflowDispatcher>().GetType() != typeof(AdmissionWorkflowDispatcher) ||
+            services.GetRequiredService<IWorkflowInstanceVariableManager>().GetType() != typeof(AdmissionWorkflowInstanceVariableManager) ||
             services.GetRequiredService<IWorkflowRunner>().GetType() != typeof(WorkflowRunner) ||
             services.GetRequiredService<IWorkflowExecutionPipeline>().GetType() != typeof(WorkflowExecutionPipeline) ||
             services.GetRequiredService<IWorkflowExecutionGuard>().GetType() != typeof(AdmissionExecutionGuard))

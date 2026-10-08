@@ -501,6 +501,60 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
         }
     }
 
+    [Theory]
+    [InlineData("runtime-owned-variable-id", "id")]
+    [InlineData("runtime-owned-variable-context", "context")]
+    public async Task PublicVariableManagementDeniesOwnedWritesBeforeStorageAndPreservesUnownedWrites(string caseId, string scenario)
+    {
+        await WithHostAsync(async host =>
+        {
+            host.Probe.Outcome = "suspended";
+            host.Probe.EnableVariable = true;
+            var initial = (await host.Execution.ExecuteAsync(host.AdmissionId))!;
+            var ownedContext = host.Probe.PreparedContext!;
+            var variables = host.Services.GetRequiredService<IWorkflowInstanceVariableManager>();
+            var serializer = host.Services.GetRequiredService<IWorkflowStateSerializer>();
+            var instances = host.Services.GetRequiredService<IWorkflowInstanceManager>();
+            var original = serializer.Serialize((await instances.FindByIdAsync(initial.WorkflowInstanceId))!.WorkflowState);
+            var reads = host.Probe.Count("variableReads");
+            var writes = host.Probe.Count("variableWrites");
+            var saves = host.Probe.Count("instanceWriteAttempts");
+            await Assert.ThrowsAsync<InvalidOperationException>(() => scenario == "id"
+                ? variables.SetVariablesAsync(initial.WorkflowInstanceId, [])
+                : variables.SetVariablesAsync(ownedContext, []));
+            Assert.Equal(reads, host.Probe.Count("variableReads"));
+            Assert.Equal(writes, host.Probe.Count("variableWrites"));
+            Assert.Equal(saves, host.Probe.Count("instanceWriteAttempts"));
+            Assert.Equal(original, serializer.Serialize((await instances.FindByIdAsync(initial.WorkflowInstanceId))!.WorkflowState));
+
+            // A real unowned Local client still executes the normal pinned workflow, including
+            // its externally persisted variable, through the same fixed/audited host services.
+            var client = await host.Services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync("fixture-unowned-variable");
+            await client.CreateInstanceAsync(new CreateWorkflowInstanceRequest
+            {
+                WorkflowDefinitionHandle = Elsa.Workflows.Models.WorkflowDefinitionHandle.ByDefinitionVersionId(AdmissionRuntimeHost.Artifact().Id)
+            });
+            await client.RunInstanceAsync(new RunWorkflowInstanceRequest());
+            var unownedContext = host.Probe.PreparedContext!;
+            Assert.Equal("fixture-unowned-variable", unownedContext.Id);
+            reads = host.Probe.Count("variableReads");
+            writes = host.Probe.Count("variableWrites");
+            if (scenario == "id")
+            {
+                await variables.SetVariablesAsync(unownedContext.Id, []);
+            }
+            else
+            {
+                await variables.SetVariablesAsync(unownedContext, []);
+            }
+            Assert.True(host.Probe.Count("variableReads") > reads);
+            Assert.True(host.Probe.Count("variableWrites") > writes);
+            await ObserveAsync(caseId, nameof(PublicVariableManagementDeniesOwnedWritesBeforeStorageAndPreservesUnownedWrites), caseId,
+                new() { ["ownedStorageReads"] = 0, ["ownedStorageWrites"] = 0, ["ownedInstanceWrites"] = 0,
+                    ["ownedStateUnchanged"] = true, ["unownedStorageRead"] = true, ["unownedStorageWrite"] = true });
+        });
+    }
+
     private async Task WithHostAsync(Func<RuntimeScenario, Task> assertion, IInterceptor? interceptor = null, bool shell = false)
     {
         await fixture.ResetSchemaAsync();
