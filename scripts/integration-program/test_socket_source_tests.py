@@ -54,15 +54,16 @@ else:
         ET.SubElement(test, '{'+ns+'}TestMethod', className=namespace, name=method)
         ET.SubElement(results, '{'+ns+'}UnitTestResult', testId=('absent' if mode=='unknown-method' else str(index)),
                       executionId=str(index), testName=method+'(private-only-synthetic-secret)',
-                      outcome=('NotExecuted' if mode=='skipped' else 'Failed' if mode=='false-pass' else 'Passed'))
+                      outcome=('NotExecuted' if mode=='skipped' else 'Failed' if mode in ('false-pass','test-case-failed') else 'Passed'))
     summary = ET.SubElement(root, '{'+ns+'}ResultSummary')
     ET.SubElement(summary, '{'+ns+'}Counters', total=str(count+1 if mode=='wrong-count' else count),
-                  executed=str(0 if mode=='skipped' else count), passed=str(0 if mode in ('skipped','false-pass') else count),
-                  failed=str(count if mode=='false-pass' else 0), error='0', timeout='0', aborted='0',
+                  executed=str(0 if mode=='skipped' else count), passed=str(0 if mode in ('skipped','false-pass','test-case-failed') else count),
+                  failed=str(count if mode in ('false-pass','test-case-failed') else 0), error='0', timeout='0', aborted='0',
                   inconclusive='0', notRunnable='0', notExecuted=str(count if mode=='skipped' else 0))
     ET.ElementTree(root).write(private / 'socket-source.trx', encoding='utf-8')
     if mode == 'extra-trx': (private/'other.trx').write_text('private-only-extra')
     if mode == 'dirty': project.write_text(project.read_text()+'\nchanged')
+    if mode == 'test-case-failed': sys.exit(1)
 '''
 
 
@@ -78,6 +79,14 @@ class SourceRunnerTests(unittest.TestCase):
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text('tracked-source')
         (self.root / '.gitignore').write_text('**/obj/\n')
+        for project, namespace, name in (
+                (runner.SLACK, 'Elsa.Slack.Tests.SocketMode', 'Example'),
+                (runner.POSTGRES, 'Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests', 'SocketExample')):
+            (self.root / project).with_name(name+'.cs').write_text(
+                f'namespace {namespace};\npublic class {name} {{\n'
+                ' public void Example0() {}\n public void Example1() {}\n public void Example() {}\n}\n')
+        (self.root / 'Directory.Packages.props').write_text(
+            '<Project><ItemGroup><PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.9"/></ItemGroup></Project>')
         self.fake = self.root / 'fake.py'
         self.fake.write_text(FAKE)
         self.git('init', '-q')
@@ -163,6 +172,11 @@ class SourceRunnerTests(unittest.TestCase):
         passed, data = self.exercise('dirty')
         self.assertFalse(passed)
         self.assertEqual('source_postcheck_failed', data['category'])
+        self.assertEqual('working_tree_dirty', data['sourceState']['reason'])
+        self.assertEqual([{'path': runner.SLACK, 'status': ' M'}], data['sourceState']['changedTracked'])
+        self.assertEqual([runner.SLACK], data['sourceState']['inputHashMismatches'])
+        self.assertEqual(2, data['testEvidence']['counters']['passed'])
+        self.assertEqual([], data['testEvidence']['failedTests'])
 
     def test_wrong_head_or_dirty_source_never_invokes_dotnet(self):
         for dirty in (False, True):
@@ -206,6 +220,97 @@ class SourceRunnerTests(unittest.TestCase):
         retained = (output/'retained/failure.json').read_text()
         self.assertNotIn('private-only', retained+stdout.getvalue())
         self.assertEqual('restore_failed', json.loads(retained)['category'])
+
+    def test_failed_test_identities_are_bound_to_head_source_not_private_messages(self):
+        passed, data = self.exercise('test-case-failed', suite='postgres-socket')
+        self.assertFalse(passed)
+        self.assertEqual('test_failed', data['category'])
+        evidence = data['testEvidence']
+        self.assertEqual('available', evidence['status'])
+        self.assertEqual(2, evidence['counters']['failed'])
+        self.assertEqual(2, len(evidence['failedTests']))
+        for row in evidence['failedTests']:
+            self.assertIn('.SocketExample.Example', row['method'])
+            self.assertEqual('Failed', row['outcome'])
+            self.assertEqual(64, len(row['caseSha256']))
+            self.assertEqual(64, len(row['sourceSha256']))
+            self.assertTrue(row['sourceFile'].endswith('/SocketExample.cs'))
+        # A valid-looking but untracked symbol cannot become a public failed identity.
+        source = self.root / runner.POSTGRES
+        source.with_name('SocketExample.cs').write_text('public void PrivateNewSymbol() {}')
+        trx = self.base / 'evidence-0/private/socket-source.trx'
+        trx.write_text(trx.read_text().replace('Example0', 'PrivateNewSymbol'))
+        safe = runner.test_failure_evidence(self.root, self.head, trx.parent, runner.POSTGRES,
+                                            'postgres-socket', runner.SUITES['postgres-socket'][3], 1)
+        self.assertEqual(1, safe['omittedFailureIdentities'])
+        self.assertNotIn('PrivateNewSymbol', json.dumps(safe))
+
+    def test_untracked_names_are_private_and_python_caches_bind_only_tracked_owners(self):
+        (self.root / 'private-only-token.txt').write_text('private-only-secret')
+        cache = self.root / '__pycache__'
+        cache.mkdir()
+        (cache / 'fake.cpython-312.pyc').write_bytes(b'private-only-bytecode')
+        (cache / 'private-only.cpython-312.pyc').write_bytes(b'private-only-bytecode')
+        state = runner.source_state(self.root, self.head, None)
+        self.assertEqual('working_tree_dirty', state['reason'])
+        self.assertEqual({'python-cache': 1, 'other': 2}, state['untrackedKinds'])
+        self.assertEqual(['fake.py'], state['pythonCacheOwners'])
+        self.assertNotIn('private-only', json.dumps(state))
+        self.assertEqual([], state['changedTracked'])
+
+    def test_rename_new_path_is_not_public(self):
+        self.git('mv', 'fake.py', 'private-only-new-name.py')
+        state = runner.source_state(self.root, self.head, None)
+        self.assertEqual('working_tree_dirty', state['reason'])
+        self.assertEqual([{'path': 'fake.py', 'status': 'R '}], state['changedTracked'])
+        self.assertNotIn('private-only', json.dumps(state))
+
+    def test_failed_identity_diagnostics_are_bounded_without_weakening_counters(self):
+        import xml.etree.ElementTree as ET
+        self.exercise('test-case-failed')
+        trx = self.base / 'evidence-0/private/socket-source.trx'
+        tree = ET.parse(trx)
+        ns = '{http://microsoft.com/schemas/VisualStudio/TeamTest/2010}'
+        definitions, results = tree.getroot().find(ns+'TestDefinitions'), tree.getroot().find(ns+'Results')
+        prototype_method = definitions[0].find(ns+'TestMethod').attrib
+        definitions.clear()
+        results.clear()
+        for index in range(40):
+            definition = ET.SubElement(definitions, ns+'UnitTest', id=str(index))
+            ET.SubElement(definition, ns+'TestMethod', **prototype_method)
+            ET.SubElement(results, ns+'UnitTestResult', testId=str(index), outcome='Failed',
+                          testName='private-only-parameter-'+str(index))
+        counters = tree.getroot().find(ns+'ResultSummary/'+ns+'Counters')
+        counters.set('total', '40')
+        counters.set('executed', '40')
+        counters.set('failed', '40')
+        tree.write(trx)
+        safe = runner.test_failure_evidence(self.root, self.head, trx.parent, runner.SLACK,
+                                            'slack-unit-loopback', runner.SUITES['slack-unit-loopback'][3], 1)
+        self.assertEqual(40, safe['counters']['failed'])
+        self.assertEqual(32, len(safe['failedTests']))
+        self.assertTrue(safe['truncated'])
+        self.assertNotIn('private-only', json.dumps(safe))
+
+    def test_dependency_codes_and_ids_are_bound_to_head_catalog_not_error_text(self):
+        assets = (self.root / runner.SLACK).with_name('obj') / 'project.assets.json'
+        assets.parent.mkdir()
+        assets.write_text(json.dumps({'logs': [
+            {'code': 'NU1202', 'libraryId': 'Microsoft.AspNetCore.Mvc.Testing', 'targetGraphs': ['net8.0'],
+             'message': 'private-only-secret at /private/path'},
+            {'code': 'NU1202', 'libraryId': 'private-only-package'},
+            {'code': 'private-only-code', 'libraryId': 'Microsoft.AspNetCore.Mvc.Testing'},
+            {'code': 'NU1202', 'libraryId': ['private-only-list']},
+        ]}))
+        expected = [{'code': 'NU1202', 'packageId': 'Microsoft.AspNetCore.Mvc.Testing', 'framework': 'net8.0'}]
+        self.assertEqual(expected, runner.dependency_diagnostics(self.root, self.head, runner.SLACK, 'net8.0'))
+        # Worktree/catalog poisoning cannot authorize a package from the error payload.
+        (self.root / 'Directory.Packages.props').write_text(
+            '<Project><PackageVersion Include="private-only-package"/></Project>')
+        self.assertEqual(expected, runner.dependency_diagnostics(self.root, self.head, runner.SLACK, 'net8.0'))
+        assets.unlink()
+        assets.symlink_to(self.root / 'Directory.Packages.props')
+        self.assertEqual([], runner.dependency_diagnostics(self.root, self.head, runner.SLACK, 'net8.0'))
 
     def test_publication_failure_cannot_leave_a_partial_success_receipt(self):
         link = runner.os.link

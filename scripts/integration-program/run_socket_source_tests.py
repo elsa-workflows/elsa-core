@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import xml.etree.ElementTree as ET
 
 from run_admission_proof import diagnostic_codes, regular
 from run_current_import_affected_tests import assert_clean_source
@@ -67,6 +68,141 @@ def results(trx: Path, suite: str, namespace: str) -> dict:
             "caseIdentitiesSha256": identity_hash}
 
 
+
+def git_bytes(root: Path, *arguments: str) -> bytes:
+    return subprocess.check_output(["git", "-C", str(root), *arguments], stderr=subprocess.DEVNULL)
+
+
+def head_files(root: Path, head: str) -> dict[str, str]:
+    # Immutable regular HEAD blobs alone authorize public path/symbol/catalog diagnostics.
+    files = {}
+    for entry in git_bytes(root, "ls-tree", "-r", "-z", head).split(b"\0"):
+        if not entry:
+            continue
+        metadata, path = entry.decode("utf-8").split("\t", 1)
+        mode, kind, blob = metadata.split()
+        if mode in {"100644", "100755"} and kind == "blob":
+            files[path] = blob
+    return files
+
+
+def source_state(root: Path, head: str, hashes: dict | None) -> dict:
+    """Diagnostic only: unknown paths never authorize an exception to the clean-source gate."""
+    try:
+        files = head_files(root, head)
+        current = git_bytes(root, "rev-parse", "HEAD").decode().strip()
+        entries = iter(git_bytes(root, "status", "--porcelain=v1", "-z", "--untracked-files=all").split(b"\0"))
+        changed, untracked, owners = [], {"python-cache": 0, "other": 0}, set()
+        status_count = 0
+        for entry in entries:
+            if not entry:
+                continue
+            status_count += 1
+            status, path = entry[:2].decode("ascii"), entry[3:].decode("utf-8")
+            paths = [path]
+            if "R" in status or "C" in status:
+                paths.append(next(entries).decode("utf-8"))
+            if status == "??":
+                match = re.fullmatch(r"(.*/)?__pycache__/([A-Za-z_][A-Za-z0-9_]*)\.cpython-[0-9]+(?:\.opt-[12])?\.pyc", path)
+                owner = (match.group(1) or "") + match.group(2) + ".py" if match else None
+                kind = "python-cache" if owner in files else "other"
+                untracked[kind] += 1
+                if kind == "python-cache":
+                    owners.add(owner)
+            elif re.fullmatch(r"[ MADRCU?!]{2}", status):
+                changed.extend({"path": name, "status": status} for name in paths if name in files)
+        mismatch = []
+        for path, expected in (hashes or {}).items():
+            try:
+                if digest(tracked_input(root, path)) != expected:
+                    mismatch.append(path)
+            except Exception:
+                mismatch.append(path)
+        reason = ("head_changed" if current != head else "working_tree_dirty" if status_count
+                  else "input_hash_changed" if mismatch else "clean")
+        return {"reason": reason, "currentHead": current if HEAD.fullmatch(current) else None,
+                "changedTracked": changed[:32], "changedTrackedCount": len(changed), "statusEntryCount": status_count,
+                "untrackedKinds": untracked, "pythonCacheOwners": sorted(owners)[:32],
+                "inputHashMismatches": [path for path in mismatch if path in files][:32],
+                "truncated": len(changed) > 32 or len(owners) > 32 or len(mismatch) > 32}
+    except Exception:
+        return {"reason": "inspection_unavailable"}
+
+
+def test_failure_evidence(root: Path, head: str, private: Path, project: str, suite: str, namespace: str, exit_code: int | None) -> dict:
+    trx = private / "socket-source.trx"
+    if not trx.exists():
+        return {"status": "missing"}
+    try:
+        regular(trx)
+        require(trx.stat().st_size <= 16 * 1024 * 1024, "trx_invalid")
+        summary = test_summary(trx, exit_code if type(exit_code) is int else 0)
+        files = head_files(root, head)
+        methods = {}
+        for path in files:
+            if not path.startswith(str(Path(project).parent) + "/") or not path.endswith(".cs"):
+                continue
+            source = git_bytes(root, "show", f"{head}:{path}")
+            text = source.decode("utf-8-sig")
+            declared = re.search(r"^namespace ([A-Za-z_][A-Za-z0-9_.]*);", text, re.MULTILINE)
+            class_name = Path(path).stem
+            if not declared or not re.search(r"\bclass\s+" + re.escape(class_name) + r"\b", text):
+                continue
+            for method in re.findall(r"\bpublic\s+(?:async\s+)?(?:Task(?:<[^>]+>)?|ValueTask|void)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(", text):
+                identity = declared.group(1) + "." + class_name + "." + method
+                methods[identity] = {"sourceFile": path, "sourceSha256": hashlib.sha256(source).hexdigest()}
+        failures, omitted = [], 0
+        for case in summary["cases"]:
+            if case["outcome"] == "Passed":
+                continue
+            method = case["method"]
+            if method not in methods or not method.startswith(namespace) or (suite == "postgres-socket" and "Socket" not in method):
+                omitted += 1
+                continue
+            if case["outcome"] not in {"Failed", "NotExecuted", "Error", "Timeout", "Aborted", "Inconclusive", "NotRunnable"}:
+                omitted += 1
+                continue
+            failures.append({**case, **methods[method]})
+        counters = summary["counters"]
+        require(all(type(value) is int and 0 <= value <= 10**9 for value in counters.values()), "trx_invalid")
+        return {"status": "available", "counters": counters, "failedTests": failures[:32],
+                "omittedFailureIdentities": omitted, "truncated": len(failures) > 32,
+                "privateTrxSha256": summary["trxSha256"]}
+    except Exception:
+        return {"status": "invalid_or_unavailable"}
+
+
+def dependency_diagnostics(root: Path, head: str, project: str, framework: str) -> list[dict]:
+    try:
+        assets = Path(root / project).with_name("obj") / "project.assets.json"
+        regular(assets)
+        require(assets.stat().st_size <= 32 * 1024 * 1024, "source_test_setup_failed")
+        data = json.loads(assets.read_text(encoding="utf-8"))
+        files = head_files(root, head)
+        packages = set()
+        for path in files:
+            if Path(path).name != "Directory.Packages.props":
+                continue
+            document = ET.fromstring(git_bytes(root, "show", f"{head}:{path}"))
+            packages.update(item.get("Include") or item.get("Update") for item in document.iter("PackageVersion"))
+        diagnostics = []
+        for row in data.get("logs", []):
+            code, package = row.get("code"), row.get("libraryId")
+            if type(code) is not str or not re.fullmatch(r"NU[0-9]{4}", code) or type(package) is not str or package not in packages:
+                continue
+            if type(package) is not str or not re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", package):
+                continue
+            # Never copy NuGet message text/paths or invent a selected dependency version.
+            diagnostic = {"code": code, "packageId": package}
+            if row.get("targetGraphs") == [framework]:
+                diagnostic["framework"] = framework
+            if diagnostic not in diagnostics:
+                diagnostics.append(diagnostic)
+        return diagnostics[:32]
+    except Exception:
+        return []
+
+
 def retain(private: Path, retained: Path, name: str, data: dict) -> None:
     # Both paths are in one fresh evidence tree. A closed sanitized private file plus
     # no-overwrite link is the commit point; no fallible cleanup follows publication.
@@ -96,6 +232,7 @@ def run(root: Path, output: Path, head: str, suite: str, framework: str,
     stage = "source_validation_failed"
     exit_code = None
     log = None
+    hashes = None
     try:
         assert_clean_source(root, head)
         source_tree = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD^{tree}"],
@@ -143,7 +280,10 @@ def run(root: Path, output: Path, head: str, suite: str, framework: str,
         category = stage if stage in CATEGORIES else "source_test_setup_failed"
         failure = {**identity, "kind": "socket-source-test-failure", "category": category,
                    "exitCode": exit_code if type(exit_code) is int else None,
-                   "diagnosticCodes": diagnostic_codes(log) if log is not None else []}
+                   "diagnosticCodes": diagnostic_codes(log) if log is not None else [],
+                   "sourceState": source_state(root, head, hashes),
+                   "testEvidence": test_failure_evidence(root, head, private, project, suite, namespace, exit_code),
+                   "dependencyDiagnostics": dependency_diagnostics(root, head, project, framework)}
         retain(private, retained, "failure.json", failure)
         return False
 
