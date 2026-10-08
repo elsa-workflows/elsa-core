@@ -1,46 +1,29 @@
-using Elsa.Testing.Shared;
-using Elsa.Testing.Shared.Services;
+using System.Diagnostics;
 using Elsa.Workflows.ComponentTests.Abstractions;
 using Elsa.Workflows.ComponentTests.Fixtures;
-using Elsa.Workflows.ComponentTests.Scenarios.WorkflowActivities.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Models;
+using Humanizer;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowActivities;
 
-public class DeleteWorkflowTests : AppComponentTest
+public class DeleteWorkflowTests(App app) : AppComponentTest(app)
 {
-    private static readonly object WorkflowDeletedSignal = new();
-    private readonly IServiceScope _scope1;
-    // private readonly IServiceScope _scope2;
-    // private readonly IServiceScope _scope3;
-    private readonly SignalManager _signalManager;
-    private readonly WorkflowDefinitionEvents _workflowDefinitionEvents;
-
-    public DeleteWorkflowTests(App app) : base(app)
-    {
-        _scope1 = app.Cluster.Pod1.Services.CreateScope();
-        // Disabled these scope creations since this prevents events from firing in other tests.
-        // _scope2 = app.Cluster.Pod2.Services.CreateScope();
-        // _scope3 = app.Cluster.Pod3.Services.CreateScope();
-        _signalManager = Scope.ServiceProvider.GetRequiredService<SignalManager>();
-        _workflowDefinitionEvents = Scope.ServiceProvider.GetRequiredService<WorkflowDefinitionEvents>();
-        _workflowDefinitionEvents.WorkflowDefinitionDeleted += OnWorkflowDefinitionDeleted;
-    }
-
     [Fact]
     public async Task DeleteWorkflow()
     {
-        EnsureWorkflowInRegistry(_scope1, Workflows.DeleteWorkflow.Type);
+        EnsureWorkflowInRegistry(Scope, Workflows.DeleteWorkflow.Type);
 
-        var workflowDefinitionManager = _scope1.ServiceProvider.GetRequiredService<IWorkflowDefinitionManager>();
+        var workflowDefinitionManager = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionManager>();
         var deletedCount = await workflowDefinitionManager.DeleteByDefinitionIdAsync(Workflows.DeleteWorkflow.DefinitionId);
         Assert.True(deletedCount > 0, "Expected workflow definition to be deleted.");
         
-        var store = _scope1.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
+        var store = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
         var t1 = await store.FindAsync(new WorkflowDefinitionFilter
         {
             DefinitionId = Workflows.DeleteWorkflow.DefinitionId
@@ -49,29 +32,54 @@ public class DeleteWorkflowTests : AppComponentTest
         Assert.Null(t1);
 
         // Force a refresh of the activity registry to ensure it reflects the deletion
-        var activityRegistry = _scope1.ServiceProvider.GetRequiredService<IActivityRegistry>();
-        var workflowDefinitionActivityProvider = _scope1.ServiceProvider.GetRequiredService<WorkflowDefinitionActivityProvider>();
+        var activityRegistry = Scope.ServiceProvider.GetRequiredService<IActivityRegistry>();
+        var workflowDefinitionActivityProvider = Scope.ServiceProvider.GetRequiredService<WorkflowDefinitionActivityProvider>();
         await activityRegistry.RefreshDescriptorsAsync(workflowDefinitionActivityProvider);
 
         // Verify the workflow is removed from the registry
-        WorkflowTypeDeletedFromRegistry(_scope1, Workflows.DeleteWorkflow.Type);
+        WorkflowTypeDeletedFromRegistry(Scope, Workflows.DeleteWorkflow.Type);
     }
 
-    [Fact(Skip = "Clustered tests are interfering with other event driven tests")]
+    [Fact]
     public async Task DeleteWorkflow_Clustered()
     {
-        EnsureWorkflowInRegistry(_scope1, DeleteWorkflowClustered.Type);
-        // EnsureWorkflowInRegistry(_scope2, DeleteWorkflowClustered.Type);
-        // EnsureWorkflowInRegistry(_scope3, DeleteWorkflowClustered.Type);
+        using var pod1Scope = Cluster.Pod1.Services.CreateScope();
+        using var pod2Scope = Cluster.Pod2.Services.CreateScope();
+        using var pod3Scope = Cluster.Pod3.Services.CreateScope();
+        var registries = new[] { pod1Scope, pod2Scope, pod3Scope }
+            .Select(scope => scope.ServiceProvider.GetRequiredService<IActivityRegistry>()).ToArray();
+        var definitionId = $"DeleteWorkflowClustered{Guid.NewGuid():N}";
+        var activityName = definitionId.Pascalize();
+        var importer = pod1Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionImporter>();
+        var manager = pod1Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionManager>();
+        var store = pod1Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
 
-        var workflowDefinitionManager = _scope1.ServiceProvider.GetRequiredService<IWorkflowDefinitionManager>();
-        await workflowDefinitionManager.DeleteByDefinitionIdAsync(DeleteWorkflowClustered.DefinitionId);
+        try
+        {
+            var imported = await importer.ImportAsync(new SaveWorkflowDefinitionRequest
+            {
+                Model = new WorkflowDefinitionModel
+                {
+                    Name = activityName,
+                    DefinitionId = definitionId,
+                    Options = new WorkflowOptions { UsableAsActivity = true }
+                },
+                Publish = true
+            });
+            Assert.True(imported.Succeeded, string.Join(Environment.NewLine, imported.ValidationErrors.Select(error => error.Message)));
+            await WaitForRegistryConvergenceAsync(registries, activityName, expectedPresent: true);
 
-        WorkflowTypeDeletedFromRegistry(_scope1, DeleteWorkflowClustered.Type);
+            var deletedCount = await manager.DeleteByDefinitionIdAsync(definitionId);
+            Assert.Equal(1L, deletedCount);
+            Assert.Null(await store.FindAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId }));
 
-        await _signalManager.WaitAsync<WorkflowDefinitionDeletedEventArgs>(WorkflowDeletedSignal);
-        // WorkflowTypeDeletedFromRegistry(_scope2, DeleteWorkflowClustered.Type);
-        // WorkflowTypeDeletedFromRegistry(_scope3, DeleteWorkflowClustered.Type);
+            // Observe the actual generation/refresh path on every pod without forcing a refresh.
+            await WaitForRegistryConvergenceAsync(registries, activityName, expectedPresent: false);
+        }
+        finally
+        {
+            await manager.DeleteByDefinitionIdAsync(definitionId);
+        }
     }
 
     private static void EnsureWorkflowInRegistry(IServiceScope scope, string type)
@@ -89,30 +97,15 @@ public class DeleteWorkflowTests : AppComponentTest
         Assert.Null(descriptor);
     }
 
-    private static async Task<bool> WaitForWorkflowTypeRemovedAsync(IServiceScope scope, string type, TimeSpan timeout)
+    private static async Task WaitForRegistryConvergenceAsync(IActivityRegistry[] registries, string activityName, bool expectedPresent)
     {
-        var activityRegistry = scope.ServiceProvider.GetRequiredService<IActivityRegistry>();
-        var deadline = DateTimeOffset.UtcNow + timeout;
-
-        while (DateTimeOffset.UtcNow < deadline)
+        bool Converged() => registries.All(registry => (registry.Find(activityName) is not null) == expectedPresent);
+        var elapsed = Stopwatch.StartNew();
+        while (!Converged() && elapsed.Elapsed < TimeSpan.FromSeconds(30))
         {
-            if (activityRegistry.Find(type) == null)
-                return true;
-
             await Task.Delay(100);
         }
 
-        return false;
-    }
-
-    private void OnWorkflowDefinitionDeleted(object? sender, WorkflowDefinitionDeletedEventArgs args)
-    {
-        if (args.DefinitionId == Workflows.DeleteWorkflow.DefinitionId) 
-            _signalManager.Trigger(WorkflowDeletedSignal, args);
-    }
-
-    protected override void OnDispose()
-    {
-        _workflowDefinitionEvents.WorkflowDefinitionDeleted -= OnWorkflowDefinitionDeleted;
+        Assert.True(Converged(), $"Expected workflow activity presence {expectedPresent} on all three pods.");
     }
 }
