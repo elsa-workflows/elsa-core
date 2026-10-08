@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Elsa.Common.Multitenancy;
 using Elsa.Persistence.EFCore;
+using Elsa.Persistence.EFCore.EntityHandlers;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Slack.SocketMode;
 using Elsa.Slack.SocketMode.Persistence;
@@ -460,6 +461,8 @@ public sealed class SocketDurableWorkTests(PostgreSqlConnectionsFixture fixture)
             collection.AddSlackSocketDiscardPersistence();
         });
         using var tenant = AdmissionRuntimeHost.EnterTenant(services);
+        Assert.Contains(services.GetServices<IEntitySavingHandler>(), handler => handler is ApplyTenantId);
+        Assert.Contains(services.GetServices<IEntityModelCreatingHandler>(), handler => handler is SetTenantIdFilter);
         await using (var admission = await services.GetRequiredService<IDbContextFactory<AdmissionElsaDbContext>>().CreateDbContextAsync())
         {
             Assert.True(admission.IsTenantFilteringEnabled);

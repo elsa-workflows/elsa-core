@@ -2,9 +2,11 @@ using System.Reflection;
 using CShells.Features;
 using Elsa.Common.Entities;
 using Elsa.Extensions;
+using Elsa.Persistence.EFCore.EntityHandlers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 // ReSharper disable once CheckNamespace
@@ -92,6 +94,11 @@ public abstract class PersistenceShellFeatureBase<TDbContext> : IShellFeature
             services.AddDbContextFactory<TDbContext>(setup, dbContextFactoryLifetime);
 
         services.Decorate<IDbContextFactory<TDbContext>, TenantAwareDbContextFactory<TDbContext>>();
+
+        // Each selected context needs the same tenant stamping and query filtering
+        // as classic persistence. Register shared handlers once across Shell features.
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IEntitySavingHandler, ApplyTenantId>());
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IEntityModelCreatingHandler, SetTenantIdFilter>());
 
         services.Configure<MigrationOptions>(options =>
         {
