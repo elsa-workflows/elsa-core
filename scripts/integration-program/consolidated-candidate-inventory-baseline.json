@@ -1,0 +1,1535 @@
+{
+  "evidence": {
+    "archive_sha256": "8317e5766591f9da2d1f83cd6a85274bd41efbfbd0039d6a1bcfaf0c9bf81636",
+    "artifact_id": 11390805430,
+    "inventory_sha256": "5981ea53924127299dc165b9cee07de6450be9996c816249e2310cb987a2c6df",
+    "run_id": 37410240989,
+    "scope": "Reviewed inventory comparison only; never relabel or reuse as candidate bytes.",
+    "source_commit": "44083dc4f47d56aa2d5c215b0c7479c0b7290cb0",
+    "version": "3.10.0-proof.37410240989.1"
+  },
+  "exclusions": [
+    {
+      "id": "_build",
+      "project": "build/_build.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Server.Web",
+      "project": "samples/extensions/workbench/Elsa.Server.Web/Elsa.Server.Web.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.ServerAndStudio.Web",
+      "project": "samples/extensions/workbench/Elsa.ServerAndStudio.Web/Elsa.ServerAndStudio.Web.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "ElsaStudioWebAssembly",
+      "project": "samples/extensions/workbench/ElsaStudioWebAssembly/ElsaStudioWebAssembly.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "BlazorApp1",
+      "project": "samples/studio/BlazorApp1/BlazorApp1.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.ModularServer.Web",
+      "project": "src/apps/Elsa.ModularServer.Web/Elsa.ModularServer.Web.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Server.LoadBalancer",
+      "project": "src/apps/Elsa.Server.LoadBalancer/Elsa.Server.LoadBalancer.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Server.Web",
+      "project": "src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Secrets.Api",
+      "project": "src/extensions/secrets/Elsa.Secrets.Api/Elsa.Secrets.Api.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Secrets.Core",
+      "project": "src/extensions/secrets/Elsa.Secrets.Core/Elsa.Secrets.Core.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Secrets.Management",
+      "project": "src/extensions/secrets/Elsa.Secrets.Management/Elsa.Secrets.Management.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Secrets.Models",
+      "project": "src/extensions/secrets/Elsa.Secrets.Models/Elsa.Secrets.Models.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Secrets.Scripting",
+      "project": "src/extensions/secrets/Elsa.Secrets.Scripting/Elsa.Secrets.Scripting.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql",
+      "project": "src/modules/Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql/Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Connections.Credentials.Persistence.EFCore.Sqlite",
+      "project": "src/modules/Elsa.Connections.Credentials.Persistence.EFCore.Sqlite/Elsa.Connections.Credentials.Persistence.EFCore.Sqlite.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Connections.Credentials.Persistence.EFCore",
+      "project": "src/modules/Elsa.Connections.Credentials.Persistence.EFCore/Elsa.Connections.Credentials.Persistence.EFCore.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Connections.Credentials.Workflows",
+      "project": "src/modules/Elsa.Connections.Credentials.Workflows/Elsa.Connections.Credentials.Workflows.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Connections",
+      "project": "src/modules/Elsa.Connections/Elsa.Connections.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Core.Tests",
+      "project": "src/studio/framework/Elsa.Studio.Core.Tests/Elsa.Studio.Core.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Host.CustomElements",
+      "project": "src/studio/hosts/Elsa.Studio.Host.CustomElements/Elsa.Studio.Host.CustomElements.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Host.HostedWasm",
+      "project": "src/studio/hosts/Elsa.Studio.Host.HostedWasm/Elsa.Studio.Host.HostedWasm.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Host.Server",
+      "project": "src/studio/hosts/Elsa.Studio.Host.Server/Elsa.Studio.Host.Server.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Host.Wasm",
+      "project": "src/studio/hosts/Elsa.Studio.Host.Wasm/Elsa.Studio.Host.Wasm.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.AI.Tests",
+      "project": "src/studio/modules/Elsa.Studio.AI.Tests/Elsa.Studio.AI.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Administration.Tests",
+      "project": "src/studio/modules/Elsa.Studio.Administration.Tests/Elsa.Studio.Administration.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Authentication.UI.Tests",
+      "project": "src/studio/modules/Elsa.Studio.Authentication.UI.Tests/Elsa.Studio.Authentication.UI.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Dashboard.Tests",
+      "project": "src/studio/modules/Elsa.Studio.Dashboard.Tests/Elsa.Studio.Dashboard.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Diagnostics.ConsoleLogs.Tests",
+      "project": "src/studio/modules/Elsa.Studio.Diagnostics.ConsoleLogs.Tests/Elsa.Studio.Diagnostics.ConsoleLogs.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Diagnostics.OpenTelemetry.Tests",
+      "project": "src/studio/modules/Elsa.Studio.Diagnostics.OpenTelemetry.Tests/Elsa.Studio.Diagnostics.OpenTelemetry.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Diagnostics.StructuredLogs.Tests",
+      "project": "src/studio/modules/Elsa.Studio.Diagnostics.StructuredLogs.Tests/Elsa.Studio.Diagnostics.StructuredLogs.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Environments.Tests",
+      "project": "src/studio/modules/Elsa.Studio.Environments.Tests/Elsa.Studio.Environments.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.ExternalAuthentication.Tests",
+      "project": "src/studio/modules/Elsa.Studio.ExternalAuthentication.Tests/Elsa.Studio.ExternalAuthentication.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Localization.Tests",
+      "project": "src/studio/modules/Elsa.Studio.Localization.Tests/Elsa.Studio.Localization.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.PlatformIntegration.Tests",
+      "project": "src/studio/modules/Elsa.Studio.PlatformIntegration.Tests/Elsa.Studio.PlatformIntegration.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Secrets.Tests",
+      "project": "src/studio/modules/Elsa.Studio.Secrets.Tests/Elsa.Studio.Secrets.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Security.Tests",
+      "project": "src/studio/modules/Elsa.Studio.Security.Tests/Elsa.Studio.Security.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.UserTasks.Tests",
+      "project": "src/studio/modules/Elsa.Studio.UserTasks.Tests/Elsa.Studio.UserTasks.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Workflows.Designer.Tests",
+      "project": "src/studio/modules/Elsa.Studio.Workflows.Designer.Tests/Elsa.Studio.Workflows.Designer.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Workflows.Tests",
+      "project": "src/studio/modules/Elsa.Studio.Workflows.Tests/Elsa.Studio.Workflows.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Workflows.ComponentTests",
+      "project": "test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Actors.ProtoActor.UnitTests",
+      "project": "test/extensions/modules/actors/Elsa.Actors.ProtoActor.UnitTests/Elsa.Actors.ProtoActor.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Agents.Tests",
+      "project": "test/extensions/modules/agents/Elsa.Studio.Agents.Tests/Elsa.Studio.Agents.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Caching.Distributed.ProtoActor.IntegrationTests",
+      "project": "test/extensions/modules/caching/Elsa.Caching.Distributed.ProtoActor.IntegrationTests/Elsa.Caching.Distributed.ProtoActor.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.DevOps.GitHub.UnitTests",
+      "project": "test/extensions/modules/devops/Elsa.DevOps.GitHub.UnitTests/Elsa.DevOps.GitHub.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Logging.Core.IntegrationTests",
+      "project": "test/extensions/modules/diagnostics/Elsa.Logging.Core.IntegrationTests/Elsa.Logging.Core.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Logging.Core.UnitTests",
+      "project": "test/extensions/modules/diagnostics/Elsa.Logging.Core.UnitTests/Elsa.Logging.Core.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Ldap.UnitTests",
+      "project": "test/extensions/modules/ldap/Elsa.Ldap.UnitTests/Elsa.Ldap.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Mqtt.UnitTests",
+      "project": "test/extensions/modules/mqtt/Elsa.Mqtt.UnitTests/Elsa.Mqtt.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Dapper.UnitTests",
+      "project": "test/extensions/modules/persistence/Elsa.Dapper.UnitTests/Elsa.Dapper.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.MongoDb.UnitTests",
+      "project": "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Persistence.Dapper.UnitTests",
+      "project": "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Workflows.Runtime.ProtoActor.UnitTests",
+      "project": "test/extensions/modules/runtimes/Elsa.Workflows.Runtime.ProtoActor.UnitTests/Elsa.Workflows.Runtime.ProtoActor.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Scheduling.Hangfire.UnitTests",
+      "project": "test/extensions/modules/scheduling/Elsa.Scheduling.Hangfire.UnitTests/Elsa.Scheduling.Hangfire.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Scheduling.Quartz.ComponentTests",
+      "project": "test/extensions/modules/scheduling/Elsa.Scheduling.Quartz.ComponentTests/Elsa.Scheduling.Quartz.ComponentTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Scheduling.Quartz.UnitTests",
+      "project": "test/extensions/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/Elsa.Scheduling.Quartz.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Secrets.Management.UnitTests",
+      "project": "test/extensions/modules/secrets/Elsa.Secrets.Management.UnitTests/Elsa.Secrets.Management.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.ServiceBus.AzureServiceBus.ComponentTests",
+      "project": "test/extensions/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.ServiceBus.MassTransit.UnitTests",
+      "project": "test/extensions/modules/servicebus/Elsa.ServiceBus.MassTransit.UnitTests/Elsa.ServiceBus.MassTransit.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Slack.Tests",
+      "project": "test/extensions/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.TestServer.Web",
+      "project": "test/extensions/workbench/Elsa.TestServer.Web/Elsa.TestServer.Web.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.AI.IntegrationTests",
+      "project": "test/integration/Elsa.AI.IntegrationTests/Elsa.AI.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Activities.IntegrationTests",
+      "project": "test/integration/Elsa.Activities.IntegrationTests/Elsa.Activities.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Alterations.IntegrationTests",
+      "project": "test/integration/Elsa.Alterations.IntegrationTests/Elsa.Alterations.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Alterations.Persistence.ConformanceTests",
+      "project": "test/integration/Elsa.Alterations.Persistence.ConformanceTests/Elsa.Alterations.Persistence.ConformanceTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Bpmn.IntegrationTests",
+      "project": "test/integration/Elsa.Bpmn.IntegrationTests/Elsa.Bpmn.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Bpmn.Interchange.IntegrationTests",
+      "project": "test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Elsa.Bpmn.Interchange.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Common.IntegrationTests",
+      "project": "test/integration/Elsa.Common.IntegrationTests/Elsa.Common.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Diagnostics.ConsoleLogs.IntegrationTests",
+      "project": "test/integration/Elsa.Diagnostics.ConsoleLogs.IntegrationTests/Elsa.Diagnostics.ConsoleLogs.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Diagnostics.OpenTelemetry.IntegrationTests",
+      "project": "test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/Elsa.Diagnostics.OpenTelemetry.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Diagnostics.StructuredLogs.IntegrationTests",
+      "project": "test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests/Elsa.Diagnostics.StructuredLogs.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests",
+      "project": "test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests/Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests",
+      "project": "test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Dsl.ElsaScript.IntegrationTests",
+      "project": "test/integration/Elsa.Dsl.ElsaScript.IntegrationTests/Elsa.Dsl.ElsaScript.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.ExternalAuthentication.IntegrationTests",
+      "project": "test/integration/Elsa.ExternalAuthentication.IntegrationTests/Elsa.ExternalAuthentication.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Hosts.SmokeTests",
+      "project": "test/integration/Elsa.Hosts.SmokeTests/Elsa.Hosts.SmokeTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Http.IntegrationTests",
+      "project": "test/integration/Elsa.Http.IntegrationTests/Elsa.Http.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.JavaScript.IntegrationTests",
+      "project": "test/integration/Elsa.JavaScript.IntegrationTests/Elsa.JavaScript.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Labels.Persistence.ConformanceTests",
+      "project": "test/integration/Elsa.Labels.Persistence.ConformanceTests/Elsa.Labels.Persistence.ConformanceTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Resilience.IntegrationTests",
+      "project": "test/integration/Elsa.Resilience.IntegrationTests/Elsa.Resilience.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Secrets.Api.IntegrationTests",
+      "project": "test/integration/Elsa.Secrets.Api.IntegrationTests/Elsa.Secrets.Api.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Secrets.DefaultHost.IntegrationTests",
+      "project": "test/integration/Elsa.Secrets.DefaultHost.IntegrationTests/Elsa.Secrets.DefaultHost.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Workflows.IntegrationTests",
+      "project": "test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Workflows.Persistence.ConformanceTests",
+      "project": "test/integration/Elsa.Workflows.Persistence.ConformanceTests/Elsa.Workflows.Persistence.ConformanceTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Workflows.PerformanceTests",
+      "project": "test/performance/Elsa.Workflows.PerformanceTests/Elsa.Workflows.PerformanceTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.AI.Abstractions.UnitTests",
+      "project": "test/unit/Elsa.AI.Abstractions.UnitTests/Elsa.AI.Abstractions.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.AI.Copilot.UnitTests",
+      "project": "test/unit/Elsa.AI.Copilot.UnitTests/Elsa.AI.Copilot.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.AI.Host.UnitTests",
+      "project": "test/unit/Elsa.AI.Host.UnitTests/Elsa.AI.Host.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.AI.Persistence.EFCore.UnitTests",
+      "project": "test/unit/Elsa.AI.Persistence.EFCore.UnitTests/Elsa.AI.Persistence.EFCore.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Activities.UnitTests",
+      "project": "test/unit/Elsa.Activities.UnitTests/Elsa.Activities.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Alterations.Core.UnitTests",
+      "project": "test/unit/Elsa.Alterations.Core.UnitTests/Elsa.Alterations.Core.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Api.Common.UnitTests",
+      "project": "test/unit/Elsa.Api.Common.UnitTests/Elsa.Api.Common.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Bpmn.Interchange.UnitTests",
+      "project": "test/unit/Elsa.Bpmn.Interchange.UnitTests/Elsa.Bpmn.Interchange.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Bpmn.UnitTests",
+      "project": "test/unit/Elsa.Bpmn.UnitTests/Elsa.Bpmn.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Common.UnitTests",
+      "project": "test/unit/Elsa.Common.UnitTests/Elsa.Common.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Connections.UnitTests",
+      "project": "test/unit/Elsa.Connections.UnitTests/Elsa.Connections.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Dashboard.Api.UnitTests",
+      "project": "test/unit/Elsa.Dashboard.Api.UnitTests/Elsa.Dashboard.Api.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Diagnostics.ConsoleLogs.UnitTests",
+      "project": "test/unit/Elsa.Diagnostics.ConsoleLogs.UnitTests/Elsa.Diagnostics.ConsoleLogs.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Diagnostics.OpenTelemetry.UnitTests",
+      "project": "test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Elsa.Diagnostics.OpenTelemetry.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests",
+      "project": "test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Diagnostics.StructuredLogs.UnitTests",
+      "project": "test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Elsa.Diagnostics.StructuredLogs.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Expressions.UnitTests",
+      "project": "test/unit/Elsa.Expressions.UnitTests/Elsa.Expressions.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.ExternalAuthentication.UnitTests",
+      "project": "test/unit/Elsa.ExternalAuthentication.UnitTests/Elsa.ExternalAuthentication.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Features.UnitTests",
+      "project": "test/unit/Elsa.Features.UnitTests/Elsa.Features.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Hosting.Management.UnitTests",
+      "project": "test/unit/Elsa.Hosting.Management.UnitTests/Elsa.Hosting.Management.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Http.UnitTests",
+      "project": "test/unit/Elsa.Http.UnitTests/Elsa.Http.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Identity.UnitTests",
+      "project": "test/unit/Elsa.Identity.UnitTests/Elsa.Identity.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Labels.UnitTests",
+      "project": "test/unit/Elsa.Labels.UnitTests/Elsa.Labels.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Persistence.EFCore.UnitTests",
+      "project": "test/unit/Elsa.Persistence.EFCore.UnitTests/Elsa.Persistence.EFCore.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Persistence.VNext.UnitTests",
+      "project": "test/unit/Elsa.Persistence.VNext.UnitTests/Elsa.Persistence.VNext.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Platform.Integration.UnitTests",
+      "project": "test/unit/Elsa.Platform.Integration.UnitTests/Elsa.Platform.Integration.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Resilience.Core.UnitTests",
+      "project": "test/unit/Elsa.Resilience.Core.UnitTests/Elsa.Resilience.Core.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.SasTokens.UnitTests",
+      "project": "test/unit/Elsa.SasTokens.UnitTests/Elsa.SasTokens.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Scheduling.UnitTests",
+      "project": "test/unit/Elsa.Scheduling.UnitTests/Elsa.Scheduling.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Secrets.UnitTests",
+      "project": "test/unit/Elsa.Secrets.UnitTests/Elsa.Secrets.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Shells.Api.Tests",
+      "project": "test/unit/Elsa.Shells.Api.Tests/Elsa.Shells.Api.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Tenants.UnitTests",
+      "project": "test/unit/Elsa.Tenants.UnitTests/Elsa.Tenants.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.UserTasks.Persistence.ConformanceTests",
+      "project": "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/Elsa.UserTasks.Persistence.ConformanceTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.UserTasks.Persistence.EFCore.UnitTests",
+      "project": "test/unit/Elsa.UserTasks.Persistence.EFCore.UnitTests/Elsa.UserTasks.Persistence.EFCore.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.UserTasks.UnitTests",
+      "project": "test/unit/Elsa.UserTasks.UnitTests/Elsa.UserTasks.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Workflows.Api.UnitTests",
+      "project": "test/unit/Elsa.Workflows.Api.UnitTests/Elsa.Workflows.Api.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Workflows.Core.UnitTests",
+      "project": "test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Workflows.Management.UnitTests",
+      "project": "test/unit/Elsa.Workflows.Management.UnitTests/Elsa.Workflows.Management.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Workflows.Runtime.UnitTests",
+      "project": "test/unit/Elsa.Workflows.Runtime.UnitTests/Elsa.Workflows.Runtime.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    }
+  ],
+  "packages": [
+    {
+      "id": "Elsa.SamplePackage",
+      "project": "src/apps/Elsa.SamplePackage/Elsa.SamplePackage.csproj"
+    },
+    {
+      "id": "Elsa.Api.Client",
+      "project": "src/clients/Elsa.Api.Client/Elsa.Api.Client.csproj"
+    },
+    {
+      "id": "Elsa.Api.Common",
+      "project": "src/common/Elsa.Api.Common/Elsa.Api.Common.csproj"
+    },
+    {
+      "id": "Elsa.Features",
+      "project": "src/common/Elsa.Features/Elsa.Features.csproj"
+    },
+    {
+      "id": "Elsa.Mediator",
+      "project": "src/common/Elsa.Mediator/Elsa.Mediator.csproj"
+    },
+    {
+      "id": "Elsa.Testing.Shared.Component",
+      "project": "src/common/Elsa.Testing.Shared.Component/Elsa.Testing.Shared.Component.csproj"
+    },
+    {
+      "id": "Elsa.Testing.Shared.Integration",
+      "project": "src/common/Elsa.Testing.Shared.Integration/Elsa.Testing.Shared.Integration.csproj"
+    },
+    {
+      "id": "Elsa.Testing.Shared",
+      "project": "src/common/Elsa.Testing.Shared/Elsa.Testing.Shared.csproj"
+    },
+    {
+      "id": "Elsa.Actors.ProtoActor.PubSub.Redis",
+      "project": "src/extensions/actors/Elsa.Actors.ProtoActor.PubSub.Redis/Elsa.Actors.ProtoActor.PubSub.Redis.csproj"
+    },
+    {
+      "id": "Elsa.Actors.ProtoActor",
+      "project": "src/extensions/actors/Elsa.Actors.ProtoActor/Elsa.Actors.ProtoActor.csproj"
+    },
+    {
+      "id": "Elsa.Agents.Activities",
+      "project": "src/extensions/agents/Elsa.Agents.Activities/Elsa.Agents.Activities.csproj"
+    },
+    {
+      "id": "Elsa.Agents.Api",
+      "project": "src/extensions/agents/Elsa.Agents.Api/Elsa.Agents.Api.csproj"
+    },
+    {
+      "id": "Elsa.Agents.AzureOpenAI",
+      "project": "src/extensions/agents/Elsa.Agents.AzureOpenAI/Elsa.Agents.AzureOpenAI.csproj"
+    },
+    {
+      "id": "Elsa.Agents.Core",
+      "project": "src/extensions/agents/Elsa.Agents.Core/Elsa.Agents.Core.csproj"
+    },
+    {
+      "id": "Elsa.Agents.Models",
+      "project": "src/extensions/agents/Elsa.Agents.Models/Elsa.Agents.Models.csproj"
+    },
+    {
+      "id": "Elsa.Agents.OpenAI",
+      "project": "src/extensions/agents/Elsa.Agents.OpenAI/Elsa.Agents.OpenAI.csproj"
+    },
+    {
+      "id": "Elsa.Agents.Persistence.EFCore.MySql",
+      "project": "src/extensions/agents/Elsa.Agents.Persistence.EFCore.MySql/Elsa.Agents.Persistence.EFCore.MySql.csproj"
+    },
+    {
+      "id": "Elsa.Agents.Persistence.EFCore.PostgreSql",
+      "project": "src/extensions/agents/Elsa.Agents.Persistence.EFCore.PostgreSql/Elsa.Agents.Persistence.EFCore.PostgreSql.csproj"
+    },
+    {
+      "id": "Elsa.Agents.Persistence.EFCore.SqlServer",
+      "project": "src/extensions/agents/Elsa.Agents.Persistence.EFCore.SqlServer/Elsa.Agents.Persistence.EFCore.SqlServer.csproj"
+    },
+    {
+      "id": "Elsa.Agents.Persistence.EFCore.Sqlite",
+      "project": "src/extensions/agents/Elsa.Agents.Persistence.EFCore.Sqlite/Elsa.Agents.Persistence.EFCore.Sqlite.csproj"
+    },
+    {
+      "id": "Elsa.Agents.Persistence.EFCore",
+      "project": "src/extensions/agents/Elsa.Agents.Persistence.EFCore/Elsa.Agents.Persistence.EFCore.csproj"
+    },
+    {
+      "id": "Elsa.Agents.Persistence",
+      "project": "src/extensions/agents/Elsa.Agents.Persistence/Elsa.Agents.Persistence.csproj"
+    },
+    {
+      "id": "Elsa.Agents",
+      "project": "src/extensions/agents/Elsa.Agents/Elsa.Agents.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Agents",
+      "project": "src/extensions/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj"
+    },
+    {
+      "id": "Elsa.Alterations.MassTransit",
+      "project": "src/extensions/alterations/Elsa.Alterations.MassTransit/Elsa.Alterations.MassTransit.csproj"
+    },
+    {
+      "id": "Elsa.Caching.Distributed.MassTransit",
+      "project": "src/extensions/caching/Elsa.Caching.Distributed.MassTransit/Elsa.Caching.Distributed.MassTransit.csproj"
+    },
+    {
+      "id": "Elsa.Caching.Distributed.ProtoActor",
+      "project": "src/extensions/caching/Elsa.Caching.Distributed.ProtoActor/Elsa.Caching.Distributed.ProtoActor.csproj"
+    },
+    {
+      "id": "Elsa.Caching.Distributed",
+      "project": "src/extensions/caching/Elsa.Caching.Distributed/Elsa.Caching.Distributed.csproj"
+    },
+    {
+      "id": "Elsa.OrchardCore",
+      "project": "src/extensions/cms/Elsa.OrchardCore/Elsa.OrchardCore.csproj"
+    },
+    {
+      "id": "Elsa.Slack",
+      "project": "src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj"
+    },
+    {
+      "id": "Elsa.Connections.Api",
+      "project": "src/extensions/connections/Elsa.Connections.Api/Elsa.Connections.Api.csproj"
+    },
+    {
+      "id": "Elsa.Connections.Core",
+      "project": "src/extensions/connections/Elsa.Connections.Core/Elsa.Connections.Core.csproj"
+    },
+    {
+      "id": "Elsa.Connections.Models",
+      "project": "src/extensions/connections/Elsa.Connections.Models/Elsa.Connections.Models.csproj"
+    },
+    {
+      "id": "Elsa.Connections.Persistence.EFCore.Sqlite",
+      "project": "src/extensions/connections/Elsa.Connections.Persistence.EFCore.Sqlite/Elsa.Connections.Persistence.EFCore.Sqlite.csproj"
+    },
+    {
+      "id": "Elsa.Connections.Persistence.EFCore",
+      "project": "src/extensions/connections/Elsa.Connections.Persistence.EFCore/Elsa.Connections.Persistence.EFCore.csproj"
+    },
+    {
+      "id": "Elsa.Connections.Persistence",
+      "project": "src/extensions/connections/Elsa.Connections.Persistence/Elsa.Connections.Persistence.csproj"
+    },
+    {
+      "id": "Elsa.Data.Csv",
+      "project": "src/extensions/data/Elsa.Data.Csv/Elsa.Data.Csv.csproj"
+    },
+    {
+      "id": "Elsa.DevOps.GitHub",
+      "project": "src/extensions/devops/Elsa.DevOps.GitHub/Elsa.DevOps.GitHub.csproj"
+    },
+    {
+      "id": "Elsa.Logging.Console",
+      "project": "src/extensions/diagnostics/Elsa.Logging.Console/Elsa.Logging.Console.csproj"
+    },
+    {
+      "id": "Elsa.Logging.Core",
+      "project": "src/extensions/diagnostics/Elsa.Logging.Core/Elsa.Logging.Core.csproj"
+    },
+    {
+      "id": "Elsa.Logging.Serilog",
+      "project": "src/extensions/diagnostics/Elsa.Logging.Serilog/Elsa.Logging.Serilog.csproj"
+    },
+    {
+      "id": "Elsa.Logging",
+      "project": "src/extensions/diagnostics/Elsa.Logging/Elsa.Logging.csproj"
+    },
+    {
+      "id": "Elsa.OpenTelemetry",
+      "project": "src/extensions/diagnostics/Elsa.OpenTelemetry/Elsa.OpenTelemetry.csproj"
+    },
+    {
+      "id": "Elsa.DropIns.Core",
+      "project": "src/extensions/dropins/Elsa.DropIns.Core/Elsa.DropIns.Core.csproj"
+    },
+    {
+      "id": "Elsa.DropIns",
+      "project": "src/extensions/dropins/Elsa.DropIns/Elsa.DropIns.csproj"
+    },
+    {
+      "id": "Elsa.Email",
+      "project": "src/extensions/email/Elsa.Email/Elsa.Email.csproj"
+    },
+    {
+      "id": "Elsa.Http.OpenApi",
+      "project": "src/extensions/http/Elsa.Http.OpenApi/Elsa.Http.OpenApi.csproj"
+    },
+    {
+      "id": "Elsa.IO.Compression",
+      "project": "src/extensions/io/Elsa.IO.Compression/Elsa.IO.Compression.csproj"
+    },
+    {
+      "id": "Elsa.IO.Http",
+      "project": "src/extensions/io/Elsa.IO.Http/Elsa.IO.Http.csproj"
+    },
+    {
+      "id": "Elsa.IO",
+      "project": "src/extensions/io/Elsa.IO/Elsa.IO.csproj"
+    },
+    {
+      "id": "Elsa.Ldap",
+      "project": "src/extensions/ldap/Elsa.Ldap/Elsa.Ldap.csproj"
+    },
+    {
+      "id": "Elsa.Mqtt",
+      "project": "src/extensions/mqtt/Elsa.Mqtt/Elsa.Mqtt.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.Dapper.Migrations",
+      "project": "src/extensions/persistence/Elsa.Persistence.Dapper.Migrations/Elsa.Persistence.Dapper.Migrations.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.Dapper",
+      "project": "src/extensions/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.Elasticsearch",
+      "project": "src/extensions/persistence/Elsa.Persistence.Elasticsearch/Elsa.Persistence.Elasticsearch.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.MongoDb",
+      "project": "src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj"
+    },
+    {
+      "id": "Elsa.Retention",
+      "project": "src/extensions/retention/Elsa.Retention/Elsa.Retention.csproj"
+    },
+    {
+      "id": "Elsa.Workflows.Runtime.ProtoActor",
+      "project": "src/extensions/runtimes/Elsa.Workflows.Runtime.ProtoActor/Elsa.Workflows.Runtime.ProtoActor.csproj"
+    },
+    {
+      "id": "Elsa.Scheduling.Hangfire",
+      "project": "src/extensions/scheduling/Elsa.Scheduling.Hangfire/Elsa.Scheduling.Hangfire.csproj"
+    },
+    {
+      "id": "Elsa.Scheduling.Quartz.EFCore.MySql",
+      "project": "src/extensions/scheduling/Elsa.Scheduling.Quartz.EFCore.MySql/Elsa.Scheduling.Quartz.EFCore.MySql.csproj"
+    },
+    {
+      "id": "Elsa.Scheduling.Quartz.EFCore.PostgreSql",
+      "project": "src/extensions/scheduling/Elsa.Scheduling.Quartz.EFCore.PostgreSql/Elsa.Scheduling.Quartz.EFCore.PostgreSql.csproj"
+    },
+    {
+      "id": "Elsa.Scheduling.Quartz.EFCore.SqlServer",
+      "project": "src/extensions/scheduling/Elsa.Scheduling.Quartz.EFCore.SqlServer/Elsa.Scheduling.Quartz.EFCore.SqlServer.csproj"
+    },
+    {
+      "id": "Elsa.Scheduling.Quartz.EFCore.Sqlite",
+      "project": "src/extensions/scheduling/Elsa.Scheduling.Quartz.EFCore.Sqlite/Elsa.Scheduling.Quartz.EFCore.Sqlite.csproj"
+    },
+    {
+      "id": "Elsa.Scheduling.Quartz",
+      "project": "src/extensions/scheduling/Elsa.Scheduling.Quartz/Elsa.Scheduling.Quartz.csproj"
+    },
+    {
+      "id": "Elsa.ServiceBus.AzureServiceBus",
+      "project": "src/extensions/servicebus/Elsa.ServiceBus.AzureServiceBus/Elsa.ServiceBus.AzureServiceBus.csproj"
+    },
+    {
+      "id": "Elsa.ServiceBus.Kafka",
+      "project": "src/extensions/servicebus/Elsa.ServiceBus.Kafka/Elsa.ServiceBus.Kafka.csproj"
+    },
+    {
+      "id": "Elsa.ServiceBus.MassTransit.AzureServiceBus",
+      "project": "src/extensions/servicebus/Elsa.ServiceBus.MassTransit.AzureServiceBus/Elsa.ServiceBus.MassTransit.AzureServiceBus.csproj"
+    },
+    {
+      "id": "Elsa.ServiceBus.MassTransit.RabbitMq",
+      "project": "src/extensions/servicebus/Elsa.ServiceBus.MassTransit.RabbitMq/Elsa.ServiceBus.MassTransit.RabbitMq.csproj"
+    },
+    {
+      "id": "Elsa.ServiceBus.MassTransit",
+      "project": "src/extensions/servicebus/Elsa.ServiceBus.MassTransit/Elsa.ServiceBus.MassTransit.csproj"
+    },
+    {
+      "id": "Elsa.Sql.MySql",
+      "project": "src/extensions/sql/Elsa.Sql.MySql/Elsa.Sql.MySql.csproj"
+    },
+    {
+      "id": "Elsa.Sql.PostgreSql",
+      "project": "src/extensions/sql/Elsa.Sql.PostgreSql/Elsa.Sql.PostgreSql.csproj"
+    },
+    {
+      "id": "Elsa.Sql.SqlServer",
+      "project": "src/extensions/sql/Elsa.Sql.SqlServer/Elsa.Sql.SqlServer.csproj"
+    },
+    {
+      "id": "Elsa.Sql.Sqlite",
+      "project": "src/extensions/sql/Elsa.Sql.Sqlite/Elsa.Sql.Sqlite.csproj"
+    },
+    {
+      "id": "Elsa.Sql",
+      "project": "src/extensions/sql/Elsa.Sql/Elsa.Sql.csproj"
+    },
+    {
+      "id": "Elsa.Storage.AzureStorage",
+      "project": "src/extensions/storage/Elsa.Storage.AzureStorage/Elsa.Storage.AzureStorage.csproj"
+    },
+    {
+      "id": "Elsa.Storage.Files",
+      "project": "src/extensions/storage/Elsa.Storage.Files/Elsa.Storage.Files.csproj"
+    },
+    {
+      "id": "Elsa.Telnyx",
+      "project": "src/extensions/telecom/Elsa.Telnyx/Elsa.Telnyx.csproj"
+    },
+    {
+      "id": "Elsa.Studio.WorkflowContexts",
+      "project": "src/extensions/workflows/Elsa.Studio.WorkflowContexts/Elsa.Studio.WorkflowContexts.csproj"
+    },
+    {
+      "id": "Elsa.WorkflowContexts",
+      "project": "src/extensions/workflows/Elsa.WorkflowContexts/Elsa.WorkflowContexts.csproj"
+    },
+    {
+      "id": "Elsa.AI.Abstractions",
+      "project": "src/modules/Elsa.AI.Abstractions/Elsa.AI.Abstractions.csproj"
+    },
+    {
+      "id": "Elsa.AI.Copilot",
+      "project": "src/modules/Elsa.AI.Copilot/Elsa.AI.Copilot.csproj"
+    },
+    {
+      "id": "Elsa.AI.Host",
+      "project": "src/modules/Elsa.AI.Host/Elsa.AI.Host.csproj"
+    },
+    {
+      "id": "Elsa.AI.Persistence.EFCore.MySql",
+      "project": "src/modules/Elsa.AI.Persistence.EFCore.MySql/Elsa.AI.Persistence.EFCore.MySql.csproj"
+    },
+    {
+      "id": "Elsa.AI.Persistence.EFCore.Oracle",
+      "project": "src/modules/Elsa.AI.Persistence.EFCore.Oracle/Elsa.AI.Persistence.EFCore.Oracle.csproj"
+    },
+    {
+      "id": "Elsa.AI.Persistence.EFCore.PostgreSql",
+      "project": "src/modules/Elsa.AI.Persistence.EFCore.PostgreSql/Elsa.AI.Persistence.EFCore.PostgreSql.csproj"
+    },
+    {
+      "id": "Elsa.AI.Persistence.EFCore.SqlServer",
+      "project": "src/modules/Elsa.AI.Persistence.EFCore.SqlServer/Elsa.AI.Persistence.EFCore.SqlServer.csproj"
+    },
+    {
+      "id": "Elsa.AI.Persistence.EFCore.Sqlite",
+      "project": "src/modules/Elsa.AI.Persistence.EFCore.Sqlite/Elsa.AI.Persistence.EFCore.Sqlite.csproj"
+    },
+    {
+      "id": "Elsa.AI.Persistence.EFCore",
+      "project": "src/modules/Elsa.AI.Persistence.EFCore/Elsa.AI.Persistence.EFCore.csproj"
+    },
+    {
+      "id": "Elsa.Alterations.Core",
+      "project": "src/modules/Elsa.Alterations.Core/Elsa.Alterations.Core.csproj"
+    },
+    {
+      "id": "Elsa.Alterations",
+      "project": "src/modules/Elsa.Alterations/Elsa.Alterations.csproj"
+    },
+    {
+      "id": "Elsa.Bpmn.Interchange",
+      "project": "src/modules/Elsa.Bpmn.Interchange/Elsa.Bpmn.Interchange.csproj"
+    },
+    {
+      "id": "Elsa.Bpmn",
+      "project": "src/modules/Elsa.Bpmn/Elsa.Bpmn.csproj"
+    },
+    {
+      "id": "Elsa.Caching",
+      "project": "src/modules/Elsa.Caching/Elsa.Caching.csproj"
+    },
+    {
+      "id": "Elsa.Common",
+      "project": "src/modules/Elsa.Common/Elsa.Common.csproj"
+    },
+    {
+      "id": "Elsa.Dashboard.Abstractions",
+      "project": "src/modules/Elsa.Dashboard.Abstractions/Elsa.Dashboard.Abstractions.csproj"
+    },
+    {
+      "id": "Elsa.Dashboard.Api",
+      "project": "src/modules/Elsa.Dashboard.Api/Elsa.Dashboard.Api.csproj"
+    },
+    {
+      "id": "Elsa.Diagnostics.ConsoleLogs.Dashboard",
+      "project": "src/modules/Elsa.Diagnostics.ConsoleLogs.Dashboard/Elsa.Diagnostics.ConsoleLogs.Dashboard.csproj"
+    },
+    {
+      "id": "Elsa.Diagnostics.ConsoleLogs",
+      "project": "src/modules/Elsa.Diagnostics.ConsoleLogs/Elsa.Diagnostics.ConsoleLogs.csproj"
+    },
+    {
+      "id": "Elsa.Diagnostics.OpenTelemetry",
+      "project": "src/modules/Elsa.Diagnostics.OpenTelemetry/Elsa.Diagnostics.OpenTelemetry.csproj"
+    },
+    {
+      "id": "Elsa.Diagnostics.StructuredLogs.Dashboard",
+      "project": "src/modules/Elsa.Diagnostics.StructuredLogs.Dashboard/Elsa.Diagnostics.StructuredLogs.Dashboard.csproj"
+    },
+    {
+      "id": "Elsa.Diagnostics.StructuredLogs.Persistence.Relational",
+      "project": "src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.csproj"
+    },
+    {
+      "id": "Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite",
+      "project": "src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.csproj"
+    },
+    {
+      "id": "Elsa.Diagnostics.StructuredLogs",
+      "project": "src/modules/Elsa.Diagnostics.StructuredLogs/Elsa.Diagnostics.StructuredLogs.csproj"
+    },
+    {
+      "id": "Elsa.Dsl.ElsaScript",
+      "project": "src/modules/Elsa.Dsl.ElsaScript/Elsa.Dsl.ElsaScript.csproj"
+    },
+    {
+      "id": "Elsa.Expressions.CSharp",
+      "project": "src/modules/Elsa.Expressions.CSharp/Elsa.Expressions.CSharp.csproj"
+    },
+    {
+      "id": "Elsa.Expressions.JavaScript.Libraries",
+      "project": "src/modules/Elsa.Expressions.JavaScript.Libraries/Elsa.Expressions.JavaScript.Libraries.csproj"
+    },
+    {
+      "id": "Elsa.Expressions.JavaScript",
+      "project": "src/modules/Elsa.Expressions.JavaScript/Elsa.Expressions.JavaScript.csproj"
+    },
+    {
+      "id": "Elsa.Expressions.Liquid",
+      "project": "src/modules/Elsa.Expressions.Liquid/Elsa.Expressions.Liquid.csproj"
+    },
+    {
+      "id": "Elsa.Expressions.Python",
+      "project": "src/modules/Elsa.Expressions.Python/Elsa.Expressions.Python.csproj"
+    },
+    {
+      "id": "Elsa.Expressions",
+      "project": "src/modules/Elsa.Expressions/Elsa.Expressions.csproj"
+    },
+    {
+      "id": "Elsa.ExternalAuthentication.OpenIdConnect",
+      "project": "src/modules/Elsa.ExternalAuthentication.OpenIdConnect/Elsa.ExternalAuthentication.OpenIdConnect.csproj"
+    },
+    {
+      "id": "Elsa.ExternalAuthentication.Persistence.EFCore.MySql",
+      "project": "src/modules/Elsa.ExternalAuthentication.Persistence.EFCore.MySql/Elsa.ExternalAuthentication.Persistence.EFCore.MySql.csproj"
+    },
+    {
+      "id": "Elsa.ExternalAuthentication.Persistence.EFCore.Oracle",
+      "project": "src/modules/Elsa.ExternalAuthentication.Persistence.EFCore.Oracle/Elsa.ExternalAuthentication.Persistence.EFCore.Oracle.csproj"
+    },
+    {
+      "id": "Elsa.ExternalAuthentication.Persistence.EFCore.PostgreSql",
+      "project": "src/modules/Elsa.ExternalAuthentication.Persistence.EFCore.PostgreSql/Elsa.ExternalAuthentication.Persistence.EFCore.PostgreSql.csproj"
+    },
+    {
+      "id": "Elsa.ExternalAuthentication.Persistence.EFCore.SqlServer",
+      "project": "src/modules/Elsa.ExternalAuthentication.Persistence.EFCore.SqlServer/Elsa.ExternalAuthentication.Persistence.EFCore.SqlServer.csproj"
+    },
+    {
+      "id": "Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite",
+      "project": "src/modules/Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite/Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite.csproj"
+    },
+    {
+      "id": "Elsa.ExternalAuthentication.Persistence.EFCore",
+      "project": "src/modules/Elsa.ExternalAuthentication.Persistence.EFCore/Elsa.ExternalAuthentication.Persistence.EFCore.csproj"
+    },
+    {
+      "id": "Elsa.ExternalAuthentication.Secrets",
+      "project": "src/modules/Elsa.ExternalAuthentication.Secrets/Elsa.ExternalAuthentication.Secrets.csproj"
+    },
+    {
+      "id": "Elsa.ExternalAuthentication",
+      "project": "src/modules/Elsa.ExternalAuthentication/Elsa.ExternalAuthentication.csproj"
+    },
+    {
+      "id": "Elsa.Hosting.Management",
+      "project": "src/modules/Elsa.Hosting.Management/Elsa.Hosting.Management.csproj"
+    },
+    {
+      "id": "Elsa.Http.Webhooks",
+      "project": "src/modules/Elsa.Http.Webhooks/Elsa.Http.Webhooks.csproj"
+    },
+    {
+      "id": "Elsa.Http",
+      "project": "src/modules/Elsa.Http/Elsa.Http.csproj"
+    },
+    {
+      "id": "Elsa.Identity",
+      "project": "src/modules/Elsa.Identity/Elsa.Identity.csproj"
+    },
+    {
+      "id": "Elsa.KeyValues",
+      "project": "src/modules/Elsa.KeyValues/Elsa.KeyValues.csproj"
+    },
+    {
+      "id": "Elsa.Labels",
+      "project": "src/modules/Elsa.Labels/Elsa.Labels.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.EFCore.Common",
+      "project": "src/modules/Elsa.Persistence.EFCore.Common/Elsa.Persistence.EFCore.Common.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.EFCore.MySql",
+      "project": "src/modules/Elsa.Persistence.EFCore.MySql/Elsa.Persistence.EFCore.MySql.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.EFCore.Oracle",
+      "project": "src/modules/Elsa.Persistence.EFCore.Oracle/Elsa.Persistence.EFCore.Oracle.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.EFCore.PostgreSql",
+      "project": "src/modules/Elsa.Persistence.EFCore.PostgreSql/Elsa.Persistence.EFCore.PostgreSql.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.EFCore.SqlServer",
+      "project": "src/modules/Elsa.Persistence.EFCore.SqlServer/Elsa.Persistence.EFCore.SqlServer.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.EFCore.Sqlite",
+      "project": "src/modules/Elsa.Persistence.EFCore.Sqlite/Elsa.Persistence.EFCore.Sqlite.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.EFCore",
+      "project": "src/modules/Elsa.Persistence.EFCore/Elsa.Persistence.EFCore.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.VNext.Extensions",
+      "project": "src/modules/Elsa.Persistence.VNext.Extensions/Elsa.Persistence.VNext.Extensions.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.VNext.MongoDb",
+      "project": "src/modules/Elsa.Persistence.VNext.MongoDb/Elsa.Persistence.VNext.MongoDb.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.VNext.PostgreSql",
+      "project": "src/modules/Elsa.Persistence.VNext.PostgreSql/Elsa.Persistence.VNext.PostgreSql.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.VNext.Relational",
+      "project": "src/modules/Elsa.Persistence.VNext.Relational/Elsa.Persistence.VNext.Relational.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.VNext.Runtime",
+      "project": "src/modules/Elsa.Persistence.VNext.Runtime/Elsa.Persistence.VNext.Runtime.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.VNext.SqlServer",
+      "project": "src/modules/Elsa.Persistence.VNext.SqlServer/Elsa.Persistence.VNext.SqlServer.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.VNext.Sqlite",
+      "project": "src/modules/Elsa.Persistence.VNext.Sqlite/Elsa.Persistence.VNext.Sqlite.csproj"
+    },
+    {
+      "id": "Elsa.Persistence.VNext",
+      "project": "src/modules/Elsa.Persistence.VNext/Elsa.Persistence.VNext.csproj"
+    },
+    {
+      "id": "Elsa.Platform.Integration",
+      "project": "src/modules/Elsa.Platform.Integration/Elsa.Platform.Integration.csproj"
+    },
+    {
+      "id": "Elsa.Resilience.Core",
+      "project": "src/modules/Elsa.Resilience.Core/Elsa.Resilience.Core.csproj"
+    },
+    {
+      "id": "Elsa.Resilience",
+      "project": "src/modules/Elsa.Resilience/Elsa.Resilience.csproj"
+    },
+    {
+      "id": "Elsa.SasTokens",
+      "project": "src/modules/Elsa.SasTokens/Elsa.SasTokens.csproj"
+    },
+    {
+      "id": "Elsa.Scheduling",
+      "project": "src/modules/Elsa.Scheduling/Elsa.Scheduling.csproj"
+    },
+    {
+      "id": "Elsa.Secrets.JavaScript",
+      "project": "src/modules/Elsa.Secrets.JavaScript/Elsa.Secrets.JavaScript.csproj"
+    },
+    {
+      "id": "Elsa.Secrets.Persistence.EFCore.MySql",
+      "project": "src/modules/Elsa.Secrets.Persistence.EFCore.MySql/Elsa.Secrets.Persistence.EFCore.MySql.csproj"
+    },
+    {
+      "id": "Elsa.Secrets.Persistence.EFCore.Oracle",
+      "project": "src/modules/Elsa.Secrets.Persistence.EFCore.Oracle/Elsa.Secrets.Persistence.EFCore.Oracle.csproj"
+    },
+    {
+      "id": "Elsa.Secrets.Persistence.EFCore.PostgreSql",
+      "project": "src/modules/Elsa.Secrets.Persistence.EFCore.PostgreSql/Elsa.Secrets.Persistence.EFCore.PostgreSql.csproj"
+    },
+    {
+      "id": "Elsa.Secrets.Persistence.EFCore.SqlServer",
+      "project": "src/modules/Elsa.Secrets.Persistence.EFCore.SqlServer/Elsa.Secrets.Persistence.EFCore.SqlServer.csproj"
+    },
+    {
+      "id": "Elsa.Secrets.Persistence.EFCore.Sqlite",
+      "project": "src/modules/Elsa.Secrets.Persistence.EFCore.Sqlite/Elsa.Secrets.Persistence.EFCore.Sqlite.csproj"
+    },
+    {
+      "id": "Elsa.Secrets.Persistence.EFCore",
+      "project": "src/modules/Elsa.Secrets.Persistence.EFCore/Elsa.Secrets.Persistence.EFCore.csproj"
+    },
+    {
+      "id": "Elsa.Secrets.Persistence.VNext",
+      "project": "src/modules/Elsa.Secrets.Persistence.VNext/Elsa.Secrets.Persistence.VNext.csproj"
+    },
+    {
+      "id": "Elsa.Secrets",
+      "project": "src/modules/Elsa.Secrets/Elsa.Secrets.csproj"
+    },
+    {
+      "id": "Elsa.Shells.Api",
+      "project": "src/modules/Elsa.Shells.Api/Elsa.Shells.Api.csproj"
+    },
+    {
+      "id": "Elsa.Tenants.AspNetCore",
+      "project": "src/modules/Elsa.Tenants.AspNetCore/Elsa.Tenants.AspNetCore.csproj"
+    },
+    {
+      "id": "Elsa.Tenants",
+      "project": "src/modules/Elsa.Tenants/Elsa.Tenants.csproj"
+    },
+    {
+      "id": "Elsa.UserTasks.Persistence.EFCore.MySql",
+      "project": "src/modules/Elsa.UserTasks.Persistence.EFCore.MySql/Elsa.UserTasks.Persistence.EFCore.MySql.csproj"
+    },
+    {
+      "id": "Elsa.UserTasks.Persistence.EFCore.Oracle",
+      "project": "src/modules/Elsa.UserTasks.Persistence.EFCore.Oracle/Elsa.UserTasks.Persistence.EFCore.Oracle.csproj"
+    },
+    {
+      "id": "Elsa.UserTasks.Persistence.EFCore.PostgreSql",
+      "project": "src/modules/Elsa.UserTasks.Persistence.EFCore.PostgreSql/Elsa.UserTasks.Persistence.EFCore.PostgreSql.csproj"
+    },
+    {
+      "id": "Elsa.UserTasks.Persistence.EFCore.SqlServer",
+      "project": "src/modules/Elsa.UserTasks.Persistence.EFCore.SqlServer/Elsa.UserTasks.Persistence.EFCore.SqlServer.csproj"
+    },
+    {
+      "id": "Elsa.UserTasks.Persistence.EFCore.Sqlite",
+      "project": "src/modules/Elsa.UserTasks.Persistence.EFCore.Sqlite/Elsa.UserTasks.Persistence.EFCore.Sqlite.csproj"
+    },
+    {
+      "id": "Elsa.UserTasks.Persistence.EFCore",
+      "project": "src/modules/Elsa.UserTasks.Persistence.EFCore/Elsa.UserTasks.Persistence.EFCore.csproj"
+    },
+    {
+      "id": "Elsa.UserTasks.Persistence.VNext",
+      "project": "src/modules/Elsa.UserTasks.Persistence.VNext/Elsa.UserTasks.Persistence.VNext.csproj"
+    },
+    {
+      "id": "Elsa.UserTasks",
+      "project": "src/modules/Elsa.UserTasks/Elsa.UserTasks.csproj"
+    },
+    {
+      "id": "Elsa.WorkflowProviders.BlobStorage.ElsaScript",
+      "project": "src/modules/Elsa.WorkflowProviders.BlobStorage.ElsaScript/Elsa.WorkflowProviders.BlobStorage.ElsaScript.csproj"
+    },
+    {
+      "id": "Elsa.WorkflowProviders.BlobStorage",
+      "project": "src/modules/Elsa.WorkflowProviders.BlobStorage/Elsa.WorkflowProviders.BlobStorage.csproj"
+    },
+    {
+      "id": "Elsa.Workflows.Api",
+      "project": "src/modules/Elsa.Workflows.Api/Elsa.Workflows.Api.csproj"
+    },
+    {
+      "id": "Elsa.Workflows.Core",
+      "project": "src/modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj"
+    },
+    {
+      "id": "Elsa.Workflows.Management",
+      "project": "src/modules/Elsa.Workflows.Management/Elsa.Workflows.Management.csproj"
+    },
+    {
+      "id": "Elsa.Workflows.Runtime.Dashboard",
+      "project": "src/modules/Elsa.Workflows.Runtime.Dashboard/Elsa.Workflows.Runtime.Dashboard.csproj"
+    },
+    {
+      "id": "Elsa.Workflows.Runtime.Distributed",
+      "project": "src/modules/Elsa.Workflows.Runtime.Distributed/Elsa.Workflows.Runtime.Distributed.csproj"
+    },
+    {
+      "id": "Elsa.Workflows.Runtime",
+      "project": "src/modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj"
+    },
+    {
+      "id": "Elsa",
+      "project": "src/modules/Elsa/Elsa.csproj"
+    },
+    {
+      "id": "Elsa.Studio",
+      "project": "src/studio/bundles/Elsa.Studio/Elsa.Studio.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Core.BlazorServer",
+      "project": "src/studio/framework/Elsa.Studio.Core.BlazorServer/Elsa.Studio.Core.BlazorServer.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Core.BlazorWasm",
+      "project": "src/studio/framework/Elsa.Studio.Core.BlazorWasm/Elsa.Studio.Core.BlazorWasm.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Core",
+      "project": "src/studio/framework/Elsa.Studio.Core/Elsa.Studio.Core.csproj"
+    },
+    {
+      "id": "Elsa.Studio.DomInterop",
+      "project": "src/studio/framework/Elsa.Studio.DomInterop/Elsa.Studio.DomInterop.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Shared",
+      "project": "src/studio/framework/Elsa.Studio.Shared/Elsa.Studio.Shared.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Shell",
+      "project": "src/studio/framework/Elsa.Studio.Shell/Elsa.Studio.Shell.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Translations",
+      "project": "src/studio/framework/Elsa.Studio.Translations/Elsa.Studio.Translations.csproj"
+    },
+    {
+      "id": "Elsa.Studio.AI",
+      "project": "src/studio/modules/Elsa.Studio.AI/Elsa.Studio.AI.csproj"
+    },
+    {
+      "id": "Elsa.Studio.ActivityPortProviders",
+      "project": "src/studio/modules/Elsa.Studio.ActivityPortProviders/Elsa.Studio.ActivityPortProviders.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Alterations",
+      "project": "src/studio/modules/Elsa.Studio.Alterations/Elsa.Studio.Alterations.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Authentication.Abstractions",
+      "project": "src/studio/modules/Elsa.Studio.Authentication.Abstractions/Elsa.Studio.Authentication.Abstractions.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Authentication.ElsaIdentity.BlazorServer",
+      "project": "src/studio/modules/Elsa.Studio.Authentication.ElsaIdentity.BlazorServer/Elsa.Studio.Authentication.ElsaIdentity.BlazorServer.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Authentication.ElsaIdentity.BlazorWasm",
+      "project": "src/studio/modules/Elsa.Studio.Authentication.ElsaIdentity.BlazorWasm/Elsa.Studio.Authentication.ElsaIdentity.BlazorWasm.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Authentication.ElsaIdentity.UI",
+      "project": "src/studio/modules/Elsa.Studio.Authentication.ElsaIdentity.UI/Elsa.Studio.Authentication.ElsaIdentity.UI.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Authentication.ElsaIdentity",
+      "project": "src/studio/modules/Elsa.Studio.Authentication.ElsaIdentity/Elsa.Studio.Authentication.ElsaIdentity.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Authentication.OpenIdConnect.BlazorServer",
+      "project": "src/studio/modules/Elsa.Studio.Authentication.OpenIdConnect.BlazorServer/Elsa.Studio.Authentication.OpenIdConnect.BlazorServer.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Authentication.OpenIdConnect.BlazorWasm",
+      "project": "src/studio/modules/Elsa.Studio.Authentication.OpenIdConnect.BlazorWasm/Elsa.Studio.Authentication.OpenIdConnect.BlazorWasm.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Authentication.OpenIdConnect",
+      "project": "src/studio/modules/Elsa.Studio.Authentication.OpenIdConnect/Elsa.Studio.Authentication.OpenIdConnect.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Authentication.Themes",
+      "project": "src/studio/modules/Elsa.Studio.Authentication.Themes/Elsa.Studio.Authentication.Themes.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Authentication.UI",
+      "project": "src/studio/modules/Elsa.Studio.Authentication.UI/Elsa.Studio.Authentication.UI.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Counter",
+      "project": "src/studio/modules/Elsa.Studio.Counter/Elsa.Studio.Counter.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Dashboard",
+      "project": "src/studio/modules/Elsa.Studio.Dashboard/Elsa.Studio.Dashboard.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard",
+      "project": "src/studio/modules/Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard/Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Diagnostics.ConsoleLogs",
+      "project": "src/studio/modules/Elsa.Studio.Diagnostics.ConsoleLogs/Elsa.Studio.Diagnostics.ConsoleLogs.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard",
+      "project": "src/studio/modules/Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard/Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Diagnostics.OpenTelemetry",
+      "project": "src/studio/modules/Elsa.Studio.Diagnostics.OpenTelemetry/Elsa.Studio.Diagnostics.OpenTelemetry.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Diagnostics.StructuredLogs.Dashboard",
+      "project": "src/studio/modules/Elsa.Studio.Diagnostics.StructuredLogs.Dashboard/Elsa.Studio.Diagnostics.StructuredLogs.Dashboard.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Diagnostics.StructuredLogs",
+      "project": "src/studio/modules/Elsa.Studio.Diagnostics.StructuredLogs/Elsa.Studio.Diagnostics.StructuredLogs.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Environments",
+      "project": "src/studio/modules/Elsa.Studio.Environments/Elsa.Studio.Environments.csproj"
+    },
+    {
+      "id": "Elsa.Studio.ExternalAuthentication.BlazorServer",
+      "project": "src/studio/modules/Elsa.Studio.ExternalAuthentication.BlazorServer/Elsa.Studio.ExternalAuthentication.BlazorServer.csproj"
+    },
+    {
+      "id": "Elsa.Studio.ExternalAuthentication.BlazorWasm",
+      "project": "src/studio/modules/Elsa.Studio.ExternalAuthentication.BlazorWasm/Elsa.Studio.ExternalAuthentication.BlazorWasm.csproj"
+    },
+    {
+      "id": "Elsa.Studio.ExternalAuthentication",
+      "project": "src/studio/modules/Elsa.Studio.ExternalAuthentication/Elsa.Studio.ExternalAuthentication.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Http.Webhooks",
+      "project": "src/studio/modules/Elsa.Studio.Http.Webhooks/Elsa.Studio.Http.Webhooks.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Labels",
+      "project": "src/studio/modules/Elsa.Studio.Labels/Elsa.Studio.Labels.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Localization.BlazorServer",
+      "project": "src/studio/modules/Elsa.Studio.Localization.BlazorServer/Elsa.Studio.Localization.BlazorServer.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Localization.BlazorWasm",
+      "project": "src/studio/modules/Elsa.Studio.Localization.BlazorWasm/Elsa.Studio.Localization.BlazorWasm.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Localization",
+      "project": "src/studio/modules/Elsa.Studio.Localization/Elsa.Studio.Localization.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Login.BlazorServer",
+      "project": "src/studio/modules/Elsa.Studio.Login.BlazorServer/Elsa.Studio.Login.BlazorServer.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Login.BlazorWasm",
+      "project": "src/studio/modules/Elsa.Studio.Login.BlazorWasm/Elsa.Studio.Login.BlazorWasm.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Login",
+      "project": "src/studio/modules/Elsa.Studio.Login/Elsa.Studio.Login.csproj"
+    },
+    {
+      "id": "Elsa.Studio.PlatformIntegration",
+      "project": "src/studio/modules/Elsa.Studio.PlatformIntegration/Elsa.Studio.PlatformIntegration.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Secrets",
+      "project": "src/studio/modules/Elsa.Studio.Secrets/Elsa.Studio.Secrets.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Security",
+      "project": "src/studio/modules/Elsa.Studio.Security/Elsa.Studio.Security.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Settings",
+      "project": "src/studio/modules/Elsa.Studio.Settings/Elsa.Studio.Settings.csproj"
+    },
+    {
+      "id": "Elsa.Studio.UIHints",
+      "project": "src/studio/modules/Elsa.Studio.UIHints/Elsa.Studio.UIHints.csproj"
+    },
+    {
+      "id": "Elsa.Studio.UserTasks",
+      "project": "src/studio/modules/Elsa.Studio.UserTasks/Elsa.Studio.UserTasks.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Workflows.Core",
+      "project": "src/studio/modules/Elsa.Studio.Workflows.Core/Elsa.Studio.Workflows.Core.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Workflows.Dashboard",
+      "project": "src/studio/modules/Elsa.Studio.Workflows.Dashboard/Elsa.Studio.Workflows.Dashboard.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Workflows.Designer",
+      "project": "src/studio/modules/Elsa.Studio.Workflows.Designer/Elsa.Studio.Workflows.Designer.csproj"
+    },
+    {
+      "id": "Elsa.Studio.Workflows",
+      "project": "src/studio/modules/Elsa.Studio.Workflows/Elsa.Studio.Workflows.csproj"
+    }
+  ]
+}

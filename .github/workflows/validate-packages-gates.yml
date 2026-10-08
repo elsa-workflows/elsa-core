@@ -7,13 +7,45 @@ on:
       - '.github/workflows/validate-packages-gates.yml'
       - 'scripts/validate_packages_*.py'
       - 'scripts/test_validate_packages_*.py'
+      - '.github/workflows/prepare-consolidated-release-candidate.yml'
+      - 'scripts/integration-program/prepare_consolidated_release_candidate.py'
+      - 'scripts/integration-program/test_prepare_consolidated_release_candidate.py'
+      - 'scripts/integration-program/consolidated-candidate-inventory-baseline.json'
+      - 'scripts/integration-program/prove_consolidated*.py'
+      - 'scripts/integration-program/test_prove_consolidated*.py'
+      - 'scripts/integration-program/consolidated-package-consumer/**'
+      - 'build/Build.cs'
+      - 'build/ConsolidatedPackageProof.targets'
+      - 'src/extensions/Directory.Build.*'
+      - 'src/studio/Directory.Build.*'
+      - '.agents/skills/elsa-release/references/consolidated-feedz-profile.json'
+      - '.agents/skills/elsa-release/references/elsa-profile.json'
+      - '.agents/skills/elsa-release/references/runbook.md'
+      - '.agents/skills/elsa-release/scripts/release_train.py'
+      - '.agents/skills/elsa-release/tests/test_release_train.py'
   push:
-    branches: [main]
+    branches: [main, 'codex/**']
     paths:
       - '.github/workflows/packages.yml'
       - '.github/workflows/validate-packages-gates.yml'
       - 'scripts/validate_packages_*.py'
       - 'scripts/test_validate_packages_*.py'
+      - '.github/workflows/prepare-consolidated-release-candidate.yml'
+      - 'scripts/integration-program/prepare_consolidated_release_candidate.py'
+      - 'scripts/integration-program/test_prepare_consolidated_release_candidate.py'
+      - 'scripts/integration-program/consolidated-candidate-inventory-baseline.json'
+      - 'scripts/integration-program/prove_consolidated*.py'
+      - 'scripts/integration-program/test_prove_consolidated*.py'
+      - 'scripts/integration-program/consolidated-package-consumer/**'
+      - 'build/Build.cs'
+      - 'build/ConsolidatedPackageProof.targets'
+      - 'src/extensions/Directory.Build.*'
+      - 'src/studio/Directory.Build.*'
+      - '.agents/skills/elsa-release/references/consolidated-feedz-profile.json'
+      - '.agents/skills/elsa-release/references/elsa-profile.json'
+      - '.agents/skills/elsa-release/references/runbook.md'
+      - '.agents/skills/elsa-release/scripts/release_train.py'
+      - '.agents/skills/elsa-release/tests/test_release_train.py'
 
 permissions:
   contents: read
@@ -36,3 +68,13 @@ jobs:
         run: |
           python3 -B -m unittest discover -s scripts -p 'test_validate_packages_*.py'
           python3 -B -O -m unittest discover -s scripts -p 'test_validate_packages_*.py'
+      - name: Test isolated candidate preparation and original archive contracts
+        run: |
+          python3 -B -m unittest discover -s scripts/integration-program -p 'test_prepare_consolidated_release_candidate.py'
+          python3 -B -O -m unittest discover -s scripts/integration-program -p 'test_prepare_consolidated_release_candidate.py'
+          python3 -B -m unittest discover -s scripts/integration-program -p 'test_prove_consolidated*.py'
+          python3 -B -O -m unittest discover -s scripts/integration-program -p 'test_prove_consolidated*.py'
+      - name: Verify maintenance release train and candidate-only rejection
+        run: |
+          python3 -B -m unittest discover -s .agents/skills/elsa-release/tests -p 'test_release_train.py'
+          python3 -B -O -m unittest discover -s .agents/skills/elsa-release/tests -p 'test_release_train.py'

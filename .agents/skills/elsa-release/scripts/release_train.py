@@ -260,6 +260,8 @@ def site_receipt_valid(state, target, record):
 def init(args):
     version = parse_version(args.version, args.kind)
     profile = read(args.profile)
+    if profile.get("candidate_only"):
+        raise ValueError("Nonpublishing candidate profiles cannot initialize a publication release train")
     names = [r['name'] for r in profile['repositories']]
     selected = args.repositories or names
     sources = dict(x.split('=', 1) for x in (args.source or []))

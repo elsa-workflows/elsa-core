@@ -13,8 +13,9 @@ import { defineConfig } from 'vitest/config';
 //
 // Covered: src/bpmn, and the pure half of the X6 BPMN adapter under src/designer/bpmn -- its cell
 // mapping, badge policy and graph options are all plain functions precisely so that they can be
-// tested here rather than only in a browser. The rest of the designer and react-designer bundles
-// have no test suite; they are covered by the .NET side.
+// tested here rather than only in a browser. The flowchart designer's edge hover tools are covered
+// the same way, through the graph events they listen to. The rest of the designer and react-designer
+// bundles have no test suite; they are covered by the .NET side.
 export default defineConfig({
     test: {
         environment: 'jsdom',

@@ -4,7 +4,8 @@ namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Tracks a single in-flight execution cycle of the workflow runtime. Created when a cycle starts, disposed when
-/// it completes or is force-cancelled during drain. Active-cycle accounting is done through
+/// its owning attempt finishes unwinding. Cancellation requests do not complete ownership.
+/// Active-cycle accounting is done through
 /// <see cref="IExecutionCycleRegistry"/>.
 /// </summary>
 public sealed class ExecutionCycleHandle : IDisposable
@@ -75,8 +76,8 @@ public sealed class ExecutionCycleHandle : IDisposable
 
     /// <summary>
     /// Completes after <see cref="Dispose"/> logically releases the handle and physically cleans up its linked CTS —
-    /// i.e., when the workflow runner finishes the cycle (cleanly or via cancellation) and the middleware exits its
-    /// <c>using</c> block. If cancellation callbacks are in flight, <see cref="Dispose"/> may return before this
+    /// i.e., when the owning execution scope finishes the attempt (cleanly or via failure) after its last awaited write.
+    /// If cancellation callbacks are in flight, <see cref="Dispose"/> may return before this
     /// cleanup completes. The drain orchestrator awaits this with a timeout before persisting
     /// <see cref="WorkflowSubStatus.Interrupted"/>, ensuring its write happens AFTER any commit the runner emits in
     /// response to <see cref="Cancel"/>.

@@ -1,9 +1,10 @@
 # Preserve original upstream histories during repository consolidation
 
-- Status: Proposed; executable rehearsal only, not import or publisher cutover approval
+- Status: Accepted; the history-bearing source import merged through [#8409](https://github.com/elsa-workflows/elsa-core/pull/8409) on 2026-09-29. This records the history-preservation decision and does not approve publication or publisher cutover.
 - Program: [#8194](https://github.com/elsa-workflows/elsa-core/issues/8194)
 - Feature: [#8213](https://github.com/elsa-workflows/elsa-core/issues/8213)
 - Evidence: [pinned inventory](../integration-program/inventory/README.md)
+- Implementation: [history-bearing import #8409](https://github.com/elsa-workflows/elsa-core/pull/8409), [source/release catch-up #8624](https://github.com/elsa-workflows/elsa-core/pull/8624)
 
 ## Context
 
@@ -15,32 +16,40 @@ The inventory recommends filtered histories as one approach. The alternative bel
 
 Retain each complete upstream history as an original merge parent. Construct the import tree from the current Core tree and an explicit, validated path map of every tracked upstream file. Record original and resulting commit IDs plus every source/destination path, blob ID and mode. Use a normal merge preserving the import commit's ancestry when the real import is ready; **never squash or rebase that history-bearing import**. Ordinary subsequent implementation PRs may still use squash merges.
 
-The rehearsal script creates only a new disposable repository. It refuses shallow source histories, refuses an existing output directory, rejects exact and file/directory destination collisions, compares the complete resulting tree with the intended tree, verifies all three original tips are ancestors, and runs `git fsck --full`. It neither checks out the imported tree nor changes source repository refs. Its synthetic merge commit is not a candidate production branch.
+The original rehearsal script creates only a new disposable repository. It refuses shallow source histories, refuses an existing output directory, rejects exact and file/directory destination collisions, compares the complete resulting tree with the intended tree, verifies all three original tips are ancestors, and runs `git fsck --full`. It neither checks out the imported tree nor changes source repository refs. Its synthetic merge commit is historical evidence, not the actual import commit.
 
-The initial map retains Core paths and uses:
+## Landed import and current source layout
+
+The real import landed through #8409 as merge commit `8b34ab1e71c22c853e1aa340774231c80e92e677`, preserving the Core, Extensions and Studio history in the merged tree. The later source/release catch-up #8624 merged at `6dbfc58624c28e147a90e2d2b0d1a610817012e2`; both merge commits are ancestors of that clean Core head. The import was a merge, not the rehearsal's synthetic commit. The [r10 mapped source-tip receipt](../integration-program/consolidation/source-tip-refresh-2026-09-28-r10.json) and [retained-asset ledger](../integration-program/consolidation/legacy-asset-dispositions.json) preserve later mapped-path provenance and asset dispositions.
+
+The active source layout at the imported tree is:
 
 | Source | Destination |
 |---|---|
+| Core source and project paths | Retained in the root `src/`, `test/`, `samples/`, `doc/` and `specs/` layout |
 | Extensions `src/modules/` | `src/extensions/` |
 | Extensions `src/workbench/` | `samples/extensions/workbench/` |
 | Extensions `test/`, `doc/` | `test/extensions/`, `doc/extensions/` |
-| Studio `src/` | `src/studio/` (including framework, modules, hosts, bundles and wrappers) |
+| Studio `src/` | `src/studio/` (framework, modules, hosts, bundles, testing and wrappers) |
 | Studio `tests/`, `samples/` | `test/studio/`, `samples/studio/` |
 | Studio `doc/`, `docs/`, `specs/` | `doc/studio/`, `doc/studio/docs/`, `specs/studio/` |
-| Studio artwork and Postman assets | Named subdirectories of `doc/studio/` |
-| Remaining root/tool/build/workflow assets | `doc/integration-program/legacy/<repository>/<original-path>.source` |
+| Retained upstream-only assets | `doc/integration-program/legacy/<repository>/<original-path>.source`; later active-tree representations or retirement are recorded in the [retained-asset ledger](../integration-program/consolidation/legacy-asset-dispositions.json) and its decision supplements |
 
-The `.source` suffix makes retained build projects and workflows inert. They remain byte-identical evidence; their functionality must be deliberately integrated or explicitly retired before #8214 can finish. Imported licensing and contribution information also remains in the receipt and must be surfaced in consolidated notices and contributor documentation before cutover. Merely retaining files is not operational migration completion.
+The `.source` suffix marks retained originals as provenance, not active build or workflow inputs. The ledger and its supplements record which assets have an active Core representation or are retired; the original rehearsal counts and pre-supplement checklist are historical and are not current missing-work totals. Imported license and contribution notices are tracked through their separate dispositions. Merely retaining an original file is not operational migration completion.
 
-For the five known package-ID collisions, retain the Extensions copies under the inert legacy path. The rehearsal leaves Core's Secrets EF family and Studio's Secrets UI as candidate canonical sources because the source audit shows these align with the current platform implementation. This is **not a verified compatibility decision**: the implementations have materially different types and contracts. Before real import, compare published APIs, stored schema/migrations, Studio HTTP contracts and runtime behavior; port any required capability or provide an explicit supported migration. Never silently replace a public package because its ID matches.
+The one root `Elsa.sln` now uses solution folders and generated filters curated by [`scripts/solution/solution-groups.json`](../../scripts/solution/solution-groups.json), delivered in [#8547](https://github.com/elsa-workflows/elsa-core/pull/8547). Projects are grouped by role rather than source repository: Foundation, optional Extensions domains, Studio, Apps and Samples. The generator enforces that Foundation source projects reference only Foundation source projects; Liquid remains Foundation because `Elsa.Http` references it, and Alterations remains Foundation because `Elsa.Persistence.EFCore` references it. Foundation is a solution grouping and reference boundary, not a separate repository or a package-release unit. The [grouping guide](../integration-program/consolidation/product-solution-filters.md) documents the generated filters and their project-reference closure.
+
+The five Secrets package-ID collision decisions were resolved separately in #8524/#8525 and the [Secrets package disposition](../integration-program/consolidation/secrets-legacy-package-disposition.md). The Core Secrets EF family and Studio Secrets module are the canonical sources; the Extensions 3.8.x legacy Secrets packages remain for their 3.8/3.9 maintenance line and have per-project `IsPackable=false` for the 3.10 cutover. Duplicate 3.8.1 source copies are retained as inert `.source` provenance, and no legacy ciphertext converter ships: operators re-enter or rotate values under the documented upgrade path. These choices do not prove every package/runtime compatibility gate or perform NuGet deprecation.
 
 ## Release and source boundaries
 
-Importing source must not activate an upstream publishing workflow. Existing Core publishing remains untouched by the rehearsal. A real import requires a reviewed, non-publishing validation path and a separate explicit publication gate. Until approved cutover, the existing source repositories remain package publishers; imported projects are excluded from automated packing. Define one eventual publisher per package ID, including npm units. Source co-location does not authorize republishing all packages or matching every version number.
+Importing source did not activate an upstream publishing workflow. The accepted [first consolidated release ADR](2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md) sets the first consolidated 3.10 release to lockstep; Extensions and Studio continue publishing their 3.8/3.9 maintenance patches from their source repositories, while Core carries reviewed catch-up into the consolidated tree. The later E3 independent connector release streams remain separate program scope. The npm publisher decision also remains separate. Keep full artifact/runtime compatibility, publication, publisher cutover, deprecation, archival and the two product Dependabot operational checks as separate evidence/gates; consult their [disposition records](../integration-program/consolidation/legacy-dependabot-disposition.md) and live issue state. Source co-location authorizes neither publication nor publisher cutover, deprecation, or archival.
 
-The packaging proof in #8259–#8260 remains separate. Backend/Blazor co-debugging in #8215 must resolve imported project references, central package/SDK settings and host composition. A successful tree/history rehearsal proves neither compilation nor serialization compatibility.
+The package/artifact and runtime-compatibility evidence under #8259–#8260 remains separate from this history decision. The paired backend/Blazor source-debugging slice in #8215 is recorded in the [final-layout replay guide](../integration-program/consolidation/workflow-contexts-final-layout-debug.md); that synthetic host result does not establish production security or replace broader package/runtime acceptance. A successful tree/history rehearsal by itself proves neither compilation nor serialization compatibility.
 
-## Required implementation ledger
+## Original implementation ledger (historical acceptance checklist)
+
+The following checklist recorded the evidence required before the real import. It is preserved as the original plan; current completion and remaining gates are determined by the linked merged evidence and live program issues, not by reading this frozen list as a current status ledger.
 
 Before merging real history-bearing imports, #8214 must demonstrate:
 

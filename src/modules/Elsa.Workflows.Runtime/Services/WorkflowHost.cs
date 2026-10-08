@@ -90,6 +90,7 @@ public class WorkflowHost : IWorkflowHost
 
         await using var scope = _serviceScopeFactory.CreateAsyncScope();
         var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
+        using var executionScope = WorkflowExecutionScope.Begin(WorkflowState.Id);
         var workflowResult = await workflowRunner.RunAsync(WorkflowGraph, WorkflowState, runOptions, linkedCancellationToken);
 
         WorkflowState = workflowResult.WorkflowState;
@@ -115,6 +116,7 @@ public class WorkflowHost : IWorkflowHost
         await using var scope = _serviceScopeFactory.CreateAsyncScope();
         var serviceProvider = scope.ServiceProvider;
         var workflowCanceler = serviceProvider.GetRequiredService<IWorkflowCanceler>();
+        using var executionScope = WorkflowExecutionScope.Begin(WorkflowState.Id);
         WorkflowState = await workflowCanceler.CancelWorkflowAsync(WorkflowGraph, WorkflowState, cancellationToken);
         await PersistStateAsync(scope, cancellationToken);
     }

@@ -205,8 +205,7 @@ public sealed class ResumeGate
 
 /// <summary>
 /// Blocks without observing cancellation so drain can mark the still-Running row Interrupted.
-/// The first execution persists through <see cref="IWorkflowInstanceManager"/> (not
-/// <see cref="WorkflowExecutionContext.CommitAsync"/>, which would dispose the live cycle handle)
+/// The first execution persists through <see cref="IWorkflowInstanceManager"/>
 /// and then stays blocked until the test releases <see cref="ResumeGate.Continue"/>, so it cannot
 /// overwrite the recovered Finished row. The restarter's re-entry completes immediately and runs
 /// the remaining work.

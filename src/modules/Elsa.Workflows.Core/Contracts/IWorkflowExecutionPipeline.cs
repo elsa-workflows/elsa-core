@@ -24,6 +24,8 @@ public interface IWorkflowExecutionPipeline
     
     /// <summary>
     /// Executes the pipeline with the specified workflow execution context.
+    /// Callers owning subsequent writes must wrap this invocation and those writes in a
+    /// <see cref="WorkflowExecutionScope"/>; a direct invocation only owns its pipeline lifetime.
     /// </summary>
     /// <param name="context"></param>
     /// <returns></returns>

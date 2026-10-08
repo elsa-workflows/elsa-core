@@ -44,4 +44,4 @@
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
   </ItemGroup>
 
-<PropertyGroup><UseProjectReferences>true</UseProjectReferences><IsPackable>false</IsPackable></PropertyGroup></Project>
+<PropertyGroup><UseProjectReferences>true</UseProjectReferences><IsPackable Condition="'$(ConsolidatedPackageProof)' != 'true' and '$(ConsolidatedReleaseCandidate)' != 'true'">false</IsPackable></PropertyGroup></Project>
