@@ -9,8 +9,8 @@
 
     <ItemGroup>
 		<PackageReference Include="Elastic.Clients.Elasticsearch" />
-		<ProjectReference Include="../../../common/Elsa.Features/Elsa.Features.csproj" />
-		<ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
+		<ProjectReference Include="../../../../core/src/common/Elsa.Features/Elsa.Features.csproj" />
+		<ProjectReference Include="../../../../core/src/modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
 </Project>

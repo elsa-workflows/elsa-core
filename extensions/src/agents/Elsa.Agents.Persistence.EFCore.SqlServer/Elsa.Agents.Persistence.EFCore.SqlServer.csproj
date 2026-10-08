@@ -15,11 +15,11 @@
 	</ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="../../../modules/Elsa.Persistence.EFCore.SqlServer/Elsa.Persistence.EFCore.SqlServer.csproj" />
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Persistence.EFCore.SqlServer/Elsa.Persistence.EFCore.SqlServer.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <ProjectReference Include="../../../modules/Elsa.Persistence.EFCore.SqlServer/Elsa.Persistence.EFCore.SqlServer.csproj" />
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Persistence.EFCore.SqlServer/Elsa.Persistence.EFCore.SqlServer.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-        <ProjectReference Include="../../../../../src/extensions/devops/Elsa.DevOps.GitHub/Elsa.DevOps.GitHub.csproj" />
+        <ProjectReference Include="../../../../src/devops/Elsa.DevOps.GitHub/Elsa.DevOps.GitHub.csproj" />
     </ItemGroup>
 
 </Project>

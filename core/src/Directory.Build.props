@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup Label="Files">
-    <None Include="..\..\..\icon.png" Pack="true" PackagePath="\" />
+    <None Include="$(MSBuildThisFileDirectory)../../icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>

@@ -10,11 +10,11 @@
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="../../../modules/Elsa.Persistence.EFCore.Common/Elsa.Persistence.EFCore.Common.csproj" />
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Persistence.EFCore.Common/Elsa.Persistence.EFCore.Common.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <ProjectReference Include="../../../modules/Elsa.Persistence.EFCore.Common/Elsa.Persistence.EFCore.Common.csproj" />
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Persistence.EFCore.Common/Elsa.Persistence.EFCore.Common.csproj" />
     </ItemGroup>
 
 </Project>

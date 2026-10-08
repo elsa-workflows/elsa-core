@@ -5,10 +5,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="../../../../src/studio/bundles/Elsa.Studio/Elsa.Studio.csproj" />
-        <ProjectReference Include="../../../../src/studio/framework/Elsa.Studio.Core/Elsa.Studio.Core.csproj" />
-        <ProjectReference Include="../../../../src/studio/framework/Elsa.Studio.Core.BlazorWasm/Elsa.Studio.Core.BlazorWasm.csproj" />
-        <ProjectReference Include="../../../../src/studio/modules/Elsa.Studio.Login.BlazorWasm/Elsa.Studio.Login.BlazorWasm.csproj" />
+        <ProjectReference Include="../../../../studio/src/bundles/Elsa.Studio/Elsa.Studio.csproj" />
+        <ProjectReference Include="../../../../studio/src/framework/Elsa.Studio.Core/Elsa.Studio.Core.csproj" />
+        <ProjectReference Include="../../../../studio/src/framework/Elsa.Studio.Core.BlazorWasm/Elsa.Studio.Core.BlazorWasm.csproj" />
+        <ProjectReference Include="../../../../studio/src/modules/Elsa.Studio.Login.BlazorWasm/Elsa.Studio.Login.BlazorWasm.csproj" />
     </ItemGroup>
     
     <ItemGroup>
@@ -19,7 +19,7 @@
     </ItemGroup>
     
     <ItemGroup>
-      <ProjectReference Include="../../../../src/extensions/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj" />
+      <ProjectReference Include="../../../src/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj" />
     </ItemGroup>
 
 </Project>

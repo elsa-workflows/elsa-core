@@ -1,7 +1,7 @@
 <Project>
 
   <!--
-    The single ConfigureAwait.Fody directive, shared by every props root under src/.
+    The single ConfigureAwait.Fody directive, shared by every props root under core/src/.
 
     ConfigureAwait.Fody only rewrites awaits when it is handed an explicit
     ContinueOnCapturedContext value. A bare <ConfigureAwait /> element in a FodyWeavers.xml
@@ -9,8 +9,8 @@
     compiling with no weaving at all while looking correctly configured.
 
     Fody reads this MSBuild property in preference to any FodyWeavers.xml, which keeps the
-    directive in one reviewable place. src/apps has its own props root that does not chain up
-    to src/Directory.Build.props, so both import this file rather than duplicating the value.
+    directive in one reviewable place. core/src/apps has its own props root that does not chain up
+    to core/src/Directory.Build.props, so both import this file rather than duplicating the value.
 
     Directory.Build.targets in the repository root fails the build for any project that
     references ConfigureAwait.Fody without an effective directive, or that reintroduces a

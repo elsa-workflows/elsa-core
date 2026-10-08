@@ -26,11 +26,11 @@
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="../../../clients/Elsa.Api.Client/Elsa.Api.Client.csproj" />
+        <ProjectReference Include="../../../../core/src/clients/Elsa.Api.Client/Elsa.Api.Client.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <ProjectReference Include="../../../clients/Elsa.Api.Client/Elsa.Api.Client.csproj"/>
+        <ProjectReference Include="../../../../core/src/clients/Elsa.Api.Client/Elsa.Api.Client.csproj"/>
     </ItemGroup>
 
 </Project>

@@ -13,14 +13,14 @@
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
         <PackageReference Include="CShells.Abstractions" />
-        <ProjectReference Include="../../../modules/Elsa.Hosting.Management/Elsa.Hosting.Management.csproj" />
-        <ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Hosting.Management/Elsa.Hosting.Management.csproj" />
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
       <PackageReference Include="CShells.Abstractions" />
-      <ProjectReference Include="../../../modules/Elsa.Hosting.Management/Elsa.Hosting.Management.csproj" />
-      <ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
+      <ProjectReference Include="../../../../core/src/modules/Elsa.Hosting.Management/Elsa.Hosting.Management.csproj" />
+      <ProjectReference Include="../../../../core/src/modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
 </Project>

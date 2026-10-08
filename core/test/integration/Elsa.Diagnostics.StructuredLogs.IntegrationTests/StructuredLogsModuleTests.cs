@@ -77,7 +77,7 @@ public class StructuredLogsModuleTests
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory != null)
         {
-            var candidate = Path.Combine(directory.FullName, "src", "modules", "Elsa.Diagnostics.StructuredLogs", "README.md");
+            var candidate = Path.Combine(directory.FullName, "core", "src", "modules", "Elsa.Diagnostics.StructuredLogs", "README.md");
             if (File.Exists(candidate))
                 return candidate;
 

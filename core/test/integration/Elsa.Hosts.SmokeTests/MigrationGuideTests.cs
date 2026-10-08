@@ -161,7 +161,7 @@ public class MigrationGuideTests
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
         {
-            var candidate = Path.Combine(directory.FullName, "doc", "migrations", "authorization-model.md");
+            var candidate = Path.Combine(directory.FullName, "core", "docs", "migrations", "authorization-model.md");
 
             if (File.Exists(candidate))
                 return candidate;

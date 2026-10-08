@@ -21,7 +21,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="..\..\..\icon.png">
+      <Content Include="..\..\..\..\icon.png">
         <Link>icon.png</Link>
       </Content>
     </ItemGroup>

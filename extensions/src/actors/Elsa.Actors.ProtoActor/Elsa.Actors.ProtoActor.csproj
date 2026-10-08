@@ -24,14 +24,14 @@
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <ProjectReference Include="../../../modules/Elsa.Tenants/Elsa.Tenants.csproj"/>
-        <ProjectReference Include="../../../modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj"/>
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Tenants/Elsa.Tenants.csproj"/>
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj"/>
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="../../../common/Elsa.Features/Elsa.Features.csproj"/>
-        <ProjectReference Include="../../../modules/Elsa.Tenants/Elsa.Tenants.csproj"/>
-        <ProjectReference Include="../../../modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj"/>
+        <ProjectReference Include="../../../../core/src/common/Elsa.Features/Elsa.Features.csproj"/>
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Tenants/Elsa.Tenants.csproj"/>
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj"/>
     </ItemGroup>
 
 </Project>

@@ -6,7 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="../../../src/studio/hosts/Elsa.Studio.Host.CustomElements/Elsa.Studio.Host.CustomElements.csproj" />
+      <ProjectReference Include="../../src/hosts/Elsa.Studio.Host.CustomElements/Elsa.Studio.Host.CustomElements.csproj" />
     </ItemGroup>
 
 </Project>

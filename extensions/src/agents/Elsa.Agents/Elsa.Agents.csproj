@@ -7,11 +7,11 @@
     </PropertyGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="../../../modules/Elsa.Common/Elsa.Common.csproj"/>
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Common/Elsa.Common.csproj"/>
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <ProjectReference Include="../../../modules/Elsa.Common/Elsa.Common.csproj"/>
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Common/Elsa.Common.csproj"/>
     </ItemGroup>
     
     <ItemGroup>

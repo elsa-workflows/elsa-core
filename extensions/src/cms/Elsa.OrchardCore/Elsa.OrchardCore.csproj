@@ -8,13 +8,13 @@
     </PropertyGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="../../../modules/Elsa.Http/Elsa.Http.csproj" />
-        <ProjectReference Include="../../../modules/Elsa.Http.Webhooks/Elsa.Http.Webhooks.csproj" />
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Http/Elsa.Http.csproj" />
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Http.Webhooks/Elsa.Http.Webhooks.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <ProjectReference Include="../../../modules/Elsa.Http/Elsa.Http.csproj" />
-        <ProjectReference Include="../../../modules/Elsa.Http.Webhooks/Elsa.Http.Webhooks.csproj" />
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Http/Elsa.Http.csproj" />
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Http.Webhooks/Elsa.Http.Webhooks.csproj" />
     </ItemGroup>
     
 </Project>

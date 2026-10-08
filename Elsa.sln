@@ -5,9 +5,9 @@ VisualStudioVersion = 17.7.34003.232
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{61017E64-6D00-49CB-9E81-5002DC8F7D5F}"
 	ProjectSection(SolutionItems) = preProject
-		src\Directory.Build.props = src\Directory.Build.props
-		src\PackageManifestHints.cs = src\PackageManifestHints.cs
-		src\PackageManifest.props = src\PackageManifest.props
+		core\src\Directory.Build.props = core\src\Directory.Build.props
+		core\src\PackageManifestHints.cs = core\src\PackageManifestHints.cs
+		core\src\PackageManifest.props = core\src\PackageManifest.props
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D21EB5E-D6B4-48A5-A9BC-A26387A65F0B}"
@@ -23,26 +23,26 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{90031D64-CA0F-46D0-9AF4-8DC023A5FFCD}"
 	ProjectSection(SolutionItems) = preProject
-		test\Directory.Build.props = test\Directory.Build.props
+		core\test\Directory.Build.props = core\test\Directory.Build.props
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Api", "src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj", "{C9539BD8-D2AE-4A8D-8281-71A05B3FBF31}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Api", "core\src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj", "{C9539BD8-D2AE-4A8D-8281-71A05B3FBF31}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Core", "src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj", "{169E2C9B-6687-427F-A278-30BF849BFEDC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Core", "core\src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj", "{169E2C9B-6687-427F-A278-30BF849BFEDC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Management", "src\modules\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj", "{2DD5D66B-85E9-4AF9-911C-C9F963234159}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Management", "core\src\modules\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj", "{2DD5D66B-85E9-4AF9-911C-C9F963234159}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Runtime", "src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj", "{8A050229-DB79-4E0B-9AFF-7565E87F2954}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Runtime", "core\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj", "{8A050229-DB79-4E0B-9AFF-7565E87F2954}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Features", "src\common\Elsa.Features\Elsa.Features.csproj", "{C237BA1A-3A7D-4AB2-BE09-2696F3C082A4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Features", "core\src\common\Elsa.Features\Elsa.Features.csproj", "{C237BA1A-3A7D-4AB2-BE09-2696F3C082A4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Expressions", "src\modules\Elsa.Expressions\Elsa.Expressions.csproj", "{80529478-A383-4FEA-B744-C71264969E9A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Expressions", "core\src\modules\Elsa.Expressions\Elsa.Expressions.csproj", "{80529478-A383-4FEA-B744-C71264969E9A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Api.Common", "src\common\Elsa.Api.Common\Elsa.Api.Common.csproj", "{39CD855E-83B1-4A96-93F7-01608211EBE3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Api.Common", "core\src\common\Elsa.Api.Common\Elsa.Api.Common.csproj", "{39CD855E-83B1-4A96-93F7-01608211EBE3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Identity", "src\modules\Elsa.Identity\Elsa.Identity.csproj", "{30B49E42-AE61-4F7C-981F-923F07BB3986}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Identity", "core\src\modules\Elsa.Identity\Elsa.Identity.csproj", "{30B49E42-AE61-4F7C-981F-923F07BB3986}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Common", "src\modules\Elsa.Common\Elsa.Common.csproj", "{D229105F-6879-4452-9189-75DE060C0F4C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Common", "core\src\modules\Elsa.Common\Elsa.Common.csproj", "{D229105F-6879-4452-9189-75DE060C0F4C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E5482-0482-448C-B9E4-EC67A9474B85}"
 	ProjectSection(SolutionItems) = preProject
@@ -52,70 +52,70 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E54
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unit", "unit", "{18453B51-25EB-4317-A4B3-B10518252E92}"
 	ProjectSection(SolutionItems) = preProject
-		test\unit\Directory.Build.props = test\unit\Directory.Build.props
+		core\test\unit\Directory.Build.props = core\test\unit\Directory.Build.props
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "integration", "integration", "{1B8D5897-902E-4632-8698-E89CAF3DDF54}"
 	ProjectSection(SolutionItems) = preProject
-		test\integration\Directory.Build.props = test\integration\Directory.Build.props
+		core\test\integration\Directory.Build.props = core\test\integration\Directory.Build.props
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "component", "component", "{08B41FFA-CEE3-46A7-B5C0-3EB65D37A16C}"
 	ProjectSection(SolutionItems) = preProject
-		test\component\Directory.Build.props = test\component\Directory.Build.props
+		core\test\component\Directory.Build.props = core\test\component\Directory.Build.props
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.IntegrationTests", "test\integration\Elsa.Workflows.IntegrationTests\Elsa.Workflows.IntegrationTests.csproj", "{E9652738-2B3D-4357-B84B-54F0EA161382}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.IntegrationTests", "core\test\integration\Elsa.Workflows.IntegrationTests\Elsa.Workflows.IntegrationTests.csproj", "{E9652738-2B3D-4357-B84B-54F0EA161382}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Api.Client", "src\clients\Elsa.Api.Client\Elsa.Api.Client.csproj", "{1FCB2200-28B8-4703-8E89-73241AAED047}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Api.Client", "core\src\clients\Elsa.Api.Client\Elsa.Api.Client.csproj", "{1FCB2200-28B8-4703-8E89-73241AAED047}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Mediator", "src\common\Elsa.Mediator\Elsa.Mediator.csproj", "{28818676-F6AF-4203-8B65-BD33A50CB9A2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Mediator", "core\src\common\Elsa.Mediator\Elsa.Mediator.csproj", "{28818676-F6AF-4203-8B65-BD33A50CB9A2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Core.UnitTests", "test\unit\Elsa.Workflows.Core.UnitTests\Elsa.Workflows.Core.UnitTests.csproj", "{DC9CCAD0-7363-4691-B964-FF5B3AEA3F95}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Core.UnitTests", "core\test\unit\Elsa.Workflows.Core.UnitTests\Elsa.Workflows.Core.UnitTests.csproj", "{DC9CCAD0-7363-4691-B964-FF5B3AEA3F95}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Tenants", "src\modules\Elsa.Tenants\Elsa.Tenants.csproj", "{29638A67-E79F-44FE-AC05-DA499EBA929E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Tenants", "core\src\modules\Elsa.Tenants\Elsa.Tenants.csproj", "{29638A67-E79F-44FE-AC05-DA499EBA929E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.csproj", "{99F2B1DA-2F69-4D70-A2A3-AC985AD91EC4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{C80C8231-D35C-4ACC-9ED6-9F3DB221535E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Hosting.Management", "src\modules\Elsa.Hosting.Management\Elsa.Hosting.Management.csproj", "{BBCE36D1-6767-4ED1-B3E8-84D2567A962A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Hosting.Management", "core\src\modules\Elsa.Hosting.Management\Elsa.Hosting.Management.csproj", "{BBCE36D1-6767-4ED1-B3E8-84D2567A962A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.KeyValues", "src\modules\Elsa.KeyValues\Elsa.KeyValues.csproj", "{73BBB1E3-AEEC-44E8-83D7-6DD9CD687FE3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.KeyValues", "core\src\modules\Elsa.KeyValues\Elsa.KeyValues.csproj", "{73BBB1E3-AEEC-44E8-83D7-6DD9CD687FE3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Runtime.UnitTests", "test\unit\Elsa.Workflows.Runtime.UnitTests\Elsa.Workflows.Runtime.UnitTests.csproj", "{B0946844-DE0E-4C59-9391-C0EB649DBF4E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Runtime.UnitTests", "core\test\unit\Elsa.Workflows.Runtime.UnitTests\Elsa.Workflows.Runtime.UnitTests.csproj", "{B0946844-DE0E-4C59-9391-C0EB649DBF4E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.ComponentTests", "test\component\Elsa.Workflows.ComponentTests\Elsa.Workflows.ComponentTests.csproj", "{34BC9836-681D-43A5-BC39-E4FEE17FC528}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.ComponentTests", "core\test\component\Elsa.Workflows.ComponentTests\Elsa.Workflows.ComponentTests.csproj", "{34BC9836-681D-43A5-BC39-E4FEE17FC528}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "performance", "performance", "{CBB515F3-A0EF-43B5-A907-FD4E652DD66E}"
 	ProjectSection(SolutionItems) = preProject
-		test\performance\Directory.Build.props = test\performance\Directory.Build.props
+		core\test\performance\Directory.Build.props = core\test\performance\Directory.Build.props
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.PerformanceTests", "test\performance\Elsa.Workflows.PerformanceTests\Elsa.Workflows.PerformanceTests.csproj", "{90CD37A9-C866-4D90-A3B1-8C87F53B845E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.PerformanceTests", "core\test\performance\Elsa.Workflows.PerformanceTests\Elsa.Workflows.PerformanceTests.csproj", "{90CD37A9-C866-4D90-A3B1-8C87F53B845E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Testing.Shared", "src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj", "{5CBCBEA4-6038-48CA-B45D-C1D0F6B4ACA4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Testing.Shared", "core\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj", "{5CBCBEA4-6038-48CA-B45D-C1D0F6B4ACA4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Testing.Shared.Integration", "src\common\Elsa.Testing.Shared.Integration\Elsa.Testing.Shared.Integration.csproj", "{94A61AD7-2A2B-40DB-81F3-C59D596958A8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Testing.Shared.Integration", "core\src\common\Elsa.Testing.Shared.Integration\Elsa.Testing.Shared.Integration.csproj", "{94A61AD7-2A2B-40DB-81F3-C59D596958A8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Testing.Shared.Component", "src\common\Elsa.Testing.Shared.Component\Elsa.Testing.Shared.Component.csproj", "{4B598AF7-BD7D-4544-A274-2CDDD98F4167}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Testing.Shared.Component", "core\src\common\Elsa.Testing.Shared.Component\Elsa.Testing.Shared.Component.csproj", "{4B598AF7-BD7D-4544-A274-2CDDD98F4167}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.IntegrationTests", "test\integration\Elsa.Activities.IntegrationTests\Elsa.Activities.IntegrationTests.csproj", "{99B171E6-0248-4402-836D-98947CD63772}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.IntegrationTests", "core\test\integration\Elsa.Activities.IntegrationTests\Elsa.Activities.IntegrationTests.csproj", "{99B171E6-0248-4402-836D-98947CD63772}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.JavaScript.IntegrationTests", "test\integration\Elsa.JavaScript.IntegrationTests\Elsa.JavaScript.IntegrationTests.csproj", "{4332A6BC-434A-4AF5-A075-F1BBCDD28F5D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.JavaScript.IntegrationTests", "core\test\integration\Elsa.JavaScript.IntegrationTests\Elsa.JavaScript.IntegrationTests.csproj", "{4332A6BC-434A-4AF5-A075-F1BBCDD28F5D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Resilience.IntegrationTests", "test\integration\Elsa.Resilience.IntegrationTests\Elsa.Resilience.IntegrationTests.csproj", "{832675FA-C597-4554-AE6B-18F189198A1F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Resilience.IntegrationTests", "core\test\integration\Elsa.Resilience.IntegrationTests\Elsa.Resilience.IntegrationTests.csproj", "{832675FA-C597-4554-AE6B-18F189198A1F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "apps", "apps", "{D92BEAB2-60D6-4BB4-885A-6BA681C6CCF1}"
 	ProjectSection(SolutionItems) = preProject
-		src\apps\Directory.Build.props = src\apps\Directory.Build.props
+		core\src\apps\Directory.Build.props = core\src\apps\Directory.Build.props
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Server.Web", "src\apps\Elsa.Server.Web\Elsa.Server.Web.csproj", "{5ADDDFB1-E59B-4097-97B7-8C24E2D60463}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Server.Web", "core\src\apps\Elsa.Server.Web\Elsa.Server.Web.csproj", "{5ADDDFB1-E59B-4097-97B7-8C24E2D60463}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa", "src\modules\Elsa\Elsa.csproj", "{97C7E531-9D5F-43FD-AA19-BF24DA13B612}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa", "core\src\modules\Elsa\Elsa.csproj", "{97C7E531-9D5F-43FD-AA19-BF24DA13B612}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Server.LoadBalancer", "src\apps\Elsa.Server.LoadBalancer\Elsa.Server.LoadBalancer.csproj", "{65F2AD97-3ECF-4BA6-8AAA-1E5882FDCE68}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Server.LoadBalancer", "core\src\apps\Elsa.Server.LoadBalancer\Elsa.Server.LoadBalancer.csproj", "{65F2AD97-3ECF-4BA6-8AAA-1E5882FDCE68}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "k8s", "k8s", "{B32DB9B2-AD6C-48A5-8682-4373CB045185}"
 EndProject
@@ -173,89 +173,89 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "elsa-studio", "elsa-studio"
 		scripts\k8s\elsa-studio\service.yaml = scripts\k8s\elsa-studio\service.yaml
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Tenants.AspNetCore", "src\modules\Elsa.Tenants.AspNetCore\Elsa.Tenants.AspNetCore.csproj", "{D5720DBC-8C2B-42D5-9D9F-2FF6EAD4001C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Tenants.AspNetCore", "core\src\modules\Elsa.Tenants.AspNetCore\Elsa.Tenants.AspNetCore.csproj", "{D5720DBC-8C2B-42D5-9D9F-2FF6EAD4001C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching", "src\modules\Elsa.Caching\Elsa.Caching.csproj", "{6F14B066-DF7B-2409-59D8-CCCA90A4974C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching", "core\src\modules\Elsa.Caching\Elsa.Caching.csproj", "{6F14B066-DF7B-2409-59D8-CCCA90A4974C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Http", "src\modules\Elsa.Http\Elsa.Http.csproj", "{E0B22AB7-7CB5-6D17-562C-4A989DC61F8A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Http", "core\src\modules\Elsa.Http\Elsa.Http.csproj", "{E0B22AB7-7CB5-6D17-562C-4A989DC61F8A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Http.Webhooks", "src\modules\Elsa.Http.Webhooks\Elsa.Http.Webhooks.csproj", "{ABC40471-5A32-0AC0-594B-FF19B66E2493}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Http.Webhooks", "core\src\modules\Elsa.Http.Webhooks\Elsa.Http.Webhooks.csproj", "{ABC40471-5A32-0AC0-594B-FF19B66E2493}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Expressions.CSharp", "src\modules\Elsa.Expressions.CSharp\Elsa.Expressions.CSharp.csproj", "{16C3FBDE-A832-E3CD-5FBF-F51744D1F79B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Expressions.CSharp", "core\src\modules\Elsa.Expressions.CSharp\Elsa.Expressions.CSharp.csproj", "{16C3FBDE-A832-E3CD-5FBF-F51744D1F79B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Expressions.JavaScript", "src\modules\Elsa.Expressions.JavaScript\Elsa.Expressions.JavaScript.csproj", "{099D5DCE-CCF7-16FE-6EDC-A64B694F50BE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Expressions.JavaScript", "core\src\modules\Elsa.Expressions.JavaScript\Elsa.Expressions.JavaScript.csproj", "{099D5DCE-CCF7-16FE-6EDC-A64B694F50BE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Expressions.JavaScript.Libraries", "src\modules\Elsa.Expressions.JavaScript.Libraries\Elsa.Expressions.JavaScript.Libraries.csproj", "{08B69CC4-B5F0-44E8-FA7A-6BF6F00CA40A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Expressions.JavaScript.Libraries", "core\src\modules\Elsa.Expressions.JavaScript.Libraries\Elsa.Expressions.JavaScript.Libraries.csproj", "{08B69CC4-B5F0-44E8-FA7A-6BF6F00CA40A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Expressions.Liquid", "src\modules\Elsa.Expressions.Liquid\Elsa.Expressions.Liquid.csproj", "{6AF53651-99F0-1DE0-D37B-4FF6B0348DBB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Expressions.Liquid", "core\src\modules\Elsa.Expressions.Liquid\Elsa.Expressions.Liquid.csproj", "{6AF53651-99F0-1DE0-D37B-4FF6B0348DBB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Expressions.Python", "src\modules\Elsa.Expressions.Python\Elsa.Expressions.Python.csproj", "{9D8FB664-88B4-10BE-58A2-D9A1644AD2E4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Expressions.Python", "core\src\modules\Elsa.Expressions.Python\Elsa.Expressions.Python.csproj", "{9D8FB664-88B4-10BE-58A2-D9A1644AD2E4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.SasTokens", "src\modules\Elsa.SasTokens\Elsa.SasTokens.csproj", "{A7DE02E3-405B-B6BA-7E47-9E27D4BEFB24}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.SasTokens", "core\src\modules\Elsa.SasTokens\Elsa.SasTokens.csproj", "{A7DE02E3-405B-B6BA-7E47-9E27D4BEFB24}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Http.UnitTests", "test\unit\Elsa.Http.UnitTests\Elsa.Http.UnitTests.csproj", "{66ACA2B3-DB48-4F68-B26D-62555F3CE69B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Http.UnitTests", "core\test\unit\Elsa.Http.UnitTests\Elsa.Http.UnitTests.csproj", "{66ACA2B3-DB48-4F68-B26D-62555F3CE69B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.SasTokens.UnitTests", "test\unit\Elsa.SasTokens.UnitTests\Elsa.SasTokens.UnitTests.csproj", "{F6A5C27A-D0B0-47A7-B027-BE718F84910A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.SasTokens.UnitTests", "core\test\unit\Elsa.SasTokens.UnitTests\Elsa.SasTokens.UnitTests.csproj", "{F6A5C27A-D0B0-47A7-B027-BE718F84910A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Resilience.Core", "src\modules\Elsa.Resilience.Core\Elsa.Resilience.Core.csproj", "{58064618-A7BD-4D3E-8D57-B15018110AB5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Resilience.Core", "core\src\modules\Elsa.Resilience.Core\Elsa.Resilience.Core.csproj", "{58064618-A7BD-4D3E-8D57-B15018110AB5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Resilience", "src\modules\Elsa.Resilience\Elsa.Resilience.csproj", "{467573C9-DDC7-4351-9EC8-22E23F554DA7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Resilience", "core\src\modules\Elsa.Resilience\Elsa.Resilience.csproj", "{467573C9-DDC7-4351-9EC8-22E23F554DA7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowProviders.BlobStorage", "src\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj", "{0125BC8D-C837-414C-BB53-FCEA62E3060F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowProviders.BlobStorage", "core\src\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj", "{0125BC8D-C837-414C-BB53-FCEA62E3060F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Scheduling", "src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj", "{26849C37-2ACA-4DDE-83CD-B87939465791}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Scheduling", "core\src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj", "{26849C37-2ACA-4DDE-83CD-B87939465791}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Bpmn", "src\modules\Elsa.Bpmn\Elsa.Bpmn.csproj", "{6326EFE4-A6B1-4306-8551-41103EC38755}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Bpmn", "core\src\modules\Elsa.Bpmn\Elsa.Bpmn.csproj", "{6326EFE4-A6B1-4306-8551-41103EC38755}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Bpmn.Interchange", "src\modules\Elsa.Bpmn.Interchange\Elsa.Bpmn.Interchange.csproj", "{E2408639-12D3-4A17-AD40-F8A097E27009}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Bpmn.Interchange", "core\src\modules\Elsa.Bpmn.Interchange\Elsa.Bpmn.Interchange.csproj", "{E2408639-12D3-4A17-AD40-F8A097E27009}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Runtime.Distributed", "src\modules\Elsa.Workflows.Runtime.Distributed\Elsa.Workflows.Runtime.Distributed.csproj", "{42CE3E10-BC73-4D29-B099-88F0D5319E57}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Runtime.Distributed", "core\src\modules\Elsa.Workflows.Runtime.Distributed\Elsa.Workflows.Runtime.Distributed.csproj", "{42CE3E10-BC73-4D29-B099-88F0D5319E57}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EFCore.Common", "src\modules\Elsa.Persistence.EFCore.Common\Elsa.Persistence.EFCore.Common.csproj", "{B0EC08F9-8FEB-43DB-A06F-57E3D35FE090}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EFCore.Common", "core\src\modules\Elsa.Persistence.EFCore.Common\Elsa.Persistence.EFCore.Common.csproj", "{B0EC08F9-8FEB-43DB-A06F-57E3D35FE090}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.Core", "src\modules\Elsa.Alterations.Core\Elsa.Alterations.Core.csproj", "{ACEEA5FB-FC91-48DA-B29B-5EBE06B76370}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.Core", "core\src\modules\Elsa.Alterations.Core\Elsa.Alterations.Core.csproj", "{ACEEA5FB-FC91-48DA-B29B-5EBE06B76370}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations", "src\modules\Elsa.Alterations\Elsa.Alterations.csproj", "{371B1326-C660-4CA8-92C0-4EC63C25EE1D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations", "core\src\modules\Elsa.Alterations\Elsa.Alterations.csproj", "{371B1326-C660-4CA8-92C0-4EC63C25EE1D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EFCore", "src\modules\Elsa.Persistence.EFCore\Elsa.Persistence.EFCore.csproj", "{8C6E3960-C75F-474E-AB03-46BA4121E46C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EFCore", "core\src\modules\Elsa.Persistence.EFCore\Elsa.Persistence.EFCore.csproj", "{8C6E3960-C75F-474E-AB03-46BA4121E46C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EFCore.MySql", "src\modules\Elsa.Persistence.EFCore.MySql\Elsa.Persistence.EFCore.MySql.csproj", "{CFB7DFB9-049C-497F-BB9D-BD14235006BC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EFCore.MySql", "core\src\modules\Elsa.Persistence.EFCore.MySql\Elsa.Persistence.EFCore.MySql.csproj", "{CFB7DFB9-049C-497F-BB9D-BD14235006BC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EFCore.Oracle", "src\modules\Elsa.Persistence.EFCore.Oracle\Elsa.Persistence.EFCore.Oracle.csproj", "{0456F70D-1609-4799-9B45-724CF10811F6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EFCore.Oracle", "core\src\modules\Elsa.Persistence.EFCore.Oracle\Elsa.Persistence.EFCore.Oracle.csproj", "{0456F70D-1609-4799-9B45-724CF10811F6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EFCore.PostgreSql", "src\modules\Elsa.Persistence.EFCore.PostgreSql\Elsa.Persistence.EFCore.PostgreSql.csproj", "{7756243F-43BF-45D0-9E27-054D475B9F5F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EFCore.PostgreSql", "core\src\modules\Elsa.Persistence.EFCore.PostgreSql\Elsa.Persistence.EFCore.PostgreSql.csproj", "{7756243F-43BF-45D0-9E27-054D475B9F5F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Labels", "src\modules\Elsa.Labels\Elsa.Labels.csproj", "{6DED1DC9-BF3F-4AA5-AA93-97AD55548C49}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Labels", "core\src\modules\Elsa.Labels\Elsa.Labels.csproj", "{6DED1DC9-BF3F-4AA5-AA93-97AD55548C49}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EFCore.Sqlite", "src\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj", "{71D5178D-2490-4681-8621-BF8DED964F33}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EFCore.Sqlite", "core\src\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj", "{71D5178D-2490-4681-8621-BF8DED964F33}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EFCore.SqlServer", "src\modules\Elsa.Persistence.EFCore.SqlServer\Elsa.Persistence.EFCore.SqlServer.csproj", "{698051E0-7981-43D4-B7BA-F3D8B65004A1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EFCore.SqlServer", "core\src\modules\Elsa.Persistence.EFCore.SqlServer\Elsa.Persistence.EFCore.SqlServer.csproj", "{698051E0-7981-43D4-B7BA-F3D8B65004A1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.IntegrationTests", "test\integration\Elsa.Alterations.IntegrationTests\Elsa.Alterations.IntegrationTests.csproj", "{51C39AF0-4F41-4FC1-AEBD-D1494407D3F9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.IntegrationTests", "core\test\integration\Elsa.Alterations.IntegrationTests\Elsa.Alterations.IntegrationTests.csproj", "{51C39AF0-4F41-4FC1-AEBD-D1494407D3F9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.UnitTests", "test\unit\Elsa.Activities.UnitTests\Elsa.Activities.UnitTests.csproj", "{2DA466EB-CBF0-46EC-8B86-45CAF2B68BBA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.UnitTests", "core\test\unit\Elsa.Activities.UnitTests\Elsa.Activities.UnitTests.csproj", "{2DA466EB-CBF0-46EC-8B86-45CAF2B68BBA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Management.UnitTests", "test\unit\Elsa.Workflows.Management.UnitTests\Elsa.Workflows.Management.UnitTests.csproj", "{20C75446-CAE0-48D1-85D9-459541C4D8B6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Management.UnitTests", "core\test\unit\Elsa.Workflows.Management.UnitTests\Elsa.Workflows.Management.UnitTests.csproj", "{20C75446-CAE0-48D1-85D9-459541C4D8B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Expressions.UnitTests", "test\unit\Elsa.Expressions.UnitTests\Elsa.Expressions.UnitTests.csproj", "{67E1F0CC-C436-4D71-AD2C-AE42E3AA8A0B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Expressions.UnitTests", "core\test\unit\Elsa.Expressions.UnitTests\Elsa.Expressions.UnitTests.csproj", "{67E1F0CC-C436-4D71-AD2C-AE42E3AA8A0B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Scheduling.UnitTests", "test\unit\Elsa.Scheduling.UnitTests\Elsa.Scheduling.UnitTests.csproj", "{9AEE941A-3F23-4E4B-9B59-1A2F57FC762D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Scheduling.UnitTests", "core\test\unit\Elsa.Scheduling.UnitTests\Elsa.Scheduling.UnitTests.csproj", "{9AEE941A-3F23-4E4B-9B59-1A2F57FC762D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Bpmn.UnitTests", "test\unit\Elsa.Bpmn.UnitTests\Elsa.Bpmn.UnitTests.csproj", "{C8BDA5AA-14CE-41DF-85F7-49B752AECFDE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Bpmn.UnitTests", "core\test\unit\Elsa.Bpmn.UnitTests\Elsa.Bpmn.UnitTests.csproj", "{C8BDA5AA-14CE-41DF-85F7-49B752AECFDE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Bpmn.Interchange.UnitTests", "test\unit\Elsa.Bpmn.Interchange.UnitTests\Elsa.Bpmn.Interchange.UnitTests.csproj", "{ECB546D5-8B38-47AF-87C1-70A0F03284D1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Bpmn.Interchange.UnitTests", "core\test\unit\Elsa.Bpmn.Interchange.UnitTests\Elsa.Bpmn.Interchange.UnitTests.csproj", "{ECB546D5-8B38-47AF-87C1-70A0F03284D1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Common.IntegrationTests", "test\integration\Elsa.Common.IntegrationTests\Elsa.Common.IntegrationTests.csproj", "{6C451CC5-280E-475E-B95E-23ADCF0CCBFD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Common.IntegrationTests", "core\test\integration\Elsa.Common.IntegrationTests\Elsa.Common.IntegrationTests.csproj", "{6C451CC5-280E-475E-B95E-23ADCF0CCBFD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Bpmn.IntegrationTests", "test\integration\Elsa.Bpmn.IntegrationTests\Elsa.Bpmn.IntegrationTests.csproj", "{90D1A3F2-6A09-4E13-942C-6183D38C8E54}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Bpmn.IntegrationTests", "core\test\integration\Elsa.Bpmn.IntegrationTests\Elsa.Bpmn.IntegrationTests.csproj", "{90D1A3F2-6A09-4E13-942C-6183D38C8E54}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Bpmn.Interchange.IntegrationTests", "test\integration\Elsa.Bpmn.Interchange.IntegrationTests\Elsa.Bpmn.Interchange.IntegrationTests.csproj", "{EA2D95CD-62E7-4AA3-A27D-D1A467B7B0E7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Bpmn.Interchange.IntegrationTests", "core\test\integration\Elsa.Bpmn.Interchange.IntegrationTests\Elsa.Bpmn.Interchange.IntegrationTests.csproj", "{EA2D95CD-62E7-4AA3-A27D-D1A467B7B0E7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Dsl.ElsaScript", "src\modules\Elsa.Dsl.ElsaScript\Elsa.Dsl.ElsaScript.csproj", "{874F5A44-DB06-47AB-A18C-2D13942E0147}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Dsl.ElsaScript", "core\src\modules\Elsa.Dsl.ElsaScript\Elsa.Dsl.ElsaScript.csproj", "{874F5A44-DB06-47AB-A18C-2D13942E0147}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Dsl.ElsaScript.IntegrationTests", "test\integration\Elsa.Dsl.ElsaScript.IntegrationTests\Elsa.Dsl.ElsaScript.IntegrationTests.csproj", "{4B5A9D32-58F2-47A9-8A1B-8A9E2D76C3F5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Dsl.ElsaScript.IntegrationTests", "core\test\integration\Elsa.Dsl.ElsaScript.IntegrationTests\Elsa.Dsl.ElsaScript.IntegrationTests.csproj", "{4B5A9D32-58F2-47A9-8A1B-8A9E2D76C3F5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowProviders.BlobStorage.ElsaScript", "src\modules\Elsa.WorkflowProviders.BlobStorage.ElsaScript\Elsa.WorkflowProviders.BlobStorage.ElsaScript.csproj", "{2B7FB49D-E4B6-4AD5-981B-3D85B94F6F48}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowProviders.BlobStorage.ElsaScript", "core\src\modules\Elsa.WorkflowProviders.BlobStorage.ElsaScript\Elsa.WorkflowProviders.BlobStorage.ElsaScript.csproj", "{2B7FB49D-E4B6-4AD5-981B-3D85B94F6F48}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "github", "github", "{06DC6553-AAEF-4FC8-B16F-039F292E86A3}"
 	ProjectSection(SolutionItems) = preProject
@@ -283,567 +283,567 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "issue_templates", "issue_te
 		.github\ISSUE_TEMPLATE\documentation.md = .github\ISSUE_TEMPLATE\documentation.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ModularServer.Web", "src\apps\Elsa.ModularServer.Web\Elsa.ModularServer.Web.csproj", "{E9CA9A0B-6180-4CA7-814C-FA60D1F1B6EC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ModularServer.Web", "core\src\apps\Elsa.ModularServer.Web\Elsa.ModularServer.Web.csproj", "{E9CA9A0B-6180-4CA7-814C-FA60D1F1B6EC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Resilience.Core.UnitTests", "test\unit\Elsa.Resilience.Core.UnitTests\Elsa.Resilience.Core.UnitTests.csproj", "{B8006D70-1630-43DB-A043-FA89FAC70F37}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Resilience.Core.UnitTests", "core\test\unit\Elsa.Resilience.Core.UnitTests\Elsa.Resilience.Core.UnitTests.csproj", "{B8006D70-1630-43DB-A043-FA89FAC70F37}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Common.UnitTests", "test\unit\Elsa.Common.UnitTests\Elsa.Common.UnitTests.csproj", "{A3C07D5B-2A30-494E-B9BC-4B1594B31ABC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Common.UnitTests", "core\test\unit\Elsa.Common.UnitTests\Elsa.Common.UnitTests.csproj", "{A3C07D5B-2A30-494E-B9BC-4B1594B31ABC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Http.IntegrationTests", "test\integration\Elsa.Http.IntegrationTests\Elsa.Http.IntegrationTests.csproj", "{8C4F6A2D-1E9F-4B3C-9D8E-7F5A6B4C3D2E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Http.IntegrationTests", "core\test\integration\Elsa.Http.IntegrationTests\Elsa.Http.IntegrationTests.csproj", "{8C4F6A2D-1E9F-4B3C-9D8E-7F5A6B4C3D2E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Tenants.UnitTests", "test\unit\Elsa.Tenants.UnitTests\Elsa.Tenants.UnitTests.csproj", "{DC476900-D836-4920-A696-CF8796668723}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Tenants.UnitTests", "core\test\unit\Elsa.Tenants.UnitTests\Elsa.Tenants.UnitTests.csproj", "{DC476900-D836-4920-A696-CF8796668723}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Features.UnitTests", "test\unit\Elsa.Features.UnitTests\Elsa.Features.UnitTests.csproj", "{F77B17C4-B722-402F-A238-48CDC5AE7565}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Features.UnitTests", "core\test\unit\Elsa.Features.UnitTests\Elsa.Features.UnitTests.csproj", "{F77B17C4-B722-402F-A238-48CDC5AE7565}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Shells.Api", "src\modules\Elsa.Shells.Api\Elsa.Shells.Api.csproj", "{23BBF2CE-D2BA-43D4-8C78-A0B7B4AD6219}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Shells.Api", "core\src\modules\Elsa.Shells.Api\Elsa.Shells.Api.csproj", "{23BBF2CE-D2BA-43D4-8C78-A0B7B4AD6219}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.SamplePackage", "src\apps\Elsa.SamplePackage\Elsa.SamplePackage.csproj", "{85E81AC4-10EF-4A93-A7A3-930087621ACC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.SamplePackage", "core\src\apps\Elsa.SamplePackage\Elsa.SamplePackage.csproj", "{85E81AC4-10EF-4A93-A7A3-930087621ACC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Shells.Api.Tests", "test\unit\Elsa.Shells.Api.Tests\Elsa.Shells.Api.Tests.csproj", "{42FFCACD-5A9D-462B-AC84-7E1D14CDBDF0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Shells.Api.Tests", "core\test\unit\Elsa.Shells.Api.Tests\Elsa.Shells.Api.Tests.csproj", "{42FFCACD-5A9D-462B-AC84-7E1D14CDBDF0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Identity.UnitTests", "test\unit\Elsa.Identity.UnitTests\Elsa.Identity.UnitTests.csproj", "{B314D549-DD53-4D1B-A88E-934A72FA0BCB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Identity.UnitTests", "core\test\unit\Elsa.Identity.UnitTests\Elsa.Identity.UnitTests.csproj", "{B314D549-DD53-4D1B-A88E-934A72FA0BCB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs", "src\modules\Elsa.Diagnostics.StructuredLogs\Elsa.Diagnostics.StructuredLogs.csproj", "{72A70AAA-67EA-4454-9AEF-0C08654B8B4E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs", "core\src\modules\Elsa.Diagnostics.StructuredLogs\Elsa.Diagnostics.StructuredLogs.csproj", "{72A70AAA-67EA-4454-9AEF-0C08654B8B4E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs.UnitTests", "test\unit\Elsa.Diagnostics.StructuredLogs.UnitTests\Elsa.Diagnostics.StructuredLogs.UnitTests.csproj", "{96C2CA98-5CFA-4983-A551-CD570CD8CFA7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs.UnitTests", "core\test\unit\Elsa.Diagnostics.StructuredLogs.UnitTests\Elsa.Diagnostics.StructuredLogs.UnitTests.csproj", "{96C2CA98-5CFA-4983-A551-CD570CD8CFA7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs.IntegrationTests", "test\integration\Elsa.Diagnostics.StructuredLogs.IntegrationTests\Elsa.Diagnostics.StructuredLogs.IntegrationTests.csproj", "{2530E106-A168-4C57-9DFC-AB3F2CBD36AE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs.IntegrationTests", "core\test\integration\Elsa.Diagnostics.StructuredLogs.IntegrationTests\Elsa.Diagnostics.StructuredLogs.IntegrationTests.csproj", "{2530E106-A168-4C57-9DFC-AB3F2CBD36AE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs.Persistence.Relational", "src\modules\Elsa.Diagnostics.StructuredLogs.Persistence.Relational\Elsa.Diagnostics.StructuredLogs.Persistence.Relational.csproj", "{FDABE591-B1A1-4842-9332-04A894D76C05}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs.Persistence.Relational", "core\src\modules\Elsa.Diagnostics.StructuredLogs.Persistence.Relational\Elsa.Diagnostics.StructuredLogs.Persistence.Relational.csproj", "{FDABE591-B1A1-4842-9332-04A894D76C05}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite", "src\modules\Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite\Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.csproj", "{A0D906D7-9E4D-4C50-93B4-8720BB0AAFA7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite", "core\src\modules\Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite\Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.csproj", "{A0D906D7-9E4D-4C50-93B4-8720BB0AAFA7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests", "test\unit\Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests\Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests.csproj", "{695814F0-7E8F-469E-9A5A-E46759A4D67C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests", "core\test\unit\Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests\Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests.csproj", "{695814F0-7E8F-469E-9A5A-E46759A4D67C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests", "test\integration\Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests\Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj", "{FB7836E3-1D05-4123-B4FA-B9E722723603}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests", "core\test\integration\Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests\Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj", "{FB7836E3-1D05-4123-B4FA-B9E722723603}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.ConsoleLogs", "src\modules\Elsa.Diagnostics.ConsoleLogs\Elsa.Diagnostics.ConsoleLogs.csproj", "{195FD304-EC3F-4350-93C8-AFE80C4E6896}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.ConsoleLogs", "core\src\modules\Elsa.Diagnostics.ConsoleLogs\Elsa.Diagnostics.ConsoleLogs.csproj", "{195FD304-EC3F-4350-93C8-AFE80C4E6896}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.ConsoleLogs.UnitTests", "test\unit\Elsa.Diagnostics.ConsoleLogs.UnitTests\Elsa.Diagnostics.ConsoleLogs.UnitTests.csproj", "{D8739449-22DC-42D4-85A4-4BA547B0B458}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.ConsoleLogs.UnitTests", "core\test\unit\Elsa.Diagnostics.ConsoleLogs.UnitTests\Elsa.Diagnostics.ConsoleLogs.UnitTests.csproj", "{D8739449-22DC-42D4-85A4-4BA547B0B458}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.ConsoleLogs.IntegrationTests", "test\integration\Elsa.Diagnostics.ConsoleLogs.IntegrationTests\Elsa.Diagnostics.ConsoleLogs.IntegrationTests.csproj", "{93E9213A-694D-4AB4-870E-05E44F793133}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.ConsoleLogs.IntegrationTests", "core\test\integration\Elsa.Diagnostics.ConsoleLogs.IntegrationTests\Elsa.Diagnostics.ConsoleLogs.IntegrationTests.csproj", "{93E9213A-694D-4AB4-870E-05E44F793133}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets", "src\modules\Elsa.Secrets\Elsa.Secrets.csproj", "{09B4B78B-FE02-44E2-8667-E182AF921C54}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets", "core\src\modules\Elsa.Secrets\Elsa.Secrets.csproj", "{09B4B78B-FE02-44E2-8667-E182AF921C54}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.UnitTests", "test\unit\Elsa.Secrets.UnitTests\Elsa.Secrets.UnitTests.csproj", "{7D905CEC-B30B-4C99-B5F7-3052D33EC8E9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.UnitTests", "core\test\unit\Elsa.Secrets.UnitTests\Elsa.Secrets.UnitTests.csproj", "{7D905CEC-B30B-4C99-B5F7-3052D33EC8E9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Api.UnitTests", "test\unit\Elsa.Workflows.Api.UnitTests\Elsa.Workflows.Api.UnitTests.csproj", "{81CFD2E0-2E5E-4810-ADB8-A08301199166}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Api.UnitTests", "core\test\unit\Elsa.Workflows.Api.UnitTests\Elsa.Workflows.Api.UnitTests.csproj", "{81CFD2E0-2E5E-4810-ADB8-A08301199166}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.OpenTelemetry", "src\modules\Elsa.Diagnostics.OpenTelemetry\Elsa.Diagnostics.OpenTelemetry.csproj", "{8F4AD54E-8586-4D8C-82E6-69218DD4280F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.OpenTelemetry", "core\src\modules\Elsa.Diagnostics.OpenTelemetry\Elsa.Diagnostics.OpenTelemetry.csproj", "{8F4AD54E-8586-4D8C-82E6-69218DD4280F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.OpenTelemetry.UnitTests", "test\unit\Elsa.Diagnostics.OpenTelemetry.UnitTests\Elsa.Diagnostics.OpenTelemetry.UnitTests.csproj", "{60F844CC-6DA6-45EB-BA5E-B480B4E77624}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.OpenTelemetry.UnitTests", "core\test\unit\Elsa.Diagnostics.OpenTelemetry.UnitTests\Elsa.Diagnostics.OpenTelemetry.UnitTests.csproj", "{60F844CC-6DA6-45EB-BA5E-B480B4E77624}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.OpenTelemetry.IntegrationTests", "test\integration\Elsa.Diagnostics.OpenTelemetry.IntegrationTests\Elsa.Diagnostics.OpenTelemetry.IntegrationTests.csproj", "{B6A62D42-D9AA-47BE-BCBC-FCB866D346F0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.OpenTelemetry.IntegrationTests", "core\test\integration\Elsa.Diagnostics.OpenTelemetry.IntegrationTests\Elsa.Diagnostics.OpenTelemetry.IntegrationTests.csproj", "{B6A62D42-D9AA-47BE-BCBC-FCB866D346F0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.JavaScript", "src\modules\Elsa.Secrets.JavaScript\Elsa.Secrets.JavaScript.csproj", "{80F7ED38-15BA-4C82-88C8-12135B33F7EF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.JavaScript", "core\src\modules\Elsa.Secrets.JavaScript\Elsa.Secrets.JavaScript.csproj", "{80F7ED38-15BA-4C82-88C8-12135B33F7EF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.EFCore", "src\modules\Elsa.Secrets.Persistence.EFCore\Elsa.Secrets.Persistence.EFCore.csproj", "{0C6F614C-A698-426B-8D11-0132C2FFF400}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.EFCore", "core\src\modules\Elsa.Secrets.Persistence.EFCore\Elsa.Secrets.Persistence.EFCore.csproj", "{0C6F614C-A698-426B-8D11-0132C2FFF400}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.EFCore.Sqlite", "src\modules\Elsa.Secrets.Persistence.EFCore.Sqlite\Elsa.Secrets.Persistence.EFCore.Sqlite.csproj", "{4DEE0574-C5B3-4765-9C48-89D384A17780}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.EFCore.Sqlite", "core\src\modules\Elsa.Secrets.Persistence.EFCore.Sqlite\Elsa.Secrets.Persistence.EFCore.Sqlite.csproj", "{4DEE0574-C5B3-4765-9C48-89D384A17780}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.EFCore.SqlServer", "src\modules\Elsa.Secrets.Persistence.EFCore.SqlServer\Elsa.Secrets.Persistence.EFCore.SqlServer.csproj", "{151C46EF-FE3D-400B-8CBE-F86886B3EB96}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.EFCore.SqlServer", "core\src\modules\Elsa.Secrets.Persistence.EFCore.SqlServer\Elsa.Secrets.Persistence.EFCore.SqlServer.csproj", "{151C46EF-FE3D-400B-8CBE-F86886B3EB96}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.EFCore.PostgreSql", "src\modules\Elsa.Secrets.Persistence.EFCore.PostgreSql\Elsa.Secrets.Persistence.EFCore.PostgreSql.csproj", "{E4B1546A-3F35-4B5C-815C-07E58B00163F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.EFCore.PostgreSql", "core\src\modules\Elsa.Secrets.Persistence.EFCore.PostgreSql\Elsa.Secrets.Persistence.EFCore.PostgreSql.csproj", "{E4B1546A-3F35-4B5C-815C-07E58B00163F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.EFCore.MySql", "src\modules\Elsa.Secrets.Persistence.EFCore.MySql\Elsa.Secrets.Persistence.EFCore.MySql.csproj", "{E18931B2-82EE-4398-B38A-7B8B449957CD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.EFCore.MySql", "core\src\modules\Elsa.Secrets.Persistence.EFCore.MySql\Elsa.Secrets.Persistence.EFCore.MySql.csproj", "{E18931B2-82EE-4398-B38A-7B8B449957CD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.EFCore.Oracle", "src\modules\Elsa.Secrets.Persistence.EFCore.Oracle\Elsa.Secrets.Persistence.EFCore.Oracle.csproj", "{729FD075-2863-48AB-A3C0-A4F7A9277263}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.EFCore.Oracle", "core\src\modules\Elsa.Secrets.Persistence.EFCore.Oracle\Elsa.Secrets.Persistence.EFCore.Oracle.csproj", "{729FD075-2863-48AB-A3C0-A4F7A9277263}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Dashboard.Api", "src\modules\Elsa.Dashboard.Api\Elsa.Dashboard.Api.csproj", "{4FD4C59B-2804-4F6B-AD38-2562CC01C510}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Dashboard.Api", "core\src\modules\Elsa.Dashboard.Api\Elsa.Dashboard.Api.csproj", "{4FD4C59B-2804-4F6B-AD38-2562CC01C510}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Dashboard.Api.UnitTests", "test\unit\Elsa.Dashboard.Api.UnitTests\Elsa.Dashboard.Api.UnitTests.csproj", "{157EDBA7-B04F-4EA0-8377-434D1065ACF6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Dashboard.Api.UnitTests", "core\test\unit\Elsa.Dashboard.Api.UnitTests\Elsa.Dashboard.Api.UnitTests.csproj", "{157EDBA7-B04F-4EA0-8377-434D1065ACF6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Dashboard.Abstractions", "src\modules\Elsa.Dashboard.Abstractions\Elsa.Dashboard.Abstractions.csproj", "{27300F17-F959-4D4A-885F-FDDBE81456C1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Dashboard.Abstractions", "core\src\modules\Elsa.Dashboard.Abstractions\Elsa.Dashboard.Abstractions.csproj", "{27300F17-F959-4D4A-885F-FDDBE81456C1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Runtime.Dashboard", "src\modules\Elsa.Workflows.Runtime.Dashboard\Elsa.Workflows.Runtime.Dashboard.csproj", "{05AC1253-922A-4BC4-93D0-765752026B29}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Runtime.Dashboard", "core\src\modules\Elsa.Workflows.Runtime.Dashboard\Elsa.Workflows.Runtime.Dashboard.csproj", "{05AC1253-922A-4BC4-93D0-765752026B29}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.ConsoleLogs.Dashboard", "src\modules\Elsa.Diagnostics.ConsoleLogs.Dashboard\Elsa.Diagnostics.ConsoleLogs.Dashboard.csproj", "{D1212632-20D4-4115-9E8F-05EEEC4604BE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.ConsoleLogs.Dashboard", "core\src\modules\Elsa.Diagnostics.ConsoleLogs.Dashboard\Elsa.Diagnostics.ConsoleLogs.Dashboard.csproj", "{D1212632-20D4-4115-9E8F-05EEEC4604BE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs.Dashboard", "src\modules\Elsa.Diagnostics.StructuredLogs.Dashboard\Elsa.Diagnostics.StructuredLogs.Dashboard.csproj", "{215555CD-3B4A-46E7-ACE0-B4ADE1F0FE62}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs.Dashboard", "core\src\modules\Elsa.Diagnostics.StructuredLogs.Dashboard\Elsa.Diagnostics.StructuredLogs.Dashboard.csproj", "{215555CD-3B4A-46E7-ACE0-B4ADE1F0FE62}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.VNext", "src\modules\Elsa.Persistence.VNext\Elsa.Persistence.VNext.csproj", "{A5BE660B-BED0-4D72-BC60-2E6EB42061C0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.VNext", "core\src\modules\Elsa.Persistence.VNext\Elsa.Persistence.VNext.csproj", "{A5BE660B-BED0-4D72-BC60-2E6EB42061C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.VNext.Extensions", "src\modules\Elsa.Persistence.VNext.Extensions\Elsa.Persistence.VNext.Extensions.csproj", "{86A93965-54B1-4983-9A87-6E3ADB584BED}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.VNext.Extensions", "core\src\modules\Elsa.Persistence.VNext.Extensions\Elsa.Persistence.VNext.Extensions.csproj", "{86A93965-54B1-4983-9A87-6E3ADB584BED}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.VNext.MongoDb", "src\modules\Elsa.Persistence.VNext.MongoDb\Elsa.Persistence.VNext.MongoDb.csproj", "{E1F2B414-D9E4-4789-8138-3F9DA076FFB6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.VNext.MongoDb", "core\src\modules\Elsa.Persistence.VNext.MongoDb\Elsa.Persistence.VNext.MongoDb.csproj", "{E1F2B414-D9E4-4789-8138-3F9DA076FFB6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.VNext.PostgreSql", "src\modules\Elsa.Persistence.VNext.PostgreSql\Elsa.Persistence.VNext.PostgreSql.csproj", "{860546C8-60D4-4C11-A1E1-3102969F5E47}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.VNext.PostgreSql", "core\src\modules\Elsa.Persistence.VNext.PostgreSql\Elsa.Persistence.VNext.PostgreSql.csproj", "{860546C8-60D4-4C11-A1E1-3102969F5E47}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.VNext.Relational", "src\modules\Elsa.Persistence.VNext.Relational\Elsa.Persistence.VNext.Relational.csproj", "{E0BF8169-5AB4-4F07-A166-98FE48125359}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.VNext.Relational", "core\src\modules\Elsa.Persistence.VNext.Relational\Elsa.Persistence.VNext.Relational.csproj", "{E0BF8169-5AB4-4F07-A166-98FE48125359}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.VNext.Runtime", "src\modules\Elsa.Persistence.VNext.Runtime\Elsa.Persistence.VNext.Runtime.csproj", "{83836640-31A6-4EDA-AE80-BC926E6B29EC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.VNext.Runtime", "core\src\modules\Elsa.Persistence.VNext.Runtime\Elsa.Persistence.VNext.Runtime.csproj", "{83836640-31A6-4EDA-AE80-BC926E6B29EC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.VNext.Sqlite", "src\modules\Elsa.Persistence.VNext.Sqlite\Elsa.Persistence.VNext.Sqlite.csproj", "{6A17BD0C-8643-4684-BC3F-9E378A467605}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.VNext.Sqlite", "core\src\modules\Elsa.Persistence.VNext.Sqlite\Elsa.Persistence.VNext.Sqlite.csproj", "{6A17BD0C-8643-4684-BC3F-9E378A467605}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.VNext.SqlServer", "src\modules\Elsa.Persistence.VNext.SqlServer\Elsa.Persistence.VNext.SqlServer.csproj", "{2248A649-6CA4-4A1A-8BC3-34257238B560}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.VNext.SqlServer", "core\src\modules\Elsa.Persistence.VNext.SqlServer\Elsa.Persistence.VNext.SqlServer.csproj", "{2248A649-6CA4-4A1A-8BC3-34257238B560}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.VNext", "src\modules\Elsa.Secrets.Persistence.VNext\Elsa.Secrets.Persistence.VNext.csproj", "{807C6ACA-1C4B-4AC4-A60C-1FE6B9AB38AC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.VNext", "core\src\modules\Elsa.Secrets.Persistence.VNext\Elsa.Secrets.Persistence.VNext.csproj", "{807C6ACA-1C4B-4AC4-A60C-1FE6B9AB38AC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.VNext.UnitTests", "test\unit\Elsa.Persistence.VNext.UnitTests\Elsa.Persistence.VNext.UnitTests.csproj", "{418472CD-1215-4962-9024-F26E9863B5A4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.VNext.UnitTests", "core\test\unit\Elsa.Persistence.VNext.UnitTests\Elsa.Persistence.VNext.UnitTests.csproj", "{418472CD-1215-4962-9024-F26E9863B5A4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EFCore.UnitTests", "test\unit\Elsa.Persistence.EFCore.UnitTests\Elsa.Persistence.EFCore.UnitTests.csproj", "{C6EFA89A-923E-4F7A-A63B-BC8DDF44A208}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EFCore.UnitTests", "core\test\unit\Elsa.Persistence.EFCore.UnitTests\Elsa.Persistence.EFCore.UnitTests.csproj", "{C6EFA89A-923E-4F7A-A63B-BC8DDF44A208}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Abstractions", "src\modules\Elsa.AI.Abstractions\Elsa.AI.Abstractions.csproj", "{E8D76C93-4FE6-4B97-BC16-C8490CF3C8CC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Abstractions", "core\src\modules\Elsa.AI.Abstractions\Elsa.AI.Abstractions.csproj", "{E8D76C93-4FE6-4B97-BC16-C8490CF3C8CC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Copilot", "src\modules\Elsa.AI.Copilot\Elsa.AI.Copilot.csproj", "{C9E1429E-BC22-4ABC-820D-08709793ECE7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Copilot", "core\src\modules\Elsa.AI.Copilot\Elsa.AI.Copilot.csproj", "{C9E1429E-BC22-4ABC-820D-08709793ECE7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Host", "src\modules\Elsa.AI.Host\Elsa.AI.Host.csproj", "{24CE63F9-29D1-4243-9144-BB2C1590FCC0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Host", "core\src\modules\Elsa.AI.Host\Elsa.AI.Host.csproj", "{24CE63F9-29D1-4243-9144-BB2C1590FCC0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Persistence.EFCore", "src\modules\Elsa.AI.Persistence.EFCore\Elsa.AI.Persistence.EFCore.csproj", "{D3F07276-CD16-46BD-AEB1-8C7D6D7910C5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Persistence.EFCore", "core\src\modules\Elsa.AI.Persistence.EFCore\Elsa.AI.Persistence.EFCore.csproj", "{D3F07276-CD16-46BD-AEB1-8C7D6D7910C5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Abstractions.UnitTests", "test\unit\Elsa.AI.Abstractions.UnitTests\Elsa.AI.Abstractions.UnitTests.csproj", "{C597B963-A80F-4093-B3CC-9060854D9D38}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Abstractions.UnitTests", "core\test\unit\Elsa.AI.Abstractions.UnitTests\Elsa.AI.Abstractions.UnitTests.csproj", "{C597B963-A80F-4093-B3CC-9060854D9D38}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Copilot.UnitTests", "test\unit\Elsa.AI.Copilot.UnitTests\Elsa.AI.Copilot.UnitTests.csproj", "{E087B3BD-D579-422B-A29F-965D33E2C769}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Copilot.UnitTests", "core\test\unit\Elsa.AI.Copilot.UnitTests\Elsa.AI.Copilot.UnitTests.csproj", "{E087B3BD-D579-422B-A29F-965D33E2C769}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Host.UnitTests", "test\unit\Elsa.AI.Host.UnitTests\Elsa.AI.Host.UnitTests.csproj", "{1C70A220-E69F-434B-966B-9C53A35B072B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Host.UnitTests", "core\test\unit\Elsa.AI.Host.UnitTests\Elsa.AI.Host.UnitTests.csproj", "{1C70A220-E69F-434B-966B-9C53A35B072B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Persistence.EFCore.UnitTests", "test\unit\Elsa.AI.Persistence.EFCore.UnitTests\Elsa.AI.Persistence.EFCore.UnitTests.csproj", "{9B74CCC3-9634-4A09-A270-CE1101D96824}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Persistence.EFCore.UnitTests", "core\test\unit\Elsa.AI.Persistence.EFCore.UnitTests\Elsa.AI.Persistence.EFCore.UnitTests.csproj", "{9B74CCC3-9634-4A09-A270-CE1101D96824}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.IntegrationTests", "test\integration\Elsa.AI.IntegrationTests\Elsa.AI.IntegrationTests.csproj", "{DDEA0B6A-A615-4CF8-8B23-F93E390454B2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.IntegrationTests", "core\test\integration\Elsa.AI.IntegrationTests\Elsa.AI.IntegrationTests.csproj", "{DDEA0B6A-A615-4CF8-8B23-F93E390454B2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Persistence.EFCore.Sqlite", "src\modules\Elsa.AI.Persistence.EFCore.Sqlite\Elsa.AI.Persistence.EFCore.Sqlite.csproj", "{4A57961A-ED52-471F-BA21-EAEE9100E485}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Persistence.EFCore.Sqlite", "core\src\modules\Elsa.AI.Persistence.EFCore.Sqlite\Elsa.AI.Persistence.EFCore.Sqlite.csproj", "{4A57961A-ED52-471F-BA21-EAEE9100E485}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Persistence.EFCore.SqlServer", "src\modules\Elsa.AI.Persistence.EFCore.SqlServer\Elsa.AI.Persistence.EFCore.SqlServer.csproj", "{6BE15A6D-F543-4084-BF6E-F00FD71F60F3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Persistence.EFCore.SqlServer", "core\src\modules\Elsa.AI.Persistence.EFCore.SqlServer\Elsa.AI.Persistence.EFCore.SqlServer.csproj", "{6BE15A6D-F543-4084-BF6E-F00FD71F60F3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Persistence.EFCore.PostgreSql", "src\modules\Elsa.AI.Persistence.EFCore.PostgreSql\Elsa.AI.Persistence.EFCore.PostgreSql.csproj", "{32F2EE33-8190-41D7-BD12-45AA02BEB930}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Persistence.EFCore.PostgreSql", "core\src\modules\Elsa.AI.Persistence.EFCore.PostgreSql\Elsa.AI.Persistence.EFCore.PostgreSql.csproj", "{32F2EE33-8190-41D7-BD12-45AA02BEB930}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Persistence.EFCore.MySql", "src\modules\Elsa.AI.Persistence.EFCore.MySql\Elsa.AI.Persistence.EFCore.MySql.csproj", "{2D51FFE0-F114-48E1-BF58-FCED0FD1944F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Persistence.EFCore.MySql", "core\src\modules\Elsa.AI.Persistence.EFCore.MySql\Elsa.AI.Persistence.EFCore.MySql.csproj", "{2D51FFE0-F114-48E1-BF58-FCED0FD1944F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Persistence.EFCore.Oracle", "src\modules\Elsa.AI.Persistence.EFCore.Oracle\Elsa.AI.Persistence.EFCore.Oracle.csproj", "{743C1835-E41E-4E5C-9D12-585BAEE59EEE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AI.Persistence.EFCore.Oracle", "core\src\modules\Elsa.AI.Persistence.EFCore.Oracle\Elsa.AI.Persistence.EFCore.Oracle.csproj", "{743C1835-E41E-4E5C-9D12-585BAEE59EEE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Platform.Integration", "src\modules\Elsa.Platform.Integration\Elsa.Platform.Integration.csproj", "{11F7C89F-835A-4D78-A846-9FCB463DA80C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Platform.Integration", "core\src\modules\Elsa.Platform.Integration\Elsa.Platform.Integration.csproj", "{11F7C89F-835A-4D78-A846-9FCB463DA80C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Platform.Integration.UnitTests", "test\unit\Elsa.Platform.Integration.UnitTests\Elsa.Platform.Integration.UnitTests.csproj", "{84E70F39-2C24-4C93-A30F-6EC1330E2F49}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Platform.Integration.UnitTests", "core\test\unit\Elsa.Platform.Integration.UnitTests\Elsa.Platform.Integration.UnitTests.csproj", "{84E70F39-2C24-4C93-A30F-6EC1330E2F49}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Hosting.Management.UnitTests", "test\unit\Elsa.Hosting.Management.UnitTests\Elsa.Hosting.Management.UnitTests.csproj", "{39DE4EE7-0FDB-499F-9BC2-7ECC779FA5F6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Hosting.Management.UnitTests", "core\test\unit\Elsa.Hosting.Management.UnitTests\Elsa.Hosting.Management.UnitTests.csproj", "{39DE4EE7-0FDB-499F-9BC2-7ECC779FA5F6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication", "src\modules\Elsa.ExternalAuthentication\Elsa.ExternalAuthentication.csproj", "{4B06CF8B-0501-4801-BC81-4A1E3121F6AF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication", "core\src\modules\Elsa.ExternalAuthentication\Elsa.ExternalAuthentication.csproj", "{4B06CF8B-0501-4801-BC81-4A1E3121F6AF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.OpenIdConnect", "src\modules\Elsa.ExternalAuthentication.OpenIdConnect\Elsa.ExternalAuthentication.OpenIdConnect.csproj", "{C27DCFCA-965D-41EC-BAB5-FCB25AAC7480}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.OpenIdConnect", "core\src\modules\Elsa.ExternalAuthentication.OpenIdConnect\Elsa.ExternalAuthentication.OpenIdConnect.csproj", "{C27DCFCA-965D-41EC-BAB5-FCB25AAC7480}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.Secrets", "src\modules\Elsa.ExternalAuthentication.Secrets\Elsa.ExternalAuthentication.Secrets.csproj", "{99259B90-F623-4861-9035-3D01F5E42C45}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.Secrets", "core\src\modules\Elsa.ExternalAuthentication.Secrets\Elsa.ExternalAuthentication.Secrets.csproj", "{99259B90-F623-4861-9035-3D01F5E42C45}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.Persistence.EFCore", "src\modules\Elsa.ExternalAuthentication.Persistence.EFCore\Elsa.ExternalAuthentication.Persistence.EFCore.csproj", "{7A1E4D62-3C58-4F0B-9E21-5B8D4A6C1F30}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.Persistence.EFCore", "core\src\modules\Elsa.ExternalAuthentication.Persistence.EFCore\Elsa.ExternalAuthentication.Persistence.EFCore.csproj", "{7A1E4D62-3C58-4F0B-9E21-5B8D4A6C1F30}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite", "src\modules\Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite\Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite.csproj", "{2F9C6B14-8D47-4A53-B0E6-9C1A5F72D48B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite", "core\src\modules\Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite\Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite.csproj", "{2F9C6B14-8D47-4A53-B0E6-9C1A5F72D48B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.Persistence.EFCore.SqlServer", "src\modules\Elsa.ExternalAuthentication.Persistence.EFCore.SqlServer\Elsa.ExternalAuthentication.Persistence.EFCore.SqlServer.csproj", "{B54A0E37-6F92-4D18-A7C3-1E8B60D5942F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.Persistence.EFCore.SqlServer", "core\src\modules\Elsa.ExternalAuthentication.Persistence.EFCore.SqlServer\Elsa.ExternalAuthentication.Persistence.EFCore.SqlServer.csproj", "{B54A0E37-6F92-4D18-A7C3-1E8B60D5942F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.Persistence.EFCore.PostgreSql", "src\modules\Elsa.ExternalAuthentication.Persistence.EFCore.PostgreSql\Elsa.ExternalAuthentication.Persistence.EFCore.PostgreSql.csproj", "{D8371C05-4E6A-42BF-95D7-3A0F81B6E27C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.Persistence.EFCore.PostgreSql", "core\src\modules\Elsa.ExternalAuthentication.Persistence.EFCore.PostgreSql\Elsa.ExternalAuthentication.Persistence.EFCore.PostgreSql.csproj", "{D8371C05-4E6A-42BF-95D7-3A0F81B6E27C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.Persistence.EFCore.MySql", "src\modules\Elsa.ExternalAuthentication.Persistence.EFCore.MySql\Elsa.ExternalAuthentication.Persistence.EFCore.MySql.csproj", "{6C0B92FA-1D53-4E87-8B4A-72F9C3D06E15}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.Persistence.EFCore.MySql", "core\src\modules\Elsa.ExternalAuthentication.Persistence.EFCore.MySql\Elsa.ExternalAuthentication.Persistence.EFCore.MySql.csproj", "{6C0B92FA-1D53-4E87-8B4A-72F9C3D06E15}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.Persistence.EFCore.Oracle", "src\modules\Elsa.ExternalAuthentication.Persistence.EFCore.Oracle\Elsa.ExternalAuthentication.Persistence.EFCore.Oracle.csproj", "{9E4F58D3-0A26-4C71-B39E-8D5721CA640B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.Persistence.EFCore.Oracle", "core\src\modules\Elsa.ExternalAuthentication.Persistence.EFCore.Oracle\Elsa.ExternalAuthentication.Persistence.EFCore.Oracle.csproj", "{9E4F58D3-0A26-4C71-B39E-8D5721CA640B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.UnitTests", "test\unit\Elsa.ExternalAuthentication.UnitTests\Elsa.ExternalAuthentication.UnitTests.csproj", "{DCFAE70F-67B8-4F84-A28D-55E1FF6F92DC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.UnitTests", "core\test\unit\Elsa.ExternalAuthentication.UnitTests\Elsa.ExternalAuthentication.UnitTests.csproj", "{DCFAE70F-67B8-4F84-A28D-55E1FF6F92DC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.IntegrationTests", "test\integration\Elsa.ExternalAuthentication.IntegrationTests\Elsa.ExternalAuthentication.IntegrationTests.csproj", "{F94712B2-9237-403F-B8F4-C6F73D1DFED9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.IntegrationTests", "core\test\integration\Elsa.ExternalAuthentication.IntegrationTests\Elsa.ExternalAuthentication.IntegrationTests.csproj", "{F94712B2-9237-403F-B8F4-C6F73D1DFED9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Api.Common.UnitTests", "test\unit\Elsa.Api.Common.UnitTests\Elsa.Api.Common.UnitTests.csproj", "{D81CC1F3-6312-4E77-BA16-8044F2553F3C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Api.Common.UnitTests", "core\test\unit\Elsa.Api.Common.UnitTests\Elsa.Api.Common.UnitTests.csproj", "{D81CC1F3-6312-4E77-BA16-8044F2553F3C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks", "src\modules\Elsa.UserTasks\Elsa.UserTasks.csproj", "{2FF198D8-FE05-4893-92C8-A373C82C8DEF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks", "core\src\modules\Elsa.UserTasks\Elsa.UserTasks.csproj", "{2FF198D8-FE05-4893-92C8-A373C82C8DEF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.Persistence.EFCore", "src\modules\Elsa.UserTasks.Persistence.EFCore\Elsa.UserTasks.Persistence.EFCore.csproj", "{3A89A26D-E9AF-4A75-B9F0-C93018727869}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.Persistence.EFCore", "core\src\modules\Elsa.UserTasks.Persistence.EFCore\Elsa.UserTasks.Persistence.EFCore.csproj", "{3A89A26D-E9AF-4A75-B9F0-C93018727869}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.Persistence.EFCore.Sqlite", "src\modules\Elsa.UserTasks.Persistence.EFCore.Sqlite\Elsa.UserTasks.Persistence.EFCore.Sqlite.csproj", "{4A494EBB-702E-4FC7-AFCB-02ECD2613AA1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.Persistence.EFCore.Sqlite", "core\src\modules\Elsa.UserTasks.Persistence.EFCore.Sqlite\Elsa.UserTasks.Persistence.EFCore.Sqlite.csproj", "{4A494EBB-702E-4FC7-AFCB-02ECD2613AA1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.Persistence.EFCore.SqlServer", "src\modules\Elsa.UserTasks.Persistence.EFCore.SqlServer\Elsa.UserTasks.Persistence.EFCore.SqlServer.csproj", "{C298ED71-A1AA-4DB0-B4F8-B2F19133EC0B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.Persistence.EFCore.SqlServer", "core\src\modules\Elsa.UserTasks.Persistence.EFCore.SqlServer\Elsa.UserTasks.Persistence.EFCore.SqlServer.csproj", "{C298ED71-A1AA-4DB0-B4F8-B2F19133EC0B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.Persistence.EFCore.PostgreSql", "src\modules\Elsa.UserTasks.Persistence.EFCore.PostgreSql\Elsa.UserTasks.Persistence.EFCore.PostgreSql.csproj", "{408BBF9A-6CF2-4241-A20B-0190B03D48B1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.Persistence.EFCore.PostgreSql", "core\src\modules\Elsa.UserTasks.Persistence.EFCore.PostgreSql\Elsa.UserTasks.Persistence.EFCore.PostgreSql.csproj", "{408BBF9A-6CF2-4241-A20B-0190B03D48B1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.Persistence.EFCore.MySql", "src\modules\Elsa.UserTasks.Persistence.EFCore.MySql\Elsa.UserTasks.Persistence.EFCore.MySql.csproj", "{BB2982B8-708B-422E-B1B3-541240F01A49}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.Persistence.EFCore.MySql", "core\src\modules\Elsa.UserTasks.Persistence.EFCore.MySql\Elsa.UserTasks.Persistence.EFCore.MySql.csproj", "{BB2982B8-708B-422E-B1B3-541240F01A49}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.Persistence.EFCore.Oracle", "src\modules\Elsa.UserTasks.Persistence.EFCore.Oracle\Elsa.UserTasks.Persistence.EFCore.Oracle.csproj", "{F2714082-9CE1-4DAE-9421-AE59477F950A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.Persistence.EFCore.Oracle", "core\src\modules\Elsa.UserTasks.Persistence.EFCore.Oracle\Elsa.UserTasks.Persistence.EFCore.Oracle.csproj", "{F2714082-9CE1-4DAE-9421-AE59477F950A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.Persistence.VNext", "src\modules\Elsa.UserTasks.Persistence.VNext\Elsa.UserTasks.Persistence.VNext.csproj", "{385BB2E8-33F3-4127-BBD6-33F06938EE1C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.Persistence.VNext", "core\src\modules\Elsa.UserTasks.Persistence.VNext\Elsa.UserTasks.Persistence.VNext.csproj", "{385BB2E8-33F3-4127-BBD6-33F06938EE1C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.UnitTests", "test\unit\Elsa.UserTasks.UnitTests\Elsa.UserTasks.UnitTests.csproj", "{FB045674-6D63-4B49-A060-73D580E0FAC0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.UnitTests", "core\test\unit\Elsa.UserTasks.UnitTests\Elsa.UserTasks.UnitTests.csproj", "{FB045674-6D63-4B49-A060-73D580E0FAC0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.Persistence.EFCore.UnitTests", "test\unit\Elsa.UserTasks.Persistence.EFCore.UnitTests\Elsa.UserTasks.Persistence.EFCore.UnitTests.csproj", "{A4F3CB08-759D-4FE6-B715-E8D91E3E3F3E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.Persistence.EFCore.UnitTests", "core\test\unit\Elsa.UserTasks.Persistence.EFCore.UnitTests\Elsa.UserTasks.Persistence.EFCore.UnitTests.csproj", "{A4F3CB08-759D-4FE6-B715-E8D91E3E3F3E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.Persistence.ConformanceTests", "test\unit\Elsa.UserTasks.Persistence.ConformanceTests\Elsa.UserTasks.Persistence.ConformanceTests.csproj", "{0C16ED4D-2483-488D-9CA1-D269ED5BEB9F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UserTasks.Persistence.ConformanceTests", "core\test\unit\Elsa.UserTasks.Persistence.ConformanceTests\Elsa.UserTasks.Persistence.ConformanceTests.csproj", "{0C16ED4D-2483-488D-9CA1-D269ED5BEB9F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Hosts.SmokeTests", "test\integration\Elsa.Hosts.SmokeTests\Elsa.Hosts.SmokeTests.csproj", "{0BE4BC01-D02D-4185-A433-E33780584261}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Hosts.SmokeTests", "core\test\integration\Elsa.Hosts.SmokeTests\Elsa.Hosts.SmokeTests.csproj", "{0BE4BC01-D02D-4185-A433-E33780584261}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Labels.UnitTests", "test\unit\Elsa.Labels.UnitTests\Elsa.Labels.UnitTests.csproj", "{ED8D7C78-154D-4124-8C0A-E63785A862E5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Labels.UnitTests", "core\test\unit\Elsa.Labels.UnitTests\Elsa.Labels.UnitTests.csproj", "{ED8D7C78-154D-4124-8C0A-E63785A862E5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.Core.UnitTests", "test\unit\Elsa.Alterations.Core.UnitTests\Elsa.Alterations.Core.UnitTests.csproj", "{EAF427BE-7A07-42D7-A223-70FB1FC91BB2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.Core.UnitTests", "core\test\unit\Elsa.Alterations.Core.UnitTests\Elsa.Alterations.Core.UnitTests.csproj", "{EAF427BE-7A07-42D7-A223-70FB1FC91BB2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Persistence.ConformanceTests", "test\integration\Elsa.Workflows.Persistence.ConformanceTests\Elsa.Workflows.Persistence.ConformanceTests.csproj", "{E099B352-C3E6-499D-B141-67B209125B67}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Persistence.ConformanceTests", "core\test\integration\Elsa.Workflows.Persistence.ConformanceTests\Elsa.Workflows.Persistence.ConformanceTests.csproj", "{E099B352-C3E6-499D-B141-67B209125B67}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Labels.Persistence.ConformanceTests", "test\integration\Elsa.Labels.Persistence.ConformanceTests\Elsa.Labels.Persistence.ConformanceTests.csproj", "{7C4E1A92-6B8F-4D3A-9E11-2F5A8C0B4D17}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Labels.Persistence.ConformanceTests", "core\test\integration\Elsa.Labels.Persistence.ConformanceTests\Elsa.Labels.Persistence.ConformanceTests.csproj", "{7C4E1A92-6B8F-4D3A-9E11-2F5A8C0B4D17}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.Persistence.ConformanceTests", "test\integration\Elsa.Alterations.Persistence.ConformanceTests\Elsa.Alterations.Persistence.ConformanceTests.csproj", "{B2C8E4F1-3A7D-4E91-8F06-1D9A5C7B3E28}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.Persistence.ConformanceTests", "core\test\integration\Elsa.Alterations.Persistence.ConformanceTests\Elsa.Alterations.Persistence.ConformanceTests.csproj", "{B2C8E4F1-3A7D-4E91-8F06-1D9A5C7B3E28}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests", "test\integration\Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests\Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests.csproj", "{C3D9A4E6-1F28-4B07-9A15-8E6C2D0B7F41}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests", "core\test\integration\Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests\Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests.csproj", "{C3D9A4E6-1F28-4B07-9A15-8E6C2D0B7F41}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections", "src\modules\Elsa.Connections\Elsa.Connections.csproj", "{3C1DAFA1-2DD7-44BF-B79E-B6A36772D203}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections", "core\src\modules\Elsa.Connections\Elsa.Connections.csproj", "{3C1DAFA1-2DD7-44BF-B79E-B6A36772D203}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Credentials.Persistence.EFCore", "src\modules\Elsa.Connections.Credentials.Persistence.EFCore\Elsa.Connections.Credentials.Persistence.EFCore.csproj", "{A786DB42-389D-49BD-96A5-0C92E0D13BAB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Credentials.Persistence.EFCore", "core\src\modules\Elsa.Connections.Credentials.Persistence.EFCore\Elsa.Connections.Credentials.Persistence.EFCore.csproj", "{A786DB42-389D-49BD-96A5-0C92E0D13BAB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Credentials.Persistence.EFCore.Sqlite", "src\modules\Elsa.Connections.Credentials.Persistence.EFCore.Sqlite\Elsa.Connections.Credentials.Persistence.EFCore.Sqlite.csproj", "{8145D0E6-AB49-401D-BECB-0A6C43ADBA44}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Credentials.Persistence.EFCore.Sqlite", "core\src\modules\Elsa.Connections.Credentials.Persistence.EFCore.Sqlite\Elsa.Connections.Credentials.Persistence.EFCore.Sqlite.csproj", "{8145D0E6-AB49-401D-BECB-0A6C43ADBA44}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.UnitTests", "test\unit\Elsa.Connections.UnitTests\Elsa.Connections.UnitTests.csproj", "{960027E9-5B74-4FF9-A936-63089C0A1BA9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.UnitTests", "core\test\unit\Elsa.Connections.UnitTests\Elsa.Connections.UnitTests.csproj", "{960027E9-5B74-4FF9-A936-63089C0A1BA9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Credentials.Workflows", "src\modules\Elsa.Connections.Credentials.Workflows\Elsa.Connections.Credentials.Workflows.csproj", "{3D929ABC-FC85-4E87-BC98-87A6CCBD9650}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Credentials.Workflows", "core\src\modules\Elsa.Connections.Credentials.Workflows\Elsa.Connections.Credentials.Workflows.csproj", "{3D929ABC-FC85-4E87-BC98-87A6CCBD9650}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql", "src\modules\Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql\Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql.csproj", "{B9CF1280-DBBD-4C53-91A4-A090694B85AB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql", "core\src\modules\Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql\Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql.csproj", "{B9CF1280-DBBD-4C53-91A4-A090694B85AB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests", "test\integration\Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests\Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj", "{B7FD3306-DDAF-483E-8D4C-87BC59843FAB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests", "core\test\integration\Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests\Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj", "{B7FD3306-DDAF-483E-8D4C-87BC59843FAB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Api.IntegrationTests", "test\integration\Elsa.Secrets.Api.IntegrationTests\Elsa.Secrets.Api.IntegrationTests.csproj", "{7BB1EDB9-F1AA-4DA1-84D4-BD5155D92D64}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Api.IntegrationTests", "core\test\integration\Elsa.Secrets.Api.IntegrationTests\Elsa.Secrets.Api.IntegrationTests.csproj", "{7BB1EDB9-F1AA-4DA1-84D4-BD5155D92D64}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.DefaultHost.IntegrationTests", "test\integration\Elsa.Secrets.DefaultHost.IntegrationTests\Elsa.Secrets.DefaultHost.IntegrationTests.csproj", "{86104678-6D3B-4928-9A8A-308F1AB74B69}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.DefaultHost.IntegrationTests", "core\test\integration\Elsa.Secrets.DefaultHost.IntegrationTests\Elsa.Secrets.DefaultHost.IntegrationTests.csproj", "{86104678-6D3B-4928-9A8A-308F1AB74B69}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Server.Web", "samples\extensions\workbench\Elsa.Server.Web\Elsa.Server.Web.csproj", "{0BD54993-59D9-5F07-AE25-B6AFB102868D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Server.Web", "extensions\samples\workbench\Elsa.Server.Web\Elsa.Server.Web.csproj", "{0BD54993-59D9-5F07-AE25-B6AFB102868D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ServerAndStudio.Web", "samples\extensions\workbench\Elsa.ServerAndStudio.Web\Elsa.ServerAndStudio.Web.csproj", "{4BDC6977-B7E0-5D8E-B311-BF3D88651D0E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ServerAndStudio.Web", "extensions\samples\workbench\Elsa.ServerAndStudio.Web\Elsa.ServerAndStudio.Web.csproj", "{4BDC6977-B7E0-5D8E-B311-BF3D88651D0E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaStudioWebAssembly", "samples\extensions\workbench\ElsaStudioWebAssembly\ElsaStudioWebAssembly.csproj", "{A9728B54-B569-5C46-A97C-B144A964C952}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaStudioWebAssembly", "extensions\samples\workbench\ElsaStudioWebAssembly\ElsaStudioWebAssembly.csproj", "{A9728B54-B569-5C46-A97C-B144A964C952}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorApp1", "samples\studio\BlazorApp1\BlazorApp1.csproj", "{B93FEB66-7542-54E8-A41C-577AB38CA535}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorApp1", "studio\samples\BlazorApp1\BlazorApp1.csproj", "{B93FEB66-7542-54E8-A41C-577AB38CA535}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Actors.ProtoActor.PubSub.Redis", "src\extensions\actors\Elsa.Actors.ProtoActor.PubSub.Redis\Elsa.Actors.ProtoActor.PubSub.Redis.csproj", "{0B054B14-A66A-598A-8F09-37A2A29B4FD7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Actors.ProtoActor.PubSub.Redis", "extensions\src\actors\Elsa.Actors.ProtoActor.PubSub.Redis\Elsa.Actors.ProtoActor.PubSub.Redis.csproj", "{0B054B14-A66A-598A-8F09-37A2A29B4FD7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Actors.ProtoActor", "src\extensions\actors\Elsa.Actors.ProtoActor\Elsa.Actors.ProtoActor.csproj", "{AAAA89AB-053A-5B34-8F23-B66DBBADA7A3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Actors.ProtoActor", "extensions\src\actors\Elsa.Actors.ProtoActor\Elsa.Actors.ProtoActor.csproj", "{AAAA89AB-053A-5B34-8F23-B66DBBADA7A3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Activities", "src\extensions\agents\Elsa.Agents.Activities\Elsa.Agents.Activities.csproj", "{562BC0FA-6184-5872-9C02-E0B1374EFA9F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Activities", "extensions\src\agents\Elsa.Agents.Activities\Elsa.Agents.Activities.csproj", "{562BC0FA-6184-5872-9C02-E0B1374EFA9F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Api", "src\extensions\agents\Elsa.Agents.Api\Elsa.Agents.Api.csproj", "{2B622A37-24D9-5C5A-842F-8472C1A3F309}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Api", "extensions\src\agents\Elsa.Agents.Api\Elsa.Agents.Api.csproj", "{2B622A37-24D9-5C5A-842F-8472C1A3F309}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.AzureOpenAI", "src\extensions\agents\Elsa.Agents.AzureOpenAI\Elsa.Agents.AzureOpenAI.csproj", "{4A1A1E8A-C88F-57BF-AA9B-D65BB097A8E5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.AzureOpenAI", "extensions\src\agents\Elsa.Agents.AzureOpenAI\Elsa.Agents.AzureOpenAI.csproj", "{4A1A1E8A-C88F-57BF-AA9B-D65BB097A8E5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Core", "src\extensions\agents\Elsa.Agents.Core\Elsa.Agents.Core.csproj", "{60E36C4B-0846-5619-9106-784F087CF19B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Core", "extensions\src\agents\Elsa.Agents.Core\Elsa.Agents.Core.csproj", "{60E36C4B-0846-5619-9106-784F087CF19B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Models", "src\extensions\agents\Elsa.Agents.Models\Elsa.Agents.Models.csproj", "{04B917AD-A4FC-56A2-9631-C0101FC03D1B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Models", "extensions\src\agents\Elsa.Agents.Models\Elsa.Agents.Models.csproj", "{04B917AD-A4FC-56A2-9631-C0101FC03D1B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.OpenAI", "src\extensions\agents\Elsa.Agents.OpenAI\Elsa.Agents.OpenAI.csproj", "{A6129E71-F3E5-5684-8878-6F545070BA97}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.OpenAI", "extensions\src\agents\Elsa.Agents.OpenAI\Elsa.Agents.OpenAI.csproj", "{A6129E71-F3E5-5684-8878-6F545070BA97}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Persistence.EFCore.MySql", "src\extensions\agents\Elsa.Agents.Persistence.EFCore.MySql\Elsa.Agents.Persistence.EFCore.MySql.csproj", "{06AE4F9B-53AE-52EA-A2E5-1244A90BA1F3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Persistence.EFCore.MySql", "extensions\src\agents\Elsa.Agents.Persistence.EFCore.MySql\Elsa.Agents.Persistence.EFCore.MySql.csproj", "{06AE4F9B-53AE-52EA-A2E5-1244A90BA1F3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Persistence.EFCore.PostgreSql", "src\extensions\agents\Elsa.Agents.Persistence.EFCore.PostgreSql\Elsa.Agents.Persistence.EFCore.PostgreSql.csproj", "{B45CC3D5-8F53-562D-921B-DED433A2E956}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Persistence.EFCore.PostgreSql", "extensions\src\agents\Elsa.Agents.Persistence.EFCore.PostgreSql\Elsa.Agents.Persistence.EFCore.PostgreSql.csproj", "{B45CC3D5-8F53-562D-921B-DED433A2E956}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Persistence.EFCore.SqlServer", "src\extensions\agents\Elsa.Agents.Persistence.EFCore.SqlServer\Elsa.Agents.Persistence.EFCore.SqlServer.csproj", "{1C83F5B7-37A0-5628-AA37-134A81661E5E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Persistence.EFCore.SqlServer", "extensions\src\agents\Elsa.Agents.Persistence.EFCore.SqlServer\Elsa.Agents.Persistence.EFCore.SqlServer.csproj", "{1C83F5B7-37A0-5628-AA37-134A81661E5E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Persistence.EFCore.Sqlite", "src\extensions\agents\Elsa.Agents.Persistence.EFCore.Sqlite\Elsa.Agents.Persistence.EFCore.Sqlite.csproj", "{B151AB7C-789F-5478-931C-2A1B191B861D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Persistence.EFCore.Sqlite", "extensions\src\agents\Elsa.Agents.Persistence.EFCore.Sqlite\Elsa.Agents.Persistence.EFCore.Sqlite.csproj", "{B151AB7C-789F-5478-931C-2A1B191B861D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Persistence.EFCore", "src\extensions\agents\Elsa.Agents.Persistence.EFCore\Elsa.Agents.Persistence.EFCore.csproj", "{056BEB95-6FF7-51DB-802D-C9239FD20646}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Persistence.EFCore", "extensions\src\agents\Elsa.Agents.Persistence.EFCore\Elsa.Agents.Persistence.EFCore.csproj", "{056BEB95-6FF7-51DB-802D-C9239FD20646}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Persistence", "src\extensions\agents\Elsa.Agents.Persistence\Elsa.Agents.Persistence.csproj", "{5DE41662-696D-52CC-8F70-56E14B545F23}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Persistence", "extensions\src\agents\Elsa.Agents.Persistence\Elsa.Agents.Persistence.csproj", "{5DE41662-696D-52CC-8F70-56E14B545F23}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents", "src\extensions\agents\Elsa.Agents\Elsa.Agents.csproj", "{CF26A491-D662-502E-B7B6-AF3E2065D5C4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents", "extensions\src\agents\Elsa.Agents\Elsa.Agents.csproj", "{CF26A491-D662-502E-B7B6-AF3E2065D5C4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Agents", "src\extensions\agents\Elsa.Studio.Agents\Elsa.Studio.Agents.csproj", "{99F37556-A5B5-51D8-B5EF-4AAFDB8A705A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Agents", "extensions\src\agents\Elsa.Studio.Agents\Elsa.Studio.Agents.csproj", "{99F37556-A5B5-51D8-B5EF-4AAFDB8A705A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Alterations.MassTransit", "src\extensions\alterations\Elsa.Alterations.MassTransit\Elsa.Alterations.MassTransit.csproj", "{13C37C29-A211-5AAA-A2EC-ECD6FF721107}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Alterations.MassTransit", "extensions\src\alterations\Elsa.Alterations.MassTransit\Elsa.Alterations.MassTransit.csproj", "{13C37C29-A211-5AAA-A2EC-ECD6FF721107}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Caching.Distributed.MassTransit", "src\extensions\caching\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj", "{60E846FC-CA2E-55A3-9B68-ADDEBCE5F3CE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Caching.Distributed.MassTransit", "extensions\src\caching\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj", "{60E846FC-CA2E-55A3-9B68-ADDEBCE5F3CE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Caching.Distributed.ProtoActor", "src\extensions\caching\Elsa.Caching.Distributed.ProtoActor\Elsa.Caching.Distributed.ProtoActor.csproj", "{908C63B4-0563-5C7D-BEB3-3BB5CB8C716D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Caching.Distributed.ProtoActor", "extensions\src\caching\Elsa.Caching.Distributed.ProtoActor\Elsa.Caching.Distributed.ProtoActor.csproj", "{908C63B4-0563-5C7D-BEB3-3BB5CB8C716D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Caching.Distributed", "src\extensions\caching\Elsa.Caching.Distributed\Elsa.Caching.Distributed.csproj", "{D048F7D2-7640-5954-84B8-D3D2FC2179B5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Caching.Distributed", "extensions\src\caching\Elsa.Caching.Distributed\Elsa.Caching.Distributed.csproj", "{D048F7D2-7640-5954-84B8-D3D2FC2179B5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.OrchardCore", "src\extensions\cms\Elsa.OrchardCore\Elsa.OrchardCore.csproj", "{4244FABE-DF8C-58D3-930C-276905A4EE76}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.OrchardCore", "extensions\src\cms\Elsa.OrchardCore\Elsa.OrchardCore.csproj", "{4244FABE-DF8C-58D3-930C-276905A4EE76}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Slack", "src\extensions\communication\Elsa.Slack\Elsa.Slack.csproj", "{DA91C4E9-72B8-560B-BBBA-FB52460D63C7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Slack", "extensions\src\communication\Elsa.Slack\Elsa.Slack.csproj", "{DA91C4E9-72B8-560B-BBBA-FB52460D63C7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Connections.Api", "src\extensions\connections\Elsa.Connections.Api\Elsa.Connections.Api.csproj", "{BBC82BED-CD65-5E2C-9BD8-F8736F2092F4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Connections.Api", "extensions\src\connections\Elsa.Connections.Api\Elsa.Connections.Api.csproj", "{BBC82BED-CD65-5E2C-9BD8-F8736F2092F4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Connections.Core", "src\extensions\connections\Elsa.Connections.Core\Elsa.Connections.Core.csproj", "{ED1A9789-A3CD-5A48-B522-40A5A1F648C8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Connections.Core", "extensions\src\connections\Elsa.Connections.Core\Elsa.Connections.Core.csproj", "{ED1A9789-A3CD-5A48-B522-40A5A1F648C8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Connections.Models", "src\extensions\connections\Elsa.Connections.Models\Elsa.Connections.Models.csproj", "{C159EA5E-D097-5197-B9B3-5219D4AD5177}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Connections.Models", "extensions\src\connections\Elsa.Connections.Models\Elsa.Connections.Models.csproj", "{C159EA5E-D097-5197-B9B3-5219D4AD5177}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Connections.Persistence.EFCore.Sqlite", "src\extensions\connections\Elsa.Connections.Persistence.EFCore.Sqlite\Elsa.Connections.Persistence.EFCore.Sqlite.csproj", "{3A9CD0DB-96E2-56A2-82CF-D1C4D82A0436}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Connections.Persistence.EFCore.Sqlite", "extensions\src\connections\Elsa.Connections.Persistence.EFCore.Sqlite\Elsa.Connections.Persistence.EFCore.Sqlite.csproj", "{3A9CD0DB-96E2-56A2-82CF-D1C4D82A0436}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Connections.Persistence.EFCore", "src\extensions\connections\Elsa.Connections.Persistence.EFCore\Elsa.Connections.Persistence.EFCore.csproj", "{C6E62E4F-7F29-5DCB-B48D-90E758916720}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Connections.Persistence.EFCore", "extensions\src\connections\Elsa.Connections.Persistence.EFCore\Elsa.Connections.Persistence.EFCore.csproj", "{C6E62E4F-7F29-5DCB-B48D-90E758916720}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Connections.Persistence", "src\extensions\connections\Elsa.Connections.Persistence\Elsa.Connections.Persistence.csproj", "{6AE1500C-7E40-54F6-9405-FAC7E77B28D1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Connections.Persistence", "extensions\src\connections\Elsa.Connections.Persistence\Elsa.Connections.Persistence.csproj", "{6AE1500C-7E40-54F6-9405-FAC7E77B28D1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Data.Csv", "src\extensions\data\Elsa.Data.Csv\Elsa.Data.Csv.csproj", "{EC36E3CF-A191-5A46-8B76-47EC60CF46E7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Data.Csv", "extensions\src\data\Elsa.Data.Csv\Elsa.Data.Csv.csproj", "{EC36E3CF-A191-5A46-8B76-47EC60CF46E7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DevOps.GitHub", "src\extensions\devops\Elsa.DevOps.GitHub\Elsa.DevOps.GitHub.csproj", "{C8A29E8E-7855-5F6E-968F-45E1B2F225E3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DevOps.GitHub", "extensions\src\devops\Elsa.DevOps.GitHub\Elsa.DevOps.GitHub.csproj", "{C8A29E8E-7855-5F6E-968F-45E1B2F225E3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Logging.Console", "src\extensions\diagnostics\Elsa.Logging.Console\Elsa.Logging.Console.csproj", "{2D15D40C-C34F-539F-9CA7-4AD7C041292A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Logging.Console", "extensions\src\diagnostics\Elsa.Logging.Console\Elsa.Logging.Console.csproj", "{2D15D40C-C34F-539F-9CA7-4AD7C041292A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Logging.Core", "src\extensions\diagnostics\Elsa.Logging.Core\Elsa.Logging.Core.csproj", "{B3EFA8FA-610B-570F-914D-B21A6A8D79FD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Logging.Core", "extensions\src\diagnostics\Elsa.Logging.Core\Elsa.Logging.Core.csproj", "{B3EFA8FA-610B-570F-914D-B21A6A8D79FD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Logging.Serilog", "src\extensions\diagnostics\Elsa.Logging.Serilog\Elsa.Logging.Serilog.csproj", "{A04DA6EE-B9A9-57F8-B0B5-B11EB2B9EF62}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Logging.Serilog", "extensions\src\diagnostics\Elsa.Logging.Serilog\Elsa.Logging.Serilog.csproj", "{A04DA6EE-B9A9-57F8-B0B5-B11EB2B9EF62}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Logging", "src\extensions\diagnostics\Elsa.Logging\Elsa.Logging.csproj", "{B3237C78-A4EF-53DA-B8C4-AF0B9D0105E0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Logging", "extensions\src\diagnostics\Elsa.Logging\Elsa.Logging.csproj", "{B3237C78-A4EF-53DA-B8C4-AF0B9D0105E0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.OpenTelemetry", "src\extensions\diagnostics\Elsa.OpenTelemetry\Elsa.OpenTelemetry.csproj", "{08A36330-26A9-5D2B-992F-4C3C32CA0C99}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.OpenTelemetry", "extensions\src\diagnostics\Elsa.OpenTelemetry\Elsa.OpenTelemetry.csproj", "{08A36330-26A9-5D2B-992F-4C3C32CA0C99}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DropIns.Core", "src\extensions\dropins\Elsa.DropIns.Core\Elsa.DropIns.Core.csproj", "{C4D0E122-9DE1-5751-B962-CEEA594B894B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DropIns.Core", "extensions\src\dropins\Elsa.DropIns.Core\Elsa.DropIns.Core.csproj", "{C4D0E122-9DE1-5751-B962-CEEA594B894B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DropIns", "src\extensions\dropins\Elsa.DropIns\Elsa.DropIns.csproj", "{387849E5-1595-5372-A1FE-CBD9115160FB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DropIns", "extensions\src\dropins\Elsa.DropIns\Elsa.DropIns.csproj", "{387849E5-1595-5372-A1FE-CBD9115160FB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Email", "src\extensions\email\Elsa.Email\Elsa.Email.csproj", "{8A263F27-263C-5196-978A-6ACC514F3267}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Email", "extensions\src\email\Elsa.Email\Elsa.Email.csproj", "{8A263F27-263C-5196-978A-6ACC514F3267}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Http.OpenApi", "src\extensions\http\Elsa.Http.OpenApi\Elsa.Http.OpenApi.csproj", "{455194F7-2EB5-5AC7-BC8D-F309CE7C845B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Http.OpenApi", "extensions\src\http\Elsa.Http.OpenApi\Elsa.Http.OpenApi.csproj", "{455194F7-2EB5-5AC7-BC8D-F309CE7C845B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.IO.Compression", "src\extensions\io\Elsa.IO.Compression\Elsa.IO.Compression.csproj", "{9B515DAB-6A45-53F8-8542-8E2691B18CAF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.IO.Compression", "extensions\src\io\Elsa.IO.Compression\Elsa.IO.Compression.csproj", "{9B515DAB-6A45-53F8-8542-8E2691B18CAF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.IO.Http", "src\extensions\io\Elsa.IO.Http\Elsa.IO.Http.csproj", "{C825E4FF-D5EA-5A8D-BEF2-25CBE4EE43DC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.IO.Http", "extensions\src\io\Elsa.IO.Http\Elsa.IO.Http.csproj", "{C825E4FF-D5EA-5A8D-BEF2-25CBE4EE43DC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.IO", "src\extensions\io\Elsa.IO\Elsa.IO.csproj", "{D663A7A3-4DC1-5DBB-8F2E-6E87B3483F47}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.IO", "extensions\src\io\Elsa.IO\Elsa.IO.csproj", "{D663A7A3-4DC1-5DBB-8F2E-6E87B3483F47}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Ldap", "src\extensions\ldap\Elsa.Ldap\Elsa.Ldap.csproj", "{B9D5BDF6-8F6D-5BF6-8B1F-491D59E79835}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Ldap", "extensions\src\ldap\Elsa.Ldap\Elsa.Ldap.csproj", "{B9D5BDF6-8F6D-5BF6-8B1F-491D59E79835}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Mqtt", "src\extensions\mqtt\Elsa.Mqtt\Elsa.Mqtt.csproj", "{E0A9EAFB-13BF-5F0D-B85F-D211E45C6408}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Mqtt", "extensions\src\mqtt\Elsa.Mqtt\Elsa.Mqtt.csproj", "{E0A9EAFB-13BF-5F0D-B85F-D211E45C6408}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.Dapper.Migrations", "src\extensions\persistence\Elsa.Persistence.Dapper.Migrations\Elsa.Persistence.Dapper.Migrations.csproj", "{B028BF9C-141A-53BF-AAE5-B7C0C7F32E83}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.Dapper.Migrations", "extensions\src\persistence\Elsa.Persistence.Dapper.Migrations\Elsa.Persistence.Dapper.Migrations.csproj", "{B028BF9C-141A-53BF-AAE5-B7C0C7F32E83}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.Dapper", "src\extensions\persistence\Elsa.Persistence.Dapper\Elsa.Persistence.Dapper.csproj", "{7946819D-834F-5AE1-A5F0-F1AF85F097DA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.Dapper", "extensions\src\persistence\Elsa.Persistence.Dapper\Elsa.Persistence.Dapper.csproj", "{7946819D-834F-5AE1-A5F0-F1AF85F097DA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.Elasticsearch", "src\extensions\persistence\Elsa.Persistence.Elasticsearch\Elsa.Persistence.Elasticsearch.csproj", "{48DA116D-2DBA-5871-8CC6-34956E67AD5C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.Elasticsearch", "extensions\src\persistence\Elsa.Persistence.Elasticsearch\Elsa.Persistence.Elasticsearch.csproj", "{48DA116D-2DBA-5871-8CC6-34956E67AD5C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.MongoDb", "src\extensions\persistence\Elsa.Persistence.MongoDb\Elsa.Persistence.MongoDb.csproj", "{D8561DC4-A573-5438-98CF-EF5683734442}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.MongoDb", "extensions\src\persistence\Elsa.Persistence.MongoDb\Elsa.Persistence.MongoDb.csproj", "{D8561DC4-A573-5438-98CF-EF5683734442}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Retention", "src\extensions\retention\Elsa.Retention\Elsa.Retention.csproj", "{5228BA23-3AFA-56CB-A6CC-096DBB1B20EC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Retention", "extensions\src\retention\Elsa.Retention\Elsa.Retention.csproj", "{5228BA23-3AFA-56CB-A6CC-096DBB1B20EC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Runtime.ProtoActor", "src\extensions\runtimes\Elsa.Workflows.Runtime.ProtoActor\Elsa.Workflows.Runtime.ProtoActor.csproj", "{32FE991A-229F-5404-8C40-4D8243D9351D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Runtime.ProtoActor", "extensions\src\runtimes\Elsa.Workflows.Runtime.ProtoActor\Elsa.Workflows.Runtime.ProtoActor.csproj", "{32FE991A-229F-5404-8C40-4D8243D9351D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Hangfire", "src\extensions\scheduling\Elsa.Scheduling.Hangfire\Elsa.Scheduling.Hangfire.csproj", "{CE5FE4B1-59C8-5547-A229-5874242B7DD2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Hangfire", "extensions\src\scheduling\Elsa.Scheduling.Hangfire\Elsa.Scheduling.Hangfire.csproj", "{CE5FE4B1-59C8-5547-A229-5874242B7DD2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Quartz.EFCore.MySql", "src\extensions\scheduling\Elsa.Scheduling.Quartz.EFCore.MySql\Elsa.Scheduling.Quartz.EFCore.MySql.csproj", "{9CF28ECC-ECCB-56D2-B648-FF7CF8469985}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Quartz.EFCore.MySql", "extensions\src\scheduling\Elsa.Scheduling.Quartz.EFCore.MySql\Elsa.Scheduling.Quartz.EFCore.MySql.csproj", "{9CF28ECC-ECCB-56D2-B648-FF7CF8469985}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Quartz.EFCore.PostgreSql", "src\extensions\scheduling\Elsa.Scheduling.Quartz.EFCore.PostgreSql\Elsa.Scheduling.Quartz.EFCore.PostgreSql.csproj", "{0858C6E7-C61A-5694-A88A-B3C510115983}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Quartz.EFCore.PostgreSql", "extensions\src\scheduling\Elsa.Scheduling.Quartz.EFCore.PostgreSql\Elsa.Scheduling.Quartz.EFCore.PostgreSql.csproj", "{0858C6E7-C61A-5694-A88A-B3C510115983}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Quartz.EFCore.SqlServer", "src\extensions\scheduling\Elsa.Scheduling.Quartz.EFCore.SqlServer\Elsa.Scheduling.Quartz.EFCore.SqlServer.csproj", "{AAD3B665-30B4-57C3-AF73-D15E1541C6EA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Quartz.EFCore.SqlServer", "extensions\src\scheduling\Elsa.Scheduling.Quartz.EFCore.SqlServer\Elsa.Scheduling.Quartz.EFCore.SqlServer.csproj", "{AAD3B665-30B4-57C3-AF73-D15E1541C6EA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Quartz.EFCore.Sqlite", "src\extensions\scheduling\Elsa.Scheduling.Quartz.EFCore.Sqlite\Elsa.Scheduling.Quartz.EFCore.Sqlite.csproj", "{CB5B504C-737C-5F13-991F-927064324835}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Quartz.EFCore.Sqlite", "extensions\src\scheduling\Elsa.Scheduling.Quartz.EFCore.Sqlite\Elsa.Scheduling.Quartz.EFCore.Sqlite.csproj", "{CB5B504C-737C-5F13-991F-927064324835}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Quartz", "src\extensions\scheduling\Elsa.Scheduling.Quartz\Elsa.Scheduling.Quartz.csproj", "{3EE16ED6-5DC4-55F9-A8D6-E4D72C279BD1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Quartz", "extensions\src\scheduling\Elsa.Scheduling.Quartz\Elsa.Scheduling.Quartz.csproj", "{3EE16ED6-5DC4-55F9-A8D6-E4D72C279BD1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Api", "src\extensions\secrets\Elsa.Secrets.Api\Elsa.Secrets.Api.csproj", "{F05999A2-49DD-54AA-9754-DACD427083BD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Api", "extensions\src\secrets\Elsa.Secrets.Api\Elsa.Secrets.Api.csproj", "{F05999A2-49DD-54AA-9754-DACD427083BD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Core", "src\extensions\secrets\Elsa.Secrets.Core\Elsa.Secrets.Core.csproj", "{CFA5F237-6A19-5D30-AE65-5B8817141A2B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Core", "extensions\src\secrets\Elsa.Secrets.Core\Elsa.Secrets.Core.csproj", "{CFA5F237-6A19-5D30-AE65-5B8817141A2B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Management", "src\extensions\secrets\Elsa.Secrets.Management\Elsa.Secrets.Management.csproj", "{BE2B7795-EF80-5CF6-9CB8-E70B2A6CAB8E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Management", "extensions\src\secrets\Elsa.Secrets.Management\Elsa.Secrets.Management.csproj", "{BE2B7795-EF80-5CF6-9CB8-E70B2A6CAB8E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Models", "src\extensions\secrets\Elsa.Secrets.Models\Elsa.Secrets.Models.csproj", "{E722BD7D-E6EE-530F-AE22-54B2745DC005}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Models", "extensions\src\secrets\Elsa.Secrets.Models\Elsa.Secrets.Models.csproj", "{E722BD7D-E6EE-530F-AE22-54B2745DC005}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Scripting", "src\extensions\secrets\Elsa.Secrets.Scripting\Elsa.Secrets.Scripting.csproj", "{EF857339-F840-56FB-B05A-B94FF0865575}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Scripting", "extensions\src\secrets\Elsa.Secrets.Scripting\Elsa.Secrets.Scripting.csproj", "{EF857339-F840-56FB-B05A-B94FF0865575}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ServiceBus.AzureServiceBus", "src\extensions\servicebus\Elsa.ServiceBus.AzureServiceBus\Elsa.ServiceBus.AzureServiceBus.csproj", "{1BA2CA10-5507-577B-BC04-43AC7DE96D57}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ServiceBus.AzureServiceBus", "extensions\src\servicebus\Elsa.ServiceBus.AzureServiceBus\Elsa.ServiceBus.AzureServiceBus.csproj", "{1BA2CA10-5507-577B-BC04-43AC7DE96D57}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ServiceBus.Kafka", "src\extensions\servicebus\Elsa.ServiceBus.Kafka\Elsa.ServiceBus.Kafka.csproj", "{53394BFD-45CD-5197-A6AB-D9AADDCBD02A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ServiceBus.Kafka", "extensions\src\servicebus\Elsa.ServiceBus.Kafka\Elsa.ServiceBus.Kafka.csproj", "{53394BFD-45CD-5197-A6AB-D9AADDCBD02A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ServiceBus.MassTransit.AzureServiceBus", "src\extensions\servicebus\Elsa.ServiceBus.MassTransit.AzureServiceBus\Elsa.ServiceBus.MassTransit.AzureServiceBus.csproj", "{F31C6497-E616-5136-82B4-D45A88586E25}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ServiceBus.MassTransit.AzureServiceBus", "extensions\src\servicebus\Elsa.ServiceBus.MassTransit.AzureServiceBus\Elsa.ServiceBus.MassTransit.AzureServiceBus.csproj", "{F31C6497-E616-5136-82B4-D45A88586E25}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ServiceBus.MassTransit.RabbitMq", "src\extensions\servicebus\Elsa.ServiceBus.MassTransit.RabbitMq\Elsa.ServiceBus.MassTransit.RabbitMq.csproj", "{FBD0D0CB-28D4-5658-B4DA-7F58F1B029B5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ServiceBus.MassTransit.RabbitMq", "extensions\src\servicebus\Elsa.ServiceBus.MassTransit.RabbitMq\Elsa.ServiceBus.MassTransit.RabbitMq.csproj", "{FBD0D0CB-28D4-5658-B4DA-7F58F1B029B5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ServiceBus.MassTransit", "src\extensions\servicebus\Elsa.ServiceBus.MassTransit\Elsa.ServiceBus.MassTransit.csproj", "{B491D22D-C958-560D-B6F8-4D3C18032401}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ServiceBus.MassTransit", "extensions\src\servicebus\Elsa.ServiceBus.MassTransit\Elsa.ServiceBus.MassTransit.csproj", "{B491D22D-C958-560D-B6F8-4D3C18032401}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Sql.MySql", "src\extensions\sql\Elsa.Sql.MySql\Elsa.Sql.MySql.csproj", "{58C4967A-60BC-58DE-8FD3-4F73623A99B3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Sql.MySql", "extensions\src\sql\Elsa.Sql.MySql\Elsa.Sql.MySql.csproj", "{58C4967A-60BC-58DE-8FD3-4F73623A99B3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Sql.PostgreSql", "src\extensions\sql\Elsa.Sql.PostgreSql\Elsa.Sql.PostgreSql.csproj", "{D55C5C4F-E4FF-52A6-BF0D-A2872CC6325B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Sql.PostgreSql", "extensions\src\sql\Elsa.Sql.PostgreSql\Elsa.Sql.PostgreSql.csproj", "{D55C5C4F-E4FF-52A6-BF0D-A2872CC6325B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Sql.SqlServer", "src\extensions\sql\Elsa.Sql.SqlServer\Elsa.Sql.SqlServer.csproj", "{6E433B66-D570-5A39-A547-271FED4E6EE8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Sql.SqlServer", "extensions\src\sql\Elsa.Sql.SqlServer\Elsa.Sql.SqlServer.csproj", "{6E433B66-D570-5A39-A547-271FED4E6EE8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Sql.Sqlite", "src\extensions\sql\Elsa.Sql.Sqlite\Elsa.Sql.Sqlite.csproj", "{09B16860-D411-5F79-92ED-3CA8BAA9E091}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Sql.Sqlite", "extensions\src\sql\Elsa.Sql.Sqlite\Elsa.Sql.Sqlite.csproj", "{09B16860-D411-5F79-92ED-3CA8BAA9E091}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Sql", "src\extensions\sql\Elsa.Sql\Elsa.Sql.csproj", "{0F0D3EBA-89D6-5C41-AC9B-96089A3F856B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Sql", "extensions\src\sql\Elsa.Sql\Elsa.Sql.csproj", "{0F0D3EBA-89D6-5C41-AC9B-96089A3F856B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Storage.AzureStorage", "src\extensions\storage\Elsa.Storage.AzureStorage\Elsa.Storage.AzureStorage.csproj", "{BC0C53B7-D5A2-5685-A777-41273A78191C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Storage.AzureStorage", "extensions\src\storage\Elsa.Storage.AzureStorage\Elsa.Storage.AzureStorage.csproj", "{BC0C53B7-D5A2-5685-A777-41273A78191C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Storage.Files", "src\extensions\storage\Elsa.Storage.Files\Elsa.Storage.Files.csproj", "{44CE378D-2A65-57C2-9C57-48349553F7BC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Storage.Files", "extensions\src\storage\Elsa.Storage.Files\Elsa.Storage.Files.csproj", "{44CE378D-2A65-57C2-9C57-48349553F7BC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Telnyx", "src\extensions\telecom\Elsa.Telnyx\Elsa.Telnyx.csproj", "{4575C332-7D04-519C-BB2C-C74A651E9397}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Telnyx", "extensions\src\telecom\Elsa.Telnyx\Elsa.Telnyx.csproj", "{4575C332-7D04-519C-BB2C-C74A651E9397}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.WorkflowContexts", "src\extensions\workflows\Elsa.Studio.WorkflowContexts\Elsa.Studio.WorkflowContexts.csproj", "{2D44C810-89E8-5191-9FFA-DE760B257CFC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.WorkflowContexts", "extensions\src\workflows\Elsa.Studio.WorkflowContexts\Elsa.Studio.WorkflowContexts.csproj", "{2D44C810-89E8-5191-9FFA-DE760B257CFC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowContexts", "src\extensions\workflows\Elsa.WorkflowContexts\Elsa.WorkflowContexts.csproj", "{E2BB5002-CC56-5A5F-B358-AE9A5D27CB2D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowContexts", "extensions\src\workflows\Elsa.WorkflowContexts\Elsa.WorkflowContexts.csproj", "{E2BB5002-CC56-5A5F-B358-AE9A5D27CB2D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio", "src\studio\bundles\Elsa.Studio\Elsa.Studio.csproj", "{80F7A970-4F1C-5F34-892C-CBFF1A15B8CA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio", "studio\src\bundles\Elsa.Studio\Elsa.Studio.csproj", "{80F7A970-4F1C-5F34-892C-CBFF1A15B8CA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Core.BlazorServer", "src\studio\framework\Elsa.Studio.Core.BlazorServer\Elsa.Studio.Core.BlazorServer.csproj", "{22D9DC81-6E83-58B0-A46B-2AAFC14E1EFA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Core.BlazorServer", "studio\src\framework\Elsa.Studio.Core.BlazorServer\Elsa.Studio.Core.BlazorServer.csproj", "{22D9DC81-6E83-58B0-A46B-2AAFC14E1EFA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Core.BlazorWasm", "src\studio\framework\Elsa.Studio.Core.BlazorWasm\Elsa.Studio.Core.BlazorWasm.csproj", "{50278384-C51A-5870-B3F9-CE9CF4061090}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Core.BlazorWasm", "studio\src\framework\Elsa.Studio.Core.BlazorWasm\Elsa.Studio.Core.BlazorWasm.csproj", "{50278384-C51A-5870-B3F9-CE9CF4061090}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Core.Tests", "src\studio\framework\Elsa.Studio.Core.Tests\Elsa.Studio.Core.Tests.csproj", "{90A46D89-FCCE-504A-9EDF-50E785F9B3D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Core.Tests", "studio\src\framework\Elsa.Studio.Core.Tests\Elsa.Studio.Core.Tests.csproj", "{90A46D89-FCCE-504A-9EDF-50E785F9B3D4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Core", "src\studio\framework\Elsa.Studio.Core\Elsa.Studio.Core.csproj", "{F095A1D8-25E1-5983-B037-477920349F24}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Core", "studio\src\framework\Elsa.Studio.Core\Elsa.Studio.Core.csproj", "{F095A1D8-25E1-5983-B037-477920349F24}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.DomInterop", "src\studio\framework\Elsa.Studio.DomInterop\Elsa.Studio.DomInterop.csproj", "{F1ADA026-A676-5CB9-8E3E-C22420390196}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.DomInterop", "studio\src\framework\Elsa.Studio.DomInterop\Elsa.Studio.DomInterop.csproj", "{F1ADA026-A676-5CB9-8E3E-C22420390196}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Shared", "src\studio\framework\Elsa.Studio.Shared\Elsa.Studio.Shared.csproj", "{A12F357F-2AF0-5654-BEB4-6D8C8ED39679}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Shared", "studio\src\framework\Elsa.Studio.Shared\Elsa.Studio.Shared.csproj", "{A12F357F-2AF0-5654-BEB4-6D8C8ED39679}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Shell", "src\studio\framework\Elsa.Studio.Shell\Elsa.Studio.Shell.csproj", "{F285BA72-874F-502A-9FD7-BDF33E26DD7F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Shell", "studio\src\framework\Elsa.Studio.Shell\Elsa.Studio.Shell.csproj", "{F285BA72-874F-502A-9FD7-BDF33E26DD7F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Translations", "src\studio\framework\Elsa.Studio.Translations\Elsa.Studio.Translations.csproj", "{D6D722A1-1BA5-5210-AD2C-1722FDF3CEA8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Translations", "studio\src\framework\Elsa.Studio.Translations\Elsa.Studio.Translations.csproj", "{D6D722A1-1BA5-5210-AD2C-1722FDF3CEA8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Host.CustomElements", "src\studio\hosts\Elsa.Studio.Host.CustomElements\Elsa.Studio.Host.CustomElements.csproj", "{AB55CAFD-52F5-56AF-9CD7-4C57DBB27CA5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Host.CustomElements", "studio\src\hosts\Elsa.Studio.Host.CustomElements\Elsa.Studio.Host.CustomElements.csproj", "{AB55CAFD-52F5-56AF-9CD7-4C57DBB27CA5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Host.HostedWasm", "src\studio\hosts\Elsa.Studio.Host.HostedWasm\Elsa.Studio.Host.HostedWasm.csproj", "{C04A712A-DE39-5974-9ED0-93BC17CCE658}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Host.HostedWasm", "studio\src\hosts\Elsa.Studio.Host.HostedWasm\Elsa.Studio.Host.HostedWasm.csproj", "{C04A712A-DE39-5974-9ED0-93BC17CCE658}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Host.Server", "src\studio\hosts\Elsa.Studio.Host.Server\Elsa.Studio.Host.Server.csproj", "{6B164EAA-5C4D-5514-8DB3-31BEF639E034}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Host.Server", "studio\src\hosts\Elsa.Studio.Host.Server\Elsa.Studio.Host.Server.csproj", "{6B164EAA-5C4D-5514-8DB3-31BEF639E034}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Host.Wasm", "src\studio\hosts\Elsa.Studio.Host.Wasm\Elsa.Studio.Host.Wasm.csproj", "{243D34B8-49DA-50DF-8660-A4F1AF6CB429}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Host.Wasm", "studio\src\hosts\Elsa.Studio.Host.Wasm\Elsa.Studio.Host.Wasm.csproj", "{243D34B8-49DA-50DF-8660-A4F1AF6CB429}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.AI.Tests", "src\studio\modules\Elsa.Studio.AI.Tests\Elsa.Studio.AI.Tests.csproj", "{805AD121-1E07-5B99-ABA1-2E438764CEFA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.AI.Tests", "studio\src\modules\Elsa.Studio.AI.Tests\Elsa.Studio.AI.Tests.csproj", "{805AD121-1E07-5B99-ABA1-2E438764CEFA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.AI", "src\studio\modules\Elsa.Studio.AI\Elsa.Studio.AI.csproj", "{F48851C3-8FA9-5121-871F-3821FB633078}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.AI", "studio\src\modules\Elsa.Studio.AI\Elsa.Studio.AI.csproj", "{F48851C3-8FA9-5121-871F-3821FB633078}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.ActivityPortProviders", "src\studio\modules\Elsa.Studio.ActivityPortProviders\Elsa.Studio.ActivityPortProviders.csproj", "{24D954DE-B77A-5E51-98A6-3CEDFAE9BB1B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.ActivityPortProviders", "studio\src\modules\Elsa.Studio.ActivityPortProviders\Elsa.Studio.ActivityPortProviders.csproj", "{24D954DE-B77A-5E51-98A6-3CEDFAE9BB1B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Administration.Tests", "src\studio\modules\Elsa.Studio.Administration.Tests\Elsa.Studio.Administration.Tests.csproj", "{A011DB75-05FD-5EBF-98C2-FECE34B8C745}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Administration.Tests", "studio\src\modules\Elsa.Studio.Administration.Tests\Elsa.Studio.Administration.Tests.csproj", "{A011DB75-05FD-5EBF-98C2-FECE34B8C745}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Alterations", "src\studio\modules\Elsa.Studio.Alterations\Elsa.Studio.Alterations.csproj", "{718A3378-D348-5292-9C01-18C53C682010}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Alterations", "studio\src\modules\Elsa.Studio.Alterations\Elsa.Studio.Alterations.csproj", "{718A3378-D348-5292-9C01-18C53C682010}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.Abstractions", "src\studio\modules\Elsa.Studio.Authentication.Abstractions\Elsa.Studio.Authentication.Abstractions.csproj", "{97F1066D-9597-52DF-9C71-82F5B9854588}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.Abstractions", "studio\src\modules\Elsa.Studio.Authentication.Abstractions\Elsa.Studio.Authentication.Abstractions.csproj", "{97F1066D-9597-52DF-9C71-82F5B9854588}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.ElsaIdentity.BlazorServer", "src\studio\modules\Elsa.Studio.Authentication.ElsaIdentity.BlazorServer\Elsa.Studio.Authentication.ElsaIdentity.BlazorServer.csproj", "{7377558A-1EA6-5AEC-A7D6-8C4AD506ABCA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.ElsaIdentity.BlazorServer", "studio\src\modules\Elsa.Studio.Authentication.ElsaIdentity.BlazorServer\Elsa.Studio.Authentication.ElsaIdentity.BlazorServer.csproj", "{7377558A-1EA6-5AEC-A7D6-8C4AD506ABCA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.ElsaIdentity.BlazorWasm", "src\studio\modules\Elsa.Studio.Authentication.ElsaIdentity.BlazorWasm\Elsa.Studio.Authentication.ElsaIdentity.BlazorWasm.csproj", "{87DFE4D6-1737-53F8-AB8E-F0AEB51DBE17}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.ElsaIdentity.BlazorWasm", "studio\src\modules\Elsa.Studio.Authentication.ElsaIdentity.BlazorWasm\Elsa.Studio.Authentication.ElsaIdentity.BlazorWasm.csproj", "{87DFE4D6-1737-53F8-AB8E-F0AEB51DBE17}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.ElsaIdentity.UI", "src\studio\modules\Elsa.Studio.Authentication.ElsaIdentity.UI\Elsa.Studio.Authentication.ElsaIdentity.UI.csproj", "{0D561CDA-BC26-5897-A91C-AE1A311B5F99}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.ElsaIdentity.UI", "studio\src\modules\Elsa.Studio.Authentication.ElsaIdentity.UI\Elsa.Studio.Authentication.ElsaIdentity.UI.csproj", "{0D561CDA-BC26-5897-A91C-AE1A311B5F99}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.ElsaIdentity", "src\studio\modules\Elsa.Studio.Authentication.ElsaIdentity\Elsa.Studio.Authentication.ElsaIdentity.csproj", "{E70FE59A-30FB-591F-87CE-7DB0EE249979}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.ElsaIdentity", "studio\src\modules\Elsa.Studio.Authentication.ElsaIdentity\Elsa.Studio.Authentication.ElsaIdentity.csproj", "{E70FE59A-30FB-591F-87CE-7DB0EE249979}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.OpenIdConnect.BlazorServer", "src\studio\modules\Elsa.Studio.Authentication.OpenIdConnect.BlazorServer\Elsa.Studio.Authentication.OpenIdConnect.BlazorServer.csproj", "{DC5D3948-EBEB-5895-AA30-A89771091B67}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.OpenIdConnect.BlazorServer", "studio\src\modules\Elsa.Studio.Authentication.OpenIdConnect.BlazorServer\Elsa.Studio.Authentication.OpenIdConnect.BlazorServer.csproj", "{DC5D3948-EBEB-5895-AA30-A89771091B67}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.OpenIdConnect.BlazorWasm", "src\studio\modules\Elsa.Studio.Authentication.OpenIdConnect.BlazorWasm\Elsa.Studio.Authentication.OpenIdConnect.BlazorWasm.csproj", "{FB457639-BB10-5997-AC46-136D57F0A791}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.OpenIdConnect.BlazorWasm", "studio\src\modules\Elsa.Studio.Authentication.OpenIdConnect.BlazorWasm\Elsa.Studio.Authentication.OpenIdConnect.BlazorWasm.csproj", "{FB457639-BB10-5997-AC46-136D57F0A791}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.OpenIdConnect", "src\studio\modules\Elsa.Studio.Authentication.OpenIdConnect\Elsa.Studio.Authentication.OpenIdConnect.csproj", "{E270E7BF-1930-58F9-BE76-D064F132306A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.OpenIdConnect", "studio\src\modules\Elsa.Studio.Authentication.OpenIdConnect\Elsa.Studio.Authentication.OpenIdConnect.csproj", "{E270E7BF-1930-58F9-BE76-D064F132306A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.Themes", "src\studio\modules\Elsa.Studio.Authentication.Themes\Elsa.Studio.Authentication.Themes.csproj", "{4230C395-FBF4-53F7-9160-F2784793028F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.Themes", "studio\src\modules\Elsa.Studio.Authentication.Themes\Elsa.Studio.Authentication.Themes.csproj", "{4230C395-FBF4-53F7-9160-F2784793028F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.UI.Tests", "src\studio\modules\Elsa.Studio.Authentication.UI.Tests\Elsa.Studio.Authentication.UI.Tests.csproj", "{A5DDE38F-98A2-5C27-BB09-6420E00C0740}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.UI.Tests", "studio\src\modules\Elsa.Studio.Authentication.UI.Tests\Elsa.Studio.Authentication.UI.Tests.csproj", "{A5DDE38F-98A2-5C27-BB09-6420E00C0740}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.UI", "src\studio\modules\Elsa.Studio.Authentication.UI\Elsa.Studio.Authentication.UI.csproj", "{33D699C0-0EE1-57DF-8777-C64DB1E81841}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Authentication.UI", "studio\src\modules\Elsa.Studio.Authentication.UI\Elsa.Studio.Authentication.UI.csproj", "{33D699C0-0EE1-57DF-8777-C64DB1E81841}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Counter", "src\studio\modules\Elsa.Studio.Counter\Elsa.Studio.Counter.csproj", "{CC3936D5-7950-52AF-9EF0-F0C7213184E4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Counter", "studio\src\modules\Elsa.Studio.Counter\Elsa.Studio.Counter.csproj", "{CC3936D5-7950-52AF-9EF0-F0C7213184E4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Dashboard.Tests", "src\studio\modules\Elsa.Studio.Dashboard.Tests\Elsa.Studio.Dashboard.Tests.csproj", "{A8ADAFD0-D09C-5368-87C5-E8B0A2CEA6A2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Dashboard.Tests", "studio\src\modules\Elsa.Studio.Dashboard.Tests\Elsa.Studio.Dashboard.Tests.csproj", "{A8ADAFD0-D09C-5368-87C5-E8B0A2CEA6A2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Dashboard", "src\studio\modules\Elsa.Studio.Dashboard\Elsa.Studio.Dashboard.csproj", "{4AA0C6EE-0F20-528F-A88D-71F6A2A7A1C1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Dashboard", "studio\src\modules\Elsa.Studio.Dashboard\Elsa.Studio.Dashboard.csproj", "{4AA0C6EE-0F20-528F-A88D-71F6A2A7A1C1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard", "src\studio\modules\Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard\Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard.csproj", "{A8C0BD37-BC54-5C45-B4C6-8FA9A7630A4C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard", "studio\src\modules\Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard\Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard.csproj", "{A8C0BD37-BC54-5C45-B4C6-8FA9A7630A4C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Diagnostics.ConsoleLogs.Tests", "src\studio\modules\Elsa.Studio.Diagnostics.ConsoleLogs.Tests\Elsa.Studio.Diagnostics.ConsoleLogs.Tests.csproj", "{AE0A2C80-B159-5BEA-A5A3-4E907DD76F01}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Diagnostics.ConsoleLogs.Tests", "studio\src\modules\Elsa.Studio.Diagnostics.ConsoleLogs.Tests\Elsa.Studio.Diagnostics.ConsoleLogs.Tests.csproj", "{AE0A2C80-B159-5BEA-A5A3-4E907DD76F01}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Diagnostics.ConsoleLogs", "src\studio\modules\Elsa.Studio.Diagnostics.ConsoleLogs\Elsa.Studio.Diagnostics.ConsoleLogs.csproj", "{1EEFFC47-0C5C-5516-BDEA-C68304A8E27A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Diagnostics.ConsoleLogs", "studio\src\modules\Elsa.Studio.Diagnostics.ConsoleLogs\Elsa.Studio.Diagnostics.ConsoleLogs.csproj", "{1EEFFC47-0C5C-5516-BDEA-C68304A8E27A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard", "src\studio\modules\Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard\Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard.csproj", "{EFF530CA-69D3-5347-870D-5FFEAB425868}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard", "studio\src\modules\Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard\Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard.csproj", "{EFF530CA-69D3-5347-870D-5FFEAB425868}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Diagnostics.OpenTelemetry.Tests", "src\studio\modules\Elsa.Studio.Diagnostics.OpenTelemetry.Tests\Elsa.Studio.Diagnostics.OpenTelemetry.Tests.csproj", "{0EAB1D89-D634-58D7-9DD2-07C1842C66F1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Diagnostics.OpenTelemetry.Tests", "studio\src\modules\Elsa.Studio.Diagnostics.OpenTelemetry.Tests\Elsa.Studio.Diagnostics.OpenTelemetry.Tests.csproj", "{0EAB1D89-D634-58D7-9DD2-07C1842C66F1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Diagnostics.OpenTelemetry", "src\studio\modules\Elsa.Studio.Diagnostics.OpenTelemetry\Elsa.Studio.Diagnostics.OpenTelemetry.csproj", "{11695BE0-EDE2-5CE8-B2C4-0FED34AD8CE4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Diagnostics.OpenTelemetry", "studio\src\modules\Elsa.Studio.Diagnostics.OpenTelemetry\Elsa.Studio.Diagnostics.OpenTelemetry.csproj", "{11695BE0-EDE2-5CE8-B2C4-0FED34AD8CE4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Diagnostics.StructuredLogs.Dashboard", "src\studio\modules\Elsa.Studio.Diagnostics.StructuredLogs.Dashboard\Elsa.Studio.Diagnostics.StructuredLogs.Dashboard.csproj", "{4D7FAEA4-DF5A-5DDA-8073-6296D36517D0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Diagnostics.StructuredLogs.Dashboard", "studio\src\modules\Elsa.Studio.Diagnostics.StructuredLogs.Dashboard\Elsa.Studio.Diagnostics.StructuredLogs.Dashboard.csproj", "{4D7FAEA4-DF5A-5DDA-8073-6296D36517D0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Diagnostics.StructuredLogs.Tests", "src\studio\modules\Elsa.Studio.Diagnostics.StructuredLogs.Tests\Elsa.Studio.Diagnostics.StructuredLogs.Tests.csproj", "{453A8EDD-52D9-5EF4-9BA3-C1A9D99B25C8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Diagnostics.StructuredLogs.Tests", "studio\src\modules\Elsa.Studio.Diagnostics.StructuredLogs.Tests\Elsa.Studio.Diagnostics.StructuredLogs.Tests.csproj", "{453A8EDD-52D9-5EF4-9BA3-C1A9D99B25C8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Diagnostics.StructuredLogs", "src\studio\modules\Elsa.Studio.Diagnostics.StructuredLogs\Elsa.Studio.Diagnostics.StructuredLogs.csproj", "{7910BE75-C485-5468-8488-8D2131A8EDC9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Diagnostics.StructuredLogs", "studio\src\modules\Elsa.Studio.Diagnostics.StructuredLogs\Elsa.Studio.Diagnostics.StructuredLogs.csproj", "{7910BE75-C485-5468-8488-8D2131A8EDC9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Environments.Tests", "src\studio\modules\Elsa.Studio.Environments.Tests\Elsa.Studio.Environments.Tests.csproj", "{A2808DFD-E85B-5759-A0F7-CAE9340E9542}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Environments.Tests", "studio\src\modules\Elsa.Studio.Environments.Tests\Elsa.Studio.Environments.Tests.csproj", "{A2808DFD-E85B-5759-A0F7-CAE9340E9542}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Environments", "src\studio\modules\Elsa.Studio.Environments\Elsa.Studio.Environments.csproj", "{F9AAD794-A837-5C27-B723-1A6DA5A1F8AA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Environments", "studio\src\modules\Elsa.Studio.Environments\Elsa.Studio.Environments.csproj", "{F9AAD794-A837-5C27-B723-1A6DA5A1F8AA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.ExternalAuthentication.BlazorServer", "src\studio\modules\Elsa.Studio.ExternalAuthentication.BlazorServer\Elsa.Studio.ExternalAuthentication.BlazorServer.csproj", "{BE8D7F4A-896A-5E88-85FE-D6BEF233BDFA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.ExternalAuthentication.BlazorServer", "studio\src\modules\Elsa.Studio.ExternalAuthentication.BlazorServer\Elsa.Studio.ExternalAuthentication.BlazorServer.csproj", "{BE8D7F4A-896A-5E88-85FE-D6BEF233BDFA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.ExternalAuthentication.BlazorWasm", "src\studio\modules\Elsa.Studio.ExternalAuthentication.BlazorWasm\Elsa.Studio.ExternalAuthentication.BlazorWasm.csproj", "{5E323EEC-4E11-5D6F-AEEE-E6486D05154A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.ExternalAuthentication.BlazorWasm", "studio\src\modules\Elsa.Studio.ExternalAuthentication.BlazorWasm\Elsa.Studio.ExternalAuthentication.BlazorWasm.csproj", "{5E323EEC-4E11-5D6F-AEEE-E6486D05154A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.ExternalAuthentication.Tests", "src\studio\modules\Elsa.Studio.ExternalAuthentication.Tests\Elsa.Studio.ExternalAuthentication.Tests.csproj", "{5C44E2CF-9F16-5848-A23E-375FB953CA92}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.ExternalAuthentication.Tests", "studio\src\modules\Elsa.Studio.ExternalAuthentication.Tests\Elsa.Studio.ExternalAuthentication.Tests.csproj", "{5C44E2CF-9F16-5848-A23E-375FB953CA92}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.ExternalAuthentication", "src\studio\modules\Elsa.Studio.ExternalAuthentication\Elsa.Studio.ExternalAuthentication.csproj", "{EB705543-FE8E-53D8-9D1E-99595873D053}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.ExternalAuthentication", "studio\src\modules\Elsa.Studio.ExternalAuthentication\Elsa.Studio.ExternalAuthentication.csproj", "{EB705543-FE8E-53D8-9D1E-99595873D053}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Http.Webhooks", "src\studio\modules\Elsa.Studio.Http.Webhooks\Elsa.Studio.Http.Webhooks.csproj", "{06C06A09-5B58-5868-9BC7-88C14AD4D9E8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Http.Webhooks", "studio\src\modules\Elsa.Studio.Http.Webhooks\Elsa.Studio.Http.Webhooks.csproj", "{06C06A09-5B58-5868-9BC7-88C14AD4D9E8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Labels", "src\studio\modules\Elsa.Studio.Labels\Elsa.Studio.Labels.csproj", "{8EA01F62-57F3-5EE0-80FB-1FC0728C56EA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Labels", "studio\src\modules\Elsa.Studio.Labels\Elsa.Studio.Labels.csproj", "{8EA01F62-57F3-5EE0-80FB-1FC0728C56EA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Localization.BlazorServer", "src\studio\modules\Elsa.Studio.Localization.BlazorServer\Elsa.Studio.Localization.BlazorServer.csproj", "{3CD795EB-BDAF-5608-8982-CC5B66DAE957}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Localization.BlazorServer", "studio\src\modules\Elsa.Studio.Localization.BlazorServer\Elsa.Studio.Localization.BlazorServer.csproj", "{3CD795EB-BDAF-5608-8982-CC5B66DAE957}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Localization.BlazorWasm", "src\studio\modules\Elsa.Studio.Localization.BlazorWasm\Elsa.Studio.Localization.BlazorWasm.csproj", "{91F74B7E-8C80-5738-BD3B-20CE69DA152D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Localization.BlazorWasm", "studio\src\modules\Elsa.Studio.Localization.BlazorWasm\Elsa.Studio.Localization.BlazorWasm.csproj", "{91F74B7E-8C80-5738-BD3B-20CE69DA152D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Localization", "src\studio\modules\Elsa.Studio.Localization\Elsa.Studio.Localization.csproj", "{8E6E75BF-9B7C-53B3-84AC-C86B012F3E64}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Localization", "studio\src\modules\Elsa.Studio.Localization\Elsa.Studio.Localization.csproj", "{8E6E75BF-9B7C-53B3-84AC-C86B012F3E64}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Login.BlazorServer", "src\studio\modules\Elsa.Studio.Login.BlazorServer\Elsa.Studio.Login.BlazorServer.csproj", "{D38CC59C-8A53-5A99-B062-752CEE996DD9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Login.BlazorServer", "studio\src\modules\Elsa.Studio.Login.BlazorServer\Elsa.Studio.Login.BlazorServer.csproj", "{D38CC59C-8A53-5A99-B062-752CEE996DD9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Login.BlazorWasm", "src\studio\modules\Elsa.Studio.Login.BlazorWasm\Elsa.Studio.Login.BlazorWasm.csproj", "{D70816B3-C930-5C6F-A609-03617E2D1952}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Login.BlazorWasm", "studio\src\modules\Elsa.Studio.Login.BlazorWasm\Elsa.Studio.Login.BlazorWasm.csproj", "{D70816B3-C930-5C6F-A609-03617E2D1952}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Login", "src\studio\modules\Elsa.Studio.Login\Elsa.Studio.Login.csproj", "{309A6BDD-A4C5-580A-A317-9829D7A34FA5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Login", "studio\src\modules\Elsa.Studio.Login\Elsa.Studio.Login.csproj", "{309A6BDD-A4C5-580A-A317-9829D7A34FA5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.PlatformIntegration.Tests", "src\studio\modules\Elsa.Studio.PlatformIntegration.Tests\Elsa.Studio.PlatformIntegration.Tests.csproj", "{7C7B752C-F928-5AF7-BEA1-EF44DAC14369}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.PlatformIntegration.Tests", "studio\src\modules\Elsa.Studio.PlatformIntegration.Tests\Elsa.Studio.PlatformIntegration.Tests.csproj", "{7C7B752C-F928-5AF7-BEA1-EF44DAC14369}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.PlatformIntegration", "src\studio\modules\Elsa.Studio.PlatformIntegration\Elsa.Studio.PlatformIntegration.csproj", "{EE26BF8B-8CC3-57F2-B3B3-B45512CD3696}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.PlatformIntegration", "studio\src\modules\Elsa.Studio.PlatformIntegration\Elsa.Studio.PlatformIntegration.csproj", "{EE26BF8B-8CC3-57F2-B3B3-B45512CD3696}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Secrets", "src\studio\modules\Elsa.Studio.Secrets\Elsa.Studio.Secrets.csproj", "{B1F79687-D6C4-5D0D-ADBA-9E412A82D379}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Secrets", "studio\src\modules\Elsa.Studio.Secrets\Elsa.Studio.Secrets.csproj", "{B1F79687-D6C4-5D0D-ADBA-9E412A82D379}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Secrets.Tests", "src\studio\modules\Elsa.Studio.Secrets.Tests\Elsa.Studio.Secrets.Tests.csproj", "{A9B84F0F-1515-464D-B573-AEF52FF12E3F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Secrets.Tests", "studio\src\modules\Elsa.Studio.Secrets.Tests\Elsa.Studio.Secrets.Tests.csproj", "{A9B84F0F-1515-464D-B573-AEF52FF12E3F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Security.Tests", "src\studio\modules\Elsa.Studio.Security.Tests\Elsa.Studio.Security.Tests.csproj", "{D139293A-010B-549D-B35E-584A8B52CCD3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Security.Tests", "studio\src\modules\Elsa.Studio.Security.Tests\Elsa.Studio.Security.Tests.csproj", "{D139293A-010B-549D-B35E-584A8B52CCD3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Security", "src\studio\modules\Elsa.Studio.Security\Elsa.Studio.Security.csproj", "{08A59061-F4F5-52CD-94E6-45FC62AE0555}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Security", "studio\src\modules\Elsa.Studio.Security\Elsa.Studio.Security.csproj", "{08A59061-F4F5-52CD-94E6-45FC62AE0555}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Settings", "src\studio\modules\Elsa.Studio.Settings\Elsa.Studio.Settings.csproj", "{E9FB8763-DBB7-5572-84D7-AC4798E2810A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Settings", "studio\src\modules\Elsa.Studio.Settings\Elsa.Studio.Settings.csproj", "{E9FB8763-DBB7-5572-84D7-AC4798E2810A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.UIHints", "src\studio\modules\Elsa.Studio.UIHints\Elsa.Studio.UIHints.csproj", "{160FC161-AA46-51CA-93FD-4E552789976A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.UIHints", "studio\src\modules\Elsa.Studio.UIHints\Elsa.Studio.UIHints.csproj", "{160FC161-AA46-51CA-93FD-4E552789976A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.UserTasks.Tests", "src\studio\modules\Elsa.Studio.UserTasks.Tests\Elsa.Studio.UserTasks.Tests.csproj", "{D7F69EED-DA28-57DB-8793-8CF667E158D5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.UserTasks.Tests", "studio\src\modules\Elsa.Studio.UserTasks.Tests\Elsa.Studio.UserTasks.Tests.csproj", "{D7F69EED-DA28-57DB-8793-8CF667E158D5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.UserTasks", "src\studio\modules\Elsa.Studio.UserTasks\Elsa.Studio.UserTasks.csproj", "{4BC98BB1-4D90-5ED5-B7AC-4976A8CA3B30}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.UserTasks", "studio\src\modules\Elsa.Studio.UserTasks\Elsa.Studio.UserTasks.csproj", "{4BC98BB1-4D90-5ED5-B7AC-4976A8CA3B30}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Workflows.Core", "src\studio\modules\Elsa.Studio.Workflows.Core\Elsa.Studio.Workflows.Core.csproj", "{4584B387-7901-5211-BF24-1B63B08CB25B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Workflows.Core", "studio\src\modules\Elsa.Studio.Workflows.Core\Elsa.Studio.Workflows.Core.csproj", "{4584B387-7901-5211-BF24-1B63B08CB25B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Workflows.Dashboard", "src\studio\modules\Elsa.Studio.Workflows.Dashboard\Elsa.Studio.Workflows.Dashboard.csproj", "{FBC6C60D-D188-565D-84FF-E9038ED43F6B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Workflows.Dashboard", "studio\src\modules\Elsa.Studio.Workflows.Dashboard\Elsa.Studio.Workflows.Dashboard.csproj", "{FBC6C60D-D188-565D-84FF-E9038ED43F6B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Workflows.Designer.Tests", "src\studio\modules\Elsa.Studio.Workflows.Designer.Tests\Elsa.Studio.Workflows.Designer.Tests.csproj", "{0B686E73-A57C-55BF-9F1B-415DEF65D4C9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Workflows.Designer.Tests", "studio\src\modules\Elsa.Studio.Workflows.Designer.Tests\Elsa.Studio.Workflows.Designer.Tests.csproj", "{0B686E73-A57C-55BF-9F1B-415DEF65D4C9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Workflows.Designer", "src\studio\modules\Elsa.Studio.Workflows.Designer\Elsa.Studio.Workflows.Designer.csproj", "{49EC428F-821F-5015-9F6A-D728E446F497}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Workflows.Designer", "studio\src\modules\Elsa.Studio.Workflows.Designer\Elsa.Studio.Workflows.Designer.csproj", "{49EC428F-821F-5015-9F6A-D728E446F497}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Workflows.Tests", "src\studio\modules\Elsa.Studio.Workflows.Tests\Elsa.Studio.Workflows.Tests.csproj", "{9E69DFC3-C5F2-581D-A103-4889D3C017F0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Workflows.Tests", "studio\src\modules\Elsa.Studio.Workflows.Tests\Elsa.Studio.Workflows.Tests.csproj", "{9E69DFC3-C5F2-581D-A103-4889D3C017F0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Workflows", "src\studio\modules\Elsa.Studio.Workflows\Elsa.Studio.Workflows.csproj", "{0C1C9AA3-EB53-5088-8BA4-EB07F26DDACE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Workflows", "studio\src\modules\Elsa.Studio.Workflows\Elsa.Studio.Workflows.csproj", "{0C1C9AA3-EB53-5088-8BA4-EB07F26DDACE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Actors.ProtoActor.UnitTests", "test\extensions\modules\actors\Elsa.Actors.ProtoActor.UnitTests\Elsa.Actors.ProtoActor.UnitTests.csproj", "{3E9EE697-394E-55E7-BFA7-7B8438868C31}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Actors.ProtoActor.UnitTests", "extensions\test\modules\actors\Elsa.Actors.ProtoActor.UnitTests\Elsa.Actors.ProtoActor.UnitTests.csproj", "{3E9EE697-394E-55E7-BFA7-7B8438868C31}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Agents.Tests", "test\extensions\modules\agents\Elsa.Studio.Agents.Tests\Elsa.Studio.Agents.Tests.csproj", "{449FFF17-838E-57CD-9BEA-0F444260925B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Agents.Tests", "extensions\test\modules\agents\Elsa.Studio.Agents.Tests\Elsa.Studio.Agents.Tests.csproj", "{449FFF17-838E-57CD-9BEA-0F444260925B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Caching.Distributed.ProtoActor.IntegrationTests", "test\extensions\modules\caching\Elsa.Caching.Distributed.ProtoActor.IntegrationTests\Elsa.Caching.Distributed.ProtoActor.IntegrationTests.csproj", "{4698364A-9C39-5F2D-BB80-42FF059AFBAD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Caching.Distributed.ProtoActor.IntegrationTests", "extensions\test\modules\caching\Elsa.Caching.Distributed.ProtoActor.IntegrationTests\Elsa.Caching.Distributed.ProtoActor.IntegrationTests.csproj", "{4698364A-9C39-5F2D-BB80-42FF059AFBAD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DevOps.GitHub.UnitTests", "test\extensions\modules\devops\Elsa.DevOps.GitHub.UnitTests\Elsa.DevOps.GitHub.UnitTests.csproj", "{D3CB3AB9-1B9D-5288-86BC-5206777A6F07}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DevOps.GitHub.UnitTests", "extensions\test\modules\devops\Elsa.DevOps.GitHub.UnitTests\Elsa.DevOps.GitHub.UnitTests.csproj", "{D3CB3AB9-1B9D-5288-86BC-5206777A6F07}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Logging.Core.IntegrationTests", "test\extensions\modules\diagnostics\Elsa.Logging.Core.IntegrationTests\Elsa.Logging.Core.IntegrationTests.csproj", "{2A030437-0B5C-52B6-A2DF-80545519150B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Logging.Core.IntegrationTests", "extensions\test\modules\diagnostics\Elsa.Logging.Core.IntegrationTests\Elsa.Logging.Core.IntegrationTests.csproj", "{2A030437-0B5C-52B6-A2DF-80545519150B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Logging.Core.UnitTests", "test\extensions\modules\diagnostics\Elsa.Logging.Core.UnitTests\Elsa.Logging.Core.UnitTests.csproj", "{ABC8D11E-5114-5B7C-AA57-3ED25C02F81C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Logging.Core.UnitTests", "extensions\test\modules\diagnostics\Elsa.Logging.Core.UnitTests\Elsa.Logging.Core.UnitTests.csproj", "{ABC8D11E-5114-5B7C-AA57-3ED25C02F81C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Ldap.UnitTests", "test\extensions\modules\ldap\Elsa.Ldap.UnitTests\Elsa.Ldap.UnitTests.csproj", "{9D6797BD-F240-5A61-A93F-099329CEDE36}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Ldap.UnitTests", "extensions\test\modules\ldap\Elsa.Ldap.UnitTests\Elsa.Ldap.UnitTests.csproj", "{9D6797BD-F240-5A61-A93F-099329CEDE36}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Mqtt.UnitTests", "test\extensions\modules\mqtt\Elsa.Mqtt.UnitTests\Elsa.Mqtt.UnitTests.csproj", "{701C9CF1-577D-57C1-9C97-5BB955E5EC26}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Mqtt.UnitTests", "extensions\test\modules\mqtt\Elsa.Mqtt.UnitTests\Elsa.Mqtt.UnitTests.csproj", "{701C9CF1-577D-57C1-9C97-5BB955E5EC26}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Dapper.UnitTests", "test\extensions\modules\persistence\Elsa.Dapper.UnitTests\Elsa.Dapper.UnitTests.csproj", "{55D19E09-4468-43C7-8CE4-9C000C321D47}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Dapper.UnitTests", "extensions\test\modules\persistence\Elsa.Dapper.UnitTests\Elsa.Dapper.UnitTests.csproj", "{55D19E09-4468-43C7-8CE4-9C000C321D47}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.MongoDb.UnitTests", "test\extensions\modules\persistence\Elsa.MongoDb.UnitTests\Elsa.MongoDb.UnitTests.csproj", "{FF84CD92-DA70-5D7F-BD1F-3E9BBEC22CDE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.MongoDb.UnitTests", "extensions\test\modules\persistence\Elsa.MongoDb.UnitTests\Elsa.MongoDb.UnitTests.csproj", "{FF84CD92-DA70-5D7F-BD1F-3E9BBEC22CDE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.Dapper.UnitTests", "test\extensions\modules\persistence\Elsa.Persistence.Dapper.UnitTests\Elsa.Persistence.Dapper.UnitTests.csproj", "{90C6FC77-1B4E-5457-9019-A860AA0BA5CB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.Dapper.UnitTests", "extensions\test\modules\persistence\Elsa.Persistence.Dapper.UnitTests\Elsa.Persistence.Dapper.UnitTests.csproj", "{90C6FC77-1B4E-5457-9019-A860AA0BA5CB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Management.UnitTests", "test\extensions\modules\secrets\Elsa.Secrets.Management.UnitTests\Elsa.Secrets.Management.UnitTests.csproj", "{F7E8DAEB-246E-5DFA-BBD3-FA553BEBAC83}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Management.UnitTests", "extensions\test\modules\secrets\Elsa.Secrets.Management.UnitTests\Elsa.Secrets.Management.UnitTests.csproj", "{F7E8DAEB-246E-5DFA-BBD3-FA553BEBAC83}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Runtime.ProtoActor.UnitTests", "test\extensions\modules\runtimes\Elsa.Workflows.Runtime.ProtoActor.UnitTests\Elsa.Workflows.Runtime.ProtoActor.UnitTests.csproj", "{8B4F0408-3892-58AA-96B3-B176F86E3E12}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Runtime.ProtoActor.UnitTests", "extensions\test\modules\runtimes\Elsa.Workflows.Runtime.ProtoActor.UnitTests\Elsa.Workflows.Runtime.ProtoActor.UnitTests.csproj", "{8B4F0408-3892-58AA-96B3-B176F86E3E12}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Hangfire.UnitTests", "test\extensions\modules\scheduling\Elsa.Scheduling.Hangfire.UnitTests\Elsa.Scheduling.Hangfire.UnitTests.csproj", "{482DDEEB-9060-5D3A-B807-BB3D229C53DF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Hangfire.UnitTests", "extensions\test\modules\scheduling\Elsa.Scheduling.Hangfire.UnitTests\Elsa.Scheduling.Hangfire.UnitTests.csproj", "{482DDEEB-9060-5D3A-B807-BB3D229C53DF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Quartz.ComponentTests", "test\extensions\modules\scheduling\Elsa.Scheduling.Quartz.ComponentTests\Elsa.Scheduling.Quartz.ComponentTests.csproj", "{676B2944-9211-51BF-9510-99AC4E2A5EC9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Quartz.ComponentTests", "extensions\test\modules\scheduling\Elsa.Scheduling.Quartz.ComponentTests\Elsa.Scheduling.Quartz.ComponentTests.csproj", "{676B2944-9211-51BF-9510-99AC4E2A5EC9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Quartz.UnitTests", "test\extensions\modules\scheduling\Elsa.Scheduling.Quartz.UnitTests\Elsa.Scheduling.Quartz.UnitTests.csproj", "{3B49B160-A81E-5B7E-9856-B0F97158F06F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scheduling.Quartz.UnitTests", "extensions\test\modules\scheduling\Elsa.Scheduling.Quartz.UnitTests\Elsa.Scheduling.Quartz.UnitTests.csproj", "{3B49B160-A81E-5B7E-9856-B0F97158F06F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ServiceBus.AzureServiceBus.ComponentTests", "test\extensions\modules\servicebus\Elsa.ServiceBus.AzureServiceBus.ComponentTests\Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj", "{5FE1B417-BFB4-51BC-AA47-A10B84F178C0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ServiceBus.AzureServiceBus.ComponentTests", "extensions\test\modules\servicebus\Elsa.ServiceBus.AzureServiceBus.ComponentTests\Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj", "{5FE1B417-BFB4-51BC-AA47-A10B84F178C0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ServiceBus.MassTransit.UnitTests", "test\extensions\modules\servicebus\Elsa.ServiceBus.MassTransit.UnitTests\Elsa.ServiceBus.MassTransit.UnitTests.csproj", "{DD7BAAA5-E822-5B9C-A08B-4E2B2138488F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ServiceBus.MassTransit.UnitTests", "extensions\test\modules\servicebus\Elsa.ServiceBus.MassTransit.UnitTests\Elsa.ServiceBus.MassTransit.UnitTests.csproj", "{DD7BAAA5-E822-5B9C-A08B-4E2B2138488F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Slack.Tests", "test\extensions\modules\slack\Elsa.Slack.Tests\Elsa.Slack.Tests.csproj", "{2920ECEE-AFBC-58F9-A33B-5F0495BFADA7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Slack.Tests", "extensions\test\modules\slack\Elsa.Slack.Tests\Elsa.Slack.Tests.csproj", "{2920ECEE-AFBC-58F9-A33B-5F0495BFADA7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.TestServer.Web", "test\extensions\workbench\Elsa.TestServer.Web\Elsa.TestServer.Web.csproj", "{844E56F3-CAB4-52CE-A9D2-AEC11FABBF8A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.TestServer.Web", "extensions\test\workbench\Elsa.TestServer.Web\Elsa.TestServer.Web.csproj", "{844E56F3-CAB4-52CE-A9D2-AEC11FABBF8A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Studio.Localization.Tests", "src\studio\modules\Elsa.Studio.Localization.Tests\Elsa.Studio.Localization.Tests.csproj", "{A6E49D32-84FA-49B4-8A3C-A8868FC93023}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Studio.Localization.Tests", "studio\src\modules\Elsa.Studio.Localization.Tests\Elsa.Studio.Localization.Tests.csproj", "{A6E49D32-84FA-49B4-8A3C-A8868FC93023}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Admission", "src\modules\Elsa.Workflows.Admission\Elsa.Workflows.Admission.csproj", "{EC19826A-485C-5847-8D14-119BC8AEBE38}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Admission", "core\src\modules\Elsa.Workflows.Admission\Elsa.Workflows.Admission.csproj", "{EC19826A-485C-5847-8D14-119BC8AEBE38}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Admission.Persistence.EFCore", "src\modules\Elsa.Workflows.Admission.Persistence.EFCore\Elsa.Workflows.Admission.Persistence.EFCore.csproj", "{2D42AF8B-DD3B-54BC-B31C-15DADF162773}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Admission.Persistence.EFCore", "core\src\modules\Elsa.Workflows.Admission.Persistence.EFCore\Elsa.Workflows.Admission.Persistence.EFCore.csproj", "{2D42AF8B-DD3B-54BC-B31C-15DADF162773}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql", "src\modules\Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql\Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql.csproj", "{BB2D87B5-A09C-5C0F-8C1C-BE61710C4FCE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql", "core\src\modules\Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql\Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql.csproj", "{BB2D87B5-A09C-5C0F-8C1C-BE61710C4FCE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Apps", "Apps", "{295C9828-41EA-5AAF-8451-2A366FEF2A5E}"
 EndProject
@@ -893,6 +893,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Studio", "Studio", "{DDA3A6
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{2B827F47-FA3A-5896-9D9F-55DDB3F34787}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Mediator.UnitTests", "core\test\unit\Elsa.Mediator.UnitTests\Elsa.Mediator.UnitTests.csproj", "{C238743E-049D-5073-9E1B-B1CF948A3630}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Connections.Credentials.WorkerProcess", "core\test\workers\Elsa.Connections.Credentials.WorkerProcess\Elsa.Connections.Credentials.WorkerProcess.csproj", "{2C128905-26F8-57CB-821A-00B32347DEC7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Admission.WorkerProcess", "core\test\workers\Elsa.Workflows.Admission.WorkerProcess\Elsa.Workflows.Admission.WorkerProcess.csproj", "{1777ADAF-28FB-516D-BB81-A3A6E98C1EE7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -903,6 +909,42 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C238743E-049D-5073-9E1B-B1CF948A3630}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C238743E-049D-5073-9E1B-B1CF948A3630}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C238743E-049D-5073-9E1B-B1CF948A3630}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C238743E-049D-5073-9E1B-B1CF948A3630}.Debug|x64.Build.0 = Debug|Any CPU
+		{C238743E-049D-5073-9E1B-B1CF948A3630}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C238743E-049D-5073-9E1B-B1CF948A3630}.Debug|x86.Build.0 = Debug|Any CPU
+		{C238743E-049D-5073-9E1B-B1CF948A3630}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C238743E-049D-5073-9E1B-B1CF948A3630}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C238743E-049D-5073-9E1B-B1CF948A3630}.Release|x64.ActiveCfg = Release|Any CPU
+		{C238743E-049D-5073-9E1B-B1CF948A3630}.Release|x64.Build.0 = Release|Any CPU
+		{C238743E-049D-5073-9E1B-B1CF948A3630}.Release|x86.ActiveCfg = Release|Any CPU
+		{C238743E-049D-5073-9E1B-B1CF948A3630}.Release|x86.Build.0 = Release|Any CPU
+		{2C128905-26F8-57CB-821A-00B32347DEC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C128905-26F8-57CB-821A-00B32347DEC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C128905-26F8-57CB-821A-00B32347DEC7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2C128905-26F8-57CB-821A-00B32347DEC7}.Debug|x64.Build.0 = Debug|Any CPU
+		{2C128905-26F8-57CB-821A-00B32347DEC7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2C128905-26F8-57CB-821A-00B32347DEC7}.Debug|x86.Build.0 = Debug|Any CPU
+		{2C128905-26F8-57CB-821A-00B32347DEC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C128905-26F8-57CB-821A-00B32347DEC7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C128905-26F8-57CB-821A-00B32347DEC7}.Release|x64.ActiveCfg = Release|Any CPU
+		{2C128905-26F8-57CB-821A-00B32347DEC7}.Release|x64.Build.0 = Release|Any CPU
+		{2C128905-26F8-57CB-821A-00B32347DEC7}.Release|x86.ActiveCfg = Release|Any CPU
+		{2C128905-26F8-57CB-821A-00B32347DEC7}.Release|x86.Build.0 = Release|Any CPU
+		{1777ADAF-28FB-516D-BB81-A3A6E98C1EE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1777ADAF-28FB-516D-BB81-A3A6E98C1EE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1777ADAF-28FB-516D-BB81-A3A6E98C1EE7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1777ADAF-28FB-516D-BB81-A3A6E98C1EE7}.Debug|x64.Build.0 = Debug|Any CPU
+		{1777ADAF-28FB-516D-BB81-A3A6E98C1EE7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1777ADAF-28FB-516D-BB81-A3A6E98C1EE7}.Debug|x86.Build.0 = Debug|Any CPU
+		{1777ADAF-28FB-516D-BB81-A3A6E98C1EE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1777ADAF-28FB-516D-BB81-A3A6E98C1EE7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1777ADAF-28FB-516D-BB81-A3A6E98C1EE7}.Release|x64.ActiveCfg = Release|Any CPU
+		{1777ADAF-28FB-516D-BB81-A3A6E98C1EE7}.Release|x64.Build.0 = Release|Any CPU
+		{1777ADAF-28FB-516D-BB81-A3A6E98C1EE7}.Release|x86.ActiveCfg = Release|Any CPU
+		{1777ADAF-28FB-516D-BB81-A3A6E98C1EE7}.Release|x86.Build.0 = Release|Any CPU
 		{EC19826A-485C-5847-8D14-119BC8AEBE38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{EC19826A-485C-5847-8D14-119BC8AEBE38}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EC19826A-485C-5847-8D14-119BC8AEBE38}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -5130,6 +5172,9 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{C238743E-049D-5073-9E1B-B1CF948A3630} = {90031D64-CA0F-46D0-9AF4-8DC023A5FFCD}
+		{2C128905-26F8-57CB-821A-00B32347DEC7} = {90031D64-CA0F-46D0-9AF4-8DC023A5FFCD}
+		{1777ADAF-28FB-516D-BB81-A3A6E98C1EE7} = {90031D64-CA0F-46D0-9AF4-8DC023A5FFCD}
 		{C9539BD8-D2AE-4A8D-8281-71A05B3FBF31} = {B27B69E2-04E7-52FF-93BB-7E607D917C02}
 		{169E2C9B-6687-427F-A278-30BF849BFEDC} = {B27B69E2-04E7-52FF-93BB-7E607D917C02}
 		{2DD5D66B-85E9-4AF9-911C-C9F963234159} = {B27B69E2-04E7-52FF-93BB-7E607D917C02}

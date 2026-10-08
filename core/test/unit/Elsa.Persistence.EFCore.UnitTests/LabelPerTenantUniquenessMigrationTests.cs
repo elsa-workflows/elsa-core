@@ -79,7 +79,7 @@ public class LabelPerTenantUniquenessMigrationTests
     private static string FindMigration(string providerProject)
     {
         var repoRoot = FindRepoRoot();
-        var labelsDir = Path.Combine(repoRoot, "src", "modules", providerProject, "Migrations", "Labels");
+        var labelsDir = Path.Combine(repoRoot, "core", "src", "modules", providerProject, "Migrations", "Labels");
         var path = Directory.GetFiles(labelsDir, "*PerTenantLabelUniqueness.cs")
             .Single(file => !file.EndsWith(".Designer.cs", StringComparison.Ordinal));
         return File.ReadAllText(path);

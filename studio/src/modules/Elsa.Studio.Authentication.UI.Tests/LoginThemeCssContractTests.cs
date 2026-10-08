@@ -162,7 +162,7 @@ public sealed class LoginThemeCssContractTests
             if (File.Exists(standalonePath))
                 return File.ReadAllText(standalonePath);
 
-            var consolidatedPath = Path.Combine([current.FullName, "src", "studio", .. pathSegments[1..]]);
+            var consolidatedPath = Path.Combine([current.FullName, "studio", "src", .. pathSegments[1..]]);
             if (File.Exists(consolidatedPath))
                 return File.ReadAllText(consolidatedPath);
         }

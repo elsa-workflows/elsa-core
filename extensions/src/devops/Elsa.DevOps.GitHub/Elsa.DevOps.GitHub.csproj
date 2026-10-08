@@ -12,11 +12,11 @@
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="../../../modules/Elsa/Elsa.csproj" />
+        <ProjectReference Include="../../../../core/src/modules/Elsa/Elsa.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <ProjectReference Include="../../../modules/Elsa/Elsa.csproj" />
+        <ProjectReference Include="../../../../core/src/modules/Elsa/Elsa.csproj" />
     </ItemGroup>
 
 </Project>

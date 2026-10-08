@@ -72,7 +72,7 @@ public class SecretDefaultTenantUniquenessMigrationTests
             throw new ArgumentException("Provider project must be a relative path.", nameof(providerProject));
 
         var repoRoot = FindRepoRoot();
-        var secretsDir = Path.Combine(repoRoot, "src", "modules", providerProject, "Migrations", "Secrets");
+        var secretsDir = Path.Combine(repoRoot, "core", "src", "modules", providerProject, "Migrations", "Secrets");
         var path = Directory.GetFiles(secretsDir, "*SecretDefaultTenantUniqueness.cs")
             .Single(file => !file.EndsWith(".Designer.cs", StringComparison.Ordinal));
         return File.ReadAllText(path);

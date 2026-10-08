@@ -19,17 +19,17 @@
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <ProjectReference Include="../../../modules/Elsa.Alterations/Elsa.Alterations.csproj" />
-        <ProjectReference Include="../../../modules/Elsa.Identity/Elsa.Identity.csproj"/>
-        <ProjectReference Include="../../../modules/Elsa.Labels/Elsa.Labels.csproj"/>
-        <ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj"/>
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Alterations/Elsa.Alterations.csproj" />
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Identity/Elsa.Identity.csproj"/>
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Labels/Elsa.Labels.csproj"/>
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj"/>
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="../../../modules/Elsa.Alterations/Elsa.Alterations.csproj" />
-        <ProjectReference Include="../../../modules/Elsa.Identity/Elsa.Identity.csproj"/>
-        <ProjectReference Include="../../../modules/Elsa.Labels/Elsa.Labels.csproj"/>
-        <ProjectReference Include="../../../modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj"/>
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Alterations/Elsa.Alterations.csproj" />
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Identity/Elsa.Identity.csproj"/>
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Labels/Elsa.Labels.csproj"/>
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj"/>
     </ItemGroup>
 
 </Project>

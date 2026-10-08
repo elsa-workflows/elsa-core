@@ -6,11 +6,11 @@
 	</PropertyGroup>
 	
 	<ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-		<ProjectReference Include="../../../common/Elsa.Api.Common/Elsa.Api.Common.csproj" />
+		<ProjectReference Include="../../../../core/src/common/Elsa.Api.Common/Elsa.Api.Common.csproj" />
 	</ItemGroup>
 
 	<ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-		<ProjectReference Include="../../../common/Elsa.Api.Common/Elsa.Api.Common.csproj" />
+		<ProjectReference Include="../../../../core/src/common/Elsa.Api.Common/Elsa.Api.Common.csproj" />
 	</ItemGroup>
 	
 	<ItemGroup>

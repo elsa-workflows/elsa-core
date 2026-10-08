@@ -22,11 +22,11 @@
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="../../../modules/Elsa.Persistence.EFCore.MySql/Elsa.Persistence.EFCore.MySql.csproj" />
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Persistence.EFCore.MySql/Elsa.Persistence.EFCore.MySql.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
-        <ProjectReference Include="../../../modules/Elsa.Persistence.EFCore.MySql/Elsa.Persistence.EFCore.MySql.csproj" />
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Persistence.EFCore.MySql/Elsa.Persistence.EFCore.MySql.csproj" />
     </ItemGroup>
 
 </Project>

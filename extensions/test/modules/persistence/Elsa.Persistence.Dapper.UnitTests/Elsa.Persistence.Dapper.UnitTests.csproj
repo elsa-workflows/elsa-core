@@ -13,8 +13,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="../../../../../src/modules/Elsa/Elsa.csproj" />
-        <ProjectReference Include="../../../../../src/extensions/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj" />
+        <ProjectReference Include="../../../../../core/src/modules/Elsa/Elsa.csproj" />
+        <ProjectReference Include="../../../../src/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj" />
     </ItemGroup>
 
 </Project>

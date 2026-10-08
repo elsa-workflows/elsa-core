@@ -7,7 +7,7 @@
 	<ItemGroup>
 	  <PackageReference Include="Testcontainers.MongoDb" />
 	  <PackageReference Include="SSH.NET" PrivateAssets="All"/>
-	  <ProjectReference Include="../../../../../src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj" />
+	  <ProjectReference Include="../../../../src/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj" />
 	</ItemGroup>
 	
 </Project>

@@ -603,7 +603,7 @@ public class DefaultDashboardProviderTests
     [Fact]
     public void DashboardApiProject_DoesNotReferenceWorkflowOrDiagnosticsModules()
     {
-        var projectFile = FindRepositoryRoot().Combine("src/modules/Elsa.Dashboard.Api/Elsa.Dashboard.Api.csproj");
+        var projectFile = FindRepositoryRoot().Combine("core/src/modules/Elsa.Dashboard.Api/Elsa.Dashboard.Api.csproj");
         var project = File.ReadAllText(projectFile);
 
         Assert.DoesNotContain("Elsa.Workflows", project);
@@ -617,9 +617,9 @@ public class DefaultDashboardProviderTests
         var root = FindRepositoryRoot();
         var ownerProjects = new[]
         {
-            "src/modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj",
-            "src/modules/Elsa.Diagnostics.ConsoleLogs/Elsa.Diagnostics.ConsoleLogs.csproj",
-            "src/modules/Elsa.Diagnostics.StructuredLogs/Elsa.Diagnostics.StructuredLogs.csproj"
+            "core/src/modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj",
+            "core/src/modules/Elsa.Diagnostics.ConsoleLogs/Elsa.Diagnostics.ConsoleLogs.csproj",
+            "core/src/modules/Elsa.Diagnostics.StructuredLogs/Elsa.Diagnostics.StructuredLogs.csproj"
         };
 
         foreach (var ownerProject in ownerProjects)
