@@ -43,12 +43,14 @@ class CandidateClockContracts(unittest.TestCase):
             future_clock = execution.executor.datetime
             suite = unittest.TestSuite([
                 execution.FullInventoryTests("test_verify_missing_is_complete_observation_not_release_acceptance"),
+                execution.AdmissionTests("test_native_approval_and_exact_preexisting_policy"),
+                execution.AdmissionTests("test_preschedule_requires_policy_but_not_future_approval"),
                 approvals.SummaryTests("test_complete_missing_observation_reports_actual_668_and_immutable_bindings"),
                 stable.StableAdapterContracts("test_two_package_scope_and_distinct_execution_identity"),
             ])
             output = io.StringIO()
             result = unittest.TextTestRunner(stream=output).run(suite)
-            self.assertEqual(result.testsRun, 3)
+            self.assertEqual(result.testsRun, 5)
             self.assertTrue(result.wasSuccessful(), output.getvalue())
             self.assertFalse(result.skipped)
             for module in modules:

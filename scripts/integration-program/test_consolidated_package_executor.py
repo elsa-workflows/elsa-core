@@ -525,6 +525,7 @@ class FakeApi:
 
 class AdmissionTests(unittest.TestCase):
     def setUp(self):
+        install_candidate_clock(self, executor, executor.candidate_input.candidate)
         self.policy = {"environment_id": 11, "reviewer_rule_id": 12, "branch_rule_id": 15, "reviewer_ids": [13],
                        "branch_policies": [{"id": 14, "type": "branch", "name": "main"}],
                        "allowed_ref": "refs/heads/main", "operational_packet_sha256": "a"*64}
@@ -601,6 +602,14 @@ class AdmissionTests(unittest.TestCase):
         self.assertFalse(any("/secrets?" in path or "/organization-secrets?" in path for path in self.api.calls))
         with self.assertRaisesRegex(executor.ExecutorError, "native_approval_missing"):
             self.admit()
+
+    def test_historical_expiry_blocks_admission_before_environment_or_approval(self):
+        for publish in (False, True):
+            self.api.calls.clear()
+            with self.subTest(publish=publish), candidate_clock(executor.candidate_input.candidate, at=AFTER_EXPIRY), \
+                    self.assertRaisesRegex(executor.ExecutorError, "^candidate_unavailable_or_changed$"):
+                self.admit(publish=publish)
+            self.assertEqual(self.api.calls, [self.run, self.prefix+f"/actions/artifacts/{executor.candidate_input.ARTIFACT}"])
 
     def test_wrong_runtime_and_rerun_never_reuse_approval(self):
         for field, value in (("GITHUB_RUN_ATTEMPT", "2"), ("GITHUB_REF", "refs/heads/other"),
