@@ -75,6 +75,7 @@ public sealed class AdmissionSubscription
     public string ConfigurationJson { get; set; } = null!;
     public string ConfigurationFingerprint { get; set; } = null!;
     public long Revision { get; set; }
+    public long ActivationEpoch { get; set; }
     public bool Active { get; set; }
     public bool Retired { get; set; }
     public bool BootstrapVerified { get; set; }
@@ -96,6 +97,7 @@ public sealed class AdmissionRecord
     public string? ProviderEventId { get; set; }
     public string? Payload { get; set; }
     public string ConfigurationFingerprint { get; set; } = null!;
+    public long ActivationEpoch { get; set; }
     public DateTimeOffset AdmittedAt { get; set; }
     public DateTimeOffset EventOccurredAt { get; set; }
     public long Revision { get; set; }
@@ -106,6 +108,7 @@ public sealed class AdmissionRecord
     public string? CheckpointFingerprint { get; set; }
     public string? BookmarkIdsJson { get; set; }
     public string? RecoveryCode { get; set; }
+    public string? AuditReference { get; set; }
     public AdmissionTerminalDisposition? TerminalDisposition { get; set; }
     public DateTimeOffset? TerminalAt { get; set; }
     public bool ActiveReservationReleased { get; set; }

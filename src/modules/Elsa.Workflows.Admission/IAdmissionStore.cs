@@ -64,6 +64,11 @@ public interface IAdmissionStore
 /// <summary>Selected EF bootstrap insert seam. Publication/indexing remains a separate audited boundary.</summary>
 public interface IAdmissionDefinitionBootstrapStore
 {
+    /// <summary>Selected-provider session lock covering logical definition and trusted subscription, including cross-subscription definition contention.</summary>
+    Task<IAsyncDisposable> AcquireExclusiveAsync(AdmissionSubscriptionConfiguration configuration, CancellationToken cancellationToken = default);
     /// <summary>Insert fixed definition atomically if absent or verify exact tenant/id/version/content; never upsert.</summary>
-    Task InsertOrVerifyAsync(Elsa.Workflows.Management.Entities.WorkflowDefinition definition, string contentFingerprint, CancellationToken cancellationToken = default);
+    Task<AdmissionDefinitionInsertOutcome> InsertOrVerifyAsync(Elsa.Workflows.Management.Entities.WorkflowDefinition definition, string contentFingerprint, CancellationToken cancellationToken = default);
 }
+
+/// <summary>Definite insert outcome; ExistingMatch alone never permits publication or saved-notification replay.</summary>
+public enum AdmissionDefinitionInsertOutcome { Inserted, ExistingMatch }
