@@ -1,6 +1,6 @@
 # PostgreSQL provider for Connections lifecycle state
 
-The pilot PostgreSQL provider is `Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql`. It registers PostgreSQL persistence for the existing `ConnectionsElsaDbContext` and lifecycle/binding stores; it does not add a second connection model or secret store. The project follows the normal Core module packaging convention as part of the seven selected Admission/Connections identities. Package enablement is not publication or package-consumer acceptance; see the [package support and setup baseline](../../guides/admission-connections-packages.md).
+The pilot PostgreSQL provider is `Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql`. It registers PostgreSQL persistence for the existing `ConnectionsElsaDbContext` and lifecycle/binding stores; it does not add a second connection model or secret store. The project follows the normal Core module packaging convention as part of the seven selected Admission/Connections identities. Package enablement is not publication or package-consumer acceptance; see the [package support and setup baseline](../../../core/docs/guides/admission-connections-packages.md).
 
 ## Provider and migration scope
 

@@ -69,7 +69,7 @@ Key files:
 
 ## Correlation IDs And Activation Strategies
 
-`CorrelationId` groups and routes instances. It is not a unique identity unless the workflow opts into an activation strategy. The decision is recorded in [Refuse duplicate running instances through activation strategies](../adr/2026-09-15-correlated-workflow-activation.md).
+`CorrelationId` groups and routes instances. It is not a unique identity unless the workflow opts into an activation strategy. The decision is recorded in [Refuse duplicate running instances through activation strategies](../../../docs/adr/2026-09-15-correlated-workflow-activation.md).
 
 | Strategy | Running-instance uniqueness | Blank `CorrelationId` |
 | --- | --- | --- |
@@ -173,7 +173,7 @@ Recent graceful shutdown work added node-local quiescence and drain concepts. So
 - [InterruptedRecoveryScanner](../../src/modules/Elsa.Workflows.Runtime/Services/InterruptedRecoveryScanner.cs)
 - [RecoverInterruptedWorkflowsStartupTask](../../src/modules/Elsa.Workflows.Runtime/StartupTasks/RecoverInterruptedWorkflowsStartupTask.cs)
 
-The design intent is captured in [specs/002-graceful-shutdown/plan.md](../../specs/002-graceful-shutdown/plan.md).
+The design intent is captured in [specs/002-graceful-shutdown/plan.md](../specs/002-graceful-shutdown/plan.md).
 
 Ingress source adapters are currently registered by modules such as HTTP and Scheduling so the runtime can pause external event intake during drain.
 

@@ -102,8 +102,8 @@ Events pass through `IStructuredLogRedactor` before buffering or streaming. Conf
 
 Durable SQLite storage is available through the relational and SQLite packages:
 
-- design plan: [specs/005-structured-log-persistence/plan.md](../../specs/005-structured-log-persistence/plan.md)
-- quickstart: [specs/005-structured-log-persistence/quickstart.md](../../specs/005-structured-log-persistence/quickstart.md)
+- design plan: [specs/005-structured-log-persistence/plan.md](../specs/005-structured-log-persistence/plan.md)
+- quickstart: [specs/005-structured-log-persistence/quickstart.md](../specs/005-structured-log-persistence/quickstart.md)
 - relational package: [Elsa.Diagnostics.StructuredLogs.Persistence.Relational](../../src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational)
 - SQLite package: [Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite](../../src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite)
 

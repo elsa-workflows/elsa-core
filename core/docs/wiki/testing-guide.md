@@ -8,10 +8,10 @@ The detailed internal testing strategy is [doc/qa/test-guidelines.md](../qa/test
 
 | Folder | Purpose |
 | --- | --- |
-| [test/unit](../../test/unit) | Isolated services, activities, converters, stores, validators, descriptors, and small logic. |
-| [test/integration](../../test/integration) | In-process composition of workflow engine services, expressions, activities, runtime behavior, and module integration. |
-| [test/component](../../test/component) | Host-level workflows, persistence-backed scenarios, HTTP workflows, clustered behavior, and lifecycle behavior. |
-| [test/performance](../../test/performance) | Benchmark and throughput scenarios. |
+| [core/test/unit](../../test/unit) | Isolated services, activities, converters, stores, validators, descriptors, and small logic. |
+| [core/test/integration](../../test/integration) | In-process composition of workflow engine services, expressions, activities, runtime behavior, and module integration. |
+| [core/test/component](../../test/component) | Host-level workflows, persistence-backed scenarios, HTTP workflows, clustered behavior, and lifecycle behavior. |
+| [core/test/performance](../../test/performance) | Benchmark and throughput scenarios. |
 
 Shared helpers:
 
@@ -68,17 +68,17 @@ Run the NUKE test target after the resilient restore:
 Run targeted projects:
 
 ```bash
-dotnet restore test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --ignore-failed-sources
-dotnet test test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --no-restore
+dotnet restore core/test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --ignore-failed-sources
+dotnet test core/test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --no-restore
 
-dotnet restore test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj --ignore-failed-sources
-dotnet test test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj --no-restore
+dotnet restore core/test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj --ignore-failed-sources
+dotnet test core/test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj --no-restore
 
-dotnet restore test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj --ignore-failed-sources
-dotnet test test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj --no-restore
+dotnet restore core/test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj --ignore-failed-sources
+dotnet test core/test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj --no-restore
 
-dotnet restore test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj --ignore-failed-sources
-dotnet test test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj --no-restore
+dotnet restore core/test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj --ignore-failed-sources
+dotnet test core/test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj --no-restore
 ```
 
 Run ElsaScript DSL tests:
@@ -93,8 +93,8 @@ Use `ActivityTestFixture` from [Elsa.Testing.Shared](../../src/common/Elsa.Testi
 
 Examples live in:
 
-- [test/unit/Elsa.Activities.UnitTests](../../test/unit/Elsa.Activities.UnitTests)
-- [test/unit/Elsa.Workflows.Core.UnitTests](../../test/unit/Elsa.Workflows.Core.UnitTests)
+- [core/test/unit/Elsa.Activities.UnitTests](../../test/unit/Elsa.Activities.UnitTests)
+- [core/test/unit/Elsa.Workflows.Core.UnitTests](../../test/unit/Elsa.Workflows.Core.UnitTests)
 
 ## Workflow Integration Tests
 
@@ -102,9 +102,9 @@ Use integration helpers when activity behavior depends on workflow runner behavi
 
 Examples:
 
-- [test/integration/Elsa.Workflows.IntegrationTests](../../test/integration/Elsa.Workflows.IntegrationTests)
-- [test/integration/Elsa.Activities.IntegrationTests](../../test/integration/Elsa.Activities.IntegrationTests)
-- [test/integration/Elsa.JavaScript.IntegrationTests](../../test/integration/Elsa.JavaScript.IntegrationTests)
+- [core/test/integration/Elsa.Workflows.IntegrationTests](../../test/integration/Elsa.Workflows.IntegrationTests)
+- [core/test/integration/Elsa.Activities.IntegrationTests](../../test/integration/Elsa.Activities.IntegrationTests)
+- [core/test/integration/Elsa.JavaScript.IntegrationTests](../../test/integration/Elsa.JavaScript.IntegrationTests)
 
 ## Component Tests
 
@@ -123,10 +123,10 @@ Use component tests when host lifecycle, HTTP server behavior, actual persistenc
 
 Structured log tests are split by layer:
 
-- [test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests](../../test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests)
-- [test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests](../../test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests)
-- [test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests](../../test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests)
-- [test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests](../../test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests)
+- [core/test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests](../../test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests)
+- [core/test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests](../../test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests)
+- [core/test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests](../../test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests)
+- [core/test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests](../../test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests)
 
 This mirrors the architecture: core capture and API behavior should not require SQLite; SQLite tests should prove durability, migrations, retention, timestamp storage, queue overflow, and filtering.
 
@@ -134,8 +134,8 @@ This mirrors the architecture: core capture and API behavior should not require 
 
 Console log tests are split by layer:
 
-- [test/unit/Elsa.Diagnostics.ConsoleLogs.UnitTests](../../test/unit/Elsa.Diagnostics.ConsoleLogs.UnitTests): capture, filtering, redaction, buffering, source registry, and naming.
-- [test/integration/Elsa.Diagnostics.ConsoleLogs.IntegrationTests](../../test/integration/Elsa.Diagnostics.ConsoleLogs.IntegrationTests): module registration, endpoint authorization, SignalR hub, and recent query behavior.
+- [core/test/unit/Elsa.Diagnostics.ConsoleLogs.UnitTests](../../test/unit/Elsa.Diagnostics.ConsoleLogs.UnitTests): capture, filtering, redaction, buffering, source registry, and naming.
+- [core/test/integration/Elsa.Diagnostics.ConsoleLogs.IntegrationTests](../../test/integration/Elsa.Diagnostics.ConsoleLogs.IntegrationTests): module registration, endpoint authorization, SignalR hub, and recent query behavior.
 
 Run targeted console log tests when touching `Elsa.Diagnostics.ConsoleLogs`.
 

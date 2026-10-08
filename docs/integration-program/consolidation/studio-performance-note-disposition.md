@@ -5,7 +5,7 @@ Program #8194; story #8286. At Studio commit
 `PERFORMANCE_OPTIMIZATIONS.md` is Git blob
 `c6e96edb95815e591c0f3c092c5a2c8442220a58`, mode `100644`. Its active
 documentation destination is
-[`doc/studio/history/performance-optimizations-develop-3.6.md`](../../studio/history/performance-optimizations-develop-3.6.md),
+[`doc/studio/history/performance-optimizations-develop-3.6.md`](../../../studio/docs/history/performance-optimizations-develop-3.6.md),
 with exactly the same bytes and mode. The original path remains in the draft
 history import as an inert `.source` copy until the final import is accepted.
 

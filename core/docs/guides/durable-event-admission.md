@@ -1,6 +1,6 @@
 # Configure and operate isolated durable event admission
 
-This transport-independent boundary is for one reviewed in-process LocalWorkflowRuntime host with PostgreSQL admission and normal workflow definition/instance/runtime persistence. It is an offline implementation foundation, not a live Slack connection or Socket Mode acknowledgement adapter. See the [decision and guarantees](../adr/2026-10-08-durable-event-admission-and-isolated-execution.md).
+This transport-independent boundary is for one reviewed in-process LocalWorkflowRuntime host with PostgreSQL admission and normal workflow definition/instance/runtime persistence. It is an offline implementation foundation, not a live Slack connection or Socket Mode acknowledgement adapter. See the [decision and guarantees](../../../docs/adr/2026-10-08-durable-event-admission-and-isolated-execution.md).
 
 ## Prepare the host
 

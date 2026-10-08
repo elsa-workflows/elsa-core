@@ -6,7 +6,7 @@ The source of truth is still the code, specs, ADRs, and tests. Each page links b
 
 ## Start Here
 
-Elsa Core is a modular .NET workflow engine. The main solution is [Elsa.sln](../../Elsa.sln). Production code lives under [src](../../src), tests under [test](../../test), specifications under [specs](../../specs), and architecture decisions under [doc/adr](../adr).
+Elsa Core is a modular .NET workflow engine. The main solution is [Elsa.sln](../../../Elsa.sln). Core production code lives under [core/src](../../src), tests under [core/test](../../test), specifications under [Core specifications](../specs), and architecture decisions under [shared ADRs](../../../docs/adr).
 
 The shortest mental model:
 
@@ -67,7 +67,7 @@ flowchart LR
 - Runtime feature: [src/modules/Elsa.Workflows.Runtime/Features/WorkflowRuntimeFeature.cs](../../src/modules/Elsa.Workflows.Runtime/Features/WorkflowRuntimeFeature.cs)
 - API feature: [src/modules/Elsa.Workflows.Api/Features/WorkflowsApiFeature.cs](../../src/modules/Elsa.Workflows.Api/Features/WorkflowsApiFeature.cs)
 - Reference server: [src/apps/Elsa.Server.Web/Program.cs](../../src/apps/Elsa.Server.Web/Program.cs)
-- Structured-log persistence design: [specs/005-structured-log-persistence/plan.md](../../specs/005-structured-log-persistence/plan.md)
+- Structured-log persistence design: [specs/005-structured-log-persistence/plan.md](../specs/005-structured-log-persistence/plan.md)
 
 ## Contributor Workflow
 

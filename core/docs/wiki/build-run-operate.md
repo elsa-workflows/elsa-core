@@ -39,8 +39,8 @@ dotnet test Elsa.sln --no-restore
 Targeted test project:
 
 ```bash
-dotnet restore test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --ignore-failed-sources
-dotnet test test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --no-restore
+dotnet restore core/test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --ignore-failed-sources
+dotnet test core/test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --no-restore
 ```
 
 ElsaScript DSL tests:
@@ -51,19 +51,19 @@ ElsaScript DSL tests:
 
 ## Build System
 
-The NUKE build lives in [build/Build.cs](../../build/Build.cs). It defines clean, restore, compile, test, and package behavior through NUKE components. Test projects are discovered as solution projects whose names end with `Tests`.
+The NUKE build lives in [build/Build.cs](../../../build/Build.cs). It defines clean, restore, compile, test, and package behavior through NUKE components. Test projects are discovered as solution projects whose names end with `Tests`.
 
-Source projects multi-target `net8.0`, `net9.0`, and `net10.0` through [src/Directory.Build.props](../../src/Directory.Build.props). Central package versions are in [Directory.Packages.props](../../Directory.Packages.props), including conditional version blocks for .NET 8/9 and .NET 10.
+Source projects multi-target `net8.0`, `net9.0`, and `net10.0` through [core/src/Directory.Build.props](../../src/Directory.Build.props). Central package versions are in [Directory.Packages.props](../../../Directory.Packages.props), including conditional version blocks for .NET 8/9 and .NET 10.
 
 ## Run The Reference Server
 
-The main sample host is [src/apps/Elsa.Server.Web](../../src/apps/Elsa.Server.Web). It wires most major modules in [Program.cs](../../src/apps/Elsa.Server.Web/Program.cs).
+The main sample host is [core/src/apps/Elsa.Server.Web](../../src/apps/Elsa.Server.Web). It wires most major modules in [Program.cs](../../src/apps/Elsa.Server.Web/Program.cs).
 
 Restore the project and run it with:
 
 ```bash
-dotnet restore src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj --ignore-failed-sources
-dotnet run --project src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj --no-restore
+dotnet restore core/src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj --ignore-failed-sources
+dotnet run --project core/src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj --no-restore
 ```
 
 Notable toggles in `Program.cs`:
@@ -80,7 +80,7 @@ When running outside the explicit `Development` or `Demo` environments, configur
 
 ## Docker Quick Try
 
-The root [README](../../README.md) documents the public Docker quick start:
+The root [README](../../../README.md) documents the public Docker quick start:
 
 ```bash
 docker pull elsaworkflows/elsa-server-and-studio-v3:latest
@@ -157,7 +157,7 @@ Structured logs options include recent log capacity, query size, source heartbea
 
 - Prefer targeted builds/tests while iterating.
 - Use `rg` to find feature registration and endpoint routes.
-- Keep package version changes centralized in [Directory.Packages.props](../../Directory.Packages.props).
+- Keep package version changes centralized in [Directory.Packages.props](../../../Directory.Packages.props).
 - Avoid provider-specific assumptions in core modules.
 - When changing middleware, verify both code-first host setup and shell-feature setup if applicable.
 

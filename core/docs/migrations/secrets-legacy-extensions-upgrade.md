@@ -74,7 +74,7 @@ guide does not apply; see [Secrets become tenant-scoped](secrets-tenancy.md) ins
 4. Update workflows. Replace an expression such as `return secrets.getMySecretAsync();` with
    `return getSecret("my-secret");`, or pick the secret in a Secret-typed input. Inside an `async` function in a
    larger script, `await getSecret("my-secret")` works too
-   ([scripting compatibility](../integration-program/secrets-scripting-compatibility.md)). Publish and run each changed workflow against the new host.
+   ([scripting compatibility](../../../docs/integration-program/secrets-scripting-compatibility.md)). Publish and run each changed workflow against the new host.
 5. Update API clients to the name-based routes. Clients that cannot stop using row IDs or the plaintext route
    stay on the legacy host until they can.
 6. When every workflow and client runs against Core, retire the legacy host. Keep its database and key ring until

@@ -7,7 +7,7 @@ remain under `doc/integration-program/legacy/studio/` for provenance.
 
 | Studio source path | Pinned blob and mode | Active Core representation |
 | --- | --- | --- |
-| `README.md` | `d1b23bc8d67e931e311c43d06a9a0b10b7cde101`, `100644` | [Studio source and local development guide](../../studio/README.md), blob `1bcbeee61947bc6b56b79a5d8a9b97d9a83252e7`, `100644`; introduced in draft-import child PR [#8459](https://github.com/elsa-workflows/elsa-core/pull/8459), merge commit `c01f9c53f07a3db6ec48b15ea97e784272363df9`. |
+| `README.md` | `d1b23bc8d67e931e311c43d06a9a0b10b7cde101`, `100644` | [Studio source and local development guide](../../../studio/docs/README.md), blob `1bcbeee61947bc6b56b79a5d8a9b97d9a83252e7`, `100644`; introduced in draft-import child PR [#8459](https://github.com/elsa-workflows/elsa-core/pull/8459), merge commit `c01f9c53f07a3db6ec48b15ea97e784272363df9`. |
 | `.dockerignore` | `38bece4e1ed9968d70beb5815ba4dcead8b592d5`, `100644` | Root [`.dockerignore`](../../../.dockerignore), blob `9fd202e8fac99839317ea15a5b6a9fe600081ab6`, `100644`; introduced by [#8461](https://github.com/elsa-workflows/elsa-core/pull/8461), merge commit `eab0bbf825ff42f4e7ba344dfdf0ae2fd9f094c0`. |
 
 The initial source-tip verification was at Studio main

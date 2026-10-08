@@ -8,10 +8,10 @@ Both source paths are regular files (`100644`) at that commit.
 
 | Studio source path | Active Core path | Git blob | Disposition |
 | --- | --- | --- | --- |
-| `.interface-design/system.md` | [`doc/studio/design/system.md`](../../studio/design/system.md) | `3a5059c6d654e2ab51a46884638effa3625f1b4c` | Retained verbatim as the approved 2026-09-01 Studio design baseline. |
-| `.github/RELEASE_NOTES_3.6.0-rc1.md` | [`doc/studio/releases/3.6.0-rc1.md`](../../studio/releases/3.6.0-rc1.md) | `4b3251bdcbe0fd58aad3ff2b2e1f06fa79f28107` | Archived verbatim as historical 3.6.0-rc1 notes, never current release instructions. |
+| `.interface-design/system.md` | [`doc/studio/design/system.md`](../../../studio/docs/design/system.md) | `3a5059c6d654e2ab51a46884638effa3625f1b4c` | Retained verbatim as the approved 2026-09-01 Studio design baseline. |
+| `.github/RELEASE_NOTES_3.6.0-rc1.md` | [`doc/studio/releases/3.6.0-rc1.md`](../../../studio/docs/releases/3.6.0-rc1.md) | `4b3251bdcbe0fd58aad3ff2b2e1f06fa79f28107` | Archived verbatim as historical 3.6.0-rc1 notes, never current release instructions. |
 
-The active [Studio documentation index](../../studio/README.md) distinguishes
+The active [Studio documentation index](../../../studio/docs/README.md) distinguishes
 those roles. Verify the copies without requiring a second Studio checkout:
 
 ```sh

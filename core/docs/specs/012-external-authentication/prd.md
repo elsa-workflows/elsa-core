@@ -6,9 +6,9 @@
 
 **Initial protocol scope**: Host-wide, brokered OpenID Connect
 
-**Domain language**: [`CONTEXT.md`](../../CONTEXT.md)
+**Domain language**: [`CONTEXT.md`](../../../../CONTEXT.md)
 
-**Architecture decisions**: [`doc/adr`](../../doc/adr)
+**Architecture decisions**: [`doc/adr`](../../../../docs/adr)
 
 ## Summary
 

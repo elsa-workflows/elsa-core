@@ -39,11 +39,11 @@ Far more than the ticket assumes. The endpoint-declaration layer is essentially 
 | Tenant scoping | `Entity.TenantId`, [SetTenantIdFilter.cs](src/modules/Elsa.Persistence.EFCore.Common/EntityHandlers/SetTenantIdFilter.cs), `""` = default, `"*"` = agnostic (ADR 0009) | Exists for EF Core |
 | Richest scope model in the repo | `ConnectionScope(ConnectionScopeKind { Host, DefaultTenant, Tenant }, TenantId)` in [ExternalAuthenticationModels.cs](src/modules/Elsa.ExternalAuthentication/Models/ExternalAuthenticationModels.cs) | The precedent to follow for role scoping |
 
-Governing ADRs: [0017](../../doc/adr/0017-separate-external-identity-from-elsa-authorization.md) —
+Governing ADRs: [0017](../../../../docs/adr/0017-separate-external-identity-from-elsa-authorization.md) —
 Elsa's permission vocabulary is deliberately **open**, composed through grant sources;
-[0022](../../doc/adr/0022-match-unlinked-identities-with-trusted-user-matchers.md) — **Elsa is the
+[0022](../../../../docs/adr/0022-match-unlinked-identities-with-trusted-user-matchers.md) — **Elsa is the
 only authority that expands Roles into `permissions` claims**;
-[0020](../../doc/adr/0020-publish-audit-ready-security-notifications.md) — typed security notifications
+[0020](../../../../docs/adr/0020-publish-audit-ready-security-notifications.md) — typed security notifications
 over `INotificationSender`, no audit persistence in the producing module.
 
 ### The real defects in today's model

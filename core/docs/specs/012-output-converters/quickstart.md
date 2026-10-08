@@ -2,7 +2,7 @@
 
 ## Register a converter
 
-Follow the complete implementation and registration example in [Output Converters](../../doc/wiki/output-converters.md). Create a deterministic converter that turns a sample object into text, declare source/result types and a settings schema, and register it with a stable ID through the public service-registration extension.
+Follow the complete implementation and registration example in [Output Converters](../../wiki/output-converters.md). Create a deterministic converter that turns a sample object into text, declare source/result types and a settings schema, and register it with a stable ID through the public service-registration extension.
 
 ## Author a workflow
 

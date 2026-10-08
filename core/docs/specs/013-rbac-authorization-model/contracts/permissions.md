@@ -164,7 +164,7 @@ Added after the original census: User Tasks was still on the legacy channel when
 
 ## Migration mapping
 
-The source for [`doc/migrations/authorization-model.md`](../../../doc/migrations/authorization-model.md), which is the operator-facing guide and is published alongside this contract. Full legacy strings, so it is checkable mechanically.
+The source for [`doc/migrations/authorization-model.md`](../../../migrations/authorization-model.md), which is the operator-facing guide and is published alongside this contract. Full legacy strings, so it is checkable mechanically.
 
 **Several mappings expand rather than rename**, because some new sub-resources are granularity increases. A migration must expand, not substitute.
 

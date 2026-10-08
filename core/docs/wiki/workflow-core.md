@@ -114,8 +114,8 @@ Flowchart support is split between:
 
 Relevant ADRs:
 
-- [ADR 0005: Token-Centric Flowchart Execution Model](../adr/0005-token-centric-flowchart-execution-model.md)
-- [ADR 0007: Explicit Merge Modes For Flowchart Joins](../adr/0007-adoption-of-explicit-merge-modes-for-flowchart-joins.md)
+- [ADR 0005: Token-Centric Flowchart Execution Model](../../../docs/adr/0005-token-centric-flowchart-execution-model.md)
+- [ADR 0007: Explicit Merge Modes For Flowchart Joins](../../../docs/adr/0007-adoption-of-explicit-merge-modes-for-flowchart-joins.md)
 
 ## Pipelines
 

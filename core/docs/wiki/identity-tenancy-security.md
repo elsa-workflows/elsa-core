@@ -81,7 +81,7 @@ A custom `IAccessTokenIssuer` must implement `IssueTokensAsync(User, SignInSessi
 
 ## Default Admin Bootstrap
 
-The default admin bootstrap is documented in [src/modules/Elsa.Identity/README.md](../../src/modules/Elsa.Identity/README.md) and [ADR 0010](../adr/0010-default-admin-user-bootstrap-for-initial-identity-access.md).
+The default admin bootstrap is documented in [src/modules/Elsa.Identity/README.md](../../src/modules/Elsa.Identity/README.md) and [ADR 0010](../../../docs/adr/0010-default-admin-user-bootstrap-for-initial-identity-access.md).
 
 Key points:
 
@@ -131,14 +131,14 @@ This feature is important when HTTP workflow routes must be tenant-aware.
 
 Persistence is tenant-aware through EF Core model/saving handlers and tenant-aware DbContext factory decoration. ADRs explain conventions:
 
-- [ADR 0008: Empty String As Default Tenant ID](../adr/0008-empty-string-as-default-tenant-id.md)
-- [ADR 0009: Asterisk Sentinel Value For Tenant-Agnostic Entities](../adr/0009-asterisk-sentinel-value-for-tenant-agnostic-entities.md)
+- [ADR 0008: Empty String As Default Tenant ID](../../../docs/adr/0008-empty-string-as-default-tenant-id.md)
+- [ADR 0009: Asterisk Sentinel Value For Tenant-Agnostic Entities](../../../docs/adr/0009-asterisk-sentinel-value-for-tenant-agnostic-entities.md)
 
 When changing persisted entities, verify tenant ID behavior and default tenant semantics.
 
 ## API Authorization
 
-A permission is `{resource}:{verb}` — a hierarchical resource path paired with a verb. Both axes are open and contributed by modules; see [ADR 0025](../adr/0025-two-axis-authorization-model.md) for why neither is a closed set.
+A permission is `{resource}:{verb}` — a hierarchical resource path paired with a verb. Both axes are open and contributed by modules; see [ADR 0025](../../../docs/adr/0025-two-axis-authorization-model.md) for why neither is a closed set.
 
 A trailing `*` on the resource axis matches the named node and every descendant, so `workflows/*:view` is one grant covering every resource beneath `workflows/`, including ones added in later releases. `*` as a verb matches any verb, and `*:*` is superuser. Wildcards are the only construct with forward reach; there are no aggregates and no verb implies another.
 
@@ -214,7 +214,7 @@ return `Bearer ${token}`;
 - [test/integration/Elsa.JavaScript.IntegrationTests](../../test/integration/Elsa.JavaScript.IntegrationTests)
 - [test/integration/Elsa.Activities.IntegrationTests](../../test/integration/Elsa.Activities.IntegrationTests)
 
-Spec: [specs/007-secrets-module/spec.md](../../specs/007-secrets-module/spec.md).
+Spec: [specs/007-secrets-module/spec.md](../specs/007-secrets-module/spec.md).
 
 ## Ingress Rate Limiting
 

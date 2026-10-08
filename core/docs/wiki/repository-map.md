@@ -6,19 +6,19 @@ Elsa Core is organized as a large multi-project .NET solution. The repo favors s
 
 | Path | Purpose |
 | --- | --- |
-| [src/apps](../../src/apps) | Runnable reference hosts, load-balancer host, modular server host, and sample package. |
-| [src/modules](../../src/modules) | Elsa product modules: workflow engine, runtime, management, APIs, HTTP, identity, persistence, diagnostics, scripting, scheduling, tenants, labels, resilience, and more. |
-| [src/common](../../src/common) | Shared infrastructure such as feature/module plumbing, mediator, API helpers, and test helpers. |
-| [src/clients](../../src/clients) | Client packages, currently including the Elsa API client. |
-| [src/extensions](../../src/extensions) | Extension packages consolidated from the former Elsa Extensions repository. Organized by category: actors (ProtoActor), agents (AI/OpenAI/Azure OpenAI), alterations (MassTransit), distributed caching, CMS (Orchard Core), communication (Slack), connections lifecycle, data (CSV), DevOps (GitHub), diagnostics/logging (Console, Serilog, OpenTelemetry), drop-ins, email, HTTP OpenAPI, IO, LDAP, MQTT, alternative persistence (Dapper, Elasticsearch, MongoDB), retention, alternative runtimes (ProtoActor), scheduling (Quartz, Hangfire), extended secrets, service bus (Azure Service Bus, Kafka, MassTransit), SQL, storage (Azure, files), telecom (Telnyx), workflow contexts, and [Elsa.Testing.Extensions](../../src/extensions/Elsa.Testing.Extensions). See [doc/extensions/README.md](../extensions/README.md) for the inventory. |
-| [test/unit](../../test/unit) | Fast unit tests scoped to individual modules or services. |
-| [test/integration](../../test/integration) | In-process tests that compose multiple Elsa services. |
-| [test/component](../../test/component) | Larger host-level and persistence-oriented scenarios. |
-| [test/performance](../../test/performance) | Benchmark and throughput-oriented tests. |
-| [build](../../build) | NUKE build project and CI build wiring. |
-| [doc](../../doc) | ADRs, QA notes, agent logs, bounty docs, and this wiki. |
-| [specs](../../specs) | Spec Kit feature specs, plans, tasks, contracts, and quickstarts. |
-| [design](../../design) | Logos, screenshots, and visual assets used by public docs and README files. |
+| [core/src/apps](../../src/apps) | Runnable reference hosts, load-balancer host, modular server host, and sample package. |
+| [core/src/modules](../../src/modules) | Elsa product modules: workflow engine, runtime, management, APIs, HTTP, identity, persistence, diagnostics, scripting, scheduling, tenants, labels, resilience, and more. |
+| [core/src/common](../../src/common) | Shared infrastructure such as feature/module plumbing, mediator, API helpers, and test helpers. |
+| [core/src/clients](../../src/clients) | Client packages, currently including the Elsa API client. |
+| [extensions/src](../../../extensions/src) | Extension packages consolidated from the former Elsa Extensions repository. Organized by category: actors (ProtoActor), agents (AI/OpenAI/Azure OpenAI), alterations (MassTransit), distributed caching, CMS (Orchard Core), communication (Slack), connections lifecycle, data (CSV), DevOps (GitHub), diagnostics/logging (Console, Serilog, OpenTelemetry), drop-ins, email, HTTP OpenAPI, IO, LDAP, MQTT, alternative persistence (Dapper, Elasticsearch, MongoDB), retention, alternative runtimes (ProtoActor), scheduling (Quartz, Hangfire), extended secrets, service bus (Azure Service Bus, Kafka, MassTransit), SQL, storage (Azure, files), telecom (Telnyx), workflow contexts, and [Elsa.Testing.Extensions](../../../extensions/src/Elsa.Testing.Extensions). See [Extensions documentation](../../../extensions/docs/README.md) for the inventory. |
+| [core/test/unit](../../test/unit) | Fast unit tests scoped to individual modules or services. |
+| [core/test/integration](../../test/integration) | In-process tests that compose multiple Elsa services. |
+| [core/test/component](../../test/component) | Larger host-level and persistence-oriented scenarios. |
+| [core/test/performance](../../test/performance) | Benchmark and throughput-oriented tests. |
+| [build](../../../build) | NUKE build project and CI build wiring. |
+| [core/docs](..) | Core guides, QA notes, specifications and this wiki; shared ADRs and integration records live under root `docs/`. |
+| [core/docs/specs](../specs) | Spec Kit feature specs, plans, tasks, contracts, and quickstarts. |
+| [design](../../../design) | Logos, screenshots, and visual assets used by public docs and README files. |
 
 ## Major Module Families
 
@@ -38,10 +38,10 @@ Elsa Core is organized as a large multi-project .NET solution. The repo favors s
 | Key-value store | [Elsa.KeyValues](../../src/modules/Elsa.KeyValues) | Generic key-value storage (`IKeyValueStore`) with a default in-memory backing store; used by other modules for ephemeral or cross-request state. |
 | Caching | [Elsa.Caching](../../src/modules/Elsa.Caching) | `ICacheManager` and `IChangeTokenSignaler`; provides memory-cache helpers and signal-based cache invalidation used internally by other Elsa modules. |
 | Security and tenancy | [Elsa.Identity](../../src/modules/Elsa.Identity), [Elsa.Tenants](../../src/modules/Elsa.Tenants), [Elsa.Tenants.AspNetCore](../../src/modules/Elsa.Tenants.AspNetCore), [Elsa.SasTokens](../../src/modules/Elsa.SasTokens) | Users, applications, roles, API keys, tenants, tenant-aware routing, SAS tokens. |
-| External authentication | [Elsa.ExternalAuthentication](../../src/modules/Elsa.ExternalAuthentication), [Elsa.ExternalAuthentication.OpenIdConnect](../../src/modules/Elsa.ExternalAuthentication.OpenIdConnect), [Elsa.ExternalAuthentication.Secrets](../../src/modules/Elsa.ExternalAuthentication.Secrets), and EF Core provider packages (`Sqlite`, `SqlServer`, `PostgreSql`, `MySql`, `Oracle`) | Server-brokered external identity providers: Identity Provider Connections, OpenID Connect adapter, linked identity resolution, configurable unlinked-identity policies, Elsa credential issuance, and EF Core persistence. See [specs/012-external-authentication/spec.md](../../specs/012-external-authentication/spec.md). |
+| External authentication | [Elsa.ExternalAuthentication](../../src/modules/Elsa.ExternalAuthentication), [Elsa.ExternalAuthentication.OpenIdConnect](../../src/modules/Elsa.ExternalAuthentication.OpenIdConnect), [Elsa.ExternalAuthentication.Secrets](../../src/modules/Elsa.ExternalAuthentication.Secrets), and EF Core provider packages (`Sqlite`, `SqlServer`, `PostgreSql`, `MySql`, `Oracle`) | Server-brokered external identity providers: Identity Provider Connections, OpenID Connect adapter, linked identity resolution, configurable unlinked-identity policies, Elsa credential issuance, and EF Core persistence. See [specs/012-external-authentication/spec.md](../specs/012-external-authentication/spec.md). |
 | Secrets | [Elsa.Secrets](../../src/modules/Elsa.Secrets), [Elsa.Secrets.Persistence.EFCore](../../src/modules/Elsa.Secrets.Persistence.EFCore), [Elsa.Secrets.Persistence.VNext](../../src/modules/Elsa.Secrets.Persistence.VNext), [Elsa.Secrets.JavaScript](../../src/modules/Elsa.Secrets.JavaScript) | Named secrets with pluggable stores, extensible secret types (text, RSA key, X.509 certificate), versioning, rotation, revocation, secret resolver, management endpoints, EF Core and vNext persistence, and JavaScript expression access. |
 | Diagnostics | [Elsa.Diagnostics.StructuredLogs](../../src/modules/Elsa.Diagnostics.StructuredLogs), [Relational](../../src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational), [Sqlite](../../src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite), [Elsa.Diagnostics.ConsoleLogs](../../src/modules/Elsa.Diagnostics.ConsoleLogs), [Elsa.Diagnostics.OpenTelemetry](../../src/modules/Elsa.Diagnostics.OpenTelemetry) | Structured `ILogger` capture, raw console capture, live feed, REST/SignalR endpoints, in-memory and SQLite storage; OTLP ingestion backend with trace/metric/log storage, query APIs, and live streaming. |
-| User Tasks | [Elsa.UserTasks](../../src/modules/Elsa.UserTasks), EF Core provider packages (`Elsa.UserTasks.Persistence.EFCore.*`), [Elsa.UserTasks.Persistence.VNext](../../src/modules/Elsa.UserTasks.Persistence.VNext) | Identity-neutral durable human-task module: workflow pause/resume for human decisions, a secure task queue, typed outcomes, participant references independent of `Elsa.Identity`. See [specs/013-user-tasks/spec.md](../../specs/013-user-tasks/spec.md). |
+| User Tasks | [Elsa.UserTasks](../../src/modules/Elsa.UserTasks), EF Core provider packages (`Elsa.UserTasks.Persistence.EFCore.*`), [Elsa.UserTasks.Persistence.VNext](../../src/modules/Elsa.UserTasks.Persistence.VNext) | Identity-neutral durable human-task module: workflow pause/resume for human decisions, a secure task queue, typed outcomes, participant references independent of `Elsa.Identity`. See [Core User Tasks specification](../specs/013-user-tasks/spec.md). |
 | Shells and modular hosting | [Elsa.Shells.Api](../../src/modules/Elsa.Shells.Api), CShells-facing shell feature classes throughout modules | Runtime-configurable feature loading for modular hosts. |
 | Operational dashboard | [Elsa.Dashboard.Api](../../src/modules/Elsa.Dashboard.Api) | Read-only aggregate endpoints for the Studio operational dashboard: overview, trends, needs-attention findings, recent activity, and workflow hotspots. |
 | Application clustering | [Elsa.Hosting.Management](../../src/modules/Elsa.Hosting.Management) | Application instance naming, heartbeat-based cluster membership, and instance-aware hosted service support for multi-node deployments. |
@@ -56,10 +56,10 @@ Elsa Core is organized as a large multi-project .NET solution. The repo favors s
 
 ## Build And Package Files
 
-- [Directory.Build.props](../../Directory.Build.props) contains shared MSBuild settings.
-- [src/Directory.Build.props](../../src/Directory.Build.props) multi-targets source packages for `net8.0`, `net9.0`, and `net10.0`.
-- [Directory.Packages.props](../../Directory.Packages.props) centrally manages package versions, including conditional versions for .NET 8/9 versus .NET 10.
-- [build/Build.cs](../../build/Build.cs) defines the NUKE build, test, and package targets.
+- [Directory.Build.props](../../../Directory.Build.props) contains shared MSBuild settings.
+- [core/src/Directory.Build.props](../../src/Directory.Build.props) multi-targets source packages for `net8.0`, `net9.0`, and `net10.0`.
+- [Directory.Packages.props](../../../Directory.Packages.props) centrally manages package versions, including conditional versions for .NET 8/9 versus .NET 10.
+- [build/Build.cs](../../../build/Build.cs) defines the NUKE build, test, and package targets.
 
 ## How To Find Code Fast
 
@@ -68,8 +68,8 @@ Use the feature class first. Most modules have a `Features/*Feature.cs` and ofte
 Good first searches:
 
 ```bash
-rg "class .*Feature" src/modules src/common
-rg "interface I.*Store" src/modules
-rg "AddScoped|AddSingleton|TryAdd" src/modules/Elsa.Workflows.Runtime/Features
-rg "Get\\(|Post\\(|Delete\\(" src/modules/Elsa.Workflows.Api/Endpoints
+rg "class .*Feature" core/src/modules core/src/common
+rg "interface I.*Store" core/src/modules
+rg "AddScoped|AddSingleton|TryAdd" core/src/modules/Elsa.Workflows.Runtime/Features
+rg "Get\\(|Post\\(|Delete\\(" core/src/modules/Elsa.Workflows.Api/Endpoints
 ```

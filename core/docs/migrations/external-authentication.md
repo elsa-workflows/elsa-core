@@ -49,4 +49,4 @@ Studio Server is a confidential Authentication Client. It exchanges the broker c
 
 Studio WebAssembly is a public Authentication Client. It has no client secret, must use PKCE, and registers an exact browser origin. Its default credential store is memory-only; session or durable browser persistence is an explicit warned deployment choice.
 
-See [`specs/012-external-authentication/quickstart.md`](../../specs/012-external-authentication/quickstart.md) for complete Server and WebAssembly examples.
+See [`specs/012-external-authentication/quickstart.md`](../specs/012-external-authentication/quickstart.md) for complete Server and WebAssembly examples.

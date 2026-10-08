@@ -43,7 +43,7 @@ rows now point to their reviewed, path-specific active representation; their `.s
 as provenance in the draft history import.
 
 The retained Extensions README is represented by the reviewed
-[active Extensions overview](../../extensions/README.md) from #8459. That page
+[active Extensions overview](../../../extensions/docs/README.md) from #8459. That page
 updates repository paths and separates historical provider plans from the
 current integration catalog and package-release gate. Its original `.source`
 copy remains immutable import provenance.

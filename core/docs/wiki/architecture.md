@@ -69,7 +69,7 @@ sequenceDiagram
 
 Activities are the unit of work. Core activity types live under [Elsa.Workflows.Core/Activities](../../src/modules/Elsa.Workflows.Core/Activities). Control flow includes `Sequence`, `If`, `Switch`, `Fork`, `For`, `ForEach`, `While`, `Parallel`, `Flowchart`, `StateMachine`, and flowchart node activities.
 
-Flowchart execution has a token-centric model documented in [ADR 0005](../adr/0005-token-centric-flowchart-execution-model.md), with explicit join behavior documented in [ADR 0007](../adr/0007-adoption-of-explicit-merge-modes-for-flowchart-joins.md).
+Flowchart execution has a token-centric model documented in [ADR 0005](../../../docs/adr/0005-token-centric-flowchart-execution-model.md), with explicit join behavior documented in [ADR 0007](../../../docs/adr/0007-adoption-of-explicit-merge-modes-for-flowchart-joins.md).
 
 ## Management Layer
 

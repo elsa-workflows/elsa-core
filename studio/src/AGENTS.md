@@ -1,19 +1,19 @@
 # Studio contributor guidance
 
-These instructions apply to Studio modules, hosts, frameworks, and tests under
-`src/studio/`. Follow the repository-root `AGENTS.md` for shared build, review,
-testing, package and ADR
-rules. This guidance carries the Studio-specific rules from the pinned
+These instructions apply to Studio modules, hosts, frameworks and colocated
+.NET tests under `studio/src/`, and browser fixtures under `studio/test/`.
+Follow the repository-root `AGENTS.md` for shared build, review, testing,
+package and ADR rules. This guidance carries the Studio-specific rules from the pinned
 [Studio constitution](https://github.com/elsa-workflows/elsa-studio/blob/20ceaeeed7e671f0c9662003e82063026f2216de/.specify/memory/constitution.md)
 into the consolidated source layout.
 
 ## Module boundaries
 
-- Put user-facing features in focused `src/studio/modules/Elsa.Studio.*`
+- Put user-facing features in focused `studio/src/modules/Elsa.Studio.*`
   modules with explicit service and feature registration, menu integration,
   and route ownership. Shared framework concerns belong in
-  `src/studio/framework/`; bundled defaults are composed in
-  `src/studio/bundles/Elsa.Studio/`.
+  `studio/src/framework/`; bundled defaults are composed in
+  `studio/src/bundles/Elsa.Studio/`.
 - Do not reach into another module's internals. Use public contracts,
   services, notifications, or route/query links for cross-module behavior.
 - Keep modules usable in the supported Blazor Server and WebAssembly hosts
@@ -34,7 +34,7 @@ into the consolidated source layout.
 
 ## UI and lifecycle
 
-- Consult the [Studio design baseline](../../doc/studio/README.md) when shaping
+- Consult the [Studio design baseline](../docs/README.md) when shaping
   Studio UI; verify the relevant current module behavior and tests as well.
 - Follow existing Studio component and layout patterns. Favor scannable
   tables, toolbars, tabs, drawers, and dialogs for operational views; keep
@@ -50,8 +50,8 @@ into the consolidated source layout.
 
 ## Plans and verification
 
-- Keep Studio feature-specific requirements, plans, and tasks under that
-  feature's `specs/` directory. Do not change the repository-root
+- Keep Studio feature-specific requirements, plans, and tasks under
+  `studio/docs/specs/<feature>/`. Do not change the repository-root
   `AGENTS.md` plan pointer solely for a Studio feature; put its implementation
   context and backend dependencies in the feature's `plan.md`.
 - Test client services and filter/query mapping at the smallest practical

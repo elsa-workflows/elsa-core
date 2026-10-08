@@ -107,4 +107,4 @@ Studio offers schema-driven fields for simple object schemas and a raw JSON-obje
 - Treat converter removal as deployment drift: previously published workflows that reference it will fault at assignment.
 - Use activity inputs or an explicit activity when transformation is asynchronous or has side effects.
 
-The design decisions are recorded in [ADR 0011](../adr/0011-output-conversion-at-binding-is-synchronous.md), [ADR 0012](../adr/0012-output-converters-use-explicit-stable-identities.md), and [ADR 0013](../adr/0013-output-converter-discovery-is-server-owned.md).
+The design decisions are recorded in [ADR 0011](../../../docs/adr/0011-output-conversion-at-binding-is-synchronous.md), [ADR 0012](../../../docs/adr/0012-output-converters-use-explicit-stable-identities.md), and [ADR 0013](../../../docs/adr/0013-output-converter-discovery-is-server-owned.md).

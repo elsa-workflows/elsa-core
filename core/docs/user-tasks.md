@@ -59,4 +59,4 @@ A guest presents its session as `Authorization: UserTaskSession <credential>` ag
 
 Elsa Studio provides Workflows → User Tasks with Assigned to me, Available, History, and manager-only All and Needs Attention views. Studio is a reference workbench, not a required runtime dependency. Custom applications use the same REST APIs and server-computed capability projections. Realtime messages are invalidations only; clients always requery authorized data.
 
-See [the feature specification](../specs/013-user-tasks/spec.md), [REST contract](../specs/013-user-tasks/contracts/rest-api.md), and [quickstart](../specs/013-user-tasks/quickstart.md) for the complete design and examples.
+See [the feature specification](specs/013-user-tasks/spec.md), [REST contract](specs/013-user-tasks/contracts/rest-api.md), and [quickstart](specs/013-user-tasks/quickstart.md) for the complete design and examples.

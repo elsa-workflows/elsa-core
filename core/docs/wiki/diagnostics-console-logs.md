@@ -113,7 +113,7 @@ app.UseConsoleLogs();
 
 ## Design Spec
 
-[specs/006-diagnostics-console-logs/spec.md](../../specs/006-diagnostics-console-logs/spec.md) defines requirements for capture, buffering, endpoints, SignalR, permissions, source identity, and redaction.
+[specs/006-diagnostics-console-logs/spec.md](../specs/006-diagnostics-console-logs/spec.md) defines requirements for capture, buffering, endpoints, SignalR, permissions, source identity, and redaction.
 
 ## Tests
 

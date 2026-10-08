@@ -115,7 +115,7 @@ Execution cycle:
 
 When a condition evaluates to false the failed trigger is re-armed and remains waiting alongside other triggers for the state.
 
-Spec: [specs/006-state-machine-activity/spec.md](../../specs/006-state-machine-activity/spec.md).
+Spec: [specs/006-state-machine-activity/spec.md](../specs/006-state-machine-activity/spec.md).
 
 ## Adding A New Activity
 

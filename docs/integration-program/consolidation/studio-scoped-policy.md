@@ -8,7 +8,7 @@ contains Studio-specific development rules. The current Core root plan skill
 updates the root Spec Kit plan marker and Core has its own root constitution.
 Neither root file can simply be overwritten by the Studio copy.
 
-The active representation is [`src/studio/AGENTS.md`](../../../src/studio/AGENTS.md),
+The active representation is [`src/studio/AGENTS.md`](../../../studio/src/AGENTS.md),
 with a pointer from the root instructions. It scopes the Studio constitution's
 module boundaries, supported Blazor hosts, backend feature awareness, client
 and SignalR abstractions, UI states, async/disposal behavior, testing and

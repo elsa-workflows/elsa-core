@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 #
-# Regenerates doc/adr/toc.md from the ADR files themselves.
+# Regenerates docs/adr/toc.md from the ADR files themselves.
 #
 # The index is generated, never hand-edited: it drifted from the documents it indexes precisely because
 # every ADR merge asked a human to retype it. Run with --check to verify it is current without writing.
 #
-#   scripts/adr/generate-toc.sh            # rewrite doc/adr/toc.md
-#   scripts/adr/generate-toc.sh --check    # exit 1 if doc/adr/toc.md is out of date
+#   scripts/adr/generate-toc.sh            # rewrite docs/adr/toc.md
+#   scripts/adr/generate-toc.sh --check    # exit 1 if docs/adr/toc.md is out of date
 #
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-adr_dir="$repo_root/doc/adr"
+adr_dir="$repo_root/docs/adr"
 toc_path="$adr_dir/toc.md"
 
 check_only=false
@@ -81,11 +81,11 @@ generated="$(
 
 if [[ "$check_only" == true ]]; then
   if ! diff -u "$toc_path" <(printf '%s\n' "$generated"); then
-    echo "doc/adr/toc.md is out of date. Run scripts/adr/generate-toc.sh and commit the result." >&2
+    echo "docs/adr/toc.md is out of date. Run scripts/adr/generate-toc.sh and commit the result." >&2
     exit 1
   fi
-  echo "doc/adr/toc.md is up to date."
+  echo "docs/adr/toc.md is up to date."
 else
   printf '%s\n' "$generated" > "$toc_path"
-  echo "Wrote doc/adr/toc.md."
+  echo "Wrote docs/adr/toc.md."
 fi

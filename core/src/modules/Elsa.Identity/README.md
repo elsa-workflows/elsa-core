@@ -12,7 +12,7 @@ Identity token signing requires a secure random key. Configure it through enviro
 
 Elsa supports bootstrapping an initial admin role and user through the `DefaultAdminUser` feature.
 
-This is the recommended way to initialize identity access. Identity management endpoints are authorized by their own permissions. Elsa 3.9 removed the `SecurityRoot` policy and the localhost permission grant ([#8003](https://github.com/elsa-workflows/elsa-core/pull/8003)), so a fresh instance has no network-position shortcut. Configure a seeded administrator (below) or an [admin API key](#admin-api-key-bootstrap) instead. See [the authorization migration guide](../../../doc/migrations/authorization-model.md#the-securityroot-policy-and-the-localhost-grant-are-gone) for the full list of removed types and toggles.
+This is the recommended way to initialize identity access. Identity management endpoints are authorized by their own permissions. Elsa 3.9 removed the `SecurityRoot` policy and the localhost permission grant ([#8003](https://github.com/elsa-workflows/elsa-core/pull/8003)), so a fresh instance has no network-position shortcut. Configure a seeded administrator (below) or an [admin API key](#admin-api-key-bootstrap) instead. See [the authorization migration guide](../../../docs/migrations/authorization-model.md#the-securityroot-policy-and-the-localhost-grant-are-gone) for the full list of removed types and toggles.
 
 See `doc/adr/0010-default-admin-user-bootstrap-for-initial-identity-access.md` for the architectural decision.
 
@@ -124,9 +124,9 @@ New identity passwords, client secrets, and API keys are hashed with PBKDF2-SHA2
 
 External Authentication is additive to Elsa Identity:
 
-- Existing `/identity/login`, `/identity/refresh-token` and `/identity/logout` contracts remain the direct local-credential flow. `POST /identity/logout` revokes the sign-in session of the refresh token in its body; see [Signing Out](../../../doc/wiki/identity-tenancy-security.md#signing-out).
+- Existing `/identity/login`, `/identity/refresh-token` and `/identity/logout` contracts remain the direct local-credential flow. `POST /identity/logout` revokes the sign-in session of the refresh token in its body; see [Signing Out](../../../docs/wiki/identity-tenancy-security.md#signing-out).
 - The optional broker exposes separate local and external completion endpoints that return a short-lived, PKCE-bound authorization code before issuing Elsa credentials.
 - Externally provisioned users may have no local password hash or salt. Such users fail direct local login with the same public result as any other invalid credential.
 - Elsa remains the issuer of access tokens and the authority for their `permissions` claim, regardless of how the user authenticated.
 
-See [the External Authentication migration guide](../../../doc/migrations/external-authentication.md) before changing a Studio host from direct OpenID Connect to brokered mode.
+See [the External Authentication migration guide](../../../docs/migrations/external-authentication.md) before changing a Studio host from direct OpenID Connect to brokered mode.

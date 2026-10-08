@@ -81,7 +81,7 @@ Migration-related files:
 
 - [MigrationOptions](../../src/modules/Elsa.Persistence.EFCore.Common/MigrationOptions.cs)
 - [RunMigrationsStartupTask](../../src/modules/Elsa.Persistence.EFCore.Common/RunMigrationsStartupTask.cs)
-- [scripts/migrations/README.md](../../scripts/migrations/README.md)
+- [scripts/migrations/README.md](../../../scripts/migrations/README.md)
 
 When adding an entity or changing persisted shape, check every provider package and test provider-specific migration behavior where practical.
 
@@ -100,12 +100,12 @@ Memory stamps the ambient tenant on save, filters Find/FindMany with `TenantVisi
 
 Tenant conventions are documented in ADRs:
 
-- [ADR 0008: Empty String As Default Tenant ID](../adr/0008-empty-string-as-default-tenant-id.md)
-- [ADR 0009: Asterisk Sentinel Value For Tenant-Agnostic Entities](../adr/0009-asterisk-sentinel-value-for-tenant-agnostic-entities.md)
+- [ADR 0008: Empty String As Default Tenant ID](../../../docs/adr/0008-empty-string-as-default-tenant-id.md)
+- [ADR 0009: Asterisk Sentinel Value For Tenant-Agnostic Entities](../../../docs/adr/0009-asterisk-sentinel-value-for-tenant-agnostic-entities.md)
 
 ## Structured Log Persistence
 
-Structured log persistence is intentionally separate from EF Core. The active feature plan is [005 structured log persistence](../../specs/005-structured-log-persistence/plan.md).
+Structured log persistence is intentionally separate from EF Core. The active feature plan is [005 structured log persistence](../specs/005-structured-log-persistence/plan.md).
 
 Packages:
 
@@ -150,7 +150,7 @@ Persistence vNext is a next-generation, provider-neutral persistence system bein
 | [Elsa.Persistence.VNext.SqlServer](../../src/modules/Elsa.Persistence.VNext.SqlServer) | SQL Server physicalization. |
 | [Elsa.Persistence.VNext.MongoDb](../../src/modules/Elsa.Persistence.VNext.MongoDb) | Native MongoDB physicalization using collections and indexes. |
 
-Spec: [specs/011-persistence-vnext/spec.md](../../specs/011-persistence-vnext/spec.md).
+Spec: [specs/011-persistence-vnext/spec.md](../specs/011-persistence-vnext/spec.md).
 
 ### When To Use Persistence vNext
 

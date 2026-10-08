@@ -5,9 +5,9 @@
 **Issue**: [elsa-core #7770](https://github.com/elsa-workflows/elsa-core/issues/7770)
 
 **Related decisions**:
-[binding boundary](../doc/adr/0011-output-conversion-at-binding-is-synchronous.md),
-[converter identity](../doc/adr/0012-output-converters-use-explicit-stable-identities.md), and
-[server-owned discovery](../doc/adr/0013-output-converter-discovery-is-server-owned.md)
+[binding boundary](../../../docs/adr/0011-output-conversion-at-binding-is-synchronous.md),
+[converter identity](../../../docs/adr/0012-output-converters-use-explicit-stable-identities.md), and
+[server-owned discovery](../../../docs/adr/0013-output-converter-discovery-is-server-owned.md)
 
 The feature should be delivered in independently verifiable phases. Each phase preserves existing output-binding behavior when no converter is configured.
 
