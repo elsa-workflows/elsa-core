@@ -5056,6 +5056,18 @@
         "credentialReturned": {
           "kind": "boolean",
           "equals": false
+        },
+        "activeConnectionWithoutCredential": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "bindingReloadVerified": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "additionalUsePolicyAllows": {
+          "kind": "boolean",
+          "equals": true
         }
       },
       "topology": "postgresql",
