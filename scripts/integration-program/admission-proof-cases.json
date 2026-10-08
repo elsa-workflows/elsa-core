@@ -5074,6 +5074,471 @@
       "processRoles": [],
       "minimumProcesses": 0,
       "restartRequired": false
+    },
+    {
+      "caseId": "runtime-bootstrap-inactive-classic",
+      "family": "bootstrap",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeBootstrapTests.VerifiedInactiveBootstrapRepeatsWithoutPublicationThenExplicitlyActivates",
+      "parameterId": "runtime-bootstrap-inactive-classic",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "inactiveBeforeExplicitActivation": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "fullDefinitionReloadVerified": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "publicationNotifications": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activationEpochAdvanced": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-bootstrap-inactive-shell",
+      "family": "bootstrap",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeBootstrapTests.VerifiedInactiveBootstrapRepeatsWithoutPublicationThenExplicitlyActivates",
+      "parameterId": "runtime-bootstrap-inactive-shell",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "inactiveBeforeExplicitActivation": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "fullDefinitionReloadVerified": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "publicationNotifications": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activationEpochAdvanced": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-bootstrap-artifact-mismatch",
+      "family": "bootstrap",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeBootstrapTests.MismatchedPredefinedArtifactCannotCreateDefinitionOrSubscription",
+      "parameterId": "default",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "subscriptionAbsent": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "definitionAbsent": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "publicationNotifications": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-bootstrap-unverified-insert",
+      "family": "bootstrap",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeBootstrapTests.ExistingUnverifiedInsertNeverReplaysPublicationOrBecomesActive",
+      "parameterId": "default",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "fullDefinitionReloadVerified": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "subscriptionInactive": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "bootstrapUnverified": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "reconciliationRequired": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "publicationNotifications": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-bootstrap-stored-content-change",
+      "family": "bootstrap",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeBootstrapTests.VerifiedBootstrapRejectsChangedStoredContentWithoutOverwriteOrRepublish",
+      "parameterId": "default",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "changedStoredContentPreserved": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "subscriptionInactive": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "reconciliationRequired": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "publicationNotifications": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-retention-completed",
+      "family": "terminal",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRetentionTests.RealTerminalCleanupKeepsOwnedInstanceFencedAndRetainedCapacityCharged",
+      "parameterId": "runtime-retention-completed",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "qualifiedTerminal": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "payloadErased": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "identityErased": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "immutableDigestsRetained": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "instanceOwnershipRetained": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "retainedRecords": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activeReservations": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "doubleReleaseDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "lateForgottenEventQuarantined": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "additionalWorkflowEntries": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "subStatus": {
+          "kind": "enum",
+          "values": [
+            "Finished"
+          ]
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-retention-handled-fault",
+      "family": "terminal",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRetentionTests.RealTerminalCleanupKeepsOwnedInstanceFencedAndRetainedCapacityCharged",
+      "parameterId": "runtime-retention-handled-fault",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "qualifiedTerminal": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "payloadErased": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "identityErased": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "immutableDigestsRetained": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "instanceOwnershipRetained": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "retainedRecords": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activeReservations": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "doubleReleaseDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "lateForgottenEventQuarantined": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "additionalWorkflowEntries": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "subStatus": {
+          "kind": "enum",
+          "values": [
+            "Faulted"
+          ]
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-retention-suspended-resume",
+      "family": "terminal",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRetentionTests.SuspendedWorkflowIsNotExpiryEligibleAndOnlyActualResumeReleasesActiveCapacity",
+      "parameterId": "default",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "suspendedCleanupDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "unknownEffectsResolutionDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "staleRevisionCleanupDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "actualResumeCompleted": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "activeReservations": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "retainedRecords": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-retention-audited-resolution",
+      "family": "resolve",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRetentionTests.ExplicitAuditedResolutionAfterOwnerUnwindDoesNotReplayPreparedWork",
+      "parameterId": "default",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "ambiguousCleanupDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "bothOperatorAttestationsRequired": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "ownerUnwound": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "qualifiedResolved": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "auditReferencePersisted": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "activeReservations": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "retainedRecords": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "workflowExecuting": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-recovery-safe-export",
+      "family": "resolve",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRetentionTests.ActualRecoveryPageExportsOnlySafeStateAndNeverEventContent",
+      "parameterId": "default",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "realAdmissionPresentInRecoveryPage": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "payloadMarkerExcluded": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "providerEventMarkerExcluded": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "configurationAndDigestsExcluded": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
     }
   ],
   "workerAssemblies": {
