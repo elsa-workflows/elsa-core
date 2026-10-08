@@ -33,7 +33,7 @@ class MaintenanceContracts(unittest.TestCase):
         (self.root / 'test-inventory.json').write_text(json.dumps([{'project': 'Fixture.Tests.csproj', 'assembly_name': 'Fixture.Tests', 'frameworks': ['net8.0']}]))
 
     def write_trx_fixture(self, product='studio', name='private-runner-host', assembly=None,
-                          counters=None, outcomes=None, test_class='Fixture.Tests', method='Runs'):
+                          counters=None, outcomes=None, test_class='Fixture.Tests', method='Runs', definition_ids=None):
         results = self.root / ('test-results' if product == 'studio' else 'source/testresults')
         results.mkdir(parents=True, exist_ok=True)
         assembly = assembly or self.root / 'source/bin/Release/net8.0/Fixture.Tests.dll'
@@ -45,12 +45,15 @@ class MaintenanceContracts(unittest.TestCase):
                       {key: str(value) for key, value in (dict.fromkeys(maintenance.TRX_COUNTERS, 0) | counters).items()})
         definitions, results_element = ET.SubElement(tree, 'TestDefinitions'), ET.SubElement(tree, 'Results')
         entries = ET.SubElement(tree, 'TestEntries')
+        defined = set()
         for index, outcome in enumerate(outcomes):
-            identifier = f'test-{index}'
-            definition = ET.SubElement(definitions, 'UnitTest', id=identifier)
-            ET.SubElement(definition, 'Execution', id=f'execution-{index}')
+            identifier = definition_ids[index] if definition_ids is not None else f'test-{index}'
+            if identifier not in defined:
+                definition = ET.SubElement(definitions, 'UnitTest', id=identifier)
+                ET.SubElement(definition, 'Execution', id=f'execution-{index}')
+                ET.SubElement(definition, 'TestMethod', codeBase=str(assembly), className=test_class, name=method)
+                defined.add(identifier)
             ET.SubElement(entries, 'TestEntry', testId=identifier, executionId=f'execution-{index}')
-            ET.SubElement(definition, 'TestMethod', codeBase=str(assembly), className=test_class, name=method)
             ET.SubElement(results_element, 'UnitTestResult', testId=identifier, executionId=f'execution-{index}', outcome=outcome)
         path = results / (name + '.trx')
         path.write_text(ET.tostring(tree, encoding='unicode'))
@@ -370,6 +373,87 @@ class MaintenanceContracts(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     maintenance.verify_tests(self.root, self.row, context)
                 self.assertNotIn('private-secret-outcome', json.dumps(context))
+
+    def test_flat_dynamic_theory_executions_share_definition_with_complete_unique_execution_links(self):
+        # Original Quartz 3.8 emits four MemberData executions for one definition.
+        self.write_trx_fixture(outcomes=['Passed'] * 7,
+                               definition_ids=['dynamic'] * 4 + ['static-1', 'static-2', 'static-3'])
+        context = {}
+        result = maintenance.verify_tests(self.root, self.row, context)
+        self.assertEqual(result['executions'][0]['counters']['passed'], 7)
+        self.assertEqual(context['positive_summary_count'], 1)
+        self.assertEqual(context['cells'][0]['structure'], {
+            'definition_count': 4, 'result_count': 7, 'entry_count': 7, 'unique_execution_count': 7,
+            'repeated_definition_result_count': 3, 'nested_result_count': 0, 'unsupported_structure_count': 0,
+            'linkage_valid': True, 'summary_completed': True})
+
+    def test_flat_execution_linkage_rejects_conflicting_or_missing_links_and_unsupported_shapes(self):
+        mutations = ['duplicate-execution', 'empty-execution', 'unknown-definition', 'duplicate-definition',
+                     'missing-anchor', 'duplicate-anchor', 'orphan-anchor', 'cross-linked-anchor',
+                     'missing-entry', 'duplicate-entry', 'orphan-entry', 'cross-linked-entry',
+                     'missing-result', 'nested-result', 'empty-aggregate', 'inner-results',
+                     'duplicate-container', 'failed-leaf', 'skipped-leaf', 'failed-summary', 'false-counts']
+        for mutation in mutations:
+            with self.subTest(mutation=mutation):
+                path = self.write_trx_fixture(outcomes=['Passed'] * 7,
+                    definition_ids=['dynamic'] * 4 + ['static-1', 'static-2', 'static-3'])
+                tree = ET.parse(path)
+                definitions = tree.find('TestDefinitions')
+                results = tree.find('Results')
+                entries = tree.find('TestEntries')
+                if mutation == 'duplicate-execution':
+                    results[1].set('executionId', results[0].get('executionId'))
+                    entries[1].set('executionId', entries[0].get('executionId'))
+                elif mutation == 'empty-execution':
+                    results[1].set('executionId', '')
+                    entries[1].set('executionId', '')
+                elif mutation == 'unknown-definition':
+                    results[1].set('testId', 'private-secret-identity')
+                    entries[1].set('testId', 'private-secret-identity')
+                elif mutation == 'duplicate-definition':
+                    definitions.append(ET.fromstring(ET.tostring(definitions[0])))
+                elif mutation == 'missing-anchor':
+                    definitions[0].remove(definitions[0].find('Execution'))
+                elif mutation == 'duplicate-anchor':
+                    definitions[0].append(ET.fromstring(ET.tostring(definitions[0].find('Execution'))))
+                elif mutation in ('orphan-anchor', 'cross-linked-anchor'):
+                    definitions[0].find('Execution').set('id',
+                        'private-secret-identity' if mutation == 'orphan-anchor' else 'execution-4')
+                elif mutation == 'missing-entry':
+                    entries.remove(entries[1])
+                elif mutation == 'duplicate-entry':
+                    entries.append(ET.fromstring(ET.tostring(entries[1])))
+                elif mutation == 'orphan-entry':
+                    ET.SubElement(entries, 'TestEntry', testId='dynamic', executionId='private-secret-identity')
+                elif mutation == 'cross-linked-entry':
+                    entries[1].set('testId', 'static-1')
+                elif mutation == 'missing-result':
+                    results.remove(results[1])
+                elif mutation == 'nested-result':
+                    ET.SubElement(results[0], 'InnerResults').append(results[1])
+                    results.remove(results[1])
+                elif mutation == 'empty-aggregate':
+                    ET.SubElement(results, 'TestResultAggregation', testId='private-secret-identity', outcome='Passed')
+                elif mutation == 'inner-results':
+                    ET.SubElement(results[0], 'InnerResults')
+                elif mutation == 'duplicate-container':
+                    ET.SubElement(tree.getroot(), 'TestEntries')
+                elif mutation in ('failed-leaf', 'skipped-leaf'):
+                    results[1].set('outcome', 'Failed' if mutation == 'failed-leaf' else 'NotExecuted')
+                elif mutation == 'failed-summary':
+                    tree.find('ResultSummary').set('outcome', 'Failed')
+                elif mutation == 'false-counts':
+                    tree.find('.//Counters').set('passed', '6')
+                tree.write(path)
+                context = {}
+                with self.assertRaises(ValueError):
+                    maintenance.verify_tests(self.root, self.row, context)
+                structure = context['cells'][0]['structure']
+                if mutation not in ('failed-leaf', 'skipped-leaf', 'failed-summary', 'false-counts'):
+                    self.assertFalse(structure['linkage_valid'])
+                    self.assertIn('test-execution-linkage-invalid', context['failure_reasons'])
+                self.assertNotIn('private-secret-identity', json.dumps(context))
+                self.assertNotIn(str(self.root), json.dumps(context))
 
     def test_failed_first_cell_still_collects_later_known_counters_and_unknown_names_stay_private(self):
         row = next(row for row in self.register['sources'] if row['product'] == 'extensions')

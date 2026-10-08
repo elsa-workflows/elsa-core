@@ -422,7 +422,7 @@ def verify_tests(output: Path, row: dict, context: dict | None = None) -> dict:
         cell, assemblies = None, set()
         try:
             tree = ET.parse(path)
-            methods = tree.findall('.//{*}TestDefinitions/{*}UnitTest/{*}TestMethod')
+            methods = tree.findall('./{*}TestDefinitions/{*}UnitTest/{*}TestMethod')
             assemblies = {str(Path(method.get('codeBase', '')).resolve()) for method in methods}
             cells.extend(assemblies)
             if len(assemblies) != 1 or not assemblies <= expected.keys():
@@ -447,19 +447,41 @@ def verify_tests(output: Path, row: dict, context: dict | None = None) -> dict:
             diagnostic['unknown_counter_count'] = len(set(counters_element.attrib) - set(TRX_COUNTERS))
             failures.add('test-counter-schema-invalid')
             continue
-        definitions = tree.findall('.//{*}TestDefinitions/{*}UnitTest')
-        outcomes = tree.findall('.//{*}Results/{*}UnitTestResult')
+        definitions = tree.findall('./{*}TestDefinitions/{*}UnitTest')
+        outcomes = tree.findall('./{*}Results/{*}UnitTestResult')
+        entries = tree.findall('./{*}TestEntries/{*}TestEntry')
         definition_ids = [definition.get('id') for definition in definitions]
         result_ids = [result.get('testId') for result in outcomes]
+        result_pairs = [(result.get('testId'), result.get('executionId')) for result in outcomes]
+        result_pair_set = set(result_pairs)
+        entry_pairs = [(entry.get('testId'), entry.get('executionId')) for entry in entries]
+        execution_ids = [pair[1] for pair in result_pairs]
+        anchors = [definition.findall('{*}Execution') for definition in definitions]
+        nested_result_count = len(tree.findall('.//{*}UnitTestResult')) - len(outcomes)
+        unsupported_structure_count = sum(len(tree.findall('./{*}' + container + '/*')) - len(items)
+            for container, items in (('TestDefinitions', definitions), ('Results', outcomes), ('TestEntries', entries))) + \
+            sum(len(result.findall('{*}InnerResults')) for result in outcomes)
+        # Dynamic theories may share a definition, but every flat execution has
+        # its own identity and exactly one matching TestEntry. The definition's
+        # sole Execution anchors one result in that same definition group.
         linked = bool(definition_ids) and all(definition_ids) and len(set(definition_ids)) == len(definition_ids) and \
             all(len(definition.findall('{*}TestMethod')) == 1 for definition in definitions) and \
-            len(set(result_ids)) == len(result_ids) and set(result_ids) == set(definition_ids)
+            all(len(tree.findall('./{*}' + container)) == 1 for container in ('TestDefinitions', 'Results', 'TestEntries')) and \
+            nested_result_count == unsupported_structure_count == 0 and set(result_ids) == set(definition_ids) and \
+            all(execution_ids) and len(set(execution_ids)) == len(execution_ids) and \
+            len(set(entry_pairs)) == len(entry_pairs) and set(entry_pairs) == result_pair_set and \
+            all(len(anchor) == 1 and (identifier, anchor[0].get('id')) in result_pair_set
+                for identifier, anchor in zip(definition_ids, anchors))
         policy = policies.get((cell['project'], cell['framework']))
         receipt = cell | {'counters': counters, 'sha256': digest(path.read_bytes())}
         summaries = tree.findall('.//{*}ResultSummary')
         completed = len(summaries) == 1 and summaries[0].get('outcome') == 'Completed'
+        diagnostic['structure'] = {'definition_count': len(definitions), 'result_count': len(outcomes),
+            'entry_count': len(entries), 'unique_execution_count': len(set(execution_ids)),
+            'repeated_definition_result_count': len(result_ids) - len(set(result_ids)),
+            'nested_result_count': nested_result_count, 'unsupported_structure_count': unsupported_structure_count,
+            'linkage_valid': linked, 'summary_completed': completed}
         if policy is not None:
-            entries = tree.findall('.//{*}TestEntries/{*}TestEntry')
             execution = definitions[0].find('{*}Execution') if len(definitions) == 1 else None
             identity_matches = linked and len(definitions) == len(methods) == len(outcomes) == len(entries) == 1 and \
                 methods[0].get('className') == policy['class'] and methods[0].get('name') == policy['method'] and \
@@ -485,6 +507,10 @@ def verify_tests(output: Path, row: dict, context: dict | None = None) -> dict:
                 evidence['positive_summary_count'] += 1
                 results.append(receipt)
             else:
+                if not linked:
+                    failures.add('test-execution-linkage-invalid')
+                if not completed:
+                    failures.add('test-summary-invalid')
                 failures.add('test-counts-or-outcomes-invalid')
     admitted = [cell for cell in cells if cell in expected]
     evidence.update(admitted_observed_cells=[expected[cell] | {'occurrences': admitted.count(cell)}
