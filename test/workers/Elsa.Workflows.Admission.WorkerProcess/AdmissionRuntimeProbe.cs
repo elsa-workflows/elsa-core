@@ -118,9 +118,16 @@ public sealed class AdmissionRuntimeActivity : Activity
         {
             if (probe.EnableVariable)
             {
-                var variable = context.SetDynamicVariable("DurableProof", "saved-variable");
-                variable.StorageDriverType = typeof(AdmissionProofStorageDriver);
-                variable.GetBlock(context.ExpressionExecutionContext).Metadata = new VariableBlockMetadata(variable, typeof(AdmissionProofStorageDriver), true);
+                // Retain the SAME variable/driver binding in both durable DynamicVariables
+                // and its memory block; restored contexts must select the external driver.
+                var container = context.FindParentWithVariableContainer()
+                    ?? throw new InvalidOperationException("fixture_variable_container_missing");
+                var variable = new Variable<string>("DurableProof", "saved-variable")
+                {
+                    StorageDriverType = typeof(AdmissionProofStorageDriver)
+                };
+                container.DynamicVariables.Add(variable);
+                container.ExpressionExecutionContext.Memory.Declare(variable);
             }
             context.CreateBookmark(ResumeAsync);
             return;
