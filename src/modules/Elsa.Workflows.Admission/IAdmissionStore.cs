@@ -23,7 +23,7 @@ public interface IAdmissionStore
     /// <summary>Includes records whose dedup identity was cleaned. Null must mean definitively unowned.</summary>
     Task<AdmissionRecord?> FindByInstanceAsync(string instanceId, CancellationToken cancellationToken = default);
     /// <summary>Bounded indexed recovery scan; never grants execution authority.</summary>
-    Task<IReadOnlyList<AdmissionRecord>> FindRecoverableAsync(int limit, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<AdmissionRecord>> FindRecoverableAsync(int limit, string? afterId, CancellationToken cancellationToken = default);
     /// <summary>CAS Admitted→Creating, allocating instance identity before insert-only workflow creation. Requires active binding.</summary>
     Task<AdmissionRecord?> BeginCreationAsync(string admissionId, long revision, string instanceId, CancellationToken cancellationToken = default);
     /// <summary>CAS Creating→Materialized only after definite insertion AND notification completion.</summary>
