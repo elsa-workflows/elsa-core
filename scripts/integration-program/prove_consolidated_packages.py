@@ -1017,9 +1017,15 @@ def require_empty_package_output(packages: Path) -> None:
 def source_input_hashes(root: Path) -> dict[str, str]:
     from run_admission_proof import source_hashes, regular
     result = source_hashes(root)
-    workflow = ".github/workflows/prove-consolidated-packages.yml"
-    result[workflow] = hashlib.sha256(regular(root / workflow).read_bytes()).hexdigest()
-    return result
+    extra_paths = subprocess.check_output([
+        "git", "-C", str(root), "ls-files", "-z", "--", "build.sh", "build.cmd", "build.ps1",
+        ".nuke", ".github/actions", ".github/workflows/prove-consolidated-packages.yml", "icon.png",
+    ], text=True).split("\0")
+    require("build.sh" in extra_paths and ".github/workflows/prove-consolidated-packages.yml" in extra_paths,
+            "Package proof source inputs are incomplete")
+    result.update({path: hashlib.sha256(regular(root / path).read_bytes()).hexdigest()
+                   for path in extra_paths if path})
+    return dict(sorted(result.items()))
 
 
 def main(*, mode: str = "proof") -> None:
@@ -1080,7 +1086,7 @@ def main(*, mode: str = "proof") -> None:
     require(clean_head(root) == commit and source_input_hashes(root) == initial_sources, "Source changed during package proof")
     receipt = {"result": "passed", "mode": mode, "build_inputs": inputs, "published": False, "source_commit": commit, "version": args.version,
                "package_count": len(manifest["packages"]), "exclusion_count": len(manifest["exclusions"]),
-               "remote_sources_verified": args.remote_sources,
+               "remote_sources_verified": args.remote_sources, "sdk_metadata_verified": True,
                "provenance": sources, "consumers": consumers, "admission_consumers": admission_consumers,
                "source_inputs_sha256": hashlib.sha256((output / "source-inputs.json").read_bytes()).hexdigest(), "source_inputs_unchanged": True,
                "limits": ["Consumers are representative; this is not behavioral certification of every package.",
