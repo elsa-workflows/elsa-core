@@ -317,7 +317,7 @@ def source_hashes(root: Path) -> dict[str, str]:
 
 @contextmanager
 def proof_environment(directory: Path, head: str):
-    updates = {"ELSA_ADMISSION_PROOF_DIRECTORY": str(directory), "ELSA_ADMISSION_EXPECTED_HEAD": head}
+    updates = {"ELSA_ADMISSION_PROOF_DIRECTORY": str(directory), "ELSA_ADMISSION_SOURCE_REVISION": head}
     previous = {k: os.environ.get(k) for k in updates}
     os.environ.update(updates)
     try: yield
@@ -469,7 +469,8 @@ def validate_retained(output: Path, manifest: dict, expected_head: str, root: Pa
     data = (output / "receipt.json").read_bytes()
     require(len(data) <= 16 * 1024 * 1024, "retained_too_large")
     require(not any(marker in data.lower() for marker in (b"synthetic-secret", b"synthetic-access-token",
-            b"synthetic-refresh-token", b"password=", b"bearer ")), "private_marker")
+            b"synthetic-refresh-token", b"access-never-log-8a6f", b"refresh-never-log-1f92",
+            b"password=", b"bearer ")), "private_marker")
     receipt = read_json(output / "receipt.json", 16 * 1024 * 1024)
     validate_receipt(receipt, manifest, expected_head)
     if root is not None:

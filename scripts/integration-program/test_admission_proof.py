@@ -245,10 +245,10 @@ class AdmissionProofTests(unittest.TestCase):
         self.assertFalse(receipt['verificationComplete']); self.assertFalse(receipt['postSourceVerified'])
 
     def test_environment_restored_and_duplicate_json_fields_rejected(self):
-        with patch.dict(os.environ, {'ELSA_ADMISSION_EXPECTED_HEAD': 'outer'}):
+        with patch.dict(os.environ, {'ELSA_ADMISSION_SOURCE_REVISION': 'outer'}):
             with proof.proof_environment(self.directory, HEAD):
-                self.assertEqual(HEAD, os.environ['ELSA_ADMISSION_EXPECTED_HEAD'])
-            self.assertEqual('outer', os.environ['ELSA_ADMISSION_EXPECTED_HEAD'])
+                self.assertEqual(HEAD, os.environ['ELSA_ADMISSION_SOURCE_REVISION'])
+            self.assertEqual('outer', os.environ['ELSA_ADMISSION_SOURCE_REVISION'])
         path = self.directory / 'duplicate.json'; path.write_text('{"facts": {}, "facts": {"token": "private"}}')
         with self.assertRaises(ValueError): proof.read_json(path)
 
