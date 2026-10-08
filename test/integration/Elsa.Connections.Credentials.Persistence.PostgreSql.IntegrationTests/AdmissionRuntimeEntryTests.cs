@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Text.Json;
 using Elsa.Workflows;
 using Elsa.Workflows.Admission;
@@ -9,6 +11,7 @@ using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests;
@@ -126,6 +129,62 @@ public sealed class AdmissionRuntimeEntryTests(PostgreSqlConnectionsFixture fixt
                     ["competingActivityEffects"] = 0, ["authorizedEntries"] = 1, ["activityEffects"] = 1 });
         });
     }
+
+    [Fact]
+    public async Task PostNotificationDenialNeverEntersBusinessTelemetryWhileRealUnownedExecutionDoes()
+    {
+        await _runtime.RunAsync(async host =>
+        {
+            var stopped = new ConcurrentQueue<System.Diagnostics.Activity>();
+            using var listener = new ActivityListener
+            {
+                ShouldListenTo = source => source.Name == WorkflowInstrumentation.ActivitySourceName,
+                Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+                ActivityStopped = activity =>
+                {
+                    if (activity.OperationName == "workflow.execute")
+                    {
+                        stopped.Enqueue(activity);
+                    }
+                }
+            };
+            ActivitySource.AddActivityListener(listener);
+            host.Probe.OnExecuting = context =>
+            {
+                context.Input["InjectedAfterAuthorization"] = "synthetic-mutation";
+                return Task.CompletedTask;
+            };
+            await Assert.ThrowsAsync<InvalidOperationException>(() => host.Execution.ExecuteAsync(host.AdmissionId));
+            var deniedInstanceId = host.Probe.PreparedContext!.Id;
+            Assert.Equal(AdmissionState.RecoveryRequired, (await host.Store.FindAsync(host.AdmissionId))!.State);
+            Assert.Equal(1, host.Probe.Count("workflowExecuting"));
+            Assert.Equal(1, host.Probe.Count("workflowStarted"));
+            Assert.Equal(0, host.Probe.Count("activityEffects"));
+            Assert.DoesNotContain(stopped, activity => Equals(activity.GetTagItem(WorkflowInstrumentation.WorkflowInstanceId), deniedInstanceId));
+
+            // A real unowned run is the positive listener control. A silent/unregistered
+            // listener cannot make the denied invocation's zero-span assertion pass.
+            host.Probe.OnExecuting = null;
+            var client = await host.Services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync("fixture-unowned-telemetry-control");
+            var positive = await client.CreateAndRunInstanceAsync(new CreateAndRunWorkflowInstanceRequest
+            {
+                WorkflowDefinitionHandle = Elsa.Workflows.Models.WorkflowDefinitionHandle.ByDefinitionVersionId(AdmissionRuntimeHost.Artifact().Id)
+            });
+            Assert.Equal(WorkflowSubStatus.Finished, positive.SubStatus);
+            var positiveSpan = Assert.Single(stopped.Where(activity => Equals(activity.GetTagItem(WorkflowInstrumentation.WorkflowInstanceId), positive.WorkflowInstanceId)));
+            Assert.NotEqual(ActivityStatusCode.Error, positiveSpan.Status);
+            Assert.Equal(false, positiveSpan.GetTagItem(WorkflowInstrumentation.WorkflowFaulted));
+            Assert.Null(positiveSpan.GetTagItem(WorkflowInstrumentation.ExceptionType));
+            Assert.DoesNotContain(stopped, activity => Equals(activity.GetTagItem(WorkflowInstrumentation.WorkflowInstanceId), deniedInstanceId));
+            Assert.Equal(1, host.Probe.Count("activityEffects"));
+            await AdmissionProofObservation.WriteAsync(fixture, "runtime-denial-no-business-telemetry",
+                GetType().FullName + "." + nameof(PostNotificationDenialNeverEntersBusinessTelemetryWhileRealUnownedExecutionDoes), "default", [],
+                new Dictionary<string, bool> { ["behaviorAssertionsPassed"] = true },
+                new Dictionary<string, object> { ["deniedBusinessSpans"] = 0, ["positiveBusinessSpans"] = 1,
+                    ["deniedActivityEffects"] = 0, ["positiveActivityEffects"] = 1, ["recoveryRequired"] = true });
+        });
+    }
+
     [Theory]
     [InlineData("runtime-typed-int-long", "int-long")]
     [InlineData("runtime-typed-decimal-double", "decimal-double")]
