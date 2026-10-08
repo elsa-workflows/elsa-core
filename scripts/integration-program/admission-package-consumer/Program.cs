@@ -69,8 +69,41 @@ internal static class Program
                 _ => "operation"
             };
             Console.Error.WriteLine($"PACKAGE_CONSUMER_FAIL:{stage}:{category}");
+            WriteFailureDiagnostic(exception);
             return 1;
         }
+    }
+
+    private static void WriteFailureDiagnostic(Exception exception)
+    {
+        // Fixed type categories and trusted fixture coordinates only. Never emit
+        // exception messages, arbitrary type names, file paths or raw stack traces.
+        var category = exception switch
+        {
+            Npgsql.PostgresException => "postgres",
+            Microsoft.EntityFrameworkCore.DbUpdateException => "db-update",
+            ArgumentException => "argument",
+            InvalidOperationException => "invalid-operation",
+            NotSupportedException => "not-supported",
+            InvalidCastException => "invalid-cast",
+            NullReferenceException => "null-reference",
+            TimeoutException => "timeout",
+            OperationCanceledException => "cancelled",
+            IOException => "io",
+            _ => "other"
+        };
+        var postgres = exception as Npgsql.PostgresException ?? exception.InnerException as Npgsql.PostgresException;
+        var sqlState = postgres?.SqlState;
+        if (sqlState is null || !Regex.IsMatch(sqlState, "^[0-9A-Z]{5}$"))
+        {
+            sqlState = "none";
+        }
+        string[] trustedFiles = ["Program.cs", "ConsumerHost.cs", "ActivitiesAndPolicies.cs", "Migrations.cs", "Scenarios.cs"];
+        var frame = new StackTrace(exception, true).GetFrames()?.FirstOrDefault(x =>
+            trustedFiles.Contains(Path.GetFileName(x.GetFileName()), StringComparer.Ordinal) && x.GetFileLineNumber() > 0);
+        var file = frame is null ? "none" : Path.GetFileName(frame.GetFileName());
+        var line = frame?.GetFileLineNumber() ?? 0;
+        Console.Error.WriteLine($"PACKAGE_CONSUMER_DIAGNOSTIC:{category}:{sqlState}:{file}:{line}");
     }
 }
 
