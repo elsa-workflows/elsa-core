@@ -31,7 +31,7 @@ internal static class Migrations
         foreach (var factory in Factories(services, admission))
         {
             await using var context = await factory(cancellationToken);
-            Require.That(context.Database.ProviderName == "Npgsql.EntityFrameworkCore.PostgreSQL", "provider-not-postgresql");
+            DemandSelectedTenantContext(context);
             await context.Database.MigrateAsync(cancellationToken);
         }
     }
@@ -42,6 +42,7 @@ internal static class Migrations
         foreach (var factory in Factories(services, admission))
         {
             await using var context = await factory(cancellationToken);
+            DemandSelectedTenantContext(context);
             var known = context.Database.GetMigrations().Order(StringComparer.Ordinal).ToArray();
             Require.That(known.Length > 0, "no-known-migrations");
             if (context is ConnectionsElsaDbContext)
@@ -74,6 +75,10 @@ internal static class Migrations
         }
         return results.ToArray();
     }
+
+    private static void DemandSelectedTenantContext(ElsaDbContextBase context) =>
+        Require.That(context.Database.ProviderName == "Npgsql.EntityFrameworkCore.PostgreSQL" &&
+            context.IsTenantFilteringEnabled && context.TenantId == FixtureConstants.TenantId, "selected-postgresql-tenant-context");
 
     private static async Task<HashSet<string>> HistoryAsync(ElsaDbContextBase context, string history, CancellationToken cancellationToken)
     {

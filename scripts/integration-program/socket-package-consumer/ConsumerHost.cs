@@ -30,6 +30,7 @@ using Elsa.Slack.SocketMode.Transport;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Admission;
+using Elsa.Workflows.Admission.Persistence.EFCore;
 using Elsa.Workflows.Admission.Persistence.EFCore.Features;
 using Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql.Extensions;
 using Elsa.Workflows.CommitStates;
