@@ -401,7 +401,7 @@ def validate_container_receipt(profile, version, receipt, image_names=None, bind
     workflow = receipt.get('workflowRun')
     if not isinstance(workflow, dict):
         raise ValueError('Container receipt requires workflowRun provenance')
-    run_id = positive_int(workflow.get('id'), 'workflowRun.id')
+    run_id = container_workflow_run_id(workflow.get('id'))
     run_attempt = positive_int(workflow.get('runAttempt'), 'workflowRun.runAttempt')
     expected_workflow = inventory['workflow']
     event = workflow.get('event')
@@ -1242,6 +1242,14 @@ def published_release(state, name):
 def positive_int(value, field):
     if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
         raise ValueError(f'Recovery receipt requires positive integer {field}')
+    return value
+
+
+def container_workflow_run_id(value):
+    if isinstance(value, str) and re.fullmatch(r'[1-9][0-9]*', value):
+        value = int(value)
+    if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+        raise ValueError('Container receipt requires a positive integer or canonical decimal string workflowRun.id')
     return value
 
 

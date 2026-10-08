@@ -195,9 +195,9 @@ class TrainTests(unittest.TestCase):
 
     def container_github(self, artifact, live_run, *args):
         url = args[-1]
-        if '/actions/runs/44/artifacts?' in url:
+        if f"/actions/runs/{live_run['id']}/artifacts?" in url:
             return [{'artifacts': [artifact]}]
-        if url.endswith('/actions/runs/44'):
+        if url.endswith(f"/actions/runs/{live_run['id']}"):
             return live_run
         if '/compare/' in url:
             return {'status': 'identical'}
@@ -259,6 +259,28 @@ class TrainTests(unittest.TestCase):
         release_fixture = self.container_fixture(state, event='release')
         release_report = self.validate_container_fixture(state, release_fixture)
         self.assertTrue(release_report['verified'])
+
+    def test_container_receipt_accepts_producer_decimal_run_id_and_rejects_malformed_values(self):
+        state = self.ready_container_state(no_containers=False)
+        fixture = self.container_fixture(state)
+        receipt, _, _, artifact, live_run, _ = fixture
+        run_id = 37736455508
+        run_url = f"https://github.com/{state['profile']['container_release']['repository']}/actions/runs/{run_id}"
+        receipt['workflowRun']['id'] = str(run_id)
+        receipt['workflowRun']['url'] = run_url
+        artifact['name'] = train.container_artifact_name(state['version'], run_id, 1)
+        live_run.update(id=run_id, html_url=run_url)
+        self.refresh_container_artifact(fixture)
+
+        report = self.validate_container_fixture(state, fixture)
+        self.assertEqual(run_id, report['workflow_run_id'])
+
+        for malformed in ('037736455508', '37736455508x', '', ' 44', '+44', '0', '-44', '４４', True, 0, -37736455508):
+            with self.subTest(value=malformed), self.assertRaisesRegex(ValueError, 'canonical decimal string workflowRun.id'):
+                train.validate_container_receipt(state['profile'], state['version'], {**receipt, 'workflowRun': {**receipt['workflowRun'], 'id': malformed}})
+
+        with self.assertRaisesRegex(ValueError, 'Recovery receipt requires positive integer'):
+            train.positive_int(str(run_id), 'original_release_run.id')
 
     def test_forged_image_digest_and_receipt_bytes_do_not_verify(self):
         state = self.ready_container_state(no_containers=False)
