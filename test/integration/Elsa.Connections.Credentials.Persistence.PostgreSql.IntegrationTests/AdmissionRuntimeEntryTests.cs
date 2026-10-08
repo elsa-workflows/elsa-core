@@ -3,6 +3,8 @@ using Elsa.Workflows.Admission;
 using Elsa.Workflows.Admission.WorkerProcess;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Options;
+using Elsa.Workflows.Memory;
+using System.Text.Json;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
@@ -114,6 +116,87 @@ public sealed class AdmissionRuntimeEntryTests(PostgreSqlConnectionsFixture fixt
                     ["competingActivityEffects"] = 0, ["authorizedEntries"] = 1, ["activityEffects"] = 1 });
         });
     }
+    [Theory]
+    [InlineData("runtime-typed-int-long", "int-long")]
+    [InlineData("runtime-typed-decimal-double", "decimal-double")]
+    [InlineData("runtime-typed-json-clr", "json-clr")]
+    [InlineData("runtime-typed-negative-zero", "negative-zero")]
+    [InlineData("runtime-prepared-properties", "properties")]
+    [InlineData("runtime-prepared-output", "output")]
+    [InlineData("runtime-prepared-memory", "memory")]
+    [InlineData("runtime-prepared-scheduler-input", "scheduler-input")]
+    [InlineData("runtime-prepared-scheduler-depth", "scheduler-depth")]
+    [InlineData("runtime-prepared-execute-delegate", "execute-delegate")]
+    [InlineData("runtime-prepared-root-reference", "root-reference")]
+    [InlineData("runtime-executing-notification-mutation", "executing-notification")]
+    public async Task PreparedInvocationRejectsRuntimeDistinctValuesAndPlanMutation(string caseId, string scenario)
+    {
+        await _runtime.RunAsync(async host =>
+        {
+            host.Probe.OnRestored = context =>
+            {
+                context.Input["TypedProof"] = scenario switch
+                {
+                    "decimal-double" => 1m,
+                    "json-clr" => JsonSerializer.SerializeToElement(1),
+                    "negative-zero" => BitConverter.Int64BitsToDouble(long.MinValue),
+                    _ => 1
+                };
+                context.Properties["ProofProperty"] = "before";
+                context.Output["ProofOutput"] = "before";
+                context.MemoryRegister.Declare(new Variable("ProofMemory", 1, "proof-memory"));
+                return Task.CompletedTask;
+            };
+            void Mutate(WorkflowExecutionContext context)
+            {
+                switch (scenario)
+                {
+                    case "int-long": context.Input["TypedProof"] = 1L; break;
+                    case "decimal-double": context.Input["TypedProof"] = 1d; break;
+                    case "json-clr": context.Input["TypedProof"] = 1; break;
+                    case "negative-zero": context.Input["TypedProof"] = 0d; break;
+                    case "properties": context.Properties["ProofProperty"] = "after"; break;
+                    case "output": context.Output["ProofOutput"] = "after"; break;
+                    case "memory": context.MemoryRegister.Blocks["proof-memory"].Value = 2; break;
+                    case "scheduler-input": Assert.Single(context.Scheduler.List()).Input["Injected"] = "after"; break;
+                    case "scheduler-depth": Assert.Single(context.Scheduler.List()).SchedulingCallStackDepth = 7; break;
+                    case "execute-delegate": context.ExecuteDelegate = _ => ValueTask.CompletedTask; break;
+                    case "root-reference": context.Workflow.Root = new AdmissionRuntimeActivity(); break;
+                    case "executing-notification": context.Input["TypedProof"] = 2; break;
+                    default: throw new ArgumentOutOfRangeException(nameof(scenario));
+                }
+            }
+            host.Probe.Boundary = boundary =>
+            {
+                if (scenario != "executing-notification" && boundary == nameof(AdmissionExecutionBoundary.StartAuthorized))
+                {
+                    Mutate(host.Probe.PreparedContext!);
+                }
+                return Task.CompletedTask;
+            };
+            if (scenario == "executing-notification")
+            {
+                host.Probe.OnExecuting = context =>
+                {
+                    Mutate(context);
+                    return Task.CompletedTask;
+                };
+            }
+            await Assert.ThrowsAsync<InvalidOperationException>(() => host.Execution.ExecuteAsync(host.AdmissionId));
+            var expectedNotifications = scenario == "executing-notification" ? 1 : 0;
+            Assert.Equal(expectedNotifications, host.Probe.Count("workflowExecuting"));
+            Assert.Equal(expectedNotifications, host.Probe.Count("workflowStarted"));
+            Assert.Equal(0, host.Probe.Count("activityEffects"));
+            Assert.Equal(0, host.Probe.Count("instanceWriteAttempts"));
+            Assert.Null(host.Probe.PreparedContext!.Exception);
+            Assert.Equal(AdmissionState.RecoveryRequired, (await host.Store.FindAsync(host.AdmissionId))!.State);
+            await AdmissionProofObservation.WriteAsync(fixture, caseId, GetType().FullName + "." + nameof(PreparedInvocationRejectsRuntimeDistinctValuesAndPlanMutation), caseId, [],
+                new Dictionary<string, bool> { ["behaviorAssertionsPassed"] = true },
+                new Dictionary<string, object> { ["workflowExecuting"] = expectedNotifications, ["workflowStarted"] = expectedNotifications,
+                    ["activityEffects"] = 0, ["instanceWriteAttempts"] = 0, ["businessFaultRecorded"] = false, ["recoveryRequired"] = true });
+        });
+    }
+
 #pragma warning disable CS0618 // Exercise the actual legacy facade rather than a duplicate wrapper.
     private static async Task InvokeLegacyAsync(IWorkflowRuntime runtime, Elsa.Workflows.State.WorkflowState state, string scenario)
     {
