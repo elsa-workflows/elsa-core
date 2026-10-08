@@ -83,7 +83,7 @@ def run(root: Path, output: Path, head: str, suite: str, framework: str,
     require(type(head) is str and HEAD.fullmatch(head) is not None and
             all(type(value) is str and NUMBER.fullmatch(value) is not None for value in (run_id, run_attempt)),
             "source_test_setup_failed")
-    require(not output.is_symlink(), "source_test_setup_failed")
+    require(not any(part.is_symlink() for part in (output, *output.parents)), "source_test_setup_failed")
     root, output = root.resolve(), output.resolve()
     require(output != root and root not in output.parents and
             (not output.exists() or output.is_dir() and not any(output.iterdir())), "source_test_setup_failed")

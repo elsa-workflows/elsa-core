@@ -188,6 +188,17 @@ class SourceRunnerTests(unittest.TestCase):
                 runner.run(self.root, output, self.head, 'slack-unit-loopback', 'net10.0', '123', '1')
             self.assertEqual('user data', (output/'keep').read_text())
 
+    def test_output_symlink_ancestor_is_rejected_before_children_or_writes(self):
+        destination = self.base / 'real-output'
+        destination.mkdir()
+        alias = self.base / 'output-alias'
+        alias.symlink_to(destination, target_is_directory=True)
+        with patch.object(runner, 'execute') as execute:
+            with self.assertRaises(runner.SourceTestError):
+                runner.run(self.root, alias / 'new-evidence', self.head, 'slack-unit-loopback', 'net10.0', '123', '1')
+            execute.assert_not_called()
+        self.assertEqual([], list(destination.iterdir()))
+
     def test_arbitrary_exception_text_is_not_retained_or_printed(self):
         with patch.object(runner, 'execute', side_effect=RuntimeError('/private/secret/token=private-only')), redirect_stdout(io.StringIO()) as stdout:
             output = self.base/'exception'
