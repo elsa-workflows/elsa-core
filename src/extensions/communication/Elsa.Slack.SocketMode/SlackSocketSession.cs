@@ -26,7 +26,7 @@ internal sealed class SlackSocketSession(SlackSocketModeConfiguration configurat
     private readonly TaskCompletionSource _ended = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly TaskCompletionSource _hello = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly TaskCompletionSource _cancellationEnded = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    private readonly HashSet<SessionOperation> _operations = [];
+    private readonly HashSet<SlackSocketOperation> _operations = [];
     private readonly Channel<SlackSocketConnection.ReceivedFrame> _frames = Channel.CreateBounded<SlackSocketConnection.ReceivedFrame>(
         new BoundedChannelOptions(configuration.Limits.MaximumPendingEnvelopes)
         {
@@ -395,7 +395,7 @@ internal sealed class SlackSocketSession(SlackSocketModeConfiguration configurat
 
     private void End(SlackSocketSessionEndReason reason)
     {
-        SessionOperation[] operations;
+        SlackSocketOperation[] operations;
         lock (_gate)
         {
             if (_ending)
@@ -443,7 +443,7 @@ internal sealed class SlackSocketSession(SlackSocketModeConfiguration configurat
         _ = CancelOwnedAsync(operations);
     }
 
-    private async Task CancelOwnedAsync(SessionOperation[] operations)
+    private async Task CancelOwnedAsync(SlackSocketOperation[] operations)
     {
         try
         {
@@ -470,9 +470,9 @@ internal sealed class SlackSocketSession(SlackSocketModeConfiguration configurat
         }
     }
 
-    private SessionOperation BeginOperation(Func<SlackSocketSessionEndReason> failure)
+    private SlackSocketOperation BeginOperation(Func<SlackSocketSessionEndReason> failure)
     {
-        SessionOperation operation;
+        SlackSocketOperation operation;
         bool ending;
         lock (_gate)
         {
@@ -481,92 +481,30 @@ internal sealed class SlackSocketSession(SlackSocketModeConfiguration configurat
             {
                 throw new InvalidOperationException("socket_session_operation_bound_exceeded");
             }
-            operation = new(this);
+            operation = new(CancellationFailed, settled =>
+            {
+                lock (_gate)
+                {
+                    _operations.Remove(settled);
+                }
+            });
             _operations.Add(operation);
             ending = _ending;
         }
-        operation.StartDeadline(configuration.Limits.OperationTimeout, failure);
+        operation.StartDeadline(configuration.Limits.OperationTimeout, () =>
+        {
+            var reason = failure();
+            End(reason);
+            if (reason == SlackSocketSessionEndReason.AdmissionUncertainty)
+            {
+                SignalDurableWork();
+            }
+        });
         if (ending)
         {
             _ = operation.RequestCancellation();
         }
         return operation;
-    }
-
-    private sealed class SessionOperation : IAsyncDisposable
-    {
-        private readonly object _gate = new();
-        private readonly SlackSocketSession _session;
-        private readonly CancellationTokenSource _exposed = new();
-        private readonly CancellationTokenSource _watcherStop = new();
-        private Task _watcher = Task.CompletedTask;
-        private Task? _cancellation;
-        private bool _bodyClosed;
-
-        internal SessionOperation(SlackSocketSession session) => _session = session;
-
-        internal CancellationToken Token => _exposed.Token;
-
-        // Start outside the session gate, including an explicitly configured sub-millisecond deadline.
-        internal void StartDeadline(TimeSpan timeout, Func<SlackSocketSessionEndReason> failure) => _watcher = WatchAsync(timeout, failure);
-
-        private async Task WatchAsync(TimeSpan timeout, Func<SlackSocketSessionEndReason> failure)
-        {
-            try
-            {
-                // This private deadline is never linked to, or registered on, the provider's token.
-                await Task.Delay(timeout, _watcherStop.Token);
-                var reason = failure();
-                _session.End(reason);
-                if (reason == SlackSocketSessionEndReason.AdmissionUncertainty)
-                {
-                    _session.SignalDurableWork();
-                }
-            }
-            catch (OperationCanceledException) when (_watcherStop.IsCancellationRequested)
-            {
-            }
-        }
-
-        internal Task RequestCancellation()
-        {
-            lock (_gate)
-            {
-                // Cache the FIRST CancelAsync task: later CancelAsync calls may return before existing callbacks finish.
-                return _bodyClosed ? _cancellation ?? Task.CompletedTask : _cancellation ??= _exposed.CancelAsync();
-            }
-        }
-
-        internal async Task CloseBodyAsync()
-        {
-            Task callbacks;
-            lock (_gate)
-            {
-                _bodyClosed = true;
-                callbacks = _cancellation ?? Task.CompletedTask;
-            }
-            try
-            {
-                await callbacks;
-            }
-            catch (Exception)
-            {
-                _session.CancellationFailed();
-            }
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            await CloseBodyAsync();
-            await _watcherStop.CancelAsync();
-            await _watcher;
-            lock (_session._gate)
-            {
-                _session._operations.Remove(this);
-            }
-            _exposed.Dispose();
-            _watcherStop.Dispose();
-        }
     }
 
     // Caller holds _gate, keeping queued/inflight snapshots coherent with queue mutation and retirement.

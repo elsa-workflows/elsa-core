@@ -16,7 +16,7 @@ namespace Elsa.Slack.SocketMode.Extensions;
 /// <summary>Explicit opt-in shared by classic and Shell hosts. Existing guarded workflow, Connections and Secrets persistence is selected separately.</summary>
 public static class SlackSocketModeServiceCollectionExtensions
 {
-    /// <summary>Registers the fixed production Socket adapter and validates existing provisioning at startup. Does not migrate, activate or open a connection.</summary>
+    /// <summary>Registers the fixed production Socket listener. The listener validates existing provisioning before opening; it never migrates or activates.</summary>
     public static IServiceCollection AddSlackSocketMode(this IServiceCollection services, SlackSocketModeConfiguration configuration, string connectionString) =>
         services.AddSlackSocketMode(configuration, connectionString, SlackSocketTransportPolicy.Production);
 
@@ -35,7 +35,8 @@ public static class SlackSocketModeServiceCollectionExtensions
         {
             typeof(SlackSocketModeConfiguration), typeof(SlackSocketTransportPolicy), typeof(ISlackPublicChannelMessageSource),
             typeof(AdmittedSlackPublicChannelMessageSource), typeof(SlackSocketListenerCredentialReader), typeof(SlackSocketEnvelopeProcessor),
-            typeof(SlackSocketUrlOpener), typeof(SlackSocketModeHostValidator), typeof(SlackSocketReceiptElsaDbContext),
+            typeof(SlackSocketUrlOpener), typeof(SlackSocketModeHostValidator), typeof(SlackSocketSubscriptionWithdrawal),
+            typeof(SlackSocketModeHealth), typeof(ISlackSocketModeHealth), typeof(SlackSocketListener), typeof(SlackSocketReceiptElsaDbContext),
             typeof(DbContextOptions<SlackSocketReceiptElsaDbContext>), typeof(IDbContextFactory<SlackSocketReceiptElsaDbContext>),
             typeof(SlackSocketReceiptTransactions), typeof(ISlackSocketDiscardStore), typeof(IAdmissionIdentityConflictReader)
         };
@@ -53,24 +54,16 @@ public static class SlackSocketModeServiceCollectionExtensions
         services.AddScoped<SlackSocketEnvelopeProcessor>();
         services.AddScoped<SlackSocketUrlOpener>();
         services.AddScoped<SlackSocketModeHostValidator>();
+        services.AddScoped<SlackSocketSubscriptionWithdrawal>();
+        services.AddSingleton(_ => new SlackSocketModeHealth(configuration.Limits.MaximumPendingEnvelopes,
+            configuration.Limits.MaximumAdmissionConcurrency));
+        services.AddSingleton<ISlackSocketModeHealth>(provider => provider.GetRequiredService<SlackSocketModeHealth>());
         services.AddDbContextFactory<SlackSocketReceiptElsaDbContext>((_, builder) =>
             builder.UseElsaPostgreSql(typeof(SlackSocketReceiptElsaDbContext).Assembly, connectionString,
                 new ElsaDbContextOptions { SchemaName = "Elsa", MigrationsHistoryTableName = SlackSocketReceiptElsaDbContext.HistoryTable }));
         services.AddSlackSocketDiscardPersistence();
-        services.AddHostedService<SlackSocketModeStartupValidator>();
+        services.AddHostedService<SlackSocketListener>();
         return services;
     }
 
-    // This service performs validation only. The owned listener must also validate before opening,
-    // even when the host elects to start hosted services concurrently.
-    private sealed class SlackSocketModeStartupValidator(IServiceScopeFactory scopes) : IHostedService
-    {
-        public async Task StartAsync(CancellationToken cancellationToken)
-        {
-            await using var scope = scopes.CreateAsyncScope();
-            await scope.ServiceProvider.GetRequiredService<SlackSocketModeHostValidator>().ValidateAsync(cancellationToken);
-        }
-
-        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-    }
 }

@@ -16,6 +16,7 @@ internal sealed class SlackSocketModeHealth : ISlackSocketModeHealth
     private long _rejected;
     private int _queued;
     private int _inflight;
+    private bool _reconciliationLatched;
 
     internal SlackSocketModeHealth(int maximumQueued, int maximumInflight)
     {
@@ -43,8 +44,30 @@ internal sealed class SlackSocketModeHealth : ISlackSocketModeHealth
         }
         lock (_gate)
         {
-            _state = state;
-            _reason = reason;
+            if (!_reconciliationLatched)
+            {
+                _state = state;
+                _reason = reason;
+            }
+        }
+    }
+
+    // A parent failure survives later socket-generation Connected/Stopped callbacks.
+    // A fresh listener lifetime requires a fresh health owner, never an implicit reset.
+    internal void LatchReconciliation(SlackSocketModeHealthReason reason)
+    {
+        if (!Enum.IsDefined(reason) || reason == SlackSocketModeHealthReason.None)
+        {
+            throw new ArgumentOutOfRangeException(nameof(reason));
+        }
+        lock (_gate)
+        {
+            if (!_reconciliationLatched)
+            {
+                _reconciliationLatched = true;
+                _state = SlackSocketModeHealthState.ReconciliationRequired;
+                _reason = reason;
+            }
         }
     }
 

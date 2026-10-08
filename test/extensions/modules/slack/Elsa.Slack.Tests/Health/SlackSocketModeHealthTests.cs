@@ -23,6 +23,24 @@ public sealed class SlackSocketModeHealthTests
         Assert.All(json.RootElement.EnumerateObject(), property => Assert.Equal(JsonValueKind.Number, property.Value.ValueKind));
     }
 
+    [Fact]
+    public void ParentReconciliationSurvivesLaterSessionShutdownAndConnectionCallbacks()
+    {
+        var health = new SlackSocketModeHealth(3, 2);
+        health.SetState(SlackSocketModeHealthState.Connected, SlackSocketModeHealthReason.None);
+        health.LatchReconciliation(SlackSocketModeHealthReason.AdmissionUncertainty);
+        Parallel.For(0, 100, _ =>
+        {
+            health.SetState(SlackSocketModeHealthState.Stopped, SlackSocketModeHealthReason.Drain);
+            health.SetState(SlackSocketModeHealthState.Connected, SlackSocketModeHealthReason.None);
+            health.LatchReconciliation(SlackSocketModeHealthReason.Withdrawal);
+        });
+        Assert.Equal(SlackSocketModeHealthState.ReconciliationRequired, health.GetSnapshot().State);
+        Assert.Equal(SlackSocketModeHealthReason.AdmissionUncertainty, health.GetSnapshot().Reason);
+        health.RecordOutcome(SlackSocketModeHealthOutcome.Admitted);
+        Assert.Equal(1, health.GetSnapshot().Admitted);
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(1)]
