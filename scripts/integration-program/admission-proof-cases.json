@@ -6299,6 +6299,211 @@
       "processRoles": [],
       "minimumProcesses": 0,
       "restartRequired": false
+    },
+    {
+      "caseId": "runtime-checkpoint-observer-created",
+      "family": "continue",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeCheckpointTests.ConfirmedSuspendedCheckpointSurvivesObserverFailureAndRemainsResumable",
+      "parameterId": "runtime-checkpoint-observer-created",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "observerExceptionPropagated": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "confirmedCheckpointUnchanged": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "durableBookmarksUnchanged": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "resolutionDeniedWhileOwnerHeld": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "legitimateContinuationCompleted": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activeCyclesAfterUnwind": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-checkpoint-observer-materialized",
+      "family": "continue",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeCheckpointTests.ConfirmedSuspendedCheckpointSurvivesObserverFailureAndRemainsResumable",
+      "parameterId": "runtime-checkpoint-observer-materialized",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "observerExceptionPropagated": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "confirmedCheckpointUnchanged": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "durableBookmarksUnchanged": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "resolutionDeniedWhileOwnerHeld": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "legitimateContinuationCompleted": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activeCyclesAfterUnwind": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-checkpoint-observer-resumed",
+      "family": "continue",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeCheckpointTests.ConfirmedSuspendedCheckpointSurvivesObserverFailureAndRemainsResumable",
+      "parameterId": "runtime-checkpoint-observer-resumed",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "observerExceptionPropagated": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "confirmedCheckpointUnchanged": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "durableBookmarksUnchanged": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "resolutionDeniedWhileOwnerHeld": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "legitimateContinuationCompleted": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 2,
+          "maximum": 2
+        },
+        "activeCyclesAfterUnwind": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-checkpoint-commit-unknown",
+      "family": "continue",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeCheckpointTests.UnknownCheckpointCommitResponseStillRequiresRecoveryDespiteCommittedReadback",
+      "parameterId": "default",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "committedCheckpointObserved": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "recoveryRequired": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "continuationDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "persistedSuspensionUnchanged": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "checkpointNotifications": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activeCyclesAfterUnwind": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
     }
   ],
   "workerAssemblies": {

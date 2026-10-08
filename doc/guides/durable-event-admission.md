@@ -30,6 +30,8 @@ The later transport calls `AdmissionExecutionService.AdmitAsync` with provider e
 
 Execution retains the same execution-cycle owner through final commit, trailing save and full unwind. Persistent variables load before scheduling and save through the normal commit path. A real Suspended result remains nonterminal. A successful runner return alone does not establish the trusted checkpoint: recording the final persisted full-state/bookmark fingerprint is a separate definite boundary.
 
+After checkpoint recording returns definite success, a `CheckpointRecorded` observer failure propagates to the caller without invalidating that saved checkpoint. Resume still requires the exact recorded bookmark and fingerprint. A checkpoint commit that throws before returning remains uncertain even if a later read finds `ExecutionObserved`; it requires recovery rather than automatic continuation. Failures before checkpoint confirmation, including trailing writes and ownership-unwind instrumentation, retain the same conservative recovery behavior.
+
 For continuation, use the actual runtime client with the exact recorded BookmarkId after ExecutionObserved. Arbitrary activity handles, variable/property/scheduling changes and imported snapshots do not authorize continuation. Optional workflow output is returned as detached persisted data only when requested. Consumed, forged, missing-owner or ambiguous checkpoints fail closed.
 
 ## Withdraw and reconcile
