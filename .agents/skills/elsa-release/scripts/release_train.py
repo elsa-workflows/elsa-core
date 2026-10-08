@@ -1924,17 +1924,25 @@ def status(state):
 def adopt_containers(state, args):
     """Explicitly upgrade a legacy checkpoint to the current container artifact gate."""
 
+    profile = state['profile']
+    profile_path = getattr(args, 'profile', None)
+    if profile_path is not None or ('container_release' not in profile and not containers_configured(state)):
+        current_profile = read(profile_path or DEFAULT_PROFILE)
+        if not compatible_profile(profile, current_profile):
+            raise ValueError('Container adoption profile conflicts with the saved release policy')
     if containers_configured(state):
         return state['containers']
-    current_profile = read(DEFAULT_PROFILE)
-    state.setdefault('profile', {})['container_release'] = current_profile['container_release']
+    if 'container_release' not in profile:
+        profile = {**profile, 'container_release': current_profile['container_release']}
     selected = [name for name, item in state['repositories'].items() if item.get('publish')]
-    state['containers'] = make_container_state(
-        state['profile'], state['version'], selected,
+    containers = make_container_state(
+        profile, state['version'], selected,
         getattr(args, 'no_containers', False),
         state['repositories'].keys(),
     )
-    return state['containers']
+    state['profile'] = profile
+    state['containers'] = containers
+    return containers
 
 
 def adopt_post_refresh(state, args):
@@ -2046,6 +2054,7 @@ def main():
     p.add_argument('--no-containers', action='store_true', help='Explicitly omit container publication from this release')
     sub.add_parser('status')
     p = sub.add_parser('adopt-containers')
+    p.add_argument('--profile', type=Path, help='Compatible profile supplying a missing legacy container inventory; saved inventory is preserved')
     p.add_argument('--no-containers', action='store_true', help='Explicitly adopt the legacy checkpoint with containers disabled')
     sub.add_parser('prepare-containers')
     p = sub.add_parser('bind-containers')

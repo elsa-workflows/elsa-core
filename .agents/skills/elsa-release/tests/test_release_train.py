@@ -605,6 +605,104 @@ class TrainTests(unittest.TestCase):
         self.assertTrue(adopted['enabled'])
         self.assertEqual(8, len(adopted['images']))
 
+    def custom_container_profile(self):
+        profile = copy.deepcopy(self.state['profile'])
+        profile['container_release']['source_ref'] = 'release/custom'
+        profile['container_release']['canonical_ref'] = 'release/custom'
+        for image in profile['container_release']['images']:
+            image['repository'] = image['repository'].replace('elsaworkflows/', 'custom-images/')
+        return profile
+
+    def test_adopt_containers_preserves_saved_custom_inventory(self):
+        self.state.pop('containers')
+        self.state['profile'] = self.custom_container_profile()
+        saved_profile = copy.deepcopy(self.state['profile'])
+        adopted = train.adopt_containers(self.state, SimpleNamespace(no_containers=False))
+        self.assertEqual(saved_profile, self.state['profile'])
+        self.assertEqual('release/custom', adopted['source_ref'])
+        self.assertEqual(8, len(adopted['images']))
+
+    def test_adopt_containers_cli_accepts_compatible_custom_legacy_profile(self):
+        self.state.pop('containers')
+        profile = self.custom_container_profile()
+        profile['repositories'][0]['directory'] = 'custom-core'
+        self.state['profile'] = copy.deepcopy(profile)
+        self.state['profile'].pop('container_release')
+        profile_path = self.root / 'custom-profile.json'
+        train.save(profile_path, profile)
+        train.save(self.args.state, self.state)
+        result = subprocess.run(
+            [sys.executable, str(Path(train.__file__)), '--state', str(self.args.state),
+             'adopt-containers', '--profile', str(profile_path)],
+            text=True, capture_output=True,
+        )
+        self.assertEqual(0, result.returncode, result.stderr)
+        adopted = train.read(self.args.state)
+        self.assertEqual(profile, adopted['profile'])
+        self.assertEqual('release/custom', adopted['containers']['source_ref'])
+        self.assertEqual(self.state['announcements'], adopted['announcements'])
+        self.assertEqual(self.state['repositories'], adopted['repositories'])
+
+    def test_adopt_containers_rejects_conflicting_profile_without_mutation(self):
+        for configured in (False, True):
+            for section in ('container_release', 'repositories', 'post_release_sites'):
+                with self.subTest(configured=configured, section=section):
+                    state = copy.deepcopy(self.state)
+                    if not configured:
+                        state.pop('containers')
+                    profile = copy.deepcopy(state['profile'])
+                    if section == 'container_release':
+                        profile[section]['source_ref'] = 'release/conflicting'
+                    elif section == 'repositories':
+                        profile[section][0]['directory'] = 'conflicting-core'
+                    else:
+                        profile[section]['website']['project_id'] = 'conflicting-site'
+                    profile_path = self.root / 'conflicting-profile.json'
+                    train.save(profile_path, profile)
+                    original = copy.deepcopy(state)
+                    with self.assertRaisesRegex(ValueError, 'conflicts with the saved release policy'):
+                        train.adopt_containers(state, SimpleNamespace(profile=profile_path, no_containers=False))
+                    self.assertEqual(original, state)
+
+    def test_adopt_containers_legacy_default_rejects_custom_policy_without_mutation(self):
+        self.state.pop('containers')
+        self.state['profile'].pop('container_release')
+        self.state['profile']['repositories'][0]['directory'] = 'custom-core'
+        original = copy.deepcopy(self.state)
+        with self.assertRaisesRegex(ValueError, 'conflicts with the saved release policy'):
+            train.adopt_containers(self.state, SimpleNamespace(no_containers=False))
+        self.assertEqual(original, self.state)
+
+    def test_adopt_containers_cli_invalid_inventory_leaves_checkpoint_unchanged(self):
+        self.state.pop('containers')
+        self.state['profile'].pop('container_release')
+        profile = copy.deepcopy(self.state['profile'])
+        profile['container_release'] = {'images': []}
+        profile_path = self.root / 'invalid-profile.json'
+        train.save(profile_path, profile)
+        train.save(self.args.state, self.state)
+        original = self.args.state.read_bytes()
+        result = subprocess.run(
+            [sys.executable, str(Path(train.__file__)), '--state', str(self.args.state),
+             'adopt-containers', '--profile', str(profile_path)],
+            text=True, capture_output=True,
+        )
+        self.assertEqual(1, result.returncode)
+        self.assertIn('non-empty image inventory', result.stderr)
+        self.assertEqual(original, self.args.state.read_bytes())
+
+    def test_adopt_containers_configured_gate_is_unchanged(self):
+        self.state['containers']['receipt'] = {'retained': 'existing-receipt'}
+        original = copy.deepcopy(self.state)
+        with patch.object(train, 'read', side_effect=AssertionError('Configured gate must not load a default profile')):
+            adopted = train.adopt_containers(self.state, SimpleNamespace(no_containers=False))
+        self.assertIs(self.state['containers'], adopted)
+        self.assertEqual(original, self.state)
+        profile_path = self.root / 'same-profile.json'
+        train.save(profile_path, self.state['profile'])
+        self.assertIs(adopted, train.adopt_containers(self.state, SimpleNamespace(profile=profile_path, no_containers=False)))
+        self.assertEqual(original, self.state)
+
     def test_prerelease_container_aliases_keep_exact_release_version_tags(self):
         args = SimpleNamespace(**{
             **vars(self.args), 'version': '3.9.0-rc1', 'kind': 'rc', 'no_containers': False,
