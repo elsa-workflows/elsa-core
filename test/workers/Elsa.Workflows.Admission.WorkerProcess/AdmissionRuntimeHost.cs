@@ -104,6 +104,7 @@ public static class AdmissionRuntimeHost
         services.Replace(ServiceDescriptor.Singleton<ISystemClock>(new AdmissionRuntimeClock()));
         services.Decorate<IWorkflowStateExtractor, AdmissionObservedStateExtractor>();
         services.Decorate<ICommitStateHandler, AdmissionObservedCommit>();
+        services.Decorate<IBookmarkStore, AdmissionObservedBookmarkStore>();
         // A serializer can be instantiated against the SAME final service container after
         // registration. The deferred descriptor constructs the immutable allowlist before use.
         services.AddSingleton(provider =>
@@ -185,7 +186,7 @@ public static class AdmissionRuntimeHost
             typeof(WorkflowCommitNotificationSender), typeof(ExecutionCycleAwareCommitStateHandler), typeof(BookmarksPersister),
             typeof(VariablePersistenceManager), typeof(NoopWorkflowCommitTransaction), typeof(WorkflowCommitNotificationBuffer),
             typeof(ActivitySchedulerFactory), typeof(ActivityInvoker), typeof(ActivityLoggerStateGenerator), typeof(TypedActivityProvider), typeof(WorkflowDefinitionActivityProvider), typeof(HostMethodActivityProvider),
-            typeof(AdmissionRuntimeProbe), typeof(AdmissionObservedStateExtractor), typeof(AdmissionObservedCommit)
+            typeof(AdmissionRuntimeProbe), typeof(AdmissionObservedStateExtractor), typeof(AdmissionObservedCommit), typeof(AdmissionObservedBookmarkStore)
         };
         var management = new[] { "DeleteWorkflowInstances", "RefreshActivityRegistry", "UpdateConsumingWorkflows", "ValidateWorkflow", "ValidateOutputConverters" }
             .Select(name => typeof(WorkflowManagementFeature).Assembly.GetType("Elsa.Workflows.Management.Handlers.Notifications." + name, true)!);

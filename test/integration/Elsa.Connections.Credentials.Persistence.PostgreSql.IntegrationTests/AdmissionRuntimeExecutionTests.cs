@@ -7,6 +7,8 @@ using Elsa.Workflows.Pipelines.ActivityExecution;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
+using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.State;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
@@ -227,6 +229,101 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
             Assert.Equal(1, host.Probe.Count("activityEffects"));
             await ObserveAsync("runtime-public-activity-denial", nameof(PublicActivityEntriesRemainDeniedDuringAuthorizedRunAndAfterUnwind), "public-activity-denial",
                 new() { ["activityEffects"] = 1, ["duringExecutionDenied"] = true, ["afterUnwindDenied"] = true });
+        });
+    }
+
+    [Fact]
+    public async Task LegacyBookmarkUpsertCannotReplaceOwnedRowWithForgedUnownedIdentity()
+    {
+        await WithHostAsync(async host =>
+        {
+            host.Probe.Outcome = "suspended";
+            var initial = (await host.Execution.ExecuteAsync(host.AdmissionId))!;
+            var bookmark = Assert.Single(initial.Bookmarks);
+            var store = host.Services.GetRequiredService<IBookmarkStore>();
+            var serializer = host.Services.GetRequiredService<IPayloadSerializer>();
+            var original = (await store.FindAsync(new BookmarkFilter { BookmarkId = bookmark.Id }))!;
+            var before = serializer.Serialize(original);
+            var saves = host.Probe.Count("bookmarkSaveCalls");
+            var forged = new StoredBookmark
+            {
+                Id = original.Id, TenantId = "foreign-forged-tenant", WorkflowInstanceId = "definitively-unowned-instance",
+                ActivityInstanceId = original.ActivityInstanceId, Name = "forged-bookmark", Hash = "forged-hash", CreatedAt = original.CreatedAt
+            };
+            var runtime = host.Services.GetRequiredService<IWorkflowRuntime>();
+#pragma warning disable CS0618 // Exercise the supported legacy facade's actual write boundary.
+            await Assert.ThrowsAsync<InvalidOperationException>(() => runtime.UpdateBookmarkAsync(forged));
+#pragma warning restore CS0618
+            Assert.Equal(saves, host.Probe.Count("bookmarkSaveCalls"));
+            Assert.Equal(before, serializer.Serialize((await store.FindAsync(new BookmarkFilter { BookmarkId = bookmark.Id }))!));
+            await ObserveAsync("runtime-bookmark-owner-upsert", nameof(LegacyBookmarkUpsertCannotReplaceOwnedRowWithForgedUnownedIdentity), "bookmark-owner-upsert",
+                new() { ["bookmarkSaveDelta"] = 0, ["originalUnchanged"] = true });
+        });
+    }
+
+    [Fact]
+    public async Task MutablePreparedContextIdentityCannotEmitCancellationNotification()
+    {
+        await WithHostAsync(async host =>
+        {
+            var denied = false;
+            host.Probe.Boundary = async boundary =>
+            {
+                if (boundary == nameof(AdmissionExecutionBoundary.BeforeRunnerEntry))
+                {
+                    var context = host.Probe.PreparedContext!;
+                    var original = context.Id;
+                    try
+                    {
+                        context.Id = "definitively-unowned-instance";
+                        await Assert.ThrowsAsync<InvalidOperationException>(() => host.Services.GetRequiredService<IWorkflowCanceler>().CancelWorkflowAsync(context));
+                        denied = true;
+                    }
+                    finally
+                    {
+                        context.Id = original;
+                    }
+                }
+            };
+            await host.Execution.ExecuteAsync(host.AdmissionId);
+            Assert.True(denied);
+            Assert.Equal(0, host.Probe.Count("workflowCancelling"));
+            Assert.Equal(1, host.Probe.Count("activityEffects"));
+            await ObserveAsync("runtime-cancel-context-identity", nameof(MutablePreparedContextIdentityCannotEmitCancellationNotification), "cancel-context-identity",
+                new() { ["workflowCancelling"] = 0, ["activityEffects"] = 1 });
+        });
+    }
+
+    [Theory]
+    [InlineData("runtime-output-included", "included", true)]
+    [InlineData("runtime-output-omitted", "omitted", false)]
+    public async Task LegitimateLocalClientContinuationReturnsRequestedDetachedPersistedOutput(string caseId, string parameterId, bool includeOutput)
+    {
+        await WithHostAsync(async host =>
+        {
+            host.Probe.Outcome = "suspended";
+            var initial = (await host.Execution.ExecuteAsync(host.AdmissionId))!;
+            var client = await host.Services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync(initial.WorkflowInstanceId);
+            var response = await client.RunInstanceAsync(new RunWorkflowInstanceRequest
+            {
+                BookmarkId = Assert.Single(initial.Bookmarks).Id, IncludeWorkflowOutput = includeOutput
+            });
+            Assert.Equal(WorkflowSubStatus.Finished, response.SubStatus);
+            if (includeOutput)
+            {
+                Assert.Equal("persisted-resume-output", response.Output!["Proof"]);
+                response.Output["Proof"] = "caller-mutated-output";
+                var persisted = (await host.Services.GetRequiredService<IWorkflowInstanceManager>().FindByIdAsync(initial.WorkflowInstanceId))!;
+                Assert.Equal("persisted-resume-output", persisted.WorkflowState.Output["Proof"]);
+            }
+            else
+            {
+                Assert.Null(response.Output);
+            }
+            Assert.Equal(1, host.Probe.Count("activityEffects"));
+            Assert.Equal(1, host.Probe.Count("activityResumes"));
+            await ObserveAsync(caseId, nameof(LegitimateLocalClientContinuationReturnsRequestedDetachedPersistedOutput), parameterId,
+                new() { ["activityEffects"] = 1, ["activityResumes"] = 1, ["outputIncluded"] = includeOutput, ["persistedOutputUnchanged"] = true });
         });
     }
 

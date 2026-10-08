@@ -1,4 +1,8 @@
+using Elsa.Common.Models;
 using Elsa.Workflows.CommitStates;
+using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.State;
 using Microsoft.EntityFrameworkCore;
@@ -65,4 +69,22 @@ public sealed class AdmissionObservedInstanceWrites(AdmissionRuntimeProbe probe)
         }
         return result;
     }
+}
+
+public sealed class AdmissionObservedBookmarkStore(IBookmarkStore inner, AdmissionRuntimeProbe probe) : IBookmarkStore
+{
+    public async ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default)
+    {
+        await probe.IncrementAsync("bookmarkSaveCalls");
+        await inner.SaveAsync(record, cancellationToken);
+    }
+    public async ValueTask SaveManyAsync(IEnumerable<StoredBookmark> records, CancellationToken cancellationToken)
+    {
+        await probe.IncrementAsync("bookmarkBatchCalls");
+        await inner.SaveManyAsync(records, cancellationToken);
+    }
+    public ValueTask<StoredBookmark?> FindAsync(BookmarkFilter filter, CancellationToken cancellationToken = default) => inner.FindAsync(filter, cancellationToken);
+    public ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default) => inner.FindManyAsync(filter, cancellationToken);
+    public ValueTask<Page<StoredBookmark>> FindManyAsync(BookmarkFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default) => inner.FindManyAsync(filter, pageArgs, cancellationToken);
+    public ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default) => inner.DeleteAsync(filter, cancellationToken);
 }

@@ -27,7 +27,13 @@ public class WorkflowCanceler(
     /// <inheritdoc />
     public async Task CancelWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default)
     {
-        await DemandUnownedAsync(workflowExecutionContext.Id, cancellationToken);
+        var guard = serviceProvider.GetService(typeof(IWorkflowExecutionGuard)) as IWorkflowExecutionGuard ?? workflowExecutionContext.GetService<IWorkflowExecutionGuard>();
+        if (guard != null)
+        {
+            // Exact-context denial precedes cancellation notifications, even if its mutable
+            // ID was changed after preparation. This never consumes runner authority.
+            await guard.AuthorizeAsync(workflowExecutionContext, WorkflowExecutionEntryPoint.DirectPipeline);
+        }
         using var executionScope = WorkflowExecutionScope.Begin(workflowExecutionContext);
         await mediator.SendAsync(new WorkflowCancelling(workflowExecutionContext.Id), cancellationToken);
         var pipelineBuilder = new WorkflowExecutionPipelineBuilder(serviceProvider);

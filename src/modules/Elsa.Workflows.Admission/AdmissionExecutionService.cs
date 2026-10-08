@@ -124,7 +124,7 @@ public sealed class AdmissionExecutionService
                 }
                 record = await _store.CompleteCreationAsync(record.Id, record.Revision, AdmissionHash.Compute(expectedState), cancellationToken)
                     ?? throw new InvalidOperationException("Admission creation completion lost its revision.");
-                return await RunOwnedAsync(record, configuration, graph, reloaded.WorkflowState, null, null, cancellationToken);
+                return await RunOwnedAsync(record, configuration, graph, reloaded.WorkflowState, null, null, false, cancellationToken);
             }
             catch
             {
@@ -139,7 +139,7 @@ public sealed class AdmissionExecutionService
                 var instance = await _instances.FindByIdAsync(record.WorkflowInstanceId!, cancellationToken)
                     ?? throw new InvalidOperationException("The materialized admission instance is missing.");
                 ValidateInitialState(instance.WorkflowState, record, configuration);
-                return await RunOwnedAsync(record, configuration, graph, instance.WorkflowState, null, null, cancellationToken);
+                return await RunOwnedAsync(record, configuration, graph, instance.WorkflowState, null, null, false, cancellationToken);
             }
             catch
             {
@@ -176,7 +176,7 @@ public sealed class AdmissionExecutionService
             throw new InvalidOperationException("The admission bookmark has no trusted owning activity.");
         }
         var graph = await LoadPinnedGraphAsync(configuration, cancellationToken);
-        return await RunOwnedAsync(record, configuration, graph, state, bookmark, request.Input, cancellationToken);
+        return await RunOwnedAsync(record, configuration, graph, state, bookmark, request.Input, request.IncludeWorkflowOutput, cancellationToken);
     }
 
     /// <summary>Conservative restart classification; never repeats insertion, notifications, permit or effects.</summary>
@@ -236,7 +236,7 @@ public sealed class AdmissionExecutionService
     }
 
     private async Task<RunWorkflowInstanceResponse> RunOwnedAsync(AdmissionRecord record, AdmissionSubscriptionConfiguration configuration,
-        WorkflowGraph graph, WorkflowState state, Bookmark? bookmark, IDictionary<string, object>? input, CancellationToken cancellationToken)
+        WorkflowGraph graph, WorkflowState state, Bookmark? bookmark, IDictionary<string, object>? input, bool includeWorkflowOutput, CancellationToken cancellationToken)
     {
         WorkflowExecutionContext? context = null;
         try
@@ -290,7 +290,8 @@ public sealed class AdmissionExecutionService
             return new()
             {
                 WorkflowInstanceId = persisted.Id, Status = persisted.Status, SubStatus = persisted.SubStatus,
-                Bookmarks = persisted.WorkflowState.Bookmarks, Incidents = persisted.WorkflowState.Incidents
+                Bookmarks = persisted.WorkflowState.Bookmarks, Incidents = persisted.WorkflowState.Incidents,
+                Output = includeWorkflowOutput ? new Dictionary<string, object>(persisted.WorkflowState.Output) : null
             };
         }
         catch
