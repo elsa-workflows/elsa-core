@@ -1,9 +1,5 @@
-using System.Text.Json.Serialization;
 using Elsa.Workflows;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Memory;
-using Elsa.Workflows.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.Modules.Management;
@@ -12,7 +8,7 @@ namespace Elsa.Persistence.EFCore.Modules.Management;
 public static class WorkflowDefinitionStateCodec
 {
     public static string Serialize(WorkflowDefinition entity, IPayloadSerializer serializer) =>
-        serializer.Serialize(new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties));
+        serializer.Serialize(new EFCoreWorkflowDefinitionStore.WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties));
 
     public static void Write(ManagementElsaDbContext context, WorkflowDefinition entity, IPayloadSerializer serializer)
     {
@@ -32,7 +28,7 @@ public static class WorkflowDefinitionStateCodec
             }
             return;
         }
-        var data = serializer.Deserialize<WorkflowDefinitionState>(json) ?? throw new InvalidOperationException("workflow_definition_stored_state_missing");
+        var data = serializer.Deserialize<EFCoreWorkflowDefinitionStore.WorkflowDefinitionState>(json) ?? throw new InvalidOperationException("workflow_definition_stored_state_missing");
         entity.Options = data.Options;
         entity.Variables = data.Variables;
         entity.Inputs = data.Inputs;
@@ -41,35 +37,4 @@ public static class WorkflowDefinitionStateCodec
         entity.CustomProperties = data.CustomProperties;
     }
 
-    private sealed class WorkflowDefinitionState
-    {
-        [JsonConstructor]
-        public WorkflowDefinitionState()
-        {
-        }
-
-        public WorkflowDefinitionState(
-            WorkflowOptions options,
-            ICollection<Variable> variables,
-            ICollection<InputDefinition> inputs,
-            ICollection<OutputDefinition> outputs,
-            ICollection<string> outcomes,
-            IDictionary<string, object> customProperties
-        )
-        {
-            Options = options;
-            Variables = variables;
-            Inputs = inputs;
-            Outputs = outputs;
-            Outcomes = outcomes;
-            CustomProperties = customProperties;
-        }
-
-        public WorkflowOptions Options { get; set; } = new();
-        public ICollection<Variable> Variables { get; set; } = new List<Variable>();
-        public ICollection<InputDefinition> Inputs { get; set; } = new List<InputDefinition>();
-        public ICollection<OutputDefinition> Outputs { get; set; } = new List<OutputDefinition>();
-        public ICollection<string> Outcomes { get; set; } = new List<string>();
-        public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
-    }
 }
