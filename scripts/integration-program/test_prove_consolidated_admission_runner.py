@@ -1,8 +1,10 @@
 """Offline negative guards, never evidence that PostgreSQL or .NET scenarios ran."""
 import copy
+import errno
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -110,6 +112,78 @@ class AdmissionRunnerBoundaryTests(unittest.TestCase):
         with self.assertRaises(runner.ProofError):
             runner._write_receipt(output, b'{"status":"passed"}')
         self.assertEqual(b'{"status":"failed"}', (output / 'admission-consumer-proof.json').read_bytes())
+
+    def test_published_receipt_remains_committed_when_staging_unlink_fails(self):
+        output = self.root / 'retained'
+        original_unlink = runner.os.unlink
+        original_link = runner.os.link
+        failure_injected = False
+        staging_paths = []
+
+        def record_link(source, destination):
+            staging_paths.append(source)
+            self.addCleanup(shutil.rmtree, source.parent, ignore_errors=True)
+            return original_link(source, destination)
+
+        def fail_staging_unlink(path, *args, **kwargs):
+            nonlocal failure_injected
+            if str(path).endswith('.pending') and not failure_injected:
+                self.assertEqual(b'{"status":"passed"}',
+                                 (output / 'admission-consumer-proof.json').read_bytes())
+                failure_injected = True
+                raise OSError(runner.SECRET_MARKERS[0])
+            return original_unlink(path, *args, **kwargs)
+
+        with patch.object(runner.os, 'link', side_effect=record_link), \
+                patch.object(runner.os, 'unlink', side_effect=fail_staging_unlink):
+            runner._write_receipt(output, b'{"status":"passed"}')
+        self.assertTrue(failure_injected)
+        self.assertEqual(b'{"status":"passed"}', (output / 'admission-consumer-proof.json').read_bytes())
+        self.assertEqual({'admission-consumer-proof.json'}, {path.name for path in output.iterdir()})
+        self.assertEqual(1, len(staging_paths))
+        self.assertFalse(staging_paths[0].is_relative_to(output))
+
+    def test_receipt_publication_failure_is_sanitized_and_leaves_no_success(self):
+        for index, error in enumerate((OSError(runner.SECRET_MARKERS[0]),
+                                       OSError(errno.EXDEV, runner.SECRET_MARKERS[0]))):
+            with self.subTest(errno=error.errno):
+                output = self.root / str(index)
+                with patch.object(runner.os, 'link', side_effect=error), \
+                        self.assertRaisesRegex(runner.ProofError, '^receipt_write$') as caught:
+                    runner._write_receipt(output, b'{"status":"passed"}')
+                self.assertNotIn(runner.SECRET_MARKERS[0], str(caught.exception))
+                self.assertEqual([], list(output.iterdir()))
+
+    def test_receipt_publication_failure_is_not_masked_by_staging_cleanup(self):
+        output = self.root / 'retained'
+        original_mkdtemp = runner.tempfile.mkdtemp
+        original_rmtree = shutil.rmtree
+
+        def record_staging(*args, **kwargs):
+            staging = original_mkdtemp(*args, **kwargs)
+            self.addCleanup(original_rmtree, staging, ignore_errors=True)
+            return staging
+
+        with patch.object(runner.tempfile, 'mkdtemp', side_effect=record_staging), \
+                patch.object(runner.os, 'link', side_effect=OSError(runner.SECRET_MARKERS[0])), \
+                patch.object(runner.shutil, 'rmtree', side_effect=OSError(runner.SECRET_MARKERS[0])), \
+                self.assertRaisesRegex(runner.ProofError, '^receipt_write$'):
+            runner._write_receipt(output, b'{"status":"passed"}')
+        self.assertEqual([], list(output.iterdir()))
+
+    def test_receipt_publication_race_never_overwrites_prior_evidence(self):
+        output = self.root / 'retained'
+        original_link = runner.os.link
+
+        def competing_publication(source, destination):
+            destination.write_bytes(b'{"status":"failed"}')
+            return original_link(source, destination)
+
+        with patch.object(runner.os, 'link', side_effect=competing_publication), \
+                self.assertRaisesRegex(runner.ProofError, '^receipt_write$'):
+            runner._write_receipt(output, b'{"status":"passed"}')
+        self.assertEqual(b'{"status":"failed"}', (output / 'admission-consumer-proof.json').read_bytes())
+        self.assertEqual({'admission-consumer-proof.json'}, {path.name for path in output.iterdir()})
 
     def test_container_absence_requires_successful_query_and_exact_id_absence(self):
         identifier = 'a' * 64

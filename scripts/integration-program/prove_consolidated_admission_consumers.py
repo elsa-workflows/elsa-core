@@ -427,18 +427,33 @@ def _prove(artifacts: Path, manifest: dict[str, Any], output: Path) -> dict[str,
 
 
 def _write_receipt(output: Path, encoded: bytes) -> None:
-    output.mkdir(parents=True, exist_ok=True)
     destination = output / "admission-consumer-proof.json"
-    pending = output / ".admission-consumer-proof.pending"
-    require(not destination.exists() and not pending.exists(), "receipt_exists")
+    staging = None
     try:
+        output.mkdir(parents=True, exist_ok=True)
+        require(not destination.exists() and not (output / ".admission-consumer-proof.pending").exists(), "receipt_exists")
+        staging = Path(tempfile.mkdtemp(prefix="elsa-admission-receipt-"))
+        require(not staging.resolve().is_relative_to(output.resolve()), "receipt_staging_boundary")
+        pending = staging / "receipt.pending"
         with pending.open("xb") as stream:
             stream.write(encoded)
+        # The no-overwrite hardlink is the commit point. EXDEV fails closed:
+        # there is deliberately no copy/replace fallback to partial publication.
         os.link(pending, destination)
-        pending.unlink()
+    except ProofError:
+        raise
     except Exception:
-        pending.unlink(missing_ok=True)
         raise ProofError("receipt_write") from None
+    finally:
+        if staging is not None:
+            try:
+                shutil.rmtree(staging)
+            except OSError:
+                # Unlike mandatory runtime/process/container cleanup in _prove,
+                # this contains only already-sanitized bytes outside retained
+                # output. Best-effort staging cleanup cannot undo a commit or
+                # mask a prepublication failure with a raw filesystem error.
+                pass
 
 
 def prove(artifacts: Path, manifest: dict[str, Any], output: Path) -> dict[str, Any]:
