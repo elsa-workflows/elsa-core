@@ -14,7 +14,7 @@ public interface IAdmissionStore
     Task<AdmissionSubscription?> FindSubscriptionAsync(string subscriptionId, CancellationToken cancellationToken = default);
     /// <summary>CAS verifies bootstrap, then separately activates only verified, non-retired configuration.</summary>
     Task<AdmissionSubscription?> VerifyBootstrapAsync(string subscriptionId, long revision, string configurationFingerprint, CancellationToken cancellationToken = default);
-    Task<AdmissionSubscription?> ActivateAsync(string subscriptionId, long revision, CancellationToken cancellationToken = default);
+    Task<AdmissionSubscription?> ActivateAsync(string subscriptionId, long revision, DateTimeOffset now, CancellationToken cancellationToken = default);
     /// <summary>Withdraw first. Retirement is irreversible; failed later external mutations retain withdrawal and reconciliation.</summary>
     Task<AdmissionSubscription?> WithdrawAsync(string subscriptionId, long revision, bool retire, string? reconciliationCode, CancellationToken cancellationToken = default);
     /// <summary>Checks trusted configuration, filters, event time, unique identity and both capacity counters in one transaction.</summary>

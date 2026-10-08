@@ -29,7 +29,7 @@ public sealed record AdmissionPolicy(
     public void Validate()
     {
         if (PayloadRetention < TimeSpan.Zero || MaximumEventAge <= TimeSpan.Zero || MaximumClockSkew < TimeSpan.Zero ||
-            IdentityHorizon < MaximumEventAge + MaximumClockSkew || IdentityHorizon < PayloadRetention ||
+            (IdentityHorizon <= MaximumEventAge || IdentityHorizon - MaximumEventAge <= MaximumClockSkew) || IdentityHorizon < PayloadRetention ||
             ActiveCapacity <= 0 || RetainedRecordCapacity < ActiveCapacity || string.IsNullOrWhiteSpace(CleanupAuthority) ||
             !Enum.IsDefined(LateEventDisposition) || !Enum.IsDefined(InvalidEventDisposition))
         {
@@ -54,7 +54,7 @@ public sealed record AdmissionSubscriptionConfiguration(
                 throw new ArgumentException("Admission bindings must be explicit and bounded.");
             }
         }
-        if (DefinitionVersion <= 0 || DefinitionFingerprint.Length != 64 || !DefinitionFingerprint.All(Uri.IsHexDigit))
+        if (ActivationBoundary == default || DefinitionVersion <= 0 || DefinitionFingerprint.Length != 64 || !DefinitionFingerprint.All(Uri.IsHexDigit))
         {
             throw new ArgumentException("A pinned definition version and SHA-256 fingerprint are required.");
         }
@@ -97,6 +97,7 @@ public sealed class AdmissionRecord
     public string? ProviderEventId { get; set; }
     public string? Payload { get; set; }
     public string PayloadFingerprint { get; set; } = null!;
+    public string EventFingerprint { get; set; } = null!;
     public string AdmittedConfigurationJson { get; set; } = null!;
     public string ConfigurationFingerprint { get; set; } = null!;
     public long ActivationEpoch { get; set; }
@@ -130,4 +131,15 @@ public static class AdmissionHash
 
     public static string Identity(AdmissionSubscriptionConfiguration configuration, string eventId) =>
         Compute(JsonSerializer.Serialize(new[] { configuration.TenantId, configuration.EnvironmentId, configuration.InstallationId, configuration.Id, eventId }));
+}
+
+/// <summary>Immutable event digest, independent of transport envelopes and credential generations.</summary>
+public static class AdmissionEventFingerprint
+{
+    public static string Compute(AdmissionEvent message) => AdmissionHash.Compute(JsonSerializer.Serialize(new
+    {
+        message.SubscriptionId, message.InstallationId, message.ChannelId, message.ProviderEventId,
+        OccurredAt = message.OccurredAt?.ToUniversalTime(), message.IsHumanMessage, message.IsLoopMessage,
+        PayloadFingerprint = AdmissionHash.Compute(message.Payload)
+    }));
 }
