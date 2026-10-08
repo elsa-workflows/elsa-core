@@ -24,7 +24,7 @@ public sealed class AdmissionRuntimeProcessTests(PostgreSqlConnectionsFixture fi
     public async Task SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects(
         string caseId, string boundary, int expectedInstances, int expectedEffects, bool terminalAlreadyRecorded)
     {
-        var admissionId = await PrepareInactiveExecutionHostAsync();
+        var admissionId = await PrepareSequentialBootstrapAsync();
         // This provider has ledger services only: no second runtime sharing workflow stores.
         await using var controller = AdmissionWorkerHost.CreateServices(fixture.ConnectionString);
         var store = controller.GetRequiredService<IAdmissionStore>();
@@ -46,8 +46,10 @@ public sealed class AdmissionRuntimeProcessTests(PostgreSqlConnectionsFixture fi
         var observed = await runner.RunAsync(["inspect", admissionId], EnvironmentFor());
         Assert.Equal(0, observed.ExitCode);
         Assert.Equal(before.State.ToString(), observed.ReadResult().GetProperty("result").GetProperty("state").GetString());
-        var killed = await running.TerminateAsync();
+        var killed = await running.TerminateRunningAsync();
         Assert.NotEqual(0, killed.ExitCode);
+        Assert.True(killed.ForcedTerminationRequested);
+        Assert.DoesNotContain("admission_runtime_command_failed", killed.StandardError);
         Assert.DoesNotContain(killed.StandardOutput, value => value.StartsWith("RESULT:", StringComparison.Ordinal));
         // Only after the original process has exited can the replacement runtime recover.
         var restarted = await runner.RunAsync(["runtime-recover", admissionId], EnvironmentFor());
@@ -66,11 +68,11 @@ public sealed class AdmissionRuntimeProcessTests(PostgreSqlConnectionsFixture fi
             new Dictionary<string, object>
             {
                 ["instanceCount"] = expectedInstances, ["activityEffects"] = expectedEffects, ["activityResumes"] = 0,
-                ["terminalAlreadyRecorded"] = terminalAlreadyRecorded, ["replayed"] = false, ["state"] = after.State.ToString()
+                ["terminalAlreadyRecorded"] = terminalAlreadyRecorded, ["forcedTerminationRequested"] = killed.ForcedTerminationRequested, ["replayed"] = false, ["state"] = after.State.ToString()
             });
     }
 
-    private async Task<string> PrepareInactiveExecutionHostAsync()
+    private async Task<string> PrepareSequentialBootstrapAsync()
     {
         await fixture.ResetSchemaAsync();
         var probe = new AdmissionRuntimeProbe(fixture.ConnectionString);

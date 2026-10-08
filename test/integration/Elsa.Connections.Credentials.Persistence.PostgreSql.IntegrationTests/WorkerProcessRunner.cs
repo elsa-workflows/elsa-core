@@ -108,16 +108,27 @@ internal sealed class ProcessRun(Process process) : IAsyncDisposable
         return new ProcessRunResult(process.Id, process.ExitCode, _stdout.ToArray(), _stderr.ToArray(), _processStartedAt);
     }
 
-    public async Task<ProcessRunResult> TerminateAsync()
+    public Task<ProcessRunResult> TerminateAsync() => TerminateCoreAsync(false);
+
+    public Task<ProcessRunResult> TerminateRunningAsync() => TerminateCoreAsync(true);
+
+    private async Task<ProcessRunResult> TerminateCoreAsync(bool requireRunning)
     {
-        if (!process.HasExited)
+        var running = !process.HasExited;
+        if (requireRunning && !running)
+        {
+            throw new InvalidOperationException("worker_exited_before_required_termination");
+        }
+        var terminationRequested = false;
+        if (running)
         {
             process.Kill(entireProcessTree: true);
+            terminationRequested = true;
         }
 
         await process.WaitForExitAsync();
         await Task.WhenAll(_stdoutReader!, _stderrReader!);
-        return new ProcessRunResult(process.Id, process.ExitCode, _stdout.ToArray(), _stderr.ToArray(), _processStartedAt);
+        return new ProcessRunResult(process.Id, process.ExitCode, _stdout.ToArray(), _stderr.ToArray(), _processStartedAt, terminationRequested);
     }
 
     public async ValueTask DisposeAsync()
@@ -147,7 +158,7 @@ internal sealed class ProcessRun(Process process) : IAsyncDisposable
     }
 }
 
-internal sealed record ProcessRunResult(int ProcessId, int ExitCode, IReadOnlyList<string> StandardOutput, IReadOnlyList<string> StandardError, DateTimeOffset ProcessStartedAt)
+internal sealed record ProcessRunResult(int ProcessId, int ExitCode, IReadOnlyList<string> StandardOutput, IReadOnlyList<string> StandardError, DateTimeOffset ProcessStartedAt, bool ForcedTerminationRequested = false)
 {
     public JsonElement ReadResult()
     {
