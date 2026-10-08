@@ -52,7 +52,7 @@ Prefer targeted `dotnet test <project>` commands while iterating, then run a bro
 - `core/src/apps/`, `core/src/clients/`, `core/src/common/`, `core/src/modules/`: Core hosts, clients, shared infrastructure and modules.
 - `core/test/`: Core unit, integration, component and performance tests.
 - `extensions/src/`, `extensions/test/`, `extensions/docs/`, `extensions/samples/`: Extensions-owned code, tests, documentation and samples.
-- `studio/src/`, `studio/test/`, `studio/docs/`, `studio/samples/`: Studio-owned code, tests, documentation and samples. Read [Studio contributor guidance](studio/src/AGENTS.md) for Studio work.
+- `studio/src/`, `studio/test/`, `studio/docs/`, `studio/samples/`: Studio-owned code, tests, documentation and samples. Read [Studio contributor guidance](studio/src/AGENTS.md) for Studio modules, hosts, frameworks and tests.
 - `core/docs/specs/` and `studio/docs/specs/`: product feature plans and specifications.
 - `docs/adr/`: shared architecture decisions; `docs/integration-program/`: retained consolidation and proof records.
 - `build/`, `scripts/`, `docker/`, root solution/filter files and central `Directory.*` files: shared tooling and policy.
