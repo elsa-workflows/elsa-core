@@ -1,0 +1,128 @@
+name: Offline Socket source tests
+
+on:
+  push:
+    branches: ['codex/socket-ingress-integration-8666']
+    paths:
+      - 'src/**'
+      - 'test/extensions/modules/slack/**'
+      - '.github/workflows/socket-mode-source-tests.yml'
+      - 'Directory.*'
+      - 'src/Directory.*'
+      - 'test/Directory.*'
+      - 'test/extensions/Directory.*'
+      - 'test/extensions/modules/Directory.*'
+      - 'global.json'
+      - 'NuGet.Config'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'test/extensions/modules/slack/**'
+      - '.github/workflows/socket-mode-source-tests.yml'
+      - 'Directory.*'
+      - 'src/Directory.*'
+      - 'test/Directory.*'
+      - 'test/extensions/Directory.*'
+      - 'test/extensions/modules/Directory.*'
+      - 'global.json'
+      - 'NuGet.Config'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: socket-source-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        framework: [net8.0, net9.0, net10.0]
+    env:
+      EXPECTED_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      FRAMEWORK: ${{ matrix.framework }}
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+      - name: Run Slack unit and real loopback transport tests
+        id: tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          mkdir -p "$RUNNER_TEMP/socket-source/private" "$RUNNER_TEMP/socket-source/retained"
+          dotnet test test/extensions/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj \
+            --configuration Release --framework "$FRAMEWORK" -p:TargetFramework="$FRAMEWORK" \
+            --logger 'trx;LogFileName=socket-source.trx' \
+            --results-directory "$RUNNER_TEMP/socket-source/private"
+      - name: Verify executed results and retain aggregate source-test evidence
+        id: receipt
+        if: always() && steps.tests.outcome == 'success'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import subprocess
+          import xml.etree.ElementTree as ET
+
+          base = pathlib.Path(os.environ['RUNNER_TEMP']) / 'socket-source'
+          raw = (base / 'private/socket-source.trx').read_bytes()
+          root = ET.fromstring(raw)
+          ns = {'t': 'http://microsoft.com/schemas/VisualStudio/TeamTest/2010'}
+          results = root.findall('t:Results/t:UnitTestResult', ns)
+          counters = root.find('t:ResultSummary/t:Counters', ns)
+          if not results or counters is None:
+              raise SystemExit('Missing executed Socket source-test evidence.')
+          if any(result.get('outcome') != 'Passed' for result in results):
+              raise SystemExit('Socket source tests contain failed or unexecuted cases.')
+          if any(int(counters.get(key, '-1')) != len(results) for key in ('total', 'executed', 'passed')):
+              raise SystemExit('Socket source-test counts disagree.')
+          if any(int(counters.get(key, '-1')) != 0 for key in ('failed', 'error', 'timeout', 'aborted', 'notExecuted')):
+              raise SystemExit('Socket source tests contain incomplete or failed outcomes.')
+          revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          if revision != os.environ['EXPECTED_HEAD']:
+              raise SystemExit('Socket source-test revision mismatch.')
+          receipt = {
+              'schemaVersion': 1,
+              'kind': 'socket-source-unit-and-loopback-aggregate',
+              'sourceRevision': revision,
+              'framework': os.environ['FRAMEWORK'],
+              'runId': os.environ['GITHUB_RUN_ID'],
+              'runAttempt': os.environ['GITHUB_RUN_ATTEMPT'],
+              'passed': len(results),
+              'failed': 0,
+              'skipped': 0,
+              'privateTrxSha256': hashlib.sha256(raw).hexdigest(),
+              'privateTrxBytes': len(raw),
+              'packageOnlyProof': False,
+              'postgresqlProof': False,
+              'fullSocketAcceptance': False,
+          }
+          (base / 'retained/receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          PY
+      - name: Retain aggregate receipt only
+        if: always() && steps.receipt.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: socket-source-${{ matrix.framework }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/socket-source/retained/receipt.json
+          if-no-files-found: error
+          retention-days: 14
