@@ -12,7 +12,8 @@ internal sealed class AdmittedSlackPublicChannelMessageSource(SlackSocketModeCon
         var data = await reader.ReadConsumedEventAsync(workflow, cancellationToken);
         // These normal workflow inputs are only a consistency check. They cannot establish the
         // exact private consumed-owner binding which the Admission reader required independently.
-        if (!workflow.Input.TryGetValue("Event", out var eventValue) || eventValue is not string input || input != data.Payload ||
+        if (data.WorkflowInstanceId != workflow.Id ||
+            !workflow.Input.TryGetValue("Event", out var eventValue) || eventValue is not string input || input != data.Payload ||
             !workflow.Input.TryGetValue("ProviderEventId", out var idValue) || idValue is not string eventId || eventId != data.ProviderEventId ||
             !workflow.Input.TryGetValue("ChannelId", out var channelValue) || channelValue is not string channel || channel != data.Configuration.ChannelId ||
             data.Configuration.TenantId != configuration.TenantId || data.Configuration.EnvironmentId != configuration.EnvironmentId ||

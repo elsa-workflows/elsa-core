@@ -29,6 +29,7 @@ public sealed class AdmittedSlackPublicChannelMessageSourceTests(ITestOutputHelp
     [InlineData("provider-id")]
     [InlineData("occurrence")]
     [InlineData("binding-fingerprint")]
+    [InlineData("instance")]
     public async Task OnlyCoherentDurableEventAndListenerBindingsProduceOutputs(string mutation)
     {
         var configuration = SocketModeTestData.Configuration();
@@ -59,7 +60,7 @@ public sealed class AdmittedSlackPublicChannelMessageSourceTests(ITestOutputHelp
                 input["Event"] = payload;
                 break;
         }
-        var reader = new DataReader(data);
+        var reader = new DataReader(data, mutation == "instance");
         var fixture = new WorkflowTestFixture(output)
             .ConfigureElsa(elsa => elsa.AddActivity<WatchPublicChannelMessages>())
             .ConfigureServices(services =>
@@ -98,13 +99,13 @@ public sealed class AdmittedSlackPublicChannelMessageSourceTests(ITestOutputHelp
         }
     }
 
-    private sealed class DataReader(AdmissionExecutionData data) : IAdmissionExecutionDataReader
+    private sealed class DataReader(AdmissionExecutionData data, bool foreignInstance) : IAdmissionExecutionDataReader
     {
         public int Reads { get; private set; }
         public ValueTask<AdmissionExecutionData> ReadConsumedEventAsync(WorkflowExecutionContext context, CancellationToken cancellationToken = default)
         {
             Reads++;
-            return ValueTask.FromResult(data);
+            return ValueTask.FromResult(data with { WorkflowInstanceId = foreignInstance ? "foreign-instance" : context.Id });
         }
     }
 }
