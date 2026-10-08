@@ -104,6 +104,64 @@ public sealed class AdmissionWorkerProcessTests(PostgreSqlConnectionsFixture fix
     }
 
     [Fact]
+    public async Task UnknownAdmissionCommitResponseRedeliveryPreservesAllocationAndCapacity()
+    {
+        await using var services = await AdmissionTestLedger.CreateAsync(fixture, AdmissionWorkerHost.Configuration(1, 1));
+        var store = AdmissionTestLedger.Store(services);
+        using var gate = new AdmissionProcessGate();
+        await using var uncertain = Runner().Start(["admit", "event-unknown-admission"], WorkerEnvironment(commitGate: gate.Path, boundary: "unknown-commit"));
+        await uncertain.WaitForLineAsync("BOUNDARY:unknown-commit");
+        await using var db = await AdmissionTestLedger.ContextAsync(services);
+        var visible = await db.Admissions.AsNoTracking().SingleAsync();
+        var committedAdmissionCount = await db.Admissions.CountAsync();
+        var committedSubscription = (await store.FindSubscriptionAsync(AdmissionWorkerHost.Configuration().Id))!;
+        Assert.Equal(AdmissionState.Admitted, visible.State);
+        Assert.Equal(1, committedAdmissionCount);
+        Assert.Equal(1, committedSubscription.ActiveReservations);
+        Assert.Equal(1, committedSubscription.RetainedRecords);
+
+        await gate.ReleaseAsync();
+        var failed = await uncertain.CompleteAsync();
+        var resultObserved = failed.StandardOutput.Any(x => x.StartsWith("RESULT:", StringComparison.Ordinal));
+        var acknowledgementObserved = failed.StandardOutput.Any(x => x.StartsWith("ACK", StringComparison.Ordinal));
+        Assert.Equal(2, failed.ExitCode);
+        Assert.Contains("ERROR:admission_operation_not_definitive", failed.StandardOutput);
+        Assert.False(resultObserved);
+        Assert.False(acknowledgementObserved);
+
+        var redelivery = await Runner().RunAsync(["admit", "event-unknown-admission"], WorkerEnvironment());
+        Assert.NotEqual(failed.ProcessId, redelivery.ProcessId);
+        Assert.Equal(0, redelivery.ExitCode);
+        var duplicate = Result(redelivery);
+        var outcome = duplicate.GetProperty("outcome").GetString();
+        var sameAllocation = visible.Id == duplicate.GetProperty("admissionId").GetString();
+        Assert.Equal("Duplicate", outcome);
+        Assert.True(sameAllocation);
+        Assert.Equal(visible.Revision, duplicate.GetProperty("revision").GetInt64());
+        var preserved = await db.Admissions.AsNoTracking().SingleAsync();
+        var subscription = (await store.FindSubscriptionAsync(visible.SubscriptionId))!;
+        var admissionCount = await db.Admissions.CountAsync();
+        Assert.Equal(visible.Id, preserved.Id);
+        Assert.Equal(visible.Revision, preserved.Revision);
+        Assert.Equal(1, admissionCount);
+        Assert.Equal(1, subscription.ActiveReservations);
+        Assert.Equal(1, subscription.RetainedRecords);
+        await ObserveAsync("provider-unknown-admission", nameof(UnknownAdmissionCommitResponseRedeliveryPreservesAllocationAndCapacity), [failed, redelivery],
+            new()
+            {
+                ["postCommitState"] = visible.State.ToString(), ["firstExitCode"] = failed.ExitCode,
+                ["admissionCountBeforeFailure"] = committedAdmissionCount,
+                ["activeReservationsBeforeFailure"] = committedSubscription.ActiveReservations,
+                ["retainedRecordsBeforeFailure"] = committedSubscription.RetainedRecords,
+                ["firstResultObserved"] = resultObserved, ["firstAcknowledgementObserved"] = acknowledgementObserved,
+                ["redeliveryOutcome"] = outcome!, ["sameAllocationAfterRedelivery"] = sameAllocation,
+                ["revisionPreserved"] = preserved.Revision == visible.Revision,
+                ["admissionCount"] = admissionCount, ["activeReservations"] = subscription.ActiveReservations,
+                ["retainedRecords"] = subscription.RetainedRecords
+            }, restarted: true);
+    }
+
+    [Fact]
     public async Task UnknownCommitResponseThrowsAndReadbackDoesNotRepeatAuthorization()
     {
         await using var services = await AdmissionTestLedger.CreateAsync(fixture);
