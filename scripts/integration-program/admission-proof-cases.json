@@ -5539,6 +5539,418 @@
       "processRoles": [],
       "minimumProcesses": 0,
       "restartRequired": false
+    },
+    {
+      "caseId": "runtime-held-client-create-run",
+      "family": "entry",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
+      "parameterId": "runtime-held-client-create-run",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "competingMiddlewareCalls": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "competingStartNotifications": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "competingActivityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "authorizedEntries": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-held-host-run",
+      "family": "entry",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
+      "parameterId": "runtime-held-host-run",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "competingMiddlewareCalls": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "competingStartNotifications": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "competingActivityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "authorizedEntries": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-held-host-cancel",
+      "family": "entry",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
+      "parameterId": "runtime-held-host-cancel",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "competingMiddlewareCalls": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "competingStartNotifications": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "competingActivityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "authorizedEntries": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-held-host-persist",
+      "family": "entry",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
+      "parameterId": "runtime-held-host-persist",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "competingMiddlewareCalls": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "competingStartNotifications": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "competingActivityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "authorizedEntries": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-held-canceler-state",
+      "family": "entry",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
+      "parameterId": "runtime-held-canceler-state",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "competingMiddlewareCalls": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "competingStartNotifications": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "competingActivityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "authorizedEntries": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-held-canceler-context",
+      "family": "entry",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
+      "parameterId": "runtime-held-canceler-context",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "competingMiddlewareCalls": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "competingStartNotifications": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "competingActivityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "authorizedEntries": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-import-foreign-owned-target",
+      "family": "control",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeControlTests.UnownedClientCannotImportStateWhoseActualTargetIsOwned",
+      "parameterId": "default",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "ownedTargetStateUnchanged": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "unownedSourceNotCreated": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "additionalInstanceWrites": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "additionalBookmarkWrites": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "additionalStartNotifications": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "cancellationNotifications": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-unowned-control-cancel",
+      "family": "compat",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeControlTests.ActualUnownedLocalClientControlsRemainCompatibleWithoutChangingOwnedState",
+      "parameterId": "runtime-unowned-control-cancel",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "unownedControlSucceeded": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "ownedStateUnchanged": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "cancellationNotifications": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 2,
+          "maximum": 2
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-unowned-control-delete",
+      "family": "compat",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeControlTests.ActualUnownedLocalClientControlsRemainCompatibleWithoutChangingOwnedState",
+      "parameterId": "runtime-unowned-control-delete",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "unownedControlSucceeded": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "ownedStateUnchanged": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "cancellationNotifications": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 2,
+          "maximum": 2
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-unowned-control-import",
+      "family": "compat",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeControlTests.ActualUnownedLocalClientControlsRemainCompatibleWithoutChangingOwnedState",
+      "parameterId": "runtime-unowned-control-import",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "unownedControlSucceeded": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "ownedStateUnchanged": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "cancellationNotifications": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 2,
+          "maximum": 2
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
     }
   ],
   "workerAssemblies": {
