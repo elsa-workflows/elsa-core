@@ -11,6 +11,7 @@ using Elsa.Secrets.Stores;
 using Elsa.Slack.SocketMode.Credentials;
 using Elsa.Slack.SocketMode.Events;
 using Elsa.Slack.SocketMode.Persistence;
+using Elsa.Slack.SocketMode.Transport;
 using Elsa.Workflows.Admission;
 using Elsa.Workflows.Admission.Persistence.EFCore;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +35,10 @@ internal sealed class SlackSocketModeHostValidator(SlackSocketModeConfiguration 
                 services.GetRequiredService<AdmissionPersistenceScope>() != new AdmissionPersistenceScope(configuration.TenantId, configuration.EnvironmentId) ||
                 services.GetRequiredService<ISlackPublicChannelMessageSource>().GetType() != typeof(AdmittedSlackPublicChannelMessageSource) ||
                 services.GetRequiredService<SlackSocketListenerCredentialReader>().GetType() != typeof(SlackSocketListenerCredentialReader) ||
+                services.GetRequiredService<SlackSocketEnvelopeProcessor>().GetType() != typeof(SlackSocketEnvelopeProcessor) ||
+                services.GetRequiredService<SlackSocketUrlOpener>().GetType() != typeof(SlackSocketUrlOpener) ||
+                services.GetRequiredService<ISlackSocketDiscardStore>().GetType() != typeof(PostgreSqlSlackSocketDiscardStore) ||
+                services.GetRequiredService<SlackSocketReceiptTransactions>().GetType() != typeof(SlackSocketReceiptTransactions) ||
                 services.GetRequiredService<IConnectionLifecycleStore>().GetType() != typeof(EFCoreConnectionLifecycleStore) ||
                 services.GetRequiredService<IAdmissionStore>().GetType() != typeof(EFCoreAdmissionStore) ||
                 services.GetRequiredService<IManagedSecretManager>().GetType() != typeof(DefaultSecretManager) ||
@@ -45,6 +50,20 @@ internal sealed class SlackSocketModeHostValidator(SlackSocketModeConfiguration 
                 services.GetRequiredService<ISecretStoreRegistry>().Get(SecretStoreNames.Encrypted).GetType() != typeof(EncryptedSecretStore))
             {
                 throw new InvalidOperationException();
+            }
+            var readers = services.GetServices<IAdmissionIdentityConflictReader>().ToArray();
+            if (readers.Length != 1 || readers[0].GetType() != typeof(PostgreSqlSlackSocketIdentityConflictReader))
+            {
+                throw new InvalidOperationException();
+            }
+            var clocks = services.GetServices<TimeProvider>().ToArray();
+            if (clocks.Length != 1)
+            {
+                throw new InvalidOperationException();
+            }
+            if (!ReferenceEquals(clocks[0], TimeProvider.System))
+            {
+                admission.DemandAuditedServiceType(clocks[0].GetType());
             }
             foreach (var subscription in configuration.Subscriptions)
             {
@@ -77,10 +96,12 @@ internal sealed class SlackSocketModeHostValidator(SlackSocketModeConfiguration 
             var ledger = await ValidateDatabaseAsync<AdmissionElsaDbContext>(cancellationToken);
             var connections = await ValidateDatabaseAsync<ConnectionsElsaDbContext>(cancellationToken);
             var secrets = await ValidateDatabaseAsync<SecretsElsaDbContext>(cancellationToken);
-            if (ledger != connections || ledger != secrets)
+            var receipts = await ValidateDatabaseAsync<SlackSocketReceiptElsaDbContext>(cancellationToken);
+            if (ledger != connections || ledger != secrets || ledger != receipts)
             {
                 throw new InvalidOperationException();
             }
+            await services.GetRequiredService<ISlackSocketDiscardStore>().ValidateProvisioningAsync(cancellationToken);
             await services.GetRequiredService<SlackSocketListenerCredentialReader>().DemandAuthorizedAsync(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -122,6 +143,7 @@ internal sealed class SlackSocketModeHostValidator(SlackSocketModeConfiguration 
         // share the existing history; the Admission ledger must remain separate from it.
         const string admissionHistory = "__AdmissionMigrationsHistory";
         var expectedHistory = context.GetType() == typeof(AdmissionElsaDbContext) ? admissionHistory :
+            context.GetType() == typeof(SlackSocketReceiptElsaDbContext) ? SlackSocketReceiptElsaDbContext.HistoryTable :
             context.GetType() == typeof(ConnectionsElsaDbContext) || context.GetType() == typeof(SecretsElsaDbContext)
                 ? sharedHistory : throw new InvalidOperationException();
         var options = RelationalOptionsExtension.Extract(context.GetService<IDbContextOptions>());
