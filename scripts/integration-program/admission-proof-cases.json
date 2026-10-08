@@ -5022,6 +5022,46 @@
       "processRoles": [],
       "minimumProcesses": 0,
       "restartRequired": false
+    },
+    {
+      "caseId": "runtime-outbound-no-instance-grant",
+      "family": "control",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeOutboundGrantTests.RealAdmittedWorkflowReceivesNoExactInstanceCredentialUseGrant",
+      "parameterId": "default",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "realWorkflowExecuted": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "bindingExists": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "instanceGrantAbsent": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "storedGrantPolicyDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "resolverDeniedBeforeBackground": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "credentialReturned": {
+          "kind": "boolean",
+          "equals": false
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
     }
   ],
   "workerAssemblies": {
