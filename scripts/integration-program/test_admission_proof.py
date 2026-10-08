@@ -193,7 +193,7 @@ class AdmissionProofTests(unittest.TestCase):
                     with self.assertRaises(ValueError): proof.image_identity(IMAGE)
                 else: self.assertEqual(IMAGE, proof.image_identity(IMAGE)['id'])
 
-    def fake_run(self, *, fail_compile=False, mutate_source=False):
+    def fake_run(self, *, fail_compile=False, fail_tests=False, malformed_identity=False, mutate_source=False):
         repo = self.directory / 'repo'; repo.mkdir()
         (repo / '.gitignore').write_text('**/bin/\n**/obj/\n')
         path = repo / proof.MANIFEST; path.parent.mkdir(parents=True)
@@ -208,12 +208,14 @@ class AdmissionProofTests(unittest.TestCase):
         commands = []
         def execute(command, root, log):
             commands.append(command)
-            code = 1 if fail_compile and command[1] == 'build' else 0
+            code = int((fail_compile and command[1] == 'build') or (fail_tests and command[1] == 'test'))
             if command[1] == 'build' and command[2] == PROJECT:
                 for relative in (proof.assembly_path(PROJECT), WORKER):
                     path = repo / relative; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(b'fixture DLL')
             if command[1] == 'test':
-                self.write_trx(log.parent / 'test-0.trx', self.manifest['cases'])
+                displays = [c['method'] + '(value: "synthetic-secret")' for c in self.manifest['cases']] if malformed_identity else None
+                self.write_trx(log.parent / 'test-0.trx', self.manifest['cases'],
+                               outcome='Failed' if fail_tests else 'Passed', displays=displays)
                 evidence = Path(os.environ['ELSA_ADMISSION_PROOF_DIRECTORY'])
                 assembly_hash = proof.digest(repo / WORKER)
                 for case in self.manifest['cases']:
@@ -243,9 +245,15 @@ class AdmissionProofTests(unittest.TestCase):
         self.assertEqual(1, len(receipt['serviceCleanup']))
         for mutate in (lambda d: d['cases'].pop(), lambda d: d['builds'].pop(),
                        lambda d: d.update(postSourceVerified=False), lambda d: d['tests'][0]['identities'].pop(),
+                       lambda d: d['tests'][0].update(identities=[]),
                        lambda d: d['cases'][0].update(token='synthetic-access-token')):
             bad = copy.deepcopy(receipt); mutate(bad)
             with self.assertRaises(ValueError): proof.validate_receipt(bad, self.manifest, receipt['sourceRevision'])
+        partial = copy.deepcopy(receipt)
+        partial['verificationComplete'] = False
+        partial['tests'][0]['identities'].pop()
+        with self.assertRaisesRegex(ValueError, 'receipt_trx_manifest_mismatch'):
+            proof.validate_receipt(partial, self.manifest, receipt['sourceRevision'])
         retained = self.directory / 'output/retained'
         proof.validate_retained(retained, self.manifest, receipt['sourceRevision'])
         (retained / 'extra.log').write_text('private')
@@ -261,6 +269,41 @@ class AdmissionProofTests(unittest.TestCase):
         self.assertTrue(all(c['status'] == 'not_run' for c in receipt['cases']))
         bad = copy.deepcopy(receipt); bad['verificationComplete'] = True
         with self.assertRaises(ValueError): proof.validate_receipt(bad, self.manifest, receipt['sourceRevision'])
+
+    def test_failed_suite_retains_sanitized_summary_without_accepting_observations(self):
+        with patch.object(proof, 'validate_evidence', wraps=proof.validate_evidence) as validate:
+            receipt, commands, _ = self.fake_run(fail_tests=True)
+        validate.assert_not_called()
+        self.assertFalse(receipt['verificationComplete'])
+        self.assertEqual(['build', 'test'], [c[1] for c in commands])
+        self.assertEqual(1, len(receipt['tests']))
+        attempt = receipt['tests'][0]
+        self.assertEqual('failed', attempt['status'])
+        self.assertEqual(18, attempt['counters']['failed'])
+        self.assertEqual([], attempt['identities'])
+        self.assertTrue(all(c['outcome'] == 'Failed' for c in attempt['cases']))
+        self.assertEqual([], receipt['serviceCleanup'])
+        self.assertTrue(all(c['status'] == 'not_run' for c in receipt['cases']))
+        proof.validate_retained(self.directory / 'output/retained', self.manifest, receipt['sourceRevision'])
+        bad = copy.deepcopy(receipt)
+        bad.update(verificationComplete=True, postSourceVerified=True, failureCategory=None)
+        with self.assertRaisesRegex(ValueError, 'receipt_trx_manifest_mismatch'):
+            proof.validate_receipt(bad, self.manifest, receipt['sourceRevision'])
+
+    def test_passed_suite_with_invalid_identity_retains_only_sanitized_diagnostics(self):
+        with patch.object(proof, 'validate_evidence', wraps=proof.validate_evidence) as validate:
+            receipt, commands, _ = self.fake_run(malformed_identity=True)
+        validate.assert_not_called()
+        self.assertFalse(receipt['verificationComplete'])
+        self.assertEqual(['build', 'test'], [c[1] for c in commands])
+        self.assertEqual('passed', receipt['tests'][0]['status'])
+        self.assertEqual(18, receipt['tests'][0]['counters']['passed'])
+        self.assertEqual([], receipt['tests'][0]['identities'])
+        self.assertEqual([], receipt['serviceCleanup'])
+        self.assertTrue(all(c['status'] == 'not_run' for c in receipt['cases']))
+        retained = self.directory / 'output/retained'
+        self.assertNotIn('synthetic-secret', (retained / 'receipt.json').read_text())
+        proof.validate_retained(retained, self.manifest, receipt['sourceRevision'])
 
     def test_source_mutation_after_tests_cannot_complete(self):
         receipt, _, _ = self.fake_run(mutate_source=True)

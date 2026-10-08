@@ -409,12 +409,15 @@ def validate_receipt(data: dict, manifest: dict, expected_head: str) -> None:
                 expected = {(c["method"], c["parameterId"]) for c in manifest["cases"]
                             if c["project"] == row["project"]}
                 actual = [(i["method"], i["parameterId"]) for i in row["identities"]]
-                require(len(actual) == len(set(actual)) and set(actual) == expected,
-                        "receipt_trx_manifest_mismatch")
-                if projects[row["project"]]["observations"]:
-                    require(len(actual) == len(row["cases"])
-                            and [i["method"] for i in row["identities"]] == [c["method"] for c in row["cases"]],
-                            "receipt_trx_identity_mismatch")
+                # An incomplete attempt may retain only its sanitized TRX summary.
+                # Final acceptance still requires the complete reviewed identity bijection.
+                if actual or data["verificationComplete"] or not projects[row["project"]]["observations"]:
+                    require(len(actual) == len(set(actual)) and set(actual) == expected,
+                            "receipt_trx_manifest_mismatch")
+                    if projects[row["project"]]["observations"]:
+                        require(len(actual) == len(row["cases"])
+                                and [i["method"] for i in row["identities"]] == [c["method"] for c in row["cases"]],
+                                "receipt_trx_identity_mismatch")
             identities.append((row["project"], row["framework"]))
         require(len(identities) == len(set(identities)), "duplicate_command")
     case_map = {c["caseId"]: c for c in manifest["cases"]}
@@ -532,8 +535,14 @@ def run(root: Path, output: Path, head: str) -> dict:
                 result.update(execute(["dotnet", "test", row["project"], "-c", "Release", "-f", "net10.0",
                     *PROPERTIES, "--no-build", "--no-restore", "--filter", row["filter"], "--logger",
                     f"trx;LogFileName={trx.name}", "--results-directory", str(private)], root, private / f"test-{index}.log"))
+            # Retain safe counts/method outcomes before strict identity/observation
+            # validation. A failing suite must remain visible without uploading raw logs.
+            result.update(test_summary(regular(trx), result["exitCode"]))
+            result["identities"] = []
+            receipt["tests"].append(result); save()
+            require(result["status"] == "passed", "fixture_test")
             if row["observations"]:
-                summary, identities = trx_identities(trx, result["exitCode"])
+                _, identities = trx_identities(trx, result["exitCode"])
                 selected = [c for c in manifest["cases"] if c["project"] == row["project"]]
                 records, cleanup = validate_evidence(directory, selected, identities, head,
                                                      manifest, receipt["compiledAssemblySha256"])
@@ -542,13 +551,10 @@ def run(root: Path, output: Path, head: str) -> dict:
                 if cleanup:
                     receipt["serviceCleanup"].append(cleanup)
             else:
-                summary = test_summary(regular(trx), result["exitCode"])
                 require(not list(directory.iterdir()), "unexpected_supplemental_observations")
-                result["identities"] = []
             receipt["cases"] = observations + [{"caseId": c["caseId"], "status": "not_run"}
                 for c in manifest["cases"] if c["caseId"] not in {r["caseId"] for r in observations}]
-            result.update(summary); receipt["tests"].append(result); save()
-            require(result["status"] == "passed", "fixture_test")
+            save()
         receipt["cases"] = observations; save()
         for framework in FRAMEWORKS:
             for project in manifest["buildProjects"]:
