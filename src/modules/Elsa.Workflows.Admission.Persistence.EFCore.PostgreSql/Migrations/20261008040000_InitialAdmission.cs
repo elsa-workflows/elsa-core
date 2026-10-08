@@ -36,7 +36,7 @@ public sealed class InitialAdmission(IElsaDbContextSchema schema) : Migration
             Id = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
             SubscriptionId = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
             IdentityHash = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
-            ProviderEventId = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+            ProviderEventId = table.Column<string>(type: "character varying(1024)", maxLength: 1024, nullable: true),
             Payload = table.Column<string>(type: "text", nullable: true),
             PayloadFingerprint = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
             EventFingerprint = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),

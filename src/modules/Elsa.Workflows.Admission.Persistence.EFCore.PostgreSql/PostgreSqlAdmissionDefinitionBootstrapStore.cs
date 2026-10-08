@@ -25,7 +25,7 @@ public sealed class PostgreSqlAdmissionDefinitionBootstrapStore(
     {
         configuration.Validate();
         scope.Validate();
-        if (configuration.TenantId != scope.TenantId || configuration.EnvironmentId != scope.EnvironmentId || Interlocked.CompareExchange(ref _acquiring, 1, 0) != 0)
+        if (configuration.TenantId != scope.TenantId || configuration.EnvironmentId != scope.EnvironmentId)
         {
             throw new InvalidOperationException("admission_bootstrap_scope_or_session_conflict");
         }
@@ -42,6 +42,11 @@ public sealed class PostgreSqlAdmissionDefinitionBootstrapStore(
             _lease = null;
             Volatile.Write(ref _acquiring, 0);
         });
+        if (Interlocked.CompareExchange(ref _acquiring, 1, 0) != 0)
+        {
+            await connection.DisposeAsync();
+            throw new InvalidOperationException("admission_bootstrap_scope_or_session_conflict");
+        }
         try
         {
             await connection.OpenAsync(cancellationToken);
@@ -88,7 +93,7 @@ public sealed class PostgreSqlAdmissionDefinitionBootstrapStore(
             {
                 throw new InvalidOperationException("admission_bootstrap_logical_definition_conflict");
             }
-            WorkflowDefinitionStateCodec.Read(db, rows[0], serializer);
+            WorkflowDefinitionStateCodec.Read(db, rows[0], serializer, requireStoredState: true);
             if (AdmissionDefinitionFingerprint.Compute(rows[0], serializer) != contentFingerprint ||
                 (bool?)db.Entry(rows[0]).Property("UsableAsActivity").CurrentValue != definition.Options.UsableAsActivity)
             {
@@ -159,8 +164,14 @@ public sealed class PostgreSqlAdmissionDefinitionBootstrapStore(
             }
             finally
             {
-                await connection.DisposeAsync();
-                onDispose();
+                try
+                {
+                    await connection.DisposeAsync();
+                }
+                finally
+                {
+                    onDispose();
+                }
             }
         }
     }

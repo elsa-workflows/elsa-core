@@ -141,7 +141,7 @@ public sealed class EFCoreAdmissionStore(
         {
             return new(AdmissionOutcome.Filtered, null, null);
         }
-        if (string.IsNullOrWhiteSpace(message.ProviderEventId) || message.ProviderEventId.Length > 256 ||
+        if (string.IsNullOrWhiteSpace(message.ProviderEventId) ||
             Encoding.UTF8.GetByteCount(message.ProviderEventId) > configuration.Policy.MaximumProviderEventIdBytes ||
             Encoding.UTF8.GetByteCount(message.Payload) > configuration.Policy.MaximumPayloadBytes || message.OccurredAt == null)
         {
@@ -162,11 +162,11 @@ public sealed class EFCoreAdmissionStore(
         }
         var occurredAt = message.OccurredAt.Value.ToUniversalTime();
         now = now.ToUniversalTime();
-        if (occurredAt > now + configuration.Policy.MaximumClockSkew)
+        if (occurredAt > now && occurredAt - now > configuration.Policy.MaximumClockSkew)
         {
             return Rejected(configuration.Policy.InvalidEventDisposition);
         }
-        if (occurredAt < configuration.ActivationBoundary || occurredAt < now - configuration.Policy.MaximumEventAge)
+        if (occurredAt < configuration.ActivationBoundary || occurredAt < now && now - occurredAt > configuration.Policy.MaximumEventAge)
         {
             return Rejected(configuration.Policy.LateEventDisposition);
         }
@@ -243,13 +243,15 @@ public sealed class EFCoreAdmissionStore(
         }, cancellationToken);
     }
 
-    public Task<AdmissionRecord?> CompleteCreationAsync(string admissionId, long revision, CancellationToken cancellationToken = default) =>
+    public Task<AdmissionRecord?> CompleteCreationAsync(string admissionId, long revision, string materializedStateFingerprint, CancellationToken cancellationToken = default) =>
         MutateRecordAsync(admissionId, revision, (record, _) =>
         {
             if (record.State != AdmissionState.Creating)
             {
                 return false;
             }
+            DemandFingerprint(materializedStateFingerprint);
+            record.CheckpointFingerprint = materializedStateFingerprint;
             record.State = AdmissionState.Materialized;
             return true;
         }, cancellationToken);
@@ -372,13 +374,13 @@ public sealed class EFCoreAdmissionStore(
         DemandScope(db, subscription);
         var policy = JsonSerializer.Deserialize<AdmissionSubscriptionConfiguration>(record.AdmittedConfigurationJson)!.Policy;
         policy.Validate();
-        if (cleanupAuthority != policy.CleanupAuthority || now.ToUniversalTime() < record.TerminalAt.Value + policy.PayloadRetention)
+        if (cleanupAuthority != policy.CleanupAuthority || now.ToUniversalTime() < record.TerminalAt.Value || now.ToUniversalTime() - record.TerminalAt.Value < policy.PayloadRetention)
         {
             return false;
         }
         var changed = record.Payload != null;
         record.Payload = null;
-        if (now.ToUniversalTime() >= record.TerminalAt.Value + policy.IdentityHorizon)
+        if (now.ToUniversalTime() - record.TerminalAt.Value >= policy.IdentityHorizon)
         {
             changed |= record.IdentityHash != null || record.ProviderEventId != null;
             record.IdentityHash = null;

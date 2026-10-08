@@ -21,14 +21,18 @@ public static class WorkflowDefinitionStateCodec
     }
 
     /// <summary>Strict decoding. Bootstrap must reject corrupt state rather than accept a fallback.</summary>
-    public static void Read(ManagementElsaDbContext context, WorkflowDefinition entity, IPayloadSerializer serializer)
+    public static void Read(ManagementElsaDbContext context, WorkflowDefinition entity, IPayloadSerializer serializer, bool requireStoredState = false)
     {
         var json = (string?)context.Entry(entity).Property("Data").CurrentValue;
         if (string.IsNullOrWhiteSpace(json))
         {
+            if (requireStoredState)
+            {
+                throw new InvalidOperationException("workflow_definition_stored_state_missing");
+            }
             return;
         }
-        var data = serializer.Deserialize<WorkflowDefinitionState>(json);
+        var data = serializer.Deserialize<WorkflowDefinitionState>(json) ?? throw new InvalidOperationException("workflow_definition_stored_state_missing");
         entity.Options = data.Options;
         entity.Variables = data.Variables;
         entity.Inputs = data.Inputs;

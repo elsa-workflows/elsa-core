@@ -44,7 +44,7 @@ internal static class InitialAdmissionModel
             entity.Property<string>("Id").IsRequired().HasMaxLength(256).HasColumnType("character varying(256)");
             entity.Property<string>("SubscriptionId").IsRequired().HasMaxLength(256).HasColumnType("character varying(256)");
             entity.Property<string>("IdentityHash").HasMaxLength(64).HasColumnType("character varying(64)");
-            entity.Property<string>("ProviderEventId").HasMaxLength(256).HasColumnType("character varying(256)");
+            entity.Property<string>("ProviderEventId").HasMaxLength(1024).HasColumnType("character varying(1024)");
             entity.Property<string>("Payload").HasColumnType("text");
             entity.Property<string>("PayloadFingerprint").IsRequired().HasMaxLength(64).HasColumnType("character varying(64)");
             entity.Property<string>("EventFingerprint").IsRequired().HasMaxLength(64).HasColumnType("character varying(64)");
@@ -54,7 +54,7 @@ internal static class InitialAdmissionModel
             entity.Property<DateTimeOffset>("AdmittedAt").HasColumnType("timestamp with time zone");
             entity.Property<DateTimeOffset>("EventOccurredAt").HasColumnType("timestamp with time zone");
             entity.Property<long>("Revision").IsConcurrencyToken().HasColumnType("bigint");
-            entity.Property<string>("State").HasMaxLength(32).HasColumnType("character varying(32)");
+            entity.Property<string>("State").IsRequired().HasMaxLength(32).HasColumnType("character varying(32)");
             entity.Property<string>("WorkflowInstanceId").HasMaxLength(256).HasColumnType("character varying(256)");
             entity.Property<string>("AttemptId").HasMaxLength(256).HasColumnType("character varying(256)");
             entity.Property<bool>("AuthorityOutstanding").HasColumnType("boolean");

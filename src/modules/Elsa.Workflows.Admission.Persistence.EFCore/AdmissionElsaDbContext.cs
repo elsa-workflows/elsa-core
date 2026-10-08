@@ -40,7 +40,7 @@ public sealed class AdmissionElsaDbContext(DbContextOptions<AdmissionElsaDbConte
         record.Property(x => x.Id).HasMaxLength(256);
         record.Property(x => x.SubscriptionId).HasMaxLength(256);
         record.Property(x => x.IdentityHash).HasMaxLength(64);
-        record.Property(x => x.ProviderEventId).HasMaxLength(256);
+        record.Property(x => x.ProviderEventId).HasMaxLength(AdmissionLimits.ProviderEventIdBytes);
         record.Property(x => x.ConfigurationFingerprint).HasMaxLength(64);
         record.Property(x => x.WorkflowInstanceId).HasMaxLength(256);
         record.Property(x => x.AttemptId).HasMaxLength(256);
