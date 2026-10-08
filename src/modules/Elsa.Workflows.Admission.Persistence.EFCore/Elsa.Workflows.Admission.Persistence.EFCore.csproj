@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Description>Transactional durable admission persistence for selected relational providers.</Description>
-        <IsPackable>false</IsPackable>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Persistence.EFCore.Common\Elsa.Persistence.EFCore.Common.csproj" />
