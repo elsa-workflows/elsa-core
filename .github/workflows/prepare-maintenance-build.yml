@@ -1,0 +1,138 @@
+name: Preserved maintenance build rehearsal
+
+on:
+  # Temporary reviewed rehearsal branch; no historical source refs are activated.
+  push:
+    branches: ['codex/maintenance-builds-8677']
+  workflow_dispatch:
+    inputs:
+      product:
+        type: choice
+        options: [studio, extensions]
+        required: true
+      line:
+        type: choice
+        options: ['3.8', '3.9']
+        required: true
+      commit:
+        description: Exact registered original source commit (40 hexadecimal characters)
+        type: string
+        required: true
+      version:
+        description: Same-line unpublished MAJOR.MINOR.PATCH-proof.RUN.ATTEMPT
+        type: string
+        required: true
+
+permissions: {}
+
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: '1'
+
+jobs:
+  select:
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/codex/maintenance-builds-8677') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    permissions:
+      contents: read
+      actions: none
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.select.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Verify focused maintenance contracts
+        run: |
+          python -m unittest discover -s scripts/integration-program -p test_prepare_maintenance_build.py
+          python -O -m unittest discover -s scripts/integration-program -p test_prepare_maintenance_build.py
+      - name: Admit explicit original-source selections
+        id: select
+        env:
+          EVENT: ${{ github.event_name }}
+          PRODUCT: ${{ inputs.product }}
+          LINE: ${{ inputs.line }}
+          SOURCE_COMMIT: ${{ inputs.commit }}
+          PROOF_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, sys
+          sys.path.insert(0, 'scripts/integration-program')
+          import prepare_maintenance_build as maintenance
+          register = maintenance.load_register()
+          if os.environ['EVENT'] == 'workflow_dispatch':
+              row = maintenance.selection(register, os.environ['PRODUCT'], os.environ['LINE'],
+                  os.environ['SOURCE_COMMIT'], os.environ['PROOF_VERSION'])
+              rows = [dict(row, version=os.environ['PROOF_VERSION'])]
+          else:
+              rows = [dict(row, version=f"{row['dependency_version']}-proof.{os.environ['GITHUB_RUN_ID']}.{os.environ['GITHUB_RUN_ATTEMPT']}")
+                      for row in register['sources']]
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:
+              stream.write('matrix=' + json.dumps({'include': rows}, separators=(',', ':')) + '\n')
+          PY
+
+  build:
+    needs: select
+    permissions:
+      contents: read
+      actions: none
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.select.outputs.matrix) }}
+    name: ${{ matrix.product }} ${{ matrix.line }} original-source proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.300
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Build, test, pack and verify original-source artifacts without publication
+        env:
+          PRODUCT: ${{ matrix.product }}
+          LINE: ${{ matrix.line }}
+          SOURCE_COMMIT: ${{ matrix.commit }}
+          PROOF_VERSION: ${{ matrix.version }}
+        run: |
+          python scripts/integration-program/prepare_maintenance_build.py \
+            --product "$PRODUCT" --line "$LINE" --commit "$SOURCE_COMMIT" \
+            --version "$PROOF_VERSION" --output "$RUNNER_TEMP/maintenance-proof"
+      - name: Retain original artifacts and sanitized structured receipts
+        if: always()
+        id: artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: maintenance-${{ matrix.product }}-${{ matrix.line }}-${{ matrix.commit }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/maintenance-proof/receipt.json
+            ${{ runner.temp }}/maintenance-proof/evaluated-inventory.json
+            ${{ runner.temp }}/maintenance-proof/test-inventory.json
+            ${{ runner.temp }}/maintenance-proof/verified-artifacts.json
+            ${{ runner.temp }}/maintenance-proof/artifacts
+          if-no-files-found: warn
+          overwrite: false
+          retention-days: 30
