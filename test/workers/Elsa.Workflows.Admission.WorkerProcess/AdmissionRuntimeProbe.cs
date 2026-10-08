@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Memory;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Runtime;
@@ -20,6 +21,7 @@ public sealed class AdmissionRuntimeProbe(string connectionString) : IAdmissionE
     public Func<WorkflowExecutionContext, Task>? OnExecuting { get; set; }
     public Func<WorkflowExecutionContext, Task>? OnRestored { get; set; }
     public WorkflowExecutionContext? PreparedContext { get; set; }
+    public bool EnableVariable { get; set; }
     public bool FailSavedNotification { get; set; }
     public bool FailRetract { get; set; }
     private readonly ConcurrentDictionary<string, int> _counts = new(StringComparer.Ordinal);
@@ -31,6 +33,8 @@ public sealed class AdmissionRuntimeProbe(string connectionString) : IAdmissionE
         await connection.OpenAsync();
         await using var command = new NpgsqlCommand("CREATE TABLE IF NOT EXISTS \"AdmissionRuntimeProofCounters\" (\"Name\" text PRIMARY KEY, \"Value\" integer NOT NULL)", connection);
         await command.ExecuteNonQueryAsync();
+        await using var variables = new NpgsqlCommand("CREATE TABLE IF NOT EXISTS \"AdmissionRuntimeProofVariables\" (\"InstanceId\" text NOT NULL, \"VariableId\" text NOT NULL, \"Value\" text NOT NULL, PRIMARY KEY (\"InstanceId\", \"VariableId\"))", connection);
+        await variables.ExecuteNonQueryAsync();
     }
 
     public async Task IncrementAsync(string key)
@@ -92,6 +96,12 @@ public sealed class AdmissionRuntimeActivity : Activity
         }
         if (probe.Outcome == "suspended")
         {
+            if (probe.EnableVariable)
+            {
+                var variable = context.SetDynamicVariable("DurableProof", "saved-variable");
+                variable.StorageDriverType = typeof(AdmissionProofStorageDriver);
+                variable.GetBlock(context.ExpressionExecutionContext).Metadata = new VariableBlockMetadata(variable, typeof(AdmissionProofStorageDriver), true);
+            }
             context.CreateBookmark(ResumeAsync);
             return;
         }
@@ -100,7 +110,12 @@ public sealed class AdmissionRuntimeActivity : Activity
 
     private async ValueTask ResumeAsync(ActivityExecutionContext context)
     {
-        await context.GetRequiredService<AdmissionRuntimeProbe>().IncrementAsync("activityResumes");
+        var probe = context.GetRequiredService<AdmissionRuntimeProbe>();
+        await probe.IncrementAsync("activityResumes");
+        if (probe.EnableVariable && context.GetVariable<string>("DurableProof") == "reloaded-variable")
+        {
+            await probe.IncrementAsync("variableLoadedCorrectly");
+        }
         context.WorkflowExecutionContext.Output["Proof"] = "persisted-resume-output";
         await context.CompleteActivityAsync();
     }

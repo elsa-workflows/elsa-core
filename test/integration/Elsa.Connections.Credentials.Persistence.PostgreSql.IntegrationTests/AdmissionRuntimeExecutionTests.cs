@@ -383,6 +383,124 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
         }, shell: scenario == "shell");
     }
 
+    [Theory]
+    [InlineData("runtime-variable-classic", "classic")]
+    [InlineData("runtime-variable-shell", "shell")]
+    public async Task FrozenHostSavesAndReloadsActualExternalVariables(string caseId, string scenario)
+    {
+        await WithHostAsync(async host =>
+        {
+            host.Probe.Outcome = "suspended";
+            host.Probe.EnableVariable = true;
+            var initial = (await host.Execution.ExecuteAsync(host.AdmissionId))!;
+            var variable = Assert.Single(host.Probe.PreparedContext!.ActivityExecutionContexts
+                .SelectMany(context => context.Variables).Where(value => value.Name == "DurableProof"));
+            var driver = Assert.Single(host.Services.GetServices<IStorageDriver>().OfType<AdmissionProofStorageDriver>());
+            Assert.True(host.Probe.Count("variableWrites") > 0);
+            Assert.Equal("saved-variable", await driver.ReadPersistedAsync(initial.WorkflowInstanceId, variable.Id));
+            // Changing only external persisted storage discriminates LOAD from state restoration:
+            // the retained workflow snapshot still contains the original in-memory value.
+            await driver.ReplacePersistedAsync(initial.WorkflowInstanceId, variable.Id, "reloaded-variable");
+            var client = await host.Services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync(initial.WorkflowInstanceId);
+            var resumed = await client.RunInstanceAsync(new RunWorkflowInstanceRequest { BookmarkId = Assert.Single(initial.Bookmarks).Id });
+            Assert.Equal(WorkflowSubStatus.Finished, resumed.SubStatus);
+            Assert.True(host.Probe.Count("variableReads") > 0);
+            Assert.Equal(1, host.Probe.Count("variableLoadedCorrectly"));
+            Assert.Equal(2, host.Probe.Count("CheckpointRecorded"));
+            await ObserveAsync(caseId, nameof(FrozenHostSavesAndReloadsActualExternalVariables), caseId,
+                new() { ["variableWritten"] = true, ["variableRead"] = true, ["variableLoadedCorrectly"] = 1, ["checkpointCount"] = 2 });
+        }, shell: scenario == "shell");
+    }
+
+    [Theory]
+    [InlineData("runtime-cycle-trailing-success", false)]
+    [InlineData("runtime-cycle-trailing-failure", true)]
+    public async Task SameExecutionCycleSurvivesFinalCommitAndTrailingWriteUntilCompleteUnwind(string caseId, bool failTrailingWrite)
+    {
+        await WithHostAsync(async host =>
+        {
+            host.Probe.Outcome = "suspended";
+            var gates = new ExecutionWriteGates(failTrailingWrite);
+            host.Probe.Boundary = gates.ReachAsync;
+            var registry = host.Services.GetRequiredService<IExecutionCycleRegistry>();
+            var execution = host.Execution.ExecuteAsync(host.AdmissionId);
+            ExecutionCycleHandle? handle = null;
+            try
+            {
+                await gates.CommitReached.Task.WaitAsync(TimeSpan.FromSeconds(30));
+                handle = Assert.Single(registry.ListActiveCycles());
+                Assert.Equal(1, registry.ActiveCount);
+                Assert.False(handle.Disposed.IsCompleted);
+                Assert.Equal(0, host.Probe.Count("CheckpointRecorded"));
+                var record = (await host.Store.FindAsync(host.AdmissionId))!;
+                Assert.True(record.AuthorityOutstanding);
+                gates.CommitRelease.TrySetResult();
+                await gates.WriteReached.Task.WaitAsync(TimeSpan.FromSeconds(30));
+                Assert.Same(handle, Assert.Single(registry.ListActiveCycles()));
+                Assert.False(handle.Disposed.IsCompleted);
+                Assert.Equal(1, registry.ActiveCount);
+                record = (await host.Store.FindAsync(host.AdmissionId))!;
+                await Assert.ThrowsAsync<InvalidOperationException>(() => host.Execution.ResolveAsync(record.Id, record.Revision,
+                    AdmissionTerminalDisposition.Resolved, "fixture-held-cycle", true, true));
+                gates.WriteRelease.TrySetResult();
+                if (failTrailingWrite)
+                {
+                    await Assert.ThrowsAsync<IOException>(() => execution);
+                }
+                else
+                {
+                    Assert.Equal(WorkflowSubStatus.Suspended, (await execution)!.SubStatus);
+                }
+            }
+            finally
+            {
+                gates.CommitRelease.TrySetResult();
+                gates.WriteRelease.TrySetResult();
+                try
+                {
+                    await execution;
+                }
+                catch (IOException) when (failTrailingWrite)
+                {
+                    // The expected trailing-write failure must still unwind its real owner.
+                }
+            }
+            await handle!.Disposed.WaitAsync(TimeSpan.FromSeconds(30));
+            Assert.Equal(0, registry.ActiveCount);
+            Assert.Equal(failTrailingWrite ? 0 : 1, host.Probe.Count("CheckpointRecorded"));
+            Assert.Equal(failTrailingWrite ? AdmissionState.RecoveryRequired : AdmissionState.ExecutionObserved,
+                (await host.Store.FindAsync(host.AdmissionId))!.State);
+            await ObserveAsync(caseId, nameof(SameExecutionCycleSurvivesFinalCommitAndTrailingWriteUntilCompleteUnwind), caseId,
+                new() { ["sameHandleThroughTrailingWrite"] = true, ["resolutionDeniedWhileHeld"] = true,
+                    ["activeCyclesAfterUnwind"] = 0, ["checkpointCount"] = failTrailingWrite ? 0 : 1, ["recoveryRequired"] = failTrailingWrite });
+        });
+    }
+
+    private sealed class ExecutionWriteGates(bool failTrailingWrite)
+    {
+        public TaskCompletionSource CommitReached { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource CommitRelease { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource WriteReached { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource WriteRelease { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public async Task ReachAsync(string boundary)
+        {
+            if (boundary == "FinalCommitCompleted")
+            {
+                CommitReached.TrySetResult();
+                await CommitRelease.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            }
+            if (boundary == "TrailingWrite")
+            {
+                WriteReached.TrySetResult();
+                await WriteRelease.Task.WaitAsync(TimeSpan.FromSeconds(30));
+                if (failTrailingWrite)
+                {
+                    throw new IOException("fixture_trailing_write_failure");
+                }
+            }
+        }
+    }
+
     private async Task WithHostAsync(Func<RuntimeScenario, Task> assertion, IInterceptor? interceptor = null, bool shell = false)
     {
         await fixture.ResetSchemaAsync();

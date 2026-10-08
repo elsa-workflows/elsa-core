@@ -113,7 +113,7 @@ public sealed class AdmissionHostConfiguration
             typeof(IWorkflowDefinitionService), typeof(IWorkflowGraphBuilder), typeof(IWorkflowInstanceManager),
             typeof(IWorkflowStateExtractor), typeof(IWorkflowStateSerializer), typeof(IActivitySerializer), typeof(IPayloadSerializer),
             typeof(IActivityRegistry), typeof(IActivityRegistryLookupService), typeof(IMaterializerRegistry),
-            typeof(IActivitySchedulerFactory), typeof(IActivityInvoker),
+            typeof(IActivitySchedulerFactory), typeof(IActivityInvoker), typeof(IStorageDriverManager),
             typeof(ILoggerStateGenerator<ActivityExecutionContext>),
             typeof(ILoggerStateGenerator<WorkflowExecutionContext>), typeof(INotificationSender), typeof(ICommitStateHandler),
             typeof(IBookmarksPersister), typeof(IVariablePersistenceManager), typeof(IWorkflowCommitTransaction), typeof(IWorkflowCommitNotificationBuffer)
@@ -121,6 +121,10 @@ public sealed class AdmissionHostConfiguration
         foreach (var contract in required)
         {
             DemandAudited(services.GetRequiredService(contract).GetType());
+        }
+        foreach (var driver in services.GetServices<IStorageDriver>())
+        {
+            DemandAudited(driver.GetType());
         }
         foreach (var observer in services.GetServices<IAdmissionExecutionObserver>())
         {

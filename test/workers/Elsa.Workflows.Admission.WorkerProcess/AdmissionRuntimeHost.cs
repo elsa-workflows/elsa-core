@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Elsa.Common;
 using Elsa.Common.Multitenancy;
+using Elsa.Common.Serialization;
 using Elsa.Connections.Features;
 using Elsa.Extensions;
 using Elsa.Features.Services;
@@ -19,6 +20,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Activities.HostMethod;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Features;
 using Elsa.Workflows.Management.Providers;
 using Elsa.Workflows.Management.Services;
@@ -63,6 +65,8 @@ public static class AdmissionRuntimeHost
         services.AddLogging();
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
         services.AddSingleton(probe);
+        services.AddScoped<IStorageDriver>(_ => new AdmissionProofStorageDriver(connectionString, probe));
+        services.Configure<SerializationTypeOptions>(options => options.AddTypeAlias<AdmissionProofStorageDriver>("AdmissionProofStorage"));
         services.AddSingleton<IAdmissionExecutionObserver>(probe);
         services.AddScoped<INotificationHandler>(_ => probe);
         var module = services.CreateModule();
@@ -232,7 +236,7 @@ public static class AdmissionRuntimeHost
     public static async Task<AdmissionSubscription> BootstrapAsync(IServiceProvider services, bool activate = true)
     {
         await services.GetRequiredService<AdmissionHostConfiguration>().ValidateAsync(services);
-        await services.PopulateRegistriesAsync();
+        await services.GetRequiredService<IRegistriesPopulator>().PopulateAsync();
         var binding = services.GetRequiredService<AdmissionRuntimeBinding>();
         var bootstrap = services.GetRequiredService<AdmissionBootstrapService>();
         var subscription = await bootstrap.ProvisionAsync(binding.Configuration, binding.Artifact);
@@ -248,7 +252,7 @@ public static class AdmissionRuntimeHost
             typeof(ActivityRegistryLookupService), typeof(MaterializerRegistry), typeof(WorkflowLoggerStateGenerator),
             typeof(WorkflowCommitNotificationSender), typeof(ExecutionCycleAwareCommitStateHandler), typeof(BookmarksPersister),
             typeof(VariablePersistenceManager), typeof(NoopWorkflowCommitTransaction), typeof(WorkflowCommitNotificationBuffer),
-            typeof(ActivitySchedulerFactory), typeof(ActivityInvoker), typeof(ActivityLoggerStateGenerator), typeof(TypedActivityProvider), typeof(WorkflowDefinitionActivityProvider), typeof(HostMethodActivityProvider),
+            typeof(ActivitySchedulerFactory), typeof(StorageDriverManager), typeof(WorkflowInstanceStorageDriver), typeof(MemoryStorageDriver), typeof(AdmissionProofStorageDriver), typeof(ActivityInvoker), typeof(ActivityLoggerStateGenerator), typeof(TypedActivityProvider), typeof(WorkflowDefinitionActivityProvider), typeof(HostMethodActivityProvider),
             typeof(AdmissionRuntimeProbe), typeof(AdmissionObservedStateExtractor), typeof(AdmissionObservedCommit), typeof(AdmissionObservedBookmarkStore)
         };
         var management = new[] { "DeleteWorkflowInstances", "RefreshActivityRegistry", "UpdateConsumingWorkflows", "ValidateWorkflow", "ValidateOutputConverters" }
@@ -260,7 +264,7 @@ public static class AdmissionRuntimeHost
             "DeleteWorkflowExecutionLogRecords", "RefreshActivityRegistry", "SignalBookmarkQueueWorker", "EvaluateParentLogPersistenceModes",
             "CaptureActivityExecutionState", "ValidateWorkflowRequestHandler"
         }.Select(name => typeof(WorkflowRuntimeFeature).Assembly.GetType("Elsa.Workflows.Runtime.Handlers." + name, true)!);
-        return direct.Concat(management).Concat(runtime);
+        return direct.Concat(management).Concat(runtime).Append(typeof(IStorageDriver).Assembly.GetType("Elsa.Workflows.Services.WorkflowStorageDriver", true)!);
     }
 }
 
