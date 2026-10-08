@@ -1,7 +1,10 @@
+using Elsa.Extensions;
 using Elsa.Workflows;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Admission;
 using Elsa.Workflows.Admission.WorkerProcess;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests;
@@ -47,6 +50,40 @@ public sealed class AdmissionRuntimeBootstrapTests(PostgreSqlConnectionsFixture 
                 new() { ["inactiveBeforeExplicitActivation"] = true, ["fullDefinitionReloadVerified"] = true,
                     ["publicationNotifications"] = 1, ["activationEpochAdvanced"] = true, ["activityEffects"] = 1 });
         }, shell: shell);
+    }
+
+    [Theory]
+    [InlineData("runtime-bootstrap-autonomous-start", "autonomous")]
+    [InlineData("runtime-bootstrap-unallowlisted-activity", "unallowlisted")]
+    public async Task ForbiddenGraphIsRejectedAfterRealMaterializationBeforePersistence(string caseId, string scenario)
+    {
+        await _runtime.RunUnprovisionedAsync(async host =>
+        {
+            var services = host.Services;
+            await services.GetRequiredService<IRegistriesPopulator>().PopulateAsync();
+            var binding = services.GetRequiredService<AdmissionRuntimeBinding>();
+            Assert.Equal(binding.Configuration.DefinitionFingerprint, AdmissionDefinitionFingerprint.Compute(binding.Artifact, services.GetRequiredService<IPayloadSerializer>()));
+            var graph = await services.GetRequiredService<IWorkflowDefinitionService>().MaterializeWorkflowAsync(binding.Artifact);
+            if (scenario == "autonomous")
+            {
+                Assert.Contains(graph.Nodes, node => node.Activity is AdmissionRuntimeActivity && node.Activity.GetCanStartWorkflow());
+            }
+            else
+            {
+                Assert.Contains(graph.Nodes, node => node.Activity is WriteLine);
+                Assert.DoesNotContain(graph.Nodes, node => node.Activity.GetCanStartWorkflow());
+            }
+            await Assert.ThrowsAsync<InvalidOperationException>(() => AdmissionRuntimeHost.BootstrapAsync(services, activate: false));
+            Assert.Null(await services.GetRequiredService<IAdmissionStore>().FindSubscriptionAsync(binding.Configuration.Id));
+            Assert.Null(await services.GetRequiredService<IWorkflowDefinitionService>().FindWorkflowDefinitionAsync(binding.Artifact.Id));
+            Assert.Equal(0, host.Probe.Count("definitionPublished"));
+            Assert.Equal(0, host.Probe.Count("workflowExecuting"));
+            Assert.Equal(0, host.Probe.Count("activityEffects"));
+            await ObserveAsync(caseId, nameof(ForbiddenGraphIsRejectedAfterRealMaterializationBeforePersistence), caseId,
+                new() { ["allowlistedFingerprintMatched"] = true, ["realForbiddenGraphMaterialized"] = true,
+                    ["subscriptionAbsent"] = true, ["definitionAbsent"] = true, ["publicationNotifications"] = 0,
+                    ["workflowExecuting"] = 0, ["activityEffects"] = 0 });
+        }, canStartWorkflow: scenario == "autonomous", unallowlistedActivity: scenario == "unallowlisted");
     }
 
     [Fact]
