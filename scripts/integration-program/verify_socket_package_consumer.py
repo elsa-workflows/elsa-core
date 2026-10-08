@@ -8,12 +8,12 @@ the caller verifies bytes and normalizes them; this module writes nothing.
 from __future__ import annotations
 
 import json
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 import re
 from typing import Any
 
 from verify_admission_package_consumers import (
-    FEATURES, FRAMEWORKS, HEAD, MIGRATION, NAME, SHA256, VERSION, _match, _strings,
+    FEATURES, FRAMEWORKS, HEAD, MIGRATION, SHA256, VERSION, _assemblies, _match, _strings,
 )
 
 CASE_ID = "socket-package-held-commit-watch-resume"
@@ -90,27 +90,6 @@ CONTRACT = _validate_contract(json.loads(Path(__file__).with_name("socket-packag
                                          .joinpath("report-contract.json").read_text(encoding="utf-8")))
 
 
-def _assemblies(rows: Any) -> None:
-    _require(type(rows) is list and 0 < len(rows) <= 1024, "loaded assemblies")
-    names: set[str] = set()
-    for row in rows:
-        _keys(row, CONTRACT["loadedAssemblyKeys"], "loaded assembly shape")
-        _require(_match(row["name"], NAME) and row["name"].casefold() not in names, "loaded assembly name")
-        names.add(row["name"].casefold())
-        _require(_match(row["version"], re.compile(r"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+"))
-                 and type(row["fullName"]) is str
-                 and re.fullmatch(re.escape(row["name"] + ", Version=" + row["version"])
-                                  + r", Culture=[A-Za-z0-9-]+, PublicKeyToken=(?:null|[0-9a-f]{16})", row["fullName"]) is not None
-                 and _match(row["informationalVersion"], VERSION), "loaded assembly identity")
-        location = row["location"]
-        _require(type(location) is str and 0 < len(location) <= 4096
-                 and not any(ord(char) < 32 or ord(char) == 127 for char in location) and "\\" not in location
-                 and PurePosixPath(location).is_absolute() and ".." not in PurePosixPath(location).parts
-                 and PurePosixPath(location).name == row["name"] + ".dll"
-                 and _match(row["sha256"], SHA256), "loaded assembly location/hash")
-    _require({name.casefold() for name in REQUIRED_ASSEMBLIES} <= names, "required loaded assemblies")
-
-
 def _migrations(rows: Any) -> None:
     _require(type(rows) is list and len(rows) == len(CONTEXTS), "migration inventory")
     seen: set[str] = set()
@@ -158,7 +137,10 @@ def validate_cell(data: Any, *, expected_head: str, version: str, tfm: str, feat
     _keys(data["process"], CONTRACT["processKeys"], "process shape")
     _require(type(data["process"]["pid"]) is int and data["process"]["pid"] == process_id
              and _match(data["process"]["startIdentitySha256"], SHA256), "process identity")
-    _assemblies(data["loadedAssemblies"])
+    try:
+        _assemblies(data["loadedAssemblies"], REQUIRED_ASSEMBLIES)
+    except ValueError:
+        raise ValueError("Socket consumer report rejected: loaded assemblies") from None
     scenarios = data["scenarios"]
     _require(type(scenarios) is list and len(scenarios) == 1, "scenario inventory")
     scenario = scenarios[0]

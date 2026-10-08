@@ -98,7 +98,7 @@ def _exact_values(actual: Any, expected: dict, category: str) -> None:
                  for key, value in expected.items()), category)
 
 
-def _assemblies(rows: Any) -> None:
+def _assemblies(rows: Any, required_assemblies: Any = CONTRACT["requiredAssemblies"]) -> None:
     _require(type(rows) is list and 0 < len(rows) <= 1024, "loaded assemblies")
     names: set[str] = set()
     for row in rows:
@@ -112,11 +112,11 @@ def _assemblies(rows: Any) -> None:
                  and _match(row["informationalVersion"], VERSION), "loaded assembly identity")
         location = row["location"]
         _require(type(location) is str and 0 < len(location) <= 4096
-                 and not any(ord(char) < 32 for char in location) and "\\" not in location
+                 and not any(ord(char) < 32 or ord(char) == 127 for char in location) and "\\" not in location
                  and PurePosixPath(location).is_absolute() and ".." not in PurePosixPath(location).parts
                  and PurePosixPath(location).name == row["name"] + ".dll"
                  and _match(row["sha256"], SHA256), "loaded assembly location/hash")
-    _require({name.casefold() for name in CONTRACT["requiredAssemblies"]} <= names, "required loaded assemblies")
+    _require({name.casefold() for name in required_assemblies} <= names, "required loaded assemblies")
 
 
 def _migrations(rows: Any, contexts: list[str]) -> None:
