@@ -336,7 +336,7 @@ class TrainTests(unittest.TestCase):
                 return {'sha': commit}
             return self.github(*args)
 
-        args = SimpleNamespace(state=state['repositories']['core']['path'], source_ref=None, commit=None, package_version=[], replace=False)
+        args = SimpleNamespace(state=state['repositories']['core']['path'], source_ref=None, commit='a' * 40, package_version=[], replace=False)
         args.state = self.root / 'containers-core.json'
         train.save(args.state, state)
         with patch.object(train, 'gh', side_effect=github), self.assertRaisesRegex(ValueError, 'explicit published extensions package version'):
@@ -382,7 +382,7 @@ class TrainTests(unittest.TestCase):
 
                 args = SimpleNamespace(
                     state=self.root / f'dispatch-{suffix}.json', source_ref=None,
-                    commit=None, package_version=['extensions=3.8.4'], replace=False,
+                    commit='a' * 40, package_version=['extensions=3.8.4'], replace=False,
                 )
                 train.save(args.state, state)
                 with patch.object(train, 'gh', side_effect=github), patch.object(train, 'package_feed_available', return_value=True):
@@ -403,7 +403,7 @@ class TrainTests(unittest.TestCase):
         state = self.ready_container_state(repositories=['core'], no_containers=False)
         args = SimpleNamespace(
             state=self.root / 'untrusted-apps-source.json', source_ref='feature/untrusted',
-            commit=None, package_version=['extensions=3.8.4'], replace=False,
+            commit='a' * 40, package_version=['extensions=3.8.4'], replace=False,
         )
         with patch.object(train, 'gh', side_effect=self.github), self.assertRaisesRegex(ValueError, 'canonical branch or the exact release-version tag'):
             train.bind_containers(state, args)
@@ -447,6 +447,25 @@ class TrainTests(unittest.TestCase):
         with patch.object(train, 'gh', side_effect=github):
             self.assertEqual({'source_ref': 'main', 'commit': commit}, train.validate_container_source(inventory, 'main', '3.9.0'))
             self.assertEqual({'source_ref': '3.9.0', 'commit': commit}, train.validate_container_source(inventory, 'refs/tags/3.9.0', '3.9.0'))
+
+    def test_bind_containers_cli_requires_full_reviewed_apps_commit(self):
+        state_path = self.root / 'empty-state.json'
+        train.save(state_path, {})
+        script = str(Path(train.__file__))
+
+        missing = subprocess.run(
+            [sys.executable, script, '--state', str(state_path), 'bind-containers'],
+            text=True, capture_output=True,
+        )
+        self.assertEqual(2, missing.returncode)
+        self.assertIn('--commit', missing.stderr)
+
+        malformed = subprocess.run(
+            [sys.executable, script, '--state', str(state_path), 'bind-containers', '--commit', 'abc123'],
+            text=True, capture_output=True,
+        )
+        self.assertEqual(1, malformed.returncode)
+        self.assertIn('full 40-character SHA', malformed.stderr)
 
     def test_legacy_container_checkpoint_requires_explicit_adoption(self):
         old_profile = copy.deepcopy(self.state['profile'])

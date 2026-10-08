@@ -773,6 +773,8 @@ def prepare_containers(state, args):
 
 
 def bind_containers(state, args):
+    if not isinstance(args.commit, str) or not re.fullmatch(r'[0-9a-f]{40}', args.commit):
+        raise ValueError('The reviewed Apps commit must be a full 40-character SHA')
     plan = prepare_containers(state, args)
     inventory = configured_container_release(state['profile'])
     source = validate_container_source(
@@ -2008,7 +2010,7 @@ def main():
     sub.add_parser('prepare-containers')
     p = sub.add_parser('bind-containers')
     p.add_argument('--source-ref', help='Apps branch or tag to bind; defaults to the profile source ref')
-    p.add_argument('--commit', help='Expected full Apps commit SHA')
+    p.add_argument('--commit', required=True, help='Reviewed full Apps commit SHA')
     p.add_argument('--package-version', action='append', help='Explicit external family version, e.g. extensions=3.8.4')
     p.add_argument('--replace', action='store_true', help='Replace a reviewed binding only before workflow dispatch')
     sub.add_parser('dispatch-containers')
