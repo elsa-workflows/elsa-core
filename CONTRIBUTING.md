@@ -29,7 +29,7 @@ All changes happen through Pull Requests targeting the `main` branch.
 
 ### Contribution routing after consolidation
 
-Open new consolidated Core, Extensions and Studio issues and pull requests in [elsa-core](https://github.com/elsa-workflows/elsa-core). Identify the affected product and version. Retained 3.8/3.9 maintenance continues through its existing source-repository procedure until a reviewed replacement is established; consolidation does not end that support or move its publisher automatically.
+Open new consolidated Core, Extensions and Studio issues and pull requests in [elsa-core](https://github.com/elsa-workflows/elsa-core). Identify the affected product and version. Retained 3.8/3.9 maintenance continues through its existing source-repository procedure until an explicitly approved replacement is verified; consolidation does not end that support or move its publisher automatically.
 
 For existing Studio or Extensions contributions, consult the [source contribution handoff and register](docs/integration-program/source-contributor-handoff.md). Reuse a matching Core continuation when one exists. When scheduling new continuation work, link the original issue/PR and preserve its author attribution; an open historical source item is not automatically an active Core task.
 
