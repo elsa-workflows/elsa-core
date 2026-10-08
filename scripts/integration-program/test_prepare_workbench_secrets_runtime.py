@@ -833,7 +833,7 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
 class CommittedWorkbenchHostDefaultsTests(unittest.TestCase):
     """The committed Workbench keeps each runtime-fixture switch opt-in and disabled by default (#8326)."""
 
-    WORKBENCH = SCRIPT.parents[2] / FIXTURE.SOURCE_PROJECT
+    WORKBENCH = FIXTURE.current_path(SCRIPT.parents[2], FIXTURE.SOURCE_PROJECT.as_posix())
     ROUTE_PROBE_GUARD = 'if (configuration.GetValue("Features:Secrets:RouteProbe", false))'
     GUARDED_REGISTRATIONS = (
         r'if \(useSecrets\)\s*\{\s*elsa\s*\.UseSecrets\(',
