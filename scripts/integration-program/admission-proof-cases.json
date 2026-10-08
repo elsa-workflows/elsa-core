@@ -2083,10 +2083,660 @@
       "processRoles": [],
       "minimumProcesses": 0,
       "restartRequired": false
+    },
+    {
+      "caseId": "runtime-crash-creation-claim",
+      "family": "create",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
+      "parameterId": "runtime-crash-creation-claim",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "noReplayVerified"
+      ],
+      "facts": {
+        "instanceCount": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "terminalAlreadyRecorded": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "replayed": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "state": {
+          "kind": "enum",
+          "values": [
+            "RecoveryRequired"
+          ]
+        },
+        "forcedTerminationRequested": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-runtime",
+        "admission-controller"
+      ],
+      "minimumProcesses": 3,
+      "restartRequired": true
+    },
+    {
+      "caseId": "runtime-crash-before-insert",
+      "family": "create",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
+      "parameterId": "runtime-crash-before-insert",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "noReplayVerified"
+      ],
+      "facts": {
+        "instanceCount": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "terminalAlreadyRecorded": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "replayed": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "state": {
+          "kind": "enum",
+          "values": [
+            "RecoveryRequired"
+          ]
+        },
+        "forcedTerminationRequested": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-runtime",
+        "admission-controller"
+      ],
+      "minimumProcesses": 3,
+      "restartRequired": true
+    },
+    {
+      "caseId": "runtime-crash-insert-notified",
+      "family": "create",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
+      "parameterId": "runtime-crash-insert-notified",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "noReplayVerified"
+      ],
+      "facts": {
+        "instanceCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "terminalAlreadyRecorded": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "replayed": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "state": {
+          "kind": "enum",
+          "values": [
+            "RecoveryRequired"
+          ]
+        },
+        "forcedTerminationRequested": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-runtime",
+        "admission-controller"
+      ],
+      "minimumProcesses": 3,
+      "restartRequired": true
+    },
+    {
+      "caseId": "runtime-crash-start-prepared",
+      "family": "permit",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
+      "parameterId": "runtime-crash-start-prepared",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "noReplayVerified"
+      ],
+      "facts": {
+        "instanceCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "terminalAlreadyRecorded": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "replayed": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "state": {
+          "kind": "enum",
+          "values": [
+            "RecoveryRequired"
+          ]
+        },
+        "forcedTerminationRequested": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-runtime",
+        "admission-controller"
+      ],
+      "minimumProcesses": 3,
+      "restartRequired": true
+    },
+    {
+      "caseId": "runtime-crash-start-authorized",
+      "family": "permit",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
+      "parameterId": "runtime-crash-start-authorized",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "noReplayVerified"
+      ],
+      "facts": {
+        "instanceCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "terminalAlreadyRecorded": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "replayed": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "state": {
+          "kind": "enum",
+          "values": [
+            "RecoveryRequired"
+          ]
+        },
+        "forcedTerminationRequested": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-runtime",
+        "admission-controller"
+      ],
+      "minimumProcesses": 3,
+      "restartRequired": true
+    },
+    {
+      "caseId": "runtime-crash-before-entry",
+      "family": "entry",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
+      "parameterId": "runtime-crash-before-entry",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "noReplayVerified"
+      ],
+      "facts": {
+        "instanceCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "terminalAlreadyRecorded": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "replayed": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "state": {
+          "kind": "enum",
+          "values": [
+            "RecoveryRequired"
+          ]
+        },
+        "forcedTerminationRequested": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-runtime",
+        "admission-controller"
+      ],
+      "minimumProcesses": 3,
+      "restartRequired": true
+    },
+    {
+      "caseId": "runtime-crash-authority-consumed",
+      "family": "consume",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
+      "parameterId": "runtime-crash-authority-consumed",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "noReplayVerified"
+      ],
+      "facts": {
+        "instanceCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "terminalAlreadyRecorded": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "replayed": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "state": {
+          "kind": "enum",
+          "values": [
+            "RecoveryRequired"
+          ]
+        },
+        "forcedTerminationRequested": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-runtime",
+        "admission-controller"
+      ],
+      "minimumProcesses": 3,
+      "restartRequired": true
+    },
+    {
+      "caseId": "runtime-crash-effect",
+      "family": "entry",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
+      "parameterId": "runtime-crash-effect",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "noReplayVerified"
+      ],
+      "facts": {
+        "instanceCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "terminalAlreadyRecorded": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "replayed": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "state": {
+          "kind": "enum",
+          "values": [
+            "RecoveryRequired"
+          ]
+        },
+        "forcedTerminationRequested": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-runtime",
+        "admission-controller"
+      ],
+      "minimumProcesses": 3,
+      "restartRequired": true
+    },
+    {
+      "caseId": "runtime-crash-final-commit",
+      "family": "terminal",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
+      "parameterId": "runtime-crash-final-commit",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "noReplayVerified"
+      ],
+      "facts": {
+        "instanceCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "terminalAlreadyRecorded": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "replayed": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "state": {
+          "kind": "enum",
+          "values": [
+            "RecoveryRequired"
+          ]
+        },
+        "forcedTerminationRequested": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-runtime",
+        "admission-controller"
+      ],
+      "minimumProcesses": 3,
+      "restartRequired": true
+    },
+    {
+      "caseId": "runtime-crash-trailing-write",
+      "family": "terminal",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
+      "parameterId": "runtime-crash-trailing-write",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "noReplayVerified"
+      ],
+      "facts": {
+        "instanceCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "terminalAlreadyRecorded": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "replayed": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "state": {
+          "kind": "enum",
+          "values": [
+            "RecoveryRequired"
+          ]
+        },
+        "forcedTerminationRequested": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-runtime",
+        "admission-controller"
+      ],
+      "minimumProcesses": 3,
+      "restartRequired": true
+    },
+    {
+      "caseId": "runtime-crash-ownership-unwound",
+      "family": "terminal",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
+      "parameterId": "runtime-crash-ownership-unwound",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "noReplayVerified"
+      ],
+      "facts": {
+        "instanceCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "terminalAlreadyRecorded": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "replayed": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "state": {
+          "kind": "enum",
+          "values": [
+            "RecoveryRequired"
+          ]
+        },
+        "forcedTerminationRequested": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-runtime",
+        "admission-controller"
+      ],
+      "minimumProcesses": 3,
+      "restartRequired": true
+    },
+    {
+      "caseId": "runtime-crash-checkpoint-recorded",
+      "family": "terminal",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
+      "parameterId": "runtime-crash-checkpoint-recorded",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "noReplayVerified"
+      ],
+      "facts": {
+        "instanceCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityResumes": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "terminalAlreadyRecorded": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "replayed": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "state": {
+          "kind": "enum",
+          "values": [
+            "Terminal"
+          ]
+        },
+        "forcedTerminationRequested": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-runtime",
+        "admission-controller"
+      ],
+      "minimumProcesses": 3,
+      "restartRequired": true
     }
   ],
   "workerAssemblies": {
     "admission-primary": "test/workers/Elsa.Workflows.Admission.WorkerProcess/bin/Release/net10.0/Elsa.Workflows.Admission.WorkerProcess.dll",
-    "admission-competitor": "test/workers/Elsa.Workflows.Admission.WorkerProcess/bin/Release/net10.0/Elsa.Workflows.Admission.WorkerProcess.dll"
+    "admission-competitor": "test/workers/Elsa.Workflows.Admission.WorkerProcess/bin/Release/net10.0/Elsa.Workflows.Admission.WorkerProcess.dll",
+    "admission-controller": "test/workers/Elsa.Workflows.Admission.WorkerProcess/bin/Release/net10.0/Elsa.Workflows.Admission.WorkerProcess.dll",
+    "admission-runtime": "test/workers/Elsa.Workflows.Admission.WorkerProcess/bin/Release/net10.0/Elsa.Workflows.Admission.WorkerProcess.dll"
   }
 }
