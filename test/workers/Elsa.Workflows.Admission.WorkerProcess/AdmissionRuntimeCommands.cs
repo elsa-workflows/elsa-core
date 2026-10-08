@@ -38,7 +38,7 @@ internal static class AdmissionRuntimeCommands
             await using var services = AdmissionRuntimeHost.CreateServices(connection, probe);
             using var tenant = AdmissionRuntimeHost.EnterTenant(services);
             await services.GetRequiredService<AdmissionHostConfiguration>().ValidateAsync(services);
-            await services.PopulateRegistriesAsync();
+            await services.GetRequiredService<IRegistriesPopulator>().PopulateAsync();
             var execution = services.GetRequiredService<AdmissionExecutionService>();
             var replayed = false;
             switch (args[0])

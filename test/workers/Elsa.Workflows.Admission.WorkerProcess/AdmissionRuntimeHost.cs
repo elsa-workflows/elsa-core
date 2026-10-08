@@ -20,6 +20,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Activities.HostMethod;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Features;
 using Elsa.Workflows.Management.Providers;
 using Elsa.Workflows.Management.Services;
@@ -235,7 +236,7 @@ public static class AdmissionRuntimeHost
     public static async Task<AdmissionSubscription> BootstrapAsync(IServiceProvider services, bool activate = true)
     {
         await services.GetRequiredService<AdmissionHostConfiguration>().ValidateAsync(services);
-        await services.PopulateRegistriesAsync();
+        await services.GetRequiredService<IRegistriesPopulator>().PopulateAsync();
         var binding = services.GetRequiredService<AdmissionRuntimeBinding>();
         var bootstrap = services.GetRequiredService<AdmissionBootstrapService>();
         var subscription = await bootstrap.ProvisionAsync(binding.Configuration, binding.Artifact);
