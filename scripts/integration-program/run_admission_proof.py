@@ -102,7 +102,7 @@ def validate_manifest(data: dict) -> dict:
     for case in data["cases"]:
         keys(case, {"caseId", "family", "project", "method", "parameterId", "assertions",
                     "facts", "topology", "processRoles", "minimumProcesses", "restartRequired"})
-        require(matches(TOKEN, case["caseId"]) and case["parameterId"] in (case["caseId"], "default")
+        require(matches(TOKEN, case["caseId"]) and matches(TOKEN, case["parameterId"])
                 and case["caseId"] not in ids and matches(NAME, case["method"])
                 and case["family"] in FAMILIES, "invalid_case_identity")
         require(case["project"] in projects and next(p["observations"] for p in data["testProjects"]

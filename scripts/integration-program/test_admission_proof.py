@@ -96,6 +96,10 @@ class AdmissionProofTests(unittest.TestCase):
             data = copy.deepcopy(self.manifest); mutate(data)
             with self.subTest(data=data), self.assertRaises(ValueError): proof.validate_manifest(data)
         proof.validate_manifest(self.manifest)
+        labeled = copy.deepcopy(self.manifest)
+        labeled['cases'][0]['parameterId'] = 'shared-parameter'
+        labeled['cases'][1]['parameterId'] = 'shared-parameter'
+        proof.validate_manifest(labeled)
 
     def test_trx_bijection_handles_real_named_theory_shape_and_unique_fact(self):
         cases = copy.deepcopy(self.manifest['cases'][:2]); cases[1]['parameterId'] = 'default'
