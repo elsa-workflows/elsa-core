@@ -628,6 +628,19 @@ def validate_container_receipt(profile, version, receipt, image_names=None, bind
             for item in smoke_platforms
         ):
             raise ValueError(f'Container receipt contains a failed platform smoke check for {name}')
+        for item in smoke_platforms:
+            dashboard = item.get('dashboardApi')
+            running = dashboard.get('running') if isinstance(dashboard, dict) else None
+            if (
+                not isinstance(dashboard, dict)
+                or dashboard.get('runtimeStatus') != 'AcceptingWork'
+                or dashboard.get('isAcceptingWork') is not True
+                or dashboard.get('workflowMetricsValid') is not True
+                or isinstance(running, bool)
+                or not isinstance(running, int)
+                or running < 0
+            ):
+                raise ValueError(f'Container receipt has no healthy authenticated dashboard runtime evidence for {name}')
 
         live = dockerhub_manifest(repository, tag)
         if live['digest'] != image_digest or live['platforms'] != platform_digests:

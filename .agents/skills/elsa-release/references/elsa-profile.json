@@ -29,7 +29,7 @@
         "Elsa.Persistence.EFCore.PostgreSql", "Elsa.Persistence.EFCore.SqlServer", "Elsa.Persistence.EFCore.Sqlite",
         "Elsa.Resilience", "Elsa.Resilience.Core", "Elsa.SasTokens", "Elsa.Scheduling", "Elsa.Tenants",
         "Elsa.Workflows.Api", "Elsa.Workflows.Core", "Elsa.Workflows.Management", "Elsa.Workflows.Runtime",
-        "Elsa.Workflows.Runtime.Distributed"
+        "Elsa.Workflows.Runtime.Dashboard", "Elsa.Workflows.Runtime.Distributed"
       ],
       "studio": [
         "Elsa.Studio", "Elsa.Studio.AI", "Elsa.Studio.ActivityPortProviders",

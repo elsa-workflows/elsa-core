@@ -124,7 +124,19 @@ class TrainTests(unittest.TestCase):
                     'success': True,
                     'imageDigest': digest_value,
                     'platforms': [
-                        {'platform': platform, 'imageDigest': platform_digests[platform], 'status': 'success', 'endpoint': 'http://localhost/health', 'httpStatus': 200}
+                        {
+                            'platform': platform,
+                            'imageDigest': platform_digests[platform],
+                            'status': 'success',
+                            'endpoint': 'http://localhost/health',
+                            'httpStatus': 200,
+                            'dashboardApi': {
+                                'runtimeStatus': 'AcceptingWork',
+                                'isAcceptingWork': True,
+                                'workflowMetricsValid': True,
+                                'running': 0,
+                            },
+                        }
                         for platform in image['platforms']
                     ],
                 },
@@ -259,6 +271,39 @@ class TrainTests(unittest.TestCase):
         release_fixture = self.container_fixture(state, event='release')
         release_report = self.validate_container_fixture(state, release_fixture)
         self.assertTrue(release_report['verified'])
+
+    def test_container_receipt_accepts_runtime_dashboard_package_in_core_assets(self):
+        state = self.ready_container_state(repositories=['core'], no_containers=False)
+        fixture = self.container_fixture(state, image_names=state['containers']['images'])
+        receipt = fixture[0]
+        dashboard_package = {'id': 'Elsa.Workflows.Runtime.Dashboard', 'version': state['version']}
+        receipt['resolvedPackages']['core'].append(dashboard_package)
+        for image in receipt['images']:
+            if image['name'] in ('server', 'server-alias'):
+                image['resolvedPackages']['core'].append(dashboard_package)
+        self.refresh_container_artifact(fixture)
+
+        report = self.validate_container_fixture(state, fixture, image_names=state['containers']['images'])
+        self.assertTrue(report['verified'])
+        self.assertEqual(2, len(report['images']))
+
+    def test_container_receipt_requires_authenticated_dashboard_runtime_semantics(self):
+        state = self.ready_container_state(no_containers=False)
+        mutations = (
+            ('missing dashboard evidence', lambda row: row.pop('dashboardApi')),
+            ('runtime not accepting work', lambda row: row['dashboardApi'].update(runtimeStatus='Unavailable')),
+            ('runtime acceptance false', lambda row: row['dashboardApi'].update(isAcceptingWork=False)),
+            ('workflow metrics invalid', lambda row: row['dashboardApi'].update(workflowMetricsValid=False)),
+            ('invalid running count', lambda row: row['dashboardApi'].update(running=True)),
+        )
+        for label, mutate in mutations:
+            with self.subTest(case=label):
+                fixture = self.container_fixture(state)
+                receipt = fixture[0]
+                mutate(receipt['images'][0]['smoke']['platforms'][0])
+                self.refresh_container_artifact(fixture)
+                with self.assertRaisesRegex(ValueError, 'healthy authenticated dashboard runtime evidence'):
+                    self.validate_container_fixture(state, fixture)
 
     def test_container_receipt_accepts_producer_decimal_run_id_and_rejects_malformed_values(self):
         state = self.ready_container_state(no_containers=False)
