@@ -29,7 +29,7 @@ public sealed class AdmissionProofStorageDriver(string connectionString, Admissi
     {
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync(context.CancellationToken);
-        await using var command = new NpgsqlCommand("DELETE FROM \"AdmissionRuntimeProofVariables\" WHERE \"InstanceId\" = @instance AND \"VariableId\" = @variable", connection);
+        await using var command = new NpgsqlCommand("DELETE FROM \"Elsa\".\"AdmissionRuntimeProofVariables\" WHERE \"InstanceId\" = @instance AND \"VariableId\" = @variable", connection);
         Bind(command, InstanceId(context), id);
         await command.ExecuteNonQueryAsync(context.CancellationToken);
         await probe.IncrementAsync("variableDeletes");
@@ -39,7 +39,7 @@ public sealed class AdmissionProofStorageDriver(string connectionString, Admissi
     {
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
-        await using var command = new NpgsqlCommand("SELECT \"Value\" FROM \"AdmissionRuntimeProofVariables\" WHERE \"InstanceId\" = @instance AND \"VariableId\" = @variable", connection);
+        await using var command = new NpgsqlCommand("SELECT \"Value\" FROM \"Elsa\".\"AdmissionRuntimeProofVariables\" WHERE \"InstanceId\" = @instance AND \"VariableId\" = @variable", connection);
         Bind(command, instanceId, variableId);
         return await command.ExecuteScalarAsync(cancellationToken) as string;
     }
@@ -48,7 +48,7 @@ public sealed class AdmissionProofStorageDriver(string connectionString, Admissi
     {
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
-        await using var command = new NpgsqlCommand("INSERT INTO \"AdmissionRuntimeProofVariables\" (\"InstanceId\", \"VariableId\", \"Value\") VALUES (@instance, @variable, @value) ON CONFLICT (\"InstanceId\", \"VariableId\") DO UPDATE SET \"Value\" = EXCLUDED.\"Value\"", connection);
+        await using var command = new NpgsqlCommand("INSERT INTO \"Elsa\".\"AdmissionRuntimeProofVariables\" (\"InstanceId\", \"VariableId\", \"Value\") VALUES (@instance, @variable, @value) ON CONFLICT (\"InstanceId\", \"VariableId\") DO UPDATE SET \"Value\" = EXCLUDED.\"Value\"", connection);
         Bind(command, instanceId, variableId);
         command.Parameters.AddWithValue("value", value);
         await command.ExecuteNonQueryAsync(cancellationToken);

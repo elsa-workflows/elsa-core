@@ -111,7 +111,7 @@ public sealed class AdmissionRuntimeProcessTests(PostgreSqlConnectionsFixture fi
         await connection.OpenAsync();
         // EF maps ManagementElsaDbContext.WorkflowInstances to this table in the default
         // selected-provider fixture schema. No second management/runtime provider is built.
-        await using var command = new NpgsqlCommand("SELECT count(*)::integer FROM \"WorkflowInstances\" WHERE \"Id\" = @id", connection);
+        await using var command = new NpgsqlCommand("SELECT count(*)::integer FROM \"Elsa\".\"WorkflowInstances\" WHERE \"Id\" = @id", connection);
         command.Parameters.AddWithValue("id", instanceId);
         return (int)(await command.ExecuteScalarAsync())!;
     }
