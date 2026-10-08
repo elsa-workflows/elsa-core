@@ -442,7 +442,7 @@ class TrainTests(unittest.TestCase):
                 return {'sha': commit}
             if '/compare/' in url:
                 return {'status': 'ahead'}
-            self.fail(f'Unexpected GitHub call {args}')
+            raise AssertionError(f'Unexpected GitHub call {args}')
 
         with patch.object(train, 'gh', side_effect=github):
             self.assertEqual({'source_ref': 'main', 'commit': commit}, train.validate_container_source(inventory, 'main', '3.9.0'))
