@@ -845,6 +845,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Admission.Pe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql", "core\src\modules\Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql\Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql.csproj", "{BB2D87B5-A09C-5C0F-8C1C-BE61710C4FCE}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Mediator.UnitTests", "core\test\unit\Elsa.Mediator.UnitTests\Elsa.Mediator.UnitTests.csproj", "{C238743E-049D-5073-9E1B-B1CF948A3630}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Connections.Credentials.WorkerProcess", "core\test\workers\Elsa.Connections.Credentials.WorkerProcess\Elsa.Connections.Credentials.WorkerProcess.csproj", "{2C128905-26F8-57CB-821A-00B32347DEC7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Admission.WorkerProcess", "core\test\workers\Elsa.Workflows.Admission.WorkerProcess\Elsa.Workflows.Admission.WorkerProcess.csproj", "{1777ADAF-28FB-516D-BB81-A3A6E98C1EE7}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Apps", "Apps", "{295C9828-41EA-5AAF-8451-2A366FEF2A5E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{E26ABACB-8C6D-52E5-9453-0A0A46664BAD}"
@@ -892,12 +898,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Studio", "Studio", "{DDA3A66D-0AAA-51CC-A373-B25E8E60E438}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{2B827F47-FA3A-5896-9D9F-55DDB3F34787}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Mediator.UnitTests", "core\test\unit\Elsa.Mediator.UnitTests\Elsa.Mediator.UnitTests.csproj", "{C238743E-049D-5073-9E1B-B1CF948A3630}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Connections.Credentials.WorkerProcess", "core\test\workers\Elsa.Connections.Credentials.WorkerProcess\Elsa.Connections.Credentials.WorkerProcess.csproj", "{2C128905-26F8-57CB-821A-00B32347DEC7}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Admission.WorkerProcess", "core\test\workers\Elsa.Workflows.Admission.WorkerProcess\Elsa.Workflows.Admission.WorkerProcess.csproj", "{1777ADAF-28FB-516D-BB81-A3A6E98C1EE7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -5172,9 +5172,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{C238743E-049D-5073-9E1B-B1CF948A3630} = {90031D64-CA0F-46D0-9AF4-8DC023A5FFCD}
-		{2C128905-26F8-57CB-821A-00B32347DEC7} = {90031D64-CA0F-46D0-9AF4-8DC023A5FFCD}
-		{1777ADAF-28FB-516D-BB81-A3A6E98C1EE7} = {90031D64-CA0F-46D0-9AF4-8DC023A5FFCD}
 		{C9539BD8-D2AE-4A8D-8281-71A05B3FBF31} = {B27B69E2-04E7-52FF-93BB-7E607D917C02}
 		{169E2C9B-6687-427F-A278-30BF849BFEDC} = {B27B69E2-04E7-52FF-93BB-7E607D917C02}
 		{2DD5D66B-85E9-4AF9-911C-C9F963234159} = {B27B69E2-04E7-52FF-93BB-7E607D917C02}
@@ -5542,6 +5539,9 @@ Global
 		{EC19826A-485C-5847-8D14-119BC8AEBE38} = {414EEF42-62D1-5774-A0FC-AA97A32CAC15}
 		{2D42AF8B-DD3B-54BC-B31C-15DADF162773} = {414EEF42-62D1-5774-A0FC-AA97A32CAC15}
 		{BB2D87B5-A09C-5C0F-8C1C-BE61710C4FCE} = {414EEF42-62D1-5774-A0FC-AA97A32CAC15}
+		{C238743E-049D-5073-9E1B-B1CF948A3630} = {F93187DE-B56C-571D-B6C6-BC38AEE4F8F7}
+		{2C128905-26F8-57CB-821A-00B32347DEC7} = {4D8A9D17-ED94-56BF-86AC-1CCD0E766BF4}
+		{1777ADAF-28FB-516D-BB81-A3A6E98C1EE7} = {33FB99E3-81FF-59DD-9DA2-5F078848352E}
 		{E26ABACB-8C6D-52E5-9453-0A0A46664BAD} = {295C9828-41EA-5AAF-8451-2A366FEF2A5E}
 		{35BCF824-931F-512A-B9E9-F9384E18B938} = {E2EF577F-D856-5496-8EBF-006528D68E86}
 		{E123619D-133C-5DD0-A2A8-35A01CA0E137} = {35BCF824-931F-512A-B9E9-F9384E18B938}

@@ -48,7 +48,6 @@
       "core/src/modules/Elsa.Workflows.Runtime.Distributed/Elsa.Workflows.Runtime.Distributed.csproj",
       "core/src/modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj",
       "core/src/modules/Elsa/Elsa.csproj",
-      "extensions/test/workbench/Elsa.TestServer.Web/Elsa.TestServer.Web.csproj",
       "core/test/integration/Elsa.Alterations.IntegrationTests/Elsa.Alterations.IntegrationTests.csproj",
       "core/test/integration/Elsa.Alterations.Persistence.ConformanceTests/Elsa.Alterations.Persistence.ConformanceTests.csproj",
       "core/test/integration/Elsa.Common.IntegrationTests/Elsa.Common.IntegrationTests.csproj",
@@ -67,6 +66,7 @@
       "core/test/unit/Elsa.Http.UnitTests/Elsa.Http.UnitTests.csproj",
       "core/test/unit/Elsa.Identity.UnitTests/Elsa.Identity.UnitTests.csproj",
       "core/test/unit/Elsa.Labels.UnitTests/Elsa.Labels.UnitTests.csproj",
+      "core/test/unit/Elsa.Mediator.UnitTests/Elsa.Mediator.UnitTests.csproj",
       "core/test/unit/Elsa.Persistence.EFCore.UnitTests/Elsa.Persistence.EFCore.UnitTests.csproj",
       "core/test/unit/Elsa.Resilience.Core.UnitTests/Elsa.Resilience.Core.UnitTests.csproj",
       "core/test/unit/Elsa.SasTokens.UnitTests/Elsa.SasTokens.UnitTests.csproj",
@@ -75,7 +75,8 @@
       "core/test/unit/Elsa.Workflows.Api.UnitTests/Elsa.Workflows.Api.UnitTests.csproj",
       "core/test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj",
       "core/test/unit/Elsa.Workflows.Management.UnitTests/Elsa.Workflows.Management.UnitTests.csproj",
-      "core/test/unit/Elsa.Workflows.Runtime.UnitTests/Elsa.Workflows.Runtime.UnitTests.csproj"
+      "core/test/unit/Elsa.Workflows.Runtime.UnitTests/Elsa.Workflows.Runtime.UnitTests.csproj",
+      "extensions/test/workbench/Elsa.TestServer.Web/Elsa.TestServer.Web.csproj"
     ]
   }
 }

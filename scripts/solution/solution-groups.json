@@ -39,9 +39,7 @@
     "Elsa.Persistence.EFCore.SqlServer",
     "Elsa.Alterations",
     "Elsa.Alterations.Core",
-    "Elsa.Workflows.IntegrationTests",
-    "Elsa.Connections.Credentials.WorkerProcess",
-    "Elsa.Workflows.Admission.WorkerProcess"
+    "Elsa.Workflows.IntegrationTests"
   ],
   "domains": {
     "Scripting": {
@@ -148,7 +146,8 @@
   },
   "samples": {
     "paths": [
-      "core/samples/"
+      "core/samples/",
+      "extensions/samples/"
     ]
   }
 }
