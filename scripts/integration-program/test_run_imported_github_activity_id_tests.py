@@ -32,7 +32,7 @@ class ImportedGitHubActivityIdRunnerTests(unittest.TestCase):
         self.assertEqual(6, len(self.expected))
         self.assertIn(TEST_PROJECT, self.expected)
         for path in self.expected:
-            self.assertTrue(path.startswith(("src/extensions/devops/Elsa.DevOps.GitHub/", "test/extensions/modules/devops/")), path)
+            self.assertTrue(path.startswith(('extensions/src/devops/Elsa.DevOps.GitHub/', 'extensions/test/modules/devops/')), path)
         project = self.expected[TEST_PROJECT]
         self.assertIn(REFERENCE_MAP[1], project)
         self.assertNotIn(b"src/modules/", project)
@@ -41,8 +41,8 @@ class ImportedGitHubActivityIdRunnerTests(unittest.TestCase):
         rows = port_differences(REPOSITORY, self.expected)
         self.assertEqual([], [row for row in rows if not row["matches"]])
         boms = {row["path"]: row["bom"] for row in rows}
-        self.assertTrue(all(boms[path] for path in boms if path.startswith("src/")))
-        self.assertFalse(any(boms[path] for path in boms if path.startswith("test/")))
+        self.assertTrue(all(boms[path] for path in boms if path.startswith('extensions/src/')))
+        self.assertFalse(any(boms[path] for path in boms if path.startswith('extensions/test/')))
 
     def test_modified_missing_or_non_leading_bom_content_is_rejected(self):
         path, content = next((path, content) for path, content in self.expected.items() if path.endswith("V2.cs"))
@@ -68,16 +68,16 @@ class ImportedGitHubActivityIdRunnerTests(unittest.TestCase):
         with self.assertRaisesRegex(ProofError, "only add new regular files"):
             reviewed_files(modified)
         with self.assertRaisesRegex(ProofError, "unmapped path"):
-            reviewed_files(new_file_section("src/modules/other/A.cs", "class A {}"))
+            reviewed_files(new_file_section('src/modules/other/A.cs', "class A {}"))
         with self.assertRaisesRegex(ProofError, "exactly one mapped GitHub ProjectReference"):
-            reviewed_files(new_file_section("test/modules/devops/T/T.csproj", "<Project />"))
-        truncated = new_file_section("src/modules/devops/A.cs", "a", "b").replace(b"+1,2", b"+1,3")
+            reviewed_files(new_file_section('test/modules/devops/T/T.csproj', "<Project />"))
+        truncated = new_file_section('src/modules/devops/A.cs', "a", "b").replace(b"+1,2", b"+1,3")
         with self.assertRaisesRegex(ProofError, "line count"):
             reviewed_files(truncated)
 
     def test_final_newline_marker_is_preserved(self):
-        files = reviewed_files(new_file_section("src/modules/devops/A.cs", "a", "", "b", final_newline=False))
-        self.assertEqual(b"a\n\nb", files["src/extensions/devops/A.cs"])
+        files = reviewed_files(new_file_section('src/modules/devops/A.cs', "a", "", "b", final_newline=False))
+        self.assertEqual(b"a\n\nb", files['extensions/src/devops/A.cs'])
 
     def test_dirty_source_fails_before_any_test_command(self):
         with tempfile.TemporaryDirectory() as directory:

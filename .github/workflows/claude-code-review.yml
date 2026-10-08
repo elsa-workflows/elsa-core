@@ -5,10 +5,10 @@ on:
     types: [opened, synchronize, ready_for_review, reopened]
     # Optional: Only run on specific file changes
     # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
+    #   - "core/src/**/*.ts"
+    #   - "core/src/**/*.tsx"
+    #   - "core/src/**/*.js"
+    #   - "core/src/**/*.jsx"
 
 jobs:
   claude-review:

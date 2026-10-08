@@ -24,7 +24,7 @@ partial class Build : NukeBuild, ITest, IPack
 
     [GitRepository] readonly GitRepository GitRepository;
 
-    AbsolutePath SourceDirectory => RootDirectory / "src";
+    IEnumerable<AbsolutePath> SourceDirectories => new[] { RootDirectory / "core" / "src", RootDirectory / "extensions" / "src", RootDirectory / "studio" / "src" };
 
     public AbsolutePath PackagesDirectory => RootDirectory / "packages";
     public AbsolutePath TestResultDirectory => RootDirectory / "testresults";
@@ -65,7 +65,7 @@ partial class Build : NukeBuild, ITest, IPack
         .Before<IRestore>(x => x.Restore)
         .Executes(() =>
         {
-            SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => x.DeleteDirectory());
+            SourceDirectories.SelectMany(directory => directory.GlobDirectories("**/bin", "**/obj")).ForEach(x => x.DeleteDirectory());
             ((IHazArtifacts)this).ArtifactsDirectory.CreateOrCleanDirectory();
 
             TestResultDirectory.CreateOrCleanDirectory();

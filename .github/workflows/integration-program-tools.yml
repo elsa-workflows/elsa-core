@@ -7,12 +7,12 @@ on:
       - 'Elsa.Extensions.slnf'
       - 'Elsa.Studio.slnf'
       - '.github/dependabot.yml'
-      - 'src/extensions/**/*.csproj'
-      - 'src/studio/**/*.csproj'
+      - 'extensions/src/**/*.csproj'
+      - 'studio/src/**/*.csproj'
       - 'scripts/integration-program/**'
-      - 'samples/extensions/workbench/**'
-      - 'doc/integration-program/verify-hierarchy.py'
-      - 'doc/integration-program/hierarchy.json'
+      - 'extensions/samples/workbench/**'
+      - 'docs/integration-program/verify-hierarchy.py'
+      - 'docs/integration-program/hierarchy.json'
       - '.github/workflows/integration-program-tools.yml'
   workflow_dispatch:
 
@@ -55,7 +55,7 @@ jobs:
           python -O -m unittest discover -s scripts/integration-program -p test_verify_package_symbol_pair.py
       - name: Verify program graph, import safety and history preservation
         run: |
-          python doc/integration-program/verify-hierarchy.py
+          python docs/integration-program/verify-hierarchy.py
           python -m unittest discover -s scripts/integration-program -p 'test_*.py'
           python -O -m unittest discover -s scripts/integration-program -p 'test_*.py'
       - name: Preserve maintenance package verification and recovery contracts

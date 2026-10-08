@@ -3,14 +3,14 @@ name: Studio ClientLib build
 on:
   pull_request:
     paths:
-      - 'src/studio/**/ClientLib/**'
-      - 'src/studio/Directory.Packages.props'
-      - 'src/studio/Directory.Build.props'
-      - 'src/Directory.Build.props'
+      - 'studio/src/**/ClientLib/**'
+      - 'studio/src/Directory.Packages.props'
+      - 'studio/src/Directory.Build.props'
+      - 'core/src/Directory.Build.props'
       - 'scripts/integration-program/build_studio_clientlibs.sh'
       - 'scripts/integration-program/consolidated-build/studio-bpmn-generator-layout.patch'
       - 'scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/**'
-      - 'test/studio/browser/DesignerHover/**'
+      - 'studio/test/browser/DesignerHover/**'
       - '.github/workflows/studio-clientlib-build.yml'
   workflow_dispatch:
 
@@ -46,9 +46,9 @@ jobs:
       - name: Detect imported Studio source
         id: source
         run: |
-          if test -f src/studio/modules/Elsa.Studio.Workflows.Designer/ClientLib/package.json; then
+          if test -f studio/src/modules/Elsa.Studio.Workflows.Designer/ClientLib/package.json; then
             echo 'mapped=true' >> "$GITHUB_OUTPUT"
-          elif test -d src/studio; then
+          elif test -d studio/src; then
             echo 'Imported Studio is missing the required Designer ClientLib manifest.' >&2
             exit 1
           else
@@ -68,7 +68,7 @@ jobs:
           scripts/integration-program/build_studio_clientlibs.sh pinned-studio
       - name: Verify browser proof source-binding guards
         if: steps.source.outputs.mapped == 'true'
-        working-directory: test/studio/browser/DesignerHover
+        working-directory: studio/test/browser/DesignerHover
         run: |
           npm ci
           npm test
@@ -77,7 +77,7 @@ jobs:
         run: scripts/integration-program/build_studio_clientlibs.sh .
       - name: Verify real X6 edge-hover behavior
         if: steps.source.outputs.mapped == 'true'
-        working-directory: test/studio/browser/DesignerHover
+        working-directory: studio/test/browser/DesignerHover
         run: |
           npx --no-install playwright install --with-deps chromium
           node run.mjs --expected-head "$EXPECTED_HEAD" --output "$RUNNER_TEMP/designer-hover-browser.json"

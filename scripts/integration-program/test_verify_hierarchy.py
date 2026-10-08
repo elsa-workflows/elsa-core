@@ -4,7 +4,7 @@ import importlib.util
 from pathlib import Path
 import unittest
 
-PATH = Path(__file__).resolve().parents[2] / 'doc/integration-program/verify-hierarchy.py'
+PATH = Path(__file__).resolve().parents[2] / 'docs/integration-program/verify-hierarchy.py'
 spec = importlib.util.spec_from_file_location('verify_hierarchy', PATH)
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)

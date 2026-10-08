@@ -21,7 +21,7 @@ class PackageProofTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.directory = Path(self.temporary.name)
         self.row = {
-            "id": "Elsa.Example", "project": "src/studio/example/Example.csproj",
+            "id": "Elsa.Example", "project": 'studio/src/example/Example.csproj',
             "frameworks": ["net8.0"], "assembly_name": "Example", "include_build_output": True,
             "include_symbols": True, "is_tool": False,
             "nupkg": f"Elsa.Example.{VERSION}.nupkg", "snupkg": f"Elsa.Example.{VERSION}.snupkg",
@@ -479,7 +479,7 @@ class PackageProofTests(unittest.TestCase):
     def test_physical_generator_uses_exact_framework_and_runtime_target(self):
         resolved = self.framework_logging_fixture()
         resolved["Items"]["Analyzer"] = []
-        self.row.update(id="Elsa.Api.Common", project="src/common/Elsa.Api.Common/Elsa.Api.Common.csproj")
+        self.row.update(id="Elsa.Api.Common", project='core/src/common/Elsa.Api.Common/Elsa.Api.Common.csproj')
         identifier = "FastEndpoints.Swagger"
         entry = proof.PHYSICAL_GENERATORS["swagger"][1]
         libraries = {}
@@ -527,7 +527,7 @@ class PackageProofTests(unittest.TestCase):
         output = self.directory / "evidence"
         with patch("sys.argv", ["prove", "--version", VERSION, "--output", str(output), "--inventory-only"]), \
                 patch.object(proof, "clean_head", return_value=COMMIT), \
-                patch.object(proof, "source_input_hashes", side_effect=[{"src/a.cs": "a" * 64}, {"src/a.cs": "b" * 64}]), \
+                patch.object(proof, "source_input_hashes", side_effect=[{'core/src/a.cs': "a" * 64}, {'core/src/a.cs': "b" * 64}]), \
                 patch.object(proof, "inventory", return_value=self.manifest), \
                 self.assertRaisesRegex(ValueError, "Source changed"):
             proof.main()
@@ -549,7 +549,7 @@ class PackageProofTests(unittest.TestCase):
         with patch.object(proof, "__file__", str(root / "scripts/integration-program/prove.py")), \
                 patch("sys.argv", ["prove", "--version", VERSION, "--output", str(output)]), \
                 patch.object(proof, "clean_head", return_value=COMMIT), \
-                patch.object(proof, "source_input_hashes", return_value={"src/example.cs": "a" * 64}), \
+                patch.object(proof, "source_input_hashes", return_value={'core/src/example.cs': "a" * 64}), \
                 patch.object(proof, "inventory", return_value=self.manifest), \
                 patch.object(proof, "build_clientlibs", return_value={"assets": []}), \
                 patch.object(proof, "run", side_effect=pack), \
@@ -564,28 +564,28 @@ class PackageProofTests(unittest.TestCase):
         verify.assert_not_called()
 
     def test_tracked_documents_are_checked_against_exact_blob(self):
-        inspection = self.inspection("src/studio/example/Example.cs")
+        inspection = self.inspection('studio/src/example/Example.cs')
         with patch.object(proof.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, b"source")) as command:
             result = proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, False)
         self.assertEqual(1, result["tracked_documents"])
         self.assertEqual(0, result["remote_documents"])
-        self.assertEqual(f"{COMMIT}:src/studio/example/Example.cs", command.call_args.args[0][-1])
+        self.assertEqual(f"{COMMIT}:studio/src/example/Example.cs", command.call_args.args[0][-1])
         with patch.object(proof.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, b"wrong")), self.assertRaisesRegex(ValueError, "exact Git blob"):
             proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, False)
 
     def test_embedded_sources_do_not_bypass_checksum_or_generated_policy(self):
         self.compiler_fixture()
-        tracked = self.inspection("src/studio/example/Example.cs")
+        tracked = self.inspection('studio/src/example/Example.cs')
         checksum = hashlib.sha256(b"source").hexdigest()
-        generated = self.inspection("src/studio/example/obj/Release/net8.0/Example.AssemblyInfo.cs", embedded=checksum)
+        generated = self.inspection('studio/src/example/obj/Release/net8.0/Example.AssemblyInfo.cs', embedded=checksum)
         inspection = {**tracked, "documents": tracked["documents"] + generated["documents"]}
         def blob(command, **kwargs):
-            tracked = command[-1].endswith(":src/studio/example/Example.cs")
+            tracked = command[-1].endswith(":studio/src/example/Example.cs")
             return subprocess.CompletedProcess(command, 0 if tracked else 1, b"source" if tracked else b"")
         with patch.object(proof.subprocess, "run", side_effect=blob):
             result = proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, False)
             self.assertEqual(1, result["embedded_generated_documents"])
-            for path in ("src/studio/example/untracked.cs", "src/studio/other/obj/Release/net8.0/Example.AssemblyInfo.cs"):
+            for path in ('studio/src/example/untracked.cs', 'studio/src/other/obj/Release/net8.0/Example.AssemblyInfo.cs'):
                 inspection["documents"][1] = self.inspection(path, embedded=checksum)["documents"][0]
                 with self.subTest(path=path), self.assertRaises(ValueError):
                     proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, False)
@@ -594,7 +594,7 @@ class PackageProofTests(unittest.TestCase):
             proof.verify_documents(ROOT, self.row, "net8.0", tracked, COMMIT, False)
 
     def test_generated_families_are_owned_and_narrow(self):
-        prefix = "src/studio/example/obj/Release/net8.0/"
+        prefix = 'studio/src/example/obj/Release/net8.0/'
         name = "InterfaceStubGeneratorV2/Refit.Generator.InterfaceStubGeneratorV2/Generated.g.cs"
         self.assertEqual("refit", proof.generated_family(self.row, "net8.0", prefix + name))
         self.assertEqual("refit", proof.generated_family(self.row, "net8.0", prefix + name.replace("Generated", "PreserveAttribute")))
@@ -611,11 +611,11 @@ class PackageProofTests(unittest.TestCase):
     def test_generated_document_requires_embedding_and_actual_tool_identity(self):
         self.refit_fixture()
         checksum = hashlib.sha256(b"source").hexdigest()
-        tracked = self.inspection("src/studio/example/Example.cs")
-        generated = self.inspection("src/studio/example/obj/Release/net8.0/InterfaceStubGeneratorV2/Refit.Generator.InterfaceStubGeneratorV2/Generated.g.cs", embedded=checksum)
+        tracked = self.inspection('studio/src/example/Example.cs')
+        generated = self.inspection('studio/src/example/obj/Release/net8.0/InterfaceStubGeneratorV2/Refit.Generator.InterfaceStubGeneratorV2/Generated.g.cs', embedded=checksum)
         inspection = {**tracked, "documents": tracked["documents"] + generated["documents"]}
         def blob(command, **kwargs):
-            tracked = command[-1].endswith(":src/studio/example/Example.cs")
+            tracked = command[-1].endswith(":studio/src/example/Example.cs")
             return subprocess.CompletedProcess(command, 0 if tracked else 1, b"source" if tracked else b"")
         with patch.object(proof.subprocess, "run", side_effect=blob):
             result = proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, False)
@@ -674,7 +674,7 @@ class PackageProofTests(unittest.TestCase):
                       "executable_method_bodies": 0, "nonabstract_methods_without_body": 0, "native_or_external_methods": 0, "nonmodule_types": 0}
         with self.assertRaisesRegex(ValueError, "no source documents"):
             proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, True)
-        self.row.update(id="Elsa.DropIns.Core", project="src/extensions/dropins/Elsa.DropIns.Core/Elsa.DropIns.Core.csproj")
+        self.row.update(id="Elsa.DropIns.Core", project='extensions/src/dropins/Elsa.DropIns.Core/Elsa.DropIns.Core.csproj')
         result = proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, True)
         self.assertEqual("not_applicable_interface_only", result["document_coverage"])
         self.assertEqual(0, result["tracked_documents"])
@@ -689,7 +689,7 @@ class PackageProofTests(unittest.TestCase):
 
     def test_metadata_bundle_requires_exact_sdk_documents_and_no_implemented_methods(self):
         self.refit_fixture()
-        self.row.update(id="Elsa.Studio", project="src/studio/bundles/Elsa.Studio/Elsa.Studio.csproj")
+        self.row.update(id="Elsa.Studio", project='studio/src/bundles/Elsa.Studio/Elsa.Studio.csproj')
         checksum = hashlib.sha256(b"source").hexdigest()
         inspection = {"source_link": {"documents": {"/_/*": f"{proof.RAW_URL}{COMMIT}/*"}},
                       "documents": [self.inspection(path, embedded=checksum)["documents"][0]
@@ -703,7 +703,7 @@ class PackageProofTests(unittest.TestCase):
             self.assertEqual(0, result["remote_documents"])
             with self.assertRaisesRegex(ValueError, "No tracked source"):
                 proof.verify_documents(ROOT, {**self.row, "id": "Elsa.Other"}, "net8.0", inspection, COMMIT, False)
-            wrong_project = {**self.row, "project": "src/studio/other/Elsa.Studio.csproj"}
+            wrong_project = {**self.row, "project": 'studio/src/other/Elsa.Studio.csproj'}
             with self.assertRaisesRegex(ValueError, "Untracked source"):
                 proof.verify_documents(ROOT, wrong_project, "net8.0", inspection, COMMIT, False)
             for key in ("executable_method_bodies", "nonabstract_methods_without_body", "native_or_external_methods"):
@@ -711,18 +711,18 @@ class PackageProofTests(unittest.TestCase):
                     proof.verify_documents(ROOT, self.row, "net8.0", {**inspection, key: 1}, COMMIT, False)
             with self.assertRaisesRegex(ValueError, "exactly its three"):
                 proof.verify_documents(ROOT, self.row, "net8.0", {**inspection, "documents": inspection["documents"][:-1]}, COMMIT, False)
-            extra = self.inspection("src/studio/bundles/Elsa.Studio/obj/Release/net8.0/InterfaceStubGeneratorV2/Refit.Generator.InterfaceStubGeneratorV2/Generated.g.cs", embedded=checksum)
+            extra = self.inspection('studio/src/bundles/Elsa.Studio/obj/Release/net8.0/InterfaceStubGeneratorV2/Refit.Generator.InterfaceStubGeneratorV2/Generated.g.cs', embedded=checksum)
             with self.assertRaisesRegex(ValueError, "exactly its three"):
                 proof.verify_documents(ROOT, self.row, "net8.0", {**inspection, "documents": inspection["documents"] + extra["documents"]}, COMMIT, False)
             with self.assertRaisesRegex(ValueError, "no declared types"):
                 proof.verify_documents(ROOT, self.row, "net8.0", {**inspection, "nonmodule_types": 1}, COMMIT, False)
-            for path in ("src/studio/bundles/Elsa.Studio/Constants.cs", "src/common/Shared/LinkedConstants.cs"):
+            for path in ('studio/src/bundles/Elsa.Studio/Constants.cs', 'core/src/common/Shared/LinkedConstants.cs'):
                 self.row["framework_properties"]["net8.0"]["compiler_evidence"]["compile_inputs"] = [{"path": path}]
                 with self.subTest(path=path), self.assertRaisesRegex(ValueError, "authored or unaudited Compile inputs"):
                     proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, False)
 
     def test_byte_cache_keeps_each_document_checksum_check(self):
-        inspection = self.inspection("src/studio/example/Example.cs")
+        inspection = self.inspection('studio/src/example/Example.cs')
         cache = {}
         with patch.object(proof.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, b"source")) as command:
             for _ in range(2):
@@ -792,7 +792,7 @@ class PackageProofTests(unittest.TestCase):
                                  proof.GENERATOR_SOURCE_ENTRIES[version])
 
     def test_unmapped_and_wrong_repository_documents_fail(self):
-        inspection = self.inspection("src/studio/example/Example.cs")
+        inspection = self.inspection('studio/src/example/Example.cs')
         inspection["source_link"]["documents"]["/_/*"] = f"https://raw.githubusercontent.com/elsa-workflows/elsa-studio/{COMMIT}/*"
         with self.assertRaisesRegex(ValueError, "exact Core head"):
             proof.verify_documents(ROOT, self.row, "net8.0", inspection, COMMIT, False)
@@ -826,12 +826,12 @@ class PackageProofTests(unittest.TestCase):
     def test_import_guards_are_default_off_and_preserve_explicit_exclusions(self):
         for subtree in ("extensions", "studio"):
             for suffix in ("props", "targets"):
-                document = ET.parse(ROOT / f"src/{subtree}/Directory.Build.{suffix}")
+                document = ET.parse(ROOT / f"{subtree}/src/Directory.Build.{suffix}")
                 guards = document.findall("./PropertyGroup/IsPackable")
                 self.assertEqual(1, len(guards))
                 self.assertEqual("'$(ConsolidatedPackageProof)' != 'true' and '$(ConsolidatedReleaseCandidate)' != 'true'", guards[0].get("Condition"))
                 self.assertEqual("false", guards[0].text)
-        for path in (ROOT / "src/extensions/secrets").rglob("*.csproj"):
+        for path in (ROOT / 'extensions/src/secrets').rglob("*.csproj"):
             self.assertEqual("false", ET.parse(path).findtext("./PropertyGroup/IsPackable"))
         promoted = {
             "Elsa.Connections", "Elsa.Connections.Credentials.Workflows",
@@ -840,9 +840,9 @@ class PackageProofTests(unittest.TestCase):
             "Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql",
         }
         for name in promoted:
-            path = ROOT / "src/modules" / name / (name + ".csproj")
+            path = ROOT / 'core/src/modules' / name / (name + ".csproj")
             self.assertIsNone(ET.parse(path).findtext("./PropertyGroup/IsPackable"))
-        for path in (ROOT / "src/modules").glob("Elsa.Connections*/**/*.csproj"):
+        for path in (ROOT / 'core/src/modules').glob("Elsa.Connections*/**/*.csproj"):
             if "Credentials" in str(path) and path.stem not in promoted:
                 self.assertEqual("false", ET.parse(path).findtext("./PropertyGroup/IsPackable"))
         self.assertNotIn("ConsolidatedPackageProof", (ROOT / ".github/workflows/packages.yml").read_text())

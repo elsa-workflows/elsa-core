@@ -144,7 +144,7 @@ def inventory(root: Path, version: str, commit: str, *, workers: int = 4, mode: 
         path = project.relative_to(root).as_posix()
         normal = evaluate(root, project, version, False, mode=mode)
         proof = evaluate(root, project, version, True, mode=mode)
-        imported = path.startswith(("src/extensions/", "src/studio/"))
+        imported = path.startswith(('extensions/src/', 'studio/src/'))
         require(not imported or normal["IsPackable"].lower() == "false",
                 f"Imported project is packable by default: {path}")
         require(imported or normal["IsPackable"] == proof["IsPackable"],
@@ -355,17 +355,17 @@ def stage_sdk_metadata(root: Path, manifest: dict, output: Path, inspector: Path
 
 CLIENTLIB_ASSETS = {
     "Elsa.Studio.Workflows.Designer": (
-        "src/studio/modules/Elsa.Studio.Workflows.Designer",
+        'studio/src/modules/Elsa.Studio.Workflows.Designer',
         ("designer.entry.js", "react-designer.entry.js", "designer.css")),
     "Elsa.Studio.DomInterop": (
-        "src/studio/framework/Elsa.Studio.DomInterop",
+        'studio/src/framework/Elsa.Studio.DomInterop',
         ("dom.entry.js", "clipboard.entry.js", "files.entry.js")),
 }
 
 
 def build_clientlibs(root: Path, output: Path) -> dict:
     script = root / "scripts/integration-program/build_studio_clientlibs.sh"
-    inputs = {script.relative_to(root).as_posix(), "Directory.Packages.props", "src/studio/Directory.Packages.props"}
+    inputs = {script.relative_to(root).as_posix(), "Directory.Packages.props", 'studio/src/Directory.Packages.props'}
     for project, _ in CLIENTLIB_ASSETS.values():
         tracked = run(["git", "ls-files", "--", f"{project}/ClientLib"], root).splitlines()
         inputs.update(tracked)
@@ -633,12 +633,12 @@ PHYSICAL_GENERATORS = {
     "swagger": ("FastEndpoints.Swagger", "build/FastEndpoints.Swagger.targets"),
 }
 PHYSICAL_GENERATED_PROJECTS = {
-    ("Elsa.Caching.Distributed.ProtoActor", "src/extensions/caching/Elsa.Caching.Distributed.ProtoActor/Elsa.Caching.Distributed.ProtoActor.csproj"):
+    ("Elsa.Caching.Distributed.ProtoActor", 'extensions/src/caching/Elsa.Caching.Distributed.ProtoActor/Elsa.Caching.Distributed.ProtoActor.csproj'):
         ((r"Proto/LocalCacheMessages\.cs", "grpc"),),
-    ("Elsa.Workflows.Runtime.ProtoActor", "src/extensions/runtimes/Elsa.Workflows.Runtime.ProtoActor/Elsa.Workflows.Runtime.ProtoActor.csproj"):
+    ("Elsa.Workflows.Runtime.ProtoActor", 'extensions/src/runtimes/Elsa.Workflows.Runtime.ProtoActor/Elsa.Workflows.Runtime.ProtoActor.csproj'):
         ((r"Proto/(Shared|WorkflowInstanceMessages)\.cs", "grpc"),
          (r"protopotato/WorkflowInstance-[0-9A-F]{32}\.cs", "protograin")),
-    ("Elsa.Api.Common", "src/common/Elsa.Api.Common/Elsa.Api.Common.csproj"):
+    ("Elsa.Api.Common", 'core/src/common/Elsa.Api.Common/Elsa.Api.Common.csproj'):
         ((r"SwaggerExportPathInitializer\.g\.cs", "swagger"),),
 }
 
@@ -930,7 +930,7 @@ def verify_documents(root: Path, row: dict, framework: str, inspection: dict,
     counts = {"tracked_documents": 0, "remote_documents": 0, "embedded_tracked_documents": 0,
               "embedded_generated_documents": 0, "embedded_external_documents": 0}
     if not documents:
-        require((row["id"], row["project"]) == ("Elsa.DropIns.Core", "src/extensions/dropins/Elsa.DropIns.Core/Elsa.DropIns.Core.csproj"),
+        require((row["id"], row["project"]) == ("Elsa.DropIns.Core", 'extensions/src/dropins/Elsa.DropIns.Core/Elsa.DropIns.Core.csproj'),
                 f"Portable PDB has no source documents: {row['id']}/{framework}")
         require(only_abstract_methods(inspection),
                 "Interface-only source coverage exception requires zero executable, native or bodyless implemented methods")
@@ -985,7 +985,7 @@ def verify_documents(root: Path, row: dict, framework: str, inspection: dict,
                             "embedded": True, "generated": True, "remote_fetched": False,
                             "generator_family": family, "generator_identity": identity,
                             "evidence": "Embedded compiled bytes and declared generator identity; not independently regenerated"})
-    if counts["tracked_documents"] == 0 and (row["id"], row["project"]) == ("Elsa.Studio", "src/studio/bundles/Elsa.Studio/Elsa.Studio.csproj"):
+    if counts["tracked_documents"] == 0 and (row["id"], row["project"]) == ("Elsa.Studio", 'studio/src/bundles/Elsa.Studio/Elsa.Studio.csproj'):
         compile_inputs = row["framework_properties"][framework].get("compiler_evidence", {}).get("compile_inputs")
         require(isinstance(compile_inputs, list) and all(item["path"] in sdk_document_paths(row, framework) and item.get("tracked") is False for item in compile_inputs),
                 "Metadata-only Studio bundle has authored or unaudited Compile inputs")

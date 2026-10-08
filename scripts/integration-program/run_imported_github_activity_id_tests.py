@@ -36,15 +36,15 @@ from run_github_activity_id_compatibility import (
 FRAMEWORK = "net10.0"
 BOM = b"\xef\xbb\xbf"
 PATH_MAP = (
-    ("src/modules/devops/", "src/extensions/devops/"),
-    ("test/modules/devops/", "test/extensions/modules/devops/"),
+    ('src/modules/devops/', 'extensions/src/devops/'),
+    ('test/modules/devops/', 'extensions/test/modules/devops/'),
 )
 # The imported test folder is one directory deeper than the Extensions layout.
 REFERENCE_MAP = (
     b'Include="../../../../src/modules/devops/Elsa.DevOps.GitHub/Elsa.DevOps.GitHub.csproj"',
-    b'Include="../../../../../src/extensions/devops/Elsa.DevOps.GitHub/Elsa.DevOps.GitHub.csproj"',
+    b'Include="../../../../src/devops/Elsa.DevOps.GitHub/Elsa.DevOps.GitHub.csproj"',
 )
-TEST_PROJECT = "test/extensions/modules/devops/Elsa.DevOps.GitHub.UnitTests/Elsa.DevOps.GitHub.UnitTests.csproj"
+TEST_PROJECT = 'extensions/test/modules/devops/Elsa.DevOps.GitHub.UnitTests/Elsa.DevOps.GitHub.UnitTests.csproj'
 REVIEWED_TEST_CLASS = "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests"
 TRX_NAME = "github-activity-id.trx"
 

@@ -11,7 +11,7 @@ import {assertSourceHead, captureSourceBinding, verifySourceBinding} from './sou
 const fixtureDirectory = dirname(fileURLToPath(import.meta.url));
 const expect = playwrightExpect.configure({timeout: 10000});
 const root = resolve(fixtureDirectory, '../../../..');
-const clientPath = 'src/studio/modules/Elsa.Studio.Workflows.Designer/ClientLib';
+const clientPath = 'studio/src/modules/Elsa.Studio.Workflows.Designer/ClientLib';
 const helperPath = `${clientPath}/src/designer/api/edge-hover-tools.ts`;
 const reviewedLockPath = 'scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/designer.package-lock.json';
 const installedLockPath = `${clientPath}/package-lock.json`;

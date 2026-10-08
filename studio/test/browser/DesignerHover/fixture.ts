@@ -1,6 +1,6 @@
 import {Graph} from '@antv/x6';
 import '@antv/x6/dist/index.css';
-import {registerEdgeHoverTools} from '../../../../src/studio/modules/Elsa.Studio.Workflows.Designer/ClientLib/src/designer/api/edge-hover-tools';
+import {registerEdgeHoverTools} from '../../../src/modules/Elsa.Studio.Workflows.Designer/ClientLib/src/designer/api/edge-hover-tools';
 
 // All interactions come from Chromium's mouse. Supplemental probes explicitly drop selected helper
 // notifications; the nine primary cases subscribe directly, without this fault-injection adapter.

@@ -6,16 +6,16 @@ on:
   pull_request:
     paths:
       - '.github/workflows/release-elsa-slack.yml'
-      - 'src/extensions/communication/Elsa.Slack/**'
-      - 'src/extensions/Directory.Build.*'
-      - 'src/extensions/Directory.Packages.props'
-      - 'src/modules/**'
-      - 'src/common/**'
-      - 'src/Fody.props'
-      - 'src/Directory.Build.*'
+      - 'extensions/src/communication/Elsa.Slack/**'
+      - 'extensions/src/Directory.Build.*'
+      - 'extensions/src/Directory.Packages.props'
+      - 'core/src/modules/**'
+      - 'core/src/common/**'
+      - 'core/src/Fody.props'
+      - 'core/src/Directory.Build.*'
       - 'Directory.Build.*'
       - 'Directory.Packages.props'
-      - 'doc/integration-program/release-units.json'
+      - 'docs/integration-program/release-units.json'
       - 'scripts/integration-program/prove_slack_artifact_consumer.py'
       - 'scripts/integration-program/verify_slack_source_link.py'
       - 'scripts/integration-program/VerifyPackageSymbolPair/**'
@@ -25,7 +25,7 @@ on:
       - 'scripts/integration-program/release_unit_manifest.py'
       - 'scripts/integration-program/package_impact.py'
       - 'scripts/integration-program/verify_import_source_tip_refresh*.py'
-      - 'doc/integration-program/inventory/inventory.json'
+      - 'docs/integration-program/inventory/inventory.json'
   workflow_dispatch:
 
 permissions:
@@ -58,7 +58,7 @@ jobs:
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
           import json
 
-          manifest = json.load(open('doc/integration-program/release-units.json', encoding='utf-8'))
+          manifest = json.load(open('docs/integration-program/release-units.json', encoding='utf-8'))
           units = [unit for unit in manifest['release_units'] if unit['package_id'] == 'Elsa.Slack']
           if len(units) != 1:
               raise SystemExit(f'Expected one Elsa.Slack release unit, got {len(units)}')
@@ -88,11 +88,11 @@ jobs:
             </packageSources>
           </configuration>
           EOF
-          dotnet restore src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj \
+          dotnet restore extensions/src/communication/Elsa.Slack/Elsa.Slack.csproj \
             --configfile "$RUNNER_TEMP/Slack-NuGet.Config" \
             -p:UseProjectReferences=false \
             -p:ElsaVersion="$ELSA_VERSION"
-          dotnet pack src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj \
+          dotnet pack extensions/src/communication/Elsa.Slack/Elsa.Slack.csproj \
             --configuration Release \
             --no-restore \
             --output "$RUNNER_TEMP/slack-artifacts" \

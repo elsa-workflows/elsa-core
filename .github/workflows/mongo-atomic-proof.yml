@@ -3,11 +3,11 @@ name: Mongo atomic-update proof
 on:
   pull_request:
     paths:
-      - 'src/extensions/persistence/Elsa.Persistence.MongoDb/**'
-      - 'test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/**'
-      - 'test/integration/Elsa.Bpmn.Interchange.IntegrationTests/**'
-      - 'src/extensions/Directory.Packages.props'
-      - 'test/extensions/Directory.Packages.props'
+      - 'extensions/src/persistence/Elsa.Persistence.MongoDb/**'
+      - 'extensions/test/modules/persistence/Elsa.MongoDb.UnitTests/**'
+      - 'core/test/integration/Elsa.Bpmn.Interchange.IntegrationTests/**'
+      - 'extensions/src/Directory.Packages.props'
+      - 'extensions/test/Directory.Packages.props'
       - 'scripts/integration-program/run_mongo_atomic_proof.py'
       - 'scripts/integration-program/test_mongo_atomic_proof.py'
       - 'scripts/integration-program/run_execution_cycle_proof.py'

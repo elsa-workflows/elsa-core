@@ -39,9 +39,9 @@ class ConsolidatedPairedBlazorHostTests(unittest.TestCase):
         projects = solution_filter["solution"]["projects"]
         self.assertEqual(len(projects), 3)
         self.assertEqual(set(projects), {
-            "src/modules/Elsa/Elsa.csproj",
-            "src/extensions/workflows/Elsa.WorkflowContexts/Elsa.WorkflowContexts.csproj",
-            "src/extensions/workflows/Elsa.Studio.WorkflowContexts/Elsa.Studio.WorkflowContexts.csproj",
+            'core/src/modules/Elsa/Elsa.csproj',
+            'extensions/src/workflows/Elsa.WorkflowContexts/Elsa.WorkflowContexts.csproj',
+            'extensions/src/workflows/Elsa.Studio.WorkflowContexts/Elsa.Studio.WorkflowContexts.csproj',
         })
         self.assertTrue(all((ROOT / project).is_file() for project in projects))
 

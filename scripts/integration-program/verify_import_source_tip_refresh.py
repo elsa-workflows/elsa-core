@@ -13,7 +13,7 @@ from verify_import_source_tip_refresh_r2 import LANDED_IMPORT
 
 
 ROOT = Path(__file__).resolve().parents[2]
-RECEIPT = ROOT / "doc/integration-program/consolidation/source-tip-refresh-2026-09-25.json"
+RECEIPT = ROOT / "docs/integration-program/consolidation/source-tip-refresh-2026-09-25.json"
 # The sixth receipt (#8293) owns the current bytes of these mapped paths. This receipt still pins them at its
 # history join; every other mapped path stays pinned to HEAD here.
 PATHS_SUPERSEDED_BY_R6 = frozenset({

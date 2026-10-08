@@ -9,7 +9,7 @@ require "yaml"
 class DependabotDiscoveryTests < Minitest::Test
   REPOSITORY_ROOT = File.expand_path("../..", __dir__)
   CONFIGURATION = YAML.load_file(File.join(REPOSITORY_ROOT, ".github/dependabot.yml"))
-  LEGACY_CORE_PROJECT = "src/extensions/Elsa.Testing.Extensions/Elsa.Testing.Extensions.csproj"
+  LEGACY_CORE_PROJECT = "extensions/src/Elsa.Testing.Extensions/Elsa.Testing.Extensions.csproj"
 
   def setup
     @workspace = Dir.mktmpdir("dependabot-discovery-")
@@ -20,29 +20,29 @@ class DependabotDiscoveryTests < Minitest::Test
   end
 
   def test_terminal_double_star_does_not_discover_nested_projects
-    add_project("src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj")
+    add_project("extensions/src/communication/Elsa.Slack/Elsa.Slack.csproj")
 
-    assert_empty discovered_projects(["/src/extensions/**"])
-    assert_empty discovered_projects(["/src/extensions/**"], native: false)
+    assert_empty discovered_projects(["/extensions/src/**"])
+    assert_empty discovered_projects(["/extensions/src/**"], native: false)
   end
 
   def test_recursive_selector_discovers_direct_and_deeper_projects
     projects = [
-      "src/extensions/Elsa.Direct/Elsa.Direct.csproj",
-      "src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj",
-      "src/extensions/communication/deeper/Elsa.NewConnector/Elsa.NewConnector.csproj"
+      "extensions/src/Elsa.Direct/Elsa.Direct.csproj",
+      "extensions/src/communication/Elsa.Slack/Elsa.Slack.csproj",
+      "extensions/src/communication/deeper/Elsa.NewConnector/Elsa.NewConnector.csproj"
     ]
     projects.each { |project| add_project(project) }
-    add_project("src/studio/modules/Other/Other.csproj")
+    add_project("studio/src/modules/Other/Other.csproj")
 
-    assert_equal projects.sort, discovered_projects(["/src/extensions/**/Elsa.*"])
-    assert_equal projects.sort, discovered_projects(["/src/extensions/**/Elsa.*"], native: false)
-    assert_equal projects.sort, discovered_projects(["/src/extensions/**/*"])
-    refute_equal projects.sort, discovered_projects(["/src/extensions/*/*"])
+    assert_equal projects.sort, discovered_projects(["/extensions/src/**/Elsa.*"])
+    assert_equal projects.sort, discovered_projects(["/extensions/src/**/Elsa.*"], native: false)
+    assert_equal projects.sort, discovered_projects(["/extensions/src/**/*"])
+    refute_equal projects.sort, discovered_projects(["/extensions/src/*/*"])
   end
 
   def test_configured_selectors_cover_every_tracked_product_project
-    output, status = Open3.capture2("git", "ls-files", "-z", "src/extensions", "src/studio", chdir: REPOSITORY_ROOT)
+    output, status = Open3.capture2("git", "ls-files", "-z", "extensions/src", "studio/src", chdir: REPOSITORY_ROOT)
     assert status.success?, "Could not enumerate tracked product files"
     files = output.split("\0")
     files.each { |path| FileUtils.mkdir_p(File.dirname(File.join(@workspace, path))) }
@@ -50,7 +50,7 @@ class DependabotDiscoveryTests < Minitest::Test
     projects.each { |project| add_project(project) }
 
     %w[extensions studio].each do |product|
-      expected = projects.select { |path| path.start_with?("src/#{product}/") }.sort
+      expected = projects.select { |path| path.start_with?("#{product}/src/") }.sort
       refute_empty expected
       patterns = product_entry(product).fetch("directories")
       assert_equal expected, discovered_projects(patterns)
@@ -72,11 +72,11 @@ class DependabotDiscoveryTests < Minitest::Test
     assert_equal "nuget", root.fetch("package-ecosystem")
     assert_equal({ "interval" => "weekly" }, root.fetch("schedule"))
     assert_equal %w[elsa-feedz-preview valence-loom-feedz], root.fetch("registries")
-    assert_equal %w[src/extensions/** src/studio/**], root.fetch("exclude-paths")
+    assert_equal %w[extensions/src/** studio/src/**], root.fetch("exclude-paths")
 
     %w[extensions studio].each do |product|
       entry = product_entry(product)
-      assert_equal ["/src/#{product}/**/Elsa.*"], entry.fetch("directories")
+      assert_equal ["/#{product}/src/**/Elsa.*"], entry.fetch("directories")
       refute entry.key?("directory")
       assert_equal "nuget", entry.fetch("package-ecosystem")
       assert_equal "main", entry.fetch("target-branch")
@@ -93,7 +93,7 @@ class DependabotDiscoveryTests < Minitest::Test
 
   def product_entry(product)
     CONFIGURATION.fetch("updates").find do |entry|
-      entry.fetch("directories", []).any? { |pattern| pattern.start_with?("/src/#{product}/") }
+      entry.fetch("directories", []).any? { |pattern| pattern.start_with?("/#{product}/src/") }
     end
   end
 

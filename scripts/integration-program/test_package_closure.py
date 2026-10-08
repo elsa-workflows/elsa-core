@@ -25,7 +25,7 @@ from package_closure import (
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-INVENTORY = REPOSITORY_ROOT / "doc/integration-program/inventory/inventory.json"
+INVENTORY = REPOSITORY_ROOT / 'docs/integration-program/inventory/inventory.json'
 
 
 class PackageClosureTests(unittest.TestCase):

@@ -17,6 +17,24 @@ from validate_legacy_asset_dispositions import DEFAULT_LEDGER
 
 
 class CurrentTipLegacyAssetsTests(unittest.TestCase):
+    def test_only_exact_tooling_path_transforms_preserve_historical_equivalence(self):
+        from audit_current_tip_legacy_assets import representation_identity
+        from product_layout import relocation_baseline
+        source = ".specify/scripts/bash/common.sh"
+        before, mode = relocation_baseline(ROOT, source)
+        after = before.replace(b"$repo_root/specs", b"$repo_root/core/docs/specs")
+        with tempfile.TemporaryDirectory() as directory:
+            file = Path(directory) / "common.sh"
+            file.write_bytes(after)
+            file.chmod(0o755 if mode == "100755" else 0o644)
+            self.assertTrue(representation_identity(source, file)[1])
+            for invalid in (before, after + b"\n# arbitrary extra edit\n"):
+                file.write_bytes(invalid)
+                self.assertFalse(representation_identity(source, file)[1])
+            file.write_bytes(after)
+            file.chmod(0o644 if mode == "100755" else 0o755)
+            self.assertFalse(representation_identity(source, file)[1])
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.ledger = json.loads(DEFAULT_LEDGER.read_text(encoding="utf-8"))
@@ -55,7 +73,7 @@ class CurrentTipLegacyAssetsTests(unittest.TestCase):
 
     def test_materialized_asset_bytes_and_mode_must_match_receipt(self) -> None:
         content = b"source asset\n"
-        destination = "doc/integration-program/legacy/extensions/sample.source"
+        destination = 'docs/integration-program/legacy/extensions/sample.source'
         blob = hashlib.sha1(f"blob {len(content)}\0".encode() + content).hexdigest()
         receipt = {"mapping": [{"destination": destination, "blob": blob, "mode": "100644"}]}
         with tempfile.TemporaryDirectory() as directory:
@@ -77,7 +95,9 @@ class CurrentTipLegacyAssetsTests(unittest.TestCase):
         errors, summary = compare_studio_spec_representation(self.ledger, self.receipt, self.studio_decision)
         self.assertEqual([], errors)
         self.assertEqual(50, summary["total"])
-        self.assertEqual(42, summary["representedByIdenticalCoreRoot"])
+        self.assertEqual(42, summary["representedByIdenticalCoreRoot"] +
+                         len(summary["representedByVerifiedPathRelocation"]))
+        self.assertGreaterEqual(len(summary["representedByVerifiedPathRelocation"]), 4)
         self.assertEqual(8, len(summary["reviewedDifferentPaths"]))
         self.assertTrue({
             ".agents/skills/speckit-plan/SKILL.md",
@@ -112,7 +132,7 @@ class CurrentTipLegacyAssetsTests(unittest.TestCase):
 
     def test_studio_scoped_policy_requires_the_reviewed_guidance_blob_and_path(self) -> None:
         for change in ({"scopedBlob": "0" * 40}, {"scopedMode": "100755"},
-                       {"scopedPath": "doc/studio/README.md"}):
+                       {"scopedPath": 'studio/docs/README.md'}):
             with self.subTest(change=change):
                 decision = copy.deepcopy(self.studio_decision)
                 decision["sourceDifferences"][".specify/memory/constitution.md"].update(change)
@@ -128,9 +148,9 @@ class CurrentTipLegacyAssetsTests(unittest.TestCase):
                 target = root / relative
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(ROOT / relative, target)
-            guidance = root / "src/studio/AGENTS.md"
+            guidance = root / 'studio/src/AGENTS.md'
             guidance.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(ROOT / "src/studio/AGENTS.md", guidance)
+            shutil.copy2(ROOT / 'studio/src/AGENTS.md', guidance)
             shutil.copy2(ROOT / "AGENTS.md", root / "AGENTS.md")
             errors, _ = compare_studio_spec_representation(self.ledger, self.receipt,
                                                              self.studio_decision, root)
@@ -146,10 +166,10 @@ class CurrentTipLegacyAssetsTests(unittest.TestCase):
                                                              self.studio_decision, root)
             self.assertTrue(any("Root guidance no longer links" in error for error in errors))
             for directive in (
-                "For Studio modules, consult [scoped instructions](src/studio/AGENTS.md).\n",
-                "[Studio policy](src/studio/AGENTS.md); consult it for Studio modules.\n",
-                "Read [these instructions](src/studio/AGENTS.md) for Studio modules.\n",
-                "Read [the scoped guidance](src/studio/AGENTS.md) for Studio modules, but do not modify it.\n",
+                "For Studio modules, consult [scoped instructions](studio/src/AGENTS.md).\n",
+                "[Studio policy](studio/src/AGENTS.md); consult it for Studio modules.\n",
+                "Read [these instructions](studio/src/AGENTS.md) for Studio modules.\n",
+                "Read [the scoped guidance](studio/src/AGENTS.md) for Studio modules, but do not modify it.\n",
             ):
                 with self.subTest(directive=directive):
                     (root / "AGENTS.md").write_text(directive, encoding="utf-8")
@@ -157,7 +177,7 @@ class CurrentTipLegacyAssetsTests(unittest.TestCase):
                                                                      self.studio_decision, root)
                     self.assertEqual([], errors)
             (root / "AGENTS.md").write_text(
-                "Do not use [`src/studio/AGENTS.md`](src/studio/AGENTS.md) for Studio modules.\n",
+                "Do not use [`src/studio/AGENTS.md`](studio/src/AGENTS.md) for Studio modules.\n",
                 encoding="utf-8",
             )
             errors, _ = compare_studio_spec_representation(self.ledger, self.receipt,

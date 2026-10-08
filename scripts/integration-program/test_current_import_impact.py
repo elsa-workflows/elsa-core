@@ -10,9 +10,9 @@ from current_import_impact import (
 )
 
 
-SLACK_PROJECT = "src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj"
-SLACK_TEST = "test/extensions/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj"
-CORE_TEST = "test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj"
+SLACK_PROJECT = 'extensions/src/communication/Elsa.Slack/Elsa.Slack.csproj'
+SLACK_TEST = 'extensions/test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj'
+CORE_TEST = 'core/test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj'
 
 
 class FakeGraph:
@@ -50,7 +50,7 @@ def unit():
         "package_id": "Elsa.Slack",
         "source": {
             "test_projects": [{
-                "project_path": "test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj",
+                "project_path": 'core/test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj',
                 "target_frameworks": ["net10.0"],
             }],
         },
@@ -58,7 +58,7 @@ def unit():
             "repository": "elsa-core",
             "project_path": SLACK_PROJECT,
             "test_projects": [{
-                "source_project_path": "test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj",
+                "source_project_path": 'core/test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj',
                 "project_path": SLACK_TEST,
             }],
         },
@@ -69,7 +69,7 @@ class CurrentImportedImpactTests(unittest.TestCase):
     def test_workflow_triggers_for_selector_graph_dependencies(self):
         workflow = Path(__file__).resolve().parents[2] / ".github/workflows/current-import-impact.yml"
         text = workflow.read_text(encoding="utf-8")
-        input_roots = (".github/**", "build/**", "samples/**", "scripts/integration-program/**", "src/**", "test/**")
+        input_roots = (".github/**", "build/**", 'core/samples/**', "scripts/integration-program/**", 'core/src/**', 'core/test/**')
         for input_root in input_roots:
             with self.subTest(input_root=input_root):
                 self.assertIn(f"      - '{input_root}'", text)
@@ -95,23 +95,23 @@ class CurrentImportedImpactTests(unittest.TestCase):
 
     def test_evaluates_test_projects_and_includes_relocated_studio_paths(self):
         documents = assets()
-        documents["src/studio/Elsa.Studio.Core.Tests.csproj"] = {
+        documents['studio/src/Elsa.Studio.Core.Tests.csproj'] = {
             "libraries": {"Microsoft.NET.Test.Sdk/18.0.1": {}}
         }
-        documents["test/performance/Benchmarks.csproj"] = {"libraries": {}}
+        documents['core/test/performance/Benchmarks.csproj'] = {"libraries": {}}
 
-        documents["src/studio/Elsa.Studio.Core.Tests.csproj"]["project"] = {
+        documents['studio/src/Elsa.Studio.Core.Tests.csproj']["project"] = {
             "restore": {"frameworks": {"net10.0": {}}},
         }
         with patch("current_import_impact._is_test_project", return_value=True):
             self.assertEqual(
                 restored_test_projects(Path("."), documents),
-                {SLACK_TEST, CORE_TEST, "src/studio/Elsa.Studio.Core.Tests.csproj"},
+                {SLACK_TEST, CORE_TEST, 'studio/src/Elsa.Studio.Core.Tests.csproj'},
             )
 
     def test_excludes_test_sdk_worker_when_msbuild_says_not_test_project(self):
         documents = assets()
-        worker = "test/workers/Elsa.Connections.Credentials.WorkerProcess/Elsa.Connections.Credentials.WorkerProcess.csproj"
+        worker = 'core/test/workers/Elsa.Connections.Credentials.WorkerProcess/Elsa.Connections.Credentials.WorkerProcess.csproj'
         documents[worker] = {
             "project": {"restore": {"frameworks": {"net10.0": {}}}},
             "libraries": {"Microsoft.NET.Test.Sdk/18.0.1": {}},
@@ -152,7 +152,7 @@ class CurrentImportedImpactTests(unittest.TestCase):
     def test_mapped_slack_tests_must_map_each_source_test_once(self):
         for mutate in (
             lambda configured: configured["source"]["test_projects"].append({
-                "project_path": "test/modules/slack/Extra.Tests/Extra.Tests.csproj",
+                "project_path": 'core/test/modules/slack/Extra.Tests/Extra.Tests.csproj',
                 "target_frameworks": ["net10.0"],
             }),
             lambda configured: configured["mapped"]["test_projects"].append(
@@ -188,7 +188,7 @@ class CurrentImportedImpactTests(unittest.TestCase):
     def test_release_unit_manifest_mismatch_fails(self):
         configured = unit()
         configured["mapped"]["test_projects"] = [{
-            "source_project_path": "test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj",
+            "source_project_path": 'core/test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj',
             "project_path": CORE_TEST,
         }]
         graph = FakeGraph({

@@ -13,14 +13,15 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from product_layout import current_path, map_path, verified_relocation_identity
 from validate_legacy_asset_dispositions import DEFAULT_LEDGER, DEFAULT_RECEIPT, validate_ledger
 
 
 ROOT = Path(__file__).resolve().parents[2]
-EVIDENCE = ROOT / "doc/integration-program/consolidation/current-tip-e96-evidence"
-STUDIO_SPEC_REPRESENTATION = ROOT / "doc/integration-program/consolidation/studio-spec-asset-representation.json"
-STUDIO_GUIDANCE = "src/studio/AGENTS.md"
-ROOT_STUDIO_LINK = re.compile(r"\[[^\]]+\]\(src/studio/AGENTS\.md\)")
+EVIDENCE = ROOT / 'docs/integration-program/consolidation/current-tip-e96-evidence'
+STUDIO_SPEC_REPRESENTATION = ROOT / 'docs/integration-program/consolidation/studio-spec-asset-representation.json'
+STUDIO_GUIDANCE = 'studio/src/AGENTS.md'
+ROOT_STUDIO_LINK = re.compile(r"\[[^\]]+\]\(studio/src/AGENTS\.md\)")
 ROOT_STUDIO_DIRECTIVE_BEFORE = re.compile(r"\b(?:read|consult|follow|use)\s+(?:the\s+)?$", re.IGNORECASE)
 ROOT_STUDIO_DIRECTIVE_AFTER = re.compile(r"^\s*[,;:]?\s*(?:read|consult|follow|use)\s+it\b", re.IGNORECASE)
 ROOT_STUDIO_NEGATION_BEFORE = re.compile(r"\b(?:do\s+not|don't|never|no\s+need\s+to|not\s+required\s+to|not)\s+$",
@@ -33,6 +34,11 @@ def file_git_identity(path: Path) -> tuple[str, str]:
     blob = hashlib.sha1(f"blob {len(content)}\0".encode() + content).hexdigest()
     mode = "100755" if path.stat().st_mode & stat.S_IXUSR else "100644"
     return blob, mode
+
+
+def representation_identity(source_path: str, path: Path) -> tuple[tuple[str, str], bool]:
+    identity = verified_relocation_identity(ROOT, source_path, path)
+    return (identity, True) if identity is not None else (file_git_identity(path), False)
 
 
 def has_root_studio_instruction(content: str) -> bool:
@@ -99,7 +105,7 @@ def verify_mapped_files(import_root: Path, receipt: dict[str, Any]) -> list[str]
         destination = row["destination"]
         if not destination.endswith(".source"):
             continue
-        path = import_root / destination
+        path = current_path(import_root, destination)
         if not path.is_file() or path.is_symlink():
             errors.append(f"missing or non-regular retained asset: {destination}")
             continue
@@ -123,6 +129,7 @@ def compare_studio_spec_representation(
 
     represented: list[str] = []
     different: list[str] = []
+    path_only: list[str] = []
     active: dict[str, tuple[str, str]] = {}
     for row in rows:
         source_path = row["original_path"]
@@ -130,11 +137,13 @@ def compare_studio_spec_representation(
         if current is None or current.get("destination") != row["mapped_path"]:
             errors.append(f"Studio tooling source mapping changed: {source_path}")
             continue
-        path = core_root / source_path
+        path = current_path(core_root, source_path)
         if not path.is_file() or path.is_symlink():
             errors.append(f"Active Core tooling file is missing or not regular: {source_path}")
             continue
-        blob, mode = file_git_identity(path)
+        (blob, mode), relocated = representation_identity(source_path, path)
+        if relocated:
+            path_only.append(source_path)
         active[source_path] = (blob, mode)
         (represented if blob == current["blob"] and mode == current["mode"] else different).append(source_path)
 
@@ -157,7 +166,7 @@ def compare_studio_spec_representation(
             if status == "represented_by_scoped_studio":
                 scoped_path = core_root / STUDIO_GUIDANCE
                 root_guidance = core_root / "AGENTS.md"
-                if (record.get("scopedPath") != STUDIO_GUIDANCE or not scoped_path.is_file()
+                if (map_path(record.get("scopedPath", "")) != STUDIO_GUIDANCE or not scoped_path.is_file()
                         or scoped_path.is_symlink() or
                         (record.get("scopedBlob"), record.get("scopedMode")) != file_git_identity(scoped_path)):
                     errors.append(f"Studio scoped guidance changed: {source_path}")
@@ -175,7 +184,8 @@ def compare_studio_spec_representation(
             errors.append("Studio tooling reviewed/pending difference counts changed")
     if decision.get("representedCount") != len(represented) or len(rows) != len(represented) + len(different):
         errors.append("Studio tooling represented count does not match the source comparison")
-    return errors, {"total": len(rows), "representedByIdenticalCoreRoot": len(represented),
+    return errors, {"total": len(rows), "representedByIdenticalCoreRoot": len(represented) - len(path_only),
+                    "representedByVerifiedPathRelocation": sorted(path_only),
                     "reviewedDifferentPaths": sorted(reviewed), "pendingPolicyPaths": sorted(policy_pending)}
 
 
