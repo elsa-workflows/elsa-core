@@ -5951,6 +5951,46 @@
       "processRoles": [],
       "minimumProcesses": 0,
       "restartRequired": false
+    },
+    {
+      "caseId": "runtime-denial-no-business-telemetry",
+      "family": "entry",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.PostNotificationDenialNeverEntersBusinessTelemetryWhileRealUnownedExecutionDoes",
+      "parameterId": "default",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "deniedBusinessSpans": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "positiveBusinessSpans": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "deniedActivityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "positiveActivityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "recoveryRequired": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
     }
   ],
   "workerAssemblies": {
