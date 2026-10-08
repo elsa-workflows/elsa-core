@@ -6,6 +6,7 @@ using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence.EFCore;
 using Elsa.Secrets.Persistence.EFCore.PostgreSql;
 using Elsa.Slack.SocketMode;
+using Elsa.Slack.SocketMode.Persistence;
 using Elsa.Workflows.Admission;
 using Elsa.Workflows.Admission.Persistence.EFCore;
 using Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql.Extensions;
@@ -24,7 +25,7 @@ public sealed class SlackSocketHostLayoutTests
     {
         using var services = new ServiceCollection().AddPostgreSqlEntityModelCreatingHandlers().BuildServiceProvider();
         using var valid = CreateContext(kind, services);
-        SlackSocketModeHostValidator.DemandDatabaseLayout(valid);
+        SlackSocketModeHostValidator.DemandDatabaseLayout(valid, ElsaDbContextBase.MigrationsHistoryTable);
         using var wrongHistory = CreateContext(kind, services, wrongHistory: true);
         AssertLayoutDenied(wrongHistory);
         using var wrongSchema = CreateContext(kind, services, wrongSchema: true);
@@ -39,27 +40,41 @@ public sealed class SlackSocketHostLayoutTests
         using var services = new ServiceCollection().AddPostgreSqlEntityModelCreatingHandlers().BuildServiceProvider();
         using var connections = CreateContext("connections", services);
         using var secrets = CreateContext("secrets", services);
-        SlackSocketModeHostValidator.DemandDatabaseLayout(connections);
-        SlackSocketModeHostValidator.DemandDatabaseLayout(secrets);
+        SlackSocketModeHostValidator.DemandDatabaseLayout(connections, ElsaDbContextBase.MigrationsHistoryTable);
+        SlackSocketModeHostValidator.DemandDatabaseLayout(secrets, ElsaDbContextBase.MigrationsHistoryTable);
         Assert.Equal("__EFMigrationsHistory", ElsaDbContextBase.MigrationsHistoryTable);
     }
 
-    private static void AssertLayoutDenied(ElsaDbContextBase context)
+    [Theory]
+    [InlineData("connections")]
+    [InlineData("secrets")]
+    public void SharedHistoryCannotCollideWithDedicatedSocketReceipts(string kind)
     {
-        var error = Assert.Throws<InvalidOperationException>(() => SlackSocketModeHostValidator.DemandDatabaseLayout(context));
+        using var services = new ServiceCollection().AddPostgreSqlEntityModelCreatingHandlers().BuildServiceProvider();
+        // Pass the effective history value to the pure layout check instead of mutating a
+        // process-global EF default, so this negative cannot interfere with parallel tests.
+        using var context = CreateContext(kind, services, sharedHistory: SlackSocketReceiptElsaDbContext.HistoryTable);
+        AssertLayoutDenied(context, SlackSocketReceiptElsaDbContext.HistoryTable);
+    }
+
+    private static void AssertLayoutDenied(ElsaDbContextBase context, string? sharedHistory = null)
+    {
+        var error = Assert.Throws<InvalidOperationException>(() => SlackSocketModeHostValidator.DemandDatabaseLayout(context,
+            sharedHistory ?? ElsaDbContextBase.MigrationsHistoryTable));
         Assert.Equal("Socket credential and event stores require the reviewed migration histories and table schemas.", error.Message);
     }
 
     private static ElsaDbContextBase CreateContext(string kind, IServiceProvider services,
-        bool wrongHistory = false, bool wrongSchema = false, bool wrongTable = false)
+        bool wrongHistory = false, bool wrongSchema = false, bool wrongTable = false, string? sharedHistory = null)
     {
         var admission = kind == "admission";
+        sharedHistory ??= ElsaDbContextBase.MigrationsHistoryTable;
         var options = new ElsaDbContextOptions
         {
             SchemaName = wrongSchema ? "Other" : "Elsa",
             MigrationsHistoryTableName = wrongHistory
-                ? admission ? ElsaDbContextBase.MigrationsHistoryTable : "__AdmissionMigrationsHistory"
-                : admission ? "__AdmissionMigrationsHistory" : ElsaDbContextBase.MigrationsHistoryTable
+                ? admission ? sharedHistory : "__AdmissionMigrationsHistory"
+                : admission ? "__AdmissionMigrationsHistory" : sharedHistory
         };
         if (wrongTable)
         {

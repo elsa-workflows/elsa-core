@@ -10,6 +10,7 @@ using Elsa.Secrets.Services;
 using Elsa.Secrets.Stores;
 using Elsa.Slack.SocketMode.Credentials;
 using Elsa.Slack.SocketMode.Events;
+using Elsa.Slack.SocketMode.Persistence;
 using Elsa.Workflows.Admission;
 using Elsa.Workflows.Admission.Persistence.EFCore;
 using Microsoft.EntityFrameworkCore;
@@ -99,7 +100,7 @@ internal sealed class SlackSocketModeHostValidator(SlackSocketModeConfiguration 
         var factory = services.GetRequiredService<IDbContextFactory<TContext>>();
         admission.DemandAuditedServiceType(factory.GetType());
         await using var context = await factory.CreateDbContextAsync(cancellationToken);
-        DemandDatabaseLayout(context);
+        DemandDatabaseLayout(context, ElsaDbContextBase.MigrationsHistoryTable);
         if (context.GetType() != typeof(TContext) || context.Database.ProviderName != "Npgsql.EntityFrameworkCore.PostgreSQL" ||
             context.Schema != "Elsa" || context.Model.GetDefaultSchema() != "Elsa" ||
             !context.IsTenantFilteringEnabled || context.TenantId != configuration.TenantId ||
@@ -114,18 +115,18 @@ internal sealed class SlackSocketModeHostValidator(SlackSocketModeConfiguration 
         return (connection.DataSource, connection.Database);
     }
 
-    internal static void DemandDatabaseLayout(ElsaDbContextBase context)
+    internal static void DemandDatabaseLayout(ElsaDbContextBase context, string sharedHistory)
     {
         // Defaults selected by PostgreSqlAdmissionPersistenceExtensions/ShellFeature and
         // ElsaDbContextBase through UseElsaPostgreSql. Connections and Secrets intentionally
         // share the existing history; the Admission ledger must remain separate from it.
         const string admissionHistory = "__AdmissionMigrationsHistory";
-        var sharedHistory = ElsaDbContextBase.MigrationsHistoryTable;
         var expectedHistory = context.GetType() == typeof(AdmissionElsaDbContext) ? admissionHistory :
             context.GetType() == typeof(ConnectionsElsaDbContext) || context.GetType() == typeof(SecretsElsaDbContext)
                 ? sharedHistory : throw new InvalidOperationException();
         var options = RelationalOptionsExtension.Extract(context.GetService<IDbContextOptions>());
         if (string.IsNullOrWhiteSpace(sharedHistory) || sharedHistory == admissionHistory ||
+            sharedHistory == SlackSocketReceiptElsaDbContext.HistoryTable ||
             options.MigrationsHistoryTableName != expectedHistory || options.MigrationsHistoryTableSchema != "Elsa" ||
             context.Schema != "Elsa" || context.Model.GetDefaultSchema() != "Elsa" ||
             context.Model.GetEntityTypes().Any(x => x.GetSchema() != "Elsa"))
