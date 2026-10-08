@@ -37,7 +37,11 @@ public sealed class AdmissionRuntimeProcessTests(PostgreSqlConnectionsFixture fi
         Assert.NotNull(before.WorkflowInstanceId);
         Assert.Equal(expectedInstances, await CountInstancesAsync(before.WorkflowInstanceId));
         Assert.Equal(expectedEffects, await probe.ReadDurableCountAsync("activityEffects"));
-        if (!terminalAlreadyRecorded)
+        if (terminalAlreadyRecorded)
+        {
+            Assert.Equal(AdmissionState.Terminal, before.State);
+        }
+        else
         {
             Assert.NotEqual(AdmissionState.Terminal, before.State);
         }
@@ -48,6 +52,10 @@ public sealed class AdmissionRuntimeProcessTests(PostgreSqlConnectionsFixture fi
         Assert.Equal(before.State.ToString(), observed.ReadResult().GetProperty("result").GetProperty("state").GetString());
         var killed = await running.TerminateRunningAsync();
         Assert.NotEqual(0, killed.ExitCode);
+        if (OperatingSystem.IsLinux())
+        {
+            Assert.Equal(137, killed.ExitCode); // SIGKILL exit status on the hosted Linux proof runner.
+        }
         Assert.True(killed.ForcedTerminationRequested);
         Assert.DoesNotContain("admission_runtime_command_failed", killed.StandardError);
         Assert.DoesNotContain(killed.StandardOutput, value => value.StartsWith("RESULT:", StringComparison.Ordinal));
