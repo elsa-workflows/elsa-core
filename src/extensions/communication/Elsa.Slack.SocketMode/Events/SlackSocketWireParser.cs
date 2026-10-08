@@ -123,7 +123,7 @@ internal sealed class SlackSocketWireParser(SlackSocketModeConfiguration configu
         return SlackSocketEventKind.Human;
     }
 
-    private static void ValidateKnownFields(JsonElement message)
+    internal static void ValidateKnownFields(JsonElement message)
     {
         foreach (var name in new[] { "user", "bot_id", "subtype", "type", "channel", "channel_type" })
         {
@@ -170,7 +170,7 @@ internal sealed class SlackSocketWireParser(SlackSocketModeConfiguration configu
         }
     }
 
-    private static SlackSocketProjectionValue Project(JsonElement message, string path)
+    internal static SlackSocketProjectionValue Project(JsonElement message, string path)
     {
         var value = message;
         foreach (var part in path.Split('.'))

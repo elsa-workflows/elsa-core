@@ -57,11 +57,17 @@ internal sealed record SlackSocketEventPayload(int Version, string BindingFinger
                 throw new InvalidDataException("Absent Socket projection contains a value.");
             }
         }
+        ValidateProjection(result.Projection);
         foreach (var value in new[] { result.AppId, result.ProviderEventId, result.ChannelId, result.SelfUserId })
         {
             SlackSocketModeConfiguration.ValidateIdentifier(value);
         }
-        if (result.OccurredAt <= DateTimeOffset.UnixEpoch ||
+        foreach (var value in new[] { result.TeamId, result.EnterpriseId }.Where(x => x is not null))
+        {
+            SlackSocketModeConfiguration.ValidateIdentifier(value!);
+        }
+        if (result.TeamId is null && result.EnterpriseId is null ||
+            result.OccurredAt <= DateTimeOffset.UnixEpoch || result.OccurredAt.UtcTicks % TimeSpan.TicksPerSecond != 0 ||
             result.GetRequiredString("user") == result.SelfUserId ||
             result.Projection.Any(x => x.Present && x.Path is "subtype" or "bot_id" or "bot_profile" or "edited" or "deleted_ts" or "message") ||
             result.Projection.Any(x => x.Path == "hidden" && x.Present && (x.Kind != JsonValueKind.False || x.Value != "false")))
@@ -77,6 +83,41 @@ internal sealed record SlackSocketEventPayload(int Version, string BindingFinger
             SlackSocketWireParser.ValidateTimestamp(thread);
         }
         return result;
+    }
+
+    private static void ValidateProjection(IReadOnlyList<SlackSocketProjectionValue> projection)
+    {
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            writer.WriteStartObject();
+            foreach (var slot in projection.Where(x => x.Present && !x.Path.Contains('.')))
+            {
+                if (slot.Value is null || slot.Kind == JsonValueKind.Undefined)
+                {
+                    throw new InvalidDataException("Present Socket projection has no typed value.");
+                }
+                writer.WritePropertyName(slot.Path);
+                if (slot.Kind == JsonValueKind.String)
+                {
+                    writer.WriteStringValue(slot.Value);
+                }
+                else
+                {
+                    writer.WriteRawValue(slot.Value);
+                }
+            }
+            writer.WriteEndObject();
+        }
+        using var reconstructed = SlackSocketJson.Parse(stream.ToArray(), AdmissionLimits.PayloadBytes, 32);
+        SlackSocketWireParser.ValidateKnownFields(reconstructed.RootElement);
+        foreach (var slot in projection)
+        {
+            if (slot != SlackSocketWireParser.Project(reconstructed.RootElement, slot.Path))
+            {
+                throw new InvalidDataException("Socket projection kind, value or structural path is inconsistent.");
+            }
+        }
     }
 
     private static bool IsDigest(string value) => value is { Length: 64 } && value.All(x => x is >= '0' and <= '9' or >= 'a' and <= 'f');
