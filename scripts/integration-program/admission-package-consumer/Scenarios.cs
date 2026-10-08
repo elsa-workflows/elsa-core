@@ -91,15 +91,15 @@ internal static class Scenarios
             var client = await services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync(instance.Id, cancellationToken);
             var deniedEntries = await DeniedCountAsync(
             [
-                () => pipeline.ExecuteAsync(context), () => pipeline.Pipeline(context), () => runner.RunAsync(context),
-                () => activityPipeline.ExecuteAsync(activityContext), () => activityPipeline.Pipeline(activityContext),
+                () => pipeline.ExecuteAsync(context), () => pipeline.Pipeline(context).AsTask(), () => runner.RunAsync(context),
+                () => activityPipeline.ExecuteAsync(activityContext), () => activityPipeline.Pipeline(activityContext).AsTask(),
                 () => activityInvoker.InvokeAsync(activityContext), () => activityInvoker.InvokeAsync(context, activityContext.Activity),
                 () => client.RunInstanceAsync(new(), cancellationToken), () => client.CancelAsync(cancellationToken),
                 () => client.ImportStateAsync(instance.WorkflowState, cancellationToken), () => client.DeleteAsync(cancellationToken)
             ]);
             var managementDenials = await DeniedCountAsync(
             [
-                () => services.GetRequiredService<IWorkflowDefinitionManager>().NewAsync(cancellationToken: cancellationToken),
+                () => services.GetRequiredService<IWorkflowDefinitionPublisher>().NewAsync(cancellationToken: cancellationToken),
                 () => services.GetRequiredService<IWorkflowDefinitionPublisher>().RetractAsync(binding.Artifact.DefinitionId, cancellationToken)
             ]);
             var backgroundDenials = await DeniedCountAsync(

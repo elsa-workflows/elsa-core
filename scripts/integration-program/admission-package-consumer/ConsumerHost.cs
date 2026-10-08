@@ -29,6 +29,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Activities.HostMethod;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Features;
 using Elsa.Workflows.Management.Providers;
 using Elsa.Workflows.Management.Services;
