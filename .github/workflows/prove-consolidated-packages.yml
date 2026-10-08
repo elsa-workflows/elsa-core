@@ -10,6 +10,9 @@ on:
       - 'scripts/integration-program/admission-package-consumer/**'
       - 'scripts/integration-program/admission-package-consumer-contract.json'
       - 'scripts/integration-program/verify_admission_package_consumers.py'
+      - 'scripts/integration-program/socket-package-consumer/**'
+      - 'scripts/integration-program/verify_socket_package_consumer.py'
+      - 'scripts/integration-program/test_verify_socket_package_consumer.py'
       - 'scripts/integration-program/run_admission_proof.py'
       - 'scripts/integration-program/run_secrets_postgresql_upgrade_fixture.py'
       - 'scripts/integration-program/VerifyPackageSymbolPair/**'
@@ -34,6 +37,8 @@ jobs:
   prove:
     runs-on: ubuntu-latest
     timeout-minutes: 180
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -53,7 +58,9 @@ jobs:
         with:
           node-version: '22'
       - name: Check proof guards and negative artifact fixtures
-        run: python3 -m unittest discover -s scripts/integration-program -p 'test_prove_consolidated*.py'
+        run: |
+          python3 -m unittest discover -s scripts/integration-program -p 'test_prove_consolidated*.py'
+          python3 -m unittest discover -s scripts/integration-program -p 'test_verify_socket_package_consumer.py'
       - name: Produce and verify exact-head packages without publication
         env:
           PROOF_VERSION: 3.10.0-proof.${{ github.run_id }}.${{ github.run_attempt }}

@@ -1122,13 +1122,18 @@ def main(*, mode: str = "proof") -> None:
     from prove_consolidated_admission_consumers import prove as prove_admission
     admission_consumers = (prove_admission(artifacts, manifest, output / "admission-consumers")
                            if mode == "proof" else {"status": "required_downstream_exact_archive"})
+    from prove_consolidated_socket_consumer import prove as prove_socket
+    socket_checkpoint = (prove_socket(artifacts, manifest, output / "socket-consumer")
+                         if mode == "proof" else {"status": "required_downstream_exact_archive", "fullSocketAcceptance": False})
     require(clean_head(root) == commit and source_input_hashes(root) == initial_sources, "Source changed during package proof")
     receipt = {"result": "passed", "mode": mode, "build_inputs": inputs, "published": False, "source_commit": commit, "version": args.version,
                "package_count": len(manifest["packages"]), "exclusion_count": len(manifest["exclusions"]),
                "remote_sources_verified": args.remote_sources, "sdk_metadata_verified": True,
                "provenance": sources, "consumers": consumers, "admission_consumers": admission_consumers,
+               "socket_consumer_checkpoint": socket_checkpoint,
                "source_inputs_sha256": hashlib.sha256((output / "source-inputs.json").read_bytes()).hexdigest(), "source_inputs_unchanged": True,
                "limits": ["Consumers are representative; this is not behavioral certification of every package.",
+                          "Socket consumer checkpoint covers classic/net10 only; the full offline matrix remains required.",
                           "No publication, publisher cutover, npm artifact proof or live Slack certification."]}
     if not args.remote_sources:
         receipt["limits"].append("Tracked sources checked against exact local Git blobs; remote SourceLink fetch remains unverified.")
