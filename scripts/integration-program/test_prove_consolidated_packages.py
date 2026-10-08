@@ -847,6 +847,25 @@ class PackageProofTests(unittest.TestCase):
                 self.assertEqual("false", ET.parse(path).findtext("./PropertyGroup/IsPackable"))
         self.assertNotIn("ConsolidatedPackageProof", (ROOT / ".github/workflows/packages.yml").read_text())
 
+    def test_socket_mode_is_discovered_without_overriding_default_packaging(self):
+        relative = "src/extensions/communication/Elsa.Slack.SocketMode/Elsa.Slack.SocketMode.csproj"
+        project = ROOT / relative
+        projects = set(proof.solution_projects(ROOT))
+        self.assertIn(project, projects)
+        document = ET.parse(project)
+        for property_name in ("IsPackable", "TargetFramework", "TargetFrameworks"):
+            self.assertIsNone(document.find(f"./PropertyGroup/{property_name}"))
+        for reference in document.findall("./ItemGroup/ProjectReference"):
+            self.assertIn((project.parent / reference.attrib["Include"]).resolve(), projects)
+        inputs = proof.source_input_hashes(ROOT)
+        socket_inputs = set(subprocess.check_output(
+            ["git", "ls-files", "-z", "--", str(project.parent.relative_to(ROOT))],
+            cwd=ROOT, text=True).strip("\0").split("\0"))
+        self.assertTrue(socket_inputs)
+        for path in socket_inputs | {"Elsa.sln", "scripts/integration-program/admission-proof-cases.json"}:
+            with self.subTest(input=path):
+                self.assertEqual(hashlib.sha256((ROOT / path).read_bytes()).hexdigest(), inputs[path])
+
 
 if __name__ == "__main__":
     unittest.main()

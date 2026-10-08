@@ -6504,6 +6504,93 @@
       "processRoles": [],
       "minimumProcesses": 0,
       "restartRequired": false
+    },
+    {
+      "caseId": "runtime-consumed-data-classic",
+      "family": "consume",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionExecutionDataReaderTests.OnlyExactConsumedOwnerCanReadDurableEvent",
+      "parameterId": "runtime-consumed-data-classic",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "exactConsumedDataRead": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "unconsumedCopiedRetiredDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "processRoles": [],
+      "topology": "postgresql",
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-consumed-data-shell",
+      "family": "consume",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionExecutionDataReaderTests.OnlyExactConsumedOwnerCanReadDurableEvent",
+      "parameterId": "runtime-consumed-data-shell",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "exactConsumedDataRead": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "unconsumedCopiedRetiredDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "processRoles": [],
+      "topology": "postgresql",
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-consumed-data-retired-read",
+      "family": "consume",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionExecutionDataReaderTests.DataLookupCompletingAfterOwnerRetiresCannotReturnItsOldSnapshot",
+      "parameterId": "default",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "postLookupOwnerRevalidated": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "staleDataNotReturned": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "processRoles": [],
+      "topology": "postgresql",
+      "minimumProcesses": 0,
+      "restartRequired": false
     }
   ],
   "workerAssemblies": {

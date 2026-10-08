@@ -31,6 +31,7 @@
       "src/extensions/caching/Elsa.Caching.Distributed.ProtoActor/Elsa.Caching.Distributed.ProtoActor.csproj",
       "src/extensions/caching/Elsa.Caching.Distributed/Elsa.Caching.Distributed.csproj",
       "src/extensions/cms/Elsa.OrchardCore/Elsa.OrchardCore.csproj",
+      "src/extensions/communication/Elsa.Slack.SocketMode/Elsa.Slack.SocketMode.csproj",
       "src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj",
       "src/extensions/connections/Elsa.Connections.Api/Elsa.Connections.Api.csproj",
       "src/extensions/connections/Elsa.Connections.Core/Elsa.Connections.Core.csproj",

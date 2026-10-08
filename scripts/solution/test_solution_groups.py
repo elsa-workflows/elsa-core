@@ -38,6 +38,19 @@ class SolutionGroupsTests(unittest.TestCase):
         selected = set(json.loads((sg.ROOT / "Elsa.Foundation.slnf").read_text(encoding="utf-8"))["solution"]["projects"])
         self.assertLessEqual(foundation_sources, selected)
 
+    def test_socket_mode_is_in_integrations_and_extension_dependency_closures(self) -> None:
+        path = "src/extensions/communication/Elsa.Slack.SocketMode/Elsa.Slack.SocketMode.csproj"
+        by_path = {project.path: project for project in self.projects}
+        self.assertIn(path, by_path)
+        project = by_path[path]
+        self.assertEqual("Integrations", sg.classify(self.projects, self.manifest)[project])
+        references = {reference.path for reference in sg.project_references(project, by_path)}
+        self.assertEqual(5, len(references))
+        for name in ("Elsa.Integrations.slnf", "Elsa.Extensions.slnf"):
+            with self.subTest(filter=name):
+                selected = set(json.loads((sg.ROOT / name).read_text(encoding="utf-8"))["solution"]["projects"])
+                self.assertLessEqual({path, *references}, selected)
+
     def test_unclassified_project_is_rejected(self) -> None:
         stray = sg.SolutionProject("Elsa.Unlisted", "src/elsewhere/Elsa.Unlisted/Elsa.Unlisted.csproj", "0" * 32)
         with self.assertRaisesRegex(ValueError, "missing from scripts/solution/solution-groups.json"):
