@@ -9,13 +9,17 @@ public static class AdmissionDefinitionFingerprint
 {
     public static string Compute(WorkflowDefinition definition, IPayloadSerializer serializer)
     {
+        if (definition.CreatedAt == default || definition.CreatedAt.Offset != TimeSpan.Zero || definition.CreatedAt.UtcDateTime.Ticks % 10 != 0)
+        {
+            throw new ArgumentException("Pinned definition timestamps must be explicit UTC values at PostgreSQL microsecond precision.");
+        }
         var element = serializer.SerializeToElement(new
         {
             definition.Id, definition.TenantId, definition.DefinitionId, definition.Version, definition.CreatedAt,
             definition.Name, definition.Description, definition.ToolVersion, definition.Options, definition.Variables,
             definition.Inputs, definition.Outputs, definition.Outcomes, definition.CustomProperties, definition.ProviderName,
             definition.MaterializerName, definition.MaterializerContext,
-            StringData = JsonContent(definition.StringData),
+            StringData = definition.MaterializerName == "Json" ? JsonContent(definition.StringData) : definition.StringData,
             OriginalSource = definition.MaterializerName == "Json" ? JsonContent(definition.OriginalSource) : definition.OriginalSource,
             definition.BinaryData, definition.IsReadonly, definition.IsSystem
         });
@@ -36,11 +40,35 @@ public static class AdmissionDefinitionFingerprint
         try
         {
             using var document = JsonDocument.Parse(value);
+            ValidateJson(document.RootElement);
             return document.RootElement.Clone();
         }
         catch (JsonException)
         {
             return value;
+        }
+    }
+
+    private static void ValidateJson(JsonElement element)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            var names = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var property in element.EnumerateObject())
+            {
+                if (!names.Add(property.Name))
+                {
+                    throw new ArgumentException("Pinned JSON definition content cannot contain duplicate property names.");
+                }
+                ValidateJson(property.Value);
+            }
+        }
+        else if (element.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in element.EnumerateArray())
+            {
+                ValidateJson(item);
+            }
         }
     }
 
