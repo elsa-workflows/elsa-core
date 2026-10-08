@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "baselineCommit": "fee3a6da59db56c231ea89ca24fcd3393b615024",
+  "baselineTree": "caa2602543dd3b89b4a9c64d4c8e53bff19ab191",
+  "baselineEntries": 10910,
+  "exactMoves": {
+    "jordi-delay-bookmark-reply.md": "core/docs/support/jordi-delay-bookmark-reply.md",
+    "pau-delay-dispatch-response.md": "core/docs/support/pau-delay-dispatch-response.md",
+    "test-flowchart.txt": "core/samples/elsa-script/test-flowchart.txt",
+    "test-simple-flowchart.elsa": "core/samples/elsa-script/test-simple-flowchart.elsa",
+    "design/persistence-vnext-roadmap.md": "core/docs/design/persistence-vnext-roadmap.md",
+    "design/persistence-vnext-poc.md": "core/docs/design/persistence-vnext-poc.md",
+    "design/persistence-vnext-workflow-runtime-evaluation.md": "core/docs/design/persistence-vnext-workflow-runtime-evaluation.md"
+  },
+  "prefixMoves": [
+    [
+      "src/extensions/",
+      "extensions/src/"
+    ],
+    [
+      "src/studio/",
+      "studio/src/"
+    ],
+    [
+      "src/",
+      "core/src/"
+    ],
+    [
+      "test/extensions/",
+      "extensions/test/"
+    ],
+    [
+      "test/studio/",
+      "studio/test/"
+    ],
+    [
+      "test/",
+      "core/test/"
+    ],
+    [
+      "doc/extensions/",
+      "extensions/docs/"
+    ],
+    [
+      "doc/studio/",
+      "studio/docs/"
+    ],
+    [
+      "doc/adr/",
+      "docs/adr/"
+    ],
+    [
+      "doc/integration-program/",
+      "docs/integration-program/"
+    ],
+    [
+      "doc/",
+      "core/docs/"
+    ],
+    [
+      "samples/extensions/",
+      "extensions/samples/"
+    ],
+    [
+      "samples/studio/",
+      "studio/samples/"
+    ],
+    [
+      "samples/",
+      "core/samples/"
+    ],
+    [
+      "specs/studio/",
+      "studio/docs/specs/"
+    ],
+    [
+      "specs/",
+      "core/docs/specs/"
+    ],
+    [
+      "announcements/",
+      "docs/announcements/"
+    ],
+    [
+      "gen/",
+      "core/gen/"
+    ]
+  ],
+  "sharedRootEntries": [
+    ".agents",
+    ".claude",
+    ".config",
+    ".dockerignore",
+    ".editorconfig",
+    ".github",
+    ".gitignore",
+    ".nuke",
+    ".specify",
+    ".vscode",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "CONTEXT.md",
+    "CONTRIBUTING.md",
+    "Directory.Build.props",
+    "Directory.Build.targets",
+    "Directory.Packages.props",
+    "Elsa.AI.slnf",
+    "Elsa.Extensions.slnf",
+    "Elsa.Foundation.slnf",
+    "Elsa.Integrations.slnf",
+    "Elsa.Operations.slnf",
+    "Elsa.Persistence.slnf",
+    "Elsa.Runtime.slnf",
+    "Elsa.Scripting.slnf",
+    "Elsa.Security.slnf",
+    "Elsa.Studio.slnf",
+    "Elsa.WorkflowContexts.Debug.slnf",
+    "Elsa.sln",
+    "Elsa.sln.DotSettings",
+    "LICENSE",
+    "NuGet.Config",
+    "README.md",
+    "ROADMAP.md",
+    "build.cmd",
+    "build.ps1",
+    "build.sh",
+    "build",
+    "design",
+    "docker",
+    "dotnet-install.sh",
+    "icon.png",
+    "run-dsl-tests.sh",
+    "scripts"
+  ],
+  "notes": [
+    "First matching prefix wins after exact overrides.",
+    "Preserve historical proof/source bytes; update current consumers separately.",
+    "Cross-product references do not change physical product ownership."
+  ]
+}
