@@ -18,10 +18,15 @@ public class WorkflowExecutionGuardTests : IAsyncLifetime
 {
     private readonly TestGuard _guard = new();
     private WorkflowExecutionContext _context = null!;
+    private ActivityExecutionContext _activityContext = null!;
     private int _middlewareCalls;
 
-    public async Task InitializeAsync() => _context = (await new ActivityTestFixture(new WriteLine("guard"))
-        .ConfigureServices(services => services.AddSingleton<IWorkflowExecutionGuard>(_guard)).BuildAsync()).WorkflowExecutionContext;
+    public async Task InitializeAsync()
+    {
+        _activityContext = await new ActivityTestFixture(new WriteLine("guard"))
+            .ConfigureServices(services => services.AddSingleton<IWorkflowExecutionGuard>(_guard)).BuildAsync();
+        _context = _activityContext.WorkflowExecutionContext;
+    }
     public async Task DisposeAsync() => await ((IAsyncDisposable)_context.ServiceProvider).DisposeAsync();
 
     [Theory]
@@ -163,7 +168,9 @@ public class WorkflowExecutionGuardTests : IAsyncLifetime
     [InlineData("invoker-context")]
     public async Task PublicActivityEntriesDenyOwnedBeforeMiddlewareAndRemainCompatibleWhenUnowned(string entryPoint)
     {
-        var activityContext = await _context.CreateActivityExecutionContextAsync(new WriteLine("activity-guard"));
+        // Reuse the fixture-owned graph member; a new activity has no ActivityNode.
+        var activityContext = _activityContext;
+        Assert.Same(activityContext.Activity, activityContext.ActivityNode.Activity);
         var calls = 0;
         ActivityMiddlewareDelegate CountActivity(ActivityMiddlewareDelegate next) => async context =>
         {
