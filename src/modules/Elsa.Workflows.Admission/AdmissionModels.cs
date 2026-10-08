@@ -22,6 +22,8 @@ public sealed record AdmissionPolicy(
     TimeSpan MaximumClockSkew,
     int ActiveCapacity,
     int RetainedRecordCapacity,
+    int MaximumPayloadBytes,
+    int MaximumProviderEventIdBytes,
     AdmissionRejectedEventDisposition LateEventDisposition,
     AdmissionRejectedEventDisposition InvalidEventDisposition,
     string CleanupAuthority)
@@ -30,7 +32,10 @@ public sealed record AdmissionPolicy(
     {
         if (PayloadRetention < TimeSpan.Zero || MaximumEventAge <= TimeSpan.Zero || MaximumClockSkew < TimeSpan.Zero ||
             (IdentityHorizon <= MaximumEventAge || IdentityHorizon - MaximumEventAge <= MaximumClockSkew) || IdentityHorizon < PayloadRetention ||
-            ActiveCapacity <= 0 || RetainedRecordCapacity < ActiveCapacity || string.IsNullOrWhiteSpace(CleanupAuthority) ||
+            ActiveCapacity <= 0 || RetainedRecordCapacity < ActiveCapacity ||
+            MaximumPayloadBytes <= 0 || MaximumPayloadBytes > AdmissionLimits.PayloadBytes ||
+            MaximumProviderEventIdBytes <= 0 || MaximumProviderEventIdBytes > AdmissionLimits.ProviderEventIdBytes ||
+            string.IsNullOrWhiteSpace(CleanupAuthority) || Encoding.UTF8.GetByteCount(CleanupAuthority) > AdmissionLimits.AuthorityBytes ||
             !Enum.IsDefined(LateEventDisposition) || !Enum.IsDefined(InvalidEventDisposition))
         {
             throw new ArgumentException("Explicit admission retention, time, capacity and cleanup policy is invalid.");
@@ -142,4 +147,12 @@ public static class AdmissionEventFingerprint
         OccurredAt = message.OccurredAt?.ToUniversalTime(), message.IsHumanMessage, message.IsLoopMessage,
         PayloadFingerprint = AdmissionHash.Compute(message.Payload)
     }));
+}
+
+/// <summary>Technical ceilings; activation still requires explicit smaller-or-equal policy values.</summary>
+public static class AdmissionLimits
+{
+    public const int PayloadBytes = 1024 * 1024;
+    public const int ProviderEventIdBytes = 1024;
+    public const int AuthorityBytes = 256;
 }
