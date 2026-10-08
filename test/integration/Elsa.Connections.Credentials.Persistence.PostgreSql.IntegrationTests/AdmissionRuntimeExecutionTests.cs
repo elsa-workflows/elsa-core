@@ -222,6 +222,8 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
                 await Assert.ThrowsAsync<InvalidOperationException>(cached);
                 await Assert.ThrowsAsync<InvalidOperationException>(() => invoker.InvokeAsync(retained));
                 await Assert.ThrowsAsync<InvalidOperationException>(async () => { await invoker.InvokeAsync(context, new AdmissionRuntimeActivity()); });
+                await Assert.ThrowsAsync<InvalidOperationException>(() => host.Services.GetRequiredService<IWorkflowRunner>().RunAsync(context));
+                Assert.Equal(1, host.Probe.Count("workflowExecuting"));
                 Assert.Equal(1, host.Probe.Count("activityEffects"));
             }
             finally
@@ -231,9 +233,11 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
             }
             await Assert.ThrowsAsync<InvalidOperationException>(cached!);
             await Assert.ThrowsAsync<InvalidOperationException>(() => host.Services.GetRequiredService<IActivityInvoker>().InvokeAsync(retained!));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => host.Services.GetRequiredService<IWorkflowRunner>().RunAsync(retained!.WorkflowExecutionContext));
+            Assert.Equal(1, host.Probe.Count("workflowExecuting"));
             Assert.Equal(1, host.Probe.Count("activityEffects"));
             await ObserveAsync("runtime-public-activity-denial", nameof(PublicActivityEntriesRemainDeniedDuringAuthorizedRunAndAfterUnwind), "default",
-                new() { ["activityEffects"] = 1, ["duringExecutionDenied"] = true, ["afterUnwindDenied"] = true });
+                new() { ["activityEffects"] = 1, ["duringExecutionDenied"] = true, ["afterUnwindDenied"] = true, ["publicRunnerReuseDenied"] = true });
         });
     }
 
