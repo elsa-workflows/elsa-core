@@ -31,6 +31,27 @@ public sealed class SlackSocketReceiptCleanupDriverTests
     }
 
     [Fact]
+    public async Task CallerOwnedStoreRetainsItsScopeAndSharesTheSameFiniteCursor()
+    {
+        await using var fixture = new CleanupFixture();
+        fixture.Candidates.AddRange([new("a", 7), new("b", 8)]);
+        await using (var scope = fixture.Scopes.CreateAsyncScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<ISlackSocketDiscardStore>();
+            Assert.Equal(new SlackSocketReceiptCleanupBatch(1, 0, false),
+                await fixture.Driver.RunBatchAsync(store, 1, Now, CancellationToken.None));
+            Assert.Equal(1, fixture.Created);
+            Assert.Equal(0, fixture.Disposed);
+        }
+        Assert.Equal(1, fixture.Disposed);
+        Assert.Equal(new SlackSocketReceiptCleanupBatch(1, 0, false), await fixture.Driver.RunBatchAsync(1, Now));
+        Assert.Equal(new string?[] { null, "a" }, fixture.Reads.Select(x => x.Cursor));
+        Assert.Equal(new[] { "a", "b" }, fixture.Cleanups.Select(x => x.Id));
+        Assert.Equal(2, fixture.Created);
+        Assert.Equal(2, fixture.Disposed);
+    }
+
+    [Fact]
     public async Task AnExactFullLastPageCompletesOnTheNextEmptyBatch()
     {
         await using var fixture = new CleanupFixture();
