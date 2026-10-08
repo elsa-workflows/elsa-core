@@ -67,40 +67,51 @@ public static class AdmissionRuntimeHost
         services.AddScoped<INotificationHandler>(_ => probe);
         var module = services.CreateModule();
         module.Configure<ConnectionsFeature>();
-        module.Configure<WorkflowRuntimeFeature>();
-        module.Configure<Elsa.Workflows.Features.WorkflowsFeature>(feature => feature.WithWorkflowExecutionPipeline(pipeline => pipeline.UseDefaultPipeline()));
-        module.Configure<WorkflowManagementFeature>();
-        module.AddActivity<AdmissionRuntimeActivity>();
-        module.Configure<EFCoreAdmissionPersistenceFeature>(feature =>
+        var instanceWrites = new AdmissionObservedInstanceWrites(probe);
+        if (shell)
         {
-            feature.TenantId = AdmissionWorkerHost.TenantId;
-            feature.EnvironmentId = AdmissionWorkerHost.EnvironmentId;
-            feature.RunMigrations = false;
-            feature.UsePostgreSql(connectionString);
-            if (admissionInterceptor != null)
+            // Connections currently exposes classic registration. Only that existing credential/
+            // grant infrastructure is applied through IModule; ALL workflow and persistence
+            // registrations below use the actual ShellFeatures implementations.
+            module.Apply();
+            ConfigureShellServices(services, connectionString, instanceWrites, admissionInterceptor);
+        }
+        else
+        {
+            module.Configure<WorkflowRuntimeFeature>();
+            module.Configure<Elsa.Workflows.Features.WorkflowsFeature>(feature => feature.WithWorkflowExecutionPipeline(pipeline => pipeline.UseDefaultPipeline()));
+            module.Configure<WorkflowManagementFeature>();
+            module.AddActivity<AdmissionRuntimeActivity>();
+            module.Configure<EFCoreAdmissionPersistenceFeature>(feature =>
             {
+                feature.TenantId = AdmissionWorkerHost.TenantId;
+                feature.EnvironmentId = AdmissionWorkerHost.EnvironmentId;
+                feature.RunMigrations = false;
+                feature.UsePostgreSql(connectionString);
+                if (admissionInterceptor != null)
+                {
+                    var inner = feature.DbContextOptionsBuilder;
+                    feature.DbContextOptionsBuilder = (provider, builder) =>
+                    {
+                        inner(provider, builder);
+                        builder.AddInterceptors(admissionInterceptor);
+                    };
+                }
+            });
+            module.Configure<EFCoreWorkflowDefinitionPersistenceFeature>(feature => feature.UsePostgreSql(connectionString));
+            module.Configure<EFCoreWorkflowInstancePersistenceFeature>(feature =>
+            {
+                feature.UsePostgreSql(connectionString);
                 var inner = feature.DbContextOptionsBuilder;
                 feature.DbContextOptionsBuilder = (provider, builder) =>
                 {
                     inner(provider, builder);
-                    builder.AddInterceptors(admissionInterceptor);
+                    builder.AddInterceptors(instanceWrites);
                 };
-            }
-        });
-        module.Configure<EFCoreWorkflowDefinitionPersistenceFeature>(feature => feature.UsePostgreSql(connectionString));
-        var instanceWrites = new AdmissionObservedInstanceWrites(probe);
-        module.Configure<EFCoreWorkflowInstancePersistenceFeature>(feature =>
-        {
-            feature.UsePostgreSql(connectionString);
-            var inner = feature.DbContextOptionsBuilder;
-            feature.DbContextOptionsBuilder = (provider, builder) =>
-            {
-                inner(provider, builder);
-                builder.AddInterceptors(instanceWrites);
-            };
-        });
-        module.Configure<EFCoreWorkflowRuntimePersistenceFeature>(feature => feature.UsePostgreSql(connectionString));
-        module.Apply();
+            });
+            module.Configure<EFCoreWorkflowRuntimePersistenceFeature>(feature => feature.UsePostgreSql(connectionString));
+            module.Apply();
+        }
         services.Replace(ServiceDescriptor.Singleton<ISystemClock>(new AdmissionRuntimeClock()));
         services.Decorate<IWorkflowStateExtractor, AdmissionObservedStateExtractor>();
         services.Decorate<ICommitStateHandler, AdmissionObservedCommit>();
@@ -133,6 +144,58 @@ public static class AdmissionRuntimeHost
         }
         configure?.Invoke(services);
         return services.BuildServiceProvider();
+    }
+
+    private static void ConfigureShellServices(IServiceCollection services, string connectionString,
+        AdmissionObservedInstanceWrites instanceWrites, IInterceptor? admissionInterceptor)
+    {
+        // Explicit dependency order from the selected ShellFeature attributes. This invokes
+        // the real features, not a classic registration wearing an Admission Shell wrapper.
+        CShells.Features.IShellFeature[] features =
+        [
+            new Elsa.Common.ShellFeatures.SystemClockFeature(),
+            new Elsa.Expressions.ShellFeatures.ExpressionsFeature(),
+            new Elsa.Common.ShellFeatures.MultitenancyFeature(),
+            new Elsa.Common.ShellFeatures.MediatorFeature(),
+            new Elsa.Common.ShellFeatures.DefaultFormattersFeature(),
+            new Elsa.Workflows.ShellFeatures.CommitStrategiesFeature(),
+            new Elsa.Common.ShellFeatures.StringCompressionFeature(),
+            new Elsa.Caching.ShellFeatures.MemoryCacheFeature(),
+            new Elsa.Workflows.ShellFeatures.WorkflowsFeature(),
+            new Elsa.Workflows.Management.ShellFeatures.WorkflowDefinitionsFeature(),
+            new Elsa.Workflows.Management.ShellFeatures.WorkflowInstancesFeature(),
+            new Elsa.Workflows.Management.ShellFeatures.WorkflowManagementFeature(),
+            new Elsa.Workflows.Runtime.ShellFeatures.WorkflowRuntimeFeature(),
+            new Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Management.PostgreSqlWorkflowDefinitionPersistenceFeature
+            {
+                ConnectionString = connectionString, RunMigrations = false
+            },
+            new Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Management.PostgreSqlWorkflowInstancePersistenceFeature
+            {
+                ConnectionString = connectionString, RunMigrations = false
+            },
+            new Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Runtime.PostgreSqlWorkflowRuntimePersistenceFeature
+            {
+                ConnectionString = connectionString, RunMigrations = false
+            },
+            new Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql.ShellFeatures.PostgreSqlAdmissionPersistenceShellFeature
+            {
+                TenantId = AdmissionWorkerHost.TenantId, EnvironmentId = AdmissionWorkerHost.EnvironmentId,
+                ConnectionString = connectionString, RunMigrations = false
+            }
+        ];
+        foreach (var feature in features)
+        {
+            feature.ConfigureServices(services);
+        }
+        services.AddActivity<AdmissionRuntimeActivity>();
+        // AddDbContextFactory retains the real selected-provider factory. Subsequent options
+        // registrations attach only fixture interceptors to that same actual context.
+        services.AddDbContext<ManagementElsaDbContext>((_, builder) => builder.AddInterceptors(instanceWrites));
+        if (admissionInterceptor != null)
+        {
+            services.AddDbContext<AdmissionElsaDbContext>((_, builder) => builder.AddInterceptors(admissionInterceptor));
+        }
     }
 
     private static AdmissionRuntimeBinding CompileBinding()

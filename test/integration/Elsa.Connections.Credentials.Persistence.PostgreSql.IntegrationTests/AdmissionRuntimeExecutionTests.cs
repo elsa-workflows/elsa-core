@@ -160,10 +160,12 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
         await WithHostAsync(async host =>
         {
             var setupCallbacks = 0;
+            var setupAttempts = 0;
             var workflow = (WorkflowExecutionPipeline)host.Services.GetRequiredService<IWorkflowExecutionPipeline>();
             var activity = (ActivityExecutionPipeline)host.Services.GetRequiredService<IActivityExecutionPipeline>();
             void AttemptSetup()
             {
+                setupAttempts++;
                 Assert.Throws<InvalidOperationException>(() => workflow.Setup(builder => { setupCallbacks++; builder.Reset(); }));
                 Assert.Throws<InvalidOperationException>(() => activity.Setup(builder => { setupCallbacks++; builder.Reset(); }));
             }
@@ -178,9 +180,10 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
             host.Probe.OnExecuting = _ => { AttemptSetup(); return Task.CompletedTask; };
             Assert.Equal(WorkflowSubStatus.Finished, (await host.Execution.ExecuteAsync(host.AdmissionId))!.SubStatus);
             Assert.Equal(0, setupCallbacks);
+            Assert.Equal(4, setupAttempts);
             Assert.Equal(1, host.Probe.Count("activityEffects"));
             await ObserveAsync("runtime-frozen-compositions", nameof(FrozenCompositionsRejectSetupFromAuthorizationAndExecutingCallbacks), "default",
-                new() { ["setupCallbacks"] = 0, ["activityEffects"] = 1 });
+                new() { ["setupCallbacks"] = 0, ["setupAttempts"] = 4, ["activityEffects"] = 1 });
         });
     }
 
@@ -309,11 +312,14 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
                 BookmarkId = Assert.Single(initial.Bookmarks).Id, IncludeWorkflowOutput = includeOutput
             });
             Assert.Equal(WorkflowSubStatus.Finished, response.SubStatus);
+            var instances = host.Services.GetRequiredService<IWorkflowInstanceManager>();
+            var actual = (await instances.FindByIdAsync(initial.WorkflowInstanceId))!;
+            Assert.Equal("persisted-resume-output", actual.WorkflowState.Output["Proof"]);
             if (includeOutput)
             {
                 Assert.Equal("persisted-resume-output", response.Output!["Proof"]);
                 response.Output["Proof"] = "caller-mutated-output";
-                var persisted = (await host.Services.GetRequiredService<IWorkflowInstanceManager>().FindByIdAsync(initial.WorkflowInstanceId))!;
+                var persisted = (await instances.FindByIdAsync(initial.WorkflowInstanceId))!;
                 Assert.Equal("persisted-resume-output", persisted.WorkflowState.Output["Proof"]);
             }
             else
@@ -356,11 +362,32 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
         });
     }
 
-    private async Task WithHostAsync(Func<RuntimeScenario, Task> assertion, IInterceptor? interceptor = null)
+    [Theory]
+    [InlineData("runtime-classic-feature-host", "classic")]
+    [InlineData("runtime-shell-feature-host", "shell")]
+    public async Task ActualSelectedFeatureHostBootstrapsAndResumesRealPersistedWorkflow(string caseId, string scenario)
+    {
+        await WithHostAsync(async host =>
+        {
+            host.Probe.Outcome = "suspended";
+            var initial = (await host.Execution.ExecuteAsync(host.AdmissionId))!;
+            var client = await host.Services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync(initial.WorkflowInstanceId);
+            var resumed = await client.RunInstanceAsync(new RunWorkflowInstanceRequest { BookmarkId = Assert.Single(initial.Bookmarks).Id });
+            Assert.Equal(WorkflowSubStatus.Finished, resumed.SubStatus);
+            Assert.Equal(1, host.Probe.Count("activityEffects"));
+            Assert.Equal(1, host.Probe.Count("activityResumes"));
+            Assert.Equal(2, host.Probe.Count("CheckpointRecorded"));
+            Assert.Equal(AdmissionState.Terminal, (await host.Store.FindAsync(host.AdmissionId))!.State);
+            await ObserveAsync(caseId, nameof(ActualSelectedFeatureHostBootstrapsAndResumesRealPersistedWorkflow), caseId,
+                new() { ["activityEffects"] = 1, ["activityResumes"] = 1, ["checkpointCount"] = 2, ["terminal"] = true });
+        }, shell: scenario == "shell");
+    }
+
+    private async Task WithHostAsync(Func<RuntimeScenario, Task> assertion, IInterceptor? interceptor = null, bool shell = false)
     {
         await fixture.ResetSchemaAsync();
         var probe = new AdmissionRuntimeProbe(fixture.ConnectionString);
-        await using var services = AdmissionRuntimeHost.CreateServices(fixture.ConnectionString, probe, admissionInterceptor: interceptor);
+        await using var services = AdmissionRuntimeHost.CreateServices(fixture.ConnectionString, probe, shell: shell, admissionInterceptor: interceptor);
         using var tenant = AdmissionRuntimeHost.EnterTenant(services);
         await AdmissionRuntimeHost.MigrateAsync(services);
         await AdmissionRuntimeHost.BootstrapAsync(services);
