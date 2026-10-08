@@ -36,9 +36,9 @@ The branch name must match one of these patterns:
 
 If on a feature branch (matches either pattern):
 - Output: `✓ On feature branch: <branch-name>`
-- Check if the corresponding spec directory exists under `specs/`:
-  - For sequential branches, look for `specs/<prefix>-*` where prefix matches the numeric portion
-  - For timestamp branches, look for `specs/<prefix>-*` where prefix matches the `YYYYMMDD-HHMMSS` portion
+- Check if the corresponding spec directory exists under `core/docs/specs/`:
+  - For sequential branches, look for `core/docs/specs/<prefix>-*` where prefix matches the numeric portion
+  - For timestamp branches, look for `core/docs/specs/<prefix>-*` where prefix matches the `YYYYMMDD-HHMMSS` portion
 - If spec directory exists: `✓ Spec directory found: <path>`
 - If spec directory missing: `⚠ No spec directory found for prefix <prefix>`
 

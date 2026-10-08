@@ -15,8 +15,8 @@ HEAD = 'a' * 40
 HASH = 'b' * 64
 CONTAINER = 'c' * 64
 IMAGE = 'sha256:' + 'd' * 64
-PROJECT = 'test/integration/Fixture/Fixture.csproj'
-WORKER = 'test/workers/Worker/bin/Release/net10.0/Worker.dll'
+PROJECT = 'core/test/integration/Fixture/Fixture.csproj'
+WORKER = 'core/test/workers/Worker/bin/Release/net10.0/Worker.dll'
 HOSTED = {'GITHUB_REPOSITORY': 'elsa-workflows/elsa-core', 'GITHUB_RUN_ID': '123',
           'GITHUB_RUN_ATTEMPT': '1', 'GITHUB_EVENT_NAME': 'workflow_dispatch'}
 
@@ -35,7 +35,7 @@ def manifest():
                       'minimumProcesses': 2 if two_process else 0, 'restartRequired': two_process})
     return {'schemaVersion': 1, 'complete': True, 'families': list(proof.FAMILIES),
             'testProjects': [{'project': PROJECT, 'filter': 'FullyQualifiedName~Admission', 'observations': True}],
-            'buildProjects': ['src/Production/Production.csproj'],
+            'buildProjects': ['core/src/Production/Production.csproj'],
             'workerAssemblies': {'primary': WORKER, 'competitor': WORKER}, 'cases': cases}
 
 
@@ -89,7 +89,7 @@ class AdmissionProofTests(unittest.TestCase):
     def test_manifest_cannot_self_declare_complete_or_omit_families_and_topology(self):
         mutations = [lambda d: d.update(complete=False), lambda d: d.update(cases=[]),
                      lambda d: d['cases'].pop(), lambda d: d['cases'].append(copy.deepcopy(d['cases'][0])),
-                     lambda d: d['cases'][0].update(project='test/Unknown.csproj'),
+                     lambda d: d['cases'][0].update(project='core/test/Unknown.csproj'),
                      lambda d: d['cases'][0].update(facts={}),
                      lambda d: d['cases'][5].update(topology='postgresql-two-process')]
         for mutate in mutations:
@@ -260,7 +260,7 @@ class AdmissionProofTests(unittest.TestCase):
         with self.assertRaises(ValueError): proof.validate_retained(retained, self.manifest, receipt['sourceRevision'])
 
     def test_compile_failure_collects_fixture_errors_without_tests_or_production_builds(self):
-        self.manifest['testProjects'].append({'project': 'test/unit/Supplemental/Supplemental.csproj',
+        self.manifest['testProjects'].append({'project': 'core/test/unit/Supplemental/Supplemental.csproj',
             'filter': 'FullyQualifiedName~Guards', 'observations': False})
         receipt, commands, _ = self.fake_run(fail_compile=True)
         self.assertFalse(receipt['verificationComplete'])

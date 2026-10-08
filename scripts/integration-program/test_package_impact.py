@@ -31,7 +31,7 @@ class PackageImpactTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.graph = InventoryGraph.from_path(
-            REPOSITORY / "doc/integration-program/inventory/inventory.json"
+            REPOSITORY / "docs/integration-program/inventory/inventory.json"
         )
         cls.changed_core_elsa = ("elsa-core", "src/modules/Elsa/Elsa.csproj")
         cls.slack_project = (

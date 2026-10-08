@@ -23,7 +23,7 @@ PAIR_PROJECT = ROOT / "scripts/integration-program/VerifyPackageSymbolPair/Verif
 
 
 def verify(artifacts: Path, version: str, commit: str, sourcelink_tool: Path) -> dict[str, object]:
-    manifest = json.loads((ROOT / "doc/integration-program/release-units.json").read_text(encoding="utf-8"))
+    manifest = json.loads((ROOT / 'docs/integration-program/release-units.json').read_text(encoding="utf-8"))
     units = [unit for unit in manifest["release_units"] if unit["package_id"] == "Elsa.Slack"]
     if len(units) != 1:
         raise ValueError(f"Expected one Elsa.Slack release unit, got {len(units)}")

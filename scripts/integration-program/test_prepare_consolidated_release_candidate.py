@@ -160,7 +160,7 @@ class CandidateContractsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             checkout = Path(temporary)
             for name in ("prepare_consolidated_release_candidate.py", "prove_consolidated_packages.py",
-                         "prove_consolidated_package_consumers.py"):
+                         "prove_consolidated_package_consumers.py", "product_layout.py", "product-layout.json"):
                 shutil.copy2(ROOT / "scripts/integration-program" / name, checkout / name)
             def execute(command, **kwargs):
                 return subprocess.run(command, cwd=checkout, check=True, capture_output=True, text=True, **kwargs)
@@ -216,6 +216,9 @@ class CandidateContractsTests(unittest.TestCase):
     def test_inventory_changes_emit_reviewable_diff_and_fail_before_build(self):
         baseline = json.loads((ROOT / "scripts/integration-program/consolidated-candidate-inventory-baseline.json").read_text())
         manifest = copy.deepcopy(baseline)
+        for category in ("packages", "exclusions"):
+            for row in manifest[category]:
+                row["project"] = candidate.map_path(row["project"])
         for row in manifest["packages"]:
             row["nupkg"] = row["id"] + ".3.10.0.nupkg"
         with tempfile.TemporaryDirectory() as temporary:

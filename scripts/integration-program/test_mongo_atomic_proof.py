@@ -113,6 +113,10 @@ class MongoAtomicProofTests(unittest.TestCase):
             path = checkout / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("baseline input")
+        for name in (proof.BASELINE_FIXTURE, proof.BASELINE_MONGO_TEST):
+            path = checkout / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("baseline input")
         proof.git(checkout, "add", ".")
         proof.git(checkout, "commit", "-qm", "baseline")
         baseline = proof.git(checkout, "rev-parse", "HEAD")

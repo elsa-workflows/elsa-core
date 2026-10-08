@@ -27,14 +27,31 @@ All changes happen through Pull Requests targeting the `main` branch.
 4. Ensure the test suite passes.
 5. Open a Pull Request.
 
+### Product ownership and local checks
+
+Core, Extensions and Studio share this repository and the root `Elsa.sln`. Keep code, tests and documentation in the owning product's `src/`, `test/` and `docs/` directories. Shared build scripts, central package policy and solution filters remain at the repository root. Cross-product references use public contracts; moving a file does not change its package or activity identity.
+
+Run commands from the repository root. Start with the owning project and test project, then use the relevant root filter or full solution when the change crosses boundaries:
+
+```bash
+dotnet build Elsa.Core.slnf
+dotnet build Elsa.Extensions.slnf
+dotnet build Elsa.Studio.slnf
+dotnet test core/test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj
+```
+
+The Core filter excludes the cross-product `Elsa.Secrets.DefaultHost.IntegrationTests` fixture; it remains in the full solution. These filters include required project references; they are development selections, not isolated package-consumer or publication proof. See [Core](core/docs/README.md), [Extensions](extensions/docs/README.md) and [Studio](studio/docs/README.md) for product entrypoints, and [the package proof](docs/integration-program/consolidated-package-proof.md) for artifact checks. Studio browser bundles require the documented Node build before their .NET hosts.
+
+The first consolidated 3.10 release follows the [lockstep publisher policy](docs/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md). A directory move or successful local build does not authorize publication or source-repository archival. Keep existing source issue/PR attribution and link any reviewed adoption to its original contribution.
+
 ### Architecture Decision Records
 
-Records live in `doc/adr/`. Name a new one `YYYY-MM-DD-slug.md` and give it a `# ` heading with the title
+Records live in `docs/adr/`. Name a new one `YYYY-MM-DD-slug.md` and give it a `# ` heading with the title
 alone — no numeric prefix. The older `NNNN-` records stay as they are; do not renumber them, and do not
 continue the sequence. Sequential numbering had no reservation step, so two branches in flight always
 picked the same number and one of them had to be renumbered on merge.
 
-`doc/adr/toc.md` is generated. After adding or retitling a record, run:
+`docs/adr/toc.md` is generated. After adding or retitling a record, run:
 
 ```bash
 scripts/adr/generate-toc.sh

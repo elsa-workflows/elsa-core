@@ -24,11 +24,11 @@ updates:
     schedule:
       interval: "weekly"
     exclude-paths:
-      - "src/extensions/**"
-      - "src/studio/**"
+      - "extensions/src/**"
+      - "studio/src/**"
   - package-ecosystem: "nuget"
     directories:
-      - "/src/extensions/**/Elsa.*"
+      - "/extensions/src/**/Elsa.*"
     target-branch: "main"
     registries:
       - elsa-feedz-preview
@@ -46,7 +46,7 @@ updates:
       include: "scope"
   - package-ecosystem: "nuget"
     directories:
-      - "/src/studio/**/Elsa.*"
+      - "/studio/src/**/Elsa.*"
     target-branch: "main"
     registries:
       - elsa-feedz-preview

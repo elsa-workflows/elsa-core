@@ -548,6 +548,55 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
                              optional_fixture_patches=(self.menu_patch, self.layout_patch, self.tenant_patch))
         build_host.assert_not_called()
 
+    def relocate_imported_source(self):
+        from product_layout import map_path
+        paths = subprocess.check_output(['git', 'ls-files'], cwd=self.rehearsal, text=True).splitlines()
+        for relative in paths:
+            destination = map_path(relative)
+            if destination != relative:
+                target = self.rehearsal / destination
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(self.rehearsal / relative, target)
+        layout = self.rehearsal / 'scripts/integration-program/product-layout.json'
+        layout.parent.mkdir(parents=True, exist_ok=True)
+        layout.write_text('{}')
+        self.source = self.rehearsal / map_path(FIXTURE.SOURCE_PROJECT.as_posix())
+        subprocess.run(['git', 'add', '-A'], cwd=self.rehearsal, check=True)
+        subprocess.run(['git', '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid',
+                        '-c', 'commit.gpgsign=false', 'commit', '-qm', 'Relocate products'],
+                       cwd=self.rehearsal, check=True)
+        return subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=self.rehearsal, text=True).strip()
+
+    def test_current_imported_fixture_maps_paths_and_verifies_unchanged_optional_patch_hunks(self):
+        import_commit, _ = self.initialize_imported_source()
+        imported_sha = self.relocate_imported_source()
+        before = self.route_patch.read_bytes()
+        mapped = FIXTURE.imported_fixture_patch_bytes(self.rehearsal, self.route_patch)
+        self.assertIn(b'a/extensions/samples/workbench/', mapped)
+        self.assertEqual(before[before.index(b'@@'):], mapped[mapped.index(b'@@'):])
+        fixture_root = self.prepare(two_tenant=True, route_probe=True,
+                                    import_commit=import_commit, imported_sha=imported_sha,
+                                    optional_fixture_patches=(self.menu_patch, self.layout_patch,
+                                                              self.tenant_patch, self.route_patch))
+        try:
+            plan = json.loads((fixture_root / 'launch-plan.json').read_text())
+            self.assertEqual(imported_sha, plan['sourceRevision'])
+            self.assertTrue(plan['sourceProvenance']['compiledWorkbenchSourcesCommitted'])
+            self.assertTrue(plan['twoTenantMode'])
+            self.assertTrue(plan['routeProbe']['enabled'])
+        finally:
+            FIXTURE.cleanup_fixture(fixture_root, host_stopped=True)
+
+    def test_current_imported_fixture_rejects_missing_optional_patch_before_build(self):
+        import_commit, _ = self.initialize_imported_source(apply_route_probe=False)
+        imported_sha = self.relocate_imported_source()
+        with mock.patch.object(self, 'fake_build', side_effect=AssertionError('host build ran')) as build_host:
+            with self.assertRaisesRegex(ValueError, 'does not contain reviewed fixture patch changes'):
+                self.prepare(route_probe=True, import_commit=import_commit, imported_sha=imported_sha,
+                             optional_fixture_patches=(self.menu_patch, self.layout_patch,
+                                                       self.tenant_patch, self.route_patch))
+        build_host.assert_not_called()
+
     def test_imported_fixture_pins_committed_history_and_keeps_rehearsal_receipts_separate(self):
         import_commit, imported_sha = self.initialize_imported_source()
         fixture_root = self.prepare(two_tenant=True, route_probe=True,
@@ -738,6 +787,10 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
         self.assertEqual(str(self.source / 'Program.cs'), items[0]['FullPath'])
         self.assertEqual(self.source, Path(run.call_args.kwargs['cwd']))
 
+    def test_current_host_build_resolves_relocated_core_assembly_outputs(self):
+        self.relocate_imported_source()
+        self.test_host_build_uses_clone_local_restore_and_rebuilds_project_references()
+
     def test_host_build_uses_clone_local_restore_and_rebuilds_project_references(self):
         project = self.source / 'Elsa.Server.Web.csproj'
         assets = self.source / 'obj' / 'project.assets.json'
@@ -747,7 +800,7 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
         host_dll.parent.mkdir(parents=True)
         host_dll.write_bytes(b'host')
         for name in FIXTURE.REQUIRED_SECRETS_ASSEMBLIES:
-            project_output = self.rehearsal / 'src' / 'modules' / name / 'bin' / 'Debug' / 'net10.0' / f'{name}.dll'
+            project_output = FIXTURE.current_path(self.rehearsal, f'src/modules/{name}/bin/Debug/net10.0/{name}.dll')
             project_output.parent.mkdir(parents=True)
             project_output.write_bytes(b'synthetic assembly bytes')
             (host_dll.parent / f'{name}.dll').write_bytes(b'synthetic assembly bytes')
@@ -780,7 +833,7 @@ class WorkbenchSecretsRuntimeFixtureTests(unittest.TestCase):
 class CommittedWorkbenchHostDefaultsTests(unittest.TestCase):
     """The committed Workbench keeps each runtime-fixture switch opt-in and disabled by default (#8326)."""
 
-    WORKBENCH = SCRIPT.parents[2] / FIXTURE.SOURCE_PROJECT
+    WORKBENCH = FIXTURE.current_path(SCRIPT.parents[2], FIXTURE.SOURCE_PROJECT.as_posix())
     ROUTE_PROBE_GUARD = 'if (configuration.GetValue("Features:Secrets:RouteProbe", false))'
     GUARDED_REGISTRATIONS = (
         r'if \(useSecrets\)\s*\{\s*elsa\s*\.UseSecrets\(',

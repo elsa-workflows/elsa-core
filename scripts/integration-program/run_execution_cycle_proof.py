@@ -20,17 +20,17 @@ from run_current_import_affected_tests import assert_clean_source, classify
 
 ROOT = Path(__file__).resolve().parents[2]
 FRAMEWORKS = ("net8.0", "net9.0", "net10.0")
-BUILD_PROJECTS = tuple(f"src/modules/{name}/{name}.csproj" for name in (
+BUILD_PROJECTS = tuple(f"core/src/modules/{name}/{name}.csproj" for name in (
     "Elsa.Workflows.Core", "Elsa.Workflows.Runtime", "Elsa.Alterations")) + (
-    "src/extensions/runtimes/Elsa.Workflows.Runtime.ProtoActor/Elsa.Workflows.Runtime.ProtoActor.csproj",
+    'extensions/src/runtimes/Elsa.Workflows.Runtime.ProtoActor/Elsa.Workflows.Runtime.ProtoActor.csproj',
 )
 TEST_PROJECTS = (
-    ("test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj", None),
-    ("test/unit/Elsa.Workflows.Runtime.UnitTests/Elsa.Workflows.Runtime.UnitTests.csproj", None),
-    ("test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj",
+    ('core/test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj', None),
+    ('core/test/unit/Elsa.Workflows.Runtime.UnitTests/Elsa.Workflows.Runtime.UnitTests.csproj', None),
+    ('core/test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj',
      "FullyQualifiedName~GracefulShutdown|FullyQualifiedName~DefaultActivityCommitStrategy|FullyQualifiedName~DefaultWorkflowCommitStrategy"),
-    ("test/integration/Elsa.Alterations.IntegrationTests/Elsa.Alterations.IntegrationTests.csproj", None),
-    ("test/extensions/modules/runtimes/Elsa.Workflows.Runtime.ProtoActor.UnitTests/Elsa.Workflows.Runtime.ProtoActor.UnitTests.csproj", None),
+    ('core/test/integration/Elsa.Alterations.IntegrationTests/Elsa.Alterations.IntegrationTests.csproj', None),
+    ('extensions/test/modules/runtimes/Elsa.Workflows.Runtime.ProtoActor.UnitTests/Elsa.Workflows.Runtime.ProtoActor.UnitTests.csproj', None),
 )
 IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_.+`]*\Z")
 

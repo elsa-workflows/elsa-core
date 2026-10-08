@@ -1,11 +1,11 @@
-# Keeps doc/adr/toc.md generated rather than hand-edited. The index drifted from the records it indexes
+# Keeps docs/adr/toc.md generated rather than hand-edited. The index drifted from the records it indexes
 # because every ADR merge conflict asked a human to retype it; this fails the pull request instead.
 name: ADR index
 
 on:
   pull_request:
     paths:
-      - 'doc/adr/**'
+      - 'docs/adr/**'
       - 'scripts/adr/**'
       - '.github/workflows/adr-toc.yml'
 
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   check-toc:
-    name: doc/adr/toc.md is up to date
+    name: docs/adr/toc.md is up to date
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

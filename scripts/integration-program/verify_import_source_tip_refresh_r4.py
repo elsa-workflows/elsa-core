@@ -12,7 +12,7 @@ from typing import Any
 from verify_import_source_tip_refresh_r3 import LANDED_IMPORT, PUBLISHER_BLOBS, ROOT, entry, git, parents
 
 
-RECEIPT = ROOT / "doc/integration-program/consolidation/source-tip-refresh-2026-09-25-r4.json"
+RECEIPT = ROOT / "docs/integration-program/consolidation/source-tip-refresh-2026-09-25-r4.json"
 SOURCE = "src/modules/Elsa.Studio.Workflows.Tests/WorkflowInstanceDesignerDisconnectRefreshTests.cs"
 MAPPED = "src/studio/modules/Elsa.Studio.Workflows.Tests/WorkflowInstanceDesignerDisconnectRefreshTests.cs"
 OLD_STUDIO = "099402226daba80e473a306bbd1243b8994465b8"

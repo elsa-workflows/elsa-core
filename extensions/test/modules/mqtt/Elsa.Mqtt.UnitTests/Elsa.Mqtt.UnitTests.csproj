@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<ItemGroup>
+		<ProjectReference Include="../../../../../core/src/common/Elsa.Testing.Shared/Elsa.Testing.Shared.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="../../../../src/mqtt/Elsa.Mqtt/Elsa.Mqtt.csproj" />
+	</ItemGroup>
+
+</Project>

@@ -1,7 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-    <ItemGroup>
-        <ProjectReference Include="../../../../../src/extensions/scheduling/Elsa.Scheduling.Hangfire/Elsa.Scheduling.Hangfire.csproj" />
-    </ItemGroup>
-
-</Project>

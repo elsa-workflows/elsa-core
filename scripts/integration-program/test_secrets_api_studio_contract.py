@@ -276,7 +276,7 @@ class SecretsApiStudioContractTests(unittest.TestCase):
         self.assertIn('ef.UseSqlite(sp => sp.GetSqliteConnectionString());', patch)
         self.assertIn('-    options.Schedule.ConfigureTask<UpdateExpiredSecretsRecurringTask>', patch)
 
-        fixture_source = (SCRIPT.parents[2] / 'test/integration/Elsa.Secrets.Api.IntegrationTests/SecretsApiStudioHttpTests.cs').read_text()
+        fixture_source = (SCRIPT.parents[2] / 'core/test/integration/Elsa.Secrets.Api.IntegrationTests/SecretsApiStudioHttpTests.cs').read_text()
         for marker in (
             '.UseSecrets(secrets =>',
             'secrets.UseEntityFrameworkCore(ef =>',

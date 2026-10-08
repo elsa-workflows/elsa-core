@@ -35,10 +35,10 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
-            Refresh the repo-local wiki under doc/wiki so it remains accurate for the current Elsa Core codebase.
+            Refresh the repo-local wiki under core/docs/wiki so it remains accurate for the current Elsa Core codebase.
 
             Scope:
-            - Edit only files under doc/wiki/.
+            - Edit only files under core/docs/wiki/.
             - Keep the existing wiki structure unless the codebase genuinely needs a new or renamed wiki page.
             - Ground every update in the current repository source, tests, specs, and ADRs.
             - Preserve relative Markdown links and Mermaid diagrams where useful.
@@ -46,11 +46,11 @@ jobs:
             - Prefer concise contributor-facing explanations over exhaustive API reference.
 
             Validation:
-            - Check local Markdown links under doc/wiki before finishing.
+            - Check local Markdown links under core/docs/wiki before finishing.
             - If the wiki is already up to date, leave the worktree unchanged.
           claude_args: >-
             --allowed-tools
-            "Edit(doc/wiki/**),Write(doc/wiki/**),Bash(rg:* .),Bash(git diff:*),Bash(git status:*),Bash(ls:* .),Bash(wc:*)"
+            "Edit(core/docs/wiki/**),Write(core/docs/wiki/**),Bash(rg:* .),Bash(git diff:*),Bash(git status:*),Bash(ls:* .),Bash(wc:*)"
 
       - name: Verify wiki-only changes
         run: |
@@ -86,7 +86,7 @@ jobs:
                       paths.append(records[i].decode())
 
               changed_paths.extend(paths)
-              invalid_paths.extend(path for path in paths if not path.startswith("doc/wiki/"))
+              invalid_paths.extend(path for path in paths if not path.startswith("core/docs/wiki/"))
               i += 1
 
           if not changed_paths:
@@ -94,14 +94,14 @@ jobs:
               sys.exit(0)
 
           if invalid_paths:
-              print("The wiki update workflow may only modify files under doc/wiki/.", file=sys.stderr)
+              print("The wiki update workflow may only modify files under core/docs/wiki/.", file=sys.stderr)
               print("\n".join(invalid_paths), file=sys.stderr)
               sys.exit(1)
 
           print("Wiki-only changes verified.")
           PY
 
-          if git diff --quiet -- doc/wiki && [ -z "$(git ls-files --others --exclude-standard doc/wiki)" ]; then
+          if git diff --quiet -- core/docs/wiki && [ -z "$(git ls-files --others --exclude-standard core/docs/wiki)" ]; then
             echo "No wiki changes detected."
             exit 0
           fi
@@ -110,7 +110,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          if git diff --quiet -- doc/wiki && [ -z "$(git ls-files --others --exclude-standard doc/wiki)" ]; then
+          if git diff --quiet -- core/docs/wiki && [ -z "$(git ls-files --others --exclude-standard core/docs/wiki)" ]; then
             echo "No wiki changes to validate."
             exit 0
           fi
@@ -123,7 +123,7 @@ jobs:
           root = Path(".").resolve()
           errors = []
 
-          for md in sorted(Path("doc/wiki").rglob("*.md")):
+          for md in sorted(Path("core/docs/wiki").rglob("*.md")):
               text = md.read_text()
               for match in re.finditer(r"\[[^\]]+\]\(([^)]+)\)", text):
                   target = match.group(1).split("#", 1)[0]
@@ -156,13 +156,13 @@ jobs:
         run: |
           set -euo pipefail
 
-          if git diff --quiet -- doc/wiki && [ -z "$(git ls-files --others --exclude-standard doc/wiki)" ]; then
+          if git diff --quiet -- core/docs/wiki && [ -z "$(git ls-files --others --exclude-standard core/docs/wiki)" ]; then
             echo "No wiki changes to publish."
             exit 0
           fi
 
           git checkout -B "$UPDATE_BRANCH"
-          git add doc/wiki
+          git add core/docs/wiki
           git commit -m "Refresh codebase wiki"
 
           remote_sha="$(git ls-remote --heads origin "$UPDATE_BRANCH" | awk '{print $1}')"
@@ -182,12 +182,12 @@ jobs:
           body="$(cat <<'MD'
           ## Summary
 
-          Refreshes the repo-local `doc/wiki/` documentation after changes landed on `main`.
+          Refreshes the repo-local `core/docs/wiki/` documentation after changes landed on `main`.
 
           ## Validation
 
-          - Verified the workflow changed only files under `doc/wiki/`.
-          - Verified all local Markdown links under `doc/wiki/` recursively resolve.
+          - Verified the workflow changed only files under `core/docs/wiki/`.
+          - Verified all local Markdown links under `core/docs/wiki/` recursively resolve.
 
           This PR was opened automatically by the Update Wiki workflow.
           MD

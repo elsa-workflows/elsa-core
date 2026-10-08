@@ -23,31 +23,31 @@
   ],
   "testProjects": [
     {
-      "project": "test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj",
+      "project": "core/test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj",
       "filter": "FullyQualifiedName~WorkflowExecutionGuardTests",
       "observations": false
     },
     {
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "filter": "FullyQualifiedName~Admission",
       "observations": true
     }
   ],
   "buildProjects": [
-    "src/modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj",
-    "src/modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj",
-    "src/modules/Elsa.Workflows.Admission/Elsa.Workflows.Admission.csproj",
-    "src/modules/Elsa.Workflows.Management/Elsa.Workflows.Management.csproj",
-    "src/modules/Elsa.Persistence.EFCore/Elsa.Persistence.EFCore.csproj",
-    "src/modules/Elsa.Workflows.Admission.Persistence.EFCore/Elsa.Workflows.Admission.Persistence.EFCore.csproj",
-    "src/modules/Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql/Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql.csproj",
-    "src/modules/Elsa.Alterations/Elsa.Alterations.csproj"
+    "core/src/modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj",
+    "core/src/modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj",
+    "core/src/modules/Elsa.Workflows.Admission/Elsa.Workflows.Admission.csproj",
+    "core/src/modules/Elsa.Workflows.Management/Elsa.Workflows.Management.csproj",
+    "core/src/modules/Elsa.Persistence.EFCore/Elsa.Persistence.EFCore.csproj",
+    "core/src/modules/Elsa.Workflows.Admission.Persistence.EFCore/Elsa.Workflows.Admission.Persistence.EFCore.csproj",
+    "core/src/modules/Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql/Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql.csproj",
+    "core/src/modules/Elsa.Alterations/Elsa.Alterations.csproj"
   ],
   "cases": [
     {
       "caseId": "provider-store-migration",
       "family": "compat",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.MigrationMatchesRuntimeModelAndReapplicationPreservesLedger",
       "parameterId": "default",
       "assertions": [
@@ -81,7 +81,7 @@
     {
       "caseId": "provider-store-identity-fanout",
       "family": "identity",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.IdentityFanOutAndChangedDuplicatePreserveOriginalBinding",
       "parameterId": "default",
       "assertions": [
@@ -134,7 +134,7 @@
     {
       "caseId": "provider-store-foreign-scope",
       "family": "binding",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ForeignScopeOwnershipNeverAppearsUnowned",
       "parameterId": "default",
       "assertions": [
@@ -166,7 +166,7 @@
     {
       "caseId": "provider-store-epoch-withdrawal",
       "family": "withdraw",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.WithdrawalAndNewEpochCannotReviveOldPreparation",
       "parameterId": "default",
       "assertions": [
@@ -204,7 +204,7 @@
     {
       "caseId": "provider-store-terminal-clock",
       "family": "terminal",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.TerminalClockReleasesActiveOnceAndOwnedTombstoneRemainsCharged",
       "parameterId": "default",
       "assertions": [
@@ -264,7 +264,7 @@
     {
       "caseId": "provider-store-suppressed-cleanup",
       "family": "terminal",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.SuppressedUnallocatedCleanupReleasesRetainedCapacityOnlyOnce",
       "parameterId": "default",
       "assertions": [
@@ -308,7 +308,7 @@
     {
       "caseId": "provider-store-recovery-attestations",
       "family": "resolve",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.RecoveryAndIssuedAuthorityCannotBeSuppressedOrResolvedWithoutBothAttestations",
       "parameterId": "default",
       "assertions": [
@@ -358,7 +358,7 @@
     {
       "caseId": "provider-store-original-cleanup-policy",
       "family": "time",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.CleanupUsesOriginalPolicyAndDuplicatesCompareDigestAfterPayloadErasure",
       "parameterId": "default",
       "assertions": [
@@ -398,7 +398,7 @@
     {
       "caseId": "provider-store-continuation-lineage",
       "family": "continue",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.SuspendedCheckpointLineageCanBeConsumedOnlyOnce",
       "parameterId": "default",
       "assertions": [
@@ -438,7 +438,7 @@
     {
       "caseId": "provider-store-policy-missing",
       "family": "time",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
       "parameterId": "missing",
       "assertions": [
@@ -464,7 +464,7 @@
     {
       "caseId": "provider-store-policy-future",
       "family": "time",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
       "parameterId": "future",
       "assertions": [
@@ -490,7 +490,7 @@
     {
       "caseId": "provider-store-policy-skew-boundary",
       "family": "time",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
       "parameterId": "skew-boundary",
       "assertions": [
@@ -516,7 +516,7 @@
     {
       "caseId": "provider-store-policy-late",
       "family": "time",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
       "parameterId": "late",
       "assertions": [
@@ -542,7 +542,7 @@
     {
       "caseId": "provider-store-policy-activation",
       "family": "time",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
       "parameterId": "activation",
       "assertions": [
@@ -568,7 +568,7 @@
     {
       "caseId": "provider-store-policy-loop",
       "family": "admission",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
       "parameterId": "loop",
       "assertions": [
@@ -594,7 +594,7 @@
     {
       "caseId": "provider-store-policy-nonhuman",
       "family": "admission",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
       "parameterId": "nonhuman",
       "assertions": [
@@ -620,7 +620,7 @@
     {
       "caseId": "provider-store-policy-channel",
       "family": "admission",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
       "parameterId": "channel",
       "assertions": [
@@ -646,7 +646,7 @@
     {
       "caseId": "provider-store-policy-utf8-payload",
       "family": "admission",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
       "parameterId": "utf8-payload",
       "assertions": [
@@ -672,7 +672,7 @@
     {
       "caseId": "provider-store-policy-utf8-event-id",
       "family": "admission",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
       "parameterId": "utf8-event-id",
       "assertions": [
@@ -698,7 +698,7 @@
     {
       "caseId": "provider-store-event-id-boundary",
       "family": "identity",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventIdByteBoundaryMatchesPostgreSqlStorage",
       "parameterId": "default",
       "assertions": [
@@ -730,7 +730,7 @@
     {
       "caseId": "provider-store-recovery-cursor",
       "family": "admission",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.RecoveryCursorReachesLaterAdmissionsBeyondUnresolvedPages",
       "parameterId": "default",
       "assertions": [
@@ -771,7 +771,7 @@
     {
       "caseId": "provider-store-retired-namespace",
       "family": "withdraw",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.RetiredNamespaceCannotBeResetAndRecoveryEnumerationIsBounded",
       "parameterId": "default",
       "assertions": [
@@ -814,7 +814,7 @@
     {
       "caseId": "provider-store-microsecond-retention",
       "family": "time",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.PostgreSqlTimestampPrecisionAndClockRollbackCannotShortenIdentityRetention",
       "parameterId": "default",
       "assertions": [
@@ -889,7 +889,7 @@
     {
       "caseId": "provider-store-nonexpanding-event-window",
       "family": "time",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.InactiveReconfigurationCannotExpandEventAgeBeforeOrAfterIdentityPurge",
       "parameterId": "default",
       "assertions": [
@@ -958,7 +958,7 @@
     {
       "caseId": "provider-bootstrap-codec-roundtrip",
       "family": "bootstrap",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionDefinitionBootstrapTests.InsertWritesExactSharedShadowCodecAndNormalStoreReloadPreservesState",
       "parameterId": "default",
       "assertions": [
@@ -1016,7 +1016,7 @@
     {
       "caseId": "provider-bootstrap-corrupt-missing",
       "family": "bootstrap",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionDefinitionBootstrapTests.ExistingDefaultArtifactWithMissingShadowStateFailsStrictVerification",
       "parameterId": "missing",
       "assertions": [
@@ -1040,7 +1040,7 @@
     {
       "caseId": "provider-bootstrap-corrupt-blank",
       "family": "bootstrap",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionDefinitionBootstrapTests.ExistingDefaultArtifactWithMissingShadowStateFailsStrictVerification",
       "parameterId": "blank",
       "assertions": [
@@ -1064,7 +1064,7 @@
     {
       "caseId": "provider-bootstrap-corrupt-null",
       "family": "bootstrap",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionDefinitionBootstrapTests.ExistingDefaultArtifactWithMissingShadowStateFailsStrictVerification",
       "parameterId": "null",
       "assertions": [
@@ -1088,7 +1088,7 @@
     {
       "caseId": "provider-bootstrap-conflicting-version",
       "family": "bootstrap",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionDefinitionBootstrapTests.ConflictingLogicalVersionOrTenantCannotBeAdoptedOrRetracted",
       "parameterId": "default",
       "assertions": [
@@ -1116,7 +1116,7 @@
     {
       "caseId": "provider-bootstrap-lease-fingerprint",
       "family": "bootstrap",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionDefinitionBootstrapTests.WrongFullContentFingerprintOrMissingExclusiveLeaseFailsBeforeInsert",
       "parameterId": "default",
       "assertions": [
@@ -1145,7 +1145,7 @@
     {
       "caseId": "provider-duplicate",
       "family": "identity",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.ConcurrentDuplicateAdmissionsCommitOneAllocation",
       "parameterId": "default",
       "assertions": [
@@ -1181,7 +1181,7 @@
     {
       "caseId": "provider-capacity",
       "family": "capacity",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.ConcurrentCapacityReservationsRejectOneWithoutAcknowledgement",
       "parameterId": "default",
       "assertions": [
@@ -1217,7 +1217,7 @@
     {
       "caseId": "provider-before-commit",
       "family": "admission",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.CrashBeforeCommitLeavesNoAdmissionAndRestartAdmits",
       "parameterId": "default",
       "assertions": [
@@ -1252,7 +1252,7 @@
     {
       "caseId": "provider-after-commit",
       "family": "admission",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.CrashAfterCommitBeforeAcknowledgementRedeliveryUsesSameAllocation",
       "parameterId": "default",
       "assertions": [
@@ -1286,7 +1286,7 @@
     {
       "caseId": "provider-unknown-permit",
       "family": "permit",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.UnknownCommitResponseThrowsAndReadbackDoesNotRepeatAuthorization",
       "parameterId": "default",
       "assertions": [
@@ -1325,7 +1325,7 @@
     {
       "caseId": "provider-withdraw-first",
       "family": "withdraw",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.WithdrawalBeforeAuthorizationDeniesAndNewEpochDoesNotRevive",
       "parameterId": "default",
       "assertions": [
@@ -1358,7 +1358,7 @@
     {
       "caseId": "provider-permit-first",
       "family": "resolve",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.AuthorizationBeforeWithdrawalRetainsOutstandingHistoricalAuthority",
       "parameterId": "default",
       "assertions": [
@@ -1397,7 +1397,7 @@
     {
       "caseId": "provider-cleanup-race",
       "family": "terminal",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.ConcurrentTerminalCleanupReleasesRetainedReservationOnce",
       "parameterId": "default",
       "assertions": [
@@ -1437,7 +1437,7 @@
     {
       "caseId": "provider-bootstrap-race",
       "family": "bootstrap",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.CompetingBootstrapSubscriptionsSerializeOneLogicalDefinitionInsert",
       "parameterId": "default",
       "assertions": [
@@ -1477,7 +1477,7 @@
     {
       "caseId": "provider-unknown-admission",
       "family": "admission",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.UnknownAdmissionCommitResponseRedeliveryPreservesAllocationAndCapacity",
       "parameterId": "default",
       "assertions": [
@@ -1561,7 +1561,7 @@
     {
       "caseId": "runtime-crash-creation-claim",
       "family": "create",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
       "parameterId": "runtime-crash-creation-claim",
       "assertions": [
@@ -1615,7 +1615,7 @@
     {
       "caseId": "runtime-crash-before-insert",
       "family": "create",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
       "parameterId": "runtime-crash-before-insert",
       "assertions": [
@@ -1669,7 +1669,7 @@
     {
       "caseId": "runtime-crash-insert-notified",
       "family": "create",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
       "parameterId": "runtime-crash-insert-notified",
       "assertions": [
@@ -1723,7 +1723,7 @@
     {
       "caseId": "runtime-crash-start-prepared",
       "family": "permit",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
       "parameterId": "runtime-crash-start-prepared",
       "assertions": [
@@ -1777,7 +1777,7 @@
     {
       "caseId": "runtime-crash-start-authorized",
       "family": "permit",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
       "parameterId": "runtime-crash-start-authorized",
       "assertions": [
@@ -1831,7 +1831,7 @@
     {
       "caseId": "runtime-crash-before-entry",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
       "parameterId": "runtime-crash-before-entry",
       "assertions": [
@@ -1885,7 +1885,7 @@
     {
       "caseId": "runtime-crash-authority-consumed",
       "family": "consume",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
       "parameterId": "runtime-crash-authority-consumed",
       "assertions": [
@@ -1939,7 +1939,7 @@
     {
       "caseId": "runtime-crash-effect",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
       "parameterId": "runtime-crash-effect",
       "assertions": [
@@ -1993,7 +1993,7 @@
     {
       "caseId": "runtime-crash-final-commit",
       "family": "terminal",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
       "parameterId": "runtime-crash-final-commit",
       "assertions": [
@@ -2047,7 +2047,7 @@
     {
       "caseId": "runtime-crash-trailing-write",
       "family": "terminal",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
       "parameterId": "runtime-crash-trailing-write",
       "assertions": [
@@ -2101,7 +2101,7 @@
     {
       "caseId": "runtime-crash-ownership-unwound",
       "family": "terminal",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
       "parameterId": "runtime-crash-ownership-unwound",
       "assertions": [
@@ -2155,7 +2155,7 @@
     {
       "caseId": "runtime-crash-checkpoint-recorded",
       "family": "terminal",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeProcessTests.SequentialRealRuntimeRestartNeverReplaysAmbiguousCreationAuthorityOrEffects",
       "parameterId": "runtime-crash-checkpoint-recorded",
       "assertions": [
@@ -2209,7 +2209,7 @@
     {
       "caseId": "runtime-completed",
       "family": "terminal",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.RealDefaultPipelineRecordsActualOutcomeAfterFinalWrite",
       "parameterId": "runtime-completed",
       "assertions": [
@@ -2240,7 +2240,7 @@
     {
       "caseId": "runtime-suspended",
       "family": "continue",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.RealDefaultPipelineRecordsActualOutcomeAfterFinalWrite",
       "parameterId": "runtime-suspended",
       "assertions": [
@@ -2271,7 +2271,7 @@
     {
       "caseId": "runtime-faulted",
       "family": "terminal",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.RealDefaultPipelineRecordsActualOutcomeAfterFinalWrite",
       "parameterId": "runtime-faulted",
       "assertions": [
@@ -2302,7 +2302,7 @@
     {
       "caseId": "runtime-creation-owner-race",
       "family": "create",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.CreationClaimCommitCannotRaceOperatorResolutionBeforeInsert",
       "parameterId": "default",
       "assertions": [
@@ -2332,7 +2332,7 @@
     {
       "caseId": "runtime-graph-parent",
       "family": "binding",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.PreparedGraphRelationshipMutationDeniesBeforeExecution",
       "parameterId": "runtime-graph-parent",
       "assertions": [
@@ -2362,7 +2362,7 @@
     {
       "caseId": "runtime-graph-child",
       "family": "binding",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.PreparedGraphRelationshipMutationDeniesBeforeExecution",
       "parameterId": "runtime-graph-child",
       "assertions": [
@@ -2392,7 +2392,7 @@
     {
       "caseId": "runtime-completion-target",
       "family": "binding",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.SameMethodNameDifferentCompletionTargetCannotEscapeRevalidation",
       "parameterId": "default",
       "assertions": [
@@ -2421,7 +2421,7 @@
     {
       "caseId": "runtime-frozen-compositions",
       "family": "pipeline",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.FrozenCompositionsRejectSetupFromAuthorizationAndExecutingCallbacks",
       "parameterId": "default",
       "assertions": [
@@ -2452,7 +2452,7 @@
     {
       "caseId": "runtime-public-activity-denial",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.PublicActivityEntriesRemainDeniedDuringAuthorizedRunAndAfterUnwind",
       "parameterId": "default",
       "assertions": [
@@ -2485,7 +2485,7 @@
     {
       "caseId": "runtime-bookmark-owner-upsert",
       "family": "control",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.LegacyBookmarkUpsertCannotReplaceOwnedRowWithForgedUnownedIdentity",
       "parameterId": "default",
       "assertions": [
@@ -2510,7 +2510,7 @@
     {
       "caseId": "runtime-cancel-context-identity",
       "family": "control",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.MutablePreparedContextIdentityCannotEmitCancellationNotification",
       "parameterId": "default",
       "assertions": [
@@ -2536,7 +2536,7 @@
     {
       "caseId": "runtime-output-included",
       "family": "continue",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.LegitimateLocalClientContinuationReturnsRequestedDetachedPersistedOutput",
       "parameterId": "runtime-output-included",
       "assertions": [
@@ -2570,7 +2570,7 @@
     {
       "caseId": "runtime-output-omitted",
       "family": "continue",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.LegitimateLocalClientContinuationReturnsRequestedDetachedPersistedOutput",
       "parameterId": "runtime-output-omitted",
       "assertions": [
@@ -2604,7 +2604,7 @@
     {
       "caseId": "runtime-input-order",
       "family": "binding",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.PreparedRuntimeDictionarySemanticsCannotChangeBeforeConsumption",
       "parameterId": "runtime-input-order",
       "assertions": [
@@ -2634,7 +2634,7 @@
     {
       "caseId": "runtime-input-comparer",
       "family": "binding",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.PreparedRuntimeDictionarySemanticsCannotChangeBeforeConsumption",
       "parameterId": "runtime-input-comparer",
       "assertions": [
@@ -2664,7 +2664,7 @@
     {
       "caseId": "runtime-classic-feature-host",
       "family": "host",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.ActualSelectedFeatureHostBootstrapsAndResumesRealPersistedWorkflow",
       "parameterId": "runtime-classic-feature-host",
       "assertions": [
@@ -2699,7 +2699,7 @@
     {
       "caseId": "runtime-shell-feature-host",
       "family": "host",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.ActualSelectedFeatureHostBootstrapsAndResumesRealPersistedWorkflow",
       "parameterId": "runtime-shell-feature-host",
       "assertions": [
@@ -2734,7 +2734,7 @@
     {
       "caseId": "runtime-variable-classic",
       "family": "continue",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.FrozenHostSavesAndReloadsActualExternalVariables",
       "parameterId": "runtime-variable-classic",
       "assertions": [
@@ -2768,7 +2768,7 @@
     {
       "caseId": "runtime-variable-shell",
       "family": "continue",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.FrozenHostSavesAndReloadsActualExternalVariables",
       "parameterId": "runtime-variable-shell",
       "assertions": [
@@ -2802,7 +2802,7 @@
     {
       "caseId": "runtime-cycle-trailing-success",
       "family": "continue",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.SameExecutionCycleSurvivesFinalCommitAndTrailingWriteUntilCompleteUnwind",
       "parameterId": "runtime-cycle-trailing-success",
       "assertions": [
@@ -2840,7 +2840,7 @@
     {
       "caseId": "runtime-cycle-trailing-failure",
       "family": "continue",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.SameExecutionCycleSurvivesFinalCommitAndTrailingWriteUntilCompleteUnwind",
       "parameterId": "runtime-cycle-trailing-failure",
       "assertions": [
@@ -2878,7 +2878,7 @@
     {
       "caseId": "runtime-owned-variable-id",
       "family": "control",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.PublicVariableManagementDeniesOwnedWritesBeforeStorageAndPreservesUnownedWrites",
       "parameterId": "runtime-owned-variable-id",
       "assertions": [
@@ -2921,7 +2921,7 @@
     {
       "caseId": "runtime-owned-variable-context",
       "family": "control",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeExecutionTests.PublicVariableManagementDeniesOwnedWritesBeforeStorageAndPreservesUnownedWrites",
       "parameterId": "runtime-owned-variable-context",
       "assertions": [
@@ -2964,7 +2964,7 @@
     {
       "caseId": "runtime-unknown-saved-notification",
       "family": "create",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRecoveryTests.UnknownSavedNotificationNeverRepeatsMaterializationOrNotifications",
       "parameterId": "default",
       "assertions": [
@@ -3004,7 +3004,7 @@
     {
       "caseId": "runtime-unknown-permit-commit",
       "family": "permit",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRecoveryTests.UnknownCommittedPermitCannotProduceCapabilityByReadbackOrRecovery",
       "parameterId": "default",
       "assertions": [
@@ -3043,7 +3043,7 @@
     {
       "caseId": "runtime-withdraw-retract-failure",
       "family": "withdraw",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRecoveryTests.FailedActualRetractionRetainsAuthoritativeWithdrawalAndReconciliation",
       "parameterId": "default",
       "assertions": [
@@ -3081,7 +3081,7 @@
     {
       "caseId": "runtime-bootstrap-publication-unknown",
       "family": "bootstrap",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRecoveryTests.UnknownPublicationRemainsInactiveAndNeverRepeatsPublicationNotifications",
       "parameterId": "default",
       "assertions": [
@@ -3119,7 +3119,7 @@
     {
       "caseId": "runtime-withdraw-before-authority",
       "family": "withdraw",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRecoveryTests.WithdrawalHonorsRecordedAuthorityBoundaryAndHeldOwnerQuiescence",
       "parameterId": "runtime-withdraw-before-authority",
       "assertions": [
@@ -3160,7 +3160,7 @@
     {
       "caseId": "runtime-withdraw-delayed-authority",
       "family": "withdraw",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRecoveryTests.WithdrawalHonorsRecordedAuthorityBoundaryAndHeldOwnerQuiescence",
       "parameterId": "runtime-withdraw-delayed-authority",
       "assertions": [
@@ -3201,7 +3201,7 @@
     {
       "caseId": "runtime-continuation-forged-suspended",
       "family": "continue",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRecoveryTests.ForgedConsumedOrAmbiguousSnapshotsCannotManufactureContinuation",
       "parameterId": "runtime-continuation-forged-suspended",
       "assertions": [
@@ -3241,7 +3241,7 @@
     {
       "caseId": "runtime-continuation-forged-bookmark",
       "family": "continue",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRecoveryTests.ForgedConsumedOrAmbiguousSnapshotsCannotManufactureContinuation",
       "parameterId": "runtime-continuation-forged-bookmark",
       "assertions": [
@@ -3281,7 +3281,7 @@
     {
       "caseId": "runtime-continuation-missing-owner",
       "family": "continue",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRecoveryTests.ForgedConsumedOrAmbiguousSnapshotsCannotManufactureContinuation",
       "parameterId": "runtime-continuation-missing-owner",
       "assertions": [
@@ -3321,7 +3321,7 @@
     {
       "caseId": "runtime-continuation-consumed-snapshot",
       "family": "continue",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRecoveryTests.ForgedConsumedOrAmbiguousSnapshotsCannotManufactureContinuation",
       "parameterId": "runtime-continuation-consumed-snapshot",
       "assertions": [
@@ -3361,7 +3361,7 @@
     {
       "caseId": "runtime-continuation-ambiguous-checkpoint",
       "family": "continue",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRecoveryTests.ForgedConsumedOrAmbiguousSnapshotsCannotManufactureContinuation",
       "parameterId": "runtime-continuation-ambiguous-checkpoint",
       "assertions": [
@@ -3401,7 +3401,7 @@
     {
       "caseId": "runtime-held-client",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-client",
       "assertions": [
@@ -3442,7 +3442,7 @@
     {
       "caseId": "runtime-held-client-create",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-client-create",
       "assertions": [
@@ -3483,7 +3483,7 @@
     {
       "caseId": "runtime-held-client-cancel",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-client-cancel",
       "assertions": [
@@ -3524,7 +3524,7 @@
     {
       "caseId": "runtime-held-client-delete",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-client-delete",
       "assertions": [
@@ -3565,7 +3565,7 @@
     {
       "caseId": "runtime-held-client-import",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-client-import",
       "assertions": [
@@ -3606,7 +3606,7 @@
     {
       "caseId": "runtime-held-legacy-resume",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-legacy-resume",
       "assertions": [
@@ -3647,7 +3647,7 @@
     {
       "caseId": "runtime-held-legacy-cancel",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-legacy-cancel",
       "assertions": [
@@ -3688,7 +3688,7 @@
     {
       "caseId": "runtime-held-legacy-import",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-legacy-import",
       "assertions": [
@@ -3729,7 +3729,7 @@
     {
       "caseId": "runtime-held-dispatcher",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-dispatcher",
       "assertions": [
@@ -3770,7 +3770,7 @@
     {
       "caseId": "runtime-held-runner-activity",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-runner-activity",
       "assertions": [
@@ -3811,7 +3811,7 @@
     {
       "caseId": "runtime-held-runner-state",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-runner-state",
       "assertions": [
@@ -3852,7 +3852,7 @@
     {
       "caseId": "runtime-held-runner-context-copy",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-runner-context-copy",
       "assertions": [
@@ -3893,7 +3893,7 @@
     {
       "caseId": "runtime-held-pipeline-execute",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-pipeline-execute",
       "assertions": [
@@ -3934,7 +3934,7 @@
     {
       "caseId": "runtime-held-pipeline-delegate",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-pipeline-delegate",
       "assertions": [
@@ -3975,7 +3975,7 @@
     {
       "caseId": "runtime-held-cached-builder",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-cached-builder",
       "assertions": [
@@ -4016,7 +4016,7 @@
     {
       "caseId": "runtime-typed-int-long",
       "family": "binding",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.PreparedInvocationRejectsRuntimeDistinctValuesAndPlanMutation",
       "parameterId": "runtime-typed-int-long",
       "assertions": [
@@ -4060,7 +4060,7 @@
     {
       "caseId": "runtime-typed-decimal-double",
       "family": "binding",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.PreparedInvocationRejectsRuntimeDistinctValuesAndPlanMutation",
       "parameterId": "runtime-typed-decimal-double",
       "assertions": [
@@ -4104,7 +4104,7 @@
     {
       "caseId": "runtime-typed-json-clr",
       "family": "binding",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.PreparedInvocationRejectsRuntimeDistinctValuesAndPlanMutation",
       "parameterId": "runtime-typed-json-clr",
       "assertions": [
@@ -4148,7 +4148,7 @@
     {
       "caseId": "runtime-typed-negative-zero",
       "family": "binding",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.PreparedInvocationRejectsRuntimeDistinctValuesAndPlanMutation",
       "parameterId": "runtime-typed-negative-zero",
       "assertions": [
@@ -4192,7 +4192,7 @@
     {
       "caseId": "runtime-prepared-properties",
       "family": "binding",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.PreparedInvocationRejectsRuntimeDistinctValuesAndPlanMutation",
       "parameterId": "runtime-prepared-properties",
       "assertions": [
@@ -4236,7 +4236,7 @@
     {
       "caseId": "runtime-prepared-output",
       "family": "binding",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.PreparedInvocationRejectsRuntimeDistinctValuesAndPlanMutation",
       "parameterId": "runtime-prepared-output",
       "assertions": [
@@ -4280,7 +4280,7 @@
     {
       "caseId": "runtime-prepared-memory",
       "family": "binding",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.PreparedInvocationRejectsRuntimeDistinctValuesAndPlanMutation",
       "parameterId": "runtime-prepared-memory",
       "assertions": [
@@ -4324,7 +4324,7 @@
     {
       "caseId": "runtime-prepared-scheduler-input",
       "family": "binding",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.PreparedInvocationRejectsRuntimeDistinctValuesAndPlanMutation",
       "parameterId": "runtime-prepared-scheduler-input",
       "assertions": [
@@ -4368,7 +4368,7 @@
     {
       "caseId": "runtime-prepared-scheduler-depth",
       "family": "binding",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.PreparedInvocationRejectsRuntimeDistinctValuesAndPlanMutation",
       "parameterId": "runtime-prepared-scheduler-depth",
       "assertions": [
@@ -4412,7 +4412,7 @@
     {
       "caseId": "runtime-prepared-execute-delegate",
       "family": "binding",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.PreparedInvocationRejectsRuntimeDistinctValuesAndPlanMutation",
       "parameterId": "runtime-prepared-execute-delegate",
       "assertions": [
@@ -4456,7 +4456,7 @@
     {
       "caseId": "runtime-prepared-root-reference",
       "family": "binding",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.PreparedInvocationRejectsRuntimeDistinctValuesAndPlanMutation",
       "parameterId": "runtime-prepared-root-reference",
       "assertions": [
@@ -4500,7 +4500,7 @@
     {
       "caseId": "runtime-executing-notification-mutation",
       "family": "binding",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.PreparedInvocationRejectsRuntimeDistinctValuesAndPlanMutation",
       "parameterId": "runtime-executing-notification-mutation",
       "assertions": [
@@ -4544,7 +4544,7 @@
     {
       "caseId": "host-route",
       "family": "host",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeHostPolicyTests.MappedHttpRouteRejectsHostBeforeHandlerOrWorkflowEffects",
       "parameterId": "default",
       "assertions": [
@@ -4580,7 +4580,7 @@
     {
       "caseId": "host-forbidden-api",
       "family": "host",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeHostPolicyTests.ForbiddenEntrypointRegistrationRejectsBeforeFactoryInvocation",
       "parameterId": "host-forbidden-api",
       "assertions": [
@@ -4611,7 +4611,7 @@
     {
       "caseId": "host-forbidden-alterations",
       "family": "host",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeHostPolicyTests.ForbiddenEntrypointRegistrationRejectsBeforeFactoryInvocation",
       "parameterId": "host-forbidden-alterations",
       "assertions": [
@@ -4642,7 +4642,7 @@
     {
       "caseId": "host-contributor-workflow",
       "family": "host",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeHostPolicyTests.UnsupportedContributorRejectsBeforeConstructorAndCallback",
       "parameterId": "host-contributor-workflow",
       "assertions": [
@@ -4678,7 +4678,7 @@
     {
       "caseId": "host-contributor-activity",
       "family": "host",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeHostPolicyTests.UnsupportedContributorRejectsBeforeConstructorAndCallback",
       "parameterId": "host-contributor-activity",
       "assertions": [
@@ -4714,7 +4714,7 @@
     {
       "caseId": "host-unaudited-registry",
       "family": "host",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeHostPolicyTests.UnauditedDependencyRejectsBeforeExecutionOperations",
       "parameterId": "host-unaudited-registry",
       "assertions": [
@@ -4749,7 +4749,7 @@
     {
       "caseId": "host-unaudited-storage",
       "family": "host",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeHostPolicyTests.UnauditedDependencyRejectsBeforeExecutionOperations",
       "parameterId": "host-unaudited-storage",
       "assertions": [
@@ -4784,7 +4784,7 @@
     {
       "caseId": "host-factory-classic",
       "family": "host",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeHostPolicyTests.OriginalPipelineFactoriesAreIgnoredByValidatedExecutingHost",
       "parameterId": "host-factory-classic",
       "assertions": [
@@ -4829,7 +4829,7 @@
     {
       "caseId": "host-factory-shell",
       "family": "host",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeHostPolicyTests.OriginalPipelineFactoriesAreIgnoredByValidatedExecutingHost",
       "parameterId": "host-factory-shell",
       "assertions": [
@@ -4874,7 +4874,7 @@
     {
       "caseId": "host-default-use-human",
       "family": "control",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeHostPolicyTests.DefaultConnectionUseAuthorizationDeniesAuthenticatedCaller",
       "parameterId": "host-default-use-human",
       "assertions": [
@@ -4908,7 +4908,7 @@
     {
       "caseId": "host-default-use-background",
       "family": "control",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeHostPolicyTests.DefaultConnectionUseAuthorizationDeniesAuthenticatedCaller",
       "parameterId": "host-default-use-background",
       "assertions": [
@@ -4942,7 +4942,7 @@
     {
       "caseId": "host-lifecycle-denied",
       "family": "control",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeHostPolicyTests.ResolvedConnectionLifecycleFacadesDenyEveryOperationWithoutChangingAdmission",
       "parameterId": "default",
       "assertions": [
@@ -4981,7 +4981,7 @@
     {
       "caseId": "host-tenant-mutations",
       "family": "control",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeHostPolicyTests.RegisteredRealTenantStoreAllowsReadsButDeniesAllLifecycleMutations",
       "parameterId": "default",
       "assertions": [
@@ -5026,7 +5026,7 @@
     {
       "caseId": "runtime-outbound-no-instance-grant",
       "family": "control",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeOutboundGrantTests.RealAdmittedWorkflowReceivesNoExactInstanceCredentialUseGrant",
       "parameterId": "default",
       "assertions": [
@@ -5078,7 +5078,7 @@
     {
       "caseId": "runtime-bootstrap-inactive-classic",
       "family": "bootstrap",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeBootstrapTests.VerifiedInactiveBootstrapRepeatsWithoutPublicationThenExplicitlyActivates",
       "parameterId": "runtime-bootstrap-inactive-classic",
       "assertions": [
@@ -5116,7 +5116,7 @@
     {
       "caseId": "runtime-bootstrap-inactive-shell",
       "family": "bootstrap",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeBootstrapTests.VerifiedInactiveBootstrapRepeatsWithoutPublicationThenExplicitlyActivates",
       "parameterId": "runtime-bootstrap-inactive-shell",
       "assertions": [
@@ -5154,7 +5154,7 @@
     {
       "caseId": "runtime-bootstrap-artifact-mismatch",
       "family": "bootstrap",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeBootstrapTests.MismatchedPredefinedArtifactCannotCreateDefinitionOrSubscription",
       "parameterId": "default",
       "assertions": [
@@ -5188,7 +5188,7 @@
     {
       "caseId": "runtime-bootstrap-unverified-insert",
       "family": "bootstrap",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeBootstrapTests.ExistingUnverifiedInsertNeverReplaysPublicationOrBecomesActive",
       "parameterId": "default",
       "assertions": [
@@ -5230,7 +5230,7 @@
     {
       "caseId": "runtime-bootstrap-stored-content-change",
       "family": "bootstrap",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeBootstrapTests.VerifiedBootstrapRejectsChangedStoredContentWithoutOverwriteOrRepublish",
       "parameterId": "default",
       "assertions": [
@@ -5268,7 +5268,7 @@
     {
       "caseId": "runtime-retention-completed",
       "family": "terminal",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRetentionTests.RealTerminalCleanupKeepsOwnedInstanceFencedAndRetainedCapacityCharged",
       "parameterId": "runtime-retention-completed",
       "assertions": [
@@ -5333,7 +5333,7 @@
     {
       "caseId": "runtime-retention-handled-fault",
       "family": "terminal",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRetentionTests.RealTerminalCleanupKeepsOwnedInstanceFencedAndRetainedCapacityCharged",
       "parameterId": "runtime-retention-handled-fault",
       "assertions": [
@@ -5398,7 +5398,7 @@
     {
       "caseId": "runtime-retention-suspended-resume",
       "family": "terminal",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRetentionTests.SuspendedWorkflowIsNotExpiryEligibleAndOnlyActualResumeReleasesActiveCapacity",
       "parameterId": "default",
       "assertions": [
@@ -5450,7 +5450,7 @@
     {
       "caseId": "runtime-retention-audited-resolution",
       "family": "resolve",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRetentionTests.ExplicitAuditedResolutionAfterOwnerUnwindDoesNotReplayPreparedWork",
       "parameterId": "default",
       "assertions": [
@@ -5506,7 +5506,7 @@
     {
       "caseId": "runtime-recovery-safe-export",
       "family": "resolve",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeRetentionTests.ActualRecoveryPageExportsOnlySafeStateAndNeverEventContent",
       "parameterId": "default",
       "assertions": [
@@ -5543,7 +5543,7 @@
     {
       "caseId": "runtime-held-client-create-run",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-client-create-run",
       "assertions": [
@@ -5584,7 +5584,7 @@
     {
       "caseId": "runtime-held-host-run",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-host-run",
       "assertions": [
@@ -5625,7 +5625,7 @@
     {
       "caseId": "runtime-held-host-cancel",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-host-cancel",
       "assertions": [
@@ -5666,7 +5666,7 @@
     {
       "caseId": "runtime-held-host-persist",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-host-persist",
       "assertions": [
@@ -5707,7 +5707,7 @@
     {
       "caseId": "runtime-held-canceler-state",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-canceler-state",
       "assertions": [
@@ -5748,7 +5748,7 @@
     {
       "caseId": "runtime-held-canceler-context",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.HeldInitialAuthorityRejectsUnboundRunnerAndPublicPipelineEntries",
       "parameterId": "runtime-held-canceler-context",
       "assertions": [
@@ -5789,7 +5789,7 @@
     {
       "caseId": "runtime-import-foreign-owned-target",
       "family": "control",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeControlTests.UnownedClientCannotImportStateWhoseActualTargetIsOwned",
       "parameterId": "default",
       "assertions": [
@@ -5838,7 +5838,7 @@
     {
       "caseId": "runtime-unowned-control-cancel",
       "family": "compat",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeControlTests.ActualUnownedLocalClientControlsRemainCompatibleWithoutChangingOwnedState",
       "parameterId": "runtime-unowned-control-cancel",
       "assertions": [
@@ -5877,7 +5877,7 @@
     {
       "caseId": "runtime-unowned-control-delete",
       "family": "compat",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeControlTests.ActualUnownedLocalClientControlsRemainCompatibleWithoutChangingOwnedState",
       "parameterId": "runtime-unowned-control-delete",
       "assertions": [
@@ -5916,7 +5916,7 @@
     {
       "caseId": "runtime-unowned-control-import",
       "family": "compat",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeControlTests.ActualUnownedLocalClientControlsRemainCompatibleWithoutChangingOwnedState",
       "parameterId": "runtime-unowned-control-import",
       "assertions": [
@@ -5955,7 +5955,7 @@
     {
       "caseId": "runtime-denial-no-business-telemetry",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeEntryTests.PostNotificationDenialNeverEntersBusinessTelemetryWhileRealUnownedExecutionDoes",
       "parameterId": "default",
       "assertions": [
@@ -5995,7 +5995,7 @@
     {
       "caseId": "runtime-bootstrap-autonomous-start",
       "family": "bootstrap",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeBootstrapTests.ForbiddenGraphIsRejectedAfterRealMaterializationBeforePersistence",
       "parameterId": "runtime-bootstrap-autonomous-start",
       "assertions": [
@@ -6042,7 +6042,7 @@
     {
       "caseId": "runtime-bootstrap-unallowlisted-activity",
       "family": "bootstrap",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeBootstrapTests.ForbiddenGraphIsRejectedAfterRealMaterializationBeforePersistence",
       "parameterId": "runtime-bootstrap-unallowlisted-activity",
       "assertions": [
@@ -6089,7 +6089,7 @@
     {
       "caseId": "provider-installation-reconciliation",
       "family": "identity",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionIdentityReconciliationTests.StableLogicalInstallationReconciliationAndInactivePinEditRetainOriginalEventAllocation",
       "parameterId": "default",
       "assertions": [
@@ -6148,7 +6148,7 @@
     {
       "caseId": "runtime-stale-materialized-owner",
       "family": "entry",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeDuplicateTests.DelayedDuplicateCannotReclassifyWinningCheckpointAfterOwnerUnwinds",
       "parameterId": "runtime-stale-materialized-owner",
       "assertions": [
@@ -6191,7 +6191,7 @@
     {
       "caseId": "runtime-stale-continuation-owner",
       "family": "continue",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeDuplicateTests.DelayedDuplicateCannotReclassifyWinningCheckpointAfterOwnerUnwinds",
       "parameterId": "runtime-stale-continuation-owner",
       "assertions": [
@@ -6234,7 +6234,7 @@
     {
       "caseId": "runtime-stale-withdrawal",
       "family": "withdraw",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionStaleWithdrawalTests.StaleWithdrawalAfterRealAdmissionCannotMutateSubscriptionOrRetractPublishedDefinition",
       "parameterId": "default",
       "assertions": [
@@ -6303,7 +6303,7 @@
     {
       "caseId": "runtime-checkpoint-observer-created",
       "family": "continue",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeCheckpointTests.ConfirmedSuspendedCheckpointSurvivesObserverFailureAndRemainsResumable",
       "parameterId": "runtime-checkpoint-observer-created",
       "assertions": [
@@ -6354,7 +6354,7 @@
     {
       "caseId": "runtime-checkpoint-observer-materialized",
       "family": "continue",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeCheckpointTests.ConfirmedSuspendedCheckpointSurvivesObserverFailureAndRemainsResumable",
       "parameterId": "runtime-checkpoint-observer-materialized",
       "assertions": [
@@ -6405,7 +6405,7 @@
     {
       "caseId": "runtime-checkpoint-observer-resumed",
       "family": "continue",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeCheckpointTests.ConfirmedSuspendedCheckpointSurvivesObserverFailureAndRemainsResumable",
       "parameterId": "runtime-checkpoint-observer-resumed",
       "assertions": [
@@ -6456,7 +6456,7 @@
     {
       "caseId": "runtime-checkpoint-commit-unknown",
       "family": "continue",
-      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
       "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeCheckpointTests.UnknownCheckpointCommitResponseStillRequiresRecoveryDespiteCommittedReadback",
       "parameterId": "default",
       "assertions": [
@@ -6507,9 +6507,9 @@
     }
   ],
   "workerAssemblies": {
-    "admission-primary": "test/workers/Elsa.Workflows.Admission.WorkerProcess/bin/Release/net10.0/Elsa.Workflows.Admission.WorkerProcess.dll",
-    "admission-competitor": "test/workers/Elsa.Workflows.Admission.WorkerProcess/bin/Release/net10.0/Elsa.Workflows.Admission.WorkerProcess.dll",
-    "admission-controller": "test/workers/Elsa.Workflows.Admission.WorkerProcess/bin/Release/net10.0/Elsa.Workflows.Admission.WorkerProcess.dll",
-    "admission-runtime": "test/workers/Elsa.Workflows.Admission.WorkerProcess/bin/Release/net10.0/Elsa.Workflows.Admission.WorkerProcess.dll"
+    "admission-primary": "core/test/workers/Elsa.Workflows.Admission.WorkerProcess/bin/Release/net10.0/Elsa.Workflows.Admission.WorkerProcess.dll",
+    "admission-competitor": "core/test/workers/Elsa.Workflows.Admission.WorkerProcess/bin/Release/net10.0/Elsa.Workflows.Admission.WorkerProcess.dll",
+    "admission-controller": "core/test/workers/Elsa.Workflows.Admission.WorkerProcess/bin/Release/net10.0/Elsa.Workflows.Admission.WorkerProcess.dll",
+    "admission-runtime": "core/test/workers/Elsa.Workflows.Admission.WorkerProcess/bin/Release/net10.0/Elsa.Workflows.Admission.WorkerProcess.dll"
   }
 }

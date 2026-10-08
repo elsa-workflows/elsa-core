@@ -2,18 +2,18 @@ name: Dapper provider tests
 
 # DapperWorkflowDefinitionStoreTests default to SQLite. This runs them against real
 # PostgreSQL and SQL Server. The images are the digests recorded in
-# doc/integration-program/consolidation/dapper-atomic-updates-import-evidence.json.
+# docs/integration-program/consolidation/dapper-atomic-updates-import-evidence.json.
 # Both servers listen on loopback only. PostgreSQL uses trust auth and the
 # SQL Server password is derived per run, so no credential is committed.
 on:
   pull_request:
     paths:
-      - 'src/extensions/persistence/Elsa.Persistence.Dapper/**'
-      - 'src/extensions/persistence/Elsa.Persistence.Dapper.Migrations/**'
-      - 'test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/**'
+      - 'extensions/src/persistence/Elsa.Persistence.Dapper/**'
+      - 'extensions/src/persistence/Elsa.Persistence.Dapper.Migrations/**'
+      - 'extensions/test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/**'
       # Npgsql, Microsoft.Data.SqlClient and Dapper versions for both projects are pinned here.
-      - 'src/extensions/Directory.Packages.props'
-      - 'test/extensions/Directory.Packages.props'
+      - 'extensions/src/Directory.Packages.props'
+      - 'extensions/test/Directory.Packages.props'
       - '.github/workflows/dapper-provider-tests.yml'
   workflow_dispatch:
 
@@ -21,7 +21,7 @@ permissions:
   contents: read
 
 env:
-  PROJECT: test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj
+  PROJECT: extensions/test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj
   FILTER: FullyQualifiedName~DapperWorkflowDefinitionStoreTests
 
 jobs:

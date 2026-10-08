@@ -12,6 +12,8 @@ SCRIPTS = Path(__file__).resolve().parent
 REPOSITORY = SCRIPTS.parents[1]
 sys.path.insert(0, str(SCRIPTS))
 
+from product_layout import current_path  # noqa: E402
+
 from github_activity_id_migration import (  # noqa: E402
     LEGACY_TYPES,
     MigrationError,
@@ -39,7 +41,7 @@ class GitHubActivityIdMigrationTests(unittest.TestCase):
 
     def test_fixture_activities_match_the_pinned_released_serialization_receipt(self):
         source = self.fixture["source"]
-        receipt_path = REPOSITORY / source["receipt"]
+        receipt_path = current_path(REPOSITORY, source["receipt"])
         receipt_bytes = receipt_path.read_bytes()
         self.assertEqual(source["receipt_sha256"], hashlib.sha256(receipt_bytes).hexdigest())
         receipt = json.loads(gzip.decompress(receipt_bytes))
