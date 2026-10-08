@@ -2,6 +2,7 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone, timedelta
@@ -183,7 +184,6 @@ class TrainTests(unittest.TestCase):
             'run_attempt': 1,
             'html_url': run_url,
             'path': inventory['workflow'],
-            'event': 'workflow_dispatch',
             'head_sha': source_commit,
             'head_branch': version if event == 'release' else 'main',
             'event': event,
@@ -237,6 +237,11 @@ class TrainTests(unittest.TestCase):
         explicitly_disabled = train.make_container_state(profile, '3.9.0', None, no_containers=True)
         self.assertFalse(explicitly_disabled['enabled'])
         self.assertIn('explicitly disabled', explicitly_disabled['reason'])
+        profile_without_container_images = copy.deepcopy(profile)
+        profile_without_container_images.pop('container_release')
+        disabled_custom_profile = train.make_container_state(profile_without_container_images, '3.9.0', no_containers=True)
+        self.assertFalse(disabled_custom_profile['enabled'])
+        self.assertIn('explicitly disabled', disabled_custom_profile['reason'])
         self.assertTrue(all(image['tag'] == '{version}' for image in profile['container_release']['images']))
         self.assertEqual(['server', 'server-alias'], train.expand_container_image_selection(profile, ['server']))
         self.assertEqual(['studio-wasm', 'studio-wasm-alias'], train.expand_container_image_selection(profile, ['studio-wasm']))
@@ -358,6 +363,41 @@ class TrainTests(unittest.TestCase):
         self.assertIn('--field', command_args)
         self.assertIn('expected_commit=' + commit, command_args)
         self.assertIn('images=server', command_args)
+
+    def test_dispatch_clears_only_definite_github_rejections(self):
+        failures = (
+            ('rejected', ValueError('HTTP 422: workflow input is invalid'), False),
+            ('timeout', subprocess.TimeoutExpired(['gh', 'workflow', 'run'], 120), True),
+            ('eof', ValueError('unexpected EOF while reading response'), True),
+        )
+        for suffix, failure, pending in failures:
+            with self.subTest(suffix=suffix):
+                state = self.ready_container_state(repositories=['core'], no_containers=False)
+                commit = 'a' * 40
+
+                def github(*args):
+                    if args[-1].endswith('/commits/main'):
+                        return {'sha': commit}
+                    return self.github(*args)
+
+                args = SimpleNamespace(
+                    state=self.root / f'dispatch-{suffix}.json', source_ref=None,
+                    commit=None, package_version=['extensions=3.8.4'], replace=False,
+                )
+                train.save(args.state, state)
+                with patch.object(train, 'gh', side_effect=github), patch.object(train, 'package_feed_available', return_value=True):
+                    train.bind_containers(state, args)
+
+                with patch.object(train, 'gh', side_effect=github), patch.object(train, 'command', side_effect=failure), self.assertRaises(type(failure)):
+                    train.dispatch_containers(state, args)
+
+                saved = train.read(args.state)['containers']['dispatch']
+                if pending:
+                    self.assertIsNotNone(saved)
+                    self.assertEqual(commit, saved['source_commit'])
+                else:
+                    self.assertIsNone(saved)
+                    self.assertIsNone(state['containers']['dispatch'])
 
     def test_legacy_container_checkpoint_requires_explicit_adoption(self):
         old_profile = copy.deepcopy(self.state['profile'])

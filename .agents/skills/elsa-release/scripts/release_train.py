@@ -180,8 +180,6 @@ def expand_container_image_selection(profile, names):
 
 
 def make_container_state(profile, version, selected_repositories=None, no_containers=False, available_repositories=None):
-    inventory = configured_container_release(profile)
-    selected_images = container_image_scope(profile, selected_repositories)
     if no_containers:
         return {
             'enabled': False,
@@ -192,6 +190,8 @@ def make_container_state(profile, version, selected_repositories=None, no_contai
             'receipt': None,
             'verification': None,
         }
+    inventory = configured_container_release(profile)
+    selected_images = container_image_scope(profile, selected_repositories)
     if not selected_images:
         return {
             'enabled': False,
@@ -870,7 +870,16 @@ def dispatch_containers(state, args):
     ]
     for name, value in fields.items():
         command_args.extend(['--field', f'{name}={value}'])
-    command(command_args)
+    try:
+        command(command_args)
+    except ValueError as error:
+        # Only a clear client-side HTTP rejection proves GitHub did not accept
+        # the dispatch. EOF, transport, and server errors remain ambiguous.
+        if re.search(r'\b(?:HTTP(?:/\d(?:\.\d)?)?\s+|status(?: code)?[=: ]+)(?:400|401|403|404|405|410|422)\b', str(error), re.IGNORECASE):
+            if containers.get('dispatch') is dispatch:
+                containers['dispatch'] = None
+                save(args.state, state)
+        raise
     run = reconcile_container_dispatch(inventory, dispatch, binding)
     if not run:
         return {'phase': 'dispatch-pending', 'source_commit': binding['commit']}
