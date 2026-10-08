@@ -113,12 +113,13 @@ def frozen_archives(artifacts: Path, manifest: dict) -> dict[str, str]:
 
 
 def _capture(command: list[str], log: Path, *, timeout: int = 60) -> str:
-    """Private, bounded diagnostics. Nothing from the command is retained verbatim."""
+    """Log both streams privately; only stdout is a machine-readable response."""
     try:
-        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                 timeout=timeout, check=False)
         with log.open("ab") as stream:
             stream.write(result.stdout)
+            stream.write(result.stderr)
         require(result.returncode == 0, "service_command")
         return result.stdout.decode("utf-8", errors="strict").strip()
     except ProofError:

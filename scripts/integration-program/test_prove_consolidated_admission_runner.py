@@ -185,6 +185,81 @@ class AdmissionRunnerBoundaryTests(unittest.TestCase):
         self.assertEqual(b'{"status":"failed"}', (output / 'admission-consumer-proof.json').read_bytes())
         self.assertEqual({'admission-consumer-proof.json'}, {path.name for path in output.iterdir()})
 
+    def test_cold_postgres_pull_keeps_stderr_private_and_accepts_only_stdout_id(self):
+        identifier = 'a' * 64
+        image_id = 'sha256:' + 'b' * 64
+        log = self.root / 'docker.log'
+        owned = {}
+        results = [
+            subprocess.CompletedProcess([], 0, (identifier + '\n').encode(), b'Unable to find image locally\nPulling layers\n'),
+            subprocess.CompletedProcess([], 0, (image_id + '\n').encode(), b'inspect diagnostic\n'),
+            subprocess.CompletedProcess([], 0, b'127.0.0.1:54321\n', b'port diagnostic\n'),
+            subprocess.CompletedProcess([], 0),
+        ]
+        pending = iter(results)
+
+        def command_output(*args, **kwargs):
+            result = next(pending)
+            # Model subprocess' merged-stream behavior, not an impossible mock.
+            if kwargs.get('stderr') == subprocess.STDOUT:
+                return subprocess.CompletedProcess([], result.returncode, result.stdout + result.stderr)
+            return result
+
+        with patch.object(runner.subprocess, 'run', side_effect=command_output) as execute, \
+                patch.object(runner, 'image_identity', return_value={'id': image_id}) as inspect:
+            connection, service = runner._start_postgres('owned', 'private-password', log, owned)
+        self.assertIs(service, owned)
+        self.assertEqual(identifier, owned['containerId'])
+        self.assertEqual({'id': image_id}, owned['image'])
+        self.assertIn('Port=54321;', connection)
+        inspect.assert_called_once_with(image_id)
+        self.assertEqual(4, execute.call_count)
+        self.assertIn('--pull=missing', execute.call_args_list[0].args[0])
+        for call in execute.call_args_list[:3]:
+            self.assertEqual(subprocess.PIPE, call.kwargs['stdout'])
+            self.assertEqual(subprocess.PIPE, call.kwargs['stderr'])
+        for result in results[:3]:
+            self.assertIn(result.stdout + result.stderr, log.read_bytes())
+        self.assertNotIn(b'private-password', log.read_bytes())
+
+    def test_postgres_contaminated_stdout_is_not_parsed_as_a_container_id(self):
+        identifier = 'a' * 64
+        for index, stdout in enumerate(('pull diagnostic\n' + identifier, identifier + '\npull diagnostic')):
+            with self.subTest(position=index):
+                log = self.root / f'docker-{index}.log'
+                owned = {}
+                result = subprocess.CompletedProcess([], 0, stdout.encode(), b'private diagnostic\n')
+                with patch.object(runner.subprocess, 'run', return_value=result) as execute, \
+                        patch.object(runner, 'image_identity') as inspect, \
+                        self.assertRaisesRegex(runner.ProofError, '^container_identity$'):
+                    runner._start_postgres('owned', 'private-password', log, owned)
+                self.assertEqual({}, owned)
+                self.assertEqual(1, execute.call_count)
+                inspect.assert_not_called()
+                self.assertEqual(result.stdout + result.stderr, log.read_bytes())
+
+    def test_service_command_failure_keeps_both_streams_out_of_public_receipt(self):
+        output = self.root / 'retained'
+        log = self.root / 'private-docker.log'
+        marker = runner.SECRET_MARKERS[0].encode()
+        result = subprocess.CompletedProcess([], 1, b'private stdout:' + marker, b'private stderr:' + marker)
+
+        def fail_command(*args):
+            return runner._capture(['docker', 'run', 'private-argument'], log)
+
+        with patch.object(runner.subprocess, 'run', return_value=result), \
+                patch.object(runner, '_prove', side_effect=fail_command), \
+                self.assertRaisesRegex(runner.ProofError, '^service_command$') as caught:
+            runner.prove(self.root, {}, output)
+        self.assertEqual({}, caught.exception.diagnostics)
+        self.assertEqual(result.stdout + result.stderr, log.read_bytes())
+        receipt = json.loads((output / 'admission-consumer-proof.json').read_text())
+        self.assertEqual('failed', receipt['status'])
+        self.assertEqual('service_command', receipt['category'])
+        self.assertNotIn(marker.decode(), json.dumps(receipt))
+        self.assertNotIn('private-argument', json.dumps(receipt))
+        self.assertEqual({'admission-consumer-proof.json'}, {path.name for path in output.iterdir()})
+
     def test_container_absence_requires_successful_query_and_exact_id_absence(self):
         identifier = 'a' * 64
         cases = (["" , identifier], ["", runner.ProofError('service_command')])
