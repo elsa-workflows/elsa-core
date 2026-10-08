@@ -20,11 +20,11 @@ internal sealed class AdmissionRuntimeTestFixture(PostgreSqlConnectionsFixture f
         }, interceptor, shell);
     }
 
-    public async Task RunUnprovisionedAsync(Func<AdmissionUnprovisionedRuntimeScenario, Task> assertion, IInterceptor? interceptor = null, bool shell = false)
+    public async Task RunUnprovisionedAsync(Func<AdmissionUnprovisionedRuntimeScenario, Task> assertion, IInterceptor? interceptor = null, bool shell = false, bool canStartWorkflow = false, bool unallowlistedActivity = false)
     {
         await fixture.ResetSchemaAsync();
         var probe = new AdmissionRuntimeProbe(fixture.ConnectionString);
-        await using var services = AdmissionRuntimeHost.CreateServices(fixture.ConnectionString, probe, shell: shell, admissionInterceptor: interceptor);
+        await using var services = AdmissionRuntimeHost.CreateServices(fixture.ConnectionString, probe, shell: shell, admissionInterceptor: interceptor, canStartWorkflow: canStartWorkflow, unallowlistedActivity: unallowlistedActivity);
         using var tenant = AdmissionRuntimeHost.EnterTenant(services);
         await AdmissionRuntimeHost.MigrateAsync(services);
         await assertion(new(services, probe));

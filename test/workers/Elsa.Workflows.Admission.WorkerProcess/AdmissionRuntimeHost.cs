@@ -41,15 +41,23 @@ namespace Elsa.Workflows.Admission.WorkerProcess;
 /// <summary>One actual guarded local execution host. Other worker commands are nonexecuting controllers.</summary>
 public static class AdmissionRuntimeHost
 {
-    public static WorkflowDefinition Artifact() => new()
+    public static WorkflowDefinition Artifact(bool canStartWorkflow = false, bool unallowlistedActivity = false)
     {
-        Id = "definition-version-fixed", DefinitionId = "definition-fixed", TenantId = AdmissionWorkerHost.TenantId,
-        Version = 1, CreatedAt = AdmissionWorkerHost.Now, IsLatest = false, IsPublished = false,
-        MaterializerName = "Json", StringData = JsonSerializer.Serialize(new
+        var activity = new Dictionary<string, object>
         {
-            id = "admission-runtime-activity", type = ActivityTypeNameHelper.GenerateTypeName<AdmissionRuntimeActivity>(), version = 1
-        })
-    };
+            ["id"] = "admission-runtime-activity", ["type"] = (unallowlistedActivity ? ActivityTypeNameHelper.GenerateTypeName<WriteLine>() : ActivityTypeNameHelper.GenerateTypeName<AdmissionRuntimeActivity>()), ["version"] = 1
+        };
+        if (canStartWorkflow)
+        {
+            activity["canStartWorkflow"] = true;
+        }
+        return new()
+        {
+            Id = "definition-version-fixed", DefinitionId = "definition-fixed", TenantId = AdmissionWorkerHost.TenantId,
+            Version = 1, CreatedAt = AdmissionWorkerHost.Now, IsLatest = false, IsPublished = false,
+            MaterializerName = "Json", StringData = JsonSerializer.Serialize(activity)
+        };
+    }
 
     public static AdmissionSubscriptionConfiguration Configuration()
     {
@@ -60,7 +68,7 @@ public static class AdmissionRuntimeHost
 
     public static ServiceProvider CreateServices(string connectionString, AdmissionRuntimeProbe probe, bool shell = false,
         Action<IServiceCollection>? configure = null, IInterceptor? admissionInterceptor = null,
-        Action<IServiceCollection>? configureBeforeAdmission = null)
+        Action<IServiceCollection>? configureBeforeAdmission = null, bool canStartWorkflow = false, bool unallowlistedActivity = false)
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -80,6 +88,10 @@ public static class AdmissionRuntimeHost
             // registrations below use the actual ShellFeatures implementations.
             module.Apply();
             ConfigureShellServices(services, connectionString, instanceWrites, admissionInterceptor);
+            if (unallowlistedActivity)
+            {
+                services.AddActivity<WriteLine>();
+            }
         }
         else
         {
@@ -87,6 +99,10 @@ public static class AdmissionRuntimeHost
             module.Configure<Elsa.Workflows.Features.WorkflowsFeature>(feature => feature.WithWorkflowExecutionPipeline(pipeline => pipeline.UseDefaultPipeline()));
             module.Configure<WorkflowManagementFeature>();
             module.AddActivity<AdmissionRuntimeActivity>();
+            if (unallowlistedActivity)
+            {
+                module.AddActivity<WriteLine>();
+            }
             module.Configure<EFCoreAdmissionPersistenceFeature>(feature =>
             {
                 feature.TenantId = AdmissionWorkerHost.TenantId;
@@ -125,7 +141,7 @@ public static class AdmissionRuntimeHost
         // registration. The deferred descriptor constructs the immutable allowlist before use.
         services.AddSingleton(provider =>
         {
-            var artifact = Artifact();
+            var artifact = Artifact(canStartWorkflow, unallowlistedActivity);
             var configuration = Configuration() with
             {
                 DefinitionFingerprint = AdmissionDefinitionFingerprint.Compute(artifact, provider.GetRequiredService<IPayloadSerializer>())
@@ -135,7 +151,7 @@ public static class AdmissionRuntimeHost
         // Build-time configuration uses the same fixed payload serializer representation as
         // JsonPayloadSerializer: it is generated below by a metadata-only compiler whose
         // stores are memory-only and never share the PostgreSQL execution store.
-        var binding = CompileBinding();
+        var binding = CompileBinding(canStartWorkflow, unallowlistedActivity);
         var host = new AdmissionHostConfiguration(AdmissionWorkerHost.TenantId, AdmissionWorkerHost.EnvironmentId,
             ReviewedTypes(), [typeof(Workflow), typeof(AdmissionRuntimeActivity)], [binding.Configuration]);
         configureBeforeAdmission?.Invoke(services);
@@ -204,7 +220,7 @@ public static class AdmissionRuntimeHost
         }
     }
 
-    private static AdmissionRuntimeBinding CompileBinding()
+    private static AdmissionRuntimeBinding CompileBinding(bool canStartWorkflow, bool unallowlistedActivity)
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -213,7 +229,7 @@ public static class AdmissionRuntimeHost
         module.Configure<WorkflowManagementFeature>();
         module.Apply();
         using var compiler = services.BuildServiceProvider();
-        var artifact = Artifact();
+        var artifact = Artifact(canStartWorkflow, unallowlistedActivity);
         return new(artifact, Configuration() with
         {
             DefinitionFingerprint = AdmissionDefinitionFingerprint.Compute(artifact, compiler.GetRequiredService<IPayloadSerializer>())
