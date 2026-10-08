@@ -5991,6 +5991,159 @@
       "processRoles": [],
       "minimumProcesses": 0,
       "restartRequired": false
+    },
+    {
+      "caseId": "runtime-bootstrap-autonomous-start",
+      "family": "bootstrap",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeBootstrapTests.ForbiddenGraphIsRejectedAfterRealMaterializationBeforePersistence",
+      "parameterId": "runtime-bootstrap-autonomous-start",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "allowlistedFingerprintMatched": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "realForbiddenGraphMaterialized": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "subscriptionAbsent": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "definitionAbsent": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "publicationNotifications": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "workflowExecuting": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-bootstrap-unallowlisted-activity",
+      "family": "bootstrap",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeBootstrapTests.ForbiddenGraphIsRejectedAfterRealMaterializationBeforePersistence",
+      "parameterId": "runtime-bootstrap-unallowlisted-activity",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "allowlistedFingerprintMatched": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "realForbiddenGraphMaterialized": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "subscriptionAbsent": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "definitionAbsent": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "publicationNotifications": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "workflowExecuting": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-installation-reconciliation",
+      "family": "identity",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionIdentityReconciliationTests.StableLogicalInstallationReconciliationAndInactivePinEditRetainOriginalEventAllocation",
+      "parameterId": "default",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "sameLogicalInstallationReconciled": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "matchingDuplicateSameAllocation": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "installationReplacementDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "inactivePinEditPersisted": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "editedBindingQuarantinedSameAllocation": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "originalSnapshotAndRevisionRetained": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "admissionCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activeReservations": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "retainedRecords": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "authorityOutstanding": {
+          "kind": "boolean",
+          "equals": false
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
     }
   ],
   "workerAssemblies": {
