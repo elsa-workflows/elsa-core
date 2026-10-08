@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
-using System.Text.Json.Serialization;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Extensions;
@@ -9,8 +8,6 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Memory;
-using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -260,44 +257,26 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
 
     private ValueTask OnSaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition entity, CancellationToken cancellationToken)
     {
-        var json = SerializeState(entity);
-
-        managementElsaDbContext.Entry(entity).Property("Data").CurrentValue = json;
-        managementElsaDbContext.Entry(entity).Property("UsableAsActivity").CurrentValue = entity.Options.UsableAsActivity;
+        WorkflowDefinitionStateCodec.Write(managementElsaDbContext, entity, payloadSerializer);
         return ValueTask.CompletedTask;
     }
 
-    private string SerializeState(WorkflowDefinition entity)
-    {
-        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
-        return payloadSerializer.Serialize(data);
-    }
+    private string SerializeState(WorkflowDefinition entity) => WorkflowDefinitionStateCodec.Serialize(entity, payloadSerializer);
 
     private ValueTask OnLoadAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition? entity, CancellationToken cancellationToken)
     {
         if (entity == null)
+        {
             return ValueTask.CompletedTask;
-
-        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
-        var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
-
+        }
         try
         {
-            if (!string.IsNullOrWhiteSpace(json))
-                data = payloadSerializer.Deserialize<WorkflowDefinitionState>(json);
+            WorkflowDefinitionStateCodec.Read(managementElsaDbContext, entity, payloadSerializer);
         }
         catch (Exception exp)
         {
             logger.LogError(exp, "Could not deserialize workflow definition state: {DefinitionId}. Reverting to default state", entity.DefinitionId);
         }
-
-        entity.Options = data.Options;
-        entity.Variables = data.Variables;
-        entity.Inputs = data.Inputs;
-        entity.Outputs = data.Outputs;
-        entity.Outcomes = data.Outcomes;
-        entity.CustomProperties = data.CustomProperties;
-
         return ValueTask.CompletedTask;
     }
 
@@ -338,35 +317,4 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         return queryable;
     }
 
-    private class WorkflowDefinitionState
-    {
-        [JsonConstructor]
-        public WorkflowDefinitionState()
-        {
-        }
-
-        public WorkflowDefinitionState(
-            WorkflowOptions options,
-            ICollection<Variable> variables,
-            ICollection<InputDefinition> inputs,
-            ICollection<OutputDefinition> outputs,
-            ICollection<string> outcomes,
-            IDictionary<string, object> customProperties
-        )
-        {
-            Options = options;
-            Variables = variables;
-            Inputs = inputs;
-            Outputs = outputs;
-            Outcomes = outcomes;
-            CustomProperties = customProperties;
-        }
-
-        public WorkflowOptions Options { get; set; } = new();
-        public ICollection<Variable> Variables { get; set; } = new List<Variable>();
-        public ICollection<InputDefinition> Inputs { get; set; } = new List<InputDefinition>();
-        public ICollection<OutputDefinition> Outputs { get; set; } = new List<OutputDefinition>();
-        public ICollection<string> Outcomes { get; set; } = new List<string>();
-        public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
-    }
 }
