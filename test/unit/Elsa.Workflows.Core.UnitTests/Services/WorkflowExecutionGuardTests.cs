@@ -5,6 +5,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
+using Elsa.Workflows.Pipelines.ActivityExecution;
 using Elsa.Workflows.Services;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
@@ -123,6 +124,76 @@ public class WorkflowExecutionGuardTests : IAsyncLifetime
         var runner = CreateRunner(pipeline, notifications, new WorkflowLoggerStateGenerator());
         await Assert.ThrowsAnyAsync<InvalidOperationException>(() => runner.RunAsync(_context));
         Assert.Equal(0, _middlewareCalls);
+    }
+
+    [Fact]
+    public void FrozenWorkflowAndActivityCompositionsRejectBeforeSetupCallbacks()
+    {
+        var callbacks = 0;
+        var workflow = new WorkflowExecutionPipeline(_context.ServiceProvider, Configure);
+        var activity = new ActivityExecutionPipeline(_context.ServiceProvider, builder => builder.Use(next => next));
+        workflow.Freeze();
+        activity.Freeze();
+        Assert.Throws<InvalidOperationException>(() => workflow.Setup(builder =>
+        {
+            callbacks++;
+            builder.Reset();
+        }));
+        Assert.Throws<InvalidOperationException>(() => activity.Setup(builder =>
+        {
+            callbacks++;
+            builder.Reset();
+        }));
+        Assert.Equal(0, callbacks);
+        // Mutability remains opt-in: ordinary hosts still execute their setup callbacks.
+        new WorkflowExecutionPipeline(_context.ServiceProvider, Configure).Setup(_ => callbacks++);
+        new ActivityExecutionPipeline(_context.ServiceProvider, _ => { }).Setup(_ => callbacks++);
+        Assert.Equal(2, callbacks);
+    }
+
+    [Theory]
+    [InlineData("execute")]
+    [InlineData("pipeline")]
+    [InlineData("setup")]
+    [InlineData("build")]
+    [InlineData("cached-build")]
+    [InlineData("reset")]
+    [InlineData("insert")]
+    [InlineData("invoker-workflow")]
+    [InlineData("invoker-context")]
+    public async Task PublicActivityEntriesDenyOwnedBeforeMiddlewareAndRemainCompatibleWhenUnowned(string entryPoint)
+    {
+        var activityContext = await _context.CreateActivityExecutionContextAsync(new WriteLine("activity-guard"));
+        var calls = 0;
+        ActivityMiddlewareDelegate CountActivity(ActivityMiddlewareDelegate next) => async context =>
+        {
+            calls++;
+            await next(context);
+        };
+        var pipeline = new ActivityExecutionPipeline(_context.ServiceProvider, builder => builder.Use(CountActivity));
+        var builder = new ActivityExecutionPipelinePipelineBuilder(_context.ServiceProvider);
+        builder.Use(CountActivity);
+        var cached = builder.Build();
+        var invoker = new ActivityInvoker(pipeline, new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
+        var invoke = entryPoint switch
+        {
+            "execute" => new Func<Task>(() => pipeline.ExecuteAsync(activityContext)),
+            "pipeline" => () => pipeline.Pipeline(activityContext).AsTask(),
+            "setup" => () => pipeline.Setup(value => value.Use(CountActivity))(activityContext).AsTask(),
+            "build" => () => builder.Build()(activityContext).AsTask(),
+            "cached-build" => () => cached(activityContext).AsTask(),
+            "reset" => () => builder.Reset().Use(CountActivity).Build()(activityContext).AsTask(),
+            "insert" => () => builder.Insert(0, CountActivity).Build()(activityContext).AsTask(),
+            "invoker-workflow" => async () => { await invoker.InvokeAsync(_context, activityContext.Activity); },
+            "invoker-context" => () => invoker.InvokeAsync(activityContext),
+            _ => throw new ArgumentOutOfRangeException(nameof(entryPoint))
+        };
+        _guard.Owned = true;
+        await Assert.ThrowsAsync<InvalidOperationException>(invoke);
+        Assert.Equal(0, calls);
+        _guard.Owned = false;
+        await invoke();
+        Assert.True(calls > 0);
     }
 
     private void Configure(IWorkflowExecutionPipelineBuilder builder) => builder.Use(Count);

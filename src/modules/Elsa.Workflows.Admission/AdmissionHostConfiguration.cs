@@ -67,7 +67,16 @@ public sealed class AdmissionHostConfiguration
     public ValueTask ValidateAsync(IServiceProvider services, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        // Inspect registrations before resolving any contributor: arbitrary constructors and
+        // callbacks must not run as a side effect of deciding that a host is unsupported.
+        if (_registrations == null || _registrations.Any(x => x.ServiceType == typeof(IWorkflowExecutionPipelineContributor) ||
+            x.ServiceType == typeof(IActivityExecutionPipelineContributor)))
+        {
+            throw new InvalidOperationException("Execution pipeline contributors are unsupported by the fixed admission host.");
+        }
+        services.GetRequiredService<AdmissionExecutionComposition>().Validate(services);
         if (_registrations == null || services.GetRequiredService<IWorkflowRuntime>().GetType() != typeof(AdmissionWorkflowRuntime) ||
+            services.GetRequiredService<IWorkflowDispatcher>().GetType() != typeof(AdmissionWorkflowDispatcher) ||
             services.GetRequiredService<IWorkflowRunner>().GetType() != typeof(WorkflowRunner) ||
             services.GetRequiredService<IWorkflowExecutionPipeline>().GetType() != typeof(WorkflowExecutionPipeline) ||
             services.GetRequiredService<IWorkflowExecutionGuard>().GetType() != typeof(AdmissionExecutionGuard))
@@ -104,13 +113,18 @@ public sealed class AdmissionHostConfiguration
             typeof(IWorkflowDefinitionService), typeof(IWorkflowGraphBuilder), typeof(IWorkflowInstanceManager),
             typeof(IWorkflowStateExtractor), typeof(IWorkflowStateSerializer), typeof(IActivitySerializer), typeof(IPayloadSerializer),
             typeof(IActivityRegistry), typeof(IActivityRegistryLookupService), typeof(IMaterializerRegistry),
-            typeof(IActivitySchedulerFactory),
+            typeof(IActivitySchedulerFactory), typeof(IActivityInvoker),
+            typeof(ILoggerStateGenerator<ActivityExecutionContext>),
             typeof(ILoggerStateGenerator<WorkflowExecutionContext>), typeof(INotificationSender), typeof(ICommitStateHandler),
             typeof(IBookmarksPersister), typeof(IVariablePersistenceManager), typeof(IWorkflowCommitTransaction), typeof(IWorkflowCommitNotificationBuffer)
         };
         foreach (var contract in required)
         {
             DemandAudited(services.GetRequiredService(contract).GetType());
+        }
+        foreach (var observer in services.GetServices<IAdmissionExecutionObserver>())
+        {
+            DemandAudited(observer.GetType());
         }
         foreach (var provider in services.GetServices<IActivityProvider>())
         {

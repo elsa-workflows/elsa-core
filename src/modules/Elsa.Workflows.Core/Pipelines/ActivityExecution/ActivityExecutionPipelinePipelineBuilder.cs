@@ -23,12 +23,27 @@ public class ActivityExecutionPipelinePipelineBuilder(IServiceProvider servicePr
     }
 
     /// <inheritdoc />
-    public ActivityMiddlewareDelegate Build()
+    public ActivityMiddlewareDelegate Build() => Guard(BuildInternal(), ServiceProvider);
+
+    internal static ActivityMiddlewareDelegate Guard(ActivityMiddlewareDelegate pipeline, IServiceProvider serviceProvider) => async context =>
+    {
+        var workflow = context.WorkflowExecutionContext;
+        var guard = serviceProvider.GetService(typeof(IWorkflowExecutionGuard)) as IWorkflowExecutionGuard ?? workflow.GetService<IWorkflowExecutionGuard>();
+        if (guard != null)
+        {
+            await guard.AuthorizeAsync(workflow, WorkflowExecutionEntryPoint.DirectPipeline);
+        }
+        await pipeline(context);
+    };
+
+    internal ActivityMiddlewareDelegate BuildInternal()
     {
         ActivityMiddlewareDelegate pipeline = _ => new ValueTask();
 
-        foreach (var component in _components.Reverse()) 
+        foreach (var component in _components.Reverse())
+        {
             pipeline = component(pipeline);
+        }
 
         return pipeline;
     }

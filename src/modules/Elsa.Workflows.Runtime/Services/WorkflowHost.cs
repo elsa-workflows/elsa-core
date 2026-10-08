@@ -130,6 +130,10 @@ public class WorkflowHost : IWorkflowHost
 
     private async Task PersistStateAsync(IServiceScope scope, CancellationToken cancellationToken = default)
     {
+        if (scope.ServiceProvider.GetService<IWorkflowExecutionGuard>() is { } guard)
+        {
+            await guard.DemandUnownedAsync(WorkflowState.Id, cancellationToken);
+        }
         var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
         await workflowInstanceManager.SaveAsync(WorkflowState, cancellationToken);
     }

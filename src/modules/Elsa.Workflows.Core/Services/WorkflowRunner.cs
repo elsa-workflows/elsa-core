@@ -264,6 +264,7 @@ public class WorkflowRunner(
         {
             if (authorization != null)
             {
+                using var authorizedPhase = WorkflowExecutionPhase.Enter(workflowExecutionContext);
                 await authorizedInvocation!.Value.Execute(workflowExecutionContext);
             }
             else

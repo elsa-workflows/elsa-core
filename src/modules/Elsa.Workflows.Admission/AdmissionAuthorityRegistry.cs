@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Elsa.Expressions.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.State;
@@ -24,8 +25,15 @@ internal sealed class AdmissionAuthorityRegistry
 
     public bool HasOwner(string instanceId) => _owners.ContainsKey(instanceId);
 
-    public Invocation Capture(WorkflowExecutionContext context, IActivitySerializer serializer, IWorkflowStateExtractor extractor, IWorkflowStateSerializer stateSerializer) =>
-        new(context, serializer, extractor, stateSerializer);
+    public Invocation Capture(WorkflowExecutionContext context, IActivitySerializer serializer, IWorkflowStateExtractor extractor, IWorkflowStateSerializer stateSerializer)
+    {
+        var invocation = new Invocation(context, serializer, extractor, stateSerializer);
+        if (!_invocations.TryAdd(context, invocation))
+        {
+            throw new InvalidOperationException("This prepared context is already protected.");
+        }
+        return invocation;
+    }
 
     public void Bind(WorkflowExecutionContext context, Invocation invocation, AdmissionRecord record, AdmissionSubscriptionConfiguration configuration)
     {
@@ -36,11 +44,11 @@ internal sealed class AdmissionAuthorityRegistry
         {
             throw new InvalidOperationException("The admission invocation does not match its committed authority.");
         }
-        invocation.BindAuthority(record);
-        if (!_invocations.TryAdd(context, invocation))
+        if (!_invocations.TryGetValue(context, out var captured) || !ReferenceEquals(invocation, captured))
         {
-            throw new InvalidOperationException("This prepared context is already bound.");
+            throw new InvalidOperationException("This prepared context is not protected by the invocation registry.");
         }
+        invocation.BindAuthority(record);
     }
 
     public Invocation? Consume(WorkflowExecutionContext context, WorkflowExecutionEntryPoint entryPoint)
@@ -53,6 +61,7 @@ internal sealed class AdmissionAuthorityRegistry
         {
             throw new InvalidOperationException("Owned workflows cannot execute through a public pipeline.");
         }
+        invocation.DemandBound();
         invocation.Validate();
         if (Interlocked.CompareExchange(ref invocation.Consumed, 1, 0) != 0)
         {
@@ -79,6 +88,7 @@ internal sealed class AdmissionAuthorityRegistry
     {
         private readonly WorkflowExecutionContext _context;
         private readonly WorkflowGraph _graph;
+        private readonly AdmissionExecutionComposition _composition;
         private readonly IActivitySerializer _serializer;
         private readonly IWorkflowStateExtractor _extractor;
         private readonly IWorkflowStateSerializer _stateSerializer;
@@ -86,6 +96,12 @@ internal sealed class AdmissionAuthorityRegistry
         private readonly KeyValuePair<string, ActivityNode>[] _nodeIds;
         private readonly KeyValuePair<string, ActivityNode>[] _nodeHashes;
         private readonly KeyValuePair<IActivity, ActivityNode>[] _nodeActivities;
+        private readonly ActivityNode[][] _parents;
+        private readonly ActivityNode[][] _children;
+        private readonly ActivityCompletionCallbackEntry[] _callbacks;
+        private readonly object?[] _callbackDelegates;
+        private readonly object[] _callbackOwners;
+        private readonly ActivityNode[] _callbackChildren;
         private readonly string _identity;
         private readonly string _prepared;
         private readonly object? _executeDelegate;
@@ -105,6 +121,8 @@ internal sealed class AdmissionAuthorityRegistry
         {
             _context = context;
             _graph = context.WorkflowGraph;
+            _composition = context.GetRequiredService<AdmissionExecutionComposition>();
+            _composition.Validate(context.ServiceProvider);
             _serializer = serializer;
             _extractor = extractor;
             _stateSerializer = stateSerializer;
@@ -112,6 +130,12 @@ internal sealed class AdmissionAuthorityRegistry
             _nodeIds = _graph.NodeIdLookup.ToArray();
             _nodeHashes = _graph.NodeHashLookup.ToArray();
             _nodeActivities = _graph.NodeActivityLookup.ToArray();
+            _parents = _nodes.Select(x => x.Parents.ToArray()).ToArray();
+            _children = _nodes.Select(x => x.Children.ToArray()).ToArray();
+            _callbacks = context.CompletionCallbacks.ToArray();
+            _callbackDelegates = _callbacks.Select(x => (object?)x.CompletionCallback).ToArray();
+            _callbackOwners = _callbacks.Select(x => (object)x.Owner).ToArray();
+            _callbackChildren = _callbacks.Select(x => x.Child).ToArray();
             _identity = context.Id;
             _executeDelegate = context.ExecuteDelegate;
             _root = context.Workflow.Root;
@@ -137,6 +161,14 @@ internal sealed class AdmissionAuthorityRegistry
             AdmissionId = record.Id;
         }
 
+        public void DemandBound()
+        {
+            if (_authorityTuple == null)
+            {
+                throw new InvalidOperationException("Prepared admission work has no committed execution authority.");
+            }
+        }
+
         public ValueTask RevalidateAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -150,6 +182,7 @@ internal sealed class AdmissionAuthorityRegistry
 
         public void Validate()
         {
+            _composition.Validate(_context.ServiceProvider);
             var current = _context.Scheduler.List().ToArray();
             var expectedStatus = Volatile.Read(ref Consumed) == 1 && _subStatus == WorkflowSubStatus.Pending
                 ? WorkflowSubStatus.Executing : _subStatus;
@@ -172,6 +205,27 @@ internal sealed class AdmissionAuthorityRegistry
                 !_nodeActivities.SequenceEqual(_graph.NodeActivityLookup))
             {
                 throw new InvalidOperationException("The prepared admission graph topology changed.");
+            }
+            for (var i = 0; i < _nodes.Length; i++)
+            {
+                if (!_parents[i].SequenceEqual(_nodes[i].Parents, ReferenceEqualityComparer.Instance) ||
+                    !_children[i].SequenceEqual(_nodes[i].Children, ReferenceEqualityComparer.Instance))
+                {
+                    throw new InvalidOperationException("The prepared admission graph relationships changed.");
+                }
+            }
+            var callbacks = _context.CompletionCallbacks.ToArray();
+            if (!_callbacks.SequenceEqual(callbacks, ReferenceEqualityComparer.Instance))
+            {
+                throw new InvalidOperationException("The prepared admission completion callbacks changed.");
+            }
+            for (var i = 0; i < callbacks.Length; i++)
+            {
+                if (!ReferenceEquals(callbacks[i].CompletionCallback, _callbackDelegates[i]) ||
+                    !ReferenceEquals(callbacks[i].Owner, _callbackOwners[i]) || !ReferenceEquals(callbacks[i].Child, _callbackChildren[i]))
+                {
+                    throw new InvalidOperationException("The prepared admission completion callback identities changed.");
+                }
             }
             if (_prepared != Fingerprint())
             {
