@@ -260,44 +260,26 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
 
     private ValueTask OnSaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition entity, CancellationToken cancellationToken)
     {
-        var json = SerializeState(entity);
-
-        managementElsaDbContext.Entry(entity).Property("Data").CurrentValue = json;
-        managementElsaDbContext.Entry(entity).Property("UsableAsActivity").CurrentValue = entity.Options.UsableAsActivity;
+        WorkflowDefinitionStateCodec.Write(managementElsaDbContext, entity, payloadSerializer);
         return ValueTask.CompletedTask;
     }
 
-    private string SerializeState(WorkflowDefinition entity)
-    {
-        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
-        return payloadSerializer.Serialize(data);
-    }
+    private string SerializeState(WorkflowDefinition entity) => WorkflowDefinitionStateCodec.Serialize(entity, payloadSerializer);
 
     private ValueTask OnLoadAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition? entity, CancellationToken cancellationToken)
     {
         if (entity == null)
+        {
             return ValueTask.CompletedTask;
-
-        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
-        var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
-
+        }
         try
         {
-            if (!string.IsNullOrWhiteSpace(json))
-                data = payloadSerializer.Deserialize<WorkflowDefinitionState>(json);
+            WorkflowDefinitionStateCodec.Read(managementElsaDbContext, entity, payloadSerializer);
         }
         catch (Exception exp)
         {
             logger.LogError(exp, "Could not deserialize workflow definition state: {DefinitionId}. Reverting to default state", entity.DefinitionId);
         }
-
-        entity.Options = data.Options;
-        entity.Variables = data.Variables;
-        entity.Inputs = data.Inputs;
-        entity.Outputs = data.Outputs;
-        entity.Outcomes = data.Outcomes;
-        entity.CustomProperties = data.CustomProperties;
-
         return ValueTask.CompletedTask;
     }
 
@@ -338,7 +320,8 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         return queryable;
     }
 
-    private class WorkflowDefinitionState
+    // Preserve the established CLR identity for hosts that configure a serialization alias for this shadow state.
+    internal sealed class WorkflowDefinitionState
     {
         [JsonConstructor]
         public WorkflowDefinitionState()

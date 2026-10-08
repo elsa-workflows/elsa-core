@@ -26,8 +26,18 @@ public class LocalWorkflowClient(
     IWorkflowCanceler workflowCanceler,
     IWorkflowActivationGate workflowActivationGate,
     WorkflowStateMapper workflowStateMapper,
-    ILogger<LocalWorkflowClient> logger) : IWorkflowClient
+    ILogger<LocalWorkflowClient> logger,
+    IWorkflowExecutionGuard? workflowExecutionGuard = null) : IWorkflowClient
 {
+    /// <summary>Retains the original constructor for hosts without an admission guard.</summary>
+    public LocalWorkflowClient(string workflowInstanceId, IWorkflowInstanceManager workflowInstanceManager,
+        IWorkflowDefinitionService workflowDefinitionService, IWorkflowRunner workflowRunner, IWorkflowCanceler workflowCanceler,
+        IWorkflowActivationGate workflowActivationGate, WorkflowStateMapper workflowStateMapper, ILogger<LocalWorkflowClient> logger)
+        : this(workflowInstanceId, workflowInstanceManager, workflowDefinitionService, workflowRunner, workflowCanceler,
+            workflowActivationGate, workflowStateMapper, logger, null)
+    {
+    }
+
     /// <summary>
     /// Retained for source compatibility. Hosts should prefer the constructor resolved by DI,
     /// which supplies the configured activation gate.
@@ -50,6 +60,7 @@ public class LocalWorkflowClient(
     /// <inheritdoc />
     public async Task<CreateWorkflowInstanceResponse> CreateInstanceAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
+        await DemandUnownedAsync(workflowInstanceId, cancellationToken);
         var workflowDefinitionHandle = request.WorkflowDefinitionHandle;
         var workflowGraph = await GetWorkflowGraphAsync(workflowDefinitionHandle, cancellationToken);
 
@@ -74,6 +85,7 @@ public class LocalWorkflowClient(
     /// <inheritdoc />
     public async Task<RunWorkflowInstanceResponse> RunInstanceAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
+        await DemandUnownedAsync(workflowInstanceId, cancellationToken);
         var workflowInstance = await GetWorkflowInstanceAsync(cancellationToken);
         return await RunInstanceAsync(workflowInstance, request, cancellationToken);
     }
@@ -81,6 +93,7 @@ public class LocalWorkflowClient(
     /// <inheritdoc />
     public async Task<RunWorkflowInstanceResponse> CreateAndRunInstanceAsync(CreateAndRunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
+        await DemandUnownedAsync(workflowInstanceId, cancellationToken);
         var workflowDefinitionHandle = request.WorkflowDefinitionHandle;
         var workflowGraph = await GetWorkflowGraphAsync(workflowDefinitionHandle, cancellationToken);
 
@@ -139,6 +152,7 @@ public class LocalWorkflowClient(
     /// <inheritdoc />
     public async Task CancelAsync(CancellationToken cancellationToken = default)
     {
+        await DemandUnownedAsync(workflowInstanceId, cancellationToken);
         var workflowInstance = await GetWorkflowInstanceAsync(cancellationToken);
         await CancelAsync(workflowInstance, cancellationToken);
     }
@@ -162,6 +176,8 @@ public class LocalWorkflowClient(
     /// <inheritdoc />
     public async Task ImportStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
+        await DemandUnownedAsync(workflowInstanceId, cancellationToken);
+        await DemandUnownedAsync(workflowState.Id, cancellationToken);
         var workflowInstance = workflowStateMapper.Map(workflowState)!;
         await workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
     }
@@ -174,6 +190,7 @@ public class LocalWorkflowClient(
     /// <inheritdoc />
     public async Task<bool> DeleteAsync(CancellationToken cancellationToken = default)
     {
+        await DemandUnownedAsync(workflowInstanceId, cancellationToken);
         // Load the workflow instance (single DB call)
         var workflowInstance = await TryGetWorkflowInstanceAsync(cancellationToken);
         if (workflowInstance == null)
@@ -290,6 +307,14 @@ public class LocalWorkflowClient(
                 throw new InvalidOperationException("The compatibility LocalWorkflowClient constructor cannot enforce a configured activation strategy. Resolve LocalWorkflowClient from dependency injection so the registered activation gate is used.");
 
             return Task.FromResult(new WorkflowActivationLease(true, null, cancellationToken));
+        }
+    }
+
+    private async ValueTask DemandUnownedAsync(string instanceId, CancellationToken cancellationToken)
+    {
+        if (workflowExecutionGuard != null)
+        {
+            await workflowExecutionGuard.DemandUnownedAsync(instanceId, cancellationToken);
         }
     }
 }

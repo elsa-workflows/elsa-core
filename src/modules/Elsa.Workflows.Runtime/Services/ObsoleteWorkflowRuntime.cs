@@ -30,8 +30,20 @@ public class ObsoleteWorkflowRuntime(
     IBookmarkStore bookmarkStore,
     IWorkflowInstanceStore workflowInstanceStore,
     ITriggerBoundWorkflowService triggerBoundWorkflowService,
-    IBookmarkBoundWorkflowService bookmarkBoundWorkflowService)
+    IBookmarkBoundWorkflowService bookmarkBoundWorkflowService,
+    IWorkflowExecutionGuard? executionGuard = null)
 {
+    /// <summary>Retains the original constructor for hosts without an admission guard.</summary>
+    public ObsoleteWorkflowRuntime(Func<string?, CancellationToken, ValueTask<IWorkflowClient>> createClientAsync,
+        IWorkflowDefinitionService workflowDefinitionService, IWorkflowActivationStrategyEvaluator workflowActivationStrategyEvaluator,
+        IStimulusSender stimulusSender, IStimulusHasher stimulusHasher, IBookmarkStore bookmarkStore,
+        IWorkflowInstanceStore workflowInstanceStore, ITriggerBoundWorkflowService triggerBoundWorkflowService,
+        IBookmarkBoundWorkflowService bookmarkBoundWorkflowService)
+        : this(createClientAsync, workflowDefinitionService, workflowActivationStrategyEvaluator, stimulusSender, stimulusHasher,
+            bookmarkStore, workflowInstanceStore, triggerBoundWorkflowService, bookmarkBoundWorkflowService, null)
+    {
+    }
+
     public static ObsoleteWorkflowRuntime Create(IServiceProvider serviceProvider, Func<string?, CancellationToken, ValueTask<IWorkflowClient>> createClientAsync)
     {
         return ActivatorUtilities.CreateInstance<ObsoleteWorkflowRuntime>(serviceProvider, createClientAsync);
@@ -212,6 +224,18 @@ public class ObsoleteWorkflowRuntime(
 
     public async Task UpdateBookmarkAsync(StoredBookmark bookmark, CancellationToken cancellationToken = default)
     {
+        if (executionGuard != null)
+        {
+            // Save upserts by globally unique bookmark ID. Inspect the existing row across
+            // tenants before trusting a caller-supplied replacement owner; foreign-scope
+            // admission ownership fails closed in the guard, rather than appearing absent.
+            var existing = await bookmarkStore.FindAsync(new BookmarkFilter { BookmarkId = bookmark.Id, TenantAgnostic = true }, cancellationToken);
+            if (existing != null)
+            {
+                await executionGuard.DemandUnownedAsync(existing.WorkflowInstanceId, cancellationToken);
+            }
+            await executionGuard.DemandUnownedAsync(bookmark.WorkflowInstanceId, cancellationToken);
+        }
         await bookmarkStore.SaveAsync(bookmark, cancellationToken);
     }
 

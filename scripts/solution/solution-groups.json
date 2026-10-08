@@ -38,7 +38,8 @@
     "Elsa.Persistence.EFCore.Sqlite",
     "Elsa.Persistence.EFCore.SqlServer",
     "Elsa.Alterations",
-    "Elsa.Alterations.Core"
+    "Elsa.Alterations.Core",
+    "Elsa.Workflows.IntegrationTests"
   ],
   "domains": {
     "Scripting": {
@@ -66,6 +67,9 @@
         "src/extensions/caching/",
         "src/extensions/mqtt/",
         "src/extensions/scheduling/"
+      ],
+      "namePrefixes": [
+        "Elsa.Workflows.Admission"
       ]
     },
     "AI": {

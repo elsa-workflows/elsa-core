@@ -31,6 +31,7 @@ public sealed class PostgreSqlConnectionsFixture : IAsyncLifetime
         .Build();
 
     public string ConnectionString => _container.GetConnectionString();
+    public string ContainerId => _container.Id;
 
     public async Task ResetSchemaAsync()
     {
@@ -42,7 +43,12 @@ public sealed class PostgreSqlConnectionsFixture : IAsyncLifetime
 
     public Task InitializeAsync() => _container.StartAsync();
 
-    public Task DisposeAsync() => _container.DisposeAsync().AsTask();
+    public async Task DisposeAsync()
+    {
+        var containerId = _container.Id;
+        await _container.DisposeAsync();
+        await AdmissionProofObservation.WriteFixtureCleanupAsync(containerId);
+    }
 }
 
 [Collection("Connections PostgreSQL")]

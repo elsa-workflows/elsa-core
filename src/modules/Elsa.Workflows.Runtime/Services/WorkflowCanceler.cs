@@ -17,6 +17,7 @@ public class WorkflowCanceler(
     /// <inheritdoc />
     public async Task<WorkflowState> CancelWorkflowAsync(WorkflowGraph workflowGraph, WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
+        await DemandUnownedAsync(workflowState.Id, cancellationToken);
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(serviceProvider, workflowGraph, workflowState, cancellationToken: cancellationToken);
         using var executionScope = WorkflowExecutionScope.Begin(workflowExecutionContext);
         await CancelWorkflowAsync(workflowExecutionContext, cancellationToken);
@@ -26,6 +27,13 @@ public class WorkflowCanceler(
     /// <inheritdoc />
     public async Task CancelWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default)
     {
+        var guard = serviceProvider.GetService(typeof(IWorkflowExecutionGuard)) as IWorkflowExecutionGuard ?? workflowExecutionContext.GetService<IWorkflowExecutionGuard>();
+        if (guard != null)
+        {
+            // Exact-context denial precedes cancellation notifications, even if its mutable
+            // ID was changed after preparation. This never consumes runner authority.
+            await guard.AuthorizeAsync(workflowExecutionContext, WorkflowExecutionEntryPoint.DirectPipeline);
+        }
         using var executionScope = WorkflowExecutionScope.Begin(workflowExecutionContext);
         await mediator.SendAsync(new WorkflowCancelling(workflowExecutionContext.Id), cancellationToken);
         var pipelineBuilder = new WorkflowExecutionPipelineBuilder(serviceProvider);
@@ -34,5 +42,13 @@ public class WorkflowCanceler(
         var pipeline = pipelineBuilder.Build();
         await pipeline(workflowExecutionContext);
         await mediator.SendAsync(new WorkflowCancelled(workflowExecutionContext.Id), cancellationToken);
+    }
+
+    private async ValueTask DemandUnownedAsync(string instanceId, CancellationToken cancellationToken)
+    {
+        if (serviceProvider.GetService(typeof(IWorkflowExecutionGuard)) is IWorkflowExecutionGuard guard)
+        {
+            await guard.DemandUnownedAsync(instanceId, cancellationToken);
+        }
     }
 }

@@ -4,6 +4,7 @@ namespace Elsa.Workflows.Pipelines.WorkflowExecution;
 public class WorkflowExecutionPipelineBuilder : IWorkflowExecutionPipelineBuilder
 {
     private const string ServicesKey = "workflow-execution.Services";
+    private readonly IServiceProvider _guardServiceProvider;
     private readonly IList<Func<WorkflowMiddlewareDelegate, WorkflowMiddlewareDelegate>> _components = new List<Func<WorkflowMiddlewareDelegate, WorkflowMiddlewareDelegate>>();
 
     /// <summary>
@@ -11,6 +12,7 @@ public class WorkflowExecutionPipelineBuilder : IWorkflowExecutionPipelineBuilde
     /// </summary>
     public WorkflowExecutionPipelineBuilder(IServiceProvider serviceProvider)
     {
+        _guardServiceProvider = serviceProvider;
         ServiceProvider = serviceProvider;
     }
 
@@ -37,10 +39,32 @@ public class WorkflowExecutionPipelineBuilder : IWorkflowExecutionPipelineBuilde
     /// <inheritdoc />
     public WorkflowMiddlewareDelegate Build()
     {
+        return Guard(BuildInternal(), _guardServiceProvider);
+    }
+
+    internal static WorkflowMiddlewareDelegate Guard(WorkflowMiddlewareDelegate pipeline, IServiceProvider serviceProvider)
+    {
+        return async context =>
+        {
+            var guard = serviceProvider.GetService(typeof(IWorkflowExecutionGuard)) as IWorkflowExecutionGuard ?? context.GetService<IWorkflowExecutionGuard>();
+            if (guard != null)
+            {
+                await guard.AuthorizeAsync(context, WorkflowExecutionEntryPoint.DirectPipeline);
+            }
+
+            await pipeline(context);
+        };
+    }
+
+    // Only Core's built-in runner invokes this composition after authorization.
+    internal WorkflowMiddlewareDelegate BuildInternal()
+    {
         WorkflowMiddlewareDelegate pipeline = _ => new ValueTask();
 
-        foreach (var component in _components.Reverse()) 
+        foreach (var component in _components.Reverse())
+        {
             pipeline = component(pipeline);
+        }
 
         return pipeline;
     }

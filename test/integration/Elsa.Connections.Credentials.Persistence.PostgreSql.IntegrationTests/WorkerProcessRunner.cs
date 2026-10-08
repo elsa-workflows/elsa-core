@@ -6,9 +6,9 @@ using Elsa.Connections.Credentials.WorkerProcess;
 
 namespace Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests;
 
-internal sealed class WorkerProcessRunner
+internal sealed class WorkerProcessRunner(string? assemblyPath = null)
 {
-    private readonly string _workerAssemblyPath = typeof(WorkerCommandHost).Assembly.Location;
+    private readonly string _workerAssemblyPath = assemblyPath ?? typeof(WorkerCommandHost).Assembly.Location;
 
     public ProcessRun Start(IEnumerable<string> arguments, IReadOnlyDictionary<string, string> environment)
     {
@@ -50,6 +50,7 @@ internal sealed class WorkerProcessRunner
 
 internal sealed class ProcessRun(Process process) : IAsyncDisposable
 {
+    private readonly DateTimeOffset _processStartedAt = process.StartTime.ToUniversalTime();
     private readonly Channel<string> _stdoutChannel = Channel.CreateUnbounded<string>();
     private readonly ConcurrentQueue<string> _stdout = new();
     private readonly ConcurrentQueue<string> _stderr = new();
@@ -104,19 +105,30 @@ internal sealed class ProcessRun(Process process) : IAsyncDisposable
         }
 
         await Task.WhenAll(_stdoutReader!, _stderrReader!);
-        return new ProcessRunResult(process.Id, process.ExitCode, _stdout.ToArray(), _stderr.ToArray());
+        return new ProcessRunResult(process.Id, process.ExitCode, _stdout.ToArray(), _stderr.ToArray(), _processStartedAt);
     }
 
-    public async Task<ProcessRunResult> TerminateAsync()
+    public Task<ProcessRunResult> TerminateAsync() => TerminateCoreAsync(false);
+
+    public Task<ProcessRunResult> TerminateRunningAsync() => TerminateCoreAsync(true);
+
+    private async Task<ProcessRunResult> TerminateCoreAsync(bool requireRunning)
     {
-        if (!process.HasExited)
+        var running = !process.HasExited;
+        if (requireRunning && !running)
+        {
+            throw new InvalidOperationException("worker_exited_before_required_termination");
+        }
+        var terminationRequested = false;
+        if (running)
         {
             process.Kill(entireProcessTree: true);
+            terminationRequested = true;
         }
 
         await process.WaitForExitAsync();
         await Task.WhenAll(_stdoutReader!, _stderrReader!);
-        return new ProcessRunResult(process.Id, process.ExitCode, _stdout.ToArray(), _stderr.ToArray());
+        return new ProcessRunResult(process.Id, process.ExitCode, _stdout.ToArray(), _stderr.ToArray(), _processStartedAt, terminationRequested);
     }
 
     public async ValueTask DisposeAsync()
@@ -146,7 +158,7 @@ internal sealed class ProcessRun(Process process) : IAsyncDisposable
     }
 }
 
-internal sealed record ProcessRunResult(int ProcessId, int ExitCode, IReadOnlyList<string> StandardOutput, IReadOnlyList<string> StandardError)
+internal sealed record ProcessRunResult(int ProcessId, int ExitCode, IReadOnlyList<string> StandardOutput, IReadOnlyList<string> StandardError, DateTimeOffset ProcessStartedAt, bool ForcedTerminationRequested = false)
 {
     public JsonElement ReadResult()
     {

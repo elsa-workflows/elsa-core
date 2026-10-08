@@ -6,6 +6,7 @@ using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Options;
+using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.State;
 using Elsa.Workflows.Telemetry;
 using Microsoft.Extensions.Logging;
@@ -29,6 +30,7 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(IActivity activity, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
+        await PreflightAsync(options?.WorkflowInstanceId, cancellationToken);
         var workflow = Workflow.FromActivity(activity);
         var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);
         return await RunAsync(workflowGraph, options, cancellationToken);
@@ -37,6 +39,7 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(IWorkflow workflow, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
+        await PreflightAsync(options?.WorkflowInstanceId, cancellationToken);
         var builder = workflowBuilderFactory.CreateBuilder();
         var workflowDefinition = await builder.BuildWorkflowAsync(workflow, cancellationToken);
         return await RunAsync(workflowDefinition, options, cancellationToken);
@@ -52,6 +55,7 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync<T>(RunWorkflowOptions? options = null, CancellationToken cancellationToken = default) where T : IWorkflow, new()
     {
+        await PreflightAsync(options?.WorkflowInstanceId, cancellationToken);
         var builder = workflowBuilderFactory.CreateBuilder();
         var workflowDefinition = await builder.BuildWorkflowAsync<T>(cancellationToken);
         return await RunAsync(workflowDefinition, options, cancellationToken);
@@ -60,6 +64,7 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public async Task<TResult> RunAsync<T, TResult>(RunWorkflowOptions? options = null, CancellationToken cancellationToken = default) where T : WorkflowBase<TResult>, new()
     {
+        await PreflightAsync(options?.WorkflowInstanceId, cancellationToken);
         var builder = workflowBuilderFactory.CreateBuilder();
         var workflow = await builder.BuildWorkflowAsync<T>(cancellationToken);
         var result = await RunAsync(workflow, options, cancellationToken);
@@ -71,6 +76,7 @@ public class WorkflowRunner(
     {
         // Set up a workflow execution context.
         var instanceId = options?.WorkflowInstanceId ?? identityGenerator.GenerateId();
+        await PreflightAsync(instanceId, cancellationToken);
         var input = options?.Input;
         var properties = options?.Properties;
         var correlationId = options?.CorrelationId;
@@ -100,6 +106,7 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(Workflow workflow, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
+        await PreflightAsync(options?.WorkflowInstanceId, cancellationToken);
         var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);
         return await RunAsync(workflowGraph, options, cancellationToken);
     }
@@ -107,6 +114,7 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
+        await PreflightAsync(workflowState.Id, cancellationToken);
         var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);
         return await RunAsync(workflowGraph, workflowState, options, cancellationToken);
     }
@@ -114,6 +122,7 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowGraph workflowGraph, WorkflowState workflowState, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
+        await PreflightAsync(workflowState.Id, cancellationToken);
         // Create a workflow execution context.
         var input = options?.Input;
         var variables = options?.Variables;
@@ -206,6 +215,23 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
+        var guard = serviceProvider.GetService(typeof(IWorkflowExecutionGuard)) as IWorkflowExecutionGuard ?? workflowExecutionContext.GetService<IWorkflowExecutionGuard>();
+        IWorkflowExecutionAuthorization? authorization = null;
+        if (guard != null)
+        {
+            if (pipeline.GetType() != typeof(WorkflowExecutionPipeline))
+            {
+                await guard.DemandUnownedAsync(workflowExecutionContext.Id, workflowExecutionContext.CancellationToken);
+            }
+            else
+            {
+                authorization = await guard.AuthorizeAsync(workflowExecutionContext, WorkflowExecutionEntryPoint.Runner);
+            }
+        }
+
+        (Action Validate, WorkflowMiddlewareDelegate Execute)? authorizedInvocation = authorization != null
+            ? ((WorkflowExecutionPipeline)pipeline).CaptureAuthorizedInvocation()
+            : null;
         using var executionScope = WorkflowExecutionScope.Begin(workflowExecutionContext);
         var loggerState = loggerStateGenerator.GenerateLoggerState(workflowExecutionContext);
         using var loggingScope = logger.BeginScope(loggerState);
@@ -222,12 +248,35 @@ public class WorkflowRunner(
             await notificationSender.SendAsync(new WorkflowStarted(workflow, workflowExecutionContext), cancellationToken);
         }
 
+        // Authority denial is not a business workflow fault. Keep these checks outside the
+        // execution catch/telemetry, after callbacks and before any middleware entry.
+        if (authorization != null)
+        {
+            authorizedInvocation!.Value.Validate();
+            await authorization.RevalidateAsync(cancellationToken);
+            authorizedInvocation!.Value.Validate();
+        }
+
         var telemetryScope = WorkflowInstrumentation.StartWorkflow(workflowExecutionContext, isStarting);
         Exception? workflowExecutionException = null;
 
         try
         {
-            await pipeline.ExecuteAsync(workflowExecutionContext);
+            if (authorization != null)
+            {
+                using var authorizedPhase = WorkflowExecutionPhase.Enter(workflowExecutionContext);
+                await authorizedInvocation!.Value.Execute(workflowExecutionContext);
+            }
+            else
+            {
+                await pipeline.ExecuteAsync(workflowExecutionContext);
+            }
+        }
+        catch (WorkflowPipelineChangedException)
+        {
+            // A concurrent reconfiguration at the final dispatch boundary is still an
+            // admission denial, not an activity exception or persisted workflow fault.
+            throw;
         }
         catch (Exception e)
         {
@@ -256,5 +305,12 @@ public class WorkflowRunner(
         await notificationSender.SendAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), cancellationToken);
         await commitStateHandler.CommitAsync(workflowExecutionContext, workflowState, cancellationToken);
         return new(workflowExecutionContext, workflowState, workflowExecutionContext.Workflow, result, journal);
+    }
+    private async ValueTask PreflightAsync(string? instanceId, CancellationToken cancellationToken)
+    {
+        if (instanceId != null && serviceProvider.GetService(typeof(IWorkflowExecutionGuard)) is IWorkflowExecutionGuard guard)
+        {
+            await guard.DemandUnownedAsync(instanceId, cancellationToken);
+        }
     }
 }
