@@ -94,7 +94,7 @@ def validate_manifest(data: dict) -> dict:
     require(len(set(data["buildProjects"])) == len(data["buildProjects"])
             and all(valid_path(p, ".csproj") for p in data["buildProjects"]), "invalid_build_projects")
     require(type(data["workerAssemblies"]) is dict and all(matches(TOKEN, role)
-            and valid_path(path, ".dll") and path.startswith("test/workers/")
+            and valid_path(path, ".dll") and path.startswith('core/test/workers/')
             and "/bin/Release/net10.0/" in path
             for role, path in data["workerAssemblies"].items()), "invalid_worker_assemblies")
     require(type(data["cases"]) is list and bool(data["cases"]), "cases_missing")
@@ -310,7 +310,7 @@ def validate_evidence(directory: Path, cases: list[dict], identities: list[tuple
 def source_hashes(root: Path) -> dict[str, str]:
     # Conservative tracked superset includes implementation, workers/migrations, shared
     # props/targets/configuration and proof dependencies, not just csproj references.
-    paths = subprocess.check_output(["git", "-C", str(root), "ls-files", "-z", "--", "src", "test",
+    paths = subprocess.check_output(["git", "-C", str(root), "ls-files", "-z", "--", "core", "extensions", "studio",
         "build", "scripts/integration-program", ".github/workflows/admission-proof.yml", ".config",
         "Directory.*", "global.json", "NuGet.Config", "Elsa.sln", ".editorconfig", ".gitignore",
         ".gitattributes"], text=True).split("\0")

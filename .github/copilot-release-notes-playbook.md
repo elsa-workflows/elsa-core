@@ -26,7 +26,7 @@ If the range crosses the history import, identify the old repository/tag and the
 corresponding imported ancestor explicitly. Do not infer the previous release
 from the nearest repository-wide semver tag. Filter changes to the release unit's
 projects, plus shared dependency/API changes that actually affect it. Cite the
-[release-unit manifest](../doc/integration-program/release-units.json) when it
+[release-unit manifest](../docs/integration-program/release-units.json) when it
 contains this unit; otherwise verify the package boundary and current owner
 from its reviewed release evidence. Verify the live source and feed before
 calling a version published. Drafting notes does not authorize a GitHub Release,
@@ -116,7 +116,7 @@ If none are provided, omit the section entirely.
 - Every bullet has suffix `(#NNNN)` or `(sha)` where available
 - No PR numbers are guessed
 - Full changelog includes all relevant release-unit changes from the range and states the path/package filter used
-- A single-package draft uses `doc/changelogs/<package-id>/<version>.md`; a Core-wide multi-package draft keeps `doc/changelogs/<version>.md`; another multi-package unit uses a reviewed unit ID in `doc/changelogs/<unit-id>/<version>.md`
+- A single-package draft uses `core/docs/changelogs/<package-id>/<version>.md`; a Core-wide multi-package draft keeps `core/docs/changelogs/<version>.md`; another multi-package unit uses a reviewed unit ID in `core/docs/changelogs/<unit-id>/<version>.md`
 - Optional sections (Developer-facing / Tests / CI / Known issues) are omitted if empty
 
 ## Example prompt for a new session

@@ -36,7 +36,7 @@ class SolutionProject:
     @property
     def is_test(self) -> bool:
         # Elsa.Testing.* are shared test harnesses: grouped with tests and exempt from the foundation-only rule.
-        return self.path.startswith("test/") or self.name.startswith("Elsa.Testing.") or bool(TEST_SUFFIX.search(self.name))
+        return self.path.startswith(('core/test/', 'extensions/test/', 'studio/test/')) or self.name.startswith("Elsa.Testing.") or bool(TEST_SUFFIX.search(self.name))
 
 
 def read_solution(text: str) -> tuple[list[SolutionProject], dict[str, str], dict[str, str]]:
@@ -234,7 +234,13 @@ def filters(groups: dict[SolutionProject, str], projects: list[SolutionProject],
     def members(*names: str) -> set[SolutionProject]:
         return {project for project, group in groups.items() if group in names}
 
-    result = {"Elsa.Foundation.slnf": closure(members(FOUNDATION))}
+    core_exclusions = {
+        "core/test/integration/Elsa.Secrets.DefaultHost.IntegrationTests/Elsa.Secrets.DefaultHost.IntegrationTests.csproj",
+        "core/test/TlsSmoke/TlsSmoke.csproj",
+    }
+    result = {"Elsa.Core.slnf": sorted(project.path for project in projects
+                                     if project.path.startswith("core/") and project.path not in core_exclusions),
+              "Elsa.Foundation.slnf": closure(members(FOUNDATION))}
     for domain in domains:
         result[f"Elsa.{domain}.slnf"] = closure(members(FOUNDATION, domain))
     studio = members(FOUNDATION, STUDIO)

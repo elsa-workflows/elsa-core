@@ -39,7 +39,7 @@ class SolutionGroupsTests(unittest.TestCase):
         self.assertLessEqual(foundation_sources, selected)
 
     def test_unclassified_project_is_rejected(self) -> None:
-        stray = sg.SolutionProject("Elsa.Unlisted", "src/elsewhere/Elsa.Unlisted/Elsa.Unlisted.csproj", "0" * 32)
+        stray = sg.SolutionProject("Elsa.Unlisted", 'core/src/elsewhere/Elsa.Unlisted/Elsa.Unlisted.csproj', "0" * 32)
         with self.assertRaisesRegex(ValueError, "missing from scripts/solution/solution-groups.json"):
             sg.classify([*self.projects, stray], self.manifest)
 

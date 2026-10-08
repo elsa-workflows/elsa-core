@@ -88,10 +88,11 @@ docker run \
 
 [Elsa Documentation Website](https://docs.elsaworkflows.io/).
 
-- [Default Admin User bootstrap (shell + legacy feature system)](src/modules/Elsa.Identity/README.md)
-- [Studio source and local development](doc/studio/README.md)
-- [Extensions source and package boundaries](doc/extensions/README.md)
-- [Consolidated 3.10 package proof and publication boundaries](doc/integration-program/consolidated-package-proof.md)
+- [Core source and local development](core/docs/README.md)
+- [Default Admin User bootstrap (shell + legacy feature system)](core/src/modules/Elsa.Identity/README.md)
+- [Studio source and local development](studio/docs/README.md)
+- [Extensions source and package boundaries](extensions/docs/README.md)
+- [Consolidated 3.10 package proof and publication boundaries](docs/integration-program/consolidated-package-proof.md)
 
 ## Training
 
@@ -123,7 +124,7 @@ Elsa offers a wide range of features for building and executing workflows, inclu
 - Actor model for increased workflow throughput.
 - Dynamic expressions with support for C#, JavaScript, Python, and Liquid.
 - Persistence agnostic, with support for Entity Framework Core, MongoDB, and Dapper out of the box.
-- [Elsa Studio](src/studio): a modular Blazor dashboard app for managing and designing workflows.
+- [Elsa Studio](studio/src): a modular Blazor dashboard app for managing and designing workflows.
 
 ## Roadmap
 
@@ -188,18 +189,15 @@ git clone https://github.com/YOUR_USERNAME/elsa-core.git
 ```
 Replace `YOUR_USERNAME` with your GitHub username. For more information on forking a repo, check out the GitHub documentation [here](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo).
 
-Incorporating the details about the "apps" folder and its projects into the second point about opening the `Elsa.sln` using your favorite IDE, we can expand the instructions to guide developers on where to start and what projects they might want to explore first. Here's an updated version of that section with the additional information:
+### 2. Open the Shared Solution
 
-### 2. Open `Elsa.sln` Using Your Favorite IDE
-After cloning the repository, navigate to the cloned directory and open the `Elsa.sln` solution file with your preferred IDE that supports .NET development, such as Visual Studio, JetBrains Rider, or Visual Studio Code with the appropriate extensions.
+Open the root `Elsa.sln` in Visual Studio, JetBrains Rider or Visual Studio Code. Core, Extensions and Studio have separate product roots with their own `src/`, `test/` and `docs/` directories. The root solution filters select focused development subsets while retaining required project dependencies.
 
-Within the solution, you will find an "apps" folder containing three projects designed to help you get started and explore the capabilities of Elsa Workflow:
+- [Core development](core/docs/README.md): backend hosts, workflow modules and Core tests.
+- [Extensions development](extensions/docs/README.md): extension modules, tests and samples.
+- [Studio development](studio/docs/README.md): Blazor hosts, browser bundles and Studio tests.
 
-- **Elsa.Server.Web**: This project is a reference ASP.NET Core application that acts as a workflow server. It's a great starting point if you want to understand how Elsa functions as a server-side workflow engine.
-
-- **Elsa.ServerAndStudio.Web**: This project serves a dual purpose. Like `Elsa.Server.Web`, it acts as a workflow server. Additionally, it hosts the Elsa Studio Blazor WebAssembly app. This is the perfect project to run if you want to see the full capabilities of Elsa, including both the server aspects and the client-side studio experience in one application.
-
-- **Elsa.Studio.Web**: This project is a reference Blazor WebAssembly application that solely hosts the Elsa Studio Blazor WebAssembly app. It requires a running Elsa server application to connect to. Use this project if you're interested in focusing on the Elsa Studio UI and its interactions with an Elsa workflow server.
+Run build and test commands from the repository root. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and [AGENTS.md](AGENTS.md) for repository conventions. These source-development commands do not publish packages or change source-repository ownership.
 
 ### 3. Submit a PR with Your Changes
 Once you have made your changes, commit them and push them back to your fork. Then, navigate to the original Elsa Workflow repository and create a new Pull Request. Ensure your PR description clearly describes the changes and any relevant information that will help the reviewers understand your contributions. For a detailed guide on creating a pull request, visit [Creating a pull request from a fork](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork).

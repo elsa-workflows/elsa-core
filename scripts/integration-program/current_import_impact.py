@@ -14,11 +14,12 @@ from typing import Any
 
 import refresh_canonical_dependency_graph as graph_reader
 from release_unit_manifest import DEFAULT_UNIT_ID, get_unit, load_manifest
+from product_layout import map_path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MANIFEST = ROOT / "doc/integration-program/release-units.json"
-CORE_PROJECT = "src/modules/Elsa/Elsa.csproj"
+MANIFEST = ROOT / 'docs/integration-program/release-units.json'
+CORE_PROJECT = 'core/src/modules/Elsa/Elsa.csproj'
 KNOWN_EXTERNAL_ELSA_PACKAGES = {"elsa.platform.packagemanifest.generator"}
 
 
@@ -120,10 +121,11 @@ def select_scenarios(
 ) -> dict[str, Any]:
     if unit["package_id"] != "Elsa.Slack" or unit["mapped"]["repository"] != "elsa-core":
         raise ValueError("This bounded selector accepts only the mapped Elsa.Slack release unit")
-    slack_project = unit["mapped"]["project_path"]
+    slack_project = map_path(unit["mapped"]["project_path"])
     slack = selected_tests(graph, asset_documents, slack_project)
     shared = selected_tests(graph, asset_documents, CORE_PROJECT)
-    mapped_tests = unit["mapped"]["test_projects"]
+    mapped_tests = [{**row, "project_path": map_path(row["project_path"])}
+                    for row in unit["mapped"]["test_projects"]]
     source_test_rows = unit["source"]["test_projects"]
     source_paths = [row["project_path"] for row in source_test_rows]
     mapped_source_paths = [row["source_project_path"] for row in mapped_tests]

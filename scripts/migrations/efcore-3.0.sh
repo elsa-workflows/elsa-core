@@ -19,7 +19,7 @@ connStrings=(
 for module in "${mods[@]}"; do
     # Loop through each provider
     for provider in "${providers[@]}"; do
-        providerPath="../src/modules/Elsa.EntityFrameworkCore.$provider"
+        providerPath="../core/src/modules/Elsa.EntityFrameworkCore.$provider"
         migrationsPath="Migrations/$module"
     
         echo "Updating migrations for $provider..."

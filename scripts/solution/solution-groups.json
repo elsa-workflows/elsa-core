@@ -54,19 +54,19 @@
         "Elsa.Persistence.VNext"
       ],
       "paths": [
-        "src/extensions/persistence/",
-        "src/extensions/data/",
-        "src/extensions/sql/"
+        "extensions/src/persistence/",
+        "extensions/src/data/",
+        "extensions/src/sql/"
       ]
     },
     "Runtime": {
       "paths": [
-        "src/extensions/actors/",
-        "src/extensions/runtimes/",
-        "src/extensions/servicebus/",
-        "src/extensions/caching/",
-        "src/extensions/mqtt/",
-        "src/extensions/scheduling/"
+        "extensions/src/actors/",
+        "extensions/src/runtimes/",
+        "extensions/src/servicebus/",
+        "extensions/src/caching/",
+        "extensions/src/mqtt/",
+        "extensions/src/scheduling/"
       ],
       "namePrefixes": [
         "Elsa.Workflows.Admission"
@@ -77,7 +77,7 @@
         "Elsa.AI."
       ],
       "paths": [
-        "src/extensions/agents/"
+        "extensions/src/agents/"
       ]
     },
     "Security": {
@@ -87,9 +87,9 @@
         "Elsa.Connections"
       ],
       "paths": [
-        "src/extensions/ldap/",
-        "src/extensions/secrets/",
-        "src/extensions/connections/"
+        "extensions/src/ldap/",
+        "extensions/src/secrets/",
+        "extensions/src/connections/"
       ]
     },
     "Operations": {
@@ -101,10 +101,10 @@
         "Elsa.Workflows.Runtime.Dashboard"
       ],
       "paths": [
-        "src/extensions/diagnostics/",
-        "src/extensions/devops/",
-        "src/extensions/retention/",
-        "src/extensions/alterations/"
+        "extensions/src/diagnostics/",
+        "extensions/src/devops/",
+        "extensions/src/retention/",
+        "extensions/src/alterations/"
       ]
     },
     "Integrations": {
@@ -119,34 +119,35 @@
         "Elsa.Shells.Api"
       ],
       "paths": [
-        "src/extensions/communication/",
-        "src/extensions/email/",
-        "src/extensions/telecom/",
-        "src/extensions/cms/",
-        "src/extensions/io/",
-        "src/extensions/storage/",
-        "src/extensions/http/",
-        "src/extensions/workflows/",
-        "src/extensions/dropins/"
+        "extensions/src/communication/",
+        "extensions/src/email/",
+        "extensions/src/telecom/",
+        "extensions/src/cms/",
+        "extensions/src/io/",
+        "extensions/src/storage/",
+        "extensions/src/http/",
+        "extensions/src/workflows/",
+        "extensions/src/dropins/"
       ]
     }
   },
   "studio": {
     "paths": [
-      "src/studio/",
-      "samples/studio/"
+      "studio/src/",
+      "studio/samples/"
     ]
   },
   "apps": {
     "paths": [
-      "src/apps/",
-      "src/clients/",
+      "core/src/apps/",
+      "core/src/clients/",
       "build/"
     ]
   },
   "samples": {
     "paths": [
-      "samples/"
+      "core/samples/",
+      "extensions/samples/"
     ]
   }
 }

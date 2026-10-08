@@ -14,6 +14,7 @@ import stat
 import zipfile
 
 import prove_consolidated_packages as packages
+from product_layout import map_path
 
 MANIFEST = "preupload-manifest.json"
 LEGACY_SECRETS = {f"Elsa.Secrets.{suffix}" for suffix in ("Api", "Core", "Management", "Models", "Scripting")}
@@ -36,6 +37,9 @@ def inventory_identity(manifest: dict) -> dict:
 def compare_inventory(manifest: dict, baseline: dict, output: Path) -> None:
     actual = inventory_identity(manifest)
     expected = inventory_identity(baseline)
+    for rows in expected.values():
+        for row in rows:
+            row["project"] = map_path(row["project"])
     differences = {}
     for category in actual:
         before = {json.dumps(row, sort_keys=True) for row in expected[category]}

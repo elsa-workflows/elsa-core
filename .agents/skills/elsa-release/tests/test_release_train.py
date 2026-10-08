@@ -2,8 +2,10 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
+from datetime import datetime, timezone, timedelta
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -21,7 +23,7 @@ class TrainTests(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root=Path(self.temp.name)
-        self.args=SimpleNamespace(version='3.9.0',kind=None,profile=train.DEFAULT_PROFILE,repositories=None,repos_root=str(self.root),pr=None,source=None,no_announcements=False,state=self.root/'state.json')
+        self.args=SimpleNamespace(version='3.9.0',kind=None,profile=train.DEFAULT_PROFILE,repositories=None,repos_root=str(self.root),pr=None,source=None,no_announcements=False,no_containers=True,state=self.root/'state.json')
         self.state=train.init(self.args)
         self.remote_existing=False
 
@@ -71,6 +73,664 @@ class TrainTests(unittest.TestCase):
             'receipt': str(path), 'sha256': train.digest(path), 'id': receipt['id']
         }
 
+    def container_fixture(self, state, *, version=None, image_names=None, source_commit='a' * 40, external_package_version=None, event='workflow_dispatch'):
+        version = version or state['version']
+        inventory = train.configured_container_release(state['profile'])
+        image_names = image_names or [image['name'] for image in inventory['images']]
+        images = [image for image in inventory['images'] if image['name'] in image_names]
+        packages = {package for image in images for package in image['packages']}
+        package_versions = {family: version for family in ('core', 'studio', 'extensions')}
+        if external_package_version:
+            package_versions['extensions'] = external_package_version
+        digest_by_name = {}
+        for index, image in enumerate(images, start=1):
+            if not image.get('alias_of'):
+                digest_by_name[image['name']] = 'sha256:' + f'{index:064x}'
+        for image in images:
+            if image.get('alias_of'):
+                digest_by_name[image['name']] = digest_by_name[image['alias_of']]
+        rows = []
+        registry = {}
+        resolved = {family: [] for family in packages}
+        for image in images:
+            package_versions_for_image = image['packages']
+            source_image = next((candidate for candidate in inventory['images'] if candidate['name'] == image.get('alias_of')), image)
+            image_resolved = {family: [] for family in package_versions_for_image}
+            for family in package_versions_for_image:
+                package_id = state['profile']['container_release']['package_probe_ids'][family][0]
+                candidate = {'id': package_id, 'version': package_versions[family]}
+                if candidate not in resolved[family]:
+                    resolved[family].append(candidate)
+                image_resolved[family].append(candidate)
+            platform_digests = {
+                platform: 'sha256:' + f'{len(rows) + platform_index + 100:064x}'
+                for platform_index, platform in enumerate(image['platforms'], start=1)
+            }
+            if image.get('alias_of'):
+                alias_source = next(row for row in rows if row['name'] == image['alias_of'])
+                platform_digests = {item['platform']: item['digest'] for item in alias_source['platforms']}
+            digest_value = digest_by_name[image['name']]
+            row = {
+                'name': image['name'],
+                'repository': image['repository'],
+                'tag': image['tag'].format(version=version),
+                'sourceRef': source_image['repository'] + ':' + (version if event == 'release' else version + '-sha-' + source_commit),
+                'digest': digest_value,
+                'packageVersions': {family: package_versions[family] for family in package_versions_for_image},
+                'resolvedPackages': image_resolved,
+                'platforms': [{'platform': name, 'digest': value} for name, value in platform_digests.items()],
+                'registryVerified': True,
+                'smoke': {
+                    'success': True,
+                    'imageDigest': digest_value,
+                    'platforms': [
+                        {
+                            'platform': platform,
+                            'imageDigest': platform_digests[platform],
+                            'status': 'success',
+                            'endpoint': 'http://localhost/health',
+                            'httpStatus': 200,
+                            **({
+                                'identityLogin': {'status': 200, 'endpoint': '/elsa/api/identity/login'},
+                                'bearerApi': {
+                                    'status': 200,
+                                    'endpoint': '/elsa/api/workflow-definitions?page=0&pageSize=1',
+                                    'contentType': 'application/json; charset=utf-8',
+                                },
+                                'dashboardApi': {
+                                    'status': 200,
+                                    'endpoint': '/elsa/api/dashboard/overview?range=24h&includeSystem=false',
+                                    'contentType': 'application/json; charset=utf-8',
+                                    'runtimeStatus': 'AcceptingWork',
+                                    'isAcceptingWork': True,
+                                    'workflowMetricsValid': True,
+                                    'running': 0,
+                                },
+                            } if source_image.get('smoke_auth') is True else {}),
+                        }
+                        for platform in image['platforms']
+                    ],
+                },
+            }
+            rows.append(row)
+            registry[(row['repository'], row['tag'])] = {'digest': digest_value, 'platforms': platform_digests}
+        run_id = 44
+        run_url = f"https://github.com/{inventory['repository']}/actions/runs/{run_id}"
+        source_ref = f'refs/tags/{version}' if event == 'release' else 'refs/heads/main'
+        workflow_inputs = {
+            inventory['workflow_inputs']['version']: '' if event == 'release' else version,
+            inventory['workflow_inputs']['publish']: '' if event == 'release' else True,
+            inventory['workflow_inputs']['images']: '' if event == 'release' else ','.join(image['name'] for image in images if not image.get('alias_of')),
+            inventory['workflow_inputs']['expected_commit']: '' if event == 'release' else source_commit,
+        }
+        selected_families = set(packages)
+        for family in ('core', 'studio', 'extensions'):
+            workflow_inputs[inventory['workflow_inputs'][family]] = '' if event == 'release' or family not in selected_families else package_versions[family]
+        receipt = {
+            'schemaVersion': 1,
+            'releaseVersion': version,
+            'appsRepository': inventory['repository'],
+            'appsSource': {'ref': source_ref, 'commit': source_commit},
+            'appsSourceCommit': source_commit,
+            'workflowRun': {
+                'id': run_id,
+                'url': run_url,
+                'repository': inventory['repository'],
+                'workflow': inventory['workflow'],
+                'runAttempt': 1,
+                'event': event,
+                'ref': source_ref,
+                'headSha': source_commit,
+                'conclusion': 'success',
+            },
+            'publication': 'published',
+            'packageVersions': package_versions,
+            'resolvedPackages': resolved,
+            'workflowInputs': workflow_inputs,
+            'registryVerifiedAt': datetime.now(timezone.utc).isoformat(),
+            'images': rows,
+            'smoke': {'success': True, 'results': [{'name': 'smoke', 'success': True}]},
+        }
+        receipt_path = self.root / f'container-receipt-{version}.json'
+        train.save(receipt_path, receipt)
+        archive_path = self.root / f'container-artifact-{version}.zip'
+        with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr('container-release-receipt.json', receipt_path.read_bytes())
+        artifact = {
+            'id': 123,
+            'name': train.container_artifact_name(version, run_id, 1),
+            'digest': 'sha256:' + train.digest(archive_path),
+            'expired': False,
+        }
+        live_run = {
+            'id': run_id,
+            'run_attempt': 1,
+            'html_url': run_url,
+            'path': inventory['workflow'],
+            'head_sha': source_commit,
+            'head_branch': version if event == 'release' else 'main',
+            'event': event,
+            'status': 'completed',
+            'conclusion': 'success',
+            'repository': {'full_name': inventory['repository']},
+        }
+        return receipt, receipt_path, archive_path, artifact, live_run, registry
+
+    def container_github(self, artifact, live_run, *args):
+        url = args[-1]
+        if f"/actions/runs/{live_run['id']}/artifacts?" in url:
+            return [{'artifacts': [artifact]}]
+        if url.endswith(f"/actions/runs/{live_run['id']}"):
+            return live_run
+        if '/compare/' in url:
+            return {'status': 'identical'}
+        return self.github(*args)
+
+    def refresh_container_artifact(self, fixture):
+        receipt, receipt_path, archive_path, artifact, *_ = fixture
+        train.save(receipt_path, receipt)
+        with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr('container-release-receipt.json', receipt_path.read_bytes())
+        artifact['digest'] = 'sha256:' + train.digest(archive_path)
+
+    def validate_container_fixture(self, state, fixture, *, binding=None, image_names=None):
+        receipt, receipt_path, archive_path, artifact, live_run, registry = fixture
+        with patch.object(train, 'gh', side_effect=lambda *args: self.container_github(artifact, live_run, *args)), \
+             patch.object(train, 'dockerhub_manifest', side_effect=lambda repository, tag: registry[(repository, tag)]), \
+             patch.object(train, 'package_feed_available', return_value=True):
+            return train.validate_container_receipt(
+                state['profile'], state['version'], receipt,
+                image_names=image_names, binding=binding,
+                artifact_archive=archive_path, receipt_path=receipt_path,
+            )
+
+    def test_container_inventory_is_versioned_and_scoped_to_selected_repositories(self):
+        profile = train.read(train.DEFAULT_PROFILE)
+        core = train.make_container_state(profile, '3.9.0', ['core'], available_repositories=['core'])
+        self.assertEqual(['server', 'server-alias'], core['images'])
+        self.assertEqual({'core', 'extensions'}, set(core['package_versions']))
+        studio = train.make_container_state(profile, '3.9.0', ['studio'], available_repositories=['core', 'studio'])
+        self.assertEqual(6, len(studio['images']))
+        self.assertEqual({'core', 'studio', 'extensions'}, set(studio['package_versions']))
+        extensions = train.make_container_state(profile, '3.9.0', ['extensions'], available_repositories=['core', 'studio', 'extensions'])
+        self.assertEqual(8, len(extensions['images']))
+        templates = train.make_container_state(profile, '3.9.0', ['templates'], available_repositories=['core', 'studio'])
+        self.assertFalse(templates['enabled'])
+        self.assertEqual([], templates['images'])
+        explicitly_disabled = train.make_container_state(profile, '3.9.0', None, no_containers=True)
+        self.assertFalse(explicitly_disabled['enabled'])
+        self.assertIn('explicitly disabled', explicitly_disabled['reason'])
+        profile_without_container_images = copy.deepcopy(profile)
+        profile_without_container_images.pop('container_release')
+        disabled_custom_profile = train.make_container_state(profile_without_container_images, '3.9.0', no_containers=True)
+        self.assertFalse(disabled_custom_profile['enabled'])
+        self.assertIn('explicitly disabled', disabled_custom_profile['reason'])
+        self.assertTrue(all(image['tag'] == '{version}' for image in profile['container_release']['images']))
+        self.assertEqual(['server', 'server-alias'], train.expand_container_image_selection(profile, ['server']))
+        self.assertEqual(['studio-wasm', 'studio-wasm-alias'], train.expand_container_image_selection(profile, ['studio-wasm']))
+        with self.assertRaisesRegex(ValueError, 'Unknown configured container image'):
+            train.expand_container_image_selection(profile, ['not-configured'])
+
+    def test_container_receipt_matches_producer_artifact_live_registry_and_release_event(self):
+        state = self.ready_container_state(no_containers=False)
+        fixture = self.container_fixture(state)
+        report = self.validate_container_fixture(state, fixture)
+        self.assertTrue(report['verified'])
+        self.assertEqual(8, len(report['images']))
+        self.assertEqual(44, report['workflow_run_id'])
+
+        release_fixture = self.container_fixture(state, event='release')
+        release_report = self.validate_container_fixture(state, release_fixture)
+        self.assertTrue(release_report['verified'])
+
+    def test_container_receipt_accepts_runtime_dashboard_package_in_core_assets(self):
+        state = self.ready_container_state(repositories=['core'], no_containers=False)
+        fixture = self.container_fixture(state, image_names=state['containers']['images'])
+        receipt = fixture[0]
+        dashboard_package = {'id': 'Elsa.Workflows.Runtime.Dashboard', 'version': state['version']}
+        receipt['resolvedPackages']['core'].append(dashboard_package)
+        for image in receipt['images']:
+            if image['name'] in ('server', 'server-alias'):
+                image['resolvedPackages']['core'].append(dashboard_package)
+        self.refresh_container_artifact(fixture)
+
+        report = self.validate_container_fixture(state, fixture, image_names=state['containers']['images'])
+        self.assertTrue(report['verified'])
+        self.assertEqual(2, len(report['images']))
+
+    def test_container_receipt_requires_authenticated_dashboard_runtime_semantics(self):
+        state = self.ready_container_state(no_containers=False)
+        mutations = (
+            ('missing dashboard evidence', lambda row: row.pop('dashboardApi')),
+            ('missing identity login proof', lambda row: row.pop('identityLogin')),
+            ('wrong bearer endpoint', lambda row: row['bearerApi'].update(endpoint='/elsa/api/other')),
+            ('non-JSON dashboard response', lambda row: row['dashboardApi'].update(contentType='text/html')),
+            ('failed dashboard request', lambda row: row['dashboardApi'].update(status=503)),
+            ('runtime not accepting work', lambda row: row['dashboardApi'].update(runtimeStatus='Unavailable')),
+            ('runtime acceptance false', lambda row: row['dashboardApi'].update(isAcceptingWork=False)),
+            ('workflow metrics invalid', lambda row: row['dashboardApi'].update(workflowMetricsValid=False)),
+            ('invalid running count', lambda row: row['dashboardApi'].update(running=True)),
+        )
+        for label, mutate in mutations:
+            with self.subTest(case=label):
+                fixture = self.container_fixture(state)
+                receipt = fixture[0]
+                mutate(receipt['images'][0]['smoke']['platforms'][0])
+                self.refresh_container_artifact(fixture)
+                with self.assertRaisesRegex(ValueError, 'healthy authenticated dashboard runtime evidence'):
+                    self.validate_container_fixture(state, fixture)
+
+        backend_images = ['server', 'server-alias']
+        fixture = self.container_fixture(state, image_names=backend_images)
+        alias = next(image for image in fixture[0]['images'] if image['name'] == 'server-alias')
+        alias['smoke']['platforms'][0].pop('dashboardApi')
+        self.refresh_container_artifact(fixture)
+        with self.assertRaisesRegex(ValueError, 'healthy authenticated dashboard runtime evidence'):
+            self.validate_container_fixture(state, fixture, image_names=backend_images)
+
+    def test_studio_only_container_receipt_does_not_require_backend_dashboard_probe(self):
+        state = self.ready_container_state(no_containers=False)
+        image_names = ['studio-wasm']
+        fixture = self.container_fixture(state, image_names=image_names)
+        platform_smoke = fixture[0]['images'][0]['smoke']['platforms'][0]
+        self.assertNotIn('dashboardApi', platform_smoke)
+
+        report = self.validate_container_fixture(state, fixture, image_names=image_names)
+        self.assertTrue(report['verified'])
+        self.assertEqual(['studio-wasm'], list(report['images']))
+
+    def test_container_receipt_accepts_producer_decimal_run_id_and_rejects_malformed_values(self):
+        state = self.ready_container_state(no_containers=False)
+        fixture = self.container_fixture(state)
+        receipt, _, _, artifact, live_run, _ = fixture
+        run_id = 37736455508
+        run_url = f"https://github.com/{state['profile']['container_release']['repository']}/actions/runs/{run_id}"
+        receipt['workflowRun']['id'] = str(run_id)
+        receipt['workflowRun']['url'] = run_url
+        artifact['name'] = train.container_artifact_name(state['version'], run_id, 1)
+        live_run.update(id=run_id, html_url=run_url)
+        self.refresh_container_artifact(fixture)
+
+        report = self.validate_container_fixture(state, fixture)
+        self.assertEqual(run_id, report['workflow_run_id'])
+
+        for malformed in ('037736455508', '37736455508x', '', ' 44', '+44', '0', '-44', '４４', True, 0, -37736455508):
+            with self.subTest(value=malformed), self.assertRaisesRegex(ValueError, 'canonical decimal string workflowRun.id'):
+                train.validate_container_receipt(state['profile'], state['version'], {**receipt, 'workflowRun': {**receipt['workflowRun'], 'id': malformed}})
+
+        with self.assertRaisesRegex(ValueError, 'Recovery receipt requires positive integer'):
+            train.positive_int(str(run_id), 'original_release_run.id')
+
+    def test_forged_image_digest_and_receipt_bytes_do_not_verify(self):
+        state = self.ready_container_state(no_containers=False)
+        fixture = self.container_fixture(state)
+        receipt, receipt_path, archive_path, artifact, live_run, registry = fixture
+        receipt['images'][0]['digest'] = 'sha256:' + 'f' * 64
+        receipt['images'][0]['smoke']['imageDigest'] = receipt['images'][0]['digest']
+        self.refresh_container_artifact(fixture)
+        with patch.object(train, 'gh', side_effect=lambda *args: self.container_github(artifact, live_run, *args)), \
+             patch.object(train, 'dockerhub_manifest', side_effect=lambda repository, tag: registry[(repository, tag)]), \
+             patch.object(train, 'package_feed_available', return_value=True), \
+             self.assertRaisesRegex(ValueError, 'differs from the receipt'):
+            train.validate_container_receipt(state['profile'], state['version'], receipt, artifact_archive=archive_path, receipt_path=receipt_path)
+
+        receipt['images'][0]['digest'] = registry[(receipt['images'][0]['repository'], receipt['images'][0]['tag'])]['digest']
+        receipt['images'][0]['smoke']['imageDigest'] = receipt['images'][0]['digest']
+        platform = receipt['images'][0]['platforms'][0]['platform']
+        receipt['images'][0]['platforms'][0]['digest'] = 'sha256:' + 'e' * 64
+        receipt['images'][0]['smoke']['platforms'][0]['imageDigest'] = 'sha256:' + 'e' * 64
+        self.refresh_container_artifact(fixture)
+        with patch.object(train, 'gh', side_effect=lambda *args: self.container_github(artifact, live_run, *args)), \
+             patch.object(train, 'dockerhub_manifest', side_effect=lambda repository, tag: registry[(repository, tag)]), \
+             patch.object(train, 'package_feed_available', return_value=True), \
+             self.assertRaisesRegex(ValueError, 'differs from the receipt'):
+            train.validate_container_receipt(state['profile'], state['version'], receipt, artifact_archive=archive_path, receipt_path=receipt_path)
+
+        receipt['images'][0]['platforms'][0]['digest'] = registry[(receipt['images'][0]['repository'], receipt['images'][0]['tag'])]['platforms'][platform]
+        receipt['images'][0]['smoke']['platforms'][0]['imageDigest'] = receipt['images'][0]['platforms'][0]['digest']
+        self.refresh_container_artifact(fixture)
+        receipt_path.write_text(receipt_path.read_text() + ' ')
+        with patch.object(train, 'gh', side_effect=lambda *args: self.container_github(artifact, live_run, *args)), \
+             self.assertRaisesRegex(ValueError, 'differs from the exact successful-run artifact'):
+            train.validate_container_receipt(state['profile'], state['version'], receipt, artifact_archive=archive_path, receipt_path=receipt_path)
+
+    def test_full_release_cannot_complete_without_fresh_container_receipt(self):
+        state = self.ready_container_state(no_containers=False)
+        fixture = self.container_fixture(state)
+        receipt, receipt_path, archive_path, artifact, live_run, registry = fixture
+        receipt['workflowRun']['id'] = '44'
+        self.refresh_container_artifact(fixture)
+        selected = train.container_plan(state)
+        state['containers']['binding'] = {
+            'source_ref': 'main',
+            'commit': 'a' * 40,
+            'packages': dict(state['containers']['package_versions']),
+            'images': [image['name'] for image in selected['images']],
+        }
+        state['containers']['dispatch'] = {'run_id': 44, 'source_commit': 'a' * 40}
+        state_path = self.root / 'containers-state.json'
+        train.save(state_path, state)
+        with patch.object(train, 'gh', side_effect=lambda *args: self.container_github(artifact, live_run, *args)), \
+             patch.object(train, 'dockerhub_manifest', side_effect=lambda repository, tag: registry[(repository, tag)]), \
+             patch.object(train, 'package_feed_available', return_value=True):
+            self.assertEqual('containers', train.status(state)['next'])
+            args = SimpleNamespace(state=state_path, receipt=receipt_path, artifact_archive=archive_path, replace=False)
+            result = train.record_containers(state, args)
+            self.assertEqual(44, result['workflow_run_id'])
+            self.assertEqual(44, state['containers']['receipt']['run_id'])
+            self.assertEqual('complete', train.status(state)['next'])
+
+            receipt_path.write_text(receipt_path.read_text() + ' ')
+            self.assertEqual('containers', train.status(state)['next'])
+            train.save(receipt_path, receipt)
+            report_path = Path(state['containers']['verification']['report'])
+            report = train.read(report_path)
+            report['verified_at'] = (datetime.now(timezone.utc) - timedelta(hours=25)).isoformat()
+            train.save(report_path, report)
+            state['containers']['verification']['sha256'] = train.digest(report_path)
+            self.assertEqual('containers', train.status(state)['next'])
+
+    def test_record_containers_rejects_malformed_or_mismatched_run_id(self):
+        state = self.ready_container_state(no_containers=False)
+        fixture = self.container_fixture(state)
+        receipt, receipt_path, archive_path, *_ = fixture
+        selected = train.container_plan(state)
+        state['containers']['binding'] = {
+            'source_ref': 'main',
+            'commit': 'a' * 40,
+            'packages': dict(state['containers']['package_versions']),
+            'images': [image['name'] for image in selected['images']],
+        }
+        state['containers']['dispatch'] = {'run_id': 44, 'source_commit': 'a' * 40}
+        args = SimpleNamespace(state=self.root / 'malformed-run-id-state.json', receipt=receipt_path, artifact_archive=archive_path, replace=False)
+        train.save(args.state, state)
+
+        for value, message in (('044', 'canonical decimal string workflowRun.id'), (True, 'canonical decimal string workflowRun.id'), (-44, 'canonical decimal string workflowRun.id'), ('45', 'differs from the release checkpoint dispatch')):
+            with self.subTest(value=value):
+                receipt['workflowRun']['id'] = value
+                train.save(receipt_path, receipt)
+                with patch.object(train, 'status', return_value={'next': 'containers'}), self.assertRaisesRegex(ValueError, message):
+                    train.record_containers(state, args)
+                self.assertIsNone(state['containers'].get('receipt'))
+
+    def test_core_subset_requires_external_extension_version_and_pins_dispatch_sha(self):
+        state = self.ready_container_state(repositories=['core'], no_containers=False)
+        commit = 'a' * 40
+
+        def github(*args):
+            url = args[-1]
+            if url.endswith('/commits/main'):
+                return {'sha': commit}
+            return self.github(*args)
+
+        args = SimpleNamespace(state=state['repositories']['core']['path'], source_ref=None, commit='a' * 40, package_version=[], replace=False)
+        args.state = self.root / 'containers-core.json'
+        train.save(args.state, state)
+        with patch.object(train, 'gh', side_effect=github), self.assertRaisesRegex(ValueError, 'explicit published extensions package version'):
+            train.bind_containers(state, args)
+
+        args.package_version = ['extensions=3.8.4']
+        with patch.object(train, 'gh', side_effect=github), patch.object(train, 'package_feed_available', return_value=True):
+            binding = train.bind_containers(state, args)
+        self.assertEqual({'core', 'extensions'}, set(binding['packages']))
+        self.assertEqual('3.8.4', binding['packages']['extensions'])
+
+        fixture = self.container_fixture(state, image_names=state['containers']['images'], external_package_version='3.8.4')
+        report = self.validate_container_fixture(state, fixture, binding=binding, image_names=state['containers']['images'])
+        self.assertEqual(2, len(report['images']))
+
+        def reconcile(inventory, dispatch, binding):
+            dispatch.update(run_id=44, url='https://github.com/run', run_attempt=1)
+            return {'id': 44, 'html_url': 'https://github.com/run'}
+
+        with patch.object(train, 'gh', side_effect=github), patch.object(train, 'command') as run_command, patch.object(train, 'reconcile_container_dispatch', side_effect=reconcile):
+            result = train.dispatch_containers(state, args)
+        self.assertEqual('wait-for-container-run', result['phase'])
+        command_args = run_command.call_args.args[0]
+        self.assertIn('--field', command_args)
+        self.assertIn('expected_commit=' + commit, command_args)
+        self.assertIn('images=server', command_args)
+
+    def test_dispatch_clears_only_definite_github_rejections(self):
+        failures = (
+            ('rejected', ValueError('HTTP 422: workflow input is invalid'), False),
+            ('timeout', subprocess.TimeoutExpired(['gh', 'workflow', 'run'], 120), True),
+            ('eof', ValueError('unexpected EOF while reading response'), True),
+        )
+        for suffix, failure, pending in failures:
+            with self.subTest(suffix=suffix):
+                state = self.ready_container_state(repositories=['core'], no_containers=False)
+                commit = 'a' * 40
+
+                def github(*args):
+                    if args[-1].endswith('/commits/main'):
+                        return {'sha': commit}
+                    return self.github(*args)
+
+                args = SimpleNamespace(
+                    state=self.root / f'dispatch-{suffix}.json', source_ref=None,
+                    commit='a' * 40, package_version=['extensions=3.8.4'], replace=False,
+                )
+                train.save(args.state, state)
+                with patch.object(train, 'gh', side_effect=github), patch.object(train, 'package_feed_available', return_value=True):
+                    train.bind_containers(state, args)
+
+                with patch.object(train, 'gh', side_effect=github), patch.object(train, 'command', side_effect=failure), self.assertRaises(type(failure)):
+                    train.dispatch_containers(state, args)
+
+                saved = train.read(args.state)['containers']['dispatch']
+                if pending:
+                    self.assertIsNotNone(saved)
+                    self.assertEqual(commit, saved['source_commit'])
+                else:
+                    self.assertIsNone(saved)
+                    self.assertIsNone(state['containers']['dispatch'])
+
+    def test_container_source_requires_canonical_ref_and_main_ancestry_before_dispatch(self):
+        state = self.ready_container_state(repositories=['core'], no_containers=False)
+        args = SimpleNamespace(
+            state=self.root / 'untrusted-apps-source.json', source_ref='feature/untrusted',
+            commit='a' * 40, package_version=['extensions=3.8.4'], replace=False,
+        )
+        with patch.object(train, 'gh', side_effect=self.github), self.assertRaisesRegex(ValueError, 'canonical branch or the exact release-version tag'):
+            train.bind_containers(state, args)
+
+        commit = 'b' * 40
+        state['containers']['package_versions']['extensions'] = '3.8.4'
+        state['containers']['binding'] = {
+            'source_ref': 'main',
+            'commit': commit,
+            'packages': {'core': '3.9.0', 'extensions': '3.8.4'},
+            'images': state['containers']['images'],
+        }
+        train.save(args.state, state)
+
+        def uncontained_github(*call_args):
+            url = call_args[-1]
+            if url.endswith('/commits/main'):
+                return {'sha': commit}
+            if '/compare/' in url:
+                return {'status': 'behind'}
+            return self.github(*call_args)
+
+        with patch.object(train, 'gh', side_effect=uncontained_github), patch.object(train, 'command') as run_command, \
+             self.assertRaisesRegex(ValueError, 'not in the canonical main branch history'):
+            train.dispatch_containers(state, args)
+        run_command.assert_not_called()
+        self.assertIsNone(state['containers']['dispatch'])
+
+    def test_container_source_accepts_canonical_branch_and_exact_version_tag(self):
+        inventory = train.configured_container_release(self.state['profile'])
+        commit = 'a' * 40
+
+        def github(*args):
+            url = args[-1]
+            if '/commits/' in url:
+                return {'sha': commit}
+            if '/compare/' in url:
+                return {'status': 'ahead'}
+            raise AssertionError(f'Unexpected GitHub call {args}')
+
+        with patch.object(train, 'gh', side_effect=github):
+            self.assertEqual({'source_ref': 'main', 'commit': commit}, train.validate_container_source(inventory, 'main', '3.9.0'))
+            self.assertEqual({'source_ref': '3.9.0', 'commit': commit}, train.validate_container_source(inventory, 'refs/tags/3.9.0', '3.9.0'))
+
+    def test_bind_containers_cli_requires_full_reviewed_apps_commit(self):
+        state_path = self.root / 'empty-state.json'
+        train.save(state_path, {})
+        script = str(Path(train.__file__))
+
+        missing = subprocess.run(
+            [sys.executable, script, '--state', str(state_path), 'bind-containers'],
+            text=True, capture_output=True,
+        )
+        self.assertEqual(2, missing.returncode)
+        self.assertIn('--commit', missing.stderr)
+
+        malformed = subprocess.run(
+            [sys.executable, script, '--state', str(state_path), 'bind-containers', '--commit', 'abc123'],
+            text=True, capture_output=True,
+        )
+        self.assertEqual(1, malformed.returncode)
+        self.assertIn('full 40-character SHA', malformed.stderr)
+
+    def test_legacy_container_checkpoint_requires_explicit_adoption(self):
+        old_profile = copy.deepcopy(self.state['profile'])
+        old_profile.pop('container_release')
+        self.assertTrue(train.compatible_profile(old_profile, self.state['profile']))
+        self.state.pop('containers')
+        self.state['profile'].pop('container_release')
+        self.assertEqual('adopt-containers', train.status(self.state)['next'])
+        adopted = train.adopt_containers(self.state, SimpleNamespace(no_containers=False))
+        self.assertTrue(adopted['enabled'])
+        self.assertEqual(8, len(adopted['images']))
+
+    def custom_container_profile(self):
+        profile = copy.deepcopy(self.state['profile'])
+        profile['container_release']['source_ref'] = 'release/custom'
+        profile['container_release']['canonical_ref'] = 'release/custom'
+        for image in profile['container_release']['images']:
+            image['repository'] = image['repository'].replace('elsaworkflows/', 'custom-images/')
+        return profile
+
+    def test_adopt_containers_preserves_saved_custom_inventory(self):
+        self.state.pop('containers')
+        self.state['profile'] = self.custom_container_profile()
+        saved_profile = copy.deepcopy(self.state['profile'])
+        adopted = train.adopt_containers(self.state, SimpleNamespace(no_containers=False))
+        self.assertEqual(saved_profile, self.state['profile'])
+        self.assertEqual('release/custom', adopted['source_ref'])
+        self.assertEqual(8, len(adopted['images']))
+
+    def test_adopt_containers_cli_accepts_compatible_custom_legacy_profile(self):
+        self.state.pop('containers')
+        profile = self.custom_container_profile()
+        profile['repositories'][0]['directory'] = 'custom-core'
+        self.state['profile'] = copy.deepcopy(profile)
+        self.state['profile'].pop('container_release')
+        profile_path = self.root / 'custom-profile.json'
+        train.save(profile_path, profile)
+        train.save(self.args.state, self.state)
+        result = subprocess.run(
+            [sys.executable, str(Path(train.__file__)), '--state', str(self.args.state),
+             'adopt-containers', '--profile', str(profile_path)],
+            text=True, capture_output=True,
+        )
+        self.assertEqual(0, result.returncode, result.stderr)
+        adopted = train.read(self.args.state)
+        self.assertEqual(profile, adopted['profile'])
+        self.assertEqual('release/custom', adopted['containers']['source_ref'])
+        self.assertEqual(self.state['announcements'], adopted['announcements'])
+        self.assertEqual(self.state['repositories'], adopted['repositories'])
+
+    def test_adopt_containers_rejects_conflicting_profile_without_mutation(self):
+        for configured in (False, True):
+            for section in ('container_release', 'repositories', 'post_release_sites'):
+                with self.subTest(configured=configured, section=section):
+                    state = copy.deepcopy(self.state)
+                    if not configured:
+                        state.pop('containers')
+                    profile = copy.deepcopy(state['profile'])
+                    if section == 'container_release':
+                        profile[section]['source_ref'] = 'release/conflicting'
+                    elif section == 'repositories':
+                        profile[section][0]['directory'] = 'conflicting-core'
+                    else:
+                        profile[section]['website']['project_id'] = 'conflicting-site'
+                    profile_path = self.root / 'conflicting-profile.json'
+                    train.save(profile_path, profile)
+                    original = copy.deepcopy(state)
+                    with self.assertRaisesRegex(ValueError, 'conflicts with the saved release policy'):
+                        train.adopt_containers(state, SimpleNamespace(profile=profile_path, no_containers=False))
+                    self.assertEqual(original, state)
+
+    def test_adopt_containers_legacy_default_rejects_custom_policy_without_mutation(self):
+        self.state.pop('containers')
+        self.state['profile'].pop('container_release')
+        self.state['profile']['repositories'][0]['directory'] = 'custom-core'
+        original = copy.deepcopy(self.state)
+        with self.assertRaisesRegex(ValueError, 'conflicts with the saved release policy'):
+            train.adopt_containers(self.state, SimpleNamespace(no_containers=False))
+        self.assertEqual(original, self.state)
+
+    def test_adopt_containers_cli_invalid_inventory_leaves_checkpoint_unchanged(self):
+        self.state.pop('containers')
+        self.state['profile'].pop('container_release')
+        profile = copy.deepcopy(self.state['profile'])
+        profile['container_release'] = {'images': []}
+        profile_path = self.root / 'invalid-profile.json'
+        train.save(profile_path, profile)
+        train.save(self.args.state, self.state)
+        original = self.args.state.read_bytes()
+        result = subprocess.run(
+            [sys.executable, str(Path(train.__file__)), '--state', str(self.args.state),
+             'adopt-containers', '--profile', str(profile_path)],
+            text=True, capture_output=True,
+        )
+        self.assertEqual(1, result.returncode)
+        self.assertIn('non-empty image inventory', result.stderr)
+        self.assertEqual(original, self.args.state.read_bytes())
+
+    def test_adopt_containers_configured_gate_is_unchanged(self):
+        self.state['containers']['receipt'] = {'retained': 'existing-receipt'}
+        original = copy.deepcopy(self.state)
+        with patch.object(train, 'read', side_effect=AssertionError('Configured gate must not load a default profile')):
+            adopted = train.adopt_containers(self.state, SimpleNamespace(no_containers=False))
+        self.assertIs(self.state['containers'], adopted)
+        self.assertEqual(original, self.state)
+        profile_path = self.root / 'same-profile.json'
+        train.save(profile_path, self.state['profile'])
+        self.assertIs(adopted, train.adopt_containers(self.state, SimpleNamespace(profile=profile_path, no_containers=False)))
+        self.assertEqual(original, self.state)
+
+    def test_prerelease_container_aliases_keep_exact_release_version_tags(self):
+        args = SimpleNamespace(**{
+            **vars(self.args), 'version': '3.9.0-rc1', 'kind': 'rc', 'no_containers': False,
+            'no_post_refresh': True, 'state': self.root / 'rc-containers.json',
+        })
+        state = train.init(args)
+        plan = train.container_plan(state)
+        self.assertTrue(all(image['tag'] == '3.9.0-rc1' for image in plan['images']))
+        self.assertEqual({'server', 'studio-wasm'}, {image['alias_of'] for image in plan['images'] if image['alias_of']})
+
+    def ready_container_state(self, *, repositories=None, version='3.9.0', kind=None, no_containers=False):
+        state_path = self.root / f'containers-{version}-{repositories or "all"}.json'
+        args = SimpleNamespace(**{
+            **vars(self.args),
+            'version': version,
+            'kind': kind,
+            'repositories': repositories,
+            'no_containers': no_containers,
+            'no_announcements': True,
+            'no_post_refresh': True,
+            'state': state_path,
+        })
+        state = train.init(args)
+        self.state = state
+        for name in state['repositories']:
+            self.bind_fixture(name)
+        return state
+
     def github(self,*args):
         url=args[-1]
         if '/releases?' in url:
@@ -82,6 +742,8 @@ class TrainTests(unittest.TestCase):
             return {'object':{'type':'tag','sha':'tag-object'}}
         if '/git/tags/' in url:
             return {'object':{'type':'commit','sha':'a'*40}}
+        if '/compare/' in url:
+            return {'status':'identical'}
         if '/workflows/' in url:
             return [{'workflow_runs':[{'id':42,'head_sha':'a'*40,'head_branch':'3.9.0','event':'release','run_number':42,'run_attempt':1,'status':'completed','conclusion':'success','html_url':'https://github.com/run'}]}]
         if '/jobs?' in url:

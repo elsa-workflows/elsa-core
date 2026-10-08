@@ -18,10 +18,12 @@ from run_current_import_affected_tests import assert_clean_source
 
 ROOT = Path(__file__).resolve().parents[2]
 BASELINE = "23b852ad6262c4bf07b9f311090c892dbecd740b"
-MONGO = "src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj"
-MONGO_TEST = "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj"
-BPMN_TEST = "test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Elsa.Bpmn.Interchange.IntegrationTests.csproj"
-FIXTURE = "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs"
+MONGO = 'extensions/src/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj'
+MONGO_TEST = 'extensions/test/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj'
+BPMN_TEST = 'core/test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Elsa.Bpmn.Interchange.IntegrationTests.csproj'
+FIXTURE = 'extensions/test/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs'
+BASELINE_MONGO_TEST = "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj"
+BASELINE_FIXTURE = "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs"
 PREFIX = "Elsa.MongoDb.UnitTests.MongoWorkflowDefinitionStoreCompareAndSwapTests."
 REGRESSIONS = {
     PREFIX + "TryUpdateLatestAsync_WhenUnlistedMetadataChangesAfterRead_ReturnsConflictAndKeepsConcurrentMetadata":
@@ -61,11 +63,11 @@ PROPERTIES = ["-m:1", "-p:UseProjectReferences=true", "-p:IsPackable=false",
               "-p:GeneratePackageOnBuild=false", "-p:CollectCoverage=false"]
 TESTS = ((MONGO_TEST, None), (BPMN_TEST, "FullyQualifiedName~BpmnDocumentPutCompareAndSwapTests"))
 INPUTS = (MONGO, MONGO_TEST, BPMN_TEST, FIXTURE,
-          "test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Scenarios/Interchange/BpmnDocumentPutCompareAndSwapTests.cs",
-          "test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Scenarios/Interchange/BpmnDocumentPutSqliteTests.cs",
-          "src/extensions/persistence/Elsa.Persistence.MongoDb/Common/MongoDbStore.cs",
-          "src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs",
-          "src/extensions/Directory.Packages.props", "test/extensions/Directory.Packages.props",
+          'core/test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Scenarios/Interchange/BpmnDocumentPutCompareAndSwapTests.cs',
+          'core/test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Scenarios/Interchange/BpmnDocumentPutSqliteTests.cs',
+          'extensions/src/persistence/Elsa.Persistence.MongoDb/Common/MongoDbStore.cs',
+          'extensions/src/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs',
+          'extensions/src/Directory.Packages.props', 'extensions/test/Directory.Packages.props',
           "scripts/integration-program/run_mongo_atomic_proof.py",
           "scripts/integration-program/run_execution_cycle_proof.py",
           "scripts/integration-program/run_current_import_affected_tests.py",
@@ -103,13 +105,13 @@ def baseline_summary(trx: Path, exit_code: int) -> dict:
 def check_baseline(root: Path, fixture_hash: str) -> None:
     if git(root, "rev-parse", "HEAD") != BASELINE:
         raise ValueError("Baseline revision changed")
-    if git(root, "diff", "--name-only", "HEAD") != FIXTURE:
+    if git(root, "diff", "--name-only", "HEAD") != BASELINE_FIXTURE:
         raise ValueError("Baseline must differ only by the candidate regression fixture")
-    if git(root, "status", "--porcelain", "--untracked-files=normal") != "M " + FIXTURE:
+    if git(root, "status", "--porcelain", "--untracked-files=normal") != "M " + BASELINE_FIXTURE:
         raise ValueError("Baseline contains unexpected source files or changes")
     if git(root, "diff", "--cached", "--name-only"):
         raise ValueError("Baseline index changed")
-    if digest(tracked_input(root, FIXTURE)) != fixture_hash:
+    if digest(tracked_input(root, BASELINE_FIXTURE)) != fixture_hash:
         raise ValueError("Baseline fixture changed")
 
 
@@ -215,9 +217,9 @@ def run(root: Path, output: Path, head: str) -> dict:
     git(root, "worktree", "add", "--detach", str(baseline), BASELINE)
     try:
         assert_clean_source(baseline, BASELINE)
-        tracked_input(baseline, FIXTURE).write_bytes(tracked_input(root, FIXTURE).read_bytes())
+        tracked_input(baseline, BASELINE_FIXTURE).write_bytes(tracked_input(root, FIXTURE).read_bytes())
         check_baseline(baseline, hashes[FIXTURE])
-        for index, (checkout, project) in enumerate(((baseline, MONGO_TEST), (root, MONGO_TEST), (root, BPMN_TEST))):
+        for index, (checkout, project) in enumerate(((baseline, BASELINE_MONGO_TEST), (root, MONGO_TEST), (root, BPMN_TEST))):
             row = compile_project(checkout, project, "net10.0", f"fixture-build-{index}")
             row["source"] = "baseline-with-candidate-fixture" if checkout == baseline else "candidate"
             receipt["testBuilds"].append(row)
@@ -226,7 +228,7 @@ def run(root: Path, output: Path, head: str) -> dict:
         if any(row["status"] != "passed" for row in receipt["testBuilds"]):
             return receipt
         probe_filter = "|".join(f"FullyQualifiedName={name}" for name in REGRESSIONS)
-        receipt["baseline"] = test_project(baseline, MONGO_TEST, probe_filter, "baseline-probes", True)
+        receipt["baseline"] = test_project(baseline, BASELINE_MONGO_TEST, probe_filter, "baseline-probes", True)
         check_baseline(baseline, hashes[FIXTURE])
         save()
         if receipt["baseline"]["status"] != "expected-regression-failures":

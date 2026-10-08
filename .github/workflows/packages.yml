@@ -106,14 +106,14 @@ jobs:
 
           # Discover unit and integration test projects. Component tests run in their own job.
           mapfile -t projects < <(
-            find test/unit test/integration \
+            find core/test/unit core/test/integration \
               -type f -name '*.csproj' -print0 2>/dev/null \
               | xargs -0 -n1 \
               | sort
           )
 
           if [ ${#projects[@]} -eq 0 ]; then
-            echo "No test projects were found in test/unit or test/integration." >&2
+            echo "No test projects were found in core/test/unit or core/test/integration." >&2
             exit 1
           fi
 
@@ -192,14 +192,14 @@ jobs:
           fi
 
           mapfile -t projects < <(
-            find test/component \
+            find core/test/component \
               -type f -name '*.csproj' -print0 2>/dev/null \
               | xargs -0 -n1 \
               | sort
           )
 
           if [ ${#projects[@]} -eq 0 ]; then
-            echo "No test projects were found in test/component." >&2
+            echo "No test projects were found in core/test/component." >&2
             exit 1
           fi
 

@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import secrets
 import shlex
@@ -14,6 +15,8 @@ import socket
 import subprocess
 import tempfile
 import uuid
+
+from product_layout import current_path, map_path
 
 
 HERE = Path(__file__).resolve().parent
@@ -571,6 +574,20 @@ def validate_source_root(rehearsal_root, expected_pins):
     return root, source, program, import_receipt, build_receipt, source_inventory, patch_chain
 
 
+def imported_fixture_patch_bytes(root, patch):
+    """Map only Git patch headers for a current checkout; keep all hunk bytes exact."""
+    content = patch.read_bytes()
+    if current_path(root, SOURCE_PROJECT.as_posix()) == root / SOURCE_PROJECT:
+        return content
+
+    def mapped_header(match):
+        return match[1] + map_path(match[2].decode()).encode() + match[3] + map_path(match[4].decode()).encode()
+
+    content = re.sub(rb'(?m)^(diff --git a/)([^ \r\n]+)( b/)([^ \r\n]+)$', mapped_header, content)
+    return re.sub(rb'(?m)^(--- a/|\+\+\+ b/)([^ \r\n]+)$',
+                  lambda match: match[1] + map_path(match[2].decode()).encode(), content)
+
+
 def validate_imported_source_root(imported_root, expected_pins, import_commit, imported_sha):
     """Pin a clean, history-bearing checkout without treating it as a rehearsal."""
     for name, commit in (('import', import_commit), ('imported', imported_sha)):
@@ -595,7 +612,7 @@ def validate_imported_source_root(imported_root, expected_pins, import_commit, i
                               check=False, capture_output=True)
     require(ancestor.returncode == 0, 'History import commit is not an ancestor of the selected source')
 
-    source = (root / SOURCE_PROJECT).resolve(strict=True)
+    source = current_path(root, SOURCE_PROJECT.as_posix()).resolve(strict=True)
     require(is_within(source, root), 'Workbench project root is outside the imported checkout')
     required_files = (
         SOURCE_PROJECT / 'Program.cs', SOURCE_PROJECT / 'Elsa.Server.Web.csproj',
@@ -603,9 +620,10 @@ def validate_imported_source_root(imported_root, expected_pins, import_commit, i
         Path('src/studio/modules/Elsa.Studio.Secrets/Menu/SecretsMenu.cs'),
     )
     for relative in required_files:
-        path = root / relative
+        path = current_path(root, relative.as_posix())
+        committed_path = path.relative_to(root).as_posix()
         require(path.is_file() and not path.is_symlink(), f'Missing regular imported source file: {relative}')
-        require(git_blob_bytes(root, f'HEAD:{relative.as_posix()}') == path.read_bytes(),
+        require(git_blob_bytes(root, f'HEAD:{committed_path}') == path.read_bytes(),
                 f'Imported source differs from the committed blob: {relative}')
 
     program = (source / 'Program.cs').read_text()
@@ -634,7 +652,7 @@ def validate_imported_source_root(imported_root, expected_pins, import_commit, i
     }
     source_inventory = inventory_workbench_sources(source)
     for item in source_inventory['sourceFiles']:
-        relative = (SOURCE_PROJECT / item['path']).as_posix()
+        relative = (source.relative_to(root) / item['path']).as_posix()
         require(git_blob_bytes(root, f'HEAD:{relative}') == (root / relative).read_bytes(),
                 f'Imported Workbench compile source is not the committed blob: {relative}')
     provenance['compiledWorkbenchSourcesCommitted'] = True
@@ -683,7 +701,7 @@ def build_host(source, log_parent):
     clone_root = source.parents[3]
     secret_assemblies = []
     for name in REQUIRED_SECRETS_ASSEMBLIES:
-        project_output = clone_root / 'src' / 'modules' / name / 'bin' / 'Debug' / 'net10.0' / f'{name}.dll'
+        project_output = current_path(clone_root, f'src/modules/{name}/bin/Debug/net10.0/{name}.dll')
         host_output = host_dll.parent / f'{name}.dll'
         require(project_output.is_file() and not project_output.is_symlink(),
                 f'Full graph build omitted a regular Secrets project assembly: {name}')
@@ -787,7 +805,8 @@ def prepare_fixture(rehearsal_root, core_sha, extensions_sha, studio_sha, temp_p
             if patch.name not in required_patches:
                 continue
             imported_patch = root / PATCH_RELATIVE.parent / patch.name
-            applied = subprocess.run(['git', '-C', str(root), 'apply', '--reverse', '--check', str(imported_patch)],
+            applied = subprocess.run(['git', '-C', str(root), 'apply', '--reverse', '--check', '-'],
+                                     input=imported_fixture_patch_bytes(root, imported_patch),
                                      check=False, capture_output=True)
             require(applied.returncode == 0,
                     f'Imported checkout does not contain reviewed fixture patch changes: {patch.name}')

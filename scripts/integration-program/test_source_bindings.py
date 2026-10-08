@@ -8,7 +8,7 @@ from unittest.mock import patch
 from source_bindings import expected_bindings, prepare, source_bound_project, verify_overlay
 
 
-INVENTORY = Path(__file__).resolve().parents[2] / "doc/integration-program/inventory/inventory.json"
+INVENTORY = Path(__file__).resolve().parents[2] / 'docs/integration-program/inventory/inventory.json'
 
 
 class SourceBindingTests(unittest.TestCase):

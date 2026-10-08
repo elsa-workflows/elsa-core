@@ -26,6 +26,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 import run_slack_package_proof as shared
+from product_layout import current_path, map_path
 import verify_import_source_tip_refresh as source_tip_refresh
 import verify_import_source_tip_refresh_r2 as source_tip_refresh_r2
 import verify_import_source_tip_refresh_r5 as source_tip_refresh_r5
@@ -53,7 +54,7 @@ EXTENSIONS_SHA = PINNED_MAPPED_COMMITS["elsa-extensions"]
 STUDIO_SHA = PINNED_MAPPED_COMMITS["elsa-studio"]
 SOURCE_COMMITS = {"core": CORE_SHA, "extensions": EXTENSIONS_SHA, "studio": STUDIO_SHA}
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-INVENTORY_RELATIVE = Path("doc/integration-program/inventory/inventory.json")
+INVENTORY_RELATIVE = Path('docs/integration-program/inventory/inventory.json')
 INVENTORY_PATH = REPOSITORY_ROOT / INVENTORY_RELATIVE
 INVENTORY_DOCUMENT = json.loads(INVENTORY_PATH.read_text(encoding="utf-8"))
 validate_against_inventory(RELEASE_UNIT, INVENTORY_DOCUMENT)
@@ -65,15 +66,15 @@ SLACK_NET_VERSION = REQUIRED_PROOF_DEPENDENCIES["SlackNet"]
 TFMS = tuple(RELEASE_UNIT["target_frameworks"])
 REPOSITORY_URL = "https://github.com/elsa-workflows/elsa-extensions"
 IMPORTED_REPOSITORY_URL = "https://github.com/elsa-workflows/elsa-core"
-SOURCE_TIP_REFRESH_RECEIPT = Path("doc/integration-program/consolidation/source-tip-refresh-2026-09-25.json")
-SOURCE_TIP_REFRESH_R2_RECEIPT = Path("doc/integration-program/consolidation/source-tip-refresh-2026-09-25-r2.json")
-SOURCE_TIP_REFRESH_R5_RECEIPT = Path("doc/integration-program/consolidation/source-tip-refresh-2026-09-26-r5.json")
-SOURCE_TIP_REFRESH_R6_RECEIPT = Path("doc/integration-program/consolidation/source-tip-refresh-2026-09-27-r6.json")
-SOURCE_TIP_REFRESH_R7_RECEIPT = Path("doc/integration-program/consolidation/source-tip-refresh-2026-09-27-r7.json")
-SOURCE_TIP_REFRESH_R8_RECEIPT = Path("doc/integration-program/consolidation/source-tip-refresh-2026-09-28-r8.json")
-SOURCE_TIP_REFRESH_R9_RECEIPT = Path("doc/integration-program/consolidation/source-tip-refresh-2026-09-28-r9.json")
-SOURCE_TIP_REFRESH_R10_RECEIPT = Path("doc/integration-program/consolidation/source-tip-refresh-2026-09-28-r10.json")
-CURRENT_TIP_EVIDENCE = REPOSITORY_ROOT / "doc/integration-program/consolidation/current-tip-e96-evidence"
+SOURCE_TIP_REFRESH_RECEIPT = Path('doc/integration-program/consolidation/source-tip-refresh-2026-09-25.json')
+SOURCE_TIP_REFRESH_R2_RECEIPT = Path('doc/integration-program/consolidation/source-tip-refresh-2026-09-25-r2.json')
+SOURCE_TIP_REFRESH_R5_RECEIPT = Path('doc/integration-program/consolidation/source-tip-refresh-2026-09-26-r5.json')
+SOURCE_TIP_REFRESH_R6_RECEIPT = Path('doc/integration-program/consolidation/source-tip-refresh-2026-09-27-r6.json')
+SOURCE_TIP_REFRESH_R7_RECEIPT = Path('doc/integration-program/consolidation/source-tip-refresh-2026-09-27-r7.json')
+SOURCE_TIP_REFRESH_R8_RECEIPT = Path('doc/integration-program/consolidation/source-tip-refresh-2026-09-28-r8.json')
+SOURCE_TIP_REFRESH_R9_RECEIPT = Path('doc/integration-program/consolidation/source-tip-refresh-2026-09-28-r9.json')
+SOURCE_TIP_REFRESH_R10_RECEIPT = Path('doc/integration-program/consolidation/source-tip-refresh-2026-09-28-r10.json')
+CURRENT_TIP_EVIDENCE = REPOSITORY_ROOT / 'docs/integration-program/consolidation/current-tip-e96-evidence'
 CURRENT_TIP_IMPORT_SHA256 = "06cd198a338d5c6d49fa6b0183bbda6b602252f39f622f18084e60342880bb75"
 CURRENT_TIP_PREPARATION_SHA256 = "219fcafe45959bb8f9295d8b9137f8ae0807489f0370b5112204f228fc7bd7bc"
 SLACK_RELATIVE = Path(RELEASE_UNIT["mapped"]["project_path"]).parent
@@ -191,21 +192,21 @@ def require_imported_history_checkout(root: Path, source_commits: dict[str, str]
     head = git_value(root, "rev-parse", "HEAD")
     if head != expected_head:
         raise RuntimeError(f"The imported checkout must match the requested proof head {expected_head}: {head}")
-    receipt = json.loads((root / SOURCE_TIP_REFRESH_RECEIPT).read_text(encoding="utf-8"))
+    receipt = json.loads(current_path(root, SOURCE_TIP_REFRESH_RECEIPT.as_posix()).read_text(encoding="utf-8"))
     source_tip_refresh.verify(receipt, root)
-    second_receipt = json.loads((root / SOURCE_TIP_REFRESH_R2_RECEIPT).read_text(encoding="utf-8"))
+    second_receipt = json.loads(current_path(root, SOURCE_TIP_REFRESH_R2_RECEIPT.as_posix()).read_text(encoding="utf-8"))
     source_tip_refresh_r2.verify(second_receipt, root)
-    fifth_receipt = json.loads((root / SOURCE_TIP_REFRESH_R5_RECEIPT).read_text(encoding="utf-8"))
+    fifth_receipt = json.loads(current_path(root, SOURCE_TIP_REFRESH_R5_RECEIPT.as_posix()).read_text(encoding="utf-8"))
     source_tip_refresh_r5.verify(fifth_receipt, root)
-    sixth_receipt = json.loads((root / SOURCE_TIP_REFRESH_R6_RECEIPT).read_text(encoding="utf-8"))
+    sixth_receipt = json.loads(current_path(root, SOURCE_TIP_REFRESH_R6_RECEIPT.as_posix()).read_text(encoding="utf-8"))
     source_tip_refresh_r6.verify(sixth_receipt, root)
-    seventh_receipt = json.loads((root / SOURCE_TIP_REFRESH_R7_RECEIPT).read_text(encoding="utf-8"))
+    seventh_receipt = json.loads(current_path(root, SOURCE_TIP_REFRESH_R7_RECEIPT.as_posix()).read_text(encoding="utf-8"))
     source_tip_refresh_r7.verify(seventh_receipt, root)
-    eighth_receipt = json.loads((root / SOURCE_TIP_REFRESH_R8_RECEIPT).read_text(encoding="utf-8"))
+    eighth_receipt = json.loads(current_path(root, SOURCE_TIP_REFRESH_R8_RECEIPT.as_posix()).read_text(encoding="utf-8"))
     source_tip_refresh_r8.verify(eighth_receipt, root)
-    ninth_receipt = json.loads((root / SOURCE_TIP_REFRESH_R9_RECEIPT).read_text(encoding="utf-8"))
+    ninth_receipt = json.loads(current_path(root, SOURCE_TIP_REFRESH_R9_RECEIPT.as_posix()).read_text(encoding="utf-8"))
     source_tip_refresh_r9.verify(ninth_receipt, root)
-    tenth_receipt = json.loads((root / SOURCE_TIP_REFRESH_R10_RECEIPT).read_text(encoding="utf-8"))
+    tenth_receipt = json.loads(current_path(root, SOURCE_TIP_REFRESH_R10_RECEIPT.as_posix()).read_text(encoding="utf-8"))
     source_tip_refresh_r10.verify(tenth_receipt, root)
     imported, prepared, patch_hash = load_current_tip_receipts()
     if imported.get("sourceCommits") != source_commits or not imported.get("exactBlobAndModeMapping") or not imported.get("originalHistoriesReachable"):
@@ -213,7 +214,7 @@ def require_imported_history_checkout(root: Path, source_commits: dict[str, str]
     for source in source_commits.values():
         if subprocess.run(["git", "merge-base", "--is-ancestor", source, head], cwd=root, check=False).returncode:
             raise RuntimeError(f"The imported checkout does not preserve source commit {source}")
-    if not (root / SLACK_RELATIVE / "Elsa.Slack.csproj").is_file():
+    if not (current_path(root, SLACK_RELATIVE.as_posix()) / "Elsa.Slack.csproj").is_file():
         raise RuntimeError("The imported checkout omits the mapped Slack project")
     return imported, prepared, patch_hash, head
 
@@ -278,7 +279,7 @@ def require_pinned_source(root: Path, expected_sha: str, name: str) -> None:
 
 
 def compare_mapped_source(rehearsal: Path, extensions: Path) -> list[dict[str, str]]:
-    mapped_root = rehearsal / SLACK_RELATIVE
+    mapped_root = current_path(rehearsal, SLACK_RELATIVE.as_posix())
     upstream_root = extensions / EXTENSIONS_SLACK_RELATIVE
     mapped = {
         path.relative_to(mapped_root).as_posix(): path
@@ -575,7 +576,7 @@ def verify_evaluation(log: Path, rehearsal: Path, *, package_mode: bool) -> dict
         if elsa_packages[0].get("Version") not in (None, ELSA_VERSION):
             raise RuntimeError(f"Unexpected Elsa package version in evaluation: {elsa_packages[0]}")
     else:
-        expected_core = (rehearsal / "src/modules/Elsa/Elsa.csproj").resolve(strict=True)
+        expected_core = current_path(rehearsal, "src/modules/Elsa/Elsa.csproj").resolve(strict=True)
         resolved = [Path(row["FullPath"]).resolve(strict=True) for row in project_references]
         if elsa_packages or resolved != [expected_core]:
             raise RuntimeError(
@@ -634,7 +635,7 @@ def map_impact_selection(selection: dict, rehearsal: Path, imported: dict) -> di
         if product is None:
             raise RuntimeError(f"No imported source pin is recorded for {repository}")
         destination = map_source_project_path(repository, relative_path, mapping)
-        destination_file = rehearsal / destination
+        destination_file = current_path(rehearsal, destination)
         if not destination_file.is_file():
             raise RuntimeError(f"Mapped impact project is missing from the rehearsal: {destination}")
         project = graph.projects[(repository, relative_path)]
@@ -694,7 +695,7 @@ def selector_evidence(output: Path, rehearsal: Path | None = None, imported: dic
         for name, repository in inventory_document["repositories"].items()
     }
     selection["release_unit_manifest"] = {
-        "path": "doc/integration-program/release-units.json",
+        "path": 'docs/integration-program/release-units.json',
         "sha256": sha256_file(MANIFEST_PATH),
         "unit_id": RELEASE_UNIT["id"],
         "package_id": PACKAGE_ID,
@@ -875,7 +876,7 @@ def verify_upstream_test_baseline(
     for test_index, source_test in enumerate(RELEASE_UNIT["source"]["test_projects"], start=1):
         source_path = source_test["project_path"]
         mapped_path = mapped_paths[source_path]
-        test_project = rehearsal / mapped_path
+        test_project = current_path(rehearsal, mapped_path)
         if not test_project.is_file():
             raise RuntimeError(f"Mapped release-unit test project is missing: {test_project}")
 
@@ -1084,7 +1085,7 @@ def main() -> int:
     env["DOTNET_SKIP_FIRST_TIME_EXPERIENCE"] = "1"
     env["NUGET_HTTP_CACHE_PATH"] = str(output / "nuget-http-cache")
     env["NUGET_PACKAGES"] = str(cache_root / "pack")
-    project = rehearsal / SLACK_RELATIVE / "Elsa.Slack.csproj"
+    project = current_path(rehearsal, SLACK_RELATIVE.as_posix()) / "Elsa.Slack.csproj"
     repository_url = IMPORTED_REPOSITORY_URL if imported_head else REPOSITORY_URL
     repository_commit = imported_head or extensions_sha
     package_properties = [
@@ -1186,7 +1187,7 @@ def main() -> int:
             "studio_commit": studio_sha,
         },
         "release_unit_manifest": {
-            "path": "doc/integration-program/release-units.json",
+            "path": 'docs/integration-program/release-units.json',
             "sha256": sha256_file(MANIFEST_PATH),
             "unit_id": RELEASE_UNIT["id"],
             "package_id": PACKAGE_ID,

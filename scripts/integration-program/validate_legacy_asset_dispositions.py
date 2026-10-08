@@ -13,11 +13,13 @@ from collections import Counter
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from product_layout import current_path, verified_relocation_identity
+
 from verify_import_source_tip_refresh_r2 import LANDED_IMPORT
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_LEDGER = ROOT / "doc/integration-program/consolidation/legacy-asset-dispositions.json"
+DEFAULT_LEDGER = ROOT / 'docs/integration-program/consolidation/legacy-asset-dispositions.json'
 DEFAULT_RECEIPT = Path(__file__).resolve().parent / "fixtures/legacy_asset_disposition_receipt.json"
 EXPECTED_PINS = {
     "core": "076f022cc174d497af26fc8e26414970e61a79b1",
@@ -94,13 +96,14 @@ def _is_normalized_relative_path(value: Any) -> bool:
 
 
 def _is_regular_repo_file(root: Path, relative_path: str) -> bool:
-    path = root / relative_path
+    path = current_path(root, relative_path)
     return (path.is_file() and not path.is_symlink()
             and path.resolve().is_relative_to(root.resolve()))
 
 
 def _active_git_blob_and_mode(root: Path, relative_path: str) -> tuple[str, str] | None:
     """Read index identity and verify the working file through Git clean filters."""
+    relative_path = current_path(root, relative_path).relative_to(root).as_posix()
     indexed = subprocess.run(
         ["git", "ls-files", "--stage", "--", relative_path], cwd=root,
         capture_output=True, text=True, check=False,
@@ -191,7 +194,7 @@ def _completion_errors(row: dict[str, Any], root: Path) -> list[str]:
     if row["status"] == "represented_in_core":
         active_path = completion["active_path"]
         if (not _is_normalized_relative_path(active_path)
-                or active_path.startswith("doc/integration-program/legacy/")):
+                or active_path.startswith(('doc/integration-program/legacy/', 'docs/integration-program/legacy/'))):
             errors.append(f"completed asset has invalid active path: {source}")
         else:
             if not _is_regular_repo_file(root, active_path):
@@ -199,7 +202,9 @@ def _completion_errors(row: dict[str, Any], root: Path) -> list[str]:
             else:
                 # The ledger pins the reviewed file as the import landed; later edits on main are ordinary reviewed changes.
                 pinned = (completion["active_blob"], completion["active_mode"])
-                if pinned != _active_git_blob_and_mode(root, active_path) and pinned != _landed_blob_and_mode(root, active_path):
+                if (pinned != _active_git_blob_and_mode(root, active_path)
+                        and pinned != _landed_blob_and_mode(root, active_path)
+                        and pinned != verified_relocation_identity(ROOT, active_path, current_path(root, active_path))):
                     errors.append(f"completed asset active blob or mode changed: {source}")
         if (not isinstance(completion["representation"], str)
                 or completion["representation"] not in {"identical", "expanded"}):
@@ -209,7 +214,7 @@ def _completion_errors(row: dict[str, Any], root: Path) -> list[str]:
     else:
         if not isinstance(completion["reason"], str) or not completion["reason"].strip():
             errors.append(f"retired asset lacks a reason: {source}")
-        original = root / row["original_path"]
+        original = current_path(root, row["original_path"])
         if original.exists() or original.is_symlink():
             errors.append(f"retired asset remains active at its original path: {source}")
     return errors

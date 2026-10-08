@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides workflow context APIs to Elsa workflows.
+        </Description>
+        <PackageTags>elsa extension module workflows</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
+        <ProjectReference Include="../../../../core/src/common/Elsa.Api.Common/Elsa.Api.Common.csproj"/>
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Expressions.JavaScript/Elsa.Expressions.JavaScript.csproj"/>
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' == 'true'">
+        <ProjectReference Include="../../../../core/src/common/Elsa.Api.Common/Elsa.Api.Common.csproj"/>
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Expressions.JavaScript/Elsa.Expressions.JavaScript.csproj"/>
+        <ProjectReference Include="../../../../core/src/modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj"/>
+    </ItemGroup>
+
+</Project>

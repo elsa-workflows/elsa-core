@@ -10,7 +10,7 @@ providers=("MySql" "SqlServer" "Sqlite" "PostgreSql" "Oracle")
 for module in "${mods[@]}"; do
     # Loop through each provider
     for provider in "${providers[@]}"; do
-        providerPath="../src/modules/Elsa.EntityFrameworkCore.$provider"
+        providerPath="../core/src/modules/Elsa.EntityFrameworkCore.$provider"
         sqlPath="$providerPath/Migrations/$module/v3.1.sql"
     
         echo "Generating SQL for $provider..."

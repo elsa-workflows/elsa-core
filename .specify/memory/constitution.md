@@ -45,15 +45,15 @@
 
 Every feature area MUST be implemented as an independent module (separate .csproj) with clear boundaries.
 
-- Modules reside under `src/modules/` and MUST be self-contained with their own
+- Modules reside under `core/src/modules/` and MUST be self-contained with their own
   DI registration, contracts, and implementations.
 - Each module MUST follow the standard directory structure: `ShellFeatures/`,
   `Contracts/`, `Services/`, `Extensions/`, `Models/`, and optionally
   `Activities/`, `Middleware/`, `Handlers/`.
 - No module may directly reference another module's internal types. Cross-module
   communication MUST go through published contracts (interfaces) or the mediator.
-- Shared infrastructure belongs in `src/common/`; application hosts belong in
-  `src/apps/`.
+- Shared infrastructure belongs in `core/src/common/`; application hosts belong in
+  `core/src/apps/`.
 
 **Rationale**: Modularity enables independent development, testing, and
 deployment of features. It keeps the 100+ project solution manageable and allows
@@ -138,8 +138,8 @@ New code MUST include tests. Tests MUST be organised by scope and follow
 established patterns.
 
 - **Framework**: xUnit with `[Fact]` and `[Theory]` attributes.
-- **Test organisation**: `test/unit/` for isolated tests, `test/integration/`
-  for end-to-end scenarios, `test/component/` for feature testing.
+- **Test organisation**: `core/test/unit/` for isolated tests, `core/test/integration/`
+  for end-to-end scenarios, `core/test/component/` for feature testing.
 - **Shared fixtures**: Use `ActivityTestFixture` for unit-testing activities
   and `WorkflowTestFixture` for integration tests.
 - Test methods MUST use descriptive names; `DisplayName` SHOULD be set for
@@ -240,7 +240,7 @@ is harder to undo once entrenched.
 ```
 
 - NU1900/NU1801 warnings for external feeds are expected and safe to ignore.
-- Individual modules can be built with `dotnet build src/modules/{Module}/`.
+- Individual modules can be built with `dotnet build core/src/modules/{Module}/`.
 
 ### Quality Gates for PRs
 

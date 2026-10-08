@@ -22,11 +22,11 @@ FIXTURE = ROOT / "scripts/integration-program/paired-blazor-host"
 CONTRACT = ROOT / "scripts/integration-program/paired-source-probe/HttpProbe.cs"
 SOURCE_FILES = ("Program.cs", "App.razor", "Routes.razor", "Probe.razor", "_Imports.razor")
 REFERENCES = {
-    "../elsa-core/src/modules/Elsa/Elsa.csproj": "src/modules/Elsa/Elsa.csproj",
+    "../elsa-core/src/modules/Elsa/Elsa.csproj": 'core/src/modules/Elsa/Elsa.csproj',
     "../elsa-extensions/src/modules/workflows/Elsa.WorkflowContexts/Elsa.WorkflowContexts.csproj":
-        "src/extensions/workflows/Elsa.WorkflowContexts/Elsa.WorkflowContexts.csproj",
+        'extensions/src/workflows/Elsa.WorkflowContexts/Elsa.WorkflowContexts.csproj',
     "../elsa-extensions/src/modules/workflows/Elsa.Studio.WorkflowContexts/Elsa.Studio.WorkflowContexts.csproj":
-        "src/extensions/workflows/Elsa.Studio.WorkflowContexts/Elsa.Studio.WorkflowContexts.csproj",
+        'extensions/src/workflows/Elsa.Studio.WorkflowContexts/Elsa.Studio.WorkflowContexts.csproj',
 }
 
 
