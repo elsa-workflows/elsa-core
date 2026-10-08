@@ -130,6 +130,7 @@ def compare_studio_spec_representation(
     represented: list[str] = []
     different: list[str] = []
     path_only: list[str] = []
+    different_path_only: list[str] = []
     active: dict[str, tuple[str, str]] = {}
     for row in rows:
         source_path = row["original_path"]
@@ -142,10 +143,11 @@ def compare_studio_spec_representation(
             errors.append(f"Active Core tooling file is missing or not regular: {source_path}")
             continue
         (blob, mode), relocated = representation_identity(source_path, path)
+        identical_to_source = blob == current["blob"] and mode == current["mode"]
         if relocated:
-            path_only.append(source_path)
+            (path_only if identical_to_source else different_path_only).append(source_path)
         active[source_path] = (blob, mode)
-        (represented if blob == current["blob"] and mode == current["mode"] else different).append(source_path)
+        (represented if identical_to_source else different).append(source_path)
 
     differences = decision.get("sourceDifferences")
     reviewed: list[str] = []
@@ -168,7 +170,8 @@ def compare_studio_spec_representation(
                 root_guidance = core_root / "AGENTS.md"
                 if (map_path(record.get("scopedPath", "")) != STUDIO_GUIDANCE or not scoped_path.is_file()
                         or scoped_path.is_symlink() or
-                        (record.get("scopedBlob"), record.get("scopedMode")) != file_git_identity(scoped_path)):
+                        (record.get("scopedBlob"), record.get("scopedMode")) !=
+                        representation_identity("src/studio/AGENTS.md", scoped_path)[0]):
                     errors.append(f"Studio scoped guidance changed: {source_path}")
                     continue
                 if (not root_guidance.is_file() or root_guidance.is_symlink() or
@@ -186,6 +189,7 @@ def compare_studio_spec_representation(
         errors.append("Studio tooling represented count does not match the source comparison")
     return errors, {"total": len(rows), "representedByIdenticalCoreRoot": len(represented) - len(path_only),
                     "representedByVerifiedPathRelocation": sorted(path_only),
+                    "reviewedDifferencesWithVerifiedPathRelocation": sorted(different_path_only),
                     "reviewedDifferentPaths": sorted(reviewed), "pendingPolicyPaths": sorted(policy_pending)}
 
 

@@ -62,6 +62,22 @@ _PATH_TRANSFORMS[".specify/memory/constitution.md"] = tuple(
 _PATH_TRANSFORMS[".github/dependabot.yml"] = (
     (b"src/extensions", b"extensions/src"), (b"src/studio", b"studio/src"))
 
+_PATH_TRANSFORMS["src/studio/AGENTS.md"] = (
+    (b"These instructions apply to Studio modules, hosts, frameworks, and tests under\n"
+     b"`src/studio/`. Follow the repository-root `AGENTS.md` for shared build, review,\n"
+     b"testing, package and ADR\nrules. This guidance carries the Studio-specific rules from the pinned\n",
+     b"These instructions apply to Studio modules, hosts, frameworks and colocated\n"
+     b".NET tests under `studio/src/`, and browser fixtures under `studio/test/`.\n"
+     b"Follow the repository-root `AGENTS.md` for shared build, review, testing,\n"
+     b"package and ADR rules. This guidance carries the Studio-specific rules from the pinned\n"),
+    (b"src/studio/", b"studio/src/"),
+    (b"../../doc/studio/README.md", b"../docs/README.md"),
+    (b"- Keep Studio feature-specific requirements, plans, and tasks under that\n"
+     b"  feature's `specs/` directory. Do not change the repository-root\n",
+     b"- Keep Studio feature-specific requirements, plans, and tasks under\n"
+     b"  `studio/docs/specs/<feature>/`. Do not change the repository-root\n"),
+)
+
 
 @lru_cache(maxsize=32)
 def relocation_baseline(git_root: Path, path: str) -> tuple[bytes, str]:
