@@ -18,13 +18,15 @@ namespace Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests;
 [Collection("Connections PostgreSQL")]
 public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture fixture)
 {
+    private readonly AdmissionRuntimeTestFixture _runtime = new(fixture);
+
     [Theory]
     [InlineData("runtime-completed", "completed", WorkflowSubStatus.Finished)]
     [InlineData("runtime-suspended", "suspended", WorkflowSubStatus.Suspended)]
     [InlineData("runtime-faulted", "faulted", WorkflowSubStatus.Faulted)]
     public async Task RealDefaultPipelineRecordsActualOutcomeAfterFinalWrite(string caseId, string outcome, WorkflowSubStatus expected)
     {
-        await WithHostAsync(async host =>
+        await _runtime.RunAsync(async host =>
         {
             host.Probe.Outcome = outcome;
             var response = await host.Execution.ExecuteAsync(host.AdmissionId);
@@ -48,7 +50,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
     public async Task CreationClaimCommitCannotRaceOperatorResolutionBeforeInsert()
     {
         var barrier = new CreationCommitGate();
-        await WithHostAsync(async host =>
+        await _runtime.RunAsync(async host =>
         {
             barrier.Armed = true;
             var execution = host.Execution.ExecuteAsync(host.AdmissionId);
@@ -79,7 +81,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
     [InlineData("runtime-graph-child", "child")]
     public async Task PreparedGraphRelationshipMutationDeniesBeforeExecution(string caseId, string scenario)
     {
-        await WithHostAsync(async host =>
+        await _runtime.RunAsync(async host =>
         {
             host.Probe.Boundary = boundary =>
             {
@@ -111,7 +113,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
     [Fact]
     public async Task SameMethodNameDifferentCompletionTargetCannotEscapeRevalidation()
     {
-        await WithHostAsync(async host =>
+        await _runtime.RunAsync(async host =>
         {
             host.Probe.Outcome = "suspended";
             var initial = (await host.Execution.ExecuteAsync(host.AdmissionId))!;
@@ -157,7 +159,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
     [Fact]
     public async Task FrozenCompositionsRejectSetupFromAuthorizationAndExecutingCallbacks()
     {
-        await WithHostAsync(async host =>
+        await _runtime.RunAsync(async host =>
         {
             var setupCallbacks = 0;
             var setupAttempts = 0;
@@ -190,7 +192,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
     [Fact]
     public async Task PublicActivityEntriesRemainDeniedDuringAuthorizedRunAndAfterUnwind()
     {
-        await WithHostAsync(async host =>
+        await _runtime.RunAsync(async host =>
         {
             var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -238,7 +240,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
     [Fact]
     public async Task LegacyBookmarkUpsertCannotReplaceOwnedRowWithForgedUnownedIdentity()
     {
-        await WithHostAsync(async host =>
+        await _runtime.RunAsync(async host =>
         {
             host.Probe.Outcome = "suspended";
             var initial = (await host.Execution.ExecuteAsync(host.AdmissionId))!;
@@ -267,7 +269,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
     [Fact]
     public async Task MutablePreparedContextIdentityCannotEmitCancellationNotification()
     {
-        await WithHostAsync(async host =>
+        await _runtime.RunAsync(async host =>
         {
             var denied = false;
             host.Probe.Boundary = async boundary =>
@@ -302,7 +304,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
     [InlineData("runtime-output-omitted", "omitted", false)]
     public async Task LegitimateLocalClientContinuationReturnsRequestedDetachedPersistedOutput(string caseId, string scenario, bool includeOutput)
     {
-        await WithHostAsync(async host =>
+        await _runtime.RunAsync(async host =>
         {
             host.Probe.Outcome = "suspended";
             var initial = (await host.Execution.ExecuteAsync(host.AdmissionId))!;
@@ -338,7 +340,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
     [InlineData("runtime-input-comparer", "comparer")]
     public async Task PreparedRuntimeDictionarySemanticsCannotChangeBeforeConsumption(string caseId, string scenario)
     {
-        await WithHostAsync(async host =>
+        await _runtime.RunAsync(async host =>
         {
             host.Probe.Boundary = boundary =>
             {
@@ -367,7 +369,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
     [InlineData("runtime-shell-feature-host", "shell")]
     public async Task ActualSelectedFeatureHostBootstrapsAndResumesRealPersistedWorkflow(string caseId, string scenario)
     {
-        await WithHostAsync(async host =>
+        await _runtime.RunAsync(async host =>
         {
             host.Probe.Outcome = "suspended";
             var initial = (await host.Execution.ExecuteAsync(host.AdmissionId))!;
@@ -388,7 +390,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
     [InlineData("runtime-variable-shell", "shell")]
     public async Task FrozenHostSavesAndReloadsActualExternalVariables(string caseId, string scenario)
     {
-        await WithHostAsync(async host =>
+        await _runtime.RunAsync(async host =>
         {
             host.Probe.Outcome = "suspended";
             host.Probe.EnableVariable = true;
@@ -417,7 +419,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
     [InlineData("runtime-cycle-trailing-failure", true)]
     public async Task SameExecutionCycleSurvivesFinalCommitAndTrailingWriteUntilCompleteUnwind(string caseId, bool failTrailingWrite)
     {
-        await WithHostAsync(async host =>
+        await _runtime.RunAsync(async host =>
         {
             host.Probe.Outcome = "suspended";
             var gates = new ExecutionWriteGates(failTrailingWrite);
@@ -501,25 +503,64 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
         }
     }
 
-    private async Task WithHostAsync(Func<RuntimeScenario, Task> assertion, IInterceptor? interceptor = null, bool shell = false)
+    [Theory]
+    [InlineData("runtime-owned-variable-id", "id")]
+    [InlineData("runtime-owned-variable-context", "context")]
+    public async Task PublicVariableManagementDeniesOwnedWritesBeforeStorageAndPreservesUnownedWrites(string caseId, string scenario)
     {
-        await fixture.ResetSchemaAsync();
-        var probe = new AdmissionRuntimeProbe(fixture.ConnectionString);
-        await using var services = AdmissionRuntimeHost.CreateServices(fixture.ConnectionString, probe, shell: shell, admissionInterceptor: interceptor);
-        using var tenant = AdmissionRuntimeHost.EnterTenant(services);
-        await AdmissionRuntimeHost.MigrateAsync(services);
-        await AdmissionRuntimeHost.BootstrapAsync(services);
-        var execution = services.GetRequiredService<AdmissionExecutionService>();
-        var admission = await execution.AdmitAsync(AdmissionWorkerHost.Event());
-        Assert.Equal(AdmissionOutcome.Committed, admission.Outcome);
-        await assertion(new(services, probe, execution, services.GetRequiredService<IAdmissionStore>(), admission.AdmissionId!));
+        await _runtime.RunAsync(async host =>
+        {
+            host.Probe.Outcome = "suspended";
+            host.Probe.EnableVariable = true;
+            var initial = (await host.Execution.ExecuteAsync(host.AdmissionId))!;
+            var ownedContext = host.Probe.PreparedContext!;
+            var variables = host.Services.GetRequiredService<IWorkflowInstanceVariableManager>();
+            var serializer = host.Services.GetRequiredService<IWorkflowStateSerializer>();
+            var instances = host.Services.GetRequiredService<IWorkflowInstanceManager>();
+            var original = serializer.Serialize((await instances.FindByIdAsync(initial.WorkflowInstanceId))!.WorkflowState);
+            var reads = host.Probe.Count("variableReads");
+            var writes = host.Probe.Count("variableWrites");
+            var saves = host.Probe.Count("instanceWriteAttempts");
+            await Assert.ThrowsAsync<InvalidOperationException>(() => scenario == "id"
+                ? variables.SetVariablesAsync(initial.WorkflowInstanceId, [])
+                : variables.SetVariablesAsync(ownedContext, []));
+            Assert.Equal(reads, host.Probe.Count("variableReads"));
+            Assert.Equal(writes, host.Probe.Count("variableWrites"));
+            Assert.Equal(saves, host.Probe.Count("instanceWriteAttempts"));
+            Assert.Equal(original, serializer.Serialize((await instances.FindByIdAsync(initial.WorkflowInstanceId))!.WorkflowState));
+
+            // A real unowned Local client still executes the normal pinned workflow, including
+            // its externally persisted variable, through the same fixed/audited host services.
+            var client = await host.Services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync("fixture-unowned-variable");
+            await client.CreateInstanceAsync(new CreateWorkflowInstanceRequest
+            {
+                WorkflowDefinitionHandle = Elsa.Workflows.Models.WorkflowDefinitionHandle.ByDefinitionVersionId(AdmissionRuntimeHost.Artifact().Id)
+            });
+            await client.RunInstanceAsync(new RunWorkflowInstanceRequest());
+            var unownedContext = host.Probe.PreparedContext!;
+            Assert.Equal("fixture-unowned-variable", unownedContext.Id);
+            reads = host.Probe.Count("variableReads");
+            writes = host.Probe.Count("variableWrites");
+            if (scenario == "id")
+            {
+                await variables.SetVariablesAsync(unownedContext.Id, []);
+            }
+            else
+            {
+                await variables.SetVariablesAsync(unownedContext, []);
+            }
+            Assert.True(host.Probe.Count("variableReads") > reads);
+            Assert.True(host.Probe.Count("variableWrites") > writes);
+            await ObserveAsync(caseId, nameof(PublicVariableManagementDeniesOwnedWritesBeforeStorageAndPreservesUnownedWrites), caseId,
+                new() { ["ownedStorageReads"] = 0, ["ownedStorageWrites"] = 0, ["ownedInstanceWrites"] = 0,
+                    ["ownedStateUnchanged"] = true, ["unownedStorageRead"] = true, ["unownedStorageWrite"] = true });
+        });
     }
 
     private Task ObserveAsync(string caseId, string method, string parameterId, Dictionary<string, object> facts) =>
         AdmissionProofObservation.WriteAsync(fixture, caseId, $"{typeof(AdmissionRuntimeExecutionTests).FullName}.{method}", parameterId, [],
             new Dictionary<string, bool> { ["behaviorAssertionsPassed"] = true }, facts);
 
-    private sealed record RuntimeScenario(IServiceProvider Services, AdmissionRuntimeProbe Probe, AdmissionExecutionService Execution, IAdmissionStore Store, string AdmissionId);
     private sealed class CompletionTarget
     {
         public ValueTask Complete(ActivityCompletedContext context) => ValueTask.CompletedTask;

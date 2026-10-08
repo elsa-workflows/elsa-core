@@ -77,6 +77,7 @@ public sealed class AdmissionHostConfiguration
         services.GetRequiredService<AdmissionExecutionComposition>().Validate(services);
         if (_registrations == null || services.GetRequiredService<IWorkflowRuntime>().GetType() != typeof(AdmissionWorkflowRuntime) ||
             services.GetRequiredService<IWorkflowDispatcher>().GetType() != typeof(AdmissionWorkflowDispatcher) ||
+            services.GetRequiredService<IWorkflowInstanceVariableManager>().GetType() != typeof(AdmissionWorkflowInstanceVariableManager) ||
             services.GetRequiredService<IWorkflowRunner>().GetType() != typeof(WorkflowRunner) ||
             services.GetRequiredService<IWorkflowExecutionPipeline>().GetType() != typeof(WorkflowExecutionPipeline) ||
             services.GetRequiredService<IWorkflowExecutionGuard>().GetType() != typeof(AdmissionExecutionGuard))
@@ -113,7 +114,7 @@ public sealed class AdmissionHostConfiguration
             typeof(IWorkflowDefinitionService), typeof(IWorkflowGraphBuilder), typeof(IWorkflowInstanceManager),
             typeof(IWorkflowStateExtractor), typeof(IWorkflowStateSerializer), typeof(IActivitySerializer), typeof(IPayloadSerializer),
             typeof(IActivityRegistry), typeof(IActivityRegistryLookupService), typeof(IMaterializerRegistry),
-            typeof(IActivitySchedulerFactory), typeof(IActivityInvoker), typeof(IStorageDriverManager),
+            typeof(IActivitySchedulerFactory), typeof(IActivityInvoker), typeof(IStorageDriverManager), typeof(IExecutionCycleRegistry),
             typeof(ILoggerStateGenerator<ActivityExecutionContext>),
             typeof(ILoggerStateGenerator<WorkflowExecutionContext>), typeof(INotificationSender), typeof(ICommitStateHandler),
             typeof(IBookmarksPersister), typeof(IVariablePersistenceManager), typeof(IWorkflowCommitTransaction), typeof(IWorkflowCommitNotificationBuffer)

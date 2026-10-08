@@ -32,6 +32,7 @@ public static class AdmissionServiceCollectionExtensions
             sp.GetRequiredService<ITenantAccessor>(), configuration));
         services.Replace(ServiceDescriptor.Scoped<IWorkflowRuntime, AdmissionWorkflowRuntime>());
         services.Decorate<IWorkflowDispatcher, AdmissionWorkflowDispatcher>();
+        services.Decorate<IWorkflowInstanceVariableManager, AdmissionWorkflowInstanceVariableManager>();
         services.AddScoped<AdmissionBootstrapService>();
         services.Replace(ServiceDescriptor.Scoped<IWorkflowDefinitionPublisher, AdmissionDeniedManagement>());
         services.Replace(ServiceDescriptor.Scoped<IWorkflowDefinitionManager, AdmissionDeniedManagement>());
