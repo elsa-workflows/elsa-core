@@ -39,11 +39,11 @@ The [tested dependency closure](canonical-dependency-closure-tested.json.gz) rec
 To recheck the source graph from this tooling checkout and the exact disposable source tree, decompress the two JSON receipts and run:
 
 ```sh
-gzip -dc doc/integration-program/consolidation/current-tip-c4b3-evidence/full-suite-nuke-test-evidence.json.gz > /tmp/current-tip-test-evidence.json
+gzip -dc docs/integration-program/consolidation/current-tip-c4b3-evidence/full-suite-nuke-test-evidence.json.gz > /tmp/current-tip-test-evidence.json
 python3 scripts/integration-program/refresh_canonical_dependency_graph.py \
   --source-profile current-tip-c4b3 \
   --rehearsal /path/to/prepared-c4b3-source-with-six-overlays \
-  --overlay-receipt doc/integration-program/consolidation/current-tip-c4b3-evidence/reviewed-overlays-six.json \
+  --overlay-receipt docs/integration-program/consolidation/current-tip-c4b3-evidence/reviewed-overlays-six.json \
   --evidence /tmp/current-tip-test-evidence.json \
   --output /tmp/current-tip-tested-closure.json
 ```

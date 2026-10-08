@@ -19,8 +19,8 @@ The 26 explicit dependencies in the existing `Blocking dependencies` and `Depend
 From the repository root:
 
 ```sh
-python3 doc/integration-program/verify-hierarchy.py
-python3 doc/integration-program/verify-hierarchy.py --live
+python3 docs/integration-program/verify-hierarchy.py
+python3 docs/integration-program/verify-hierarchy.py --live
 ```
 
 The first command validates the declared root, semantic levels, uniqueness, full parent coverage and cycles offline. Counts derive from the snapshot so reviewed implementation tasks can be added without weakening the hierarchy rules. The second uses authenticated, paginated `gh` read-only calls to compare the complete child and blocker sets of every indexed issue, including leaves. Missing and unrecorded links both fail verification, and full issue URLs distinguish cross-repository issue numbers. It never removes additional relationships or reparents work. An issue-state change alone is not relationship drift; refresh state separately when recording new execution evidence. Run it again before subsequent execution if the backlog may have changed. GitHub is the current state; this file is dated evidence.
