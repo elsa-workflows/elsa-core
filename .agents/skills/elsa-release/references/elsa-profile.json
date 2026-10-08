@@ -1,5 +1,131 @@
 {
   "schema": 1,
+  "container_release": {
+    "repository": "elsa-workflows/elsa-apps",
+    "workflow": ".github/workflows/container-images.yml",
+    "source_ref": "main",
+    "canonical_ref": "main",
+    "workflow_inputs": {
+      "version": "version",
+      "publish": "publish",
+      "images": "images",
+      "expected_commit": "expected_commit",
+      "core": "core_version",
+      "studio": "studio_version",
+      "extensions": "extensions_version"
+    },
+    "package_probe_ids": {
+      "core": ["Elsa"],
+      "studio": ["Elsa.Studio"],
+      "extensions": ["Elsa.Logging"]
+    },
+    "package_ids": {
+      "core": [
+        "Elsa", "Elsa.Alterations", "Elsa.Alterations.Core", "Elsa.Api.Client", "Elsa.Api.Common",
+        "Elsa.Caching", "Elsa.Common", "Elsa.Dashboard.Abstractions", "Elsa.Dashboard.Api", "Elsa.Expressions", "Elsa.Expressions.CSharp",
+        "Elsa.Expressions.JavaScript", "Elsa.Expressions.Liquid", "Elsa.Features", "Elsa.Http",
+        "Elsa.Identity", "Elsa.KeyValues", "Elsa.Labels", "Elsa.Mediator", "Elsa.Persistence.EFCore",
+        "Elsa.Persistence.EFCore.Common", "Elsa.Persistence.EFCore.MySql", "Elsa.Persistence.EFCore.Oracle",
+        "Elsa.Persistence.EFCore.PostgreSql", "Elsa.Persistence.EFCore.SqlServer", "Elsa.Persistence.EFCore.Sqlite",
+        "Elsa.Resilience", "Elsa.Resilience.Core", "Elsa.SasTokens", "Elsa.Scheduling", "Elsa.Tenants",
+        "Elsa.Workflows.Api", "Elsa.Workflows.Core", "Elsa.Workflows.Management", "Elsa.Workflows.Runtime",
+        "Elsa.Workflows.Runtime.Dashboard", "Elsa.Workflows.Runtime.Distributed"
+      ],
+      "studio": [
+        "Elsa.Studio", "Elsa.Studio.AI", "Elsa.Studio.ActivityPortProviders",
+        "Elsa.Studio.Authentication.Abstractions", "Elsa.Studio.Authentication.Themes",
+        "Elsa.Studio.Authentication.UI", "Elsa.Studio.Core", "Elsa.Studio.Core.BlazorServer",
+        "Elsa.Studio.Core.BlazorWasm", "Elsa.Studio.Dashboard", "Elsa.Studio.Diagnostics.ConsoleLogs",
+        "Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard", "Elsa.Studio.Diagnostics.OpenTelemetry",
+        "Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard", "Elsa.Studio.Diagnostics.StructuredLogs",
+        "Elsa.Studio.Diagnostics.StructuredLogs.Dashboard", "Elsa.Studio.DomInterop",
+        "Elsa.Studio.Localization", "Elsa.Studio.Localization.BlazorServer",
+        "Elsa.Studio.Localization.BlazorWasm", "Elsa.Studio.Login", "Elsa.Studio.Login.BlazorServer",
+        "Elsa.Studio.Login.BlazorWasm", "Elsa.Studio.Secrets", "Elsa.Studio.Security",
+        "Elsa.Studio.Settings", "Elsa.Studio.Shared", "Elsa.Studio.Shell", "Elsa.Studio.UIHints",
+        "Elsa.Studio.UserTasks", "Elsa.Studio.Workflows", "Elsa.Studio.Workflows.Core",
+        "Elsa.Studio.Workflows.Dashboard", "Elsa.Studio.Workflows.Designer"
+      ],
+      "extensions": [
+        "Elsa.Agents.Activities", "Elsa.Agents.Api", "Elsa.Agents.Core", "Elsa.Agents.Models",
+        "Elsa.Agents.Persistence", "Elsa.Agents.Persistence.EFCore", "Elsa.Agents.Persistence.EFCore.MySql",
+        "Elsa.Agents.Persistence.EFCore.PostgreSql", "Elsa.Agents.Persistence.EFCore.SqlServer",
+        "Elsa.Agents.Persistence.EFCore.Sqlite", "Elsa.Logging", "Elsa.Logging.Console", "Elsa.Logging.Core",
+        "Elsa.Logging.Serilog", "Elsa.Studio.Agents", "Elsa.Studio.Http.Webhooks", "Elsa.Studio.WorkflowContexts"
+      ]
+    },
+    "images": [
+      {
+        "name": "server",
+        "repository": "elsaworkflows/elsa-server-app",
+        "tag": "{version}",
+        "smoke_auth": true,
+        "release_repositories": ["core", "extensions"],
+        "packages": ["core", "extensions"],
+        "platforms": ["linux/amd64", "linux/arm64"]
+      },
+      {
+        "name": "studio-server",
+        "repository": "elsaworkflows/elsa-studio-blazor-server-app",
+        "tag": "{version}",
+        "release_repositories": ["studio", "extensions"],
+        "packages": ["core", "studio", "extensions"],
+        "platforms": ["linux/amd64", "linux/arm64"]
+      },
+      {
+        "name": "studio-wasm",
+        "repository": "elsaworkflows/elsa-studio-blazor-wasm-app",
+        "tag": "{version}",
+        "release_repositories": ["studio", "extensions"],
+        "packages": ["core", "studio", "extensions"],
+        "platforms": ["linux/amd64", "linux/arm64"]
+      },
+      {
+        "name": "studio-wasm-standalone",
+        "repository": "elsaworkflows/elsa-studio-blazor-wasm-standalone-app",
+        "tag": "{version}",
+        "release_repositories": ["studio", "extensions"],
+        "packages": ["core", "studio", "extensions"],
+        "platforms": ["linux/amd64", "linux/arm64"]
+      },
+      {
+        "name": "server-studio-server",
+        "repository": "elsaworkflows/elsa-server-studio-blazor-server-app",
+        "tag": "{version}",
+        "smoke_auth": true,
+        "release_repositories": ["studio", "extensions"],
+        "packages": ["core", "studio", "extensions"],
+        "platforms": ["linux/amd64", "linux/arm64"]
+      },
+      {
+        "name": "server-studio-wasm",
+        "repository": "elsaworkflows/elsa-server-studio-blazor-wasm-app",
+        "tag": "{version}",
+        "smoke_auth": true,
+        "release_repositories": ["studio", "extensions"],
+        "packages": ["core", "studio", "extensions"],
+        "platforms": ["linux/amd64", "linux/arm64"]
+      },
+      {
+        "name": "studio-wasm-alias",
+        "repository": "elsaworkflows/elsa-studio",
+        "tag": "{version}",
+        "release_repositories": ["studio", "extensions"],
+        "packages": ["core", "studio", "extensions"],
+        "platforms": ["linux/amd64", "linux/arm64"],
+        "alias_of": "studio-wasm"
+      },
+      {
+        "name": "server-alias",
+        "repository": "elsaworkflows/elsa-server",
+        "tag": "{version}",
+        "release_repositories": ["core", "extensions"],
+        "packages": ["core", "extensions"],
+        "platforms": ["linux/amd64", "linux/arm64"],
+        "alias_of": "server"
+      }
+    ]
+  },
   "repositories": [
     {
       "name": "core",
