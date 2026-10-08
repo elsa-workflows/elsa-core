@@ -215,7 +215,7 @@ internal sealed class AdmissionAuthorityRegistry
                 }
             }
             var callbacks = _context.CompletionCallbacks.ToArray();
-            if (!_callbacks.SequenceEqual(callbacks, ReferenceEqualityComparer.Instance))
+            if (!Enumerable.SequenceEqual(_callbacks, callbacks, ReferenceEqualityComparer.Instance))
             {
                 throw new InvalidOperationException("The prepared admission completion callbacks changed.");
             }
