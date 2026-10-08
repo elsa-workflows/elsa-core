@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Middleware.Workflows;
 using Elsa.Workflows.Pipelines.ActivityExecution;
@@ -33,6 +34,8 @@ internal sealed class AdmissionExecutionComposition
         _workflow = new(() =>
         {
             var pipeline = new WorkflowExecutionPipeline(services, builder => builder
+                .UseExecutionCycleTracking()
+                .UsePersistentVariables()
                 .UseMiddleware<Elsa.Workflows.Middleware.Workflows.ExceptionHandlingMiddleware>()
                 .UseDefaultActivityScheduler());
             pipeline.Freeze();
