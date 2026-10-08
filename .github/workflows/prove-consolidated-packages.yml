@@ -58,6 +58,7 @@ jobs:
         env:
           PROOF_VERSION: 3.10.0-proof.${{ github.run_id }}.${{ github.run_attempt }}
           PROOF_OUTPUT: ${{ runner.temp }}/consolidated-proof
+          TMPDIR: ${{ runner.temp }}
         run: |
           python3 scripts/integration-program/prove_consolidated_packages.py \
             --version "$PROOF_VERSION" --output "$PROOF_OUTPUT" --remote-sources
