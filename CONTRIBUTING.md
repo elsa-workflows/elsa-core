@@ -27,6 +27,12 @@ All changes happen through Pull Requests targeting the `main` branch.
 4. Ensure the test suite passes.
 5. Open a Pull Request.
 
+### Contribution routing after consolidation
+
+Open new consolidated Core, Extensions and Studio issues and pull requests in [elsa-core](https://github.com/elsa-workflows/elsa-core). Identify the affected product and version. Retained 3.8/3.9 maintenance continues through its existing source-repository procedure until an explicitly approved replacement is verified; consolidation does not end that support or move its publisher automatically.
+
+For existing Studio or Extensions contributions, consult the [source contribution handoff and register](docs/integration-program/source-contributor-handoff.md). Reuse a matching Core continuation when one exists. When scheduling new continuation work, link the original issue/PR and preserve its author attribution; an open historical source item is not automatically an active Core task.
+
 ### Product ownership and local checks
 
 Core, Extensions and Studio share this repository and the root `Elsa.sln`. Keep code, tests and documentation in the owning product's `src/`, `test/` and `docs/` directories. Shared build scripts, central package policy and solution filters remain at the repository root. Cross-product references use public contracts; moving a file does not change its package or activity identity.

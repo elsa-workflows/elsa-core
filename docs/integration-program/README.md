@@ -1,10 +1,14 @@
 # Elsa 3 integration program: evidence and delivery
 
-Program [#8194](https://github.com/elsa-workflows/elsa-core/issues/8194), audited 2026-09-23 and now in implementation. The initial evidence is integrated; repository consolidation, independently governed publishing and supported pilot workflows remain program acceptance work. Consult the program issue for the live delivery queue.
+Program [#8194](https://github.com/elsa-workflows/elsa-core/issues/8194) was initially audited on 2026-09-23. Structural consolidation is accepted under [#8667](https://github.com/elsa-workflows/elsa-core/issues/8667): Core, Extensions and Studio now share this repository under their own product roots. Consult the program issue for the live delivery queue and remaining operational cutover gates.
 
-## Backlog and delivery state
+## Current contribution handoff
 
-The original backlog was read and preserved. Its initial reconciliation had 68 parent links and 26 blockers; those are historical counts. The current [snapshot](hierarchy.json) records **87 issues, 86 parent links and 36 separate blocking dependencies**, including the refreshed credential lifecycle tasks and the active EF persistence and Secrets compatibility work. Use `python3 docs/integration-program/verify-hierarchy.py --live` to detect drift as execution adds work. [Initial reconciliation](reconciliation.md) remains the historical record. Do not infer issue completion from an open PR.
+New consolidated development belongs in Core. The [source contribution handoff](source-contributor-handoff.md) and [attributed register](source-handoff-register.json) record the open Studio/Extensions issues and PRs, their bounded dispositions, and the remaining source-side operations. Existing source maintenance/publishing boundaries remain until an approved replacement is verified. The register does not imply source archival or implementation of every retained proposal.
+
+## Historical audit and backlog snapshots
+
+The sections below retain the initial audit's evidence, recommendations and decisions in their original context; they are not the current delivery queue. The [hierarchy snapshot](hierarchy.json) and [initial reconciliation](reconciliation.md) record earlier backlog states. Use `python3 docs/integration-program/verify-hierarchy.py --live` to detect drift as execution adds work. Do not infer issue completion from an open PR or treat the frozen [upstream-work receipt](consolidation/upstream-work.json) as the current open contribution inventory.
 
 ## Integrated initial evidence
 
