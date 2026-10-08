@@ -123,6 +123,24 @@ class AdmissionProofTests(unittest.TestCase):
         data['cases'][1]['method'] = data['cases'][0]['method']
         with self.assertRaises(ValueError): proof.validate_manifest(data)
 
+    def test_single_process_runtime_can_use_postgresql_without_losing_service_evidence(self):
+        data = copy.deepcopy(self.manifest)
+        entry = next(c for c in data['cases'] if c['family'] == 'entry')
+        entry['topology'] = 'postgresql'
+        proof.validate_manifest(data)
+        record = observation(entry)
+        proof.validate_observation(record, entry, HEAD)
+        record['services'] = []
+        with self.assertRaises(ValueError): proof.validate_observation(record, entry, HEAD)
+        entry.update(topology='postgresql-two-process', minimumProcesses=2,
+                     processRoles=['primary', 'competitor'])
+        # Other in-process provider cases cannot stand in for runtime entry proof.
+        with self.assertRaises(ValueError): proof.validate_manifest(data)
+        data = copy.deepcopy(self.manifest)
+        for case in data['cases']:
+            case.update(topology='postgresql', processRoles=[], minimumProcesses=0, restartRequired=False)
+        with self.assertRaises(ValueError): proof.validate_manifest(data)
+
     def test_observations_reject_source_predicate_cleanup_service_and_process_mismatch(self):
         case = next(c for c in self.manifest['cases'] if c['topology'] == 'postgresql-two-process')
         mutations = [lambda d: d.update(sourceRevision='f' * 40), lambda d: d.update(parameterId='other'),

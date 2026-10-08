@@ -129,8 +129,12 @@ def validate_manifest(data: dict) -> dict:
         ids.add(case["caseId"]); identities.add(identity); covered.add(case["family"])
         case_projects.add(case["project"])
     require(covered == set(FAMILIES), "missing_family")
+    # A local execution host can use real PostgreSQL without becoming a second
+    # execution process. Require an actual entry case in that single-process lane,
+    # retaining PostgreSQL identity/disposal evidence when it is present.
     require(any(c["topology"] == "postgresql-two-process" for c in data["cases"])
-            and any(c["topology"] == "in-process" for c in data["cases"]), "missing_required_topology")
+            and any(c["family"] == "entry" and c["topology"] in ("in-process", "postgresql")
+                    for c in data["cases"]), "missing_required_topology")
     for case in data["cases"]:
         if case["parameterId"] == "default":
             require(sum(c["method"] == case["method"] and c["project"] == case["project"]
