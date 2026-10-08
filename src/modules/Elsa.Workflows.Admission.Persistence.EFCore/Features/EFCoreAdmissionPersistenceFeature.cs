@@ -1,9 +1,6 @@
-using Elsa.Common.Multitenancy;
-using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Persistence.EFCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
+using Elsa.Workflows.Admission.Persistence.EFCore.Extensions;
 
 namespace Elsa.Workflows.Admission.Persistence.EFCore.Features;
 
@@ -18,11 +15,7 @@ public sealed class EFCoreAdmissionPersistenceFeature(IModule module)
     {
         var scope = new AdmissionPersistenceScope(TenantId, EnvironmentId);
         scope.Validate();
-        // The shared factory requires an accessor even in a single-scope, non-multitenant host.
-        // Preserve an accessor supplied by the host, as the existing Connections feature does.
-        Services.TryAddSingleton<ITenantAccessor, DefaultTenantAccessor>();
         base.Apply();
-        Services.AddSingleton(scope);
-        Services.AddScoped<IAdmissionStore, EFCoreAdmissionStore>();
+        Services.AddAdmissionPersistence(scope);
     }
 }
