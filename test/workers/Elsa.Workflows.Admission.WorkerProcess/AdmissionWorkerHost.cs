@@ -108,6 +108,9 @@ public static class AdmissionWorkerHost
                     result = new { outcome = inserted.ToString() };
                     break;
                 }
+                case "inspect":
+                    result = Snapshot(await store.FindAsync(args[1]));
+                    break;
                 case "admit":
                     var admitted = await store.AdmitAsync(Event(args[1]), Now);
                     result = new { outcome = admitted.Outcome.ToString(), admitted.AdmissionId, admitted.Revision, admitted.AcknowledgementEligible };
