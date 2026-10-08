@@ -124,7 +124,30 @@ class TrainTests(unittest.TestCase):
                     'success': True,
                     'imageDigest': digest_value,
                     'platforms': [
-                        {'platform': platform, 'imageDigest': platform_digests[platform], 'status': 'success', 'endpoint': 'http://localhost/health', 'httpStatus': 200}
+                        {
+                            'platform': platform,
+                            'imageDigest': platform_digests[platform],
+                            'status': 'success',
+                            'endpoint': 'http://localhost/health',
+                            'httpStatus': 200,
+                            **({
+                                'identityLogin': {'status': 200, 'endpoint': '/elsa/api/identity/login'},
+                                'bearerApi': {
+                                    'status': 200,
+                                    'endpoint': '/elsa/api/workflow-definitions?page=0&pageSize=1',
+                                    'contentType': 'application/json; charset=utf-8',
+                                },
+                                'dashboardApi': {
+                                    'status': 200,
+                                    'endpoint': '/elsa/api/dashboard/overview?range=24h&includeSystem=false',
+                                    'contentType': 'application/json; charset=utf-8',
+                                    'runtimeStatus': 'AcceptingWork',
+                                    'isAcceptingWork': True,
+                                    'workflowMetricsValid': True,
+                                    'running': 0,
+                                },
+                            } if source_image.get('smoke_auth') is True else {}),
+                        }
                         for platform in image['platforms']
                     ],
                 },
@@ -259,6 +282,62 @@ class TrainTests(unittest.TestCase):
         release_fixture = self.container_fixture(state, event='release')
         release_report = self.validate_container_fixture(state, release_fixture)
         self.assertTrue(release_report['verified'])
+
+    def test_container_receipt_accepts_runtime_dashboard_package_in_core_assets(self):
+        state = self.ready_container_state(repositories=['core'], no_containers=False)
+        fixture = self.container_fixture(state, image_names=state['containers']['images'])
+        receipt = fixture[0]
+        dashboard_package = {'id': 'Elsa.Workflows.Runtime.Dashboard', 'version': state['version']}
+        receipt['resolvedPackages']['core'].append(dashboard_package)
+        for image in receipt['images']:
+            if image['name'] in ('server', 'server-alias'):
+                image['resolvedPackages']['core'].append(dashboard_package)
+        self.refresh_container_artifact(fixture)
+
+        report = self.validate_container_fixture(state, fixture, image_names=state['containers']['images'])
+        self.assertTrue(report['verified'])
+        self.assertEqual(2, len(report['images']))
+
+    def test_container_receipt_requires_authenticated_dashboard_runtime_semantics(self):
+        state = self.ready_container_state(no_containers=False)
+        mutations = (
+            ('missing dashboard evidence', lambda row: row.pop('dashboardApi')),
+            ('missing identity login proof', lambda row: row.pop('identityLogin')),
+            ('wrong bearer endpoint', lambda row: row['bearerApi'].update(endpoint='/elsa/api/other')),
+            ('non-JSON dashboard response', lambda row: row['dashboardApi'].update(contentType='text/html')),
+            ('failed dashboard request', lambda row: row['dashboardApi'].update(status=503)),
+            ('runtime not accepting work', lambda row: row['dashboardApi'].update(runtimeStatus='Unavailable')),
+            ('runtime acceptance false', lambda row: row['dashboardApi'].update(isAcceptingWork=False)),
+            ('workflow metrics invalid', lambda row: row['dashboardApi'].update(workflowMetricsValid=False)),
+            ('invalid running count', lambda row: row['dashboardApi'].update(running=True)),
+        )
+        for label, mutate in mutations:
+            with self.subTest(case=label):
+                fixture = self.container_fixture(state)
+                receipt = fixture[0]
+                mutate(receipt['images'][0]['smoke']['platforms'][0])
+                self.refresh_container_artifact(fixture)
+                with self.assertRaisesRegex(ValueError, 'healthy authenticated dashboard runtime evidence'):
+                    self.validate_container_fixture(state, fixture)
+
+        backend_images = ['server', 'server-alias']
+        fixture = self.container_fixture(state, image_names=backend_images)
+        alias = next(image for image in fixture[0]['images'] if image['name'] == 'server-alias')
+        alias['smoke']['platforms'][0].pop('dashboardApi')
+        self.refresh_container_artifact(fixture)
+        with self.assertRaisesRegex(ValueError, 'healthy authenticated dashboard runtime evidence'):
+            self.validate_container_fixture(state, fixture, image_names=backend_images)
+
+    def test_studio_only_container_receipt_does_not_require_backend_dashboard_probe(self):
+        state = self.ready_container_state(no_containers=False)
+        image_names = ['studio-wasm']
+        fixture = self.container_fixture(state, image_names=image_names)
+        platform_smoke = fixture[0]['images'][0]['smoke']['platforms'][0]
+        self.assertNotIn('dashboardApi', platform_smoke)
+
+        report = self.validate_container_fixture(state, fixture, image_names=image_names)
+        self.assertTrue(report['verified'])
+        self.assertEqual(['studio-wasm'], list(report['images']))
 
     def test_container_receipt_accepts_producer_decimal_run_id_and_rejects_malformed_values(self):
         state = self.ready_container_state(no_containers=False)

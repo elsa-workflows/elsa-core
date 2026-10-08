@@ -332,6 +332,14 @@ python3 <skill>/scripts/release_train.py --state <run>/state.json record-contain
 
 The recorder independently fetches the exact artifact metadata and successful Apps run, byte-compares the supplied receipt with its sole ZIP member, anchors the Apps SHA in canonical `main`, verifies the image repository/tag/root digest and every configured platform digest against the live Docker registry, checks aliases, resolved Elsa package assets and public feed availability, and requires smoke success bound to each platform digest. A hand-written receipt or a build-only/PR artifact cannot satisfy the gate. The verification report expires after 24 hours; rerun verification against a fresh successful workflow artifact before proceeding if it is stale.
 
+Each backend platform (`server`, `server-studio-server`, and `server-studio-wasm`) must also carry authenticated smoke evidence:
+
+- `identityLogin`: `status: 200` and `endpoint: /elsa/api/identity/login`.
+- `bearerApi`: `status: 200`, `endpoint: /elsa/api/workflow-definitions?page=0&pageSize=1`, and JSON `contentType` (`application/json`, optionally followed by parameters).
+- `dashboardApi`: `status: 200`, `endpoint: /elsa/api/dashboard/overview?range=24h&includeSystem=false`, JSON `contentType`, `runtimeStatus: AcceptingWork`, literal `isAcceptingWork: true` and `workflowMetricsValid: true`, and a nonnegative integer `running` count. A boolean count is invalid.
+
+Backend aliases inherit these requirements from their canonical image. Studio-only images do not require backend probes; their own platform and asset checks remain required. The Apps producer measures these fields from authenticated responses and rejects an unavailable runtime or malformed workflow counters. Older receipts without this evidence cannot satisfy the updated gate: use the repaired Apps producer to rebuild and smoke the images, following the [Apps correction procedure](https://github.com/elsa-workflows/elsa-apps#using-docker-images-from-docker-hub) if the version tags already exist.
+
 For a historic repair without reopening the package release train, run the standalone verifier with the exact Apps run receipt ZIP and current profile. It performs the same provenance and live-registry checks without requiring a release checkpoint:
 
 ```bash
