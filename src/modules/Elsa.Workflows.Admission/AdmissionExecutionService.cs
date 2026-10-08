@@ -134,6 +134,12 @@ public sealed class AdmissionExecutionService
         }
         using (var owner = _authorities.AcquireOwner(record.WorkflowInstanceId!))
         {
+            // A caller can read Materialized before another local owner runs and unwinds.
+            // Losing that race is a definite duplicate, not this caller's uncertain attempt.
+            if (!await IsCurrentOwnedSnapshotAsync(record, cancellationToken))
+            {
+                return null;
+            }
             try
             {
                 var instance = await _instances.FindByIdAsync(record.WorkflowInstanceId!, cancellationToken)
@@ -159,6 +165,10 @@ public sealed class AdmissionExecutionService
             throw new InvalidOperationException("Owned continuation requires an exact trusted bookmark lineage.");
         }
         using var owner = _authorities.AcquireOwner(record.WorkflowInstanceId!);
+        if (!await IsCurrentOwnedSnapshotAsync(record, cancellationToken))
+        {
+            throw new InvalidOperationException("The admission continuation snapshot was superseded before ownership acquisition.");
+        }
         var configuration = Configuration(record);
         ValidateScope(configuration);
         _host.ValidateSubscription(configuration);
@@ -351,6 +361,12 @@ public sealed class AdmissionExecutionService
         {
             throw new InvalidOperationException("The materialized initial admission state changed.");
         }
+    }
+    private async Task<bool> IsCurrentOwnedSnapshotAsync(AdmissionRecord snapshot, CancellationToken cancellationToken)
+    {
+        var current = await FindRequiredAsync(snapshot.Id, cancellationToken);
+        return current.Id == snapshot.Id && current.Revision == snapshot.Revision && current.State == snapshot.State &&
+            current.WorkflowInstanceId == snapshot.WorkflowInstanceId;
     }
     private async Task<AdmissionRecord> FindRequiredAsync(string id, CancellationToken cancellationToken) =>
         await _store.FindAsync(id, cancellationToken) ?? throw new InvalidOperationException("The admission record is missing.");
