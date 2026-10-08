@@ -923,7 +923,9 @@ def record_containers(state, args):
     if dispatch:
         if not dispatch.get('run_id'):
             raise ValueError('Reconcile the pending Apps workflow dispatch before recording a container receipt')
-        if receipt_run.get('id') != dispatch['run_id']:
+        receipt_run_id = container_workflow_run_id(receipt_run.get('id'))
+        dispatch_run_id = container_workflow_run_id(dispatch['run_id'])
+        if receipt_run_id != dispatch_run_id:
             raise ValueError('Container receipt workflow run differs from the release checkpoint dispatch')
     elif receipt_run.get('event') != 'release':
         raise ValueError('Dispatch and reconcile the Apps container workflow before recording its receipt')

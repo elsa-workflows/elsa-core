@@ -319,6 +319,8 @@ class TrainTests(unittest.TestCase):
         state = self.ready_container_state(no_containers=False)
         fixture = self.container_fixture(state)
         receipt, receipt_path, archive_path, artifact, live_run, registry = fixture
+        receipt['workflowRun']['id'] = '44'
+        self.refresh_container_artifact(fixture)
         selected = train.container_plan(state)
         state['containers']['binding'] = {
             'source_ref': 'main',
@@ -334,12 +336,13 @@ class TrainTests(unittest.TestCase):
              patch.object(train, 'package_feed_available', return_value=True):
             self.assertEqual('containers', train.status(state)['next'])
             args = SimpleNamespace(state=state_path, receipt=receipt_path, artifact_archive=archive_path, replace=False)
-            train.record_containers(state, args)
+            result = train.record_containers(state, args)
+            self.assertEqual(44, result['workflow_run_id'])
+            self.assertEqual(44, state['containers']['receipt']['run_id'])
             self.assertEqual('complete', train.status(state)['next'])
 
             receipt_path.write_text(receipt_path.read_text() + ' ')
             self.assertEqual('containers', train.status(state)['next'])
-
             train.save(receipt_path, receipt)
             report_path = Path(state['containers']['verification']['report'])
             report = train.read(report_path)
@@ -347,6 +350,29 @@ class TrainTests(unittest.TestCase):
             train.save(report_path, report)
             state['containers']['verification']['sha256'] = train.digest(report_path)
             self.assertEqual('containers', train.status(state)['next'])
+
+    def test_record_containers_rejects_malformed_or_mismatched_run_id(self):
+        state = self.ready_container_state(no_containers=False)
+        fixture = self.container_fixture(state)
+        receipt, receipt_path, archive_path, *_ = fixture
+        selected = train.container_plan(state)
+        state['containers']['binding'] = {
+            'source_ref': 'main',
+            'commit': 'a' * 40,
+            'packages': dict(state['containers']['package_versions']),
+            'images': [image['name'] for image in selected['images']],
+        }
+        state['containers']['dispatch'] = {'run_id': 44, 'source_commit': 'a' * 40}
+        args = SimpleNamespace(state=self.root / 'malformed-run-id-state.json', receipt=receipt_path, artifact_archive=archive_path, replace=False)
+        train.save(args.state, state)
+
+        for value, message in (('044', 'canonical decimal string workflowRun.id'), (True, 'canonical decimal string workflowRun.id'), (-44, 'canonical decimal string workflowRun.id'), ('45', 'differs from the release checkpoint dispatch')):
+            with self.subTest(value=value):
+                receipt['workflowRun']['id'] = value
+                train.save(receipt_path, receipt)
+                with patch.object(train, 'status', return_value={'next': 'containers'}), self.assertRaisesRegex(ValueError, message):
+                    train.record_containers(state, args)
+                self.assertIsNone(state['containers'].get('receipt'))
 
     def test_core_subset_requires_external_extension_version_and_pins_dispatch_sha(self):
         state = self.ready_container_state(repositories=['core'], no_containers=False)
