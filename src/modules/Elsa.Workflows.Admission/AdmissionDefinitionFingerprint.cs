@@ -14,7 +14,9 @@ public static class AdmissionDefinitionFingerprint
             definition.Id, definition.TenantId, definition.DefinitionId, definition.Version, definition.CreatedAt,
             definition.Name, definition.Description, definition.ToolVersion, definition.Options, definition.Variables,
             definition.Inputs, definition.Outputs, definition.Outcomes, definition.CustomProperties, definition.ProviderName,
-            definition.MaterializerName, definition.MaterializerContext, definition.StringData, definition.OriginalSource,
+            definition.MaterializerName, definition.MaterializerContext,
+            StringData = JsonContent(definition.StringData),
+            OriginalSource = definition.MaterializerName == "Json" ? JsonContent(definition.OriginalSource) : definition.OriginalSource,
             definition.BinaryData, definition.IsReadonly, definition.IsSystem
         });
         using var stream = new MemoryStream();
@@ -23,6 +25,23 @@ public static class AdmissionDefinitionFingerprint
             WriteCanonical(writer, element);
         }
         return AdmissionHash.Compute(Encoding.UTF8.GetString(stream.ToArray()));
+    }
+
+    private static object? JsonContent(string? value)
+    {
+        if (value == null)
+        {
+            return null;
+        }
+        try
+        {
+            using var document = JsonDocument.Parse(value);
+            return document.RootElement.Clone();
+        }
+        catch (JsonException)
+        {
+            return value;
+        }
     }
 
     private static void WriteCanonical(Utf8JsonWriter writer, JsonElement element)
