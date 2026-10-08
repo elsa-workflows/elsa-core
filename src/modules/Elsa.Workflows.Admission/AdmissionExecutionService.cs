@@ -98,6 +98,7 @@ public sealed class AdmissionExecutionService
             {
                 return null;
             }
+            WorkflowState materializedState;
             try
             {
                 await ObserveAsync(AdmissionExecutionBoundary.CreationClaimed, record, cancellationToken);
@@ -124,13 +125,14 @@ public sealed class AdmissionExecutionService
                 }
                 record = await _store.CompleteCreationAsync(record.Id, record.Revision, AdmissionHash.Compute(expectedState), cancellationToken)
                     ?? throw new InvalidOperationException("Admission creation completion lost its revision.");
-                return await RunOwnedAsync(record, configuration, graph, reloaded.WorkflowState, null, null, false, cancellationToken);
+                materializedState = reloaded.WorkflowState;
             }
             catch
             {
                 await MarkRecoveryAsync(admissionId, "creation-or-start-incomplete");
                 throw;
             }
+            return await RunOwnedAsync(record, configuration, graph, materializedState, null, null, false, cancellationToken);
         }
         using (var owner = _authorities.AcquireOwner(record.WorkflowInstanceId!))
         {
@@ -140,18 +142,20 @@ public sealed class AdmissionExecutionService
             {
                 return null;
             }
+            WorkflowState materializedState;
             try
             {
                 var instance = await _instances.FindByIdAsync(record.WorkflowInstanceId!, cancellationToken)
                     ?? throw new InvalidOperationException("The materialized admission instance is missing.");
                 ValidateInitialState(instance.WorkflowState, record, configuration);
-                return await RunOwnedAsync(record, configuration, graph, instance.WorkflowState, null, null, false, cancellationToken);
+                materializedState = instance.WorkflowState;
             }
             catch
             {
                 await MarkRecoveryAsync(admissionId, "materialized-state-incomplete");
                 throw;
             }
+            return await RunOwnedAsync(record, configuration, graph, materializedState, null, null, false, cancellationToken);
         }
     }
 
@@ -249,6 +253,7 @@ public sealed class AdmissionExecutionService
         WorkflowGraph graph, WorkflowState state, Bookmark? bookmark, IDictionary<string, object>? input, bool includeWorkflowOutput, CancellationToken cancellationToken)
     {
         WorkflowExecutionContext? context = null;
+        WorkflowInstance persisted;
         try
         {
             // Typed input validation precedes callbacks. The host audits the fixed framework
@@ -286,7 +291,7 @@ public sealed class AdmissionExecutionService
             }
             _authorities.Retire(context);
             await ObserveAsync(AdmissionExecutionBoundary.OwnershipUnwound, record, cancellationToken);
-            var persisted = await _instances.FindByIdAsync(context.Id, cancellationToken)
+            persisted = await _instances.FindByIdAsync(context.Id, cancellationToken)
                 ?? throw new InvalidOperationException("The final admission state is missing.");
             if (_stateSerializer.Serialize(persisted.WorkflowState) != _stateSerializer.Serialize(result.WorkflowState))
             {
@@ -296,13 +301,6 @@ public sealed class AdmissionExecutionService
             record = await _store.CompleteExecutionAsync(record.Id, record.Revision, attemptId, fingerprint,
                 persisted.WorkflowState.Bookmarks.Select(x => x.Id).ToArray(), persisted.Status == WorkflowStatus.Finished,
                 _clock.UtcNow, cancellationToken) ?? throw new InvalidOperationException("The admission checkpoint was not recorded.");
-            await ObserveAsync(AdmissionExecutionBoundary.CheckpointRecorded, record, cancellationToken);
-            return new()
-            {
-                WorkflowInstanceId = persisted.Id, Status = persisted.Status, SubStatus = persisted.SubStatus,
-                Bookmarks = persisted.WorkflowState.Bookmarks, Incidents = persisted.WorkflowState.Incidents,
-                Output = includeWorkflowOutput ? new Dictionary<string, object>(persisted.WorkflowState.Output) : null
-            };
         }
         catch
         {
@@ -316,6 +314,16 @@ public sealed class AdmissionExecutionService
                 _authorities.Retire(context);
             }
         }
+        // Only a definitive CompleteExecutionAsync return crosses this boundary. An
+        // observer/response failure afterward propagates without demoting a healthy
+        // checkpoint; an unknown commit above still requires conservative recovery.
+        await ObserveAsync(AdmissionExecutionBoundary.CheckpointRecorded, record, cancellationToken);
+        return new()
+        {
+            WorkflowInstanceId = persisted.Id, Status = persisted.Status, SubStatus = persisted.SubStatus,
+            Bookmarks = persisted.WorkflowState.Bookmarks, Incidents = persisted.WorkflowState.Incidents,
+            Output = includeWorkflowOutput ? new Dictionary<string, object>(persisted.WorkflowState.Output) : null
+        };
     }
 
     private async Task<WorkflowGraph> LoadPinnedGraphAsync(AdmissionSubscriptionConfiguration configuration, CancellationToken cancellationToken)

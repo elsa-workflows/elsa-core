@@ -3,7 +3,6 @@ using Elsa.Workflows;
 using Elsa.Workflows.Admission;
 using Elsa.Workflows.Admission.WorkerProcess;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -29,7 +28,7 @@ public sealed class AdmissionRuntimeDuplicateTests(PostgreSqlConnectionsFixture 
             }
             else
             {
-                await MaterializeAsync(host);
+                await AdmissionRuntimeTestFixture.MaterializeAsync(host);
             }
             var before = (await host.Store.FindAsync(host.AdmissionId))!;
             Assert.Equal(continuation ? AdmissionState.ExecutionObserved : AdmissionState.Materialized, before.State);
@@ -104,32 +103,6 @@ public sealed class AdmissionRuntimeDuplicateTests(PostgreSqlConnectionsFixture 
                 }
             }
         }, barrier);
-    }
-
-    private static async Task MaterializeAsync(AdmissionRuntimeScenario host)
-    {
-        var record = (await host.Store.FindAsync(host.AdmissionId))!;
-        var binding = host.Services.GetRequiredService<AdmissionRuntimeBinding>();
-        var definitions = host.Services.GetRequiredService<IWorkflowDefinitionService>();
-        var definition = (await definitions.FindWorkflowDefinitionAsync(binding.Artifact.Id))!;
-        var graph = await definitions.MaterializeWorkflowAsync(definition);
-        var instanceId = Guid.NewGuid().ToString("N");
-        record = (await host.Store.BeginCreationAsync(record.Id, record.Revision, instanceId))!;
-        var instances = host.Services.GetRequiredService<IWorkflowInstanceManager>();
-        var instance = instances.CreateWorkflowInstance(graph.Workflow, new WorkflowInstanceOptions
-        {
-            WorkflowInstanceId = instanceId,
-            Input = new Dictionary<string, object>
-            {
-                ["Event"] = record.Payload!, ["ProviderEventId"] = record.ProviderEventId!, ["ChannelId"] = binding.Configuration.ChannelId
-            }
-        });
-        await instances.CreateAsync(instance);
-        var persisted = (await instances.FindByIdAsync(instanceId))!;
-        var serializer = host.Services.GetRequiredService<IWorkflowStateSerializer>();
-        Assert.Equal(serializer.Serialize(instance.WorkflowState), serializer.Serialize(persisted.WorkflowState));
-        var fingerprint = AdmissionHash.Compute(serializer.Serialize(persisted.WorkflowState));
-        Assert.NotNull(await host.Store.CompleteCreationAsync(record.Id, record.Revision, fingerprint));
     }
 
     private sealed class SnapshotReadGate(bool continuation) : DbCommandInterceptor
