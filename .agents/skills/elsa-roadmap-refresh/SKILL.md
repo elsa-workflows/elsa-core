@@ -32,10 +32,10 @@ The output should be a coherent product roadmap, not a raw issue digest. Ground 
    - GitHub issue `elsa-workflows/elsa-core#3232`
 
 2. Inspect `elsa-core`.
-   - Source modules under `src/modules`
-   - App hosts under `src/apps`
-   - Specs under `specs`
-   - Docs under `doc` and `design`
+   - Source modules under `core/src/modules`
+   - App hosts under `core/src/apps`
+   - Specs under `core/docs/specs`
+   - Docs under `core/docs`, shared `docs` and `design`
    - Recent releases, commits, open issues, discussions, and open PRs
 
 3. Inspect `elsa-studio`.
