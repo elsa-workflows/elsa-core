@@ -22,7 +22,7 @@
     "package_ids": {
       "core": [
         "Elsa", "Elsa.Alterations", "Elsa.Alterations.Core", "Elsa.Api.Client", "Elsa.Api.Common",
-        "Elsa.Caching", "Elsa.Common", "Elsa.Expressions", "Elsa.Expressions.CSharp",
+        "Elsa.Caching", "Elsa.Common", "Elsa.Dashboard.Abstractions", "Elsa.Dashboard.Api", "Elsa.Expressions", "Elsa.Expressions.CSharp",
         "Elsa.Expressions.JavaScript", "Elsa.Expressions.Liquid", "Elsa.Features", "Elsa.Http",
         "Elsa.Identity", "Elsa.KeyValues", "Elsa.Labels", "Elsa.Mediator", "Elsa.Persistence.EFCore",
         "Elsa.Persistence.EFCore.Common", "Elsa.Persistence.EFCore.MySql", "Elsa.Persistence.EFCore.Oracle",
