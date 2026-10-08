@@ -29,7 +29,7 @@
     },
     {
       "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
-      "filter": "FullyQualifiedName~Admission",
+      "filter": "FullyQualifiedName~Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.Admission|FullyQualifiedName~Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.ExpectedAdmissionBindingTests.",
       "observations": true
     }
   ],

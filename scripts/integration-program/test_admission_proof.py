@@ -5,6 +5,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -88,6 +89,45 @@ class AdmissionProofTests(unittest.TestCase):
             ET.SubElement(results, 'UnitTestResult', testId=str(index), outcome=outcome,
                           testName=displays[index] if displays else display)
         ET.ElementTree(root).write(path)
+
+    def test_tracked_manifest_selects_all_required_cases_without_socket_method_matches(self):
+        root = Path(__file__).resolve().parents[2]
+        data = proof.validate_manifest(proof.read_json(root / proof.MANIFEST))
+        projects = {row['project']: row for row in data['testProjects']}
+        cases = data['cases']
+        self.assertEqual(171, len(cases))
+        self.assertEqual(18, len({case['method'].rsplit('.', 1)[0] for case in cases}))
+
+        def selected(method, test_filter):
+            return any(term.removeprefix('FullyQualifiedName~') in method
+                       for term in test_filter.split('|'))
+
+        for case in cases:
+            with self.subTest(caseId=case['caseId']):
+                self.assertTrue(selected(case['method'], projects[case['project']]['filter']))
+
+        postgres = next(row for row in data['testProjects'] if row['observations'])
+        namespace = 'Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.'
+        self.assertEqual('FullyQualifiedName~' + namespace + 'Admission|FullyQualifiedName~'
+                         + namespace + 'ExpectedAdmissionBindingTests.', postgres['filter'])
+        socket_methods = set()
+        for path in (root / postgres['project']).parent.glob('Socket*Tests.cs'):
+            source = path.read_text()
+            self.assertIn('namespace ' + namespace.rstrip('.') + ';', source)
+            methods = re.findall(r'\bpublic\s+(?:async\s+)?Task(?:<[^>]+>)?\s+(\w+)\s*\(', source)
+            socket_methods.update(namespace + path.stem + '.' + method for method in methods)
+        self.assertTrue(socket_methods)
+        accidental_matches = {method for method in socket_methods if 'Admission' in method}
+        self.assertEqual({
+            namespace + 'SocketDiscardPersistenceTests.UnprovisionedReceiptTableFailsBeforeWorkflowAdmissionOrDiscard',
+            namespace + 'SocketDiscardPersistenceTests.ReceiptMigrationCannotCreateTheRequiredAdmissionTables',
+            namespace + 'SocketDiscardPersistenceTests.CleanupSerializesWithDuplicateAndNewAdmissionCapacity',
+            namespace + 'SocketDurableWorkTests.AFailedAdmissionDoesNotStarveLaterWorkOrReplayItsUnknownEffects',
+        }, accidental_matches)
+        for method in socket_methods:
+            with self.subTest(method=method):
+                self.assertFalse(selected(method, postgres['filter']))
+        self.assertFalse(selected(namespace + 'ExpectedAdmissionBindingTestsOther.Test', postgres['filter']))
 
     def test_manifest_cannot_self_declare_complete_or_omit_families_and_topology(self):
         mutations = [lambda d: d.update(complete=False), lambda d: d.update(cases=[]),
