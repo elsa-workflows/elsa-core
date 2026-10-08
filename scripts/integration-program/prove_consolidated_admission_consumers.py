@@ -107,7 +107,7 @@ def frozen_archives(artifacts: Path, manifest: dict) -> dict[str, str]:
                 if kind == "nupkg":
                     packages.verify_sdk_assets(archive, package, required=True)
             expected[name] = digest
-    actual = {path.name for path in artifacts.iterdir() if path.suffix in (".nupkg", ".snupkg")}
+    actual = {path.name for path in artifacts.iterdir()}
     require(actual == set(expected), "archive_inventory")
     return expected
 
