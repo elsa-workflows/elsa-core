@@ -31,7 +31,10 @@ public sealed class PostgreSqlAdmissionDefinitionBootstrapStore(
         }
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         DemandProvider(db);
-        var connection = new NpgsqlConnection(db.Database.GetConnectionString());
+        // Session locks need one physical connection, including when the normal store is pooled/multiplexed.
+        // https://www.npgsql.org/doc/api/Npgsql.NpgsqlConnectionStringBuilder.html#Npgsql_NpgsqlConnectionStringBuilder_Pooling
+        var connectionSettings = new NpgsqlConnectionStringBuilder(db.Database.GetConnectionString()) { Pooling = false, Multiplexing = false };
+        var connection = new NpgsqlConnection(connectionSettings.ConnectionString);
         var keys = new[]
         {
             "elsa:admission:bootstrap:definition:" + configuration.DefinitionId,
