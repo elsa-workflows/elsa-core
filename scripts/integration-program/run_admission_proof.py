@@ -40,9 +40,13 @@ def matches(pattern: re.Pattern, value: object) -> bool:
     return type(value) is str and pattern.fullmatch(value) is not None
 
 
+class ProofError(ValueError):
+    """Internal predicate identity; only explicitly reviewed categories may be printed."""
+
+
 def require(condition: bool, category: str) -> None:
     if not condition:
-        raise ValueError(category)
+        raise ProofError(category)
 
 
 def keys(value: object, expected: set[str]) -> None:
@@ -486,6 +490,80 @@ def validate_retained(output: Path, manifest: dict, expected_head: str, root: Pa
         require(receipt["sourceTree"] == tree, "retained_tree_changed")
 
 
+DIAGNOSTIC_CATEGORIES = frozenset({
+    "fixture_compile", "fixture_test", "production_build", "source_changed", "compiled_assemblies_changed",
+    "manifest_incomplete", "retained_layout", "private_marker", "retained_source_changed", "retained_tree_changed",
+    "receipt_trx_manifest_mismatch", "receipt_trx_identity_mismatch", "observation_source", "unexpected_fields",
+})
+DIAGNOSTIC_COUNTERS = frozenset({"total", "executed", "passed", "failed", "error", "timeout", "aborted",
+    "inconclusive", "passedButRunAborted", "notRunnable", "notExecuted", "disconnected", "warning",
+    "completed", "inProgress", "pending"})
+
+
+def diagnostic_codes(log: Path) -> list[str]:
+    """Only fixed diagnostic code shapes from a bounded private-log tail; not a complete log analysis."""
+    try:
+        with regular(log).open("rb") as source:
+            source.seek(max(0, log.stat().st_size - 1024 * 1024))
+            tail = source.read(1024 * 1024).decode("utf-8", errors="replace")
+        return sorted(set(re.findall(r"\b(?:error|warning)\s+((?:CS|NETSDK|MSB|NU|RZ)\d{4}):", tail)))[:32]
+    except (OSError, ValueError):
+        return []
+
+
+def failure_category(error: Exception) -> str:
+    if isinstance(error, ProofError) and len(error.args) == 1 and type(error.args[0]) is str and error.args[0] in DIAGNOSTIC_CATEGORIES:
+        return error.args[0]
+    # Imported Git guards have fixed source-controlled messages; never echo arbitrary exception text.
+    if type(error) is ValueError and error.args == ("Source working tree is not clean",):
+        return "source_worktree_dirty"
+    if type(error) is ValueError and error.args == ("Source revision changed from the expected commit",):
+        return "source_head_changed"
+    return "incomplete_or_invalid_proof"
+
+
+def print_failure_diagnostic(error: Exception, stage: str, root: Path, head: str,
+                             receipt: dict | None = None, manifest: dict | None = None, private: Path | None = None) -> None:
+    """Console diagnostics only. This is never an acceptance receipt or fallback upload."""
+    stages = {"proof-run", "retained-validation", "manifest", "fixture-compile", "fixture-test",
+              "observations", "production-build", "source-postcheck"}
+    summary = {"schemaVersion": 1, "kind": "admission-proof-failure-diagnostic",
+               "sourceRevision": head if matches(HEAD, head) else None,
+               "stage": stage if stage in stages else "proof-run", "category": failure_category(error), "commands": []}
+    if receipt is not None and manifest is not None:
+        projects = {p["project"] for p in manifest["testProjects"]} | set(manifest["buildProjects"])
+        commands = [(row, f"{prefix}-{index}.log")
+                    for group, prefix in (("testBuilds", "compile"), ("tests", "test"), ("builds", "build"))
+                    for index, row in enumerate(receipt[group])]
+        for row, log_name in commands[:64]:
+            project = row.get("project")
+            if (not valid_path(project, ".csproj") or project not in projects or
+                    row.get("framework") not in FRAMEWORKS or type(row.get("exitCode")) is not int or
+                    row.get("status") not in ("passed", "failed", "incomplete")):
+                continue
+            try:
+                tracked_input(root, project)
+            except (OSError, ValueError, subprocess.SubprocessError):
+                continue
+            safe = {k: row[k] for k in ("project", "framework", "exitCode", "status")}
+            safe["diagnosticCodes"] = diagnostic_codes(private / log_name) if private is not None else []
+            safe["compilerDiagnostics"] = []
+            for diagnostic in row.get("compilerDiagnostics", [])[:32]:
+                if (type(diagnostic) is not dict or set(diagnostic) != {"file", "location", "code"} or
+                        not valid_path(diagnostic["file"]) or not matches(re.compile(r"\(\d{1,9},\d{1,9}\)"), diagnostic["location"]) or
+                        not matches(re.compile(r"(?:CS|NETSDK|MSB|NU|RZ)\d{4}"), diagnostic["code"])):
+                    continue
+                try:
+                    tracked_input(root, diagnostic["file"])
+                except (OSError, ValueError, subprocess.SubprocessError):
+                    continue
+                safe["compilerDiagnostics"].append(diagnostic)
+            safe["counters"] = {k: v for k, v in row.get("counters", {}).items()
+                                if k in DIAGNOSTIC_COUNTERS and type(v) is int and 0 <= v <= 10**9}
+            summary["commands"].append(safe)
+    print(json.dumps(summary, sort_keys=True), flush=True)
+
+
 def run(root: Path, output: Path, head: str) -> dict:
     require(type(head) is str and HEAD.fullmatch(head), "invalid_head")
     require(not any(p.is_symlink() for p in (output, *output.parents)), "output_symlink")
@@ -513,9 +591,11 @@ def run(root: Path, output: Path, head: str) -> dict:
         path.write_text(json.dumps(receipt, indent=2) + "\n"); path.chmod(0o600)
         validate_retained(retained, manifest, head)
     save()
+    stage, failure = "manifest", None
     try:
         validate_manifest(manifest)
         receipt["cases"] = [{"caseId": c["caseId"], "status": "not_run"} for c in manifest["cases"]]
+        stage = "fixture-compile"
         for index, row in enumerate(manifest["testProjects"]):
             project = row["project"]; require(project in hashes, "untracked_project")
             result = {"project": project, "framework": "net10.0"}
@@ -528,6 +608,7 @@ def run(root: Path, output: Path, head: str) -> dict:
         receipt["compiledAssemblySha256"] = {p: digest(regular(root / p)) for p in sorted(assemblies)}
         observations = []
         for index, row in enumerate(manifest["testProjects"]):
+            stage = "fixture-test"
             trx = private / f"test-{index}.trx"; directory = private / f"observations-{index}"
             directory.mkdir(mode=0o700)
             result = {"project": row["project"], "framework": "net10.0", "filter": row["filter"]}
@@ -542,6 +623,7 @@ def run(root: Path, output: Path, head: str) -> dict:
             receipt["tests"].append(result); save()
             require(result["status"] == "passed", "fixture_test")
             if row["observations"]:
+                stage = "observations"
                 _, identities = trx_identities(trx, result["exitCode"])
                 selected = [c for c in manifest["cases"] if c["project"] == row["project"]]
                 records, cleanup = validate_evidence(directory, selected, identities, head,
@@ -556,6 +638,7 @@ def run(root: Path, output: Path, head: str) -> dict:
                 for c in manifest["cases"] if c["caseId"] not in {r["caseId"] for r in observations}]
             save()
         receipt["cases"] = observations; save()
+        stage = "production-build"
         for framework in FRAMEWORKS:
             for project in manifest["buildProjects"]:
                 require(project in hashes, "untracked_build_project")
@@ -563,16 +646,20 @@ def run(root: Path, output: Path, head: str) -> dict:
                 result.update(execute(["dotnet", "build", project, "-c", "Release", "-f", framework,
                     *PROPERTIES], root, private / f"build-{len(receipt['builds'])}.log"))
                 receipt["builds"].append(result); save(); require(result["status"] == "passed", "production_build")
+        stage = "source-postcheck"
         assert_clean_source(root, head)
         require(hashes == source_hashes(root), "source_changed")
         require(receipt["compiledAssemblySha256"] == {p: digest(regular(root / p)) for p in sorted(assemblies)},
                 "compiled_assemblies_changed")
         receipt["postSourceVerified"] = True
         receipt["verificationComplete"] = True
-    except (OSError, ValueError, KeyError, TypeError, ET.ParseError, subprocess.SubprocessError):
+    except (OSError, ValueError, KeyError, TypeError, ET.ParseError, subprocess.SubprocessError) as error:
+        failure = error
         # Categories are fixed; no arbitrary fixture errors, command output or payloads.
         receipt["failureCategory"] = "incomplete_or_invalid_proof"
     save()
+    if failure is not None:
+        print_failure_diagnostic(failure, stage, root, head, receipt, manifest, private)
     return receipt
 
 
@@ -591,6 +678,7 @@ if __name__ == "__main__":
         else:
             result = run(args.root, args.output, args.expected_head)
             raise SystemExit(0 if result["verificationComplete"] else 1)
-    except (OSError, ValueError, KeyError, TypeError, ET.ParseError, subprocess.SubprocessError):
-        print("Admission verification failed during preflight or retained-evidence validation.")
+    except (OSError, ValueError, KeyError, TypeError, ET.ParseError, subprocess.SubprocessError) as error:
+        print_failure_diagnostic(error, "retained-validation" if args.validate_retained else "proof-run",
+                                 args.root.resolve(), args.expected_head)
         raise SystemExit(1)

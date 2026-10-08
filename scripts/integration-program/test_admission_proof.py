@@ -1,9 +1,12 @@
 """Cheap policy contracts; fake dotnet/Docker observations are never runtime acceptance."""
 import copy
+from contextlib import redirect_stdout
+import io
 import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -193,7 +196,8 @@ class AdmissionProofTests(unittest.TestCase):
                     with self.assertRaises(ValueError): proof.image_identity(IMAGE)
                 else: self.assertEqual(IMAGE, proof.image_identity(IMAGE)['id'])
 
-    def fake_run(self, *, fail_compile=False, fail_tests=False, malformed_identity=False, mutate_source=False):
+    def fake_run(self, *, fail_compile=False, fail_tests=False, malformed_identity=False, mutate_source=False,
+                 untracked_source=False, execution_error=None):
         repo = self.directory / 'repo'; repo.mkdir()
         (repo / '.gitignore').write_text('**/bin/\n**/obj/\n')
         path = repo / proof.MANIFEST; path.parent.mkdir(parents=True)
@@ -208,6 +212,8 @@ class AdmissionProofTests(unittest.TestCase):
         commands = []
         def execute(command, root, log):
             commands.append(command)
+            if execution_error is not None:
+                raise execution_error
             code = int((fail_compile and command[1] == 'build') or (fail_tests and command[1] == 'test'))
             if command[1] == 'build' and command[2] == PROJECT:
                 for relative in (proof.assembly_path(PROJECT), WORKER):
@@ -223,6 +229,7 @@ class AdmissionProofTests(unittest.TestCase):
                 self.write_json(evidence / 'fixture.json', {'schemaVersion': 1, 'sourceRevision': head,
                                                           'disposedContainerIds': [CONTAINER]})
                 if mutate_source: (repo / PROJECT).write_text('changed')
+                if untracked_source: (repo / 'synthetic-secret-untracked.txt').write_text('private')
             return {'exitCode': code, 'status': 'failed' if code else 'passed', 'durationSeconds': 0.1,
                     'logSha256': HASH, 'compilerDiagnostics': []}
         # Only Docker is mocked: real Git verifies source cleanliness and pre/post hashes.
@@ -233,7 +240,10 @@ class AdmissionProofTests(unittest.TestCase):
         with patch.dict(os.environ, HOSTED), patch.object(proof, 'execute', side_effect=execute), \
                 patch.object(proof.subprocess, 'check_output', side_effect=output), \
                 patch.object(proof, 'image_identity', return_value=image):
-            result = proof.run(repo, self.directory / 'output', head)
+            captured = io.StringIO()
+            with redirect_stdout(captured):
+                result = proof.run(repo, self.directory / 'output', head)
+            self.last_diagnostic = captured.getvalue()
         return result, commands, repo
 
     def test_serial_orchestration_requires_exact_bijection_all_frameworks_and_post_source(self):
@@ -278,6 +288,10 @@ class AdmissionProofTests(unittest.TestCase):
         self.assertEqual(['build', 'test'], [c[1] for c in commands])
         self.assertEqual(1, len(receipt['tests']))
         attempt = receipt['tests'][0]
+        diagnostic = json.loads(self.last_diagnostic)
+        self.assertEqual('fixture-test', diagnostic['stage'])
+        self.assertEqual('fixture_test', diagnostic['category'])
+        self.assertEqual(18, diagnostic['commands'][1]['counters']['failed'])
         self.assertEqual('failed', attempt['status'])
         self.assertEqual(18, attempt['counters']['failed'])
         self.assertEqual([], attempt['identities'])
@@ -308,6 +322,92 @@ class AdmissionProofTests(unittest.TestCase):
     def test_source_mutation_after_tests_cannot_complete(self):
         receipt, _, _ = self.fake_run(mutate_source=True)
         self.assertFalse(receipt['verificationComplete']); self.assertFalse(receipt['postSourceVerified'])
+
+    def test_failed_stages_print_fixed_diagnostics_without_weakening_receipt(self):
+        receipt, _, repo = self.fake_run(fail_compile=True)
+        diagnostic = json.loads(self.last_diagnostic)
+        self.assertEqual('fixture-compile', diagnostic['stage'])
+        self.assertEqual('fixture_compile', diagnostic['category'])
+        self.assertEqual(1, diagnostic['commands'][0]['exitCode'])
+        self.assertEqual('incomplete_or_invalid_proof', receipt['failureCategory'])
+        proof.validate_retained(self.directory / 'output/retained', self.manifest, receipt['sourceRevision'], repo)
+
+    def test_source_mutation_diagnostic_does_not_allow_retained_acceptance(self):
+        receipt, _, repo = self.fake_run(mutate_source=True)
+        diagnostic = json.loads(self.last_diagnostic)
+        self.assertEqual('source-postcheck', diagnostic['stage'])
+        self.assertEqual('source_worktree_dirty', diagnostic['category'])
+        self.assertFalse(receipt['verificationComplete'])
+        with self.assertRaises(ValueError):
+            proof.validate_retained(self.directory / 'output/retained', self.manifest, receipt['sourceRevision'], repo)
+
+    def test_untracked_source_diagnostic_does_not_echo_private_filename(self):
+        receipt, _, repo = self.fake_run(untracked_source=True)
+        self.assertEqual('source_worktree_dirty', json.loads(self.last_diagnostic)['category'])
+        self.assertNotIn('synthetic-secret', self.last_diagnostic)
+        with self.assertRaises(ValueError): proof.assert_clean_source(repo, receipt['sourceRevision'])
+        result = subprocess.run([sys.executable, proof.__file__, '--validate-retained', '--root', str(repo),
+            '--expected-head', receipt['sourceRevision'], '--output', str(self.directory / 'output/retained')],
+            capture_output=True, text=True, env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'})
+        self.assertEqual(1, result.returncode)
+        diagnostic = json.loads(result.stdout)
+        self.assertEqual('retained-validation', diagnostic['stage'])
+        self.assertEqual('source_worktree_dirty', diagnostic['category'])
+        self.assertNotIn('synthetic-secret', result.stdout + result.stderr)
+
+
+    def test_arbitrary_exception_text_and_values_are_never_printed(self):
+        receipt, _, _ = self.fake_run(execution_error=ValueError('synthetic-secret /private/poisoned-path'))
+        self.assertEqual('incomplete_or_invalid_proof', json.loads(self.last_diagnostic)['category'])
+        self.assertNotIn('synthetic-secret', self.last_diagnostic)
+        self.assertNotIn('/private/', self.last_diagnostic)
+        self.assertFalse(receipt['verificationComplete'])
+        self.assertEqual('incomplete_or_invalid_proof', proof.failure_category(proof.ProofError('synthetic-secret')))
+        self.assertEqual('incomplete_or_invalid_proof', proof.failure_category(ValueError({'token': 'private'})))
+
+    def test_diagnostic_locations_are_tracked_regular_and_counters_allowlisted(self):
+        receipt, _, repo = self.fake_run()
+        file = PROJECT
+        poisoned = [
+            {'file': file, 'location': '(1,2)', 'code': 'CS0103'},
+            {'file': '/private/synthetic-secret.cs', 'location': '(1,2)', 'code': 'CS0103'},
+            {'file': '../synthetic-secret.cs', 'location': '(1,2)', 'code': 'CS0103'},
+            {'file': 'untracked-synthetic-secret.cs', 'location': '(1,2)', 'code': 'CS0103'},
+            {'file': 'symlink-synthetic-secret.cs', 'location': '(1,2)', 'code': 'CS0103'},
+            {'file': file, 'location': '(1,2)', 'code': 'SECRET1234'},
+            {'file': file, 'location': 'synthetic-secret', 'code': 'CS0103'},
+        ]
+        (repo / 'untracked-synthetic-secret.cs').write_text('private')
+        (repo / 'symlink-synthetic-secret.cs').symlink_to(repo / file)
+        subprocess.run(['git', '-C', str(repo), 'add', 'symlink-synthetic-secret.cs'], check=True)
+        receipt['testBuilds'][0]['compilerDiagnostics'] = poisoned
+        receipt['tests'][0]['counters'] = {'passed': 18, 'failed': 0, 'token': 'synthetic-secret', 'total': True}
+        captured = io.StringIO()
+        with redirect_stdout(captured):
+            proof.print_failure_diagnostic(proof.ProofError('fixture_test'), 'fixture-test', repo,
+                                           receipt['sourceRevision'], receipt, self.manifest)
+        diagnostic = json.loads(captured.getvalue())
+        self.assertEqual([poisoned[0]], diagnostic['commands'][0]['compilerDiagnostics'])
+        self.assertEqual({'passed': 18, 'failed': 0}, diagnostic['commands'][1]['counters'])
+        self.assertNotIn('synthetic-secret', captured.getvalue())
+        self.assertEqual('source_head_changed', proof.failure_category(ValueError('Source revision changed from the expected commit')))
+        self.assertEqual('retained_source_changed', proof.failure_category(proof.ProofError('retained_source_changed')))
+
+    def test_private_log_codes_are_bounded_and_never_export_text_or_paths(self):
+        log = self.directory / 'private.log'
+        log.write_text('synthetic-secret /private/token\nerror NU1301: private connection detail\n'
+                       'warning MSB3277: private detail\nerror CS0103: synthetic-secret\n'
+                       'error NETSDK1005: /private/path\nerror SECRET1234: poison\n'
+                       'error NU1301: duplicate\n')
+        self.assertEqual(['CS0103', 'MSB3277', 'NETSDK1005', 'NU1301'], proof.diagnostic_codes(log))
+        link = self.directory / 'link.log'; link.symlink_to(log)
+        self.assertEqual([], proof.diagnostic_codes(link))
+        self.assertEqual([], proof.diagnostic_codes(self.directory / 'missing.log'))
+        log.write_bytes(b'error NU0001: outside bounded tail\n' + b'x' * (1024 * 1024)
+                        + b'\nerror NU1301: inside bounded tail\n')
+        self.assertEqual(['NU1301'], proof.diagnostic_codes(log))
+        log.write_text('\n'.join(f'error CS{code:04}: private' for code in range(100)))
+        self.assertEqual(32, len(proof.diagnostic_codes(log)))
 
     def test_environment_restored_and_duplicate_json_fields_rejected(self):
         with patch.dict(os.environ, {'ELSA_ADMISSION_SOURCE_REVISION': 'outer'}):

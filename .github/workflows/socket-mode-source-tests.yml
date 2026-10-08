@@ -7,6 +7,7 @@ on:
       - 'src/**'
       - 'test/extensions/modules/slack/**'
       - '.github/workflows/socket-mode-source-tests.yml'
+      - 'scripts/integration-program/*.py'
       - 'Directory.*'
       - 'src/Directory.*'
       - 'test/Directory.*'
@@ -19,6 +20,7 @@ on:
       - 'src/**'
       - 'test/extensions/modules/slack/**'
       - '.github/workflows/socket-mode-source-tests.yml'
+      - 'scripts/integration-program/*.py'
       - 'Directory.*'
       - 'src/Directory.*'
       - 'test/Directory.*'
@@ -73,6 +75,9 @@ jobs:
           import subprocess
           import sys
 
+          sys.path.insert(0, 'scripts/integration-program')
+          from run_admission_proof import diagnostic_codes
+
           base = pathlib.Path(os.environ['RUNNER_TEMP']) / 'socket-source'
           framework = os.environ['FRAMEWORK']
           project = 'test/extensions/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj'
@@ -80,7 +85,7 @@ jobs:
           # net10-only test default cannot replace a net8/net9 cell during restore.
           properties = [f'-p:TargetFramework={framework}', f'-p:TargetFrameworks={framework}']
 
-          def fail(category, exit_code=None):
+          def fail(category, exit_code=None, log=None):
               summary = {
                   'schemaVersion': 1,
                   'kind': 'socket-source-test-failure',
@@ -90,6 +95,7 @@ jobs:
                   'runAttempt': os.environ['GITHUB_RUN_ATTEMPT'],
                   'category': category,
                   'exitCode': exit_code,
+                  'diagnosticCodes': diagnostic_codes(log) if log is not None else [],
               }
               (base / 'retained/failure.json').write_text(json.dumps(summary, indent=2) + '\n')
               print('Socket source-test stage failed; raw diagnostics remain private.')
@@ -99,7 +105,7 @@ jobs:
               with (base / f'private/{stage}.log').open('wb') as log:
                   result = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=False)
               if result.returncode != 0:
-                  fail(f'{stage}_failed', result.returncode)
+                  fail(f'{stage}_failed', result.returncode, base / f'private/{stage}.log')
 
           try:
               run('restore', ['dotnet', 'restore', project, *properties])
