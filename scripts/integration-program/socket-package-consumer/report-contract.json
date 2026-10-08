@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "caseId": "socket-package-held-commit-watch-resume",
+  "cli": [
+    "--feature",
+    "--tfm",
+    "--output"
+  ],
+  "mandatoryEnvironment": [
+    "ELSA_SOCKET_PACKAGE_SOURCE_REVISION",
+    "ELSA_SOCKET_PACKAGE_CANDIDATE_VERSION",
+    "ELSA_SOCKET_PACKAGE_CONNECTION_STRING"
+  ],
+  "syntheticSecretMarkers": [
+    "synthetic-socket-package-secret-never-export-8666"
+  ],
+  "topLevelKeys": [
+    "schemaVersion",
+    "sourceRevision",
+    "candidateVersion",
+    "tfm",
+    "feature",
+    "targetFramework",
+    "frameworkDescription",
+    "process",
+    "loadedAssemblies",
+    "scenarios"
+  ],
+  "processKeys": [
+    "pid",
+    "startIdentitySha256"
+  ],
+  "loadedAssemblyKeys": [
+    "name",
+    "fullName",
+    "version",
+    "informationalVersion",
+    "location",
+    "sha256"
+  ],
+  "requiredLoadedAssemblies": [
+    "Elsa.Slack.SocketMode",
+    "Elsa.Slack",
+    "Elsa.Connections",
+    "Elsa.Connections.Credentials.Workflows",
+    "Elsa.Connections.Credentials.Persistence.EFCore",
+    "Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql",
+    "Elsa.Workflows.Admission",
+    "Elsa.Workflows.Admission.Persistence.EFCore",
+    "Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql"
+  ],
+  "scenarioKeys": [
+    "scenario",
+    "databaseIdentitySha256",
+    "serverVersion",
+    "assertions",
+    "counters",
+    "correlation",
+    "order",
+    "migrations",
+    "cleanup"
+  ],
+  "assertions": {
+    "realManagedGenerationEncrypted": true,
+    "inactiveBootstrapVerified": true,
+    "definiteActivationCaptured": true,
+    "guardedRuntimeSelected": true,
+    "physicalHttpOpenAndHello": true,
+    "noAckBeforeCommit": true,
+    "noEffectsBeforeCommit": true,
+    "physicalAckAfterCommit": true,
+    "ackIndependentOfWorkflowDuration": true,
+    "realWatchOutputsPersisted": true,
+    "suspensionAndBookmarkPersisted": true,
+    "publicOwnedEntriesDeniedWithoutEffects": true,
+    "publicBackgroundAndLifecycleDenied": true,
+    "noImplicitOutboundGrant": true,
+    "actualStoredGrantPolicyDenied": true,
+    "legitimateResumeCompleted": true,
+    "terminalAndBookmarkConsumptionPersisted": true,
+    "migrationsReappliedPreserved": true,
+    "providerNotCalled": true,
+    "noSecretMarkers": true,
+    "physicalPeerDisposed": true,
+    "listenerRetiredPhysicalClient": true
+  },
+  "counters": {
+    "heldAdmissionCommits": 1,
+    "httpOpens": 1,
+    "physicalAcknowledgements": 1,
+    "watchExecutions": 1,
+    "suspensions": 1,
+    "resumes": 1,
+    "ownedEntryDenials": 7,
+    "backgroundDenials": 1,
+    "lifecycleDenials": 2,
+    "outboundDenials": 1,
+    "providerCalls": 0,
+    "activeExecutionCycles": 0
+  },
+  "correlationKeys": [
+    "envelopeSha256",
+    "eventSha256",
+    "admissionSha256",
+    "workflowInstanceSha256",
+    "bookmarkSha256",
+    "bindingSha256"
+  ],
+  "orderKeys": [
+    "admissionCommitted",
+    "acknowledgementReceived"
+  ],
+  "orderConstraint": "0 < admissionCommitted < acknowledgementReceived; actual committing callback/physical peer receive share one monotonic counter",
+  "migrationKeys": [
+    "context",
+    "provider",
+    "schema",
+    "historyTable",
+    "knownIds",
+    "appliedIds",
+    "historyIds",
+    "reapplied",
+    "populatedPreserved"
+  ],
+  "migrationContexts": [
+    "SecretsElsaDbContext",
+    "ConnectionsElsaDbContext",
+    "ManagementElsaDbContext",
+    "RuntimeElsaDbContext",
+    "AdmissionElsaDbContext",
+    "SlackSocketReceiptElsaDbContext"
+  ],
+  "cleanup": {
+    "hostsDisposed": true,
+    "hostsCreated": 3,
+    "maximumConcurrentHosts": 1,
+    "executionHostsObserved": 1
+  },
+  "scope": "One first vertical, not the complete Socket task matrix. First hosted cell classic/net10.0; later source-supported classic/Shell and net8/9/10 require their own real execution.",
+  "failureMarkers": [
+    "SOCKET_PACKAGE_CONSUMER_FAIL:<fixed-stage>:<fixed-category-or-source-assertion-code>",
+    "SOCKET_PACKAGE_CONSUMER_DIAGNOSTIC:<allowlisted-category>:<sql-state-or-none>:<fixture-basename-or-none>:<line>"
+  ],
+  "retention": "raw loaded paths are private verifier inputs; runner validates bytes before logical-path normalization. Raw stdout/stderr stay private; scan synthetic marker before retention."
+}

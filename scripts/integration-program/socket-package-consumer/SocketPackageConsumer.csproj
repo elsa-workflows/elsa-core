@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>Elsa.Slack.Tests</AssemblyName>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Elsa.Slack.SocketMode" Version="$(CandidateVersion)" />
+    <PackageReference Include="Elsa.Connections" Version="$(CandidateVersion)" />
+    <PackageReference Include="Elsa.Connections.Credentials.Workflows" Version="$(CandidateVersion)" />
+    <PackageReference Include="Elsa.Connections.Credentials.Persistence.EFCore" Version="$(CandidateVersion)" />
+    <PackageReference Include="Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql" Version="$(CandidateVersion)" />
+    <PackageReference Include="Elsa.Workflows.Admission" Version="$(CandidateVersion)" />
+    <PackageReference Include="Elsa.Workflows.Admission.Persistence.EFCore" Version="$(CandidateVersion)" />
+    <PackageReference Include="Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql" Version="$(CandidateVersion)" />
+    <PackageReference Include="Elsa.Secrets.Persistence.EFCore.PostgreSql" Version="$(CandidateVersion)" />
+    <PackageReference Include="Elsa.Persistence.EFCore.PostgreSql" Version="$(CandidateVersion)" />
+    <PackageReference Include="Elsa.Workflows.Runtime" Version="$(CandidateVersion)" />
+  </ItemGroup>
+  <Target Name="RequireCandidateVersion" BeforeTargets="Restore;PrepareForBuild" Condition="'$(CandidateVersion)' == ''">
+    <Error Text="CandidateVersion is required; this fixture consumes one unpublished package candidate." />
+  </Target>
+</Project>
