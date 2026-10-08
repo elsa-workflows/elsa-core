@@ -15,8 +15,8 @@ The active [Studio documentation index](../../../studio/docs/README.md) distingu
 those roles. Verify the copies without requiring a second Studio checkout:
 
 ```sh
-git hash-object doc/studio/design/system.md
-git hash-object doc/studio/releases/3.6.0-rc1.md
+git hash-object studio/docs/design/system.md
+git hash-object studio/docs/releases/3.6.0-rc1.md
 ```
 
 Both outputs must match the pinned blobs above. The materialized **draft import**

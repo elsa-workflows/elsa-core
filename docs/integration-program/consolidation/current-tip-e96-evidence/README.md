@@ -44,12 +44,12 @@ python3 scripts/integration-program/extract_nuke_test_evidence.py \
   --preparation-receipt "$rehearsal/consolidated-build-receipt.json" \
   --import-receipt "$rehearsal/import-receipt.json" \
   --source-integration-patch scripts/integration-program/consolidated-build/source-integration.patch \
-  --profile-template doc/integration-program/consolidation/current-tip-e96-evidence/reviewed-overlays-six.json \
+  --profile-template docs/integration-program/consolidation/current-tip-e96-evidence/reviewed-overlays-six.json \
   --command 'env -u NUKE_ENTERPRISE_TOKEN ./build.sh --host Terminal --target Test' \
   --output "$rehearsal-test-evidence.json"
 python3 scripts/integration-program/refresh_canonical_dependency_graph.py \
   --source-profile current-tip-e96 --rehearsal "$rehearsal" \
-  --overlay-receipt doc/integration-program/consolidation/current-tip-e96-evidence/reviewed-overlays-six.json \
+  --overlay-receipt docs/integration-program/consolidation/current-tip-e96-evidence/reviewed-overlays-six.json \
   --evidence "$rehearsal-test-evidence.json" --output "$rehearsal-tested-closure.json"
 ```
 

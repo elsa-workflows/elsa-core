@@ -6,7 +6,7 @@ Run the current-owner preflight and tooling tests from the repository root:
 
 ```sh
 python3 scripts/integration-program/check_publisher_handoff.py \
-  --manifest doc/integration-program/release-units.json
+  --manifest docs/integration-program/release-units.json
 python3 -m unittest discover -s scripts/integration-program -p 'test_*.py'
 python3 -O -m unittest discover -s scripts/integration-program -p 'test_*.py'
 ```

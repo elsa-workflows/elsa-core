@@ -8,7 +8,7 @@ From a reviewed checkout on macOS or Linux with Python and an authenticated GitH
 
 ```sh
 python3 scripts/integration-program/consolidated_publisher_handoff.py \
-  --inventory doc/integration-program/consolidated-publisher-inventory.json \
+  --inventory docs/integration-program/consolidated-publisher-inventory.json \
   --output /absolute/new/path/publisher-handoff.json
 ```
 

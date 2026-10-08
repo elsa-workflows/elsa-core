@@ -28,13 +28,13 @@ A focused `--run --only elsa-extensions:test/modules/diagnostics/Elsa.Logging.Co
 
 ```sh
 python3 scripts/integration-program/source_bindings.py \
-  --inventory doc/integration-program/inventory/inventory.json \
+  --inventory docs/integration-program/inventory/inventory.json \
   --core /path/to/sources/elsa-core \
   --extensions /path/to/sources/elsa-extensions \
   --overlay /path/to/sources/source-bound-extensions \
   --receipt /tmp/source-binding.json
 python3 scripts/integration-program/package_closure.py \
-  --inventory doc/integration-program/inventory/inventory.json \
+  --inventory docs/integration-program/inventory/inventory.json \
   --source elsa-core=/path/to/sources/elsa-core \
   --source elsa-extensions=/path/to/sources/source-bound-extensions \
   --source-binding-receipt /tmp/source-binding.json \
@@ -60,7 +60,7 @@ Run selector and planner tests in both interpreter modes:
 python -m unittest discover -s scripts/integration-program -p 'test_*.py'
 python -O -m unittest discover -s scripts/integration-program -p 'test_*.py'
 python scripts/integration-program/package_closure.py \
-  --inventory doc/integration-program/inventory/inventory.json \
+  --inventory docs/integration-program/inventory/inventory.json \
   --output /tmp/package-closure-plan.json
 ```
 
@@ -68,7 +68,7 @@ To reproduce the historical unmodified baseline (an expected preflight failure),
 
 ```sh
 python scripts/integration-program/package_closure.py \
-  --inventory doc/integration-program/inventory/inventory.json \
+  --inventory docs/integration-program/inventory/inventory.json \
   --source elsa-core=/path/to/sources/elsa-core \
   --source elsa-extensions=/path/to/sources/elsa-extensions \
   --run --include-docker \

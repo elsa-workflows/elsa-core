@@ -45,9 +45,9 @@ Reproduce the pinned and active identities with:
 ```sh
 git ls-tree 099402226daba80e473a306bbd1243b8994465b8 README.md .dockerignore
 git ls-tree 5b34ec327caffd132e18bfd88bfc9e862dc35c43 README.md .dockerignore
-git ls-tree HEAD doc/studio/README.md .dockerignore \
-  doc/integration-program/legacy/studio/README.md.source \
-  doc/integration-program/legacy/studio/.dockerignore.source
+git ls-tree HEAD studio/docs/README.md .dockerignore \
+  docs/integration-program/legacy/studio/README.md.source \
+  docs/integration-program/legacy/studio/.dockerignore.source
 ```
 
 These are path-specific asset dispositions for the current draft tree. They do
