@@ -22,11 +22,11 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
     [InlineData("runtime-completed", "completed", WorkflowSubStatus.Finished)]
     [InlineData("runtime-suspended", "suspended", WorkflowSubStatus.Suspended)]
     [InlineData("runtime-faulted", "faulted", WorkflowSubStatus.Faulted)]
-    public async Task RealDefaultPipelineRecordsActualOutcomeAfterFinalWrite(string caseId, string parameterId, WorkflowSubStatus expected)
+    public async Task RealDefaultPipelineRecordsActualOutcomeAfterFinalWrite(string caseId, string outcome, WorkflowSubStatus expected)
     {
         await WithHostAsync(async host =>
         {
-            host.Probe.Outcome = parameterId;
+            host.Probe.Outcome = outcome;
             var response = await host.Execution.ExecuteAsync(host.AdmissionId);
             Assert.Equal(expected, response!.SubStatus);
             var record = (await host.Store.FindAsync(host.AdmissionId))!;
@@ -39,7 +39,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
             Assert.Equal(1, host.Probe.Count("TrailingWriteCompleted"));
             Assert.Equal(1, host.Probe.Count("OwnershipUnwound"));
             Assert.Equal(1, host.Probe.Count("CheckpointRecorded"));
-            await ObserveAsync(caseId, nameof(RealDefaultPipelineRecordsActualOutcomeAfterFinalWrite), parameterId,
+            await ObserveAsync(caseId, nameof(RealDefaultPipelineRecordsActualOutcomeAfterFinalWrite), caseId,
                 new() { ["activityEffects"] = 1, ["checkpointRecorded"] = true, ["subStatus"] = expected.ToString() });
         });
     }
@@ -69,7 +69,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
             }
             Assert.Equal(1, host.Probe.Count("instanceInsertAttempts"));
             Assert.Equal(1, host.Probe.Count("activityEffects"));
-            await ObserveAsync("runtime-creation-owner-race", nameof(CreationClaimCommitCannotRaceOperatorResolutionBeforeInsert), "creation-owner-race",
+            await ObserveAsync("runtime-creation-owner-race", nameof(CreationClaimCommitCannotRaceOperatorResolutionBeforeInsert), "default",
                 new() { ["resolutionDenied"] = true, ["instanceInsertAttempts"] = 1, ["activityEffects"] = 1 });
         }, barrier);
     }
@@ -77,7 +77,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
     [Theory]
     [InlineData("runtime-graph-parent", "parent")]
     [InlineData("runtime-graph-child", "child")]
-    public async Task PreparedGraphRelationshipMutationDeniesBeforeExecution(string caseId, string parameterId)
+    public async Task PreparedGraphRelationshipMutationDeniesBeforeExecution(string caseId, string scenario)
     {
         await WithHostAsync(async host =>
         {
@@ -87,7 +87,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
                 {
                     var nodes = host.Probe.PreparedContext!.WorkflowGraph.Nodes.ToArray();
                     Assert.True(nodes.Length >= 2);
-                    if (parameterId == "parent")
+                    if (scenario == "parent")
                     {
                         nodes[^1].AddParent(nodes[0]);
                     }
@@ -103,7 +103,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
             Assert.Equal(0, host.Probe.Count("workflowStarted"));
             Assert.Equal(0, host.Probe.Count("activityEffects"));
             Assert.Equal(AdmissionState.RecoveryRequired, (await host.Store.FindAsync(host.AdmissionId))!.State);
-            await ObserveAsync(caseId, nameof(PreparedGraphRelationshipMutationDeniesBeforeExecution), parameterId,
+            await ObserveAsync(caseId, nameof(PreparedGraphRelationshipMutationDeniesBeforeExecution), caseId,
                 new() { ["workflowExecuting"] = 0, ["activityEffects"] = 0, ["recoveryRequired"] = true });
         });
     }
@@ -149,7 +149,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
             Assert.Equal(1, host.Probe.Count("workflowExecuting"));
             Assert.Equal(0, host.Probe.Count("activityResumes"));
             Assert.Equal(AdmissionState.RecoveryRequired, (await host.Store.FindAsync(host.AdmissionId))!.State);
-            await ObserveAsync("runtime-completion-target", nameof(SameMethodNameDifferentCompletionTargetCannotEscapeRevalidation), "completion-target",
+            await ObserveAsync("runtime-completion-target", nameof(SameMethodNameDifferentCompletionTargetCannotEscapeRevalidation), "default",
                 new() { ["callbackReplaced"] = true, ["activityResumes"] = 0, ["recoveryRequired"] = true });
         });
     }
@@ -179,7 +179,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
             Assert.Equal(WorkflowSubStatus.Finished, (await host.Execution.ExecuteAsync(host.AdmissionId))!.SubStatus);
             Assert.Equal(0, setupCallbacks);
             Assert.Equal(1, host.Probe.Count("activityEffects"));
-            await ObserveAsync("runtime-frozen-compositions", nameof(FrozenCompositionsRejectSetupFromAuthorizationAndExecutingCallbacks), "frozen-compositions",
+            await ObserveAsync("runtime-frozen-compositions", nameof(FrozenCompositionsRejectSetupFromAuthorizationAndExecutingCallbacks), "default",
                 new() { ["setupCallbacks"] = 0, ["activityEffects"] = 1 });
         });
     }
@@ -227,7 +227,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
             await Assert.ThrowsAsync<InvalidOperationException>(cached!);
             await Assert.ThrowsAsync<InvalidOperationException>(() => host.Services.GetRequiredService<IActivityInvoker>().InvokeAsync(retained!));
             Assert.Equal(1, host.Probe.Count("activityEffects"));
-            await ObserveAsync("runtime-public-activity-denial", nameof(PublicActivityEntriesRemainDeniedDuringAuthorizedRunAndAfterUnwind), "public-activity-denial",
+            await ObserveAsync("runtime-public-activity-denial", nameof(PublicActivityEntriesRemainDeniedDuringAuthorizedRunAndAfterUnwind), "default",
                 new() { ["activityEffects"] = 1, ["duringExecutionDenied"] = true, ["afterUnwindDenied"] = true });
         });
     }
@@ -256,7 +256,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
 #pragma warning restore CS0618
             Assert.Equal(saves, host.Probe.Count("bookmarkSaveCalls"));
             Assert.Equal(before, serializer.Serialize((await store.FindAsync(new BookmarkFilter { BookmarkId = bookmark.Id }))!));
-            await ObserveAsync("runtime-bookmark-owner-upsert", nameof(LegacyBookmarkUpsertCannotReplaceOwnedRowWithForgedUnownedIdentity), "bookmark-owner-upsert",
+            await ObserveAsync("runtime-bookmark-owner-upsert", nameof(LegacyBookmarkUpsertCannotReplaceOwnedRowWithForgedUnownedIdentity), "default",
                 new() { ["bookmarkSaveDelta"] = 0, ["originalUnchanged"] = true });
         });
     }
@@ -289,7 +289,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
             Assert.True(denied);
             Assert.Equal(0, host.Probe.Count("workflowCancelling"));
             Assert.Equal(1, host.Probe.Count("activityEffects"));
-            await ObserveAsync("runtime-cancel-context-identity", nameof(MutablePreparedContextIdentityCannotEmitCancellationNotification), "cancel-context-identity",
+            await ObserveAsync("runtime-cancel-context-identity", nameof(MutablePreparedContextIdentityCannotEmitCancellationNotification), "default",
                 new() { ["workflowCancelling"] = 0, ["activityEffects"] = 1 });
         });
     }
@@ -297,7 +297,7 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
     [Theory]
     [InlineData("runtime-output-included", "included", true)]
     [InlineData("runtime-output-omitted", "omitted", false)]
-    public async Task LegitimateLocalClientContinuationReturnsRequestedDetachedPersistedOutput(string caseId, string parameterId, bool includeOutput)
+    public async Task LegitimateLocalClientContinuationReturnsRequestedDetachedPersistedOutput(string caseId, string scenario, bool includeOutput)
     {
         await WithHostAsync(async host =>
         {
@@ -322,8 +322,37 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
             }
             Assert.Equal(1, host.Probe.Count("activityEffects"));
             Assert.Equal(1, host.Probe.Count("activityResumes"));
-            await ObserveAsync(caseId, nameof(LegitimateLocalClientContinuationReturnsRequestedDetachedPersistedOutput), parameterId,
+            await ObserveAsync(caseId, nameof(LegitimateLocalClientContinuationReturnsRequestedDetachedPersistedOutput), caseId,
                 new() { ["activityEffects"] = 1, ["activityResumes"] = 1, ["outputIncluded"] = includeOutput, ["persistedOutputUnchanged"] = true });
+        });
+    }
+
+    [Theory]
+    [InlineData("runtime-input-order", "order")]
+    [InlineData("runtime-input-comparer", "comparer")]
+    public async Task PreparedRuntimeDictionarySemanticsCannotChangeBeforeConsumption(string caseId, string scenario)
+    {
+        await WithHostAsync(async host =>
+        {
+            host.Probe.Boundary = boundary =>
+            {
+                if (boundary == nameof(AdmissionExecutionBoundary.StartAuthorized))
+                {
+                    var context = host.Probe.PreparedContext!;
+                    var original = Assert.IsType<Dictionary<string, object>>(context.Input);
+                    Assert.True(original.Count >= 2);
+                    context.Input = scenario == "order"
+                        ? new Dictionary<string, object>(original.Reverse(), original.Comparer)
+                        : new Dictionary<string, object>(original, StringComparer.Ordinal);
+                }
+                return Task.CompletedTask;
+            };
+            await Assert.ThrowsAsync<InvalidOperationException>(() => host.Execution.ExecuteAsync(host.AdmissionId));
+            Assert.Equal(0, host.Probe.Count("workflowExecuting"));
+            Assert.Equal(0, host.Probe.Count("activityEffects"));
+            Assert.Equal(AdmissionState.RecoveryRequired, (await host.Store.FindAsync(host.AdmissionId))!.State);
+            await ObserveAsync(caseId, nameof(PreparedRuntimeDictionarySemanticsCannotChangeBeforeConsumption), caseId,
+                new() { ["workflowExecuting"] = 0, ["activityEffects"] = 0, ["recoveryRequired"] = true });
         });
     }
 

@@ -73,8 +73,10 @@ internal static class AdmissionValueFingerprint
                 {
                     throw new InvalidOperationException("Admission input dictionaries require an audited ordinal comparer.");
                 }
+                // Dictionary enumeration is observable by activities; do not canonicalize
+                // executable input order while retaining a differently ordered runtime value.
                 writer.Write(dictionary.Count);
-                foreach (var pair in dictionary.OrderBy(x => x.Key, StringComparer.Ordinal))
+                foreach (var pair in dictionary)
                 {
                     writer.Write(pair.Key);
                     Write(writer, pair.Value, ancestors, depth + 1);
