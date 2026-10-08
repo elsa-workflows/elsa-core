@@ -402,6 +402,11 @@ public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture 
             var variable = Assert.Single(host.Probe.PreparedContext!.ActivityExecutionContexts
                 .SelectMany(context => context.Variables).Where(value => value.Name == "DurableProof"));
             var driver = Assert.Single(host.Services.GetServices<IStorageDriver>().OfType<AdmissionProofStorageDriver>());
+            var persisted = (await host.Services.GetRequiredService<IWorkflowInstanceManager>().FindByIdAsync(initial.WorkflowInstanceId))!.WorkflowState;
+            var persistedVariable = Assert.Single(persisted.ActivityExecutionContexts.SelectMany(context => context.DynamicVariables)
+                .Where(value => value.Name == "DurableProof"));
+            Assert.Equal(variable.Id, persistedVariable.Id);
+            Assert.Equal(typeof(AdmissionProofStorageDriver), persistedVariable.StorageDriverType);
             Assert.True(host.Probe.Count("variableWrites") > 0);
             Assert.Equal("saved-variable", await driver.ReadPersistedAsync(initial.WorkflowInstanceId, variable.Id));
             // Changing only external persisted storage discriminates LOAD from state restoration:

@@ -212,6 +212,9 @@ public sealed class AdmissionRuntimeEntryTests(PostgreSqlConnectionsFixture fixt
                     _ => 1
                 };
                 context.Properties["ProofProperty"] = "before";
+                // ApplyAsync aliases state.Output. Setup must not corrupt the initial stored
+                // snapshot before capture, otherwise every case denies at the wrong boundary.
+                context.Output = new Dictionary<string, object>(context.Output);
                 context.Output["ProofOutput"] = "before";
                 context.MemoryRegister.Declare(new Variable("ProofMemory", 1, "proof-memory"));
                 return Task.CompletedTask;
@@ -252,6 +255,8 @@ public sealed class AdmissionRuntimeEntryTests(PostgreSqlConnectionsFixture fixt
                 };
             }
             await Assert.ThrowsAsync<InvalidOperationException>(() => host.Execution.ExecuteAsync(host.AdmissionId));
+            Assert.Equal(1, host.Probe.Count("StartPrepared"));
+            Assert.Equal(1, host.Probe.Count("StartAuthorized"));
             var expectedNotifications = scenario == "executing-notification" ? 1 : 0;
             Assert.Equal(expectedNotifications, host.Probe.Count("workflowExecuting"));
             Assert.Equal(expectedNotifications, host.Probe.Count("workflowStarted"));
