@@ -6144,6 +6144,161 @@
       "processRoles": [],
       "minimumProcesses": 0,
       "restartRequired": false
+    },
+    {
+      "caseId": "runtime-stale-materialized-owner",
+      "family": "entry",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeDuplicateTests.DelayedDuplicateCannotReclassifyWinningCheckpointAfterOwnerUnwinds",
+      "parameterId": "runtime-stale-materialized-owner",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "staleSnapshotRejected": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "winningCheckpointUnchanged": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "legitimateContinuationCompleted": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "additionalActivityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "additionalResumeEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "winnerResumes": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-stale-continuation-owner",
+      "family": "continue",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeDuplicateTests.DelayedDuplicateCannotReclassifyWinningCheckpointAfterOwnerUnwinds",
+      "parameterId": "runtime-stale-continuation-owner",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "staleSnapshotRejected": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "winningCheckpointUnchanged": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "legitimateContinuationCompleted": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "additionalActivityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "additionalResumeEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "winnerResumes": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "runtime-stale-withdrawal",
+      "family": "withdraw",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionStaleWithdrawalTests.StaleWithdrawalAfterRealAdmissionCannotMutateSubscriptionOrRetractPublishedDefinition",
+      "parameterId": "default",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "admissionRevisionAdvanced": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "providerConflict": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "bootstrapConflict": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "subscriptionUnchanged": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "admittedRecordUnchanged": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "definitionPublished": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "definitionFingerprintUnchanged": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "activeReservations": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "retainedRecords": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "retractionNotifications": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "workflowExecuting": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
     }
   ],
   "workerAssemblies": {
