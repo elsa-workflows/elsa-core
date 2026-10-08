@@ -30,8 +30,20 @@ public class ObsoleteWorkflowRuntime(
     IBookmarkStore bookmarkStore,
     IWorkflowInstanceStore workflowInstanceStore,
     ITriggerBoundWorkflowService triggerBoundWorkflowService,
-    IBookmarkBoundWorkflowService bookmarkBoundWorkflowService)
+    IBookmarkBoundWorkflowService bookmarkBoundWorkflowService,
+    IWorkflowExecutionGuard? executionGuard = null)
 {
+    /// <summary>Retains the original constructor for hosts without an admission guard.</summary>
+    public ObsoleteWorkflowRuntime(Func<string?, CancellationToken, ValueTask<IWorkflowClient>> createClientAsync,
+        IWorkflowDefinitionService workflowDefinitionService, IWorkflowActivationStrategyEvaluator workflowActivationStrategyEvaluator,
+        IStimulusSender stimulusSender, IStimulusHasher stimulusHasher, IBookmarkStore bookmarkStore,
+        IWorkflowInstanceStore workflowInstanceStore, ITriggerBoundWorkflowService triggerBoundWorkflowService,
+        IBookmarkBoundWorkflowService bookmarkBoundWorkflowService)
+        : this(createClientAsync, workflowDefinitionService, workflowActivationStrategyEvaluator, stimulusSender, stimulusHasher,
+            bookmarkStore, workflowInstanceStore, triggerBoundWorkflowService, bookmarkBoundWorkflowService, null)
+    {
+    }
+
     public static ObsoleteWorkflowRuntime Create(IServiceProvider serviceProvider, Func<string?, CancellationToken, ValueTask<IWorkflowClient>> createClientAsync)
     {
         return ActivatorUtilities.CreateInstance<ObsoleteWorkflowRuntime>(serviceProvider, createClientAsync);
@@ -212,6 +224,10 @@ public class ObsoleteWorkflowRuntime(
 
     public async Task UpdateBookmarkAsync(StoredBookmark bookmark, CancellationToken cancellationToken = default)
     {
+        if (executionGuard != null)
+        {
+            await executionGuard.DemandUnownedAsync(bookmark.WorkflowInstanceId, cancellationToken);
+        }
         await bookmarkStore.SaveAsync(bookmark, cancellationToken);
     }
 

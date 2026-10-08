@@ -41,6 +41,10 @@ public class DefaultAlterationRunner(
     /// <inheritdoc />
     public async Task<RunAlterationsResult> RunAsync(string workflowInstanceId, IEnumerable<IAlteration> alterations, CancellationToken cancellationToken = default)
     {
+        if (serviceProvider.GetService(typeof(IWorkflowExecutionGuard)) is IWorkflowExecutionGuard guard)
+        {
+            await guard.DemandUnownedAsync(workflowInstanceId, cancellationToken);
+        }
         var log = new AlterationLog(systemClock);
         var result = new RunAlterationsResult(workflowInstanceId, log);
         var workflowClient = await workflowRuntime.CreateClientAsync(workflowInstanceId, cancellationToken: cancellationToken);

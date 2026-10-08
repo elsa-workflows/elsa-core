@@ -8,6 +8,8 @@ public class WorkflowExecutionPipeline : IWorkflowExecutionPipeline
     private readonly IServiceProvider _serviceProvider;
     private WorkflowMiddlewareDelegate? _pipeline;
     private WorkflowMiddlewareDelegate? _runnerPipeline;
+    private readonly object _gate = new();
+    private long _generation;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WorkflowExecutionPipeline"/> class.
@@ -30,21 +32,48 @@ public class WorkflowExecutionPipeline : IWorkflowExecutionPipeline
     {
         var builder = new WorkflowExecutionPipelineBuilder(_serviceProvider);
         setup(builder);
-        _runnerPipeline = builder.BuildInternal();
-        _pipeline = WorkflowExecutionPipelineBuilder.Guard(_runnerPipeline);
-        return _pipeline;
+        var raw = builder.BuildInternal();
+        lock (_gate)
+        {
+            _runnerPipeline = raw;
+            _pipeline = WorkflowExecutionPipelineBuilder.Guard(raw, _serviceProvider);
+            _generation++;
+            return _pipeline;
+        }
     }
 
     /// <inheritdoc />
     public async Task ExecuteAsync(WorkflowExecutionContext context) => await Pipeline(context);
 
-    internal async Task ExecuteAuthorizedAsync(WorkflowExecutionContext context, IWorkflowExecutionAuthorization authorization)
+    internal (Action Validate, WorkflowMiddlewareDelegate Execute) CaptureAuthorizedInvocation()
     {
-        await authorization.RevalidateAsync(context.CancellationToken);
-        await (_runnerPipeline ?? throw new InvalidOperationException("The workflow pipeline is not configured."))(context);
+        lock (_gate)
+        {
+            var pipeline = _runnerPipeline ?? throw new InvalidOperationException("The workflow pipeline is not configured.");
+            var generation = _generation;
+            void Validate()
+            {
+                lock (_gate)
+                {
+                    if (generation != _generation || !ReferenceEquals(pipeline, _runnerPipeline))
+                    {
+                        throw new WorkflowPipelineChangedException();
+                    }
+                }
+            }
+            return (Validate, context =>
+            {
+                lock (_gate)
+                {
+                    Validate();
+                    return pipeline(context);
+                }
+            });
+        }
     }
 
     private WorkflowMiddlewareDelegate CreateDefaultPipeline() => Setup(x => x
         .UseExceptionHandling()
         .UseDefaultActivityScheduler());
 }
+internal sealed class WorkflowPipelineChangedException() : InvalidOperationException("The authorized workflow composition changed.");
