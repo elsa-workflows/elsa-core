@@ -57,7 +57,7 @@ public sealed class AdmissionDefinitionBootstrapTests(PostgreSqlConnectionsFixtu
         Assert.Equal(true, usableAsActivity);
         await ObserveAsync("provider-bootstrap-codec-roundtrip", nameof(InsertWritesExactSharedShadowCodecAndNormalStoreReloadPreservesState),
             inserted == AdmissionDefinitionInsertOutcome.Inserted && existing == AdmissionDefinitionInsertOutcome.ExistingMatch
-            && fingerprint == reloadedFingerprint && reloaded.Options.UsableAsActivity && reloaded.Variables.Count == 1
+            && fingerprint == reloadedFingerprint && reloaded.Options.UsableAsActivity == true && reloaded.Variables.Count == 1
             && reloaded.Outcomes.Contains("fixture-outcome") && reloaded.CustomProperties["fixture-property"].ToString() == "preserved-property"
             && count == 1 && Equals(expectedShadowState, shadowState) && Equals(true, usableAsActivity),
             new() { ["insertOutcome"] = inserted.ToString(), ["existingOutcome"] = existing.ToString(),

@@ -198,7 +198,11 @@ public sealed class AdmissionRuntimeEntryTests(PostgreSqlConnectionsFixture fixt
             Assert.Equal(expectedNotifications, host.Probe.Count("workflowStarted"));
             Assert.Equal(0, host.Probe.Count("activityEffects"));
             Assert.Equal(0, host.Probe.Count("instanceWriteAttempts"));
-            Assert.Null(host.Probe.PreparedContext!.Exception);
+            Assert.Empty(host.Probe.PreparedContext!.Incidents);
+            Assert.NotEqual(WorkflowSubStatus.Faulted, host.Probe.PreparedContext.SubStatus);
+            var persisted = (await host.Services.GetRequiredService<IWorkflowInstanceManager>().FindByIdAsync(host.Probe.PreparedContext.Id))!.WorkflowState;
+            Assert.Empty(persisted.Incidents);
+            Assert.Equal(WorkflowSubStatus.Pending, persisted.SubStatus);
             Assert.Equal(AdmissionState.RecoveryRequired, (await host.Store.FindAsync(host.AdmissionId))!.State);
             await AdmissionProofObservation.WriteAsync(fixture, caseId, GetType().FullName + "." + nameof(PreparedInvocationRejectsRuntimeDistinctValuesAndPlanMutation), caseId, [],
                 new Dictionary<string, bool> { ["behaviorAssertionsPassed"] = true },
