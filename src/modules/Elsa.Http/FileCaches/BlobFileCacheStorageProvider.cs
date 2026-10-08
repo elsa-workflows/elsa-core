@@ -1,4 +1,4 @@
-using FluentStorage.Blobs;
+using FluentStorage.Storage;
 
 namespace Elsa.Http.FileCaches;
 
@@ -7,18 +7,18 @@ namespace Elsa.Http.FileCaches;
 /// </summary>
 public class BlobFileCacheStorageProvider : IFileCacheStorageProvider
 {
-    private readonly IBlobStorage _blobStorage;
+    private readonly IStore _blobStorage;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BlobFileCacheStorageProvider"/> class.
     /// </summary>
-    public BlobFileCacheStorageProvider(IBlobStorage blobStorage)
+    public BlobFileCacheStorageProvider(IStore blobStorage)
     {
         _blobStorage = blobStorage;
     }
 
     /// <inheritdoc />
-    public IBlobStorage GetStorage()
+    public IStore GetStorage()
     {
         return _blobStorage;
     }

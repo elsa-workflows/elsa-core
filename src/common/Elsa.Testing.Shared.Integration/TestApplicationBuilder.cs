@@ -116,7 +116,7 @@ public class TestApplicationBuilder
         var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
         var assemblyDirectory = Path.GetDirectoryName(assemblyLocation)!;
         var workflowsDirectory = directory.Prepend(assemblyDirectory).ToArray();
-        _configureElsa += elsa => elsa.UseFluentStorageProvider(storage => storage.BlobStorage = sp => StorageFactory.Blobs.DirectoryFiles(Path.Combine(workflowsDirectory)));
+        _configureElsa += elsa => elsa.UseFluentStorageProvider(storage => storage.BlobStorage = sp => StorageFactory.Disk(Path.Combine(workflowsDirectory)));
         return this;
     }
 }

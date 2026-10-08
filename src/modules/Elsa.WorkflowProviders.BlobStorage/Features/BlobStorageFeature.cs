@@ -7,7 +7,7 @@ using Elsa.WorkflowProviders.BlobStorage.Handlers;
 using Elsa.WorkflowProviders.BlobStorage.Providers;
 using Elsa.Workflows.Management.Features;
 using FluentStorage;
-using FluentStorage.Blobs;
+using FluentStorage.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.WorkflowProviders.BlobStorage.Features;
@@ -26,7 +26,7 @@ public class BlobStorageFeature : FeatureBase
     /// <summary>
     /// The blob storage to use.
     /// </summary>
-    public Func<IServiceProvider, IBlobStorage> BlobStorage { get; set; } = _ => StorageFactory.Blobs.DirectoryFiles(GetDefaultWorkflowsDirectory());
+    public Func<IServiceProvider, IStore> BlobStorage { get; set; } = _ => StorageFactory.Disk(GetDefaultWorkflowsDirectory());
 
     /// <inheritdoc />
     public override void Apply()
