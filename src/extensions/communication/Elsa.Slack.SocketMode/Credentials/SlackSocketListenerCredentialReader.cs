@@ -21,6 +21,7 @@ internal sealed class SlackSocketListenerCredentialReader(SlackSocketModeConfigu
     {
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var principal = new ClaimsPrincipal(new ClaimsIdentity(
                 [new Claim(ClaimTypes.NameIdentifier, PrincipalId), new Claim("elsa:identity-kind", "system")], AuthenticationType));
             if (!await authorizer.AuthorizeAsync(new ConnectionUseRequest(principal, ConnectionUseKind.BackgroundSystem,
@@ -28,6 +29,7 @@ internal sealed class SlackSocketListenerCredentialReader(SlackSocketModeConfigu
             {
                 throw new ConnectionUnavailableException();
             }
+            cancellationToken.ThrowIfCancellationRequested();
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -47,6 +49,7 @@ internal sealed class SlackSocketListenerCredentialReader(SlackSocketModeConfigu
         {
             var reader = new ConnectionCredentialReader(store, secrets, timeProvider, tenantAccessor);
             var current = await reader.ReadAsync(configuration.TenantId, configuration.EnvironmentId, configuration.ConnectionId, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             if (current.Kind != ConnectionCredentialKind.ApiKey)
             {
                 throw new ConnectionUnavailableException();

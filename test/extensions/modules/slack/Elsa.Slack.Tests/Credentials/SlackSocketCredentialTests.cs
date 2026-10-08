@@ -49,6 +49,31 @@ public sealed class SlackSocketCredentialTests
     }
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CancellationBeforeOrDuringPolicyEvaluationCannotReadCredential(bool duringPolicy)
+    {
+        var test = new CredentialFixture();
+        using var cancellation = new CancellationTokenSource();
+        if (duringPolicy)
+        {
+            test.Authorizer.AuthorizeAsync(Arg.Any<ConnectionUseRequest>(), Arg.Any<CancellationToken>()).Returns(_ =>
+            {
+                cancellation.Cancel();
+                return Task.FromResult(true);
+            });
+        }
+        else
+        {
+            cancellation.Cancel();
+        }
+        var error = await Assert.ThrowsAsync<OperationCanceledException>(() => test.Reader.ResolveCurrentAsync(cancellation.Token));
+        Assert.Equal(cancellation.Token, error.CancellationToken);
+        await test.Store.DidNotReceive().FindAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await test.Secrets.DidNotReceive().ResolveGenerationAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
     [InlineData(ConnectionStatus.Disconnected, CredentialOperationStatus.None)]
     [InlineData(ConnectionStatus.RecoveryRequired, CredentialOperationStatus.None)]
     [InlineData(ConnectionStatus.Active, CredentialOperationStatus.Claimed)]

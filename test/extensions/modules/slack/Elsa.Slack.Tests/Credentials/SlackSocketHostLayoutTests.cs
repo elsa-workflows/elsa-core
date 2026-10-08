@@ -26,11 +26,11 @@ public sealed class SlackSocketHostLayoutTests
         using var valid = CreateContext(kind, services);
         SlackSocketModeHostValidator.DemandDatabaseLayout(valid);
         using var wrongHistory = CreateContext(kind, services, wrongHistory: true);
-        Assert.Throws<InvalidOperationException>(() => SlackSocketModeHostValidator.DemandDatabaseLayout(wrongHistory));
+        AssertLayoutDenied(wrongHistory);
         using var wrongSchema = CreateContext(kind, services, wrongSchema: true);
-        Assert.Throws<InvalidOperationException>(() => SlackSocketModeHostValidator.DemandDatabaseLayout(wrongSchema));
+        AssertLayoutDenied(wrongSchema);
         using var wrongTable = CreateContext(kind, services, wrongTable: true);
-        Assert.Throws<InvalidOperationException>(() => SlackSocketModeHostValidator.DemandDatabaseLayout(wrongTable));
+        AssertLayoutDenied(wrongTable);
     }
 
     [Fact]
@@ -42,6 +42,12 @@ public sealed class SlackSocketHostLayoutTests
         SlackSocketModeHostValidator.DemandDatabaseLayout(connections);
         SlackSocketModeHostValidator.DemandDatabaseLayout(secrets);
         Assert.Equal("__EFMigrationsHistory", ElsaDbContextBase.MigrationsHistoryTable);
+    }
+
+    private static void AssertLayoutDenied(ElsaDbContextBase context)
+    {
+        var error = Assert.Throws<InvalidOperationException>(() => SlackSocketModeHostValidator.DemandDatabaseLayout(context));
+        Assert.Equal("Socket credential and event stores require the reviewed migration histories and table schemas.", error.Message);
     }
 
     private static ElsaDbContextBase CreateContext(string kind, IServiceProvider services,
