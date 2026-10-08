@@ -332,6 +332,57 @@ class PackageProofTests(unittest.TestCase):
             with zipfile.ZipFile(self.directory / self.row["nupkg"]) as archive, self.assertRaises(ValueError):
                 proof.verify_package_manifest(archive, self.row, VERSION)
 
+    def admission_manifest(self, identifier):
+        self.row["id"] = identifier
+        self.row["framework_properties"]["net8.0"].update(manifest_required=True, manifest_path="elsa-package.json")
+        return {"schemaVersion": "1.0", "package": {"id": identifier, "version": VERSION},
+                "extensions": {"targetFrameworks": ["net8.0"], "repositoryUrl": proof.CORE_URL},
+                "compatibility": {"runtimeKinds": ["elsa.server"]},
+                "features": [{"id": identifier + "." + name.rsplit(".", 1)[-1].removesuffix("Feature"), "typeName": name}
+                             for name in proof.ADMISSION_SHELL_FEATURES[identifier]]}
+
+    def check_manifest(self, data, *, strict=True):
+        archive_path = self.directory / "manifest-only.zip"
+        with zipfile.ZipFile(archive_path, "w") as archive:
+            if data is not None:
+                archive.writestr("elsa-package.json", __import__("json").dumps(data))
+        with zipfile.ZipFile(archive_path) as archive:
+            return proof.verify_package_manifest(archive, self.row, VERSION, require_sdk_metadata=strict)
+
+    def test_new_admission_catalog_requires_real_selectable_features_and_server_hint(self):
+        for identifier in ("Elsa.Workflows.Admission", "Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql"):
+            data = self.admission_manifest(identifier)
+            receipt = self.check_manifest(data)
+            self.assertEqual(["elsa.server"], receipt["runtime_kinds"])
+            self.assertEqual(1, len(receipt["selectable_features"]))
+            for mutate in (lambda value: value.update(features=[]), lambda value: value.pop("features"),
+                           lambda value: value["compatibility"].update(runtimeKinds=[]),
+                           lambda value: value["compatibility"].update(runtimeKinds=["elsa.studio"]),
+                           lambda value: value["features"][0].update(compatibility={"runtimeKinds": ["elsa.studio"]}),
+                           lambda value: value["features"].append(dict(value["features"][0])),
+                           lambda value: value["features"][0].update(id="Unrelated.Feature")):
+                changed = __import__("json").loads(__import__("json").dumps(data)); mutate(changed)
+                with self.subTest(identifier=identifier), self.assertRaises(ValueError):
+                    self.check_manifest(changed)
+            self.row["framework_properties"]["net8.0"]["manifest_required"] = False
+            with self.assertRaisesRegex(ValueError, "manifest is required"):
+                self.check_manifest(None)
+
+    def test_abstract_admission_ef_base_is_never_selectable_and_connections_stay_classic(self):
+        data = self.admission_manifest("Elsa.Workflows.Admission.Persistence.EFCore")
+        self.assertEqual([], self.check_manifest(data)["selectable_features"])
+        data["features"] = [{"id": self.row["id"] + ".EFCoreAdmissionPersistenceShellFeatureBase",
+                             "typeName": self.row["id"] + ".ShellFeatures.EFCoreAdmissionPersistenceShellFeatureBase"}]
+        with self.assertRaisesRegex(ValueError, "selectable feature mismatch"):
+            self.check_manifest(data)
+        # The older capability never claimed this new catalog check.
+        self.check_manifest(data, strict=False)
+        for identifier in ("Elsa.Connections", "Elsa.Connections.Credentials.Workflows", "Elsa.Connections.Credentials.Persistence.EFCore",
+                           "Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql"):
+            self.row["id"] = identifier
+            self.row["framework_properties"]["net8.0"]["manifest_required"] = False
+            self.assertIsNone(self.check_manifest(None))
+
     def inspection(self, relative, *, embedded=None, source=b"source"):
         return {"source_link": {"documents": {"/_/*": f"{proof.RAW_URL}{COMMIT}/*"}},
                 "documents": [{"path": f"/_/{relative}", "algorithm": "sha256",

@@ -392,9 +392,47 @@ def verify_browser_assets(archive: zipfile.ZipFile, row: dict, assets: list[dict
     return expected
 
 
-def verify_package_manifest(archive: zipfile.ZipFile, row: dict, version: str) -> dict | None:
+# Source-bound catalog support for the seven newly promoted #8661 packages.
+# Concrete Shell declarations live in the named packages' ShellFeatures directories;
+# the EFCore package contains only an abstract persistence base, never a selection.
+ADMISSION_SHELL_FEATURES = {
+    "Elsa.Workflows.Admission": {"Elsa.Workflows.Admission.ShellFeatures.AdmissionFeature"},
+    "Elsa.Workflows.Admission.Persistence.EFCore": set(),
+    "Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql": {
+        "Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql.ShellFeatures.PostgreSqlAdmissionPersistenceShellFeature"},
+}
+
+
+def verify_admission_catalog(data: dict, row: dict) -> dict:
+    require(data.get("schemaVersion") == "1.0", "Admission package manifest schema mismatch")
+    compatibility = data.get("compatibility")
+    require(type(compatibility) is dict and compatibility.get("runtimeKinds") == ["elsa.server"],
+            "Admission package manifest must target Server runtime")
+    features = data.get("features")
+    require(type(features) is list and all(type(feature) is dict for feature in features),
+            "Admission package manifest feature inventory is missing")
+    identities = [feature.get("id") for feature in features]
+    types = [feature.get("typeName") for feature in features]
+    require(all(type(identity) is str and identity.startswith(row["id"] + ".") and identity != row["id"] + "."
+                for identity in identities) and len(set(identities)) == len(identities),
+            "Admission package manifest feature identity mismatch")
+    require(all(type(name) is str for name in types) and len(set(types)) == len(types)
+            and set(types) == ADMISSION_SHELL_FEATURES[row["id"]],
+            "Admission package manifest selectable feature mismatch")
+    for feature in features:
+        compatibility = feature.get("compatibility")
+        require(compatibility is None or (type(compatibility) is dict and compatibility.get("runtimeKinds") == ["elsa.server"]),
+                "Admission selectable feature narrows away from Server runtime")
+    return {"selectable_features": [{"id": feature["id"], "type_name": feature["typeName"]} for feature in features],
+            "runtime_kinds": data["compatibility"]["runtimeKinds"]}
+
+
+def verify_package_manifest(archive: zipfile.ZipFile, row: dict, version: str, *, require_sdk_metadata: bool = False) -> dict | None:
     required = any(properties["manifest_required"] for properties in row["framework_properties"].values())
     paths = {properties["manifest_path"] for properties in row["framework_properties"].values() if properties["manifest_required"]}
+    catalog_required = require_sdk_metadata and row["id"] in ADMISSION_SHELL_FEATURES
+    if catalog_required and ADMISSION_SHELL_FEATURES[row["id"]]:
+        require(required, "Selectable Admission package manifest is required")
     require(len(paths) <= 1, f"Frameworks disagree on package manifest location: {row['id']}")
     if not required:
         require("elsa-package.json" not in archive_names(archive), f"Unexpected package manifest: {row['id']}")
@@ -408,8 +446,9 @@ def verify_package_manifest(archive: zipfile.ZipFile, row: dict, version: str) -
             f"Generated package manifest framework mismatch: {row['id']}")
     require(data.get("extensions", {}).get("repositoryUrl", "").rstrip("/") == CORE_URL,
             f"Generated package manifest repository mismatch: {row['id']}")
+    catalog = verify_admission_catalog(data, row) if catalog_required else {}
     return {"path": path, "sha256": hashlib.sha256(archive.read(path)).hexdigest(),
-            "id": row["id"], "version": version, "frameworks": row["frameworks"]}
+            "id": row["id"], "version": version, "frameworks": row["frameworks"], **catalog}
 
 
 def archive_names(archive: zipfile.ZipFile) -> set[str]:
@@ -497,7 +536,7 @@ def verify_artifacts(artifacts: Path, manifest: dict, *, require_sdk_metadata: b
             row["dependency_groups"] = verify_metadata(nuspec, row, manifest, require_sdk_metadata=require_sdk_metadata)
             verify_sdk_assets(archive, row, required=require_sdk_metadata)
             row["browser_assets"] = verify_browser_assets(archive, row, manifest.get("browser_assets", []))
-            row["package_manifest"] = verify_package_manifest(archive, row, manifest["version"])
+            row["package_manifest"] = verify_package_manifest(archive, row, manifest["version"], require_sdk_metadata=require_sdk_metadata)
             require(nuspec.findtext("projectUrl", "").rstrip("/") == CORE_URL,
                     f"Noncanonical project URL: {row['id']}")
             icon = nuspec.findtext("icon")
