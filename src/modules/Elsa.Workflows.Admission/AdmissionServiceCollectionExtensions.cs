@@ -19,6 +19,7 @@ public static class AdmissionServiceCollectionExtensions
         configuration.BindRegistrations(services);
         services.AddSingleton(configuration);
         services.TryAddSingleton<AdmissionAuthorityRegistry>();
+        services.AddScoped<IAdmissionExecutionDataReader, AdmissionExecutionDataReader>();
         services.AddScoped<AdmissionExecutionComposition>();
         services.RemoveAll<IWorkflowExecutionPipeline>();
         services.RemoveAll<IActivityExecutionPipeline>();

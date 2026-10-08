@@ -72,6 +72,21 @@ internal sealed class AdmissionAuthorityRegistry
 
     public void Retire(WorkflowExecutionContext context) => _invocations.TryRemove(context, out _);
 
+    internal Invocation DemandConsumedInvocation(WorkflowExecutionContext context)
+    {
+        if (!_invocations.TryGetValue(context, out var invocation) || !_owners.ContainsKey(invocation.InstanceId))
+        {
+            throw new InvalidOperationException("No live consumed admission owner is bound to this context.");
+        }
+        invocation.DemandConsumedEventBinding();
+        return invocation;
+    }
+
+    internal sealed record ConsumedEventBinding(string AdmissionId, string InstanceId, long Revision, string AttemptId,
+        string SubscriptionId, string ConfigurationJson, string ConfigurationFingerprint, long ActivationEpoch,
+        string ProviderEventId, DateTimeOffset OccurredAt, string PayloadFingerprint, string EventFingerprint,
+        string DefinitionId, string DefinitionVersionId, int DefinitionVersion);
+
     private sealed class Owner(ConcurrentDictionary<string, byte> owners, string instanceId) : IDisposable
     {
         private int _disposed;
@@ -113,6 +128,8 @@ internal sealed class AdmissionAuthorityRegistry
         private readonly object?[] _workItemOwners;
         private readonly object?[] _existingContexts;
         private string? _authorityTuple;
+        private ConsumedEventBinding? _eventBinding;
+        internal ConsumedEventBinding EventBinding => _eventBinding ?? throw new InvalidOperationException("No committed admission data is bound.");
         internal string AdmissionId { get; private set; } = null!;
         internal string InstanceId => _identity;
         public int Consumed;
@@ -159,6 +176,25 @@ internal sealed class AdmissionAuthorityRegistry
             // only after a definitive first commit, without recapturing the prepared fingerprint.
             _authorityTuple = AdmissionHash.Compute($"{record.Id}:{record.Revision}:{record.AttemptId}:{record.ConfigurationFingerprint}");
             AdmissionId = record.Id;
+            _eventBinding = new(record.Id, _identity, record.Revision, record.AttemptId!, record.SubscriptionId,
+                record.AdmittedConfigurationJson, record.ConfigurationFingerprint, record.ActivationEpoch,
+                record.ProviderEventId!, record.EventOccurredAt, record.PayloadFingerprint, record.EventFingerprint,
+                _context.Workflow.Identity.DefinitionId, _context.Workflow.Identity.Id, _context.Workflow.Identity.Version);
+        }
+
+        internal void DemandConsumedEventBinding()
+        {
+            DemandBound();
+            if (Volatile.Read(ref Consumed) != 1 || _eventBinding == null || _context.Id != _identity ||
+                !ReferenceEquals(_graph, _context.WorkflowGraph) || !ReferenceEquals(_root, _context.Workflow.Root) ||
+                _context.Workflow.Identity.DefinitionId != _eventBinding.DefinitionId ||
+                _context.Workflow.Identity.Id != _eventBinding.DefinitionVersionId || _context.Workflow.Identity.Version != _eventBinding.DefinitionVersion)
+            {
+                throw new InvalidOperationException("The exact live consumed admission context is required.");
+            }
+            // Scheduling, memory and output legitimately evolve after entry. This data-only read
+            // validates ownership and fixed composition, not the preparation fingerprint again.
+            _composition.Validate(_context.ServiceProvider);
         }
 
         public void DemandBound()

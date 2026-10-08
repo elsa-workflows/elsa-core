@@ -17,6 +17,10 @@ namespace Elsa.Slack.Activities.Events;
 [UsedImplicitly]
 public class WatchPublicChannelMessages : SlackEventActivity
 {
+    /// <summary>The legacy path remains the default for definitions without this input.</summary>
+    [Input(Description = "Legacy token mode or explicitly admitted public message data.")]
+    public Input<WatchPublicChannelMessageMode> Mode { get; set; } = new(WatchPublicChannelMessageMode.LegacyToken);
+
     /// <summary>
     /// The ID of the public channel to watch.
     /// </summary>
@@ -29,12 +33,41 @@ public class WatchPublicChannelMessages : SlackEventActivity
     [Output(Description = "The received message.")]
     public Output<Message> ReceivedMessage { get; set; } = null!;
 
+    [Output(Description = "The original incoming message timestamp.")]
+    public Output<string> MessageTimestamp { get; set; } = null!;
+
+    [Output(Description = "The original message sender.")]
+    public Output<string> UserId { get; set; } = null!;
+
+    [Output(Description = "The incoming thread timestamp, or the original message timestamp for a new thread.")]
+    public Output<string> ReplyThreadTimestamp { get; set; } = null!;
+
     /// <summary>
     /// Executes the activity.
     /// </summary>
-    protected override ValueTask ExecuteAsync(ActivityExecutionContext context)
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        // Implementation depends on Slack's Events API and WebSocket support
-        throw new NotImplementedException("Event subscription requires WebSocket implementation.");
+        var mode = context.Get(Mode);
+        if (mode == WatchPublicChannelMessageMode.LegacyToken)
+        {
+            throw new NotImplementedException("Event subscription requires WebSocket implementation.");
+        }
+        if (mode != WatchPublicChannelMessageMode.AdmittedPublicMessage || !string.IsNullOrEmpty(context.Get(Token)))
+        {
+            throw new InvalidOperationException("Admitted public messages require an explicit mode and an empty Token.");
+        }
+        var message = await context.GetRequiredService<ISlackPublicChannelMessageSource>().ReadAsync(context, context.CancellationToken);
+        var channelId = context.Get(ChannelId);
+        var botUserId = context.Get(BotUserId);
+        if (channelId != message.ChannelId || !string.IsNullOrEmpty(botUserId) && botUserId != message.SelfUserId)
+        {
+            throw new InvalidOperationException("The Watch inputs do not match the trusted public-channel route.");
+        }
+        // Keep the original SlackNet.WebApi.Message contract. Incoming sender/timestamp are
+        // separate scalar outputs; ThreadTs remains the incoming thread value, not a reply default.
+        context.Set(ReceivedMessage, new Message { Channel = message.ChannelId, Text = message.Text, ThreadTs = message.ThreadTimestamp });
+        context.Set(MessageTimestamp, message.MessageTimestamp);
+        context.Set(UserId, message.UserId);
+        context.Set(ReplyThreadTimestamp, message.ReplyThreadTimestamp);
     }
 }

@@ -80,6 +80,7 @@ public sealed class AdmissionHostConfiguration
             services.GetRequiredService<IWorkflowInstanceVariableManager>().GetType() != typeof(AdmissionWorkflowInstanceVariableManager) ||
             services.GetRequiredService<IWorkflowRunner>().GetType() != typeof(WorkflowRunner) ||
             services.GetRequiredService<IWorkflowExecutionPipeline>().GetType() != typeof(WorkflowExecutionPipeline) ||
+            services.GetRequiredService<IAdmissionExecutionDataReader>().GetType() != typeof(AdmissionExecutionDataReader) ||
             services.GetRequiredService<IWorkflowExecutionGuard>().GetType() != typeof(AdmissionExecutionGuard))
         {
             throw new InvalidOperationException("Admission requires the reviewed built-in runner, pipeline and isolated Local runtime adapter.");
@@ -173,6 +174,10 @@ public sealed class AdmissionHostConfiguration
             throw new InvalidOperationException("The actual admission preparation/notification chain contains an unaudited service.");
         }
     }
+
+    // The opt-in friend adapter can check additional actual services against the SAME immutable
+    // host audit inventory. It cannot add or change accepted types or invoke execution authority.
+    internal void DemandAuditedServiceType(Type type) => DemandAudited(type);
     private static bool Forbidden(Type type)
     {
         var name = type.FullName ?? "";

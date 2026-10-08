@@ -7,6 +7,9 @@ using Elsa.Connections.Contracts;
 using Elsa.Connections.Models;
 using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Models;
+using CredentialEnvelope = Elsa.Connections.Services.ConnectionCredentialEnvelope;
+using static Elsa.Connections.Services.ConnectionCredentialEnvelopeCodec;
+using static Elsa.Connections.Services.ConnectionCredentialReader;
 
 namespace Elsa.Connections.Services;
 
@@ -235,49 +238,8 @@ public sealed class DefaultConnectionLifecycleService(
 
     private async Task<ConnectionAccessCredential> ResolveAuthorizedCredentialAsync(string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken)
     {
-        using var tenantContext = PushTenant(tenantId);
-        var connection = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
-        if (!CanUseCurrentGeneration(connection))
-        {
-            throw new ConnectionUnavailableException();
-        }
-
-        CredentialEnvelope? material;
-        try
-        {
-            var payload = await secrets.ResolveGenerationAsync(connection!.CurrentSecretName!, connection.Id, connection.CurrentGenerationId!, cancellationToken);
-            material = Deserialize(payload.Value);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw new OperationCanceledException("Connection access was cancelled.", cancellationToken);
-        }
-        catch (Exception)
-        {
-            throw new ConnectionUnavailableException();
-        }
-
-        if (!IsValidEnvelope(material) ||
-            (material!.Kind ?? ConnectionCredentialKind.OAuth) == ConnectionCredentialKind.OAuth &&
-            material.AccessTokenExpiresAt <= timeProvider.GetUtcNow())
-        {
-            throw new ConnectionUnavailableException();
-        }
-
-        var validMaterial = material!;
-
-        var latest = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
-        if (latest == null || latest.Status != ConnectionStatus.Active ||
-            latest.Revision != connection.Revision || latest.CurrentGenerationId != connection.CurrentGenerationId ||
-            latest.CurrentSecretName != connection.CurrentSecretName ||
-            latest.OperationStatus is not (CredentialOperationStatus.None or CredentialOperationStatus.Completed))
-        {
-            throw new ConnectionUnavailableException();
-        }
-
-        return validMaterial.Kind == ConnectionCredentialKind.ApiKey
-            ? new ConnectionAccessCredential(ConnectionCredentialKind.ApiKey, validMaterial.AccessToken!, null)
-            : new ConnectionAccessCredential(ConnectionCredentialKind.OAuth, validMaterial.AccessToken!, validMaterial.AccessTokenExpiresAt);
+        var reader = new ConnectionCredentialReader(store, secrets, timeProvider, tenantAccessor);
+        return await reader.ReadAsync(tenantId, environmentId, connectionId, cancellationToken);
     }
 
     public async Task<ConnectionOffboardingOperationResult> DisconnectAsync(
@@ -1029,10 +991,6 @@ public sealed class DefaultConnectionLifecycleService(
         return Convert.ToHexString(SHA256.HashData(canonicalIdentity)).ToLowerInvariant();
     }
 
-    private static bool CanUseCurrentGeneration(IntegrationConnection? connection) =>
-        connection is { Status: ConnectionStatus.Active, OperationStatus: CredentialOperationStatus.None or CredentialOperationStatus.Completed } &&
-        !string.IsNullOrWhiteSpace(connection.CurrentSecretName) && !string.IsNullOrWhiteSpace(connection.CurrentGenerationId);
-
     private static ConnectionLifecycleMetadata ToMetadata(IntegrationConnection connection) => new(
         connection.Id,
         connection.ProviderId,
@@ -1062,29 +1020,6 @@ public sealed class DefaultConnectionLifecycleService(
         catch (Exception)
         {
             // The active credential remains the only published generation; reconciliation can release this claim after its lease.
-        }
-    }
-
-    private static string Serialize(CredentialMaterial material) => JsonSerializer.Serialize(
-        new CredentialEnvelope(ConnectionCredentialKind.OAuth, material.AccessToken, material.RefreshToken, material.AccessTokenExpiresAt), JsonOptions);
-
-    private static string SerializeApiKey(string apiKey) => JsonSerializer.Serialize(
-        new CredentialEnvelope(ConnectionCredentialKind.ApiKey, apiKey, null, null), JsonOptions);
-
-    private static CredentialEnvelope? Deserialize(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            return null;
-        }
-
-        try
-        {
-            return JsonSerializer.Deserialize<CredentialEnvelope>(json, JsonOptions);
-        }
-        catch (JsonException)
-        {
-            return null;
         }
     }
 
@@ -1139,21 +1074,6 @@ public sealed class DefaultConnectionLifecycleService(
     private async Task<bool> CanPromoteApiKeyRecoveryAsync(IntegrationConnection connection, CancellationToken cancellationToken) =>
         await IsApiKeySourceGenerationAsync(connection, cancellationToken) ||
         string.IsNullOrWhiteSpace(connection.CurrentGenerationId) && string.IsNullOrWhiteSpace(connection.OperationSourceGenerationId);
-
-    private static bool IsValidEnvelope(CredentialEnvelope? envelope)
-    {
-        if (envelope == null || string.IsNullOrWhiteSpace(envelope.AccessToken))
-        {
-            return false;
-        }
-
-        return envelope.Kind switch
-        {
-            null or ConnectionCredentialKind.OAuth => !string.IsNullOrWhiteSpace(envelope.RefreshToken) && envelope.AccessTokenExpiresAt.HasValue,
-            ConnectionCredentialKind.ApiKey => envelope.RefreshToken is null && !envelope.AccessTokenExpiresAt.HasValue,
-            _ => false
-        };
-    }
 
     private async Task<ConnectionLifecycleResult?> RestoreApiKeySourceIfPlanMissingAsync(
         IntegrationConnection connection,
@@ -1248,6 +1168,4 @@ public sealed class DefaultConnectionLifecycleService(
             // Durable provider-call intent remains for startup reconciliation; never replay automatically.
         }
     }
-
-    private sealed record CredentialEnvelope(ConnectionCredentialKind? Kind, string? AccessToken, string? RefreshToken, DateTimeOffset? AccessTokenExpiresAt);
 }
