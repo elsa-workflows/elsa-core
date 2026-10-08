@@ -6,8 +6,10 @@ using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Slack.SocketMode;
 using Elsa.Slack.SocketMode.Persistence;
 using Elsa.Slack.SocketMode.Events;
+using Elsa.Tenants.Options;
 using Elsa.Workflows;
 using Elsa.Workflows.Admission;
+using Elsa.Workflows.Admission.Persistence.EFCore;
 using Elsa.Workflows.Admission.WorkerProcess;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
@@ -451,12 +453,19 @@ public sealed class SocketDurableWorkTests(PostgreSqlConnectionsFixture fixture)
         var probe = new AdmissionRuntimeProbe(fixture.ConnectionString);
         await using var services = AdmissionRuntimeHost.CreateServices(fixture.ConnectionString, probe, shell: shell, configure: collection =>
         {
+            collection.Configure<TenantsOptions>(options => options.IsEnabled = true);
             collection.AddDbContextFactory<SlackSocketReceiptElsaDbContext>((_, builder) => builder.UseElsaPostgreSql(
                 typeof(SlackSocketReceiptElsaDbContext).Assembly, fixture.ConnectionString,
                 new ElsaDbContextOptions { MigrationsHistoryTableName = SlackSocketReceiptElsaDbContext.HistoryTable }));
             collection.AddSlackSocketDiscardPersistence();
         });
         using var tenant = AdmissionRuntimeHost.EnterTenant(services);
+        await using (var admission = await services.GetRequiredService<IDbContextFactory<AdmissionElsaDbContext>>().CreateDbContextAsync())
+        {
+            Assert.True(admission.IsTenantFilteringEnabled);
+            Assert.Equal(AdmissionWorkerHost.TenantId, admission.TenantId);
+            SlackSocketModeHostValidator.DemandDatabaseLayout(admission, ElsaDbContextBase.MigrationsHistoryTable);
+        }
         await AdmissionRuntimeHost.MigrateAsync(services);
         await using (var receipts = await services.GetRequiredService<IDbContextFactory<SlackSocketReceiptElsaDbContext>>().CreateDbContextAsync())
         {
