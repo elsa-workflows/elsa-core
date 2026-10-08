@@ -226,6 +226,14 @@ public class ObsoleteWorkflowRuntime(
     {
         if (executionGuard != null)
         {
+            // Save upserts by globally unique bookmark ID. Inspect the existing row across
+            // tenants before trusting a caller-supplied replacement owner; foreign-scope
+            // admission ownership fails closed in the guard, rather than appearing absent.
+            var existing = await bookmarkStore.FindAsync(new BookmarkFilter { BookmarkId = bookmark.Id, TenantAgnostic = true }, cancellationToken);
+            if (existing != null)
+            {
+                await executionGuard.DemandUnownedAsync(existing.WorkflowInstanceId, cancellationToken);
+            }
             await executionGuard.DemandUnownedAsync(bookmark.WorkflowInstanceId, cancellationToken);
         }
         await bookmarkStore.SaveAsync(bookmark, cancellationToken);

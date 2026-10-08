@@ -5,6 +5,7 @@ using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Notifications;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
@@ -12,7 +13,7 @@ namespace Elsa.Workflows.Admission.WorkerProcess;
 
 /// <summary>Trusted, fixed fixture instrumentation. Gates never convey a capability or context.</summary>
 public sealed class AdmissionRuntimeProbe(string connectionString) : IAdmissionExecutionObserver,
-    INotificationHandler<WorkflowExecuting>, INotificationHandler<WorkflowStarted>, INotificationHandler<WorkflowInstanceSaved>
+    INotificationHandler<WorkflowExecuting>, INotificationHandler<WorkflowStarted>, INotificationHandler<WorkflowInstanceSaved>, INotificationHandler<WorkflowCancelling>
 {
     public string Outcome { get; set; } = "completed";
     public Func<string, Task>? Boundary { get; set; }
@@ -66,6 +67,7 @@ public sealed class AdmissionRuntimeProbe(string connectionString) : IAdmissionE
         }
     }
     public Task HandleAsync(WorkflowStarted notification, CancellationToken cancellationToken) => IncrementAsync("workflowStarted");
+    public Task HandleAsync(WorkflowCancelling notification, CancellationToken cancellationToken) => IncrementAsync("workflowCancelling");
     public async Task HandleAsync(WorkflowInstanceSaved notification, CancellationToken cancellationToken)
     {
         await IncrementAsync("savedNotifications");
@@ -99,6 +101,7 @@ public sealed class AdmissionRuntimeActivity : Activity
     private async ValueTask ResumeAsync(ActivityExecutionContext context)
     {
         await context.GetRequiredService<AdmissionRuntimeProbe>().IncrementAsync("activityResumes");
+        context.WorkflowExecutionContext.Output["Proof"] = "persisted-resume-output";
         await context.CompleteActivityAsync();
     }
 }
