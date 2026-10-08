@@ -275,6 +275,76 @@ public sealed class SocketDurableWorkTests(PostgreSqlConnectionsFixture fixture)
         });
     }
 
+    [Theory]
+    [InlineData("reactivated", true)]
+    [InlineData("reconfigured-same-authority", true)]
+    [InlineData("reconfigured-different-authority", false)]
+    public async Task HistoricalTerminalCleanupUsesStableNamespaceAndHistoricalPolicyButOnlyCurrentApprovedAuthority(string scenario, bool cleanupAllowed)
+    {
+        await RunAsync(async host =>
+        {
+            var admissionId = await host.AdmitAsync("historical-terminal");
+            var executed = (await host.Execution.ExecuteAsync(admissionId))!;
+            var historical = (await host.Store.FindAsync(admissionId))!;
+            Assert.Equal(AdmissionState.Terminal, historical.State);
+            var old = (await host.Store.FindSubscriptionAsync(historical.SubscriptionId))!;
+            var current = (await host.Store.WithdrawAsync(old.Id, old.Revision, false, null))!;
+            Assert.False(current.Active);
+            if (scenario != "reactivated")
+            {
+                var configuration = current.Configuration with
+                {
+                    Policy = current.Configuration.Policy with
+                    {
+                        PayloadRetention = current.Configuration.Policy.PayloadRetention + TimeSpan.FromHours(1),
+                        IdentityHorizon = current.Configuration.Policy.IdentityHorizon + TimeSpan.FromDays(1),
+                        CleanupAuthority = cleanupAllowed ? current.Configuration.Policy.CleanupAuthority : "different-current-approved-authority"
+                    }
+                };
+                current = (await host.Store.ReconfigureAsync(configuration, current.Revision))!;
+                Assert.False(current.BootstrapVerified);
+                // Actual ledger configuration/activation transitions; this does not start a
+                // second runtime or claim that the old host's execution allowlist was changed.
+                current = (await host.Store.VerifyBootstrapAsync(current.Id, current.Revision, configuration.ConfigurationFingerprint))!;
+                Assert.NotEqual(historical.ConfigurationFingerprint, current.ConfigurationFingerprint);
+            }
+            current = (await host.Store.ActivateAsync(current.Id, current.Revision, AdmissionWorkerHost.Now))!;
+            Assert.True(current.Active);
+            Assert.True(current.ActivationEpoch > historical.ActivationEpoch);
+            var selected = new SlackSocketSubscription(current.Configuration, current.ActivationEpoch);
+            var work = new SlackSocketDurableWork(host.WithSubscriptions([selected]), host.Scopes, host.Time);
+            host.Time.Now = historical.TerminalAt!.Value + old.Configuration.Policy.IdentityHorizon;
+            var batch = await host.RunBatchAsync(work);
+            Assert.Equal(1, batch.TerminalExamined);
+            Assert.Equal(cleanupAllowed ? 1 : 0, batch.WorkflowCleaned);
+            Assert.Equal(0, batch.ExecutionAttempts);
+            Assert.False(batch.Uncertain);
+            var retained = (await host.Store.FindByInstanceAsync(executed.WorkflowInstanceId))!;
+            Assert.Equal(historical.AdmittedConfigurationJson, retained.AdmittedConfigurationJson);
+            Assert.Equal(historical.ConfigurationFingerprint, retained.ConfigurationFingerprint);
+            Assert.Equal(historical.ActivationEpoch, retained.ActivationEpoch);
+            Assert.Equal(historical.EventFingerprint, retained.EventFingerprint);
+            if (cleanupAllowed)
+            {
+                Assert.Null(retained.Payload);
+                Assert.Null(retained.ProviderEventId);
+                Assert.Null(retained.IdentityHash);
+                Assert.True(retained.Revision > historical.Revision);
+            }
+            else
+            {
+                Assert.Equal(historical.Payload, retained.Payload);
+                Assert.Equal(historical.ProviderEventId, retained.ProviderEventId);
+                Assert.Equal(historical.IdentityHash, retained.IdentityHash);
+                Assert.Equal(historical.Revision, retained.Revision);
+            }
+            Assert.Equal(1, (await host.Store.FindSubscriptionAsync(current.Id))!.RetainedRecords);
+            Assert.Equal(0, (await host.Store.FindSubscriptionAsync(current.Id))!.ActiveReservations);
+            Assert.Equal(1, host.Probe.Count("activityEffects"));
+            Assert.Equal(0, host.Probe.Count("activityResumes"));
+        });
+    }
+
     [Fact]
     public async Task IneligibleTerminalPagesAdvanceAndCompletedScansRevisitThemAndLaterInsertions()
     {

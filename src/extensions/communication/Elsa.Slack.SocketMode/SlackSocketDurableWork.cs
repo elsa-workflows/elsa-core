@@ -155,9 +155,10 @@ internal sealed class SlackSocketDurableWork
                     {
                         cancellationToken.ThrowIfCancellationRequested();
                         terminalExamined++;
+                        // Terminal cleanup belongs to the stable configured namespace, not a
+                        // current execution epoch. The store applies the historical admitted policy;
+                        // only the currently approved authority is supplied, never an adopted old one.
                         if (_subscriptions.TryGetValue(candidate.SubscriptionId, out var captured) &&
-                            candidate.ConfigurationFingerprint == captured.Configuration.ConfigurationFingerprint &&
-                            candidate.ActivationEpoch == captured.ActivationEpoch &&
                             (candidate.WorkflowInstanceId == null || !owners.HasOwner(candidate.WorkflowInstanceId)))
                         {
                             if (await store.CleanupAsync(candidate.Id, candidate.Revision, captured.Configuration.Policy.CleanupAuthority,
@@ -299,12 +300,12 @@ internal sealed class SlackSocketDurableWork
                 (x.TerminalAt == cursor.TerminalAt && string.Compare(x.Id, cursor.Id) > 0));
         }
         return await query.OrderBy(x => x.TerminalAt).ThenBy(x => x.Id).Take(_limit)
-            .Select(x => new TerminalCandidate(x.Id, x.Revision, x.SubscriptionId, x.ConfigurationFingerprint,
-                x.ActivationEpoch, x.TerminalAt!.Value, x.WorkflowInstanceId)).ToListAsync(cancellationToken);
+            .Select(x => new TerminalCandidate(x.Id, x.Revision, x.SubscriptionId,
+                x.TerminalAt!.Value, x.WorkflowInstanceId)).ToListAsync(cancellationToken);
     }
 
     private static int SaturatingAdd(int left, int right) => (int)Math.Min(int.MaxValue, (long)left + right);
     private sealed record TerminalCursor(DateTimeOffset TerminalAt, string Id);
-    private sealed record TerminalCandidate(string Id, long Revision, string SubscriptionId, string ConfigurationFingerprint,
-        long ActivationEpoch, DateTimeOffset TerminalAt, string? WorkflowInstanceId);
+    private sealed record TerminalCandidate(string Id, long Revision, string SubscriptionId,
+        DateTimeOffset TerminalAt, string? WorkflowInstanceId);
 }
