@@ -59,7 +59,8 @@ public static class AdmissionRuntimeHost
     }
 
     public static ServiceProvider CreateServices(string connectionString, AdmissionRuntimeProbe probe, bool shell = false,
-        Action<IServiceCollection>? configure = null, IInterceptor? admissionInterceptor = null)
+        Action<IServiceCollection>? configure = null, IInterceptor? admissionInterceptor = null,
+        Action<IServiceCollection>? configureBeforeAdmission = null)
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -137,6 +138,7 @@ public static class AdmissionRuntimeHost
         var binding = CompileBinding();
         var host = new AdmissionHostConfiguration(AdmissionWorkerHost.TenantId, AdmissionWorkerHost.EnvironmentId,
             ReviewedTypes(), [typeof(Workflow), typeof(AdmissionRuntimeActivity)], [binding.Configuration]);
+        configureBeforeAdmission?.Invoke(services);
         if (shell)
         {
             new Elsa.Workflows.Admission.ShellFeatures.AdmissionFeature { Configuration = host }.ConfigureServices(services);
