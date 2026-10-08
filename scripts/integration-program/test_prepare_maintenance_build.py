@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+import xml.etree.ElementTree as ET
 import zipfile
 
 import prepare_maintenance_build as maintenance
@@ -31,14 +32,49 @@ class MaintenanceContracts(unittest.TestCase):
         self.row = self.register['sources'][0]
         (self.root / 'test-inventory.json').write_text(json.dumps([{'project': 'Fixture.Tests.csproj', 'assembly_name': 'Fixture.Tests', 'frameworks': ['net8.0']}]))
 
-    def write_trx_fixture(self, product='studio', name='private-runner-host', assembly=None):
+    def write_trx_fixture(self, product='studio', name='private-runner-host', assembly=None,
+                          counters=None, outcomes=None, test_class='Fixture.Tests', method='Runs'):
         results = self.root / ('test-results' if product == 'studio' else 'source/testresults')
         results.mkdir(parents=True, exist_ok=True)
         assembly = assembly or self.root / 'source/bin/Release/net8.0/Fixture.Tests.dll'
+        outcomes = ['Passed'] * 3 if outcomes is None else outcomes
+        counters = counters or {'total': len(outcomes), 'executed': len(outcomes), 'passed': len(outcomes),
+                                'failed': 0, 'notExecuted': 0}
+        tree = ET.Element('TestRun')
+        ET.SubElement(ET.SubElement(tree, 'ResultSummary', outcome='Completed'), 'Counters',
+                      {key: str(value) for key, value in (dict.fromkeys(maintenance.TRX_COUNTERS, 0) | counters).items()})
+        definitions, results_element = ET.SubElement(tree, 'TestDefinitions'), ET.SubElement(tree, 'Results')
+        entries = ET.SubElement(tree, 'TestEntries')
+        for index, outcome in enumerate(outcomes):
+            identifier = f'test-{index}'
+            definition = ET.SubElement(definitions, 'UnitTest', id=identifier)
+            ET.SubElement(definition, 'Execution', id=f'execution-{index}')
+            ET.SubElement(entries, 'TestEntry', testId=identifier, executionId=f'execution-{index}')
+            ET.SubElement(definition, 'TestMethod', codeBase=str(assembly), className=test_class, name=method)
+            ET.SubElement(results_element, 'UnitTestResult', testId=identifier, executionId=f'execution-{index}', outcome=outcome)
         path = results / (name + '.trx')
-        path.write_text(f'<TestRun><ResultSummary><Counters total="3" passed="3" failed="0" private="private-secret-host" /></ResultSummary>'
-            f'<TestDefinitions><UnitTest><TestMethod codeBase="{assembly}" /></UnitTest></TestDefinitions></TestRun>')
+        path.write_text(ET.tostring(tree, encoding='unicode'))
         return path
+
+    def write_placeholder_fixture(self):
+        source = self.root / 'source'
+        source.mkdir(exist_ok=True)
+        # Immutable object reads only; no checkout or product build is needed.
+        gitdir = maintenance.git(maintenance.ROOT, 'rev-parse', '--absolute-git-dir')
+        (source / '.git').write_text('gitdir: ' + gitdir + '\n')
+        tests = [{'project': 'Fixture.Tests.csproj', 'assembly_name': 'Fixture.Tests', 'frameworks': ['net8.0']}]
+        paths = []
+        policies = self.register['inherited_skipped_placeholders']
+        for index, policy in enumerate(policies):
+            assembly_name = Path(policy['project']).stem
+            tests.append({'project': policy['project'], 'assembly_name': assembly_name, 'frameworks': [policy['framework']]})
+            assembly = source / Path(policy['project']).parent / 'bin/Release' / policy['framework'] / (assembly_name + '.dll')
+            paths.append(self.write_trx_fixture('extensions', f'0{index}-placeholder', assembly,
+                {'total': 1, 'executed': 0, 'passed': 0, 'failed': 0, 'notExecuted': 0}, ['NotExecuted'],
+                policy['class'], policy['method']))
+        (self.root / 'test-inventory.json').write_text(json.dumps(tests))
+        paths.append(self.write_trx_fixture('extensions', '02-runnable'))
+        return paths
 
     def test_all_four_exact_sources_and_only_proof_versions_are_admitted(self):
         for row in self.register['sources']:
@@ -127,7 +163,7 @@ class MaintenanceContracts(unittest.TestCase):
     def test_missing_tests_cannot_be_reported_as_success(self):
         with self.assertRaises(ValueError):
             maintenance.verify_tests(self.root, self.row)
-        extension = next(row for row in self.register['sources'] if row['product'] == 'extensions')
+        extension = dict(next(row for row in self.register['sources'] if row['product'] == 'extensions'), commit='0' * 40)
         (self.root / 'command-00.log').write_text('Build succeeded.\n')
         with self.assertRaises(ValueError):
             maintenance.verify_tests(self.root, extension)
@@ -188,7 +224,7 @@ class MaintenanceContracts(unittest.TestCase):
                     self.assertIn('/p:EmbedUntrackedSources=true', command)
 
     def test_failed_extensions_test_evidence_retains_only_admitted_cells_and_counts(self):
-        row = next(row for row in self.register['sources'] if row['product'] == 'extensions')
+        row = dict(next(row for row in self.register['sources'] if row['product'] == 'extensions'), commit='0' * 40)
         known = self.root / 'source/bin/Release/net8.0/Fixture.Tests.dll'
         private = '/private/secret-token/machine-host/Unknown.dll'
         for name, assembly in [('first', known), ('second', known), ('third', private)]:
@@ -197,12 +233,209 @@ class MaintenanceContracts(unittest.TestCase):
         with self.assertRaises(ValueError):
             maintenance.verify_tests(self.root, row, context)
         cell = {'project': 'Fixture.Tests.csproj', 'framework': 'net8.0'}
-        self.assertEqual(context, {'expected_cells': [cell],
-            'admitted_observed_cells': [cell | {'occurrences': 2}], 'unknown_path_count': 1,
-            'duplicate_cell_count': 1, 'positive_summary_count': 3, 'summary_count': 3})
+        self.assertEqual(context['expected_cells'], [cell])
+        self.assertEqual(context['admitted_observed_cells'], [cell | {'occurrences': 2}])
+        self.assertEqual(context['unknown_path_count'], 1)
+        self.assertEqual(context['duplicate_cell_count'], 1)
+        self.assertEqual(context['positive_summary_count'], 2)
+        self.assertEqual(context['summary_count'], 3)
+        self.assertEqual(context['unknown_test_identity_count'], 1)
+        self.assertEqual(context['failure_reasons'], ['test-cells-incomplete-or-duplicate', 'test-identity-unknown'])
         retained = json.dumps(context)
         for value in [str(self.root), 'secret-token', 'machine-host', 'Unknown.dll', '/private']:
             self.assertNotIn(value, retained)
+
+    def test_both_original_sources_separate_exact_placeholders_from_positive_tests(self):
+        for row in [row for row in self.register['sources'] if row['product'] == 'extensions']:
+            with self.subTest(commit=row['commit']):
+                self.write_placeholder_fixture()
+                context = {}
+                result = maintenance.verify_tests(self.root, row, context)
+                self.assertEqual(len(result['executions']), 1)
+                self.assertEqual(result['executions'][0]['counters']['passed'], 3)
+                placeholders = result['inherited_skipped_placeholders']
+                self.assertEqual(len(placeholders), 2)
+                for actual, policy in zip(placeholders, self.register['inherited_skipped_placeholders']):
+                    self.assertEqual(actual['source_commit'], row['commit'])
+                    self.assertEqual(actual['source_blob'], policy['source_blob'])
+                    self.assertEqual(actual['skip_reason'], policy['skip_reason'])
+                    self.assertEqual(actual['not_executed_result_count'], 1)
+                    self.assertEqual(actual['counters'], dict.fromkeys(maintenance.TRX_COUNTERS, 0) | {'total': 1})
+                self.assertEqual(context['positive_summary_count'], 1)
+                self.assertEqual(context['summary_count'], 3)
+                self.assertEqual(context['failure_reasons'], [])
+                self.assertNotIn(str(self.root), json.dumps(result))
+
+    def test_placeholder_policy_requires_immutable_blob_and_original_skip_declaration(self):
+        row = next(row for row in self.register['sources'] if row['product'] == 'extensions')
+        self.write_placeholder_fixture()
+        for field, changed in [('source_blob', '0' * 40), ('skip_reason', 'private-secret-host'),
+                               ('method', 'UnknownPrivateMethod'), ('class', 'Unknown.PrivateClass'),
+                               ('class', 'Elsa.ServiceBus.AzureServiceBus.ComponentTests.AzureServiceBus')]:
+            register = json.loads(json.dumps(self.register))
+            register['inherited_skipped_placeholders'][0][field] = changed
+            with self.subTest(field=field), patch.object(maintenance, 'load_register', return_value=register):
+                with self.assertRaises(ValueError) as rejected:
+                    maintenance.verify_tests(self.root, row)
+                self.assertNotIn(changed, str(rejected.exception))
+        with self.assertRaises(ValueError):
+            maintenance.verify_tests(self.root, dict(row, commit='0' * 40))
+        inventory = json.loads((self.root / 'test-inventory.json').read_text())
+        (self.root / 'test-inventory.json').write_text(json.dumps(inventory[:-1]))
+        with self.assertRaisesRegex(ValueError, 'placeholder inventory mismatch'):
+            maintenance.verify_tests(self.root, row)
+
+    def test_placeholder_runtime_requires_sole_known_linked_notexecuted_identity_and_exact_counts(self):
+        row = next(row for row in self.register['sources'] if row['product'] == 'extensions')
+        mutations = ['class', 'method', 'link', 'missing-result', 'extra-result', 'new-definition',
+                     'passed-outcome', 'failed-outcome', 'zero-counts', 'missing-file', 'duplicate-file',
+                     'nonoriginal-skip-counter', 'summary', 'missing-entry', 'entry-link', 'execution-link']
+        for mutation in mutations:
+            with self.subTest(mutation=mutation):
+                path = self.write_placeholder_fixture()[0]
+                tree = ET.parse(path)
+                method = tree.find('.//TestMethod')
+                result = tree.find('.//UnitTestResult')
+                counters = tree.find('.//Counters')
+                if mutation in ('class', 'method'):
+                    method.set('className' if mutation == 'class' else 'name', 'private-secret-identity')
+                elif mutation == 'link':
+                    result.set('testId', 'private-unlinked-id')
+                elif mutation == 'missing-result':
+                    tree.find('.//Results').remove(result)
+                elif mutation == 'extra-result':
+                    tree.find('.//Results').append(ET.fromstring(ET.tostring(result)))
+                elif mutation == 'new-definition':
+                    definition = ET.fromstring(ET.tostring(tree.find('.//UnitTest')))
+                    definition.set('id', 'private-new-id')
+                    definition.find('TestMethod').set('name', 'private-new-method')
+                    tree.find('.//TestDefinitions').append(definition)
+                    extra = ET.fromstring(ET.tostring(result)); extra.set('testId', 'private-new-id')
+                    tree.find('.//Results').append(extra)
+                    counters.set('total', '2'); counters.set('notExecuted', '2')
+                elif mutation in ('passed-outcome', 'failed-outcome'):
+                    result.set('outcome', 'Passed' if mutation == 'passed-outcome' else 'Failed')
+                elif mutation == 'zero-counts':
+                    counters.set('total', '0')
+                elif mutation == 'nonoriginal-skip-counter':
+                    counters.set('notExecuted', '1')
+                elif mutation == 'summary':
+                    tree.find('.//ResultSummary').set('outcome', 'Failed')
+                elif mutation == 'missing-entry':
+                    tree.find('.//TestEntries').clear()
+                elif mutation == 'entry-link':
+                    tree.find('.//TestEntry').set('testId', 'private-unknown-entry')
+                elif mutation == 'execution-link':
+                    result.set('executionId', 'private-unknown-execution')
+                tree.write(path)
+                if mutation == 'missing-file':
+                    path.unlink()
+                duplicate = path.with_name('duplicate-placeholder.trx')
+                if mutation == 'duplicate-file':
+                    duplicate.write_bytes(path.read_bytes())
+                context = {}
+                with self.assertRaises(ValueError):
+                    maintenance.verify_tests(self.root, row, context)
+                if duplicate.exists():
+                    duplicate.unlink()
+                self.assertNotIn('private-secret-identity', json.dumps(context))
+                self.assertNotIn('private-new', json.dumps(context))
+                self.assertEqual(context['positive_summary_count'], 1)  # Later runnable cell still collected.
+
+    def test_runnable_cells_reject_unexpected_skips_failures_zero_and_duplicate_test_identities(self):
+        for mutation in ['skip', 'failure', 'zero', 'unexpected-outcome', 'duplicate-id', 'missing-method']:
+            with self.subTest(mutation=mutation):
+                path = self.write_trx_fixture()
+                tree = ET.parse(path)
+                counters = tree.find('.//Counters')
+                result = tree.find('.//UnitTestResult')
+                if mutation in ('skip', 'failure'):
+                    result.set('outcome', 'NotExecuted' if mutation == 'skip' else 'Failed')
+                    counters.set('passed', '2')
+                    counters.set('notExecuted' if mutation == 'skip' else 'failed', '1')
+                elif mutation == 'zero':
+                    for name in ('total', 'executed', 'passed'):
+                        counters.set(name, '0')
+                    tree.find('.//Results').clear()
+                    tree.find('.//TestDefinitions').clear()
+                elif mutation == 'unexpected-outcome':
+                    result.set('outcome', 'private-secret-outcome')
+                elif mutation == 'duplicate-id':
+                    tree.findall('.//UnitTestResult')[1].set('testId', result.get('testId'))
+                else:
+                    definition = tree.find('.//UnitTest')
+                    definition.remove(definition.find('TestMethod'))
+                tree.write(path)
+                context = {}
+                with self.assertRaises(ValueError):
+                    maintenance.verify_tests(self.root, self.row, context)
+                self.assertNotIn('private-secret-outcome', json.dumps(context))
+
+    def test_failed_first_cell_still_collects_later_known_counters_and_unknown_names_stay_private(self):
+        row = next(row for row in self.register['sources'] if row['product'] == 'extensions')
+        paths = self.write_placeholder_fixture()
+        tree = ET.parse(paths[0]); tree.find('.//Counters').set('passed', '1'); tree.write(paths[0])
+        self.write_trx_fixture('extensions', '03-unknown-private-host', '/private/secret-token/Unknown.dll',
+                               test_class='private-secret-class', method='private-secret-method')
+        context = {}
+        with self.assertRaises(ValueError):
+            maintenance.verify_tests(self.root, row, context)
+        self.assertEqual(len(context['cells']), 3)
+        self.assertEqual(context['positive_summary_count'], 1)
+        self.assertEqual(context['summary_count'], 4)
+        self.assertEqual(context['unknown_path_count'], 1)
+        self.assertEqual(len(context['inherited_skipped_placeholders']), 1)
+        self.assertEqual(context['cells'][0]['counters']['passed'], 1)
+        for private in ['secret-token', 'Unknown.dll', 'private-secret', '03-unknown-private-host', str(self.root)]:
+            self.assertNotIn(private, json.dumps(context))
+
+    def test_all_standard_failure_counters_and_summary_schema_fail_closed_for_both_categories(self):
+        row = next(row for row in self.register['sources'] if row['product'] == 'extensions')
+        names = [name for name in maintenance.TRX_COUNTERS if name not in ('total', 'executed', 'passed')]
+        for category in ['placeholder', 'runnable']:
+            for field in [*names, 'missing-counter', 'unknown-counter', 'malformed-counter', 'failed-summary']:
+                with self.subTest(category=category, field=field):
+                    paths = self.write_placeholder_fixture()
+                    path = paths[0] if category == 'placeholder' else paths[-1]
+                    tree = ET.parse(path); counters = tree.find('.//Counters')
+                    if field == 'missing-counter':
+                        del counters.attrib['error']
+                    elif field == 'unknown-counter':
+                        counters.set('private-secret-counter', '1')
+                    elif field == 'malformed-counter':
+                        counters.set('timeout', 'private-secret-value')
+                    elif field == 'failed-summary':
+                        tree.find('.//ResultSummary').set('outcome', 'Failed')
+                    else:
+                        counters.set(field, '1')
+                    tree.write(path)
+                    context = {}
+                    with self.assertRaises(ValueError):
+                        maintenance.verify_tests(self.root, row, context)
+                    self.assertNotIn('private-secret', json.dumps(context))
+
+    def test_empty_documents_require_real_bodyless_nonreference_metadata(self):
+        prefix = f"https://raw.githubusercontent.com/{self.row['source_repository']}/{self.row['commit']}/"
+        details = {'documents': [], 'source_link': {'documents': {'/_/*': prefix + '*'}},
+                   'executable_method_bodies': 0, 'nonabstract_methods_without_body': 0,
+                   'native_or_external_methods': 0, 'nonmodule_types': 2, 'reference_assembly': False}
+        self.assertEqual(maintenance.verify_documents(details, maintenance.ROOT, self.row), [])
+        for field in ['executable_method_bodies', 'nonabstract_methods_without_body', 'native_or_external_methods']:
+            for value in [1, -1, None, False, '0']:
+                with self.subTest(field=field, value=value), self.assertRaises(ValueError):
+                    maintenance.verify_documents(details | {field: value}, maintenance.ROOT, self.row)
+        for field, value in [('nonmodule_types', 0), ('nonmodule_types', False), ('nonmodule_types', -1),
+                             ('reference_assembly', True), ('reference_assembly', None), ('reference_assembly', 0)]:
+            with self.subTest(field=field, value=value), self.assertRaises(ValueError):
+                maintenance.verify_documents(details | {field: value}, maintenance.ROOT, self.row)
+        for field in ['executable_method_bodies', 'nonabstract_methods_without_body', 'native_or_external_methods',
+                      'nonmodule_types', 'reference_assembly']:
+            missing = dict(details); missing.pop(field)
+            with self.subTest(missing=field), self.assertRaises(ValueError):
+                maintenance.verify_documents(missing, maintenance.ROOT, self.row)
+        for maps in [{}, {'/_/*': 'https://example.invalid/*'}]:
+            with self.subTest(maps=maps), self.assertRaises(ValueError):
+                maintenance.verify_documents(details | {'source_link': {'documents': maps}}, maintenance.ROOT, self.row)
 
     def test_inventory_records_explicit_source_build_output_and_assembly_identity(self):
         source = self.root / 'source'; source.mkdir()
@@ -353,7 +586,7 @@ class MaintenanceContracts(unittest.TestCase):
     def test_trx_binds_actual_project_and_framework_rejecting_duplicate_positive_cells(self):
         for product in ['studio', 'extensions']:
             with self.subTest(product=product):
-                row = next(row for row in self.register['sources'] if row['product'] == product)
+                row = dict(next(row for row in self.register['sources'] if row['product'] == product), commit='0' * 40)
                 path = self.write_trx_fixture(product)
                 receipt = maintenance.verify_tests(self.root, row)
                 self.assertEqual(receipt['executions'][0]['project'], 'Fixture.Tests.csproj')
@@ -429,6 +662,11 @@ class MaintenanceContracts(unittest.TestCase):
         for index, (message, expected) in enumerate([
                 ('Packed repository provenance mismatch', 'package-repository-mismatch'),
                 ('Tracked source checksum mismatch', 'source-checksum-mismatch'),
+                ('Unexpected evaluated version', 'evaluated-version-mismatch'),
+                ('Unexpected evaluated version: private-secret /private/runner-host', 'evaluated-version-mismatch'),
+                ('Unexpected Elsa dependency: private-secret /private/runner-host', 'elsa-dependency-mismatch'),
+                ('Unexpected Elsa dependency suffix: private-secret', 'unknown-check-failure'),
+                ('Command failed: Unexpected Elsa dependency: private-secret', 'unknown-check-failure'),
                 ('secret-password /private/runner-host-42', 'unknown-check-failure')]):
             output = self.root / f'proof-{index}'
             with patch.object(maintenance, 'verify_source', side_effect=ValueError(message)):

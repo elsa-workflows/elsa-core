@@ -92,5 +92,35 @@
       "commit": "e7d05ef930dfde2aa85bf9dcaf841e5a6ede0a1e",
       "build_admitted": false
     }
+  ],
+  "inherited_skipped_placeholders": [
+    {
+      "product": "extensions",
+      "commits": [
+        "154ba15fb4da85b4bebecfbe43639579cbda1d0d",
+        "89d4eb9b739ae135604aac2a1de18653a289bdb0"
+      ],
+      "project": "test/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj",
+      "framework": "net10.0",
+      "source_file": "test/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/AzureServiceBusTests.cs",
+      "source_blob": "e195c22612571d5b38536e350de2c6005afb613f",
+      "class": "Elsa.ServiceBus.AzureServiceBus.ComponentTests.AzureServiceBusTests",
+      "method": "WorkflowReceivesMessage_WhenSendingMessageToTopic",
+      "skip_reason": "TODO"
+    },
+    {
+      "product": "extensions",
+      "commits": [
+        "154ba15fb4da85b4bebecfbe43639579cbda1d0d",
+        "89d4eb9b739ae135604aac2a1de18653a289bdb0"
+      ],
+      "project": "test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj",
+      "framework": "net10.0",
+      "source_file": "test/modules/slack/Elsa.Slack.Tests/Activities/Channels/CreateChannelTests.cs",
+      "source_blob": "621aa53e57f8fddf339fcbea4579ec68bbb04a04",
+      "class": "Elsa.Slack.Tests.Activities.Channels.CreateChannelTests",
+      "method": "ExecuteAsync",
+      "skip_reason": "Not implemented yet."
+    }
   ]
 }

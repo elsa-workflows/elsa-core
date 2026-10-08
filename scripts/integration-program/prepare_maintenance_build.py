@@ -15,11 +15,13 @@ import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
 
-from prove_consolidated_packages import archive_names, dependency_groups, metadata, require, run, source_url
+from prove_consolidated_packages import archive_names, dependency_groups, metadata, only_abstract_methods, require, run, source_url
 
 ROOT = Path(__file__).resolve().parents[2]
 REGISTER = ROOT / 'docs/integration-program/maintenance-source-register.json'
 PROOF_BUILD_PROPERTIES = {'EmbedUntrackedSources': 'true'}
+TRX_COUNTERS = ('total', 'executed', 'passed', 'failed', 'error', 'timeout', 'aborted', 'inconclusive',
+                'passedButRunAborted', 'notRunnable', 'notExecuted', 'disconnected', 'warning', 'completed', 'inProgress', 'pending')
 
 
 def load_register() -> dict:
@@ -122,10 +124,25 @@ VERIFICATION_REASONS = {
     'Artifact must contain exactly one nuspec': 'archive-nuspec-count-invalid',
     'Nuspec metadata is missing': 'archive-nuspec-metadata-missing',
     'No required test framework executions': 'test-inventory-empty',
+    'Inherited placeholder source binding mismatch': 'placeholder-source-binding-invalid',
+    'Inherited placeholder source declaration mismatch': 'placeholder-source-declaration-invalid',
+    'Inherited placeholder inventory mismatch': 'placeholder-inventory-invalid',
+    'Test evidence rejected': 'test-evidence-invalid',
+    'Unexpected evaluated version': 'evaluated-version-mismatch',
+    'Unexpected Elsa dependency': 'elsa-dependency-mismatch',
     'Missing/failed tests': 'test-counts-invalid',
     'Unknown test project/framework identity': 'test-identity-unknown',
     'Missing/duplicate test project-framework results': 'test-cells-incomplete-or-duplicate',
 }
+
+
+def verification_reason(message: str) -> str:
+    if message in VERIFICATION_REASONS:
+        return VERIFICATION_REASONS[message]
+    for key in ('Unexpected evaluated version', 'Unexpected Elsa dependency'):
+        if message.startswith(key + ':'):
+            return VERIFICATION_REASONS[key]
+    return 'unknown-check-failure'
 
 
 def closed_diagnostics(log: Path) -> dict:
@@ -263,7 +280,10 @@ def verify_documents(details: dict, source: Path, row: dict) -> list[dict]:
             require(document.get('embedded_checksum') == checksum, 'Unmapped source document is not verified embedded content')
             evidence = {'path': f'[embedded]/document-{index + 1}', 'source': 'embedded'}
         documents.append(evidence | {'algorithm': document['algorithm'], 'checksum': checksum})
-    require(bool(documents), 'PDB source documents missing')
+    if not documents:
+        require(only_abstract_methods(details) and type(details.get('nonmodule_types')) is int and
+                details['nonmodule_types'] > 0 and details.get('reference_assembly') is False,
+                'PDB source documents missing')
     return documents
 
 
@@ -332,11 +352,17 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                                 source, env=build_environment()))
                             details = inspection['details']
                             require(details['assembly_name'] == policy['assembly_name'], 'Packaged assembly identity mismatch')
+                            source_evidence = {'documents': verify_documents(details, source, row)}
+                            if not source_evidence['documents']:
+                                source_evidence['source_applicability'] = {
+                                    'classification': 'no-documents-no-executable-method-bodies', 'document_count': 0,
+                                    **{key: details[key] for key in ('executable_method_bodies', 'nonabstract_methods_without_body',
+                                       'native_or_external_methods', 'nonmodule_types', 'reference_assembly')}}
                             symbols.append({'assembly': name, 'assembly_sha256': digest(dll.read_bytes()),
                                 'pdb': pdb_name, 'pdb_sha256': digest(pdb.read_bytes()), 'symbol': {key: inspection['symbol'][key] for key in ('key', 'pdb_name', 'guid', 'stamp',
                                     'checksum_algorithm', 'declared_checksum', 'normalized_checksum', 'pdb_sha256', 'pdb_size')}, 'assembly_version': details['assembly_version'],
                                 'informational_version': details['informational_version'],
-                                'documents': verify_documents(details, source, row)})
+                                **source_evidence})
                 receipts.append({'id': identifier, 'version': version, 'frameworks': frameworks,
                     'assembly_name': policy['assembly_name'], 'include_build_output': policy['include_build_output'],
                     'satellites': policy['satellites'],
@@ -350,6 +376,28 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
     return receipts
 
 
+def placeholder_policies(source: Path, row: dict) -> dict:
+    policies = {}
+    for policy in load_register()['inherited_skipped_placeholders']:
+        if row['product'] != policy['product'] or row['commit'] not in policy['commits']:
+            continue
+        locator = row['commit'] + ':' + policy['source_file']
+        require(git(source, 'rev-parse', locator) == policy['source_blob'], 'Inherited placeholder source binding mismatch')
+        text = git(source, 'show', locator)
+        namespace, name = policy['class'].rsplit('.', 1)
+        # These two reviewed immutable blobs contain one unconditional skipped
+        # Fact each. Check the explicit declarations, without parsing C#.
+        require(f'[Fact(Skip = "{policy["skip_reason"]}")]' in text and
+                f' {policy["method"]}(' in text and f'namespace {namespace};' in text and
+                any(line.split()[:3] == ['public', 'class', name] for line in text.splitlines()),
+                'Inherited placeholder source declaration mismatch')
+        key = policy['project'], policy['framework']
+        require(key not in policies, 'Inherited placeholder inventory mismatch')
+        policies[key] = {name: value for name, value in policy.items() if name not in ('commits', 'product')} | {
+            'source_commit': row['commit']}
+    return policies
+
+
 def verify_tests(output: Path, row: dict, context: dict | None = None) -> dict:
     tests = json.loads((output / 'test-inventory.json').read_text())
     source = output / 'source'
@@ -357,37 +405,96 @@ def verify_tests(output: Path, row: dict, context: dict | None = None) -> dict:
                     (test['assembly_name'] + '.dll')).resolve()):
                 {'project': test['project'], 'framework': framework}
                 for test in tests for framework in test['frameworks']}
-    require(bool(expected), 'No required test framework executions')
+    require(bool(expected) and len(expected) == sum(len(test['frameworks']) for test in tests),
+            'No required test framework executions')
     evidence = context if context is not None else {}
     evidence.update(expected_cells=list(expected.values()), admitted_observed_cells=[], unknown_path_count=0,
-                    duplicate_cell_count=0, positive_summary_count=0)
-    def record_cells(cells):
-        admitted = [cell for cell in cells if cell in expected]
-        evidence.update(admitted_observed_cells=[expected[cell] | {'occurrences': admitted.count(cell)}
-                        for cell in dict.fromkeys(admitted)], unknown_path_count=len(cells) - len(admitted),
-                        duplicate_cell_count=len(cells) - len(set(cells)))
-    cells, results = [], []
-    # Both original NUKE releases add a per-project TRX logger and, with the
-    # registered AnalyseCode=true recipe, write to RootDirectory/testresults.
+                    duplicate_cell_count=0, positive_summary_count=0, summary_count=0,
+                    cells=[], failure_reasons=[], unknown_test_identity_count=0, inherited_skipped_placeholders=[])
+    policies = placeholder_policies(source, row)
+    require(set(policies) <= {(cell['project'], cell['framework']) for cell in expected.values()},
+            'Inherited placeholder inventory mismatch')
+    cells, results, failures = [], [], set()
+    # Original NUKE adds TRX and its AnalyseCode=true recipe writes here.
     results_directory = output / 'test-results' if row['product'] == 'studio' else source / 'testresults'
-    evidence['summary_count'] = 0
     for path in sorted(results_directory.glob('*.trx')):
-        tree = ET.parse(path)
-        counters = tree.find('.//{*}Counters')
-        assemblies = {str(Path(method.get('codeBase', '')).resolve()) for method in tree.findall('.//{*}TestMethod')}
-        cells.extend(assemblies)
-        record_cells(cells)
         evidence['summary_count'] += 1
-        positive = counters is not None and int(counters.get('failed', '0')) == 0 and int(counters.get('passed', '0')) > 0
-        evidence['positive_summary_count'] += int(positive)
-        require(counters is not None and int(counters.get('total', '0')) > 0 and
-                int(counters.get('failed', '0')) == 0 and int(counters.get('passed', '0')) > 0, 'Missing/failed tests')
-        require(len(assemblies) == 1 and assemblies <= expected.keys(), 'Unknown test project/framework identity')
-        assembly = next(iter(assemblies))
-        results.append(expected[assembly] | {'counters': {name: int(counters.get(name, '0'))
-            for name in ('total', 'passed', 'failed', 'executed', 'notExecuted')}, 'sha256': digest(path.read_bytes())})
-    require(len(cells) == len(set(cells)) and set(cells) == expected.keys(), 'Missing/duplicate test project-framework results')
-    return {'executions': results}
+        cell, assemblies = None, set()
+        try:
+            tree = ET.parse(path)
+            methods = tree.findall('.//{*}TestDefinitions/{*}UnitTest/{*}TestMethod')
+            assemblies = {str(Path(method.get('codeBase', '')).resolve()) for method in methods}
+            cells.extend(assemblies)
+            if len(assemblies) != 1 or not assemblies <= expected.keys():
+                failures.add('test-identity-unknown')
+                evidence['unknown_test_identity_count'] += 1
+                continue
+            cell = expected[next(iter(assemblies))]
+            counter_elements = tree.findall('.//{*}Counters')
+            require(len(counter_elements) == 1, 'Missing/failed tests')
+            counters_element = counter_elements[0]
+            counters = {name: int(counters_element.get(name, '-1')) for name in TRX_COUNTERS}
+            require(all(value >= 0 for value in counters.values()), 'Missing/failed tests')
+        except (ET.ParseError, ValueError):
+            failures.add('test-counts-invalid')
+            # Retain the admitted cell even when its counts are malformed.
+            if cell is not None:
+                evidence['cells'].append(cell | {'status': 'invalid-counts'})
+            continue
+        diagnostic = cell | {'counters': counters, 'status': 'rejected'}
+        evidence['cells'].append(diagnostic)
+        if set(counters_element.attrib) != set(TRX_COUNTERS):
+            diagnostic['unknown_counter_count'] = len(set(counters_element.attrib) - set(TRX_COUNTERS))
+            failures.add('test-counter-schema-invalid')
+            continue
+        definitions = tree.findall('.//{*}TestDefinitions/{*}UnitTest')
+        outcomes = tree.findall('.//{*}Results/{*}UnitTestResult')
+        definition_ids = [definition.get('id') for definition in definitions]
+        result_ids = [result.get('testId') for result in outcomes]
+        linked = bool(definition_ids) and all(definition_ids) and len(set(definition_ids)) == len(definition_ids) and \
+            all(len(definition.findall('{*}TestMethod')) == 1 for definition in definitions) and \
+            len(set(result_ids)) == len(result_ids) and set(result_ids) == set(definition_ids)
+        policy = policies.get((cell['project'], cell['framework']))
+        receipt = cell | {'counters': counters, 'sha256': digest(path.read_bytes())}
+        summaries = tree.findall('.//{*}ResultSummary')
+        completed = len(summaries) == 1 and summaries[0].get('outcome') == 'Completed'
+        if policy is not None:
+            entries = tree.findall('.//{*}TestEntries/{*}TestEntry')
+            execution = definitions[0].find('{*}Execution') if len(definitions) == 1 else None
+            identity_matches = linked and len(definitions) == len(methods) == len(outcomes) == len(entries) == 1 and \
+                methods[0].get('className') == policy['class'] and methods[0].get('name') == policy['method'] and \
+                entries[0].get('testId') == definitions[0].get('id') and execution is not None and \
+                bool(execution.get('id')) and execution.get('id') == outcomes[0].get('executionId') == entries[0].get('executionId')
+            evidence['unknown_test_identity_count'] += int(not identity_matches)
+            not_executed = sum(result.get('outcome') == 'NotExecuted' for result in outcomes)
+            diagnostic['not_executed_result_count'] = not_executed
+            receipt['not_executed_result_count'] = not_executed
+            valid = identity_matches and not_executed == 1 and completed and \
+                counters == dict.fromkeys(TRX_COUNTERS, 0) | {'total': 1}
+            if valid:
+                diagnostic['status'] = 'inherited-skipped-placeholder'
+                evidence['inherited_skipped_placeholders'].append(receipt | policy)
+            else:
+                failures.add('placeholder-result-invalid')
+        else:
+            valid = linked and completed and counters['total'] == counters['executed'] == counters['passed'] == len(outcomes) > 0 and \
+                all(counters[name] == 0 for name in TRX_COUNTERS if name not in ('total', 'executed', 'passed')) and \
+                all(result.get('outcome') == 'Passed' for result in outcomes)
+            if valid:
+                diagnostic['status'] = 'passed'
+                evidence['positive_summary_count'] += 1
+                results.append(receipt)
+            else:
+                failures.add('test-counts-or-outcomes-invalid')
+    admitted = [cell for cell in cells if cell in expected]
+    evidence.update(admitted_observed_cells=[expected[cell] | {'occurrences': admitted.count(cell)}
+        for cell in dict.fromkeys(admitted)], unknown_path_count=len(cells) - len(admitted),
+        duplicate_cell_count=len(cells) - len(set(cells)))
+    if len(cells) != len(set(cells)) or set(cells) != expected.keys():
+        failures.add('test-cells-incomplete-or-duplicate')
+    evidence['failure_reasons'] = sorted(failures)
+    require(not failures, 'Test evidence rejected')
+    return {'executions': results, 'inherited_skipped_placeholders': evidence['inherited_skipped_placeholders']}
 
 
 def prepare(root: Path, row: dict, version: str, output: Path) -> dict:
@@ -445,7 +552,7 @@ def prepare(root: Path, row: dict, version: str, output: Path) -> dict:
         return receipt
     except Exception as error:
         receipt['error'] = {'code': receipt['stage'] + '-failed',
-                            'reason': VERIFICATION_REASONS.get(str(error), 'unknown-check-failure')}
+                            'reason': verification_reason(str(error))}
         raise
     finally:
         receipt['logs'] = [{'name': p.name, 'sha256': digest(p.read_bytes())} for p in sorted(output.glob('*.log'))]
