@@ -23,6 +23,7 @@ public sealed class AdmissionRuntimeProbe(string connectionString) : IAdmissionE
     public Func<WorkflowExecutionContext, Task>? OnRestored { get; set; }
     public WorkflowExecutionContext? PreparedContext { get; set; }
     public bool EnableVariable { get; set; }
+    public bool ResuspendOnResume { get; set; }
     public bool FailSavedNotification { get; set; }
     public bool FailRetract { get; set; }
     public bool FailPublication { get; set; }
@@ -134,6 +135,11 @@ public sealed class AdmissionRuntimeActivity : Activity
         if (probe.EnableVariable && context.GetVariable<string>("DurableProof") == "reloaded-variable")
         {
             await probe.IncrementAsync("variableLoadedCorrectly");
+        }
+        if (probe.ResuspendOnResume)
+        {
+            context.CreateBookmark(ResumeAsync);
+            return;
         }
         context.WorkflowExecutionContext.Output["Proof"] = "persisted-resume-output";
         await context.CompleteActivityAsync();
