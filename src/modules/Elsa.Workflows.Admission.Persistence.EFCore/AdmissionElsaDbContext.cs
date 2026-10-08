@@ -56,7 +56,7 @@ public sealed class AdmissionElsaDbContext(DbContextOptions<AdmissionElsaDbConte
         record.Property<string>("EnvironmentId").HasMaxLength(256).IsRequired();
         record.HasIndex(x => x.IdentityHash).IsUnique();
         record.HasIndex(x => x.WorkflowInstanceId).IsUnique();
-        record.HasIndex("TenantId", "EnvironmentId", nameof(AdmissionRecord.State), nameof(AdmissionRecord.AdmittedAt), nameof(AdmissionRecord.Id));
+        record.HasIndex("TenantId", "EnvironmentId", nameof(AdmissionRecord.Id)).HasFilter("\"State\" <> 'Terminal'");
         record.HasIndex(x => new { x.SubscriptionId, x.State, x.TerminalAt, x.Id });
         record.HasOne<AdmissionSubscription>().WithMany().HasForeignKey(x => x.SubscriptionId).OnDelete(DeleteBehavior.Restrict);
     }

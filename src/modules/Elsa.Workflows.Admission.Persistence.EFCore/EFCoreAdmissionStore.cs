@@ -109,7 +109,7 @@ public sealed class EFCoreAdmissionStore(
         {
             subscription.Active = false;
             subscription.Retired |= retire;
-            subscription.ReconciliationCode = reconciliationCode;
+            subscription.ReconciliationCode = reconciliationCode ?? subscription.ReconciliationCode;
             return true;
         }, cancellationToken);
     }
@@ -215,17 +215,21 @@ public sealed class EFCoreAdmissionStore(
         return record;
     }
 
-    public async Task<IReadOnlyList<AdmissionRecord>> FindRecoverableAsync(int limit, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<AdmissionRecord>> FindRecoverableAsync(int limit, string? afterId, CancellationToken cancellationToken = default)
     {
         if (limit is < 1 or > 1000)
         {
             throw new ArgumentOutOfRangeException(nameof(limit));
         }
+        if (afterId != null)
+        {
+            DemandCode(afterId);
+        }
         await using var db = await CreateAsync(cancellationToken);
         return await db.Admissions.AsNoTracking()
             .Where(x => EF.Property<string>(x, "TenantId") == scope.TenantId && EF.Property<string>(x, "EnvironmentId") == scope.EnvironmentId &&
-                x.State != AdmissionState.Terminal)
-            .OrderBy(x => x.State).ThenBy(x => x.AdmittedAt).ThenBy(x => x.Id).Take(limit).ToListAsync(cancellationToken);
+                x.State != AdmissionState.Terminal && (afterId == null || string.Compare(x.Id, afterId) > 0))
+            .OrderBy(x => x.Id).Take(limit).ToListAsync(cancellationToken);
     }
 
     public Task<AdmissionRecord?> BeginCreationAsync(string admissionId, long revision, string instanceId, CancellationToken cancellationToken = default)

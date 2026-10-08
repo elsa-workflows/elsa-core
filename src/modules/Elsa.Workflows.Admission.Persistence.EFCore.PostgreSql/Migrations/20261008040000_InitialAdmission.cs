@@ -68,7 +68,7 @@ public sealed class InitialAdmission(IElsaDbContextSchema schema) : Migration
         migrationBuilder.CreateIndex("IX_AdmissionSubscriptions_TenantId_EnvironmentId_Id", "AdmissionSubscriptions", new[] { "TenantId", "EnvironmentId", "Id" }, schema: schema.Schema, unique: false);
         migrationBuilder.CreateIndex("IX_Admissions_IdentityHash", "Admissions", new[] { "IdentityHash" }, schema: schema.Schema, unique: true);
         migrationBuilder.CreateIndex("IX_Admissions_WorkflowInstanceId", "Admissions", new[] { "WorkflowInstanceId" }, schema: schema.Schema, unique: true);
-        migrationBuilder.CreateIndex("IX_Admissions_TenantId_EnvironmentId_State_AdmittedAt_Id", "Admissions", new[] { "TenantId", "EnvironmentId", "State", "AdmittedAt", "Id" }, schema: schema.Schema, unique: false);
+        migrationBuilder.CreateIndex("IX_Admissions_TenantId_EnvironmentId_Id", "Admissions", new[] { "TenantId", "EnvironmentId", "Id" }, schema: schema.Schema, unique: false, filter: "\"State\" <> 'Terminal'");
         migrationBuilder.CreateIndex("IX_Admissions_SubscriptionId_State_TerminalAt_Id", "Admissions", new[] { "SubscriptionId", "State", "TerminalAt", "Id" }, schema: schema.Schema, unique: false);
     }
 

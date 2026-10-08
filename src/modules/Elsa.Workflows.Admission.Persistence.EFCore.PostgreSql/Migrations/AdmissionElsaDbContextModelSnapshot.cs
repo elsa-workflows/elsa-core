@@ -71,7 +71,7 @@ internal static class InitialAdmissionModel
             entity.HasKey("Id");
             entity.HasIndex("IdentityHash").IsUnique();
             entity.HasIndex("WorkflowInstanceId").IsUnique();
-            entity.HasIndex("TenantId", "EnvironmentId", "State", "AdmittedAt", "Id");
+            entity.HasIndex("TenantId", "EnvironmentId", "Id").HasFilter("\"State\" <> 'Terminal'");
             entity.HasIndex("SubscriptionId", "State", "TerminalAt", "Id");
             entity.ToTable("Admissions", ElsaDbContextBase.ElsaSchema);
         });
