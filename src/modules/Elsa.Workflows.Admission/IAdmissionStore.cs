@@ -52,7 +52,7 @@ public interface IAdmissionStore
     /// This method is never an automatic lease-expiry recovery operation.
     /// </summary>
     Task<AdmissionRecord?> ResolveAsync(string admissionId, long revision, AdmissionTerminalDisposition disposition,
-        string auditReference, bool establishedOwnerQuiescence, DateTimeOffset now, CancellationToken cancellationToken = default);
+        string auditReference, bool establishedOwnerQuiescence, bool noUnknownEffects, DateTimeOffset now, CancellationToken cancellationToken = default);
     /// <summary>
     /// Revision-checked cleanup of truly terminal records using TerminalAt clock and configured authority.
     /// Erases payload at its retention and identity at its horizon. Owned tombstones stay charged against retained-record capacity; only records without an allocated instance may be deleted and release retained capacity, exactly once.

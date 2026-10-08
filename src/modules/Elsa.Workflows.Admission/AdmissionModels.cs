@@ -96,6 +96,8 @@ public sealed class AdmissionRecord
     public string? IdentityHash { get; set; }
     public string? ProviderEventId { get; set; }
     public string? Payload { get; set; }
+    public string PayloadFingerprint { get; set; } = null!;
+    public string AdmittedConfigurationJson { get; set; } = null!;
     public string ConfigurationFingerprint { get; set; } = null!;
     public long ActivationEpoch { get; set; }
     public DateTimeOffset AdmittedAt { get; set; }
