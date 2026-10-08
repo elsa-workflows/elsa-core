@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "families": [
+    "identity",
+    "admission",
+    "create",
+    "permit",
+    "consume",
+    "entry",
+    "pipeline",
+    "binding",
+    "control",
+    "continue",
+    "withdraw",
+    "resolve",
+    "terminal",
+    "time",
+    "capacity",
+    "bootstrap",
+    "host",
+    "compat"
+  ],
+  "testProjects": [
+    {
+      "project": "test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj",
+      "filter": "FullyQualifiedName~WorkflowExecutionGuardTests",
+      "observations": false
+    },
+    {
+      "project": "test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj",
+      "filter": "FullyQualifiedName~AdmissionRuntimeTests|FullyQualifiedName~AdmissionBootstrapTests",
+      "observations": true
+    },
+    {
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "filter": "FullyQualifiedName~Admission",
+      "observations": true
+    }
+  ],
+  "buildProjects": [
+    "src/modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj",
+    "src/modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj",
+    "src/modules/Elsa.Workflows.Admission/Elsa.Workflows.Admission.csproj"
+  ],
+  "cases": [],
+  "workerAssemblies": {}
+}

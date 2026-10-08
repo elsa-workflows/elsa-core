@@ -1,0 +1,76 @@
+name: Offline admission proof
+
+on:
+  pull_request:
+    paths:
+      - 'src/modules/Elsa.Workflows.Core/**'
+      - 'src/modules/Elsa.Workflows.Runtime/**'
+      - 'src/modules/Elsa.Workflows.Admission/**'
+      - 'src/modules/Elsa.Connections*/**'
+      - 'test/unit/Elsa.Workflows.Core.UnitTests/**'
+      - 'test/integration/Elsa.Workflows.IntegrationTests/**'
+      - 'test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/**'
+      - 'test/workers/Elsa.Workflows.Admission.WorkerProcess/**'
+      - 'scripts/integration-program/run_admission_proof.py'
+      - 'scripts/integration-program/test_admission_proof.py'
+      - 'scripts/integration-program/admission-proof-cases.json'
+      - 'scripts/integration-program/run_execution_cycle_proof.py'
+      - 'scripts/integration-program/run_current_import_affected_tests.py'
+      - 'scripts/integration-program/package_closure.py'
+      - '.github/workflows/admission-proof.yml'
+      - 'Directory.*'
+      - 'global.json'
+      - 'NuGet.Config'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: admission-proof-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  admission-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      EXPECTED_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+      - name: Check fail-closed evidence contracts
+        run: |
+          python -m unittest discover -s scripts/integration-program -p test_admission_proof.py
+          python -O -m unittest discover -s scripts/integration-program -p test_admission_proof.py
+      - name: Compile fixtures, run offline cases and build production serially
+        run: |
+          python scripts/integration-program/run_admission_proof.py \
+            --expected-head "$EXPECTED_HEAD" --output "$RUNNER_TEMP/admission-proof"
+      - name: Validate retained evidence boundary
+        id: retained
+        if: always()
+        run: |
+          python scripts/integration-program/run_admission_proof.py --validate-retained \
+            --expected-head "$EXPECTED_HEAD" --output "$RUNNER_TEMP/admission-proof/retained"
+      - name: Retain sanitized receipt only
+        if: always() && steps.retained.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: admission-proof-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/admission-proof/retained/receipt.json
+          if-no-files-found: error
+          retention-days: 14
