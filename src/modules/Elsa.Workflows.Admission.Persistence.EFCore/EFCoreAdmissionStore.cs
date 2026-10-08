@@ -9,11 +9,29 @@ namespace Elsa.Workflows.Admission.Persistence.EFCore;
 /// Subscription-serialized ledger transactions. The selected provider lock includes absent subscriptions.
 /// No retry strategy or commit readback is used: any uncertain commit propagates to the caller.
 /// </summary>
-public sealed class EFCoreAdmissionStore(
-    IDbContextFactory<AdmissionElsaDbContext> factory,
-    AdmissionPersistenceScope scope,
-    IAdmissionTransactionLock transactionLock) : IAdmissionStore
+public sealed class EFCoreAdmissionStore : IAdmissionStore
 {
+    private readonly IDbContextFactory<AdmissionElsaDbContext> factory;
+    private readonly AdmissionPersistenceScope scope;
+    private readonly IAdmissionTransactionLock transactionLock;
+    private readonly IAdmissionIdentityConflictReader[] identityConflictReaders;
+
+    /// <summary>Preserves the ordinary Admission construction path without sibling reservations.</summary>
+    public EFCoreAdmissionStore(IDbContextFactory<AdmissionElsaDbContext> factory, AdmissionPersistenceScope scope, IAdmissionTransactionLock transactionLock)
+        : this(factory, scope, transactionLock, [])
+    {
+    }
+
+    /// <summary>Selected siblings participate in the caller's existing locked transaction.</summary>
+    public EFCoreAdmissionStore(IDbContextFactory<AdmissionElsaDbContext> factory, AdmissionPersistenceScope scope,
+        IAdmissionTransactionLock transactionLock, IEnumerable<IAdmissionIdentityConflictReader> identityConflictReaders)
+    {
+        this.factory = factory;
+        this.scope = scope;
+        this.transactionLock = transactionLock;
+        this.identityConflictReaders = identityConflictReaders.ToArray();
+    }
+
     public async Task<AdmissionSubscription> ProvisionAsync(AdmissionSubscriptionConfiguration configuration, CancellationToken cancellationToken = default)
     {
         ValidateConfiguration(configuration);
@@ -149,6 +167,13 @@ public sealed class EFCoreAdmissionStore(
             return Rejected(configuration.Policy.InvalidEventDisposition);
         }
         var identity = AdmissionHash.Identity(configuration, message.ProviderEventId);
+        foreach (var reader in identityConflictReaders)
+        {
+            if (await reader.HasConflictAsync(db, identity, cancellationToken))
+            {
+                return new(AdmissionOutcome.Quarantined, null, null);
+            }
+        }
         var duplicate = await db.Admissions.SingleOrDefaultAsync(x => x.IdentityHash == identity, cancellationToken);
         if (duplicate != null)
         {
