@@ -27,7 +27,7 @@ public interface IAdmissionStore
     /// <summary>CAS Admitted→Creating, allocating instance identity before insert-only workflow creation. Requires active binding.</summary>
     Task<AdmissionRecord?> BeginCreationAsync(string admissionId, long revision, string instanceId, CancellationToken cancellationToken = default);
     /// <summary>CAS Creating→Materialized only after definite insertion AND notification completion.</summary>
-    Task<AdmissionRecord?> CompleteCreationAsync(string admissionId, long revision, CancellationToken cancellationToken = default);
+    Task<AdmissionRecord?> CompleteCreationAsync(string admissionId, long revision, string materializedStateFingerprint, CancellationToken cancellationToken = default);
     /// <summary>
     /// CAS Materialized/ExecutionObserved→StartPreparing. Continuation requires exact checkpoint and unconsumed bookmark;
     /// initial entry requires null checkpoint/bookmark. Requires active binding and no outstanding authority.
