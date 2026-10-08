@@ -103,7 +103,8 @@ public sealed class AdmissionBootstrapService(
         try
         {
             var publisher = ActivatorUtilities.CreateInstance<WorkflowDefinitionPublisher>(services);
-            await publisher.RetractAsync(withdrawn.Configuration.DefinitionVersionId, cancellationToken);
+            var definition = await ReloadVerifiedAsync(withdrawn.Configuration, true, cancellationToken);
+            await publisher.RetractAsync(definition, cancellationToken);
         }
         catch
         {

@@ -33,9 +33,9 @@ public sealed class AdmissionRuntimeProbe(string connectionString) : IAdmissionE
     {
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
-        await using var command = new NpgsqlCommand("CREATE TABLE IF NOT EXISTS \"AdmissionRuntimeProofCounters\" (\"Name\" text PRIMARY KEY, \"Value\" integer NOT NULL)", connection);
+        await using var command = new NpgsqlCommand("CREATE TABLE IF NOT EXISTS \"Elsa\".\"AdmissionRuntimeProofCounters\" (\"Name\" text PRIMARY KEY, \"Value\" integer NOT NULL)", connection);
         await command.ExecuteNonQueryAsync();
-        await using var variables = new NpgsqlCommand("CREATE TABLE IF NOT EXISTS \"AdmissionRuntimeProofVariables\" (\"InstanceId\" text NOT NULL, \"VariableId\" text NOT NULL, \"Value\" text NOT NULL, PRIMARY KEY (\"InstanceId\", \"VariableId\"))", connection);
+        await using var variables = new NpgsqlCommand("CREATE TABLE IF NOT EXISTS \"Elsa\".\"AdmissionRuntimeProofVariables\" (\"InstanceId\" text NOT NULL, \"VariableId\" text NOT NULL, \"Value\" text NOT NULL, PRIMARY KEY (\"InstanceId\", \"VariableId\"))", connection);
         await variables.ExecuteNonQueryAsync();
     }
 
@@ -44,7 +44,7 @@ public sealed class AdmissionRuntimeProbe(string connectionString) : IAdmissionE
         _counts.AddOrUpdate(key, 1, (_, count) => count + 1);
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
-        await using var command = new NpgsqlCommand("INSERT INTO \"AdmissionRuntimeProofCounters\" (\"Name\", \"Value\") VALUES (@name, 1) ON CONFLICT (\"Name\") DO UPDATE SET \"Value\" = \"AdmissionRuntimeProofCounters\".\"Value\" + 1", connection);
+        await using var command = new NpgsqlCommand("INSERT INTO \"Elsa\".\"AdmissionRuntimeProofCounters\" AS counters (\"Name\", \"Value\") VALUES (@name, 1) ON CONFLICT (\"Name\") DO UPDATE SET \"Value\" = counters.\"Value\" + 1", connection);
         command.Parameters.AddWithValue("name", key);
         await command.ExecuteNonQueryAsync();
     }
@@ -53,7 +53,7 @@ public sealed class AdmissionRuntimeProbe(string connectionString) : IAdmissionE
     {
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
-        await using var command = new NpgsqlCommand("SELECT \"Value\" FROM \"AdmissionRuntimeProofCounters\" WHERE \"Name\" = @name", connection);
+        await using var command = new NpgsqlCommand("SELECT \"Value\" FROM \"Elsa\".\"AdmissionRuntimeProofCounters\" WHERE \"Name\" = @name", connection);
         command.Parameters.AddWithValue("name", key);
         return (await command.ExecuteScalarAsync()) is int count ? count : 0;
     }

@@ -214,9 +214,11 @@ public sealed class AdmissionRuntimeRecoveryTests(PostgreSqlConnectionsFixture f
                 await bookmarks.SaveAsync(stored);
             }
             var executing = host.Probe.Count("workflowExecuting");
+            var started = host.Probe.Count("workflowStarted");
             var resumes = host.Probe.Count("activityResumes");
             await Assert.ThrowsAsync<InvalidOperationException>(() => client.RunInstanceAsync(new RunWorkflowInstanceRequest { BookmarkId = bookmark.Id }));
             Assert.Equal(executing, host.Probe.Count("workflowExecuting"));
+            Assert.Equal(started, host.Probe.Count("workflowStarted"));
             Assert.Equal(resumes, host.Probe.Count("activityResumes"));
             Assert.Equal(1, host.Probe.Count("activityEffects"));
             Assert.Equal(scenario == "consumed-snapshot" ? 1 : 0, resumes);
