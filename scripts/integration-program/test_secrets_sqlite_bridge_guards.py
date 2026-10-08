@@ -18,6 +18,7 @@ class SecretsSqliteBridgeGuardTests(unittest.TestCase):
     def create_pinned_repo(root):
         for relative in (
             "src/Secrets.cs",
+            "src/Secrets.csproj",
             "Directory.Build.props",
             "Directory.Build.targets",
             "Directory.Packages.props",
@@ -84,7 +85,9 @@ class SecretsSqliteBridgeGuardTests(unittest.TestCase):
 
             runner_source = root / "scripts/integration-program/secrets-sqlite-bridge-contract/current-core"
             runner_source.mkdir(parents=True)
-            (runner_source / "CurrentCoreBridgeRunner.csproj").write_text("<Project />", encoding="utf-8")
+            (runner_source / "CurrentCoreBridgeRunner.csproj").write_text(
+                '<Project><ItemGroup><ProjectReference Include="../../../../core/src/Secrets.csproj" /></ItemGroup></Project>',
+                encoding="utf-8")
             (runner_source / "Program.cs").write_text("synthetic runner", encoding="utf-8")
             (runner_source / "obj").mkdir()
             (runner_source / "obj/project.assets.json").write_text("stale generated state", encoding="utf-8")
