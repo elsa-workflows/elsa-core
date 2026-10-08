@@ -8,7 +8,7 @@ using Nuke.Components;
 [CustomGitHubActions(
         "pr",
         GitHubActionsImage.UbuntuLatest,
-        OnPullRequestBranches = ["main", "patch/*", "develop/*", "release/*"],
+        OnPullRequestBranches = ["main", "patch/*", "develop/*", "release/*", "codex/elsa-integration-program"],
         OnPullRequestIncludePaths = ["**/*"],
         PublishArtifacts = false,
         InvokedTargets = [nameof(ICompile.Compile), nameof(ITest.Test)],

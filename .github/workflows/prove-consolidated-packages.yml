@@ -7,6 +7,11 @@ on:
       - 'scripts/integration-program/prove_consolidated*.py'
       - 'scripts/integration-program/test_prove_consolidated*.py'
       - 'scripts/integration-program/consolidated-package-consumer/**'
+      - 'scripts/integration-program/admission-package-consumer/**'
+      - 'scripts/integration-program/admission-package-consumer-contract.json'
+      - 'scripts/integration-program/verify_admission_package_consumers.py'
+      - 'scripts/integration-program/run_admission_proof.py'
+      - 'scripts/integration-program/run_secrets_postgresql_upgrade_fixture.py'
       - 'scripts/integration-program/VerifyPackageSymbolPair/**'
       - 'scripts/integration-program/build_studio_clientlibs.sh'
       - 'scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/**'
@@ -53,6 +58,7 @@ jobs:
         env:
           PROOF_VERSION: 3.10.0-proof.${{ github.run_id }}.${{ github.run_attempt }}
           PROOF_OUTPUT: ${{ runner.temp }}/consolidated-proof
+          TMPDIR: ${{ runner.temp }}
         run: |
           python3 scripts/integration-program/prove_consolidated_packages.py \
             --version "$PROOF_VERSION" --output "$PROOF_OUTPUT" --remote-sources

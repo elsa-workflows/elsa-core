@@ -62,6 +62,111 @@ class PackageProofTests(unittest.TestCase):
         self.assertEqual(128, len(result["packages"][0]["nupkg_sha512"]))
         self.assertEqual("lib/net8.0/Example.pdb", result["packages"][0]["assemblies"][0]["pdb"])
 
+    def test_sdk_required_framework_reference_cannot_disappear_from_archive(self):
+        self.row["expected_framework_reference_groups"] = [{"framework": "net8.0", "references": ["Microsoft.AspNetCore.App"]}]
+        with self.assertRaisesRegex(ValueError, "framework reference metadata/archive mismatch"):
+            proof.verify_metadata(self.nuspec(), self.row, self.manifest)
+
+    def test_sdk_mapped_build_asset_cannot_disappear_from_archive(self):
+        self.row["expected_sdk_assets"] = [{"path": "buildTransitive/Example.props", "source_path": "obj/Example.props",
+                                            "sha256": hashlib.sha256(b"evaluated output").hexdigest()}]
+        self.artifacts()
+        with self.assertRaisesRegex(ValueError, "SDK build/manifest asset inventory"):
+            proof.verify_artifacts(self.directory, self.manifest)
+
+    def framework_references(self, data, frameworks=("net8.0", "net9.0", "net10.0")):
+        references = ET.SubElement(data, "frameworkReferences")
+        for framework in frameworks:
+            group = ET.SubElement(references, "group", targetFramework=framework)
+            ET.SubElement(group, "frameworkReference", name="Microsoft.AspNetCore.App")
+        return data
+
+    def test_sdk_framework_reference_groups_bind_all_frameworks_and_symbols(self):
+        self.row["framework_properties"].update({framework: dict(self.row["framework_properties"]["net8.0"])
+                                                  for framework in ("net9.0", "net10.0")})
+        data = self.framework_references(self.nuspec())
+        expected = proof.framework_reference_groups(data)
+        self.row.update(expected_framework_reference_groups=expected, expected_symbol_framework_reference_groups=expected)
+        for symbols in (False, True):
+            proof.verify_metadata(data, self.row, self.manifest, symbols=symbols, require_sdk_metadata=True)
+            for mutate in (lambda element: element.find("frameworkReferences").remove(element.find("frameworkReferences/group")),
+                           lambda element: element.find("frameworkReferences/group/frameworkReference").set("name", "Microsoft.WindowsDesktop.App"),
+                           lambda element: element.find("frameworkReferences/group").append(ET.Element("frameworkReference", name="Microsoft.AspNetCore.App")),
+                           lambda element: element.find("frameworkReferences/group").set("targetFramework", "net7.0")):
+                changed = ET.fromstring(ET.tostring(data)); mutate(changed)
+                with self.subTest(symbols=symbols), self.assertRaises(ValueError):
+                    proof.verify_metadata(changed, self.row, self.manifest, symbols=symbols, require_sdk_metadata=True)
+
+    def test_fresh_verification_requires_metadata_while_immutable_history_stays_replayable(self):
+        self.artifacts()
+        proof.verify_artifacts(self.directory, self.manifest)
+        with self.assertRaisesRegex(ValueError, "framework reference metadata/archive mismatch"):
+            proof.verify_artifacts(self.directory, self.manifest, require_sdk_metadata=True)
+        self.row.update(expected_framework_reference_groups=[], expected_symbol_framework_reference_groups=[])
+        with self.assertRaisesRegex(ValueError, "Missing SDK build/manifest asset evidence"):
+            proof.verify_artifacts(self.directory, self.manifest, require_sdk_metadata=True)
+        self.row["expected_sdk_assets"] = []
+        proof.verify_artifacts(self.directory, self.manifest, require_sdk_metadata=True)
+        del self.row["expected_symbol_framework_reference_groups"]
+        with self.assertRaisesRegex(ValueError, "framework reference metadata/archive mismatch"):
+            proof.verify_artifacts(self.directory, self.manifest, require_sdk_metadata=True)
+
+    def sdk_file_fixture(self):
+        root = self.directory.resolve()
+        generated = root / "obj/Release/net8.0"
+        generated.mkdir(parents=True)
+        document = ET.Element("package")
+        files = ET.SubElement(document, "files")
+        for target, name in (("build/Example.props", "Example.props"), ("buildTransitive/Example.props", "Example.transitive.props"),
+                             ("buildMultiTargeting/Example.props", "Example.multi.props"), ("elsa-package.json", "elsa-package.json")):
+            source = generated / name
+            source.write_bytes(("evaluated " + target).encode())
+            ET.SubElement(files, "file", src=str(source), target=target)
+        return root, document
+
+    def test_concrete_sdk_build_and_manifest_mappings_bind_exact_archive_bytes(self):
+        root, document = self.sdk_file_fixture()
+        assets = proof.capture_sdk_assets(root, self.row, ET.tostring(document))
+        self.assertEqual(4, len(assets))
+        self.row["expected_sdk_assets"] = assets
+        self.artifacts()
+        with zipfile.ZipFile(self.directory / self.row["nupkg"], "a") as archive:
+            for asset in assets:
+                archive.writestr(asset["path"], (root / asset["source_path"]).read_bytes())
+        with zipfile.ZipFile(self.directory / self.row["nupkg"]) as archive:
+            proof.verify_sdk_assets(archive, self.row, required=True)
+        for extra, stale in ((True, False), (False, True)):
+            with zipfile.ZipFile(self.directory / "changed.zip", "w") as archive:
+                for asset in assets:
+                    archive.writestr(asset["path"], b"stale" if stale and asset["path"] == "elsa-package.json"
+                                     else (root / asset["source_path"]).read_bytes())
+                if extra:
+                    archive.writestr("build/net9.0/unexpected.targets", b"unexpected build effect")
+            with zipfile.ZipFile(self.directory / "changed.zip") as archive, self.assertRaises(ValueError):
+                proof.verify_sdk_assets(archive, self.row, required=True)
+
+    def test_sdk_mapping_rejects_glob_escape_symlink_and_ambiguous_target(self):
+        root, original = self.sdk_file_fixture()
+        for mutation in ("glob", "escape", "parent-symlink", "file-symlink", "duplicate", "unsafe-target"):
+            document = ET.fromstring(ET.tostring(original))
+            item = document.find("files/file")
+            if mutation == "glob":
+                item.set("src", str(root / "obj/*.props"))
+            elif mutation == "escape":
+                item.set("src", str(root.parent / "outside.props"))
+            elif mutation in ("parent-symlink", "file-symlink"):
+                source = Path(item.get("src"))
+                link = root / mutation
+                link.symlink_to(source.parent if mutation == "parent-symlink" else source,
+                                target_is_directory=mutation == "parent-symlink")
+                item.set("src", str(link / source.name if mutation == "parent-symlink" else link))
+            elif mutation == "duplicate":
+                document.find("files").append(ET.fromstring(ET.tostring(item)))
+            else:
+                item.set("target", "build/../escaped.props")
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                proof.capture_sdk_assets(root, self.row, ET.tostring(document))
+
     def test_missing_unexpected_and_retired_artifacts_fail(self):
         self.artifacts()
         (self.directory / self.row["snupkg"]).unlink()
@@ -180,6 +285,18 @@ class PackageProofTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "produced package output"):
             proof.read_staged_nuspecs(destination, self.row)
 
+    def test_sdk_staged_nuspecs_capture_actual_main_and_symbol_framework_references(self):
+        document = ET.Element("package")
+        document.append(self.framework_references(self.nuspec()))
+        data = ET.tostring(document)
+        for suffix in (".nuspec", ".symbols.nuspec"):
+            (self.directory / (self.row["nupkg"].removesuffix(".nupkg") + suffix)).write_bytes(data)
+        proof.read_staged_nuspecs(self.directory, self.row)
+        expected = [{"framework": framework, "references": ["Microsoft.AspNetCore.App"]}
+                    for framework in ("net10.0", "net8.0", "net9.0")]
+        self.assertEqual(expected, self.row["expected_framework_reference_groups"])
+        self.assertEqual(expected, self.row["expected_symbol_framework_reference_groups"])
+
     def test_sdk_metadata_stage_rejects_missing_or_unexpected_pair(self):
         self.staged_nuspecs(self.directory)
         symbol = self.directory / (self.row["nupkg"].removesuffix(".nupkg") + ".symbols.nuspec")
@@ -214,6 +331,57 @@ class PackageProofTests(unittest.TestCase):
                 archive.writestr("elsa-package.json", __import__("json").dumps(data))
             with zipfile.ZipFile(self.directory / self.row["nupkg"]) as archive, self.assertRaises(ValueError):
                 proof.verify_package_manifest(archive, self.row, VERSION)
+
+    def admission_manifest(self, identifier):
+        self.row["id"] = identifier
+        self.row["framework_properties"]["net8.0"].update(manifest_required=True, manifest_path="elsa-package.json")
+        return {"schemaVersion": "1.0", "package": {"id": identifier, "version": VERSION},
+                "extensions": {"targetFrameworks": ["net8.0"], "repositoryUrl": proof.CORE_URL},
+                "compatibility": {"runtimeKinds": ["elsa.server"]},
+                "features": [{"id": identifier + "." + name.rsplit(".", 1)[-1].removesuffix("Feature"), "typeName": name}
+                             for name in proof.ADMISSION_SHELL_FEATURES[identifier]]}
+
+    def check_manifest(self, data, *, strict=True):
+        archive_path = self.directory / "manifest-only.zip"
+        with zipfile.ZipFile(archive_path, "w") as archive:
+            if data is not None:
+                archive.writestr("elsa-package.json", __import__("json").dumps(data))
+        with zipfile.ZipFile(archive_path) as archive:
+            return proof.verify_package_manifest(archive, self.row, VERSION, require_sdk_metadata=strict)
+
+    def test_new_admission_catalog_requires_real_selectable_features_and_server_hint(self):
+        for identifier in ("Elsa.Workflows.Admission", "Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql"):
+            data = self.admission_manifest(identifier)
+            receipt = self.check_manifest(data)
+            self.assertEqual(["elsa.server"], receipt["runtime_kinds"])
+            self.assertEqual(1, len(receipt["selectable_features"]))
+            for mutate in (lambda value: value.update(features=[]), lambda value: value.pop("features"),
+                           lambda value: value["compatibility"].update(runtimeKinds=[]),
+                           lambda value: value["compatibility"].update(runtimeKinds=["elsa.studio"]),
+                           lambda value: value["features"][0].update(compatibility={"runtimeKinds": ["elsa.studio"]}),
+                           lambda value: value["features"].append(dict(value["features"][0])),
+                           lambda value: value["features"][0].update(id="Unrelated.Feature")):
+                changed = __import__("json").loads(__import__("json").dumps(data)); mutate(changed)
+                with self.subTest(identifier=identifier), self.assertRaises(ValueError):
+                    self.check_manifest(changed)
+            self.row["framework_properties"]["net8.0"]["manifest_required"] = False
+            with self.assertRaisesRegex(ValueError, "manifest is required"):
+                self.check_manifest(None)
+
+    def test_abstract_admission_ef_base_is_never_selectable_and_connections_stay_classic(self):
+        data = self.admission_manifest("Elsa.Workflows.Admission.Persistence.EFCore")
+        self.assertEqual([], self.check_manifest(data)["selectable_features"])
+        data["features"] = [{"id": self.row["id"] + ".EFCoreAdmissionPersistenceShellFeatureBase",
+                             "typeName": self.row["id"] + ".ShellFeatures.EFCoreAdmissionPersistenceShellFeatureBase"}]
+        with self.assertRaisesRegex(ValueError, "selectable feature mismatch"):
+            self.check_manifest(data)
+        # The older capability never claimed this new catalog check.
+        self.check_manifest(data, strict=False)
+        for identifier in ("Elsa.Connections", "Elsa.Connections.Credentials.Workflows", "Elsa.Connections.Credentials.Persistence.EFCore",
+                           "Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql"):
+            self.row["id"] = identifier
+            self.row["framework_properties"]["net8.0"]["manifest_required"] = False
+            self.assertIsNone(self.check_manifest(None))
 
     def inspection(self, relative, *, embedded=None, source=b"source"):
         return {"source_link": {"documents": {"/_/*": f"{proof.RAW_URL}{COMMIT}/*"}},
@@ -355,6 +523,16 @@ class PackageProofTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Missing resolved RuntimeIdentifier"):
             proof.capture_compiler_evidence(self.directory, self.row, "net8.0", resolved, cache)
 
+    def test_inventory_rejects_changed_source_bytes_at_same_clean_head(self):
+        output = self.directory / "evidence"
+        with patch("sys.argv", ["prove", "--version", VERSION, "--output", str(output), "--inventory-only"]), \
+                patch.object(proof, "clean_head", return_value=COMMIT), \
+                patch.object(proof, "source_input_hashes", side_effect=[{"src/a.cs": "a" * 64}, {"src/a.cs": "b" * 64}]), \
+                patch.object(proof, "inventory", return_value=self.manifest), \
+                self.assertRaisesRegex(ValueError, "Source changed"):
+            proof.main()
+        self.assertFalse((output / "receipt.json").exists())
+
     def test_staging_failure_keeps_package_bytes_without_acceptance_receipt(self):
         root = self.directory / "checkout"
         packages = root / "packages"
@@ -371,6 +549,7 @@ class PackageProofTests(unittest.TestCase):
         with patch.object(proof, "__file__", str(root / "scripts/integration-program/prove.py")), \
                 patch("sys.argv", ["prove", "--version", VERSION, "--output", str(output)]), \
                 patch.object(proof, "clean_head", return_value=COMMIT), \
+                patch.object(proof, "source_input_hashes", return_value={"src/example.cs": "a" * 64}), \
                 patch.object(proof, "inventory", return_value=self.manifest), \
                 patch.object(proof, "build_clientlibs", return_value={"assets": []}), \
                 patch.object(proof, "run", side_effect=pack), \
@@ -654,8 +833,17 @@ class PackageProofTests(unittest.TestCase):
                 self.assertEqual("false", guards[0].text)
         for path in (ROOT / "src/extensions/secrets").rglob("*.csproj"):
             self.assertEqual("false", ET.parse(path).findtext("./PropertyGroup/IsPackable"))
+        promoted = {
+            "Elsa.Connections", "Elsa.Connections.Credentials.Workflows",
+            "Elsa.Connections.Credentials.Persistence.EFCore", "Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql",
+            "Elsa.Workflows.Admission", "Elsa.Workflows.Admission.Persistence.EFCore",
+            "Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql",
+        }
+        for name in promoted:
+            path = ROOT / "src/modules" / name / (name + ".csproj")
+            self.assertIsNone(ET.parse(path).findtext("./PropertyGroup/IsPackable"))
         for path in (ROOT / "src/modules").glob("Elsa.Connections*/**/*.csproj"):
-            if "Credentials" in str(path):
+            if "Credentials" in str(path) and path.stem not in promoted:
                 self.assertEqual("false", ET.parse(path).findtext("./PropertyGroup/IsPackable"))
         self.assertNotIn("ConsolidatedPackageProof", (ROOT / ".github/workflows/packages.yml").read_text())
 

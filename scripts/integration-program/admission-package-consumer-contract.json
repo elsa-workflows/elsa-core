@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "rootKeys": [
+    "schemaVersion",
+    "sourceRevision",
+    "candidateVersion",
+    "tfm",
+    "feature",
+    "targetFramework",
+    "frameworkDescription",
+    "process",
+    "loadedAssemblies",
+    "scenarios"
+  ],
+  "processKeys": [
+    "pid",
+    "startIdentitySha256"
+  ],
+  "loadedAssemblyKeys": [
+    "name",
+    "fullName",
+    "version",
+    "informationalVersion",
+    "location",
+    "sha256"
+  ],
+  "scenarioKeys": [
+    "scenario",
+    "databaseIdentitySha256",
+    "serverVersion",
+    "assertions",
+    "counters",
+    "migrations",
+    "cleanup"
+  ],
+  "migrationKeys": [
+    "context",
+    "provider",
+    "schema",
+    "historyTable",
+    "knownIds",
+    "appliedIds",
+    "historyIds",
+    "reapplied",
+    "populatedPreserved"
+  ],
+  "scenarios": {
+    "admission": {
+      "assertions": {
+        "inactiveBootstrapVerified": true,
+        "activationPersisted": true,
+        "admissionCommitted": true,
+        "realGuardedRuntimeSelected": true,
+        "realBuiltInRunnerSelected": true,
+        "suspensionPersisted": true,
+        "bookmarkPersisted": true,
+        "checkpointRecorded": true,
+        "ownedEntriesDeniedWithoutEffects": true,
+        "genericManagementDenied": true,
+        "publicBackgroundDenied": true,
+        "publicLifecycleDenied": true,
+        "noImplicitGrant": true,
+        "storedGrantPolicyDenied": true,
+        "resolverDeniedBeforeBackground": true,
+        "legitimateResumeCompleted": true,
+        "terminalRecorded": true,
+        "ownershipUnwound": true,
+        "noMappedEndpoints": true,
+        "noSecretMarkers": true,
+        "providerNotCalled": true,
+        "migrationsReappliedPopulated": true
+      },
+      "counters": {
+        "activityExecutions": 1,
+        "activityResumes": 1,
+        "ownedEntryDenials": 11,
+        "managementDenials": 2,
+        "backgroundDenials": 1,
+        "lifecycleDenials": 2,
+        "providerCalls": 0,
+        "activeExecutionCycles": 0
+      },
+      "contexts": [
+        "SecretsElsaDbContext",
+        "ConnectionsElsaDbContext",
+        "ManagementElsaDbContext",
+        "RuntimeElsaDbContext",
+        "AdmissionElsaDbContext"
+      ],
+      "cleanup": {
+        "hostDisposed": true,
+        "executorsCreated": 1,
+        "maximumConcurrentExecutors": 1
+      }
+    },
+    "managed-secret-grant": {
+      "assertions": {
+        "nonAdmissionHostVerified": true,
+        "realLifecycleUsed": true,
+        "managedSecretEncrypted": true,
+        "bindingPersisted": true,
+        "twoRealWorkflowsSuspended": true,
+        "noResolutionBeforeGrant": true,
+        "exactInstanceGrantPersisted": true,
+        "ungrantedInstancePolicyDenied": true,
+        "sequentialRestartCompleted": true,
+        "grantSurvivedRestart": true,
+        "grantedWorkflowCompleted": true,
+        "ungrantedWorkflowCompletedDenied": true,
+        "oneCredentialResolution": true,
+        "realResolverAndStoresSelected": true,
+        "noSecretMarkers": true,
+        "providerNotCalled": true,
+        "migrationsReappliedPopulated": true
+      },
+      "counters": {
+        "workflowSuspensions": 2,
+        "credentialAttempts": 2,
+        "credentialSuccesses": 1,
+        "credentialDenials": 1,
+        "providerCalls": 0
+      },
+      "contexts": [
+        "SecretsElsaDbContext",
+        "ConnectionsElsaDbContext",
+        "ManagementElsaDbContext",
+        "RuntimeElsaDbContext"
+      ],
+      "cleanup": {
+        "hostDisposed": true,
+        "executorsCreated": 2,
+        "maximumConcurrentExecutors": 1
+      }
+    }
+  },
+  "migrationRules": {
+    "provider": "Npgsql.EntityFrameworkCore.PostgreSQL",
+    "schema": "Elsa",
+    "connectionsIds": [
+      "20260923225653_Initial",
+      "20260924125922_WorkflowCredentialUseGrants",
+      "20260924150000_DueCredentialLifecycleCandidates"
+    ],
+    "admissionIds": [
+      "20261008040000_InitialAdmission"
+    ]
+  },
+  "requiredAssemblies": [
+    "Elsa.Connections",
+    "Elsa.Connections.Credentials.Workflows",
+    "Elsa.Connections.Credentials.Persistence.EFCore",
+    "Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql",
+    "Elsa.Workflows.Admission",
+    "Elsa.Workflows.Admission.Persistence.EFCore",
+    "Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql"
+  ]
+}
