@@ -41,3 +41,4 @@
 * [2026-09-27. Decide connection metadata inspection with its own host policy](2026-09-27-dedicated-connection-metadata-inspection-policy.md)
 * [2026-09-28. Release the consolidated packages in lockstep and cut publishers over at 3.10.0](2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md)
 * [2026-10-08. Durable event admission with isolated local execution](2026-10-08-durable-event-admission-and-isolated-execution.md)
+* [2026-10-08. Give Core, Extensions and Studio separate root directories](2026-10-08-product-directory-boundaries.md)
