@@ -67,6 +67,13 @@ def verify() -> dict:
         require(old == new or old not in current, "Retired source remains active: " + old)
         if current[new][1] != identity[1]:
             changed.append(new)
+    metadata_path = "scripts/integration-program/product-layout.json"
+    require(set(moved) == set(destinations.values()) | {metadata_path},
+            "Pure move contains unexpected files beyond the relocation manifest")
+    require(moved[metadata_path][0] == "100644", "Relocation manifest mode changed")
+    original_config = json.loads(git("show", relocation + ":" + metadata_path))
+    expected_config = {key: value for key, value in config.items() if key != "relocationCommit"}
+    require(original_config == expected_config, "Relocation manifest differs from its original mapping")
     for key in destinations:
         parts = key.split("/")
         require(not any("/".join(parts[:n]) in destinations for n in range(1, len(parts))),
@@ -81,7 +88,7 @@ def verify() -> dict:
             "baselineFiles": len(original), "mappedFilesPresent": len(destinations),
             "pureMoveBlobsAndModesPreserved": True, "currentTrackedFiles": len(current),
             "subsequentContentChanges": sorted(changed),
-            "scope": "Inventory and move provenance; build/runtime acceptance is separate"}
+            "scope": "Git index inventory and exact pure-move provenance; working content and build/runtime acceptance are separate"}
 
 
 if __name__ == "__main__":
