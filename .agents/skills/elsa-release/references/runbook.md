@@ -6,7 +6,7 @@ Read this once at the start of a release. Codex operates the procedure; the user
 
 Helpers require Python 3.10+ on macOS/Linux, Git, GitHub CLI, and the SDKs required by the source repositories. They use the Python standard library.
 
-Use [elsa-profile.json](elsa-profile.json). This is the maintained default for repository names, dependency declarations, expected jobs, feeds, fixed-version exceptions, post-release website/documentation targets, and announcement destinations. It includes the fourth package stage, `Elsa.Templates`, whose source and embedded-reference policy is intentionally separate from the Core/Studio/Extensions release branches. Read [post-release site guidance](post-release-sites.md) for the content audit and receipt workflow. A custom `--profile` can change these for another environment; do not put credentials in it. Discover repository paths from the workspace/saved projects and verify each GitHub remote. Do not assume the user's saved checkouts are up to date.
+Use [elsa-profile.json](elsa-profile.json). This is the maintained default for repository names, dependency declarations, expected jobs, feeds, fixed-version exceptions, the Apps container image inventory, post-release website/documentation targets, and announcement destinations. It includes the fourth package stage, `Elsa.Templates`, whose source and embedded-reference policy is intentionally separate from the Core/Studio/Extensions release branches. Read [post-release site guidance](post-release-sites.md) for the content audit and receipt workflow. A custom `--profile` can change these for another environment; do not put credentials in it. Discover repository paths from the workspace/saved projects and verify each GitHub remote. Do not assume the user's saved checkouts are up to date.
 
 Default release branches are `release/<base-version>` for Core, Studio, and Extensions. Templates stable releases use freshly fetched `origin/main` because its documented `main` policy targets the latest stable Elsa release; Templates RC/preview releases use `origin/release/<base-version>` unless an explicit source is supplied. Fetch and inspect all required repositories before publishing Core. An explicit source such as `core=3.9.0-rc1` or `templates=origin/3.9.0-preview.2` overrides only that source. An absent branch or conflicting version needs a concrete source decision; the helper must not fall back to `HEAD`, silently publish a preview from Templates `main`, or manufacture a branch from an unrelated release line.
 
@@ -86,7 +86,9 @@ python3 <skill>/scripts/release_train.py --state <run>/state.json init \
   --version 3.9.0 --repos-root <parent-of-the-four-repositories>
 ```
 
-Optional arguments: `--kind stable|rc|preview`, `--repositories core studio extensions templates`, `--source core=3.9.0-rc1`, repeated `--pr <URL>`, `--no-announcements`, `--no-post-refresh`, and `--profile <JSON>`. The two flags are independent. For “draft announcements”, use `--no-announcements` for publication tracking and retain the explicit draft requirement in the task notes. A named subset includes its upstream repositories as verification-only dependencies; do not publish those implicitly. Selecting `templates` includes Core and Studio as verification-only upstreams and does not add Extensions. The post-release receipt scope contains only the selected repositories.
+Optional arguments: `--kind stable|rc|preview`, `--repositories core studio extensions templates`, `--source core=3.9.0-rc1`, repeated `--pr <URL>`, `--no-announcements`, `--no-post-refresh`, `--no-containers`, and `--profile <JSON>`. The flags are independent. `--no-containers` is only for an explicit user request to omit images. A named subset includes its upstream repositories as verification-only dependencies; do not publish those implicitly. Selecting `templates` includes Core and Studio as verification-only upstreams and does not add Extensions. The post-release receipt scope contains only the selected repositories.
+
+The container image scope follows package consumers: Core selects `server` and its generic `server` alias; Studio selects its five host images and generic Studio/WASM alias; Extensions selects all configured images; Templates alone selects no images. A Templates-only run must not publish unrelated Apps images. The generic aliases use exact release-version tags (`elsaworkflows/elsa-server:<version>` and `elsaworkflows/elsa-studio:<version>`); they do not update `latest` or `4`.
 
 Repeating `init` with identical inputs preserves progress. Conflicting inputs fail rather than overwrite an in-flight plan.
 
@@ -98,7 +100,7 @@ python3 <skill>/scripts/release_train.py --state <run>/state.json status
 
 The helper inspects current GitHub releases, resolved tag SHAs, exact release-event workflow runs, and successful required jobs. Verified package receipts are bound to manifest/report hashes and the immutable source. Stored `running` text is never evidence of a live job. Recheck actual package feeds on a long-delayed resume or any provenance concern.
 
-`adopt-existing` → reconstruct the binding at the returned immutable tag SHA, recover its published notes, generate the source inventory, download that release run’s artifacts and verify them; do not create another release. `prepare` → create an isolated worktree from the selected source, prepare and validate it. `publish` → run the reviewed release helper. `wait-for-run` → observe the returned run ID. `repair-pipeline` → diagnose that run. `verify-packages` → verify the downloaded artifacts. `wait-for-upstream` → complete the indicated dependency. `sites` → follow [post-release site guidance](post-release-sites.md), update the enabled website/documentation targets, and record live production receipts. `announcements` → follow the announcement skill. `adopt-post-refresh` → explicitly upgrade a legacy checkpoint; use `--targets website` for a website-only follow-up on an already completed release and preserve its existing announcement receipts. `missing-upstream-release` for a verification-only dependency requires the missing upstream release to exist, or new authorization to expand scope.
+`adopt-existing` → reconstruct the binding at the returned immutable tag SHA, recover its published notes, generate the source inventory, download that release run’s artifacts and verify them; do not create another release. `prepare` → create an isolated worktree from the selected source, prepare and validate it. `publish` → run the reviewed release helper. `wait-for-run` → observe the returned run ID. `repair-pipeline` → diagnose that run. `verify-packages` → verify the downloaded artifacts. `wait-for-upstream` → complete the indicated dependency. `containers` → bind Apps source and package versions, dispatch or reconcile the Apps workflow, download its exact receipt artifact, and live-verify image tags/digests/platforms/smoke checks. `sites` → follow [post-release site guidance](post-release-sites.md), update the enabled website/documentation targets, and record live production receipts. `announcements` → follow the announcement skill. `adopt-containers` and `adopt-post-refresh` → explicitly upgrade a legacy checkpoint; use `--targets website` for a website-only follow-up on an already completed release and preserve its existing announcement receipts. `missing-upstream-release` for a verification-only dependency requires the missing upstream release to exist, or new authorization to expand scope.
 
 Poll live jobs/feeds at a bounded interval (typically 30–60 seconds, then back off). A timeout is not failure and must not start a replacement run. Announce meaningful changes rather than narrating identical polls. Use the environment's persistent goal or a single supported heartbeat if waiting beyond the active turn; preserve state and stop the monitor at completion.
 
@@ -298,11 +300,52 @@ python3 <skill>/scripts/release_train.py --state <run>/state.json verify \
 
 `verify_packages.py` compares the explicit manifest with local artifacts and actual published feed content, handles NuGet repository signing, and checks npm integrity/dist-tags. For Templates it also compares every embedded project file and Elsa PackageReference in the nupkg against the bound source and known published upstream IDs. Each attempt writes a report even when indexing is incomplete. Retry missing/not-yet-indexed packages with backoff; diagnose provenance mismatches rather than calling them propagation delays. Never accept a queued/uploaded state as package availability. Once Core verifies, prepare Studio; once Studio verifies, prepare Extensions; once Extensions verifies, prepare Templates.
 
-NuGet verification is not a release-wide artifact verdict. Verify Docker images, the `Elsa.Templates` package and generated projects, samples, and other configured release artifacts independently, including the exact source/version or image tag and the public pull/template URL. Record those checks in the site audit or release completion record before using the artifact in current guidance.
+NuGet verification is not a release-wide artifact verdict. After all selected package repositories are verified, the checkpoint requires the configured Apps image scope before it can advance to sites or announcements. Do not treat the container check as a note in the site audit.
 
-## 6. Refresh sites, announce, recover, and finish
+## 6. Publish and verify the configured Apps images
 
-After package verification, follow [post-release site guidance](post-release-sites.md). Update and live-verify the configured Elsa Hub website and Elsa GitBook documentation targets in the selected scope. Review pre-existing Lovable unpublished changes before publishing, include only release-related changes, and preserve unrelated work. A merged docs PR, a Lovable queue acknowledgement, or a preview URL without production verification is not completion. Record each verified target:
+Prepare only after Core, Studio, Extensions, and Templates selected by the checkpoint have passed their package gates:
+
+```bash
+python3 <skill>/scripts/release_train.py --state <run>/state.json prepare-containers
+python3 <skill>/scripts/release_train.py --state <run>/state.json bind-containers \
+  --source-ref main --commit <reviewed-apps-commit> \
+  --package-version extensions=<published-version-if-not-in-this-train>
+python3 <skill>/scripts/release_train.py --state <run>/state.json dispatch-containers
+```
+
+Omit `--package-version` when every family used by these images is in the release checkpoint. If a named subset consumes a family outside that checkpoint, bind its explicit published version; the helper probes the configured feeds and never chooses `latest`. `bind-containers` accepts only the canonical Apps branch or the exact release-version tag and requires the commit to be in canonical branch history. Dispatch checks the ref and pinned commit again before submitting the workflow. Review the returned source SHA and package versions before dispatch. The workflow receives the full expected commit and must compare it to `GITHUB_SHA` before credentials or build steps. An explicit GitHub HTTP rejection (400, 401, 403, 404, 405, 410, or 422) clears the saved dispatch intent so you can correct the request and retry. A timeout, EOF, transport failure, or server error is uncertain: keep the intent and rerun `dispatch-containers` to reconcile it by run ID. Do not create a second dispatch while that intent remains unresolved.
+
+`workflow_dispatch` publishes the selected canonical images and their configured aliases. A successful Apps `release` event is also acceptable only for the exact package-version tag. Neither path may publish generic `latest` or `4` tags. The Apps workflow uploads the machine-readable receipt named `container-release-receipt-<version>-<run-id>-<attempt>`. Download the exact artifact from that successful run, preserving the ZIP for byte/digest verification:
+
+```bash
+gh api "repos/elsa-workflows/elsa-apps/actions/runs/<run-id>/artifacts" \
+  --jq '.artifacts[] | select(.name == "container-release-receipt-<version>-<run-id>-<attempt>") | .id'
+gh api "repos/elsa-workflows/elsa-apps/actions/artifacts/<artifact-id>/zip" \
+  > <run>/container-release-artifact.zip
+unzip -p <run>/container-release-artifact.zip container-release-receipt.json \
+  > <run>/container-release-receipt.json
+python3 <skill>/scripts/release_train.py --state <run>/state.json record-containers \
+  --receipt <run>/container-release-receipt.json \
+  --artifact-archive <run>/container-release-artifact.zip
+```
+
+The recorder independently fetches the exact artifact metadata and successful Apps run, byte-compares the supplied receipt with its sole ZIP member, anchors the Apps SHA in canonical `main`, verifies the image repository/tag/root digest and every configured platform digest against the live Docker registry, checks aliases, resolved Elsa package assets and public feed availability, and requires smoke success bound to each platform digest. A hand-written receipt or a build-only/PR artifact cannot satisfy the gate. The verification report expires after 24 hours; rerun verification against a fresh successful workflow artifact before proceeding if it is stale.
+
+For a historic repair without reopening the package release train, run the standalone verifier with the exact Apps run receipt ZIP and current profile. It performs the same provenance and live-registry checks without requiring a release checkpoint:
+
+```bash
+python3 <skill>/scripts/release_train.py verify-containers \
+  --version 3.9.0 --receipt <run>/container-release-receipt.json \
+  --artifact-archive <run>/container-release-artifact.zip \
+  --output <run>/container-verification.json
+```
+
+For scoped workflow artifacts, pass `--images <configured-name> ...`; use repeated `--package-version family=version` only when the selected image family was built against a version other than the release version. The verifier checks all actual Elsa packages in each selected image against those exact versions and the configured feeds. Keep the report with the release record before updating container pull guidance.
+
+## 7. Refresh sites, announce, recover, and finish
+
+After package and required container verification, follow [post-release site guidance](post-release-sites.md). Update and live-verify the configured Elsa Hub website and Elsa GitBook documentation targets in the selected scope. Review pre-existing Lovable unpublished changes before publishing, include only release-related changes, and preserve unrelated work. A merged docs PR, a Lovable queue acknowledgement, or a preview URL without production verification is not completion. Record each verified target:
 
 ```bash
 python3 <skill>/scripts/release_train.py --state <run>/state.json record-site \
