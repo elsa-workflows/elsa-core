@@ -147,7 +147,15 @@ using (pdbReaderProvider)
         var nonmoduleTypes = assemblyMetadata.TypeDefinitions.Select(assemblyMetadata.GetTypeDefinition)
             .Count(type => assemblyMetadata.GetString(type.Name) != "<Module>");
         var methods = assemblyMetadata.MethodDefinitions.Select(assemblyMetadata.GetMethodDefinition).ToArray();
-        var executableMethodBodies = methods.Count(method => method.RelativeVirtualAddress != 0);
+        var executableMethodBodies = 0;
+        foreach (var method in methods.Where(method => method.RelativeVirtualAddress != 0))
+        {
+            if (reader.GetMethodBody(method.RelativeVirtualAddress).GetILBytes() is null)
+            {
+                throw new InvalidDataException("A declared method body could not be decoded.");
+            }
+            executableMethodBodies++;
+        }
         var nonabstractMethodsWithoutBody = methods.Count(method => method.RelativeVirtualAddress == 0
             && (method.Attributes & System.Reflection.MethodAttributes.Abstract) == 0);
         var nativeOrExternalMethods = methods.Count(method =>
@@ -194,6 +202,7 @@ using (pdbReaderProvider)
             nonabstract_methods_without_body = nonabstractMethodsWithoutBody,
             native_or_external_methods = nativeOrExternalMethods,
             nonmodule_types = nonmoduleTypes,
+            reference_assembly = IsReferenceAssembly(assemblyMetadata, definition),
             source_link = sourceLinks[0],
             documents
         };
@@ -205,6 +214,43 @@ using (pdbReaderProvider)
     {
         Console.WriteLine("Verified matching external Portable PDB for packaged assembly.");
     }
+}
+
+
+// Unknown attribute type shapes remain unknown; they cannot admit a bodyless
+// implementation artifact through the no-documents policy.
+static bool? IsReferenceAssembly(MetadataReader metadata, AssemblyDefinition definition)
+{
+    var unknown = false;
+    foreach (var handle in definition.GetCustomAttributes())
+    {
+        var attribute = metadata.GetCustomAttribute(handle);
+        EntityHandle typeHandle = attribute.Constructor.Kind switch
+        {
+            HandleKind.MemberReference => metadata.GetMemberReference((MemberReferenceHandle)attribute.Constructor).Parent,
+            HandleKind.MethodDefinition => metadata.GetMethodDefinition((MethodDefinitionHandle)attribute.Constructor).GetDeclaringType(),
+            _ => default
+        };
+        (StringHandle Namespace, StringHandle Name)? identity = typeHandle.Kind switch
+        {
+            HandleKind.TypeReference => (metadata.GetTypeReference((TypeReferenceHandle)typeHandle).Namespace,
+                                        metadata.GetTypeReference((TypeReferenceHandle)typeHandle).Name),
+            HandleKind.TypeDefinition => (metadata.GetTypeDefinition((TypeDefinitionHandle)typeHandle).Namespace,
+                                         metadata.GetTypeDefinition((TypeDefinitionHandle)typeHandle).Name),
+            _ => null
+        };
+        if (identity is not { } type)
+        {
+            unknown = true;
+            continue;
+        }
+        if (metadata.GetString(type.Namespace) == "System.Runtime.CompilerServices" &&
+            metadata.GetString(type.Name) == "ReferenceAssemblyAttribute")
+        {
+            return true;
+        }
+    }
+    return unknown ? null : false;
 }
 
 

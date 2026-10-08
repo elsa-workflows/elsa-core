@@ -45,15 +45,22 @@ def require(condition: bool, message: str) -> None:
 
 
 def run(command: list[str], cwd: Path, *, timeout: int = 300, log: Path | None = None,
-        env: dict | None = None) -> str:
+        env: dict | None = None, outcome: dict | None = None) -> str:
     def execute(stream=None):
-        process = subprocess.Popen(command, cwd=cwd, env=env, text=True,
-                                   stdout=stream if stream else subprocess.PIPE,
-                                   stderr=subprocess.STDOUT if stream else subprocess.PIPE,
-                                   start_new_session=os.name == "posix")
+        if outcome is not None:
+            outcome.update(status="starting", exit_code=None)
+        try:
+            process = subprocess.Popen(command, cwd=cwd, env=env, text=True,
+                                       stdout=stream if stream else subprocess.PIPE,
+                                       stderr=subprocess.STDOUT if stream else subprocess.PIPE,
+                                       start_new_session=os.name == "posix")
+        except OSError:
+            if outcome is not None:
+                outcome.update(status="start-failed")
+            raise
         try:
             stdout, stderr = process.communicate(timeout=timeout)
-        except BaseException:
+        except BaseException as error:
             if process.poll() is None:
                 if os.name == "posix":
                     try:
@@ -63,7 +70,12 @@ def run(command: list[str], cwd: Path, *, timeout: int = 300, log: Path | None =
                 else:
                     process.kill()
                 process.communicate()
+            if outcome is not None:
+                outcome.update(status="timed-out" if isinstance(error, subprocess.TimeoutExpired) else "interrupted",
+                               exit_code=process.returncode)
             raise
+        if outcome is not None:
+            outcome.update(status="exited", exit_code=process.returncode)
         require(process.returncode == 0,
                 f"Command failed ({process.returncode}): {command!r}\n" +
                 (f"See {log}" if stream else f"{stdout}\n{stderr}"))
