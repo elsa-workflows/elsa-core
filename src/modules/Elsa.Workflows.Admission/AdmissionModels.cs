@@ -71,7 +71,14 @@ public sealed record AdmissionSubscriptionConfiguration(
 
 /// <summary>Transport-independent synthetic/provider event. Envelope identity is deliberately absent.</summary>
 public sealed record AdmissionEvent(string SubscriptionId, string InstallationId, string ChannelId, string ProviderEventId,
-    DateTimeOffset? OccurredAt, bool IsHumanMessage, bool IsLoopMessage, string Payload);
+    DateTimeOffset? OccurredAt, bool IsHumanMessage, bool IsLoopMessage, string Payload)
+{
+    /// <summary>Optional captured subscription binding; supply together with ExpectedActivationEpoch for comparison under the subscription lock.</summary>
+    public string? ExpectedConfigurationFingerprint { get; init; }
+
+    /// <summary>Optional positive captured activation epoch. These expectations restrict admission and never grant execution authority.</summary>
+    public long? ExpectedActivationEpoch { get; init; }
+}
 
 /// <summary>Persisted configuration and separate active/retained capacity counters.</summary>
 public sealed class AdmissionSubscription

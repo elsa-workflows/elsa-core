@@ -17,7 +17,10 @@ public interface IAdmissionStore
     Task<AdmissionSubscription?> ActivateAsync(string subscriptionId, long revision, DateTimeOffset now, CancellationToken cancellationToken = default);
     /// <summary>Withdraw first. Retirement is irreversible; failed later external mutations retain withdrawal and reconciliation.</summary>
     Task<AdmissionSubscription?> WithdrawAsync(string subscriptionId, long revision, bool retire, string? reconciliationCode, CancellationToken cancellationToken = default);
-    /// <summary>Checks trusted configuration, filters, event time, unique identity and both capacity counters in one transaction.</summary>
+    /// <summary>
+    /// Checks trusted configuration, filters, event time, unique identity and both capacity counters in one transaction.
+    /// Optional paired event binding expectations must match the current ready subscription and duplicate epoch under the subscription lock.
+    /// </summary>
     Task<AdmissionResult> AdmitAsync(AdmissionEvent message, DateTimeOffset now, CancellationToken cancellationToken = default);
     Task<AdmissionRecord?> FindAsync(string admissionId, CancellationToken cancellationToken = default);
     /// <summary>Includes records whose dedup identity was cleaned. Null must mean definitively unowned.</summary>

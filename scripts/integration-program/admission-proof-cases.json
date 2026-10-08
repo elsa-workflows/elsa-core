@@ -6591,6 +6591,276 @@
       "topology": "postgresql",
       "minimumProcesses": 0,
       "restartRequired": false
+    },
+    {
+      "caseId": "provider-expected-binding-reactivated",
+      "family": "binding",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.ExpectedAdmissionBindingTests.CapturedBindingCannotCrossReactivationOrReconfiguration",
+      "parameterId": "provider-expected-binding-reactivated",
+      "assertions": [
+        "bindingContractVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Quarantined"
+          ]
+        },
+        "persistedAdmissions": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-expected-binding-reconfigured",
+      "family": "binding",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.ExpectedAdmissionBindingTests.CapturedBindingCannotCrossReactivationOrReconfiguration",
+      "parameterId": "provider-expected-binding-reconfigured",
+      "assertions": [
+        "bindingContractVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Quarantined"
+          ]
+        },
+        "persistedAdmissions": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-expected-binding-old-duplicate",
+      "family": "binding",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.ExpectedAdmissionBindingTests.DuplicateCannotAcknowledgeAnOlderOrWithdrawnEpoch",
+      "parameterId": "default",
+      "assertions": [
+        "bindingContractVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Quarantined"
+          ]
+        },
+        "persistedAdmissions": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-expected-binding-inactive",
+      "family": "binding",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.ExpectedAdmissionBindingTests.GuardedDuplicateRequiresReadySubscription",
+      "parameterId": "provider-expected-binding-inactive",
+      "assertions": [
+        "bindingContractVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Inactive"
+          ]
+        },
+        "persistedAdmissions": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-expected-binding-unverified",
+      "family": "binding",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.ExpectedAdmissionBindingTests.GuardedDuplicateRequiresReadySubscription",
+      "parameterId": "provider-expected-binding-unverified",
+      "assertions": [
+        "bindingContractVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Inactive"
+          ]
+        },
+        "persistedAdmissions": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-expected-binding-retired",
+      "family": "binding",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.ExpectedAdmissionBindingTests.GuardedDuplicateRequiresReadySubscription",
+      "parameterId": "provider-expected-binding-retired",
+      "assertions": [
+        "bindingContractVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Inactive"
+          ]
+        },
+        "persistedAdmissions": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-expected-binding-reconciliation",
+      "family": "binding",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.ExpectedAdmissionBindingTests.GuardedDuplicateRequiresReadySubscription",
+      "parameterId": "provider-expected-binding-reconciliation",
+      "assertions": [
+        "bindingContractVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Inactive"
+          ]
+        },
+        "persistedAdmissions": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-expected-binding-malformed",
+      "family": "binding",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.ExpectedAdmissionBindingTests.MalformedBindingPairRejectsWithoutLedgerMutation",
+      "parameterId": "default",
+      "assertions": [
+        "bindingContractVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Rejected"
+          ]
+        },
+        "persistedAdmissions": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-expected-binding-compatible",
+      "family": "compat",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.ExpectedAdmissionBindingTests.ExpectedBindingPreservesLegacyEventContractAndDigest",
+      "parameterId": "default",
+      "assertions": [
+        "bindingContractVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Duplicate"
+          ]
+        },
+        "persistedAdmissions": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-expected-binding-locked-recheck",
+      "family": "binding",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.ExpectedAdmissionBindingTests.BindingIsRecheckedAfterAcquiringSubscriptionLock",
+      "parameterId": "default",
+      "assertions": [
+        "bindingContractVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Inactive"
+          ]
+        },
+        "persistedAdmissions": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
     }
   ],
   "workerAssemblies": {

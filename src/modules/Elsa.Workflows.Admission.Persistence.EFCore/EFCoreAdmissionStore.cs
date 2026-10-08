@@ -135,6 +135,12 @@ public sealed class EFCoreAdmissionStore : IAdmissionStore
 
     public async Task<AdmissionResult> AdmitAsync(AdmissionEvent message, DateTimeOffset now, CancellationToken cancellationToken = default)
     {
+        var expectedBinding = message.ExpectedConfigurationFingerprint != null || message.ExpectedActivationEpoch != null;
+        if (expectedBinding && (message.ExpectedConfigurationFingerprint is not { Length: 64 } fingerprint ||
+            !fingerprint.All(Uri.IsHexDigit) || message.ExpectedActivationEpoch is not > 0))
+        {
+            return new(AdmissionOutcome.Rejected, null, null);
+        }
         if (message.Payload == null || message.ProviderEventId == null ||
             Encoding.UTF8.GetByteCount(message.Payload) > AdmissionLimits.PayloadBytes ||
             Encoding.UTF8.GetByteCount(message.ProviderEventId) > AdmissionLimits.ProviderEventIdBytes)
@@ -152,6 +158,19 @@ public sealed class EFCoreAdmissionStore : IAdmissionStore
         DemandScope(db, subscription);
         var configuration = subscription.Configuration;
         ValidateConfiguration(configuration);
+        // Captured listener bindings must still be current and ready inside the same lock as duplicate/insertion decisions.
+        if (expectedBinding)
+        {
+            if (subscription.ConfigurationFingerprint != message.ExpectedConfigurationFingerprint ||
+                subscription.ActivationEpoch != message.ExpectedActivationEpoch)
+            {
+                return new(AdmissionOutcome.Quarantined, null, null);
+            }
+            if (!subscription.Active || !subscription.BootstrapVerified || subscription.Retired || subscription.ReconciliationCode != null)
+            {
+                return new(AdmissionOutcome.Inactive, null, null);
+            }
+        }
         if (message.InstallationId != configuration.InstallationId || message.ChannelId != configuration.ChannelId)
         {
             return new(AdmissionOutcome.Quarantined, null, null);
@@ -178,7 +197,8 @@ public sealed class EFCoreAdmissionStore : IAdmissionStore
         if (duplicate != null)
         {
             DemandScope(db, duplicate);
-            return duplicate.ConfigurationFingerprint == subscription.ConfigurationFingerprint && duplicate.EventFingerprint == AdmissionEventFingerprint.Compute(message)
+            return duplicate.ConfigurationFingerprint == subscription.ConfigurationFingerprint && duplicate.EventFingerprint == AdmissionEventFingerprint.Compute(message) &&
+                (!expectedBinding || duplicate.ActivationEpoch == message.ExpectedActivationEpoch)
                 ? new(AdmissionOutcome.Duplicate, duplicate.Id, duplicate.Revision)
                 : new(AdmissionOutcome.Quarantined, duplicate.Id, duplicate.Revision);
         }
