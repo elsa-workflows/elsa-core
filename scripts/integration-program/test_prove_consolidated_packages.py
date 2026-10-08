@@ -355,6 +355,16 @@ class PackageProofTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Missing resolved RuntimeIdentifier"):
             proof.capture_compiler_evidence(self.directory, self.row, "net8.0", resolved, cache)
 
+    def test_inventory_rejects_changed_source_bytes_at_same_clean_head(self):
+        output = self.directory / "evidence"
+        with patch("sys.argv", ["prove", "--version", VERSION, "--output", str(output), "--inventory-only"]), \
+                patch.object(proof, "clean_head", return_value=COMMIT), \
+                patch.object(proof, "source_input_hashes", side_effect=[{"src/a.cs": "a" * 64}, {"src/a.cs": "b" * 64}]), \
+                patch.object(proof, "inventory", return_value=self.manifest), \
+                self.assertRaisesRegex(ValueError, "Source changed"):
+            proof.main()
+        self.assertFalse((output / "receipt.json").exists())
+
     def test_staging_failure_keeps_package_bytes_without_acceptance_receipt(self):
         root = self.directory / "checkout"
         packages = root / "packages"
@@ -371,6 +381,7 @@ class PackageProofTests(unittest.TestCase):
         with patch.object(proof, "__file__", str(root / "scripts/integration-program/prove.py")), \
                 patch("sys.argv", ["prove", "--version", VERSION, "--output", str(output)]), \
                 patch.object(proof, "clean_head", return_value=COMMIT), \
+                patch.object(proof, "source_input_hashes", return_value={"src/example.cs": "a" * 64}), \
                 patch.object(proof, "inventory", return_value=self.manifest), \
                 patch.object(proof, "build_clientlibs", return_value={"assets": []}), \
                 patch.object(proof, "run", side_effect=pack), \
@@ -654,8 +665,17 @@ class PackageProofTests(unittest.TestCase):
                 self.assertEqual("false", guards[0].text)
         for path in (ROOT / "src/extensions/secrets").rglob("*.csproj"):
             self.assertEqual("false", ET.parse(path).findtext("./PropertyGroup/IsPackable"))
+        promoted = {
+            "Elsa.Connections", "Elsa.Connections.Credentials.Workflows",
+            "Elsa.Connections.Credentials.Persistence.EFCore", "Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql",
+            "Elsa.Workflows.Admission", "Elsa.Workflows.Admission.Persistence.EFCore",
+            "Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql",
+        }
+        for name in promoted:
+            path = ROOT / "src/modules" / name / (name + ".csproj")
+            self.assertIsNone(ET.parse(path).findtext("./PropertyGroup/IsPackable"))
         for path in (ROOT / "src/modules").glob("Elsa.Connections*/**/*.csproj"):
-            if "Credentials" in str(path):
+            if "Credentials" in str(path) and path.stem not in promoted:
                 self.assertEqual("false", ET.parse(path).findtext("./PropertyGroup/IsPackable"))
         self.assertNotIn("ConsolidatedPackageProof", (ROOT / ".github/workflows/packages.yml").read_text())
 

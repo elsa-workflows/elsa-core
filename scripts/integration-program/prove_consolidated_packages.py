@@ -922,6 +922,14 @@ def require_empty_package_output(packages: Path) -> None:
             "Canonical packages output must be absent or an empty directory before proof; use an isolated worktree")
 
 
+def source_input_hashes(root: Path) -> dict[str, str]:
+    from run_admission_proof import source_hashes, regular
+    result = source_hashes(root)
+    workflow = ".github/workflows/prove-consolidated-packages.yml"
+    result[workflow] = hashlib.sha256(regular(root / workflow).read_bytes()).hexdigest()
+    return result
+
+
 def main(*, mode: str = "proof") -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", required=True)
@@ -939,6 +947,8 @@ def main(*, mode: str = "proof") -> None:
     require(not output.exists() and not output.is_relative_to(root), "Output must be a new directory outside the worktree")
     output.mkdir(parents=True)
     commit = clean_head(root)
+    initial_sources = source_input_hashes(root)
+    write_json(output / "source-inputs.json", initial_sources)
     manifest = inventory(root, args.version, commit, mode=mode)
     write_json(output / "inventory.json", manifest)
     if mode == "candidate":
@@ -946,7 +956,7 @@ def main(*, mode: str = "proof") -> None:
         compare_inventory(manifest, json.loads(args.baseline.read_text()), output / "inventory-diff.json")
     print(f"Evaluated {len(manifest['packages'])} packages and {len(manifest['exclusions'])} exclusions", flush=True)
     if args.inventory_only:
-        require(clean_head(root) == commit, "Source changed during inventory evaluation")
+        require(clean_head(root) == commit and source_input_hashes(root) == initial_sources, "Source changed during inventory evaluation")
         return
     packages = root / "packages"
     require_empty_package_output(packages)
@@ -972,11 +982,15 @@ def main(*, mode: str = "proof") -> None:
     write_json(output / "source-provenance.json", sources)
     from prove_consolidated_package_consumers import prove
     consumers = prove(artifacts, manifest, output / "consumers") if mode == "proof" else {"status": "required_downstream_exact_archive"}
-    require(clean_head(root) == commit, "Source changed during package proof")
+    from prove_consolidated_admission_consumers import prove as prove_admission
+    admission_consumers = (prove_admission(artifacts, manifest, output / "admission-consumers")
+                           if mode == "proof" else {"status": "required_downstream_exact_archive"})
+    require(clean_head(root) == commit and source_input_hashes(root) == initial_sources, "Source changed during package proof")
     receipt = {"result": "passed", "mode": mode, "build_inputs": inputs, "published": False, "source_commit": commit, "version": args.version,
                "package_count": len(manifest["packages"]), "exclusion_count": len(manifest["exclusions"]),
                "remote_sources_verified": args.remote_sources,
-               "provenance": sources, "consumers": consumers,
+               "provenance": sources, "consumers": consumers, "admission_consumers": admission_consumers,
+               "source_inputs_sha256": hashlib.sha256((output / "source-inputs.json").read_bytes()).hexdigest(), "source_inputs_unchanged": True,
                "limits": ["Consumers are representative; this is not behavioral certification of every package.",
                           "No publication, publisher cutover, npm artifact proof or live Slack certification."]}
     if not args.remote_sources:

@@ -431,7 +431,8 @@ def verify_restore_isolation(assets: dict, root: Path, cache: Path, artifacts: P
 
 
 def verify_loaded_assemblies(result: dict, assets: dict, framework: str, root: Path,
-                             cache: Path, artifacts: Path, by_id: dict, version: str, source: str) -> list[dict]:
+                             cache: Path, artifacts: Path, by_id: dict, version: str, source: str,
+                             required_packages: tuple[str, ...] = REQUIRED_PACKAGES) -> list[dict]:
     expected = {}
     for key, library in assets["targets"][framework].items():
         package_id, package_version = key.split("/")
@@ -454,7 +455,7 @@ def verify_loaded_assemblies(result: dict, assets: dict, framework: str, root: P
     loaded = result.get("loadedAssemblies", [])
     if not loaded or len({row["name"] for row in loaded}) != len(loaded):
         raise RuntimeError("Missing or duplicate loaded assembly identities")
-    if not set(REQUIRED_PACKAGES) <= {row["name"] for row in loaded}:
+    if not set(required_packages) <= {row["name"] for row in loaded}:
         raise RuntimeError("Representative loaded assembly missing")
     records = []
     for row in loaded:
@@ -462,6 +463,9 @@ def verify_loaded_assemblies(result: dict, assets: dict, framework: str, root: P
         location = Path(row["location"])
         if asset is None or row.get("sha256") != asset["sha256"] or not location.resolve().is_relative_to((root / "bin").resolve()):
             raise RuntimeError("Loaded assembly differs from restored package asset")
+        if (not location.is_file() or any(path.is_symlink() for path in (location, *location.parents))
+                or hashlib.sha256(location.read_bytes()).hexdigest() != asset["sha256"]):
+            raise RuntimeError("Loaded assembly file differs from exact package asset")
         if not row.get("fullName", "").startswith(row["name"] + ", Version=" + str(row.get("version")) + ",") or not row.get("informationalVersion"):
             raise RuntimeError("Incomplete loaded assembly identity")
         if asset["internal"] and (row["version"] != version.split("+", 1)[0].split("-", 1)[0] + ".0" or row["informationalVersion"] != f"{version}+{source}"):

@@ -52,7 +52,7 @@ class ConsolidatedPackageConsumerTests(unittest.TestCase):
 
     def test_all_loaded_identities_hashes_locations_and_exact_package_assets_are_corroborated(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve()
             artifacts, cache = root / "artifacts", root / "cache"
             artifacts.mkdir()
             target, rows, by_id = {}, [], {}
@@ -67,6 +67,9 @@ class ConsolidatedPackageConsumerTests(unittest.TestCase):
                     zipped.writestr(asset, content)
                 by_id[package_id.casefold()] = {"nupkg": archive.name}
                 target[f"{package_id}/3.10.0"] = {"type": "package", "runtime": {asset: {}}}
+                loaded_path = root / "bin/Release/net8.0" / (package_id + ".dll")
+                loaded_path.parent.mkdir(parents=True, exist_ok=True)
+                loaded_path.write_bytes(content)
                 rows.append({"name": package_id, "version": "3.10.0.0", "fullName": package_id + ", Version=3.10.0.0, Culture=neutral, PublicKeyToken=null",
                              "informationalVersion": "3.10.0+" + "a" * 40, "location": str(root / "bin/Release/net8.0" / (package_id + ".dll")),
                              "sha256": hashlib.sha256(content).hexdigest()})
@@ -85,6 +88,15 @@ class ConsolidatedPackageConsumerTests(unittest.TestCase):
                 check({"loadedAssemblies": rows[:-1]})
             with self.assertRaisesRegex(RuntimeError, "duplicate"):
                 check({"loadedAssemblies": rows + [rows[0]]})
+            loaded_path.write_bytes(b"loaded-file corruption")
+            with self.assertRaisesRegex(RuntimeError, "Loaded assembly file"):
+                check({"loadedAssemblies": rows})
+            loaded_path.unlink()
+            loaded_path.symlink_to(cached)
+            with self.assertRaisesRegex(RuntimeError, "Loaded assembly"):
+                check({"loadedAssemblies": rows})
+            loaded_path.unlink()
+            loaded_path.write_bytes(content)
             cached.write_bytes(b"cache corruption")
             with self.assertRaisesRegex(RuntimeError, "exact package asset"):
                 check({"loadedAssemblies": rows})
