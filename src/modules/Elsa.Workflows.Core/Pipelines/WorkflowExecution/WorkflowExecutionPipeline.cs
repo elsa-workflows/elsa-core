@@ -7,6 +7,7 @@ public class WorkflowExecutionPipeline : IWorkflowExecutionPipeline
 {
     private readonly IServiceProvider _serviceProvider;
     private WorkflowMiddlewareDelegate? _pipeline;
+    private WorkflowMiddlewareDelegate? _runnerPipeline;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WorkflowExecutionPipeline"/> class.
@@ -29,12 +30,19 @@ public class WorkflowExecutionPipeline : IWorkflowExecutionPipeline
     {
         var builder = new WorkflowExecutionPipelineBuilder(_serviceProvider);
         setup(builder);
-        _pipeline = builder.Build();
+        _runnerPipeline = builder.BuildInternal();
+        _pipeline = WorkflowExecutionPipelineBuilder.Guard(_runnerPipeline);
         return _pipeline;
     }
 
     /// <inheritdoc />
     public async Task ExecuteAsync(WorkflowExecutionContext context) => await Pipeline(context);
+
+    internal async Task ExecuteAuthorizedAsync(WorkflowExecutionContext context, IWorkflowExecutionAuthorization authorization)
+    {
+        await authorization.RevalidateAsync(context.CancellationToken);
+        await (_runnerPipeline ?? throw new InvalidOperationException("The workflow pipeline is not configured."))(context);
+    }
 
     private WorkflowMiddlewareDelegate CreateDefaultPipeline() => Setup(x => x
         .UseExceptionHandling()

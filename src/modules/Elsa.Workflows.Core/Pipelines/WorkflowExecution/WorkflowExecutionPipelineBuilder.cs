@@ -37,10 +37,32 @@ public class WorkflowExecutionPipelineBuilder : IWorkflowExecutionPipelineBuilde
     /// <inheritdoc />
     public WorkflowMiddlewareDelegate Build()
     {
+        return Guard(BuildInternal());
+    }
+
+    internal static WorkflowMiddlewareDelegate Guard(WorkflowMiddlewareDelegate pipeline)
+    {
+        return async context =>
+        {
+            var guard = context.GetService<IWorkflowExecutionGuard>();
+            if (guard != null)
+            {
+                await guard.AuthorizeAsync(context, WorkflowExecutionEntryPoint.DirectPipeline);
+            }
+
+            await pipeline(context);
+        };
+    }
+
+    // Only Core's built-in runner invokes this composition after authorization.
+    internal WorkflowMiddlewareDelegate BuildInternal()
+    {
         WorkflowMiddlewareDelegate pipeline = _ => new ValueTask();
 
-        foreach (var component in _components.Reverse()) 
+        foreach (var component in _components.Reverse())
+        {
             pipeline = component(pipeline);
+        }
 
         return pipeline;
     }
