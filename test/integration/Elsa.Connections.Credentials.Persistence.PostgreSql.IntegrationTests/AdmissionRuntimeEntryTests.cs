@@ -18,6 +18,13 @@ public sealed class AdmissionRuntimeEntryTests(PostgreSqlConnectionsFixture fixt
 
     [Theory]
     [InlineData("runtime-held-client", "client")]
+    [InlineData("runtime-held-client-create", "client-create")]
+    [InlineData("runtime-held-client-cancel", "client-cancel")]
+    [InlineData("runtime-held-client-delete", "client-delete")]
+    [InlineData("runtime-held-client-import", "client-import")]
+    [InlineData("runtime-held-legacy-resume", "legacy-resume")]
+    [InlineData("runtime-held-legacy-cancel", "legacy-cancel")]
+    [InlineData("runtime-held-legacy-import", "legacy-import")]
     [InlineData("runtime-held-dispatcher", "dispatcher")]
     [InlineData("runtime-held-runner-activity", "runner-activity")]
     [InlineData("runtime-held-runner-state", "runner-state")]
@@ -58,13 +65,16 @@ public sealed class AdmissionRuntimeEntryTests(PostgreSqlConnectionsFixture fixt
                 var runner = host.Services.GetRequiredService<IWorkflowRunner>();
                 var pipeline = host.Services.GetRequiredService<IWorkflowExecutionPipeline>();
                 var state = (await host.Services.GetRequiredService<IWorkflowInstanceManager>().FindByIdAsync(context.Id))!.WorkflowState;
+                var runtime = host.Services.GetRequiredService<IWorkflowRuntime>();
+                var client = await runtime.CreateClientAsync(context.Id);
                 Func<Task> competing = scenario switch
                 {
-                    "client" => async () =>
-                    {
-                        var client = await host.Services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync(context.Id);
-                        await client.RunInstanceAsync(new RunWorkflowInstanceRequest());
-                    },
+                    "client" => () => client.RunInstanceAsync(new RunWorkflowInstanceRequest()),
+                    "client-create" => () => client.CreateInstanceAsync(new CreateWorkflowInstanceRequest()),
+                    "client-cancel" => () => client.CancelAsync(),
+                    "client-delete" => () => client.DeleteAsync(),
+                    "client-import" => () => client.ImportStateAsync(state),
+                    "legacy-resume" or "legacy-cancel" or "legacy-import" => () => InvokeLegacyAsync(runtime, state, scenario),
                     "dispatcher" => () => host.Services.GetRequiredService<IWorkflowDispatcher>().DispatchAsync(new DispatchWorkflowInstanceRequest(context.Id), null),
                     "runner-activity" => () => runner.RunAsync(new AdmissionRuntimeActivity(), new RunWorkflowOptions { WorkflowInstanceId = context.Id }),
                     "runner-state" => () => runner.RunAsync(context.WorkflowGraph, state),
@@ -85,6 +95,9 @@ public sealed class AdmissionRuntimeEntryTests(PostgreSqlConnectionsFixture fixt
                 Assert.Equal(0, host.Probe.Count("workflowStarted"));
                 Assert.Equal(0, host.Probe.Count("activityEffects"));
                 Assert.Equal(0, host.Probe.Count("AuthorityConsumed"));
+                Assert.Equal(0, host.Probe.Count("workflowCancelling"));
+                Assert.Equal(0, host.Probe.Count("instanceWriteAttempts"));
+                Assert.Equal(0, host.Probe.Count("bookmarkSaveCalls"));
             }
             finally
             {
@@ -101,4 +114,24 @@ public sealed class AdmissionRuntimeEntryTests(PostgreSqlConnectionsFixture fixt
                     ["competingActivityEffects"] = 0, ["authorizedEntries"] = 1, ["activityEffects"] = 1 });
         });
     }
+#pragma warning disable CS0618 // Exercise the actual legacy facade rather than a duplicate wrapper.
+    private static async Task InvokeLegacyAsync(IWorkflowRuntime runtime, Elsa.Workflows.State.WorkflowState state, string scenario)
+    {
+        switch (scenario)
+        {
+            case "legacy-resume":
+                await runtime.ResumeWorkflowAsync(state.Id);
+                break;
+            case "legacy-cancel":
+                await runtime.CancelWorkflowAsync(state.Id);
+                break;
+            case "legacy-import":
+                await runtime.ImportWorkflowStateAsync(state);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(scenario));
+        }
+    }
+#pragma warning restore CS0618
+
 }
