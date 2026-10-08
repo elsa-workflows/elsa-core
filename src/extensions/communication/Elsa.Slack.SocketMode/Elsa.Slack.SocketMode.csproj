@@ -2,6 +2,13 @@
     <PropertyGroup>
         <Description>Opt-in PostgreSQL-backed Slack Socket Mode ingress for guarded local workflow execution.</Description>
         <PackageTags>elsa slack socket admission</PackageTags>
+        <!-- Extensions has its own props root; configure its inherited weaver explicitly
+             so Fody does not create a default configuration in the source checkout. -->
+        <WeaverConfiguration>
+            <Weavers>
+                <ConfigureAwait ContinueOnCapturedContext="false" />
+            </Weavers>
+        </WeaverConfiguration>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="../Elsa.Slack/Elsa.Slack.csproj" />
