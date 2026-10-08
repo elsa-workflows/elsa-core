@@ -11,7 +11,10 @@ namespace Elsa.Connections.Services;
 internal sealed class ConnectionCredentialReader(IConnectionLifecycleStore store, IManagedSecretManager secrets,
     TimeProvider timeProvider, ITenantAccessor tenantAccessor)
 {
-    internal async Task<ConnectionAccessCredential> ReadAsync(string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken)
+    internal async Task<ConnectionAccessCredential> ReadAsync(string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken) =>
+        (await ReadSnapshotAsync(tenantId, environmentId, connectionId, cancellationToken)).Credential;
+
+    internal async Task<ConnectionCredentialSnapshot> ReadSnapshotAsync(string tenantId, string environmentId, string connectionId, CancellationToken cancellationToken)
     {
         using var tenantContext = tenantAccessor.PushContext(new Tenant { Id = tenantId, Name = tenantId });
         var connection = await store.FindAsync(connectionId, tenantId, environmentId, cancellationToken);
@@ -47,9 +50,10 @@ internal sealed class ConnectionCredentialReader(IConnectionLifecycleStore store
         {
             throw new ConnectionUnavailableException();
         }
-        return material!.Kind == ConnectionCredentialKind.ApiKey
+        var credential = material!.Kind == ConnectionCredentialKind.ApiKey
             ? new ConnectionAccessCredential(ConnectionCredentialKind.ApiKey, material.AccessToken!, null)
             : new ConnectionAccessCredential(ConnectionCredentialKind.OAuth, material.AccessToken!, material.AccessTokenExpiresAt);
+        return new(credential, latest.Revision, latest.CurrentGenerationId!, latest.CurrentSecretName!);
     }
 
     internal static bool CanUseCurrentGeneration(IntegrationConnection? connection) =>

@@ -146,6 +146,177 @@ public sealed class SlackSocketCredentialTests
         Assert.DoesNotContain(CredentialFixture.Token, error.ToString(), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task CurrentLeaseReauthorizesAndReadsMetadataWithoutResolvingBearerAgain()
+    {
+        var test = new CredentialFixture();
+        var lease = await test.Reader.ResolveCurrentLeaseAsync(CancellationToken.None);
+        Assert.Equal(ConnectionCredentialKind.ApiKey, lease.Credential.Kind);
+        Assert.Equal(CredentialFixture.Token, lease.Credential.AccessToken);
+        Assert.Equal(1, lease.Revision);
+        Assert.Equal("generation", lease.GenerationId);
+        Assert.Equal("generation-secret", lease.SecretName);
+        Assert.Equal(SocketModeTestData.Configuration().BindingFingerprint, lease.BindingFingerprint);
+        Assert.Equal("SlackSocketCredentialLease { Redacted = true }", lease.ToString());
+        Assert.Equal("{}", JsonSerializer.Serialize(lease));
+        test.ClearCalls();
+        using var outer = test.Tenants.PushContext(new Tenant { Id = "outer", Name = "outer" });
+        test.Store.FindAsync("connection", "tenant", "environment", Arg.Any<CancellationToken>()).Returns(_ =>
+        {
+            Assert.Equal("tenant", test.Tenants.TenantId);
+            return test.Connection;
+        });
+        await test.Reader.DemandCurrentAsync(lease, CancellationToken.None);
+        Assert.Equal("outer", test.Tenants.TenantId);
+        await test.Authorizer.Received(1).AuthorizeAsync(Arg.Is<ConnectionUseRequest>(request =>
+            request.Kind == ConnectionUseKind.BackgroundSystem && request.TenantId == "tenant" && request.EnvironmentId == "environment" &&
+            request.ConnectionId == "connection" && request.Purpose == SlackSocketListenerCredentialReader.Purpose &&
+            request.Principal.Identity!.IsAuthenticated && request.Principal.Identity.AuthenticationType == SlackSocketListenerCredentialReader.AuthenticationType &&
+            request.Principal.FindFirst(ClaimTypes.NameIdentifier)!.Value == SlackSocketListenerCredentialReader.PrincipalId), Arg.Any<CancellationToken>());
+        await test.Store.Received(1).FindAsync("connection", "tenant", "environment", Arg.Any<CancellationToken>());
+        await test.Secrets.DidNotReceive().ResolveGenerationAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("revision")]
+    [InlineData("generation")]
+    [InlineData("secret-name")]
+    [InlineData("missing-generation")]
+    [InlineData("missing-name")]
+    [InlineData("connection-id")]
+    [InlineData("tenant")]
+    [InlineData("environment")]
+    [InlineData("disconnected")]
+    [InlineData("recovery")]
+    [InlineData("claimed")]
+    [InlineData("provider-started")]
+    [InlineData("credential-received")]
+    [InlineData("staged")]
+    [InlineData("operation-recovery")]
+    public async Task StaleRotatedOffboardedOrForeignMetadataInvalidatesLease(string change)
+    {
+        var test = new CredentialFixture();
+        var lease = await test.Reader.ResolveCurrentLeaseAsync(CancellationToken.None);
+        test.ClearCalls();
+        switch (change)
+        {
+            case "revision": test.Connection.Revision++; break;
+            case "generation": test.Connection.CurrentGenerationId = "rotated"; break;
+            case "secret-name": test.Connection.CurrentSecretName = "rotated-secret"; break;
+            case "missing-generation": test.Connection.CurrentGenerationId = null; break;
+            case "missing-name": test.Connection.CurrentSecretName = null; break;
+            case "connection-id": test.Connection.Id = "another-connection"; break;
+            case "tenant": test.Connection.TenantId = "another-tenant"; break;
+            case "environment": test.Connection.EnvironmentId = "another-environment"; break;
+            case "disconnected": test.Connection.Status = ConnectionStatus.Disconnected; break;
+            case "recovery": test.Connection.Status = ConnectionStatus.RecoveryRequired; break;
+            case "claimed": test.Connection.OperationStatus = CredentialOperationStatus.Claimed; break;
+            case "provider-started": test.Connection.OperationStatus = CredentialOperationStatus.ProviderCallStarted; break;
+            case "credential-received": test.Connection.OperationStatus = CredentialOperationStatus.CredentialReceived; break;
+            case "staged": test.Connection.OperationStatus = CredentialOperationStatus.Staged; break;
+            case "operation-recovery": test.Connection.OperationStatus = CredentialOperationStatus.RecoveryRequired; break;
+            default: throw new ArgumentOutOfRangeException(nameof(change));
+        }
+        using var outer = test.Tenants.PushContext(new Tenant { Id = "outer", Name = "outer" });
+        await Assert.ThrowsAsync<ConnectionUnavailableException>(() => test.Reader.DemandCurrentAsync(lease, CancellationToken.None));
+        Assert.Equal("outer", test.Tenants.TenantId);
+        await test.Authorizer.Received(1).AuthorizeAsync(Arg.Any<ConnectionUseRequest>(), Arg.Any<CancellationToken>());
+        await test.Store.Received(1).FindAsync("connection", "tenant", "environment", Arg.Any<CancellationToken>());
+        await test.Secrets.DidNotReceive().ResolveGenerationAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task MissingConnectionInvalidatesLeaseWithoutSecretLookup()
+    {
+        var test = new CredentialFixture();
+        var lease = await test.Reader.ResolveCurrentLeaseAsync(CancellationToken.None);
+        test.ClearCalls();
+        test.Store.FindAsync("connection", "tenant", "environment", Arg.Any<CancellationToken>()).Returns((IntegrationConnection?)null);
+        await Assert.ThrowsAsync<ConnectionUnavailableException>(() => test.Reader.DemandCurrentAsync(lease, CancellationToken.None));
+        await test.Store.Received(1).FindAsync("connection", "tenant", "environment", Arg.Any<CancellationToken>());
+        await test.Secrets.DidNotReceive().ResolveGenerationAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ForeignListenerBindingCannotReuseLease()
+    {
+        var origin = new CredentialFixture();
+        var lease = await origin.Reader.ResolveCurrentLeaseAsync(CancellationToken.None);
+        var other = new CredentialFixture(SocketModeTestData.Configuration(teamId: "T_OTHER"));
+        await Assert.ThrowsAsync<ConnectionUnavailableException>(() => other.Reader.DemandCurrentAsync(lease, CancellationToken.None));
+        await other.Authorizer.DidNotReceive().AuthorizeAsync(Arg.Any<ConnectionUseRequest>(), Arg.Any<CancellationToken>());
+        await other.Store.DidNotReceive().FindAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await other.Secrets.DidNotReceive().ResolveGenerationAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("denied")]
+    [InlineData("pre-canceled")]
+    [InlineData("policy-canceled")]
+    [InlineData("store-canceled")]
+    public async Task LeaseRevalidationCannotOutrunDeniedPolicyOrCancellation(string boundary)
+    {
+        var test = new CredentialFixture();
+        var lease = await test.Reader.ResolveCurrentLeaseAsync(CancellationToken.None);
+        test.ClearCalls();
+        using var cancellation = new CancellationTokenSource();
+        switch (boundary)
+        {
+            case "denied":
+                test.Authorizer.AuthorizeAsync(Arg.Any<ConnectionUseRequest>(), Arg.Any<CancellationToken>()).Returns(false);
+                break;
+            case "pre-canceled":
+                cancellation.Cancel();
+                break;
+            case "policy-canceled":
+                test.Authorizer.AuthorizeAsync(Arg.Any<ConnectionUseRequest>(), Arg.Any<CancellationToken>()).Returns(_ =>
+                {
+                    cancellation.Cancel();
+                    return Task.FromResult(true);
+                });
+                break;
+            case "store-canceled":
+                test.Store.FindAsync("connection", "tenant", "environment", Arg.Any<CancellationToken>()).Returns(_ =>
+                {
+                    cancellation.Cancel();
+                    return test.Connection;
+                });
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(boundary));
+        }
+        using var outer = test.Tenants.PushContext(new Tenant { Id = "outer", Name = "outer" });
+        if (boundary == "denied")
+        {
+            await Assert.ThrowsAsync<ConnectionUnavailableException>(() => test.Reader.DemandCurrentAsync(lease, cancellation.Token));
+        }
+        else
+        {
+            var error = await Assert.ThrowsAsync<OperationCanceledException>(() => test.Reader.DemandCurrentAsync(lease, cancellation.Token));
+            Assert.Equal(cancellation.Token, error.CancellationToken);
+        }
+        Assert.Equal("outer", test.Tenants.TenantId);
+        await test.Authorizer.Received(boundary == "pre-canceled" ? 0 : 1).AuthorizeAsync(Arg.Any<ConnectionUseRequest>(), Arg.Any<CancellationToken>());
+        await test.Store.Received(boundary == "store-canceled" ? 1 : 0).FindAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await test.Secrets.DidNotReceive().ResolveGenerationAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task LeaseStoreFailureIsRedactedAndRestoresOuterTenant()
+    {
+        var test = new CredentialFixture();
+        var lease = await test.Reader.ResolveCurrentLeaseAsync(CancellationToken.None);
+        test.ClearCalls();
+        test.Store.FindAsync("connection", "tenant", "environment", Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromException<IntegrationConnection?>(new InvalidOperationException(CredentialFixture.Token)));
+        using var outer = test.Tenants.PushContext(new Tenant { Id = "outer", Name = "outer" });
+        var error = await Assert.ThrowsAsync<ConnectionUnavailableException>(() => test.Reader.DemandCurrentAsync(lease, CancellationToken.None));
+        Assert.Null(error.InnerException);
+        Assert.DoesNotContain(CredentialFixture.Token, error.ToString(), StringComparison.Ordinal);
+        Assert.Equal("outer", test.Tenants.TenantId);
+        await test.Secrets.DidNotReceive().ResolveGenerationAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
     private sealed class CredentialFixture
     {
         internal const string Token = "synthetic-offline-app-token";
@@ -161,13 +332,20 @@ public sealed class SlackSocketCredentialTests
         };
         internal SlackSocketListenerCredentialReader Reader { get; }
 
-        internal CredentialFixture()
+        internal CredentialFixture(SlackSocketModeConfiguration? configuration = null)
         {
             Authorizer.AuthorizeAsync(Arg.Any<ConnectionUseRequest>(), Arg.Any<CancellationToken>()).Returns(true);
             Store.FindAsync("connection", "tenant", "environment", Arg.Any<CancellationToken>()).Returns(Connection);
             Secrets.ResolveGenerationAsync("generation-secret", "connection", "generation", Arg.Any<CancellationToken>())
                 .Returns(SecretPayload.FromValue(JsonSerializer.Serialize(new { kind = 1, accessToken = Token, refreshToken = (string?)null, accessTokenExpiresAt = (DateTimeOffset?)null })));
-            Reader = new(SocketModeTestData.Configuration(), Authorizer, Store, Secrets, TimeProvider.System, Tenants);
+            Reader = new(configuration ?? SocketModeTestData.Configuration(), Authorizer, Store, Secrets, TimeProvider.System, Tenants);
+        }
+
+        internal void ClearCalls()
+        {
+            Authorizer.ClearReceivedCalls();
+            Store.ClearReceivedCalls();
+            Secrets.ClearReceivedCalls();
         }
     }
 }
