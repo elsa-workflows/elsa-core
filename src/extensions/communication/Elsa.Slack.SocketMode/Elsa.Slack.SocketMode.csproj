@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Opt-in PostgreSQL-backed Slack Socket Mode ingress for guarded local workflow execution.</Description>
+        <PackageTags>elsa slack socket admission</PackageTags>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="../Elsa.Slack/Elsa.Slack.csproj" />
+        <ProjectReference Include="../../../modules/Elsa.Connections/Elsa.Connections.csproj" />
+        <ProjectReference Include="../../../modules/Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql/Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql.csproj" />
+        <ProjectReference Include="../../../modules/Elsa.Secrets.Persistence.EFCore.PostgreSql/Elsa.Secrets.Persistence.EFCore.PostgreSql.csproj" />
+        <ProjectReference Include="../../../modules/Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql/Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <InternalsVisibleTo Include="Elsa.Slack.Tests" />
+        <InternalsVisibleTo Include="Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests" />
+    </ItemGroup>
+</Project>
