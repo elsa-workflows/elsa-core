@@ -59,6 +59,7 @@
         "name": "server",
         "repository": "elsaworkflows/elsa-server-app",
         "tag": "{version}",
+        "smoke_auth": true,
         "release_repositories": ["core", "extensions"],
         "packages": ["core", "extensions"],
         "platforms": ["linux/amd64", "linux/arm64"]
@@ -91,6 +92,7 @@
         "name": "server-studio-server",
         "repository": "elsaworkflows/elsa-server-studio-blazor-server-app",
         "tag": "{version}",
+        "smoke_auth": true,
         "release_repositories": ["studio", "extensions"],
         "packages": ["core", "studio", "extensions"],
         "platforms": ["linux/amd64", "linux/arm64"]
@@ -99,6 +101,7 @@
         "name": "server-studio-wasm",
         "repository": "elsaworkflows/elsa-server-studio-blazor-wasm-app",
         "tag": "{version}",
+        "smoke_auth": true,
         "release_repositories": ["studio", "extensions"],
         "packages": ["core", "studio", "extensions"],
         "platforms": ["linux/amd64", "linux/arm64"]

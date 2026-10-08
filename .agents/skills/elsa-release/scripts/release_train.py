@@ -628,19 +628,36 @@ def validate_container_receipt(profile, version, receipt, image_names=None, bind
             for item in smoke_platforms
         ):
             raise ValueError(f'Container receipt contains a failed platform smoke check for {name}')
-        for item in smoke_platforms:
-            dashboard = item.get('dashboardApi')
-            running = dashboard.get('running') if isinstance(dashboard, dict) else None
-            if (
-                not isinstance(dashboard, dict)
-                or dashboard.get('runtimeStatus') != 'AcceptingWork'
-                or dashboard.get('isAcceptingWork') is not True
-                or dashboard.get('workflowMetricsValid') is not True
-                or isinstance(running, bool)
-                or not isinstance(running, int)
-                or running < 0
-            ):
-                raise ValueError(f'Container receipt has no healthy authenticated dashboard runtime evidence for {name}')
+        if source_image.get('smoke_auth') is True:
+            for item in smoke_platforms:
+                identity_login = item.get('identityLogin')
+                bearer_api = item.get('bearerApi')
+                dashboard = item.get('dashboardApi')
+                bearer_content_type = bearer_api.get('contentType') if isinstance(bearer_api, dict) else None
+                dashboard_content_type = dashboard.get('contentType') if isinstance(dashboard, dict) else None
+                running = dashboard.get('running') if isinstance(dashboard, dict) else None
+                if (
+                    not isinstance(identity_login, dict)
+                    or identity_login.get('status') != 200
+                    or identity_login.get('endpoint') != '/elsa/api/identity/login'
+                    or not isinstance(bearer_api, dict)
+                    or bearer_api.get('status') != 200
+                    or bearer_api.get('endpoint') != '/elsa/api/workflow-definitions?page=0&pageSize=1'
+                    or not isinstance(bearer_content_type, str)
+                    or bearer_content_type.split(';', 1)[0] != 'application/json'
+                    or not isinstance(dashboard, dict)
+                    or dashboard.get('status') != 200
+                    or dashboard.get('endpoint') != '/elsa/api/dashboard/overview?range=24h&includeSystem=false'
+                    or not isinstance(dashboard_content_type, str)
+                    or dashboard_content_type.split(';', 1)[0] != 'application/json'
+                    or dashboard.get('runtimeStatus') != 'AcceptingWork'
+                    or dashboard.get('isAcceptingWork') is not True
+                    or dashboard.get('workflowMetricsValid') is not True
+                    or isinstance(running, bool)
+                    or not isinstance(running, int)
+                    or running < 0
+                ):
+                    raise ValueError(f'Container receipt has no healthy authenticated dashboard runtime evidence for {name}')
 
         live = dockerhub_manifest(repository, tag)
         if live['digest'] != image_digest or live['platforms'] != platform_digests:

@@ -130,12 +130,23 @@ class TrainTests(unittest.TestCase):
                             'status': 'success',
                             'endpoint': 'http://localhost/health',
                             'httpStatus': 200,
-                            'dashboardApi': {
-                                'runtimeStatus': 'AcceptingWork',
-                                'isAcceptingWork': True,
-                                'workflowMetricsValid': True,
-                                'running': 0,
-                            },
+                            **({
+                                'identityLogin': {'status': 200, 'endpoint': '/elsa/api/identity/login'},
+                                'bearerApi': {
+                                    'status': 200,
+                                    'endpoint': '/elsa/api/workflow-definitions?page=0&pageSize=1',
+                                    'contentType': 'application/json; charset=utf-8',
+                                },
+                                'dashboardApi': {
+                                    'status': 200,
+                                    'endpoint': '/elsa/api/dashboard/overview?range=24h&includeSystem=false',
+                                    'contentType': 'application/json; charset=utf-8',
+                                    'runtimeStatus': 'AcceptingWork',
+                                    'isAcceptingWork': True,
+                                    'workflowMetricsValid': True,
+                                    'running': 0,
+                                },
+                            } if source_image.get('smoke_auth') is True else {}),
                         }
                         for platform in image['platforms']
                     ],
@@ -291,6 +302,10 @@ class TrainTests(unittest.TestCase):
         state = self.ready_container_state(no_containers=False)
         mutations = (
             ('missing dashboard evidence', lambda row: row.pop('dashboardApi')),
+            ('missing identity login proof', lambda row: row.pop('identityLogin')),
+            ('wrong bearer endpoint', lambda row: row['bearerApi'].update(endpoint='/elsa/api/other')),
+            ('non-JSON dashboard response', lambda row: row['dashboardApi'].update(contentType='text/html')),
+            ('failed dashboard request', lambda row: row['dashboardApi'].update(status=503)),
             ('runtime not accepting work', lambda row: row['dashboardApi'].update(runtimeStatus='Unavailable')),
             ('runtime acceptance false', lambda row: row['dashboardApi'].update(isAcceptingWork=False)),
             ('workflow metrics invalid', lambda row: row['dashboardApi'].update(workflowMetricsValid=False)),
@@ -304,6 +319,25 @@ class TrainTests(unittest.TestCase):
                 self.refresh_container_artifact(fixture)
                 with self.assertRaisesRegex(ValueError, 'healthy authenticated dashboard runtime evidence'):
                     self.validate_container_fixture(state, fixture)
+
+        backend_images = ['server', 'server-alias']
+        fixture = self.container_fixture(state, image_names=backend_images)
+        alias = next(image for image in fixture[0]['images'] if image['name'] == 'server-alias')
+        alias['smoke']['platforms'][0].pop('dashboardApi')
+        self.refresh_container_artifact(fixture)
+        with self.assertRaisesRegex(ValueError, 'healthy authenticated dashboard runtime evidence'):
+            self.validate_container_fixture(state, fixture, image_names=backend_images)
+
+    def test_studio_only_container_receipt_does_not_require_backend_dashboard_probe(self):
+        state = self.ready_container_state(no_containers=False)
+        image_names = ['studio-wasm']
+        fixture = self.container_fixture(state, image_names=image_names)
+        platform_smoke = fixture[0]['images'][0]['smoke']['platforms'][0]
+        self.assertNotIn('dashboardApi', platform_smoke)
+
+        report = self.validate_container_fixture(state, fixture, image_names=image_names)
+        self.assertTrue(report['verified'])
+        self.assertEqual(['studio-wasm'], list(report['images']))
 
     def test_container_receipt_accepts_producer_decimal_run_id_and_rejects_malformed_values(self):
         state = self.ready_container_state(no_containers=False)
