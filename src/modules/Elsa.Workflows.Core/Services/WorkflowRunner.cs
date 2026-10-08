@@ -215,7 +215,7 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
-        var guard = workflowExecutionContext.GetService<IWorkflowExecutionGuard>();
+        var guard = serviceProvider.GetService(typeof(IWorkflowExecutionGuard)) as IWorkflowExecutionGuard ?? workflowExecutionContext.GetService<IWorkflowExecutionGuard>();
         IWorkflowExecutionAuthorization? authorization = null;
         if (guard != null)
         {
@@ -229,6 +229,9 @@ public class WorkflowRunner(
             }
         }
 
+        (Action Validate, WorkflowMiddlewareDelegate Execute)? authorizedInvocation = authorization != null
+            ? ((WorkflowExecutionPipeline)pipeline).CaptureAuthorizedInvocation()
+            : null;
         using var executionScope = WorkflowExecutionScope.Begin(workflowExecutionContext);
         var loggerState = loggerStateGenerator.GenerateLoggerState(workflowExecutionContext);
         using var loggingScope = logger.BeginScope(loggerState);
@@ -245,6 +248,15 @@ public class WorkflowRunner(
             await notificationSender.SendAsync(new WorkflowStarted(workflow, workflowExecutionContext), cancellationToken);
         }
 
+        // Authority denial is not a business workflow fault. Keep these checks outside the
+        // execution catch/telemetry, after callbacks and before any middleware entry.
+        if (authorization != null)
+        {
+            authorizedInvocation!.Value.Validate();
+            await authorization.RevalidateAsync(cancellationToken);
+            authorizedInvocation.Value.Validate();
+        }
+
         var telemetryScope = WorkflowInstrumentation.StartWorkflow(workflowExecutionContext, isStarting);
         Exception? workflowExecutionException = null;
 
@@ -252,12 +264,18 @@ public class WorkflowRunner(
         {
             if (authorization != null)
             {
-                await ((WorkflowExecutionPipeline)pipeline).ExecuteAuthorizedAsync(workflowExecutionContext, authorization);
+                await authorizedInvocation!.Value.Execute(workflowExecutionContext);
             }
             else
             {
                 await pipeline.ExecuteAsync(workflowExecutionContext);
             }
+        }
+        catch (WorkflowPipelineChangedException)
+        {
+            // A concurrent reconfiguration at the final dispatch boundary is still an
+            // admission denial, not an activity exception or persisted workflow fault.
+            throw;
         }
         catch (Exception e)
         {
