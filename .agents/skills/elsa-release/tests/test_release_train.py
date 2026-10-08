@@ -399,6 +399,55 @@ class TrainTests(unittest.TestCase):
                     self.assertIsNone(saved)
                     self.assertIsNone(state['containers']['dispatch'])
 
+    def test_container_source_requires_canonical_ref_and_main_ancestry_before_dispatch(self):
+        state = self.ready_container_state(repositories=['core'], no_containers=False)
+        args = SimpleNamespace(
+            state=self.root / 'untrusted-apps-source.json', source_ref='feature/untrusted',
+            commit=None, package_version=['extensions=3.8.4'], replace=False,
+        )
+        with patch.object(train, 'gh', side_effect=self.github), self.assertRaisesRegex(ValueError, 'canonical branch or the exact release-version tag'):
+            train.bind_containers(state, args)
+
+        commit = 'b' * 40
+        state['containers']['package_versions']['extensions'] = '3.8.4'
+        state['containers']['binding'] = {
+            'source_ref': 'main',
+            'commit': commit,
+            'packages': {'core': '3.9.0', 'extensions': '3.8.4'},
+            'images': state['containers']['images'],
+        }
+        train.save(args.state, state)
+
+        def uncontained_github(*call_args):
+            url = call_args[-1]
+            if url.endswith('/commits/main'):
+                return {'sha': commit}
+            if '/compare/' in url:
+                return {'status': 'behind'}
+            return self.github(*call_args)
+
+        with patch.object(train, 'gh', side_effect=uncontained_github), patch.object(train, 'command') as run_command, \
+             self.assertRaisesRegex(ValueError, 'not in the canonical main branch history'):
+            train.dispatch_containers(state, args)
+        run_command.assert_not_called()
+        self.assertIsNone(state['containers']['dispatch'])
+
+    def test_container_source_accepts_canonical_branch_and_exact_version_tag(self):
+        inventory = train.configured_container_release(self.state['profile'])
+        commit = 'a' * 40
+
+        def github(*args):
+            url = args[-1]
+            if '/commits/' in url:
+                return {'sha': commit}
+            if '/compare/' in url:
+                return {'status': 'ahead'}
+            self.fail(f'Unexpected GitHub call {args}')
+
+        with patch.object(train, 'gh', side_effect=github):
+            self.assertEqual({'source_ref': 'main', 'commit': commit}, train.validate_container_source(inventory, 'main', '3.9.0'))
+            self.assertEqual({'source_ref': '3.9.0', 'commit': commit}, train.validate_container_source(inventory, 'refs/tags/3.9.0', '3.9.0'))
+
     def test_legacy_container_checkpoint_requires_explicit_adoption(self):
         old_profile = copy.deepcopy(self.state['profile'])
         old_profile.pop('container_release')
@@ -449,6 +498,8 @@ class TrainTests(unittest.TestCase):
             return {'object':{'type':'tag','sha':'tag-object'}}
         if '/git/tags/' in url:
             return {'object':{'type':'commit','sha':'a'*40}}
+        if '/compare/' in url:
+            return {'status':'identical'}
         if '/workflows/' in url:
             return [{'workflow_runs':[{'id':42,'head_sha':'a'*40,'head_branch':'3.9.0','event':'release','run_number':42,'run_attempt':1,'status':'completed','conclusion':'success','html_url':'https://github.com/run'}]}]
         if '/jobs?' in url:

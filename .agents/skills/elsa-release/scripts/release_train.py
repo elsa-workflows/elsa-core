@@ -735,6 +735,27 @@ def container_plan(state):
     }
 
 
+def validate_container_source(inventory, source_ref, version, expected_commit=None):
+    canonical_ref = inventory.get('canonical_ref', 'main')
+    if source_ref in {canonical_ref, f'origin/{canonical_ref}', f'refs/heads/{canonical_ref}'}:
+        pinned_ref = canonical_ref
+    elif source_ref in {version, f'refs/tags/{version}'}:
+        pinned_ref = version
+    else:
+        raise ValueError('Apps source ref must be the canonical branch or the exact release-version tag')
+
+    ref = gh('api', f"repos/{inventory['repository']}/commits/{quote(pinned_ref, safe='')}")
+    commit = ref.get('sha')
+    if not isinstance(commit, str) or not re.fullmatch(r'[0-9a-f]{40}', commit):
+        raise ValueError('Apps source ref did not resolve to a full commit SHA')
+    if expected_commit and commit != expected_commit:
+        raise ValueError('Apps source ref no longer points to the pinned commit')
+    comparison = gh('api', f"repos/{inventory['repository']}/compare/{commit}...{quote(canonical_ref, safe='')}")
+    if comparison.get('status') not in {'ahead', 'identical'}:
+        raise ValueError('Apps source commit is not in the canonical main branch history')
+    return {'source_ref': pinned_ref, 'commit': commit}
+
+
 def require_container_upstreams(state):
     current = status(state)
     results = current.get('repositories', {})
@@ -754,13 +775,11 @@ def prepare_containers(state, args):
 def bind_containers(state, args):
     plan = prepare_containers(state, args)
     inventory = configured_container_release(state['profile'])
-    source_ref = args.source_ref or plan['source_ref']
-    ref = gh('api', f"repos/{inventory['repository']}/commits/{quote(source_ref, safe='')}")
-    commit = ref.get('sha')
-    if not isinstance(commit, str) or not re.fullmatch(r'[0-9a-f]{40}', commit):
-        raise ValueError('Apps source ref did not resolve to a full commit SHA')
-    if args.commit and args.commit != commit:
-        raise ValueError('Apps source ref no longer points to the requested commit')
+    source = validate_container_source(
+        inventory, args.source_ref or plan['source_ref'], state['version'], expected_commit=args.commit,
+    )
+    source_ref = source['source_ref']
+    commit = source['commit']
     packages = dict(state['containers'].get('package_versions', {}))
     required_packages = set(plan['packages'])
     for item in args.package_version or []:
@@ -851,6 +870,7 @@ def dispatch_containers(state, args):
                 return {'phase': 'dispatch-pending', 'source_commit': binding['commit']}
             return {'phase': 'wait-for-container-run', 'run_id': run['id'], 'url': run['html_url'], 'source_commit': binding['commit']}
         return {'phase': 'wait-for-container-run', 'run_id': run_id, 'source_commit': binding['commit']}
+    source = validate_container_source(inventory, binding.get('source_ref'), state['version'], expected_commit=binding.get('commit'))
     workflow_inputs = inventory.get('workflow_inputs', {})
     if not {'version', 'publish', 'images', 'expected_commit'} <= set(workflow_inputs) or any(family not in workflow_inputs for family in binding['packages']):
         raise ValueError('Container workflow profile must configure version, publish, expected-commit, and image-selection inputs')
@@ -866,7 +886,7 @@ def dispatch_containers(state, args):
     fields.update({workflow_inputs[family]: version for family, version in binding['packages'].items()})
     command_args = [
         'gh', 'workflow', 'run', inventory['workflow'], '--repo', inventory['repository'],
-        '--ref', binding['source_ref'],
+        '--ref', source['source_ref'],
     ]
     for name, value in fields.items():
         command_args.extend(['--field', f'{name}={value}'])
