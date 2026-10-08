@@ -466,7 +466,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
-        prove(args.artifacts, read_json(args.manifest.resolve(strict=True)), args.output)
+        prove(args.artifacts, read_json(args.manifest.resolve(strict=True), maximum=32 * 1024 * 1024), args.output)
     except ProofError as error:
         raise SystemExit("ADMISSION_CONSUMER_FAIL:" + str(error)) from None
     except Exception:
