@@ -114,7 +114,7 @@ public sealed class AdmissionHostConfiguration
             typeof(IWorkflowDefinitionService), typeof(IWorkflowGraphBuilder), typeof(IWorkflowInstanceManager),
             typeof(IWorkflowStateExtractor), typeof(IWorkflowStateSerializer), typeof(IActivitySerializer), typeof(IPayloadSerializer),
             typeof(IActivityRegistry), typeof(IActivityRegistryLookupService), typeof(IMaterializerRegistry),
-            typeof(IActivitySchedulerFactory), typeof(IActivityInvoker), typeof(IStorageDriverManager),
+            typeof(IActivitySchedulerFactory), typeof(IActivityInvoker), typeof(IStorageDriverManager), typeof(IExecutionCycleRegistry),
             typeof(ILoggerStateGenerator<ActivityExecutionContext>),
             typeof(ILoggerStateGenerator<WorkflowExecutionContext>), typeof(INotificationSender), typeof(ICommitStateHandler),
             typeof(IBookmarksPersister), typeof(IVariablePersistenceManager), typeof(IWorkflowCommitTransaction), typeof(IWorkflowCommitNotificationBuffer)

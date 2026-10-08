@@ -252,7 +252,7 @@ public static class AdmissionRuntimeHost
             typeof(ActivityRegistryLookupService), typeof(MaterializerRegistry), typeof(WorkflowLoggerStateGenerator),
             typeof(WorkflowCommitNotificationSender), typeof(ExecutionCycleAwareCommitStateHandler), typeof(BookmarksPersister),
             typeof(VariablePersistenceManager), typeof(NoopWorkflowCommitTransaction), typeof(WorkflowCommitNotificationBuffer),
-            typeof(ActivitySchedulerFactory), typeof(StorageDriverManager), typeof(WorkflowInstanceStorageDriver), typeof(MemoryStorageDriver), typeof(AdmissionProofStorageDriver), typeof(ActivityInvoker), typeof(ActivityLoggerStateGenerator), typeof(TypedActivityProvider), typeof(WorkflowDefinitionActivityProvider), typeof(HostMethodActivityProvider),
+            typeof(ActivitySchedulerFactory), typeof(ExecutionCycleRegistry), typeof(StorageDriverManager), typeof(WorkflowInstanceStorageDriver), typeof(MemoryStorageDriver), typeof(AdmissionProofStorageDriver), typeof(ActivityInvoker), typeof(ActivityLoggerStateGenerator), typeof(TypedActivityProvider), typeof(WorkflowDefinitionActivityProvider), typeof(HostMethodActivityProvider),
             typeof(AdmissionRuntimeProbe), typeof(AdmissionObservedStateExtractor), typeof(AdmissionObservedCommit), typeof(AdmissionObservedBookmarkStore)
         };
         var management = new[] { "DeleteWorkflowInstances", "RefreshActivityRegistry", "UpdateConsumingWorkflows", "ValidateWorkflow", "ValidateOutputConverters" }
