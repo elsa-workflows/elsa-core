@@ -21,12 +21,18 @@ public sealed class AdmissionRuntimeEntryTests(PostgreSqlConnectionsFixture fixt
     [Theory]
     [InlineData("runtime-held-client", "client")]
     [InlineData("runtime-held-client-create", "client-create")]
+    [InlineData("runtime-held-client-create-run", "client-create-run")]
     [InlineData("runtime-held-client-cancel", "client-cancel")]
     [InlineData("runtime-held-client-delete", "client-delete")]
     [InlineData("runtime-held-client-import", "client-import")]
     [InlineData("runtime-held-legacy-resume", "legacy-resume")]
     [InlineData("runtime-held-legacy-cancel", "legacy-cancel")]
     [InlineData("runtime-held-legacy-import", "legacy-import")]
+    [InlineData("runtime-held-host-run", "host-run")]
+    [InlineData("runtime-held-host-cancel", "host-cancel")]
+    [InlineData("runtime-held-host-persist", "host-persist")]
+    [InlineData("runtime-held-canceler-state", "canceler-state")]
+    [InlineData("runtime-held-canceler-context", "canceler-context")]
     [InlineData("runtime-held-dispatcher", "dispatcher")]
     [InlineData("runtime-held-runner-activity", "runner-activity")]
     [InlineData("runtime-held-runner-state", "runner-state")]
@@ -73,10 +79,14 @@ public sealed class AdmissionRuntimeEntryTests(PostgreSqlConnectionsFixture fixt
                 {
                     "client" => () => client.RunInstanceAsync(new RunWorkflowInstanceRequest()),
                     "client-create" => () => client.CreateInstanceAsync(new CreateWorkflowInstanceRequest()),
+                    "client-create-run" => () => client.CreateAndRunInstanceAsync(new CreateAndRunWorkflowInstanceRequest()),
                     "client-cancel" => () => client.CancelAsync(),
                     "client-delete" => () => client.DeleteAsync(),
                     "client-import" => () => client.ImportStateAsync(state),
                     "legacy-resume" or "legacy-cancel" or "legacy-import" => () => InvokeLegacyAsync(runtime, state, scenario),
+                    "host-run" or "host-cancel" or "host-persist" => () => InvokeHostAsync(host.Services, context, state, scenario),
+                    "canceler-state" => () => host.Services.GetRequiredService<IWorkflowCanceler>().CancelWorkflowAsync(context.WorkflowGraph, state),
+                    "canceler-context" => () => host.Services.GetRequiredService<IWorkflowCanceler>().CancelWorkflowAsync(context),
                     "dispatcher" => () => host.Services.GetRequiredService<IWorkflowDispatcher>().DispatchAsync(new DispatchWorkflowInstanceRequest(context.Id), null),
                     "runner-activity" => () => runner.RunAsync(new AdmissionRuntimeActivity(), new RunWorkflowOptions { WorkflowInstanceId = context.Id }),
                     "runner-state" => () => runner.RunAsync(context.WorkflowGraph, state),
@@ -188,7 +198,11 @@ public sealed class AdmissionRuntimeEntryTests(PostgreSqlConnectionsFixture fixt
             Assert.Equal(expectedNotifications, host.Probe.Count("workflowStarted"));
             Assert.Equal(0, host.Probe.Count("activityEffects"));
             Assert.Equal(0, host.Probe.Count("instanceWriteAttempts"));
-            Assert.Null(host.Probe.PreparedContext!.Exception);
+            Assert.Empty(host.Probe.PreparedContext!.Incidents);
+            Assert.NotEqual(WorkflowSubStatus.Faulted, host.Probe.PreparedContext.SubStatus);
+            var persisted = (await host.Services.GetRequiredService<IWorkflowInstanceManager>().FindByIdAsync(host.Probe.PreparedContext.Id))!.WorkflowState;
+            Assert.Empty(persisted.Incidents);
+            Assert.Equal(WorkflowSubStatus.Pending, persisted.SubStatus);
             Assert.Equal(AdmissionState.RecoveryRequired, (await host.Store.FindAsync(host.AdmissionId))!.State);
             await AdmissionProofObservation.WriteAsync(fixture, caseId, GetType().FullName + "." + nameof(PreparedInvocationRejectsRuntimeDistinctValuesAndPlanMutation), caseId, [],
                 new Dictionary<string, bool> { ["behaviorAssertionsPassed"] = true },
@@ -198,6 +212,25 @@ public sealed class AdmissionRuntimeEntryTests(PostgreSqlConnectionsFixture fixt
     }
 
 #pragma warning disable CS0618 // Exercise the actual legacy facade rather than a duplicate wrapper.
+    private static async Task InvokeHostAsync(IServiceProvider services, WorkflowExecutionContext context, Elsa.Workflows.State.WorkflowState state, string scenario)
+    {
+        var host = await services.GetRequiredService<IWorkflowHostFactory>().CreateAsync(context.WorkflowGraph, state);
+        switch (scenario)
+        {
+            case "host-run":
+                await host.RunWorkflowAsync();
+                break;
+            case "host-cancel":
+                await host.CancelWorkflowAsync();
+                break;
+            case "host-persist":
+                await host.PersistStateAsync();
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(scenario));
+        }
+    }
+
     private static async Task InvokeLegacyAsync(IWorkflowRuntime runtime, Elsa.Workflows.State.WorkflowState state, string scenario)
     {
         switch (scenario)
