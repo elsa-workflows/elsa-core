@@ -19,6 +19,11 @@ public static class AdmissionServiceCollectionExtensions
         configuration.BindRegistrations(services);
         services.AddSingleton(configuration);
         services.TryAddSingleton<AdmissionAuthorityRegistry>();
+        services.AddScoped<AdmissionExecutionComposition>();
+        services.RemoveAll<IWorkflowExecutionPipeline>();
+        services.RemoveAll<IActivityExecutionPipeline>();
+        services.AddScoped<IWorkflowExecutionPipeline>(sp => sp.GetRequiredService<AdmissionExecutionComposition>().Workflow);
+        services.AddScoped<IActivityExecutionPipeline>(sp => sp.GetRequiredService<AdmissionExecutionComposition>().Activity);
         services.AddScoped<IWorkflowExecutionGuard, AdmissionExecutionGuard>();
         services.AddScoped(sp => new AdmissionExecutionService(sp.GetRequiredService<IAdmissionStore>(), sp.GetRequiredService<AdmissionAuthorityRegistry>(),
             sp, sp.GetRequiredService<IWorkflowDefinitionService>(), sp.GetRequiredService<IWorkflowInstanceManager>(), sp.GetRequiredService<IWorkflowRunner>(),
@@ -26,6 +31,7 @@ public static class AdmissionServiceCollectionExtensions
             sp.GetRequiredService<IPayloadSerializer>(), sp.GetRequiredService<IBookmarkStore>(), sp.GetRequiredService<ISystemClock>(),
             sp.GetRequiredService<ITenantAccessor>(), configuration));
         services.Replace(ServiceDescriptor.Scoped<IWorkflowRuntime, AdmissionWorkflowRuntime>());
+        services.Decorate<IWorkflowDispatcher, AdmissionWorkflowDispatcher>();
         services.AddScoped<AdmissionBootstrapService>();
         services.Replace(ServiceDescriptor.Scoped<IWorkflowDefinitionPublisher, AdmissionDeniedManagement>());
         services.Replace(ServiceDescriptor.Scoped<IWorkflowDefinitionManager, AdmissionDeniedManagement>());

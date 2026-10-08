@@ -61,6 +61,18 @@ internal static class AdmissionValueFingerprint
             {
                 writer.Write((byte)15);
                 var dictionary = (Dictionary<string, object>)value;
+                if (ReferenceEquals(dictionary.Comparer, StringComparer.OrdinalIgnoreCase))
+                {
+                    writer.Write((byte)1);
+                }
+                else if (ReferenceEquals(dictionary.Comparer, StringComparer.Ordinal) || ReferenceEquals(dictionary.Comparer, EqualityComparer<string>.Default))
+                {
+                    writer.Write((byte)0);
+                }
+                else
+                {
+                    throw new InvalidOperationException("Admission input dictionaries require an audited ordinal comparer.");
+                }
                 writer.Write(dictionary.Count);
                 foreach (var pair in dictionary.OrderBy(x => x.Key, StringComparer.Ordinal))
                 {

@@ -61,7 +61,14 @@ public class DefaultActivitySchedulerMiddleware(WorkflowMiddlewareDelegate next,
             SchedulingCallStackDepth = workItem.SchedulingCallStackDepth
         };
 
-        await activityInvoker.InvokeAsync(context, workItem.Activity, options);
+        if (WorkflowExecutionPhase.Contains(context) && activityInvoker.GetType() == typeof(ActivityInvoker))
+        {
+            await ((ActivityInvoker)activityInvoker).InvokeAuthorizedAsync(context, workItem.Activity, options);
+        }
+        else
+        {
+            await activityInvoker.InvokeAsync(context, workItem.Activity, options);
+        }
     }
 
     private async Task ConditionallyCommitStateAsync(WorkflowExecutionContext context, WorkflowLifetimeEvent lifetimeEvent)

@@ -70,6 +70,7 @@ public sealed class AdmissionExecutionService
             ?? throw new InvalidOperationException("The trusted admission subscription is missing.");
         ValidateScope(subscription.Configuration);
         _host.ValidateSubscription(subscription.Configuration);
+        await LoadPinnedGraphAsync(subscription.Configuration, cancellationToken);
         return await _store.AdmitAsync(message, _clock.UtcNow, cancellationToken);
     }
 
@@ -89,12 +90,14 @@ public sealed class AdmissionExecutionService
         if (record.State == AdmissionState.Admitted)
         {
             var instanceId = Guid.NewGuid().ToString("N");
+            // Register local quiescence ownership before the durable claim can become visible.
+            // Resolution must not retire Creating while its original caller can still insert.
+            using var owner = _authorities.AcquireOwner(instanceId);
             record = await _store.BeginCreationAsync(record.Id, record.Revision, instanceId, cancellationToken);
             if (record == null)
             {
                 return null;
             }
-            using var owner = _authorities.AcquireOwner(instanceId);
             try
             {
                 await ObserveAsync(AdmissionExecutionBoundary.CreationClaimed, record, cancellationToken);

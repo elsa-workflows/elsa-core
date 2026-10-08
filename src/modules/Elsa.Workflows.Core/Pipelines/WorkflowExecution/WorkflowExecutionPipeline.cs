@@ -10,6 +10,7 @@ public class WorkflowExecutionPipeline : IWorkflowExecutionPipeline
     private WorkflowMiddlewareDelegate? _runnerPipeline;
     private readonly object _gate = new();
     private long _generation;
+    private bool _frozen;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WorkflowExecutionPipeline"/> class.
@@ -30,15 +31,31 @@ public class WorkflowExecutionPipeline : IWorkflowExecutionPipeline
     /// <inheritdoc />
     public WorkflowMiddlewareDelegate Setup(Action<IWorkflowExecutionPipelineBuilder> setup)
     {
-        var builder = new WorkflowExecutionPipelineBuilder(_serviceProvider);
-        setup(builder);
-        var raw = builder.BuildInternal();
         lock (_gate)
         {
+            if (_frozen)
+            {
+                throw new InvalidOperationException("This workflow execution composition is frozen.");
+            }
+            var builder = new WorkflowExecutionPipelineBuilder(_serviceProvider);
+            setup(builder);
+            var raw = builder.BuildInternal();
             _runnerPipeline = raw;
             _pipeline = WorkflowExecutionPipelineBuilder.Guard(raw, _serviceProvider);
             _generation++;
             return _pipeline;
+        }
+    }
+
+    /// <summary>
+    /// Permanently prevents replacement of this composition. Setup fails before invoking
+    /// configuration callbacks or constructing middleware. Other instances remain mutable.
+    /// </summary>
+    public void Freeze()
+    {
+        lock (_gate)
+        {
+            _frozen = true;
         }
     }
 
