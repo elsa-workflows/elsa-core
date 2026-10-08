@@ -3,6 +3,7 @@
   "baselineCommit": "fee3a6da59db56c231ea89ca24fcd3393b615024",
   "baselineTree": "caa2602543dd3b89b4a9c64d4c8e53bff19ab191",
   "baselineEntries": 10910,
+  "relocationCommit": "78ada291063930334b282f1db64e275847368347",
   "exactMoves": {
     "jordi-delay-bookmark-reply.md": "core/docs/support/jordi-delay-bookmark-reply.md",
     "pau-delay-dispatch-response.md": "core/docs/support/pau-delay-dispatch-response.md",
