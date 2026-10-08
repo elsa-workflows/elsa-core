@@ -16,6 +16,7 @@ using Elsa.Workflows.Admission.Persistence.EFCore.Features;
 using Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql.Extensions;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Handlers;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Activities.HostMethod;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
@@ -270,6 +271,9 @@ public static class AdmissionRuntimeHost
             typeof(ActivityRegistryLookupService), typeof(MaterializerRegistry), typeof(WorkflowLoggerStateGenerator),
             typeof(WorkflowCommitNotificationSender), typeof(ExecutionCycleAwareCommitStateHandler), typeof(BookmarksPersister),
             typeof(VariablePersistenceManager), typeof(NoopWorkflowCommitTransaction), typeof(WorkflowCommitNotificationBuffer),
+            // Core's classic and Shell WorkflowsFeature both scan this normal callback handler.
+            // Retain parent-input evaluation for legitimate bookmark/completion callbacks.
+            typeof(EvaluateParentInputProperties),
             typeof(ActivitySchedulerFactory), typeof(ExecutionCycleRegistry), typeof(StorageDriverManager), typeof(WorkflowInstanceStorageDriver), typeof(MemoryStorageDriver), typeof(AdmissionProofStorageDriver), typeof(ActivityInvoker), typeof(ActivityLoggerStateGenerator), typeof(TypedActivityProvider), typeof(WorkflowDefinitionActivityProvider), typeof(HostMethodActivityProvider),
             typeof(AdmissionRuntimeProbe), typeof(AdmissionObservedStateExtractor), typeof(AdmissionObservedCommit), typeof(AdmissionObservedBookmarkStore)
         };
