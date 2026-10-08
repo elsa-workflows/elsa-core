@@ -87,7 +87,7 @@ public sealed class AdmissionExecutionDataReaderTests(PostgreSqlConnectionsFixtu
                 barrier.Release.TrySetResult();
                 await Assert.ThrowsAsync<InvalidOperationException>(() => delayed!);
                 await AdmissionProofObservation.WriteAsync(fixture, caseId,
-                    $"{typeof(AdmissionExecutionDataReaderTests).FullName}.{nameof(DataLookupCompletingAfterOwnerRetiresCannotReturnItsOldSnapshot)}", caseId, [],
+                    $"{typeof(AdmissionExecutionDataReaderTests).FullName}.{nameof(DataLookupCompletingAfterOwnerRetiresCannotReturnItsOldSnapshot)}", "default", [],
                     new Dictionary<string, bool> { ["behaviorAssertionsPassed"] = true },
                     new Dictionary<string, object> { ["postLookupOwnerRevalidated"] = true, ["staleDataNotReturned"] = true, ["activityEffects"] = 1 });
             }
