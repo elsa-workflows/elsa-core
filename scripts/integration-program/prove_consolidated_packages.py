@@ -209,6 +209,81 @@ def dependency_groups(data: ET.Element) -> list[dict]:
     return sorted(groups, key=lambda group: group["framework"])
 
 
+def framework_reference_groups(data: ET.Element) -> list[dict]:
+    require(not data.findall("frameworkReferences/frameworkReference"), "Ungrouped framework references are unsupported")
+    groups = []
+    containers = data.findall("frameworkReferences")
+    require(len(containers) <= 1 and all(child.tag == "group" for container in containers for child in container),
+            "Unsupported framework reference structure")
+    for group in data.findall("frameworkReferences/group"):
+        require(set(group.attrib) == {"targetFramework"} and all(item.tag == "frameworkReference" for item in group),
+                "Unsupported framework reference structure")
+        references = [item.get("name", "") for item in group.findall("frameworkReference")]
+        require(bool(group.get("targetFramework")) and all(references), "Empty framework reference identity")
+        require(len({name.casefold() for name in references}) == len(references), "Duplicate framework reference")
+        require(all(set(item.attrib) == {"name"} for item in group), "Unsupported framework reference attributes")
+        groups.append({"framework": group.get("targetFramework"), "references": sorted(references)})
+    require(len({group["framework"] for group in groups}) == len(groups), "Duplicate framework reference group")
+    return sorted(groups, key=lambda group: group["framework"])
+
+
+SDK_BUILD_FOLDERS = {"build", "buildTransitive", "buildMultiTargeting"}
+
+
+def sdk_asset_path(path: str, row: dict) -> bool:
+    manifests = {properties["manifest_path"] for properties in row["framework_properties"].values()
+                 if properties["manifest_required"]}
+    parts = PurePosixPath(path).parts
+    return bool(parts and parts[0].casefold() in {name.casefold() for name in SDK_BUILD_FOLDERS}) or path in manifests or path == "elsa-package.json"
+
+
+def capture_sdk_assets(root: Path, row: dict, data: bytes) -> list[dict]:
+    """Hash concrete SDK nuspec mappings; never expand arbitrary globs or infer files."""
+    document = parse_document(data)
+    assets = []
+    root = root.resolve(strict=True)
+    for item in document.findall("files/file"):
+        target = item.get("target", "").lstrip("/")
+        if not sdk_asset_path(target, row):
+            continue
+        path = PurePosixPath(target)
+        require(target and not path.is_absolute() and ".." not in path.parts and "\\" not in target,
+                "Unsafe SDK build/manifest target")
+        require(set(item.attrib) == {"src", "target"}, "Unsupported SDK build/manifest mapping")
+        source = Path(item.get("src", ""))
+        require(source.is_absolute() and source.is_file() and not source.is_symlink(), "Missing or non-concrete SDK build/manifest source")
+        resolved = source.resolve(strict=True)
+        require(source.is_relative_to(root) and resolved.is_relative_to(root) and not any(parent.is_symlink() for parent in source.parents if parent != root and parent.is_relative_to(root)),
+                "SDK build/manifest source escaped worktree")
+        assets.append({"path": target, "source_path": resolved.relative_to(root).as_posix(),
+                       "sha256": hashlib.sha256(source.read_bytes()).hexdigest()})
+    require(len({asset["path"].casefold() for asset in assets}) == len(assets), "Duplicate SDK build/manifest target")
+    return sorted(assets, key=lambda asset: asset["path"])
+
+
+def verify_sdk_assets(archive: zipfile.ZipFile, row: dict, *, required: bool = False) -> None:
+    if not required and "expected_sdk_assets" not in row:
+        return  # Immutable historical receipts predate this explicit capability.
+    require("expected_sdk_assets" in row, "Missing SDK build/manifest asset evidence")
+    expected = row["expected_sdk_assets"]
+    require(type(expected) is list and all(type(asset) is dict and set(asset) == {"path", "source_path", "sha256"}
+            and type(asset["path"]) is str and sdk_asset_path(asset["path"], row)
+            and PurePosixPath(asset["path"]).as_posix() == asset["path"]
+            and not PurePosixPath(asset["path"]).is_absolute() and ".." not in PurePosixPath(asset["path"]).parts
+            and type(asset["source_path"]) is str and bool(asset["source_path"])
+            and not PurePosixPath(asset["source_path"]).is_absolute() and ".." not in PurePosixPath(asset["source_path"]).parts
+            and "\\" not in asset["source_path"]
+            and type(asset["sha256"]) is str and re.fullmatch(r"[0-9a-f]{64}", asset["sha256"]) for asset in expected),
+            "Invalid SDK build/manifest asset evidence")
+    paths = {asset["path"] for asset in expected}
+    require(len({path.casefold() for path in paths}) == len(expected), "Duplicate SDK build/manifest asset evidence")
+    actual = {name for name in archive_names(archive) if sdk_asset_path(name, row) and not name.endswith("/")}
+    require(actual == paths, "SDK build/manifest asset inventory mismatch")
+    for asset in expected:
+        require(hashlib.sha256(archive.read(asset["path"])).hexdigest() == asset["sha256"],
+                "SDK build/manifest asset differs from generated output")
+
+
 def read_staged_nuspecs(destination: Path, row: dict) -> None:
     main = row["nupkg"].removesuffix(".nupkg") + ".nuspec"
     symbols = row["snupkg"].removesuffix(".snupkg") + ".symbols.nuspec" if row["snupkg"] else None
@@ -226,7 +301,10 @@ def read_staged_nuspecs(destination: Path, row: dict) -> None:
         path = destination / name
         require(path.is_file() and not path.is_symlink(), f"Invalid staged nuspec: {path}")
         data = path.read_bytes()
-        row[groups_key] = dependency_groups(parse_metadata(data))
+        metadata = parse_metadata(data)
+        row[groups_key] = dependency_groups(metadata)
+        references_key = "expected_symbol_framework_reference_groups" if name == symbols else "expected_framework_reference_groups"
+        row[references_key] = framework_reference_groups(metadata)
         row[hash_key] = hashlib.sha256(data).hexdigest()
 
 
@@ -269,6 +347,8 @@ def stage_sdk_metadata(root: Path, manifest: dict, output: Path, inspector: Path
             snapshot.write_bytes(assets.read_bytes())
             row["restore_assets"][-1]["retained_path"] = snapshot.relative_to(output).as_posix()
             properties["compiler_evidence"] = capture_compiler_evidence(root, row, framework, resolved, cache)
+        staged_main = destination / (row["nupkg"].removesuffix(".nupkg") + ".nuspec")
+        row["expected_sdk_assets"] = capture_sdk_assets(root, row, staged_main.read_bytes())
         if (index + 1) % 20 == 0 or index + 1 == len(manifest["packages"]):
             print(f"Staged SDK metadata for {index+1}/{len(manifest['packages'])} packages", flush=True)
 
@@ -348,16 +428,20 @@ def metadata(archive: zipfile.ZipFile) -> ET.Element:
     return parse_metadata(archive.read(files[0]))
 
 
-def parse_metadata(data: bytes) -> ET.Element:
+def parse_document(data: bytes) -> ET.Element:
     document = ET.fromstring(data)
     for element in document.iter():
         element.tag = element.tag.rsplit("}", 1)[-1]
-    result = document.find("metadata")
+    return document
+
+
+def parse_metadata(data: bytes) -> ET.Element:
+    result = parse_document(data).find("metadata")
     require(result is not None, "Nuspec metadata is missing")
     return result
 
 
-def verify_metadata(data: ET.Element, row: dict, manifest: dict, *, symbols: bool = False) -> list[dict]:
+def verify_metadata(data: ET.Element, row: dict, manifest: dict, *, symbols: bool = False, require_sdk_metadata: bool = False) -> list[dict]:
     require(data.findtext("id") == row["id"] and data.findtext("version") == manifest["version"],
             f"Artifact identity/version mismatch: {row['id']}")
     repository = data.find("repository")
@@ -371,6 +455,12 @@ def verify_metadata(data: ET.Element, row: dict, manifest: dict, *, symbols: boo
     groups_key = "expected_symbol_dependency_groups" if symbols else "expected_dependency_groups"
     require(groups_key in row and groups == row[groups_key],
             f"SDK dependency metadata/archive mismatch: {row['id']}")
+    references_key = "expected_symbol_framework_reference_groups" if symbols else "expected_framework_reference_groups"
+    if require_sdk_metadata or references_key in row:
+        require(references_key in row and framework_reference_groups(data) == row[references_key],
+                f"SDK framework reference metadata/archive mismatch: {row['id']}")
+        require(all(group["framework"] in row["framework_properties"] for group in row[references_key]),
+                f"Unsupported framework reference framework: {row['id']}")
     for group in groups:
         require(group["framework"] in row["framework_properties"], f"Unsupported dependency framework: {group['framework']}")
         for dependency in group["dependencies"]:
@@ -386,7 +476,8 @@ def verify_metadata(data: ET.Element, row: dict, manifest: dict, *, symbols: boo
     return groups
 
 
-def verify_artifacts(artifacts: Path, manifest: dict) -> dict:
+def verify_artifacts(artifacts: Path, manifest: dict, *, require_sdk_metadata: bool = False) -> dict:
+    """Fresh runs require SDK asset/reference evidence; immutable legacy replay cannot invent it."""
     require(artifacts.is_dir() and not artifacts.is_symlink(), "Artifact directory is missing or symlinked")
     expected = {row[key] for row in manifest["packages"] for key in ("nupkg", "snupkg") if row[key]}
     actual = {path.name for path in artifacts.iterdir()}
@@ -403,7 +494,8 @@ def verify_artifacts(artifacts: Path, manifest: dict) -> dict:
         with zipfile.ZipFile(path) as archive:
             names = archive_names(archive)
             nuspec = metadata(archive)
-            row["dependency_groups"] = verify_metadata(nuspec, row, manifest)
+            row["dependency_groups"] = verify_metadata(nuspec, row, manifest, require_sdk_metadata=require_sdk_metadata)
+            verify_sdk_assets(archive, row, required=require_sdk_metadata)
             row["browser_assets"] = verify_browser_assets(archive, row, manifest.get("browser_assets", []))
             row["package_manifest"] = verify_package_manifest(archive, row, manifest["version"])
             require(nuspec.findtext("projectUrl", "").rstrip("/") == CORE_URL,
@@ -430,7 +522,7 @@ def verify_artifacts(artifacts: Path, manifest: dict) -> dict:
                 row["snupkg_sha256"] = hashlib.sha256(symbol_path.read_bytes()).hexdigest()
                 with zipfile.ZipFile(symbol_path) as symbols:
                     symbol_names = archive_names(symbols)
-                    verify_metadata(metadata(symbols), row, manifest, symbols=True)
+                    verify_metadata(metadata(symbols), row, manifest, symbols=True, require_sdk_metadata=require_sdk_metadata)
                     expected_pdbs = {assembly["pdb"] for assembly in row["assemblies"]}
                     require({name for name in symbol_names if name.endswith(".pdb")} == expected_pdbs,
                             f"Symbol framework coverage mismatch: {row['id']}")
@@ -976,7 +1068,7 @@ def main(*, mode: str = "proof") -> None:
     shutil.copytree(packages, artifacts)
     inspector = build_symbol_verifier(root, output)
     stage_sdk_metadata(root, manifest, output, inspector)
-    manifest = verify_artifacts(artifacts, manifest)
+    manifest = verify_artifacts(artifacts, manifest, require_sdk_metadata=True)
     write_json(output / "verified-artifacts.json", manifest)
     sources = provenance(root, artifacts, manifest, output, remote=args.remote_sources, inspector=inspector)
     write_json(output / "source-provenance.json", sources)
