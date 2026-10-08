@@ -1478,6 +1478,90 @@
       ],
       "minimumProcesses": 2,
       "restartRequired": false
+    },
+    {
+      "caseId": "provider-unknown-admission",
+      "family": "admission",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.UnknownAdmissionCommitResponseRedeliveryPreservesAllocationAndCapacity",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "safeOutputVerified"
+      ],
+      "facts": {
+        "postCommitState": {
+          "kind": "enum",
+          "values": [
+            "Admitted"
+          ]
+        },
+        "firstExitCode": {
+          "kind": "integer",
+          "minimum": 2,
+          "maximum": 2
+        },
+        "firstResultObserved": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "firstAcknowledgementObserved": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "redeliveryOutcome": {
+          "kind": "enum",
+          "values": [
+            "Duplicate"
+          ]
+        },
+        "sameAllocationAfterRedelivery": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "revisionPreserved": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "admissionCountBeforeFailure": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activeReservationsBeforeFailure": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "retainedRecordsBeforeFailure": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "admissionCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activeReservations": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "retainedRecords": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-primary",
+        "admission-competitor"
+      ],
+      "minimumProcesses": 2,
+      "restartRequired": true
     }
   ],
   "workerAssemblies": {
