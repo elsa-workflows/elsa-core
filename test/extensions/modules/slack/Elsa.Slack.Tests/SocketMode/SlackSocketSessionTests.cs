@@ -144,6 +144,71 @@ public sealed class SlackSocketSessionTests
         Assert.Equal(0, fixture.Notifications);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BlockedProviderCancellationCannotSuppressDeadlineOrExternalStop(bool externalStop)
+    {
+        await using var fixture = new SessionFixture(TimeSpan.FromSeconds(2));
+        await using var peer = new SocketPeer();
+        await using var connection = await peer.ConnectAsync(fixture.Configuration);
+        var lease = await fixture.CreateLeaseAsync();
+        var policyEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var callbackEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseCallback = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var policyResult = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var policyCalls = 0;
+        fixture.Authorizer.AuthorizeAsync(Arg.Any<ConnectionUseRequest>(), Arg.Any<CancellationToken>()).Returns(call =>
+        {
+            Interlocked.Increment(ref policyCalls);
+            // This registration comes AFTER the reader starts, exactly the callback-order counterexample.
+            call.ArgAt<CancellationToken>(1).Register(() =>
+            {
+                callbackEntered.TrySetResult();
+                releaseCallback.Task.GetAwaiter().GetResult();
+                policyResult.TrySetResult(false);
+            });
+            policyEntered.TrySetResult();
+            return policyResult.Task;
+        });
+        using var stop = new CancellationTokenSource();
+        var session = fixture.CreateSession();
+        var running = session.RunAsync(connection, lease, stop.Token);
+        try
+        {
+            await peer.SendAsync("{\"type\":\"hello\"}");
+            await policyEntered.Task.WaitAsync(Deadline);
+            if (externalStop)
+            {
+                // Its callback only publishes retirement and starts owned asynchronous cancellation.
+                await stop.CancelAsync().WaitAsync(Deadline);
+            }
+            await callbackEntered.Task.WaitAsync(Deadline);
+            Assert.Equal(SlackSocketSessionEndReason.ReconciliationRequired, await running.WaitAsync(Deadline));
+            Assert.Equal(externalStop ? SlackSocketSessionEndReason.Stopped : SlackSocketSessionEndReason.Credentials, session.TerminationReason);
+            await peer.ClientStopped.WaitAsync(Deadline);
+            Assert.Equal(0, peer.ClientMessages);
+            Assert.False(session.IsSettled);
+            Assert.Equal(1, fixture.CreatedScopes);
+            Assert.Equal(0, fixture.DisposedScopes);
+            Assert.Equal(1, Volatile.Read(ref policyCalls));
+            Assert.Equal(0, fixture.Notifications);
+            Assert.False(await session.TryDrainAsync(CancellationToken.None));
+            Assert.Equal(0, fixture.DisposedScopes);
+        }
+        finally
+        {
+            releaseCallback.TrySetResult();
+            await running.WaitAsync(Deadline);
+            await fixture.ScopeDisposed.Task.WaitAsync(Deadline);
+            Assert.True(await session.TryDrainAsync(CancellationToken.None));
+        }
+        Assert.True(session.IsSettled);
+        Assert.Equal(1, fixture.DisposedScopes);
+        Assert.Equal(1, Volatile.Read(ref policyCalls));
+        Assert.Equal(0, peer.ClientMessages);
+    }
+
     private sealed class SessionFixture : IAsyncDisposable
     {
         private readonly ServiceProvider _services;

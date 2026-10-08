@@ -25,6 +25,8 @@ internal sealed class SlackSocketSession(SlackSocketModeConfiguration configurat
     private readonly CancellationTokenSource _stop = new();
     private readonly TaskCompletionSource _ended = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly TaskCompletionSource _hello = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource _cancellationEnded = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly HashSet<SessionOperation> _operations = [];
     private readonly Channel<SlackSocketConnection.ReceivedFrame> _frames = Channel.CreateBounded<SlackSocketConnection.ReceivedFrame>(
         new BoundedChannelOptions(configuration.Limits.MaximumPendingEnvelopes)
         {
@@ -94,13 +96,13 @@ internal sealed class SlackSocketSession(SlackSocketModeConfiguration configurat
             var connectionDrain = _connection.DrainAsync(deadline.Token);
             try
             {
-                await Task.WhenAll(_work.WaitAsync(deadline.Token), connectionDrain);
+                await Task.WhenAll(_work.WaitAsync(deadline.Token), _cancellationEnded.Task.WaitAsync(deadline.Token), connectionDrain);
             }
             catch (Exception)
             {
                 // A settled failure is drained; an incomplete operation retains its scope/resources.
             }
-            if (!_work.IsCompleted || !connectionDrain.IsCompletedSuccessfully || !connectionDrain.Result)
+            if (!_work.IsCompleted || !_cancellationEnded.Task.IsCompleted || !connectionDrain.IsCompletedSuccessfully || !connectionDrain.Result)
             {
                 health.SetState(SlackSocketModeHealthState.ReconciliationRequired, SlackSocketModeHealthReason.Drain);
                 return false;
@@ -126,9 +128,7 @@ internal sealed class SlackSocketSession(SlackSocketModeConfiguration configurat
                 SlackSocketConnection.ReceivedFrame? received;
                 if (!hello)
                 {
-                    using var handshake = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
-                    using var expired = handshake.Token.Register(() => End(SlackSocketSessionEndReason.Protocol));
-                    handshake.CancelAfter(configuration.Limits.OperationTimeout);
+                    await using var handshake = BeginOperation(() => SlackSocketSessionEndReason.Protocol);
                     received = await connection.ReceiveAsync(handshake.Token);
                 }
                 else
@@ -165,19 +165,24 @@ internal sealed class SlackSocketSession(SlackSocketModeConfiguration configurat
                         End(SlackSocketSessionEndReason.LinkDisabled);
                         return;
                     case SlackSocketFrameKind.Event when hello && received.Frame.Event is not null && received.Frame.EnvelopeId is not null:
+                        bool backpressured;
                         lock (_gate)
                         {
                             if (_ending)
                             {
                                 return;
                             }
-                            if (!_frames.Writer.TryWrite(received))
+                            backpressured = !_frames.Writer.TryWrite(received);
+                            if (!backpressured)
                             {
-                                End(SlackSocketSessionEndReason.Backpressure);
-                                return;
+                                _queued++;
+                                UpdateWorkCounts();
                             }
-                            _queued++;
-                            UpdateWorkCounts();
+                        }
+                        if (backpressured)
+                        {
+                            End(SlackSocketSessionEndReason.Backpressure);
+                            return;
                         }
                         break;
                     default:
@@ -254,19 +259,7 @@ internal sealed class SlackSocketSession(SlackSocketModeConfiguration configurat
     {
         var failure = (int)SlackSocketSessionEndReason.Credentials;
         var attemptedAdmission = false;
-        using var operation = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
-        using var expired = operation.Token.Register(() =>
-        {
-            var reason = (SlackSocketSessionEndReason)Volatile.Read(ref failure);
-            End(reason);
-            if (reason == SlackSocketSessionEndReason.AdmissionUncertainty)
-            {
-                // A dependency may ignore cancellation indefinitely after committing. Wake recovery now,
-                // while still retaining that dependency/scope; its eventual unwind may signal again.
-                SignalDurableWork();
-            }
-        });
-        operation.CancelAfter(configuration.Limits.OperationTimeout);
+        await using var operation = BeginOperation(() => (SlackSocketSessionEndReason)Volatile.Read(ref failure));
         try
         {
             await using var scope = scopes.CreateAsyncScope();
@@ -275,51 +268,59 @@ internal sealed class SlackSocketSession(SlackSocketModeConfiguration configurat
             {
                 Id = configuration.TenantId, Name = configuration.TenantId
             });
-            var credentials = services.GetRequiredService<SlackSocketListenerCredentialReader>();
-            var processor = services.GetRequiredService<SlackSocketEnvelopeProcessor>();
-            await credentials.DemandCurrentAsync(lease, operation.Token);
-            operation.Token.ThrowIfCancellationRequested();
-            Volatile.Write(ref failure, (int)SlackSocketSessionEndReason.AdmissionUncertainty);
-            attemptedAdmission = true;
-            var batch = await processor.ProcessAsync(received.Frame.Event!, operation.Token);
-            health.RecordOutcome(SlackSocketModeHealthOutcome.Admitted, batch.Admitted);
-            health.RecordOutcome(SlackSocketModeHealthOutcome.Discarded, batch.Discarded);
-            health.RecordOutcome(SlackSocketModeHealthOutcome.Duplicate, batch.Duplicates);
-            if (batch.AdmissionIds.Count > 0 && !SignalDurableWork())
+            try
             {
-                return;
-            }
-            operation.Token.ThrowIfCancellationRequested();
-            if (batch.Outcome != SlackSocketBatchOutcome.Committed)
-            {
-                health.RecordOutcome(SlackSocketModeHealthOutcome.Rejected);
-                End(batch.Outcome switch
-                {
-                    SlackSocketBatchOutcome.Inactive => SlackSocketSessionEndReason.BindingUnavailable,
-                    SlackSocketBatchOutcome.CapacityExceeded => SlackSocketSessionEndReason.Backpressure,
-                    _ => SlackSocketSessionEndReason.AdmissionRejected
-                });
-                return;
-            }
-            Volatile.Write(ref failure, (int)SlackSocketSessionEndReason.Credentials);
-            await credentials.DemandCurrentAsync(lease, operation.Token);
-            Volatile.Write(ref failure, (int)SlackSocketSessionEndReason.BindingUnavailable);
-            await processor.DemandCurrentBindingAsync(operation.Token);
-            operation.Token.ThrowIfCancellationRequested();
-            Task<bool> acknowledged;
-            lock (_gate)
-            {
-                if (_ending || operation.IsCancellationRequested || !ReferenceEquals(received.Owner, connection))
+                var credentials = services.GetRequiredService<SlackSocketListenerCredentialReader>();
+                var processor = services.GetRequiredService<SlackSocketEnvelopeProcessor>();
+                await credentials.DemandCurrentAsync(lease, operation.Token);
+                operation.Token.ThrowIfCancellationRequested();
+                Volatile.Write(ref failure, (int)SlackSocketSessionEndReason.AdmissionUncertainty);
+                attemptedAdmission = true;
+                var batch = await processor.ProcessAsync(received.Frame.Event!, operation.Token);
+                health.RecordOutcome(SlackSocketModeHealthOutcome.Admitted, batch.Admitted);
+                health.RecordOutcome(SlackSocketModeHealthOutcome.Discarded, batch.Discarded);
+                health.RecordOutcome(SlackSocketModeHealthOutcome.Duplicate, batch.Duplicates);
+                if (batch.AdmissionIds.Count > 0 && !SignalDurableWork())
                 {
                     return;
                 }
-                Volatile.Write(ref failure, (int)SlackSocketSessionEndReason.Transport);
-                // End/retirement and ACK initiation share this gate; no queued frame starts a later send after termination.
-                acknowledged = received.Owner.AcknowledgeAsync(received, operation.Token);
+                operation.Token.ThrowIfCancellationRequested();
+                if (batch.Outcome != SlackSocketBatchOutcome.Committed)
+                {
+                    health.RecordOutcome(SlackSocketModeHealthOutcome.Rejected);
+                    End(batch.Outcome switch
+                    {
+                        SlackSocketBatchOutcome.Inactive => SlackSocketSessionEndReason.BindingUnavailable,
+                        SlackSocketBatchOutcome.CapacityExceeded => SlackSocketSessionEndReason.Backpressure,
+                        _ => SlackSocketSessionEndReason.AdmissionRejected
+                    });
+                    return;
+                }
+                Volatile.Write(ref failure, (int)SlackSocketSessionEndReason.Credentials);
+                await credentials.DemandCurrentAsync(lease, operation.Token);
+                Volatile.Write(ref failure, (int)SlackSocketSessionEndReason.BindingUnavailable);
+                await processor.DemandCurrentBindingAsync(operation.Token);
+                operation.Token.ThrowIfCancellationRequested();
+                Task<bool> acknowledged;
+                lock (_gate)
+                {
+                    if (_ending || operation.Token.IsCancellationRequested || !ReferenceEquals(received.Owner, connection))
+                    {
+                        return;
+                    }
+                    Volatile.Write(ref failure, (int)SlackSocketSessionEndReason.Transport);
+                    // End/retirement and ACK initiation share this gate; no queued frame starts a later send after termination.
+                    acknowledged = received.Owner.AcknowledgeAsync(received, operation.Token);
+                }
+                if (!await acknowledged)
+                {
+                    End(SlackSocketSessionEndReason.Backpressure);
+                }
             }
-            if (!await acknowledged)
+            finally
             {
-                End(SlackSocketSessionEndReason.Backpressure);
+                // Stop new provider cancellation and await actual callbacks BEFORE disposing its scope.
+                await operation.CloseBodyAsync();
             }
         }
         catch (Exception)
@@ -344,9 +345,7 @@ internal sealed class SlackSocketSession(SlackSocketModeConfiguration configurat
             while (await timer.WaitForNextTickAsync(_stop.Token))
             {
                 var failure = (int)SlackSocketSessionEndReason.Credentials;
-                using var operation = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
-                using var expired = operation.Token.Register(() => End((SlackSocketSessionEndReason)Volatile.Read(ref failure)));
-                operation.CancelAfter(configuration.Limits.OperationTimeout);
+                await using var operation = BeginOperation(() => (SlackSocketSessionEndReason)Volatile.Read(ref failure));
                 try
                 {
                     await using var scope = scopes.CreateAsyncScope();
@@ -355,10 +354,17 @@ internal sealed class SlackSocketSession(SlackSocketModeConfiguration configurat
                     {
                         Id = configuration.TenantId, Name = configuration.TenantId
                     });
-                    await services.GetRequiredService<SlackSocketListenerCredentialReader>().DemandCurrentAsync(lease, operation.Token);
-                    Volatile.Write(ref failure, (int)SlackSocketSessionEndReason.BindingUnavailable);
-                    await services.GetRequiredService<SlackSocketEnvelopeProcessor>().DemandCurrentBindingAsync(operation.Token);
-                    operation.Token.ThrowIfCancellationRequested();
+                    try
+                    {
+                        await services.GetRequiredService<SlackSocketListenerCredentialReader>().DemandCurrentAsync(lease, operation.Token);
+                        Volatile.Write(ref failure, (int)SlackSocketSessionEndReason.BindingUnavailable);
+                        await services.GetRequiredService<SlackSocketEnvelopeProcessor>().DemandCurrentBindingAsync(operation.Token);
+                        operation.Token.ThrowIfCancellationRequested();
+                    }
+                    finally
+                    {
+                        await operation.CloseBodyAsync();
+                    }
                 }
                 catch (Exception)
                 {
@@ -389,6 +395,7 @@ internal sealed class SlackSocketSession(SlackSocketModeConfiguration configurat
 
     private void End(SlackSocketSessionEndReason reason)
     {
+        SessionOperation[] operations;
         lock (_gate)
         {
             if (_ending)
@@ -397,7 +404,8 @@ internal sealed class SlackSocketSession(SlackSocketModeConfiguration configurat
             }
             _ending = true;
             _terminationReason = reason;
-            // Retire before cancellation can unwind a different worker into queued ACK initiation.
+            // This physical token only reaches owned socket I/O, never provider callbacks.
+            // Retire and publish termination before requesting any exposed-token cancellation.
             try
             {
                 _connection!.Retire();
@@ -407,16 +415,7 @@ internal sealed class SlackSocketSession(SlackSocketModeConfiguration configurat
                 _terminationReason = SlackSocketSessionEndReason.ReconciliationRequired;
                 reason = SlackSocketSessionEndReason.ReconciliationRequired;
             }
-            try
-            {
-                _stop.Cancel();
-            }
-            catch (AggregateException)
-            {
-                // A trusted policy's cancellation callback cannot export raw details or suppress the drain boundary.
-                _terminationReason = SlackSocketSessionEndReason.ReconciliationRequired;
-                reason = SlackSocketSessionEndReason.ReconciliationRequired;
-            }
+            operations = _operations.ToArray();
             var state = reason switch
             {
                 SlackSocketSessionEndReason.Stopped or SlackSocketSessionEndReason.RefreshRequested or SlackSocketSessionEndReason.LinkDisabled => SlackSocketModeHealthState.Stopped,
@@ -439,6 +438,134 @@ internal sealed class SlackSocketSession(SlackSocketModeConfiguration configurat
             };
             health.SetState(state, healthReason);
             _ended.TrySetResult();
+        }
+        // CancelAsync schedules exposed callbacks away from this state lock; completion is owned by drain.
+        _ = CancelOwnedAsync(operations);
+    }
+
+    private async Task CancelOwnedAsync(SessionOperation[] operations)
+    {
+        try
+        {
+            var stop = _stop.CancelAsync();
+            var callbacks = operations.Select(operation => operation.RequestCancellation()).ToArray();
+            await Task.WhenAll(callbacks.Append(stop));
+        }
+        catch (Exception)
+        {
+            CancellationFailed();
+        }
+        finally
+        {
+            _cancellationEnded.TrySetResult();
+        }
+    }
+
+    private void CancellationFailed()
+    {
+        lock (_gate)
+        {
+            _terminationReason = SlackSocketSessionEndReason.ReconciliationRequired;
+            health.SetState(SlackSocketModeHealthState.ReconciliationRequired, SlackSocketModeHealthReason.Drain);
+        }
+    }
+
+    private SessionOperation BeginOperation(Func<SlackSocketSessionEndReason> failure)
+    {
+        SessionOperation operation;
+        bool ending;
+        lock (_gate)
+        {
+            // One hello, one serialized processor and one periodic check; never an accumulated watcher list.
+            if (_operations.Count >= 3)
+            {
+                throw new InvalidOperationException("socket_session_operation_bound_exceeded");
+            }
+            operation = new(this);
+            _operations.Add(operation);
+            ending = _ending;
+        }
+        operation.StartDeadline(configuration.Limits.OperationTimeout, failure);
+        if (ending)
+        {
+            _ = operation.RequestCancellation();
+        }
+        return operation;
+    }
+
+    private sealed class SessionOperation : IAsyncDisposable
+    {
+        private readonly object _gate = new();
+        private readonly SlackSocketSession _session;
+        private readonly CancellationTokenSource _exposed = new();
+        private readonly CancellationTokenSource _watcherStop = new();
+        private Task _watcher = Task.CompletedTask;
+        private Task? _cancellation;
+        private bool _bodyClosed;
+
+        internal SessionOperation(SlackSocketSession session) => _session = session;
+
+        internal CancellationToken Token => _exposed.Token;
+
+        // Start outside the session gate, including an explicitly configured sub-millisecond deadline.
+        internal void StartDeadline(TimeSpan timeout, Func<SlackSocketSessionEndReason> failure) => _watcher = WatchAsync(timeout, failure);
+
+        private async Task WatchAsync(TimeSpan timeout, Func<SlackSocketSessionEndReason> failure)
+        {
+            try
+            {
+                // This private deadline is never linked to, or registered on, the provider's token.
+                await Task.Delay(timeout, _watcherStop.Token);
+                var reason = failure();
+                _session.End(reason);
+                if (reason == SlackSocketSessionEndReason.AdmissionUncertainty)
+                {
+                    _session.SignalDurableWork();
+                }
+            }
+            catch (OperationCanceledException) when (_watcherStop.IsCancellationRequested)
+            {
+            }
+        }
+
+        internal Task RequestCancellation()
+        {
+            lock (_gate)
+            {
+                // Cache the FIRST CancelAsync task: later CancelAsync calls may return before existing callbacks finish.
+                return _bodyClosed ? _cancellation ?? Task.CompletedTask : _cancellation ??= _exposed.CancelAsync();
+            }
+        }
+
+        internal async Task CloseBodyAsync()
+        {
+            Task callbacks;
+            lock (_gate)
+            {
+                _bodyClosed = true;
+                callbacks = _cancellation ?? Task.CompletedTask;
+            }
+            try
+            {
+                await callbacks;
+            }
+            catch (Exception)
+            {
+                _session.CancellationFailed();
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await CloseBodyAsync();
+            await _watcherStop.CancelAsync();
+            await _watcher;
+            lock (_session._gate)
+            {
+                _session._operations.Remove(this);
+            }
+            _exposed.Dispose();
+            _watcherStop.Dispose();
         }
     }
 
