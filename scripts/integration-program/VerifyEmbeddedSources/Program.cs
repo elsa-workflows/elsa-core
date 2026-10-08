@@ -16,7 +16,12 @@ if (!File.Exists(pdbPath) || !Directory.Exists(sourceRoot))
     throw new ArgumentException("Portable PDB and pinned Slack source directory must exist.");
 }
 
-const string mappedSourceMarker = "src/extensions/communication/Elsa.Slack/";
+string[] mappedSourceMarkers =
+[
+    "src/extensions/communication/Elsa.Slack/",
+    "extensions/src/communication/Elsa.Slack/"
+];
+string? selectedSourceMarker = null;
 var embeddedSourceKind = new Guid("0e8a571b-6926-466e-b4ad-8ab04611f5fe");
 var expectedFiles = Directory.EnumerateFiles(sourceRoot, "*.cs", SearchOption.AllDirectories)
     .Select(path => Path.GetRelativePath(sourceRoot, path).Replace(Path.DirectorySeparatorChar, '/'))
@@ -37,17 +42,44 @@ foreach (var information in reader.CustomDebugInformation.Select(reader.GetCusto
     var documentHandle = MetadataTokens.DocumentHandle(MetadataTokens.GetRowNumber(information.Parent));
     var document = reader.GetDocument(documentHandle);
     var path = reader.GetString(document.Name).Replace('\\', '/');
-    var markerIndex = path.LastIndexOf(mappedSourceMarker, StringComparison.Ordinal);
-    if (markerIndex < 0)
+    (string Marker, int Index)? sourceMatch = null;
+    foreach (var marker in mappedSourceMarkers)
+    {
+        for (var index = path.IndexOf(marker, StringComparison.Ordinal); index >= 0;
+             index = path.IndexOf(marker, index + 1, StringComparison.Ordinal))
+        {
+            if (index > 0 && path[index - 1] != '/')
+            {
+                continue;
+            }
+
+            if (sourceMatch is not null)
+            {
+                throw new InvalidDataException("PDB Slack source document has ambiguous source layout markers.");
+            }
+
+            sourceMatch = (marker, index);
+        }
+    }
+
+    if (sourceMatch is not { } match)
     {
         continue;
     }
 
-    var relativePath = path[(markerIndex + mappedSourceMarker.Length)..];
+    var relativePath = path[(match.Index + match.Marker.Length)..];
     if (relativePath.StartsWith("obj/", StringComparison.Ordinal) || !relativePath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
     {
         continue;
     }
+
+    // A historical PDB and a relocated PDB are each supported; mixing layouts is not.
+    if (selectedSourceMarker is not null && !StringComparer.Ordinal.Equals(selectedSourceMarker, match.Marker))
+    {
+        throw new InvalidDataException("PDB Slack source documents mix historical and relocated source layouts.");
+    }
+
+    selectedSourceMarker = match.Marker;
 
     if (!expectedFiles.Contains(relativePath))
     {
