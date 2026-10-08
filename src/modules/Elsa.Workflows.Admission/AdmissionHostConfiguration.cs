@@ -75,7 +75,7 @@ public sealed class AdmissionHostConfiguration
             throw new InvalidOperationException("Execution pipeline contributors are unsupported by the fixed admission host.");
         }
         services.GetRequiredService<AdmissionExecutionComposition>().Validate(services);
-        if (_registrations == null || services.GetRequiredService<IWorkflowRuntime>().GetType() != typeof(AdmissionWorkflowRuntime) ||
+        if (services.GetRequiredService<IWorkflowRuntime>().GetType() != typeof(AdmissionWorkflowRuntime) ||
             services.GetRequiredService<IWorkflowDispatcher>().GetType() != typeof(AdmissionWorkflowDispatcher) ||
             services.GetRequiredService<IWorkflowInstanceVariableManager>().GetType() != typeof(AdmissionWorkflowInstanceVariableManager) ||
             services.GetRequiredService<IWorkflowRunner>().GetType() != typeof(WorkflowRunner) ||

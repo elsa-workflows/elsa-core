@@ -50,7 +50,7 @@ internal static class AdmissionValueFingerprint
                 writer.Write((byte)14); writer.Write((int)x.ValueKind); writer.Write(x.GetRawText()); return;
         }
 
-        if (value == null || !ancestors.Add(value))
+        if (!ancestors.Add(value))
         {
             throw new InvalidOperationException("Admission inputs must be acyclic supported values.");
         }

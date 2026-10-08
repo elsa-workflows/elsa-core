@@ -254,7 +254,7 @@ public class WorkflowRunner(
         {
             authorizedInvocation!.Value.Validate();
             await authorization.RevalidateAsync(cancellationToken);
-            authorizedInvocation.Value.Validate();
+            authorizedInvocation!.Value.Validate();
         }
 
         var telemetryScope = WorkflowInstrumentation.StartWorkflow(workflowExecutionContext, isStarting);
