@@ -143,7 +143,9 @@ class MaintenanceContracts(unittest.TestCase):
                   'PackageId': 'Elsa.Studio.Fixture', 'PackageVersion': '3.8.4-proof.42.1',
                   'TargetFrameworks': 'net8.0;net9.0', 'TargetFramework': '', 'IncludeSymbols': 'true',
                   'IncludeBuildOutput': 'true'}
-        with patch.object(maintenance, 'run', side_effect=lambda *_args, **_kwargs: json.dumps({'Properties': values})) as runner:
+        with patch.object(maintenance, 'run', side_effect=lambda command, *_args, **_kwargs: json.dumps(
+                {'Items': {'SatelliteDllsProjectOutputGroupOutput': []}} if '-target:SatelliteDllsProjectOutputGroup' in command
+                else {'Properties': values})) as runner:
             for include in ['true', 'false']:
                 values['IncludeBuildOutput'] = include
                 inventory = maintenance.evaluate_inventory(source, self.row, '3.8.4-proof.42.1', self.root)
@@ -176,7 +178,7 @@ class MaintenanceContracts(unittest.TestCase):
 
     def test_package_identity_dependencies_and_complete_inventory_are_verified(self):
         policy = [{'id': 'Elsa.Studio.Fixture', 'assembly_name': 'Elsa.Studio.Fixture',
-                   'frameworks': ['net8.0'], 'include_build_output': False, 'symbols': False}]
+                   'frameworks': ['net8.0'], 'include_build_output': False, 'symbols': False, 'satellites': []}]
         version = '3.8.4-proof.42.1'
         artifacts = self.write_package_fixture()
         receipt = maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT, Path('/unused'), self.root)
@@ -200,7 +202,7 @@ class MaintenanceContracts(unittest.TestCase):
         artifacts = self.write_package_fixture(frameworks=frameworks)
         version = '3.8.4-proof.42.1'
         policy = [{'id': 'Elsa.Studio.Fixture', 'assembly_name': 'Elsa.Studio.Fixture',
-                   'frameworks': frameworks, 'include_build_output': True, 'symbols': True}]
+                   'frameworks': frameworks, 'include_build_output': True, 'symbols': True, 'satellites': []}]
         original = subprocess.run(['git', 'show', self.row['commit'] + ':Directory.Build.props'],
                                   cwd=maintenance.ROOT, check=True, capture_output=True).stdout
         prefix = f"https://raw.githubusercontent.com/{self.row['source_repository']}/{self.row['commit']}/"
@@ -227,6 +229,41 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertEqual([symbol['assembly'] for symbol in receipt[0]['symbols']],
                          ['lib/net8.0/Elsa.Studio.Fixture.dll', 'lib/net9.0/Elsa.Studio.Fixture.dll'])
         self.assertTrue(all(symbol['documents'][0]['source'] == 'original-git' for symbol in receipt[0]['symbols']))
+        # SDK-evaluated resource satellites have exact emitted bytes but no primary-style PDB.
+        source = self.root / 'source'; source.mkdir()
+        subprocess.run(['git', 'init', '-q'], cwd=source, check=True)
+        objects = Path(maintenance.git(maintenance.ROOT, 'rev-parse', '--path-format=absolute', '--git-common-dir')) / 'objects'
+        (source / '.git/objects/info/alternates').write_text(str(objects) + '\n')
+        emitted = source / 'bin/Release/net8.0/fr/Elsa.Studio.Fixture.resources.dll'
+        emitted.parent.mkdir(parents=True); emitted.write_bytes(b'original French satellite')
+        item = {'TargetPath': 'fr\\Elsa.Studio.Fixture.resources.dll', 'Culture': 'fr', 'FinalOutputPath': str(emitted)}
+        with patch.object(maintenance, 'run', return_value=json.dumps({'Items': {'SatelliteDllsProjectOutputGroupOutput': [item]}})) as evaluation:
+            satellites = maintenance.evaluate_satellites(source, 'Fixture.csproj', 'net8.0', 'Elsa.Studio.Fixture', version)
+        self.assertIn('-p:TargetFramework=net8.0', evaluation.call_args.args[0])
+        self.assertEqual(satellites[0]['culture'], 'fr')
+        self.assertEqual(satellites[0]['target_path'], 'fr/Elsa.Studio.Fixture.resources.dll')
+        self.assertEqual(satellites[0]['final_output_path'], 'bin/Release/net8.0/fr/Elsa.Studio.Fixture.resources.dll')
+        self.assertNotIn(str(source), json.dumps(satellites))
+        policy[0]['satellites'] = satellites
+        with zipfile.ZipFile(artifacts / 'fixture.nupkg', 'a') as zipped:
+            zipped.writestr(satellites[0]['package_path'], emitted.read_bytes())
+        inspected.clear()
+        with patch.object(maintenance, 'run', side_effect=inspect):
+            receipt = maintenance.verify_artifacts(artifacts, policy, self.row, version, source, Path('/inspector'), self.root)
+        self.assertEqual(inspected, frameworks)
+        self.assertEqual(receipt[0]['satellites'][0]['sha256'], hashlib.sha256(b'original French satellite').hexdigest())
+        emitted.unlink()
+        with self.assertRaisesRegex(ValueError, 'satellite bytes missing'):
+            maintenance.verify_artifacts(artifacts, policy, self.row, version, source, Path('/inspector'), self.root)
+        emitted.write_bytes(b'changed satellite')
+        with self.assertRaisesRegex(ValueError, 'satellite bytes differ'):
+            maintenance.verify_artifacts(artifacts, policy, self.row, version, source, Path('/inspector'), self.root)
+        emitted.write_bytes(b'original French satellite')
+        with zipfile.ZipFile(artifacts / 'fixture.nupkg', 'a') as zipped:
+            zipped.writestr('lib/net8.0/rogue/Elsa.Studio.Fixture.resources.dll', b'unlisted satellite')
+        with self.assertRaisesRegex(ValueError, 'assembly payload'):
+            maintenance.verify_artifacts(artifacts, policy, self.row, version, source, Path('/inspector'), self.root)
+        policy[0]['satellites'] = []
         self.write_package_fixture(frameworks=['net8.0'])
         with self.assertRaisesRegex(ValueError, 'assembly payload'):
             maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT, Path('/inspector'), self.root)

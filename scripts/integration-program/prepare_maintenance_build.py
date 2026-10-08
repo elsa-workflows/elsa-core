@@ -118,6 +118,26 @@ def recipes(row: dict, version: str, output: Path) -> list[tuple[str, list[str]]
     return commands
 
 
+def evaluate_satellites(source: Path, project: str, framework: str, assembly: str, version: str) -> list[dict]:
+    result = json.loads(run(['dotnet', 'msbuild', project, '-nologo', '-p:Configuration=Release',
+        f'-p:Version={version}', f'-p:TargetFramework={framework}', '-target:SatelliteDllsProjectOutputGroup',
+        '-getItem:SatelliteDllsProjectOutputGroupOutput'], source, env=build_environment()))
+    satellites = []
+    for item in result['Items']['SatelliteDllsProjectOutputGroupOutput']:
+        culture, target = item['Culture'], item['TargetPath'].replace('\\', '/')
+        require(re.fullmatch(r'[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*', culture) is not None and
+                target == f'{culture}/{assembly}.resources.dll', 'Unexpected evaluated satellite identity')
+        emitted = Path(item['FinalOutputPath'].replace('\\', '/'))
+        emitted = (source / emitted).resolve()
+        require(emitted.is_relative_to(source.resolve()) and emitted.is_file() and not emitted.is_symlink(),
+                'Evaluated satellite output is missing or outside source checkout')
+        satellites.append({'framework': framework, 'culture': culture, 'target_path': target,
+            'final_output_path': emitted.relative_to(source.resolve()).as_posix(),
+            'package_path': f'lib/{framework}/{target}', 'sha256': digest(emitted.read_bytes())})
+    require(len({item['package_path'] for item in satellites}) == len(satellites), 'Duplicate evaluated satellite')
+    return satellites
+
+
 def evaluate_inventory(source: Path, row: dict, version: str, output: Path) -> list[dict]:
     solution = source / ('Elsa.Studio.sln' if row['product'] == 'studio' else 'Elsa.Extensions.sln')
     projects = re.findall(r'^Project\([^\n]+?= "[^"]+", "([^"]+\.csproj)"', solution.read_text(encoding='utf-8-sig'), re.M)
@@ -141,7 +161,10 @@ def evaluate_inventory(source: Path, row: dict, version: str, output: Path) -> l
         inventory.append({'id': values['PackageId'], 'project': project,
             'assembly_name': values['AssemblyName'], 'include_build_output': values['IncludeBuildOutput'].lower() == 'true',
             'frameworks': frameworks,
-            'symbols': values['IncludeSymbols'].lower() == 'true'})
+            'symbols': values['IncludeSymbols'].lower() == 'true',
+            'satellites': [satellite for framework in frameworks for satellite in
+                evaluate_satellites(source, project, framework, values['AssemblyName'], version)]
+                if values['IncludeBuildOutput'].lower() == 'true' else []})
     require(bool(inventory) and len({p['id'].casefold() for p in inventory}) == len(inventory), 'Empty/duplicate package inventory')
     require(bool(tests), 'No evaluated test projects')
     write_json(output / 'test-inventory.json', tests)
@@ -208,9 +231,17 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                 frameworks = sorted({name.split('/')[1] for name in assemblies})
                 expected_assemblies = sorted(f"lib/{framework}/{policy['assembly_name']}.dll"
                     for framework in policy['frameworks']) if policy['include_build_output'] else []
-                require(assemblies == expected_assemblies, 'Packed assembly payload differs from evaluated build-output policy')
+                satellite_paths = [item['package_path'] for item in policy['satellites']]
+                require(assemblies == sorted(expected_assemblies + satellite_paths),
+                        'Packed assembly payload differs from evaluated build-output policy')
+                for satellite in policy['satellites']:
+                    emitted = (source / satellite['final_output_path']).resolve()
+                    require(emitted.is_relative_to(source.resolve()) and emitted.is_file(), 'Emitted satellite bytes missing')
+                    emitted_bytes = emitted.read_bytes()
+                    require(digest(emitted_bytes) == satellite['sha256'] and
+                            package.read(satellite['package_path']) == emitted_bytes, 'Packaged satellite bytes differ from emitted output')
                 symbols_path = path.with_suffix('.snupkg')
-                require(not assemblies or policy['symbols'] and symbols_path.is_file(), 'Symbol package missing')
+                require(not expected_assemblies or policy['symbols'] and symbols_path.is_file(), 'Symbol package missing')
                 symbols = []
                 if symbols_path.is_file():
                     with zipfile.ZipFile(symbols_path) as symbol_package:
@@ -221,7 +252,7 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                         require(symbol_repository is not None and symbol_repository.attrib == repository.attrib and
                                 dependency_groups(symbol_metadata) == dependencies, 'Symbol metadata disagrees with package')
                         symbol_names = archive_names(symbol_package)
-                        for name in assemblies:
+                        for name in expected_assemblies:
                             if context is not None:
                                 context.update(framework=name.split('/')[1])
                             pdb_name = name[:-4] + '.pdb'
@@ -239,6 +270,7 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                                 'documents': verify_documents(details, source, row)})
                 receipts.append({'id': identifier, 'version': version, 'frameworks': frameworks,
                     'assembly_name': policy['assembly_name'], 'include_build_output': policy['include_build_output'],
+                    'satellites': policy['satellites'],
                     'dependencies': dependencies, 'repository': dict(repository.attrib), 'symbols': symbols,
                     'files': [{'name': p.name, 'sha256': digest(p.read_bytes()), 'size': p.stat().st_size}
                               for p in (path, symbols_path) if p.exists()]})
