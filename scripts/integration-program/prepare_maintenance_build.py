@@ -19,6 +19,7 @@ from prove_consolidated_packages import archive_names, dependency_groups, metada
 
 ROOT = Path(__file__).resolve().parents[2]
 REGISTER = ROOT / 'docs/integration-program/maintenance-source-register.json'
+PROOF_BUILD_PROPERTIES = {'EmbedUntrackedSources': 'true'}
 
 
 def load_register() -> dict:
@@ -39,7 +40,7 @@ def build_environment() -> dict[str, str]:
     # Old build/npm lifecycle code receives no repository or registry authority.
     names = {'PATH', 'HOME', 'TMPDIR', 'DOTNET_ROOT', 'DOTNET_ROOT_X64', 'RUNNER_TEMP',
              'DOTNET_CLI_TELEMETRY_OPTOUT', 'DOTNET_NOLOGO', 'NUGET_PACKAGES', 'CI', 'GITHUB_ACTIONS'}
-    return {key: value for key, value in os.environ.items() if key in names}
+    return {key: value for key, value in os.environ.items() if key in names} | PROOF_BUILD_PROPERTIES
 
 
 def git(root: Path, *args: str, env: dict | None = None) -> str:
@@ -77,7 +78,8 @@ def prepare_containment(root: Path, output: Path, register: dict) -> dict:
             tree = git(root, 'write-tree', env=env)
             commit = git(root, 'commit-tree', tree, '-p', row['commit'], '-m',
                          f"Keep {row['product']} {row['line']} historical workflows inert; no activation", env=env)
-            patch = git(root, 'diff', '--binary', row['commit'], commit)
+            patch = git(root, 'diff', '--binary', '-M', '--src-prefix=a/', '--dst-prefix=b/',
+                        '--no-color', '--no-ext-diff', '--no-textconv', '--no-relative', '-O/dev/null', row['commit'], commit)
             name = f"{row['product']}-{row['line']}.patch"
             (output / name).write_text(patch + '\n')
             result['sources'].append({'product': row['product'], 'line': row['line'], 'parent': row['commit'],
@@ -95,6 +97,67 @@ def write_json(path: Path, data: object) -> None:
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + '\n')
 
 
+VERIFICATION_REASONS = {
+    'Unexpected SourceLink repository/commit': 'sourcelink-identity-mismatch',
+    'Foreign SourceLink document': 'sourcelink-document-identity-mismatch',
+    'Unsafe SourceLink path': 'sourcelink-path-invalid',
+    'Unsupported document hash': 'source-hash-algorithm-unsupported',
+    'Tracked source checksum mismatch': 'source-checksum-mismatch',
+    'Unmapped source document is not verified embedded content': 'source-document-unverified',
+    'PDB source documents missing': 'pdb-documents-missing',
+    'Unknown/duplicate package': 'package-inventory-identity-mismatch',
+    'Packed version mismatch': 'package-version-mismatch',
+    'Packed repository provenance mismatch': 'package-repository-mismatch',
+    'Packed assembly payload differs from evaluated build-output policy': 'assembly-payload-mismatch',
+    'Emitted satellite bytes missing': 'satellite-output-missing',
+    'Packaged satellite bytes differ from emitted output': 'satellite-bytes-mismatch',
+    'Symbol package missing': 'symbol-package-missing',
+    'Symbol identity mismatch': 'symbol-package-identity-mismatch',
+    'Symbol metadata disagrees with package': 'symbol-metadata-mismatch',
+    'Framework PDB missing': 'framework-pdb-missing',
+    'Packaged assembly identity mismatch': 'assembly-identity-mismatch',
+    'Missing evaluated packages': 'package-inventory-incomplete',
+    'Unexpected artifact files': 'artifact-inventory-mismatch',
+    'Duplicate ZIP entries': 'archive-duplicate-entries',
+    'Artifact must contain exactly one nuspec': 'archive-nuspec-count-invalid',
+    'Nuspec metadata is missing': 'archive-nuspec-metadata-missing',
+    'No required test framework executions': 'test-inventory-empty',
+    'Missing/failed tests': 'test-counts-invalid',
+    'Unknown test project/framework identity': 'test-identity-unknown',
+    'Missing/duplicate test project-framework results': 'test-cells-incomplete-or-duplicate',
+}
+
+
+def closed_diagnostics(log: Path) -> dict:
+    diagnostics = {'codes': [], 'nuke_failed_targets': [], 'unretained_code_occurrences': 0}
+    if not log.is_file():
+        return diagnostics
+    counts, targets = {}, set()
+    with log.open(errors='replace') as stream:
+        stream.readline()  # The shared runner's first line is the private argv JSON, not process output.
+        for raw in stream:
+            line = re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', raw).replace('\u00a0', ' ')
+            for severity, code in re.findall(r'\b(error|warning)\s+(CS[0-9]{4}|NU[0-9]{4}|MSB[0-9]{4}|NETSDK[0-9]{4})\b', line, re.I):
+                key = severity.lower(), code.upper()
+                if key in counts or len(counts) < 32:
+                    counts[key] = counts.get(key, 0) + 1
+                else:
+                    diagnostics['unretained_code_occurrences'] += 1
+            targets.update(re.findall(r'\bTarget (Restore|Compile|Test|Pack) has thrown an exception\b', line))
+    diagnostics['codes'] = [{'severity': severity, 'code': code, 'count': count}
+                            for (severity, code), count in sorted(counts.items())]
+    diagnostics['nuke_failed_targets'] = sorted(targets)
+    return diagnostics
+
+
+def run_build_command(command: list[str], cwd: Path, log: Path, record: dict) -> None:
+    try:
+        run(command, cwd, timeout=7200, log=log, env=build_environment(), outcome=record.setdefault('process', {}))
+        record['success'] = True
+    finally:
+        record['diagnostics'] = closed_diagnostics(log)
+
+
 def recipes(row: dict, version: str, output: Path) -> list[tuple[str, list[str]]]:
     if row['product'] == 'extensions':
         return [('.', ['./build.sh', 'Compile+Test+Pack', '--version', version, '--analyseCode', 'true'])]
@@ -109,7 +172,8 @@ def recipes(row: dict, version: str, output: Path) -> list[tuple[str, list[str]]
     commands.extend([(designer, ['npm', 'run', 'build']), (dom, ['npm', 'install', '--force']),
         (dom, ['npm', 'run', 'build'])])
     for target in ('build', 'test', 'pack'):
-        command = ['dotnet', target, 'Elsa.Studio.sln', '--configuration', 'Release', f'/p:Version={version}']
+        command = ['dotnet', target, 'Elsa.Studio.sln', '--configuration', 'Release', f'/p:Version={version}',
+                   *[f'/p:{name}={value}' for name, value in PROOF_BUILD_PROPERTIES.items()]]
         if target == 'test':
             command.extend(['--no-build', '--logger', 'trx', '--results-directory', str(output / 'test-results')])
         if target == 'pack':
@@ -177,7 +241,7 @@ def verify_documents(details: dict, source: Path, row: dict) -> list[dict]:
     prefix = f"https://raw.githubusercontent.com/{row['source_repository']}/{row['commit']}/"
     require(bool(maps) and all(value.startswith(prefix) for value in maps.values()), 'Unexpected SourceLink repository/commit')
     documents = []
-    for document in details['documents']:
+    for index, document in enumerate(details['documents']):
         checksum = document['checksum']
         require(document['algorithm'] in ('sha1', 'sha256'), 'Unsupported document hash')
         url = source_url(document['path'], maps)
@@ -185,14 +249,19 @@ def verify_documents(details: dict, source: Path, row: dict) -> list[dict]:
             require(url.startswith(prefix), 'Foreign SourceLink document')
             path = url[len(prefix):]
             require('..' not in Path(path).parts and not Path(path).is_absolute(), 'Unsafe SourceLink path')
-            # Read immutable source bytes, not potentially changed generated workspace files.
+            # A wildcard may also map generated files absent from the original tree.
+            tracked = bool(git(source, 'ls-tree', row['commit'], '--', ':(literal)' + path))
+        else:
+            tracked = False
+        if tracked:
+            # Read immutable source bytes, never regenerated workspace files.
             data = subprocess.run(['git', 'show', f"{row['commit']}:{path}"], cwd=source,
                 env=build_environment(), check=True, capture_output=True, timeout=30).stdout
             require(hashlib.new(document['algorithm'], data).hexdigest() == checksum, 'Tracked source checksum mismatch')
             evidence = {'path': path, 'source': 'original-git', 'url': url}
         else:
             require(document.get('embedded_checksum') == checksum, 'Unmapped source document is not verified embedded content')
-            evidence = {'path': '[embedded]/' + Path(document['path']).name, 'source': 'embedded'}
+            evidence = {'path': f'[embedded]/document-{index + 1}', 'source': 'embedded'}
         documents.append(evidence | {'algorithm': document['algorithm'], 'checksum': checksum})
     require(bool(documents), 'PDB source documents missing')
     return documents
@@ -281,7 +350,7 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
     return receipts
 
 
-def verify_tests(output: Path, row: dict) -> dict:
+def verify_tests(output: Path, row: dict, context: dict | None = None) -> dict:
     tests = json.loads((output / 'test-inventory.json').read_text())
     source = output / 'source'
     expected = {str((source / Path(test['project']).parent / 'bin/Release' / framework /
@@ -289,29 +358,36 @@ def verify_tests(output: Path, row: dict) -> dict:
                 {'project': test['project'], 'framework': framework}
                 for test in tests for framework in test['frameworks']}
     require(bool(expected), 'No required test framework executions')
-    cells = []
-    if row['product'] == 'studio':
-        results = []
-        for path in sorted((output / 'test-results').glob('*.trx')):
-            tree = ET.parse(path)
-            counters = tree.find('.//{*}Counters')
-            require(counters is not None and int(counters.get('total', '0')) > 0 and
-                    int(counters.get('failed', '0')) == 0 and int(counters.get('passed', '0')) > 0, 'Missing/failed tests')
-            assemblies = {str(Path(method.get('codeBase', '')).resolve()) for method in tree.findall('.//{*}TestMethod')}
-            require(len(assemblies) == 1 and assemblies <= expected.keys(), 'Unknown test project/framework identity')
-            assembly = next(iter(assemblies))
-            cells.append(assembly)
-            results.append(expected[assembly] | {'counters': counters.attrib, 'sha256': digest(path.read_bytes())})
-        require(len(cells) == len(set(cells)) and set(cells) == expected.keys(), 'Missing/duplicate test project-framework results')
-        return {'executions': results}
-    log = (output / 'command-00.log').read_text()
-    cells = [str(Path(path).resolve()) for path in re.findall(r'Test run for (.+\.dll) \(', log)]
-    totals = re.findall(r'Passed!\s*-\s*Failed:\s*0,\s*Passed:\s*(\d+),\s*Skipped:\s*\d+,\s*Total:\s*(\d+)', log)
-    require(len(cells) == len(set(cells)) and set(cells) == expected.keys() and len(totals) == len(cells) and
-            all(int(passed) > 0 and int(total) >= int(passed) for passed, total in totals),
-            'Missing/duplicate/nonpositive Extensions test execution evidence')
-    return {'executions': [expected[cell] for cell in cells],
-            'successful_test_summaries': [{'passed': int(p), 'total': int(t)} for p, t in totals]}
+    evidence = context if context is not None else {}
+    evidence.update(expected_cells=list(expected.values()), admitted_observed_cells=[], unknown_path_count=0,
+                    duplicate_cell_count=0, positive_summary_count=0)
+    def record_cells(cells):
+        admitted = [cell for cell in cells if cell in expected]
+        evidence.update(admitted_observed_cells=[expected[cell] | {'occurrences': admitted.count(cell)}
+                        for cell in dict.fromkeys(admitted)], unknown_path_count=len(cells) - len(admitted),
+                        duplicate_cell_count=len(cells) - len(set(cells)))
+    cells, results = [], []
+    # Both original NUKE releases add a per-project TRX logger and, with the
+    # registered AnalyseCode=true recipe, write to RootDirectory/testresults.
+    results_directory = output / 'test-results' if row['product'] == 'studio' else source / 'testresults'
+    evidence['summary_count'] = 0
+    for path in sorted(results_directory.glob('*.trx')):
+        tree = ET.parse(path)
+        counters = tree.find('.//{*}Counters')
+        assemblies = {str(Path(method.get('codeBase', '')).resolve()) for method in tree.findall('.//{*}TestMethod')}
+        cells.extend(assemblies)
+        record_cells(cells)
+        evidence['summary_count'] += 1
+        positive = counters is not None and int(counters.get('failed', '0')) == 0 and int(counters.get('passed', '0')) > 0
+        evidence['positive_summary_count'] += int(positive)
+        require(counters is not None and int(counters.get('total', '0')) > 0 and
+                int(counters.get('failed', '0')) == 0 and int(counters.get('passed', '0')) > 0, 'Missing/failed tests')
+        require(len(assemblies) == 1 and assemblies <= expected.keys(), 'Unknown test project/framework identity')
+        assembly = next(iter(assemblies))
+        results.append(expected[assembly] | {'counters': {name: int(counters.get(name, '0'))
+            for name in ('total', 'passed', 'failed', 'executed', 'notExecuted')}, 'sha256': digest(path.read_bytes())})
+    require(len(cells) == len(set(cells)) and set(cells) == expected.keys(), 'Missing/duplicate test project-framework results')
+    return {'executions': results}
 
 
 def prepare(root: Path, row: dict, version: str, output: Path) -> dict:
@@ -319,7 +395,7 @@ def prepare(root: Path, row: dict, version: str, output: Path) -> dict:
     require(not output.is_relative_to(root), 'Output must be outside the controller checkout')
     output.mkdir(parents=True)
     receipt = {'schema': 1, 'published': False, 'maintenance_refs_activated': False, 'success': False,
-        'selection': row, 'version': version, 'controller_commit': git(root, 'rev-parse', 'HEAD'),
+        'selection': row, 'version': version, 'proof_build_properties': PROOF_BUILD_PROPERTIES, 'controller_commit': git(root, 'rev-parse', 'HEAD'),
         'controller_tree': git(root, 'rev-parse', 'HEAD^{tree}'),
         'controller_sha256': digest(Path(__file__).read_bytes()), 'register_sha256': digest(REGISTER.read_bytes()),
         'run_id': os.environ.get('GITHUB_RUN_ID'), 'run_attempt': os.environ.get('GITHUB_RUN_ATTEMPT'), 'commands': []}
@@ -344,8 +420,7 @@ def prepare(root: Path, row: dict, version: str, output: Path) -> dict:
             receipt['focus'] = {'step': index + 1, 'directory': directory}
             record = {'cwd': directory, 'argv': [arg.replace(str(output), '$OUTPUT') for arg in command], 'success': False}
             receipt['commands'].append(record)
-            run(command, source / directory, timeout=7200, log=log, env=build_environment())
-            record['success'] = True
+            run_build_command(command, source / directory, log, record)
         if row['product'] == 'extensions':
             for path in (source / 'packages').glob('*nupkg'):
                 shutil.copyfile(path, output / 'artifacts' / path.name)
@@ -353,7 +428,8 @@ def prepare(root: Path, row: dict, version: str, output: Path) -> dict:
         inventory = evaluate_inventory(source, row, version, output)
         receipt['stage'] = 'test-evidence'
         receipt.pop('focus', None)
-        receipt['tests'] = verify_tests(output, row)
+        receipt['test_evidence'] = {}
+        receipt['tests'] = verify_tests(output, row, receipt['test_evidence'])
         receipt['stage'] = 'symbol-inspector'
         helper = root / 'scripts/integration-program/VerifyPackageSymbolPair'
         inspector_out = output / 'symbol-verifier'
@@ -367,8 +443,9 @@ def prepare(root: Path, row: dict, version: str, output: Path) -> dict:
         receipt.pop('focus', None)
         receipt['success'] = True
         return receipt
-    except Exception:
-        receipt['error'] = {'code': receipt['stage'] + '-failed'}
+    except Exception as error:
+        receipt['error'] = {'code': receipt['stage'] + '-failed',
+                            'reason': VERIFICATION_REASONS.get(str(error), 'unknown-check-failure')}
         raise
     finally:
         receipt['logs'] = [{'name': p.name, 'sha256': digest(p.read_bytes())} for p in sorted(output.glob('*.log'))]

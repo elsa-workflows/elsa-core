@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -30,6 +31,15 @@ class MaintenanceContracts(unittest.TestCase):
         self.row = self.register['sources'][0]
         (self.root / 'test-inventory.json').write_text(json.dumps([{'project': 'Fixture.Tests.csproj', 'assembly_name': 'Fixture.Tests', 'frameworks': ['net8.0']}]))
 
+    def write_trx_fixture(self, product='studio', name='private-runner-host', assembly=None):
+        results = self.root / ('test-results' if product == 'studio' else 'source/testresults')
+        results.mkdir(parents=True, exist_ok=True)
+        assembly = assembly or self.root / 'source/bin/Release/net8.0/Fixture.Tests.dll'
+        path = results / (name + '.trx')
+        path.write_text(f'<TestRun><ResultSummary><Counters total="3" passed="3" failed="0" private="private-secret-host" /></ResultSummary>'
+            f'<TestDefinitions><UnitTest><TestMethod codeBase="{assembly}" /></UnitTest></TestDefinitions></TestRun>')
+        return path
+
     def test_all_four_exact_sources_and_only_proof_versions_are_admitted(self):
         for row in self.register['sources']:
             with self.subTest(row=row['source_ref']):
@@ -49,7 +59,7 @@ class MaintenanceContracts(unittest.TestCase):
                                     'FEEDZ_API_KEY': 'secret', 'GITHUB_TOKEN': 'secret',
                                     'ACTIONS_ID_TOKEN_REQUEST_TOKEN': 'secret', 'GITHUB_OUTPUT': '/unsafe',
                                     'PATH': '/safe'}, clear=True):
-            self.assertEqual(maintenance.build_environment(), {'PATH': '/safe'})
+            self.assertEqual(maintenance.build_environment(), {'PATH': '/safe', 'EmbedUntrackedSources': 'true'})
 
     def test_source_tree_parent_and_workflow_inventory_are_verified(self):
         maintenance.verify_source(maintenance.ROOT, self.row)
@@ -82,8 +92,12 @@ class MaintenanceContracts(unittest.TestCase):
         changed = maintenance.git(source, 'diff', '--no-renames', '--name-only', commit, result['commit']).splitlines()
         self.assertEqual(changed, ['.github/maintenance-inert-workflows/packages.yml.source', '.github/workflows/packages.yml'])
         self.assertEqual(maintenance.git(source, 'show-ref', '--heads').split()[0], commit)
+        for name, value in [('diff.renames', 'false'), ('diff.noprefix', 'true'), ('diff.external', '/private/not-an-executable'),
+                            ('diff.orderFile', '/private/not-an-orderfile'), ('diff.relative', 'true')]:
+            maintenance.git(source, 'config', name, value)
         rerun = maintenance.prepare_containment(source, self.root / 'again', {'sources': [row]})['sources'][0]
         self.assertEqual(result['commit'], rerun['commit'])
+        self.assertEqual(result['patch_sha256'], rerun['patch_sha256'])
 
     def test_studio_quality_checks_precede_generated_asset_build_and_npm_pack_is_excluded(self):
         row = next(r for r in self.register['sources'] if r['product'] == 'studio' and r['line'] == '3.9')
@@ -106,7 +120,7 @@ class MaintenanceContracts(unittest.TestCase):
         receipt = json.loads((output / 'receipt.json').read_text())
         self.assertFalse(receipt['success'])
         self.assertFalse(receipt['published'])
-        self.assertEqual(receipt['error'], {'code': 'source-verification-failed'})
+        self.assertEqual(receipt['error'], {'code': 'source-verification-failed', 'reason': 'unknown-check-failure'})
         self.assertNotIn('source changed', json.dumps(receipt))
         self.assertNotIn(str(self.root), json.dumps(receipt))
 
@@ -117,8 +131,8 @@ class MaintenanceContracts(unittest.TestCase):
         (self.root / 'command-00.log').write_text('Build succeeded.\n')
         with self.assertRaises(ValueError):
             maintenance.verify_tests(self.root, extension)
-        (self.root / 'command-00.log').write_text(f'Test run for {self.root}/source/bin/Release/net8.0/Fixture.Tests.dll (.NETCoreApp,Version=v8.0)\nPassed! - Failed: 0, Passed: 3, Skipped: 0, Total: 3\n')
-        self.assertEqual(maintenance.verify_tests(self.root, extension)['successful_test_summaries'], [{'passed': 3, 'total': 3}])
+        self.write_trx_fixture('extensions')
+        self.assertEqual(maintenance.verify_tests(self.root, extension)['executions'][0]['counters']['passed'], 3)
 
     def test_source_document_checksum_binds_original_git_not_changed_workspace(self):
         prefix = f"https://raw.githubusercontent.com/{self.row['source_repository']}/{self.row['commit']}/"
@@ -135,6 +149,60 @@ class MaintenanceContracts(unittest.TestCase):
         details['source_link']['documents'] = {'/_/*': 'https://example.invalid/*'}
         with self.assertRaises(ValueError):
             maintenance.verify_documents(details, maintenance.ROOT, self.row)
+
+    def test_generated_source_requires_verified_embedded_bytes_even_when_wildcard_mapped(self):
+        prefix = f"https://raw.githubusercontent.com/{self.row['source_repository']}/{self.row['commit']}/"
+        checksum = hashlib.sha256(b'generated source').hexdigest()
+        document = {'path': '/_/obj/private-secret-host.g.cs', 'algorithm': 'sha256',
+                    'checksum': checksum, 'embedded_checksum': checksum}
+        details = {'source_link': {'documents': {'/_/*': prefix + '*'}}, 'documents': [document]}
+        result = maintenance.verify_documents(details, maintenance.ROOT, self.row)
+        self.assertEqual(result, [{'path': '[embedded]/document-1', 'source': 'embedded',
+                                  'algorithm': 'sha256', 'checksum': checksum}])
+        self.assertNotIn('private-secret-host', json.dumps(result))
+        self.assertEqual(maintenance.verify_documents(dict(details, documents=[dict(document, path='/unmapped/private-secret-host.g.cs')]),
+            maintenance.ROOT, self.row), result)
+        for embedded in [None, '0' * 64]:
+            with self.subTest(embedded=embedded), self.assertRaisesRegex(ValueError, 'verified embedded'):
+                maintenance.verify_documents(dict(details, documents=[dict(document, embedded_checksum=embedded)]),
+                                             maintenance.ROOT, self.row)
+        original = subprocess.run(['git', 'show', self.row['commit'] + ':Directory.Build.props'],
+                                  cwd=maintenance.ROOT, check=True, capture_output=True).stdout
+        tracked = dict(document, path='/_/Directory.Build.props')
+        self.assertNotEqual(checksum, hashlib.sha256(original).hexdigest())
+        with self.assertRaisesRegex(ValueError, 'Tracked source checksum mismatch'):
+            maintenance.verify_documents(dict(details, documents=[tracked]), maintenance.ROOT, self.row)
+
+    def test_proof_embedding_property_is_fixed_in_environment_and_studio_commands(self):
+        with patch.dict(os.environ, {'EmbedUntrackedSources': 'false', 'GH_TOKEN': 'private-secret'}, clear=True):
+            environment = maintenance.build_environment()
+        self.assertEqual(environment, {'EmbedUntrackedSources': 'true'})
+        observed = subprocess.run([sys.executable, '-c',
+            "import os; print(os.environ.get('EmbedUntrackedSources')); print(os.environ.get('GH_TOKEN'))"],
+            env=environment, capture_output=True, text=True, check=True).stdout.splitlines()
+        self.assertEqual(observed, ['true', 'None'])
+        for row in self.register['sources']:
+            commands = maintenance.recipes(row, row['dependency_version'] + '-proof.42.1', self.root)
+            for _, command in commands:
+                if command[:2] in [['dotnet', 'build'], ['dotnet', 'test'], ['dotnet', 'pack']]:
+                    self.assertIn('/p:EmbedUntrackedSources=true', command)
+
+    def test_failed_extensions_test_evidence_retains_only_admitted_cells_and_counts(self):
+        row = next(row for row in self.register['sources'] if row['product'] == 'extensions')
+        known = self.root / 'source/bin/Release/net8.0/Fixture.Tests.dll'
+        private = '/private/secret-token/machine-host/Unknown.dll'
+        for name, assembly in [('first', known), ('second', known), ('third', private)]:
+            self.write_trx_fixture('extensions', name, assembly)
+        context = {}
+        with self.assertRaises(ValueError):
+            maintenance.verify_tests(self.root, row, context)
+        cell = {'project': 'Fixture.Tests.csproj', 'framework': 'net8.0'}
+        self.assertEqual(context, {'expected_cells': [cell],
+            'admitted_observed_cells': [cell | {'occurrences': 2}], 'unknown_path_count': 1,
+            'duplicate_cell_count': 1, 'positive_summary_count': 3, 'summary_count': 3})
+        retained = json.dumps(context)
+        for value in [str(self.root), 'secret-token', 'machine-host', 'Unknown.dll', '/private']:
+            self.assertNotIn(value, retained)
 
     def test_inventory_records_explicit_source_build_output_and_assembly_identity(self):
         source = self.root / 'source'; source.mkdir()
@@ -207,7 +275,10 @@ class MaintenanceContracts(unittest.TestCase):
                                   cwd=maintenance.ROOT, check=True, capture_output=True).stdout
         prefix = f"https://raw.githubusercontent.com/{self.row['source_repository']}/{self.row['commit']}/"
         inspected = []
+        real_run = maintenance.run
         def inspect(command, *_args, **_kwargs):
+            if command[0] == 'git':
+                return real_run(command, *_args, **_kwargs)
             self.assertEqual(command[-1], '--inspect-symbols')
             assembly, symbols = Path(command[2]).read_bytes(), Path(command[3]).read_bytes()
             framework = assembly.decode().removeprefix('assembly-')
@@ -280,22 +351,22 @@ class MaintenanceContracts(unittest.TestCase):
             maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT, Path('/inspector'), self.root)
 
     def test_trx_binds_actual_project_and_framework_rejecting_duplicate_positive_cells(self):
-        results = self.root / 'test-results'; results.mkdir()
-        assembly = self.root / 'source/bin/Release/net8.0/Fixture.Tests.dll'
-        trx = f'<TestRun><ResultSummary><Counters total="3" passed="3" failed="0" /></ResultSummary><TestDefinitions><UnitTest><TestMethod codeBase="{assembly}" /></UnitTest></TestDefinitions></TestRun>'
-        (results / 'private-runner-host.trx').write_text(trx)
-        receipt = maintenance.verify_tests(self.root, self.row)
-        self.assertEqual(receipt['executions'][0]['project'], 'Fixture.Tests.csproj')
-        self.assertEqual(receipt['executions'][0]['framework'], 'net8.0')
-        self.assertNotIn('private-runner-host', json.dumps(receipt))
-        self.assertNotIn(str(self.root), json.dumps(receipt))
-        (results / 'duplicate.trx').write_text(trx)
-        with self.assertRaises(ValueError):
-            maintenance.verify_tests(self.root, self.row)
-        (results / 'duplicate.trx').unlink()
-        (results / 'private-runner-host.trx').write_text(trx.replace('net8.0', 'net9.0'))
-        with self.assertRaises(ValueError):
-            maintenance.verify_tests(self.root, self.row)
+        for product in ['studio', 'extensions']:
+            with self.subTest(product=product):
+                row = next(row for row in self.register['sources'] if row['product'] == product)
+                path = self.write_trx_fixture(product)
+                receipt = maintenance.verify_tests(self.root, row)
+                self.assertEqual(receipt['executions'][0]['project'], 'Fixture.Tests.csproj')
+                self.assertEqual(receipt['executions'][0]['framework'], 'net8.0')
+                for private in ['private-runner-host', 'private-secret-host', str(self.root)]:
+                    self.assertNotIn(private, json.dumps(receipt))
+                duplicate = self.write_trx_fixture(product, 'duplicate')
+                with self.assertRaises(ValueError):
+                    maintenance.verify_tests(self.root, row)
+                duplicate.unlink()
+                path.write_text(path.read_text().replace('net8.0', 'net9.0'))
+                with self.assertRaises(ValueError):
+                    maintenance.verify_tests(self.root, row)
 
     def test_evidence_upload_does_not_include_private_logs_or_trx(self):
         workflow = (maintenance.ROOT / '.github/workflows/prepare-maintenance-build.yml').read_text()
@@ -305,3 +376,65 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertNotIn('secrets.', workflow)
         self.assertNotIn('id-token:', workflow)
         self.assertIn('persist-credentials: false', workflow)
+
+    def test_failed_process_retains_only_exit_code_closed_target_and_diagnostic_counts(self):
+        private = '/private/runner-host-42/secret-password'
+        log = self.root / 'private.log'
+        record = {'success': False}
+        command = [sys.executable, '-c',
+            f'print("error NU1101: {private}"); print("warning CS0168: {private}"); '
+            f'print("Target Restore has thrown an exception: {private}"); raise SystemExit(7)']
+        with self.assertRaises(ValueError):
+            maintenance.run_build_command(command, self.root, log, record)
+        self.assertEqual(record['process'], {'status': 'exited', 'exit_code': 7})
+        self.assertEqual(record['diagnostics']['codes'], [
+            {'severity': 'error', 'code': 'NU1101', 'count': 1},
+            {'severity': 'warning', 'code': 'CS0168', 'count': 1}])
+        self.assertEqual(record['diagnostics']['nuke_failed_targets'], ['Restore'])
+        self.assertFalse(record['success'])
+        self.assertNotIn(private, json.dumps(record))
+        self.assertNotIn('runner-host', json.dumps(record))
+        self.assertNotIn('secret-password', json.dumps(record))
+        self.assertNotIn(str(self.root), json.dumps(record))
+        self.assertIn(private, log.read_text())
+
+    def test_diagnostic_code_counts_are_bounded_and_unknown_messages_are_not_retained(self):
+        log = self.root / 'private.log'
+        log.write_text('[]\n' + ''.join(f'error CS{code:04}: /private/secret-host\n' for code in range(40)) +
+                       'Target PrivateSecret has thrown an exception\nsecret=do-not-retain\n')
+        result = maintenance.closed_diagnostics(log)
+        self.assertEqual(len(result['codes']), 32)
+        self.assertEqual(result['unretained_code_occurrences'], 8)
+        self.assertEqual(result['nuke_failed_targets'], [])
+        self.assertNotIn('private', json.dumps(result).lower())
+        self.assertNotIn('secret', json.dumps(result).lower())
+
+    def test_optional_process_outcome_preserves_shared_runner_contract_and_timeout_cleanup(self):
+        outcome = {}
+        result = maintenance.run([sys.executable, '-c', 'print("safe")'], self.root, outcome=outcome)
+        self.assertEqual(result, 'safe\n')
+        self.assertEqual(outcome, {'status': 'exited', 'exit_code': 0})
+        self.assertEqual(maintenance.run([sys.executable, '-c', 'print("unchanged")'], self.root), 'unchanged\n')
+        with self.assertRaises(ValueError):
+            maintenance.run([sys.executable, '-c', 'raise SystemExit(4)'], self.root)
+        with self.assertRaises(subprocess.TimeoutExpired):
+            maintenance.run([sys.executable, '-c', 'import time; time.sleep(1)'], self.root, timeout=0.02, outcome=outcome)
+        self.assertEqual(outcome['status'], 'timed-out')
+        self.assertIsInstance(outcome['exit_code'], int)
+        with self.assertRaises(FileNotFoundError):
+            maintenance.run([str(self.root / 'missing-private-executable')], self.root, outcome=outcome)
+        self.assertEqual(outcome, {'status': 'start-failed', 'exit_code': None})
+
+    def test_verification_receipt_maps_only_known_static_reasons_and_hides_private_exceptions(self):
+        for index, (message, expected) in enumerate([
+                ('Packed repository provenance mismatch', 'package-repository-mismatch'),
+                ('Tracked source checksum mismatch', 'source-checksum-mismatch'),
+                ('secret-password /private/runner-host-42', 'unknown-check-failure')]):
+            output = self.root / f'proof-{index}'
+            with patch.object(maintenance, 'verify_source', side_effect=ValueError(message)):
+                with self.assertRaises(ValueError):
+                    maintenance.prepare(maintenance.ROOT, self.row, '3.8.4-proof.42.1', output)
+            receipt = json.loads((output / 'receipt.json').read_text())
+            self.assertEqual(receipt['error']['reason'], expected)
+            self.assertNotIn(message, json.dumps(receipt))
+            self.assertNotIn('/private/runner-host', json.dumps(receipt))
