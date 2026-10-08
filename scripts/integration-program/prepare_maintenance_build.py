@@ -122,7 +122,7 @@ def evaluate_inventory(source: Path, row: dict, version: str, output: Path) -> l
     solution = source / ('Elsa.Studio.sln' if row['product'] == 'studio' else 'Elsa.Extensions.sln')
     projects = re.findall(r'^Project\([^\n]+?= "[^"]+", "([^"]+\.csproj)"', solution.read_text(encoding='utf-8-sig'), re.M)
     require(bool(projects), 'No solution projects')
-    properties = 'IsPackable,IsTestProject,AssemblyName,PackageId,PackageVersion,TargetFrameworks,TargetFramework,IncludeSymbols'
+    properties = 'IsPackable,IsTestProject,AssemblyName,PackageId,PackageVersion,TargetFrameworks,TargetFramework,IncludeSymbols,IncludeBuildOutput'
     inventory, tests = [], []
     for project in projects:
         project = project.replace('\\', '/')
@@ -135,7 +135,11 @@ def evaluate_inventory(source: Path, row: dict, version: str, output: Path) -> l
         if values['IsPackable'].lower() != 'true':
             continue
         require(values['PackageVersion'] == version, f'Unexpected evaluated version: {project}')
+        require(values['IncludeBuildOutput'].lower() in ('true', 'false'), 'Build-output policy was not evaluated')
+        require(bool(values['AssemblyName']) and '/' not in values['AssemblyName'] and '\\' not in values['AssemblyName'],
+                'Invalid evaluated assembly identity')
         inventory.append({'id': values['PackageId'], 'project': project,
+            'assembly_name': values['AssemblyName'], 'include_build_output': values['IncludeBuildOutput'].lower() == 'true',
             'frameworks': frameworks,
             'symbols': values['IncludeSymbols'].lower() == 'true'})
     require(bool(inventory) and len({p['id'].casefold() for p in inventory}) == len(inventory), 'Empty/duplicate package inventory')
@@ -202,7 +206,9 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                 names = archive_names(package)
                 assemblies = sorted(n for n in names if n.startswith('lib/') and n.endswith('.dll'))
                 frameworks = sorted({name.split('/')[1] for name in assemblies})
-                require(not assemblies or frameworks == sorted(policy['frameworks']), 'Packed framework inventory mismatch')
+                expected_assemblies = sorted(f"lib/{framework}/{policy['assembly_name']}.dll"
+                    for framework in policy['frameworks']) if policy['include_build_output'] else []
+                require(assemblies == expected_assemblies, 'Packed assembly payload differs from evaluated build-output policy')
                 symbols_path = path.with_suffix('.snupkg')
                 require(not assemblies or policy['symbols'] and symbols_path.is_file(), 'Symbol package missing')
                 symbols = []
@@ -225,12 +231,14 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                             inspection = json.loads(run(['dotnet', str(inspector), str(dll), str(pdb), '--inspect-symbols'],
                                 source, env=build_environment()))
                             details = inspection['details']
+                            require(details['assembly_name'] == policy['assembly_name'], 'Packaged assembly identity mismatch')
                             symbols.append({'assembly': name, 'assembly_sha256': digest(dll.read_bytes()),
                                 'pdb': pdb_name, 'pdb_sha256': digest(pdb.read_bytes()), 'symbol': {key: inspection['symbol'][key] for key in ('key', 'pdb_name', 'guid', 'stamp',
                                     'checksum_algorithm', 'declared_checksum', 'normalized_checksum', 'pdb_sha256', 'pdb_size')}, 'assembly_version': details['assembly_version'],
                                 'informational_version': details['informational_version'],
                                 'documents': verify_documents(details, source, row)})
                 receipts.append({'id': identifier, 'version': version, 'frameworks': frameworks,
+                    'assembly_name': policy['assembly_name'], 'include_build_output': policy['include_build_output'],
                     'dependencies': dependencies, 'repository': dict(repository.attrib), 'symbols': symbols,
                     'files': [{'name': p.name, 'sha256': digest(p.read_bytes()), 'size': p.stat().st_size}
                               for p in (path, symbols_path) if p.exists()]})

@@ -136,30 +136,111 @@ class MaintenanceContracts(unittest.TestCase):
         with self.assertRaises(ValueError):
             maintenance.verify_documents(details, maintenance.ROOT, self.row)
 
-    def test_package_identity_dependencies_and_complete_inventory_are_verified(self):
-        artifacts = self.root / 'artifacts'; artifacts.mkdir()
-        policy = [{'id': 'Elsa.Studio.Fixture', 'frameworks': ['net8.0'], 'symbols': False}]
-        version = '3.8.4-proof.42.1'
+    def test_inventory_records_explicit_source_build_output_and_assembly_identity(self):
+        source = self.root / 'source'; source.mkdir()
+        (source / 'Elsa.Studio.sln').write_text('Project("{fixture}") = "Fixture", "Fixture.csproj", "{fixture}"\n')
+        values = {'IsPackable': 'true', 'IsTestProject': 'true', 'AssemblyName': 'Evaluated.Assembly',
+                  'PackageId': 'Elsa.Studio.Fixture', 'PackageVersion': '3.8.4-proof.42.1',
+                  'TargetFrameworks': 'net8.0;net9.0', 'TargetFramework': '', 'IncludeSymbols': 'true',
+                  'IncludeBuildOutput': 'true'}
+        with patch.object(maintenance, 'run', side_effect=lambda *_args, **_kwargs: json.dumps({'Properties': values})) as runner:
+            for include in ['true', 'false']:
+                values['IncludeBuildOutput'] = include
+                inventory = maintenance.evaluate_inventory(source, self.row, '3.8.4-proof.42.1', self.root)
+                self.assertEqual(inventory[0]['assembly_name'], 'Evaluated.Assembly')
+                self.assertEqual(inventory[0]['include_build_output'], include == 'true')
+                self.assertEqual(inventory[0]['frameworks'], ['net8.0', 'net9.0'])
+            self.assertIn('IncludeBuildOutput', runner.call_args.args[0][-1])
+            values['IncludeBuildOutput'] = ''
+            with self.assertRaisesRegex(ValueError, 'not evaluated'):
+                maintenance.evaluate_inventory(source, self.row, '3.8.4-proof.42.1', self.root)
+
+    def write_package_fixture(self, dependency='3.8.4', packed_version='3.8.4-proof.42.1', frameworks=()):
+        artifacts = self.root / 'artifacts'; artifacts.mkdir(exist_ok=True)
+        nuspec = f'''<package><metadata><id>Elsa.Studio.Fixture</id><version>{packed_version}</version>
+          <repository type="git" url="https://github.com/elsa-workflows/elsa-studio" commit="{self.row['commit']}" />
+          <dependencies><group targetFramework="net8.0"><dependency id="Elsa.Api.Client" version="{dependency}" /></group></dependencies>
+          </metadata></package>'''
         path = artifacts / 'fixture.nupkg'
-        def package(dependency='3.8.4', packed_version=version):
-            with zipfile.ZipFile(path, 'w') as zipped:
-                zipped.writestr('fixture.nuspec', f'''<package><metadata><id>Elsa.Studio.Fixture</id><version>{packed_version}</version>
-                  <repository type="git" url="https://github.com/elsa-workflows/elsa-studio" commit="{self.row['commit']}" />
-                  <dependencies><group targetFramework="net8.0"><dependency id="Elsa.Api.Client" version="{dependency}" /></group></dependencies>
-                  </metadata></package>''')
-                zipped.writestr('build/Fixture.targets', '<Project/>')
-        package()
+        with zipfile.ZipFile(path, 'w') as zipped:
+            zipped.writestr('fixture.nuspec', nuspec)
+            zipped.writestr('build/Fixture.targets', '<Project/>')
+            for framework in frameworks:
+                zipped.writestr(f'lib/{framework}/Elsa.Studio.Fixture.dll', f'assembly-{framework}')
+        if frameworks:
+            with zipfile.ZipFile(path.with_suffix('.snupkg'), 'w') as zipped:
+                zipped.writestr('fixture.nuspec', nuspec)
+                for framework in frameworks:
+                    zipped.writestr(f'lib/{framework}/Elsa.Studio.Fixture.pdb', f'symbols-{framework}')
+        return artifacts
+
+    def test_package_identity_dependencies_and_complete_inventory_are_verified(self):
+        policy = [{'id': 'Elsa.Studio.Fixture', 'assembly_name': 'Elsa.Studio.Fixture',
+                   'frameworks': ['net8.0'], 'include_build_output': False, 'symbols': False}]
+        version = '3.8.4-proof.42.1'
+        artifacts = self.write_package_fixture()
         receipt = maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT, Path('/unused'), self.root)
         self.assertEqual(receipt[0]['dependencies'][0]['dependencies'][0]['version'], '3.8.4')
-        package('3.10.0')
+        self.assertFalse(receipt[0]['include_build_output'])
+        with self.assertRaisesRegex(ValueError, 'assembly payload'):
+            maintenance.verify_artifacts(artifacts, [dict(policy[0], include_build_output=True)], self.row,
+                                         version, maintenance.ROOT, Path('/unused'), self.root)
+        self.write_package_fixture(dependency='3.10.0')
         with self.assertRaises(ValueError):
             maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT, Path('/unused'), self.root)
-        package(packed_version='3.9.0')
+        self.write_package_fixture(packed_version='3.9.0')
         with self.assertRaises(ValueError):
             maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT, Path('/unused'), self.root)
-        path.unlink()
+        (artifacts / 'fixture.nupkg').unlink()
         with self.assertRaises(ValueError):
             maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT, Path('/unused'), self.root)
+
+    def test_every_evaluated_framework_requires_its_named_assembly_and_verified_symbols(self):
+        frameworks = ['net8.0', 'net9.0']
+        artifacts = self.write_package_fixture(frameworks=frameworks)
+        version = '3.8.4-proof.42.1'
+        policy = [{'id': 'Elsa.Studio.Fixture', 'assembly_name': 'Elsa.Studio.Fixture',
+                   'frameworks': frameworks, 'include_build_output': True, 'symbols': True}]
+        original = subprocess.run(['git', 'show', self.row['commit'] + ':Directory.Build.props'],
+                                  cwd=maintenance.ROOT, check=True, capture_output=True).stdout
+        prefix = f"https://raw.githubusercontent.com/{self.row['source_repository']}/{self.row['commit']}/"
+        inspected = []
+        def inspect(command, *_args, **_kwargs):
+            self.assertEqual(command[-1], '--inspect-symbols')
+            assembly, symbols = Path(command[2]).read_bytes(), Path(command[3]).read_bytes()
+            framework = assembly.decode().removeprefix('assembly-')
+            self.assertEqual(symbols, f'symbols-{framework}'.encode())
+            inspected.append(framework)
+            return json.dumps({'details': {'assembly_name': 'Elsa.Studio.Fixture', 'assembly_version': '3.8.0.0',
+                'informational_version': version + '+' + self.row['commit'],
+                'source_link': {'documents': {'/_/*': prefix + '*'}}, 'documents': [
+                    {'path': '/_/Directory.Build.props', 'algorithm': 'sha256',
+                     'checksum': hashlib.sha256(original).hexdigest(), 'embedded_checksum': None}]},
+                'symbol': {'key': 'fixture.pdb/key/fixture.pdb', 'pdb_name': 'fixture.pdb', 'guid': 'fixture-guid',
+                    'stamp': 1, 'checksum_algorithm': 'SHA256', 'declared_checksum': 'fixture-checksum',
+                    'normalized_checksum': 'fixture-checksum', 'pdb_sha256': hashlib.sha256(symbols).hexdigest(),
+                    'pdb_size': len(symbols)}})
+        with patch.object(maintenance, 'run', side_effect=inspect):
+            receipt = maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT, Path('/inspector'), self.root)
+        self.assertEqual(inspected, frameworks)
+        self.assertEqual(receipt[0]['frameworks'], frameworks)
+        self.assertEqual([symbol['assembly'] for symbol in receipt[0]['symbols']],
+                         ['lib/net8.0/Elsa.Studio.Fixture.dll', 'lib/net9.0/Elsa.Studio.Fixture.dll'])
+        self.assertTrue(all(symbol['documents'][0]['source'] == 'original-git' for symbol in receipt[0]['symbols']))
+        self.write_package_fixture(frameworks=['net8.0'])
+        with self.assertRaisesRegex(ValueError, 'assembly payload'):
+            maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT, Path('/inspector'), self.root)
+        self.write_package_fixture(frameworks=frameworks)
+        # A different DLL at the right TFM cannot replace the evaluated assembly.
+        with zipfile.ZipFile(artifacts / 'fixture.nupkg', 'a') as zipped:
+            zipped.writestr('lib/net8.0/Unexpected.dll', 'wrong assembly')
+        with self.assertRaisesRegex(ValueError, 'assembly payload'):
+            maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT, Path('/inspector'), self.root)
+        # A present DLL still requires its corresponding original symbol payload.
+        self.write_package_fixture(frameworks=frameworks)
+        (artifacts / 'fixture.snupkg').unlink()
+        with self.assertRaisesRegex(ValueError, 'Symbol package missing'):
+            maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT, Path('/inspector'), self.root)
 
     def test_trx_binds_actual_project_and_framework_rejecting_duplicate_positive_cells(self):
         results = self.root / 'test-results'; results.mkdir()
