@@ -35,19 +35,36 @@ public sealed class AdmissionDefinitionBootstrapTests(PostgreSqlConnectionsFixtu
         var fingerprint = AdmissionDefinitionFingerprint.Compute(definition, serializer);
         var bootstrap = services.GetRequiredService<IAdmissionDefinitionBootstrapStore>();
         await using var lease = await bootstrap.AcquireExclusiveAsync(Configuration(definition, fingerprint));
-        Assert.Equal(AdmissionDefinitionInsertOutcome.Inserted, await bootstrap.InsertOrVerifyAsync(definition, fingerprint));
+        var inserted = await bootstrap.InsertOrVerifyAsync(definition, fingerprint);
+        Assert.Equal(AdmissionDefinitionInsertOutcome.Inserted, inserted);
         var reloaded = (await services.GetRequiredService<IWorkflowDefinitionStore>().FindAsync(new() { Id = definition.Id, TenantAgnostic = true }))!;
-        Assert.Equal(fingerprint, AdmissionDefinitionFingerprint.Compute(reloaded, serializer));
+        var reloadedFingerprint = AdmissionDefinitionFingerprint.Compute(reloaded, serializer);
+        Assert.Equal(fingerprint, reloadedFingerprint);
         Assert.True(reloaded.Options.UsableAsActivity);
         Assert.Single(reloaded.Variables);
         Assert.Contains("fixture-outcome", reloaded.Outcomes);
         Assert.Equal("preserved-property", reloaded.CustomProperties["fixture-property"].ToString());
-        Assert.Equal(AdmissionDefinitionInsertOutcome.ExistingMatch, await bootstrap.InsertOrVerifyAsync(definition, fingerprint));
+        var existing = await bootstrap.InsertOrVerifyAsync(definition, fingerprint);
+        Assert.Equal(AdmissionDefinitionInsertOutcome.ExistingMatch, existing);
         await using var db = await services.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync();
-        Assert.Equal(1, await db.WorkflowDefinitions.CountAsync());
+        var count = await db.WorkflowDefinitions.CountAsync();
+        Assert.Equal(1, count);
         var stored = await db.WorkflowDefinitions.SingleAsync();
-        Assert.Equal(WorkflowDefinitionStateCodec.Serialize(definition, serializer), db.Entry(stored).Property("Data").CurrentValue);
-        Assert.Equal(true, db.Entry(stored).Property("UsableAsActivity").CurrentValue);
+        var expectedShadowState = WorkflowDefinitionStateCodec.Serialize(definition, serializer);
+        var shadowState = db.Entry(stored).Property("Data").CurrentValue;
+        var usableAsActivity = db.Entry(stored).Property("UsableAsActivity").CurrentValue;
+        Assert.Equal(expectedShadowState, shadowState);
+        Assert.Equal(true, usableAsActivity);
+        await ObserveAsync("provider-bootstrap-codec-roundtrip", nameof(InsertWritesExactSharedShadowCodecAndNormalStoreReloadPreservesState),
+            inserted == AdmissionDefinitionInsertOutcome.Inserted && existing == AdmissionDefinitionInsertOutcome.ExistingMatch
+            && fingerprint == reloadedFingerprint && reloaded.Options.UsableAsActivity && reloaded.Variables.Count == 1
+            && reloaded.Outcomes.Contains("fixture-outcome") && reloaded.CustomProperties["fixture-property"].ToString() == "preserved-property"
+            && count == 1 && Equals(expectedShadowState, shadowState) && Equals(true, usableAsActivity),
+            new() { ["insertOutcome"] = inserted.ToString(), ["existingOutcome"] = existing.ToString(),
+                ["definitionCount"] = count, ["fingerprintPreserved"] = fingerprint == reloadedFingerprint,
+                ["variableCount"] = reloaded.Variables.Count, ["outcomePreserved"] = reloaded.Outcomes.Contains("fixture-outcome"),
+                ["customPropertyPreserved"] = reloaded.CustomProperties["fixture-property"].ToString() == "preserved-property",
+                ["shadowStateMatches"] = Equals(expectedShadowState, shadowState), ["usableAsActivity"] = Equals(true, usableAsActivity) });
     }
 
     [Theory]
@@ -65,8 +82,12 @@ public sealed class AdmissionDefinitionBootstrapTests(PostgreSqlConnectionsFixtu
         await using var db = await services.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync();
         var invalid = parameterId switch { "missing" => null, "blank" => " ", "null" => "null", _ => throw new InvalidOperationException() };
         await db.WorkflowDefinitions.Where(x => x.Id == definition.Id).ExecuteUpdateAsync(setters => setters.SetProperty(x => EF.Property<string?>(x, "Data"), invalid));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => bootstrap.InsertOrVerifyAsync(definition, fingerprint));
-        Assert.False((await db.WorkflowDefinitions.SingleAsync()).IsPublished);
+        var rejected = await Assert.ThrowsAsync<InvalidOperationException>(() => bootstrap.InsertOrVerifyAsync(definition, fingerprint));
+        var stored = await db.WorkflowDefinitions.SingleAsync();
+        Assert.False(stored.IsPublished);
+        await ObserveAsync("provider-bootstrap-corrupt-" + parameterId, nameof(ExistingDefaultArtifactWithMissingShadowStateFailsStrictVerification),
+            rejected != null && !stored.IsPublished,
+            new() { ["verificationDenied"] = rejected != null, ["published"] = stored.IsPublished }, parameterId);
     }
 
     [Fact]
@@ -84,10 +105,15 @@ public sealed class AdmissionDefinitionBootstrapTests(PostgreSqlConnectionsFixtu
         var fingerprint = AdmissionDefinitionFingerprint.Compute(definition, serializer);
         var bootstrap = services.GetRequiredService<IAdmissionDefinitionBootstrapStore>();
         await using var lease = await bootstrap.AcquireExclusiveAsync(Configuration(definition, fingerprint));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => bootstrap.InsertOrVerifyAsync(definition, fingerprint));
+        var rejected = await Assert.ThrowsAsync<InvalidOperationException>(() => bootstrap.InsertOrVerifyAsync(definition, fingerprint));
         var unchanged = (await store.FindAsync(new() { Id = conflicting.Id, TenantAgnostic = true }))!;
         Assert.True(unchanged.IsPublished);
-        Assert.Null(await store.FindAsync(new() { Id = definition.Id, TenantAgnostic = true }));
+        var candidate = await store.FindAsync(new() { Id = definition.Id, TenantAgnostic = true });
+        Assert.Null(candidate);
+        await ObserveAsync("provider-bootstrap-conflicting-version", nameof(ConflictingLogicalVersionOrTenantCannotBeAdoptedOrRetracted),
+            rejected != null && unchanged.IsPublished && candidate == null,
+            new() { ["adoptionDenied"] = rejected != null, ["existingPublished"] = unchanged.IsPublished,
+                ["candidateAbsent"] = candidate == null });
     }
 
     [Fact]
@@ -98,13 +124,22 @@ public sealed class AdmissionDefinitionBootstrapTests(PostgreSqlConnectionsFixtu
         var serializer = services.GetRequiredService<IPayloadSerializer>();
         var fingerprint = AdmissionDefinitionFingerprint.Compute(definition, serializer);
         var bootstrap = services.GetRequiredService<IAdmissionDefinitionBootstrapStore>();
-        await Assert.ThrowsAsync<InvalidOperationException>(() => bootstrap.InsertOrVerifyAsync(definition, fingerprint));
+        var missingLease = await Assert.ThrowsAsync<InvalidOperationException>(() => bootstrap.InsertOrVerifyAsync(definition, fingerprint));
         await using var lease = await bootstrap.AcquireExclusiveAsync(Configuration(definition, fingerprint));
         definition.Outcomes.Add("unreviewed-outcome");
-        await Assert.ThrowsAsync<InvalidOperationException>(() => bootstrap.InsertOrVerifyAsync(definition, fingerprint));
+        var changedFingerprint = await Assert.ThrowsAsync<InvalidOperationException>(() => bootstrap.InsertOrVerifyAsync(definition, fingerprint));
         await using var db = await services.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync();
-        Assert.Equal(0, await db.WorkflowDefinitions.CountAsync());
+        var count = await db.WorkflowDefinitions.CountAsync();
+        Assert.Equal(0, count);
+        await ObserveAsync("provider-bootstrap-lease-fingerprint", nameof(WrongFullContentFingerprintOrMissingExclusiveLeaseFailsBeforeInsert),
+            missingLease != null && changedFingerprint != null && count == 0,
+            new() { ["missingLeaseDenied"] = missingLease != null, ["changedFingerprintDenied"] = changedFingerprint != null,
+                ["definitionCount"] = count });
     }
+
+    private Task ObserveAsync(string caseId, string method, bool verified, Dictionary<string, object> facts, string parameterId = "default") =>
+        AdmissionProofObservation.WriteAsync(fixture, caseId, GetType().FullName + "." + method, parameterId, [],
+            new Dictionary<string, bool> { ["durablePredicatesVerified"] = verified }, facts);
 
     private async Task<ServiceProvider> CreateAsync()
     {

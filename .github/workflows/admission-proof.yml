@@ -5,7 +5,9 @@ on:
     paths:
       - 'src/modules/Elsa.Workflows.Core/**'
       - 'src/modules/Elsa.Workflows.Runtime/**'
-      - 'src/modules/Elsa.Workflows.Admission/**'
+      - 'src/modules/Elsa.Workflows.Admission*/**'
+      - 'src/modules/Elsa.Persistence.EFCore/Modules/Management/**'
+      - 'src/modules/Elsa.Alterations/**'
       - 'src/modules/Elsa.Connections*/**'
       - 'test/unit/Elsa.Workflows.Core.UnitTests/**'
       - 'test/integration/Elsa.Workflows.IntegrationTests/**'
@@ -19,6 +21,8 @@ on:
       - 'scripts/integration-program/package_closure.py'
       - '.github/workflows/admission-proof.yml'
       - 'Directory.*'
+      - 'src/Directory.*'
+      - 'test/Directory.*'
       - 'global.json'
       - 'NuGet.Config'
   workflow_dispatch:

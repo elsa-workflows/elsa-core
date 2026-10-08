@@ -96,6 +96,10 @@ class AdmissionProofTests(unittest.TestCase):
             data = copy.deepcopy(self.manifest); mutate(data)
             with self.subTest(data=data), self.assertRaises(ValueError): proof.validate_manifest(data)
         proof.validate_manifest(self.manifest)
+        labeled = copy.deepcopy(self.manifest)
+        labeled['cases'][0]['parameterId'] = 'shared-parameter'
+        labeled['cases'][1]['parameterId'] = 'shared-parameter'
+        proof.validate_manifest(labeled)
 
     def test_trx_bijection_handles_real_named_theory_shape_and_unique_fact(self):
         cases = copy.deepcopy(self.manifest['cases'][:2]); cases[1]['parameterId'] = 'default'
@@ -245,10 +249,10 @@ class AdmissionProofTests(unittest.TestCase):
         self.assertFalse(receipt['verificationComplete']); self.assertFalse(receipt['postSourceVerified'])
 
     def test_environment_restored_and_duplicate_json_fields_rejected(self):
-        with patch.dict(os.environ, {'ELSA_ADMISSION_EXPECTED_HEAD': 'outer'}):
+        with patch.dict(os.environ, {'ELSA_ADMISSION_SOURCE_REVISION': 'outer'}):
             with proof.proof_environment(self.directory, HEAD):
-                self.assertEqual(HEAD, os.environ['ELSA_ADMISSION_EXPECTED_HEAD'])
-            self.assertEqual('outer', os.environ['ELSA_ADMISSION_EXPECTED_HEAD'])
+                self.assertEqual(HEAD, os.environ['ELSA_ADMISSION_SOURCE_REVISION'])
+            self.assertEqual('outer', os.environ['ELSA_ADMISSION_SOURCE_REVISION'])
         path = self.directory / 'duplicate.json'; path.write_text('{"facts": {}, "facts": {"token": "private"}}')
         with self.assertRaises(ValueError): proof.read_json(path)
 

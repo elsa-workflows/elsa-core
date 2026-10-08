@@ -41,8 +41,1447 @@
   "buildProjects": [
     "src/modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj",
     "src/modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj",
-    "src/modules/Elsa.Workflows.Admission/Elsa.Workflows.Admission.csproj"
+    "src/modules/Elsa.Workflows.Admission/Elsa.Workflows.Admission.csproj",
+    "src/modules/Elsa.Workflows.Management/Elsa.Workflows.Management.csproj",
+    "src/modules/Elsa.Persistence.EFCore/Elsa.Persistence.EFCore.csproj",
+    "src/modules/Elsa.Workflows.Admission.Persistence.EFCore/Elsa.Workflows.Admission.Persistence.EFCore.csproj",
+    "src/modules/Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql/Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql.csproj",
+    "src/modules/Elsa.Alterations/Elsa.Alterations.csproj"
   ],
-  "cases": [],
-  "workerAssemblies": {}
+  "cases": [
+    {
+      "caseId": "provider-store-migration",
+      "family": "compat",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.MigrationMatchesRuntimeModelAndReapplicationPreservesLedger",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "migrationCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "appliedMigrationCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "pendingModelChanges": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "ledgerPresent": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-identity-fanout",
+      "family": "identity",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.IdentityFanOutAndChangedDuplicatePreserveOriginalBinding",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "firstOutcome": {
+          "kind": "enum",
+          "values": [
+            "Committed"
+          ]
+        },
+        "duplicateOutcome": {
+          "kind": "enum",
+          "values": [
+            "Duplicate"
+          ]
+        },
+        "changedOutcome": {
+          "kind": "enum",
+          "values": [
+            "Quarantined"
+          ]
+        },
+        "fanoutOutcome": {
+          "kind": "enum",
+          "values": [
+            "Committed"
+          ]
+        },
+        "sameAllocation": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "independentAllocation": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "activeReservations": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-foreign-scope",
+      "family": "binding",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ForeignScopeOwnershipNeverAppearsUnowned",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "foreignInstanceDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "foreignSubscriptionDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "foreignProvisionDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "unownedInstanceAbsent": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-epoch-withdrawal",
+      "family": "withdraw",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.WithdrawalAndNewEpochCannotReviveOldPreparation",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "withdrawalDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "reactivationDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "epochAdvanced": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "state": {
+          "kind": "enum",
+          "values": [
+            "StartPreparing"
+          ]
+        },
+        "authorityOutstanding": {
+          "kind": "boolean",
+          "equals": false
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-terminal-clock",
+      "family": "terminal",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.TerminalClockReleasesActiveOnceAndOwnedTombstoneRemainsCharged",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "terminalClockMatches": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "repeatedCompletionDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "earlyCleanupAllowed": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "matureCleanupAllowed": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "payloadErased": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "identityErased": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "retainedRecordReleased": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "activeReservations": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "retainedRecords": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "nextOutcome": {
+          "kind": "enum",
+          "values": [
+            "CapacityExceeded"
+          ]
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-suppressed-cleanup",
+      "family": "terminal",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.SuppressedUnallocatedCleanupReleasesRetainedCapacityOnlyOnce",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "firstCleanupAllowed": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "secondCleanupAllowed": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "recordAbsent": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "activeReservations": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "retainedRecords": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "lateOutcome": {
+          "kind": "enum",
+          "values": [
+            "Quarantined"
+          ]
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-recovery-attestations",
+      "family": "resolve",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.RecoveryAndIssuedAuthorityCannotBeSuppressedOrResolvedWithoutBothAttestations",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "authorityOutstanding": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "suppressionDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "missingQuiescenceDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "missingEffectsDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "completionDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "cleanupAllowed": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "auditReferenceMatches": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "state": {
+          "kind": "enum",
+          "values": [
+            "Terminal"
+          ]
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-original-cleanup-policy",
+      "family": "time",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.CleanupUsesOriginalPolicyAndDuplicatesCompareDigestAfterPayloadErasure",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "payloadCleanupAllowed": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "duplicateOutcome": {
+          "kind": "enum",
+          "values": [
+            "Duplicate"
+          ]
+        },
+        "conflictOutcome": {
+          "kind": "enum",
+          "values": [
+            "Quarantined"
+          ]
+        },
+        "newAuthorityCleanupAllowed": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "originalAuthorityCleanupAllowed": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-continuation-lineage",
+      "family": "continue",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.SuspendedCheckpointLineageCanBeConsumedOnlyOnce",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "terminalClockAbsent": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "cleanupAllowed": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "forgedCheckpointDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "checkpointConsumed": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "bookmarkLineageConsumed": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "replayDenied": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-policy-missing",
+      "family": "time",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
+      "parameterId": "missing",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Rejected"
+          ]
+        },
+        "acknowledgementEligible": {
+          "kind": "boolean",
+          "equals": false
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-policy-future",
+      "family": "time",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
+      "parameterId": "future",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Rejected"
+          ]
+        },
+        "acknowledgementEligible": {
+          "kind": "boolean",
+          "equals": false
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-policy-skew-boundary",
+      "family": "time",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
+      "parameterId": "skew-boundary",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Committed"
+          ]
+        },
+        "acknowledgementEligible": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-policy-late",
+      "family": "time",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
+      "parameterId": "late",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Quarantined"
+          ]
+        },
+        "acknowledgementEligible": {
+          "kind": "boolean",
+          "equals": false
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-policy-activation",
+      "family": "time",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
+      "parameterId": "activation",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Quarantined"
+          ]
+        },
+        "acknowledgementEligible": {
+          "kind": "boolean",
+          "equals": false
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-policy-loop",
+      "family": "admission",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
+      "parameterId": "loop",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Filtered"
+          ]
+        },
+        "acknowledgementEligible": {
+          "kind": "boolean",
+          "equals": false
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-policy-nonhuman",
+      "family": "admission",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
+      "parameterId": "nonhuman",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Filtered"
+          ]
+        },
+        "acknowledgementEligible": {
+          "kind": "boolean",
+          "equals": false
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-policy-channel",
+      "family": "admission",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
+      "parameterId": "channel",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Quarantined"
+          ]
+        },
+        "acknowledgementEligible": {
+          "kind": "boolean",
+          "equals": false
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-policy-utf8-payload",
+      "family": "admission",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
+      "parameterId": "utf8-payload",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Rejected"
+          ]
+        },
+        "acknowledgementEligible": {
+          "kind": "boolean",
+          "equals": false
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-policy-utf8-event-id",
+      "family": "admission",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventPolicyRejectsInvalidOrLateInput",
+      "parameterId": "utf8-event-id",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Rejected"
+          ]
+        },
+        "acknowledgementEligible": {
+          "kind": "boolean",
+          "equals": false
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-event-id-boundary",
+      "family": "identity",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.ExplicitEventIdByteBoundaryMatchesPostgreSqlStorage",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "boundaryOutcome": {
+          "kind": "enum",
+          "values": [
+            "Committed"
+          ]
+        },
+        "eventIdPreserved": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "oversizedOutcome": {
+          "kind": "enum",
+          "values": [
+            "Rejected"
+          ]
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-recovery-cursor",
+      "family": "admission",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.RecoveryCursorReachesLaterAdmissionsBeyondUnresolvedPages",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "visitedCount": {
+          "kind": "integer",
+          "minimum": 3,
+          "maximum": 3
+        },
+        "expectedCount": {
+          "kind": "integer",
+          "minimum": 3,
+          "maximum": 3
+        },
+        "orderPreserved": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "recoveryRequiredCount": {
+          "kind": "integer",
+          "minimum": 2,
+          "maximum": 2
+        },
+        "laterState": {
+          "kind": "enum",
+          "values": [
+            "Admitted"
+          ]
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-retired-namespace",
+      "family": "withdraw",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.RetiredNamespaceCannotBeResetAndRecoveryEnumerationIsBounded",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "pageCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "zeroLimitDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "excessiveLimitDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "reactivationDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "reprovisionDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "outcome": {
+          "kind": "enum",
+          "values": [
+            "Inactive"
+          ]
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-microsecond-retention",
+      "family": "time",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.PostgreSqlTimestampPrecisionAndClockRollbackCannotShortenIdentityRetention",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "admissionClockNotRoundedEarlier": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "terminalClockNotBeforeAdmission": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "admissionMicrosecondAligned": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "terminalMicrosecondAligned": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "redeliveryWithinOriginalAgeWindow": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "boundaryCleanupAllowed": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "identityRetainedAtBoundary": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "redeliveryOutcome": {
+          "kind": "enum",
+          "values": [
+            "Duplicate"
+          ]
+        },
+        "sameAllocation": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "boundaryAdmissionCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "rollbackTerminalNotBeforeAdmission": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "rollbackAdmissionClockNotRoundedEarlier": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "immediateCleanupAllowed": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "rollbackIdentityRetained": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-store-nonexpanding-event-window",
+      "family": "time",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionPostgreSqlPersistenceTests.InactiveReconfigurationCannotExpandEventAgeBeforeOrAfterIdentityPurge",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "wideningDeniedBeforePurge": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "wideningDeniedAfterPurge": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "configurationPreservedBeforePurge": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "configurationPreservedAfterPurge": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "revisionPreservedBeforePurge": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "revisionPreservedAfterPurge": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "activeReservations": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "retainedRecords": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "oldIdentityPurged": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "redeliveryOutcome": {
+          "kind": "enum",
+          "values": [
+            "Quarantined"
+          ]
+        },
+        "acknowledgementEligible": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "admissionCount": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-bootstrap-codec-roundtrip",
+      "family": "bootstrap",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionDefinitionBootstrapTests.InsertWritesExactSharedShadowCodecAndNormalStoreReloadPreservesState",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "insertOutcome": {
+          "kind": "enum",
+          "values": [
+            "Inserted"
+          ]
+        },
+        "existingOutcome": {
+          "kind": "enum",
+          "values": [
+            "ExistingMatch"
+          ]
+        },
+        "definitionCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "fingerprintPreserved": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "variableCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "outcomePreserved": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "customPropertyPreserved": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "shadowStateMatches": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "usableAsActivity": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-bootstrap-corrupt-missing",
+      "family": "bootstrap",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionDefinitionBootstrapTests.ExistingDefaultArtifactWithMissingShadowStateFailsStrictVerification",
+      "parameterId": "missing",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "verificationDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "published": {
+          "kind": "boolean",
+          "equals": false
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-bootstrap-corrupt-blank",
+      "family": "bootstrap",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionDefinitionBootstrapTests.ExistingDefaultArtifactWithMissingShadowStateFailsStrictVerification",
+      "parameterId": "blank",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "verificationDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "published": {
+          "kind": "boolean",
+          "equals": false
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-bootstrap-corrupt-null",
+      "family": "bootstrap",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionDefinitionBootstrapTests.ExistingDefaultArtifactWithMissingShadowStateFailsStrictVerification",
+      "parameterId": "null",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "verificationDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "published": {
+          "kind": "boolean",
+          "equals": false
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-bootstrap-conflicting-version",
+      "family": "bootstrap",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionDefinitionBootstrapTests.ConflictingLogicalVersionOrTenantCannotBeAdoptedOrRetracted",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "adoptionDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "existingPublished": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "candidateAbsent": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-bootstrap-lease-fingerprint",
+      "family": "bootstrap",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionDefinitionBootstrapTests.WrongFullContentFingerprintOrMissingExclusiveLeaseFailsBeforeInsert",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified"
+      ],
+      "facts": {
+        "missingLeaseDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "changedFingerprintDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "definitionCount": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-duplicate",
+      "family": "identity",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.ConcurrentDuplicateAdmissionsCommitOneAllocation",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "safeOutputVerified"
+      ],
+      "facts": {
+        "admissionCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activeReservations": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "retainedRecords": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-primary",
+        "admission-competitor"
+      ],
+      "minimumProcesses": 2,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-capacity",
+      "family": "capacity",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.ConcurrentCapacityReservationsRejectOneWithoutAcknowledgement",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "safeOutputVerified"
+      ],
+      "facts": {
+        "admissionCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "acknowledgementEligibleCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "capacityExceededCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-primary",
+        "admission-competitor"
+      ],
+      "minimumProcesses": 2,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-before-commit",
+      "family": "admission",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.CrashBeforeCommitLeavesNoAdmissionAndRestartAdmits",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "safeOutputVerified"
+      ],
+      "facts": {
+        "admissionsBeforeKill": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "admissionsAfterRestart": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "restartCommitted": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-primary",
+        "admission-competitor"
+      ],
+      "minimumProcesses": 2,
+      "restartRequired": true
+    },
+    {
+      "caseId": "provider-after-commit",
+      "family": "admission",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.CrashAfterCommitBeforeAcknowledgementRedeliveryUsesSameAllocation",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "safeOutputVerified"
+      ],
+      "facts": {
+        "admissionCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "acknowledgementObservedBeforeKill": {
+          "kind": "boolean",
+          "equals": false
+        },
+        "sameAllocationAfterRestart": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-primary",
+        "admission-competitor"
+      ],
+      "minimumProcesses": 2,
+      "restartRequired": true
+    },
+    {
+      "caseId": "provider-unknown-permit",
+      "family": "permit",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.UnknownCommitResponseThrowsAndReadbackDoesNotRepeatAuthorization",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "safeOutputVerified"
+      ],
+      "facts": {
+        "state": {
+          "kind": "enum",
+          "values": [
+            "StartAuthorized"
+          ]
+        },
+        "authorityOutstanding": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "revisionPreserved": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "duplicateAuthorizationChanged": {
+          "kind": "boolean",
+          "equals": false
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-primary",
+        "admission-competitor"
+      ],
+      "minimumProcesses": 2,
+      "restartRequired": true
+    },
+    {
+      "caseId": "provider-withdraw-first",
+      "family": "withdraw",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.WithdrawalBeforeAuthorizationDeniesAndNewEpochDoesNotRevive",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "safeOutputVerified"
+      ],
+      "facts": {
+        "staleAuthorizationDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "epochAdvanced": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "authorityOutstanding": {
+          "kind": "boolean",
+          "equals": false
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-primary",
+        "admission-competitor"
+      ],
+      "minimumProcesses": 2,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-permit-first",
+      "family": "resolve",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.AuthorizationBeforeWithdrawalRetainsOutstandingHistoricalAuthority",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "safeOutputVerified"
+      ],
+      "facts": {
+        "state": {
+          "kind": "enum",
+          "values": [
+            "StartAuthorized"
+          ]
+        },
+        "authorityOutstanding": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "unsafeResolutionDenied": {
+          "kind": "boolean",
+          "equals": true
+        },
+        "cleanupDenied": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-primary",
+        "admission-competitor"
+      ],
+      "minimumProcesses": 2,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-cleanup-race",
+      "family": "terminal",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.ConcurrentTerminalCleanupReleasesRetainedReservationOnce",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "safeOutputVerified"
+      ],
+      "facts": {
+        "cleanupSuccessCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activeReservations": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "retainedRecords": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "recordDeleted": {
+          "kind": "boolean",
+          "equals": true
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-primary",
+        "admission-competitor"
+      ],
+      "minimumProcesses": 2,
+      "restartRequired": false
+    },
+    {
+      "caseId": "provider-bootstrap-race",
+      "family": "bootstrap",
+      "project": "test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionWorkerProcessTests.CompetingBootstrapSubscriptionsSerializeOneLogicalDefinitionInsert",
+      "parameterId": "default",
+      "assertions": [
+        "durablePredicatesVerified",
+        "independentProcessesObserved",
+        "safeOutputVerified"
+      ],
+      "facts": {
+        "definitionCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "insertedCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "existingMatchCount": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "published": {
+          "kind": "boolean",
+          "equals": false
+        }
+      },
+      "topology": "postgresql-two-process",
+      "processRoles": [
+        "admission-primary",
+        "admission-competitor"
+      ],
+      "minimumProcesses": 2,
+      "restartRequired": false
+    }
+  ],
+  "workerAssemblies": {
+    "admission-primary": "test/workers/Elsa.Workflows.Admission.WorkerProcess/bin/Release/net10.0/Elsa.Workflows.Admission.WorkerProcess.dll",
+    "admission-competitor": "test/workers/Elsa.Workflows.Admission.WorkerProcess/bin/Release/net10.0/Elsa.Workflows.Admission.WorkerProcess.dll"
+  }
 }

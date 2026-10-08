@@ -51,7 +51,8 @@ public sealed class EFCoreAdmissionStore(
             var current = subscription.Configuration;
             if (subscription.Active || subscription.Retired || current.TenantId != configuration.TenantId ||
                 current.EnvironmentId != configuration.EnvironmentId || current.InstallationId != configuration.InstallationId ||
-                current.ActivationBoundary != configuration.ActivationBoundary)
+                current.ActivationBoundary != configuration.ActivationBoundary ||
+                configuration.Policy.MaximumEventAge > current.Policy.MaximumEventAge)
             {
                 return false;
             }
@@ -179,7 +180,7 @@ public sealed class EFCoreAdmissionStore(
             Id = Guid.NewGuid().ToString("N"), SubscriptionId = subscription.Id, IdentityHash = identity,
             ProviderEventId = message.ProviderEventId, Payload = message.Payload, ConfigurationFingerprint = subscription.ConfigurationFingerprint,
             ActivationEpoch = subscription.ActivationEpoch, AdmittedConfigurationJson = subscription.ConfigurationJson,
-            PayloadFingerprint = AdmissionHash.Compute(message.Payload), EventFingerprint = AdmissionEventFingerprint.Compute(message), AdmittedAt = now, EventOccurredAt = occurredAt, Revision = 1, State = AdmissionState.Admitted
+            PayloadFingerprint = AdmissionHash.Compute(message.Payload), EventFingerprint = AdmissionEventFingerprint.Compute(message), AdmittedAt = RoundTimestampUp(now), EventOccurredAt = occurredAt, Revision = 1, State = AdmissionState.Admitted
         };
         db.Admissions.Add(record);
         StampScope(db, record);
@@ -522,9 +523,19 @@ public sealed class EFCoreAdmissionStore(
         }
         record.State = AdmissionState.Terminal;
         record.TerminalDisposition = disposition;
-        record.TerminalAt = now.ToUniversalTime();
+        // PostgreSQL timestamps have microsecond precision. Never truncate a retention origin
+        // earlier, and keep a backward terminal clock from aging a fresh admission immediately.
+        var terminalAt = RoundTimestampUp(now);
+        record.TerminalAt = terminalAt < record.AdmittedAt ? record.AdmittedAt : terminalAt;
         record.ActiveReservationReleased = true;
         subscription.ActiveReservations--;
+    }
+
+    private static DateTimeOffset RoundTimestampUp(DateTimeOffset value)
+    {
+        var ticks = value.UtcTicks;
+        var remainder = ticks % TimeSpan.TicksPerMicrosecond;
+        return new DateTimeOffset(remainder == 0 ? ticks : checked(ticks + TimeSpan.TicksPerMicrosecond - remainder), TimeSpan.Zero);
     }
 
     private static void DemandCode(string value)

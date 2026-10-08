@@ -15,10 +15,15 @@ public static class PostgreSqlAdmissionPersistenceExtensions
     public static EFCoreAdmissionPersistenceFeature UsePostgreSql(this EFCoreAdmissionPersistenceFeature feature,
         Func<IServiceProvider, string> connectionString, ElsaDbContextOptions? options = null, Action<NpgsqlDbContextOptionsBuilder>? configure = null)
     {
-        feature.Services.AddSingleton<IAdmissionTransactionLock, PostgreSqlAdmissionTransactionLock>();
-        feature.Services.AddScoped<IAdmissionDefinitionBootstrapStore, PostgreSqlAdmissionDefinitionBootstrapStore>();
+        feature.Services.AddPostgreSqlAdmissionStores();
         options ??= new ElsaDbContextOptions();
         options.MigrationsHistoryTableName ??= "__AdmissionMigrationsHistory";
         return feature.UsePostgreSql(typeof(PostgreSqlAdmissionPersistenceExtensions).Assembly, connectionString, options, configure);
+    }
+
+    internal static void AddPostgreSqlAdmissionStores(this IServiceCollection services)
+    {
+        services.AddSingleton<IAdmissionTransactionLock, PostgreSqlAdmissionTransactionLock>();
+        services.AddScoped<IAdmissionDefinitionBootstrapStore, PostgreSqlAdmissionDefinitionBootstrapStore>();
     }
 }
