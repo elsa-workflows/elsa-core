@@ -388,6 +388,8 @@ def _prove(artifacts: Path, manifest: dict[str, Any], output: Path) -> dict[str,
                     except Exception:
                         raise ProofError("cell_validation", {"cell": {"tfm": tfm, "feature": feature}}) from None
             reports.validate_matrix([cell["report"] for cell in cells])
+            require(all(scenario["serverVersion"] == service["serverVersion"]
+                        for cell in cells for scenario in cell["report"]["scenarios"]), "server_version_binding")
             require(len({cell["process"]["observedLinuxStartTokenSha256"] for cell in cells}) == 6, "process_identity_reuse")
             _private_scan(private, (password, connection))
         except ProofError:

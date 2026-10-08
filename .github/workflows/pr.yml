@@ -23,6 +23,7 @@ on:
       - 'patch/*'
       - 'develop/*'
       - 'release/*'
+      - 'codex/elsa-integration-program'
     paths:
       - '**/*'
 

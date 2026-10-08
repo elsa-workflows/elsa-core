@@ -1058,7 +1058,7 @@ def source_input_hashes(root: Path) -> dict[str, str]:
     result = source_hashes(root)
     extra_paths = subprocess.check_output([
         "git", "-C", str(root), "ls-files", "-z", "--", "build.sh", "build.cmd", "build.ps1",
-        ".nuke", ".github/actions", ".github/workflows/prove-consolidated-packages.yml", "icon.png",
+        ".nuke", ".github/actions", ".github/workflows/prove-consolidated-packages.yml", ".github/workflows/pr.yml", "icon.png",
     ], text=True).split("\0")
     require("build.sh" in extra_paths and ".github/workflows/prove-consolidated-packages.yml" in extra_paths,
             "Package proof source inputs are incomplete")
